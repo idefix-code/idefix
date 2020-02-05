@@ -1,5 +1,7 @@
-KOKKOS_PATH = ${HOME}/Kokkos/kokkos
-KOKKOS_DEVICES = "OpenMP"
+
+# include local rules which are not hosted on git
+include Makefile.local
+
 EXE_NAME = "idefix"
 
 SRC = $(wildcard *.cpp)

@@ -35,7 +35,18 @@ void GridHost::MakeGrid(Grid &grid, Input &input) {
     std::cout << "GridHost::Makegrid\n";
     // Create the grid
     // TBD
-
+    for(int dir = 0 ; dir < 3 ; dir++) {
+        for(int i = 0 ; i < np_tot[dir] ; i++) {
+            dx[dir](i) = (input.xend[dir]-input.xstart[dir])/(np_int[dir]+1);
+            x[dir](i)=input.xstart[dir] + (i-nghost[dir]+HALF_F)*dx[dir](i);
+            xl[dir](i)=input.xstart[dir] + (i-nghost[dir])*dx[dir](i);
+            xr[dir](i)=input.xstart[dir] + (i-nghost[dir]+1)*dx[dir](i);
+            if(dir==0) {
+                std::cout << x[dir](i) << " ; ";
+            }
+        }
+    }
+    std::cout << "\n";
     // Sync with the device
     for(int dir = 0 ; dir < 3 ; dir++) {
         Kokkos::deep_copy(grid.x[dir],x[dir]);

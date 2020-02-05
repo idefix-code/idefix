@@ -4,11 +4,10 @@
 
 Grid::Grid() {
     // Do nothing
-    std::cout << "You should not call me\n";
 }
 
 Grid::Grid(Input &input) {
-    std::cout << "Buiilding grid \n";
+    std::cout << "Building grid \n";
     // Compute the number of grid points in each direction
 
     for(int dir = 0 ; dir < 3 ; dir++) {

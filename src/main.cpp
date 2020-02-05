@@ -109,25 +109,28 @@ int main( int argc, char* argv[] )
 
   printf("3\n");
 
-
+  // We need this as C++ lambdas can't capture arrays
+  IdefixArray4D<real> S = Q[2];
+  IdefixArray4D<real> V = Q[1];
+  IdefixArray4D<real> W = Q[0];
   for ( int repeat = 0; repeat < nrepeat; repeat++ ) {
 
     idefix_for("product",0,NVAR-1,ks,ke,js,je,is,ie,
                     KOKKOS_LAMBDA (int nv, int k, int j, int i) {
                            #ifdef NO_STRIDE
-                           Q[2](nv,k,j,i) = Q[2](nv,k,j,i) + Q[0](nv,k,j,i) - g.inputParam(0)*(Q[1](nv,k,j,i));
+                           S(nv,k,j,i) = S(nv,k,j,i) + W(nv,k,j,i) - g.inputParam(0)*(V(nv,k,j,i));
                            #endif
 
                            #ifdef I_STRIDE
-                           Q[2](nv,k,j,i) = Q[2](nv,k,j,i) + Q[0](nv,k,j,i+1)-Q[0](nv,k,j,i-1) - g.inputParam(0)*(Q[1](nv,k,j,i+1)+Q[1](nv,k,j,i-1));
+                           S(nv,k,j,i) = S(nv,k,j,i) + W(nv,k,j,i+1)-W(nv,k,j,i-1) - g.inputParam(0)*(V(nv,k,j,i+1)+V(nv,k,j,i-1));
                            #endif
 
                            #ifdef J_STRIDE
-                           Q[2](nv,k,j,i) = Q[2](nv,k,j,i) + Q[0](nv,k,j+1,i)-Q[0](nv,k,j-1,i) - g.inputParam(0)*(Q[1](nv,k,j+1,i)+Q[1](nv,k,j-1,i));
+                           S(nv,k,j,i) = S(nv,k,j,i) + W(nv,k,j+1,i)-W(nv,k,j-1,i) - g.inputParam(0)*(V(nv,k,j+1,i)+V(nv,k,j-1,i));
                            #endif
 
                            #ifdef K_STRIDE
-                           Q[2](nv,k,j,i) = Q[2](nv,k,j,i) + Q[0](nv,k+1,j,i)-Q[0](nv,k-1,j,i) - g.inputParam(0)*(Q[1](nv,k+1,j,i)+Q[1](nv,k-1,j,i));
+                           S(nv,k,j,i) = S(nv,k,j,i) + W(nv,k+1,j,i)-W(nv,k-1,j,i) - g.inputParam(0)*(V(nv,k+1,j,i)+V(nv,k-1,j,i));
                            #endif
                            //num(0)++;
     });

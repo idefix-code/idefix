@@ -4,7 +4,9 @@ include Makefile.local
 
 EXE_NAME = "idefix"
 
-SRC = $(wildcard *.cpp)
+SUBDIRS := src
+SRC = $(wildcard $(*.cpp,$(SUBDIRS)))
+OBJ = $(patsubst %.cpp,%.o,$(SRC))
 
 default: build
 	echo "done Build"
@@ -27,7 +29,6 @@ LINKFLAGS =
 
 DEPFLAGS = -M
 
-OBJ = $(SRC:.cpp=.o)
 LIB =
 
 include $(KOKKOS_PATH)/Makefile.kokkos

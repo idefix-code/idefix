@@ -15,11 +15,17 @@ using Layout = Kokkos::LayoutRight;
 #include "loop.hpp"
 #include "arrays.hpp"
 #include "globals.hpp"
+#include "input.hpp"
+#include "grid.hpp"
 //#include "configuration.hpp"
 //#include "grid.hpp"
 
 
+// Some macro definitions
 
+#define     IDIR    0
+#define     JDIR    1
+#define     KDIR    2
 
 
 

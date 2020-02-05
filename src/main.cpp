@@ -70,7 +70,9 @@ int main( int argc, char* argv[] )
   Kokkos::initialize( argc, argv );
   {
 
-
+    Input input = Input();
+    Grid grid = Grid(input);
+    
   // Allocate the arrays
   IdefixArray4D<real> Q("Q",NVAR,NZ,NY,NX);
   IdefixArray4D<real> V("V",NVAR,NZ,NY,NX);

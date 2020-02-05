@@ -71,7 +71,16 @@ int main( int argc, char* argv[] )
   {
 
     Input input = Input();
-    Grid grid = Grid(input);
+
+    // Allocate the grid on device
+    Grid grid(input);
+
+    // Allocate the grid on host as a mirror
+    GridHost gridHost(grid,input);
+
+    // Actually make the grid
+    gridHost.MakeGrid(grid,input);
+
 
   // Allocate the arrays
   IdefixArray4D<real> Q[3];

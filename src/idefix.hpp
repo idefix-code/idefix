@@ -17,6 +17,10 @@ using Layout = Kokkos::LayoutRight;
 #include "globals.hpp"
 #include "input.hpp"
 #include "grid.hpp"
+#include "gridHost.hpp"
+
+
+
 //#include "configuration.hpp"
 //#include "grid.hpp"
 

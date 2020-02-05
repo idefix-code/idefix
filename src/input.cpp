@@ -15,4 +15,8 @@ Input::Input() {
     xend[IDIR] = 1.0;
     xend[JDIR] = 1.0;
     xend[KDIR] = 1.0;
+
+    nghost[IDIR] = 2;
+    nghost[JDIR] = 2;
+    nghost[KDIR] = 2;
 }

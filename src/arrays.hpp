@@ -9,11 +9,12 @@ template <typename T> using IdefixArray2D = Kokkos::View<T**, Layout, Device>;
 template <typename T> using IdefixArray3D = Kokkos::View<T***, Layout, Device>;
 template <typename T> using IdefixArray4D = Kokkos::View<T****, Layout, Device>;
 
-template <typename T> using IdefixDualArray1D = Kokkos::DualView<T*, Layout, Device>;
-template <typename T> using IdefixDualArray2D = Kokkos::DualView<T**, Layout, Device>;
-template <typename T> using IdefixDualArray3D = Kokkos::DualView<T***, Layout, Device>;
-template <typename T> using IdefixDualArray4D = Kokkos::DualView<T****, Layout, Device>;
-
+/*
+template <typename T> using IdefixHostArray1D = Kokkos::View<T*, Layout, Host>;
+template <typename T> using IdefixHostArray2D = Kokkos::View<T**, Layout, Host>;
+template <typename T> using IdefixHostArray3D = Kokkos::View<T***, Layout, Host>;
+template <typename T> using IdefixHostArray4D = Kokkos::View<T****, Layout, Host>;
+*/
 
 
 #endif // IDEFIX_ARRAYS

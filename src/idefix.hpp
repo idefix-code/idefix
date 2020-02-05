@@ -14,6 +14,7 @@ using Layout = Kokkos::LayoutRight;
 #include "real_types.h"
 #include "loop.hpp"
 #include "arrays.hpp"
+#include "globals.hpp"
 //#include "configuration.hpp"
 //#include "grid.hpp"
 

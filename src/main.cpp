@@ -79,6 +79,8 @@ int main( int argc, char* argv[] )
   IdefixArray4D<real>::HostMirror V_H = Kokkos::create_mirror_view(V);
   IdefixArray4D<real>::HostMirror S_H = Kokkos::create_mirror_view(S);
 
+  Globals g;
+
   printf("1\n");
   // Initialize vector on host
   for( int nv = 0; nv < NVAR ; nv++) {
@@ -110,19 +112,19 @@ int main( int argc, char* argv[] )
     idefix_for("product",0,NVAR-1,ks,ke,js,je,is,ie,
                     KOKKOS_LAMBDA (int nv, int k, int j, int i) {
                            #ifdef NO_STRIDE
-                           S(nv,k,j,i) = S(nv,k,j,i) + Q(nv,k,j,i) - HALF_F*(V(nv,k,j,i));
+                           S(nv,k,j,i) = S(nv,k,j,i) + Q(nv,k,j,i) - g.inputParam(0)*(V(nv,k,j,i));
                            #endif
 
                            #ifdef I_STRIDE
-                           S(nv,k,j,i) = S(nv,k,j,i) + Q(nv,k,j,i+1)-Q(nv,k,j,i-1) - HALF_F*(V(nv,k,j,i+1)+V(nv,k,j,i-1));
+                           S(nv,k,j,i) = S(nv,k,j,i) + Q(nv,k,j,i+1)-Q(nv,k,j,i-1) - g.inputParam(0)*(V(nv,k,j,i+1)+V(nv,k,j,i-1));
                            #endif
 
                            #ifdef J_STRIDE
-                           S(nv,k,j,i) = S(nv,k,j,i) + Q(nv,k,j+1,i)-Q(nv,k,j-1,i) - HALF_F*(V(nv,k,j+1,i)+V(nv,k,j-1,i));
+                           S(nv,k,j,i) = S(nv,k,j,i) + Q(nv,k,j+1,i)-Q(nv,k,j-1,i) - g.inputParam(0)*(V(nv,k,j+1,i)+V(nv,k,j-1,i));
                            #endif
 
                            #ifdef K_STRIDE
-                           S(nv,k,j,i) = S(nv,k,j,i) + Q(nv,k+1,j,i)-Q(nv,k-1,j,i) - HALF_F*(V(nv,k+1,j,i)+V(nv,k-1,j,i));
+                           S(nv,k,j,i) = S(nv,k,j,i) + Q(nv,k+1,j,i)-Q(nv,k-1,j,i) - g.inputParam(0)*(V(nv,k+1,j,i)+V(nv,k-1,j,i));
                            #endif
                            //num(0)++;
     });

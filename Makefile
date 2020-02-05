@@ -1,15 +1,20 @@
 
+
+KOKKOS_PATH = ${HOME}/Kokkos/kokkos
+KOKKOS_DEVICES = "OpenMP"
+
 # include local rules which are not hosted on git
-include Makefile.local
+# Can Makefile.local can redefine the make rules
+-include Makefile.local
 
 EXE_NAME = "idefix"
 
-SUBDIRS := src
-SRC = $(wildcard $(*.cpp,$(SUBDIRS)))
-OBJ = $(patsubst %.cpp,%.o,$(SRC))
+SUBDIRS = src
+SRC = $(wildcard src/*.cpp)
+OBJ = $(strip $(patsubst src/%.cpp, %.o, $(SRC)))
+#VPATH="src/"
 
 default: build
-	echo "done Build"
 
 
 ifneq (,$(findstring Cuda,$(KOKKOS_DEVICES)))
@@ -43,7 +48,7 @@ clean: kokkos-clean
 
 # Compilation rules
 
-%.o:%.cpp $(KOKKOS_CPP_DEPENDS)
+%.o:src/%.cpp $(KOKKOS_CPP_DEPENDS)
 	$(CXX) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(CXXFLAGS) $(EXTRA_INC) -c $<
 
 test: $(EXE)

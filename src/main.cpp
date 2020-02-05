@@ -72,14 +72,15 @@ int main( int argc, char* argv[] )
 
     Input input = Input();
     Grid grid = Grid(input);
-    
+
   // Allocate the arrays
-  IdefixArray4D<real> Q("Q",NVAR,NZ,NY,NX);
-  IdefixArray4D<real> V("V",NVAR,NZ,NY,NX);
-  IdefixArray4D<real> S("S",NVAR,NZ,NY,NX);
-  IdefixArray4D<real>::HostMirror Q_H = Kokkos::create_mirror_view(Q);
-  IdefixArray4D<real>::HostMirror V_H = Kokkos::create_mirror_view(V);
-  IdefixArray4D<real>::HostMirror S_H = Kokkos::create_mirror_view(S);
+  IdefixArray4D<real> Q[3];
+  IdefixArray4D<real>::HostMirror Q_H[3];
+   for(int dir = 0 ; dir < 3 ; dir++ ) {
+     Q[dir] = IdefixArray4D<real>("Q",NVAR,NZ,NY,NX);
+     Q_H[dir] = Kokkos::create_mirror_view(Q[dir]);
+   }
+
 
   Globals g;
 
@@ -89,9 +90,9 @@ int main( int argc, char* argv[] )
     for( int k = 0; k < NZ ; k++) {
       for(int j = 0; j < NY ; j++) {
         for(int i = 0; i < NX ; i++) {
-          Q_H(nv,k,j,i) = i+j+k+nv;
-          V_H(nv,k,j,i) = i-j+k-nv;
-          S_H(nv,k,j,i) = 0.0;
+          Q_H[0](nv,k,j,i) = i+j+k+nv;
+          Q_H[1](nv,k,j,i) = i-j+k-nv;
+          Q_H[2](nv,k,j,i) = 0.0;
         }
       }
     }
@@ -99,9 +100,9 @@ int main( int argc, char* argv[] )
   printf("2\n");
 
   // Deep copy host views to device views.
-  Kokkos::deep_copy( Q, Q_H );
-  Kokkos::deep_copy( V, V_H );
-  Kokkos::deep_copy( S, S_H );
+  for(int dir = 0 ; dir < 3 ; dir++ ) {
+    Kokkos::deep_copy( Q[dir], Q_H[dir] );
+  }
 
   // Timer products.
   Kokkos::Timer timer;
@@ -114,19 +115,19 @@ int main( int argc, char* argv[] )
     idefix_for("product",0,NVAR-1,ks,ke,js,je,is,ie,
                     KOKKOS_LAMBDA (int nv, int k, int j, int i) {
                            #ifdef NO_STRIDE
-                           S(nv,k,j,i) = S(nv,k,j,i) + Q(nv,k,j,i) - g.inputParam(0)*(V(nv,k,j,i));
+                           Q[2](nv,k,j,i) = Q[2](nv,k,j,i) + Q[0](nv,k,j,i) - g.inputParam(0)*(Q[1](nv,k,j,i));
                            #endif
 
                            #ifdef I_STRIDE
-                           S(nv,k,j,i) = S(nv,k,j,i) + Q(nv,k,j,i+1)-Q(nv,k,j,i-1) - g.inputParam(0)*(V(nv,k,j,i+1)+V(nv,k,j,i-1));
+                           Q[2](nv,k,j,i) = Q[2](nv,k,j,i) + Q[0](nv,k,j,i+1)-Q[0](nv,k,j,i-1) - g.inputParam(0)*(Q[1](nv,k,j,i+1)+Q[1](nv,k,j,i-1));
                            #endif
 
                            #ifdef J_STRIDE
-                           S(nv,k,j,i) = S(nv,k,j,i) + Q(nv,k,j+1,i)-Q(nv,k,j-1,i) - g.inputParam(0)*(V(nv,k,j+1,i)+V(nv,k,j-1,i));
+                           Q[2](nv,k,j,i) = Q[2](nv,k,j,i) + Q[0](nv,k,j+1,i)-Q[0](nv,k,j-1,i) - g.inputParam(0)*(Q[1](nv,k,j+1,i)+Q[1](nv,k,j-1,i));
                            #endif
 
                            #ifdef K_STRIDE
-                           S(nv,k,j,i) = S(nv,k,j,i) + Q(nv,k+1,j,i)-Q(nv,k-1,j,i) - g.inputParam(0)*(V(nv,k+1,j,i)+V(nv,k-1,j,i));
+                           Q[2](nv,k,j,i) = Q[2](nv,k,j,i) + Q[0](nv,k+1,j,i)-Q[0](nv,k-1,j,i) - g.inputParam(0)*(Q[1](nv,k+1,j,i)+Q[1](nv,k-1,j,i));
                            #endif
                            //num(0)++;
     });
@@ -147,7 +148,7 @@ int main( int argc, char* argv[] )
 
   printf("5\n");
   // Check solution
-  Kokkos::deep_copy( S_H, S );
+  Kokkos::deep_copy( Q_H[2], Q[2] );
 
   printf("6\n");
   for( int nv = 0; nv < NVAR ; nv++) {
@@ -160,8 +161,8 @@ int main( int argc, char* argv[] )
           th_value=nrepeat*(2-(i-j+k-nv));
           #endif
 
-          if( S_H(nv,k,j,i) != th_value)
-            printf("Solution mismatch at (nv,i,j,k)=(%d, %d, %d, %d): %g instead of %g \n",nv,i,j,k,S_H(nv,k,j,i),th_value);
+          if( Q_H[2](nv,k,j,i) != th_value)
+            printf("Solution mismatch at (nv,i,j,k)=(%d, %d, %d, %d): %g instead of %g \n",nv,i,j,k,Q_H[2](nv,k,j,i),th_value);
         }
       }
     }

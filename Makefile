@@ -9,9 +9,15 @@ KOKKOS_DEVICES = "OpenMP"
 
 EXE_NAME = "idefix"
 
-SUBDIRS = src
-SRC = $(wildcard src/*.cpp)
-OBJ = $(strip $(patsubst src/%.cpp, %.o, $(SRC)))
+
+IDEFIX_DIR 	 = ./
+SRC 		 = $(IDEFIX_DIR)/src
+INCLUDE_DIRS = -I, -I. -I$(SRC)
+VPATH 		 = ./:$(SRC)
+
+HEADERS = arrays.hpp data.hpp globals.hpp grid.hpp gridHost.hpp idefix.hpp input.hpp kokkos_types.h loop.hpp real_types.h gitversion.h
+OBJ = data.o globals.o grid.o gridHost.o input.o main.o
+
 #VPATH="src/"
 
 default: build
@@ -48,8 +54,13 @@ clean: kokkos-clean
 
 # Compilation rules
 
-%.o:src/%.cpp $(KOKKOS_CPP_DEPENDS)
-	$(CXX) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(CXXFLAGS) $(EXTRA_INC) -c $<
+%.o:%.cpp $(KOKKOS_CPP_DEPENDS)
+	$(CXX) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(CXXFLAGS) $(EXTRA_INC) $(INCLUDE_DIRS) -c $<
+
+gitversion.h: .git/HEAD .git/index
+	echo "#define GITVERSION \"$(shell git describe --tags --always)\"" > $@
+
+$(OBJ): $(HEADERS)
 
 test: $(EXE)
 	./$(EXE)

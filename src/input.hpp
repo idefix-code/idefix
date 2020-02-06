@@ -10,6 +10,8 @@ public:
     real xend[3];
     int nghost[3];
     Input();
+private:
+    void PrintLogo();
 };
 
 #endif

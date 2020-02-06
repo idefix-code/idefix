@@ -15,7 +15,7 @@ SRC 		 = $(IDEFIX_DIR)/src
 INCLUDE_DIRS = -I, -I. -I$(SRC)
 VPATH 		 = ./:$(SRC)
 
-HEADERS = arrays.hpp data.hpp globals.hpp grid.hpp gridHost.hpp idefix.hpp input.hpp kokkos_types.h loop.hpp real_types.h gitversion.h
+HEADERS = arrays.hpp data.hpp globals.hpp grid.hpp gridHost.hpp idefix.hpp input.hpp kokkos_types.h loop.hpp real_types.h
 OBJ = data.o globals.o grid.o gridHost.o input.o main.o
 
 #VPATH="src/"
@@ -57,10 +57,14 @@ clean: kokkos-clean
 %.o:%.cpp $(KOKKOS_CPP_DEPENDS)
 	$(CXX) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(CXXFLAGS) $(EXTRA_INC) $(INCLUDE_DIRS) -c $<
 
-gitversion.h: .git/HEAD .git/index
+$(SRC)/gitversion.h: .git/HEAD .git/index
 	echo "#define GITVERSION \"$(shell git describe --tags --always)\"" > $@
 
+#dependance on headers
 $(OBJ): $(HEADERS)
+
+#specific dependence of input.o
+input.o: $(SRC)/gitversion.h
 
 test: $(EXE)
 	./$(EXE)

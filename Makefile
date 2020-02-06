@@ -12,11 +12,11 @@ EXE_NAME = "idefix"
 
 IDEFIX_DIR 	 = ./
 SRC 		 = $(IDEFIX_DIR)/src
-INCLUDE_DIRS = -I, -I. -I$(SRC)
-VPATH 		 = ./:$(SRC)
+INCLUDE_DIRS = -I, -I. -I$(SRC) -I$(SRC)/HD
+VPATH 		 = ./:$(SRC):$(SRC)/HD
 
-HEADERS = arrays.hpp data.hpp globals.hpp grid.hpp gridHost.hpp idefix.hpp input.hpp kokkos_types.h loop.hpp real_types.h
-OBJ = data.o globals.o grid.o gridHost.o input.o main.o
+HEADERS = arrays.hpp data.hpp globals.hpp grid.hpp gridHost.hpp idefix.hpp data.hpp dataHost.hpp mod_defs.hpp input.hpp kokkos_types.h loop.hpp real_types.h
+OBJ = globals.o grid.o gridHost.o input.o main.o data.o dataHost.o
 
 #VPATH="src/"
 
@@ -57,11 +57,12 @@ clean: kokkos-clean
 %.o:%.cpp $(KOKKOS_CPP_DEPENDS)
 	$(CXX) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(CXXFLAGS) $(EXTRA_INC) $(INCLUDE_DIRS) -c $<
 
-$(SRC)/gitversion.h: .git/HEAD .git/index
-	echo "#define GITVERSION \"$(shell git describe --tags --always)\"" > $@
-
 #dependance on headers
 $(OBJ): $(HEADERS)
+
+# in order to have access to current git version
+$(SRC)/gitversion.h: .git/HEAD .git/index
+	echo "#define GITVERSION \"$(shell git describe --tags --always)\"" > $@
 
 #specific dependence of input.o
 input.o: $(SRC)/gitversion.h

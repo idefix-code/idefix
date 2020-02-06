@@ -38,7 +38,6 @@ int main( int argc, char* argv[] )
   const int NX=64;
   const int NY=64;
   const int NZ=64;
-  const int NVAR=5;
 
 #ifdef I_STRIDE
   const int is=1;
@@ -80,6 +79,12 @@ int main( int argc, char* argv[] )
 
     // Actually make the grid
     gridHost.MakeGrid(grid,input);
+
+    // Make a data array
+    Data data(grid);
+    DataHost dataHost(data);
+
+    dataHost.SyncFromDevice();
 
 
   // Allocate the arrays

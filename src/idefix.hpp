@@ -12,12 +12,17 @@ using Layout = Kokkos::LayoutRight;
 //#define USE_DOUBLE
 
 #include "real_types.h"
+#include "definitions.hpp"
+#include "mod_defs.hpp"
 #include "loop.hpp"
 #include "arrays.hpp"
 #include "globals.hpp"
 #include "input.hpp"
 #include "grid.hpp"
 #include "gridHost.hpp"
+#include "data.hpp"
+#include "dataHost.hpp"
+
 
 
 
@@ -27,9 +32,14 @@ using Layout = Kokkos::LayoutRight;
 
 // Some macro definitions
 
+
 #define     IDIR    0
 #define     JDIR    1
 #define     KDIR    2
+
+
+#define NVAR    (NFLX)
+
 
 
 

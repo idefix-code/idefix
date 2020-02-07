@@ -64,7 +64,7 @@ void Test::MakeTest(Grid &grid, int stride, int nrepeat) {
     // Timer products.
     Kokkos::Timer timer;
 
-
+    std::cout << "Performing test..." << std::endl;
     if(stride<IDIR) {
         for ( int repeat = 0; repeat < nrepeat; repeat++ ) {
 

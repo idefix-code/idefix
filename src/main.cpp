@@ -20,14 +20,7 @@
 
 #include "idefix.hpp"
 
-#define  I_STRIDE
-//#define  J_STRIDE
-//#define  K_STRIDE
-//#define  NO_STRIDE
 
-
-
-//#define USE_LEFT_ITERATE
 
 
 
@@ -35,36 +28,6 @@
 
 int main( int argc, char* argv[] )
 {
-  const int NX=64;
-  const int NY=64;
-  const int NZ=64;
-
-#ifdef I_STRIDE
-  const int is=1;
-  const int ie=NX-2;
-#else
-  const int is=0;
-  const int ie=NX-1;
-#endif
-
-#ifdef J_STRIDE
-  const int js=1;
-  const int je=NY-2;
-#else
-  const int js=0;
-  const int je=NY-1;
-#endif
-
-#ifdef K_STRIDE
-  const int ks=1;
-  const int ke=NZ-2;
-#else
-  const int ks=0;
-  const int ke=NZ-1;
-#endif
-
-
-  int nrepeat=10000;
 
   Kokkos::initialize( argc, argv );
   {

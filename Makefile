@@ -12,11 +12,11 @@ EXE_NAME = "idefix"
 
 IDEFIX_DIR 	 = ./
 SRC 		 = $(IDEFIX_DIR)/src
-INCLUDE_DIRS = -I, -I. -I$(SRC) -I$(SRC)/HD
-VPATH 		 = ./:$(SRC):$(SRC)/HD
+INCLUDE_DIRS = -I, -I. -I$(SRC) -I$(SRC)/HD -I$(SRC)/Test
+VPATH 		 = ./:$(SRC):$(SRC)/HD:$(SRC)/Test
 
-HEADERS = arrays.hpp data.hpp globals.hpp grid.hpp gridHost.hpp idefix.hpp data.hpp dataHost.hpp mod_defs.hpp input.hpp kokkos_types.h loop.hpp real_types.h
-OBJ = globals.o grid.o gridHost.o input.o main.o data.o dataHost.o
+HEADERS = arrays.hpp data.hpp globals.hpp grid.hpp gridHost.hpp idefix.hpp data.hpp dataHost.hpp mod_defs.hpp input.hpp kokkos_types.h loop.hpp real_types.h test.hpp
+OBJ = globals.o grid.o gridHost.o input.o main.o data.o dataHost.o test.o
 
 #VPATH="src/"
 

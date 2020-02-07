@@ -7,7 +7,8 @@
 using Device = Kokkos::DefaultExecutionSpace;
 using Layout = Kokkos::LayoutRight;
 
-
+// Define the kind of loop we want (see loop.hpp for details)
+#define  INDEX_LOOP
 
 //#define USE_DOUBLE
 
@@ -22,6 +23,7 @@ using Layout = Kokkos::LayoutRight;
 #include "gridHost.hpp"
 #include "data.hpp"
 #include "dataHost.hpp"
+#include "test.hpp"
 
 
 

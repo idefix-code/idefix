@@ -110,7 +110,7 @@ void Test::MakeTest(Grid &grid, int stride, int nrepeat) {
 
     Kokkos::fence();
 
-
+    std::cout << "Done!" << std::endl; 
     // Calculate time.
     double time = timer.seconds();
     double th_value=0;

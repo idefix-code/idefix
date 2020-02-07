@@ -20,6 +20,8 @@ void Test::MakeTest(Grid &grid, int stride, int nrepeat) {
 
     int is,ie,js,je,ks,ke;
 
+    
+
     if(stride==IDIR) {
         is=1;
         ie=NX-2;
@@ -61,16 +63,19 @@ void Test::MakeTest(Grid &grid, int stride, int nrepeat) {
     // Deep copy host views to device views.
     dataHost.SyncToDevice();
 
+    // Get a local pointer to the needed views since we can't access classes from Kokkos kernels
+    IdefixArray4D<real> Vc = data.Vc;
+    
     // Timer products.
     Kokkos::Timer timer;
 
-    std::cout << "Performing test..." << std::endl;
+
     if(stride<IDIR) {
         for ( int repeat = 0; repeat < nrepeat; repeat++ ) {
-
+            
         idefix_for("product",ks,ke,js,je,is,ie,
                         KOKKOS_LAMBDA (int k, int j, int i) {
-                            data.Vc(2,k,j,i) = data.Vc(2,k,j,i) + data.Vc(0,k,j,i) - HALF_F*(data.Vc(1,k,j,i));
+                            Vc(2,k,j,i) = Vc(2,k,j,i) + Vc(0,k,j,i) - HALF_F*(Vc(1,k,j,i));
                             
                         });
         }
@@ -81,7 +86,7 @@ void Test::MakeTest(Grid &grid, int stride, int nrepeat) {
 
         idefix_for("product",ks,ke,js,je,is,ie,
                         KOKKOS_LAMBDA (int k, int j, int i) {
-                            data.Vc(2,k,j,i) = data.Vc(2,k,j,i) + data.Vc(0,k,j,i+1)-data.Vc(0,k,j,i-1) - HALF_F*(data.Vc(1,k,j,i+1)+data.Vc(1,k,j,i-1));
+                            Vc(2,k,j,i) = Vc(2,k,j,i) + Vc(0,k,j,i+1)-Vc(0,k,j,i-1) - HALF_F*(Vc(1,k,j,i+1)+Vc(1,k,j,i-1));
                             
                         });
         }
@@ -91,7 +96,7 @@ void Test::MakeTest(Grid &grid, int stride, int nrepeat) {
 
         idefix_for("product",ks,ke,js,je,is,ie,
                         KOKKOS_LAMBDA (int k, int j, int i) {
-                            data.Vc(2,k,j,i) = data.Vc(2,k,j,i) + data.Vc(0,k,j+1,i)-data.Vc(0,k,j-1,i) - HALF_F*(data.Vc(1,k,j+1,i)+data.Vc(1,k,j-1,i));                     
+                            Vc(2,k,j,i) = Vc(2,k,j,i) + Vc(0,k,j+1,i)-Vc(0,k,j-1,i) - HALF_F*(Vc(1,k,j+1,i)+Vc(1,k,j-1,i));                     
 
                         });
         }
@@ -101,7 +106,7 @@ void Test::MakeTest(Grid &grid, int stride, int nrepeat) {
 
         idefix_for("product",ks,ke,js,je,is,ie,
                         KOKKOS_LAMBDA (int k, int j, int i) {
-                            data.Vc(2,k,j,i) = data.Vc(2,k,j,i) + data.Vc(0,k+1,j,i)-data.Vc(0,k-1,j,i) - HALF_F*(data.Vc(1,k+1,j,i)+data.Vc(1,k-1,j,i));
+                            Vc(2,k,j,i) = Vc(2,k,j,i) + Vc(0,k+1,j,i)-Vc(0,k-1,j,i) - HALF_F*(Vc(1,k+1,j,i)+Vc(1,k-1,j,i));
                         });
         }
     }
@@ -110,7 +115,7 @@ void Test::MakeTest(Grid &grid, int stride, int nrepeat) {
 
     Kokkos::fence();
 
-    std::cout << "Done!" << std::endl; 
+
     // Calculate time.
     double time = timer.seconds();
     double th_value=0;

@@ -10,7 +10,7 @@ using Layout = Kokkos::LayoutRight;
 // Define the kind of loop we want (see loop.hpp for details)
 #define  INDEX_LOOP
 
-//#define USE_DOUBLE
+// #define USE_DOUBLE
 
 #include "real_types.h"
 #include "definitions.hpp"

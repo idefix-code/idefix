@@ -5,14 +5,13 @@ DataHost::DataHost() {
     // Do nothing
 }
 DataHost::DataHost(Data& datain) {
-    std::cout << "Building dataHost Array\n";
     
     // copy the data object for later use
     this->data=datain; 
 
     // Create mirrors (should be mirror_view)
-    Vc = Kokkos::create_mirror(data.Vc);
-    Uc = Kokkos::create_mirror(data.Uc);
+    Vc = Kokkos::create_mirror_view(data.Vc);
+    Uc = Kokkos::create_mirror_view(data.Uc);
 
 }
 

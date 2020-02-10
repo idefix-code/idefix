@@ -2,6 +2,7 @@
 
 KOKKOS_PATH = ${HOME}/Kokkos/kokkos
 KOKKOS_DEVICES = "OpenMP"
+KOKKOS_ARCH = "Pascal61"
 
 # include local rules which are not hosted on git
 # Can Makefile.local can redefine the make rules
@@ -26,7 +27,6 @@ default: build
 ifneq (,$(findstring Cuda,$(KOKKOS_DEVICES)))
 CXX = ${KOKKOS_PATH}/bin/nvcc_wrapper
 EXE = ${EXE_NAME}.cuda
-KOKKOS_ARCH = "Pascal61"
 KOKKOS_CUDA_OPTIONS = "enable_lambda"
 else
 CXX = g++

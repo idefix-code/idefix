@@ -28,7 +28,7 @@ using Layout = Kokkos::LayoutRight;
 #include "dataBlock.hpp"
 #include "dataBlockHost.hpp"
 #include "test.hpp"
-#include "TimeIntegrator.hpp"
+#include "timeIntegrator.hpp"
 
 
 

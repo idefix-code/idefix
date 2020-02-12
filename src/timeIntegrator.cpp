@@ -32,6 +32,8 @@ void TimeIntegrator::Cycle() {
     // Do one cycle
     IdefixArray4D<real> Vc = data.Vc;
     IdefixArray4D<real> V0 = this->V0;
+    IdefixArray3D<real> InvDtHypLoc=this->InvDtHyp;
+    IdefixArray3D<real> InvDtParLoc=this->InvDtPar;
 
     // Store initial stage for multi-stage time integrators
     if(nstages>1) Kokkos::deep_copy(V0,Vc);
@@ -58,10 +60,10 @@ void TimeIntegrator::Cycle() {
                             ({0,0,0},{data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]}),
                             KOKKOS_LAMBDA (int k, int j, int i, real &dtmin) {
                                 real InvDt;
-                                InvDt = SQRT(InvDtHyp(k,j,i) * InvDtHyp(k,j,i) + InvDtPar(k,j,i) * InvDtPar(k,j,i));
-                                dt=FMIN(1.0/(InvDt+1.0e20),dt);
+                                InvDt = SQRT(InvDtHypLoc(k,j,i) * InvDtHypLoc(k,j,i) + InvDtParLoc(k,j,i) * InvDtParLoc(k,j,i));
+                                InvDt=10.0;
+				dtmin=FMIN(1.0/(InvDt+1.0e20),dtmin);
                             }, Kokkos::Min<real>(dt) );
-
 
 }
 

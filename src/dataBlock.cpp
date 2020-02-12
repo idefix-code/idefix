@@ -4,7 +4,8 @@
 DataBlock::DataBlock() {
     // Do nothing
 }
-DataBlock::DataBlock(Grid &grid) {
+
+void DataBlock::InitFromGrid(Grid &grid) {
     // This initialisation is only valid for *serial*
     // MPI initialisation will involve domain decomposition of grids into DataBlocks
 
@@ -66,7 +67,6 @@ DataBlock::DataBlock(Grid &grid) {
     }
     
     // TODO: A proper initialisation of A and dV should be done at this stage
-    
 }
 
 DataBlock::DataBlock(const DataBlock &data) {

@@ -29,8 +29,8 @@ public:
     int gbeg[3];                    // Begining of local block in the grid (internal)
     int gend[3];                    // End of local block in the grid (internal)
 
-    // Constructor
-    DataBlock(Grid &);
+    // init from a Grid object
+    void InitFromGrid(Grid &);
 
     // Copy constructor
     DataBlock(const DataBlock &);

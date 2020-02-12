@@ -2,9 +2,9 @@
 #include "idefix.hpp"
 #include "test.hpp"
 
-Test::Test(Data &data) {
+Test::Test(DataBlock &data) {
     // Allocate the arrays
-    this->dataHost = DataHost(data);
+    this->dataHost = DataBlockHost(data);
     this->data=data;
 }
 
@@ -12,11 +12,11 @@ Test::Test() {
     // Do nothing
 }
 
-void Test::MakeTest(Grid &grid, int stride, int nrepeat) {
+void Test::MakeTest(int stride, int nrepeat) {
     // Do nothing
-    int NX=grid.np_int[0];
-    int NY=grid.np_int[1];
-    int NZ=grid.np_int[2];
+    int NX=data.np_int[0];
+    int NY=data.np_int[1];
+    int NZ=data.np_int[2];
 
     int is,ie,js,je,ks,ke;
 

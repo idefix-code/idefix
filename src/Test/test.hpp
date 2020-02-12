@@ -7,17 +7,17 @@ class Test {
 public:
 
     // Constructor
-    Test(Data&);
+    Test(DataBlock&);
 
     // Default constructor
     Test();
 
     // Make the test
-    void MakeTest(Grid &, int, int );
+    void MakeTest(int, int );
 
 private:
-    Data data;
-    DataHost dataHost;
+    DataBlock data;
+    DataBlockHost dataHost;
 };
 
 #endif

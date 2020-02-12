@@ -13,8 +13,6 @@ GridHost::GridHost(Grid &grid, Input &input) {
         lbound[dir] = grid.lbound[dir]; 
         rbound[dir] = grid.rbound[dir];
 
-        lbeg[dir] = grid.lbeg[dir];
-        lend[dir] = grid.lend[dir];
 
     }
 
@@ -24,9 +22,7 @@ GridHost::GridHost(Grid &grid, Input &input) {
         xr[dir] = Kokkos::create_mirror_view(grid.xr[dir]);
         xl[dir] = Kokkos::create_mirror_view(grid.xl[dir]);
         dx[dir] = Kokkos::create_mirror_view(grid.dx[dir]);
-        A[dir] = Kokkos::create_mirror_view(grid.A[dir]);
     }
-    dV = Kokkos::create_mirror_view(grid.dV);
 
 
 }
@@ -50,9 +46,6 @@ void GridHost::MakeGrid(Grid &grid, Input &input) {
         Kokkos::deep_copy(grid.xr[dir],xr[dir]);
         Kokkos::deep_copy(grid.xl[dir],xl[dir]);
         Kokkos::deep_copy(grid.dx[dir],dx[dir]);
-
-        Kokkos::deep_copy(grid.A[dir],A[dir]);
     }
 
-    Kokkos::deep_copy(grid.dV,dV);
 }

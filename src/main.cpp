@@ -39,19 +39,20 @@ int main( int argc, char* argv[] )
     gridHost.MakeGrid(grid,input);
 
     // Make a data array
-    Data data(grid);
-    DataHost dataHost(data);
+    DataBlock data(grid);
+    DataBlockHost dataHost(data);
 
     dataHost.SyncFromDevice();
 
     // Make a test
     Test test(data);
     int nrepeat=10000;
-    test.MakeTest(grid,IDIR-1,nrepeat);
-    test.MakeTest(grid,IDIR,nrepeat);
-    test.MakeTest(grid,JDIR,nrepeat);
-    test.MakeTest(grid,KDIR,nrepeat);
+    test.MakeTest(IDIR-1,nrepeat);
+    test.MakeTest(IDIR,nrepeat);
+    test.MakeTest(JDIR,nrepeat);
+    test.MakeTest(KDIR,nrepeat);
 
+    std::cout << "Job's done" << std::endl;
   }
   Kokkos::finalize();
 

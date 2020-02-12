@@ -19,9 +19,6 @@ Grid::Grid(Input &input) {
         lbound[dir] = 0; 
         rbound[dir] = 0;
 
-        lbeg[dir] = nghost[dir];
-        lend[dir] = nghost[dir]+np_int[dir];
-
     }
 
     // Allocate the grid structure on device. Initialisation will come from GridHost
@@ -32,11 +29,7 @@ Grid::Grid(Input &input) {
         xl[dir] = IdefixArray1D<real>("Grid_xl",np_tot[dir]);
         dx[dir] = IdefixArray1D<real>("Grid_dx",np_tot[dir]);
         
-        A[dir] = IdefixArray3D<real>("Grid_A",np_tot[2],np_tot[1],np_tot[0]);
     }
-
-    dV = IdefixArray3D<real>("Grid_dV",np_tot[2],np_tot[1],np_tot[0]);
-
 
 }
 

@@ -25,8 +25,8 @@ using Layout = Kokkos::LayoutRight;
 #include "input.hpp"
 #include "grid.hpp"
 #include "gridHost.hpp"
-#include "data.hpp"
-#include "dataHost.hpp"
+#include "dataBlock.hpp"
+#include "dataBlockHost.hpp"
 #include "test.hpp"
 
 

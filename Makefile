@@ -15,8 +15,8 @@ SRC 		 = $(IDEFIX_DIR)/src
 INCLUDE_DIRS = -I, -I. -I$(SRC) -I$(SRC)/HD -I$(SRC)/Test
 VPATH 		 = ./:$(SRC):$(SRC)/HD:$(SRC)/Test
 
-HEADERS = arrays.hpp globals.hpp grid.hpp gridHost.hpp idefix.hpp dataBlock.hpp dataBlockHost.hpp mod_defs.hpp input.hpp kokkos_types.h loop.hpp real_types.h test.hpp
-OBJ = globals.o grid.o gridHost.o input.o main.o dataBlock.o dataBlockHost.o test.o
+HEADERS = arrays.hpp globals.hpp grid.hpp gridHost.hpp idefix.hpp dataBlock.hpp dataBlockHost.hpp mod_defs.hpp input.hpp kokkos_types.h loop.hpp real_types.h timeIntegrator.hpp test.hpp
+OBJ = globals.o grid.o gridHost.o input.o main.o dataBlock.o dataBlockHost.o test.o timeIntegrator.o
 
 #VPATH="src/"
 

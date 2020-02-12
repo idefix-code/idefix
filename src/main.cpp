@@ -46,6 +46,15 @@ int main( int argc, char* argv[] )
 
     dataHost.SyncFromDevice();
 
+    std::cout << "Init Time Integrator..." << std::endl;
+    TimeIntegrator Tint(input, data);
+    Tint.setDt(0.1);
+
+    std::cout << "Cycling Time Integrator..." << std::endl;
+    Tint.Cycle();
+
+    std::cout << "Done." << std::endl;
+
     // Make a test
     Test test(data);
     int nrepeat=10000;

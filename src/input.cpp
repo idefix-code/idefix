@@ -21,6 +21,8 @@ Input::Input() {
     nghost[JDIR] = 2;
     nghost[KDIR] = 2;
 
+    // Number of integrator stages
+    nstages=2;
     PrintLogo();
 }
 

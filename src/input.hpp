@@ -9,6 +9,7 @@ public:
     real xstart[3];
     real xend[3];
     int nghost[3];
+    int nstages;
     Input();
 private:
     void PrintLogo();

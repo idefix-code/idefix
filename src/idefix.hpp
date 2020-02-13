@@ -8,8 +8,8 @@ using Device = Kokkos::DefaultExecutionSpace;
 using Layout = Kokkos::LayoutRight;
 
 // Define the kind of loop we want (see loop.hpp for details)
-#define  INDEX_LOOP
-//#define  MDRANGE_LOOP
+//#define  INDEX_LOOP
+#define  MDRANGE_LOOP
 //#define  SIMD_LOOP
 //#define  TP_INNERX_LOOP
 //#define  TPTTRTVR_LOOP
@@ -18,6 +18,8 @@ using Layout = Kokkos::LayoutRight;
 
 #include "real_types.h"
 #include "definitions.hpp"
+#include "macros.hpp"
+#include "physics.hpp"
 #include "mod_defs.hpp"
 #include "loop.hpp"
 #include "arrays.hpp"

@@ -33,10 +33,11 @@ int main( int argc, char* argv[] )
     Grid grid(input);
 
     // Allocate the grid on host as a mirror
-    GridHost gridHost(grid,input);
+    GridHost gridHost(grid);
 
     // Actually make the grid
     gridHost.MakeGrid(grid,input);
+    gridHost.SyncToDevice();
 
     // Make a data array
     DataBlock data;

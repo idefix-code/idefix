@@ -2,7 +2,7 @@
 #include "grid.hpp"
 #include "gridHost.hpp"
 
-GridHost::GridHost(Grid &grid, Input &input) {
+GridHost::GridHost(Grid &grid) {
 
     for(int dir = 0 ; dir < 3 ; dir++) {
 
@@ -40,6 +40,19 @@ void GridHost::MakeGrid(Grid &grid, Input &input) {
         }
     }
 
+    
+}
+
+void GridHost::SyncFromDevice() {
+    for(int dir = 0 ; dir < 3 ; dir++) {
+        Kokkos::deep_copy(x[dir],grid.x[dir]);
+        Kokkos::deep_copy(xr[dir],grid.xr[dir]);
+        Kokkos::deep_copy(xl[dir],grid.xl[dir]);
+        Kokkos::deep_copy(dx[dir],grid.dx[dir]);
+    }
+}
+
+void GridHost::SyncToDevice() {
     // Sync with the device
     for(int dir = 0 ; dir < 3 ; dir++) {
         Kokkos::deep_copy(grid.x[dir],x[dir]);
@@ -47,5 +60,4 @@ void GridHost::MakeGrid(Grid &grid, Input &input) {
         Kokkos::deep_copy(grid.xl[dir],xl[dir]);
         Kokkos::deep_copy(grid.dx[dir],dx[dir]);
     }
-
 }

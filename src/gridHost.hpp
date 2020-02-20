@@ -20,10 +20,16 @@ public:
 
     
     // Constructor
-    GridHost(Grid&, Input&);
+    GridHost(Grid&);
 
     // Actually make the grid
     void MakeGrid(Grid &, Input &);
+
+    // Sync from a device grid
+    void SyncFromDevice();
+
+    // Sync to a device grid
+    void SyncToDevice();
 
 private:
     Grid grid;

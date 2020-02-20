@@ -46,6 +46,22 @@ using Layout = Kokkos::LayoutRight;
 #define     JDIR    1
 #define     KDIR    2
 
+#if DIMENSIONS == 1
+    #define     IOFFSET     1
+    #define     JOFFSET     0
+    #define     KOFFSET     0
+#endif
+#if DIMENSIONS == 2
+    #define     IOFFSET     1
+    #define     JOFFSET     1
+    #define     KOFFSET     0
+#endif
+#if DIMENSIONS == 3
+    #define     IOFFSET     1
+    #define     JOFFSET     1
+    #define     KOFFSET     1
+#endif
+
 
 #define NVAR    (NFLX)
 

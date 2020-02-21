@@ -7,6 +7,7 @@ GridHost::GridHost() {
 }
 GridHost::GridHost(Grid &grid) {
 
+    this->grid=grid;
     for(int dir = 0 ; dir < 3 ; dir++) {
 
         nghost[dir] = grid.nghost[dir];
@@ -30,7 +31,7 @@ GridHost::GridHost(Grid &grid) {
 
 }
 
-void GridHost::MakeGrid(Grid &grid, Input &input) {
+void GridHost::MakeGrid(Input &input) {
 
     // Create the grid
 

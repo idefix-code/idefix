@@ -24,7 +24,7 @@ public:
     GridHost();
 
     // Actually make the grid
-    void MakeGrid(Grid &, Input &);
+    void MakeGrid(Input &);
 
     // Sync from a device grid
     void SyncFromDevice();

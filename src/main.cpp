@@ -36,7 +36,7 @@ int main( int argc, char* argv[] )
     GridHost gridHost(grid);
 
     // Actually make the grid
-    gridHost.MakeGrid(grid,input);
+    gridHost.MakeGrid(input);
     gridHost.SyncToDevice();
 
     // Make a data array

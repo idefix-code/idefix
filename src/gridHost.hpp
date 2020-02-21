@@ -21,6 +21,7 @@ public:
     
     // Constructor
     GridHost(Grid&);
+    GridHost();
 
     // Actually make the grid
     void MakeGrid(Grid &, Input &);

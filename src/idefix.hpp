@@ -16,21 +16,7 @@ using Layout = Kokkos::LayoutRight;
 
 #define USE_DOUBLE
 
-#include "real_types.h"
-#include "definitions.hpp"
-#include "macros.hpp"
-#include "physics.hpp"
-#include "mod_defs.hpp"
-#include "loop.hpp"
-#include "arrays.hpp"
-#include "globals.hpp"
-#include "input.hpp"
-#include "grid.hpp"
-#include "gridHost.hpp"
-#include "dataBlock.hpp"
-#include "dataBlockHost.hpp"
-#include "test.hpp"
-#include "timeIntegrator.hpp"
+
 
 
 
@@ -41,6 +27,12 @@ using Layout = Kokkos::LayoutRight;
 
 // Some macro definitions
 
+/* ---- Geometry Labels ( > 0) ----  */
+
+#define CARTESIAN    1
+#define CYLINDRICAL  2
+#define POLAR        3
+#define SPHERICAL    4
 
 #define     IDIR    0
 #define     JDIR    1
@@ -65,6 +57,23 @@ using Layout = Kokkos::LayoutRight;
 
 #define NVAR    (NFLX)
 
+
+#include "real_types.h"
+#include "definitions.hpp"
+#include "macros.hpp"
+#include "physics.hpp"
+#include "mod_defs.hpp"
+#include "loop.hpp"
+#include "arrays.hpp"
+#include "globals.hpp"
+#include "input.hpp"
+#include "grid.hpp"
+#include "gridHost.hpp"
+#include "dataBlock.hpp"
+#include "dataBlockHost.hpp"
+#include "test.hpp"
+#include "timeIntegrator.hpp"
+#include "outputVtk.hpp"
 
 
 

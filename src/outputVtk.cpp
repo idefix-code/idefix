@@ -1,108 +1,131 @@
 #include "outputVtk.hpp"
+#include "gitversion.h"
 
+#define VTK_RECTILINEAR_GRID    14
+#define VTK_STRUCTURED_GRID     35
+
+#ifndef VTK_FORMAT
+  #if GEOMETRY == CARTESIAN || GEOMETRY == CYLINDRICAL
+    #define VTK_FORMAT  VTK_RECTILINEAR_GRID
+  #else
+    #define VTK_FORMAT  VTK_STRUCTURED_GRID
+  #endif
+#endif
+
+/* ---------------------------------------------------------
+    The following macros are specific to this file only 
+    and are used to ease up serial/parallel implementation
+    for writing strings and real arrays 
+   --------------------------------------------------------- */   
+    
+#ifdef PARALLEL
+ #define VTK_HEADER_WRITE_STRING(header) \
+         TOBEDEFINED(header, strlen(header), MPI_CHAR, SZ_Float_Vect);
+ #define VTK_HEADER_WRITE_FLTARR(arr, nelem) \
+         TOBEDEFINED (arr, nelem, MPI_FLOAT, SZ_Float_Vect);
+ #define VTK_HEADER_WRITE_DBLARR(arr, nelem) \
+         TOBEDEFINED (arr, nelem, MPI_DOUBLE, SZ_Float_Vect);
+#else
+ #define VTK_HEADER_WRITE_STRING(header) \
+         fprintf (fvtk,header);
+ #define VTK_HEADER_WRITE_FLTARR(arr,nelem) \
+         fwrite(arr, sizeof(float), nelem, fvtk);
+ #define VTK_HEADER_WRITE_DBLARR(arr,nelem) \
+         fwrite(arr, sizeof(double), nelem, fvtk);
+#endif
+
+
+/* Main constructor */
 OutputVTK::OutputVTK(Grid &gridin)
 {
     // Initialize the output structure
     // Create a local gridhost as an image of gridin
-    grid = GridHost(gridin);
+    this->grid = GridHost(gridin);
     grid.SyncFromDevice();
 
+    // Create the coordinate array required in VTK files
+    this->nx1 = grid.np_tot[IDIR] - 2 * grid.nghost[IDIR];
+    this->nx2 = grid.np_tot[JDIR] - 2 * grid.nghost[JDIR];
+    this->nx3 = grid.np_tot[KDIR] - 2 * grid.nghost[KDIR];
+
+    // Vector array where we store the pencil before write
+    this->Vwrite = new float[nx1+IOFFSET];
+
+    // Temporary storage on host for 3D arrays
+    this->vect3D = IdefixHostArray3D<float>("vect3D",grid.np_tot[KDIR],grid.np_tot[JDIR],grid.np_tot[IDIR]);
+
+
     // Essentially does nothing
-    vtkFileNumber = 0;
+    this->vtkFileNumber = 0;
 
     // Test endianness
     int tmp1 = 1;
-    shouldSwapEndian = 0;
+    this->shouldSwapEndian = 0;
     unsigned char *tmp2 = (unsigned char *) &tmp1;
     if (*tmp2 != 0)
-        shouldSwapEndian = 1;
+        this->shouldSwapEndian = 1;
     
-    // Create the coordinate array required in VTK files
-    nx1 = grid.np_tot[IDIR] - 2 * grid.nghost[IDIR];
-    nx2 = grid.np_tot[JDIR] - 2 * grid.nghost[JDIR];
-    nx3 = grid.np_tot[KDIR] - 2 * grid.nghost[KDIR];
-
+    
 #if VTK_FORMAT == VTK_RECTILINEAR_GRID
-    xnode = new float[nx1+IOFFSET];
-    ynode = new float[nx2+JOFFSET];
-    znode = new float[nx3+KOFFSET];
+    this->xnode = new float[nx1+IOFFSET];
+    this->ynode = new float[nx2+JOFFSET];
+    this->znode = new float[nx3+KOFFSET];
 
-    for (int i = 0; i < nx1 + IOFFSET; i++) {
+    for (long int i = 0; i < nx1 + IOFFSET; i++) {
         xnode[i] = BigEndian(grid.xl[IDIR](i + grid.nghost[IDIR]));
     }
-    for (int j = 0; j < nx2 + JOFFSET; j++)    {
+    for (long int j = 0; j < nx2 + JOFFSET; j++)    {
         ynode[j] = BigEndian(grid.xl[JDIR](j + grid.nghost[JDIR]));
     }
-    for (int k = 0; k < nx3 + KOFFSET; k++)
+    for (long int k = 0; k < nx3 + KOFFSET; k++)
     {
         if(DIMENSIONS==2) znode[k] = BigEndian(0.0);
         else znode[k] = BigEndian(grid.xl[KDIR](k + grid.nghost[KDIR]));
     }
-#else
-        /* -- Allocate memory and define node_coord -- */
-
-    if (node_coord == NULL)
-        node_coord = ARRAY_2D(nx1 + IOFFSET, 3, float);
-
-    sprintf(header, "POINTS %d float\n", (nx1 + IOFFSET) * (nx2 + JOFFSET) * (nx3 + KOFFSET));
-    VTK_HEADER_WRITE_STRING(header);
-
-    /* -- Write structured grid information -- */
-
-    x1 = x2 = x3 = 0.0;
-    for (k = 0; k < nx3 + KOFFSET; k++)
-    {
-        for (j = 0; j < nx2 + JOFFSET; j++)
-        {
-            for (i = 0; i < nx1 + IOFFSET; i++)
-            {
-                D_EXPAND(x1 = grid->xl_glob[IDIR][IBEG + i];,
-                                                            x2 = grid->xl_glob[JDIR][JBEG + j];
-                         ,
-                         x3 = grid->xl_glob[KDIR][KBEG + k];)
-
-#if (GEOMETRY == CARTESIAN) || (GEOMETRY == CYLINDRICAL)
-                node_coord[i][0] = x1;
-                node_coord[i][1] = x2;
-                node_coord[i][2] = x3;
-#elif GEOMETRY == POLAR
-                node_coord[i][0] = x1 * cos(x2);
-                node_coord[i][1] = x1 * sin(x2);
-                node_coord[i][2] = x3;
-#elif GEOMETRY == SPHERICAL
-#if DIMENSIONS == 2
-                node_coord[i][0] = x1 * sin(x2);
-                node_coord[i][1] = x1 * cos(x2);
-                node_coord[i][2] = 0.0;
-#elif DIMENSIONS == 3
-                node_coord[i][0] = x1 * sin(x2) * cos(x3);
-                node_coord[i][1] = x1 * sin(x2) * sin(x3);
-                node_coord[i][2] = x1 * cos(x2);
-#endif
-#endif
-
-                if (IsLittleEndian())
-                {
-                    SWAP_VAR(node_coord[i][0]);
-                    SWAP_VAR(node_coord[i][1]);
-                    SWAP_VAR(node_coord[i][2]);
-                }
-            }
-            VTK_HEADER_WRITE_FLTARR(node_coord[0], 3 * (nx1 + IOFFSET));
-        }
-    }
+#else   // VTK_FORMAT
+        /* -- Allocate memory for node_coord which is later used -- */
+    node_coord = new float[(nx1+IOFFSET)*3]; 
+    
 #endif
 
 }
 
-int OutputVTK::Write(Grid &grid, DataBlock &data)
+int OutputVTK::Write(DataBlock &datain)
 {
+    FILE *fileHdl;
+    char filename[256];
+    // Create a coy of the dataBlock on Host, and sync it.
+    DataBlockHost data = DataBlockHost(datain);
+    data.SyncFromDevice();
+
+    sprintf (filename, "data.%04d.vtk", vtkFileNumber);
+    fileHdl = fopen(filename,"wb");
+    WriteHeader(fileHdl);
+    for(int nv = 0 ; nv < NVAR ; nv++) {
+        for(int k = 0; k < grid.np_tot[KDIR] ; k++ ) {
+            for(int j = 0; j < grid.np_tot[JDIR] ; j++ ) {
+                for(int i = 0; i < grid.np_tot[JDIR] ; i++ ) {
+                    vect3D(k,j,i) = float(data.Vc(nv,k,j,i));
+                }
+            }
+        }
+        std::string varname="Vc" + std::to_string(nv);
+        WriteScalar(fileHdl, vect3D, varname);
+    }
+
+    fclose(fileHdl);
+
+    vtkFileNumber++;
+    // Make file number
+
+    // One day, we will have a return code.
+    return(0);
 }
 
 
 
 /* ********************************************************************* */
-void OutputVTK::WriteHeader(FILE *fvtk, GridHost &grid)
+void OutputVTK::WriteHeader(FILE *fvtk)
 /*!
  * Write VTK header in parallel or serial mode.
  *
@@ -112,14 +135,9 @@ void OutputVTK::WriteHeader(FILE *fvtk, GridHost &grid)
  * \todo  Write the grid using several processors.
  *********************************************************************** */
 {
-    long int i, j, k;
-    long int nx1, nx2, nx3;
     char header[1024];
     float x1, x2, x3;
 
-    /* -- Get global domain sizes -- */
-
-    
 
     /* -------------------------------------------
    1. File version and identifier
@@ -149,6 +167,7 @@ void OutputVTK::WriteHeader(FILE *fvtk, GridHost &grid)
     sprintf(header + strlen(header), "DATASET %s\n", "STRUCTURED_GRID");
 #endif
 
+    
     VTK_HEADER_WRITE_STRING(header);
 
     /* -- Generate time info (VisIt reader only) -- */
@@ -186,10 +205,7 @@ void OutputVTK::WriteHeader(FILE *fvtk, GridHost &grid)
 
 #elif VTK_FORMAT == VTK_STRUCTURED_GRID
 
-    /* -- Allocate memory and define node_coord -- */
-
-    if (node_coord == NULL)
-        node_coord = ARRAY_2D(nx1 + IOFFSET, 3, float);
+    /* -- define node_coord -- */
 
     sprintf(header, "POINTS %d float\n", (nx1 + IOFFSET) * (nx2 + JOFFSET) * (nx3 + KOFFSET));
     VTK_HEADER_WRITE_STRING(header);
@@ -197,45 +213,37 @@ void OutputVTK::WriteHeader(FILE *fvtk, GridHost &grid)
     /* -- Write structured grid information -- */
 
     x1 = x2 = x3 = 0.0;
-    for (k = 0; k < nx3 + KOFFSET; k++)
+    for (long int k = 0; k < nx3 + KOFFSET; k++)
     {
-        for (j = 0; j < nx2 + JOFFSET; j++)
+        for (long int j = 0; j < nx2 + JOFFSET; j++)
         {
-            for (i = 0; i < nx1 + IOFFSET; i++)
+            for (long int i = 0; i < nx1 + IOFFSET; i++)
             {
-                D_EXPAND(x1 = grid->xl_glob[IDIR][IBEG + i];,
-                                                            x2 = grid->xl_glob[JDIR][JBEG + j];
-                         ,
-                         x3 = grid->xl_glob[KDIR][KBEG + k];)
+                D_EXPAND(x1 = grid.xl[IDIR](i + grid.nghost[IDIR]);,
+                         x2 = grid.xl[JDIR](j + grid.nghost[JDIR]);,
+                         x3 = grid.xl[KDIR](k + grid.nghost[KDIR]);)
 
 #if (GEOMETRY == CARTESIAN) || (GEOMETRY == CYLINDRICAL)
-                node_coord[i][0] = x1;
-                node_coord[i][1] = x2;
-                node_coord[i][2] = x3;
+                node_coord[3*i+IDIR] = BigEndian(x1);
+                node_coord[3*i+JDIR] = BigEndian(x2);
+                node_coord[3*i+KDIR] = BigEndian(x3);
 #elif GEOMETRY == POLAR
-                node_coord[i][0] = x1 * cos(x2);
-                node_coord[i][1] = x1 * sin(x2);
-                node_coord[i][2] = x3;
+                node_coord[3*i+IDIR] = BigEndian(x1 * cos(x2));
+                node_coord[3*i+JDIR] = BigEndian(x1 * sin(x2));
+                node_coord[3*i+KDIR] = BigEndian(x3);
 #elif GEOMETRY == SPHERICAL
 #if DIMENSIONS == 2
-                node_coord[i][0] = x1 * sin(x2);
-                node_coord[i][1] = x1 * cos(x2);
-                node_coord[i][2] = 0.0;
+                node_coord[3*i+IDIR] = BigEndian(x1 * sin(x2));
+                node_coord[3*i+JDIR] = BigEndian(x1 * cos(x2));
+                node_coord[3*i+KDIR] = BigEndian(0.0);
 #elif DIMENSIONS == 3
-                node_coord[i][0] = x1 * sin(x2) * cos(x3);
-                node_coord[i][1] = x1 * sin(x2) * sin(x3);
-                node_coord[i][2] = x1 * cos(x2);
+                node_coord[3*i+IDIR] = BigEndian(x1 * sin(x2) * cos(x3));
+                node_coord[3*i+JDIR] = BigEndian(x1 * sin(x2) * sin(x3));
+                node_coord[3*i+KDIR] = BigEndian(x1 * cos(x2));
 #endif
 #endif
-
-                if (IsLittleEndian())
-                {
-                    SWAP_VAR(node_coord[i][0]);
-                    SWAP_VAR(node_coord[i][1]);
-                    SWAP_VAR(node_coord[i][2]);
-                }
             }
-            VTK_HEADER_WRITE_FLTARR(node_coord[0], 3 * (nx1 + IOFFSET));
+            VTK_HEADER_WRITE_FLTARR(node_coord, 3 * (nx1 + IOFFSET));
         }
     }
 
@@ -252,115 +260,10 @@ void OutputVTK::WriteHeader(FILE *fvtk, GridHost &grid)
 #undef VTK_STRUCTERED_GRID
 #undef VTK_RECTILINEAR_GRID
 
-/* ********************************************************************* */
-void WriteVTK_Vector(FILE *fvtk, Data_Arr V, double unit,
-                     char *var_name, Grid *grid)
-/*!
- * Write VTK vector field data.
- * This is enabled only when VTK_VECTOR_DUMP is set to \c YES.
- * For generality purposes, vectors are written always with 3
- * components, even when there're only 2 being used.
- *
- * The following Maple script has been used to find vector
- * components from cyl/sph to cartesian:
- *
- * \code
-   restart;
-   with(linalg);
-   Acyl := matrix (3,3,[ cos(phi), sin(phi),  0,
-                      -sin(phi), cos(phi),  0,
-                        0     ,    0    , 1]);
-   Asph := matrix (3,3,[ sin(theta)*cos(phi), sin(theta)*sin(phi),  cos(theta),
-                   cos(theta)*cos(phi), cos(theta)*sin(phi), -sin(theta),
-                   -sin(phi)          , cos(phi)           , 0]);
-   Bcyl := simplify(inverse(Acyl));
-   Bsph := simplify(inverse(Asph));
- * \endcode
- *
- * \param [in]  fvtk    pointer to file
- * \param [in]  V       a 4D array [nv][k][j][i] containing the vector
- *                      components (nv) defined at cell centers (k,j,i).
- *                      The index nv = 0 marks the vector first component.
- * \param [in] unit     the corresponding cgs unit (if specified, 1 otherwise)
- * \param [in] var_name the variable name appearing in the VTK file
- * \param [in]    grid  pointer to an array of Grid structures
- *********************************************************************** */
-{
-    int i, j, k, ndust;
-    int vel_field, mag_field;
-    int dust_field, dust_num;
-    char header[512];
-    char dustname[512];
-    static Float_Vect ***vect3D;
-    double v[3], x1, x2, x3;
 
-    if (vect3D == NULL)
-    {
-        vect3D = ARRAY_3D(NX3_TOT, NX2_TOT, NX1_TOT, Float_Vect);
-    }
-
-    /* --------------------------------------------------------
-               Write VTK vector fields
-   -------------------------------------------------------- */
-
-    v[0] = v[1] = v[2] = 0.0;
-    x1 = x2 = x3 = 0.0;
-    vel_field = (strcmp(var_name, "vx1") == 0);
-    mag_field = (strcmp(var_name, "Bx1") == 0);
-    dust_field = 0;
-#if DUST == FLUID
-    for (ndust = 0; ndust < NDUST; ndust++)
-    {
-        sprintf(dustname, "vx1_d%d", ndust);
-
-        if (strcmp(var_name, dustname) == 0)
-        {
-            dust_field = 1;
-            dust_num = ndust;
-        }
-    }
-#endif
-    if (vel_field || mag_field || dust_field)
-    {
-        DOM_LOOP(k, j, i)
-        {
-            D_EXPAND(v[0] = V[0][k][j][i]; x1 = grid->x[IDIR][i];,
-                                                                 v[1] = V[1][k][j][i];
-                     x2 = grid->x[JDIR][j];,
-                                           v[2] = V[2][k][j][i];
-                     x3 = grid->x[KDIR][k];)
-
-            VectorCartesianComponents(v, x1, x2, x3);
-            vect3D[k][j][i].v1 = (float)v[0] * unit;
-            vect3D[k][j][i].v2 = (float)v[1] * unit;
-            vect3D[k][j][i].v3 = (float)v[2] * unit;
-
-            if (IsLittleEndian())
-            {
-                SWAP_VAR(vect3D[k][j][i].v1);
-                SWAP_VAR(vect3D[k][j][i].v2);
-                SWAP_VAR(vect3D[k][j][i].v3);
-            }
-
-        } /* endfor DOM_LOOP(k,j,i) */
-
-        if (vel_field)
-            sprintf(header, "\nVECTORS Velocity_Field float\n");
-#if DUST == FLUID
-        else if (dust_field)
-            sprintf(header, "\nVECTORS Velocity_Field_D%d float\n", dust_num);
-#endif
-        else
-            sprintf(header, "\nVECTORS Magnetic_Field float\n");
-
-        VTK_HEADER_WRITE_STRING(header);
-        FileWriteData(vect3D[0][0], sizeof(Float_Vect), SZ_Float_Vect, fvtk, -1);
-    }
-}
 
 /* ********************************************************************* */
-void WriteVTK_Scalar(FILE *fvtk, double ***V, double unit,
-                     char *var_name, Grid *grid)
+void OutputVTK::WriteScalar(FILE *fvtk, IdefixHostArray3D<float> &Vin,  std::string &var_name)
 /*!
  * Write VTK scalar field.
  *
@@ -373,21 +276,23 @@ void WriteVTK_Scalar(FILE *fvtk, double ***V, double unit,
 {
     int i, j, k;
     char header[512];
-    float ***Vflt;
 
-    sprintf(header, "\nSCALARS %s float\n", var_name);
+
+    sprintf(header, "\nSCALARS %s float\n", var_name.c_str());
     sprintf(header + strlen(header), "LOOKUP_TABLE default\n");
 
-#ifdef PARALLEL
-    MPI_Barrier(MPI_COMM_WORLD);
-    AL_Write_header(header, strlen(header), MPI_CHAR, SZ_float);
-    MPI_Barrier(MPI_COMM_WORLD);
-#else
-    fprintf(fvtk, "%s", header);
-#endif
 
-    Vflt = Convert_dbl2flt(V, unit, IsLittleEndian());
-    FileWriteData(Vflt[0][0], sizeof(float), SZ_float, fvtk, -1);
+    fprintf(fvtk, "%s", header);
+
+
+    for(long int k = 0 ; k < nx3 ; k++ ) {
+        for(long int j = 0 ; j < nx2 ; j++ ) {
+            for(long int i = 0 ; i < nx1 ; i++ ) {
+                Vwrite[i] = BigEndian(Vin(k + grid.nghost[KDIR],j + grid.nghost[JDIR],i + grid.nghost[IDIR]));
+            }
+            fwrite(Vwrite, sizeof(float), nx1, fvtk);
+        }
+    }
 }
 
 /* ****************************************************************************/
@@ -398,7 +303,6 @@ void WriteVTK_Scalar(FILE *fvtk, double ***V, double unit,
 
 float OutputVTK::BigEndian(float in_number)
 {
-
     if (shouldSwapEndian)
     {
 		unsigned char *bytes = (unsigned char*) &in_number;

@@ -2,6 +2,9 @@
 #include "grid.hpp"
 #include "gridHost.hpp"
 
+GridHost::GridHost() {
+    // Void
+}
 GridHost::GridHost(Grid &grid) {
 
     for(int dir = 0 ; dir < 3 ; dir++) {

@@ -94,8 +94,8 @@ int OutputVTK::Write(DataBlock &datain)
 {
     FILE *fileHdl;
     char filename[256];
-    // Create a coy of the dataBlock on Host, and sync it.
-    DataBlockHost data = DataBlockHost(datain);
+    // Create a copy of the dataBlock on Host, and sync it.
+    DataBlockHost data(datain);
     data.SyncFromDevice();
 
     sprintf (filename, "data.%04d.vtk", vtkFileNumber);

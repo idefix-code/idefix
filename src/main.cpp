@@ -27,6 +27,8 @@ int main( int argc, char* argv[] )
   Kokkos::initialize( argc, argv );
   {
 
+    
+
     Input input = Input();
 
     // Allocate the grid on device
@@ -60,12 +62,16 @@ int main( int argc, char* argv[] )
     std::cout << "Write init vtk" << std::endl;
     output.Write(data);
     std::cout << "Cycling Time Integrator..." << std::endl;
+
+    Kokkos::Timer timer;
+
     while(Tint.getNcycles() < 100) {
       Tint.Cycle();
-      output.Write(data);
     }
+    double tintegration = (timer.seconds()/(grid.np_int[IDIR]*grid.np_int[JDIR]*grid.np_int[KDIR]*Tint.getNcycles()));
+    output.Write(data);
 
-    std::cout << "Done." << std::endl;
+    std::cout << "Completed. Perfs are " << 1/tintegration << " cell updates/second." << std::endl;
     
 
     // Make a test

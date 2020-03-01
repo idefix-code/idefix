@@ -168,8 +168,8 @@ void Physics::ExtrapolatePrimVar(DataBlock &data, int dir) {
                 // |       cell i-1               interface i          cell i
                 // |-----------------------------------|------------------------------------||
                 //          Vc(i-1)           PrimL(i)  PrimR(i)       Vc(i)
-                PrimL(n,k,j,i,n) = Vc(n,k-koffset,j-joffset,i-ioffset);
-                PrimR(n,k,j,i,n) = Vc(n,k,j,i);
+                PrimL(n,k,j,i) = Vc(n,k-koffset,j-joffset,i-ioffset);
+                PrimR(n,k,j,i) = Vc(n,k,j,i);
             });
 
 }

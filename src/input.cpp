@@ -23,6 +23,9 @@ Input::Input() {
 
     // Number of integrator stages
     nstages=2;
+
+    // First time step
+    firstDt = 1.0e-4;
     PrintLogo();
 }
 

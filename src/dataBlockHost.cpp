@@ -6,6 +6,7 @@ DataBlockHost::DataBlockHost() {
 }
 DataBlockHost::DataBlockHost(DataBlock& datain) {
     
+
     // copy the dataBlock object for later use
     this->data=datain; 
 
@@ -16,6 +17,10 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
         xl[dir] = Kokkos::create_mirror_view(data.xl[dir]);
         dx[dir] = Kokkos::create_mirror_view(data.dx[dir]);
         A[dir] = Kokkos::create_mirror_view(data.A[dir]);
+        np_tot[dir] = data.np_tot[dir];
+        np_int[dir] = data.np_int[dir];
+        // TO BE COMPLETED...
+
 
     }
     dV = Kokkos::create_mirror_view(data.dV);

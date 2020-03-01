@@ -61,7 +61,6 @@ using Layout = Kokkos::LayoutRight;
 #include "real_types.h"
 #include "definitions.hpp"
 #include "macros.hpp"
-#include "physics.hpp"
 #include "mod_defs.hpp"
 #include "loop.hpp"
 #include "arrays.hpp"
@@ -72,6 +71,7 @@ using Layout = Kokkos::LayoutRight;
 #include "dataBlock.hpp"
 #include "dataBlockHost.hpp"
 #include "test.hpp"
+#include "HD/physics.hpp"
 #include "timeIntegrator.hpp"
 #include "outputVtk.hpp"
 

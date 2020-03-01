@@ -40,8 +40,8 @@ void DataBlock::InitFromGrid(Grid &grid) {
     }
 
     dV = IdefixArray3D<real>("DataBlock_dV",np_tot[KDIR],np_tot[JDIR],np_tot[IDIR]);
-    Vc = IdefixArray4D<real>("DataBlock_Vc", NVAR, np_tot[KDIR], grid.np_tot[JDIR], grid.np_tot[IDIR]);
-    Uc = IdefixArray4D<real>("DataBlock_Uc", NVAR, np_tot[KDIR], grid.np_tot[JDIR], grid.np_tot[IDIR]);
+    Vc = IdefixArray4D<real>("DataBlock_Vc", NVAR, np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
+    Uc = IdefixArray4D<real>("DataBlock_Uc", NVAR, np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
 
     // We need to copy the relevant part of the coordinate system to the datablock
     for(int dir = 0 ; dir < 3 ; dir++) {
@@ -65,7 +65,7 @@ void DataBlock::InitFromGrid(Grid &grid) {
                             dx_output(i) = dx_input(i+offset); 
                         });
     }
-    
+
     // TODO: A proper initialisation of A and dV should be done at this stage
 }
 

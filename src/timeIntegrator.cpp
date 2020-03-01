@@ -2,9 +2,18 @@
 #include "idefix.hpp"
 #include "timeIntegrator.hpp"
 
-TimeIntegrator::TimeIntegrator(Input & input, DataBlock &datain) {
+TimeIntegrator::TimeIntegrator(Input & input, DataBlock &datain, Physics &physics) {
     this->data=datain;
+    this->phys=physics;
+
     nstages=input.nstages;
+    
+    dt=input.firstDt;
+    ncycles=0;
+    cfl=0.9;
+
+    std::cout << "init dt:" << dt << std::endl;
+
     if(nstages>1) {
         // Temporary array to store initial field in the RK2-3 loops
         V0 = IdefixArray4D<real>("TimeIntegrator_V0", NVAR, data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
@@ -21,10 +30,37 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock &datain) {
     }
     InvDtHyp = IdefixArray3D<real>("TimeIntegrator_InvDtHyp", data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
     InvDtPar = IdefixArray3D<real>("TimeIntegrator_InvDtPar", data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
+
+    // Dummy dt initialisation
+
+    
+
 }
 
 // Compute one Stage of the time Integrator
-void TimeIntegrator::Stage() {}
+void TimeIntegrator::Stage() {
+    // Convert current state into conservative variable and save it
+    phys.ConvertPrimToCons(data);
+
+    // Loop on all of the directions
+    for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
+        // Step one: extrapolate the variables to the sides, result is stored in the physics object
+        phys.ExtrapolatePrimVar(data, dir);
+
+        // Step 2: compute the intercell flux with our Riemann solver, store the resulting InvDt
+        phys.CalcRiemannFlux(data, InvDtHyp, dir);
+
+        // Step 3: compute the resulting evolution of the conserved variables, stored in Uc
+        phys.CalcRightHandSide(data, dir, dt);
+    }
+
+    // Convert back into primitive variables
+    phys.ConvertConsToPrim(data);
+
+    // Apply Boundary conditions
+    phys.SetBoundary(data);
+
+}
 
 
 // Compute one full cycle of the time Integrator
@@ -34,6 +70,8 @@ void TimeIntegrator::Cycle() {
     IdefixArray4D<real> V0 = this->V0;
     IdefixArray3D<real> InvDtHypLoc=this->InvDtHyp;
     IdefixArray3D<real> InvDtParLoc=this->InvDtPar;
+
+    std::cout << "TimeIntegrator: t=" << t << " Cycle " << ncycles << " dt=" << dt << std::endl;
 
     // Store initial stage for multi-stage time integrators
     if(nstages>1) Kokkos::deep_copy(V0,Vc);
@@ -53,17 +91,30 @@ void TimeIntegrator::Cycle() {
             });
         }
     }
+    
+    // Update current time
+    t=t+dt;
 
     // Compute next time_step
+    real newdt;
     Kokkos::parallel_reduce("Timestep_reduction",
                             Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
                             ({0,0,0},{data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]}),
                             KOKKOS_LAMBDA (int k, int j, int i, real &dtmin) {
-                                real InvDt;
-                                InvDt = SQRT(InvDtHypLoc(k,j,i) * InvDtHypLoc(k,j,i) + InvDtParLoc(k,j,i) * InvDtParLoc(k,j,i));
-                                InvDt=10.0;
-				dtmin=FMIN(1.0/(InvDt+1.0e20),dtmin);
-                            }, Kokkos::Min<real>(dt) );
+        real InvDt;
+        InvDt = SQRT(InvDtHypLoc(k,j,i) * InvDtHypLoc(k,j,i) + InvDtParLoc(k,j,i) * InvDtParLoc(k,j,i));
+
+		dtmin=FMIN(ONE_F/InvDt,dtmin);
+    }, Kokkos::Min<real>(newdt) );
+
+    newdt=newdt*cfl;
+
+    if(newdt>1.1*dt) {
+        dt=1.1*dt;
+    }
+    else dt=newdt;
+
+    ncycles++;
 
 }
 
@@ -78,3 +129,7 @@ real TimeIntegrator::getT() {
 void TimeIntegrator::setDt(real dtin) {
     dt=dtin;
 } 
+
+long int TimeIntegrator::getNcycles() {
+    return(ncycles);
+}

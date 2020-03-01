@@ -50,26 +50,33 @@ int main( int argc, char* argv[] )
     DataBlockHost dataHost(data);
     dataHost.SyncFromDevice();
 
+    std::cout << "Init Physics" << std::endl;
+    Physics phys(data);
+    phys.InitFlow(data);
+
     std::cout << "Init Time Integrator..." << std::endl;
-    TimeIntegrator Tint(input, data);
-    Tint.setDt(0.1);
+    TimeIntegrator Tint(input, data, phys);
 
     std::cout << "Write init vtk" << std::endl;
     output.Write(data);
     std::cout << "Cycling Time Integrator..." << std::endl;
-    Tint.Cycle();
+    while(Tint.getNcycles() < 100) {
+      Tint.Cycle();
+      output.Write(data);
+    }
 
     std::cout << "Done." << std::endl;
-    output.Write(data);
+    
 
     // Make a test
+    /*
     Test test(data);
     int nrepeat=10000;
     test.MakeTest(IDIR-1,nrepeat);
     test.MakeTest(IDIR,nrepeat);
     test.MakeTest(JDIR,nrepeat);
     test.MakeTest(KDIR,nrepeat);
-
+    */
     std::cout << "Job's done" << std::endl;
   }
   Kokkos::finalize();

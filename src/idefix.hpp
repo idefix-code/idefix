@@ -64,7 +64,6 @@ using Layout = Kokkos::LayoutRight;
 #include "mod_defs.hpp"
 #include "loop.hpp"
 #include "arrays.hpp"
-#include "globals.hpp"
 #include "input.hpp"
 #include "grid.hpp"
 #include "gridHost.hpp"

@@ -9,7 +9,8 @@ void DataBlock::InitFromGrid(Grid &grid) {
     // This initialisation is only valid for *serial*
     // MPI initialisation will involve domain decomposition of grids into DataBlocks
 
-    
+    Kokkos::Profiling::pushRegion("DataBlock::InitFromGrid");
+
     // Copy the number of points from grid since DataBlock=Grid in serial
     for(int dir = 0 ; dir < 3 ; dir++) {
         nghost[dir] = grid.nghost[dir];
@@ -66,10 +67,14 @@ void DataBlock::InitFromGrid(Grid &grid) {
                         });
     }
 
+    Kokkos::Profiling::popRegion();
     // TODO: A proper initialisation of A and dV should be done at this stage
 }
 
 DataBlock::DataBlock(const DataBlock &data) {
+
+    Kokkos::Profiling::pushRegion("DataBlock::DataBlock(copy)");
+    
     // Shallow copy of a datablock
     for(int dir = 0 ; dir < 3; dir++) {
         nghost[dir]=data.nghost[dir];
@@ -91,9 +96,12 @@ DataBlock::DataBlock(const DataBlock &data) {
     dV=data.dV;
     Vc=data.Vc;
     Uc=data.Uc;
+
+    Kokkos::Profiling::popRegion();
 }
 
 DataBlock& DataBlock::operator=(const DataBlock& data) {
+    Kokkos::Profiling::pushRegion("DataBlock::operator=");
     // Shallow reference operator
     if (this != & data) {
         for(int dir = 0 ; dir < 3; dir++) {
@@ -117,6 +125,8 @@ DataBlock& DataBlock::operator=(const DataBlock& data) {
         Vc=data.Vc;
         Uc=data.Uc;
     }
+
+    Kokkos::Profiling::popRegion();
 
     return *this;
 }

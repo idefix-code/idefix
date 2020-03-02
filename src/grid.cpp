@@ -7,6 +7,8 @@ Grid::Grid() {
 }
 
 Grid::Grid(Input &input) {
+    Kokkos::Profiling::pushRegion("Grid::Grid(Input)");
+
     std::cout << "Building grid \n";
     // Compute the number of grid points in each direction
 
@@ -30,6 +32,8 @@ Grid::Grid(Input &input) {
         dx[dir] = IdefixArray1D<real>("Grid_dx",np_tot[dir]);
         
     }
+
+    Kokkos::Profiling::popRegion();
 
 }
 

@@ -94,6 +94,9 @@ int OutputVTK::Write(DataBlock &datain)
 {
     FILE *fileHdl;
     char filename[256];
+
+    Kokkos::Profiling::pushRegion("OutputVTK::Write");
+
     // Create a copy of the dataBlock on Host, and sync it.
     DataBlockHost data(datain);
     data.SyncFromDevice();
@@ -118,6 +121,7 @@ int OutputVTK::Write(DataBlock &datain)
     vtkFileNumber++;
     // Make file number
 
+    Kokkos::Profiling::popRegion();
     // One day, we will have a return code.
     return(0);
 }

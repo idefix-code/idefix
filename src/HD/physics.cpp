@@ -59,12 +59,16 @@ KOKKOS_INLINE_FUNCTION void K_PrimToCons(real Uc[], real Vc[], real gamma_m1) {
 }
 
 Physics::Physics(DataBlock & data) {
+    Kokkos::Profiling::pushRegion("Physics::Physics(DataBock)");
+
     this->PrimL = IdefixArray4D<real>("Physics_PrimL", NVAR, data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
     this->PrimR = IdefixArray4D<real>("Physics_PrimR", NVAR, data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
-    this->FluxRiemann = IdefixArray4D<real>("Physics_PrimR", NVAR, data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
+    this->FluxRiemann = IdefixArray4D<real>("Physics_FluxRiemann", NVAR, data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
 
     this->gamma = 5.0/3.0;
     this->C2Iso = 1.0;
+
+    Kokkos::Profiling::popRegion();
 }
 
 Physics::Physics() {

@@ -3,6 +3,7 @@
 #include "timeIntegrator.hpp"
 
 TimeIntegrator::TimeIntegrator(Input & input, DataBlock &datain, Physics &physics) {
+    Kokkos::Profiling::pushRegion("TimeIntegrator::TimeIntegrator(Input...)");
     this->data=datain;
     this->phys=physics;
 
@@ -31,7 +32,7 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock &datain, Physics &physic
     InvDtHyp = IdefixArray3D<real>("TimeIntegrator_InvDtHyp", data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
     InvDtPar = IdefixArray3D<real>("TimeIntegrator_InvDtPar", data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
 
-    // Dummy dt initialisation
+    Kokkos::Profiling::popRegion();
 
     
 

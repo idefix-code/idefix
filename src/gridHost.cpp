@@ -7,6 +7,7 @@ GridHost::GridHost() {
 }
 GridHost::GridHost(Grid &grid) {
 
+    Kokkos::Profiling::pushRegion("GridHost::GridHost(Grid)");
     this->grid=grid;
     for(int dir = 0 ; dir < 3 ; dir++) {
 
@@ -28,11 +29,12 @@ GridHost::GridHost(Grid &grid) {
         dx[dir] = Kokkos::create_mirror_view(grid.dx[dir]);
     }
 
-
+    Kokkos::Profiling::popRegion();
 }
 
 void GridHost::MakeGrid(Input &input) {
 
+    Kokkos::Profiling::pushRegion("GridHost::MakeGrid");
     // Create the grid
 
     for(int dir = 0 ; dir < 3 ; dir++) {
@@ -44,19 +46,22 @@ void GridHost::MakeGrid(Input &input) {
         }
     }
 
-    
+    Kokkos::Profiling::popRegion();
 }
 
 void GridHost::SyncFromDevice() {
+    Kokkos::Profiling::pushRegion("GridHost::SyncFromDevice");
     for(int dir = 0 ; dir < 3 ; dir++) {
         Kokkos::deep_copy(x[dir],grid.x[dir]);
         Kokkos::deep_copy(xr[dir],grid.xr[dir]);
         Kokkos::deep_copy(xl[dir],grid.xl[dir]);
         Kokkos::deep_copy(dx[dir],grid.dx[dir]);
     }
+    Kokkos::Profiling::popRegion();
 }
 
 void GridHost::SyncToDevice() {
+    Kokkos::Profiling::pushRegion("GridHost::SyncToDevice");
     // Sync with the device
     for(int dir = 0 ; dir < 3 ; dir++) {
         Kokkos::deep_copy(grid.x[dir],x[dir]);
@@ -64,4 +69,5 @@ void GridHost::SyncToDevice() {
         Kokkos::deep_copy(grid.xl[dir],xl[dir]);
         Kokkos::deep_copy(grid.dx[dir],dx[dir]);
     }
+    Kokkos::Profiling::popRegion();
 }

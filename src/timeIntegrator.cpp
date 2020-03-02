@@ -39,6 +39,8 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock &datain, Physics &physic
 
 // Compute one Stage of the time Integrator
 void TimeIntegrator::Stage() {
+    
+    Kokkos::Profiling::pushRegion("TimeIntegrator::Stage");
     // Convert current state into conservative variable and save it
     phys.ConvertPrimToCons(data);
 
@@ -60,6 +62,7 @@ void TimeIntegrator::Stage() {
     // Apply Boundary conditions
     phys.SetBoundary(data);
 
+    Kokkos::Profiling::popRegion();
 }
 
 
@@ -70,6 +73,8 @@ void TimeIntegrator::Cycle() {
     IdefixArray4D<real> V0 = this->V0;
     IdefixArray3D<real> InvDtHypLoc=this->InvDtHyp;
     IdefixArray3D<real> InvDtParLoc=this->InvDtPar;
+
+    Kokkos::Profiling::pushRegion("TimeIntegrator::Cycle");
 
     std::cout << "TimeIntegrator: t=" << t << " Cycle " << ncycles << " dt=" << dt << std::endl;
 
@@ -116,6 +121,7 @@ void TimeIntegrator::Cycle() {
 
     ncycles++;
 
+    Kokkos::Profiling::popRegion();
 }
 
 real TimeIntegrator::getDt() {

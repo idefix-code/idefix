@@ -73,6 +73,9 @@ Physics::Physics() {
 
 // Convect Conservative to Primitive variable
 void Physics::ConvertConsToPrim(DataBlock & data) {
+
+    Kokkos::Profiling::pushRegion("Physics::ConvertConsToPrim");
+
     IdefixArray4D<real> Vc = data.Vc;
     IdefixArray4D<real> Uc = data.Uc;
     real gamma_m1=this->gamma-ONE_F;
@@ -92,6 +95,8 @@ void Physics::ConvertConsToPrim(DataBlock & data) {
                     Vc(nv,k,j,i) = V[nv];
                 }
             });
+
+    Kokkos::Profiling::popRegion();
 
 }
 
@@ -125,6 +130,9 @@ void Physics::InitFlow(DataBlock & data) {
 
 // Convert Primitive to conservative variables
 void Physics::ConvertPrimToCons(DataBlock & data) {
+
+    Kokkos::Profiling::pushRegion("Physics::ConvertPrimToCons");
+
     IdefixArray4D<real> Vc = data.Vc;
     IdefixArray4D<real> Uc = data.Uc;
     real gamma_m1=this->gamma-ONE_F;
@@ -145,12 +153,15 @@ void Physics::ConvertPrimToCons(DataBlock & data) {
                 }
             });
 
+    Kokkos::Profiling::popRegion();
 }
 
 
 // Build a left and right extrapolation of the primitive variables along direction dir
 void Physics::ExtrapolatePrimVar(DataBlock &data, int dir) {
     int ioffset,joffset,koffset;
+
+    Kokkos::Profiling::pushRegion("Physics::ExtrapolatePrimVar");
     ioffset=joffset=koffset=0;
     // Determine the offset along which we do the extrapolation
     if(dir==IDIR) ioffset=1;
@@ -172,11 +183,14 @@ void Physics::ExtrapolatePrimVar(DataBlock &data, int dir) {
                 PrimR(n,k,j,i) = Vc(n,k,j,i);
             });
 
+    Kokkos::Profiling::popRegion();
 }
 
 // Compute Riemann fluxes from states
 void Physics::CalcRiemannFlux(DataBlock & data, IdefixArray3D<real> &invDt, int dir) {
     int ioffset,joffset,koffset;
+
+    Kokkos::Profiling::pushRegion("Physics::CalcRiemannFlux");
     ioffset=joffset=koffset=0;
     // Determine the offset along which we do the extrapolation
     if(dir==IDIR) ioffset=1;
@@ -247,10 +261,14 @@ void Physics::CalcRiemannFlux(DataBlock & data, IdefixArray3D<real> &invDt, int 
 
             });
 
+    Kokkos::Profiling::popRegion();
+
 }
 
 // Compute the right handside in direction dir from conservative equation, with timestep dt
 void Physics::CalcRightHandSide(DataBlock &data, int dir, real dt) {
+
+    Kokkos::Profiling::pushRegion("Physics::CalcRightHandSide");
     IdefixArray4D<real> Uc = data.Uc;
     IdefixArray1D<real> dx = data.dx[dir];
     IdefixArray4D<real> Flux = this->FluxRiemann;
@@ -270,11 +288,16 @@ void Physics::CalcRightHandSide(DataBlock &data, int dir, real dt) {
             Uc(n,k,j,i) = Uc(n,k,j,i) - dt / dx(ig) * (Flux(n, k+koffset, j+joffset, i+ioffset) - Flux(n, k, j, i));
 
         });
+
+    Kokkos::Profiling::popRegion();
 }
 
 
 // Set Boundary conditions
 void Physics::SetBoundary(DataBlock &data) {
+
+    Kokkos::Profiling::pushRegion("Physics::SetBoundary");
+
     IdefixArray4D<real> Vc = data.Vc;
     // X1 boundary conditions
     int offset = data.np_int[IDIR];
@@ -315,6 +338,8 @@ void Physics::SetBoundary(DataBlock &data) {
 
             });
     }
+
+    Kokkos::Profiling::popRegion();
 
 }
 

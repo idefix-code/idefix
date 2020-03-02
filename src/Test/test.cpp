@@ -2,9 +2,9 @@
 #include "idefix.hpp"
 #include "test.hpp"
 
-Test::Test(Data &data) {
+Test::Test(DataBlock &data) {
     // Allocate the arrays
-    this->dataHost = DataHost(data);
+    this->dataHost = DataBlockHost(data);
     this->data=data;
 }
 
@@ -12,11 +12,11 @@ Test::Test() {
     // Do nothing
 }
 
-void Test::MakeTest(Grid &grid, int stride, int nrepeat) {
+void Test::MakeTest(int stride, int nrepeat) {
     // Do nothing
-    int NX=grid.np_int[0];
-    int NY=grid.np_int[1];
-    int NZ=grid.np_int[2];
+    int NX=data.np_int[0];
+    int NY=data.np_int[1];
+    int NZ=data.np_int[2];
 
     int is,ie,js,je,ks,ke;
 
@@ -24,29 +24,29 @@ void Test::MakeTest(Grid &grid, int stride, int nrepeat) {
 
     if(stride==IDIR) {
         is=1;
-        ie=NX-2;
+        ie=NX-1;
     }
     else {
         is=0;
-        ie=NX-1;
+        ie=NX;
     }
 
     if(stride==JDIR) {
         js=1;
-        je=NY-2;
+        je=NY-1;
     }
     else {
         js=0;
-        je=NY-1;
+        je=NY;
     }
 
     if(stride==KDIR) {
         ks=1;
-        ke=NZ-2;
+        ke=NZ-1;
     }
     else {
         ks=0;
-        ke=NZ-1;
+        ke=NZ;
     }
 
     // Initialize vector on host
@@ -125,9 +125,9 @@ void Test::MakeTest(Grid &grid, int stride, int nrepeat) {
     dataHost.SyncFromDevice();
 
 
-    for( int k = ks; k <= ke ; k++) {
-        for(int j = js; j <= je ; j++) {
-            for(int i = is; i <= ie ; i++) {
+    for( int k = ks; k < ke ; k++) {
+        for(int j = js; j < je ; j++) {
+            for(int i = is; i < ie ; i++) {
             if(stride<IDIR)
                 th_value=nrepeat*((i+j+k)-0.5*(i-j+k));
             else

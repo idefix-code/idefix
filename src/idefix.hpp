@@ -9,25 +9,14 @@ using Layout = Kokkos::LayoutRight;
 
 // Define the kind of loop we want (see loop.hpp for details)
 //#define  INDEX_LOOP
-//#define  MDRANGE_LOOP
+#define  MDRANGE_LOOP
 //#define  SIMD_LOOP
 //#define  TP_INNERX_LOOP
-#define  TPTTRTVR_LOOP
+//#define  TPTTRTVR_LOOP
 
 #define USE_DOUBLE
 
-#include "real_types.h"
-#include "definitions.hpp"
-#include "mod_defs.hpp"
-#include "loop.hpp"
-#include "arrays.hpp"
-#include "globals.hpp"
-#include "input.hpp"
-#include "grid.hpp"
-#include "gridHost.hpp"
-#include "data.hpp"
-#include "dataHost.hpp"
-#include "test.hpp"
+
 
 
 
@@ -38,14 +27,53 @@ using Layout = Kokkos::LayoutRight;
 
 // Some macro definitions
 
+/* ---- Geometry Labels ( > 0) ----  */
+
+#define CARTESIAN    1
+#define CYLINDRICAL  2
+#define POLAR        3
+#define SPHERICAL    4
 
 #define     IDIR    0
 #define     JDIR    1
 #define     KDIR    2
 
+#if DIMENSIONS == 1
+    #define     IOFFSET     1
+    #define     JOFFSET     0
+    #define     KOFFSET     0
+#endif
+#if DIMENSIONS == 2
+    #define     IOFFSET     1
+    #define     JOFFSET     1
+    #define     KOFFSET     0
+#endif
+#if DIMENSIONS == 3
+    #define     IOFFSET     1
+    #define     JOFFSET     1
+    #define     KOFFSET     1
+#endif
+
 
 #define NVAR    (NFLX)
 
+
+#include "real_types.h"
+#include "definitions.hpp"
+#include "macros.hpp"
+#include "mod_defs.hpp"
+#include "loop.hpp"
+#include "arrays.hpp"
+#include "globals.hpp"
+#include "input.hpp"
+#include "grid.hpp"
+#include "gridHost.hpp"
+#include "dataBlock.hpp"
+#include "dataBlockHost.hpp"
+#include "test.hpp"
+#include "HD/physics.hpp"
+#include "timeIntegrator.hpp"
+#include "outputVtk.hpp"
 
 
 

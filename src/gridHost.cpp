@@ -2,8 +2,12 @@
 #include "grid.hpp"
 #include "gridHost.hpp"
 
-GridHost::GridHost(Grid &grid, Input &input) {
+GridHost::GridHost() {
+    // Void
+}
+GridHost::GridHost(Grid &grid) {
 
+    this->grid=grid;
     for(int dir = 0 ; dir < 3 ; dir++) {
 
         nghost[dir] = grid.nghost[dir];
@@ -13,8 +17,6 @@ GridHost::GridHost(Grid &grid, Input &input) {
         lbound[dir] = grid.lbound[dir]; 
         rbound[dir] = grid.rbound[dir];
 
-        lbeg[dir] = grid.lbeg[dir];
-        lend[dir] = grid.lend[dir];
 
     }
 
@@ -24,14 +26,12 @@ GridHost::GridHost(Grid &grid, Input &input) {
         xr[dir] = Kokkos::create_mirror_view(grid.xr[dir]);
         xl[dir] = Kokkos::create_mirror_view(grid.xl[dir]);
         dx[dir] = Kokkos::create_mirror_view(grid.dx[dir]);
-        A[dir] = Kokkos::create_mirror_view(grid.A[dir]);
     }
-    dV = Kokkos::create_mirror_view(grid.dV);
 
 
 }
 
-void GridHost::MakeGrid(Grid &grid, Input &input) {
+void GridHost::MakeGrid(Input &input) {
 
     // Create the grid
 
@@ -44,15 +44,24 @@ void GridHost::MakeGrid(Grid &grid, Input &input) {
         }
     }
 
+    
+}
+
+void GridHost::SyncFromDevice() {
+    for(int dir = 0 ; dir < 3 ; dir++) {
+        Kokkos::deep_copy(x[dir],grid.x[dir]);
+        Kokkos::deep_copy(xr[dir],grid.xr[dir]);
+        Kokkos::deep_copy(xl[dir],grid.xl[dir]);
+        Kokkos::deep_copy(dx[dir],grid.dx[dir]);
+    }
+}
+
+void GridHost::SyncToDevice() {
     // Sync with the device
     for(int dir = 0 ; dir < 3 ; dir++) {
         Kokkos::deep_copy(grid.x[dir],x[dir]);
         Kokkos::deep_copy(grid.xr[dir],xr[dir]);
         Kokkos::deep_copy(grid.xl[dir],xl[dir]);
         Kokkos::deep_copy(grid.dx[dir],dx[dir]);
-
-        Kokkos::deep_copy(grid.A[dir],A[dir]);
     }
-
-    Kokkos::deep_copy(grid.dV,dV);
 }

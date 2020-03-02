@@ -78,7 +78,7 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
                        const int & IB, const int & IE,
                        Function function) {
 
-        const int NI = IE - IB + 1;
+        const int NI = IE - IB;
         Kokkos::parallel_for(NAME,
                              NI,
                              KOKKOS_LAMBDA (const int& IDX) {
@@ -97,8 +97,8 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
                        Function function) {
     // Kokkos 1D Range
     if (lp == LoopPattern::RANGE) {
-        const int NJ = JE - JB + 1;
-        const int NI = IE - IB + 1;
+        const int NJ = JE - JB;
+        const int NI = IE - IB;
         const int NJNI = NJ * NI;
         Kokkos::parallel_for(NAME,
                              NJNI,
@@ -114,18 +114,18 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
     } else if (lp == LoopPattern::MDRANGE) {
         Kokkos::parallel_for(NAME,
                              Kokkos::MDRangePolicy<Kokkos::Rank<2, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>(
-                                                                                                                    {JB,IB},{JE+1,IE+1}),
+                                                                                                                    {JB,IB},{JE,IE}),
                              function);
         
         // TeamPolicies with single inner loops
     } else if (lp == LoopPattern::TPX || lp == LoopPattern::TPTTRTVR ) {
-        const int NJ = JE - JB + 1;
+        const int NJ = JE - JB;
         Kokkos::parallel_for(NAME,
                              team_policy (NJ, Kokkos::AUTO,KOKKOS_VECTOR_LENGTH),
                              KOKKOS_LAMBDA (member_type team_member) {
                                  const int j = team_member.league_rank() + JB;
                                  Kokkos::parallel_for(
-                                                      TPINNERLOOP<>(team_member,IB,IE+1),
+                                                      TPINNERLOOP<>(team_member,IB,IE),
                                                       [&] (const int i) {
                                                           function(j,i);
                                                       });
@@ -134,9 +134,9 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
 
         // SIMD FOR loops
     } else if (lp == LoopPattern::SIMDFOR) {
-        for (auto j = JB; j <= JE; j++)
+        for (auto j = JB; j < JE; j++)
 #pragma omp simd
-            for (auto i = IB; i <= IE; i++)
+            for (auto i = IB; i < IE; i++)
                 function(j,i);
     } else {
         throw std::runtime_error("Unknown/undefined LoopPattern used.");
@@ -154,9 +154,9 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
                 Function function) {
   // Kokkos 1D Range
   if (lp == LoopPattern::RANGE) {
-    const int NK = KE - KB + 1;
-    const int NJ = JE - JB + 1;
-    const int NI = IE - IB + 1;
+    const int NK = KE - KB;
+    const int NJ = JE - JB;
+    const int NI = IE - IB;
     const int NKNJNI = NK*NJ*NI;
     const int NJNI = NJ * NI;
     Kokkos::parallel_for(NAME,
@@ -175,13 +175,13 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
   } else if (lp == LoopPattern::MDRANGE) {
     Kokkos::parallel_for(NAME,
       Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>(
-        {KB,JB,IB},{KE+1,JE+1,IE+1}),
+        {KB,JB,IB},{KE,JE,IE}),
       function);
 
   // TeamPolicy with single inner loops
   } else if (lp == LoopPattern::TPX) {
-    const int NK = KE - KB + 1;
-    const int NJ = JE - JB + 1;
+    const int NK = KE - KB;
+    const int NJ = JE - JB;
     const int NKNJ = NK * NJ;
     Kokkos::parallel_for(NAME,
       team_policy (NKNJ, Kokkos::AUTO,KOKKOS_VECTOR_LENGTH),
@@ -189,7 +189,7 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
         const int k = team_member.league_rank() / NJ + KB;
         const int j = team_member.league_rank() % NJ + JB;
         Kokkos::parallel_for(
-          TPINNERLOOP<>(team_member,IB,IE+1),
+          TPINNERLOOP<>(team_member,IB,IE),
           [&] (const int i) {
             function(k,j,i);
           });
@@ -197,16 +197,16 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
 
   // TeamPolicy with nested TeamThreadRange and ThreadVectorRange
   } else if (lp == LoopPattern::TPTTRTVR) {
-    const int NK = KE - KB + 1;
+    const int NK = KE - KB;
     Kokkos::parallel_for(NAME,
       team_policy (NK, Kokkos::AUTO,KOKKOS_VECTOR_LENGTH),
       KOKKOS_LAMBDA (member_type team_member) {
         const int k = team_member.league_rank() + KB;
         Kokkos::parallel_for(
-          Kokkos::TeamThreadRange<>(team_member,JB,JE+1),
+          Kokkos::TeamThreadRange<>(team_member,JB,JE),
           [&] (const int j) {
             Kokkos::parallel_for(
-              Kokkos::ThreadVectorRange<>(team_member,IB,IE+1),
+              Kokkos::ThreadVectorRange<>(team_member,IB,IE),
               [&] (const int i) {
                 function(k,j,i);
               });
@@ -215,10 +215,10 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
 
   // SIMD FOR loops
   } else if (lp == LoopPattern::SIMDFOR) {
-    for (auto k = KB; k <= KE; k++)
-      for (auto j = JB; j <= JE; j++)
+    for (auto k = KB; k < KE; k++)
+      for (auto j = JB; j < JE; j++)
         #pragma omp simd
-        for (auto i = IB; i <= IE; i++)
+        for (auto i = IB; i < IE; i++)
           function(k,j,i);
   } else {
     throw std::runtime_error("Unknown/undefined LoopPattern used.");
@@ -236,10 +236,10 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
 
   // Kokkos 1D Range
   if (lp == LoopPattern::RANGE) {
-    const int NN = (NE) - (NB) + 1;
-    const int NK = (KE) - (KB) + 1;
-    const int NJ = (JE) - (JB) + 1;
-    const int NI = (IE) - (IB) + 1;
+    const int NN = (NE) - (NB);
+    const int NK = (KE) - (KB);
+    const int NJ = (JE) - (JB);
+    const int NI = (IE) - (IB);
     const int NNNKNJNI = NN*NK*NJ*NI;
     const int NKNJNI = NK*NJ*NI;
     const int NJNI = NJ * NI;
@@ -261,14 +261,14 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
   } else if (lp == LoopPattern::MDRANGE) {
     Kokkos::parallel_for(NAME,
       Kokkos::MDRangePolicy<Kokkos::Rank<4,Kokkos::Iterate::Right, Kokkos::Iterate::Right>>(
-        {NB,KB,JB,IB},{NE+1,KE+1,JE+1,IE+1}),
+        {NB,KB,JB,IB},{NE,KE,JE,IE}),
       function);
 
   // TeamPolicy loops
   } else if (lp == LoopPattern::TPX) {
-    const int NN = NE - NB + 1;
-    const int NK = KE - KB + 1;
-    const int NJ = JE - JB + 1;
+    const int NN = NE - NB;
+    const int NK = KE - KB;
+    const int NJ = JE - JB;
     const int NKNJ = NK * NJ;
     const int NNNKNJ = NN * NK * NJ;
     Kokkos::parallel_for(NAME,
@@ -280,7 +280,7 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
         n += NB;
         k += KB;
         Kokkos::parallel_for(
-          TPINNERLOOP<>(team_member,IB,IE+1),
+          TPINNERLOOP<>(team_member,IB,IE),
           [&] (const int i) {
             function(n,k,j,i);
           });
@@ -288,8 +288,8 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
 
   // TeamPolicy with nested TeamThreadRange and ThreadVectorRange
   } else if (lp == LoopPattern::TPTTRTVR) {
-    const int NN = NE - NB + 1;
-    const int NK = KE - KB + 1;
+    const int NN = NE - NB;
+    const int NK = KE - KB;
     const int NNNK = NN * NK;
     Kokkos::parallel_for(NAME,
       team_policy (NNNK, Kokkos::AUTO,KOKKOS_VECTOR_LENGTH),
@@ -297,10 +297,10 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
         int n = team_member.league_rank() / NK + NB;
         int k = team_member.league_rank() % NK + KB;
         Kokkos::parallel_for(
-          Kokkos::TeamThreadRange<>(team_member,JB,JE+1),
+          Kokkos::TeamThreadRange<>(team_member,JB,JE),
           [&] (const int j) {
             Kokkos::parallel_for(
-              Kokkos::ThreadVectorRange<>(team_member,IB,IE+1),
+              Kokkos::ThreadVectorRange<>(team_member,IB,IE),
               [&] (const int i) {
                 function(n,k,j,i);
               });
@@ -309,11 +309,11 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
 
   // SIMD FOR loops
   } else if (lp == LoopPattern::SIMDFOR) {
-    for (auto n = NB; n <= NE; n++)
-      for (auto k = KB; k <= KE; k++)
-        for (auto j = JB; j <= JE; j++)
+    for (auto n = NB; n < NE; n++)
+      for (auto k = KB; k < KE; k++)
+        for (auto j = JB; j < JE; j++)
           #pragma omp simd
-          for (auto i = IB; i <= IE; i++)
+          for (auto i = IB; i < IE; i++)
             function(n,k,j,i);
   } else {
     throw std::runtime_error("Unknown/undefined LoopPattern used.");

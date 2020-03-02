@@ -16,8 +16,8 @@ SRC 		 = $(IDEFIX_DIR)/src
 INCLUDE_DIRS = -I, -I. -I$(SRC) -I$(SRC)/HD -I$(SRC)/Test
 VPATH 		 = ./:$(SRC):$(SRC)/HD:$(SRC)/Test
 
-HEADERS = arrays.hpp data.hpp globals.hpp grid.hpp gridHost.hpp idefix.hpp data.hpp dataHost.hpp mod_defs.hpp input.hpp kokkos_types.h loop.hpp real_types.h test.hpp
-OBJ = globals.o grid.o gridHost.o input.o main.o data.o dataHost.o test.o
+HEADERS = definitions.hpp arrays.hpp globals.hpp grid.hpp gridHost.hpp idefix.hpp dataBlock.hpp dataBlockHost.hpp mod_defs.hpp input.hpp kokkos_types.h loop.hpp real_types.h timeIntegrator.hpp test.hpp outputVtk.hpp physics.hpp
+OBJ = globals.o grid.o gridHost.o input.o main.o dataBlock.o dataBlockHost.o test.o timeIntegrator.o outputVtk.o physics.o
 
 #VPATH="src/"
 
@@ -34,7 +34,7 @@ EXE = ${EXE_NAME}.host
 KOKKOS_ARCH = "BDW"
 endif
 
-CXXFLAGS = -O3
+CXXFLAGS = -O3 -g
 LINK = ${CXX}
 LINKFLAGS = 
 

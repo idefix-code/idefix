@@ -117,7 +117,7 @@ void Physics::InitFlow(DataBlock & data) {
                 d.Vc(RHO,k,j,i) = ONE_F;
                 EXPAND(\
                 d.Vc(VX1,k,j,i) = cos(2.0*M_PI*d.x[JDIR](j)); ,\
-                d.Vc(VX2,k,j,i) = randm(); ,\
+                d.Vc(VX2,k,j,i) = randm()-0.5; ,\
                 d.Vc(VX3,k,j,i) = ZERO_F; )
 #if HAVE_ENERGY 
                 d.Vc(PRS,k,j,i) = ONE_F;

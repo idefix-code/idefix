@@ -2,9 +2,9 @@
 #include "idefix.hpp"
 #include "timeIntegrator.hpp"
 
-TimeIntegrator::TimeIntegrator(Input & input, DataBlock &datain, Physics &physics) {
+TimeIntegrator::TimeIntegrator(Input & input, Physics &physics) {
     Kokkos::Profiling::pushRegion("TimeIntegrator::TimeIntegrator(Input...)");
-    this->data=datain;
+
     this->phys=physics;
 
     nstages=input.nstages;
@@ -13,12 +13,6 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock &datain, Physics &physic
     ncycles=0;
     cfl=0.9;
 
-    std::cout << "init dt:" << dt << std::endl;
-
-    if(nstages>1) {
-        // Temporary array to store initial field in the RK2-3 loops
-        V0 = IdefixArray4D<real>("TimeIntegrator_V0", NVAR, data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
-    }
     if(nstages==2) {
         wc[0] = 0.5;
         w0[0] = 0.5;
@@ -29,17 +23,13 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock &datain, Physics &physic
         wc[1] = 2.0/3.0;
         w0[1] = 1.0/3.0;
     }
-    InvDtHyp = IdefixArray3D<real>("TimeIntegrator_InvDtHyp", data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
-    InvDtPar = IdefixArray3D<real>("TimeIntegrator_InvDtPar", data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
-
-    Kokkos::Profiling::popRegion();
-
     
+    Kokkos::Profiling::popRegion();
 
 }
 
 // Compute one Stage of the time Integrator
-void TimeIntegrator::Stage() {
+void TimeIntegrator::Stage(DataBlock &data) {
     
     Kokkos::Profiling::pushRegion("TimeIntegrator::Stage");
     // Convert current state into conservative variable and save it
@@ -51,7 +41,7 @@ void TimeIntegrator::Stage() {
         phys.ExtrapolatePrimVar(data, dir);
 
         // Step 2: compute the intercell flux with our Riemann solver, store the resulting InvDt
-        phys.CalcRiemannFlux(data, InvDtHyp, dir);
+        phys.CalcRiemannFlux(data, dir);
 
         // Step 3: compute the resulting evolution of the conserved variables, stored in Uc
         phys.CalcRightHandSide(data, dir, dt);
@@ -68,12 +58,12 @@ void TimeIntegrator::Stage() {
 
 
 // Compute one full cycle of the time Integrator
-void TimeIntegrator::Cycle() {
+void TimeIntegrator::Cycle(DataBlock & data) {
     // Do one cycle
     IdefixArray4D<real> Vc = data.Vc;
-    IdefixArray4D<real> V0 = this->V0;
-    IdefixArray3D<real> InvDtHypLoc=this->InvDtHyp;
-    IdefixArray3D<real> InvDtParLoc=this->InvDtPar;
+    IdefixArray4D<real> V0 = data.V0;
+    IdefixArray3D<real> InvDtHypLoc=data.InvDtHyp;
+    IdefixArray3D<real> InvDtParLoc=data.InvDtPar;
 
     Kokkos::Profiling::pushRegion("TimeIntegrator::Cycle");
 
@@ -84,7 +74,7 @@ void TimeIntegrator::Cycle() {
 
     for(int stage=0; stage < nstages ; stage++) {
         // Update Vc
-        Stage();
+        Stage(data);
         // Is this the last stage?
         if(stage<nstages-1) {
             // No!

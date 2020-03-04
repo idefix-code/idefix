@@ -58,12 +58,8 @@ KOKKOS_INLINE_FUNCTION void K_PrimToCons(real Uc[], real Vc[], real gamma_m1) {
 
 }
 
-Physics::Physics(DataBlock & data) {
+Physics::Physics(Input &input) {
     Kokkos::Profiling::pushRegion("Physics::Physics(DataBock)");
-
-    this->PrimL = IdefixArray4D<real>("Physics_PrimL", NVAR, data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
-    this->PrimR = IdefixArray4D<real>("Physics_PrimR", NVAR, data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
-    this->FluxRiemann = IdefixArray4D<real>("Physics_FluxRiemann", NVAR, data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
 
     this->gamma = 5.0/3.0;
     this->C2Iso = 1.0;
@@ -72,8 +68,9 @@ Physics::Physics(DataBlock & data) {
 }
 
 Physics::Physics() {
-    // Do nothign
+
 }
+
 
 // Convect Conservative to Primitive variable
 void Physics::ConvertConsToPrim(DataBlock & data) {
@@ -173,8 +170,8 @@ void Physics::ExtrapolatePrimVar(DataBlock &data, int dir) {
     if(dir==KDIR) koffset=1;
 
     IdefixArray4D<real> Vc = data.Vc;
-    IdefixArray4D<real> PrimL = this->PrimL;
-    IdefixArray4D<real> PrimR = this->PrimR;
+    IdefixArray4D<real> PrimL = data.PrimL;
+    IdefixArray4D<real> PrimR = data.PrimR;
 
     idefix_for("ExtrapolatePrimVar",0,NVAR,data.beg[KDIR],data.end[KDIR]+koffset,data.beg[JDIR],data.end[JDIR]+joffset,data.beg[IDIR],data.end[IDIR]+ioffset,
                         KOKKOS_LAMBDA (int n, int k, int j, int i) 
@@ -191,7 +188,7 @@ void Physics::ExtrapolatePrimVar(DataBlock &data, int dir) {
 }
 
 // Compute Riemann fluxes from states
-void Physics::CalcRiemannFlux(DataBlock & data, IdefixArray3D<real> &invDt, int dir) {
+void Physics::CalcRiemannFlux(DataBlock & data, int dir) {
     int ioffset,joffset,koffset;
 
     Kokkos::Profiling::pushRegion("Physics::CalcRiemannFlux");
@@ -201,10 +198,11 @@ void Physics::CalcRiemannFlux(DataBlock & data, IdefixArray3D<real> &invDt, int 
     if(dir==JDIR) joffset=1;
     if(dir==KDIR) koffset=1;
 
-    IdefixArray4D<real> PrimL = this->PrimL;
-    IdefixArray4D<real> PrimR = this->PrimR;
-    IdefixArray4D<real> Flux = this->FluxRiemann;
+    IdefixArray4D<real> PrimL = data.PrimL;
+    IdefixArray4D<real> PrimR = data.PrimR;
+    IdefixArray4D<real> Flux = data.FluxRiemann;
     IdefixArray1D<real> dx = data.dx[dir];
+    IdefixArray3D<real> invDt = data.InvDtHyp;
 
     real gamma_m1=this->gamma-ONE_F;
     real C2Iso = this->C2Iso;
@@ -275,7 +273,7 @@ void Physics::CalcRightHandSide(DataBlock &data, int dir, real dt) {
     Kokkos::Profiling::pushRegion("Physics::CalcRightHandSide");
     IdefixArray4D<real> Uc = data.Uc;
     IdefixArray1D<real> dx = data.dx[dir];
-    IdefixArray4D<real> Flux = this->FluxRiemann;
+    IdefixArray4D<real> Flux = data.FluxRiemann;
 
     int ioffset,joffset,koffset;
     ioffset=joffset=koffset=0;

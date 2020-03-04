@@ -15,6 +15,18 @@ public:
 
     IdefixArray4D<real> Vc;     // Main cell-centered primitive variables index
     IdefixArray4D<real> Uc;     // Main cell-centered conservative variables
+
+    // Required by time integrator
+    IdefixArray4D<real> V0;
+    IdefixArray3D<real> InvDtHyp;
+    IdefixArray3D<real> InvDtPar;
+
+    // Required by physics
+    IdefixArray4D<real> PrimL;
+    IdefixArray4D<real> PrimR;
+    IdefixArray4D<real> FluxRiemann;
+    
+
    
     int np_tot[3];                  // total number of grid points
     int np_int[3];                  // internal number of grid points

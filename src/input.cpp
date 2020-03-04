@@ -5,9 +5,9 @@
 Input::Input() {
     std::cout << "Creating Input\n";
     // Default constructor
-    npoints[IDIR] = 64;
-    npoints[JDIR] = 64;
-    npoints[KDIR] = 64;
+    npoints[IDIR] = 128;
+    npoints[JDIR] = 128;
+    npoints[KDIR] = 128;
 
     xstart[IDIR] = 0.0;
     xstart[JDIR] = 0.0;

@@ -53,11 +53,11 @@ int main( int argc, char* argv[] )
     dataHost.SyncFromDevice();
 
     std::cout << "Init Physics" << std::endl;
-    Physics phys(data);
+    Physics phys(input);
     phys.InitFlow(data);
 
     std::cout << "Init Time Integrator..." << std::endl;
-    TimeIntegrator Tint(input, data, phys);
+    TimeIntegrator Tint(input, phys);
 
     std::cout << "Write init vtk" << std::endl;
     output.Write(data);
@@ -66,7 +66,7 @@ int main( int argc, char* argv[] )
     Kokkos::Timer timer;
 
     while(Tint.getNcycles() < 100) {
-      Tint.Cycle();
+      Tint.Cycle(data);
     }
     double tintegration = (timer.seconds()/(grid.np_int[IDIR]*grid.np_int[JDIR]*grid.np_int[KDIR]*Tint.getNcycles()));
     output.Write(data);

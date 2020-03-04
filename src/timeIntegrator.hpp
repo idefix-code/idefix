@@ -12,11 +12,11 @@ public:
 
 
     // Constructor from input and given datablock
-    TimeIntegrator(Input &, DataBlock &, Physics &);
+    TimeIntegrator(Input &, Physics &);
 
-    void Stage();
+    void Stage(DataBlock &);
     // Do one integration cycle
-    void Cycle();
+    void Cycle(DataBlock &);
 
 private:
     int nstages;
@@ -30,9 +30,6 @@ private:
     real cfl;   // CFL number
     long int ncycles;   // # of cycles
     
-    IdefixArray4D<real> V0;     // Temporary Flow structure for multi-step integrators
-    IdefixArray3D<real> InvDtHyp;  // Inverse Dt at each point for hyperbolic terms
-    IdefixArray3D<real> InvDtPar;   // Inverse Dt at each point for parabolic terms
     DataBlock data;
     Physics phys;
 };

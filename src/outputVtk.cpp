@@ -106,7 +106,8 @@ int OutputVTK::Write(DataBlock &datain, real t)
     this->tnext+= this->tperiod;
     Kokkos::Profiling::pushRegion("OutputVTK::Write");
 
-    std::cout << "OutputVTK::Write file n " << vtkFileNumber << "...";
+    std::cout << "OutputVTK::Write file n " << vtkFileNumber << "..." << std::flush;
+
     // Create a copy of the dataBlock on Host, and sync it.
     DataBlockHost data(datain);
     data.SyncFromDevice();

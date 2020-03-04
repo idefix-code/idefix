@@ -48,7 +48,7 @@ Input::Input() {
     firstDt = 1.0e-4;
 
     // Periodicty of outputs
-    tperiodVTK=0.001;
+    tperiodVTK=0.01;
 
     PrintLogo();
 }

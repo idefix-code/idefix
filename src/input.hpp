@@ -11,6 +11,8 @@ public:
     int nghost[3];
     int nstages;
     real firstDt;
+    real tperiodVTK;
+    real tfinal;
     Input();
 private:
     void PrintLogo();

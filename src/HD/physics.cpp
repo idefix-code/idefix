@@ -7,7 +7,6 @@
 
 KOKKOS_INLINE_FUNCTION void K_Flux(real F[], real V[], real U[], const int dir) {
     int VXn = VX1+dir;
-    int MXn = VXn;
 
     F[RHO] = U[VXn];
 
@@ -23,7 +22,7 @@ KOKKOS_INLINE_FUNCTION void K_Flux(real F[], real V[], real U[], const int dir) 
 } 
 
 KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[], real gamma_m1) {
-    real kin;
+    
 
     Vc[RHO] = Uc[RHO];
 
@@ -32,6 +31,7 @@ KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[], real gamma_m1) {
             Vc[VX3] = Uc[MX3]/Uc[RHO];)     
 
 #if HAVE_ENERGY
+    real kin;
     kin = 0.5 / Uc[RHO] * (EXPAND(    Uc[MX1]*Uc[MX1] , 
                                     + Uc[MX2]*Uc[MX2] ,
                                     + Uc[MX3]*Uc[MX3] ));
@@ -57,6 +57,9 @@ KOKKOS_INLINE_FUNCTION void K_PrimToCons(real Uc[], real Vc[], real gamma_m1) {
 #endif  // Have_energy
 
 }
+
+
+
 
 Physics::Physics(Input &input) {
     Kokkos::Profiling::pushRegion("Physics::Physics(DataBock)");
@@ -112,17 +115,15 @@ void Physics::InitFlow(DataBlock & data) {
         for(int j = 0; j < d.np_tot[JDIR] ; j++) {
             for(int i = 0; i < d.np_tot[IDIR] ; i++) {
                 d.Vc(RHO,k,j,i) = ONE_F;
-                d.Vc(VX1,k,j,i) = cos(2.0*M_PI*d.x[IDIR](i));
-                d.Vc(VX2,k,j,i) = ZERO_F;
-                d.Vc(VX3,k,j,i) = ZERO_F;
+                EXPAND(\
+                d.Vc(VX1,k,j,i) = cos(2.0*M_PI*d.x[JDIR](j)); ,\
+                d.Vc(VX2,k,j,i) = randm(); ,\
+                d.Vc(VX3,k,j,i) = ZERO_F; )
 #if HAVE_ENERGY 
                 d.Vc(PRS,k,j,i) = ONE_F;
 #endif
             }
         }
-    }
-    for(int nv=0; nv<NVAR;nv++) {
-        std::cout << "nv="<<nv<<" d[1,1,1]="<< d.Vc(nv,1,1,1)<<std::endl;
     }
     
     d.SyncToDevice();
@@ -159,6 +160,13 @@ void Physics::ConvertPrimToCons(DataBlock & data) {
 
 
 // Build a left and right extrapolation of the primitive variables along direction dir
+
+// These functions extrapolate the cell prim vars to the faces. Definitions are as followed
+//
+// |       cell i-1               interface i          cell i
+// |-----------------------------------|------------------------------------||
+//          Vc(i-1)           PrimL(i)  PrimR(i)       Vc(i)
+
 void Physics::ExtrapolatePrimVar(DataBlock &data, int dir) {
     int ioffset,joffset,koffset;
 
@@ -173,16 +181,36 @@ void Physics::ExtrapolatePrimVar(DataBlock &data, int dir) {
     IdefixArray4D<real> PrimL = data.PrimL;
     IdefixArray4D<real> PrimR = data.PrimR;
 
+
+#if ORDER == 1
+
     idefix_for("ExtrapolatePrimVar",0,NVAR,data.beg[KDIR],data.end[KDIR]+koffset,data.beg[JDIR],data.end[JDIR]+joffset,data.beg[IDIR],data.end[IDIR]+ioffset,
                         KOKKOS_LAMBDA (int n, int k, int j, int i) 
             {   
-                // Thats's a simple donnor-cell approximation on the left and right side of the interface
-                // |       cell i-1               interface i          cell i
-                // |-----------------------------------|------------------------------------||
-                //          Vc(i-1)           PrimL(i)  PrimR(i)       Vc(i)
+                
                 PrimL(n,k,j,i) = Vc(n,k-koffset,j-joffset,i-ioffset);
                 PrimR(n,k,j,i) = Vc(n,k,j,i);
             });
+
+#elif ORDER == 2
+    idefix_for("ExtrapolatePrimVar",0,NVAR,data.beg[KDIR]-koffset,data.end[KDIR]+koffset,data.beg[JDIR]-joffset,data.end[JDIR]+joffset,data.beg[IDIR]-ioffset,data.end[IDIR]+ioffset,
+                        KOKKOS_LAMBDA (int n, int k, int j, int i) 
+            {
+                real dvm = Vc(n,k,j,i)-Vc(n,k-koffset,j-joffset,i-ioffset);
+                real dvp = Vc(n,k+koffset,j+joffset,i+ioffset) - Vc(n,k,j,i);
+
+                // Van Leer limiter
+                real dv = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
+
+                PrimL(n,k+koffset,j+joffset,i+ioffset) = Vc(n,k,j,i) + HALF_F*dv;
+                PrimR(n,k,j,i) = Vc(n,k,j,i) - HALF_F*dv;
+
+            });
+#else   
+        #error ORDER should be 1 or 2
+#endif
+
+
 
     Kokkos::Profiling::popRegion();
 }
@@ -332,7 +360,7 @@ void Physics::SetBoundary(DataBlock &data) {
         int offset = data.np_int[KDIR];
         int nghost = data.nghost[KDIR];
 
-        idefix_for("Boundary_X3",0,NVAR,0,nghost,0,data.np_tot[JDIR],0,data.nghost[IDIR],
+        idefix_for("Boundary_X3",0,NVAR,0,nghost,0,data.np_tot[JDIR],0,data.np_tot[IDIR],
             KOKKOS_LAMBDA (int n, int k, int j, int i) {
                 
                 Vc(n,k,j,i) = Vc(n,k+offset,j,i);
@@ -345,4 +373,22 @@ void Physics::SetBoundary(DataBlock &data) {
 
 }
 
+/*********************************************/
+/**
+Customized random number generator
+Allow one to have consistant random numbers
+generators on different architectures.
+**/
+/*********************************************/
+real Physics::randm(void) {
+	const int a	=	16807;
+	const int m =	2147483647;
+	static int in0 = 13763;
+	int q;
 
+	/* find random number  */
+	q= (int) fmod((real) a * in0, m);
+	in0=q;
+
+	return((real)q/(real)m);
+}

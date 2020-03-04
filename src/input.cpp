@@ -4,28 +4,52 @@
 
 Input::Input() {
     std::cout << "Creating Input\n";
+    const int NX = 4096;
+    const int NY = 1024;
+    const int NZ = 1024;
+
+    tfinal = 5.0;
     // Default constructor
-    npoints[IDIR] = 128;
-    npoints[JDIR] = 128;
-    npoints[KDIR] = 128;
+    npoints[IDIR] = NX;
+    npoints[JDIR] = 1;
+    npoints[KDIR] = 1;
+
+    #if DIMENSIONS >=2
+    npoints[JDIR] = NY;
+    #if DIMENSIONS == 3
+    npoints[KDIR] = NZ;
+    #endif
+    #endif
 
     xstart[IDIR] = 0.0;
     xstart[JDIR] = 0.0;
     xstart[KDIR] = 0.0;
 
-    xend[IDIR] = 1.0;
+    xend[IDIR] = 4.0;
     xend[JDIR] = 1.0;
     xend[KDIR] = 1.0;
 
     nghost[IDIR] = 2;
+    nghost[JDIR] = 0;
+    nghost[KDIR] = 0;
+    
+    #if DIMENSIONS >=2
     nghost[JDIR] = 2;
+    #if DIMENSIONS == 3
     nghost[KDIR] = 2;
+    #endif
+    #endif
+
 
     // Number of integrator stages
     nstages=2;
 
     // First time step
     firstDt = 1.0e-4;
+
+    // Periodicty of outputs
+    tperiodVTK=0.001;
+
     PrintLogo();
 }
 

@@ -19,6 +19,8 @@ private:
     real C2Iso;
     real gamma;
 
+    real randm(void);
+
 };
 
 

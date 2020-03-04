@@ -10,8 +10,9 @@ TimeIntegrator::TimeIntegrator(Input & input, Physics &physics) {
     nstages=input.nstages;
     
     dt=input.firstDt;
+    t=0.0;
     ncycles=0;
-    cfl=0.9;
+    cfl=0.45;
 
     if(nstages==2) {
         wc[0] = 0.5;

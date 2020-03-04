@@ -46,9 +46,6 @@ int main( int argc, char* argv[] )
 
     data.InitFromGrid(grid);
 
-    std::cout << "init Output Routines" << std::endl;
-    OutputVTK output = OutputVTK(grid); 
-
     DataBlockHost dataHost(data);
     dataHost.SyncFromDevice();
 
@@ -59,17 +56,20 @@ int main( int argc, char* argv[] )
     std::cout << "Init Time Integrator..." << std::endl;
     TimeIntegrator Tint(input, phys);
 
+    std::cout << "init Output Routines" << std::endl;
+    OutputVTK output = OutputVTK(input, grid, Tint.getT()); 
+
     std::cout << "Write init vtk" << std::endl;
-    output.Write(data);
+    output.Write(data,Tint.getT());
     std::cout << "Cycling Time Integrator..." << std::endl;
 
     Kokkos::Timer timer;
 
-    while(Tint.getNcycles() < 100) {
+    while(Tint.getT() < input.tfinal) {
       Tint.Cycle(data);
+      output.Write(data, Tint.getT());
     }
     double tintegration = (timer.seconds()/(grid.np_int[IDIR]*grid.np_int[JDIR]*grid.np_int[KDIR]*Tint.getNcycles()));
-    output.Write(data);
 
     std::cout << "Completed. Perfs are " << 1/tintegration << " cell updates/second." << std::endl;
     

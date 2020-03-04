@@ -36,12 +36,17 @@
 
 
 /* Main constructor */
-OutputVTK::OutputVTK(Grid &gridin)
+OutputVTK::OutputVTK(Input &input, Grid &gridin, real t)
 {
+    // Init the output period
+    this->tperiod=input.tperiodVTK;
+    this->tnext = t;
+
     // Initialize the output structure
     // Create a local gridhost as an image of gridin
     this->grid = GridHost(gridin);
     grid.SyncFromDevice();
+
 
     // Create the coordinate array required in VTK files
     this->nx1 = grid.np_tot[IDIR] - 2 * grid.nghost[IDIR];
@@ -90,13 +95,18 @@ OutputVTK::OutputVTK(Grid &gridin)
 
 }
 
-int OutputVTK::Write(DataBlock &datain)
+int OutputVTK::Write(DataBlock &datain, real t)
 {
     FILE *fileHdl;
     char filename[256];
 
+    // Do we need an output?
+    if(t<this->tnext) return(0);
+
+    this->tnext+= this->tperiod;
     Kokkos::Profiling::pushRegion("OutputVTK::Write");
 
+    std::cout << "OutputVTK::Write file n " << vtkFileNumber << "...";
     // Create a copy of the dataBlock on Host, and sync it.
     DataBlockHost data(datain);
     data.SyncFromDevice();
@@ -107,7 +117,7 @@ int OutputVTK::Write(DataBlock &datain)
     for(int nv = 0 ; nv < NVAR ; nv++) {
         for(int k = 0; k < grid.np_tot[KDIR] ; k++ ) {
             for(int j = 0; j < grid.np_tot[JDIR] ; j++ ) {
-                for(int i = 0; i < grid.np_tot[JDIR] ; i++ ) {
+                for(int i = 0; i < grid.np_tot[IDIR] ; i++ ) {
                     vect3D(k,j,i) = float(data.Vc(nv,k,j,i));
                 }
             }
@@ -121,6 +131,7 @@ int OutputVTK::Write(DataBlock &datain)
     vtkFileNumber++;
     // Make file number
 
+    std::cout << "done." << std::endl;
     Kokkos::Profiling::popRegion();
     // One day, we will have a return code.
     return(0);

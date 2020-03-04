@@ -5,8 +5,9 @@
  * Local Kokkos Inline function *
  * ******************************/
 
-KOKKOS_INLINE_FUNCTION void K_Flux(real F[], real V[], real U[], const int dir) {
+KOKKOS_INLINE_FUNCTION void K_Flux(real F[], real V[], real U[], real C2Iso, const int dir) {
     int VXn = VX1+dir;
+    int MXn = VXn;
 
     F[RHO] = U[VXn];
 
@@ -14,10 +15,14 @@ KOKKOS_INLINE_FUNCTION void K_Flux(real F[], real V[], real U[], const int dir) 
            F[MX2] = U[MX2]*V[VXn]; ,
            F[MX3] = U[MX3]*V[VXn];)
 
+
 #if HAVE_ENERGY
     F[ENG]     = (U[ENG] + V[PRS])*V[VXn];
+    F[MXn]     += V[PRS];
+
 #elif EOS == ISOTHERMAL
-    // Should we do anything here?
+    // Add back pressure in the flux
+    F[MXn]     += C2Iso * V[RHO];
 #endif
 } 
 
@@ -116,7 +121,8 @@ void Physics::InitFlow(DataBlock & data) {
             for(int i = 0; i < d.np_tot[IDIR] ; i++) {
                 d.Vc(RHO,k,j,i) = ONE_F;
                 EXPAND(\
-                d.Vc(VX1,k,j,i) = cos(2.0*M_PI*d.x[JDIR](j)); ,\
+                /*d.Vc(VX1,k,j,i) = cos(2.0*M_PI*d.x[JDIR](j));*/ \
+                d.Vc(VX1,k,j,i) = (d.x[JDIR](j) > HALF_F) ? ONE_F : -ONE_F; ,\
                 d.Vc(VX2,k,j,i) = randm()-HALF_F; ,\
                 d.Vc(VX3,k,j,i) = ZERO_F; )
 #if HAVE_ENERGY 
@@ -268,8 +274,8 @@ void Physics::CalcRiemannFlux(DataBlock & data, int dir) {
                 K_PrimToCons(uR, vR, gamma_m1);
 
                 // 3-- Compute the left and right fluxes
-                K_Flux(fluxL, vL, uL, dir);
-                K_Flux(fluxR, vR, uR, dir);
+                K_Flux(fluxL, vL, uL, C2Iso, dir);
+                K_Flux(fluxR, vR, uR, C2Iso, dir);
 
                 // 4-- Get the wave speed
             #if HAVE_ENERGY

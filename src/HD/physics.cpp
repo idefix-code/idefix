@@ -117,7 +117,7 @@ void Physics::InitFlow(DataBlock & data) {
                 d.Vc(RHO,k,j,i) = ONE_F;
                 EXPAND(\
                 d.Vc(VX1,k,j,i) = cos(2.0*M_PI*d.x[JDIR](j)); ,\
-                d.Vc(VX2,k,j,i) = randm()-0.5; ,\
+                d.Vc(VX2,k,j,i) = randm()-HALF_F; ,\
                 d.Vc(VX3,k,j,i) = ZERO_F; )
 #if HAVE_ENERGY 
                 d.Vc(PRS,k,j,i) = ONE_F;
@@ -387,8 +387,8 @@ real Physics::randm(void) {
 	int q;
 
 	/* find random number  */
-	q= (int) fmod((real) a * in0, m);
+	q= (int) fmod((double) a * in0, m);
 	in0=q;
 
-	return((real)q/(real)m);
+	return((real) ((double) q/(double)m));
 }

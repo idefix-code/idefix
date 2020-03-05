@@ -12,7 +12,7 @@ TimeIntegrator::TimeIntegrator(Input & input, Physics &physics) {
     dt=input.firstDt;
     t=0.0;
     ncycles=0;
-    cfl=0.45;
+    cfl=0.2;
 
     if(nstages==2) {
         wc[0] = 0.5;
@@ -20,7 +20,7 @@ TimeIntegrator::TimeIntegrator(Input & input, Physics &physics) {
     }
     if(nstages==3) {
         wc[0] = 0.25;
-        w0[0] = 0.5;
+        w0[0] = 0.75;
         wc[1] = 2.0/3.0;
         w0[1] = 1.0/3.0;
     }
@@ -76,11 +76,10 @@ void TimeIntegrator::Cycle(DataBlock & data) {
     for(int stage=0; stage < nstages ; stage++) {
         // Update Vc
         Stage(data);
-        // Is this the last stage?
-        if(stage<nstages-1) {
-            // No!
-            real wcs=wc[stage];
-            real w0s=w0[stage];
+        // Is this not the first stage?
+        if(stage>0) {
+            real wcs=wc[stage-1];
+            real w0s=w0[stage-1];
 
             idefix_for("Cycle-update",0,NVAR,0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
                         KOKKOS_LAMBDA (int n, int k, int j, int i) {

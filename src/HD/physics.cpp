@@ -119,15 +119,25 @@ void Physics::InitFlow(DataBlock & data) {
     for(int k = 0; k < d.np_tot[KDIR] ; k++) {
         for(int j = 0; j < d.np_tot[JDIR] ; j++) {
             for(int i = 0; i < d.np_tot[IDIR] ; i++) {
+                
+                /*
+                // SHOCK TUBE
+                d.Vc(RHO,k,j,i) = (d.x[IDIR](i)>HALF_F) ? 0.125 : 1.0;
+                d.Vc(VX1,k,j,i) = ZERO_F;
+#if HAVE_ENERGY 
+                d.Vc(PRS,k,j,i) = (d.x[IDIR](i)>HALF_F) ? 0.1 : 1.0;
+#endif
+                */
+                // KHI
                 d.Vc(RHO,k,j,i) = ONE_F;
                 EXPAND(\
-                /*d.Vc(VX1,k,j,i) = cos(2.0*M_PI*d.x[JDIR](j));*/ \
                 d.Vc(VX1,k,j,i) = (d.x[JDIR](j) > HALF_F) ? ONE_F : -ONE_F; ,\
                 d.Vc(VX2,k,j,i) = randm()-HALF_F; ,\
                 d.Vc(VX3,k,j,i) = ZERO_F; )
 #if HAVE_ENERGY 
                 d.Vc(PRS,k,j,i) = ONE_F;
 #endif
+
             }
         }
     }
@@ -342,8 +352,15 @@ void Physics::SetBoundary(DataBlock &data) {
     idefix_for("Boundary_X1",0,NVAR,data.beg[KDIR],data.end[KDIR],data.beg[JDIR],data.end[JDIR],0,nghost,
         KOKKOS_LAMBDA (int n, int k, int j, int i) {
             
+            // stress-free BCs
+            //Vc(n,k,j,i)=Vc(n,k,j,nghost);
+            //Vc(n,k,j,i+offset+nghost)=Vc(n,k,j,nghost+offset-1);
+
+            // Periodic BCs
+            
             Vc(n,k,j,i) = Vc(n,k,j,i+offset);
             Vc(n,k,j,i+offset+nghost) = Vc(n,k,j,i+nghost); 
+            
 
         });
 

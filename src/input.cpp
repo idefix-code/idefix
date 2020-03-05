@@ -4,11 +4,11 @@
 
 Input::Input() {
     std::cout << "Creating Input\n";
-    const int NX = 1024;
+    const int NX = 4096;
     const int NY = 1024;
     const int NZ = 1024;
 
-    tfinal = 1.0;
+    
     // Default constructor
     npoints[IDIR] = NX;
     npoints[JDIR] = 1;
@@ -25,7 +25,7 @@ Input::Input() {
     xstart[JDIR] = 0.0;
     xstart[KDIR] = 0.0;
 
-    xend[IDIR] = 1.0;
+    xend[IDIR] = 4.0;
     xend[JDIR] = 1.0;
     xend[KDIR] = 1.0;
 
@@ -47,8 +47,11 @@ Input::Input() {
     // First time step
     firstDt = 1.0e-4;
 
+    // Final time
+    tfinal = 5.0;
+
     // Periodicty of outputs
-    tperiodVTK=0.01;
+    tperiodVTK=0.1;
 
     PrintLogo();
 }

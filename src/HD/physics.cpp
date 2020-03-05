@@ -372,8 +372,13 @@ void Physics::SetBoundary(DataBlock &data) {
         idefix_for("Boundary_X2",0,NVAR,data.beg[KDIR],data.end[KDIR],0,nghost,0,data.np_tot[IDIR],
             KOKKOS_LAMBDA (int n, int k, int j, int i) {
                 
+                Vc(n,k,j,i)=Vc(n,k,nghost,i);
+                Vc(n,k,j+offset+nghost,i) = Vc(n,k,nghost+offset-1,i);
+
+                /*
                 Vc(n,k,j,i) = Vc(n,k,j+offset,i);
                 Vc(n,k,j+offset+nghost,i) = Vc(n,k,j+nghost,i); 
+                */
 
             });
     }

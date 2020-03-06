@@ -42,13 +42,13 @@ Input::Input() {
 
 
     // Number of integrator stages
-    nstages=3;
+    nstages=2;
 
     // First time step
     firstDt = 1.0e-4;
 
     // Final time
-    tfinal = 5.0;
+    tfinal = 1.0e-2;
 
     // Periodicty of outputs
     tperiodVTK=0.1;

@@ -270,7 +270,7 @@ void Physics::CalcRiemannFlux(DataBlock & data, int dir) {
                 real fluxR[NVAR];
 
                 // Signal speeds
-                real c2RL, cmax;
+                real cRL, cmax;
 
                 // 1-- Store the primitive variables on the left, right, and averaged states
                 for(int nv = 0 ; nv < NVAR; nv++) {
@@ -289,11 +289,11 @@ void Physics::CalcRiemannFlux(DataBlock & data, int dir) {
 
                 // 4-- Get the wave speed
             #if HAVE_ENERGY
-                c2RL = (gamma_m1+ONE_F)*(vRL[PRS]/vRL[RHO]);
+                cRL = SQRT((gamma_m1+ONE_F)*(vRL[PRS]/vRL[RHO]));
             #else
-                c2RL = C2Iso;
+                cRL = SQRT(C2Iso);
             #endif
-                cmax = FMAX(c2RL+vRL[VXn],c2RL-vRL[VXn]);
+                cmax = FMAX(FABS(vRL[VXn]+cRL),FABS(vRL[VXn]-cRL));
 
                 // 5-- Compute the flux from the left and right states
                 for(int nv = 0 ; nv < NVAR; nv++) {
@@ -303,7 +303,7 @@ void Physics::CalcRiemannFlux(DataBlock & data, int dir) {
                 //6-- Compute maximum dt for this sweep
                 const int ig = ioffset*i + joffset*j + koffset*k;
 
-                invDt(k,j,i) = FMAX(invDt(k,j,i),cmax/dx(ig));
+                invDt(k,j,i) += cmax/dx(ig);
 
             });
 

@@ -32,6 +32,8 @@ private:
     
     DataBlock data;
     Physics phys;
+
+    void ReinitInvDt(DataBlock & );
 };
 
 #endif

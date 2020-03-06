@@ -57,6 +57,16 @@ void TimeIntegrator::Stage(DataBlock &data) {
     Kokkos::Profiling::popRegion();
 }
 
+void TimeIntegrator::ReinitInvDt(DataBlock & data) {
+    IdefixArray3D<real> InvDtHypLoc=data.InvDtHyp;
+    IdefixArray3D<real> InvDtParLoc=data.InvDtPar;
+
+    idefix_for("InitInvDt",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
+                KOKKOS_LAMBDA (int k, int j, int i) {
+                    InvDtHypLoc(k,j,i) = ZERO_F;
+                    InvDtParLoc(k,j,i) = ZERO_F;
+            });
+}
 
 // Compute one full cycle of the time Integrator
 void TimeIntegrator::Cycle(DataBlock & data) {
@@ -65,6 +75,7 @@ void TimeIntegrator::Cycle(DataBlock & data) {
     IdefixArray4D<real> V0 = data.V0;
     IdefixArray3D<real> InvDtHypLoc=data.InvDtHyp;
     IdefixArray3D<real> InvDtParLoc=data.InvDtPar;
+    real newdt;
 
     Kokkos::Profiling::pushRegion("TimeIntegrator::Cycle");
 
@@ -73,9 +84,28 @@ void TimeIntegrator::Cycle(DataBlock & data) {
     // Store initial stage for multi-stage time integrators
     if(nstages>1) Kokkos::deep_copy(V0,Vc);
 
+    // Reinit timestep
+    ReinitInvDt(data);
+
     for(int stage=0; stage < nstages ; stage++) {
         // Update Vc
         Stage(data);
+
+        // Compute next time_step during first stage
+        if(stage==0) {
+            Kokkos::parallel_reduce("Timestep_reduction",
+                                Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
+                                ({0,0,0},{data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]}),
+                                KOKKOS_LAMBDA (int k, int j, int i, real &dtmin) {
+                real InvDt;
+                InvDt = SQRT(InvDtHypLoc(k,j,i) * InvDtHypLoc(k,j,i) + InvDtParLoc(k,j,i) * InvDtParLoc(k,j,i));
+
+                dtmin=FMIN(ONE_F/InvDt,dtmin);
+            }, Kokkos::Min<real>(newdt) );
+
+            newdt=newdt*cfl*DIMENSIONS;
+        }
+
         // Is this not the first stage?
         if(stage>0) {
             real wcs=wc[stage-1];
@@ -91,20 +121,8 @@ void TimeIntegrator::Cycle(DataBlock & data) {
     // Update current time
     t=t+dt;
 
-    // Compute next time_step
-    real newdt;
-    Kokkos::parallel_reduce("Timestep_reduction",
-                            Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
-                            ({0,0,0},{data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]}),
-                            KOKKOS_LAMBDA (int k, int j, int i, real &dtmin) {
-        real InvDt;
-        InvDt = SQRT(InvDtHypLoc(k,j,i) * InvDtHypLoc(k,j,i) + InvDtParLoc(k,j,i) * InvDtParLoc(k,j,i));
-
-		dtmin=FMIN(ONE_F/InvDt,dtmin);
-    }, Kokkos::Min<real>(newdt) );
-
-    newdt=newdt*cfl;
-
+    
+    // Next time step
     if(newdt>1.1*dt) {
         dt=1.1*dt;
     }

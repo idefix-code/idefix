@@ -71,7 +71,7 @@ int main( int argc, char* argv[] )
     }
     double tintegration = (timer.seconds()/(grid.np_int[IDIR]*grid.np_int[JDIR]*grid.np_int[KDIR]*Tint.getNcycles()));
 
-    std::cout << "Completed. Perfs are " << 1/tintegration << " cell updates/second." << std::endl;
+    std::cout << "Completed in " << timer.seconds() << "seconds. Perfs are " << 1/tintegration << " cell updates/second." << std::endl;
     
 
     // Make a test

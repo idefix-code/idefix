@@ -17,7 +17,7 @@ public:
     void Stage(DataBlock &);
     // Do one integration cycle
     void Cycle(DataBlock &);
-
+    void ReinitInvDt(DataBlock & );
 private:
     int nstages;
     // Weights of time integrator
@@ -33,7 +33,7 @@ private:
     DataBlock data;
     Physics phys;
 
-    void ReinitInvDt(DataBlock & );
+    
 };
 
 #endif

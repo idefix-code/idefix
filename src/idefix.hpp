@@ -60,6 +60,7 @@ using Layout = Kokkos::LayoutRight;
 
 #include "real_types.h"
 #include "definitions.hpp"
+#include "error.hpp"
 #include "macros.hpp"
 #include "mod_defs.hpp"
 #include "loop.hpp"

@@ -31,6 +31,12 @@ int main( int argc, char* argv[] )
 
     Input input = Input();
 
+    Input test=Input("idefix.ini");
+    test.PrintParameters();
+    std::string hello = test.GetString("Time", "CF", 0);
+    std::cout << "Test :" << hello << std::endl;
+
+    exit(0);
     // Allocate the grid on device
     Grid grid(input);
 

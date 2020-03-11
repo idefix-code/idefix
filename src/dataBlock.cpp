@@ -103,6 +103,8 @@ DataBlock::DataBlock(const DataBlock &data) {
     Vc=data.Vc;
     V0=data.V0;
     Uc=data.Uc;
+    InvDtHyp=data.InvDtHyp;
+    InvDtPar=data.InvDtPar;
 
     Kokkos::Profiling::popRegion();
 }

@@ -57,8 +57,41 @@ void GridHost::MakeGrid(Input &input) {
                 msg << "Will assume uniform grid.";
                 IDEFIX_WARNING(msg);
             }
-            
-            std::cout << "\t Direction X" << (dir+1) << ": " << xstart[dir] << "...." << np_int[dir] << "...." << xend[dir] << std::endl;
+            std::string lboundString, rboundString;
+            switch(lbound[dir]) {
+                case outflow:
+                    lboundString="outlow";
+                    break;
+                case periodic:
+                    lboundString="periodic";
+                    break;
+                case internal:
+                    lboundString="internal";
+                    break;
+                case userdef:
+                    lboundString="userdef";
+                    break;
+                default:
+                    lboundString="unknown";
+            }
+            switch(rbound[dir]) {
+                case outflow:
+                    rboundString="outlow";
+                    break;
+                case periodic:
+                    rboundString="periodic";
+                    break;
+                case internal:
+                    rboundString="internal";
+                    break;
+                case userdef:
+                    rboundString="userdef";
+                    break;
+                default:
+                    rboundString="unknown";
+            }
+
+            std::cout << "\t Direction X" << (dir+1) << ": " << lboundString << "\t" << xstart[dir] << "...." << np_int[dir] << "...." << xend[dir] << "\t" << rboundString << std::endl;
         }
 
     }

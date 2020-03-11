@@ -39,8 +39,30 @@ Grid::Grid(Input &input) {
         np_int[dir] = npoints[dir];
 
         // Boundary conditions are yet to be defined
-        lbound[dir] = 0; 
-        rbound[dir] = 0;
+        
+        std::string label = std::string("X")+std::to_string(dir+1)+std::string("-beg");
+        std::string boundary = input.GetString("Boundary",label,0);
+        if(boundary.compare("outflow") == 0) lbound[dir] = outflow;
+        else if(boundary.compare("periodic") == 0) lbound[dir] = periodic;
+        else if(boundary.compare("internal") == 0) lbound[dir] = internal;
+        else if(boundary.compare("userdef") == 0) lbound[dir] = userdef;
+        else {
+            std::stringstream msg;
+            msg << "Unknown boundary type " << boundary;
+            IDEFIX_ERROR(msg);
+        }
+
+        label = std::string("X")+std::to_string(dir+1)+std::string("-end");
+        boundary = input.GetString("Boundary",label,0);
+        if(boundary.compare("outflow") == 0) rbound[dir] = outflow;
+        else if(boundary.compare("periodic") == 0) rbound[dir] = periodic;
+        else if(boundary.compare("internal") == 0) rbound[dir] = internal;
+        else if(boundary.compare("userdef") == 0) rbound[dir] = userdef;
+        else {
+            std::stringstream msg;
+            msg << "Unknown boundary type " << boundary;
+            IDEFIX_ERROR(msg);
+        }
 
     }
 

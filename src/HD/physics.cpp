@@ -345,56 +345,88 @@ void Physics::SetBoundary(DataBlock &data) {
     Kokkos::Profiling::pushRegion("Physics::SetBoundary");
 
     IdefixArray4D<real> Vc = data.Vc;
+    int ibeg,iend,jbeg,jend,kbeg,kend;
+    int ioffset,joffset,koffset;
+    int ighost,jghost,kghost;
+
+    ighost = data.nghost[IDIR];
+    jghost = data.nghost[JDIR];
+    kghost = data.nghost[KDIR];
+
     // X1 boundary conditions
-    int offset = data.np_int[IDIR];
-    int nghost = data.nghost[IDIR];
+    
 
-    idefix_for("Boundary_X1",0,NVAR,data.beg[KDIR],data.end[KDIR],data.beg[JDIR],data.end[JDIR],0,nghost,
-        KOKKOS_LAMBDA (int n, int k, int j, int i) {
-            
-            // stress-free BCs
-            //Vc(n,k,j,i)=Vc(n,k,j,nghost);
-            //Vc(n,k,j,i+offset+nghost)=Vc(n,k,j,nghost+offset-1);
+    for(int dir=0 ; dir < DIMENSIONS ; dir++ ) {
 
-            // Periodic BCs
-            
-            Vc(n,k,j,i) = Vc(n,k,j,i+offset);
-            Vc(n,k,j,i+offset+nghost) = Vc(n,k,j,i+nghost); 
-            
+        ioffset = (dir == IDIR) ? data.np_int[IDIR] : 0;
+        joffset = (dir == JDIR) ? data.np_int[JDIR] : 0;
+        koffset = (dir == KDIR) ? data.np_int[KDIR] : 0;
 
-        });
 
-    if(DIMENSIONS>=2) {
-        // X2 boundary conditions
-        int offset = data.np_int[JDIR];
-        int nghost = data.nghost[JDIR];
+        // left boundary
+        ibeg=0;
+        iend= (dir == IDIR) ? ighost : data.np_tot[IDIR];
+        jbeg=0;
+        jend= (dir == JDIR) ? jghost : data.np_tot[JDIR];
+        kbeg=0;
+        kend= (dir == KDIR) ? kghost : data.np_tot[KDIR];
 
-        idefix_for("Boundary_X2",0,NVAR,data.beg[KDIR],data.end[KDIR],0,nghost,0,data.np_tot[IDIR],
-            KOKKOS_LAMBDA (int n, int k, int j, int i) {
+        switch(data.lbound[dir]) {
+            case periodic:
+                idefix_for("BoundaryBegPeriodic",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+                    KOKKOS_LAMBDA (int n, int k, int j, int i) {
                 
-                Vc(n,k,j,i)=Vc(n,k,nghost,i);
-                Vc(n,k,j+offset+nghost,i) = Vc(n,k,nghost+offset-1,i);
+                        Vc(n,k,j,i) = Vc(n,k+koffset,j+joffset,i+ioffset);
+                    });
+                break;
+            case outflow:
+                idefix_for("BoundaryBegOutflow",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+                    KOKKOS_LAMBDA (int n, int k, int j, int i) {
+                        int iref= (dir==IDIR) ? ighost : i;
+                        int jref= (dir==JDIR) ? jghost : j;
+                        int kref= (dir==KDIR) ? kghost : k;
 
-                /*
-                Vc(n,k,j,i) = Vc(n,k,j+offset,i);
-                Vc(n,k,j+offset+nghost,i) = Vc(n,k,j+nghost,i); 
-                */
+                        Vc(n,k,j,i) = Vc(n,kref,jref,iref);
+                    });
+                break;
+            default:
+                std::stringstream msg ("Boundary condition type is not yet implemented");
+                IDEFIX_ERROR(msg);
+        }
 
-            });
-    }
+        // right boundary
+        ibeg= (dir == IDIR) ? ioffset + ighost : 0;
+        iend = data.np_tot[IDIR];
+        jbeg= (dir == JDIR) ? joffset + jghost : 0;
+        jend = data.np_tot[JDIR];
+        kbeg= (dir == KDIR) ? koffset + kghost : 0;
+        kend = data.np_tot[KDIR];
 
-    if(DIMENSIONS==3) {
-        // X3 boundary conditions
-        int offset = data.np_int[KDIR];
-        int nghost = data.nghost[KDIR];
-
-        idefix_for("Boundary_X3",0,NVAR,0,nghost,0,data.np_tot[JDIR],0,data.np_tot[IDIR],
-            KOKKOS_LAMBDA (int n, int k, int j, int i) {
+        switch(data.rbound[dir]) {
+            case periodic:
+                idefix_for("BoundaryEndPeriodic",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+                    KOKKOS_LAMBDA (int n, int k, int j, int i) {
                 
-                Vc(n,k,j,i) = Vc(n,k+offset,j,i);
-                Vc(n,k+offset+nghost,j,i) = Vc(n,k+nghost,j,i); 
+                        Vc(n,k,j,i) = Vc(n,k-koffset,j-joffset,i-ioffset);
+                    });
+                break;
+            case outflow:
+                idefix_for("BoundaryEndOutflow",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+                    KOKKOS_LAMBDA (int n, int k, int j, int i) {
+                        int iref= (dir==IDIR) ? ighost + ioffset - 1 : i;
+                        int jref= (dir==JDIR) ? jghost + joffset - 1 : j;
+                        int kref= (dir==KDIR) ? kghost + koffset - 1 : k;
 
-            });
+                        Vc(n,k,j,i) = Vc(n,kref,jref,iref);
+                    });
+                break;
+            default:
+                std::stringstream msg("Boundary condition type is not yet implemented");
+                IDEFIX_ERROR(msg);
+
+        }
+
+
     }
 
     Kokkos::Profiling::popRegion();

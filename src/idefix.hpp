@@ -58,6 +58,10 @@ using Layout = Kokkos::LayoutRight;
 #define NVAR    (NFLX)
 
 
+// Types of boundary which can be treated
+enum BoundaryType { internal, periodic, outflow, userdef};
+
+
 #include "real_types.h"
 #include "definitions.hpp"
 #include "error.hpp"

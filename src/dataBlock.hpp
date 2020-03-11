@@ -2,6 +2,7 @@
 #define DATABLOCK_HPP
 #include "idefix.hpp"
 
+#define     BOUNDARY_
 class DataBlock {
 public:
     // Local grid information
@@ -32,8 +33,8 @@ public:
     int np_int[3];                  // internal number of grid points
 
     int nghost[3];                  // number of ghost cells
-    int lbound[3];                  // Boundary condition to the left
-    int rbound[3];                  // Boundary condition to the right
+    BoundaryType lbound[3];                  // Boundary condition to the left
+    BoundaryType rbound[3];                  // Boundary condition to the right
 
     int beg[3];                     // Begining of internal indices
     int end[3];                     // End of internal indices
@@ -52,6 +53,8 @@ public:
 
 
     DataBlock();
+
+
 };
 
 

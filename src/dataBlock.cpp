@@ -18,8 +18,8 @@ void DataBlock::InitFromGrid(Grid &grid) {
         np_int[dir] = grid.np_int[dir];
 
         // Boundary conditions are yet to be defined
-        lbound[dir] = 0; 
-        rbound[dir] = 0;
+        lbound[dir] = grid.lbound[dir]; 
+        rbound[dir] = grid.rbound[dir];
 
         beg[dir] = grid.nghost[dir];
         end[dir] = grid.nghost[dir]+np_int[dir];

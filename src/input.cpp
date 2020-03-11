@@ -5,43 +5,9 @@
 
 Input::Input() {
     std::cout << "Creating Input\n";
-    const int NX = 4096;
-    const int NY = 1024;
-    const int NZ = 1024;
-
     
-    // Default constructor
-    npoints[IDIR] = NX;
-    npoints[JDIR] = 1;
-    npoints[KDIR] = 1;
 
-    #if DIMENSIONS >=2
-    npoints[JDIR] = NY;
-    #if DIMENSIONS == 3
-    npoints[KDIR] = NZ;
-    #endif
-    #endif
-
-    xstart[IDIR] = 0.0;
-    xstart[JDIR] = 0.0;
-    xstart[KDIR] = 0.0;
-
-    xend[IDIR] = 4.0;
-    xend[JDIR] = 1.0;
-    xend[KDIR] = 1.0;
-
-    nghost[IDIR] = 2;
-    nghost[JDIR] = 0;
-    nghost[KDIR] = 0;
-    
-    #if DIMENSIONS >=2
-    nghost[JDIR] = 2;
-    #if DIMENSIONS == 3
-    nghost[KDIR] = 2;
-    #endif
-    #endif
-
-
+    /*
     // Number of integrator stages
     nstages=2;
 
@@ -53,8 +19,9 @@ Input::Input() {
 
     // Periodicty of outputs
     tperiodVTK=0.1;
+    */
 
-    PrintLogo();
+
 }
 
 // Create input from file filename
@@ -162,6 +129,78 @@ std::string Input::GetString(std::string blockName, std::string paramName, int n
             if(num<param->second.size()) {
                 // Vector is long enough
                 value=param->second[num];
+            }
+            else {
+                // Vector is not long enough
+                msg << "Index " << num << " cannot be found in block:parameter" << blockName << ":" << paramName;
+                IDEFIX_ERROR(msg);
+            }
+        }
+        else {
+            msg << "Parameter " << paramName << " cannot be found in block [" << blockName <<"]" ;
+            IDEFIX_ERROR(msg);
+        }
+    }
+    else {
+        msg << "BlockName " << blockName << " cannot be found";
+        IDEFIX_ERROR(msg);
+    }
+    return(value);
+}
+
+// Get a real number in a block, parameter, position of the file
+real Input::GetReal(std::string blockName, std::string paramName, int num) {
+    std::stringstream msg;
+
+    real value;
+
+    std::map<std::string, std::map<std::string, std::vector<std::string>>>::iterator block = inputParameters.find(blockName);
+    if(block != inputParameters.end()) {
+        // Block exists
+        std::map<std::string, std::vector<std::string>>::iterator param = block->second.find(paramName);
+        if(param != block->second.end()) {
+            // Parameter exist
+            if(num<param->second.size()) {
+                // Vector is long enough
+                #ifdef USE_DOUBLE
+                value = std::stod(param->second[num], NULL);
+                #else
+                value = std::stof(param->second[num], NULL);
+                #endif
+            }
+            else {
+                // Vector is not long enough
+                msg << "Index " << num << " cannot be found in block:parameter" << blockName << ":" << paramName;
+                IDEFIX_ERROR(msg);
+            }
+        }
+        else {
+            msg << "Parameter " << paramName << " cannot be found in block [" << blockName <<"]" ;
+            IDEFIX_ERROR(msg);
+        }
+    }
+    else {
+        msg << "BlockName " << blockName << " cannot be found";
+        IDEFIX_ERROR(msg);
+    }
+    return(value);
+}
+
+// Get an integer number in a block, parameter, position of the file
+int Input::GetInt(std::string blockName, std::string paramName, int num) {
+    std::stringstream msg;
+
+    int value;
+
+    std::map<std::string, std::map<std::string, std::vector<std::string>>>::iterator block = inputParameters.find(blockName);
+    if(block != inputParameters.end()) {
+        // Block exists
+        std::map<std::string, std::vector<std::string>>::iterator param = block->second.find(paramName);
+        if(param != block->second.end()) {
+            // Parameter exist
+            if(num<param->second.size()) {
+                // Vector is long enough
+                value = std::stoi(param->second[num], NULL);
             }
             else {
                 // Vector is not long enough

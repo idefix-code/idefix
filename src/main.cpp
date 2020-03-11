@@ -29,14 +29,10 @@ int main( int argc, char* argv[] )
 
     
 
-    Input input = Input();
+    Input input = Input("idefix.ini");
+    input.PrintLogo();
+    input.PrintParameters();
 
-    Input test=Input("idefix.ini");
-    test.PrintParameters();
-    std::string hello = test.GetString("Time", "CF", 0);
-    std::cout << "Test :" << hello << std::endl;
-
-    exit(0);
     // Allocate the grid on device
     Grid grid(input);
 
@@ -71,7 +67,9 @@ int main( int argc, char* argv[] )
 
     Kokkos::Timer timer;
 
-    while(Tint.getT() < input.tfinal) {
+    real tstop=input.GetReal("TimeIntegrator","tstop",0);
+
+    while(Tint.getT() < tstop) {
       Tint.Cycle(data);
       output.Write(data, Tint.getT());
     }

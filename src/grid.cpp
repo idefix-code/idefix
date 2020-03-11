@@ -8,14 +8,35 @@ Grid::Grid() {
 
 Grid::Grid(Input &input) {
     Kokkos::Profiling::pushRegion("Grid::Grid(Input)");
+    int npoints[3];
 
-    std::cout << "Building grid \n";
-    // Compute the number of grid points in each direction
+
+    std::cout << "Building Grid... " << std::endl;
+    
+    // Get grid size from input file, block [Grid]
+    for(int dir = 0 ; dir < 3 ; dir++) {
+        npoints[dir] = 1;
+        nghost[dir] = 0;
+        std::string label = std::string("X")+std::to_string(dir+1)+std::string("-grid");
+        int numPatch = input.GetInt("Grid",label,0);
+        if(numPatch>1) {
+            std::stringstream msg;
+            msg << "While creating Grid: this version of idefix doesn't handle more than one grid patch in each direction" << std::endl;
+            msg << "We will build a grid based only on the first patch.";
+            IDEFIX_WARNING(msg); 
+        }
+
+        if(dir<DIMENSIONS) {
+            npoints[dir] = input.GetInt("Grid",label,2);
+            nghost[dir] = 2;
+        }
+
+    }
+
 
     for(int dir = 0 ; dir < 3 ; dir++) {
-        nghost[dir] = input.nghost[dir];
-        np_tot[dir] = input.npoints[dir] + 2*nghost[dir];
-        np_int[dir] = input.npoints[dir];
+        np_tot[dir] = npoints[dir] + 2*nghost[dir];
+        np_int[dir] = npoints[dir];
 
         // Boundary conditions are yet to be defined
         lbound[dir] = 0; 

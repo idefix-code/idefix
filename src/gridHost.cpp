@@ -35,14 +35,41 @@ GridHost::GridHost(Grid &grid) {
 void GridHost::MakeGrid(Input &input) {
 
     Kokkos::Profiling::pushRegion("GridHost::MakeGrid");
+    real xstart[3];
+    real xend[3];
     // Create the grid
+
+    // Get grid parameters from input file, block [Grid]
+    std::cout << "GridHost::MakeGrid" << std::endl;
+    for(int dir = 0 ; dir < 3 ; dir++) {
+        std::string label = std::string("X")+std::to_string(dir+1)+std::string("-grid");
+        int numPatch = input.GetInt("Grid",label,0);
+
+        xstart[dir] = input.GetReal("Grid",label,1);
+        xend[dir] = input.GetReal("Grid",label,4);
+
+        if(dir<DIMENSIONS) {
+
+            std::string gridType = input.GetString("Grid",label,3);
+            if(gridType.compare("u")) {
+                std::stringstream msg;
+                msg << "While creating Grid: this version of idefix doesn't handle non-uniform grid." << std::endl;
+                msg << "Will assume uniform grid.";
+                IDEFIX_WARNING(msg);
+            }
+            
+            std::cout << "\t Direction X" << (dir+1) << ": " << xstart[dir] << "...." << np_int[dir] << "...." << xend[dir] << std::endl;
+        }
+
+    }
+
 
     for(int dir = 0 ; dir < 3 ; dir++) {
         for(int i = 0 ; i < np_tot[dir] ; i++) {
-            dx[dir](i) = (input.xend[dir]-input.xstart[dir])/(np_int[dir]+1);
-            x[dir](i)=input.xstart[dir] + (i-nghost[dir]+HALF_F)*dx[dir](i);
-            xl[dir](i)=input.xstart[dir] + (i-nghost[dir])*dx[dir](i);
-            xr[dir](i)=input.xstart[dir] + (i-nghost[dir]+1)*dx[dir](i);
+            dx[dir](i) = (xend[dir]-xstart[dir])/(np_int[dir]+1);
+            x[dir](i)=xstart[dir] + (i-nghost[dir]+HALF_F)*dx[dir](i);
+            xl[dir](i)=xstart[dir] + (i-nghost[dir])*dx[dir](i);
+            xr[dir](i)=xstart[dir] + (i-nghost[dir]+1)*dx[dir](i);
         }
     }
 

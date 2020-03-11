@@ -7,12 +7,15 @@ TimeIntegrator::TimeIntegrator(Input & input, Physics &physics) {
 
     this->phys=physics;
 
-    nstages=input.nstages;
+
+    nstages=input.GetInt("TimeIntegrator","nstages",0);
+
     
-    dt=input.firstDt;
+    dt=input.GetReal("TimeIntegrator","first_dt",0);
+
     t=0.0;
     ncycles=0;
-    cfl=0.2;
+    cfl=input.GetReal("TimeIntegrator","CFL",0);
 
     if(nstages==2) {
         wc[0] = 0.5;

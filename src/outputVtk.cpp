@@ -39,7 +39,7 @@
 OutputVTK::OutputVTK(Input &input, Grid &gridin, real t)
 {
     // Init the output period
-    this->tperiod=input.tperiodVTK;
+    this->tperiod=input.GetReal("Output","vtk",0);
     this->tnext = t;
 
     // Initialize the output structure

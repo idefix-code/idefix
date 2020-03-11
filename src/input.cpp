@@ -52,7 +52,6 @@ Input::Input(std::string filename) {
 
     while(std::getline(file, lineWithComments)) 
     {
-        std::cout << "Interpreting line '"<<lineWithComments <<"'"<<std::endl;
         line = lineWithComments.substr(0, lineWithComments.find("#",0));
         if (line.empty()) continue;         // skip blank line
         firstChar = line.find_first_not_of(" ");
@@ -69,7 +68,6 @@ Input::Input(std::string filename) {
             blockName.assign(line, firstChar, lastChar-1);
             haveBlock = true;
 
-            std::cout << "Block " << blockName << std::endl;
             continue;   // Go to next line
         }   // New block
 
@@ -78,17 +76,14 @@ Input::Input(std::string filename) {
             msg << "Input file '" << filename << "' must specify a block name before the first parameter";
             IDEFIX_ERROR(msg);
         }
-        std::cout << "Parameter:" << line << std::endl;
 
         std::stringstream streamline(line);
         // Store the name of the parameter
         streamline >> paramName;
         
         // Store the parameters in parameter block
-        std::cout << "Pushing input[" << blockName << "][" << paramName << "]:" << std::endl;
         while(streamline >> paramValue) {
             inputParameters[blockName][paramName].push_back(paramValue);
-            std::cout << "\t\t [" << inputParameters[blockName][paramName].size() << "]=" << paramValue << std::endl;
         }
 
     }
@@ -98,6 +93,9 @@ Input::Input(std::string filename) {
 // This routine prints the parameters stored in the inputParameters structure
 void Input::PrintParameters() {
     std::string blockName, paramName, paramValue;
+    std::cout << "-----------------------------------------------------------------------------" << std::endl;
+    std::cout << "Input Parameters:" << std::endl;
+    std::cout << "-----------------------------------------------------------------------------" << std::endl;
     for(std::map<std::string, std::map<std::string, std::vector<std::string>>>::iterator block = inputParameters.begin(); block != inputParameters.end(); block++ ) {
         blockName=block->first;
         std::cout << "[" << blockName << "]" << std::endl;
@@ -111,6 +109,8 @@ void Input::PrintParameters() {
             std::cout << std::endl;
         }
     }
+    std::cout << "-----------------------------------------------------------------------------" << std::endl;
+    std::cout << "-----------------------------------------------------------------------------" << std::endl;
 
 }
 

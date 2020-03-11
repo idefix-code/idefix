@@ -17,17 +17,7 @@ public:
     std::string GetString(std::string, std::string, int);
     real GetReal(std::string, std::string, int);
     int GetInt(std::string, std::string, int);
-    /* 
-    
-    int npoints[3];
-    real xstart[3];
-    real xend[3];
-    int nghost[3];
-    int nstages;
-    real firstDt;
-    real tperiodVTK;
-    real tfinal;
-    */
+
     Input();
     void PrintLogo();
 private:

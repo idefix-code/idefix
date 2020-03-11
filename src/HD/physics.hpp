@@ -5,21 +5,20 @@
 class Physics {
 public:
     Physics();
-    Physics(Input &);
+    Physics(Input &, Setup &);
     void ConvertConsToPrim(DataBlock &);
     void ConvertPrimToCons(DataBlock &);
     void ExtrapolatePrimVar(DataBlock &, int);
     void CalcRiemannFlux(DataBlock &, int);
     void CalcRightHandSide(DataBlock &, int, real );
-    void InitFlow(DataBlock &);
-    void SetBoundary(DataBlock &);
+    void SetBoundary(DataBlock &, real);
 
 private:
 
     real C2Iso;
     real gamma;
 
-    real randm(void);
+    Setup mySetup;
 
 };
 

@@ -12,7 +12,7 @@ public:
 
 
     // Constructor from input and given datablock
-    TimeIntegrator(Input &, Physics &);
+    TimeIntegrator(Input &, Physics &, Setup &);
 
     void Stage(DataBlock &);
     // Do one integration cycle
@@ -32,6 +32,7 @@ private:
     
     DataBlock data;
     Physics phys;
+    Setup mySetup;
 
     
 };

@@ -61,6 +61,8 @@ void TimeIntegrator::Stage(DataBlock &data) {
 }
 
 void TimeIntegrator::ReinitInvDt(DataBlock & data) {
+    Kokkos::Profiling::pushRegion("TimeIntegrator::ReinitInvDt");
+
     IdefixArray3D<real> InvDtHypLoc=data.InvDtHyp;
     IdefixArray3D<real> InvDtParLoc=data.InvDtPar;
 
@@ -69,6 +71,8 @@ void TimeIntegrator::ReinitInvDt(DataBlock & data) {
                     InvDtHypLoc(k,j,i) = ZERO_F;
                     InvDtParLoc(k,j,i) = ZERO_F;
             });
+
+    Kokkos::Profiling::popRegion();
 }
 
 // Compute one full cycle of the time Integrator

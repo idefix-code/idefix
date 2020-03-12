@@ -2,11 +2,11 @@
 #include "idefix.hpp"
 #include "timeIntegrator.hpp"
 
-TimeIntegrator::TimeIntegrator(Input & input, Physics &physics) {
+TimeIntegrator::TimeIntegrator(Input & input, Physics &physics, Setup &setup) {
     Kokkos::Profiling::pushRegion("TimeIntegrator::TimeIntegrator(Input...)");
 
     this->phys=physics;
-
+    this->mySetup=setup;
 
     nstages=input.GetInt("TimeIntegrator","nstages",0);
 
@@ -55,7 +55,7 @@ void TimeIntegrator::Stage(DataBlock &data) {
     phys.ConvertConsToPrim(data);
 
     // Apply Boundary conditions
-    phys.SetBoundary(data);
+    phys.SetBoundary(data,t);
 
     Kokkos::Profiling::popRegion();
 }

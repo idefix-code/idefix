@@ -66,11 +66,13 @@ KOKKOS_INLINE_FUNCTION void K_PrimToCons(real Uc[], real Vc[], real gamma_m1) {
 
 
 
-Physics::Physics(Input &input) {
+Physics::Physics(Input &input, Setup &setup) {
     Kokkos::Profiling::pushRegion("Physics::Physics(DataBock)");
 
     this->gamma = 5.0/3.0;
     this->C2Iso = 1.0;
+
+    this->mySetup=setup;
 
     Kokkos::Profiling::popRegion();
 }
@@ -109,42 +111,6 @@ void Physics::ConvertConsToPrim(DataBlock & data) {
 
 }
 
-void Physics::InitFlow(DataBlock & data) {
-    // Create a host copy
-    DataBlockHost d(data);
-
-    for(int dir=0; dir<3; dir++) {
-        std::cout << "np["<<dir<<"]="<< data.np_tot[dir]<<std::endl;
-    }
-    for(int k = 0; k < d.np_tot[KDIR] ; k++) {
-        for(int j = 0; j < d.np_tot[JDIR] ; j++) {
-            for(int i = 0; i < d.np_tot[IDIR] ; i++) {
-                
-                /*
-                // SHOCK TUBE
-                d.Vc(RHO,k,j,i) = (d.x[IDIR](i)>HALF_F) ? 0.125 : 1.0;
-                d.Vc(VX1,k,j,i) = ZERO_F;
-#if HAVE_ENERGY 
-                d.Vc(PRS,k,j,i) = (d.x[IDIR](i)>HALF_F) ? 0.1 : 1.0;
-#endif
-                */
-                // KHI
-                d.Vc(RHO,k,j,i) = ONE_F;
-                EXPAND(\
-                d.Vc(VX1,k,j,i) = (d.x[JDIR](j) > HALF_F) ? ONE_F : -ONE_F; ,\
-                d.Vc(VX2,k,j,i) = randm()-HALF_F; ,\
-                d.Vc(VX3,k,j,i) = ZERO_F; )
-#if HAVE_ENERGY 
-                d.Vc(PRS,k,j,i) = ONE_F;
-#endif
-
-            }
-        }
-    }
-    
-    d.SyncToDevice();
-
-}
 
 // Convert Primitive to conservative variables
 void Physics::ConvertPrimToCons(DataBlock & data) {
@@ -340,7 +306,7 @@ void Physics::CalcRightHandSide(DataBlock &data, int dir, real dt) {
 
 
 // Set Boundary conditions
-void Physics::SetBoundary(DataBlock &data) {
+void Physics::SetBoundary(DataBlock &data, real t) {
 
     Kokkos::Profiling::pushRegion("Physics::SetBoundary");
 
@@ -433,22 +399,4 @@ void Physics::SetBoundary(DataBlock &data) {
 
 }
 
-/*********************************************/
-/**
-Customized random number generator
-Allow one to have consistant random numbers
-generators on different architectures.
-**/
-/*********************************************/
-real Physics::randm(void) {
-	const int a	=	16807;
-	const int m =	2147483647;
-	static int in0 = 13763;
-	int q;
 
-	/* find random number  */
-	q= (int) fmod((double) a * in0, m);
-	in0=q;
-
-	return((real) ((double) q/(double)m));
-}

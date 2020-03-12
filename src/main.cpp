@@ -52,11 +52,12 @@ int main( int argc, char* argv[] )
     dataHost.SyncFromDevice();
 
     std::cout << "Init Physics" << std::endl;
-    Physics phys(input);
-    phys.InitFlow(data);
+    Setup mysetup(input,grid,data);
+    Physics phys(input,mysetup);
+    mysetup.InitFlow(data);
 
     std::cout << "Init Time Integrator..." << std::endl;
-    TimeIntegrator Tint(input, phys);
+    TimeIntegrator Tint(input, phys, mysetup);
 
     std::cout << "init Output Routines" << std::endl;
     OutputVTK output = OutputVTK(input, grid, Tint.getT()); 
@@ -70,11 +71,12 @@ int main( int argc, char* argv[] )
     real tstop=input.GetReal("TimeIntegrator","tstop",0);
 
     while(Tint.getT() < tstop) {
+      if(tstop-Tint.getT() < Tint.getDt()) Tint.setDt(tstop-Tint.getT());
       Tint.Cycle(data);
       output.Write(data, Tint.getT());
     }
     double tintegration = (timer.seconds()/(grid.np_int[IDIR]*grid.np_int[JDIR]*grid.np_int[KDIR]*Tint.getNcycles()));
-
+    std::cout << "Reached t=" << Tint.getT() << std::endl;
     std::cout << "Completed in " << timer.seconds() << "seconds. Perfs are " << 1/tintegration << " cell updates/second." << std::endl;
     
 

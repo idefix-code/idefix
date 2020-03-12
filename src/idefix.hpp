@@ -60,6 +60,7 @@ using Layout = Kokkos::LayoutRight;
 
 // Types of boundary which can be treated
 enum BoundaryType { internal, periodic, outflow, userdef};
+enum BoundarySide { left, right};
 
 
 #include "real_types.h"
@@ -75,6 +76,7 @@ enum BoundaryType { internal, periodic, outflow, userdef};
 #include "dataBlock.hpp"
 #include "dataBlockHost.hpp"
 #include "test.hpp"
+#include "setup.hpp"
 #include "HD/physics.hpp"
 #include "timeIntegrator.hpp"
 #include "outputVtk.hpp"

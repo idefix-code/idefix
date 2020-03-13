@@ -46,9 +46,9 @@ include $(KOKKOS_PATH)/Makefile.kokkos
 
 # Create gitversion if Idefix is in a git repo
 ifneq ("$(wildcard $($(IDEFIX_DIR)/.git/HEAD))","")
-GIT_DEPDENCE = $(IDEFIX_DIR)/.git/HEAD $(IDEFIX_DIR)/.git/index
+GIT_DEPENDENCE = $(IDEFIX_DIR)/.git/HEAD $(IDEFIX_DIR)/.git/index
 else
-GIT_DEPDENCE =
+GIT_DEPENDENCE =
 endif
 
 build: $(EXE)

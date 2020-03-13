@@ -45,7 +45,7 @@ LIB =
 include $(KOKKOS_PATH)/Makefile.kokkos
 
 # Create gitversion if Idefix is in a git repo
-ifneq ("$(wildcard $($(IDEFIX_DIR)/.git/HEAD))","")
+ifneq ("$(wildcard $(IDEFIX_DIR)/.git/HEAD))","")
 GIT_DEPENDENCE = $(IDEFIX_DIR)/.git/HEAD $(IDEFIX_DIR)/.git/index
 else
 GIT_DEPENDENCE =
@@ -69,7 +69,7 @@ $(OBJ): $(HEADERS)
 
 # in order to have access to current git version
 $(SRC)/gitversion.h: $(GIT_DEPENDENCE)
-	echo "#define GITVERSION \"$(shell cd $IDEFIX_DIR; git describe --tags --always)\"" > $@
+	echo "#define GITVERSION \"$(shell cd $(IDEFIX_DIR); git describe --tags --always)\"" > $@
 
 #specific dependence of input.o
 input.o: $(SRC)/gitversion.h $(HEADERS) input.cpp

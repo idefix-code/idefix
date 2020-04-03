@@ -5,7 +5,7 @@
  * Local Kokkos Inline function *
  * ******************************/
 
-KOKKOS_INLINE_FUNCTION void K_Flux(real F[], real V[], real U[], real C2Iso, const int dir) {
+KOKKOS_INLINE_FUNCTION void K_Flux(real *KOKKOS_RESTRICT F, const real *KOKKOS_RESTRICT V, const real *KOKKOS_RESTRICT U, real C2Iso, const int dir) {
     int VXn = VX1+dir;
     int MXn = VXn;
 
@@ -26,7 +26,7 @@ KOKKOS_INLINE_FUNCTION void K_Flux(real F[], real V[], real U[], real C2Iso, con
 #endif
 } 
 
-KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[], real gamma_m1) {
+KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real *KOKKOS_RESTRICT Vc, const real *KOKKOS_RESTRICT Uc, real gamma_m1) {
     
 
     Vc[RHO] = Uc[RHO];
@@ -45,7 +45,7 @@ KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[], real gamma_m1) {
 #endif  // Have_energy
 }
 
-KOKKOS_INLINE_FUNCTION void K_PrimToCons(real Uc[], real Vc[], real gamma_m1) {
+KOKKOS_INLINE_FUNCTION void K_PrimToCons(real *KOKKOS_RESTRICT Uc, const real *KOKKOS_RESTRICT Vc, real gamma_m1) {
 
     Uc[RHO] = Vc[RHO];
 

@@ -9,3 +9,9 @@ void ErrorHandler (const int,
 			  std::string , 
 			  const int, 
 			  std::string  );
+
+void ErrorHandler (const int,
+			  std::string, 
+			  std::string , 
+			  const int, 
+			  std::string  );

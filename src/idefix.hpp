@@ -77,7 +77,7 @@ enum BoundarySide { left, right};
 #include "dataBlockHost.hpp"
 #include "test.hpp"
 #include "setup.hpp"
-#include "HD/physics.hpp"
+#include "physics.hpp"
 #include "timeIntegrator.hpp"
 #include "outputVtk.hpp"
 

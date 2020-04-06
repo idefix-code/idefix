@@ -2,6 +2,8 @@
 #define PHYSICS_HPP
 #include "../idefix.hpp"
 
+#define     SMALL_PRESSURE_FIX      (1.0e-5)
+
 class Physics {
 public:
     Physics();

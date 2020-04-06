@@ -63,6 +63,12 @@ KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[], real gamma_m1) {
 
 
     Vc[PRS] = gamma_m1 * (Uc[ENG] - kin - mag);
+    
+    // Check pressure positivity
+    if(Vc[PRS]<= ZERO_F) {
+        Vc[PRS] = SMALL_PRESSURE_FIX;
+        Uc[ENG] = Vc[PRS]/gamma_m1+kin+mag;
+    }
 #endif  // Have_energy
 }
 

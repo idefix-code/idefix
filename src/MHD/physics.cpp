@@ -249,6 +249,11 @@ void Physics::CalcRiemannFlux(DataBlock & data, int dir) {
     IdefixArray1D<real> dx = data.dx[dir];
     IdefixArray3D<real> invDt = data.InvDtHyp;
 
+    // References to required emf components
+    IdefixArray3D<real> Eb;
+    IdefixArray3D<real> Et;
+
+
     real gamma_m1=this->gamma-ONE_F;
     real gamma=this->gamma;
     real C2Iso = this->C2Iso;
@@ -260,7 +265,7 @@ void Physics::CalcRiemannFlux(DataBlock & data, int dir) {
     int BXn, BXt, BXb;
     int MXn, MXt, MXb;
 
-    double st, sb;      // st and sb will be useful only when Hall is included
+    real st, sb;      // st and sb will be useful only when Hall is included
     switch(dir) {
         case(IDIR):
             EXPAND(VXn = MXn = VX1; 
@@ -269,6 +274,9 @@ void Physics::CalcRiemannFlux(DataBlock & data, int dir) {
                    BXt = BX2;        , 
                    VXb = MXb = VX3;
                    BXb = BX3;       )
+
+            Et = data.emf.ezi;
+            Eb = data.emf.eyi;
 
             st = -1.0;
             sb = +1.0;
@@ -280,6 +288,10 @@ void Physics::CalcRiemannFlux(DataBlock & data, int dir) {
                    BXt = BX1;        , 
                    VXb = MXb = VX3;
                    BXb = BX3;       )
+
+            Et = data.emf.ezj;
+            Eb = data.emf.exj;
+
             st = +1.0;
             sb = -1.0;
             break;
@@ -290,6 +302,10 @@ void Physics::CalcRiemannFlux(DataBlock & data, int dir) {
                    BXt = BX1;        , 
                    VXb = MXb = VX2;
                    BXb = BX2;       )
+
+            Et = data.emf.eyk;
+            Eb = data.emf.exk;
+
             st = -1.0;
             sb = +1.0;
             break;
@@ -365,6 +381,12 @@ void Physics::CalcRiemannFlux(DataBlock & data, int dir) {
                 const int ig = ioffset*i + joffset*j + koffset*k;
 
                 invDt(k,j,i) += cmax/dx(ig);
+
+                // 7-- Store the flux in the emf components
+                D_EXPAND(Et(k,j,i) = st*Flux(BXt,k,j,i); ,
+                                                         ,
+                         Eb(k,j,i) = st*Flux(BXb,k,j,i); )
+
             });
 
     Kokkos::Profiling::popRegion();
@@ -503,15 +525,15 @@ real Physics::CheckDivB(DataBlock &data) {
 
     Kokkos::parallel_reduce("CheckDivB",
                                 Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
-                                ({data.beg[KDIR],data.beg[JDIR],data.beg[IDIR]},{data.end[KDIR], data.end[JDIR], data.end[IDIR]}),
+                                ({data.beg[KDIR]+1,data.beg[JDIR]+1,data.beg[IDIR]+1},{data.end[KDIR]+1, data.end[JDIR]+1, data.end[IDIR]+1}),
                                 KOKKOS_LAMBDA (int k, int j, int i, real &divBmax) {
                 real dB1,dB2,dB3;
 
                 dB1=dB2=dB3=ZERO_F;
 
-                D_EXPAND( dB1=(Vc(BX1,k,j,i+1)-Vc(BX1,k,j,i-1))/(TWO_F*dx1(i)); ,
-                          dB2=(Vc(BX2,k,j+1,i)-Vc(BX2,k,j-1,i))/(TWO_F*dx2(j)); ,
-                          dB3=(Vc(BX3,k+1,j,i)-Vc(BX3,k-1,j,i))/(TWO_F*dx3(k));  )
+                D_EXPAND( dB1=(Vs(BX1s,k,j,i+1)-Vs(BX1s,k,j,i))/(dx1(i)); ,
+                          dB2=(Vs(BX2s,k,j+1,i)-Vs(BX2s,k,j,i))/(dx2(j)); ,
+                          dB3=(Vs(BX3s,k+1,j,i)-Vs(BX3s,k,j,i))/(dx3(k));  )
                 
 
                 divBmax=FMAX(FABS(D_EXPAND(dB1, +dB2, +dB3)),divBmax);

@@ -125,8 +125,10 @@ void TimeIntegrator::Cycle(DataBlock & data) {
         }
     }
     
+    #if MHD == YES
     // Check divB
     std::cout << "\t maxdivB=" << phys.CheckDivB(data) << std::endl;
+    #endif
 
     // Update current time
     t=t+dt;

@@ -24,3 +24,8 @@
 #define VX3   MX3
 
 #define NFLX (1 + 2*COMPONENTS + HAVE_ENERGY)
+
+// Face-centered variables
+#define BX1s  0
+#define BX2s  1
+#define BX3s  2

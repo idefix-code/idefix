@@ -225,48 +225,62 @@ void Physics::CalcRiemannFlux(DataBlock & data, int dir) {
                 // Primitive variables
                 real vL[NVAR];
                 real vR[NVAR];
-                real vRL[NVAR];
+                real vRHO, vPRS, vVXn;
 
                 // Conservative variables
-                real uL[NVAR];
-                real uR[NVAR];
+                real u[NVAR];
 
                 // Flux (left and right)
+                real fl[NVAR];
                 real fluxL[NVAR];
-                real fluxR[NVAR];
 
                 // Signal speeds
                 real cRL, cmax;
+                real a2;
 
                 // 1-- Store the primitive variables on the left, right, and averaged states
                 for(int nv = 0 ; nv < NVAR; nv++) {
                     vL[nv] = PrimL(nv,k,j,i);
                     vR[nv] = PrimR(nv,k,j,i);
-                    vRL[nv]=HALF_F*(vL[nv]+vR[nv]);
                 }
-
-                // 2-- Compute the conservative variables
-                K_PrimToCons(uL, vL, gamma_m1);
-                K_PrimToCons(uR, vR, gamma_m1);
-
-                // 3-- Compute the left and right fluxes
-                K_Flux(fluxL, vL, uL, C2Iso, dir);
-                K_Flux(fluxR, vR, uR, C2Iso, dir);
-
-                // 4-- Get the wave speed
+                vRHO = HALF_F*(vL[RHO]+vR[RHO]);
+                vVXn = HALF_F*(vL[VXn]+vR[VXn]);
             #if HAVE_ENERGY
-                cRL = SQRT((gamma_m1+ONE_F)*(vRL[PRS]/vRL[RHO]));
+                vPRS = HALF_F*(vL[PRS]+vR[PRS]);
+            #endif
+                
+                // 2-- Get the wave speed
+            #if HAVE_ENERGY
+                a2 = vPRS / vRHO;
+                cRL = SQRT(a2*(gamma_m1+ONE_F));
             #else
                 cRL = SQRT(C2Iso);
             #endif
-                cmax = FMAX(FABS(vRL[VXn]+cRL),FABS(vRL[VXn]-cRL));
+                cmax = FMAX(FABS(vVXn+cRL),FABS(vVXn-cRL));
 
-                // 5-- Compute the flux from the left and right states
+                // 3-- Compute the conservative variables on the left
+                K_PrimToCons(u, vL, gamma_m1);
+
+                // 4-- Compute the left and right fluxes on the left
+                K_Flux(fl, vL, u, C2Iso, dir);
+
+                // 5-- Compute the flux from the left state
                 for(int nv = 0 ; nv < NVAR; nv++) {
-                    Flux(nv,k,j,i) = HALF_F*(fluxL[nv]+fluxR[nv] - cmax*(uR[nv]-uL[nv]));
+                    fluxL[nv] = HALF_F*(fl[nv] + cmax*u[nv]);
                 }
 
-                //6-- Compute maximum dt for this sweep
+                // 6-- Compute the conservative variables on the right
+                K_PrimToCons(u, vR, gamma_m1);
+
+                // 7-- Compute the right fluxes
+                K_Flux(fl, vR, u, C2Iso, dir);
+
+                // 8-- Compute the flux from the left and right states
+                for(int nv = 0 ; nv < NVAR; nv++) {
+                    Flux(nv,k,j,i) = fluxL[nv] + HALF_F*(fl[nv] - cmax*u[nv]);
+                }
+
+                //9-- Compute maximum dt for this sweep
                 const int ig = ioffset*i + joffset*j + koffset*k;
 
                 invDt(k,j,i) += cmax/dx(ig);

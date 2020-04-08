@@ -217,7 +217,7 @@ void Physics::CalcRiemannFlux(DataBlock & data, int dir) {
     real gamma_m1=this->gamma-ONE_F;
     real C2Iso = this->C2Iso;
 
-    idefix_for("CalcRiemannFlux",data.beg[KDIR],data.end[KDIR]+koffset,data.beg[JDIR],data.end[JDIR]+joffset,data.beg[IDIR],data.end[IDIR]+ioffset,
+    idefix_for("CalcRiemannFlux_TVDLF",data.beg[KDIR],data.end[KDIR]+koffset,data.beg[JDIR],data.end[JDIR]+joffset,data.beg[IDIR],data.end[IDIR]+ioffset,
                         KOKKOS_LAMBDA (int k, int j, int i) 
             {
                 int VXn = VX1+dir;
@@ -227,12 +227,11 @@ void Physics::CalcRiemannFlux(DataBlock & data, int dir) {
                 real vR[NVAR];
                 real vRHO, vPRS, vVXn;
 
-                // Conservative variables
+                // temporary array to compute conservative variables and fluxes
                 real u[NVAR];
 
-                // Flux (left and right)
+                // temporary flux array
                 real fl[NVAR];
-                real fluxL[NVAR];
 
                 // Signal speeds
                 real cRL, cmax;
@@ -260,24 +259,32 @@ void Physics::CalcRiemannFlux(DataBlock & data, int dir) {
 
                 // 3-- Compute the conservative variables on the left
                 K_PrimToCons(u, vL, gamma_m1);
+                // store result in flux array
+                for(int nv = 0 ; nv < NVAR; nv++) {
+                    fl[nv] = HALF_F*cmax*u[nv];
+                }
 
-                // 4-- Compute the left and right fluxes on the left
-                K_Flux(fl, vL, u, C2Iso, dir);
+                // 4-- Compute the left fluxes
+                K_Flux(u, vL, u, C2Iso, dir);
 
                 // 5-- Compute the flux from the left state
                 for(int nv = 0 ; nv < NVAR; nv++) {
-                    fluxL[nv] = HALF_F*(fl[nv] + cmax*u[nv]);
+                    fl[nv] += HALF_F*u[nv];
                 }
 
                 // 6-- Compute the conservative variables on the right
                 K_PrimToCons(u, vR, gamma_m1);
+                // store uL
+                for(int nv = 0 ; nv < NVAR; nv++) {
+                    fl[nv] -= HALF_F*cmax*u[nv];
+                }
 
                 // 7-- Compute the right fluxes
-                K_Flux(fl, vR, u, C2Iso, dir);
+                K_Flux(u, vR, u, C2Iso, dir);
 
                 // 8-- Compute the flux from the left and right states
                 for(int nv = 0 ; nv < NVAR; nv++) {
-                    Flux(nv,k,j,i) = fluxL[nv] + HALF_F*(fl[nv] - cmax*u[nv]);
+                    Flux(nv,k,j,i) = fl[nv] + HALF_F*u[nv];
                 }
 
                 //9-- Compute maximum dt for this sweep

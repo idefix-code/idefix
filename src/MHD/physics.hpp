@@ -15,6 +15,7 @@ public:
     void CalcRightHandSide(DataBlock &, int, real );
     void SetBoundary(DataBlock &, real);
     void SetGamma(real);
+    real CheckDivB(DataBlock &);
 
 private:
 

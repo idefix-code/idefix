@@ -493,6 +493,34 @@ void Physics::SetBoundary(DataBlock &data, real t) {
 
 }
 
+real Physics::CheckDivB(DataBlock &data) {
+
+    real divB;
+    IdefixArray4D<real> Vc = data.Vc;
+    IdefixArray1D<real> dx1 = data.dx[IDIR];
+    IdefixArray1D<real> dx2 = data.dx[JDIR];
+    IdefixArray1D<real> dx3 = data.dx[KDIR];
+
+    Kokkos::parallel_reduce("CheckDivB",
+                                Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
+                                ({data.beg[KDIR],data.beg[JDIR],data.beg[IDIR]},{data.end[KDIR], data.end[JDIR], data.end[IDIR]}),
+                                KOKKOS_LAMBDA (int k, int j, int i, real &divBmax) {
+                real dB1,dB2,dB3;
+
+                dB1=dB2=dB3=ZERO_F;
+
+                D_EXPAND( dB1=(Vc(BX1,k,j,i+1)-Vc(BX1,k,j,i-1))/(TWO_F*dx1(i)); ,
+                          dB2=(Vc(BX2,k,j+1,i)-Vc(BX2,k,j-1,i))/(TWO_F*dx2(j)); ,
+                          dB3=(Vc(BX3,k+1,j,i)-Vc(BX3,k-1,j,i))/(TWO_F*dx3(k));  )
+                
+
+                divBmax=FMAX(FABS(D_EXPAND(dB1, +dB2, +dB3)),divBmax);
+
+            }, Kokkos::Max<real>(divB) );
+
+    return(divB);
+
+}
 
 void Physics::SetGamma(real newGamma) {
     this->gamma=newGamma;

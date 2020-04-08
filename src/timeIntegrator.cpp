@@ -125,6 +125,9 @@ void TimeIntegrator::Cycle(DataBlock & data) {
         }
     }
     
+    // Check divB
+    std::cout << "\t maxdivB=" << phys.CheckDivB(data) << std::endl;
+
     // Update current time
     t=t+dt;
 

@@ -42,6 +42,20 @@ void DataBlock::InitFromGrid(Grid &grid) {
 
     dV = IdefixArray3D<real>("DataBlock_dV",np_tot[KDIR],np_tot[JDIR],np_tot[IDIR]);
     Vc = IdefixArray4D<real>("DataBlock_Vc", NVAR, np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
+#if MHD == YES
+    int nBx1, nBx2, nBx3;
+
+    nBx1 = np_tot[IDIR]+1;
+    nBx2 = np_tot[JDIR];
+    nBx3 = np_tot[KDIR];
+
+    if(DIMENSIONS>=2) nBx2++;
+    if(DIMENSIONS==3) nBx3++;
+
+    Vs = IdefixArray4D<real>("DataBlock_Vs", DIMENSIONS, nBx3, nBx2, nBx1);
+
+    this->emf = ElectroMotiveForce(this);
+#endif
     Uc = IdefixArray4D<real>("DataBlock_Uc", NVAR, np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
     V0 = IdefixArray4D<real>("DataBlock_V0", NVAR, np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
     InvDtHyp = IdefixArray3D<real>("DataBlock_InvDtHyp", np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);

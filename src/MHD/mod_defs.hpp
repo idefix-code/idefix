@@ -5,6 +5,8 @@
     last element (255) of the array stored by startup.c.  
    ********************************************************* */
 
+#define  MHD    YES
+
 #define  RHO 0
 #define  MX1 1
 #define  MX2 (COMPONENTS >= 2 ? 2: 255)

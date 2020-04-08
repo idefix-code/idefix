@@ -3,6 +3,12 @@
 #include "idefix.hpp"
 
 #define     BOUNDARY_
+
+#if MHD == YES
+// Forward declaration of electromotive force
+class ElectroMotiveForce;
+#endif
+
 class DataBlock {
 public:
     // Local grid information
@@ -15,6 +21,7 @@ public:
     IdefixArray3D<real> A[3];      // cell right interface area
 
     IdefixArray4D<real> Vc;     // Main cell-centered primitive variables index
+    IdefixArray4D<real> Vs;     // Main face-centered varariables
     IdefixArray4D<real> Uc;     // Main cell-centered conservative variables
 
     // Required by time integrator
@@ -42,6 +49,9 @@ public:
     int gbeg[3];                    // Begining of local block in the grid (internal)
     int gend[3];                    // End of local block in the grid (internal)
 
+#if MHD == YES
+    ElectroMotiveForce emf;
+#endif
     // init from a Grid object
     void InitFromGrid(Grid &);
 
@@ -57,6 +67,8 @@ public:
 
 };
 
-
+#if MHD == YES
+#include "electromotiveforce.hpp"
+#endif
 
 #endif

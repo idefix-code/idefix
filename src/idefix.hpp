@@ -38,6 +38,9 @@ using Layout = Kokkos::LayoutRight;
 #define     JDIR    1
 #define     KDIR    2
 
+#define     YES     255
+#define     NO      0
+
 #if DIMENSIONS == 1
     #define     IOFFSET     1
     #define     JOFFSET     0
@@ -73,6 +76,9 @@ enum BoundarySide { left, right};
 #include "input.hpp"
 #include "grid.hpp"
 #include "gridHost.hpp"
+#if MHD == YES
+#include "electromotiveforce.hpp"
+#endif
 #include "dataBlock.hpp"
 #include "dataBlockHost.hpp"
 #include "test.hpp"

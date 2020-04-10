@@ -221,11 +221,10 @@ void Physics::CalcRiemannFlux(DataBlock & data, int dir) {
                         KOKKOS_LAMBDA (int k, int j, int i) 
             {
                 int VXn = VX1+dir;
-                int MXn = VXn;
                 // Primitive variables
                 real vL[NVAR];
                 real vR[NVAR];
-                real vRHO, vPRS, vVXn;
+                real vVXn;
 
                 // temporary array to compute conservative variables and fluxes
                 real u[NVAR];
@@ -235,22 +234,21 @@ void Physics::CalcRiemannFlux(DataBlock & data, int dir) {
 
                 // Signal speeds
                 real cRL, cmax;
-                real a2;
 
                 // 1-- Store the primitive variables on the left, right, and averaged states
                 for(int nv = 0 ; nv < NVAR; nv++) {
                     vL[nv] = PrimL(nv,k,j,i);
                     vR[nv] = PrimR(nv,k,j,i);
                 }
-                vRHO = HALF_F*(vL[RHO]+vR[RHO]);
                 vVXn = HALF_F*(vL[VXn]+vR[VXn]);
             #if HAVE_ENERGY
-                vPRS = HALF_F*(vL[PRS]+vR[PRS]);
+                real vRHO = HALF_F*(vL[RHO]+vR[RHO]);
+                real vPRS = HALF_F*(vL[PRS]+vR[PRS]);
             #endif
                 
                 // 2-- Get the wave speed
             #if HAVE_ENERGY
-                a2 = vPRS / vRHO;
+                real a2 = vPRS / vRHO;
                 cRL = SQRT(a2*(gamma_m1+ONE_F));
             #else
                 cRL = SQRT(C2Iso);

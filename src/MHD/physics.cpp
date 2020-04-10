@@ -187,6 +187,7 @@ void Physics::ConvertPrimToCons(DataBlock & data) {
 void Physics::ExtrapolatePrimVar(DataBlock &data, int dir) {
     int ioffset,joffset,koffset;
     int iextend, jextend,kextend;
+    int BXn;
 
     Kokkos::Profiling::pushRegion("Physics::ExtrapolatePrimVar");
     // Offset is in the direction of integration
@@ -198,24 +199,28 @@ void Physics::ExtrapolatePrimVar(DataBlock &data, int dir) {
     // Determine the offset along which we do the extrapolation, as well as the perp extension
     if(dir==IDIR) {
         ioffset=1;
+        BXn = BX1; 
         D_EXPAND(           ,
                    jextend = 1; ,
                    kextend = 1; )
     }
     if(dir==JDIR) { 
         joffset=1;
+        BXn = BX2; 
         D_EXPAND( iextend = 1;   ,
                                  ,
                   kextend = 1;)
     }
     if(dir==KDIR) {
         koffset=1;
+        BXn = BX3; 
         D_EXPAND( iextend = 1;  ,
                   jextend = 1;  ,
                    )
     }
 
     IdefixArray4D<real> Vc = data.Vc;
+    IdefixArray4D<real> Vs = data.Vs;
     IdefixArray4D<real> PrimL = data.PrimL;
     IdefixArray4D<real> PrimR = data.PrimR;
 
@@ -225,23 +230,37 @@ void Physics::ExtrapolatePrimVar(DataBlock &data, int dir) {
     idefix_for("ExtrapolatePrimVar",0,NVAR,data.beg[KDIR]-kextend,data.end[KDIR]+koffset+kextend,data.beg[JDIR]-jextend,data.end[JDIR]+joffset+jextend,data.beg[IDIR]-iextend,data.end[IDIR]+ioffset+iextend,
                         KOKKOS_LAMBDA (int n, int k, int j, int i) 
             {   
-                
-                PrimL(n,k,j,i) = Vc(n,k-koffset,j-joffset,i-ioffset);
-                PrimR(n,k,j,i) = Vc(n,k,j,i);
+                // If normal component, the use Staggered field 
+                if(n==BXn) {
+                    PrimL(n,k,j,i) = Vs(dir,k,j,i);
+                    PrimR(n,k,j,i) = Vs(dir,k,j,i);
+                }
+                else {
+                    PrimL(n,k,j,i) = Vc(n,k-koffset,j-joffset,i-ioffset);
+                    PrimR(n,k,j,i) = Vc(n,k,j,i);
+                }
+
+
             });
 
 #elif ORDER == 2
     idefix_for("ExtrapolatePrimVar",0,NVAR,data.beg[KDIR]-koffset-kextend,data.end[KDIR]+koffset+kextend,data.beg[JDIR]-joffset-jextend,data.end[JDIR]+joffset+jextend,data.beg[IDIR]-ioffset-iextend,data.end[IDIR]+ioffset+iextend,
                         KOKKOS_LAMBDA (int n, int k, int j, int i) 
             {
-                real dvm = Vc(n,k,j,i)-Vc(n,k-koffset,j-joffset,i-ioffset);
-                real dvp = Vc(n,k+koffset,j+joffset,i+ioffset) - Vc(n,k,j,i);
+                if(n==BXn) {
+                    PrimL(n,k+koffset,j+joffset,i+ioffset) = Vs(dir,k+koffset,j+joffset,i+ioffset);
+                    PrimR(n,k,j,i) = Vs(dir,k,j,i);
+                }
+                else {
+                    real dvm = Vc(n,k,j,i)-Vc(n,k-koffset,j-joffset,i-ioffset);
+                    real dvp = Vc(n,k+koffset,j+joffset,i+ioffset) - Vc(n,k,j,i);
 
-                // Van Leer limiter
-                real dv = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
+                    // Van Leer limiter
+                    real dv = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
 
-                PrimL(n,k+koffset,j+joffset,i+ioffset) = Vc(n,k,j,i) + HALF_F*dv;
-                PrimR(n,k,j,i) = Vc(n,k,j,i) - HALF_F*dv;
+                    PrimL(n,k+koffset,j+joffset,i+ioffset) = Vc(n,k,j,i) + HALF_F*dv;
+                    PrimR(n,k,j,i) = Vc(n,k,j,i) - HALF_F*dv;
+                }
 
             });
 #else   
@@ -450,12 +469,12 @@ void Physics::CalcRightHandSide(DataBlock &data, int dir, real dt) {
 
             for(int nv = 0 ; nv < NVAR ; nv++) {
                 // Do not evolve the field components if they are computed by CT (i.e. if they are in Vs)
-                /*
+                
                 D_EXPAND( if(nv == BX1) continue;   ,
                           if(nv == BX2) continue;   ,
-                          if(nv == BX3) continue;  ) */
+                          if(nv == BX3) continue;  ) 
 
-                Uc(nv,k,j,i) = Uc(nv,k,j,i) -  (Flux(nv, k+koffset, j+joffset, i+ioffset) - Flux(nv, k, j, i));
+                Uc(nv,k,j,i) = Uc(nv,k,j,i) -  dtdx*(Flux(nv, k+koffset, j+joffset, i+ioffset) - Flux(nv, k, j, i));
             }
 
             
@@ -484,13 +503,8 @@ void Physics::CalcCornerEMF(DataBlock &data, real t) {
 
         real w = ONE_FOURTH_F;
 
-        int ioffset,joffset,koffset = 0;
-        ioffset=1;
 
-        if(DIMENSIONS >= 2) joffset = 1;
-        if(DIMENSIONS == 3) koffset = 1;
-
-        idefix_for("CalcCornerEMF",data.beg[KDIR],data.end[KDIR]+koffset,data.beg[JDIR],data.end[JDIR]+joffset,data.beg[IDIR],data.end[IDIR]+ioffset,
+        idefix_for("CalcCornerEMF",data.beg[KDIR],data.end[KDIR]+KOFFSET,data.beg[JDIR],data.end[JDIR]+JOFFSET,data.beg[IDIR],data.end[IDIR]+IOFFSET,
                     KOKKOS_LAMBDA (int k, int j, int i) {
                         #if DIMENSIONS == 3
                         Ex(k,j,i) = w * (exj(k,j,i) + exj(k-1,j,i) + exk(k,j,i) + exk(k,j-1,i));
@@ -528,20 +542,22 @@ void Physics::EvolveMagField(DataBlock &data, real t, real dt) {
     IdefixArray1D<real> dx2=data.dx[JDIR];
     IdefixArray1D<real> dx3=data.dx[KDIR];
 
-    idefix_for("EvolvMagField",data.beg[KDIR],data.end[KDIR]+1,data.beg[JDIR],data.end[JDIR]+1,data.beg[IDIR],data.end[IDIR]+1,
+
+
+    idefix_for("EvolvMagField",data.beg[KDIR],data.end[KDIR]+KOFFSET,data.beg[JDIR],data.end[JDIR]+JOFFSET,data.beg[IDIR],data.end[IDIR]+IOFFSET,
                     KOKKOS_LAMBDA (int k, int j, int i) {
 
                         Vs(BX1s,k,j,i) = Vs(BX1s,k,j,i) + ( D_EXPAND( ZERO_F                                     ,
                                                                       - dt/dx2(j) * (Ex3(k,j+1,i) - Ex3(k,j,i) )  ,
                                                                       + dt/dx3(k) * (Ex2(k+1,j,i) - Ex2(k,j,i) ) ));
-
+                        #if DIMENSIONS >= 2
                         Vs(BX2s,k,j,i) = Vs(BX2s,k,j,i) + ( D_EXPAND(   dt/dx1(i) * (Ex3(k,j,i+1) - Ex3(k,j,i) )  ,
                                                                                                                   ,
                                                                       - dt/dx3(k) * (Ex1(k+1,j,i) - Ex1(k,j,i) ) ));
-                        
+                        #endif
                         #if DIMENSIONS == 3
                         Vs(BX3s,k,j,i) = Vs(BX3s,k,j,i) + (  - dt/dx1(i) * (Ex2(k,j,i+1) - Ex2(k,j,i) )  
-                                                             + dt/dx2(k) * (Ex1(k,j+1,i) - Ex1(k,j,i) ) );
+                                                             + dt/dx2(j) * (Ex1(k,j+1,i) - Ex1(k,j,i) ) );
 
                         #endif
 
@@ -591,13 +607,13 @@ void Physics::ReconstructNormalField(DataBlock &data) {
                     KOKKOS_LAMBDA (int k, int j) {
                         for(int i = nstart ; i>=0 ; i-- ) {
                             Vs(BX1s,k,j,i) = Vs(BX1s,k,j,i+1) + dx1(i)*(  D_EXPAND(      ZERO_F                                       ,                    
-                                                                                     +  (Vs(BX2s,k,j+1,i) - Vs(BX2s,k,j+1,i))/dx2(j)  , 
-                                                                                     +  (Vs(BX3s,k+1,j,i) - Vs(BX3s,k+1,j,i))/dx3(k)) );
+                                                                                     +  (Vs(BX2s,k,j+1,i) - Vs(BX2s,k,j,i))/dx2(j)  , 
+                                                                                     +  (Vs(BX3s,k+1,j,i) - Vs(BX3s,k,j,i))/dx3(k)) );
                         }
                         for(int i = nend ; i<data.np_tot[IDIR] ; i++ ) {
                             Vs(BX1s,k,j,i+1) = Vs(BX1s,k,j,i) -   dx1(i)*(  D_EXPAND(      ZERO_F                                     ,              
-                                                                                     +  (Vs(BX2s,k,j+1,i) - Vs(BX2s,k,j+1,i))/dx2(j)  , 
-                                                                                     +  (Vs(BX3s,k+1,j,i) - Vs(BX3s,k+1,j,i))/dx3(k)) );
+                                                                                     +  (Vs(BX2s,k,j+1,i) - Vs(BX2s,k,j,i))/dx2(j)  , 
+                                                                                     +  (Vs(BX3s,k+1,j,i) - Vs(BX3s,k,j,i))/dx3(k)) );
                         }
                         
 
@@ -609,14 +625,14 @@ void Physics::ReconstructNormalField(DataBlock &data) {
     idefix_for("ReconstructBX2s",0,data.np_tot[KDIR],0,data.np_tot[IDIR],
                     KOKKOS_LAMBDA (int k, int i) {
                         for(int j = nstart ; j>=0 ; j-- ) {
-                            Vs(BX2s,k,j,i) = Vs(BX2s,k,j+1,i) + dx2(j)*(  D_EXPAND(     (Vs(BX1s,k,j,i+1) - Vs(BX1s,k,j,i+1))/dx1(i)  ,                     
+                            Vs(BX2s,k,j,i) = Vs(BX2s,k,j+1,i) + dx2(j)*(  D_EXPAND(     (Vs(BX1s,k,j,i+1) - Vs(BX1s,k,j,i))/dx1(i)  ,                     
                                                                                                                                       , 
-                                                                                     +  (Vs(BX3s,k+1,j,i) - Vs(BX3s,k+1,j,i))/dx3(k)) );
+                                                                                     +  (Vs(BX3s,k+1,j,i) - Vs(BX3s,k,j,i))/dx3(k)) );
                         }
                         for(int j = nend ; j<data.np_tot[JDIR] ; j++ ) {
-                            Vs(BX2s,k,j+1,i) = Vs(BX2s,k,j,i) -   dx2(j)*(  D_EXPAND(   (Vs(BX1s,k,j,i+1) - Vs(BX1s,k,j,i+1))/dx1(i)  ,                     
+                            Vs(BX2s,k,j+1,i) = Vs(BX2s,k,j,i) -   dx2(j)*(  D_EXPAND(   (Vs(BX1s,k,j,i+1) - Vs(BX1s,k,j,i))/dx1(i)  ,                     
                                                                                                                                       , 
-                                                                                     +  (Vs(BX3s,k+1,j,i) - Vs(BX3s,k+1,j,i))/dx3(k)) );
+                                                                                     +  (Vs(BX3s,k+1,j,i) - Vs(BX3s,k,j,i))/dx3(k)) );
                         }
                         
 
@@ -768,7 +784,7 @@ void Physics::SetBoundary(DataBlock &data, real t) {
     ReconstructNormalField(data);
 
     // Average face-centered quantities to get cell-centered quantities
-    //ReconstructVcField(data);
+    ReconstructVcField(data);
     
 
     Kokkos::Profiling::popRegion();

@@ -37,7 +37,7 @@ void Setup::InitFlow(DataBlock &data) {
 #if HAVE_ENERGY 
                 d.Vc(PRS,k,j,i) = (d.x[IDIR](i)<50.0) ? 1.0 : 0.1;
 #endif
-                d.Vc(BX1,k,j,i) = 0.75;
+                d.Vs(BX1s,k,j,i) = 0.75;
                 d.Vc(BX2,k,j,i) = (d.x[IDIR](i)<50.0) ? 1.0 : -1.0;
 
             }

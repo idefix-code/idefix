@@ -42,24 +42,16 @@ void DataBlock::InitFromGrid(Grid &grid) {
 
     dV = IdefixArray3D<real>("DataBlock_dV",np_tot[KDIR],np_tot[JDIR],np_tot[IDIR]);
     Vc = IdefixArray4D<real>("DataBlock_Vc", NVAR, np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
+    Uc = IdefixArray4D<real>("DataBlock_Uc", NVAR, np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
+    Vc0 = IdefixArray4D<real>("DataBlock_Vc0", NVAR, np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
 #if MHD == YES
-    int nBx1, nBx2, nBx3;
 
-    nBx1 = np_tot[IDIR]+1;
-    nBx2 = np_tot[JDIR];
-    nBx3 = np_tot[KDIR];
-
-    if(DIMENSIONS>=2) nBx2++;
-    if(DIMENSIONS==3) nBx3++;
-
-    Vs = IdefixArray4D<real>("DataBlock_Vs", DIMENSIONS, nBx3, nBx2, nBx1);
-
-    std::cout << "Initialised Vs with size " << DIMENSIONS << " x " << nBx3 << " x " << nBx2 << " x " << nBx1 << std::endl;
+    Vs = IdefixArray4D<real>("DataBlock_Vs", DIMENSIONS, np_tot[KDIR]+KOFFSET, np_tot[JDIR]+JOFFSET, np_tot[IDIR]+IOFFSET);
+    Vs0 = IdefixArray4D<real>("DataBlock_Vs0", DIMENSIONS, np_tot[KDIR]+KOFFSET, np_tot[JDIR]+JOFFSET, np_tot[IDIR]+IOFFSET);
 
     this->emf = ElectroMotiveForce(this);
 #endif
-    Uc = IdefixArray4D<real>("DataBlock_Uc", NVAR, np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
-    V0 = IdefixArray4D<real>("DataBlock_V0", NVAR, np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
+
     InvDtHyp = IdefixArray3D<real>("DataBlock_InvDtHyp", np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
     InvDtPar = IdefixArray3D<real>("DataBlock_InvDtPar", np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
     PrimL =  IdefixArray4D<real>("DataBlock_PrimL", NVAR, np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
@@ -117,7 +109,8 @@ DataBlock::DataBlock(const DataBlock &data) {
 
     dV=data.dV;
     Vc=data.Vc;
-    V0=data.V0;
+    Vc0=data.Vc0;
+    Vs0=data.Vs0;
     Uc=data.Uc;
     InvDtHyp=data.InvDtHyp;
     InvDtPar=data.InvDtPar;
@@ -154,7 +147,8 @@ DataBlock& DataBlock::operator=(const DataBlock& data) {
         
         dV=data.dV;
         Vc=data.Vc;
-        V0=data.V0;
+        Vc0=data.Vc0;
+        Vs0=data.Vs0;
         Uc=data.Uc;
         InvDtHyp=data.InvDtHyp;
         InvDtPar=data.InvDtPar;

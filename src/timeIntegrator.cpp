@@ -84,7 +84,9 @@ void TimeIntegrator::ReinitInvDt(DataBlock & data) {
 void TimeIntegrator::Cycle(DataBlock & data) {
     // Do one cycle
     IdefixArray4D<real> Vc = data.Vc;
-    IdefixArray4D<real> V0 = data.V0;
+    IdefixArray4D<real> Vs = data.Vs;
+    IdefixArray4D<real> Vc0 = data.Vc0;
+    IdefixArray4D<real> Vs0 = data.Vs0;
     IdefixArray3D<real> InvDtHypLoc=data.InvDtHyp;
     IdefixArray3D<real> InvDtParLoc=data.InvDtPar;
     real newdt;
@@ -94,13 +96,18 @@ void TimeIntegrator::Cycle(DataBlock & data) {
     std::cout << "TimeIntegrator: t=" << t << " Cycle " << ncycles << " dt=" << dt << std::endl;
 
     // Store initial stage for multi-stage time integrators
-    if(nstages>1) Kokkos::deep_copy(V0,Vc);
+    if(nstages>1) {
+        Kokkos::deep_copy(Vc0,Vc);
+    #if MHD == YES
+        Kokkos::deep_copy(Vs0,Vs);
+    #endif
+    }
 
     // Reinit timestep
     ReinitInvDt(data);
 
     for(int stage=0; stage < nstages ; stage++) {
-        // Update Vc
+        // Update Vc & Vs
         Stage(data);
 
         // Compute next time_step during first stage
@@ -125,8 +132,15 @@ void TimeIntegrator::Cycle(DataBlock & data) {
 
             idefix_for("Cycle-update",0,NVAR,0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
                         KOKKOS_LAMBDA (int n, int k, int j, int i) {
-                            Vc(n,k,j,i) = wcs*Vc(n,k,j,i) + w0s*V0(n,k,j,i);
+                            Vc(n,k,j,i) = wcs*Vc(n,k,j,i) + w0s*Vc0(n,k,j,i);
             });
+
+        #if MHD==YES
+            idefix_for("Cycle-update",0,DIMENSIONS,0,data.np_tot[KDIR]+KOFFSET,0,data.np_tot[JDIR]+JOFFSET,0,data.np_tot[IDIR]+IOFFSET,
+                        KOKKOS_LAMBDA (int n, int k, int j, int i) {
+                            Vs(n,k,j,i) = wcs*Vs(n,k,j,i) + w0s*Vs0(n,k,j,i);
+            });
+        #endif
         }
     }
     

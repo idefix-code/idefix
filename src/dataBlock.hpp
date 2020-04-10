@@ -25,7 +25,8 @@ public:
     IdefixArray4D<real> Uc;     // Main cell-centered conservative variables
 
     // Required by time integrator
-    IdefixArray4D<real> V0;
+    IdefixArray4D<real> Vc0;
+    IdefixArray4D<real> Vs0;
     IdefixArray3D<real> InvDtHyp;
     IdefixArray3D<real> InvDtPar;
 

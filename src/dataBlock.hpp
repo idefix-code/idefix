@@ -55,6 +55,7 @@ public:
     // init from a Grid object
     void InitFromGrid(Grid &);
 
+
     // Copy constructor
     DataBlock(const DataBlock &);
 

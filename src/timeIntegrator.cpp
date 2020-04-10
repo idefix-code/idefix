@@ -51,6 +51,11 @@ void TimeIntegrator::Stage(DataBlock &data) {
         phys.CalcRightHandSide(data, dir, dt);
     }
 
+#if MHD == YES
+    // Compute the field evolution according to CT
+    phys.CalcCornerEMF(data, t);
+    phys.EvolveMagField(data, t, dt);
+#endif
     // Convert back into primitive variables
     phys.ConvertConsToPrim(data);
 

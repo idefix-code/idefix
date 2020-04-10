@@ -41,9 +41,13 @@ void Setup::InitFlow(DataBlock &data) {
                 d.Vc(PRS,k,j,i) = 5.0/(12.0*M_PI);
                 d.Vc(VX1,k,j,i) = -sin(2.0*M_PI*y);
                 d.Vc(VX2,k,j,i) = sin(2.0*M_PI*x);
-
-                d.Vc(BX1,k,j,i) = -B0*sin(2.0*M_PI*y);
-                d.Vc(BX2,k,j,i) = B0*sin(4.0*M_PI*x);
+                
+#if MHD == YES
+#warning Coucou
+#endif
+                
+                d.Vs(BX1s,k,j,i) = -B0*sin(2.0*M_PI*y);
+                d.Vs(BX2s,k,j,i) = B0*sin(4.0*M_PI*x);
 
             }
         }

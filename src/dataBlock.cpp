@@ -54,6 +54,8 @@ void DataBlock::InitFromGrid(Grid &grid) {
 
     Vs = IdefixArray4D<real>("DataBlock_Vs", DIMENSIONS, nBx3, nBx2, nBx1);
 
+    std::cout << "Initialised Vs with size " << DIMENSIONS << " x " << nBx3 << " x " << nBx2 << " x " << nBx1 << std::endl;
+
     this->emf = ElectroMotiveForce(this);
 #endif
     Uc = IdefixArray4D<real>("DataBlock_Uc", NVAR, np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
@@ -120,8 +122,14 @@ DataBlock::DataBlock(const DataBlock &data) {
     InvDtHyp=data.InvDtHyp;
     InvDtPar=data.InvDtPar;
 
+    #if MHD == YES
+    emf=data.emf;
+    Vs=data.Vs;
+    #endif
+
     Kokkos::Profiling::popRegion();
 }
+
 
 DataBlock& DataBlock::operator=(const DataBlock& data) {
     Kokkos::Profiling::pushRegion("DataBlock::operator=");
@@ -146,7 +154,15 @@ DataBlock& DataBlock::operator=(const DataBlock& data) {
         
         dV=data.dV;
         Vc=data.Vc;
+        V0=data.V0;
         Uc=data.Uc;
+        InvDtHyp=data.InvDtHyp;
+        InvDtPar=data.InvDtPar;
+        
+        #if MHD == YES
+        emf=data.emf;
+        Vs=data.Vs;
+        #endif
     }
 
     Kokkos::Profiling::popRegion();

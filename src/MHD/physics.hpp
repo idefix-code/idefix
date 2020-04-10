@@ -13,6 +13,10 @@ public:
     void ExtrapolatePrimVar(DataBlock &, int);
     void CalcRiemannFlux(DataBlock &, int);
     void CalcRightHandSide(DataBlock &, int, real );
+    void ReconstructVcField(DataBlock &);
+    void ReconstructNormalField(DataBlock &);
+    void EvolveMagField(DataBlock &, real, real);
+    void CalcCornerEMF(DataBlock &, real );
     void SetBoundary(DataBlock &, real);
     void SetGamma(real);
     real CheckDivB(DataBlock &);

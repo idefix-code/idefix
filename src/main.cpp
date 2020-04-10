@@ -54,13 +54,17 @@ int main( int argc, char* argv[] )
     std::cout << "Init Physics" << std::endl;
     Setup mysetup(input,grid,data);
     Physics phys(input,mysetup);
-    mysetup.InitFlow(data);
 
     std::cout << "Init Time Integrator..." << std::endl;
     TimeIntegrator Tint(input, phys, mysetup);
 
     std::cout << "init Output Routines" << std::endl;
     OutputVTK output = OutputVTK(input, grid, Tint.getT()); 
+
+    // Apply initial conditions
+    std::cout << "Creating initial conditions" << std::endl;
+    mysetup.InitFlow(data);
+    phys.SetBoundary(data,Tint.getT());
 
     std::cout << "Write init vtk" << std::endl;
     output.Write(data,Tint.getT());

@@ -12,6 +12,9 @@
   #endif
 #endif
 
+#define WRITE_STAGGERED_FIELD
+#define WRITE_EMF
+
 /* ---------------------------------------------------------
     The following macros are specific to this file only 
     and are used to ease up serial/parallel implementation
@@ -126,6 +129,38 @@ int OutputVTK::Write(DataBlock &datain, real t)
         std::string varname="Vc" + std::to_string(nv);
         WriteScalar(fileHdl, vect3D, varname);
     }
+
+#ifdef WRITE_STAGGERED_FIELD
+    for(int nv = 0 ; nv < DIMENSIONS ; nv++) {
+        for(int k = 0; k < grid.np_tot[KDIR] ; k++ ) {
+            for(int j = 0; j < grid.np_tot[JDIR] ; j++ ) {
+                for(int i = 0; i < grid.np_tot[IDIR] ; i++ ) {
+                    vect3D(k,j,i) = float(data.Vs(nv,k,j,i));
+                }
+            }
+        }
+        std::string varname="Vs" + std::to_string(nv);
+        WriteScalar(fileHdl, vect3D, varname);
+    }
+#endif
+
+#ifdef WRITE_EMF
+    std::string varname;
+#if DIMENSIONS == 3
+    Kokkos::deep_copy(vect3D,datain.emf.ex);
+    varname="Ex";
+    WriteScalar(fileHdl, vect3D, varname);
+
+    Kokkos::deep_copy(vect3D,datain.emf.ey);
+    varname="Ey";
+    WriteScalar(fileHdl, vect3D, varname);
+#endif
+
+    Kokkos::deep_copy(vect3D,datain.emf.ez);
+    varname="Ez";
+    WriteScalar(fileHdl, vect3D, varname);
+#endif
+
 
     fclose(fileHdl);
 

@@ -4,7 +4,7 @@ INCLUDE_DIRS = -I, -I. -I$(SRC) -I$(SRC)/MHD -I$(SRC)/Test
 VPATH 		 = ./:$(SRC):$(SRC)/MHD:$(SRC)/Test
 
 KOKKOS_PATH = ${IDEFIX_DIR}/src/kokkos
-KOKKOS_DEVICES = "OpenMP"
+KOKKOS_DEVICES = "Serial"
 KOKKOS_ARCH = "Pascal61"
 
 # include local rules which are not hosted on git
@@ -34,7 +34,7 @@ EXE = ${EXE_NAME}.host
 KOKKOS_ARCH = "BDW"
 endif
 
-CXXFLAGS = -O3 -g
+CXXFLAGS = -O0 -g
 LINK = ${CXX}
 LINKFLAGS = 
 

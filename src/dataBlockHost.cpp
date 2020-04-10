@@ -21,11 +21,14 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
         np_tot[dir] = data.np_tot[dir];
         np_int[dir] = data.np_int[dir];
         // TO BE COMPLETED...
-
-
     }
+    
     dV = Kokkos::create_mirror_view(data.dV);
     Vc = Kokkos::create_mirror_view(data.Vc);
+#if MHD == YES
+    Vs = Kokkos::create_mirror_view(data.Vs);
+    std::cout << "Hello" << std::endl;
+#endif
     Uc = Kokkos::create_mirror_view(data.Uc);
 
     // Store the grid informations from the dataBlock
@@ -49,6 +52,9 @@ void DataBlockHost::SyncToDevice() {
     Kokkos::Profiling::pushRegion("DataBlockHost::SyncToDevice()");
 
     Kokkos::deep_copy(data.Vc,Vc);
+#if MHD == YES
+    Kokkos::deep_copy(data.Vs,Vs);
+#endif
     Kokkos::deep_copy(data.Uc,Uc);
 
     Kokkos::Profiling::popRegion();
@@ -58,6 +64,9 @@ void DataBlockHost::SyncFromDevice() {
 
     Kokkos::Profiling::pushRegion("DataBlockHost::SyncFromDevice()");
     Kokkos::deep_copy(Vc,data.Vc);
+#if MHD == YES
+    Kokkos::deep_copy(Vs,data.Vs);
+#endif
     Kokkos::deep_copy(Uc,data.Uc);
 
     Kokkos::Profiling::popRegion();

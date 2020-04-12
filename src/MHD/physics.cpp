@@ -578,6 +578,7 @@ void Physics::ReconstructVcField(DataBlock &data) {
                                     Vc(BX3,k,j,i) = HALF_F * (Vs(BX3s,k,j,i) + Vs(BX3s,k+1,j,i)) ; )
                        
                     });
+    Kokkos::Profiling::popRegion();
 }
 
 

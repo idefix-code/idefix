@@ -34,7 +34,7 @@ EXE = ${EXE_NAME}.host
 KOKKOS_ARCH = "BDW"
 endif
 
-CXXFLAGS = -O3 -g
+CXXFLAGS = -Ofast -g
 LINK = ${CXX}
 LINKFLAGS = 
 

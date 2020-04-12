@@ -13,7 +13,7 @@
 #endif
 
 #define WRITE_STAGGERED_FIELD
-#define WRITE_EMF
+//#define WRITE_EMF
 
 /* ---------------------------------------------------------
     The following macros are specific to this file only 
@@ -111,6 +111,8 @@ int OutputVTK::Write(DataBlock &datain, real t)
 
     std::cout << "OutputVTK::Write file n " << vtkFileNumber << "..." << std::flush;
 
+    timer.reset();
+
     // Create a copy of the dataBlock on Host, and sync it.
     DataBlockHost data(datain);
     data.SyncFromDevice();
@@ -167,7 +169,7 @@ int OutputVTK::Write(DataBlock &datain, real t)
     vtkFileNumber++;
     // Make file number
 
-    std::cout << "done." << std::endl;
+    std::cout << "done in " << timer.seconds() << " s." << std::endl;
     Kokkos::Profiling::popRegion();
     // One day, we will have a return code.
     return(0);

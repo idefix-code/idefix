@@ -7,6 +7,8 @@ TimeIntegrator::TimeIntegrator(Input & input, Physics &physics, Setup &setup) {
 
     this->phys=physics;
     this->mySetup=setup;
+    this->timer.reset();
+    this->lastLog=timer.seconds();
 
     nstages=input.GetInt("TimeIntegrator","nstages",0);
 
@@ -93,7 +95,14 @@ void TimeIntegrator::Cycle(DataBlock & data) {
 
     Kokkos::Profiling::pushRegion("TimeIntegrator::Cycle");
 
-    std::cout << "TimeIntegrator: t=" << t << " Cycle " << ncycles << " dt=" << dt << std::endl;
+    if(timer.seconds()-lastLog >= 1.0) {
+        lastLog = timer.seconds();
+        std::cout << "TimeIntegrator: t=" << t << " Cycle " << ncycles << " dt=" << dt << std::endl;
+        #if MHD == YES
+        // Check divB
+        std::cout << "\t maxdivB=" << phys.CheckDivB(data) << std::endl;
+        #endif
+    }
 
     // Store initial stage for multi-stage time integrators
     if(nstages>1) {
@@ -143,11 +152,6 @@ void TimeIntegrator::Cycle(DataBlock & data) {
         #endif
         }
     }
-    
-    #if MHD == YES
-    // Check divB
-    std::cout << "\t maxdivB=" << phys.CheckDivB(data) << std::endl;
-    #endif
 
     // Update current time
     t=t+dt;

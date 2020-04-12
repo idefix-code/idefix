@@ -27,7 +27,6 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
     Vc = Kokkos::create_mirror_view(data.Vc);
 #if MHD == YES
     Vs = Kokkos::create_mirror_view(data.Vs);
-    std::cout << "Hello" << std::endl;
 #endif
     Uc = Kokkos::create_mirror_view(data.Uc);
 

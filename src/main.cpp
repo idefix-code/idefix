@@ -59,7 +59,7 @@ int main( int argc, char* argv[] )
     TimeIntegrator Tint(input, phys, mysetup);
 
     std::cout << "init Output Routines" << std::endl;
-    OutputVTK output = OutputVTK(input, grid, Tint.getT()); 
+    OutputVTK output(input, grid, Tint.getT()); 
 
     // Apply initial conditions
     std::cout << "Creating initial conditions" << std::endl;

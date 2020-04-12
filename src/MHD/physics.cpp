@@ -372,62 +372,72 @@ void Physics::CalcRiemannFlux(DataBlock & data, int dir) {
     idefix_for("CalcRiemannFlux",data.beg[KDIR]-kextend,data.end[KDIR]+koffset+kextend,data.beg[JDIR]-jextend,data.end[JDIR]+joffset+jextend,data.beg[IDIR]-iextend,data.end[IDIR]+ioffset+iextend,
                         KOKKOS_LAMBDA (int k, int j, int i) 
             {
+                // Primitive variables 
+                real v[NVAR];
+                real u[NVAR];
+                real flux[NVAR];
+                real fluxRiemann[NVAR];
 
-                // Primitive variables
-                real vL[NVAR];
-                real vR[NVAR];
-                real vRL[NVAR];
+                // Store the average primitive variables
+                for(int nv = 0 ; nv < NVAR; nv++) {
+                    v[nv] = HALF_F*(PrimL(nv,k,j,i) + PrimR(nv,k,j,i));
+                }
 
-                // Conservative variables
-                real uL[NVAR];
-                real uR[NVAR];
 
-                // Flux (left and right)
-                real fluxL[NVAR];
-                real fluxR[NVAR];
-
+                // 4-- Get the wave speed
                 // Signal speeds
                 real cRL, cmax;
                 real gpr, Bt2, B2;
 
-                // 1-- Store the primitive variables on the left, right, and averaged states
-                for(int nv = 0 ; nv < NVAR; nv++) {
-                    vL[nv] = PrimL(nv,k,j,i);
-                    vR[nv] = PrimR(nv,k,j,i);
-                    vRL[nv]=HALF_F*(vL[nv]+vR[nv]);
-                }
-
-                // 2-- Compute the conservative variables
-                K_PrimToCons(uL, vL, gamma_m1);
-                K_PrimToCons(uR, vR, gamma_m1);
-
-                // 3-- Compute the left and right fluxes
-                K_Flux(fluxL, vL, uL, C2Iso, VXn, VXt, VXb, BXn, BXt, BXb, MXn);
-                K_Flux(fluxR, vR, uR, C2Iso, VXn, VXt, VXb, BXn, BXt, BXb, MXn);
-
-
-                // 4-- Get the wave speed
-                
-            #if HAVE_ENERGY
-                gpr=(gamma_m1+ONE_F)*vRL[PRS];
-            #else
-                gpr=C2Iso*vRL[RHO];
-            #endif
+                #if HAVE_ENERGY
+                    gpr=(gamma_m1+ONE_F)*v[PRS];
+                #else
+                    gpr=C2Iso*v[RHO];
+                #endif
                 Bt2=EXPAND(ZERO_F    ,
-                            + vRL[BXt]*vRL[BXt],
-                            + vRL[BXb]*vRL[BXb]);
+                            + v[BXt]*v[BXt],
+                            + v[BXb]*v[BXb]);
 
-                B2=Bt2 + vRL[BXn]*vRL[BXn];
+                B2=Bt2 + v[BXn]*v[BXn];
 
                 cRL = gpr - B2;
                 cRL = cRL + B2 + SQRT(cRL*cRL + FOUR_F*gpr*Bt2);
-                cRL = SQRT(HALF_F * cRL/vRL[RHO]);
+                cRL = SQRT(HALF_F * cRL/v[RHO]);
 
-                cmax = FMAX(FABS(vRL[VXn]+cRL),FABS(vRL[VXn]-cRL));
+                cmax = FMAX(FABS(v[VXn]+cRL),FABS(v[VXn]-cRL));
+
+
+                // Load the left state
+                for(int nv = 0 ; nv < NVAR; nv++) {
+                    v[nv] = PrimL(nv,k,j,i);
+                }
+
+                // 2-- Compute the conservative variables
+                K_PrimToCons(u, v, gamma_m1);
+
+                // 3-- Compute the left and right fluxes
+                K_Flux(flux, v, u, C2Iso, VXn, VXt, VXb, BXn, BXt, BXb, MXn);
+                
 
                 // 5-- Compute the flux from the left and right states
                 for(int nv = 0 ; nv < NVAR; nv++) {
-                    Flux(nv,k,j,i) = HALF_F*(fluxL[nv]+fluxR[nv] - cmax*(uR[nv]-uL[nv]));
+                    fluxRiemann[nv] = flux[nv] + cmax*u[nv];
+                }
+
+                // Load the right state
+                for(int nv = 0 ; nv < NVAR; nv++) {
+                    v[nv] = PrimR(nv,k,j,i);
+                }
+
+                // 2-- Compute the conservative variables
+                K_PrimToCons(u, v, gamma_m1);
+
+                // 3-- Compute the left and right fluxes
+                K_Flux(flux, v, u, C2Iso, VXn, VXt, VXb, BXn, BXt, BXb, MXn);
+                
+                // 5-- Compute the flux from the left and right states
+                for(int nv = 0 ; nv < NVAR; nv++) {
+                    Flux(nv,k,j,i) = HALF_F*(fluxRiemann[nv]+flux[nv] - cmax*u[nv]);
                 }
 
                 //6-- Compute maximum dt for this sweep

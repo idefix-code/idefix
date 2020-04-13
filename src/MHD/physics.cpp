@@ -595,33 +595,40 @@ void Physics::ReconstructVcField(DataBlock &data) {
 
 void Physics::ReconstructNormalField(DataBlock &data) {
     Kokkos::Profiling::pushRegion("Physics::ReconstructNormalField");
+
     // Reconstruct the field
     IdefixArray4D<real> Vc = data.Vc;
     IdefixArray4D<real> Vs = data.Vs;
-
     // Coordinates
     IdefixArray1D<real> x1=data.x[IDIR];
     IdefixArray1D<real> x2=data.x[JDIR];
     IdefixArray1D<real> x3=data.x[KDIR];
-
     IdefixArray1D<real> dx1=data.dx[IDIR];
     IdefixArray1D<real> dx2=data.dx[JDIR];
     IdefixArray1D<real> dx3=data.dx[KDIR];
 
-
     int nstart, nend;
+    int nx1,nx2,nx3;
 
     // reconstruct BX1s
     nstart = data.nghost[IDIR]-1;
     nend = data.np_tot[IDIR] - data.nghost[IDIR]-1;
-    idefix_for("ReconstructBX1s",0,data.np_tot[KDIR],0,data.np_tot[JDIR],
+
+    nx1=data.np_tot[IDIR];
+    nx2=data.np_tot[JDIR];
+    nx3=data.np_tot[KDIR];
+
+
+    idefix_for("ReconstructBX1s",0,nx3,0,nx2,
                     KOKKOS_LAMBDA (int k, int j) {
+                        
                         for(int i = nstart ; i>=0 ; i-- ) {
                             Vs(BX1s,k,j,i) = Vs(BX1s,k,j,i+1) + dx1(i)*(  D_EXPAND(      ZERO_F                                       ,                    
                                                                                      +  (Vs(BX2s,k,j+1,i) - Vs(BX2s,k,j,i))/dx2(j)  , 
                                                                                      +  (Vs(BX3s,k+1,j,i) - Vs(BX3s,k,j,i))/dx3(k)) );
                         }
-                        for(int i = nend ; i<data.np_tot[IDIR] ; i++ ) {
+
+                        for(int i = nend ; i<nx1 ; i++ ) {
                             Vs(BX1s,k,j,i+1) = Vs(BX1s,k,j,i) -   dx1(i)*(  D_EXPAND(      ZERO_F                                     ,              
                                                                                      +  (Vs(BX2s,k,j+1,i) - Vs(BX2s,k,j,i))/dx2(j)  , 
                                                                                      +  (Vs(BX3s,k+1,j,i) - Vs(BX3s,k,j,i))/dx3(k)) );
@@ -631,6 +638,7 @@ void Physics::ReconstructNormalField(DataBlock &data) {
                     });
 
     #if DIMENSIONS >=2
+    
     nstart = data.nghost[JDIR]-1;
     nend = data.np_tot[JDIR] - data.nghost[JDIR]-1;
     idefix_for("ReconstructBX2s",0,data.np_tot[KDIR],0,data.np_tot[IDIR],
@@ -640,7 +648,7 @@ void Physics::ReconstructNormalField(DataBlock &data) {
                                                                                                                                       , 
                                                                                      +  (Vs(BX3s,k+1,j,i) - Vs(BX3s,k,j,i))/dx3(k)) );
                         }
-                        for(int j = nend ; j<data.np_tot[JDIR] ; j++ ) {
+                        for(int j = nend ; j<nx2 ; j++ ) {
                             Vs(BX2s,k,j+1,i) = Vs(BX2s,k,j,i) -   dx2(j)*(  D_EXPAND(   (Vs(BX1s,k,j,i+1) - Vs(BX1s,k,j,i))/dx1(i)  ,                     
                                                                                                                                       , 
                                                                                      +  (Vs(BX3s,k+1,j,i) - Vs(BX3s,k,j,i))/dx3(k)) );
@@ -659,7 +667,7 @@ void Physics::ReconstructNormalField(DataBlock &data) {
                             Vs(BX3s,k,j,i) = Vs(BX3s,k+1,j,i) + dx3(k)*(     (Vs(BX1s,k,j,i+1) - Vs(BX1s,k,j,i+1))/dx1(i)                  
                                                                           +  (Vs(BX2s,k,j+1,i) - Vs(BX2s,k,j+1,i))/dx2(j) );
                         }
-                        for(int k = nend ; k<data.np_tot[KDIR] ; k++ ) {
+                        for(int k = nend ; k<nx3 ; k++ ) {
                             Vs(BX3s,k+1,j,i) = Vs(BX3s,k,j,i) -  dx3(k)*(     (Vs(BX1s,k,j,i+1) - Vs(BX1s,k,j,i+1))/dx1(i)                  
                                                                            +  (Vs(BX2s,k,j+1,i) - Vs(BX2s,k,j+1,i))/dx2(j) );
                         }

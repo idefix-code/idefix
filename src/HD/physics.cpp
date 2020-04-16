@@ -1,70 +1,7 @@
 #include "../idefix.hpp"
 #include "physics.hpp"
 
-/********************************
- * Local Kokkos Inline function *
- * ******************************/
-
-KOKKOS_INLINE_FUNCTION void K_Flux(real *KOKKOS_RESTRICT F, const real *KOKKOS_RESTRICT V, const real *KOKKOS_RESTRICT U, real C2Iso, const int dir) {
-    int VXn = VX1+dir;
-    int MXn = VXn;
-
-    F[RHO] = U[VXn];
-
-    EXPAND(F[MX1] = U[MX1]*V[VXn]; ,
-           F[MX2] = U[MX2]*V[VXn]; ,
-           F[MX3] = U[MX3]*V[VXn];)
-
-
-#if HAVE_ENERGY
-    F[ENG]     = (U[ENG] + V[PRS])*V[VXn];
-    F[MXn]     += V[PRS];
-
-#elif EOS == ISOTHERMAL
-    // Add back pressure in the flux
-    F[MXn]     += C2Iso * V[RHO];
-#endif
-} 
-
-KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real *KOKKOS_RESTRICT Vc, const real *KOKKOS_RESTRICT Uc, real gamma_m1) {
-    
-
-    Vc[RHO] = Uc[RHO];
-
-    EXPAND( Vc[VX1] = Uc[MX1]/Uc[RHO]; ,
-            Vc[VX2] = Uc[MX2]/Uc[RHO]; ,
-            Vc[VX3] = Uc[MX3]/Uc[RHO];)     
-
-#if HAVE_ENERGY
-    real kin;
-    kin = 0.5 / Uc[RHO] * (EXPAND(    Uc[MX1]*Uc[MX1] , 
-                                    + Uc[MX2]*Uc[MX2] ,
-                                    + Uc[MX3]*Uc[MX3] ));
-
-    Vc[PRS] = gamma_m1 * (Uc[ENG] - kin);
-#endif  // Have_energy
-}
-
-KOKKOS_INLINE_FUNCTION void K_PrimToCons(real *KOKKOS_RESTRICT Uc, const real *KOKKOS_RESTRICT Vc, real gamma_m1) {
-
-    Uc[RHO] = Vc[RHO];
-
-    EXPAND( Uc[MX1] = Vc[VX1]*Vc[RHO]; ,
-            Uc[MX2] = Vc[VX2]*Vc[RHO]; ,
-            Uc[MX3] = Vc[VX3]*Vc[RHO];)
-
-#if HAVE_ENERGY
-
-    Uc[ENG] = Vc[PRS] / gamma_m1 
-                + 0.5 * Vc[RHO] * EXPAND(  Vc[VX1]*Vc[VX1] , 
-                                         + Vc[VX2]*Vc[VX2] ,
-                                         + Vc[VX3]*Vc[VX3] ); 
-#endif  // Have_energy
-
-}
-
-
-
+#include "solvers.hpp"
 
 Physics::Physics(Input &input, Setup &setup) {
     Kokkos::Profiling::pushRegion("Physics::Physics(DataBock)");
@@ -73,6 +10,19 @@ Physics::Physics(Input &input, Setup &setup) {
     this->C2Iso = 1.0;
 
     this->mySetup=setup;
+    
+    // read Solver from input file
+    std::string solverString = input.GetString("Solver","Solver",0);
+    
+    if (solverString.compare("tvdlf") == 0)     mySolver = TVDLF;
+    else if (solverString.compare("hll") == 0)  mySolver = HLL;
+    else if (solverString.compare("hllc") == 0) mySolver = HLLC;
+    else if (solverString.compare("roe") == 0)  mySolver = ROE;
+    else {
+        std::stringstream msg;
+        msg << "Unknown HD solver type " << solverString;
+        IDEFIX_ERROR(msg);
+    }
 
     Kokkos::Profiling::popRegion();
 }
@@ -199,99 +149,22 @@ void Physics::ExtrapolatePrimVar(DataBlock &data, int dir) {
 
 // Compute Riemann fluxes from states
 void Physics::CalcRiemannFlux(DataBlock & data, int dir) {
-    int ioffset,joffset,koffset;
 
     Kokkos::Profiling::pushRegion("Physics::CalcRiemannFlux");
-    ioffset=joffset=koffset=0;
-    // Determine the offset along which we do the extrapolation
-    if(dir==IDIR) ioffset=1;
-    if(dir==JDIR) joffset=1;
-    if(dir==KDIR) koffset=1;
 
-    IdefixArray4D<real> PrimL = data.PrimL;
-    IdefixArray4D<real> PrimR = data.PrimR;
-    IdefixArray4D<real> Flux = data.FluxRiemann;
-    IdefixArray1D<real> dx = data.dx[dir];
-    IdefixArray3D<real> invDt = data.InvDtHyp;
-
-    real gamma_m1=this->gamma-ONE_F;
-    real C2Iso = this->C2Iso;
-
-    idefix_for("CalcRiemannFlux_TVDLF",data.beg[KDIR],data.end[KDIR]+koffset,data.beg[JDIR],data.end[JDIR]+joffset,data.beg[IDIR],data.end[IDIR]+ioffset,
-                        KOKKOS_LAMBDA (int k, int j, int i) 
-            {
-                int VXn = VX1+dir;
-                // Primitive variables
-                real vL[NVAR];
-                real vR[NVAR];
-                real vVXn;
-
-                // temporary array to compute conservative variables and fluxes
-                real u[NVAR];
-
-                // temporary flux array
-                real fl[NVAR];
-
-                // Signal speeds
-                real cRL, cmax;
-
-                // 1-- Store the primitive variables on the left, right, and averaged states
-                for(int nv = 0 ; nv < NVAR; nv++) {
-                    vL[nv] = PrimL(nv,k,j,i);
-                    vR[nv] = PrimR(nv,k,j,i);
-                }
-                vVXn = HALF_F*(vL[VXn]+vR[VXn]);
-            #if HAVE_ENERGY
-                real vRHO = HALF_F*(vL[RHO]+vR[RHO]);
-                real vPRS = HALF_F*(vL[PRS]+vR[PRS]);
-            #endif
-                
-                // 2-- Get the wave speed
-            #if HAVE_ENERGY
-                real a2 = vPRS / vRHO;
-                cRL = SQRT(a2*(gamma_m1+ONE_F));
-            #else
-                cRL = SQRT(C2Iso);
-            #endif
-                cmax = FMAX(FABS(vVXn+cRL),FABS(vVXn-cRL));
-
-                // 3-- Compute the conservative variables on the left
-                K_PrimToCons(u, vL, gamma_m1);
-                // store result in flux array
-                for(int nv = 0 ; nv < NVAR; nv++) {
-                    fl[nv] = HALF_F*cmax*u[nv];
-                }
-
-                // 4-- Compute the left fluxes
-                K_Flux(u, vL, u, C2Iso, dir);
-
-                // 5-- Compute the flux from the left state
-                for(int nv = 0 ; nv < NVAR; nv++) {
-                    fl[nv] += HALF_F*u[nv];
-                }
-
-                // 6-- Compute the conservative variables on the right
-                K_PrimToCons(u, vR, gamma_m1);
-                // store uL
-                for(int nv = 0 ; nv < NVAR; nv++) {
-                    fl[nv] -= HALF_F*cmax*u[nv];
-                }
-
-                // 7-- Compute the right fluxes
-                K_Flux(u, vR, u, C2Iso, dir);
-
-                // 8-- Compute the flux from the left and right states
-                for(int nv = 0 ; nv < NVAR; nv++) {
-                    Flux(nv,k,j,i) = fl[nv] + HALF_F*u[nv];
-                }
-
-                //9-- Compute maximum dt for this sweep
-                const int ig = ioffset*i + joffset*j + koffset*k;
-
-                invDt(k,j,i) += cmax/dx(ig);
-
-            });
-
+    switch (mySolver) {
+        case TVDLF: Tvdlf(data, dir, this->gamma, this->C2Iso);
+            break;
+        /*case HLL:   Hll(data, dir);
+            break;
+        case HLLC:  Hllc(data, dir);
+            break;
+        case ROE:   Roe(data, dir);
+            break;*/
+        default: // do nothing
+            break;
+    }
+    
     Kokkos::Profiling::popRegion();
 
 }

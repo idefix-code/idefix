@@ -2,9 +2,6 @@
 #define GRID_HPP
 #include "idefix.hpp"
 
-// this is
-enum Solver {tvdlf=1, hll, hllc, hlld, roe};
-
 class Grid {
 public:
     IdefixArray1D<real> x[3];      // geometrical central points
@@ -19,8 +16,6 @@ public:
     int nghost[3];                  // number of ghost cells
     BoundaryType lbound[3];                  // Boundary condition to the left
     BoundaryType rbound[3];                  // Boundary condition to the right
-    
-    Solver solver;                  // Solver type
 
     // Constructor
     Grid(Input &);

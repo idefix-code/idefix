@@ -28,9 +28,11 @@ private:
     // Array designed to store the temporary vector array
     IdefixHostArray3D<float> vect3D;
 
-    // Endianness swaping function and variables
-    
+    // Endianness swaping function and variable
     int doneEndianTest, shouldSwapEndian;
+
+    // Timer
+    Kokkos::Timer timer;
 
     void WriteHeader(FILE *fvtk);
     void WriteScalar(FILE *, IdefixHostArray3D<float> &,  std::string &);

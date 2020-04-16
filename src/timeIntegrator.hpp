@@ -29,6 +29,8 @@ private:
     real t;     // Current time
     real cfl;   // CFL number
     long int ncycles;   // # of cycles
+    double lastLog;     // # time for the last log
+    Kokkos::Timer timer;    // Internal timer of the integrator
     
     DataBlock data;
     Physics phys;

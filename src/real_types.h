@@ -26,6 +26,7 @@ using real = float;
 #define ONE_FOURTH_F (0.25)
 #define ONE_F  (1.0)
 #define TWO_F  (2.0)
+#define FOUR_F  (4.0)
 #else
 #define FMAX(x,y) fmaxf(x,y)
 #define FMIN(x,y) fminf(x,y)
@@ -39,6 +40,7 @@ using real = float;
 #define ONE_FOURTH_F (0.25f)
 #define ONE_F  (1.0f)
 #define TWO_F  (2.0f)
+#define FOUR_F  (4.0f)
 #endif // USE_DOUBLE
 
 

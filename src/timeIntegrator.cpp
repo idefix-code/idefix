@@ -38,6 +38,9 @@ TimeIntegrator::TimeIntegrator(Input & input, Physics &physics, Setup &setup) {
 void TimeIntegrator::Stage(DataBlock &data) {
     
     Kokkos::Profiling::pushRegion("TimeIntegrator::Stage");
+    // Apply Boundary conditions
+    phys.SetBoundary(data,t);
+
     // Convert current state into conservative variable and save it
     phys.ConvertPrimToCons(data);
 
@@ -57,12 +60,10 @@ void TimeIntegrator::Stage(DataBlock &data) {
     // Compute the field evolution according to CT
     phys.CalcCornerEMF(data, t);
     phys.EvolveMagField(data, t, dt);
+    phys.ReconstructVcField(data, data.Uc);
 #endif
     // Convert back into primitive variables
     phys.ConvertConsToPrim(data);
-
-    // Apply Boundary conditions
-    phys.SetBoundary(data,t);
 
     Kokkos::Profiling::popRegion();
 }
@@ -95,7 +96,8 @@ void TimeIntegrator::Cycle(DataBlock & data) {
 
     Kokkos::Profiling::pushRegion("TimeIntegrator::Cycle");
 
-    if(timer.seconds()-lastLog >= 1.0) {
+    //if(timer.seconds()-lastLog >= 0.0) {
+    if(ncycles%100==0) {
         lastLog = timer.seconds();
         std::cout << "TimeIntegrator: t=" << t << " Cycle " << ncycles << " dt=" << dt << std::endl;
         #if MHD == YES
@@ -131,7 +133,8 @@ void TimeIntegrator::Cycle(DataBlock & data) {
                 dtmin=FMIN(ONE_F/InvDt,dtmin);
             }, Kokkos::Min<real>(newdt) );
 
-            newdt=newdt*cfl*DIMENSIONS;
+            //newdt=newdt*cfl*DIMENSIONS;   // For some reason, pluto divides by dimensions here, but it is then unstable...
+            newdt=newdt*cfl;
         }
 
         // Is this not the first stage?

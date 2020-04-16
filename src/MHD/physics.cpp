@@ -443,7 +443,7 @@ void Physics::CalcRiemannFlux(DataBlock & data, int dir) {
                 //6-- Compute maximum dt for this sweep
                 const int ig = ioffset*i + joffset*j + koffset*k;
 
-                invDt(k,j,i) += cmax/dx(ig);
+                invDt(k,j,i) = FMAX(cmax/dx(ig),invDt(k,j,i));
 
                 // 7-- Store the flux in the emf components
                 D_EXPAND(Et(k,j,i) = st*Flux(BXt,k,j,i); ,
@@ -483,6 +483,7 @@ void Physics::CalcRightHandSide(DataBlock &data, int dir, real dt) {
                 D_EXPAND( if(nv == BX1) continue;   ,
                           if(nv == BX2) continue;   ,
                           if(nv == BX3) continue;  ) 
+                
 
                 Uc(nv,k,j,i) = Uc(nv,k,j,i) -  dtdx*(Flux(nv, k+koffset, j+joffset, i+ioffset) - Flux(nv, k, j, i));
             }
@@ -575,10 +576,9 @@ void Physics::EvolveMagField(DataBlock &data, real t, real dt) {
     Kokkos::Profiling::popRegion();
 }
 
-void Physics::ReconstructVcField(DataBlock &data) {
+void Physics::ReconstructVcField(DataBlock & data,  IdefixArray4D<real> &Vc) {
     Kokkos::Profiling::pushRegion("Physics::ReconstructVcField");
-    IdefixArray4D<real> Vc = data.Vc;
-    IdefixArray4D<real> Vs = data.Vs;
+    IdefixArray4D<real> Vs=data.Vs;
 
     // Reconstruct cell average field when using CT
     idefix_for("ReconstructVcMagField",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
@@ -801,10 +801,10 @@ void Physics::SetBoundary(DataBlock &data, real t) {
 
     // Reconstruct the normal field component when using CT
     ReconstructNormalField(data);
-
-    // Average face-centered quantities to get cell-centered quantities
-    ReconstructVcField(data);
     
+    // Remake the cell-centered field.
+    ReconstructVcField(data, data.Vc);
+
 
     Kokkos::Profiling::popRegion();
 

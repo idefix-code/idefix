@@ -13,7 +13,7 @@
 #endif
 
 #define WRITE_STAGGERED_FIELD
-//#define WRITE_EMF
+#define WRITE_EMF
 
 /* ---------------------------------------------------------
     The following macros are specific to this file only 
@@ -60,7 +60,7 @@ OutputVTK::OutputVTK(Input &input, Grid &gridin, real t)
     this->Vwrite = new float[nx1+IOFFSET];
 
     // Temporary storage on host for 3D arrays
-    this->vect3D = IdefixHostArray3D<float>("vect3D",grid.np_tot[KDIR],grid.np_tot[JDIR],grid.np_tot[IDIR]);
+    this->vect3D = IdefixHostArray3D<real>("vect3D",grid.np_tot[KDIR],grid.np_tot[JDIR],grid.np_tot[IDIR]);
 
 
     // Essentially does nothing
@@ -124,7 +124,7 @@ int OutputVTK::Write(DataBlock &datain, real t)
         for(int k = 0; k < grid.np_tot[KDIR] ; k++ ) {
             for(int j = 0; j < grid.np_tot[JDIR] ; j++ ) {
                 for(int i = 0; i < grid.np_tot[IDIR] ; i++ ) {
-                    vect3D(k,j,i) = float(data.Vc(nv,k,j,i));
+                    vect3D(k,j,i) = data.Vc(nv,k,j,i);
                 }
             }
         }
@@ -132,19 +132,20 @@ int OutputVTK::Write(DataBlock &datain, real t)
         WriteScalar(fileHdl, vect3D, varname);
     }
 
+#if MHD == YES
 #ifdef WRITE_STAGGERED_FIELD
     for(int nv = 0 ; nv < DIMENSIONS ; nv++) {
         for(int k = 0; k < grid.np_tot[KDIR] ; k++ ) {
             for(int j = 0; j < grid.np_tot[JDIR] ; j++ ) {
                 for(int i = 0; i < grid.np_tot[IDIR] ; i++ ) {
-                    vect3D(k,j,i) = float(data.Vs(nv,k,j,i));
+                    vect3D(k,j,i) = data.Vs(nv,k,j,i);
                 }
             }
         }
         std::string varname="Vs" + std::to_string(nv);
         WriteScalar(fileHdl, vect3D, varname);
     }
-#endif
+#endif // WRITE_STAGGERED_FIELD
 
 #ifdef WRITE_EMF
     std::string varname;
@@ -156,12 +157,13 @@ int OutputVTK::Write(DataBlock &datain, real t)
     Kokkos::deep_copy(vect3D,datain.emf.ey);
     varname="Ey";
     WriteScalar(fileHdl, vect3D, varname);
-#endif
+#endif // DIMENSIONS
 
     Kokkos::deep_copy(vect3D,datain.emf.ez);
     varname="Ez";
     WriteScalar(fileHdl, vect3D, varname);
-#endif
+#endif // WRITE_EMF
+#endif// MHD
 
 
     fclose(fileHdl);
@@ -316,7 +318,7 @@ void OutputVTK::WriteHeader(FILE *fvtk)
 
 
 /* ********************************************************************* */
-void OutputVTK::WriteScalar(FILE *fvtk, IdefixHostArray3D<float> &Vin,  std::string &var_name)
+void OutputVTK::WriteScalar(FILE *fvtk, IdefixHostArray3D<real> &Vin,  std::string &var_name)
 /*!
  * Write VTK scalar field.
  *
@@ -341,7 +343,7 @@ void OutputVTK::WriteScalar(FILE *fvtk, IdefixHostArray3D<float> &Vin,  std::str
     for(long int k = 0 ; k < nx3 ; k++ ) {
         for(long int j = 0 ; j < nx2 ; j++ ) {
             for(long int i = 0 ; i < nx1 ; i++ ) {
-                Vwrite[i] = BigEndian(Vin(k + grid.nghost[KDIR],j + grid.nghost[JDIR],i + grid.nghost[IDIR]));
+                Vwrite[i] = BigEndian(float(Vin(k + grid.nghost[KDIR],j + grid.nghost[JDIR],i + grid.nghost[IDIR])));
             }
             fwrite(Vwrite, sizeof(float), nx1, fvtk);
         }

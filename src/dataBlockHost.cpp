@@ -76,6 +76,8 @@ void DataBlockHost::MakeVsFromAmag(IdefixHostArray4D<real> &Ain) {
     IdefixHostArray1D<real> dx2 = this->dx[JDIR];
     IdefixHostArray1D<real> dx3 = this->dx[KDIR];
 
+    #if MHD == YES
+
     for(int k = data.beg[KDIR] ; k < data.end[KDIR] +1 ; k++) {
         for(int j = data.beg[JDIR] ; j < data.end[JDIR] +1 ; j++) {
             for(int i = data.beg[IDIR] ; i < data.end[IDIR] +1; i++) {
@@ -94,6 +96,9 @@ void DataBlockHost::MakeVsFromAmag(IdefixHostArray4D<real> &Ain) {
             }
         }
     }
+    #else
+    IDEFIX_ERROR("This function cannot be used without MHD enabled");
+    #endif
 
 
 }

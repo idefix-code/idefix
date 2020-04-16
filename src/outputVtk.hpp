@@ -26,7 +26,7 @@ private:
     float *node_coord, *xnode, *ynode, *znode, *Vwrite;
 
     // Array designed to store the temporary vector array
-    IdefixHostArray3D<float> vect3D;
+    IdefixHostArray3D<real> vect3D;
 
     // Endianness swaping function and variable
     int doneEndianTest, shouldSwapEndian;
@@ -35,7 +35,7 @@ private:
     Kokkos::Timer timer;
 
     void WriteHeader(FILE *fvtk);
-    void WriteScalar(FILE *, IdefixHostArray3D<float> &,  std::string &);
+    void WriteScalar(FILE *, IdefixHostArray3D<real> &,  std::string &);
     float BigEndian(float);
 
 };

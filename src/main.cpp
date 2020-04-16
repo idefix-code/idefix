@@ -64,9 +64,7 @@ int main( int argc, char* argv[] )
     // Apply initial conditions
     std::cout << "Creating initial conditions" << std::endl;
     mysetup.InitFlow(data);
-    std::cout << "DivB in initial conditions=" << phys.CheckDivB(data) << std::endl;
     phys.SetBoundary(data,Tint.getT());
-    std::cout << "DivB in initial conditions2=" << phys.CheckDivB(data) << std::endl;
 
     std::cout << "Write init vtk" << std::endl;
     output.Write(data,Tint.getT());
@@ -83,7 +81,7 @@ int main( int argc, char* argv[] )
     }
     double tintegration = (timer.seconds()/(grid.np_int[IDIR]*grid.np_int[JDIR]*grid.np_int[KDIR]*Tint.getNcycles()));
     std::cout << "Reached t=" << Tint.getT() << std::endl;
-    std::cout << "Completed in " << timer.seconds() << "seconds. Perfs are " << 1/tintegration << " cell updates/second." << std::endl;
+    std::cout << "Completed in " << timer.seconds() << "seconds and " << Tint.getNcycles() << " cycles. Perfs are " << 1/tintegration << " cell updates/second." << std::endl;
     
 
     // Make a test

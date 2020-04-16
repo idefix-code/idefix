@@ -10,10 +10,8 @@ import idefixTools as idfx
 import numpy as np
 import matplotlib.pyplot as plt
 
-V=idfx.readVTKCart('../data.0100.vtk')
+V=idfx.readVTKCart('../data.0001.vtk')
 U=idfx.readVTKCart('data.ref.vtk')
-gamma = 5.0/3.0
-npts = 500
 
 
 

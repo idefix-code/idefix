@@ -1,0 +1,12 @@
+Standard SOD shock tube test
+
+To run it, first initialise the IDEFIX_DIR environement to the root of the idefix directory
+export IDEFIX_DIR=...
+Second, compile the code (make)
+Third, run the code
+Then, go to the python directory and load the results, which are plotted against analytical solution
+cd python
+python testidefix.py
+
+ 
+

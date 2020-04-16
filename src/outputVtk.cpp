@@ -12,6 +12,9 @@
   #endif
 #endif
 
+#define WRITE_STAGGERED_FIELD
+//#define WRITE_EMF
+
 /* ---------------------------------------------------------
     The following macros are specific to this file only 
     and are used to ease up serial/parallel implementation
@@ -108,6 +111,8 @@ int OutputVTK::Write(DataBlock &datain, real t)
 
     std::cout << "OutputVTK::Write file n " << vtkFileNumber << "..." << std::flush;
 
+    timer.reset();
+
     // Create a copy of the dataBlock on Host, and sync it.
     DataBlockHost data(datain);
     data.SyncFromDevice();
@@ -127,12 +132,44 @@ int OutputVTK::Write(DataBlock &datain, real t)
         WriteScalar(fileHdl, vect3D, varname);
     }
 
+#ifdef WRITE_STAGGERED_FIELD
+    for(int nv = 0 ; nv < DIMENSIONS ; nv++) {
+        for(int k = 0; k < grid.np_tot[KDIR] ; k++ ) {
+            for(int j = 0; j < grid.np_tot[JDIR] ; j++ ) {
+                for(int i = 0; i < grid.np_tot[IDIR] ; i++ ) {
+                    vect3D(k,j,i) = float(data.Vs(nv,k,j,i));
+                }
+            }
+        }
+        std::string varname="Vs" + std::to_string(nv);
+        WriteScalar(fileHdl, vect3D, varname);
+    }
+#endif
+
+#ifdef WRITE_EMF
+    std::string varname;
+#if DIMENSIONS == 3
+    Kokkos::deep_copy(vect3D,datain.emf.ex);
+    varname="Ex";
+    WriteScalar(fileHdl, vect3D, varname);
+
+    Kokkos::deep_copy(vect3D,datain.emf.ey);
+    varname="Ey";
+    WriteScalar(fileHdl, vect3D, varname);
+#endif
+
+    Kokkos::deep_copy(vect3D,datain.emf.ez);
+    varname="Ez";
+    WriteScalar(fileHdl, vect3D, varname);
+#endif
+
+
     fclose(fileHdl);
 
     vtkFileNumber++;
     // Make file number
 
-    std::cout << "done." << std::endl;
+    std::cout << "done in " << timer.seconds() << " s." << std::endl;
     Kokkos::Profiling::popRegion();
     // One day, we will have a return code.
     return(0);

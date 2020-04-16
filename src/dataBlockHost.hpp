@@ -14,7 +14,9 @@ public:
     IdefixArray3D<real>::HostMirror A[3];      // cell right interface area
 
     IdefixArray4D<real>::HostMirror Vc;     // Main cell-centered primitive variables index
+    IdefixArray4D<real>::HostMirror Vs;     // Main face-centered primitive variables index
     IdefixArray4D<real>::HostMirror Uc;     // Main cell-centered conservative variables
+
    
     int np_tot[3];                  // total number of grid points
     int np_int[3];                  // internal number of grid points
@@ -35,6 +37,9 @@ public:
 
     // Default constructor
     DataBlockHost();
+
+    // Construct a face-centered field from potential vector
+    void MakeVsFromAmag(IdefixHostArray4D<real> &);
 
     // Synchronisation routines
     void SyncToDevice();

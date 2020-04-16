@@ -155,12 +155,12 @@ void Physics::CalcRiemannFlux(DataBlock & data, int dir) {
     switch (mySolver) {
         case TVDLF: Tvdlf(data, dir, this->gamma, this->C2Iso);
             break;
-        /*case HLL:   Hll(data, dir);
+        case HLL:   Hll(data, dir, this->gamma, this->C2Iso);
             break;
-        case HLLC:  Hllc(data, dir);
+        case HLLC:  Hllc(data, dir, this->gamma, this->C2Iso);
             break;
-        case ROE:   Roe(data, dir);
-            break;*/
+        case ROE:   Roe(data, dir, this->gamma, this->C2Iso);
+            break;
         default: // do nothing
             break;
     }

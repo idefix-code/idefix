@@ -75,6 +75,20 @@ Grid::Grid(Input &input) {
         dx[dir] = IdefixArray1D<real>("Grid_dx",np_tot[dir]);
         
     }
+    
+    // Get used solver
+    std::string solverString = input.GetString("Solver","Solver",0);
+    
+    if (solverString.compare("tvdlf") == 0)     solver = tvdlf;
+    else if (solverString.compare("hll") == 0)  solver = hll;
+    else if (solverString.compare("hllc") == 0) solver = hllc;
+    else if (solverString.compare("hlld") == 0) solver = hlld;
+    else if (solverString.compare("roe") == 0)  solver = roe;
+    else {
+        std::stringstream msg;
+        msg << "Unknown solver type " << solverString;
+        IDEFIX_ERROR(msg);
+    }
 
     Kokkos::Profiling::popRegion();
 

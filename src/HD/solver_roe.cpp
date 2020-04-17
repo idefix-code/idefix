@@ -2,7 +2,7 @@
 #include "solvers.hpp"
 
 // Compute Riemann fluxes from states using ROE solver
-void Tvdlf(DataBlock & data, int dir, real gamma, real C2Iso) {
+void Roe(DataBlock & data, int dir, real gamma, real C2Iso) {
     int ioffset,joffset,koffset;
 
     Kokkos::Profiling::pushRegion("ROE_Solver");
@@ -109,10 +109,10 @@ void Tvdlf(DataBlock & data, int dir, real gamma, real C2Iso) {
     #endif
 #else
                 for(int nv = 0 ; nv < NVAR; nv++) {
-                    um[nv] = vRL[nv];
+                    um[nv] = HALF_F*(vR[nv]+vL[nv]);
                 }
     #if EOS == IDEAL
-                a2   = g_gamma*um[PRS]/um[RHO];
+                a2   = gamma*um[PRS]/um[RHO];
                 a    = sqrt(a2);
 
                 vel2 = EXPAND(um[VX1]*um[VX1], + um[VX2]*um[VX2], + um[VX3]*um[VX3]);

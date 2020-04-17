@@ -96,8 +96,8 @@ void TimeIntegrator::Cycle(DataBlock & data) {
 
     Kokkos::Profiling::pushRegion("TimeIntegrator::Cycle");
 
-    //if(timer.seconds()-lastLog >= 0.0) {
-    if(ncycles%100==0) {
+    if(timer.seconds()-lastLog >= 5.0) {
+    //if(ncycles%100==0) {
         lastLog = timer.seconds();
         std::cout << "TimeIntegrator: t=" << t << " Cycle " << ncycles << " dt=" << dt << std::endl;
         #if MHD == YES

@@ -9,10 +9,18 @@ using Layout = Kokkos::LayoutRight;
 
 // Define the kind of loop we want (see loop.hpp for details)
 //#define  INDEX_LOOP
-#define  MDRANGE_LOOP
+//#define  MDRANGE_LOOP
 //#define  SIMD_LOOP
 //#define  TP_INNERX_LOOP
 //#define  TPTTRTVR_LOOP
+
+// Hopefully a master switch which detects which loop is needed on the architecture
+
+#ifdef KOKKOS_ENABLE_CUDA
+#define INDEX_LOOP
+#else
+#define MDRANGE_LOOP
+#endif
 
 #define USE_DOUBLE
 

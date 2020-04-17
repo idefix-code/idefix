@@ -262,5 +262,10 @@ void Input::PrintLogo() {
     std::cout << std::endl;
     std::cout << std::endl;
     std::cout << "           This is Idefix " << GITVERSION << std::endl;
+#ifdef KOKKOS_ENABLE_CUDA
+    std::cout << "               Compiled for GPU (nvidia-CUDA) " << std::endl;
+#else
+    std::cout << "               Compiled for CPUs " << std::endl;
+#endif
 
 }

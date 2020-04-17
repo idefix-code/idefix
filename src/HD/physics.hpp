@@ -1,6 +1,10 @@
 #ifndef PHYSICS_HPP
 #define PHYSICS_HPP
+
 #include "../idefix.hpp"
+
+// Solver type
+enum Solver {TVDLF=1, HLL, HLLC, ROE};
 
 class Physics {
 public:
@@ -19,9 +23,9 @@ private:
     real gamma;
 
     Setup mySetup;
+    Solver mySolver;
 
 };
-
 
 
 #endif

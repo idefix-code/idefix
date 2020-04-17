@@ -79,4 +79,3 @@ Grid::Grid(Input &input) {
     Kokkos::Profiling::popRegion();
 
 }
-

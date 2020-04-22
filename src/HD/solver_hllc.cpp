@@ -24,8 +24,8 @@ void Hllc(DataBlock & data, int dir, real gamma, real C2Iso) {
                         KOKKOS_LAMBDA (int k, int j, int i) 
             {
                 EXPAND( int VXn = VX1+dir; int MXn = VXn;        ,
-                        int VXt = VX1+(dir+1)%3; int MXt = VXt;  ,
-                        int VXb = VX1+(dir+2)%3; int MXb = VXb;   )
+                        int VXt = VX1+(dir+1)%DIMENSIONS; int MXt = VXt;  ,
+                        int VXb = VX1+(dir+2)%DIMENSIONS; int MXb = VXb;   )
 
                 // Primitive variables
                 real vL[NVAR];

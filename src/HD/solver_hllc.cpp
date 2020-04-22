@@ -23,12 +23,13 @@ void Hllc(DataBlock & data, int dir, real gamma, real C2Iso) {
     idefix_for("HLLC_Kernel",data.beg[KDIR],data.end[KDIR]+koffset,data.beg[JDIR],data.end[JDIR]+joffset,data.beg[IDIR],data.end[IDIR]+ioffset,
                         KOKKOS_LAMBDA (int k, int j, int i) 
             {
-                int VXn = VX1+dir;
-                int MXn = VXn;
+                EXPAND( int VXn = VX1+dir; int MXn = VXn;        ,
+                        int VXt = VX1+(dir+1)%3; int MXt = VXt;  ,
+                        int VXb = VX1+(dir+2)%3; int MXb = VXb;   )
+
                 // Primitive variables
                 real vL[NVAR];
                 real vR[NVAR];
-                real vRL[NVAR];
 
                 // Conservative variables
                 real uL[NVAR];
@@ -39,69 +40,64 @@ void Hllc(DataBlock & data, int dir, real gamma, real C2Iso) {
                 real fluxR[NVAR];
 
                 // Signal speeds
-                real cRL, cmax;
-                real SR, SL, sl_min, sr_min, sl_max, sr_max;
-                real aL, a2L, a2R, aR;
-                real scrh;
+                real cL, cR, cmax;
 
                 // 1-- Store the primitive variables on the left, right, and averaged states
                 for(int nv = 0 ; nv < NVAR; nv++) {
                     vL[nv] = PrimL(nv,k,j,i);
                     vR[nv] = PrimR(nv,k,j,i);
-                    vRL[nv]=HALF_F*(vL[nv]+vR[nv]);
                 }
 
+                // 2-- Get the wave speed
+#if HAVE_ENERGY
+                cL = SQRT( gamma *(vL[PRS]/vL[RHO]));
+                cR = SQRT( gamma *(vR[PRS]/vR[RHO]));
+#else
+                cL = SQRT(C2Iso);
+                cR = cL;
+#endif
+                
+                // 4.1 
+                real cminL = vL[VXn] - cL;
+                real cmaxL = vL[VXn] + cL;
+                
+                real cminR = vR[VXn] - cR;
+                real cmaxR = vR[VXn] + cR;
+                
+                real SL = FMIN(cminL, cminR);
+                real SR = FMAX(cmaxL, cmaxR);
+                
+                cmax  = FMAX(FABS(SL), FABS(SR));
+                
                 // 2-- Compute the conservative variables
                 K_PrimToCons(uL, vL, gamma_m1);
                 K_PrimToCons(uR, vR, gamma_m1);
+                
+                for(int nv = 0 ; nv < NVAR; nv++) {
+                    fluxL[nv] = uL[nv];
+                    fluxR[nv] = uR[nv];
+                }
 
                 // 3-- Compute the left and right fluxes
-                K_Flux(fluxL, vL, uL, C2Iso, dir);
-                K_Flux(fluxR, vR, uR, C2Iso, dir);
-
-                // 4-- Get the wave speed
-                
-                // HLL_Speed using DAVIS_ESTIMATE
-                a2L = gamma*vL[PRS]/vL[RHO];
-                a2R = gamma*vR[PRS]/vR[RHO];
-                
-                aL = sqrt(a2L);
-                aR = sqrt(a2R);
-
-                sl_min = vL[VXn] - aL;
-                sl_max = vL[VXn] + aL;
-                
-                sr_min = vR[VXn] - aR;
-                sr_max = vR[VXn] + aR;
-
-                SL = FMIN(sl_min, sr_min);
-                SR = FMAX(sl_max, sr_max);
-                
-                cmax  = FMAX(fabs(SL), fabs(SR));
+                K_Flux(fluxL, vL, fluxL, C2Iso, dir);
+                K_Flux(fluxR, vR, fluxR, C2Iso, dir);
 
                 // 5-- Compute the flux from the left and right states
-                if (SL > 0.0) {
-                    for(int nv = 0 ; nv < NVAR; nv++) Flux(nv,k,j,i) = fluxL[nv];
+                if (SL > 0){
+                    for (int nv = 0 ; nv < NFLX; nv++) {
+                        Flux(nv,k,j,i) = fluxL[nv];
+                    }
                 }
-                else if (SR < 0.0) {
-                    for(int nv = 0 ; nv < NVAR; nv++) Flux(nv,k,j,i) = fluxR[nv];
+                else if (SR < 0) {
+                    for (int nv = 0 ; nv < NFLX; nv++) {
+                        Flux(nv,k,j,i) = fluxR[nv];
+                    }
                 }
                 else {
-
-#if SHOCK_FLATTENING == MULTID
-                    //if ((sweep->flag & FLAG_HLL) || (sweep->flag[i+1] & FLAG_HLL)) {
-                        scrh  = 1.0/(SR - SL);
-                        for(int nv = 0 ; nv < NVAR; nv++) {
-                            Flux(nv,k,j,i)  = SL*SR*(uR[nv] - uL[nv])
-                                                + SR*fluxL[nv] - SL*fluxR[nv];
-                            Flux(nv,k,j,i) *= scrh;
-                        }
-                    //}
-#else
-
-// *******************************************************************************
-
-                // 4-- Compute the u*
+                    real usL[NVAR];
+                    real usR[NVAR];
+                    real vs;
+                    
 #if HAVE_ENERGY
                     real qL, qR, wL, wR;
                     qL = vL[PRS] + uL[MXn]*(vL[VXn] - SL);
@@ -110,12 +106,7 @@ void Hllc(DataBlock & data, int dir, real gamma, real C2Iso) {
                     wL = vL[RHO]*(vL[VXn] - SL);
                     wR = vR[RHO]*(vR[VXn] - SR);
 
-                    vs = (qR - qL)/(wR - wL); /* wR - wL > 0 since SL < 0, SR > 0 */
-                /*
-                    vs = vR[PRS] - vL[PRS] + uL[MXn]*(SL - vL[VXn])
-                                           - uR[MXn]*(SR - vR[VXn]);
-                    vs /= vL[RHO]*(SL - vL[VXn]) - vR[RHO]*(SR - vR[VXn]);
-                */
+                    vs = (qR - qL)/(wR - wL); // wR - wL > 0 since SL < 0, SR > 0
 
                     usL[RHO] = uL[RHO]*(SL - vL[VXn])/(SL - vs);
                     usR[RHO] = uR[RHO]*(SR - vR[VXn])/(SR - vs);
@@ -130,10 +121,10 @@ void Hllc(DataBlock & data, int dir, real gamma, real C2Iso) {
 
                     usL[ENG] *= usL[RHO];
                     usR[ENG] *= usR[RHO];
-#elif EOS == ISOTHERMAL
-                    scrh = 1.0/(SR - SL);
-                    rho  = (SR*uR[RHO] - SL*uL[RHO] - fluxR[RHO] + fluxL[RHO])*scrh;
-                    mx   = (SR*uR[MXn] - SL*uL[MXn] - fluxR[MXn] + fluxL[MXn])*scrh;
+#else
+                    real scrh = 1.0/(SR - SL);
+                    real rho  = (SR*uR[RHO] - SL*uL[RHO] - fluxR[RHO] + fluxL[RHO])*scrh;
+                    real mx   = (SR*uR[MXn] - SL*uL[MXn] - fluxR[MXn] + fluxL[MXn])*scrh;
 
                     usL[RHO] = usR[RHO] = rho;
                     usL[MXn] = usR[MXn] = mx;
@@ -156,9 +147,8 @@ void Hllc(DataBlock & data, int dir, real gamma, real C2Iso) {
                             Flux(nv,k,j,i) = fluxR[nv] + SR*(usR[nv] - uR[nv]);
                         }
                     }
-#endif
                 }
-                
+
                 //6-- Compute maximum dt for this sweep
                 const int ig = ioffset*i + joffset*j + koffset*k;
 

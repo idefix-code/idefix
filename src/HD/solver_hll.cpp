@@ -24,11 +24,10 @@ void Hll(DataBlock & data, int dir, real gamma, real C2Iso) {
                         KOKKOS_LAMBDA (int k, int j, int i) 
             {
                 int VXn = VX1+dir;
-                int MXn = VXn;
+
                 // Primitive variables
                 real vL[NVAR];
                 real vR[NVAR];
-                real vRL[NVAR];
 
                 // Conservative variables
                 real uL[NVAR];
@@ -39,71 +38,71 @@ void Hll(DataBlock & data, int dir, real gamma, real C2Iso) {
                 real fluxR[NVAR];
 
                 // Signal speeds
-                real cRL, cmax;
-                real SR, SL, sl_min, sr_min, sl_max, sr_max;
-                real aL, a2L, a2R, aR;
-                real scrh;
+                real cL, cR, cmax;
 
                 // 1-- Store the primitive variables on the left, right, and averaged states
                 for(int nv = 0 ; nv < NVAR; nv++) {
                     vL[nv] = PrimL(nv,k,j,i);
                     vR[nv] = PrimR(nv,k,j,i);
-                    vRL[nv]=HALF_F*(vL[nv]+vR[nv]);
                 }
 
+                // 2-- Get the wave speed
+#if HAVE_ENERGY
+                cL = SQRT( gamma *(vL[PRS]/vL[RHO]));
+                cR = SQRT( gamma *(vR[PRS]/vR[RHO]));
+#else
+                cL = SQRT(C2Iso);
+                cR = cL;
+#endif
+                
+                // 4.1 
+                real cminL = vL[VXn] - cL;
+                real cmaxL = vL[VXn] + cL;
+                
+                real cminR = vR[VXn] - cR;
+                real cmaxR = vR[VXn] + cR;
+                
+                real SL = FMIN(cminL, cminR);
+                real SR = FMAX(cmaxL, cmaxR);
+                
+                cmax  = FMAX(FABS(SL), FABS(SR));
+                
                 // 2-- Compute the conservative variables
                 K_PrimToCons(uL, vL, gamma_m1);
                 K_PrimToCons(uR, vR, gamma_m1);
+                
+                for(int nv = 0 ; nv < NVAR; nv++) {
+                    fluxL[nv] = uL[nv];
+                    fluxR[nv] = uR[nv];
+                }
 
                 // 3-- Compute the left and right fluxes
-                K_Flux(fluxL, vL, uL, C2Iso, dir);
-                K_Flux(fluxR, vR, uR, C2Iso, dir);
-
-                // 4-- Get the wave speed
-                
-                // HLL_Speed using DAVIS_ESTIMATE
-                a2L = gamma*vL[PRS]/vL[RHO];
-                a2R = gamma*vR[PRS]/vR[RHO];
-                
-                aL = sqrt(a2L);
-                aR = sqrt(a2R);
-
-                sl_min = vL[VXn] - aL;
-                sl_max = vL[VXn] + aL;
-                
-                sr_min = vR[VXn] - aR;
-                sr_max = vR[VXn] + aR;
-
-                SL = FMIN(sl_min, sr_min);
-                SR = FMAX(sl_max, sr_max);
-
-                /*scrh  = fabs(vL[VXn]) + fabs(vR[VXn]);    
-                scrh /= aL + aR;
-
-                // reduction!!!
-                g_maxMach = MAX(scrh, g_maxMach);*/
-                
-                cmax  = FMAX(fabs(SL), fabs(SR));
+                K_Flux(fluxL, vL, fluxL, C2Iso, dir);
+                K_Flux(fluxR, vR, fluxR, C2Iso, dir);
 
                 // 5-- Compute the flux from the left and right states
-                if (SL > 0.0) {
-                    for(int nv = 0 ; nv < NVAR; nv++) Flux(nv,k,j,i) = fluxL[nv];
+                if (SL > 0){
+                    for (int nv = 0 ; nv < NFLX; nv++) {
+                        Flux(nv,k,j,i) = fluxL[nv];
+                    }
                 }
-                else if (SR < 0.0) {
-                    for(int nv = 0 ; nv < NVAR; nv++) Flux(nv,k,j,i) = fluxR[nv];
+                else if (SR < 0) {
+                    for (int nv = 0 ; nv < NFLX; nv++) {
+                        Flux(nv,k,j,i) = fluxR[nv];
+                    }
                 }
                 else {
-                    scrh = 1.0 / (SR - SL);
-                    for(int nv = 0 ; nv < NVAR; nv++) {
-                        Flux(nv,k,j,i) = SL*SR*(uR[nv] - uL[nv]) +
-                                         SR*fluxL[nv] - SL*fluxR[nv];
-                        Flux(nv,k,j,i) *= scrh;
+                    for(int nv = 0 ; nv < NFLX; nv++) {
+                        Flux(nv,k,j,i) = SL*SR*uR[nv] - SL*SR*uL[nv] + SR*fluxL[nv] - SL*fluxR[nv];
+                        Flux(nv,k,j,i) *= (1.0 / (SR - SL));
                     }
                 }
 
                 //6-- Compute maximum dt for this sweep
                 const int ig = ioffset*i + joffset*j + koffset*k;
+
                 invDt(k,j,i) += cmax/dx(ig);
+
             });
 
     Kokkos::Profiling::popRegion();

@@ -1,6 +1,8 @@
 #include "../idefix.hpp"
 #include "solvers.hpp"
 
+#define ROE_AVERAGE 0
+
 // Compute Riemann fluxes from states using ROE solver
 void Roe(DataBlock & data, int dir, real gamma, real C2Iso) {
     int ioffset,joffset,koffset;
@@ -24,10 +26,10 @@ void Roe(DataBlock & data, int dir, real gamma, real C2Iso) {
     idefix_for("ROE_Kernel",data.beg[KDIR],data.end[KDIR]+koffset,data.beg[JDIR],data.end[JDIR]+joffset,data.beg[IDIR],data.end[IDIR]+ioffset,
                         KOKKOS_LAMBDA (int k, int j, int i) 
             {
-                int VXn = VX1+dir;
-                int MXn = VXn;
-                int VXt, MXt;
-                VXt = MXt = VX2;
+                EXPAND( int VXn = VX1+dir; int MXn = VXn;        ,
+                        int VXt = VX1+(dir+1)%DIMENSIONS; int MXt = VXt;  ,
+                        int VXb = VX1+(dir+2)%DIMENSIONS; int MXb = VXb;   )
+                
                 // Primitive variables
                 real vL[NVAR];
                 real vR[NVAR];
@@ -58,18 +60,22 @@ void Roe(DataBlock & data, int dir, real gamma, real C2Iso) {
                 // 2-- Compute the conservative variables
                 K_PrimToCons(uL, vL, gamma_m1);
                 K_PrimToCons(uR, vR, gamma_m1);
-
-                // 3.1 Compute the square of the sound speed
+                
+                // 3-- Compute the left and right fluxes
+                K_Flux(fluxL, vL, uL, C2Iso, dir);
+                K_Flux(fluxR, vR, uR, C2Iso, dir);
+                
+                // --- Compute the square of the sound speed
+#if HAVE_ENERGY
                 a2L = gamma * vL[PRS] / vL[RHO];
                 a2R = gamma * vR[PRS] / vR[RHO];
                 
-                // 3.2 Compute the left and right fluxes
-                K_Flux(fluxL, vL, uL, C2Iso, dir);
-                K_Flux(fluxR, vR, uR, C2Iso, dir);
-
-                // **- Starting Roe
-                /*  ----  Define Wave Jumps  ----  */
-
+#else
+                a2L = C2Iso;
+                a2R = C2Iso;
+#endif
+                
+                //  ----  Define Wave Jumps  ----
 #if ROE_AVERAGE == YES    
                 s       = sqrt(vR[RHO]/vL[RHO]);
                 um[RHO] = vL[RHO]*s;
@@ -80,7 +86,7 @@ void Roe(DataBlock & data, int dir, real gamma, real C2Iso) {
                 um[VX2] = s*vL[VX2] + c*vR[VX2];  ,
                 um[VX3] = s*vL[VX3] + c*vR[VX3];)
 
-    #if EOS == IDEAL
+    #if HAVE_ENERGY
                 vel2 = EXPAND(um[VX1]*um[VX1], + um[VX2]*um[VX2], + um[VX3]*um[VX3]);
 
                 hl  = 0.5*(EXPAND(vL[VX1]*vL[VX1], + vL[VX2]*vL[VX2], + vL[VX3]*vL[VX3]));    
@@ -106,24 +112,22 @@ void Roe(DataBlock & data, int dir, real gamma, real C2Iso) {
 
                 a2 = gamma_m1*(h - 0.5*vel2);
                 a  = sqrt(a2);
-    #endif
+    #endif // HAVE_ENERGY
 #else
                 for(int nv = 0 ; nv < NVAR; nv++) {
                     um[nv] = HALF_F*(vR[nv]+vL[nv]);
                 }
-    #if EOS == IDEAL
+    #if HAVE_ENERGY
                 a2   = gamma*um[PRS]/um[RHO];
                 a    = sqrt(a2);
 
                 vel2 = EXPAND(um[VX1]*um[VX1], + um[VX2]*um[VX2], + um[VX3]*um[VX3]);
                 h    = 0.5*vel2 + a2/gamma_m1;
-    #endif /* EOS == IDEAL */
-#endif /* ROE_AVERAGE == YES/NO */
+    #endif // HAVE_ENERGY
+#endif // ROE_AVERAGE == YES/NO
 
-#if EOS == ISOTHERMAL
                 a2 = 0.5*(a2L + a2R);
                 a  = sqrt(a2);
-#endif
                 
 // **********************************************************************************
                 /* ----------------------------------------------------------------
@@ -141,13 +145,13 @@ void Roe(DataBlock & data, int dir, real gamma, real C2Iso) {
                     }
                 }
                 
-                /*  ---- (u - c_s)  ----  */ 
+                //  ---- (u - c_s)  ---- 
 
                 nn         = 0;
                 lambda[nn] = um[VXn] - a;
-#if EOS == IDEAL
+#if HAVE_ENERGY
                 eta[nn] = 0.5/a2*(dv[PRS] - dv[VXn]*um[RHO]*a);
-#elif EOS == ISOTHERMAL
+#else
                 eta[nn] = 0.5*(dv[RHO] - um[RHO]*dv[VXn]/a);
 #endif
 
@@ -155,7 +159,7 @@ void Roe(DataBlock & data, int dir, real gamma, real C2Iso) {
                 EXPAND(Rc[MXn][nn] = um[VXn] - a;   ,
                 Rc[MXt][nn] = um[VXt];       ,
                 Rc[MXb][nn] = um[VXb];)
-#if EOS == IDEAL
+#if HAVE_ENERGY
                 Rc[ENG][nn] = h - um[VXn]*a;
 #endif
 
@@ -163,9 +167,9 @@ void Roe(DataBlock & data, int dir, real gamma, real C2Iso) {
 
                 nn         = 1;
                 lambda[nn] = um[VXn] + a;
-#if EOS == IDEAL
+#if HAVE_ENERGY
                 eta[nn]    = 0.5/a2*(dv[PRS] + dv[VXn]*um[RHO]*a);
-#elif EOS == ISOTHERMAL
+#else
                 eta[nn] = 0.5*(dv[RHO] + um[RHO]*dv[VXn]/a);
 #endif
 
@@ -173,13 +177,13 @@ void Roe(DataBlock & data, int dir, real gamma, real C2Iso) {
                 EXPAND(Rc[MXn][nn] = um[VXn] + a;   ,
                 Rc[MXt][nn] = um[VXt];       ,
                 Rc[MXb][nn] = um[VXb];)
-#if EOS == IDEAL
+#if HAVE_ENERGY
                 Rc[ENG][nn] = h + um[VXn]*a;
 #endif
 
                 /*  ----  (u)  ----  */ 
 
-#if EOS == IDEAL
+#if HAVE_ENERGY
                 nn         = 2;
                 lambda[nn] = um[VXn];
                 eta[nn]    = dv[RHO] - dv[PRS]/a2;
@@ -198,7 +202,7 @@ void Roe(DataBlock & data, int dir, real gamma, real C2Iso) {
                 lambda[nn] = um[VXn];
                 eta[nn]    = um[RHO]*dv[VXt];
                 Rc[MXt][nn] = 1.0;
-    #if EOS == IDEAL
+    #if HAVE_ENERGY
                 Rc[ENG][nn] = um[VXt];  
     #endif
 #endif
@@ -211,7 +215,7 @@ void Roe(DataBlock & data, int dir, real gamma, real C2Iso) {
                 lambda[nn] = um[VXn];
                 eta[nn]    = um[RHO]*dv[VXb];
                 Rc[MXb][nn] = 1.0;
-    #if EOS == IDEAL
+    #if HAVE_ENERGY
                 Rc[ENG][nn] = um[VXb];  
     #endif
 #endif
@@ -230,10 +234,10 @@ void Roe(DataBlock & data, int dir, real gamma, real C2Iso) {
 
                 real scrh, scrh1;
                 real bmin, bmax;
-#if EOS == IDEAL
+#if HAVE_ENERGY
                 scrh  = FABS(vL[PRS] - vR[PRS]);
                 scrh /= FMIN(vL[PRS],vR[PRS]);
-#elif EOS == ISOTHERMAL
+#else
                 scrh  = FABS(vL[RHO] - vR[RHO]);
                 scrh /= FMIN(vL[RHO],vR[RHO]);
                 scrh *= a*a;

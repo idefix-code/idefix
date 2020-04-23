@@ -8,9 +8,35 @@ void Hllc(DataBlock & data, int dir, real gamma, real C2Iso) {
     Kokkos::Profiling::pushRegion("HLLC_Solver");
     ioffset=joffset=koffset=0;
     // Determine the offset along which we do the extrapolation
-    if(dir==IDIR) ioffset=1;
-    if(dir==JDIR) joffset=1;
-    if(dir==KDIR) koffset=1;
+    EXPAND( int VXn; int MXn;  ,
+            int VXt; int MXt;  ,
+            int VXb; int MXb;   )
+    
+    switch(dir) {
+        case(IDIR):
+            ioffset = 1;
+            
+            EXPAND(VXn = MXn = VX1;  , 
+                   VXt = MXt = VX2;  , 
+                   VXb = MXb = VX3; )
+            break;
+        case(JDIR):
+            joffset=1;
+
+            EXPAND(VXn = MXn = VX2;  , 
+                   VXt = MXt = VX1;  , 
+                   VXb = MXb = VX3; )
+            break;
+        case(KDIR):
+            koffset=1;
+
+            EXPAND(VXn = MXn = VX3;  , 
+                   VXt = MXt = VX1;  , 
+                   VXb = MXb = VX2; )
+            break;
+        default:
+            IDEFIX_ERROR("Wrong direction");
+    }
 
     IdefixArray4D<real> PrimL = data.PrimL;
     IdefixArray4D<real> PrimR = data.PrimR;
@@ -23,9 +49,6 @@ void Hllc(DataBlock & data, int dir, real gamma, real C2Iso) {
     idefix_for("HLLC_Kernel",data.beg[KDIR],data.end[KDIR]+koffset,data.beg[JDIR],data.end[JDIR]+joffset,data.beg[IDIR],data.end[IDIR]+ioffset,
                         KOKKOS_LAMBDA (int k, int j, int i) 
             {
-                EXPAND( int VXn = VX1+dir; int MXn = VXn;        ,
-                        int VXt = VX1+(dir+1)%DIMENSIONS; int MXt = VXt;  ,
-                        int VXb = VX1+(dir+2)%DIMENSIONS; int MXb = VXb;   )
 
                 // Primitive variables
                 real vL[NVAR];
@@ -72,13 +95,13 @@ void Hllc(DataBlock & data, int dir, real gamma, real C2Iso) {
                 // 2-- Compute the conservative variables
                 K_PrimToCons(uL, vL, gamma_m1);
                 K_PrimToCons(uR, vR, gamma_m1);
-                
+
+                // 3-- Compute the left and right fluxes
                 for(int nv = 0 ; nv < NVAR; nv++) {
                     fluxL[nv] = uL[nv];
                     fluxR[nv] = uR[nv];
                 }
-
-                // 3-- Compute the left and right fluxes
+                
                 K_Flux(fluxL, vL, fluxL, C2Iso, dir);
                 K_Flux(fluxR, vR, fluxR, C2Iso, dir);
 

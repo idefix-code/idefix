@@ -1,104 +1,6 @@
 #include "../idefix.hpp"
 #include "physics.hpp"
-
-/********************************
- * Local Kokkos Inline function *
- * ******************************/
-
-KOKKOS_INLINE_FUNCTION void K_Flux(real F[], real V[], real U[], real C2Iso, 
-                                    const int VXn, const int VXt, const int VXb,
-                                    const int BXn, const int BXt, const int BXb,
-                                    const int MXn) {
-
-    F[RHO] = U[MXn];
-    EXPAND( F[MX1] = U[MX1]*V[VXn] - V[BXn]*V[BX1]; ,
-            F[MX2] = U[MX2]*V[VXn] - V[BXn]*V[BX2]; ,
-            F[MX3] = U[MX3]*V[VXn] - V[BXn]*V[BX3];)
-
-    EXPAND(F[BXn] = ZERO_F;                             ,
-           F[BXt] = V[VXn]*V[BXt] - V[BXn]*V[VXt];   ,
-           F[BXb] = V[VXn]*V[BXb] - V[BXn]*V[VXb]; )
-
-    real Bmag2 = EXPAND(V[BX1]*V[BX1] , + V[BX2]*V[BX2], + V[BX3]*V[BX3]);
-
-    #if HAVE_ENERGY
-    real ptot  = V[PRS] + HALF_F*Bmag2;
-    #elif EOS == ISOTHERMAL
-    real ptot  = C2Iso * V[RHO] + HALF_F*Bmag2;
-    #else
-    #error "K_Flux not defined for this EOS!"
-    #endif
-
-    #if HAVE_ENERGY
-    F[ENG]   = (U[ENG] + ptot)*V[VXn] - V[BXn] * (EXPAND(V[VX1]*V[BX1] , + V[VX2]*V[BX2], + V[VX3]*V[BX3]));
-    #endif
-
-    // Add back pressure in the flux (not included in original PLUTO implementation)
-    F[MXn]   += ptot;
-} 
-
-KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[], real gamma_m1) {
-    
-
-    Vc[RHO] = Uc[RHO];
-
-    EXPAND( Vc[VX1] = Uc[MX1]/Uc[RHO]; ,
-            Vc[VX2] = Uc[MX2]/Uc[RHO]; ,
-            Vc[VX3] = Uc[MX3]/Uc[RHO];)
-
-    EXPAND( Vc[BX1] = Uc[BX1];  ,
-            Vc[BX2] = Uc[BX2];  ,
-            Vc[BX3] = Uc[BX3];  )
-         
-
-#if HAVE_ENERGY
-    real kin,mag;
-    kin = HALF_F / Uc[RHO] * (EXPAND(    Uc[MX1]*Uc[MX1] , 
-                                    + Uc[MX2]*Uc[MX2] ,
-                                    + Uc[MX3]*Uc[MX3] ));
-
-    mag = HALF_F * (EXPAND(    Uc[BX1]*Uc[BX1] , 
-                                    + Uc[BX2]*Uc[BX2] ,
-                                    + Uc[BX3]*Uc[BX3]));
-
-
-    Vc[PRS] = gamma_m1 * (Uc[ENG] - kin - mag);
-    
-    // Check pressure positivity
-    if(Vc[PRS]<= ZERO_F) {
-        Vc[PRS] = SMALL_PRESSURE_FIX;
-        Uc[ENG] = Vc[PRS]/gamma_m1+kin+mag;
-    }
-#endif  // Have_energy
-}
-
-KOKKOS_INLINE_FUNCTION void K_PrimToCons(real Uc[], real Vc[], real gamma_m1) {
-
-    Uc[RHO] = Vc[RHO];
-
-    EXPAND( Uc[MX1] = Vc[VX1]*Vc[RHO]; ,
-            Uc[MX2] = Vc[VX2]*Vc[RHO]; ,
-            Uc[MX3] = Vc[VX3]*Vc[RHO];)
-
-
-    EXPAND( Uc[BX1] = Vc[BX1];  ,
-            Uc[BX2] = Vc[BX2];  ,
-            Uc[BX3] = Vc[BX3];  )
-
-#if HAVE_ENERGY
-
-    Uc[ENG] = Vc[PRS] / gamma_m1 
-                + HALF_F * Vc[RHO] * (EXPAND(  Vc[VX1]*Vc[VX1] , 
-                                         + Vc[VX2]*Vc[VX2] ,
-                                         + Vc[VX3]*Vc[VX3] ))
-                + HALF_F * (EXPAND(    Uc[BX1]*Uc[BX1] , 
-                                     + Uc[BX2]*Uc[BX2] ,
-                                     + Uc[BX3]*Uc[BX3])); 
-#endif  // Have_energy
-
-}
-
-
+#include "solvers.hpp"
 
 
 Physics::Physics(Input &input, Setup &setup) {
@@ -108,6 +10,19 @@ Physics::Physics(Input &input, Setup &setup) {
     this->C2Iso = 1.0;
 
     this->mySetup=setup;
+    
+    // read Solver from input file
+    std::string solverString = input.GetString("Solver","Solver",0);
+    
+    if (solverString.compare("tvdlf") == 0)     mySolver = TVDLF;
+    else if (solverString.compare("hll") == 0)  mySolver = HLL;
+    else if (solverString.compare("hlld") == 0) mySolver = HLLD;
+    else if (solverString.compare("roe") == 0)  mySolver = ROE;
+    else {
+        std::stringstream msg;
+        msg << "Unknown MHD solver type " << solverString;
+        IDEFIX_ERROR(msg);
+    }
 
     Kokkos::Profiling::popRegion();
 }
@@ -274,183 +189,21 @@ void Physics::ExtrapolatePrimVar(DataBlock &data, int dir) {
 
 // Compute Riemann fluxes from states
 void Physics::CalcRiemannFlux(DataBlock & data, int dir) {
-    int ioffset,joffset,koffset;
-    int iextend, jextend,kextend;
 
     Kokkos::Profiling::pushRegion("Physics::CalcRiemannFlux");
     
-    ioffset=joffset=koffset=0;
-    // extension in perp to the direction of integration, as required by CT.
-    iextend=jextend=kextend=0;
-
-    IdefixArray4D<real> PrimL = data.PrimL;
-    IdefixArray4D<real> PrimR = data.PrimR;
-    IdefixArray4D<real> Flux = data.FluxRiemann;
-    IdefixArray1D<real> dx = data.dx[dir];
-    IdefixArray3D<real> invDt = data.InvDtHyp;
-
-    // References to required emf components
-    IdefixArray3D<real> Eb;
-    IdefixArray3D<real> Et;
-
-
-    real gamma_m1=this->gamma-ONE_F;
-    real gamma=this->gamma;
-    real C2Iso = this->C2Iso;
-
-    // Define normal, tangent and bi-tanget indices
-
-    int nDIR, tDIR, bDIR;
-    int VXn, VXt, VXb;
-    int BXn, BXt, BXb;
-    int MXn, MXt, MXb;
-
-    real st, sb;      // st and sb will be useful only when Hall is included
-    switch(dir) {
-        case(IDIR):
-            ioffset = 1;
-            D_EXPAND(           ,
-                   jextend = 1; ,
-                   kextend = 1; )
-
-            EXPAND(VXn = MXn = VX1; 
-                   BXn = BX1;        , 
-                   VXt = MXt = VX2; 
-                   BXt = BX2;        , 
-                   VXb = MXb = VX3;
-                   BXb = BX3;       )
-
-            Et = data.emf.ezi;
-            Eb = data.emf.eyi;
-
-            st = -1.0;
-            sb = +1.0;
+    switch (mySolver) {
+        case TVDLF: Tvdlf(data, dir, this->gamma, this->C2Iso);
             break;
-        case(JDIR):
-            joffset=1;
-            D_EXPAND( iextend = 1;   ,
-                                    ,
-                    kextend = 1;)
-            EXPAND(VXn = MXn = VX2; 
-                   BXn = BX2;        , 
-                   VXt = MXt = VX1; 
-                   BXt = BX1;        , 
-                   VXb = MXb = VX3;
-                   BXb = BX3;       )
-
-            Et = data.emf.ezj;
-            Eb = data.emf.exj;
-
-            st = +1.0;
-            sb = -1.0;
+        case HLL:   Hll(data, dir, this->gamma, this->C2Iso);
             break;
-        case(KDIR):
-            koffset=1;
-            D_EXPAND( iextend = 1;               ,
-                    jextend = 1;                ,
-                    )
-            EXPAND(VXn = MXn = VX3; 
-                   BXn = BX3;        , 
-                   VXt = MXt = VX1; 
-                   BXt = BX1;        , 
-                   VXb = MXb = VX2;
-                   BXb = BX2;       )
-
-            Et = data.emf.eyk;
-            Eb = data.emf.exk;
-
-            st = -1.0;
-            sb = +1.0;
+        case HLLD:  Hlld(data, dir, this->gamma, this->C2Iso);
             break;
-        default:
-            IDEFIX_ERROR("Wrong direction");
+        case ROE:   Roe(data, dir, this->gamma, this->C2Iso);
+            break;
+        default: // do nothing
+            break;
     }
-
-    nDIR = VXn-VX1; tDIR = VXt-VX1; bDIR = VXb-VX1;
-
-
-    idefix_for("CalcRiemannFlux",data.beg[KDIR]-kextend,data.end[KDIR]+koffset+kextend,data.beg[JDIR]-jextend,data.end[JDIR]+joffset+jextend,data.beg[IDIR]-iextend,data.end[IDIR]+ioffset+iextend,
-                        KOKKOS_LAMBDA (int k, int j, int i) 
-            {
-                // Primitive variables 
-                real v[NVAR];
-                real u[NVAR];
-                real flux[NVAR];
-                real fluxRiemann[NVAR];
-
-                // Store the average primitive variables
-                for(int nv = 0 ; nv < NVAR; nv++) {
-                    v[nv] = HALF_F*(PrimL(nv,k,j,i) + PrimR(nv,k,j,i));
-                }
-
-
-                // 4-- Get the wave speed
-                // Signal speeds
-                real cRL, cmax;
-                real gpr, Bt2, B2;
-
-                #if HAVE_ENERGY
-                    gpr=(gamma_m1+ONE_F)*v[PRS];
-                #else
-                    gpr=C2Iso*v[RHO];
-                #endif
-                Bt2=EXPAND(ZERO_F    ,
-                            + v[BXt]*v[BXt],
-                            + v[BXb]*v[BXb]);
-
-                B2=Bt2 + v[BXn]*v[BXn];
-
-                cRL = gpr - B2;
-                cRL = cRL + B2 + SQRT(cRL*cRL + FOUR_F*gpr*Bt2);
-                cRL = SQRT(HALF_F * cRL/v[RHO]);
-
-                cmax = FMAX(FABS(v[VXn]+cRL),FABS(v[VXn]-cRL));
-
-
-                // Load the left state
-                for(int nv = 0 ; nv < NVAR; nv++) {
-                    v[nv] = PrimL(nv,k,j,i);
-                }
-
-                // 2-- Compute the conservative variables
-                K_PrimToCons(u, v, gamma_m1);
-
-                // 3-- Compute the left and right fluxes
-                K_Flux(flux, v, u, C2Iso, VXn, VXt, VXb, BXn, BXt, BXb, MXn);
-                
-
-                // 5-- Compute the flux from the left and right states
-                for(int nv = 0 ; nv < NVAR; nv++) {
-                    fluxRiemann[nv] = flux[nv] + cmax*u[nv];
-                }
-
-                // Load the right state
-                for(int nv = 0 ; nv < NVAR; nv++) {
-                    v[nv] = PrimR(nv,k,j,i);
-                }
-
-                // 2-- Compute the conservative variables
-                K_PrimToCons(u, v, gamma_m1);
-
-                // 3-- Compute the left and right fluxes
-                K_Flux(flux, v, u, C2Iso, VXn, VXt, VXb, BXn, BXt, BXb, MXn);
-                
-                // 5-- Compute the flux from the left and right states
-                for(int nv = 0 ; nv < NVAR; nv++) {
-                    Flux(nv,k,j,i) = HALF_F*(fluxRiemann[nv]+flux[nv] - cmax*u[nv]);
-                }
-
-                //6-- Compute maximum dt for this sweep
-                const int ig = ioffset*i + joffset*j + koffset*k;
-
-                invDt(k,j,i) = FMAX(cmax/dx(ig),invDt(k,j,i));
-
-                // 7-- Store the flux in the emf components
-                D_EXPAND(Et(k,j,i) = st*Flux(BXt,k,j,i); ,
-                                                         ,
-                         Eb(k,j,i) = sb*Flux(BXb,k,j,i); )
-
-            });
 
     Kokkos::Profiling::popRegion();
 

@@ -4,6 +4,9 @@
 
 #define     SMALL_PRESSURE_FIX      (1.0e-5)
 
+// Solver type
+enum Solver {TVDLF=1, HLL, HLLD, ROE};
+
 class Physics {
 public:
     Physics();
@@ -27,6 +30,7 @@ private:
     real gamma;
 
     Setup mySetup;
+    Solver mySolver;
 
 };
 

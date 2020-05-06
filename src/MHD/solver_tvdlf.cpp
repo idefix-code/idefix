@@ -93,8 +93,9 @@ void Tvdlf(DataBlock & data, int dir, real gamma, real C2Iso) {
             IDEFIX_ERROR("Wrong direction");
     }
 
-    nDIR = VXn-VX1; tDIR = VXt-VX1; bDIR = VXb-VX1;
-
+    EXPAND( nDIR = VXn-VX1; , 
+            tDIR = VXt-VX1; , 
+            bDIR = VXb-VX1;)
 
     idefix_for("CalcRiemannFlux",data.beg[KDIR]-kextend,data.end[KDIR]+koffset+kextend,data.beg[JDIR]-jextend,data.end[JDIR]+joffset+jextend,data.beg[IDIR]-iextend,data.end[IDIR]+ioffset+iextend,
                 KOKKOS_LAMBDA (int k, int j, int i) 
@@ -117,7 +118,7 @@ void Tvdlf(DataBlock & data, int dir, real gamma, real C2Iso) {
         real gpr, Bt2, B2;
 
         #if HAVE_ENERGY
-            gpr=(gamma_m1+ONE_F)*v[PRS];
+            gpr=gamma*v[PRS];
         #else
             gpr=C2Iso*v[RHO];
         #endif
@@ -143,7 +144,11 @@ void Tvdlf(DataBlock & data, int dir, real gamma, real C2Iso) {
         K_PrimToCons(u, v, gamma_m1);
 
         // 3-- Compute the left and right fluxes
-        K_Flux(flux, v, u, C2Iso, VXn, VXt, VXb, BXn, BXt, BXb, MXn);
+        for(int nv = 0 ; nv < NVAR; nv++) {
+            flux[nv] = u[nv];
+        }
+        
+        K_Flux(flux, v, flux, C2Iso, VXn, VXt, VXb, BXn, BXt, BXb, MXn);
         
 
         // 5-- Compute the flux from the left and right states
@@ -160,7 +165,11 @@ void Tvdlf(DataBlock & data, int dir, real gamma, real C2Iso) {
         K_PrimToCons(u, v, gamma_m1);
 
         // 3-- Compute the left and right fluxes
-        K_Flux(flux, v, u, C2Iso, VXn, VXt, VXb, BXn, BXt, BXb, MXn);
+        for(int nv = 0 ; nv < NVAR; nv++) {
+            flux[nv] = u[nv];
+        }
+        
+        K_Flux(flux, v, flux, C2Iso, VXn, VXt, VXb, BXn, BXt, BXb, MXn);
         
         // 5-- Compute the flux from the left and right states
         for(int nv = 0 ; nv < NVAR; nv++) {

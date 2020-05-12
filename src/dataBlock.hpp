@@ -4,10 +4,34 @@
 
 #define     BOUNDARY_
 
-#if MHD == YES
-// Forward declaration of electromotive force
-class ElectroMotiveForce;
-#endif
+// Forward declaration of DataBlock
+class DataBlock;
+class ElectroMotiveForce {
+    public:
+        /* Face centered emf components */
+        IdefixArray3D<real>     exj;
+        IdefixArray3D<real>     exk;
+        IdefixArray3D<real>     eyi;
+        IdefixArray3D<real>     eyk;
+        IdefixArray3D<real>     ezi;
+        IdefixArray3D<real>     ezj;
+
+        /* Edge centered emf components */
+        IdefixArray3D<real>     ex;
+        IdefixArray3D<real>     ey;
+        IdefixArray3D<real>     ez;
+
+        /* Range of existence */
+        int  ibeg, jbeg, kbeg;
+        int  iend, jend, kend;
+
+        // Constructor from datablock structure
+        ElectroMotiveForce(DataBlock *);
+
+        // Default constructor
+        ElectroMotiveForce();
+
+};
 
 class DataBlock {
 public:
@@ -50,9 +74,8 @@ public:
     int gbeg[3];                    // Begining of local block in the grid (internal)
     int gend[3];                    // End of local block in the grid (internal)
 
-#if MHD == YES
     ElectroMotiveForce emf;
-#endif
+
     // init from a Grid object
     void InitFromGrid(Grid &);
 
@@ -69,8 +92,6 @@ public:
 
 };
 
-#if MHD == YES
-#include "electromotiveforce.hpp"
-#endif
+
 
 #endif

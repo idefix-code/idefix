@@ -1,8 +1,8 @@
 #include "../idefix.hpp"
-#include "solvers.hpp"
+#include "solversMHD.hpp"
 
 // Compute Riemann fluxes from states using HLLD solver
-void Hlld(DataBlock & data, int dir, real gamma, real C2Iso) {
+void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
 
     int ioffset,joffset,koffset;
     int iextend, jextend,kextend;

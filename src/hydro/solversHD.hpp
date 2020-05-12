@@ -4,10 +4,10 @@
 #pragma once
 #include "../idefix.hpp"
 
-void Tvdlf(DataBlock &, int, real, real);
-void Hll(DataBlock &, int, real, real);
-void Hllc(DataBlock &, int, real, real);
-void Roe(DataBlock &, int, real, real);
+void TvdlfHD(DataBlock &, int, real, real);
+void HllHD(DataBlock &, int, real, real);
+void HllcHD(DataBlock &, int, real, real);
+void RoeHD(DataBlock &, int, real, real);
 
 static KOKKOS_INLINE_FUNCTION void K_Flux(real *KOKKOS_RESTRICT F, const real *KOKKOS_RESTRICT V, const real *KOKKOS_RESTRICT U, real C2Iso, const int dir) {
     int VXn = VX1+dir;

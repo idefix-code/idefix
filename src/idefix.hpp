@@ -24,13 +24,53 @@ using Layout = Kokkos::LayoutRight;
 
 #define USE_DOUBLE
 
+#define     YES     255
+#define     NO      0
+
+// Basic configuration
+#include "real_types.h"
+#include "definitions.hpp"
 
 
+// Shortcuts for fields used in the code
 
+#define  RHO 0
+#define  MX1 1
+#define  MX2 (COMPONENTS >= 2 ? 2: 255)
+#define  MX3 (COMPONENTS == 3 ? 3: 255)
+#if MHD == YES
+#define  BX1 (COMPONENTS + 1)
+#define  BX2 (COMPONENTS >= 2 ? (BX1+1): 255)
+#define  BX3 (COMPONENTS == 3 ? (BX1+2): 255)
+#else
+#define  BX1 255
+#define  BX2 255
+#define  BX3 255
+#endif
 
+#if HAVE_ENERGY
+#if MHD == YES
+  #define ENG  (2*COMPONENTS + 1)
+#else
+  #define ENG  (COMPONENTS + 1)
+#endif
+  #define PRS  ENG
+#endif
 
-//#include "configuration.hpp"
-//#include "grid.hpp"
+#define VX1   MX1
+#define VX2   MX2
+#define VX3   MX3
+
+#if MHD == YES
+  #define NFLX (1 + 2*COMPONENTS + HAVE_ENERGY)
+#else
+  #define NFLX (1 + COMPONENTS + HAVE_ENERGY)
+#endif
+
+// Face-centered variables
+#define BX1s  0
+#define BX2s  1
+#define BX3s  2
 
 
 // Some macro definitions
@@ -46,8 +86,7 @@ using Layout = Kokkos::LayoutRight;
 #define     JDIR    1
 #define     KDIR    2
 
-#define     YES     255
-#define     NO      0
+
 
 #if DIMENSIONS == 1
     #define     IOFFSET     1
@@ -69,32 +108,34 @@ using Layout = Kokkos::LayoutRight;
 #define NVAR    (NFLX)
 
 
+
+
+
+
 // Types of boundary which can be treated
 enum BoundaryType { internal, periodic, outflow, userdef};
 enum BoundarySide { left, right};
 
 
-#include "real_types.h"
-#include "definitions.hpp"
+
 #include "error.hpp"
 #include "macros.hpp"
-#include "mod_defs.hpp"
 #include "loop.hpp"
 #include "arrays.hpp"
 #include "input.hpp"
 #include "grid.hpp"
 #include "gridHost.hpp"
-#if MHD == YES
-#include "electromotiveforce.hpp"
-#endif
 #include "dataBlock.hpp"
 #include "dataBlockHost.hpp"
 #include "test.hpp"
 #include "setup.hpp"
-#include "physics.hpp"
+#include "hydro.hpp"
 #include "timeIntegrator.hpp"
 #include "outputVtk.hpp"
 
+#ifndef MHD
+#error MHD flag should be set to yes or no in definitions.hpp
+#endif
 
 
 #endif

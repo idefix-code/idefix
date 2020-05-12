@@ -4,10 +4,10 @@
 #pragma once
 #include "../idefix.hpp"
 
-void Tvdlf(DataBlock &, int, real, real);
-void Hll(DataBlock &, int, real, real);
-void Hlld(DataBlock &, int, real, real);
-void Roe(DataBlock &, int, real, real);
+void TvdlfMHD(DataBlock &, int, real, real);
+void HllMHD(DataBlock &, int, real, real);
+void HlldMHD(DataBlock &, int, real, real);
+void RoeMHD(DataBlock &, int, real, real);
 
 /********************************
  * Local Kokkos Inline function *

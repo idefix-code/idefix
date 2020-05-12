@@ -51,12 +51,12 @@ int main( int argc, char* argv[] )
     DataBlockHost dataHost(data);
     dataHost.SyncFromDevice();
 
-    std::cout << "Init Physics" << std::endl;
+    std::cout << "Init Hydrodynamics" << std::endl;
     Setup mysetup(input,grid,data);
-    Physics phys(input,mysetup);
+    Hydro hydro(input,mysetup);
 
     std::cout << "Init Time Integrator..." << std::endl;
-    TimeIntegrator Tint(input, phys, mysetup);
+    TimeIntegrator Tint(input, hydro, mysetup);
 
     std::cout << "init Output Routines" << std::endl;
     OutputVTK output(input, grid, Tint.getT()); 
@@ -64,7 +64,7 @@ int main( int argc, char* argv[] )
     // Apply initial conditions
     std::cout << "Creating initial conditions" << std::endl;
     mysetup.InitFlow(data);
-    phys.SetBoundary(data,Tint.getT());
+    hydro.SetBoundary(data,Tint.getT());
 
     std::cout << "Write init vtk" << std::endl;
     output.Write(data,Tint.getT());

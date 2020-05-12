@@ -1,10 +1,15 @@
 #include "../idefix.hpp"
-#include "physics.hpp"
-#include "solvers.hpp"
+#include "hydro.hpp"
+
+#if MHD == YES
+#include "solversMHD.hpp"
+#else
+#include "solversHD.hpp"
+#endif
 
 
-Physics::Physics(Input &input, Setup &setup) {
-    Kokkos::Profiling::pushRegion("Physics::Physics(DataBock)");
+Hydro::Hydro(Input &input, Setup &setup) {
+    Kokkos::Profiling::pushRegion("Hydro::Hydro(DataBock)");
 
     this->gamma = 5.0/3.0;
     this->C2Iso = 1.0;
@@ -16,26 +21,30 @@ Physics::Physics(Input &input, Setup &setup) {
     
     if (solverString.compare("tvdlf") == 0)     mySolver = TVDLF;
     else if (solverString.compare("hll") == 0)  mySolver = HLL;
-    else if (solverString.compare("hlld") == 0) mySolver = HLLD;
+    #if MHD == YES
+        else if (solverString.compare("hlld") == 0) mySolver = HLLD;
+    #else
+        else if (solverString.compare("hllc") == 0) mySolver = HLLC;
+    #endif
     else if (solverString.compare("roe") == 0)  mySolver = ROE;
     else {
         std::stringstream msg;
-        msg << "Unknown MHD solver type " << solverString;
+        msg << "Unknown HD solver type " << solverString;
         IDEFIX_ERROR(msg);
     }
 
     Kokkos::Profiling::popRegion();
 }
 
-Physics::Physics() {
+Hydro::Hydro() {
 
 }
 
 
 // Convect Conservative to Primitive variable
-void Physics::ConvertConsToPrim(DataBlock & data) {
+void Hydro::ConvertConsToPrim(DataBlock & data) {
 
-    Kokkos::Profiling::pushRegion("Physics::ConvertConsToPrim");
+    Kokkos::Profiling::pushRegion("Hydro::ConvertConsToPrim");
 
     IdefixArray4D<real> Vc = data.Vc;
     IdefixArray4D<real> Uc = data.Uc;
@@ -63,9 +72,9 @@ void Physics::ConvertConsToPrim(DataBlock & data) {
 
 
 // Convert Primitive to conservative variables
-void Physics::ConvertPrimToCons(DataBlock & data) {
+void Hydro::ConvertPrimToCons(DataBlock & data) {
 
-    Kokkos::Profiling::pushRegion("Physics::ConvertPrimToCons");
+    Kokkos::Profiling::pushRegion("Hydro::ConvertPrimToCons");
 
     IdefixArray4D<real> Vc = data.Vc;
     IdefixArray4D<real> Uc = data.Uc;
@@ -99,12 +108,12 @@ void Physics::ConvertPrimToCons(DataBlock & data) {
 // |-----------------------------------|------------------------------------||
 //          Vc(i-1)           PrimL(i)  PrimR(i)       Vc(i)
 
-void Physics::ExtrapolatePrimVar(DataBlock &data, int dir) {
+void Hydro::ExtrapolatePrimVar(DataBlock &data, int dir) {
     int ioffset,joffset,koffset;
     int iextend, jextend,kextend;
     int BXn;
 
-    Kokkos::Profiling::pushRegion("Physics::ExtrapolatePrimVar");
+    Kokkos::Profiling::pushRegion("Hydro::ExtrapolatePrimVar");
     // Offset is in the direction of integration
     ioffset=joffset=koffset=0;
 
@@ -188,19 +197,30 @@ void Physics::ExtrapolatePrimVar(DataBlock &data, int dir) {
 }
 
 // Compute Riemann fluxes from states
-void Physics::CalcRiemannFlux(DataBlock & data, int dir) {
+void Hydro::CalcRiemannFlux(DataBlock & data, int dir) {
 
-    Kokkos::Profiling::pushRegion("Physics::CalcRiemannFlux");
+    Kokkos::Profiling::pushRegion("Hydro::CalcRiemannFlux");
     
     switch (mySolver) {
-        case TVDLF: Tvdlf(data, dir, this->gamma, this->C2Iso);
+    #if MHD == YES
+        case TVDLF: TvdlfMHD(data, dir, this->gamma, this->C2Iso);
             break;
-        case HLL:   Hll(data, dir, this->gamma, this->C2Iso);
+        case HLL:   HllMHD(data, dir, this->gamma, this->C2Iso);
             break;
-        case HLLD:  Hlld(data, dir, this->gamma, this->C2Iso);
+        case HLLD:  HlldMHD(data, dir, this->gamma, this->C2Iso);
             break;
-        case ROE:   Roe(data, dir, this->gamma, this->C2Iso);
+        case ROE:   RoeMHD(data, dir, this->gamma, this->C2Iso);
             break;
+    #else
+        case TVDLF: TvdlfHD(data, dir, this->gamma, this->C2Iso);
+            break;
+        case HLL:   HllHD(data, dir, this->gamma, this->C2Iso);
+            break;
+        case HLLC:  HllcHD(data, dir, this->gamma, this->C2Iso);
+            break;
+        case ROE:   RoeHD(data, dir, this->gamma, this->C2Iso);
+            break;
+    #endif
         default: // do nothing
             break;
     }
@@ -210,9 +230,9 @@ void Physics::CalcRiemannFlux(DataBlock & data, int dir) {
 }
 
 // Compute the right handside in direction dir from conservative equation, with timestep dt
-void Physics::CalcRightHandSide(DataBlock &data, int dir, real dt) {
+void Hydro::CalcRightHandSide(DataBlock &data, int dir, real dt) {
 
-    Kokkos::Profiling::pushRegion("Physics::CalcRightHandSide");
+    Kokkos::Profiling::pushRegion("Hydro::CalcRightHandSide");
     IdefixArray4D<real> Uc = data.Uc;
     IdefixArray1D<real> dx = data.dx[dir];
     IdefixArray4D<real> Flux = data.FluxRiemann;
@@ -249,8 +269,8 @@ void Physics::CalcRightHandSide(DataBlock &data, int dir, real dt) {
 }
 
 // Compute Corner EMFs from the one stored in the Riemann step
-void Physics::CalcCornerEMF(DataBlock &data, real t) {
-        Kokkos::Profiling::pushRegion("Physics::CalcCornerEMF");
+void Hydro::CalcCornerEMF(DataBlock &data, real t) {
+        Kokkos::Profiling::pushRegion("Hydro::CalcCornerEMF");
 
         // Corned EMFs
         IdefixArray3D<real> Ex = data.emf.ex;
@@ -286,8 +306,8 @@ void Physics::CalcCornerEMF(DataBlock &data, real t) {
 }
 
 // Evolve the magnetic field in Vs according to Constranied transport
-void Physics::EvolveMagField(DataBlock &data, real t, real dt) {
-    Kokkos::Profiling::pushRegion("Physics::EvolveMagField");
+void Hydro::EvolveMagField(DataBlock &data, real t, real dt) {
+    Kokkos::Profiling::pushRegion("Hydro::EvolveMagField");
 
     // Corned EMFs
     IdefixArray3D<real> Ex1 = data.emf.ex;
@@ -329,8 +349,8 @@ void Physics::EvolveMagField(DataBlock &data, real t, real dt) {
     Kokkos::Profiling::popRegion();
 }
 
-void Physics::ReconstructVcField(DataBlock & data,  IdefixArray4D<real> &Vc) {
-    Kokkos::Profiling::pushRegion("Physics::ReconstructVcField");
+void Hydro::ReconstructVcField(DataBlock & data,  IdefixArray4D<real> &Vc) {
+    Kokkos::Profiling::pushRegion("Hydro::ReconstructVcField");
     IdefixArray4D<real> Vs=data.Vs;
 
     // Reconstruct cell average field when using CT
@@ -346,8 +366,8 @@ void Physics::ReconstructVcField(DataBlock & data,  IdefixArray4D<real> &Vc) {
 
 
 
-void Physics::ReconstructNormalField(DataBlock &data) {
-    Kokkos::Profiling::pushRegion("Physics::ReconstructNormalField");
+void Hydro::ReconstructNormalField(DataBlock &data) {
+    Kokkos::Profiling::pushRegion("Hydro::ReconstructNormalField");
 
     // Reconstruct the field
     IdefixArray4D<real> Vc = data.Vc;
@@ -434,9 +454,9 @@ void Physics::ReconstructNormalField(DataBlock &data) {
 
 
 // Set Boundary conditions
-void Physics::SetBoundary(DataBlock &data, real t) {
+void Hydro::SetBoundary(DataBlock &data, real t) {
 
-    Kokkos::Profiling::pushRegion("Physics::SetBoundary");
+    Kokkos::Profiling::pushRegion("Hydro::SetBoundary");
 
     IdefixArray4D<real> Vc = data.Vc;
     IdefixArray4D<real> Vs = data.Vs;
@@ -474,12 +494,14 @@ void Physics::SetBoundary(DataBlock &data, real t) {
                 
                         Vc(n,k,j,i) = Vc(n,k+koffset,j+joffset,i+ioffset);
                     });
+                #if MHD == YES
                 idefix_for("BoundaryBegPeriodicVs",0,DIMENSIONS,kbeg,kend,jbeg,jend,ibeg,iend,
                     KOKKOS_LAMBDA (int n, int k, int j, int i) {
 
                         // Don't touch the normal component !
                         if(n != dir) Vs(n,k,j,i) = Vs(n,k+koffset,j+joffset,i+ioffset);
                     });
+                #endif
                 break;
             case outflow:
                 idefix_for("BoundaryBegOutflow",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
@@ -490,6 +512,7 @@ void Physics::SetBoundary(DataBlock &data, real t) {
 
                         Vc(n,k,j,i) = Vc(n,kref,jref,iref);
                     });
+                #if MHD == YES
                 idefix_for("BoundaryBegOutflowVs",0,DIMENSIONS,kbeg,kend,jbeg,jend,ibeg,iend,
                     KOKKOS_LAMBDA (int n, int k, int j, int i) {
                         int iref= (dir==IDIR) ? ighost : i;
@@ -499,6 +522,7 @@ void Physics::SetBoundary(DataBlock &data, real t) {
                         // Don't touch the normal component !
                         if(n != dir) Vs(n,k,j,i) = Vs(n,kref,jref,iref);
                     });
+                #endif
                 break;
             default:
                 std::stringstream msg ("Boundary condition type is not yet implemented");
@@ -520,11 +544,13 @@ void Physics::SetBoundary(DataBlock &data, real t) {
                 
                         Vc(n,k,j,i) = Vc(n,k-koffset,j-joffset,i-ioffset);
                     });
+                #if MHD == YES
                 idefix_for("BoundaryEndPeriodicVs",0,DIMENSIONS,kbeg,kend,jbeg,jend,ibeg,iend,
                     KOKKOS_LAMBDA (int n, int k, int j, int i) {
                         // Don't touch the normal component !
                         if(n != dir) Vs(n,k,j,i) = Vs(n,k-koffset,j-joffset,i-ioffset);                        
                     });
+                #endif
                 break;
             case outflow:
                 idefix_for("BoundaryEndOutflow",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
@@ -535,6 +561,7 @@ void Physics::SetBoundary(DataBlock &data, real t) {
 
                         Vc(n,k,j,i) = Vc(n,kref,jref,iref);
                     });
+                #if MHD == YES
                 idefix_for("BoundaryEndOutflowVs",0,DIMENSIONS,kbeg,kend,jbeg,jend,ibeg,iend,
                     KOKKOS_LAMBDA (int n, int k, int j, int i) {
                         int iref= (dir==IDIR) ? ighost + ioffset - 1 : i;
@@ -543,7 +570,7 @@ void Physics::SetBoundary(DataBlock &data, real t) {
 
                         if(n != dir) Vs(n,k,j,i) = Vs(n,kref,jref,iref);
                     });
-
+                #endif
                 break;
             default:
                 std::stringstream msg("Boundary condition type is not yet implemented");
@@ -552,18 +579,19 @@ void Physics::SetBoundary(DataBlock &data, real t) {
         }
     }   // Loop on dimension ends
 
+    #if MHD == YES
     // Reconstruct the normal field component when using CT
     ReconstructNormalField(data);
     
     // Remake the cell-centered field.
     ReconstructVcField(data, data.Vc);
-
+    #endif
 
     Kokkos::Profiling::popRegion();
 
 }
 
-real Physics::CheckDivB(DataBlock &data) {
+real Hydro::CheckDivB(DataBlock &data) {
 
     real divB;
     IdefixArray4D<real> Vs = data.Vs;
@@ -592,6 +620,6 @@ real Physics::CheckDivB(DataBlock &data) {
 
 }
 
-void Physics::SetGamma(real newGamma) {
+void Hydro::SetGamma(real newGamma) {
     this->gamma=newGamma;
 }

@@ -1,8 +1,8 @@
 #include "../idefix.hpp"
-#include "solvers.hpp"
+#include "../solversHD.hpp"
 
 // Compute Riemann fluxes from states using TVDLF solver
-void Tvdlf(DataBlock & data, int dir, real gamma, real C2Iso) {
+void TvdlfHD(DataBlock & data, int dir, real gamma, real C2Iso) {
     int ioffset,joffset,koffset;
 
     Kokkos::Profiling::pushRegion("TVDLF_Solver");

@@ -1,16 +1,22 @@
-#ifndef PHYSICS_HPP
-#define PHYSICS_HPP
+#ifndef HYDRO_HPP
+#define HYDRO_HPP
 #include "../idefix.hpp"
+
+
 
 #define     SMALL_PRESSURE_FIX      (1.0e-5)
 
 // Solver type
+#if MHD == YES
 enum Solver {TVDLF=1, HLL, HLLD, ROE};
+#else
+enum Solver {TVDLF=1, HLL, HLLC, ROE};
+#endif
 
-class Physics {
+class Hydro {
 public:
-    Physics();
-    Physics(Input &, Setup &);
+    Hydro();
+    Hydro(Input &, Setup &);
     void ConvertConsToPrim(DataBlock &);
     void ConvertPrimToCons(DataBlock &);
     void ExtrapolatePrimVar(DataBlock &, int);

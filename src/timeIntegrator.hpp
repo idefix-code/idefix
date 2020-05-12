@@ -12,7 +12,7 @@ public:
 
 
     // Constructor from input and given datablock
-    TimeIntegrator(Input &, Physics &, Setup &);
+    TimeIntegrator(Input &, Hydro &, Setup &);
 
     void Stage(DataBlock &);
     // Do one integration cycle
@@ -33,7 +33,7 @@ private:
     Kokkos::Timer timer;    // Internal timer of the integrator
     
     DataBlock data;
-    Physics phys;
+    Hydro hydro;
     Setup mySetup;
 
     

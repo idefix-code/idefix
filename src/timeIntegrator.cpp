@@ -2,10 +2,10 @@
 #include "idefix.hpp"
 #include "timeIntegrator.hpp"
 
-TimeIntegrator::TimeIntegrator(Input & input, Physics &physics, Setup &setup) {
+TimeIntegrator::TimeIntegrator(Input & input, Hydro &physics, Setup &setup) {
     Kokkos::Profiling::pushRegion("TimeIntegrator::TimeIntegrator(Input...)");
 
-    this->phys=physics;
+    this->hydro=physics;
     this->mySetup=setup;
     this->timer.reset();
     this->lastLog=timer.seconds();
@@ -39,31 +39,31 @@ void TimeIntegrator::Stage(DataBlock &data) {
     
     Kokkos::Profiling::pushRegion("TimeIntegrator::Stage");
     // Apply Boundary conditions
-    phys.SetBoundary(data,t);
+    hydro.SetBoundary(data,t);
 
     // Convert current state into conservative variable and save it
-    phys.ConvertPrimToCons(data);
+    hydro.ConvertPrimToCons(data);
 
     // Loop on all of the directions
     for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
         // Step one: extrapolate the variables to the sides, result is stored in the physics object
-        phys.ExtrapolatePrimVar(data, dir);
+        hydro.ExtrapolatePrimVar(data, dir);
 
         // Step 2: compute the intercell flux with our Riemann solver, store the resulting InvDt
-        phys.CalcRiemannFlux(data, dir);
+        hydro.CalcRiemannFlux(data, dir);
 
         // Step 3: compute the resulting evolution of the conserved variables, stored in Uc
-        phys.CalcRightHandSide(data, dir, dt);
+        hydro.CalcRightHandSide(data, dir, dt);
     }
 
 #if MHD == YES
     // Compute the field evolution according to CT
-    phys.CalcCornerEMF(data, t);
-    phys.EvolveMagField(data, t, dt);
-    phys.ReconstructVcField(data, data.Uc);
+    hydro.CalcCornerEMF(data, t);
+    hydro.EvolveMagField(data, t, dt);
+    hydro.ReconstructVcField(data, data.Uc);
 #endif
     // Convert back into primitive variables
-    phys.ConvertConsToPrim(data);
+    hydro.ConvertConsToPrim(data);
 
     Kokkos::Profiling::popRegion();
 }
@@ -102,7 +102,7 @@ void TimeIntegrator::Cycle(DataBlock & data) {
         std::cout << "TimeIntegrator: t=" << t << " Cycle " << ncycles << " dt=" << dt << std::endl;
         #if MHD == YES
         // Check divB
-        std::cout << "\t maxdivB=" << phys.CheckDivB(data) << std::endl;
+        std::cout << "\t maxdivB=" << hydro.CheckDivB(data) << std::endl;
         #endif
     }
 

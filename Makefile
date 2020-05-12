@@ -1,7 +1,7 @@
 
 SRC 		 = $(IDEFIX_DIR)/src
-INCLUDE_DIRS = -I, -I. -I$(SRC) -I$(SRC)/HD -I$(SRC)/Test
-VPATH 		 = ./:$(SRC):$(SRC)/HD:$(SRC)/Test
+INCLUDE_DIRS = -I, -I. -I$(SRC) -I$(SRC)/hydro -I$(SRC)/Test
+VPATH 		 = ./:$(SRC):$(SRC)/hydro:$(SRC)/Test
 
 KOKKOS_PATH = ${IDEFIX_DIR}/src/kokkos
 KOKKOS_DEVICES = "Serial"
@@ -16,8 +16,10 @@ EXE_NAME = "idefix"
 
 
 
-HEADERS = definitions.hpp error.hpp arrays.hpp grid.hpp setup.hpp gridHost.hpp idefix.hpp dataBlock.hpp dataBlockHost.hpp mod_defs.hpp input.hpp kokkos_types.h loop.hpp real_types.h timeIntegrator.hpp test.hpp outputVtk.hpp physics.hpp
-OBJ = grid.o gridHost.o input.o main.o dataBlock.o dataBlockHost.o setup.o test.o timeIntegrator.o outputVtk.o physics.o error.o
+HEADERS = definitions.hpp error.hpp arrays.hpp grid.hpp setup.hpp gridHost.hpp idefix.hpp dataBlock.hpp dataBlockHost.hpp input.hpp kokkos_types.h loop.hpp real_types.h timeIntegrator.hpp test.hpp outputVtk.hpp hydro.hpp
+OBJ = grid.o gridHost.o input.o main.o dataBlock.o dataBlockHost.o setup.o test.o timeIntegrator.o outputVtk.o hydro.o error.o
+
+include $(SRC)/hydro/makefile
 
 #VPATH="src/"
 

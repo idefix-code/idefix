@@ -1,9 +1,8 @@
 #include "../idefix.hpp"
-#include "solvers.hpp"
+#include "solversMHD.hpp"
 
-// Compute Riemann fluxes from states using HLL solver
-void Hll(DataBlock & data, int dir, real gamma, real C2Iso) {
-
+// Compute Riemann fluxes from states using TVDLF solver
+void TvdlfMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
     int ioffset,joffset,koffset;
     int iextend, jextend,kextend;
 
@@ -94,115 +93,89 @@ void Hll(DataBlock & data, int dir, real gamma, real C2Iso) {
             IDEFIX_ERROR("Wrong direction");
     }
 
-    nDIR = VXn-VX1; tDIR = VXt-VX1; bDIR = VXb-VX1;
-
+    EXPAND( nDIR = VXn-VX1; , 
+            tDIR = VXt-VX1; , 
+            bDIR = VXb-VX1;)
 
     idefix_for("CalcRiemannFlux",data.beg[KDIR]-kextend,data.end[KDIR]+koffset+kextend,data.beg[JDIR]-jextend,data.end[JDIR]+joffset+jextend,data.beg[IDIR]-iextend,data.end[IDIR]+ioffset+iextend,
                 KOKKOS_LAMBDA (int k, int j, int i) 
     {
-        // Primitive variables
-        real vL[NVAR];
-        real vR[NVAR];
+        // Primitive variables 
+        real v[NVAR];
+        real u[NVAR];
+        real flux[NVAR];
+        real fluxRiemann[NVAR];
 
-        // Conservative variables
-        real uL[NVAR];
-        real uR[NVAR];
+        // Store the average primitive variables
+        for(int nv = 0 ; nv < NVAR; nv++) {
+            v[nv] = HALF_F*(PrimL(nv,k,j,i) + PrimR(nv,k,j,i));
+        }
 
-        // Flux (left and right)
-        real fluxL[NVAR];
-        real fluxR[NVAR];
 
+        // 4-- Get the wave speed
         // Signal speeds
-        real cL, cR, cmax;
+        real cRL, cmax;
+        real gpr, Bt2, B2;
 
-        // 1-- Store the primitive variables on the left, right, and averaged states
+        #if HAVE_ENERGY
+            gpr=gamma*v[PRS];
+        #else
+            gpr=C2Iso*v[RHO];
+        #endif
+        Bt2=EXPAND(ZERO_F    ,
+                    + v[BXt]*v[BXt],
+                    + v[BXb]*v[BXb]);
+
+        B2=Bt2 + v[BXn]*v[BXn];
+
+        cRL = gpr - B2;
+        cRL = cRL + B2 + SQRT(cRL*cRL + FOUR_F*gpr*Bt2);
+        cRL = SQRT(HALF_F * cRL/v[RHO]);
+
+        cmax = FMAX(FABS(v[VXn]+cRL),FABS(v[VXn]-cRL));
+
+
+        // Load the left state
         for(int nv = 0 ; nv < NVAR; nv++) {
-            vL[nv] = PrimL(nv,k,j,i);
-            vR[nv] = PrimR(nv,k,j,i);
+            v[nv] = PrimL(nv,k,j,i);
         }
 
-        // 2-- Get the wave speed
-        real gpr, b1, b2, b3, Btmag2, Bmag2;
-#if HAVE_ENERGY
-        gpr = gamma*vL[PRS];
-#else
-        gpr = C2Iso*vL[RHO];
-#endif
-
-        // -- get total field
-        b1 = b2 = b3 = 0.0;
-        EXPAND (b1 = vL[BXn];  ,
-                b2 = vL[BXt];  ,
-                b3 = vL[BXb];)
-
-        Btmag2 = b2*b2 + b3*b3;
-        Bmag2  = b1*b1 + Btmag2;
-
-        cL = gpr - Bmag2;
-        cL = gpr + Bmag2 + sqrt(cL*cL + 4.0*gpr*Btmag2);
-        cL = sqrt(HALF_F*cL/vL[RHO]);
-        
-#if HAVE_ENERGY
-        gpr = gamma*vR[PRS];
-#else
-        gpr = C2Iso*vR[RHO];
-#endif
-
-        // -- get total field
-        b1 = b2 = b3 = 0.0;
-        EXPAND (b1 = vR[BXn];  ,
-                b2 = vR[BXt];  ,
-                b3 = vR[BXb];)
-
-        Btmag2 = b2*b2 + b3*b3;
-        Bmag2  = b1*b1 + Btmag2;
-
-        cR = gpr - Bmag2;
-        cR = gpr + Bmag2 + sqrt(cR*cR + 4.0*gpr*Btmag2);
-        cR = sqrt(HALF_F*cR/vR[RHO]);
-        
-        // 4.1 
-        real cminL = vL[VXn] - cL;
-        real cmaxL = vL[VXn] + cL;
-        
-        real cminR = vR[VXn] - cR;
-        real cmaxR = vR[VXn] + cR;
-        
-        real SL = FMIN(cminL, cminR);
-        real SR = FMAX(cmaxL, cmaxR);
-        
-        cmax  = FMAX(FABS(SL), FABS(SR));
-        
         // 2-- Compute the conservative variables
-        K_PrimToCons(uL, vL, gamma_m1);
-        K_PrimToCons(uR, vR, gamma_m1);
-        
-        for(int nv = 0 ; nv < NVAR; nv++) {
-            fluxL[nv] = uL[nv];
-            fluxR[nv] = uR[nv];
-        }
+        K_PrimToCons(u, v, gamma_m1);
 
         // 3-- Compute the left and right fluxes
-        K_Flux(fluxL, vL, fluxL, C2Iso, VXn, VXt, VXb, BXn, BXt, BXb, MXn);
-        K_Flux(fluxR, vR, fluxR, C2Iso, VXn, VXt, VXb, BXn, BXt, BXb, MXn);
+        for(int nv = 0 ; nv < NVAR; nv++) {
+            flux[nv] = u[nv];
+        }
+        
+        K_Flux(flux, v, flux, C2Iso, VXn, VXt, VXb, BXn, BXt, BXb, MXn);
+        
 
         // 5-- Compute the flux from the left and right states
-        if (SL > 0){
-            for (int nv = 0 ; nv < NFLX; nv++) {
-                Flux(nv,k,j,i) = fluxL[nv];
-            }
+        for(int nv = 0 ; nv < NVAR; nv++) {
+            fluxRiemann[nv] = flux[nv] + cmax*u[nv];
         }
-        else if (SR < 0) {
-            for (int nv = 0 ; nv < NFLX; nv++) {
-                Flux(nv,k,j,i) = fluxR[nv];
-            }
+
+        // Load the right state
+        for(int nv = 0 ; nv < NVAR; nv++) {
+            v[nv] = PrimR(nv,k,j,i);
         }
-        else {
-            for(int nv = 0 ; nv < NFLX; nv++) {
-                Flux(nv,k,j,i) = SL*SR*uR[nv] - SL*SR*uL[nv] + SR*fluxL[nv] - SL*fluxR[nv];
-                Flux(nv,k,j,i) *= (1.0 / (SR - SL));
-            }
+
+        // 2-- Compute the conservative variables
+        K_PrimToCons(u, v, gamma_m1);
+
+        // 3-- Compute the left and right fluxes
+        for(int nv = 0 ; nv < NVAR; nv++) {
+            flux[nv] = u[nv];
         }
+        
+        K_Flux(flux, v, flux, C2Iso, VXn, VXt, VXb, BXn, BXt, BXb, MXn);
+        
+        // 5-- Compute the flux from the left and right states
+        for(int nv = 0 ; nv < NVAR; nv++) {
+            Flux(nv,k,j,i) = HALF_F*(fluxRiemann[nv]+flux[nv] - cmax*u[nv]);
+        }
+
         //6-- Compute maximum dt for this sweep
         const int ig = ioffset*i + joffset*j + koffset*k;
 
@@ -219,3 +192,4 @@ void Hll(DataBlock & data, int dir, real gamma, real C2Iso) {
     Kokkos::Profiling::popRegion();
 
 }
+

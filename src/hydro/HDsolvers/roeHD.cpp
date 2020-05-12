@@ -1,10 +1,10 @@
 #include "../idefix.hpp"
-#include "solvers.hpp"
+#include "../solversHD.hpp"
 
 #define ROE_AVERAGE 0
 
 // Compute Riemann fluxes from states using ROE solver
-void Roe(DataBlock & data, int dir, real gamma, real C2Iso) {
+void RoeHD(DataBlock & data, int dir, real gamma, real C2Iso) {
     int ioffset,joffset,koffset;
 
     Kokkos::Profiling::pushRegion("ROE_Solver");

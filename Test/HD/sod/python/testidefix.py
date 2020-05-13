@@ -10,6 +10,7 @@ import idefixTools as idfx
 import sod
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.interpolate import interp1d
 
 V=idfx.readVTKCart('../data.0002.vtk')
 gamma = 5.0/3.0
@@ -32,21 +33,32 @@ u = values['u']
 x= values['x']
 
 
+solinterp=interp1d(x,p)
+
+error=np.sqrt(np.mean((V.data['PRS'][:,0,0]-solinterp(V.x))**2/solinterp(V.x)**2))
+
+print("Error=%e"%error)
+if error<1e-1:
+    print("SUCCESS!")
+else:
+    print("FAILURE!")
+
+
+
 plt.figure(1)
 plt.plot(x,rho)
-plt.plot(V.x,V.data['Vc0'][:,0,0],'+',markersize=2)
+plt.plot(V.x,V.data['RHO'][:,0,0],'+',markersize=2)
 plt.title('Density')
 
 plt.figure(2)
 plt.plot(x,u)
-plt.plot(V.x,V.data['Vc1'][:,0,0],'+',markersize=2)
+plt.plot(V.x,V.data['VX1'][:,0,0],'+',markersize=2)
 plt.title('Velocity')
 
 plt.figure(3)
 plt.plot(x,p)
-plt.plot(V.x,V.data['Vc2'][:,0,0],'+',markersize=2)
+plt.plot(V.x,V.data['PRS'][:,0,0],'+',markersize=2)
 plt.title('Pressure')
 
 plt.ioff()
 plt.show()
-

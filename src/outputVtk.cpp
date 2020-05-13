@@ -128,8 +128,7 @@ int OutputVTK::Write(DataBlock &datain, real t)
                 }
             }
         }
-        std::string varname="Vc" + std::to_string(nv);
-        WriteScalar(fileHdl, vect3D, varname);
+        WriteScalar(fileHdl, vect3D, datain.VcName[nv]);
     }
 
 #if MHD == YES
@@ -142,8 +141,7 @@ int OutputVTK::Write(DataBlock &datain, real t)
                 }
             }
         }
-        std::string varname="Vs" + std::to_string(nv);
-        WriteScalar(fileHdl, vect3D, varname);
+        WriteScalar(fileHdl, vect3D, datain.VsName[nv]);
     }
 #endif // WRITE_STAGGERED_FIELD
 

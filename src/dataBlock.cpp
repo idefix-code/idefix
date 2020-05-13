@@ -81,6 +81,57 @@ void DataBlock::InitFromGrid(Grid &grid) {
                         });
     }
 
+
+    // Fill the names of the fields
+    for(int i = 0 ; i < NVAR ;  i++) {
+        switch(i) {
+            case RHO:
+                VcName.push_back("RHO");
+                break;
+            case VX1:
+                VcName.push_back("VX1");
+                break;
+            case VX2:
+                VcName.push_back("VX2");
+                break;
+            case VX3:
+                VcName.push_back("VX3");
+                break;
+            case BX1:
+                VcName.push_back("BX1");
+                break;
+            case BX2:
+                VcName.push_back("BX2");
+                break;
+            case BX3:
+                VcName.push_back("BX3");
+                break;
+            #if HAVE_ENERGY
+            case PRS:
+                VcName.push_back("PRS");
+                break;
+            #endif
+            default:
+                VcName.push_back("Vc_"+std::to_string(i));
+        }
+    }
+
+    for(int i = 0 ; i < DIMENSIONS ; i++) {
+        switch(i) {
+            case 0:
+                VsName.push_back("BX1s");
+                break;
+            case 1:
+                VsName.push_back("BX2s");
+                break;
+            case 2:
+                VsName.push_back("BX3s");
+                break;
+            default:
+                VsName.push_back("Vs_"+std::to_string(i));
+        }
+    }
+
     Kokkos::Profiling::popRegion();
     // TODO: A proper initialisation of A and dV should be done at this stage
 }

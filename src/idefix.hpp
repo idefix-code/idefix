@@ -37,15 +37,15 @@ using Layout = Kokkos::LayoutRight;
 #define  RHO 0
 #define  MX1 1
 #define  MX2 (COMPONENTS >= 2 ? 2: 255)
-#define  MX3 (COMPONENTS == 3 ? 3: 255)
+#define  MX3 (COMPONENTS == 3 ? 3: 254)
 #if MHD == YES
 #define  BX1 (COMPONENTS + 1)
-#define  BX2 (COMPONENTS >= 2 ? (BX1+1): 255)
-#define  BX3 (COMPONENTS == 3 ? (BX1+2): 255)
+#define  BX2 (COMPONENTS >= 2 ? (BX1+1): 252)
+#define  BX3 (COMPONENTS == 3 ? (BX1+2): 251)
 #else
-#define  BX1 255
-#define  BX2 255
-#define  BX3 255
+#define  BX1 253
+#define  BX2 252
+#define  BX3 251
 #endif
 
 #if HAVE_ENERGY

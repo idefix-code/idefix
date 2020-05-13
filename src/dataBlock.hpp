@@ -58,8 +58,10 @@ public:
     IdefixArray4D<real> PrimL;
     IdefixArray4D<real> PrimR;
     IdefixArray4D<real> FluxRiemann;
-    
 
+    // Name of the fields (used in outputs)
+    std::vector<std::string> VcName;
+    std::vector<std::string> VsName;
    
     int np_tot[3];                  // total number of grid points
     int np_int[3];                  // internal number of grid points

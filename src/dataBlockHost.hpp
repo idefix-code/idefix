@@ -17,7 +17,9 @@ public:
     IdefixArray4D<real>::HostMirror Vs;     // Main face-centered primitive variables index
     IdefixArray4D<real>::HostMirror Uc;     // Main cell-centered conservative variables
 
-   
+    real xbeg[3];                   // Beginning of dataBlock
+    real xend[3];                   // End of dataBlock
+
     int np_tot[3];                  // total number of grid points
     int np_int[3];                  // internal number of grid points
 
@@ -48,7 +50,7 @@ public:
 
 private:
     // Data object to which we are the mirror
-    DataBlock data;
+    DataBlock *data;
 };
 
 

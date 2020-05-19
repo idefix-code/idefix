@@ -220,7 +220,20 @@ int Input::GetInt(std::string blockName, std::string paramName, int num) {
     return(value);
 }
 
-
+// Check that an entry is present in the ini file, if yes, return the number of parameters for given entry
+int Input::CheckEntry(std::string blockName, std::string paramName) {
+    int result=-1;
+    std::map<std::string, std::map<std::string, std::vector<std::string>>>::iterator block = inputParameters.find(blockName);
+    if(block != inputParameters.end()) {
+        // Block exists
+        std::map<std::string, std::vector<std::string>>::iterator param = block->second.find(paramName);
+        if(param != block->second.end()) {
+            // Parameter exist
+            result = param->second.size();
+        }
+    }
+    return(result);
+}
 
 void Input::PrintLogo() {
     std::cout << "                                  .:HMMMMHn:.  ..:n.."<< std::endl;

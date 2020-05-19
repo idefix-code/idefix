@@ -17,6 +17,7 @@ public:
     std::string GetString(std::string, std::string, int);
     real GetReal(std::string, std::string, int);
     int GetInt(std::string, std::string, int);
+    int CheckEntry(std::string, std::string);
 
     Input();
     void PrintLogo();

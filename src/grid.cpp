@@ -45,6 +45,7 @@ Grid::Grid(Input &input) {
         if(boundary.compare("outflow") == 0) lbound[dir] = outflow;
         else if(boundary.compare("periodic") == 0) lbound[dir] = periodic;
         else if(boundary.compare("internal") == 0) lbound[dir] = internal;
+        else if(boundary.compare("shearingbox") == 0) lbound[dir] = shearingbox;
         else if(boundary.compare("userdef") == 0) lbound[dir] = userdef;
         else {
             std::stringstream msg;
@@ -57,6 +58,7 @@ Grid::Grid(Input &input) {
         if(boundary.compare("outflow") == 0) rbound[dir] = outflow;
         else if(boundary.compare("periodic") == 0) rbound[dir] = periodic;
         else if(boundary.compare("internal") == 0) rbound[dir] = internal;
+        else if(boundary.compare("shearingbox") == 0) rbound[dir] = shearingbox;
         else if(boundary.compare("userdef") == 0) rbound[dir] = userdef;
         else {
             std::stringstream msg;
@@ -79,3 +81,24 @@ Grid::Grid(Input &input) {
     Kokkos::Profiling::popRegion();
 
 }
+
+/*
+Grid& Grid::operator=(const Grid& grid) {
+    for(int dir = 0 ; dir < 3 ; dir++) {
+        x[dir] = grid.x[dir];
+        xr[dir] = grid.xr[dir];
+        xl[dir] = grid.xl[dir];
+        dx[dir] = grid.dx[dir];
+        xbeg[dir] = grid.xbeg[dir];
+        xend[dir] = grid.xend[dir];
+        np_tot[dir] = grid.np_tot[dir];
+        np_int[dir] = grid.np_int[dir];
+        nghost[dir] = grid.nghost[dir];
+        lbound[dir] = grid.lbound[dir];
+        rbound[dir] = grid.rbound[dir];
+    }
+
+    return *this;
+}
+*/
+

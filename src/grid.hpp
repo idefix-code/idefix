@@ -9,6 +9,8 @@ public:
     IdefixArray1D<real> xl[3];     // cell left interface
     IdefixArray1D<real> dx[3];     // cell width
 
+    real xbeg[3];                   // Beginning of grid
+    real xend[3];                   // End of grid
 
     int np_tot[3];                  // total number of grid points
     int np_int[3];                  // internal number of grid points
@@ -21,6 +23,9 @@ public:
     Grid(Input &);
 
     Grid();
+
+    // Copyt
+    //Grid& operator=(const Grid& );
 
 
 

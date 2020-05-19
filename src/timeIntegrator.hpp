@@ -2,6 +2,7 @@
 #define TIMEINTEGRATOR_HPP
 #include "idefix.hpp"
 
+using SrcTermFunc = void (*) (DataBlock &, const real t, const real dt);
 
 class TimeIntegrator {
 public:
@@ -12,12 +13,19 @@ public:
 
 
     // Constructor from input and given datablock
-    TimeIntegrator(Input &, Hydro &, Setup &);
+    TimeIntegrator(Input &, Hydro &);
 
     void Stage(DataBlock &);
     // Do one integration cycle
     void Cycle(DataBlock &);
     void ReinitInvDt(DataBlock & );
+
+    // Return the hydro object used by present TimeIntegrator
+    Hydro &GetHydro();
+
+    // Add some user source terms
+    void EnrollUserSourceTerm(SrcTermFunc);
+
 private:
     int nstages;
     // Weights of time integrator
@@ -32,11 +40,11 @@ private:
     double lastLog;     // # time for the last log
     Kokkos::Timer timer;    // Internal timer of the integrator
     
-    DataBlock data;
-    Hydro hydro;
-    Setup mySetup;
+    Hydro *hydro;
 
-    
+    // User defined functions
+    SrcTermFunc userSourceTerm;
+    bool haveUserSourceTerm;
 };
 
 #endif

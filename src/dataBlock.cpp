@@ -17,7 +17,7 @@ void DataBlock::InitFromGrid(Grid &grid) {
         np_tot[dir] = grid.np_tot[dir];
         np_int[dir] = grid.np_int[dir];
 
-        // Boundary conditions are yet to be defined
+        // Boundary conditions
         lbound[dir] = grid.lbound[dir]; 
         rbound[dir] = grid.rbound[dir];
 
@@ -27,6 +27,10 @@ void DataBlock::InitFromGrid(Grid &grid) {
         // Where does this datablock starts and end in the grid?
         gbeg[dir] = beg[dir];
         gend[dir] = end[dir];
+
+        // Copy local start and end of current datablock as full grid start and end (serial)
+        xbeg[dir] = grid.xbeg[dir];
+        xend[dir] = grid.xend[dir];
 
     }
     
@@ -136,84 +140,6 @@ void DataBlock::InitFromGrid(Grid &grid) {
     // TODO: A proper initialisation of A and dV should be done at this stage
 }
 
-DataBlock::DataBlock(const DataBlock &data) {
-
-    Kokkos::Profiling::pushRegion("DataBlock::DataBlock(copy)");
-    
-    // Shallow copy of a datablock
-    for(int dir = 0 ; dir < 3; dir++) {
-        nghost[dir]=data.nghost[dir];
-        np_tot[dir]=data.np_tot[dir];
-        np_int[dir]=data.np_int[dir];
-        lbound[dir]=data.lbound[dir];
-        rbound[dir]=data.rbound[dir];
-        beg[dir]=data.beg[dir];
-        end[dir]=data.end[dir];
-        gbeg[dir]=data.gbeg[dir];
-        gend[dir]=data.gend[dir];
-        x[dir]=data.x[dir];
-        xr[dir]=data.xr[dir];
-        xl[dir]=data.xl[dir];
-        dx[dir]=data.dx[dir];
-        A[dir]=data.A[dir];
-    }
-
-    dV=data.dV;
-    Vc=data.Vc;
-    Vc0=data.Vc0;
-    Vs0=data.Vs0;
-    Uc=data.Uc;
-    InvDtHyp=data.InvDtHyp;
-    InvDtPar=data.InvDtPar;
-
-    #if MHD == YES
-    emf=data.emf;
-    Vs=data.Vs;
-    #endif
-
-    Kokkos::Profiling::popRegion();
-}
-
-
-DataBlock& DataBlock::operator=(const DataBlock& data) {
-    Kokkos::Profiling::pushRegion("DataBlock::operator=");
-    // Shallow reference operator
-    if (this != & data) {
-        for(int dir = 0 ; dir < 3; dir++) {
-            nghost[dir]=data.nghost[dir];
-            np_tot[dir]=data.np_tot[dir];
-            np_int[dir]=data.np_int[dir];
-            lbound[dir]=data.lbound[dir];
-            rbound[dir]=data.rbound[dir];
-            beg[dir]=data.beg[dir];
-            end[dir]=data.end[dir];
-            gbeg[dir]=data.gbeg[dir];
-            gend[dir]=data.gend[dir];
-            x[dir]=data.x[dir];
-            xr[dir]=data.xr[dir];
-            xl[dir]=data.xl[dir];
-            dx[dir]=data.dx[dir];
-            A[dir]=data.A[dir];
-        }
-        
-        dV=data.dV;
-        Vc=data.Vc;
-        Vc0=data.Vc0;
-        Vs0=data.Vs0;
-        Uc=data.Uc;
-        InvDtHyp=data.InvDtHyp;
-        InvDtPar=data.InvDtPar;
-        
-        #if MHD == YES
-        emf=data.emf;
-        Vs=data.Vs;
-        #endif
-    }
-
-    Kokkos::Profiling::popRegion();
-
-    return *this;
-}
 
 // Initialisation of electromotive force object
 ElectroMotiveForce::ElectroMotiveForce() {

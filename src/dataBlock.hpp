@@ -41,6 +41,9 @@ public:
     IdefixArray1D<real> xl[3];     // cell left interface
     IdefixArray1D<real> dx[3];     // cell width
 
+    real xbeg[3];                   // Beginning of datablocl
+    real xend[3];                   // End of datablock
+
     IdefixArray3D<real> dV;     // cell volume
     IdefixArray3D<real> A[3];      // cell right interface area
 
@@ -80,13 +83,6 @@ public:
 
     // init from a Grid object
     void InitFromGrid(Grid &);
-
-
-    // Copy constructor
-    DataBlock(const DataBlock &);
-
-    // Assignement operator
-    DataBlock& operator=(const DataBlock&);
 
 
     DataBlock();

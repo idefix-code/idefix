@@ -5,7 +5,7 @@
 class Setup {
 public:
     Setup();
-    Setup(Input &, Grid &, DataBlock &);
+    Setup(Input &, Grid &, DataBlock &, TimeIntegrator &);
 
     void InitFlow(DataBlock &);
     void MakeAnalysis(DataBlock&, real);

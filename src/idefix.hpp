@@ -113,7 +113,7 @@ using Layout = Kokkos::LayoutRight;
 
 
 // Types of boundary which can be treated
-enum BoundaryType { internal, periodic, outflow, userdef};
+enum BoundaryType { internal, periodic, outflow, shearingbox, userdef};
 enum BoundarySide { left, right};
 
 
@@ -128,9 +128,9 @@ enum BoundarySide { left, right};
 #include "dataBlock.hpp"
 #include "dataBlockHost.hpp"
 #include "test.hpp"
-#include "setup.hpp"
 #include "hydro.hpp"
 #include "timeIntegrator.hpp"
+#include "setup.hpp"
 #include "outputVtk.hpp"
 
 #ifndef MHD

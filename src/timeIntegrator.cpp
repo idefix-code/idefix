@@ -2,16 +2,14 @@
 #include "idefix.hpp"
 #include "timeIntegrator.hpp"
 
-TimeIntegrator::TimeIntegrator(Input & input, Hydro &physics, Setup &setup) {
+TimeIntegrator::TimeIntegrator(Input & input, Hydro &physics) {
     Kokkos::Profiling::pushRegion("TimeIntegrator::TimeIntegrator(Input...)");
 
-    this->hydro=physics;
-    this->mySetup=setup;
+    this->hydro=&physics;
     this->timer.reset();
     this->lastLog=timer.seconds();
 
     nstages=input.GetInt("TimeIntegrator","nstages",0);
-
     
     dt=input.GetReal("TimeIntegrator","first_dt",0);
 
@@ -30,8 +28,19 @@ TimeIntegrator::TimeIntegrator(Input & input, Hydro &physics, Setup &setup) {
         w0[1] = 1.0/3.0;
     }
     
+    this->haveUserSourceTerm = false;
+
     Kokkos::Profiling::popRegion();
 
+}
+
+void TimeIntegrator::EnrollUserSourceTerm(SrcTermFunc myFunc) {
+    this->userSourceTerm = myFunc;
+    this->haveUserSourceTerm = true;
+}
+
+Hydro& TimeIntegrator::GetHydro() {
+    return (*this->hydro);
 }
 
 // Compute one Stage of the time Integrator
@@ -39,31 +48,35 @@ void TimeIntegrator::Stage(DataBlock &data) {
     
     Kokkos::Profiling::pushRegion("TimeIntegrator::Stage");
     // Apply Boundary conditions
-    hydro.SetBoundary(data,t);
+    hydro->SetBoundary(data,t);
 
     // Convert current state into conservative variable and save it
-    hydro.ConvertPrimToCons(data);
+    hydro->ConvertPrimToCons(data);
 
     // Loop on all of the directions
     for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
         // Step one: extrapolate the variables to the sides, result is stored in the physics object
-        hydro.ExtrapolatePrimVar(data, dir);
+        hydro->ExtrapolatePrimVar(data, dir);
 
         // Step 2: compute the intercell flux with our Riemann solver, store the resulting InvDt
-        hydro.CalcRiemannFlux(data, dir);
+        hydro->CalcRiemannFlux(data, dir);
 
         // Step 3: compute the resulting evolution of the conserved variables, stored in Uc
-        hydro.CalcRightHandSide(data, dir, dt);
+        hydro->CalcRightHandSide(data, dir, dt);
     }
+
+    // Step 4: add source terms to the conserved variables (curvature, rotation, etc)
+    if(hydro->haveSourceTerms) hydro->AddSourceTerms(data, dt);
+    if(this->haveUserSourceTerm) this->userSourceTerm(data, t, dt);
 
 #if MHD == YES
     // Compute the field evolution according to CT
-    hydro.CalcCornerEMF(data, t);
-    hydro.EvolveMagField(data, t, dt);
-    hydro.ReconstructVcField(data, data.Uc);
+    hydro->CalcCornerEMF(data, t);
+    hydro->EvolveMagField(data, t, dt);
+    hydro->ReconstructVcField(data, data.Uc);
 #endif
     // Convert back into primitive variables
-    hydro.ConvertConsToPrim(data);
+    hydro->ConvertConsToPrim(data);
 
     Kokkos::Profiling::popRegion();
 }
@@ -96,13 +109,13 @@ void TimeIntegrator::Cycle(DataBlock & data) {
 
     Kokkos::Profiling::pushRegion("TimeIntegrator::Cycle");
 
-    if(timer.seconds()-lastLog >= 5.0) {
+    if(timer.seconds()-lastLog >= 1.0) {
     //if(ncycles%100==0) {
         lastLog = timer.seconds();
         std::cout << "TimeIntegrator: t=" << t << " Cycle " << ncycles << " dt=" << dt << std::endl;
         #if MHD == YES
         // Check divB
-        std::cout << "\t maxdivB=" << hydro.CheckDivB(data) << std::endl;
+        std::cout << "\t maxdivB=" << hydro->CheckDivB(data) << std::endl;
         #endif
     }
 

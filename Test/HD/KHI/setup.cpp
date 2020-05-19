@@ -27,7 +27,7 @@ Setup::Setup() {}
 
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
-Setup::Setup(Input &input, Grid &grid, DataBlock &data) {
+Setup::Setup(Input &input, Grid &grid, DataBlock &data, TimeIntegrator &tint) {
 
 }
 

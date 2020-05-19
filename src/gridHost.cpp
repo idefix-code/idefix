@@ -8,7 +8,7 @@ GridHost::GridHost() {
 GridHost::GridHost(Grid &grid) {
 
     Kokkos::Profiling::pushRegion("GridHost::GridHost(Grid)");
-    this->grid=grid;
+    this->grid=&grid;
     for(int dir = 0 ; dir < 3 ; dir++) {
 
         nghost[dir] = grid.nghost[dir];
@@ -17,6 +17,9 @@ GridHost::GridHost(Grid &grid) {
 
         lbound[dir] = grid.lbound[dir]; 
         rbound[dir] = grid.rbound[dir];
+
+        xbeg[dir] = grid.xbeg[dir];
+        xend[dir] = grid.xend[dir];
 
 
     }
@@ -48,13 +51,17 @@ void GridHost::MakeGrid(Input &input) {
         xstart[dir] = input.GetReal("Grid",label,1);
         xend[dir] = input.GetReal("Grid",label,4);
 
+        this->xbeg[dir] = xstart[dir];
+        this->xend[dir] = xend[dir];
+
+
         if(dir<DIMENSIONS) {
 
             std::string gridType = input.GetString("Grid",label,3);
             if(gridType.compare("u")) {
                 std::stringstream msg;
-                msg << "While creating Grid: this version of idefix doesn't handle non-uniform grid." << std::endl;
-                msg << "Will assume uniform grid.";
+                msg << "While creating Grid: this version of idefix doesn't handle non-uniform grid->" << std::endl;
+                msg << "Will assume uniform grid->";
                 IDEFIX_WARNING(msg);
             }
             std::string lboundString, rboundString;
@@ -67,6 +74,9 @@ void GridHost::MakeGrid(Input &input) {
                     break;
                 case internal:
                     lboundString="internal";
+                    break;
+                case shearingbox:
+                    lboundString="shearingbox";
                     break;
                 case userdef:
                     lboundString="userdef";
@@ -83,6 +93,9 @@ void GridHost::MakeGrid(Input &input) {
                     break;
                 case internal:
                     rboundString="internal";
+                    break;
+                case shearingbox:
+                    lboundString="shearingbox";
                     break;
                 case userdef:
                     rboundString="userdef";
@@ -112,10 +125,13 @@ void GridHost::MakeGrid(Input &input) {
 void GridHost::SyncFromDevice() {
     Kokkos::Profiling::pushRegion("GridHost::SyncFromDevice");
     for(int dir = 0 ; dir < 3 ; dir++) {
-        Kokkos::deep_copy(x[dir],grid.x[dir]);
-        Kokkos::deep_copy(xr[dir],grid.xr[dir]);
-        Kokkos::deep_copy(xl[dir],grid.xl[dir]);
-        Kokkos::deep_copy(dx[dir],grid.dx[dir]);
+        Kokkos::deep_copy(x[dir],grid->x[dir]);
+        Kokkos::deep_copy(xr[dir],grid->xr[dir]);
+        Kokkos::deep_copy(xl[dir],grid->xl[dir]);
+        Kokkos::deep_copy(dx[dir],grid->dx[dir]);
+
+        xbeg[dir] = grid->xbeg[dir];
+        xend[dir] = grid->xend[dir];
     }
     Kokkos::Profiling::popRegion();
 }
@@ -124,10 +140,14 @@ void GridHost::SyncToDevice() {
     Kokkos::Profiling::pushRegion("GridHost::SyncToDevice");
     // Sync with the device
     for(int dir = 0 ; dir < 3 ; dir++) {
-        Kokkos::deep_copy(grid.x[dir],x[dir]);
-        Kokkos::deep_copy(grid.xr[dir],xr[dir]);
-        Kokkos::deep_copy(grid.xl[dir],xl[dir]);
-        Kokkos::deep_copy(grid.dx[dir],dx[dir]);
+        Kokkos::deep_copy(grid->x[dir],x[dir]);
+        Kokkos::deep_copy(grid->xr[dir],xr[dir]);
+        Kokkos::deep_copy(grid->xl[dir],xl[dir]);
+        Kokkos::deep_copy(grid->dx[dir],dx[dir]);
+
+        grid->xbeg[dir] = xbeg[dir];
+        grid->xend[dir] = xend[dir];
+
     }
     Kokkos::Profiling::popRegion();
 }

@@ -43,6 +43,8 @@ int main( int argc, char* argv[] )
     gridHost.MakeGrid(input);
     gridHost.SyncToDevice();
 
+    std::cout << "grid.xbeg[0]=" << grid.xbeg[0] << std::endl;
+    std::cout << "gridHost.xbeg[0]=" << gridHost.xbeg[0] << std::endl;
     // Make a data array
     DataBlock data;
 
@@ -52,11 +54,13 @@ int main( int argc, char* argv[] )
     dataHost.SyncFromDevice();
 
     std::cout << "Init Hydrodynamics" << std::endl;
-    Setup mysetup(input,grid,data);
-    Hydro hydro(input,mysetup);
+    Hydro hydro(input, grid);
 
     std::cout << "Init Time Integrator..." << std::endl;
-    TimeIntegrator Tint(input, hydro, mysetup);
+    TimeIntegrator Tint(input, hydro);
+
+    std::cout << "Init Setup..." << std::endl;
+    Setup mysetup(input,grid,data,Tint);
 
     std::cout << "init Output Routines" << std::endl;
     OutputVTK output(input, grid, Tint.getT()); 

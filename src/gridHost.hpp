@@ -10,6 +10,8 @@ public:
     IdefixArray1D<real>::HostMirror xl[3]; // cell left interface
     IdefixArray1D<real>::HostMirror dx[3]; // cell width
 
+    real xbeg[3];                   // Beginning of grid
+    real xend[3];                   // End of grid
 
     int np_tot[3];                  // total number of grid points
     int np_int[3];                  // internal number of grid points
@@ -33,7 +35,7 @@ public:
     void SyncToDevice();
 
 private:
-    Grid grid;
+    Grid *grid;
 };
 
 #endif

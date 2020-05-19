@@ -8,16 +8,14 @@
 #endif
 
 
-Hydro::Hydro(Input &input, Setup &setup) {
+Hydro::Hydro(Input &input, Grid &grid) {
     Kokkos::Profiling::pushRegion("Hydro::Hydro(DataBock)");
 
     this->gamma = 5.0/3.0;
     this->C2Iso = 1.0;
-
-    this->mySetup=setup;
     
     // read Solver from input file
-    std::string solverString = input.GetString("Solver","Solver",0);
+    std::string solverString = input.GetString("Hydro","Solver",0);
     
     if (solverString.compare("tvdlf") == 0)     mySolver = TVDLF;
     else if (solverString.compare("hll") == 0)  mySolver = HLL;
@@ -33,11 +31,58 @@ Hydro::Hydro(Input &input, Setup &setup) {
         IDEFIX_ERROR(msg);
     }
 
+    // Source terms
+    this->haveSourceTerms = false;
+
+    // Check whether we have rotation
+    int rotation = input.CheckEntry("Hydro","Rotation");
+
+    if(rotation>=0 ) {
+        this->haveSourceTerms = true;
+        this->haveRotation = true;
+        if(rotation != 3) IDEFIX_ERROR("Rotation needs a 3 components vector in idefix.ini");
+        this->OmegaX1 = input.GetReal("Hydro","Rotation",0);
+        this->OmegaX2 = input.GetReal("Hydro","Rotation",1);
+        this->OmegaX3 = input.GetReal("Hydro","Rotation",2);
+
+        std::cout << "Rotation enabled with Omega=(" << this->OmegaX1 << ", " << this->OmegaX2 << ", " << this->OmegaX3 << ")" << std::endl;
+    }
+    else {
+        this->haveRotation = false;
+    }
+
+    // Check whether we have shearing box
+    int shearingbox = input.CheckEntry("Hydro","ShearingBox");
+
+    if(shearingbox>=0 ) {
+        this->haveShearingBox = true;
+        this->haveSourceTerms = true;
+        if(shearingbox != 1) IDEFIX_ERROR("Shearing box needs a scalar value for the shear rate in idefix.ini");
+        this->sbS = input.GetReal("Hydro","ShearingBox",0);
+
+        // Get box size
+        this->sbLx = grid.xend[IDIR] - grid.xbeg[IDIR];
+
+        std::cout << "xbeg=" << grid.xbeg[IDIR] << "xend=" << grid.xend[IDIR] <<std::endl;
+        std::cout << "ShearingBox enabled with Shear rate=" << this->sbS <<  "and Lx=" << sbLx << std::endl;
+    }
+    else {
+        this->haveShearingBox = false;
+    }
+
     Kokkos::Profiling::popRegion();
 }
 
 Hydro::Hydro() {
 
+}
+
+real Hydro::GetGamma() {
+    return(this->gamma);
+}
+
+real Hydro::GetC2iso() {
+    return(this->C2Iso);
 }
 
 
@@ -268,6 +313,33 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real dt) {
     Kokkos::Profiling::popRegion();
 }
 
+// Add source terms
+void Hydro::AddSourceTerms(DataBlock &data, real dt) {
+
+    Kokkos::Profiling::pushRegion("Hydro::AddSourceTerms");
+    IdefixArray4D<real> Uc = data.Uc;
+    IdefixArray4D<real> Vc = data.Vc;
+
+    idefix_for("AddSourceTerms",data.beg[KDIR],data.end[KDIR],data.beg[JDIR],data.end[JDIR],data.beg[IDIR],data.end[IDIR],
+        KOKKOS_LAMBDA (int k, int j, int i) {
+            if(haveRotation) {
+                #if COMPONENTS == 3
+                Uc(MX1,k,j,i) += TWO_F * dt * Vc(RHO,k,j,i) * (OmegaX3 * Vc(VX2,k,j,i) - OmegaX2 * Vc(VX3,k,j,i));
+                Uc(MX2,k,j,i) += TWO_F * dt * Vc(RHO,k,j,i) * (OmegaX1 * Vc(VX3,k,j,i) - OmegaX3 * Vc(VX1,k,j,i));
+                Uc(MX3,k,j,i) += TWO_F * dt * Vc(RHO,k,j,i) * (OmegaX2 * Vc(VX1,k,j,i) - OmegaX1 * Vc(VX2,k,j,i));
+                #endif
+                #if COMPONENTS == 2
+                Uc(MX1,k,j,i) += TWO_F * dt * Vc(RHO,k,j,i) * (   OmegaX3 * Vc(VX2,k,j,i) );
+                Uc(MX2,k,j,i) += TWO_F * dt * Vc(RHO,k,j,i) * ( - OmegaX3 * Vc(VX1,k,j,i) );
+                #endif
+
+            }
+        });
+    
+    Kokkos::Profiling::popRegion();
+    
+}
+
 // Compute Corner EMFs from the one stored in the Riemann step
 void Hydro::CalcCornerEMF(DataBlock &data, real t) {
         Kokkos::Profiling::pushRegion("Hydro::CalcCornerEMF");
@@ -330,7 +402,7 @@ void Hydro::EvolveMagField(DataBlock &data, real t, real dt) {
 
     idefix_for("EvolvMagField",data.beg[KDIR],data.end[KDIR]+KOFFSET,data.beg[JDIR],data.end[JDIR]+JOFFSET,data.beg[IDIR],data.end[IDIR]+IOFFSET,
                     KOKKOS_LAMBDA (int k, int j, int i) {
-
+                        
                         Vs(BX1s,k,j,i) = Vs(BX1s,k,j,i) + ( D_EXPAND( ZERO_F                                     ,
                                                                       - dt/dx2(j) * (Ex3(k,j+1,i) - Ex3(k,j,i) )  ,
                                                                       + dt/dx3(k) * (Ex2(k+1,j,i) - Ex2(k,j,i) ) ));
@@ -437,12 +509,12 @@ void Hydro::ReconstructNormalField(DataBlock &data) {
     idefix_for("ReconstructBX3s",0,data.np_tot[JDIR],0,data.np_tot[IDIR],
                     KOKKOS_LAMBDA (int j, int i) {
                         for(int k = nstart ; k>=0 ; k-- ) {
-                            Vs(BX3s,k,j,i) = Vs(BX3s,k+1,j,i) + dx3(k)*(     (Vs(BX1s,k,j,i+1) - Vs(BX1s,k,j,i+1))/dx1(i)                  
-                                                                          +  (Vs(BX2s,k,j+1,i) - Vs(BX2s,k,j+1,i))/dx2(j) );
+                            Vs(BX3s,k,j,i) = Vs(BX3s,k+1,j,i) + dx3(k)*(     (Vs(BX1s,k,j,i+1) - Vs(BX1s,k,j,i))/dx1(i)                  
+                                                                          +  (Vs(BX2s,k,j+1,i) - Vs(BX2s,k,j,i))/dx2(j) );
                         }
                         for(int k = nend ; k<nx3 ; k++ ) {
-                            Vs(BX3s,k+1,j,i) = Vs(BX3s,k,j,i) -  dx3(k)*(     (Vs(BX1s,k,j,i+1) - Vs(BX1s,k,j,i+1))/dx1(i)                  
-                                                                           +  (Vs(BX2s,k,j+1,i) - Vs(BX2s,k,j+1,i))/dx2(j) );
+                            Vs(BX3s,k+1,j,i) = Vs(BX3s,k,j,i) -  dx3(k)*(     (Vs(BX1s,k,j,i+1) - Vs(BX1s,k,j,i))/dx1(i)                  
+                                                                           +  (Vs(BX2s,k,j+1,i) - Vs(BX2s,k,j,i))/dx2(j) );
                         }
                         
 
@@ -509,8 +581,9 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                         int iref= (dir==IDIR) ? ighost : i;
                         int jref= (dir==JDIR) ? jghost : j;
                         int kref= (dir==KDIR) ? kghost : k;
-
-                        Vc(n,k,j,i) = Vc(n,kref,jref,iref);
+                        
+                        if(n==VX1+dir) Vc(n,k,j,i) = ZERO_F;
+                        else Vc(n,k,j,i) = Vc(n,kref,jref,iref);
                     });
                 #if MHD == YES
                 idefix_for("BoundaryBegOutflowVs",0,DIMENSIONS,kbeg,kend,jbeg,jend,ibeg,iend,
@@ -521,6 +594,21 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
 
                         // Don't touch the normal component !
                         if(n != dir) Vs(n,k,j,i) = Vs(n,kref,jref,iref);
+                    });
+                #endif
+                break;
+            case shearingbox:
+                idefix_for("BoundaryBegShearingBox",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+                    KOKKOS_LAMBDA (int n, int k, int j, int i) {
+                        real voffset= (n == VX2) ? - sbLx * sbS : ZERO_F;
+                        Vc(n,k,j,i) = Vc(n,k+koffset,j+joffset,i+ioffset) + voffset;
+                    });
+                #if MHD == YES
+                idefix_for("BoundaryBegShearingBoxVs",0,DIMENSIONS,kbeg,kend,jbeg,jend,ibeg,iend,
+                    KOKKOS_LAMBDA (int n, int k, int j, int i) {
+
+                        // Don't touch the normal component !
+                        if(n != dir) Vs(n,k,j,i) = Vs(n,k+koffset,j+joffset,i+ioffset);
                     });
                 #endif
                 break;
@@ -559,7 +647,8 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                         int jref= (dir==JDIR) ? jghost + joffset - 1 : j;
                         int kref= (dir==KDIR) ? kghost + koffset - 1 : k;
 
-                        Vc(n,k,j,i) = Vc(n,kref,jref,iref);
+                        if(n==VX1+dir) Vc(n,k,j,i) = ZERO_F;
+                        else Vc(n,k,j,i) = Vc(n,kref,jref,iref);
                     });
                 #if MHD == YES
                 idefix_for("BoundaryEndOutflowVs",0,DIMENSIONS,kbeg,kend,jbeg,jend,ibeg,iend,
@@ -569,6 +658,21 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                         int kref= (dir==KDIR) ? kghost + koffset - 1 : k;
 
                         if(n != dir) Vs(n,k,j,i) = Vs(n,kref,jref,iref);
+                    });
+                #endif
+                break;
+            case shearingbox:
+                idefix_for("BoundaryEndShearingBox",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+                    KOKKOS_LAMBDA (int n, int k, int j, int i) {
+                        real voffset= (n == VX2) ? + sbLx * sbS : ZERO_F;
+
+                        Vc(n,k,j,i) = Vc(n,k-koffset,j-joffset,i-ioffset) + voffset;
+                    });
+                #if MHD == YES
+                idefix_for("BoundaryEndShearingBoxVs",0,DIMENSIONS,kbeg,kend,jbeg,jend,ibeg,iend,
+                    KOKKOS_LAMBDA (int n, int k, int j, int i) {
+                        // Don't touch the normal component !
+                        if(n != dir) Vs(n,k,j,i) = Vs(n,k-koffset,j-joffset,i-ioffset);                        
                     });
                 #endif
                 break;
@@ -591,13 +695,17 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
 
 }
 
-real Hydro::CheckDivB(DataBlock &data) {
 
+
+#ifdef KOKKOS_ENABLE_CUDA
+real Hydro::CheckDivB(DataBlock &data) {
     real divB;
     IdefixArray4D<real> Vs = data.Vs;
     IdefixArray1D<real> dx1 = data.dx[IDIR];
     IdefixArray1D<real> dx2 = data.dx[JDIR];
     IdefixArray1D<real> dx3 = data.dx[KDIR];
+
+    int iref,jref,kref;
 
     Kokkos::parallel_reduce("CheckDivB",
                                 Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
@@ -611,14 +719,51 @@ real Hydro::CheckDivB(DataBlock &data) {
                           dB2=(Vs(BX2s,k,j+1,i)-Vs(BX2s,k,j,i))/(dx2(j)); ,
                           dB3=(Vs(BX3s,k+1,j,i)-Vs(BX3s,k,j,i))/(dx3(k));  )
                 
-
                 divBmax=FMAX(FABS(D_EXPAND(dB1, +dB2, +dB3)),divBmax);
 
             }, Kokkos::Max<real>(divB) );
+    std::cout << "divB=" << divB << "(i,j,k)=(" << iref << "," << jref << "," << kref << ")" << std::endl;
+    return(divB);
+}
 
+#else
+real Hydro::CheckDivB(DataBlock &data) {
+
+    real divB=0;
+    IdefixArray4D<real> Vs = data.Vs;
+    IdefixArray1D<real> dx1 = data.dx[IDIR];
+    IdefixArray1D<real> dx2 = data.dx[JDIR];
+    IdefixArray1D<real> dx3 = data.dx[KDIR];
+
+    int iref,jref,kref;
+    
+    for(int k = data.beg[KDIR] ; k < data.end[KDIR] ; k++) {
+        for(int j = data.beg[JDIR] ; j < data.end[JDIR] ; j++) {
+            for(int i = data.beg[IDIR] ; i < data.end[IDIR] ; i++) {
+                real dB1,dB2,dB3;
+
+                dB1=dB2=dB3=ZERO_F;
+
+                D_EXPAND( dB1=(Vs(BX1s,k,j,i+1)-Vs(BX1s,k,j,i))/(dx1(i)); ,
+                          dB2=(Vs(BX2s,k,j+1,i)-Vs(BX2s,k,j,i))/(dx2(j)); ,
+                          dB3=(Vs(BX3s,k+1,j,i)-Vs(BX3s,k,j,i))/(dx3(k));  )
+                
+                if(FABS(D_EXPAND(dB1, +dB2, +dB3)) > divB) {
+                    iref=i;
+                    jref=j;
+                    kref=k;
+                    divB=FABS(D_EXPAND(dB1, +dB2, +dB3));
+                }
+            }
+        }
+    }
+    //std::cout << "divB=" << divB << "(i,j,k)=(" << iref << "," << jref << "," << kref << ")" << std::endl;
     return(divB);
 
 }
+
+#endif
+
 
 void Hydro::SetGamma(real newGamma) {
     this->gamma=newGamma;

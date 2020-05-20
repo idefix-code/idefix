@@ -132,7 +132,6 @@ enum BoundarySide { left, right};
 #include "timeIntegrator.hpp"
 #include "setup.hpp"
 #include "outputVtk.hpp"
-#include "outputVtkDebug.hpp"
 
 #ifndef MHD
 #error MHD flag should be set to yes or no in definitions.hpp

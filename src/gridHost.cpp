@@ -95,7 +95,7 @@ void GridHost::MakeGrid(Input &input) {
                     rboundString="internal";
                     break;
                 case shearingbox:
-                    lboundString="shearingbox";
+                    rboundString="shearingbox";
                     break;
                 case userdef:
                     rboundString="userdef";

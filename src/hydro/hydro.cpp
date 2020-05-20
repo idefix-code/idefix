@@ -456,8 +456,8 @@ void Hydro::ReconstructNormalField(DataBlock &data) {
     int nx1,nx2,nx3;
 
     // reconstruct BX1s
-    nstart = data.nghost[IDIR]-1;
-    nend = data.np_tot[IDIR] - data.nghost[IDIR]-1;
+    nstart = data.beg[IDIR]-1;
+    nend = data.end[IDIR];
 
     nx1=data.np_tot[IDIR];
     nx2=data.np_tot[JDIR];
@@ -484,8 +484,8 @@ void Hydro::ReconstructNormalField(DataBlock &data) {
 
     #if DIMENSIONS >=2
     
-    nstart = data.nghost[JDIR]-1;
-    nend = data.np_tot[JDIR] - data.nghost[JDIR]-1;
+    nstart = data.beg[JDIR]-1;
+    nend = data.end[JDIR];
     idefix_for("ReconstructBX2s",0,data.np_tot[KDIR],0,data.np_tot[IDIR],
                     KOKKOS_LAMBDA (int k, int i) {
                         for(int j = nstart ; j>=0 ; j-- ) {
@@ -504,8 +504,10 @@ void Hydro::ReconstructNormalField(DataBlock &data) {
     #endif
 
     #if DIMENSIONS == 3
-    nstart = data.nghost[KDIR]-1;
-    nend = data.np_tot[KDIR] - data.nghost[KDIR]-1;
+    
+    nstart = data.beg[KDIR]-1;
+    nend = data.end[KDIR];
+
     idefix_for("ReconstructBX3s",0,data.np_tot[JDIR],0,data.np_tot[IDIR],
                     KOKKOS_LAMBDA (int j, int i) {
                         for(int k = nstart ; k>=0 ; k-- ) {
@@ -520,7 +522,8 @@ void Hydro::ReconstructNormalField(DataBlock &data) {
 
                     });
 
-    #endif       
+    #endif  
+    
     Kokkos::Profiling::popRegion();
 }
 
@@ -581,7 +584,7 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                         int iref= (dir==IDIR) ? ighost : i;
                         int jref= (dir==JDIR) ? jghost : j;
                         int kref= (dir==KDIR) ? kghost : k;
-                        
+
                         if(n==VX1+dir) Vc(n,k,j,i) = ZERO_F;
                         else Vc(n,k,j,i) = Vc(n,kref,jref,iref);
                     });
@@ -686,7 +689,7 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
     #if MHD == YES
     // Reconstruct the normal field component when using CT
     ReconstructNormalField(data);
-    
+
     // Remake the cell-centered field.
     ReconstructVcField(data, data.Vc);
     #endif
@@ -697,7 +700,6 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
 
 
 
-#ifdef KOKKOS_ENABLE_CUDA
 real Hydro::CheckDivB(DataBlock &data) {
     real divB;
     IdefixArray4D<real> Vs = data.Vs;
@@ -722,11 +724,11 @@ real Hydro::CheckDivB(DataBlock &data) {
                 divBmax=FMAX(FABS(D_EXPAND(dB1, +dB2, +dB3)),divBmax);
 
             }, Kokkos::Max<real>(divB) );
-    std::cout << "divB=" << divB << "(i,j,k)=(" << iref << "," << jref << "," << kref << ")" << std::endl;
+
     return(divB);
 }
 
-#else
+/*
 real Hydro::CheckDivB(DataBlock &data) {
 
     real divB=0;
@@ -762,7 +764,7 @@ real Hydro::CheckDivB(DataBlock &data) {
 
 }
 
-#endif
+*/
 
 
 void Hydro::SetGamma(real newGamma) {

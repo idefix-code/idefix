@@ -323,7 +323,8 @@ void Hydro::AddSourceTerms(DataBlock &data, real dt) {
     real OmegaX1 = this->OmegaX1;
     real OmegaX2 = this->OmegaX2;
     real OmegaX3 = this->OmegaX3;
-
+    bool haveRotation = this->haveRotation;
+    
     idefix_for("AddSourceTerms",data.beg[KDIR],data.end[KDIR],data.beg[JDIR],data.end[JDIR],data.beg[IDIR],data.end[IDIR],
         KOKKOS_LAMBDA (int k, int j, int i) {
             if(haveRotation) {

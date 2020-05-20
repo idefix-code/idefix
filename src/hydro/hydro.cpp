@@ -544,6 +544,9 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
     jghost = data.nghost[JDIR];
     kghost = data.nghost[KDIR];
 
+    real sbLx = this->sbLx;
+    real sbS = this->sbS;
+
     // X1 boundary conditions
     
 

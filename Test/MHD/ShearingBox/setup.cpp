@@ -38,12 +38,16 @@ void UserStep(DataBlock &data, const real t, const real dt) {
     IdefixArray1D<real> x = data.x[IDIR];
     IdefixArray1D<real> z = data.x[KDIR];
 
+    // GPUS cannot capture static variables
+    real omegaLocal=omega;
+    real shearLocal =shear;
+
     idefix_for("UserSourceTerms",data.beg[KDIR],data.end[KDIR],data.beg[JDIR],data.end[JDIR],data.beg[IDIR],data.end[IDIR],
         KOKKOS_LAMBDA (int k, int j, int i) {
 #ifdef STRATIFIED
-            Uc(MX3,k,j,i) += - dt*omega*omega*z(k)*Vc(RHO,k,j,i);
+            Uc(MX3,k,j,i) += - dt*omegaLocal*omegaLocal*z(k)*Vc(RHO,k,j,i);
 #endif
-            Uc(MX1,k,j,i) += - TWO_F*dt*omega*shear*Vc(RHO,k,j,i)*x(i);
+            Uc(MX1,k,j,i) += - TWO_F*dt*omegaLocal*shearLocal*Vc(RHO,k,j,i)*x(i);
         });
 
     Kokkos::Profiling::popRegion();

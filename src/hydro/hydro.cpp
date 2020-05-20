@@ -320,6 +320,10 @@ void Hydro::AddSourceTerms(DataBlock &data, real dt) {
     IdefixArray4D<real> Uc = data.Uc;
     IdefixArray4D<real> Vc = data.Vc;
 
+    real OmegaX1 = this->OmegaX1;
+    real OmegaX2 = this->OmegaX2;
+    real OmegaX3 = this->OmegaX3;
+
     idefix_for("AddSourceTerms",data.beg[KDIR],data.end[KDIR],data.beg[JDIR],data.end[JDIR],data.beg[IDIR],data.end[IDIR],
         KOKKOS_LAMBDA (int k, int j, int i) {
             if(haveRotation) {

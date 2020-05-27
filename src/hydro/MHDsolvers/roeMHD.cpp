@@ -144,7 +144,6 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
             vL[nv] = PrimL(nv,k,j,i);
             vR[nv] = PrimR(nv,k,j,i);
             dV[nv] = vR[nv] - vL[nv];
-            dU[nv] = uR[nv] - uL[nv];
         }
 
         // 2-- Compute the conservative variables
@@ -155,6 +154,7 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
         for(int nv = 0 ; nv < NVAR; nv++) {
             fluxL[nv] = uL[nv];
             fluxR[nv] = uR[nv];
+            dU[nv] = uR[nv] - uL[nv];
         }
         
         K_Flux(fluxL, vL, fluxL, C2Iso, VXn, VXt, VXb, BXn, BXt, BXb, MXn);

@@ -27,7 +27,11 @@ Hydro::Hydro(Input &input, Grid &grid) {
     else if (solverString.compare("roe") == 0)  mySolver = ROE;
     else {
         std::stringstream msg;
+    #if MHD == YES
+        msg << "Unknown MHD solver type " << solverString;
+    #else
         msg << "Unknown HD solver type " << solverString;
+    #endif
         IDEFIX_ERROR(msg);
     }
 
@@ -98,17 +102,44 @@ void Hydro::ConvertConsToPrim(DataBlock & data) {
     idefix_for("ConsToPrim",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
                         KOKKOS_LAMBDA (int k, int j, int i) 
             {
-                real U[NVAR];
-                real V[NVAR];
-                for(int nv = 0 ; nv < NVAR; nv++) {
-                    U[nv] = Uc(nv,k,j,i); 
-                }
+                real U_RHO;
+                EXPAND(
+                    real U_MX1; ,
+                    real U_MX2; ,
+                    real U_MX3; );
+                
+                real V_RHO;
+                EXPAND(
+                    real V_VX1; ,
+                    real V_VX2; ,
+                    real V_VX3; );
+                
+#if HAVE_ENERGY
+                real U_ENG = Uc(ENG,k,j,i);
+                real V_PRS;
+#endif
 
-                K_ConsToPrim(V,U,gamma_m1);
+                U_RHO = Uc(RHO,k,j,i);
+                EXPAND (
+                    U_MX1 = Uc(MX1,k,j,i); ,
+                    U_MX2 = Uc(MX2,k,j,i); ,
+                    U_MX3 = Uc(MX3,k,j,i);
+                )
 
-                for(int nv = 0 ; nv<NVAR; nv++) {
-                    Vc(nv,k,j,i) = V[nv];
-                }
+                K_ConsToPrim(V_RHO, ARG_EXPAND(V_VX1, V_VX2, V_VX3, V_PRS),
+                             U_RHO, ARG_EXPAND(U_MX1, U_MX2, U_MX3, U_ENG),
+                             gamma_m1);
+
+                Vc(RHO,k,j,i) = V_RHO;
+                EXPAND (
+                    Vc(VX1,k,j,i) = V_VX1; ,
+                    Vc(VX2,k,j,i) = V_VX2; ,
+                    Vc(VX3,k,j,i) = V_VX3;
+                )
+#if HAVE_ENERGY
+                Vc(PRS,k,j,i) = V_PRS;
+#endif
+
             });
 
     Kokkos::Profiling::popRegion();
@@ -128,17 +159,44 @@ void Hydro::ConvertPrimToCons(DataBlock & data) {
     idefix_for("ConvertPrimToCons",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
                         KOKKOS_LAMBDA (int k, int j, int i) 
             {
-                real U[NVAR];
-                real V[NVAR];
-                for(int nv = 0 ; nv < NVAR; nv++) {
-                    V[nv] = Vc(nv,k,j,i); 
-                }
+                real U_RHO;
+                EXPAND(
+                    real U_MX1; ,
+                    real U_MX2; ,
+                    real U_MX3; );
+                
+                real V_RHO;
+                EXPAND(
+                    real V_VX1; ,
+                    real V_VX2; ,
+                    real V_VX3; );
 
-                K_PrimToCons(U,V,gamma_m1);
+#if HAVE_ENERGY
+                real U_ENG;
+                real V_PRS = Vc(PRS,k,j,i);
+#endif
+                
+                V_RHO = Vc(RHO,k,j,i);
+                EXPAND (
+                    V_VX1 = Vc(VX1,k,j,i); ,
+                    V_VX2 = Vc(VX2,k,j,i); ,
+                    V_VX3 = Vc(VX3,k,j,i);
+                )
 
-                for(int nv = 0 ; nv<NVAR; nv++) {
-                    Uc(nv,k,j,i) = U[nv];
-                }
+                K_PrimToCons(U_RHO, ARG_EXPAND(U_MX1, U_MX2, U_MX3, U_ENG),
+                             V_RHO, ARG_EXPAND(V_VX1, V_VX2, V_VX3, V_PRS),
+                             gamma_m1);
+
+                Uc(RHO,k,j,i) = U_RHO;
+                EXPAND (
+                    Uc(MX1,k,j,i) = U_MX1; ,
+                    Uc(MX2,k,j,i) = U_MX2; ,
+                    Uc(MX3,k,j,i) = U_MX3;
+                )
+#if HAVE_ENERGY
+                Uc(ENG,k,j,i) = U_ENG;
+#endif
+                
             });
 
     Kokkos::Profiling::popRegion();

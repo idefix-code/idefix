@@ -10,31 +10,15 @@ void RoeHD(DataBlock & data, int dir, real gamma, real C2Iso) {
     Kokkos::Profiling::pushRegion("ROE_Solver");
     ioffset=joffset=koffset=0;
     // Determine the offset along which we do the extrapolation
-    EXPAND( int VXn; int MXn;  ,
-            int VXt; int MXt;  ,
-            int VXb; int MXb;   )
-    
     switch(dir) {
         case(IDIR):
             ioffset = 1;
-            
-            EXPAND(VXn = MXn = VX1;  , 
-                   VXt = MXt = VX2;  , 
-                   VXb = MXb = VX3; )
             break;
         case(JDIR):
             joffset=1;
-
-            EXPAND(VXn = MXn = VX2;  , 
-                   VXt = MXt = VX1;  , 
-                   VXb = MXb = VX3; )
             break;
         case(KDIR):
             koffset=1;
-
-            EXPAND(VXn = MXn = VX3;  , 
-                   VXt = MXt = VX1;  , 
-                   VXb = MXb = VX2; )
             break;
         default:
             IDEFIX_ERROR("Wrong direction");
@@ -46,57 +30,115 @@ void RoeHD(DataBlock & data, int dir, real gamma, real C2Iso) {
     IdefixArray1D<real> dx = data.dx[dir];
     IdefixArray3D<real> invDt = data.InvDtHyp;
 
-    real gamma_m1 = gamma -ONE_F;
-    real gmm1_inv = 1.0/gamma_m1;
-
+    real gamma_m1 = gamma - ONE_F;
+#if HAVE_ENERGY
+    real gmm1_inv = ONE_F / gamma_m1;
+#endif
+    
     idefix_for("ROE_Kernel",data.beg[KDIR],data.end[KDIR]+koffset,data.beg[JDIR],data.end[JDIR]+joffset,data.beg[IDIR],data.end[IDIR]+ioffset,
                         KOKKOS_LAMBDA (int k, int j, int i)
             {
-                
                 // Primitive variables
-                real vL[NVAR];
-                real vR[NVAR];
-                real dv[NVAR];
+                real vL_RHO;
+                EXPAND(
+                    real vL_VX1; ,
+                    real vL_VX2; ,
+                    real vL_VX3; );
+                
+                real vR_RHO;
+                EXPAND(
+                    real vR_VX1; ,
+                    real vR_VX2; ,
+                    real vR_VX3; );
+                
+                real dv_RHO;
+                EXPAND(
+                    real dv_VX1; ,
+                    real dv_VX2; ,
+                    real dv_VX3; );
 
                 // Conservative variables
-                real uL[NVAR];
-                real uR[NVAR];
+                real uL_RHO;
+                EXPAND(
+                    real uL_MX1; ,
+                    real uL_MX2; ,
+                    real uL_MX3; );
+                
+                real uR_RHO;
+                EXPAND(
+                    real uR_MX1; ,
+                    real uR_MX2; ,
+                    real uR_MX3; );
 
                 // Flux (left and right)
-                real fluxL[NVAR];
-                real fluxR[NVAR];
+                real fluxL_RHO;
+                EXPAND(
+                    real fluxL_MX1; ,
+                    real fluxL_MX2; ,
+                    real fluxL_MX3; );
                 
-                // Roe
-                real Rc[NVAR][NVAR];
-                real um[NVAR];
-                real s, c, vel2;
-                real h, hl, hr;
-                real a, a2, a2L, a2R;
+                real fluxR_RHO;
+                EXPAND(
+                    real fluxR_MX1; ,
+                    real fluxR_MX2; ,
+                    real fluxR_MX3; );
 
-                // 1-- Store the primitive variables on the left, right, and averaged states
-                for(int nv = 0 ; nv < NVAR; nv++) {
-                    vL[nv] = PrimL(nv,k,j,i);
-                    vR[nv] = PrimR(nv,k,j,i);
-                    dv[nv] = vR[nv] - vL[nv];
-                }
 
+                // 1.1-- Read primitive variables on the left state
+                vL_RHO = PrimL(RHO,k,j,i);
+                EXPAND(
+                    vL_VX1 = PrimL(MX1,k,j,i); ,
+                    vL_VX2 = PrimL(MX2,k,j,i); ,
+                    vL_VX3 = PrimL(MX3,k,j,i); );
+                
+                // 1.2-- Read primitive variables on the right state
+                vR_RHO = PrimR(RHO,k,j,i);
+                EXPAND(
+                    vR_VX1 = PrimR(MX1,k,j,i); ,
+                    vR_VX2 = PrimR(MX2,k,j,i); ,
+                    vR_VX3 = PrimR(MX3,k,j,i); );
+
+                // 1.2-- Compute dV
+                dv_RHO = vR_RHO - vL_RHO;
+                EXPAND(
+                    dv_VX1 = vR_VX1 - vL_VX1; ,
+                    dv_VX2 = vR_VX2 - vL_VX2; ,
+                    dv_VX3 = vR_VX3 - vL_VX3; );
+                
+#if HAVE_ENERGY
+                real vL_PRS = PrimL(PRS,k,j,i);
+                real vR_PRS = PrimR(PRS,k,j,i);
+                real dv_PRS = vR_PRS - vL_PRS;
+                real uL_ENG, uR_ENG;
+                real fluxL_ENG, fluxR_ENG;
+#endif
+                
                 // 2-- Compute the conservative variables
-                K_PrimToCons(uL, vL, gamma_m1);
-                K_PrimToCons(uR, vR, gamma_m1);
+                K_PrimToCons(uL_RHO, ARG_EXPAND(uL_MX1, uL_MX2, uL_MX3, uL_ENG),
+                             vL_RHO, ARG_EXPAND(vL_VX1, vL_VX2, vL_VX3, vL_PRS),
+                             gamma_m1);
+                
+                K_PrimToCons(uR_RHO, ARG_EXPAND(uR_MX1, uR_MX2, uR_MX3, uR_ENG),
+                             vR_RHO, ARG_EXPAND(vR_VX1, vR_VX2, vR_VX3, vR_PRS),
+                             gamma_m1);
+
                 
                 // 3-- Compute the left and right fluxes
-                for(int nv = 0 ; nv < NVAR; nv++) {
-                    fluxL[nv] = uL[nv];
-                    fluxR[nv] = uR[nv];
-                }
+                K_Flux(fluxL_RHO, ARG_EXPAND(fluxL_MX1, fluxL_MX2, fluxL_MX3, fluxL_ENG),
+                       vL_RHO, ARG_EXPAND(vL_VX1, vL_VX2, vL_VX3, vL_PRS),
+                       uL_RHO, ARG_EXPAND(uL_MX1, uL_MX2, uL_MX3, uL_ENG),
+                       C2Iso, dir);
                 
-                K_Flux(fluxL, vL, fluxL, C2Iso, dir);
-                K_Flux(fluxR, vR, fluxR, C2Iso, dir);
+                K_Flux(fluxR_RHO, ARG_EXPAND(fluxR_MX1, fluxR_MX2, fluxR_MX3, fluxR_ENG),
+                       vR_RHO, ARG_EXPAND(vR_VX1, vR_VX2, vR_VX3, vR_PRS),
+                       uR_RHO, ARG_EXPAND(uR_MX1, uR_MX2, uR_MX3, uR_ENG),
+                       C2Iso, dir);
                 
-                // --- Compute the square of the sound speed
+                // 4-- Compute the square of the sound speed
+                real a, a2, a2L, a2R;
 #if HAVE_ENERGY
-                a2L = gamma * vL[PRS] / vL[RHO];
-                a2R = gamma * vR[PRS] / vR[RHO];
+                a2L = gamma * vL_PRS / vL_RHO;
+                a2R = gamma * vR_PRS / vR_RHO;
                 
 #else
                 a2L = C2Iso;
@@ -104,23 +146,35 @@ void RoeHD(DataBlock & data, int dir, real gamma, real C2Iso) {
 #endif
                 
                 //  ----  Define Wave Jumps  ----
-#if ROE_AVERAGE == YES    
-                s       = sqrt(vR[RHO]/vL[RHO]);
-                um[RHO] = vL[RHO]*s;
-                s       = 1.0/(1.0 + s); 
-                c       = 1.0 - s;
+                real um_RHO;
+                EXPAND(
+                real um_VX1; ,
+                real um_VX2; ,
+                real um_VX3; );
+#if HAVE_ENERGY
+                real um_PRS;
+                real h, hl, hr,vel2;
+#endif
+                
+#if ROE_AVERAGE == YES
+                real s, c;
+                s       = sqrt(vR_RHO/vL_RHO);
+                um_RHO  = vL_RHO * s;
+                s       = ONE_F/(ONE_F + s); 
+                c       = ONE_F - s;
 
-                EXPAND(um[VX1] = s*vL[VX1] + c*vR[VX1];  ,
-                um[VX2] = s*vL[VX2] + c*vR[VX2];  ,
-                um[VX3] = s*vL[VX3] + c*vR[VX3];)
+                EXPAND(um_VX1 = s*vL_VX1 + c*vR_VX1;  ,
+                    um_VX2 = s*vL_VX2 + c*vR_VX2;  ,
+                    um_VX3 = s*vL_VX3 + c*vR_VX3;)
 
     #if HAVE_ENERGY
-                vel2 = EXPAND(um[VX1]*um[VX1], + um[VX2]*um[VX2], + um[VX3]*um[VX3]);
+                
+                vel2 = EXPAND(um_VX1*um_VX1, + um_VX2*um_VX2, + um_VX3*um_VX3);
 
-                hl  = 0.5*(EXPAND(vL[VX1]*vL[VX1], + vL[VX2]*vL[VX2], + vL[VX3]*vL[VX3]));    
+                hl  = HALF_F*(EXPAND(vL_VX1*vL_VX1, + vL_VX2*vL_VX2, + vL_VX3*vL_VX3));    
                 hl += a2L*gmm1_inv;
 
-                hr = 0.5*(EXPAND(vR[VX1]*vR[VX1], + vR[VX2]*vR[VX2], + vR[VX3]*vR[VX3]));    
+                hr = HALF_F*(EXPAND(vR_VX1*vR_VX1, + vR_VX2*vR_VX2, + vR_VX3*vR_VX3));    
                 hr += a2R*gmm1_inv;
 
                 h = s*hl + c*hr;
@@ -128,130 +182,242 @@ void RoeHD(DataBlock & data, int dir, real gamma, real C2Iso) {
                 /* -------------------------------------------------
                 the following should be  equivalent to 
 
-                scrh = EXPAND(   dv[VX1]*dv[VX1],
-                + dv[VX2]*dv[VX2],
-                + dv[VX3]*dv[VX3]);
+                scrh = EXPAND(   dv_VX1*dv_VX1,
+                + dv_VX2*dv_VX2,
+                + dv_VX3*dv_VX3);
 
-                a2 = s*a2L + c*a2R + 0.5*gamma_m1*s*c*scrh;
+                a2 = s*a2L + c*a2R + HALF_F*gamma_m1*s*c*scrh;
 
                 and therefore always positive.
                 just work out the coefficiendnts...
                 -------------------------------------------------- */
 
-                a2 = gamma_m1*(h - 0.5*vel2);
+                a2 = gamma_m1*(h - HALF_F*vel2);
+                a  = sqrt(a2);
+    #else
+                a2 = HALF_F*(a2L + a2R);
                 a  = sqrt(a2);
     #endif // HAVE_ENERGY
 #else
-                for(int nv = 0 ; nv < NVAR; nv++) {
-                    um[nv] = HALF_F*(vR[nv]+vL[nv]);
-                }
+                um_RHO = HALF_F*(vR_RHO+vL_RHO);
+                EXPAND(
+                    um_VX1 = HALF_F*(vR_VX1+vL_VX1); ,
+                    um_VX2 = HALF_F*(vR_VX2+vL_VX2); ,
+                    um_VX3 = HALF_F*(vR_VX3+vL_VX3); );
+
     #if HAVE_ENERGY
-                a2   = gamma*um[PRS]/um[RHO];
+                um_PRS = HALF_F*(vR_PRS+vL_PRS);
+                
+                a2   = gamma*um_PRS/um_RHO;
                 a    = sqrt(a2);
 
-                vel2 = EXPAND(um[VX1]*um[VX1], + um[VX2]*um[VX2], + um[VX3]*um[VX3]);
-                h    = 0.5*vel2 + a2/gamma_m1;
-    #endif // HAVE_ENERGY
-#endif // ROE_AVERAGE == YES/NO
-
-                a2 = 0.5*(a2L + a2R);
+                vel2 = EXPAND(um_VX1*um_VX1, + um_VX2*um_VX2, + um_VX3*um_VX3);
+                h    = HALF_F*vel2 + a2/gamma_m1;
+    #else
+                a2 = HALF_F*(a2L + a2R);
                 a  = sqrt(a2);
-                
+    #endif // HAVE_ENERGY
+#endif // ROE_AVERAGE
+
 // **********************************************************************************
                 /* ----------------------------------------------------------------
                 define non-zero components of conservative eigenvectors Rc, 
                 eigenvalues (lambda) and wave strenght eta = L.du     
                 ----------------------------------------------------------------  */
-
-                real lambda[NVAR], alambda[NVAR];
-                real eta[NVAR];
-                int nn;
                 
-                for(int nv1 = 0 ; nv1 < NVAR; nv1++) {
-                    for(int nv2 = 0 ; nv2 < NVAR; nv2++) {
-                        Rc[nv1][nv2] = 0;
+                real lambda_RHO;
+                EXPAND(
+                    real lambda_MX1; ,
+                    real lambda_MX2; ,
+                    real lambda_MX3; )
+                
+                real eta_RHO;
+                EXPAND(
+                    real eta_MX1; ,
+                    real eta_MX2; ,
+                    real eta_MX3; )
+                
+#if HAVE_ENERGY
+                real lambda_ENG;
+                real eta_ENG;
+#endif
+                
+                real Rc_RHO_RHO = ZERO_F;
+                EXPAND(
+                    real Rc_RHO_MX1 = ZERO_F; ,
+                    real Rc_RHO_MX2 = ZERO_F; ,
+                    real Rc_RHO_MX3 = ZERO_F; );
+                
+                EXPAND(
+                    real Rc_MX1_RHO = ZERO_F;
+                    EXPAND(
+                        real Rc_MX1_MX1 = ZERO_F; ,
+                        real Rc_MX1_MX2 = ZERO_F; ,
+                        real Rc_MX1_MX3 = ZERO_F; );
+                    ,
+                    real Rc_MX2_RHO = ZERO_F;
+                    EXPAND(
+                        real Rc_MX2_MX1 = ZERO_F; ,
+                        real Rc_MX2_MX2 = ZERO_F; ,
+                        real Rc_MX2_MX3 = ZERO_F; );
+                    ,
+                    real Rc_MX3_RHO = ZERO_F;
+                    EXPAND(
+                        real Rc_MX3_MX1 = ZERO_F; ,
+                        real Rc_MX3_MX2 = ZERO_F; ,
+                        real Rc_MX3_MX3 = ZERO_F; );
+                );
+#if HAVE_ENERGY
+                real Rc_RHO_ENG = ZERO_F;
+                real Rc_MX1_ENG = ZERO_F;
+                real Rc_MX2_ENG = ZERO_F;
+                real Rc_MX3_ENG = ZERO_F;
+                
+                real Rc_ENG_RHO = ZERO_F;
+                EXPAND(
+                    real Rc_ENG_MX1 = ZERO_F; ,
+                    real Rc_ENG_MX2 = ZERO_F; ,
+                    real Rc_ENG_MX3 = ZERO_F; );
+                real Rc_ENG_ENG = ZERO_F;
+#endif
+                
+                EXPAND(
+                    real um_VXn;
+                    real dv_VXn;
+                    real vL_VXn;
+                    real vR_VXn;
+                    real Rc_MXn_RHO;
+                    real Rc_MXn_MX1;
+                    ,
+                    real um_VXt;
+                    real dv_VXt;
+                    real Rc_MXt_RHO;
+                    real Rc_MXt_MX1;
+                    real Rc_MXt_MX2;
+                    ,
+                    real um_VXb;
+                    real dv_VXb;
+                    real Rc_MXb_RHO;
+                    real Rc_MXb_MX1;
+                )
+                
+                EXPAND (
+                    if (dir == IDIR) {
+                        EXPAND (
+                        um_VXn = um_VX1;
+                        dv_VXn = dv_VX1;
+                        vL_VXn = vL_VX1;
+                        vR_VXn = vR_VX1;
+                        ,
+                        um_VXt =  um_VX2;
+                        dv_VXt =  dv_VX2;
+                        ,
+                        um_VXb =  um_VX3;
+                        dv_VXb =  dv_VX3;
+                        )
                     }
-                }
+                ,
+                    if (dir == JDIR) {
+                        EXPAND (
+                        um_VXn = um_VX2;
+                        dv_VXn = dv_VX2;
+                        vL_VXn = vL_VX2;
+                        vR_VXn = vR_VX2;
+                        ,
+                        um_VXt =  um_VX1;
+                        dv_VXt =  dv_VX1;
+                        ,
+                        um_VXb =  um_VX3;
+                        dv_VXb =  dv_VX3;
+                        )
+                    }
+                ,
+                    if (dir == KDIR) {
+                        EXPAND (
+                        um_VXn = um_VX3;
+                        dv_VXn = dv_VX3;
+                        vL_VXn = vL_VX3;
+                        vR_VXn = vR_VX3;
+                        ,
+                        um_VXt =  um_VX1;
+                        dv_VXt =  dv_VX1;
+                        ,
+                        um_VXb =  um_VX2;
+                        dv_VXb =  dv_VX2;
+                        )
+                    }
+                )
                 
                 //  ---- (u - c_s)  ---- 
 
-                nn         = 0;
-                lambda[nn] = um[VXn] - a;
+                lambda_RHO = um_VXn - a;
 #if HAVE_ENERGY
-                eta[nn] = 0.5/a2*(dv[PRS] - dv[VXn]*um[RHO]*a);
+                eta_RHO = HALF_F/a2*(dv_PRS - dv_VXn*um_RHO*a);
 #else
-                eta[nn] = 0.5*(dv[RHO] - um[RHO]*dv[VXn]/a);
+                eta_RHO = HALF_F*(dv_RHO - um_RHO*dv_VXn/a);
 #endif
 
-                Rc[RHO][nn]        = 1.0;
-                EXPAND(Rc[MXn][nn] = um[VXn] - a;   ,
-                Rc[MXt][nn] = um[VXt];       ,
-                Rc[MXb][nn] = um[VXb];)
+                Rc_RHO_RHO        = ONE_F;
+                EXPAND(Rc_MXn_RHO = um_VXn - a;   ,
+                Rc_MXt_RHO = um_VXt;              ,
+                Rc_MXb_RHO = um_VXb;)
 #if HAVE_ENERGY
-                Rc[ENG][nn] = h - um[VXn]*a;
+                Rc_ENG_RHO = h - um_VXn*a;
 #endif
 
                 /*  ---- (u + c_s)  ----  */ 
 
-                nn         = 1;
-                lambda[nn] = um[VXn] + a;
+                lambda_MX1 = um_VXn + a;
 #if HAVE_ENERGY
-                eta[nn]    = 0.5/a2*(dv[PRS] + dv[VXn]*um[RHO]*a);
+                eta_MX1    = HALF_F/a2*(dv_PRS + dv_VXn*um_RHO*a);
 #else
-                eta[nn] = 0.5*(dv[RHO] + um[RHO]*dv[VXn]/a);
+                eta_MX1 = HALF_F*(dv_RHO + um_RHO*dv_VXn/a);
 #endif
 
-                Rc[RHO][nn]        = 1.0;
-                EXPAND(Rc[MXn][nn] = um[VXn] + a;   ,
-                Rc[MXt][nn] = um[VXt];       ,
-                Rc[MXb][nn] = um[VXb];)
+                Rc_RHO_MX1        = ONE_F;
+                EXPAND(Rc_MXn_MX1 = um_VXn + a;   ,
+                Rc_MXt_MX1 = um_VXt;              ,
+                Rc_MXb_MX1 = um_VXb;)
 #if HAVE_ENERGY
-                Rc[ENG][nn] = h + um[VXn]*a;
+                Rc_ENG_MX1 = h + um_VXn*a;
 #endif
 
+#if HAVE_ENERGY
                 /*  ----  (u)  ----  */ 
 
-#if HAVE_ENERGY
-                nn         = 2;
-                lambda[nn] = um[VXn];
-                eta[nn]    = dv[RHO] - dv[PRS]/a2;
-                Rc[RHO][nn]        = 1.0;
-                EXPAND(Rc[MX1][nn] = um[VX1];   ,
-                Rc[MX2][nn] = um[VX2];   ,
-                Rc[MX3][nn] = um[VX3];)
-                Rc[ENG][nn]        = 0.5*vel2;
+                //ENG         = 2;
+                lambda_ENG = um_VXn;
+                eta_ENG    = dv_RHO - dv_PRS/a2;
+                Rc_RHO_ENG        = ONE_F;
+                EXPAND(Rc_MX1_ENG = um_VX1;   ,
+                Rc_MX2_ENG = um_VX2;          ,
+                Rc_MX3_ENG = um_VX3;)
+                Rc_ENG_ENG        = HALF_F*vel2;
 #endif
 
 #if COMPONENTS > 1
-
                 /*  ----  (u)  ----  */ 
 
-                nn++;
-                lambda[nn] = um[VXn];
-                eta[nn]    = um[RHO]*dv[VXt];
-                Rc[MXt][nn] = 1.0;
+                lambda_MX2 = um_VXn;
+                eta_MX2    = um_RHO*dv_VXt;
+                Rc_MXt_MX2 = ONE_F;
     #if HAVE_ENERGY
-                Rc[ENG][nn] = um[VXt];  
+                Rc_ENG_MX2 = um_VXt;  
     #endif
 #endif
 
 #if COMPONENTS > 2
-
                 /*  ----  (u)  ----  */ 
 
-                nn++;
-                lambda[nn] = um[VXn];
-                eta[nn]    = um[RHO]*dv[VXb];
-                Rc[MXb][nn] = 1.0;
+                lambda_MX3 = um_VXn;
+                eta_MX3    = um_RHO*dv_VXb;
+                Rc_MXb_MX3 = ONE_F;
     #if HAVE_ENERGY
-                Rc[ENG][nn] = um[VXb];  
+                Rc_ENG_MX3 = um_VXb;  
     #endif
 #endif
 
-                /*  ----  get max eigenvalue  ----  */
-
-                real cmax = FABS(um[VXn]) + a;
-                //g_maxMach = FMAX(FABS(um[VXn]/a), g_maxMach);
+                real cmax = FABS(um_VXn) + a;
 
                 /* ---------------------------------------------
                 use the HLL flux function if the interface 
@@ -263,72 +429,155 @@ void RoeHD(DataBlock & data, int dir, real gamma, real C2Iso) {
                 real scrh, scrh1;
                 real bmin, bmax;
 #if HAVE_ENERGY
-                scrh  = FABS(vL[PRS] - vR[PRS]);
-                scrh /= FMIN(vL[PRS],vR[PRS]);
+                scrh  = FABS(vL_PRS - vR_PRS);
+                scrh /= FMIN(vL_PRS,vR_PRS);
 #else
-                scrh  = FABS(vL[RHO] - vR[RHO]);
-                scrh /= FMIN(vL[RHO],vR[RHO]);
+                scrh  = FABS(vL_RHO - vR_RHO);
+                scrh /= FMIN(vL_RHO,vR_RHO);
                 scrh *= a*a;
 #endif
-                
-/*#if CHECK_ROE_MATRIX == YES
-                for(int nv = 0 ; nv < NVAR; nv++) {
-                    um[nv] = 0.0;
-                    for(int nv1 = 0 ; nv1 < NVAR; nv1++) {
-                        for(int nv2 = 0 ; nv2 < NVAR; nv2++) {
-                            um[nv] += Rc[nv][k]*(k==j)*lambda[k]*eta[j];
-                        }
-                    }
-                }
-                for(int nv = 0 ; nv < NVAR; nv++) {
-                    scrh = fluxR[nv] - fluxL[nv] - um[nv];
-                    if (nv == MXn) scrh += pR - pL;
-                    if (FABS(scrh) > 1.e-6){
-                        print ("! Matrix condition not satisfied %d, %12.6e\n", nv, scrh);
-                        exit(1);
-                    }
-                }
-#endif*/
-                
-                if (scrh > 0.5 && (vR[VXn] < vL[VXn])) {   /* -- tunable parameter -- */
-#if DIMENSIONS > 1
-                    bmin = FMIN(0.0, lambda[0]);
-                    bmax = FMAX(0.0, lambda[1]);
-                    scrh1 = 1.0/(bmax - bmin);
-                    for(int nv = 0 ; nv < NVAR; nv++) {
-                        Flux(nv,k,j,i)  = bmin*bmax*(uR[nv] - uL[nv])
-                                +   bmax*fluxL[nv] - bmin*fluxR[nv];
-                        Flux(nv,k,j,i) *= scrh1;
-                    }
-#endif
+
+#if DIMENSIONS > 1                
+                if (scrh > HALF_F && (vR_VXn < vL_VXn)) {   /* -- tunable parameter -- */
+
+                    bmin = FMIN(ZERO_F, lambda_RHO);
+                    bmax = FMAX(ZERO_F, lambda_MX1);
+                    scrh1 = ONE_F/(bmax - bmin);
+                    
+                    Flux(RHO,k,j,i) = (bmin*bmax*(uR_RHO - uL_RHO) + bmax*fluxL_RHO - bmin*fluxR_RHO)*scrh1;
+                    EXPAND (
+                    Flux(MX1,k,j,i) = (bmin*bmax*(uR_MX1 - uL_MX1) + bmax*fluxL_MX1 - bmin*fluxR_MX1)*scrh1; ,
+                    Flux(MX2,k,j,i) = (bmin*bmax*(uR_MX2 - uL_MX2) + bmax*fluxL_MX2 - bmin*fluxR_MX2)*scrh1; ,
+                    Flux(MX3,k,j,i) = (bmin*bmax*(uR_MX3 - uL_MX3) + bmax*fluxL_MX3 - bmin*fluxR_MX3)*scrh1;
+                    )
+    #if HAVE_ENERGY
+                Flux(ENG,k,j,i) = (bmin*bmax*(uR_ENG - uL_ENG) + bmax*fluxL_ENG - bmin*fluxR_ENG)*scrh1;
+    #endif
                 }
                 else {
-
+#endif
                     /* -----------------------------------------------------------
                                         compute Roe flux 
                     ----------------------------------------------------------- */
 
-                    for(int nv = 0 ; nv < NVAR; nv++) {
-                        alambda[nv]  = fabs(lambda[nv]);
-                    }
+                    EXPAND (
+                        if (dir == IDIR) {
+                            EXPAND (
+                            Rc_MX1_RHO = Rc_MXn_RHO;
+                            Rc_MX1_MX1 = Rc_MXn_MX1;
+                            ,
+                            Rc_MX2_RHO = Rc_MXt_RHO;
+                            Rc_MX2_MX1 = Rc_MXt_MX1;
+                            Rc_MX2_MX2 = Rc_MXt_MX2;
+                            ,
+                            Rc_MX3_RHO = Rc_MXb_RHO;
+                            Rc_MX3_MX1 = Rc_MXb_MX1;
+                            Rc_MX3_MX3 = Rc_MXb_MX3;
+                            )
+                        }
+                    ,
+                        if (dir == JDIR) {
+                            EXPAND (
+                            Rc_MX1_RHO = Rc_MXt_RHO;
+                            Rc_MX1_MX1 = Rc_MXt_MX1;
+                            Rc_MX1_MX2 = Rc_MXt_MX2;
+                            ,
+                            Rc_MX2_RHO = Rc_MXn_RHO;
+                            Rc_MX2_MX1 = Rc_MXn_MX1;
+                            ,
+                            Rc_MX3_RHO = Rc_MXb_RHO;
+                            Rc_MX3_MX1 = Rc_MXb_MX1;
+                            Rc_MX3_MX3 = Rc_MXb_MX3;
+                            )
+                        }
+                    ,
+                        if (dir == KDIR) {
+                            EXPAND (
+                            Rc_MX1_RHO = Rc_MXt_RHO;
+                            Rc_MX1_MX1 = Rc_MXt_MX1;
+                            Rc_MX1_MX2 = Rc_MXt_MX2;
+                            ,
+                            Rc_MX2_RHO = Rc_MXb_RHO;
+                            Rc_MX2_MX1 = Rc_MXb_MX1;
+                            Rc_MX2_MX3 = Rc_MXb_MX3;
+                            ,
+                            Rc_MX3_RHO = Rc_MXn_RHO;
+                            Rc_MX3_MX1 = Rc_MXn_MX1;
+                            )
+                        }
+                    )
+                    
+                    real alambda_RHO = FABS(lambda_RHO);
+                    EXPAND(
+                    real alambda_MX1 = FABS(lambda_MX1); ,
+                    real alambda_MX2 = FABS(lambda_MX2); ,
+                    real alambda_MX3 = FABS(lambda_MX3); )
+#if HAVE_ENERGY
+                    real alambda_ENG = FABS(lambda_ENG);
+#endif
 
                     /*  ----  entropy fix  ----  */
                     real delta = 1.e-7;
-                    if (alambda[0] <= delta) {
-                        alambda[0] = HALF_F*lambda[0]*lambda[0]/delta + HALF_F*delta;
+                    if (alambda_RHO <= delta) {
+                        alambda_RHO = HALF_F*lambda_RHO*lambda_RHO/delta + HALF_F*delta;
                     }
-                    if (alambda[1] <= delta) {
-                        alambda[1] = HALF_F*lambda[1]*lambda[1]/delta + HALF_F*delta;
+                    if (alambda_MX1 <= delta) {
+                        alambda_MX1 = HALF_F*lambda_MX1*lambda_MX1/delta + HALF_F*delta;
                     }
 
-                    for(int nv = 0 ; nv < NVAR; nv++) {
-                        Flux(nv,k,j,i) = fluxL[nv] + fluxR[nv];
-                        for(int nv2 = 0 ; nv2 < NVAR; nv2++) {
-                            Flux(nv,k,j,i) -= alambda[nv2]*eta[nv2]*Rc[nv][nv2];
-                        }
-                        Flux(nv,k,j,i) *= HALF_F;
-                    }
+                    alambda_RHO *= eta_RHO;
+                    EXPAND(
+                    alambda_MX1 *= eta_MX1; ,
+                    alambda_MX2 *= eta_MX2; ,
+                    alambda_MX3 *= eta_MX3; )
+#if HAVE_ENERGY
+                    alambda_ENG *= eta_ENG;
+#endif
+                    
+                    real fl_RHO = alambda_RHO * Rc_RHO_RHO 
+                        EXPAND(+ alambda_MX1 * Rc_RHO_MX1,
+                               + alambda_MX2 * Rc_RHO_MX2,
+                               + alambda_MX3 * Rc_RHO_MX3);
+                    EXPAND(
+                    real fl_MX1 = alambda_RHO * Rc_MX1_RHO
+                        EXPAND(+ alambda_MX1 * Rc_MX1_MX1,
+                               + alambda_MX2 * Rc_MX1_MX2,
+                               + alambda_MX3 * Rc_MX1_MX3); ,
+                    real fl_MX2 = alambda_RHO * Rc_MX2_RHO
+                        EXPAND(+ alambda_MX1 * Rc_MX2_MX1,
+                               + alambda_MX2 * Rc_MX2_MX2,
+                               + alambda_MX3 * Rc_MX2_MX3); ,
+                    real fl_MX3 = alambda_RHO * Rc_MX3_RHO
+                        EXPAND(+ alambda_MX1 * Rc_MX3_MX1,
+                               + alambda_MX2 * Rc_MX3_MX2,
+                               + alambda_MX3 * Rc_MX3_MX3); )
+#if HAVE_ENERGY
+                    real fl_ENG = alambda_RHO * Rc_ENG_RHO
+                        EXPAND(+ alambda_MX1 * Rc_ENG_MX1,
+                               + alambda_MX2 * Rc_ENG_MX2,
+                               + alambda_MX3 * Rc_ENG_MX3)
+                               + alambda_ENG * Rc_ENG_ENG;
+                    
+                    fl_RHO += alambda_ENG * Rc_RHO_ENG;
+                    EXPAND(
+                    fl_MX1 += alambda_ENG * Rc_MX1_ENG; ,
+                    fl_MX2 += alambda_ENG * Rc_MX2_ENG; ,
+                    fl_MX3 += alambda_ENG * Rc_MX3_ENG; )
+#endif
+                    
+                    Flux(RHO,k,j,i) = (fluxL_RHO + fluxR_RHO - fl_RHO)*HALF_F;
+                    EXPAND (
+                    Flux(MX1,k,j,i) = (fluxL_MX1 + fluxR_MX1 - fl_MX1)*HALF_F; ,
+                    Flux(MX2,k,j,i) = (fluxL_MX2 + fluxR_MX2 - fl_MX2)*HALF_F; ,
+                    Flux(MX3,k,j,i) = (fluxL_MX3 + fluxR_MX3 - fl_MX3)*HALF_F;
+                    )
+#if HAVE_ENERGY
+                    Flux(ENG,k,j,i) = (fluxL_ENG + fluxR_ENG - fl_ENG)*HALF_F;
+#endif
+                    
+#if DIMENSIONS > 1
                 }
+#endif
 
                 //6-- Compute maximum dt for this sweep
                 const int ig = ioffset*i + joffset*j + koffset*k;

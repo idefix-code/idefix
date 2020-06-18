@@ -1,4 +1,4 @@
-
+MHD = 1
 SRC 		 = $(IDEFIX_DIR)/src
 INCLUDE_DIRS = -I, -I. -I$(SRC) -I$(SRC)/hydro -I$(SRC)/Test
 VPATH 		 = ./:$(SRC):$(SRC)/hydro:$(SRC)/Test

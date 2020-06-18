@@ -4,31 +4,6 @@
 #pragma once
 #include "../idefix.hpp"
 
-
-#if COMPONENTS == 1
-  #if HAVE_ENERGY
-    #define ARG_EXPAND(a,b,c,e) a,e
-  #else
-    #define ARG_EXPAND(a,b,c,e) a
-  #endif
-#endif
-
-#if COMPONENTS == 2
- #if HAVE_ENERGY
-    #define ARG_EXPAND(a,b,c,e) a,b,e
-  #else
-    #define ARG_EXPAND(a,b,c,e) a,b
-  #endif
-#endif
-
-#if COMPONENTS == 3
- #if HAVE_ENERGY
-    #define ARG_EXPAND(a,b,c,e) a,b,c,e
-  #else
-    #define ARG_EXPAND(a,b,c,e) a,b,c
-  #endif
-#endif
-
 void TvdlfHD(DataBlock &, int, real, real);
 void HllHD(DataBlock &, int, real, real);
 void HllcHD(DataBlock &, int, real, real);

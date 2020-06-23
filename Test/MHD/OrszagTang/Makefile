@@ -1,42 +1,35 @@
-MHD = 1
+
 SRC 		 = $(IDEFIX_DIR)/src
-INCLUDE_DIRS = -I, -I. -I$(SRC) -I$(SRC)/hydro -I$(SRC)/Test
-VPATH 		 = ./:$(SRC):$(SRC)/hydro:$(SRC)/Test
+INCLUDE_DIRS = -I, -I. -I$(SRC) -I$(SRC)/hydro -I$(SRC)/Test  -I$(SRC)/hydro/MHDsolvers
+VPATH 		 = ./:$(SRC):$(SRC)/hydro:$(SRC)/Test:$(SRC)/hydro/MHDsolvers
 
 KOKKOS_PATH = ${IDEFIX_DIR}/src/kokkos
-KOKKOS_DEVICES = "Serial"
-KOKKOS_ARCH = "Pascal61"
+KOKKOS_DEVICES = "OpenMP"
+KOKKOS_ARCH = "BDW"
 
 # include local rules which are not hosted on git
 # Can Makefile.local can redefine the make rules
 -include Makefile.local
 
-EXE_NAME = "idefix"
-
-
-
+EXE = "idefix"
 
 HEADERS = definitions.hpp error.hpp arrays.hpp grid.hpp setup.hpp gridHost.hpp idefix.hpp dataBlock.hpp dataBlockHost.hpp input.hpp kokkos_types.h loop.hpp real_types.h timeIntegrator.hpp test.hpp outputVtk.hpp hydro.hpp
+HEADERS +=  solversMHD.hpp
 OBJ = grid.o gridHost.o input.o main.o dataBlock.o dataBlockHost.o setup.o test.o timeIntegrator.o outputVtk.o hydro.o error.o
+OBJ +=  hlldMHD.o hllMHD.o roeMHD.o tvdlfMHD.o
 
-include $(SRC)/hydro/makefile
+
+#include $(SRC)/hydro/makefile
 
 #VPATH="src/"
 
 default: build
 
-
-ifneq (,$(findstring Cuda,$(KOKKOS_DEVICES)))
-CXX = ${KOKKOS_PATH}/bin/nvcc_wrapper
-EXE = ${EXE_NAME}.cuda
-KOKKOS_CUDA_OPTIONS = "enable_lambda"
-else
 CXX = g++
-EXE = ${EXE_NAME}.host
-KOKKOS_ARCH = "BDW"
-endif
+CXXFLAGS = -O3 -D MHD=YES
 
-CXXFLAGS = -O3 -g
+
+
 LINK = ${CXX}
 LINKFLAGS = 
 

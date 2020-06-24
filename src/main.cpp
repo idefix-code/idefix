@@ -24,10 +24,14 @@
 int main( int argc, char* argv[] )
 {
 
+#ifdef WITH_MPI    
+  MPI_Init(&argc,&argv);
+#endif
+
   Kokkos::initialize( argc, argv );
   {
 
-    
+    idfx::initialize();
 
     Input input = Input("idefix.ini");
     input.PrintLogo();
@@ -43,8 +47,8 @@ int main( int argc, char* argv[] )
     gridHost.MakeGrid(input);
     gridHost.SyncToDevice();
 
-    std::cout << "grid.xbeg[0]=" << grid.xbeg[0] << std::endl;
-    std::cout << "gridHost.xbeg[0]=" << gridHost.xbeg[0] << std::endl;
+    idfx::cout << "grid.xbeg[0]=" << grid.xbeg[0] << std::endl;
+    idfx::cout << "gridHost.xbeg[0]=" << gridHost.xbeg[0] << std::endl;
     // Make a data array
     DataBlock data;
 
@@ -53,26 +57,26 @@ int main( int argc, char* argv[] )
     DataBlockHost dataHost(data);
     dataHost.SyncFromDevice();
 
-    std::cout << "Init Hydrodynamics" << std::endl;
+    idfx::cout << "Init Hydrodynamics" << std::endl;
     Hydro hydro(input, grid);
 
-    std::cout << "Init Time Integrator..." << std::endl;
+    idfx::cout << "Init Time Integrator..." << std::endl;
     TimeIntegrator Tint(input, hydro);
 
-    std::cout << "Init Setup..." << std::endl;
+    idfx::cout << "Init Setup..." << std::endl;
     Setup mysetup(input,grid,data,Tint);
 
-    std::cout << "init Output Routines" << std::endl;
+    idfx::cout << "init Output Routines" << std::endl;
     OutputVTK output(input, grid, Tint.getT()); 
 
     // Apply initial conditions
-    std::cout << "Creating initial conditions" << std::endl;
+    idfx::cout << "Creating initial conditions" << std::endl;
     mysetup.InitFlow(data);
     hydro.SetBoundary(data,Tint.getT());
 
-    std::cout << "Write init vtk" << std::endl;
+    idfx::cout << "Write init vtk" << std::endl;
     output.Write(data,Tint.getT());
-    std::cout << "Cycling Time Integrator..." << std::endl;
+    idfx::cout << "Cycling Time Integrator..." << std::endl;
 
     Kokkos::Timer timer;
 
@@ -84,8 +88,8 @@ int main( int argc, char* argv[] )
       output.Write(data, Tint.getT());
     }
     double tintegration = (timer.seconds()/(grid.np_int[IDIR]*grid.np_int[JDIR]*grid.np_int[KDIR]*Tint.getNcycles()));
-    std::cout << "Reached t=" << Tint.getT() << std::endl;
-    std::cout << "Completed in " << timer.seconds() << "seconds and " << Tint.getNcycles() << " cycles. Perfs are " << 1/tintegration << " cell updates/second." << std::endl;
+    idfx::cout << "Reached t=" << Tint.getT() << std::endl;
+    idfx::cout << "Completed in " << timer.seconds() << "seconds and " << Tint.getNcycles() << " cycles. Perfs are " << 1/tintegration << " cell updates/second." << std::endl;
     
 
     // Make a test
@@ -97,9 +101,11 @@ int main( int argc, char* argv[] )
     test.MakeTest(JDIR,nrepeat);
     test.MakeTest(KDIR,nrepeat);
     */
-    std::cout << "Job's done" << std::endl;
+    idfx::cout << "Job's done" << std::endl;
   }
   Kokkos::finalize();
-
+#ifdef WITH_MPI    
+  MPI_Finalize();
+#endif
   return 0;
 }

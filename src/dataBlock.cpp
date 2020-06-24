@@ -11,6 +11,17 @@ void DataBlock::InitFromGrid(Grid &grid) {
 
     Kokkos::Profiling::pushRegion("DataBlock::InitFromGrid");
 
+#ifdef WITH_MPI 
+    // Domain decomposition for current datablock
+    long int nint = 1;
+    int nprocs[3];
+    for(int dir = 0 ; dir < 3 ; dir++) {
+        nint = nint*grid.np_int[dir];
+    }
+    int target = pow(nint/idfx::psize,1.0/DIMENSIONS);
+    idfx::cout << "Target=" << target << std::endl;
+
+#endif
     // Copy the number of points from grid since DataBlock=Grid in serial
     for(int dir = 0 ; dir < 3 ; dir++) {
         nghost[dir] = grid.nghost[dir];

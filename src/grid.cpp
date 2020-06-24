@@ -11,7 +11,7 @@ Grid::Grid(Input &input) {
     int npoints[3];
 
 
-    std::cout << "Building Grid... " << std::endl;
+    idfx::cout << "Building Grid... " << std::endl;
     
     // Get grid size from input file, block [Grid]
     for(int dir = 0 ; dir < 3 ; dir++) {

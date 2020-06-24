@@ -49,7 +49,7 @@ Hydro::Hydro(Input &input, Grid &grid) {
         this->OmegaX2 = input.GetReal("Hydro","Rotation",1);
         this->OmegaX3 = input.GetReal("Hydro","Rotation",2);
 
-        std::cout << "Rotation enabled with Omega=(" << this->OmegaX1 << ", " << this->OmegaX2 << ", " << this->OmegaX3 << ")" << std::endl;
+        idfx::cout << "Rotation enabled with Omega=(" << this->OmegaX1 << ", " << this->OmegaX2 << ", " << this->OmegaX3 << ")" << std::endl;
     }
     else {
         this->haveRotation = false;
@@ -67,8 +67,8 @@ Hydro::Hydro(Input &input, Grid &grid) {
         // Get box size
         this->sbLx = grid.xend[IDIR] - grid.xbeg[IDIR];
 
-        std::cout << "xbeg=" << grid.xbeg[IDIR] << "xend=" << grid.xend[IDIR] <<std::endl;
-        std::cout << "ShearingBox enabled with Shear rate=" << this->sbS <<  "and Lx=" << sbLx << std::endl;
+        idfx::cout << "xbeg=" << grid.xbeg[IDIR] << "xend=" << grid.xend[IDIR] <<std::endl;
+        idfx::cout << "ShearingBox enabled with Shear rate=" << this->sbS <<  "and Lx=" << sbLx << std::endl;
     }
     else {
         this->haveShearingBox = false;
@@ -887,7 +887,7 @@ real Hydro::CheckDivB(DataBlock &data) {
             }
         }
     }
-    //std::cout << "divB=" << divB << "(i,j,k)=(" << iref << "," << jref << "," << kref << ")" << std::endl;
+    //idfx::cout << "divB=" << divB << "(i,j,k)=(" << iref << "," << jref << "," << kref << ")" << std::endl;
     return(divB);
 
 }

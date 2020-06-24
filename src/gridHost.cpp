@@ -43,7 +43,7 @@ void GridHost::MakeGrid(Input &input) {
     // Create the grid
 
     // Get grid parameters from input file, block [Grid]
-    std::cout << "GridHost::MakeGrid" << std::endl;
+    idfx::cout << "GridHost::MakeGrid" << std::endl;
     for(int dir = 0 ; dir < 3 ; dir++) {
         std::string label = std::string("X")+std::to_string(dir+1)+std::string("-grid");
         int numPatch = input.GetInt("Grid",label,0);
@@ -104,7 +104,7 @@ void GridHost::MakeGrid(Input &input) {
                     rboundString="unknown";
             }
 
-            std::cout << "\t Direction X" << (dir+1) << ": " << lboundString << "\t" << xstart[dir] << "...." << np_int[dir] << "...." << xend[dir] << "\t" << rboundString << std::endl;
+            idfx::cout << "\t Direction X" << (dir+1) << ": " << lboundString << "\t" << xstart[dir] << "...." << np_int[dir] << "...." << xend[dir] << "\t" << rboundString << std::endl;
         }
 
     }

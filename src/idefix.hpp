@@ -19,7 +19,7 @@ using Layout = Kokkos::LayoutRight;
 #ifdef KOKKOS_ENABLE_CUDA
 #define INDEX_LOOP
 #else
-#define MDRANGE_LOOP
+#define TP_INNERX_LOOP
 #endif
 
 #define USE_DOUBLE

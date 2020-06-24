@@ -80,3 +80,53 @@
  #define JOFFSET 1
  #define KOFFSET 1
 #endif
+
+#if MHD == YES
+  #if COMPONENTS == 1
+    #if HAVE_ENERGY
+      #define ARG_EXPAND(a,b,c,f,g,h,e) a,f,e
+    #else
+      #define ARG_EXPAND(a,b,c,f,g,h,e) a,f
+    #endif
+  #endif
+
+  #if COMPONENTS == 2
+    #if HAVE_ENERGY
+      #define ARG_EXPAND(a,b,c,f,g,h,e) a,b,f,g,e
+    #else
+      #define ARG_EXPAND(a,b,c,f,g,h,e) a,b,f,g
+    #endif
+  #endif
+
+  #if COMPONENTS == 3
+    #if HAVE_ENERGY
+      #define ARG_EXPAND(a,b,c,f,g,h,e) a,b,c,f,g,h,e
+    #else
+      #define ARG_EXPAND(a,b,c,f,g,h,e) a,b,c,f,g,h
+    #endif
+  #endif
+#else
+  #if COMPONENTS == 1
+    #if HAVE_ENERGY
+      #define ARG_EXPAND(a,b,c,e) a,e
+    #else
+      #define ARG_EXPAND(a,b,c,e) a
+    #endif
+  #endif
+
+  #if COMPONENTS == 2
+    #if HAVE_ENERGY
+      #define ARG_EXPAND(a,b,c,e) a,b,e
+    #else
+      #define ARG_EXPAND(a,b,c,e) a,b
+    #endif
+  #endif
+
+  #if COMPONENTS == 3
+    #if HAVE_ENERGY
+      #define ARG_EXPAND(a,b,c,e) a,b,c,e
+    #else
+      #define ARG_EXPAND(a,b,c,e) a,b,c
+    #endif
+  #endif
+#endif

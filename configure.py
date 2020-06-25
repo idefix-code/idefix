@@ -15,16 +15,22 @@ parser.add_argument("-gpu",
 parser.add_argument("-cxx",
                     help="Override default compiler")
 
-parser.add_argument("-arch", 
-                    choices = ["HSW"
-                             ,"BDW"
-                             ,"SKX"
-                             ,"Kepler30"
-                             ,"Maxwell50"
-                             ,"Pascal60"
-                             ,"Pascal61"
-                             ,"Volta70"
-                             ,"Volta72"],
+cpuarch = ["HSW"
+          ,"BDW"
+          ,"SKX"
+          ,"EPYC"]
+
+gpuarch = ["Kepler30"
+          ,"Maxwell50"
+          ,"Pascal60"
+          ,"Pascal61"
+          ,"Volta70"
+          ,"Volta72"
+          ,"Turing75"]
+
+parser.add_argument("-arch",
+                    nargs='+',
+                    choices = cpuarch + gpuarch,
                      help="Target Kokkos architecture")
 
 parser.add_argument("-openmp",
@@ -34,6 +40,11 @@ parser.add_argument("-openmp",
 args=parser.parse_args()
 
 idefixDir = os.getenv("IDEFIX_DIR")
+if idefixDir is None:
+    print("Environment variable IDEFIX_DIR is not set")
+    print("Please export IDEFIX_DIR=/path/to/idefix")
+    exit()
+
 iMakefile = idefixDir+"/Makefile.in"
 oMakefile = "Makefile"
 
@@ -45,15 +56,32 @@ makefileOptions['extraHeaders']=""
 makefileOptions['extraObj']=""
 makefileOptions['extraLine']=""
 
+# extract cpu & gpu architectures from args.arch
+cpu=""
+gpu=""
+
+if args.arch is not None:
+    for archItem in args.arch:
+        if archItem in cpuarch:
+            cpu = archItem
+        if archItem in gpuarch:
+            gpu = archItem
+
+if cpu == "":
+    cpu="BDW"
+
+if gpu == "":
+    gpu="Pascal60"
+
 if args.gpu:
     makefileOptions['cxx'] = '${KOKKOS_PATH}/bin/nvcc_wrapper'
     makefileOptions['extraLine'] += '\nKOKKOS_CUDA_OPTIONS = "enable_lambda"'
     makefileOptions['kokkosDevices'] = '"Cuda"'
-    makefileOptions['kokkosArch'] = '"Pascal60"'
+    makefileOptions['kokkosArch'] = cpu+","+gpu
     makefileOptions['cxxflags'] = "-O3"
 else:
     makefileOptions['cxx'] = "g++"
-    makefileOptions['kokkosArch'] = '"BDW"'
+    makefileOptions['kokkosArch'] = cpu
     makefileOptions['cxxflags'] = "-O3"
     if args.openmp:
          makefileOptions['kokkosDevices'] = '"OpenMP"'
@@ -65,13 +93,13 @@ if args.mhd:
     makefileOptions['extraVpath'] += "$(SRC)/hydro/MHDsolvers"
     makefileOptions['extraHeaders'] += " solversMHD.hpp"
     makefileOptions['extraObj'] += " hlldMHD.o hllMHD.o roeMHD.o tvdlfMHD.o"
-    makefileOptions['cxxflags'] += " -D MHD=YES"
+    makefileOptions['cxxflags'] += " -DMHD=YES"
 else:
     makefileOptions['extraIncludeDir'] += " -I$(SRC)/hydro/HDsolvers"
     makefileOptions['extraVpath'] += "$(SRC)/hydro/HDsolvers"
     makefileOptions['extraHeaders'] += " solversHD.hpp"
     makefileOptions['extraObj'] += " hllcHD.o hllHD.o roeHD.o tvdlfHD.o"
-    makefileOptions['cxxflags'] += " -D MHD=NO"
+    makefileOptions['cxxflags'] += " -DMHD=NO"
 
 if args.cxx:
     makefileOptions['cxx'] = args.cxx

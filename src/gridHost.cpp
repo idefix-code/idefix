@@ -112,7 +112,7 @@ void GridHost::MakeGrid(Input &input) {
 
     for(int dir = 0 ; dir < 3 ; dir++) {
         for(int i = 0 ; i < np_tot[dir] ; i++) {
-            dx[dir](i) = (xend[dir]-xstart[dir])/(np_int[dir]+1);
+            dx[dir](i) = (xend[dir]-xstart[dir])/(np_int[dir]);
             x[dir](i)=xstart[dir] + (i-nghost[dir]+HALF_F)*dx[dir](i);
             xl[dir](i)=xstart[dir] + (i-nghost[dir])*dx[dir](i);
             xr[dir](i)=xstart[dir] + (i-nghost[dir]+1)*dx[dir](i);

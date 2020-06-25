@@ -11,38 +11,50 @@ void DataBlock::InitFromGrid(Grid &grid) {
 
     Kokkos::Profiling::pushRegion("DataBlock::InitFromGrid");
 
-#ifdef WITH_MPI 
-    // Domain decomposition for current datablock
-    long int nint = 1;
-    int nprocs[3];
-    for(int dir = 0 ; dir < 3 ; dir++) {
-        nint = nint*grid.np_int[dir];
-    }
-    int target = pow(nint/idfx::psize,1.0/DIMENSIONS);
-    idfx::cout << "Target=" << target << std::endl;
+    this->mygrid=&grid;
 
-#endif
+    // Make a local copy of the grid for future usage.
+    GridHost gridHost(grid);
+
     // Copy the number of points from grid since DataBlock=Grid in serial
     for(int dir = 0 ; dir < 3 ; dir++) {
+
+        // Check that the dimension is effectively divisible by number of procs
+        if(grid.np_int[dir] % grid.nproc[dir]) {
+            IDEFIX_ERROR("Grid size must be a multiple of the domain decomposition");
+        }
+
         nghost[dir] = grid.nghost[dir];
-        np_tot[dir] = grid.np_tot[dir];
-        np_int[dir] = grid.np_int[dir];
+        np_int[dir] = grid.np_int[dir]/grid.nproc[dir];
+        np_tot[dir] = grid.np_int[dir]+2*nghost[dir];
+        
 
         // Boundary conditions
-        lbound[dir] = grid.lbound[dir]; 
-        rbound[dir] = grid.rbound[dir];
+        if(grid.xproc[dir]==0) lbound[dir] = grid.lbound[dir];
+        else lbound[dir] = internal;
+
+        if(grid.xproc[dir] == grid.nproc[dir]-1) rbound[dir] = grid.rbound[dir];
+        else rbound[dir] = internal;
 
         beg[dir] = grid.nghost[dir];
         end[dir] = grid.nghost[dir]+np_int[dir];
 
         // Where does this datablock starts and end in the grid?
-        gbeg[dir] = beg[dir];
-        gend[dir] = end[dir];
+        gbeg[dir] = grid.nghost[dir] + grid.xproc[dir]*np_int[dir];  // This assumes even distribution of points between procs
+        gend[dir] = grid.nghost[dir] + (grid.xproc[dir]+1)*np_int[dir];
 
-        // Copy local start and end of current datablock as full grid start and end (serial)
-        xbeg[dir] = grid.xbeg[dir];
-        xend[dir] = grid.xend[dir];
+        // Local start and end of current datablock
+        xbeg[dir] = gridHost.xl[dir](gbeg[dir]);
+        xend[dir] = gridHost.xl[dir](gend[dir]);
 
+    }
+
+    if(idfx::psize>1) {
+        idfx::cout << "DataBlock::initFromGrid local size is " << std::endl;
+        
+        for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
+            idfx::cout << "\t Direction X" << (dir+1) << ": " << xbeg[dir] << "...." << np_int[dir] << "...." << xend[dir] << std::endl;
+        }
     }
     
     // Allocate the required fields

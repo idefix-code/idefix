@@ -9,9 +9,7 @@ namespace idfx {
     extern int psize;
     extern IdefixOstream cout;  // custom cout for idefix
 
-#ifdef WITH_MPI
-    extern MPI_Comm CartComm;
-#endif
+
 }
 
 class idfx::IdefixOstream

@@ -116,8 +116,8 @@ int OutputVTK::Write(DataBlock &datain, real t)
     // Create a copy of the dataBlock on Host, and sync it.
     DataBlockHost data(datain);
     data.SyncFromDevice();
-
-    sprintf (filename, "data.%04d.vtk", vtkFileNumber);
+    if(idfx::psize>1) sprintf (filename, "data.%04d.%04d.vtk", idfx::prank, vtkFileNumber);
+    else sprintf (filename, "data.%04d.vtk", vtkFileNumber);
     fileHdl = fopen(filename,"wb");
     WriteHeader(fileHdl);
     for(int nv = 0 ; nv < NVAR ; nv++) {

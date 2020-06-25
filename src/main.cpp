@@ -33,7 +33,7 @@ int main( int argc, char* argv[] )
 
     idfx::initialize();
 
-    Input input = Input("idefix.ini");
+    Input input = Input("idefix.ini", argc, argv);
     input.PrintLogo();
     input.PrintParameters();
 
@@ -47,8 +47,6 @@ int main( int argc, char* argv[] )
     gridHost.MakeGrid(input);
     gridHost.SyncToDevice();
 
-    idfx::cout << "grid.xbeg[0]=" << grid.xbeg[0] << std::endl;
-    idfx::cout << "gridHost.xbeg[0]=" << gridHost.xbeg[0] << std::endl;
     // Make a data array
     DataBlock data;
 

@@ -22,6 +22,9 @@ void ErrorHandler(const int ErrorType,
         idfx::cout << "### FATAL ERROR in function " << ErrorFunction << " file " << ErrorFile << " line " << ErrorLine << std::endl;
         idfx::cout << ErrorMessage.str() << std::endl;
         idfx::cout << "------------------------------------------------------------------------------" << std::endl;
+        #ifdef WITH_MPI
+        MPI_Abort(MPI_COMM_WORLD,1);
+        #endif
         exit(1);
     }
 }
@@ -46,6 +49,9 @@ void ErrorHandler(const int ErrorType,
         idfx::cout << "### FATAL ERROR in function " << ErrorFunction << " file " << ErrorFile << " line " << ErrorLine << std::endl;
         idfx::cout << ErrorMessage << std::endl;
         idfx::cout << "------------------------------------------------------------------------------" << std::endl;
+        #ifdef WITH_MPI
+        MPI_Abort(MPI_COMM_WORLD,1);
+        #endif
         exit(1);
     }
 }

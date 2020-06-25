@@ -78,6 +78,63 @@ Grid::Grid(Input &input) {
         
     }
 
+    // Allocate proc structure (by default: one proc in each direction, size one)
+    for(int i=0 ; i < 3; i++) {
+        nproc[i] = 1;
+        xproc[i] = 0;
+    }
+
+#ifdef WITH_MPI 
+    // Domain decomposition required for the grid
+
+    // Init periodicity array
+    int period[3];
+    for(int i=0 ; i < 3 ; i++) period[i] = 0;
+
+    // Check if the dec option has been passed when number of procs > 1
+    if(idfx::psize>1) {
+
+        if(input.CheckEntry("CommandLine","dec")  != DIMENSIONS) {
+            IDEFIX_ERROR("When using MPI with np > 1, -dec option is mandatory.");
+        }
+        int ntot=1;
+        for(int dir=0 ; dir < DIMENSIONS; dir++) {
+            nproc[dir] = input.GetInt("CommandLine","dec",dir);
+            ntot = ntot * nproc[dir];
+        }
+        if(ntot != idfx::psize) {
+            std::stringstream msg;
+            msg << "The number of MPI process (" << idfx::psize << ") does not match your domain decomposition (";
+            for(int dir=0 ; dir < DIMENSIONS; dir++) {
+                msg << nproc[dir];
+                if(dir<DIMENSIONS-1) msg << ", ";
+            }
+            msg << ").";
+            IDEFIX_ERROR(msg);
+        }
+    }
+
+    // Add periodicity indications
+    for(int dir=0 ; dir < DIMENSIONS; dir++) {
+        if(rbound[dir] == periodic || rbound[dir] == shearingbox) period[dir] = 1;
+    }
+
+    // Create cartesian communicator along with cartesian coordinates.
+    MPI_Cart_create(MPI_COMM_WORLD, 3, nproc, period, 0, &CartComm);
+    MPI_Cart_coords(CartComm, idfx::prank, 3, xproc);
+    
+    MPI_Barrier(MPI_COMM_WORLD);
+    idfx::cout << "Proc dimensions (";
+
+    for(int dir = 0; dir < 3; dir++) {
+        idfx::cout << xproc[dir];
+        if(dir < 2) idfx::cout << ", ";
+    }
+    idfx::cout << ")" << std::endl;
+
+#endif
+
+
     Kokkos::Profiling::popRegion();
 
 }

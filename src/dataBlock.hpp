@@ -87,6 +87,8 @@ public:
 
     DataBlock();
 
+private:
+    Grid *mygrid;
 
 };
 

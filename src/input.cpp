@@ -33,12 +33,14 @@ Input::Input() {
 // Blockname should refer to one of Idefix class which will use the parameters in said block
 // Everything is stored in a map of maps of vectors of strings :-)
 
-Input::Input(std::string filename) {
+Input::Input(std::string filename, int argc, char* argv[] ) {
     std::ifstream file;
     std::string line, lineWithComments, blockName, paramName, paramValue;
     std::size_t firstChar, lastChar;
     bool haveBlock = false;
     std::stringstream msg;
+
+    Input::ParseCommandLine(argc,argv);
 
     try
     {
@@ -89,6 +91,35 @@ Input::Input(std::string filename) {
     }
     file.close();
 }
+
+// This routine parse command line options
+void Input::ParseCommandLine(int argc, char **argv) {
+    std::stringstream msg;
+    for(int i = 1 ; i < argc ; i++) {
+        // MPI decomposition argument
+        if(std::string(argv[i]) == "-dec") {
+            #ifndef WITH_MPI
+            IDEFIX_ERROR("Domain decomposition option '-dec' only makes sense when MPI is enabled");
+            #endif    
+            // Loop on dimensions
+            for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
+                if ((++i) >= argc) {
+                    D_SELECT(msg << "You must specify -dec n1";  ,
+                            msg << "You must specify -dec n1 n2";  ,
+                            msg << "You must specify -dec n1 n2 n3"; )
+                    IDEFIX_ERROR(msg);
+                }
+                // Store this
+                inputParameters["CommandLine"]["dec"].push_back(std::string(argv[i]));
+            }
+        }
+        else {
+            msg << "Unknown option" << argv[i];
+            IDEFIX_ERROR(msg);
+        }
+    }
+}
+
 
 // This routine prints the parameters stored in the inputParameters structure
 void Input::PrintParameters() {

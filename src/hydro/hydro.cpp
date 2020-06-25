@@ -691,6 +691,9 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
         kend= (dir == KDIR) ? kghost : data.np_tot[KDIR];
 
         switch(data.lbound[dir]) {
+            case internal:
+                // internal is used for MPI-enforced boundary conditions. Nothing to be done here.
+                break;
             case periodic:
                 idefix_for("BoundaryBegPeriodic",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
                     KOKKOS_LAMBDA (int n, int k, int j, int i) {
@@ -757,6 +760,9 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
         kend = data.np_tot[KDIR];
 
         switch(data.rbound[dir]) {
+            case internal:
+                // internal is used for MPI-enforced boundary conditions. Nothing to be done here.
+                break;
             case periodic:
                 idefix_for("BoundaryEndPeriodic",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
                     KOKKOS_LAMBDA (int n, int k, int j, int i) {

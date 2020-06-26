@@ -84,11 +84,31 @@ public:
     // init from a Grid object
     void InitFromGrid(Grid &);
 
+    // MPI Exchange functions
+    void ExchangeAll();
+    void ExchangeX1();
+    void ExchangeX2();
+    void ExchangeX3();
+
+    enum {faceRight, faceLeft};
 
     DataBlock();
 
 private:
     Grid *mygrid;
+
+    // Buffers for MPI calls
+    IdefixArray1D<real> BufferSendX1[2];
+    IdefixArray1D<real> BufferSendX2[2];
+    IdefixArray1D<real> BufferSendX3[2];
+    IdefixArray1D<real> BufferRecvX1[2];
+    IdefixArray1D<real> BufferRecvX2[2];
+    IdefixArray1D<real> BufferRecvX3[2];
+
+    int bufferSizeX1;
+    int bufferSizeX2;
+    int bufferSizeX3;
+
 
 };
 

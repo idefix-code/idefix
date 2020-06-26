@@ -4,7 +4,7 @@ INCLUDE_DIRS = -I, -I. -I$(SRC) -I$(SRC)/hydro -I$(SRC)/Test  -I$(SRC)/hydro/MHD
 VPATH 		 = ./:$(SRC):$(SRC)/hydro:$(SRC)/Test:$(SRC)/hydro/MHDsolvers
 
 KOKKOS_PATH = ${IDEFIX_DIR}/src/kokkos
-KOKKOS_DEVICES = "Serial"
+KOKKOS_DEVICES = "OpenMP"
 KOKKOS_ARCH = "BDW"
 
 # include local rules which are not hosted on git
@@ -22,8 +22,8 @@ OBJ +=  hlldMHD.o hllMHD.o roeMHD.o tvdlfMHD.o
 
 default: build
 
-CXX = mpicxx
-CXXFLAGS =  -O3 -D WITH_MPI -D MHD=YES
+CXX = g++
+CXXFLAGS =  -O3 -D MHD=YES
 
 
 

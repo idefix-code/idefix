@@ -28,8 +28,6 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
 
     // Define normal, tangent and bi-tanget indices
 
-    int nDIR, tDIR, bDIR;
-    int VXn, VXt, VXb;
     int BXn, BXt, BXb;
     int MXn, MXt, MXb;
 
@@ -41,11 +39,11 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
                    jextend = 1;     ,
                    kextend = 1; )
 
-            EXPAND(VXn = MXn = VX1; 
+            EXPAND(MXn = MX1; 
                    BXn = BX1;       , 
-                   VXt = MXt = VX2; 
+                   MXt = MX2; 
                    BXt = BX2;       , 
-                   VXb = MXb = VX3;
+                   MXb = MX3;
                    BXb = BX3;       )
 
             Et = data.emf.ezi;
@@ -59,11 +57,11 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
             D_EXPAND( iextend = 1;  ,
                                     ,
                     kextend = 1;)
-            EXPAND(VXn = MXn = VX2; 
+            EXPAND(MXn = MX2; 
                    BXn = BX2;       , 
-                   VXt = MXt = VX1; 
+                   MXt = MX1; 
                    BXt = BX1;       , 
-                   VXb = MXb = VX3;
+                   MXb = MX3;
                    BXb = BX3;       )
 
             Et = data.emf.ezj;
@@ -77,11 +75,11 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
             D_EXPAND( iextend = 1;  ,
                     jextend = 1;    ,
                     )
-            EXPAND(VXn = MXn = VX3; 
+            EXPAND(MXn = MX3; 
                    BXn = BX3;       , 
-                   VXt = MXt = VX1; 
+                   MXt = MX1; 
                    BXt = BX1;       , 
-                   VXb = MXb = VX2;
+                   MXb = MX2;
                    BXb = BX2;       )
 
             Et = data.emf.eyk;
@@ -324,6 +322,7 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
 #endif
         }
         else {
+            
             EXPAND(                   ,
                 real vL_VXt; real vR_VXt; ,
                 real vL_VXb; real vR_VXb; )
@@ -353,33 +352,6 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
                 vR_VXb = vR_VX2;  )
             }
             )
-
-            real usL_RHO;
-            EXPAND(
-                real usL_MX1;
-                real usL_BX1; ,
-                real usL_MX2;
-                real usL_BX2; ,
-                real usL_MX3;
-                real usL_BX3; )
-        
-            real usR_RHO;
-            EXPAND(
-                real usR_MX1;
-                real usR_BX1; ,
-                real usR_MX2;
-                real usR_BX2; ,
-                real usR_MX3;
-                real usR_BX3; )
-            
-            EXPAND(
-                real usL_MXn; real usR_MXn;
-                real usL_BXn; real usR_BXn;  ,
-                real usL_MXt; real usR_MXt;
-                real usL_BXt; real usR_BXt;  ,
-                real usL_MXb; real usR_MXb;
-                real usL_BXb; real usR_BXb;  )
-            
             
             EXPAND(
                 real uL_MXn; real uR_MXn;
@@ -425,33 +397,44 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
             }
             )
             
-            real ptR, ptL;
-
-#if HAVE_ENERGY
-            ptL  = vL_PRS + HALF_F* ( EXPAND(vL_BX1*vL_BX1 , + vL_BX2*vL_BX2, + vL_BX3*vL_BX3) );
-            ptR  = vR_PRS + HALF_F* ( EXPAND(vR_BX1*vR_BX1 , + vR_BX2*vR_BX2, + vR_BX3*vR_BX3) );
-#else
-            ptL  = C2Iso*vL_RHO + HALF_F* ( EXPAND(vL_BX1*vL_BX1 , + vL_BX2*vL_BX2, + vL_BX3*vL_BX3) );
-            ptR  = C2Iso*vR_RHO + HALF_F* ( EXPAND(vR_BX1*vR_BX1 , + vR_BX2*vR_BX2, + vR_BX3*vR_BX3) );
-#endif
-
-            real scrh, scrhL, scrhR, duL, duR, sBx, Bx, Bx1, SM, S1L, S1R;
-            
+            real usL_RHO;
+            EXPAND(
+                real usL_MX1;
+                real usL_BX1; ,
+                real usL_MX2;
+                real usL_BX2; ,
+                real usL_MX3;
+                real usL_BX3; )
+        
+            real usR_RHO;
+            EXPAND(
+                real usR_MX1;
+                real usR_BX1; ,
+                real usR_MX2;
+                real usR_BX2; ,
+                real usR_MX3;
+                real usR_BX3; )
 #if HAVE_ENERGY
             real usL_ENG, usR_ENG;
-
-            real Uhll_RHO;
-            EXPAND(
-                real Uhll_MX1;
-                real Uhll_BX1; ,
-                real Uhll_MX2;
-                real Uhll_BX2; ,
-                real Uhll_MX3;
-                real Uhll_BX3; )
-            real Uhll_ENG;
+#endif
             
-            real vs, pts, sqrL, sqrR, vsL, vsR, wsL, wsR;
+            EXPAND(
+                real usL_MXn; real usR_MXn;
+                real usL_BXn; real usR_BXn;  ,
+                real usL_MXt; real usR_MXt;
+                real usL_BXt; real usR_BXt;  ,
+                real usL_MXb; real usR_MXb;
+                real usL_BXb; real usR_BXb;  )
+            
+            real scrh, scrhL, scrhR, duL, duR, sBx, Bx, SM, S1L, S1R;
+            
+#if HAVE_ENERGY
+            
+            real vs, pts, sqrL, sqrR, vsL, vsR, wsL, wsR, Bx1;
             int revert_to_hllc;
+            
+            real ptL  = vL_PRS + HALF_F* ( EXPAND(vL_BX1*vL_BX1 , + vL_BX2*vL_BX2, + vL_BX3*vL_BX3) );
+            real ptR  = vR_PRS + HALF_F* ( EXPAND(vR_BX1*vR_BX1 , + vR_BX2*vR_BX2, + vR_BX3*vR_BX3) );
             
             // 3c. Compute U*(L), U^*(R)
 
@@ -496,16 +479,16 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
             if ( (S1R - SR) > -1.e-4*(SR - SM) ) revert_to_hllc = 1;
 
             if (revert_to_hllc) {
-                Uhll_RHO = (SR*uR_RHO - SL*uL_RHO + fluxL_RHO - fluxR_RHO) / (SR - SL);
-                EXPAND ( Uhll_MX1 = (SR*uR_MX1 - SL*uL_MX1 + fluxL_MX1 - fluxR_MX1) / (SR - SL);
-                        Uhll_BX1 = (SR*uR_BX1 - SL*uL_BX1 + fluxL_BX1 - fluxR_BX1) / (SR - SL);    ,
-                        Uhll_MX2 = (SR*uR_MX2 - SL*uL_MX2 + fluxL_MX2 - fluxR_MX2) / (SR - SL);
-                        Uhll_BX2 = (SR*uR_BX2 - SL*uL_BX2 + fluxL_BX2 - fluxR_BX2) / (SR - SL);    ,
-                        Uhll_MX3 = (SR*uR_MX3 - SL*uL_MX3 + fluxL_MX3 - fluxR_MX3) / (SR - SL);
-                        Uhll_BX3 = (SR*uR_BX3 - SL*uL_BX3 + fluxL_BX3 - fluxR_BX3) / (SR - SL);    )
+
+                EXPAND(
+                    real Uhll_BX1; ,
+                    real Uhll_BX2; ,
+                    real Uhll_BX3; )
                 
-                Uhll_ENG = (SR*uR_ENG - SL*uL_ENG + fluxL_ENG - fluxR_ENG) / (SR - SL);
-                
+                //Uhll_RHO = (SR*uR_RHO - SL*uL_RHO + fluxL_RHO - fluxR_RHO) / (SR - SL);
+                EXPAND ( Uhll_BX1 = (SR*uR_BX1 - SL*uL_BX1 + fluxL_BX1 - fluxR_BX1) / (SR - SL);   ,
+                         Uhll_BX2 = (SR*uR_BX2 - SL*uL_BX2 + fluxL_BX2 - fluxR_BX2) / (SR - SL);   ,
+                         Uhll_BX3 = (SR*uR_BX3 - SL*uL_BX3 + fluxL_BX3 - fluxR_BX3) / (SR - SL);   )
                 
                 EXPAND(
                     real Uhll_BXn;  ,
@@ -534,31 +517,28 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
                     Uhll_BXb = Uhll_BX2;  )
                 }
                 )
-
-                // WHERE'S THE PRESSURE ?!?!?!?
+                
                 EXPAND(usL_BXn = usR_BXn = Uhll_BXn;   ,
-                    usL_BXt = usR_BXt = Uhll_BXt;   ,
-                    usL_BXb = usR_BXb = Uhll_BXb;)
-        
+                        usL_BXt = usR_BXt = Uhll_BXt;  ,
+                        usL_BXb = usR_BXb = Uhll_BXb;  )
+                
                 S1L = S1R = SM; // region ** should never be computed since
                                 // fluxes are given in terms of UL* and UR*
-
             }
             else {
-
-            // 3e. Compute states in the * regions
+                // 3e. Compute states in the * regions
 
                 scrhL = (uL_RHO*duL*duL - Bx*Bx)/(uL_RHO*duL*(SL - SM) - Bx*Bx);
                 scrhR = (uR_RHO*duR*duR - Bx*Bx)/(uR_RHO*duR*(SR - SM) - Bx*Bx);
         
-                EXPAND(usL_BXn  = Bx1;         ,
+                EXPAND(usL_BXn  = Bx1;        ,
                     usL_BXt  = uL_BXt*scrhL;  ,
-                    usL_BXb  = uL_BXb*scrhL;)           
+                    usL_BXb  = uL_BXb*scrhL;  )
 
-                EXPAND(usR_BXn = Bx1;          ,
+                EXPAND(usR_BXn = Bx1;         ,
                     usR_BXt = uR_BXt*scrhR;   ,   
-                    usR_BXb = uR_BXb*scrhR;)     
-                
+                    usR_BXb = uR_BXb*scrhR;   )
+
             }
 
             scrhL = Bx/(uL_RHO*duL);
@@ -851,8 +831,9 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
                     
                 }
             }  // end if (S1L < 0 S1R > 0)
+
 #else
-            real usc_NVAR;
+
             real rho, sqrho;
             int revert_to_hll;
             
@@ -860,16 +841,16 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
             duL = SL - vL_VXn;
             duR = SR - vR_VXn;
 
-            Bx1 = Bx = (SR*vR_BXn - SL*vL_BXn)*scrh; 
+            Bx = (SR*vR_BXn - SL*vL_BXn)*scrh; 
 
             rho                = (uR_RHO*duR - uL_RHO*duL)*scrh;
-            Flux(RHO,k,j,i) = (SL*uR_RHO*duR - SR*uL_RHO*duL)*scrh;
-                
-        //  compute S*
-
+            real Flux_RHO = (SL*uR_RHO*duR - SR*uL_RHO*duL)*scrh;
+            
+            //  compute S*
+            
             sqrho = sqrt(rho);
 
-            SM  = Flux(RHO,k,j,i)/rho;
+            SM  = Flux_RHO/rho;
             S1L = SM - fabs(Bx)/sqrho;
             S1R = SM + fabs(Bx)/sqrho;
 
@@ -877,22 +858,108 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
             //   Prevent degeneracies when S1L -> SL or 
             //   S1R -> SR. Revert to HLL if necessary.
             // ---------------------------------------------
-
+            
             revert_to_hll = 0;
 
             if ( (S1L - SL) <  1.e-4*(SR - SL) ) revert_to_hll = 1;
             if ( (S1R - SR) > -1.e-4*(SR - SL) ) revert_to_hll = 1;
 
             if (revert_to_hll) {
-                scrh = ONE_F/(SR - SL);
-                for(int nv = 0 ; nv < NVAR; nv++) {
-                    Flux(nv,k,j,i) = SL*SR*(uR_nv - uL_nv) +
-                                        SR*fluxL_nv - SL*fluxR_nv;
-                    Flux(nv,k,j,i) *= scrh;
-                }
+
+                Flux(RHO,k,j,i) = (SL*SR*(uR_RHO - uL_RHO) + SR*fluxL_RHO - SL*fluxR_RHO) * scrh;
+                EXPAND ( Flux(MX1,k,j,i) = (SL*SR*(uR_MX1 - uL_MX1) + SR*fluxL_MX1 - SL*fluxR_MX1) * scrh;
+                        Flux(BX1,k,j,i) = (SL*SR*(uR_BX1 - uL_BX1) + SR*fluxL_BX1 - SL*fluxR_BX1) * scrh;    ,
+                        Flux(MX2,k,j,i) = (SL*SR*(uR_MX2 - uL_MX2) + SR*fluxL_MX2 - SL*fluxR_MX2) * scrh;
+                        Flux(BX2,k,j,i) = (SL*SR*(uR_BX2 - uL_BX2) + SR*fluxL_BX2 - SL*fluxR_BX2) * scrh;    ,
+                        Flux(MX3,k,j,i) = (SL*SR*(uR_MX3 - uL_MX3) + SR*fluxL_MX3 - SL*fluxR_MX3) * scrh;
+                        Flux(BX3,k,j,i) = (SL*SR*(uR_BX3 - uL_BX3) + SR*fluxL_BX3 - SL*fluxR_BX3) * scrh;    )
+
             }
             else {
-
+                
+                EXPAND(   ,
+                    real uL_MXt; real uR_MXt; ,
+                    real uL_MXb; real uR_MXb; )
+                
+                EXPAND (
+                if (dir == IDIR) {
+                    EXPAND (   ,
+                    uL_MXt = uL_MX2;
+                    uR_MXt = uR_MX2;  ,
+                    uL_MXb = uL_MX3;
+                    uR_MXb = uR_MX3;  )
+                }
+                ,
+                if (dir == JDIR) {
+                    EXPAND (   ,
+                    uL_MXt = uL_MX1;
+                    uR_MXt = uR_MX1;  ,
+                    uL_MXb = uL_MX3;
+                    uR_MXb = uR_MX3;  )
+                }
+                ,
+                if (dir == KDIR) {
+                    EXPAND (   ,
+                    uL_MXt = uL_MX1;
+                    uR_MXt = uR_MX1;  ,
+                    uL_MXb = uL_MX2;
+                    uR_MXb = uR_MX2;  )
+                }
+                )
+                
+                EXPAND(
+                    real fluxL_MXn; real fluxR_MXn; ,
+                    real fluxL_MXt; real fluxR_MXt;
+                    real fluxL_BXt; real fluxR_BXt; ,
+                    real fluxL_MXb; real fluxR_MXb;
+                    real fluxL_BXb; real fluxR_BXb; )
+                
+                EXPAND (
+                if (dir == IDIR) {
+                    EXPAND (
+                    fluxL_MXn = fluxL_MX1;
+                    fluxR_MXn = fluxR_MX1;  ,
+                    fluxL_MXt = fluxL_MX2;
+                    fluxR_MXt = fluxR_MX2;
+                    fluxL_BXt = fluxL_BX2;
+                    fluxR_BXt = fluxR_BX2;  ,
+                    fluxL_MXb = fluxL_MX3;
+                    fluxR_MXb = fluxR_MX3;
+                    fluxL_BXb = fluxL_BX3;
+                    fluxR_BXb = fluxR_BX3;  )
+                }
+                ,
+                if (dir == JDIR) {
+                    EXPAND (
+                    fluxL_MXn = fluxL_MX2;
+                    fluxR_MXn = fluxR_MX2;  ,
+                    fluxL_MXt = fluxL_MX1;
+                    fluxR_MXt = fluxR_MX1;
+                    fluxL_BXt = fluxL_BX1;
+                    fluxR_BXt = fluxR_BX1;  ,
+                    fluxL_MXb = fluxL_MX3;
+                    fluxR_MXb = fluxR_MX3;
+                    fluxL_BXb = fluxL_BX3;
+                    fluxR_BXb = fluxR_BX3;  )
+                }
+                ,
+                if (dir == KDIR) {
+                    EXPAND (
+                    fluxL_MXn = fluxL_MX3;
+                    fluxR_MXn = fluxR_MX3;  ,
+                    fluxL_MXt = fluxL_MX1;
+                    fluxR_MXt = fluxR_MX1;
+                    fluxL_BXt = fluxL_BX1;
+                    fluxR_BXt = fluxR_BX1;  ,
+                    fluxL_MXb = fluxL_MX2;
+                    fluxR_MXb = fluxR_MX2;
+                    fluxL_BXb = fluxL_BX2;
+                    fluxR_BXb = fluxR_BX2;  )
+                }
+                )
+            
+                
+                Flux(RHO,k,j,i) = Flux_RHO;
                 Flux(MXn,k,j,i) = (SR*fluxL_MXn - SL*fluxR_MXn 
                                         + SR*SL*(uR_MXn - uL_MXn))*scrh;
 
@@ -904,27 +971,25 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
                 scrhL = ONE_F/((SL - S1L)*(SL - S1R));
                 scrhR = ONE_F/((SR - S1L)*(SR - S1R));
 
-                EXPAND(                                                        ;  ,
+                EXPAND(                                                        ,
                         usL_MXt = rho*vL_VXt - Bx*uL_BXt*(SM - vL_VXn)*scrhL;
                         usR_MXt = rho*vR_VXt - Bx*uR_BXt*(SM - vR_VXn)*scrhR;  ,
-
                         usL_MXb = rho*vL_VXb - Bx*uL_BXb*(SM - vL_VXn)*scrhL;
                         usR_MXb = rho*vR_VXb - Bx*uR_BXb*(SM - vR_VXn)*scrhR;)
 
-                EXPAND(                                                      ;  ,
+                EXPAND(                                                       ,
                         usL_BXt = uL_BXt/rho*(uL_RHO*duL*duL - Bx*Bx)*scrhL; 
                         usR_BXt = uR_BXt/rho*(uR_RHO*duR*duR - Bx*Bx)*scrhR;  ,
-
                         usL_BXb = uL_BXb/rho*(uL_RHO*duL*duL - Bx*Bx)*scrhL;           
                         usR_BXb = uR_BXb/rho*(uR_RHO*duR*duR - Bx*Bx)*scrhR;)           
 
                 if (S1L >= ZERO_F) {       //  ----  Region L*  ----
 
-                    EXPAND(                                                    ;  ,
+                    EXPAND(                                               ,
                     Flux(MXt,k,j,i) = fluxL_MXt + SL*(usL_MXt - uL_MXt);  ,
                     Flux(MXb,k,j,i) = fluxL_MXb + SL*(usL_MXb - uL_MXb);  
                     ) 
-                    EXPAND(                                                    ;  ,
+                    EXPAND(                                               ,
                     Flux(BXt,k,j,i) = fluxL_BXt + SL*(usL_BXt - uL_BXt);  ,
                     Flux(BXb,k,j,i) = fluxL_BXb + SL*(usL_BXb - uL_BXb);  
                     ) 
@@ -932,44 +997,49 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
                 }
                 else if (S1R <= ZERO_F) {    //  ----  Region R*  ----
                 
-                    EXPAND(                                                    ;  ,
+                    EXPAND(                                               ,
                     Flux(MXt,k,j,i) = fluxR_MXt + SR*(usR_MXt - uR_MXt);  ,
                     Flux(MXb,k,j,i) = fluxR_MXb + SR*(usR_MXb - uR_MXb);  
                     ) 
-                    EXPAND(                                                    ;  ,
+                    EXPAND(                                               ,
                     Flux(BXt,k,j,i) = fluxR_BXt + SR*(usR_BXt - uR_BXt);  ,
                     Flux(BXb,k,j,i) = fluxR_BXb + SR*(usR_BXb - uR_BXb);  
                     ) 
                     
-                } else {
-                                
+                }
+                else {
+
+                    EXPAND(  ,
+                        real usc_MXt;
+                        real usc_BXt; ,
+                        real usc_MXb;
+                        real usc_BXb; )
+                    
                 //  Compute U** = Uc
 
                     sBx = (Bx > ZERO_F ? ONE_F : -ONE_F);
 
-                    EXPAND(                                                  ;  ,
-                        usc_MXt = HALF_F*(usR_MXt + usL_MXt 
-                                        + (usR_BXt - usL_BXt)*sBx*sqrho);  ,     
-                        usc_MXb = HALF_F*(   usR_MXb + usL_MXb 
-                                        + (usR_BXb - usL_BXb)*sBx*sqrho);)
+                    EXPAND(    ,
+                        usc_MXt = HALF_F*(usR_MXt + usL_MXt + (usR_BXt - usL_BXt)*sBx*sqrho);  ,     
+                        usc_MXb = HALF_F*(usR_MXb + usL_MXb + (usR_BXb - usL_BXb)*sBx*sqrho);  )
                     
-                    EXPAND(                                                  ;  ,
-                        usc_BXt = HALF_F*(   usR_BXt + usL_BXt  
-                                        + (usR_MXt - usL_MXt)*sBx/sqrho);  ,
-                        usc_BXb = HALF_F*(   usR_BXb + usL_BXb 
-                                        + (usR_MXb - usL_MXb)*sBx/sqrho);)
+                    EXPAND(    ,
+                        usc_BXt = HALF_F*(   usR_BXt + usL_BXt + (usR_MXt - usL_MXt)*sBx/sqrho);  ,
+                        usc_BXb = HALF_F*(   usR_BXb + usL_BXb + (usR_MXb - usL_MXb)*sBx/sqrho);  )
 
-                    EXPAND(                                               ;  ,
+                    EXPAND(                                         ,
                         Flux(MXt,k,j,i) = usc_MXt*SM - Bx*usc_BXt;  ,
-                        Flux(MXb,k,j,i) = usc_MXb*SM - Bx*usc_BXb; )
+                        Flux(MXb,k,j,i) = usc_MXb*SM - Bx*usc_BXb;  )
 
                         
-                    EXPAND(                                                   ;  ,
+                    EXPAND(                                             ,
                         Flux(BXt,k,j,i) = usc_BXt*SM - Bx*usc_MXt/rho;  ,
-                        Flux(BXb,k,j,i) = usc_BXb*SM - Bx*usc_MXb/rho;)
+                        Flux(BXb,k,j,i) = usc_BXb*SM - Bx*usc_MXb/rho;  )
                             
                 }
+                
             }
+
 #endif
         }
                 

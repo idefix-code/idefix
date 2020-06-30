@@ -7,7 +7,7 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
     int ioffset,joffset,koffset;
     int iextend, jextend,kextend;
 
-    Kokkos::Profiling::pushRegion("TVDLF_Solver");
+    Kokkos::Profiling::pushRegion("HLLD_MHD");
     
     ioffset=joffset=koffset=0;
     // extension in perp to the direction of integration, as required by CT.
@@ -28,65 +28,89 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
 
     // Define normal, tangent and bi-tanget indices
 
-    int BXn, BXt, BXb;
-    int MXn, MXt, MXb;
+    EXPAND(       ,
+        int BXt;  ,
+        int BXb;  )
+#if !HAVE_ENERGY
+    EXPAND(
+        int BXn; int MXn;  ,
+        int MXt;           ,
+        int MXb;           )
+#endif
 
-    real st, sb;      // st and sb will be useful only when Hall is included
+    // st and sb will be useful only when Hall is included
+    D_EXPAND( real st;  ,
+                        ,
+              real sb;  )
+    
     switch(dir) {
         case(IDIR):
             ioffset = 1;
-            D_EXPAND(               ,
-                   jextend = 1;     ,
-                   kextend = 1; )
-
-            EXPAND(MXn = MX1; 
-                   BXn = BX1;       , 
-                   MXt = MX2; 
-                   BXt = BX2;       , 
-                   MXb = MX3;
-                   BXb = BX3;       )
+            D_EXPAND(
+                    st = -ONE_F;  ,
+                    jextend = 1;  ,
+                    kextend = 1;
+                    sb = +ONE_F;  )
+#if !HAVE_ENERGY
+            EXPAND( MXn = MX1; 
+                    BXn = BX1;       , 
+                    MXt = MX2;       , 
+                    MXb = MX3;       )
+#endif
+            EXPAND(                 , 
+                    BXt = BX2;       ,
+                    BXb = BX3;       )
 
             Et = data.emf.ezi;
             Eb = data.emf.eyi;
 
-            st = -ONE_F;
-            sb = +ONE_F;
             break;
         case(JDIR):
             joffset=1;
-            D_EXPAND( iextend = 1;  ,
-                                    ,
-                    kextend = 1;)
+            D_EXPAND(
+                    iextend = 1;
+                    st = +ONE_F;  ,
+                                  ,
+                    kextend = 1;
+                    sb = -ONE_F;  )
+#if !HAVE_ENERGY
             EXPAND(MXn = MX2; 
                    BXn = BX2;       , 
-                   MXt = MX1; 
+                   MXt = MX1;       , 
+                   MXb = MX3;       )
+#endif
+            EXPAND(                 , 
                    BXt = BX1;       , 
-                   MXb = MX3;
                    BXb = BX3;       )
 
             Et = data.emf.ezj;
             Eb = data.emf.exj;
 
-            st = +ONE_F;
-            sb = -ONE_F;
+            
+            
             break;
         case(KDIR):
             koffset=1;
-            D_EXPAND( iextend = 1;  ,
-                    jextend = 1;    ,
-                    )
+            D_EXPAND(
+                    iextend = 1;
+                    st = -ONE_F;  ,
+                    jextend = 1;  ,
+                    sb = +ONE_F;  )
+#if !HAVE_ENERGY
             EXPAND(MXn = MX3; 
                    BXn = BX3;       , 
-                   MXt = MX1; 
+                   MXt = MX1;       , 
+                   MXb = MX2;       )
+#endif
+            EXPAND(                 , 
                    BXt = BX1;       , 
-                   MXb = MX2;
                    BXb = BX2;       )
 
             Et = data.emf.eyk;
             Eb = data.emf.exk;
 
-            st = -ONE_F;
-            sb = +ONE_F;
+            
+            
             break;
         default:
             IDEFIX_ERROR("Wrong direction");
@@ -354,18 +378,15 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
             )
             
             EXPAND(
-                real uL_MXn; real uR_MXn;
-                real uL_BXn; real uR_BXn; ,
-                real uL_BXt; real uR_BXt; ,
-                real uL_BXb; real uR_BXb; )
+                real uL_MXn; real uR_MXn;  ,
+                real uL_BXt; real uR_BXt;  ,
+                real uL_BXb; real uR_BXb;  )
             
             EXPAND (
             if (dir == IDIR) {
                 EXPAND (
                 uL_MXn = uL_MX1;
-                uR_MXn = uR_MX1;
-                uL_BXn = uL_BX1;
-                uR_BXn = uR_BX1;  ,
+                uR_MXn = uR_MX1;  ,
                 uL_BXt = uL_BX2;
                 uR_BXt = uR_BX2;  ,
                 uL_BXb = uL_BX3;
@@ -375,9 +396,7 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
             if (dir == JDIR) {
                 EXPAND (
                 uL_MXn = uL_MX2;
-                uR_MXn = uR_MX2;
-                uL_BXn = uL_BX2;
-                uR_BXn = uR_BX2;  ,
+                uR_MXn = uR_MX2;  ,
                 uL_BXt = uL_BX1;
                 uR_BXt = uR_BX1;  ,
                 uL_BXb = uL_BX3;
@@ -387,15 +406,26 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
             if (dir == KDIR) {
                 EXPAND (
                 uL_MXn = uL_MX3;
-                uR_MXn = uR_MX3;
-                uL_BXn = uL_BX3;
-                uR_BXn = uR_BX3;  ,
+                uR_MXn = uR_MX3;  ,
                 uL_BXt = uL_BX1;
                 uR_BXt = uR_BX1;  ,
                 uL_BXb = uL_BX2;
                 uR_BXb = uR_BX2;  )
             }
             )
+            
+            real scrh, scrhL, scrhR, duL, duR, sBx, Bx, SM, S1L, S1R;
+            
+#if HAVE_ENERGY
+            
+            real pts, sqrL, sqrR, Bx1;
+            EXPAND(                  ,
+                real vsL; real vsR;  ,
+                real wsL; real wsR;  )
+            int revert_to_hllc;
+            
+            real ptL  = vL_PRS + HALF_F* ( EXPAND(vL_BX1*vL_BX1 , + vL_BX2*vL_BX2, + vL_BX3*vL_BX3) );
+            real ptR  = vR_PRS + HALF_F* ( EXPAND(vR_BX1*vR_BX1 , + vR_BX2*vR_BX2, + vR_BX3*vR_BX3) );
             
             real usL_RHO;
             EXPAND(
@@ -414,9 +444,8 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
                 real usR_BX2; ,
                 real usR_MX3;
                 real usR_BX3; )
-#if HAVE_ENERGY
+
             real usL_ENG, usR_ENG;
-#endif
             
             EXPAND(
                 real usL_MXn; real usR_MXn;
@@ -425,16 +454,6 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
                 real usL_BXt; real usR_BXt;  ,
                 real usL_MXb; real usR_MXb;
                 real usL_BXb; real usR_BXb;  )
-            
-            real scrh, scrhL, scrhR, duL, duR, sBx, Bx, SM, S1L, S1R;
-            
-#if HAVE_ENERGY
-            
-            real vs, pts, sqrL, sqrR, vsL, vsR, wsL, wsR, Bx1;
-            int revert_to_hllc;
-            
-            real ptL  = vL_PRS + HALF_F* ( EXPAND(vL_BX1*vL_BX1 , + vL_BX2*vL_BX2, + vL_BX3*vL_BX3) );
-            real ptR  = vR_PRS + HALF_F* ( EXPAND(vR_BX1*vR_BX1 , + vR_BX2*vR_BX2, + vR_BX3*vR_BX3) );
             
             // 3c. Compute U*(L), U^*(R)
 
@@ -665,7 +684,9 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
             else {   // -- This state exists only if B_x != 0
 
                 // Compute U**
-                real vss, wss;
+                EXPAND(        ,
+                    real vss;  ,
+                    real wss;  )
                 
                 real ussl_RHO;
                 EXPAND(
@@ -833,6 +854,45 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
             }  // end if (S1L < 0 S1R > 0)
 
 #else
+            real uL_BXn; real uR_BXn;
+            
+            EXPAND (
+            if (dir == IDIR) {
+                EXPAND (
+                uL_MXn = uL_MX1;
+                uR_MXn = uR_MX1;
+                uL_BXn = uL_BX1;
+                uR_BXn = uR_BX1;  ,
+                uL_BXt = uL_BX2;
+                uR_BXt = uR_BX2;  ,
+                uL_BXb = uL_BX3;
+                uR_BXb = uR_BX3;  )
+            }
+            ,
+            if (dir == JDIR) {
+                EXPAND (
+                uL_MXn = uL_MX2;
+                uR_MXn = uR_MX2;
+                uL_BXn = uL_BX2;
+                uR_BXn = uR_BX2;  ,
+                uL_BXt = uL_BX1;
+                uR_BXt = uR_BX1;  ,
+                uL_BXb = uL_BX3;
+                uR_BXb = uR_BX3;  )
+            }
+            ,
+            if (dir == KDIR) {
+                EXPAND (
+                uL_MXn = uL_MX3;
+                uR_MXn = uR_MX3;
+                uL_BXn = uL_BX3;
+                uR_BXn = uR_BX3;  ,
+                uL_BXt = uL_BX1;
+                uR_BXt = uR_BX1;  ,
+                uL_BXb = uL_BX2;
+                uR_BXb = uR_BX2;  )
+            }
+            )
 
             real rho, sqrho;
             int revert_to_hll;
@@ -957,7 +1017,12 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
                     fluxR_BXb = fluxR_BX2;  )
                 }
                 )
-            
+                
+                EXPAND(    ,
+                    real usL_MXt; real usR_MXt;
+                    real usL_BXt; real usR_BXt;  ,
+                    real usL_MXb; real usR_MXb;
+                    real usL_BXb; real usR_BXb;  )
                 
                 Flux(RHO,k,j,i) = Flux_RHO;
                 Flux(MXn,k,j,i) = (SR*fluxL_MXn - SL*fluxR_MXn 

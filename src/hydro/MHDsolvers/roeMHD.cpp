@@ -26,7 +26,7 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
     int ioffset,joffset,koffset;
     int iextend, jextend,kextend;
 
-    Kokkos::Profiling::pushRegion("TVDLF_Solver");
+    Kokkos::Profiling::pushRegion("ROE_MHD");
     
     ioffset=joffset=koffset=0;
     // extension in perp to the direction of integration, as required by CT.
@@ -48,11 +48,15 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
 
     // Define normal, tangent and bi-tanget indices
 
-    int VXn, VXt, VXb;
-    int BXn, BXt, BXb;
-    int MXn, MXt, MXb;
+    EXPAND( int BXt;  ,
+                      ,
+            int BXb;  )
 
-    real st, sb;      // st and sb will be useful only when Hall is included
+    // st and sb will be useful only when Hall is included
+    D_EXPAND( real st;  ,
+                        ,
+              real sb;  )
+    
     switch(dir) {
         case(IDIR):
             ioffset = 1;
@@ -60,54 +64,48 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
                    jextend = 1;     ,
                    kextend = 1; )
 
-            EXPAND(VXn = MXn = VX1; 
-                   BXn = BX1;       , 
-                   VXt = MXt = VX2; 
+            EXPAND(/*BXn = BX1;*/   , 
                    BXt = BX2;       , 
-                   VXb = MXb = VX3;
                    BXb = BX3;       )
 
             Et = data.emf.ezi;
             Eb = data.emf.eyi;
 
-            st = -ONE_F;
-            sb = +ONE_F;
+            D_EXPAND( st = -ONE_F;  ,
+                                    ,
+                      sb = +ONE_F;  )
             break;
         case(JDIR):
             joffset=1;
             D_EXPAND( iextend = 1;  ,
                                     ,
                     kextend = 1;)
-            EXPAND(VXn = MXn = VX2; 
-                   BXn = BX2;       , 
-                   VXt = MXt = VX1; 
+            EXPAND(/*BXn = BX2;*/   , 
                    BXt = BX1;       , 
-                   VXb = MXb = VX3;
                    BXb = BX3;       )
 
             Et = data.emf.ezj;
             Eb = data.emf.exj;
 
-            st = +ONE_F;
-            sb = -ONE_F;
+            D_EXPAND( st = +ONE_F;  ,
+                                    ,
+                      sb = -ONE_F;  )
             break;
         case(KDIR):
             koffset=1;
             D_EXPAND( iextend = 1;  ,
                     jextend = 1;    ,
                     )
-            EXPAND(VXn = MXn = VX3; 
-                   BXn = BX3;       , 
-                   VXt = MXt = VX1; 
+            EXPAND(/*BXn = BX3;*/   , 
                    BXt = BX1;       , 
-                   VXb = MXb = VX2;
                    BXb = BX2;       )
 
             Et = data.emf.eyk;
             Eb = data.emf.exk;
 
-            st = -ONE_F;
-            sb = +ONE_F;
+            D_EXPAND( st = -ONE_F;  ,
+                                    ,
+                      sb = +ONE_F;  )
             break;
         default:
             IDEFIX_ERROR("Wrong direction");
@@ -221,14 +219,14 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
                C2Iso, dir);
         
         // --- Compute the square of the sound speed
-        real a, a2, a2L, a2R;
+        real a, a2;
 #if HAVE_ENERGY
-        a2L = gamma * vL_PRS / vL_RHO;
-        a2R = gamma * vR_PRS / vR_RHO;
+        // real a2L = gamma * vL_PRS / vL_RHO;
+        // real a2R = gamma * vR_PRS / vR_RHO;
         
 #else
-        a2L = C2Iso;
-        a2R = C2Iso;
+        real a2L = C2Iso;
+        real a2R = C2Iso;
 #endif
 
         real dV_RHO = vR_RHO - vL_RHO;
@@ -239,8 +237,9 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
             real dV_BX2 = vR_BX2 - vL_BX2; ,
             real dV_VX3 = vR_VX3 - vL_VX3;
             real dV_BX3 = vR_BX3 - vL_BX3; )
-        
-        real dU_RHO = uR_RHO - uL_RHO;
+
+#if HAVE_ENERGY
+        // real dU_RHO = uR_RHO - uL_RHO;
         EXPAND(
             real dU_MX1 = uR_MX1 - uL_MX1;
             real dU_BX1 = uR_BX1 - uL_BX1; ,
@@ -248,26 +247,11 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
             real dU_BX2 = uR_BX2 - uL_BX2; ,
             real dU_MX3 = uR_MX3 - uL_MX3;
             real dU_BX3 = uR_BX3 - uL_BX3; )
-
-#if HAVE_ENERGY
+        
         real dV_PRS = vR_PRS - vL_PRS;
         real dU_ENG = uR_ENG - uL_ENG;
 #endif
-        
-        enum KWAVES {
-    /*RHO*/KFASTM = 0, KFASTP /*MX1*/
-#if HAVE_ENERGY
-  , KENTRP /*ENG*/
-#endif
-  , KDIVB /*BX1*/
-#if COMPONENTS >= 2
-  , KSLOWM /*MX2*/, KSLOWP /*BX2*/
-    #if COMPONENTS == 3
-  , KALFVM/*MX3*/, KALFVP /*BX3*/
-    #endif
-#endif
-};
-        
+
         // 5. Set eigenvectors components Rc = 0 initially  
         real Rc_RHO_KFASTM = ZERO_F;
         EXPAND(
@@ -330,44 +314,7 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
                 real Rc_BX3_KALFVM = ZERO_F;
                 real Rc_BX3_KALFVP = ZERO_F; )
         )
-        
-        /*real Rc_RHO_KFASTM = ZERO_F;
-        EXPAND(
-            real Rc_RHO_KFASTP = ZERO_F;
-            real Rc_RHO_KDIVB = ZERO_F; ,
-            real Rc_RHO_KSLOWM = ZERO_F;
-            real Rc_RHO_KSLOWP = ZERO_F; ,
-            real Rc_RHO_KALFVM = ZERO_F;
-            real Rc_RHO_KALFVP = ZERO_F; )
-        
-        EXPAND(
-            real Rc_MX1_KFASTM = ZERO_F;
-            EXPAND(
-                real Rc_MX1_KFASTP = ZERO_F;
-                real Rc_MX1_KDIVB = ZERO_F; ,
-                real Rc_MX1_KSLOWM = ZERO_F;
-                real Rc_MX1_KSLOWP = ZERO_F; ,
-                real Rc_MX1_KALFVM = ZERO_F;
-                real Rc_MX1_KALFVP = ZERO_F; )
-            ,
-            real Rc_MX2_KFASTM = ZERO_F;
-            EXPAND(
-                real Rc_MX2_KFASTP = ZERO_F;
-                real Rc_MX2_KDIVB = ZERO_F; ,
-                real Rc_MX2_KSLOWM = ZERO_F;
-                real Rc_MX2_KSLOWP = ZERO_F; ,
-                real Rc_MX2_KALFVM = ZERO_F;
-                real Rc_MX2_KALFVP = ZERO_F; )
-            ,
-            real Rc_MX3_KFASTM = ZERO_F;
-            EXPAND(
-                real Rc_MX3_KFASTP = ZERO_F;
-                real Rc_MX3_KDIVB = ZERO_F; ,
-                real Rc_MX3_KSLOWM = ZERO_F;
-                real Rc_MX3_KSLOWP = ZERO_F; ,
-                real Rc_MX3_KALFVM = ZERO_F;
-                real Rc_MX3_KALFVP = ZERO_F; )
-        )*/
+
 #if HAVE_ENERGY
         real Rc_RHO_KENTRP = ZERO_F;
         EXPAND(
@@ -388,21 +335,55 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
             real Rc_ENG_KALFVP = ZERO_F; )
         real Rc_ENG_KENTRP = ZERO_F;
         
+        EXPAND(
+            real dU_MXn; real dU_BXn;  ,
+            real dU_MXt; real dU_BXt;  ,
+            real dU_MXb; real dU_BXb;  )
+        
+        EXPAND (
+        if (dir == IDIR) {
+            EXPAND (
+            dU_MXn = dU_MX1;
+            dU_BXn = dU_BX1;  ,
+            dU_MXt = dU_MX2;
+            dU_BXt = dU_BX2;  ,
+            dU_MXb = dU_MX3;
+            dU_BXb = dU_BX3;  )
+        }
+        ,
+        if (dir == JDIR) {
+            EXPAND (
+            dU_MXn = dU_MX2;
+            dU_BXn = dU_BX2;  ,
+            dU_MXt = dU_MX1;
+            dU_BXt = dU_BX1;  ,
+            dU_MXb = dU_MX3;
+            dU_BXb = dU_BX3;  )
+        }
+        ,
+        if (dir == KDIR) {
+            EXPAND (
+            dU_MXn = dU_MX3;
+            dU_BXn = dU_BX3;  ,
+            dU_MXt = dU_MX1;
+            dU_BXt = dU_BX1;  ,
+            dU_MXb = dU_MX2;
+            dU_BXb = dU_BX2;  )
+        }
+        )
+        
 #endif
         
         EXPAND(
             real vL_VXn; real vR_VXn;
             real vL_BXn; real vR_BXn;
-            real dV_VXn; real dV_BXn; 
-            real dU_MXn; real dU_BXn;  ,
+            real dV_VXn; real dV_BXn;  ,
             real vL_VXt; real vR_VXt;
             real vL_BXt; real vR_BXt;
-            real dV_VXt; real dV_BXt;
-            real dU_MXt; real dU_BXt;  ,
+            real dV_VXt; real dV_BXt;  ,
             real vL_VXb; real vR_VXb;
             real vL_BXb; real vR_BXb;
-            real dV_VXb; real dV_BXb;
-            real dU_MXb; real dU_BXb;  )
+            real dV_VXb; real dV_BXb;  )
         
         EXPAND (
         if (dir == IDIR) {
@@ -412,25 +393,19 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
             vL_BXn = vL_BX1;
             vR_BXn = vR_BX1;
             dV_VXn = dV_VX1;
-            dV_BXn = dV_BX1;
-            dU_MXn = dU_MX1;
-            dU_BXn = dU_BX1;  ,
+            dV_BXn = dV_BX1;  ,
             vL_VXt = vL_VX2;
             vR_VXt = vR_VX2;
             vL_BXt = vL_BX2;
             vR_BXt = vR_BX2;
             dV_VXt = dV_VX2;
-            dV_BXt = dV_BX2;
-            dU_MXt = dU_MX2;
-            dU_BXt = dU_BX2;  ,
+            dV_BXt = dV_BX2;  ,
             vL_VXb = vL_VX3;
             vR_VXb = vR_VX3;
             vL_BXb = vL_BX3;
             vR_BXb = vR_BX3;
             dV_VXb = dV_VX3;
-            dV_BXb = dV_BX3;
-            dU_MXb = dU_MX3;
-            dU_BXb = dU_BX3;  )
+            dV_BXb = dV_BX3;  )
         }
         ,
         if (dir == JDIR) {
@@ -440,25 +415,19 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
             vL_BXn = vL_BX2;
             vR_BXn = vR_BX2;
             dV_VXn = dV_VX2;
-            dV_BXn = dV_BX2;
-            dU_MXn = dU_MX2;
-            dU_BXn = dU_BX2;  ,
+            dV_BXn = dV_BX2;  ,
             vL_VXt = vL_VX1;
             vR_VXt = vR_VX1;
             vL_BXt = vL_BX1;
             vR_BXt = vR_BX1;
             dV_VXt = dV_VX1;
-            dV_BXt = dV_BX1;
-            dU_MXt = dU_MX1;
-            dU_BXt = dU_BX1;  ,
+            dV_BXt = dV_BX1;  ,
             vL_VXb = vL_VX3;
             vR_VXb = vR_VX3;
             vL_BXb = vL_BX3;
             vR_BXb = vR_BX3;
             dV_VXb = dV_VX3;
-            dV_BXb = dV_BX3;
-            dU_MXb = dU_MX3;
-            dU_BXb = dU_BX3;  )
+            dV_BXb = dV_BX3;  )
         }
         ,
         if (dir == KDIR) {
@@ -468,25 +437,19 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
             vL_BXn = vL_BX3;
             vR_BXn = vR_BX3;
             dV_VXn = dV_VX3;
-            dV_BXn = dV_BX3;
-            dU_MXn = dU_MX3;
-            dU_BXn = dU_BX3;  ,
+            dV_BXn = dV_BX3;  ,
             vL_VXt = vL_VX1;
             vR_VXt = vR_VX1;
             vL_BXt = vL_BX1;
             vR_BXt = vR_BX1;
             dV_VXt = dV_VX1;
-            dV_BXt = dV_BX1;
-            dU_MXt = dU_MX1;
-            dU_BXt = dU_BX1;  ,
+            dV_BXt = dV_BX1;  ,
             vL_VXb = vL_VX2;
             vR_VXb = vR_VX2;
             vL_BXb = vL_BX2;
             vR_BXb = vR_BX2;
             dV_VXb = dV_VX2;
-            dV_BXb = dV_BX2;
-            dU_MXb = dU_MX2;
-            dU_BXb = dU_BX2;  )
+            dV_BXb = dV_BX2;  )
         }
         )
         
@@ -505,53 +468,48 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
 
         sqrt_rho = sqrt(rho);
 
-        real u, v, w, Bx, By, Bz, sBx, bx, by, bz, bt2, b2, Btmag;
+        real sBx, bt2, b2, Btmag;
         
-        EXPAND (u = sl*vL_VXn + sr*vR_VXn;  ,
-                v = sl*vL_VXt + sr*vR_VXt;  ,
-                w = sl*vL_VXb + sr*vR_VXb;)
+        EXPAND (real u = sl*vL_VXn + sr*vR_VXn;  ,
+                real v = sl*vL_VXt + sr*vR_VXt;  ,
+                real w = sl*vL_VXb + sr*vR_VXb;  )
 
-        EXPAND (Bx = sr*vL_BXn + sl*vR_BXn;  ,
-                By = sr*vL_BXt + sl*vR_BXt;  ,
-                Bz = sr*vL_BXb + sl*vR_BXb;)
-
-        EXPAND (Bx = sr*vL_BXn + sl*vR_BXn;  ,
-                By = sr*vL_BXt + sl*vR_BXt;  ,
-                Bz = sr*vL_BXb + sl*vR_BXb;)
+        EXPAND (real Bx = sr*vL_BXn + sl*vR_BXn;  ,
+                real By = sr*vL_BXt + sl*vR_BXt;  ,
+                real Bz = sr*vL_BXb + sl*vR_BXb;  )
 
         sBx = (Bx >= ZERO_F ? ONE_F : -ONE_F);
 
-        EXPAND(bx = Bx/sqrt_rho;  ,
-            by = By/sqrt_rho;  ,
-            bz = Bz/sqrt_rho; )
+        EXPAND(real bx = Bx/sqrt_rho;  ,
+            real by = By/sqrt_rho;     ,
+            real bz = Bz/sqrt_rho;     )
         
         bt2   = EXPAND(ZERO_F  , + by*by, + bz*bz);
         b2    = bx*bx + bt2;
         Btmag = sqrt(bt2*rho);
 
-        real X, vdm, BdB;
         
-        X  = EXPAND(dV_BXn*dV_BXn, + dV_BXt*dV_BXt, + dV_BXb*dV_BXb);
+        real X  = EXPAND(dV_BXn*dV_BXn, + dV_BXt*dV_BXt, + dV_BXb*dV_BXb);
         X /= (sqr_rho_L + sqr_rho_R)*(sqr_rho_L + sqr_rho_R)*2.0;   
 
-        vdm = EXPAND(u*dU_MXn,  + v*dU_MXt,  + w*dU_MXb);
-
-        BdB = EXPAND(Bx*dU_BXn, + By*dU_BXt, + Bz*dU_BXb);
-
-        
-        real Bmag2L, Bmag2R, pL, pR;
+#if HAVE_ENERGY
+        real Bmag2L, Bmag2R;
         Bmag2L = EXPAND(vL_BX1*vL_BX1 , + vL_BX2*vL_BX2, + vL_BX3*vL_BX3);
         Bmag2R = EXPAND(vR_BX1*vR_BX1 , + vR_BX2*vR_BX2, + vR_BX3*vR_BX3);
-#if HAVE_ENERGY
-        pL  = vL_PRS + HALF_F*Bmag2L;
-        pR  = vR_PRS + HALF_F*Bmag2R;
+//         
+        real pL  = vL_PRS + HALF_F*Bmag2L;
+        real pR  = vR_PRS + HALF_F*Bmag2R;
 #else
-        pL  = a2L*vL_RHO + HALF_F*Bmag2L;
-        pR  = a2R*vR_RHO + HALF_F*Bmag2R;
+        // real pL  = a2L*vL_RHO + HALF_F*Bmag2L;
+        // real pR  = a2R*vR_RHO + HALF_F*Bmag2R;
 #endif
         
         // 6d. Compute enthalpy and sound speed.
 #if HAVE_ENERGY
+        real vdm = EXPAND(u*dU_MXn,  + v*dU_MXt,  + w*dU_MXb);
+
+        real BdB = EXPAND(Bx*dU_BXn, + By*dU_BXt, + Bz*dU_BXb);
+        
         real vel2, HL, HR, H, Hgas;
         vel2    = EXPAND(u*u, + v*v, + w*w);
         dV_PRS = gamma_m1*((HALF_F*vel2 - X)*dV_RHO - vdm + dU_ENG - BdB); 
@@ -628,8 +586,8 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
                 beta_z = Bz/Btmag;)
         }
         else {
-            SELECT(                        , 
-                beta_y = ONE_F;              ,
+            SELECT(                     , 
+                beta_y = ONE_F;         ,
                 beta_z = beta_y = ONE_F;)
         }
 
@@ -651,83 +609,123 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
             be added and eta (wave strength) should contain total field 
             and deviation's delta.
         ------------------------------------------------------------------- */
+        
+        EXPAND(
+            real Rc_MXn_KFASTM = ZERO_F;
+            EXPAND(
+                real Rc_MXn_KFASTP = ZERO_F;
+                real Rc_MXn_KDIVB = ZERO_F;  ,
+                real Rc_MXn_KSLOWM = ZERO_F;
+                real Rc_MXn_KSLOWP = ZERO_F; ,
+                real Rc_MXn_KALFVM = ZERO_F;
+                real Rc_MXn_KALFVP = ZERO_F; )
+            real Rc_BXn_KFASTM = ZERO_F;
+            EXPAND(
+                real Rc_BXn_KFASTP = ZERO_F;
+                real Rc_BXn_KDIVB = ZERO_F;  ,
+                real Rc_BXn_KSLOWM = ZERO_F;
+                real Rc_BXn_KSLOWP = ZERO_F; ,
+                real Rc_BXn_KALFVM = ZERO_F;
+                real Rc_BXn_KALFVP = ZERO_F; )
+            ,
+            real Rc_MXt_KFASTM = ZERO_F;
+            EXPAND(
+                real Rc_MXt_KFASTP = ZERO_F;
+                real Rc_MXt_KDIVB = ZERO_F;  ,
+                real Rc_MXt_KSLOWM = ZERO_F;
+                real Rc_MXt_KSLOWP = ZERO_F; ,
+                real Rc_MXt_KALFVM = ZERO_F;
+                real Rc_MXt_KALFVP = ZERO_F; )
+            real Rc_BXt_KFASTM = ZERO_F;
+            EXPAND(
+                real Rc_BXt_KFASTP = ZERO_F;
+                real Rc_BXt_KDIVB = ZERO_F;  ,
+                real Rc_BXt_KSLOWM = ZERO_F;
+                real Rc_BXt_KSLOWP = ZERO_F; ,
+                real Rc_BXt_KALFVM = ZERO_F;
+                real Rc_BXt_KALFVP = ZERO_F; )
+            ,
+            real Rc_MXb_KFASTM = ZERO_F;
+            EXPAND(
+                real Rc_MXb_KFASTP = ZERO_F;
+                real Rc_MXb_KDIVB = ZERO_F;  ,
+                real Rc_MXb_KSLOWM = ZERO_F;
+                real Rc_MXb_KSLOWP = ZERO_F; ,
+                real Rc_MXb_KALFVM = ZERO_F;
+                real Rc_MXb_KALFVP = ZERO_F; )
+            real Rc_BXb_KFASTM = ZERO_F;
+            EXPAND(
+                real Rc_BXb_KFASTP = ZERO_F;
+                real Rc_BXb_KDIVB = ZERO_F;  ,
+                real Rc_BXb_KSLOWM = ZERO_F;
+                real Rc_BXb_KSLOWP = ZERO_F; ,
+                real Rc_BXb_KALFVM = ZERO_F;
+                real Rc_BXb_KALFVP = ZERO_F; )
+        )
 
+#if HAVE_ENERGY
+        EXPAND(
+            real Rc_MXn_KENTRP = ZERO_F;
+            real Rc_BXn_KENTRP = ZERO_F; ,
+            real Rc_MXt_KENTRP = ZERO_F;
+            real Rc_BXt_KENTRP = ZERO_F; ,
+            real Rc_MXb_KENTRP = ZERO_F;
+            real Rc_BXb_KENTRP = ZERO_F; )
+#endif
+
+        real lambda_KFASTM;
+        EXPAND(
+            real lambda_KFASTP;
+            real lambda_KDIVB;  ,
+            real lambda_KSLOWM;
+            real lambda_KSLOWP; ,
+            real lambda_KALFVM;
+            real lambda_KALFVP; )
+        
+        real eta_KFASTM;
+        EXPAND(
+            real eta_KFASTP;
+            real eta_KDIVB;  ,
+            real eta_KSLOWM;
+            real eta_KSLOWP; ,
+            real eta_KALFVM;
+            real eta_KALFVP; )
+        
+#if HAVE_ENERGY
+        real lambda_KENTRP;
+        real eta_KENTRP;
+#endif
+
+        real beta_dv, beta_dB;
+        
         // Fast wave:  u - c_f
-        /*real _KFASTM = ZERO_F;
-        EXPAND(
-            real _KFASTP = ZERO_F;
-            real _KDIVB = ZERO_F; ,
-            real _KSLOWM = ZERO_F;
-            real _KSLOWP = ZERO_F; ,
-            real _KALFVM = ZERO_F;
-            real _KALFVP = ZERO_F; )
-#if HAVE_ENERGY
-        real _KENTRP = ZERO_F;
-#endif*/
-        real lambda_KFASTM = ZERO_F;
-        EXPAND(
-            real lambda_KFASTP = ZERO_F;
-            real lambda_KDIVB = ZERO_F; ,
-            real lambda_KSLOWM = ZERO_F;
-            real lambda_KSLOWP = ZERO_F; ,
-            real lambda_KALFVM = ZERO_F;
-            real lambda_KALFVP = ZERO_F; )
         
-        real eta_KFASTM = ZERO_F;
-        EXPAND(
-            real eta_KFASTP = ZERO_F;
-            real eta_KDIVB = ZERO_F; ,
-            real eta_KSLOWM = ZERO_F;
-            real eta_KSLOWP = ZERO_F; ,
-            real eta_KALFVM = ZERO_F;
-            real eta_KALFVP = ZERO_F; )
-        
-#if HAVE_ENERGY
-        real lambda_KENTRP = ZERO_F;
-        real eta_KENTRP = ZERO_F;
-#endif
-
-        real beta_dv, beta_dB, beta_v;
-        
-        real Rc_MXn_KFASTM, Rc_MXt_KFASTM, Rc_MXb_KFASTM;
-        real Rc_BXt_KFASTM, Rc_BXb_KFASTM;
-        real Rc_MXn_KFASTP, Rc_MXt_KFASTP, Rc_MXb_KFASTP;
-        real Rc_BXt_KFASTP, Rc_BXb_KFASTP;
-        real Rc_BXn_KDIVB;
-        real Rc_MXn_KSLOWM, Rc_MXt_KSLOWM, Rc_MXb_KSLOWM;
-        real Rc_BXt_KSLOWM, Rc_BXb_KSLOWM;
-        real Rc_MXn_KSLOWP, Rc_MXt_KSLOWP, Rc_MXb_KSLOWP;
-        real Rc_BXt_KSLOWP, Rc_BXb_KSLOWP;
-#if HAVE_ENERGY
-        real Rc_MXn_KENTRP, Rc_MXt_KENTRP;
-#endif
-
         lambda_KFASTM = u - cf;
 
         scrh    = alpha_s*cs*sBx;
         beta_dv = EXPAND(ZERO_F, + beta_y*dV_VXt, + beta_z*dV_VXb);
         beta_dB = EXPAND(ZERO_F, + beta_y*dV_BXt, + beta_z*dV_BXb);
-        beta_v  = EXPAND(ZERO_F, + beta_y*v,       + beta_z*w);
 
         Rc_RHO_KFASTM = alpha_f;
-        EXPAND(Rc_MXn_KFASTM = alpha_f*lambda_KFASTM;       ,
-            Rc_MXt_KFASTM = alpha_f*v + scrh*beta_y;    ,
-            Rc_MXb_KFASTM = alpha_f*w + scrh*beta_z;) 
-        EXPAND(                                      ,
-            Rc_BXt_KFASTM = alpha_s*a*beta_y/sqrt_rho;  ,
-            Rc_BXb_KFASTM = alpha_s*a*beta_z/sqrt_rho;)
+        EXPAND( Rc_MXn_KFASTM = alpha_f*lambda_KFASTM;    ,
+                Rc_MXt_KFASTM = alpha_f*v + scrh*beta_y;  ,
+                Rc_MXb_KFASTM = alpha_f*w + scrh*beta_z;  ) 
+        EXPAND( Rc_BXt_KFASTM = ZERO_F;                     ,
+                Rc_BXt_KFASTM = alpha_s*a*beta_y/sqrt_rho;  ,
+                Rc_BXb_KFASTM = alpha_s*a*beta_z/sqrt_rho;  )
 
 #if HAVE_ENERGY
+        real beta_v  = EXPAND(ZERO_F, + beta_y*v,      + beta_z*w);
+        
         Rc_ENG_KFASTM =   alpha_f*(Hgas - u*cf) + scrh*beta_v
                     + alpha_s*a*Btmag/sqrt_rho;
 
-        eta_KFASTM =   alpha_f*(X*dV_RHO + dV_PRS) + rho*scrh*beta_dv
-                - rho*alpha_f*cf*dV_VXn        + sqrt_rho*alpha_s*a*beta_dB;
+        eta_KFASTM = alpha_f*(X*dV_RHO + dV_PRS);
 #else
-        eta_KFASTM =   alpha_f*(ZERO_F*X + a2)*dV_RHO + rho*scrh*beta_dv
-                - rho*alpha_f*cf*dV_VXn + sqrt_rho*alpha_s*a*beta_dB;
+        eta_KFASTM = alpha_f*a2*dV_RHO;
+                
 #endif
-        
+        eta_KFASTM += rho*scrh*beta_dv - rho*alpha_f*cf*dV_VXn + sqrt_rho*alpha_s*a*beta_dB;
         eta_KFASTM *= HALF_F/a2;
 
         // Fast wave:  u + c_f
@@ -735,24 +733,22 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
         lambda_KFASTP = u + cf;
 
         Rc_RHO_KFASTP = alpha_f;
-        EXPAND( Rc_MXn_KFASTP = alpha_f*lambda_KFASTP;        ,
+        EXPAND( Rc_MXn_KFASTP = alpha_f*lambda_KFASTP;    ,
                 Rc_MXt_KFASTP = alpha_f*v - scrh*beta_y;  ,
-                Rc_MXb_KFASTP = alpha_f*w - scrh*beta_z; ) 
-        EXPAND(                                ,                                
+                Rc_MXb_KFASTP = alpha_f*w - scrh*beta_z;  ) 
+        EXPAND( Rc_BXn_KFASTP = ZERO_F;         ,                                
                 Rc_BXt_KFASTP = Rc_BXt_KFASTM;  ,
-                Rc_BXb_KFASTP = Rc_BXb_KFASTM; )
+                Rc_BXb_KFASTP = Rc_BXb_KFASTM;  )
 
 #if HAVE_ENERGY
         Rc_ENG_KFASTP =   alpha_f*(Hgas + u*cf) - scrh*beta_v
                     + alpha_s*a*Btmag/sqrt_rho;
 
-        eta_KFASTP =   alpha_f*(X*dV_RHO + dV_PRS) - rho*scrh*beta_dv
-                + rho*alpha_f*cf*dV_VXn        + sqrt_rho*alpha_s*a*beta_dB;
+        eta_KFASTP =   alpha_f*(X*dV_RHO + dV_PRS);
 #else
-        eta_KFASTP =   alpha_f*(0.*X + a2)*dV_RHO - rho*scrh*beta_dv
-                + rho*alpha_f*cf*dV_VXn      + sqrt_rho*alpha_s*a*beta_dB;
+        eta_KFASTP =   alpha_f*a2*dV_RHO;
 #endif
-
+        eta_KFASTP += rho*alpha_f*cf*dV_VXn + sqrt_rho*alpha_s*a*beta_dB - rho*scrh*beta_dv;
         eta_KFASTP *= HALF_F/a2;
 
         // Entropy wave:  u
@@ -764,6 +760,9 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
         EXPAND( Rc_MXn_KENTRP = u; ,
                 Rc_MXt_KENTRP = v; ,
                 Rc_MXb_KENTRP = w; )
+        EXPAND( Rc_BXn_KENTRP = ZERO_F; ,
+                Rc_BXt_KENTRP = ZERO_F; ,
+                Rc_BXb_KENTRP = ZERO_F; )
         Rc_ENG_KENTRP = HALF_F*vel2 + (gamma - 2.0)/gamma_m1*X;
 
         eta_KENTRP = ((a2 - X)*dV_RHO - dV_PRS)/a2;
@@ -783,8 +782,6 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
         ----------------------------------------------------------------- */
 
         lambda_KDIVB = u;
-
-        Rc_BXn_KDIVB = ZERO_F;
         eta_KDIVB = ZERO_F;
         
 #if COMPONENTS > 1    
@@ -796,24 +793,22 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
         lambda_KSLOWM = u - cs;
 
         Rc_RHO_KSLOWM = alpha_s;
-        EXPAND( Rc_MXn_KSLOWM = alpha_s*lambda_KSLOWM;        ,
+        EXPAND( Rc_MXn_KSLOWM = alpha_s*lambda_KSLOWM;    ,
                 Rc_MXt_KSLOWM = alpha_s*v - scrh*beta_y;  ,
-                Rc_MXb_KSLOWM = alpha_s*w - scrh*beta_z;) 
-        EXPAND(                                            ,                                
+                Rc_MXb_KSLOWM = alpha_s*w - scrh*beta_z;  ) 
+        EXPAND( Rc_BXn_KSLOWM = ZERO_F;                       ,                                
                 Rc_BXt_KSLOWM = - alpha_f*a*beta_y/sqrt_rho;  ,
-                Rc_BXb_KSLOWM = - alpha_f*a*beta_z/sqrt_rho; )
+                Rc_BXb_KSLOWM = - alpha_f*a*beta_z/sqrt_rho;  )
 
     #if HAVE_ENERGY
         Rc_ENG_KSLOWM =   alpha_s*(Hgas - u*cs) - scrh*beta_v
                     - alpha_f*a*Btmag/sqrt_rho; 
 
-        eta_KSLOWM =   alpha_s*(X*dV_RHO + dV_PRS) - rho*scrh*beta_dv
-                - rho*alpha_s*cs*dV_VXn        - sqrt_rho*alpha_f*a*beta_dB;
+        eta_KSLOWM = alpha_s*(X*dV_RHO + dV_PRS);
     #else
-        eta_KSLOWM =   alpha_s*(0.*X + a2)*dV_RHO - rho*scrh*beta_dv
-                - rho*alpha_s*cs*dV_VXn      - sqrt_rho*alpha_f*a*beta_dB;
+        eta_KSLOWM = alpha_s*a2*dV_RHO;
     #endif
-
+        eta_KSLOWM += - rho*scrh*beta_dv - rho*alpha_s*cs*dV_VXn - sqrt_rho*alpha_f*a*beta_dB;
         eta_KSLOWM *= HALF_F/a2;
 
         // Slow wave:  u + c_s
@@ -821,24 +816,23 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
         lambda_KSLOWP = u + cs; 
 
         Rc_RHO_KSLOWP = alpha_s;
-        EXPAND(Rc_MXn_KSLOWP = alpha_s*lambda_KSLOWP;         ,
-                Rc_MXt_KSLOWP = alpha_s*v + scrh*beta_y;   ,
-                Rc_MXb_KSLOWP = alpha_s*w + scrh*beta_z; ) 
-        EXPAND(                                , 
-                Rc_BXt_KSLOWP = Rc_BXt_KSLOWM;   ,
-                Rc_BXb_KSLOWP = Rc_BXb_KSLOWM;)
+        EXPAND( Rc_MXn_KSLOWP = alpha_s*lambda_KSLOWP;    ,
+                Rc_MXt_KSLOWP = alpha_s*v + scrh*beta_y;  ,
+                Rc_MXb_KSLOWP = alpha_s*w + scrh*beta_z;  ) 
+        EXPAND( Rc_BXt_KSLOWP = ZERO_F;         , 
+                Rc_BXt_KSLOWP = Rc_BXt_KSLOWM;  ,
+                Rc_BXb_KSLOWP = Rc_BXb_KSLOWM;  )
 
     #if HAVE_ENERGY
         Rc_ENG_KSLOWP =   alpha_s*(Hgas + u*cs) + scrh*beta_v
                     - alpha_f*a*Btmag/sqrt_rho;
 
-        eta_KSLOWP =   alpha_s*(X*dV_RHO + dV_PRS) + rho*scrh*beta_dv
-                + rho*alpha_s*cs*dV_VXn        - sqrt_rho*alpha_f*a*beta_dB; 
+        eta_KSLOWP =   alpha_s*(X*dV_RHO + dV_PRS);
     #else
-        eta_KSLOWP =   alpha_s*(0.*X + a2)*dV_RHO + rho*scrh*beta_dv
-                + rho*alpha_s*cs*dV_VXn      - sqrt_rho*alpha_f*a*beta_dB; 
+        eta_KSLOWP =   alpha_s*a2*dV_RHO;
+                 
     #endif
-
+        eta_KSLOWP += rho*scrh*beta_dv + rho*alpha_s*cs*dV_VXn - sqrt_rho*alpha_f*a*beta_dB;
         eta_KSLOWP *= HALF_F/a2;
 
 #endif // COMPONENTS > 1
@@ -857,7 +851,7 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
         Rc_ENG_KALFVM = - rho*(v*beta_z - w*beta_y);
     #endif
 
-        eta_KALFVM = + beta_y*dV_VXb               - beta_z*dV_VXt 
+        eta_KALFVM = + beta_y*dV_VXb - beta_z*dV_VXt 
                 + sBx/sqrt_rho*(beta_y*dV_BXb - beta_z*dV_BXt);
 
         eta_KALFVM *= HALF_F;
@@ -874,7 +868,7 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
         Rc_ENG_KALFVP = - Rc_ENG_KALFVM;
     #endif
 
-        eta_KALFVP = - beta_y*dV_VXb               + beta_z*dV_VXt 
+        eta_KALFVP = - beta_y*dV_VXb + beta_z*dV_VXt 
                 + sBx/sqrt_rho*(beta_y*dV_BXb - beta_z*dV_BXt);
 
         eta_KALFVP *= HALF_F;
@@ -887,7 +881,7 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
         real alambda_KFASTM = FABS(lambda_KFASTM);
         EXPAND(
             real alambda_KFASTP = FABS(lambda_KFASTP);
-            real alambda_KDIVB = FABS(lambda_KDIVB); ,
+            real alambda_KDIVB  = FABS(lambda_KDIVB);   ,
             real alambda_KSLOWM = FABS(lambda_KSLOWM);
             real alambda_KSLOWP = FABS(lambda_KSLOWP); ,
             real alambda_KALFVM = FABS(lambda_KALFVM);
@@ -915,118 +909,272 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
     
         // 6i. Compute Roe numerical flux 
         
+        // MXi
         EXPAND (
         if (dir == IDIR) {
             EXPAND (
-            //MXn = MX1;
+            //MX1 = MXn;
                 Rc_MX1_KFASTM = Rc_MXn_KFASTM;
-                Rc_MX1_KFASTP = Rc_MXn_KFASTP;
-                Rc_BX1_KDIVB = Rc_BXn_KDIVB;
-                Rc_MX1_KSLOWM = Rc_MXn_KSLOWM;
-                Rc_MX1_KSLOWP = Rc_MXn_KSLOWP;
+                EXPAND(
+                    Rc_MX1_KFASTP = Rc_MXn_KFASTP;
+                    Rc_MX1_KDIVB  = Rc_MXn_KDIVB;  ,
+                    Rc_MX1_KSLOWM = Rc_MXn_KSLOWM;
+                    Rc_MX1_KSLOWP = Rc_MXn_KSLOWP; ,
+                    Rc_MX1_KALFVM = Rc_MXn_KALFVM;
+                    Rc_MX1_KALFVP = Rc_MXn_KALFVP; )
 #if HAVE_ENERGY
                 Rc_MX1_KENTRP = Rc_MXn_KENTRP;
 #endif
               ,
             
-            //MXt = MX2;
+            //MX2 = MXt;
                 Rc_MX2_KFASTM = Rc_MXt_KFASTM;
-                Rc_BX2_KFASTM = Rc_BXt_KFASTM;
-                Rc_MX2_KFASTP = Rc_MXt_KFASTP;
-                Rc_BX2_KFASTP = Rc_BXt_KFASTP;
-                Rc_MX2_KSLOWM = Rc_MXt_KSLOWM;
-                Rc_BX2_KSLOWM = Rc_BXt_KSLOWM;
-                Rc_MX2_KSLOWP = Rc_MXt_KSLOWP;
-                Rc_BX2_KSLOWP = Rc_BXt_KSLOWP;
+                EXPAND(
+                    Rc_MX2_KFASTP = Rc_MXt_KFASTP;
+                    Rc_MX2_KDIVB  = Rc_MXt_KDIVB;  ,
+                    Rc_MX2_KSLOWM = Rc_MXt_KSLOWM;
+                    Rc_MX2_KSLOWP = Rc_MXt_KSLOWP; ,
+                    Rc_MX2_KALFVM = Rc_MXt_KALFVM;
+                    Rc_MX2_KALFVP = Rc_MXt_KALFVP; )
 #if HAVE_ENERGY
                 Rc_MX2_KENTRP = Rc_MXt_KENTRP;
 #endif
               ,
-            //MXb = MX3;
+            //MX3 = MXb;
                 Rc_MX3_KFASTM = Rc_MXb_KFASTM;
-                Rc_BX3_KFASTM = Rc_BXb_KFASTM;
-                Rc_MX3_KFASTP = Rc_MXb_KFASTP;
-                Rc_BX3_KFASTP = Rc_BXb_KFASTP;
-                Rc_MX3_KSLOWM = Rc_MXb_KSLOWM;
-                Rc_BX3_KSLOWM = Rc_BXb_KSLOWM;
-                Rc_MX3_KSLOWP = Rc_MXb_KSLOWP;
-                Rc_BX3_KSLOWP = Rc_BXb_KSLOWP;
+                EXPAND(
+                    Rc_MX3_KFASTP = Rc_MXb_KFASTP;
+                    Rc_MX3_KDIVB  = Rc_MXb_KDIVB;  ,
+                    Rc_MX3_KSLOWM = Rc_MXb_KSLOWM;
+                    Rc_MX3_KSLOWP = Rc_MXb_KSLOWP; ,
+                    Rc_MX3_KALFVM = Rc_MXb_KALFVM;
+                    Rc_MX3_KALFVP = Rc_MXb_KALFVP; )
+#if HAVE_ENERGY
+                Rc_MX3_KENTRP = Rc_MXb_KENTRP;
+#endif
             )
         }
         ,
         if (dir == JDIR) {
             EXPAND (
-            //MXn = MX2;
+            //MX2 = MXn;
                 Rc_MX2_KFASTM = Rc_MXn_KFASTM;
-                Rc_MX2_KFASTP = Rc_MXn_KFASTP;
-                Rc_BX2_KDIVB = Rc_BXn_KDIVB;
-                Rc_MX2_KSLOWM = Rc_MXn_KSLOWM;
-                Rc_MX2_KSLOWP = Rc_MXn_KSLOWP;
+                EXPAND(
+                    Rc_MX2_KFASTP = Rc_MXn_KFASTP;
+                    Rc_MX2_KDIVB  = Rc_MXn_KDIVB;  ,
+                    Rc_MX2_KSLOWM = Rc_MXn_KSLOWM;
+                    Rc_MX2_KSLOWP = Rc_MXn_KSLOWP; ,
+                    Rc_MX2_KALFVM = Rc_MXn_KALFVM;
+                    Rc_MX2_KALFVP = Rc_MXn_KALFVP; )
 #if HAVE_ENERGY
                 Rc_MX2_KENTRP = Rc_MXn_KENTRP;
 #endif
               ,
             
-            //MXt = MX1;
+            //MX1 = MXt;
                 Rc_MX1_KFASTM = Rc_MXt_KFASTM;
-                Rc_BX1_KFASTM = Rc_BXt_KFASTM;
-                Rc_MX1_KFASTP = Rc_MXt_KFASTP;
-                Rc_BX1_KFASTP = Rc_BXt_KFASTP;
-                Rc_MX1_KSLOWM = Rc_MXt_KSLOWM;
-                Rc_BX1_KSLOWM = Rc_BXt_KSLOWM;
-                Rc_MX1_KSLOWP = Rc_MXt_KSLOWP;
-                Rc_BX1_KSLOWP = Rc_BXt_KSLOWP;
+                EXPAND(
+                    Rc_MX1_KFASTP = Rc_MXt_KFASTP;
+                    Rc_MX1_KDIVB  = Rc_MXt_KDIVB;  ,
+                    Rc_MX1_KSLOWM = Rc_MXt_KSLOWM;
+                    Rc_MX1_KSLOWP = Rc_MXt_KSLOWP; ,
+                    Rc_MX1_KALFVM = Rc_MXt_KALFVM;
+                    Rc_MX1_KALFVP = Rc_MXt_KALFVP; )
 #if HAVE_ENERGY
                 Rc_MX1_KENTRP = Rc_MXt_KENTRP;
 #endif
               ,
-            //MXb = MX3;
+            //MX3 = MXb;
                 Rc_MX3_KFASTM = Rc_MXb_KFASTM;
-                Rc_BX3_KFASTM = Rc_BXb_KFASTM;
-                Rc_MX3_KFASTP = Rc_MXb_KFASTP;
-                Rc_BX3_KFASTP = Rc_BXb_KFASTP;
-                Rc_MX3_KSLOWM = Rc_MXb_KSLOWM;
-                Rc_BX3_KSLOWM = Rc_BXb_KSLOWM;
-                Rc_MX3_KSLOWP = Rc_MXb_KSLOWP;
-                Rc_BX3_KSLOWP = Rc_BXb_KSLOWP;
+                EXPAND(
+                    Rc_MX3_KFASTP = Rc_MXb_KFASTP;
+                    Rc_MX3_KDIVB  = Rc_MXb_KDIVB;  ,
+                    Rc_MX3_KSLOWM = Rc_MXb_KSLOWM;
+                    Rc_MX3_KSLOWP = Rc_MXb_KSLOWP; ,
+                    Rc_MX3_KALFVM = Rc_MXb_KALFVM;
+                    Rc_MX3_KALFVP = Rc_MXb_KALFVP; )
+#if HAVE_ENERGY
+                Rc_MX3_KENTRP = Rc_MXb_KENTRP;
+#endif
             )
         }
         ,
         if (dir == KDIR) {
             EXPAND (
-            //MXn = MX3;
+            //MX3 = MXn;
                 Rc_MX3_KFASTM = Rc_MXn_KFASTM;
-                Rc_MX3_KFASTP = Rc_MXn_KFASTP;
-                Rc_BX3_KDIVB = Rc_BXn_KDIVB;
-                Rc_MX3_KSLOWM = Rc_MXn_KSLOWM;
-                Rc_MX3_KSLOWP = Rc_MXn_KSLOWP;
+                EXPAND(
+                    Rc_MX3_KFASTP = Rc_MXn_KFASTP;
+                    Rc_MX3_KDIVB  = Rc_MXn_KDIVB;  ,
+                    Rc_MX3_KSLOWM = Rc_MXn_KSLOWM;
+                    Rc_MX3_KSLOWP = Rc_MXn_KSLOWP; ,
+                    Rc_MX3_KALFVM = Rc_MXn_KALFVM;
+                    Rc_MX3_KALFVP = Rc_MXn_KALFVP; )
 #if HAVE_ENERGY
                 Rc_MX3_KENTRP = Rc_MXn_KENTRP;
 #endif
               ,
             
-            //MXt = MX1;
+            //MX1 = MXt;
                 Rc_MX1_KFASTM = Rc_MXt_KFASTM;
-                Rc_BX1_KFASTM = Rc_BXt_KFASTM;
-                Rc_MX1_KFASTP = Rc_MXt_KFASTP;
-                Rc_BX1_KFASTP = Rc_BXt_KFASTP;
-                Rc_MX1_KSLOWM = Rc_MXt_KSLOWM;
-                Rc_BX1_KSLOWM = Rc_BXt_KSLOWM;
-                Rc_MX1_KSLOWP = Rc_MXt_KSLOWP;
-                Rc_BX1_KSLOWP = Rc_BXt_KSLOWP;
+                EXPAND(
+                    Rc_MX1_KFASTP = Rc_MXt_KFASTP;
+                    Rc_MX1_KDIVB  = Rc_MXt_KDIVB;  ,
+                    Rc_MX1_KSLOWM = Rc_MXt_KSLOWM;
+                    Rc_MX1_KSLOWP = Rc_MXt_KSLOWP; ,
+                    Rc_MX1_KALFVM = Rc_MXt_KALFVM;
+                    Rc_MX1_KALFVP = Rc_MXt_KALFVP; )
 #if HAVE_ENERGY
                 Rc_MX1_KENTRP = Rc_MXt_KENTRP;
 #endif
               ,
-            //MXb = MX2;
+            //MX2 = MXb;
                 Rc_MX2_KFASTM = Rc_MXb_KFASTM;
+                EXPAND(
+                    Rc_MX2_KFASTP = Rc_MXb_KFASTP;
+                    Rc_MX2_KDIVB  = Rc_MXb_KDIVB;  ,
+                    Rc_MX2_KSLOWM = Rc_MXb_KSLOWM;
+                    Rc_MX2_KSLOWP = Rc_MXb_KSLOWP; ,
+                    Rc_MX2_KALFVM = Rc_MXb_KALFVM;
+                    Rc_MX2_KALFVP = Rc_MXb_KALFVP; )
+#if HAVE_ENERGY
+                Rc_MX2_KENTRP = Rc_MXb_KENTRP;
+#endif
+            )
+        }
+        )
+        
+        // BXi
+        EXPAND (
+        if (dir == IDIR) {
+            EXPAND (
+            //BX1 = BXn;
+                Rc_BX1_KFASTM = Rc_BXn_KFASTM;
+                EXPAND(
+                    Rc_BX1_KFASTP = Rc_BXn_KFASTP;
+                    Rc_BX1_KDIVB  = Rc_BXn_KDIVB;  ,
+                    Rc_BX1_KSLOWM = Rc_BXn_KSLOWM;
+                    Rc_BX1_KSLOWP = Rc_BXn_KSLOWP; ,
+                    Rc_BX1_KALFVM = Rc_BXn_KALFVM;
+                    Rc_BX1_KALFVP = Rc_BXn_KALFVP; )
+#if HAVE_ENERGY
+                Rc_BX1_KENTRP = Rc_BXn_KENTRP;
+#endif
+              ,
+            
+            //BX2 = BXt;
+                Rc_BX2_KFASTM = Rc_BXt_KFASTM;
+                EXPAND(
+                    Rc_BX2_KFASTP = Rc_BXt_KFASTP;
+                    Rc_BX2_KDIVB  = Rc_BXt_KDIVB;  ,
+                    Rc_BX2_KSLOWM = Rc_BXt_KSLOWM;
+                    Rc_BX2_KSLOWP = Rc_BXt_KSLOWP; ,
+                    Rc_BX2_KALFVM = Rc_BXt_KALFVM;
+                    Rc_BX2_KALFVP = Rc_BXt_KALFVP; )
+#if HAVE_ENERGY
+                Rc_BX2_KENTRP = Rc_BXt_KENTRP;
+#endif
+              ,
+            //BX3 = BXb;
+                Rc_BX3_KFASTM = Rc_BXb_KFASTM;
+                EXPAND(
+                    Rc_BX3_KFASTP = Rc_BXb_KFASTP;
+                    Rc_BX3_KDIVB  = Rc_BXb_KDIVB;  ,
+                    Rc_BX3_KSLOWM = Rc_BXb_KSLOWM;
+                    Rc_BX3_KSLOWP = Rc_BXb_KSLOWP; ,
+                    Rc_BX3_KALFVM = Rc_BXb_KALFVM;
+                    Rc_BX3_KALFVP = Rc_BXb_KALFVP; )
+#if HAVE_ENERGY
+                Rc_BX3_KENTRP = Rc_BXb_KENTRP;
+#endif
+            )
+        }
+        ,
+        if (dir == JDIR) {
+            EXPAND (
+            //BX2 = BXn;
+                Rc_BX2_KFASTM = Rc_BXn_KFASTM;
+                EXPAND(
+                    Rc_BX2_KFASTP = Rc_BXn_KFASTP;
+                    Rc_BX2_KDIVB  = Rc_BXn_KDIVB;  ,
+                    Rc_BX2_KSLOWM = Rc_BXn_KSLOWM;
+                    Rc_BX2_KSLOWP = Rc_BXn_KSLOWP; ,
+                    Rc_BX2_KALFVM = Rc_BXn_KALFVM;
+                    Rc_BX2_KALFVP = Rc_BXn_KALFVP; )
+#if HAVE_ENERGY
+                Rc_BX2_KENTRP = Rc_BXn_KENTRP;
+#endif
+              ,
+            
+            //BX1 = BXt;
+                Rc_BX1_KFASTM = Rc_BXt_KFASTM;
+                EXPAND(
+                    Rc_BX1_KFASTP = Rc_BXt_KFASTP;
+                    Rc_BX1_KDIVB  = Rc_BXt_KDIVB;  ,
+                    Rc_BX1_KSLOWM = Rc_BXt_KSLOWM;
+                    Rc_BX1_KSLOWP = Rc_BXt_KSLOWP; ,
+                    Rc_BX1_KALFVM = Rc_BXt_KALFVM;
+                    Rc_BX1_KALFVP = Rc_BXt_KALFVP; )
+#if HAVE_ENERGY
+                Rc_BX1_KENTRP = Rc_BXt_KENTRP;
+#endif
+              ,
+            //BX3 = BXb;
+                Rc_BX3_KFASTM = Rc_BXb_KFASTM;
+                EXPAND(
+                    Rc_BX3_KFASTP = Rc_BXb_KFASTP;
+                    Rc_BX3_KDIVB  = Rc_BXb_KDIVB;  ,
+                    Rc_BX3_KSLOWM = Rc_BXb_KSLOWM;
+                    Rc_BX3_KSLOWP = Rc_BXb_KSLOWP; ,
+                    Rc_BX3_KALFVM = Rc_BXb_KALFVM;
+                    Rc_BX3_KALFVP = Rc_BXb_KALFVP; )
+#if HAVE_ENERGY
+                Rc_BX3_KENTRP = Rc_BXb_KENTRP;
+#endif
+            )
+        }
+        ,
+        if (dir == KDIR) {
+            EXPAND (
+            //BX3 = BXn;
+                Rc_BX3_KFASTM = Rc_BXn_KFASTM;
+                EXPAND(
+                    Rc_BX3_KFASTP = Rc_BXn_KFASTP;
+                    Rc_BX3_KDIVB  = Rc_BXn_KDIVB;  ,
+                    Rc_BX3_KSLOWM = Rc_BXn_KSLOWM;
+                    Rc_BX3_KSLOWP = Rc_BXn_KSLOWP; ,
+                    Rc_BX3_KALFVM = Rc_BXn_KALFVM;
+                    Rc_BX3_KALFVP = Rc_BXn_KALFVP; )
+#if HAVE_ENERGY
+                Rc_BX3_KENTRP = Rc_BXn_KENTRP;
+#endif
+              ,
+            
+            //BX1 = BXt;
+                Rc_BX1_KFASTM = Rc_BXt_KFASTM;
+                EXPAND(
+                    Rc_BX1_KFASTP = Rc_BXt_KFASTP;
+                    Rc_BX1_KDIVB  = Rc_BXt_KDIVB;  ,
+                    Rc_BX1_KSLOWM = Rc_BXt_KSLOWM;
+                    Rc_BX1_KSLOWP = Rc_BXt_KSLOWP; ,
+                    Rc_BX1_KALFVM = Rc_BXt_KALFVM;
+                    Rc_BX1_KALFVP = Rc_BXt_KALFVP; )
+#if HAVE_ENERGY
+                Rc_BX1_KENTRP = Rc_BXt_KENTRP;
+#endif
+              ,
+            //BX2 = BXb;
                 Rc_BX2_KFASTM = Rc_BXb_KFASTM;
-                Rc_MX2_KFASTP = Rc_MXb_KFASTP;
-                Rc_BX2_KFASTP = Rc_BXb_KFASTP;
-                Rc_MX2_KSLOWM = Rc_MXb_KSLOWM;
-                Rc_BX2_KSLOWM = Rc_BXb_KSLOWM;
-                Rc_MX2_KSLOWP = Rc_MXb_KSLOWP;
-                Rc_BX2_KSLOWP = Rc_BXb_KSLOWP;
+                EXPAND(
+                    Rc_BX2_KFASTP = Rc_BXb_KFASTP;
+                    Rc_BX2_KDIVB  = Rc_BXb_KDIVB;  ,
+                    Rc_BX2_KSLOWM = Rc_BXb_KSLOWM;
+                    Rc_BX2_KSLOWP = Rc_BXb_KSLOWP; ,
+                    Rc_BX2_KALFVM = Rc_BXb_KALFVM;
+                    Rc_BX2_KALFVP = Rc_BXb_KALFVP; )
+#if HAVE_ENERGY
+                Rc_BX2_KENTRP = Rc_BXb_KENTRP;
+#endif
             )
         }
         )

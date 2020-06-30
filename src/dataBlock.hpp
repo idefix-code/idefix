@@ -80,7 +80,8 @@ public:
     int gend[3];                    // End of local block in the grid (internal)
 
     ElectroMotiveForce emf;
-
+    Grid *mygrid;
+    
     // init from a Grid object
     void InitFromGrid(Grid &);
 
@@ -90,12 +91,14 @@ public:
     void ExchangeX2();
     void ExchangeX3();
 
+    
+
     enum {faceRight, faceLeft};
 
     DataBlock();
 
 private:
-    Grid *mygrid;
+    
 
     // Buffers for MPI calls
     IdefixArray1D<real> BufferSendX1[2];

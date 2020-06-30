@@ -8,11 +8,10 @@
 class OutputVTK {
 public:
 
-    OutputVTK(Input &, Grid &, real);                     // Create Output Object
+    OutputVTK(Input &, DataBlock &, real);                     // Create Output Object
     int Write(DataBlock &, real);         // Create a VTK from the current DataBlock
 
 private:
-    GridHost grid;
     int vtkFileNumber;
     real tperiod, tnext;
 
@@ -35,7 +34,7 @@ private:
     Kokkos::Timer timer;
 
     void WriteHeader(FILE *fvtk);
-    void WriteScalar(FILE *, IdefixHostArray3D<real> &,  std::string &);
+    void WriteScalar(FILE *, IdefixHostArray3D<real> &,  std::string &, DataBlock&);
     float BigEndian(float);
 
 };

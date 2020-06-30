@@ -39,29 +39,28 @@
 
 
 /* Main constructor */
-OutputVTK::OutputVTK(Input &input, Grid &gridin, real t)
+OutputVTK::OutputVTK(Input &input, DataBlock &datain, real t)
 {
     // Init the output period
     this->tperiod=input.GetReal("Output","vtk",0);
     this->tnext = t;
 
     // Initialize the output structure
-    // Create a local gridhost as an image of gridin
-    this->grid = GridHost(gridin);
-    grid.SyncFromDevice();
+    // Create a local datablock as an image of gridin
+    DataBlockHost data(datain);
+    data.SyncFromDevice();
 
 
     // Create the coordinate array required in VTK files
-    this->nx1 = grid.np_tot[IDIR] - 2 * grid.nghost[IDIR];
-    this->nx2 = grid.np_tot[JDIR] - 2 * grid.nghost[JDIR];
-    this->nx3 = grid.np_tot[KDIR] - 2 * grid.nghost[KDIR];
+    this->nx1 = data.np_int[IDIR];
+    this->nx2 = data.np_int[JDIR];
+    this->nx3 = data.np_int[KDIR];
 
     // Vector array where we store the pencil before write
     this->Vwrite = new float[nx1+IOFFSET];
 
     // Temporary storage on host for 3D arrays
-    this->vect3D = IdefixHostArray3D<real>("vect3D",grid.np_tot[KDIR],grid.np_tot[JDIR],grid.np_tot[IDIR]);
-
+    this->vect3D = IdefixHostArray3D<real>("vect3D",data.np_tot[KDIR],data.np_tot[JDIR],data.np_tot[IDIR]);
 
     // Essentially does nothing
     this->vtkFileNumber = 0;
@@ -80,15 +79,15 @@ OutputVTK::OutputVTK(Input &input, Grid &gridin, real t)
     this->znode = new float[nx3+KOFFSET];
 
     for (long int i = 0; i < nx1 + IOFFSET; i++) {
-        xnode[i] = BigEndian(grid.xl[IDIR](i + grid.nghost[IDIR]));
+        xnode[i] = BigEndian(data.xl[IDIR](i + data.nghost[IDIR]));
     }
     for (long int j = 0; j < nx2 + JOFFSET; j++)    {
-        ynode[j] = BigEndian(grid.xl[JDIR](j + grid.nghost[JDIR]));
+        ynode[j] = BigEndian(data.xl[JDIR](j + data.nghost[JDIR]));
     }
     for (long int k = 0; k < nx3 + KOFFSET; k++)
     {
         if(DIMENSIONS==2) znode[k] = BigEndian(0.0);
-        else znode[k] = BigEndian(grid.xl[KDIR](k + grid.nghost[KDIR]));
+        else znode[k] = BigEndian(data.xl[KDIR](k + data.nghost[KDIR]));
     }
 #else   // VTK_FORMAT
         /* -- Allocate memory for node_coord which is later used -- */
@@ -121,27 +120,27 @@ int OutputVTK::Write(DataBlock &datain, real t)
     fileHdl = fopen(filename,"wb");
     WriteHeader(fileHdl);
     for(int nv = 0 ; nv < NVAR ; nv++) {
-        for(int k = 0; k < grid.np_tot[KDIR] ; k++ ) {
-            for(int j = 0; j < grid.np_tot[JDIR] ; j++ ) {
-                for(int i = 0; i < grid.np_tot[IDIR] ; i++ ) {
+        for(int k = 0; k < data.np_tot[KDIR] ; k++ ) {
+            for(int j = 0; j < data.np_tot[JDIR] ; j++ ) {
+                for(int i = 0; i < data.np_tot[IDIR] ; i++ ) {
                     vect3D(k,j,i) = data.Vc(nv,k,j,i);
                 }
             }
         }
-        WriteScalar(fileHdl, vect3D, datain.VcName[nv]);
+        WriteScalar(fileHdl, vect3D, datain.VcName[nv],datain);
     }
 
 #if MHD == YES
 #ifdef WRITE_STAGGERED_FIELD
     for(int nv = 0 ; nv < DIMENSIONS ; nv++) {
-        for(int k = 0; k < grid.np_tot[KDIR] ; k++ ) {
-            for(int j = 0; j < grid.np_tot[JDIR] ; j++ ) {
-                for(int i = 0; i < grid.np_tot[IDIR] ; i++ ) {
+        for(int k = 0; k < data.np_tot[KDIR] ; k++ ) {
+            for(int j = 0; j < data.np_tot[JDIR] ; j++ ) {
+                for(int i = 0; i < data.np_tot[IDIR] ; i++ ) {
                     vect3D(k,j,i) = data.Vs(nv,k,j,i);
                 }
             }
         }
-        WriteScalar(fileHdl, vect3D, datain.VsName[nv]);
+        WriteScalar(fileHdl, vect3D, datain.VsName[nv],datain);
     }
 #endif // WRITE_STAGGERED_FIELD
 
@@ -150,16 +149,16 @@ int OutputVTK::Write(DataBlock &datain, real t)
 #if DIMENSIONS == 3
     Kokkos::deep_copy(vect3D,datain.emf.ex);
     varname="Ex";
-    WriteScalar(fileHdl, vect3D, varname);
+    WriteScalar(fileHdl, vect3D, varname,datain);
 
     Kokkos::deep_copy(vect3D,datain.emf.ey);
     varname="Ey";
-    WriteScalar(fileHdl, vect3D, varname);
+    WriteScalar(fileHdl, vect3D, varname,datain);
 #endif // DIMENSIONS
 
     Kokkos::deep_copy(vect3D,datain.emf.ez);
     varname="Ez";
-    WriteScalar(fileHdl, vect3D, varname);
+    WriteScalar(fileHdl, vect3D, varname,datain);
 #endif // WRITE_EMF
 #endif// MHD
 
@@ -272,9 +271,9 @@ void OutputVTK::WriteHeader(FILE *fvtk)
         {
             for (long int i = 0; i < nx1 + IOFFSET; i++)
             {
-                D_EXPAND(x1 = grid.xl[IDIR](i + grid.nghost[IDIR]);,
-                         x2 = grid.xl[JDIR](j + grid.nghost[JDIR]);,
-                         x3 = grid.xl[KDIR](k + grid.nghost[KDIR]);)
+                D_EXPAND(x1 = data.xl[IDIR](i + data.nghost[IDIR]);,
+                         x2 = data.xl[JDIR](j + data.nghost[JDIR]);,
+                         x3 = data.xl[KDIR](k + data.nghost[KDIR]);)
 
 #if (GEOMETRY == CARTESIAN) || (GEOMETRY == CYLINDRICAL)
                 node_coord[3*i+IDIR] = BigEndian(x1);
@@ -316,7 +315,7 @@ void OutputVTK::WriteHeader(FILE *fvtk)
 
 
 /* ********************************************************************* */
-void OutputVTK::WriteScalar(FILE *fvtk, IdefixHostArray3D<real> &Vin,  std::string &var_name)
+void OutputVTK::WriteScalar(FILE *fvtk, IdefixHostArray3D<real> &Vin,  std::string &var_name, DataBlock& data)
 /*!
  * Write VTK scalar field.
  *
@@ -341,7 +340,7 @@ void OutputVTK::WriteScalar(FILE *fvtk, IdefixHostArray3D<real> &Vin,  std::stri
     for(long int k = 0 ; k < nx3 ; k++ ) {
         for(long int j = 0 ; j < nx2 ; j++ ) {
             for(long int i = 0 ; i < nx1 ; i++ ) {
-                Vwrite[i] = BigEndian(float(Vin(k + grid.nghost[KDIR],j + grid.nghost[JDIR],i + grid.nghost[IDIR])));
+                Vwrite[i] = BigEndian(float(Vin(k + data.nghost[KDIR],j + data.nghost[JDIR],i + data.nghost[IDIR])));
             }
             fwrite(Vwrite, sizeof(float), nx1, fvtk);
         }

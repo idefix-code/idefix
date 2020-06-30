@@ -13,20 +13,17 @@ KOKKOS_ARCH = "BDW"
 
 EXE = "idefix"
 
-HEADERS = definitions.hpp error.hpp arrays.hpp grid.hpp setup.hpp gridHost.hpp idefix.hpp dataBlock.hpp dataBlockHost.hpp input.hpp kokkos_types.h loop.hpp real_types.h timeIntegrator.hpp test.hpp outputVtk.hpp hydro.hpp
+HEADERS = definitions.hpp error.hpp arrays.hpp grid.hpp setup.hpp gridHost.hpp idefix.hpp dataBlock.hpp dataBlockHost.hpp global.hpp input.hpp kokkos_types.h loop.hpp real_types.h timeIntegrator.hpp test.hpp outputVtk.hpp hydro.hpp
 HEADERS +=  solversHD.hpp
-OBJ = grid.o gridHost.o input.o main.o dataBlock.o dataBlockHost.o setup.o test.o timeIntegrator.o outputVtk.o hydro.o error.o
+OBJ = grid.o gridHost.o input.o main.o dataBlock.o global.o dataBlockHost.o setup.o test.o timeIntegrator.o outputVtk.o hydro.o error.o
 OBJ +=  hllcHD.o hllHD.o roeHD.o tvdlfHD.o
-
-
-#include $(SRC)/hydro/makefile
 
 #VPATH="src/"
 
 default: build
 
-CXX = g++
-CXXFLAGS = -O3 -D MHD=NO
+CXX = mpicxx
+CXXFLAGS =  -O3 -D WITH_MPI -D MHD=NO
 
 
 

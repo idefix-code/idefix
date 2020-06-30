@@ -14,12 +14,9 @@
 #include <cstring>
 #include <sys/time.h>
 
-
-
 #include <Kokkos_Core.hpp>
 
 #include "idefix.hpp"
-
 
 int main( int argc, char* argv[] )
 {
@@ -65,12 +62,15 @@ int main( int argc, char* argv[] )
     Setup mysetup(input,grid,data,Tint);
 
     idfx::cout << "init Output Routines" << std::endl;
-    OutputVTK output(input, grid, Tint.getT()); 
-
+    OutputVTK output(input, data, Tint.getT()); 
+    
     // Apply initial conditions
     idfx::cout << "Creating initial conditions" << std::endl;
     mysetup.InitFlow(data);
+
+    idfx::cout << "Applying boundary conditions" << std::endl;
     hydro.SetBoundary(data,Tint.getT());
+
 
     idfx::cout << "Write init vtk" << std::endl;
     output.Write(data,Tint.getT());

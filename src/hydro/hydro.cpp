@@ -676,6 +676,20 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
     
 
     for(int dir=0 ; dir < DIMENSIONS ; dir++ ) {
+        // MPI Exchange data when needed
+        if(data.mygrid->nproc[dir]>1) {
+            switch(dir) {
+                case 0:
+                    data.ExchangeX1();
+                    break;
+                case 1:
+                    data.ExchangeX2();
+                    break;
+                case 2:
+                    data.ExchangeX3();
+                    break;
+            }
+        }
 
         ioffset = (dir == IDIR) ? data.np_int[IDIR] : 0;
         joffset = (dir == JDIR) ? data.np_int[JDIR] : 0;
@@ -695,6 +709,7 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                 // internal is used for MPI-enforced boundary conditions. Nothing to be done here.
                 break;
             case periodic:
+                if(data.mygrid->nproc[dir] > 1) break; // Periodicity already enforced by MPI calls
                 idefix_for("BoundaryBegPeriodic",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
                     KOKKOS_LAMBDA (int n, int k, int j, int i) {
                 
@@ -732,6 +747,7 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                 #endif
                 break;
             case shearingbox:
+                if(data.mygrid->nproc[dir] > 1) IDEFIX_ERROR("Not implemented"); // Periodicity already enforced by MPI calls
                 idefix_for("BoundaryBegShearingBox",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
                     KOKKOS_LAMBDA (int n, int k, int j, int i) {
                         real voffset= (n == VX2) ? - sbLx * sbS : ZERO_F;
@@ -764,6 +780,7 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                 // internal is used for MPI-enforced boundary conditions. Nothing to be done here.
                 break;
             case periodic:
+                if(data.mygrid->nproc[dir] > 1) break; // Periodicity already enforced by MPI calls
                 idefix_for("BoundaryEndPeriodic",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
                     KOKKOS_LAMBDA (int n, int k, int j, int i) {
                 
@@ -799,6 +816,7 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                 #endif
                 break;
             case shearingbox:
+                if(data.mygrid->nproc[dir] > 1) IDEFIX_ERROR("Not implemented"); // Periodicity already enforced by MPI calls   
                 idefix_for("BoundaryEndShearingBox",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
                     KOKKOS_LAMBDA (int n, int k, int j, int i) {
                         real voffset= (n == VX2) ? + sbLx * sbS : ZERO_F;
@@ -859,6 +877,11 @@ real Hydro::CheckDivB(DataBlock &data) {
 
             }, Kokkos::Max<real>(divB) );
 
+    #ifdef WITH_MPI
+    if(idfx::psize>1) {
+        MPI_Allreduce(MPI_IN_PLACE, &divB, 1, realMPI, MPI_MAX, MPI_COMM_WORLD);
+    }
+    #endif
     return(divB);
 }
 

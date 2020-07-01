@@ -13,7 +13,6 @@
 #endif
 
 #define WRITE_STAGGERED_FIELD
-#define WRITE_EMF
 
 /* ---------------------------------------------------------
     The following macros are specific to this file only 
@@ -21,47 +20,71 @@
     for writing strings and real arrays 
    --------------------------------------------------------- */   
     
-#ifdef PARALLEL
- #define VTK_HEADER_WRITE_STRING(header) \
-         TOBEDEFINED(header, strlen(header), MPI_CHAR, SZ_Float_Vect);
- #define VTK_HEADER_WRITE_FLTARR(arr, nelem) \
-         TOBEDEFINED (arr, nelem, MPI_FLOAT, SZ_Float_Vect);
- #define VTK_HEADER_WRITE_DBLARR(arr, nelem) \
-         TOBEDEFINED (arr, nelem, MPI_DOUBLE, SZ_Float_Vect);
+
+
+void OutputVTK::WriteHeaderString(char* header, IdfxFileHandler fvtk) {
+#ifdef WITH_MPI
+    MPI_Status status;
+    MPI_File_set_view(fvtk, this->offset, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL );
+    if(idfx::prank==0) {
+        MPI_File_write(fvtk, header, strlen(header), MPI_CHAR, &status);
+    }
+    offset=offset+strlen(header);
 #else
- #define VTK_HEADER_WRITE_STRING(header) \
-         fprintf (fvtk,header);
- #define VTK_HEADER_WRITE_FLTARR(arr,nelem) \
-         fwrite(arr, sizeof(float), nelem, fvtk);
- #define VTK_HEADER_WRITE_DBLARR(arr,nelem) \
-         fwrite(arr, sizeof(double), nelem, fvtk);
+    fprintf (fvtk, header);
 #endif
+
+}
+
+void OutputVTK::WriteHeaderFloat(float* buffer, long int nelem, IdfxFileHandler fvtk) {
+#ifdef WITH_MPI
+    MPI_Status status;
+    MPI_File_set_view(fvtk, this->offset, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL );
+    if(idfx::prank==0) {
+        MPI_File_write(fvtk, buffer, nelem, MPI_FLOAT, &status);
+    }
+    offset=offset+nelem*sizeof(float);
+#else
+    fwrite(buffer, sizeof(float), nelem, fvtk);
+#endif
+}
+
 
 
 /* Main constructor */
-OutputVTK::OutputVTK(Input &input, Grid &gridin, real t)
+OutputVTK::OutputVTK(Input &input, DataBlock &datain, real t)
 {
     // Init the output period
     this->tperiod=input.GetReal("Output","vtk",0);
     this->tnext = t;
 
     // Initialize the output structure
-    // Create a local gridhost as an image of gridin
-    this->grid = GridHost(gridin);
-    grid.SyncFromDevice();
+    // Create a local datablock as an image of gridin
+    DataBlockHost data(datain);
+    data.SyncFromDevice();
 
+    // Pointer to global grid
+    Grid *gridin = datain.mygrid;
+
+    /* Note that there are two kinds of dimensions:
+        - nx1, nx2, nx3, derived from the grid, which are the global dimensions
+        - nx1loc,nx2loc,n3loc, which are the local dimensions of the current datablock
+    */
 
     // Create the coordinate array required in VTK files
-    this->nx1 = grid.np_tot[IDIR] - 2 * grid.nghost[IDIR];
-    this->nx2 = grid.np_tot[JDIR] - 2 * grid.nghost[JDIR];
-    this->nx3 = grid.np_tot[KDIR] - 2 * grid.nghost[KDIR];
+    this->nx1 = gridin->np_int[IDIR];
+    this->nx2 = gridin->np_int[JDIR];
+    this->nx3 = gridin->np_int[KDIR];
+
+    this->nx1loc = data.np_int[IDIR];
+    this->nx2loc = data.np_int[JDIR];
+    this->nx3loc = data.np_int[KDIR];
 
     // Vector array where we store the pencil before write
-    this->Vwrite = new float[nx1+IOFFSET];
+    this->Vwrite = new float[nx1loc+IOFFSET];
 
     // Temporary storage on host for 3D arrays
-    this->vect3D = IdefixHostArray3D<real>("vect3D",grid.np_tot[KDIR],grid.np_tot[JDIR],grid.np_tot[IDIR]);
-
+    this->vect3D = new float[nx1loc*nx2loc*nx3loc];
 
     // Essentially does nothing
     this->vtkFileNumber = 0;
@@ -73,34 +96,47 @@ OutputVTK::OutputVTK(Input &input, Grid &gridin, real t)
     if (*tmp2 != 0)
         this->shouldSwapEndian = 1;
     
-    
-#if VTK_FORMAT == VTK_RECTILINEAR_GRID
+    // Store coordinates for later use
     this->xnode = new float[nx1+IOFFSET];
     this->ynode = new float[nx2+JOFFSET];
     this->znode = new float[nx3+KOFFSET];
 
     for (long int i = 0; i < nx1 + IOFFSET; i++) {
-        xnode[i] = BigEndian(grid.xl[IDIR](i + grid.nghost[IDIR]));
+        xnode[i] = BigEndian(gridin->xl[IDIR](i + gridin->nghost[IDIR]));
     }
     for (long int j = 0; j < nx2 + JOFFSET; j++)    {
-        ynode[j] = BigEndian(grid.xl[JDIR](j + grid.nghost[JDIR]));
+        ynode[j] = BigEndian(gridin->xl[JDIR](j + gridin->nghost[JDIR]));
     }
     for (long int k = 0; k < nx3 + KOFFSET; k++)
     {
         if(DIMENSIONS==2) znode[k] = BigEndian(0.0);
-        else znode[k] = BigEndian(grid.xl[KDIR](k + grid.nghost[KDIR]));
+        else znode[k] = BigEndian(gridin->xl[KDIR](k + gridin->nghost[KDIR]));
     }
-#else   // VTK_FORMAT
+#if VTK_FORMAT == VTK_STRUCTURED_GRID   // VTK_FORMAT
         /* -- Allocate memory for node_coord which is later used -- */
     node_coord = new float[(nx1+IOFFSET)*3]; 
-    
+#endif
+
+    // Creat MPI view when using MPI I/O
+#ifdef WITH_MPI
+	int start[3];
+	int size[3];
+	int subsize[3];
+    for(int dir = 0; dir < 3 ; dir++) {
+        // VTK assumes Fortran array ordering, hence arrays dimensions are filled backwards
+        start[2-dir] = datain.gbeg[dir]-gridin->nghost[dir];
+        size[2-dir] = gridin->np_int[dir];
+        subsize[2-dir] = datain.np_int[dir];
+    }
+	MPI_Type_create_subarray(3, size, subsize, start, MPI_ORDER_C, MPI_FLOAT, &this->view);
+	MPI_Type_commit(&this->view);
 #endif
 
 }
 
 int OutputVTK::Write(DataBlock &datain, real t)
 {
-    FILE *fileHdl;
+    IdfxFileHandler fileHdl;
     char filename[256];
 
     // Do we need an output?
@@ -109,7 +145,7 @@ int OutputVTK::Write(DataBlock &datain, real t)
     this->tnext+= this->tperiod;
     Kokkos::Profiling::pushRegion("OutputVTK::Write");
 
-    std::cout << "OutputVTK::Write file n " << vtkFileNumber << "..." << std::flush;
+    idfx::cout << "OutputVTK::Write file n " << vtkFileNumber << "..." << std::flush;
 
     timer.reset();
 
@@ -118,13 +154,24 @@ int OutputVTK::Write(DataBlock &datain, real t)
     data.SyncFromDevice();
 
     sprintf (filename, "data.%04d.vtk", vtkFileNumber);
+
+    // Open file and write header
+#ifdef WITH_MPI
+    if(MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_RDWR | MPI_MODE_UNIQUE_OPEN,MPI_INFO_NULL, &fileHdl))
+        IDEFIX_ERROR("Error opening VTK file");
+    this->offset = 0;
+#else
     fileHdl = fopen(filename,"wb");
+#endif
+    
     WriteHeader(fileHdl);
+
+    // Write field one by one
     for(int nv = 0 ; nv < NVAR ; nv++) {
-        for(int k = 0; k < grid.np_tot[KDIR] ; k++ ) {
-            for(int j = 0; j < grid.np_tot[JDIR] ; j++ ) {
-                for(int i = 0; i < grid.np_tot[IDIR] ; i++ ) {
-                    vect3D(k,j,i) = data.Vc(nv,k,j,i);
+        for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++ ) {
+            for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++ ) {
+                for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
+                    vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc+  (k-data.beg[KDIR])*nx1loc*nx2loc] = BigEndian(float(data.Vc(nv,k,j,i)));
                 }
             }
         }
@@ -134,10 +181,10 @@ int OutputVTK::Write(DataBlock &datain, real t)
 #if MHD == YES
 #ifdef WRITE_STAGGERED_FIELD
     for(int nv = 0 ; nv < DIMENSIONS ; nv++) {
-        for(int k = 0; k < grid.np_tot[KDIR] ; k++ ) {
-            for(int j = 0; j < grid.np_tot[JDIR] ; j++ ) {
-                for(int i = 0; i < grid.np_tot[IDIR] ; i++ ) {
-                    vect3D(k,j,i) = data.Vs(nv,k,j,i);
+        for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++ ) {
+            for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++ ) {
+                for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
+                    vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc+  (k-data.beg[KDIR])*nx1loc*nx2loc] = BigEndian(float(data.Vs(nv,k,j,i)));
                 }
             }
         }
@@ -145,31 +192,19 @@ int OutputVTK::Write(DataBlock &datain, real t)
     }
 #endif // WRITE_STAGGERED_FIELD
 
-#ifdef WRITE_EMF
-    std::string varname;
-#if DIMENSIONS == 3
-    Kokkos::deep_copy(vect3D,datain.emf.ex);
-    varname="Ex";
-    WriteScalar(fileHdl, vect3D, varname);
-
-    Kokkos::deep_copy(vect3D,datain.emf.ey);
-    varname="Ey";
-    WriteScalar(fileHdl, vect3D, varname);
-#endif // DIMENSIONS
-
-    Kokkos::deep_copy(vect3D,datain.emf.ez);
-    varname="Ez";
-    WriteScalar(fileHdl, vect3D, varname);
-#endif // WRITE_EMF
 #endif// MHD
 
 
+#ifdef WITH_MPI
+    MPI_File_close(&fileHdl);
+#else
     fclose(fileHdl);
+#endif
 
     vtkFileNumber++;
     // Make file number
 
-    std::cout << "done in " << timer.seconds() << " s." << std::endl;
+    idfx::cout << "done in " << timer.seconds() << " s." << std::endl;
     Kokkos::Profiling::popRegion();
     // One day, we will have a return code.
     return(0);
@@ -178,7 +213,7 @@ int OutputVTK::Write(DataBlock &datain, real t)
 
 
 /* ********************************************************************* */
-void OutputVTK::WriteHeader(FILE *fvtk)
+void OutputVTK::WriteHeader(IdfxFileHandler fvtk)
 /*!
  * Write VTK header in parallel or serial mode.
  *
@@ -221,7 +256,7 @@ void OutputVTK::WriteHeader(FILE *fvtk)
 #endif
 
     
-    VTK_HEADER_WRITE_STRING(header);
+    WriteHeaderString(header, fvtk);
 
     /* -- Generate time info (VisIt reader only) -- */
 
@@ -238,30 +273,31 @@ void OutputVTK::WriteHeader(FILE *fvtk)
 
     sprintf(header, "DIMENSIONS %d %d %d\n",
             nx1 + IOFFSET, nx2 + JOFFSET, nx3 + KOFFSET);
-    VTK_HEADER_WRITE_STRING(header);
+
+    WriteHeaderString(header, fvtk);
 
 #if VTK_FORMAT == VTK_RECTILINEAR_GRID
 
     /* -- Write rectilinear grid information -- */
 
     sprintf(header, "X_COORDINATES %d float\n", nx1 + IOFFSET);
-    VTK_HEADER_WRITE_STRING(header);
-    VTK_HEADER_WRITE_FLTARR(xnode, nx1 + IOFFSET);
+    WriteHeaderString(header, fvtk);
+    WriteHeaderFloat(xnode, nx1 + IOFFSET, fvtk);
 
     sprintf(header, "\nY_COORDINATES %d float\n", nx2 + JOFFSET);
-    VTK_HEADER_WRITE_STRING(header);
-    VTK_HEADER_WRITE_FLTARR(ynode, nx2 + JOFFSET);
+    WriteHeaderString(header, fvtk);
+    WriteHeaderFloat(ynode, nx2 + JOFFSET, fvtk);
 
     sprintf(header, "\nZ_COORDINATES %d float\n", nx3 + KOFFSET);
-    VTK_HEADER_WRITE_STRING(header);
-    VTK_HEADER_WRITE_FLTARR(znode, nx3 + KOFFSET);
+    WriteHeaderString(header, fvtk);
+    WriteHeaderFloat(znode, nx3 + KOFFSET, fvtk);
 
 #elif VTK_FORMAT == VTK_STRUCTURED_GRID
 
     /* -- define node_coord -- */
 
     sprintf(header, "POINTS %d float\n", (nx1 + IOFFSET) * (nx2 + JOFFSET) * (nx3 + KOFFSET));
-    VTK_HEADER_WRITE_STRING(header);
+    WriteHeaderString(header, fvtk);
 
     /* -- Write structured grid information -- */
 
@@ -272,9 +308,9 @@ void OutputVTK::WriteHeader(FILE *fvtk)
         {
             for (long int i = 0; i < nx1 + IOFFSET; i++)
             {
-                D_EXPAND(x1 = grid.xl[IDIR](i + grid.nghost[IDIR]);,
-                         x2 = grid.xl[JDIR](j + grid.nghost[JDIR]);,
-                         x3 = grid.xl[KDIR](k + grid.nghost[KDIR]);)
+                D_EXPAND(x1 = BigEndian(xnode[i]); , // BigEndian allows us to get back to little endian when needed  
+                         x2 = BigEndian(ynode[j]);,
+                         x3 = BigEndian(znode[k]);)
 
 #if (GEOMETRY == CARTESIAN) || (GEOMETRY == CYLINDRICAL)
                 node_coord[3*i+IDIR] = BigEndian(x1);
@@ -296,7 +332,7 @@ void OutputVTK::WriteHeader(FILE *fvtk)
 #endif
 #endif
             }
-            VTK_HEADER_WRITE_FLTARR(node_coord, 3 * (nx1 + IOFFSET));
+            WriteHeaderFloat(node_coord, 3 * (nx1 + IOFFSET),fvtk);
         }
     }
 
@@ -308,7 +344,7 @@ void OutputVTK::WriteHeader(FILE *fvtk)
    ----------------------------------------------------- */
 
     sprintf(header, "\nCELL_DATA %d\n", nx1 * nx2 * nx3);
-    VTK_HEADER_WRITE_STRING(header);
+    WriteHeaderString(header, fvtk);
 }
 #undef VTK_STRUCTERED_GRID
 #undef VTK_RECTILINEAR_GRID
@@ -316,7 +352,7 @@ void OutputVTK::WriteHeader(FILE *fvtk)
 
 
 /* ********************************************************************* */
-void OutputVTK::WriteScalar(FILE *fvtk, IdefixHostArray3D<real> &Vin,  std::string &var_name)
+void OutputVTK::WriteScalar(IdfxFileHandler fvtk, float* Vin,  std::string &var_name)
 /*!
  * Write VTK scalar field.
  *
@@ -334,18 +370,16 @@ void OutputVTK::WriteScalar(FILE *fvtk, IdefixHostArray3D<real> &Vin,  std::stri
     sprintf(header, "\nSCALARS %s float\n", var_name.c_str());
     sprintf(header + strlen(header), "LOOKUP_TABLE default\n");
 
+    WriteHeaderString(header, fvtk);
 
-    fprintf(fvtk, "%s", header);
-
-
-    for(long int k = 0 ; k < nx3 ; k++ ) {
-        for(long int j = 0 ; j < nx2 ; j++ ) {
-            for(long int i = 0 ; i < nx1 ; i++ ) {
-                Vwrite[i] = BigEndian(float(Vin(k + grid.nghost[KDIR],j + grid.nghost[JDIR],i + grid.nghost[IDIR])));
-            }
-            fwrite(Vwrite, sizeof(float), nx1, fvtk);
-        }
-    }
+#ifdef WITH_MPI
+    MPI_File_set_view(fvtk, this->offset, MPI_FLOAT, this->view, "native", MPI_INFO_NULL);
+    MPI_File_write_all(fvtk, Vin, nx1loc*nx2loc*nx3loc, MPI_FLOAT, MPI_STATUS_IGNORE);
+    this->offset = this->offset + sizeof(float)*nx1*nx2*nx3;
+#else
+    fwrite(Vin,sizeof(float),nx1loc*nx2loc*nx3loc,fvtk);
+#endif
+    
 }
 
 /* ****************************************************************************/

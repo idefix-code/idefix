@@ -19,6 +19,14 @@ public:
     BoundaryType lbound[3];                  // Boundary condition to the left
     BoundaryType rbound[3];                  // Boundary condition to the right
 
+    // MPI data
+    int nproc[3];                   // Total number of procs in each direction
+    int xproc[3];                   // Coordinates of current proc in the array of procs
+
+    #ifdef WITH_MPI
+    MPI_Comm CartComm;
+    #endif
+
     // Constructor
     Grid(Input &);
 

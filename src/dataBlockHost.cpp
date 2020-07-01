@@ -20,9 +20,12 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
         A[dir] = Kokkos::create_mirror_view(data->A[dir]);
         np_tot[dir] = data->np_tot[dir];
         np_int[dir] = data->np_int[dir];
+        nghost[dir] = data->nghost[dir];
 
         xbeg[dir] = data->xbeg[dir];
         xend[dir] = data->xend[dir];
+        beg[dir] = data->beg[dir];
+        end[dir] = data->end[dir];
 
         // TO BE COMPLETED...
     }

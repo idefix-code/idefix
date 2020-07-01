@@ -37,6 +37,10 @@ parser.add_argument("-openmp",
                     help="enable OpenMP parallelism",
                     action="store_true")
 
+parser.add_argument("-mpi",
+                    help="enable MPI parallelism",
+                    action="store_true")
+
 args=parser.parse_args()
 
 idefixDir = os.getenv("IDEFIX_DIR")
@@ -55,6 +59,7 @@ makefileOptions['extraVpath']=""
 makefileOptions['extraHeaders']=""
 makefileOptions['extraObj']=""
 makefileOptions['extraLine']=""
+makefileOptions['cxxflags']=""
 
 # extract cpu & gpu architectures from args.arch
 cpu=""
@@ -74,19 +79,27 @@ if gpu == "":
     gpu="Pascal60"
 
 if args.gpu:
+    if(args.mpi):
+        raise NotImplementedError('MPI+Cuda compiler is not implemented yet')
     makefileOptions['cxx'] = '${KOKKOS_PATH}/bin/nvcc_wrapper'
     makefileOptions['extraLine'] += '\nKOKKOS_CUDA_OPTIONS = "enable_lambda"'
     makefileOptions['kokkosDevices'] = '"Cuda"'
     makefileOptions['kokkosArch'] = cpu+","+gpu
     makefileOptions['cxxflags'] = "-O3"
 else:
-    makefileOptions['cxx'] = "g++"
+    if(args.mpi):
+        makefileOptions['cxx'] = "mpicxx"
+    else:
+        makefileOptions['cxx'] = "g++"
     makefileOptions['kokkosArch'] = cpu
     makefileOptions['cxxflags'] = "-O3"
     if args.openmp:
          makefileOptions['kokkosDevices'] = '"OpenMP"'
     else:
         makefileOptions['kokkosDevices'] = '"Serial"'
+
+if(args.mpi):
+    makefileOptions['cxxflags'] += " -D WITH_MPI"
 
 if args.mhd:
     makefileOptions['extraIncludeDir'] += " -I$(SRC)/hydro/MHDsolvers"

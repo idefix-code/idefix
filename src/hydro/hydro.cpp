@@ -834,8 +834,7 @@ real Hydro::CheckDivB(DataBlock &data) {
     IdefixArray1D<real> dx1 = data.dx[IDIR];
     IdefixArray1D<real> dx2 = data.dx[JDIR];
     IdefixArray1D<real> dx3 = data.dx[KDIR];
-
-    int iref,jref,kref;
+    
 
     Kokkos::parallel_reduce("CheckDivB",
                                 Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>

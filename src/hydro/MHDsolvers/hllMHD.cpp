@@ -7,7 +7,7 @@ void HllMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
     int ioffset,joffset,koffset;
     int iextend, jextend,kextend;
 
-    Kokkos::Profiling::pushRegion("TVDLF_Solver");
+    Kokkos::Profiling::pushRegion("HLL_MHD");
     
     ioffset=joffset=koffset=0;
     // extension in perp to the direction of integration, as required by CT.

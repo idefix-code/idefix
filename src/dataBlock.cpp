@@ -238,6 +238,7 @@ void DataBlock::ExchangeAll(){
 }
 
 void DataBlock::ExchangeX1() {
+    Kokkos::Profiling::pushRegion("DataBlock::ExchangeX1");
 #ifdef WITH_MPI
     // Load  the buffers with data
     int ibeg,iend,jbeg,jend,kbeg,kend,offset;
@@ -366,10 +367,12 @@ void DataBlock::ExchangeX1() {
 #else
     IDEFIX_ERROR("You should not call DataBlock exchange routines without MPI");
 #endif
+    Kokkos::Profiling::popRegion();
 }
 
 
 void DataBlock::ExchangeX2() {
+    Kokkos::Profiling::pushRegion("DataBlock::ExchangeX2");
 #ifdef WITH_MPI
     // Load  the buffers with data
     int ibeg,iend,jbeg,jend,kbeg,kend,offset;
@@ -498,10 +501,12 @@ void DataBlock::ExchangeX2() {
 #else
     IDEFIX_ERROR("You should not call DataBlock exchange routines without MPI");
 #endif
+    Kokkos::Profiling::popRegion();
 }
 
 
 void DataBlock::ExchangeX3(){
+    Kokkos::Profiling::pushRegion("DataBlock::ExchangeX3");
 #ifdef WITH_MPI
     // Load  the buffers with data
     int ibeg,iend,jbeg,jend,kbeg,kend,offset;
@@ -630,6 +635,7 @@ void DataBlock::ExchangeX3(){
 #else
     IDEFIX_ERROR("You should not call DataBlock exchange routines without MPI");
 #endif
+    Kokkos::Profiling::popRegion();
 }
 
 

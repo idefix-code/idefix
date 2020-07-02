@@ -130,3 +130,17 @@
     #endif
   #endif
 #endif
+
+#define MPI_SAFE_CALL(cmd)                                                    \
+   {                                                                          \
+        int mpiErrNo = (cmd);                                                 \
+        if (MPI_SUCCESS != mpiErrNo) {                                        \
+            char msg[MPI_MAX_ERROR_STRING];                                   \
+            int len;                                                          \
+            std::stringstream stream;                                         \
+            MPI_Error_string(mpiErrNo, msg, &len);                            \
+            stream << "MPI failed with error code :" << mpiErrNo              \
+                                << " " << msg << std::endl;                   \
+            IDEFIX_ERROR(stream);                                             \
+        }                                                                     \
+    }

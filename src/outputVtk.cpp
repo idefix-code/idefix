@@ -25,9 +25,9 @@
 void OutputVTK::WriteHeaderString(char* header, IdfxFileHandler fvtk) {
 #ifdef WITH_MPI
     MPI_Status status;
-    MPI_File_set_view(fvtk, this->offset, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL );
+    MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL ));
     if(idfx::prank==0) {
-        MPI_File_write(fvtk, header, strlen(header), MPI_CHAR, &status);
+        MPI_SAFE_CALL(MPI_File_write(fvtk, header, strlen(header), MPI_CHAR, &status));
     }
     offset=offset+strlen(header);
 #else
@@ -39,9 +39,9 @@ void OutputVTK::WriteHeaderString(char* header, IdfxFileHandler fvtk) {
 void OutputVTK::WriteHeaderFloat(float* buffer, long int nelem, IdfxFileHandler fvtk) {
 #ifdef WITH_MPI
     MPI_Status status;
-    MPI_File_set_view(fvtk, this->offset, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL );
+    MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL ));
     if(idfx::prank==0) {
-        MPI_File_write(fvtk, buffer, nelem, MPI_FLOAT, &status);
+        MPI_SAFE_CALL(MPI_File_write(fvtk, buffer, nelem, MPI_FLOAT, &status));
     }
     offset=offset+nelem*sizeof(float);
 #else
@@ -129,8 +129,8 @@ OutputVTK::OutputVTK(Input &input, DataBlock &datain, real t)
         size[2-dir] = grid.np_int[dir];
         subsize[2-dir] = datain.np_int[dir];
     }
-	MPI_Type_create_subarray(3, size, subsize, start, MPI_ORDER_C, MPI_FLOAT, &this->view);
-	MPI_Type_commit(&this->view);
+	MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start, MPI_ORDER_C, MPI_FLOAT, &this->view));
+	MPI_SAFE_CALL(MPI_Type_commit(&this->view));
 #endif
 
 }
@@ -158,8 +158,7 @@ int OutputVTK::Write(DataBlock &datain, real t)
 
     // Open file and write header
 #ifdef WITH_MPI
-    if(MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_RDWR | MPI_MODE_UNIQUE_OPEN,MPI_INFO_NULL, &fileHdl))
-        IDEFIX_ERROR("Error opening VTK file");
+    MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_CREATE | MPI_MODE_RDWR | MPI_MODE_UNIQUE_OPEN,MPI_INFO_NULL, &fileHdl));
     this->offset = 0;
 #else
     fileHdl = fopen(filename,"wb");
@@ -197,7 +196,7 @@ int OutputVTK::Write(DataBlock &datain, real t)
 
 
 #ifdef WITH_MPI
-    MPI_File_close(&fileHdl);
+    MPI_SAFE_CALL(MPI_File_close(&fileHdl));
 #else
     fclose(fileHdl);
 #endif
@@ -374,8 +373,8 @@ void OutputVTK::WriteScalar(IdfxFileHandler fvtk, float* Vin,  std::string &var_
     WriteHeaderString(header, fvtk);
 
 #ifdef WITH_MPI
-    MPI_File_set_view(fvtk, this->offset, MPI_FLOAT, this->view, "native", MPI_INFO_NULL);
-    MPI_File_write_all(fvtk, Vin, nx1loc*nx2loc*nx3loc, MPI_FLOAT, MPI_STATUS_IGNORE);
+    MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_FLOAT, this->view, "native", MPI_INFO_NULL));
+    MPI_SAFE_CALL(MPI_File_write_all(fvtk, Vin, nx1loc*nx2loc*nx3loc, MPI_FLOAT, MPI_STATUS_IGNORE));
     this->offset = this->offset + sizeof(float)*nx1*nx2*nx3;
 #else
     fwrite(Vin,sizeof(float),nx1loc*nx2loc*nx3loc,fvtk);

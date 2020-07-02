@@ -305,17 +305,17 @@ void DataBlock::ExchangeX1() {
     // Send to the right
     int procSend, procRecv;
     MPI_Status status;
-    MPI_Cart_shift(mygrid->CartComm,0,1,&procRecv,&procSend );   // We receive from procRecv, and we send to procSend
+    MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,0,1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
     Kokkos::fence();
-    MPI_Sendrecv(BufferSendX1[faceRight].data(), bufferSizeX1, realMPI, procSend, 100,
+    MPI_SAFE_CALL(MPI_Sendrecv(BufferSendX1[faceRight].data(), bufferSizeX1, realMPI, procSend, 100,
                  BufferRecvX1[faceLeft].data(), bufferSizeX1, realMPI, procRecv, 100,
-                 mygrid->CartComm, &status);
+                 mygrid->CartComm, &status));
     
     // Send to the left
-    MPI_Cart_shift(mygrid->CartComm,0,-1,&procRecv,&procSend );   // We receive from procRecv, and we send to procSend
-    MPI_Sendrecv(BufferSendX1[faceLeft].data(), bufferSizeX1, realMPI, procSend, 101,
+    MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,0,-1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
+    MPI_SAFE_CALL(MPI_Sendrecv(BufferSendX1[faceLeft].data(), bufferSizeX1, realMPI, procSend, 101,
                  BufferRecvX1[faceRight].data(), bufferSizeX1, realMPI, procRecv, 101,
-                 mygrid->CartComm, &status);
+                 mygrid->CartComm, &status));
 
     
     // Unpack
@@ -440,17 +440,17 @@ void DataBlock::ExchangeX2() {
     // Send to the right
     int procSend, procRecv;
     MPI_Status status;
-    MPI_Cart_shift(mygrid->CartComm,1,1,&procRecv,&procSend );   // We receive from procRecv, and we send to procSend
+    MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,1,1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
     Kokkos::fence();
-    MPI_Sendrecv(BufferSendX2[faceRight].data(), bufferSizeX2, realMPI, procSend, 200,
+    MPI_SAFE_CALL(MPI_Sendrecv(BufferSendX2[faceRight].data(), bufferSizeX2, realMPI, procSend, 200,
                  BufferRecvX2[faceLeft].data(), bufferSizeX2, realMPI, procRecv, 200,
-                 mygrid->CartComm, &status);
+                 mygrid->CartComm, &status));
     
     // Send to the left
-    MPI_Cart_shift(mygrid->CartComm,1,-1,&procRecv,&procSend );   // We receive from procRecv, and we send to procSend
-    MPI_Sendrecv(BufferSendX2[faceLeft].data(), bufferSizeX2, realMPI, procSend, 201,
+    MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,1,-1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
+    MPI_SAFE_CALL(MPI_Sendrecv(BufferSendX2[faceLeft].data(), bufferSizeX2, realMPI, procSend, 201,
                  BufferRecvX2[faceRight].data(), bufferSizeX2, realMPI, procRecv, 201,
-                 mygrid->CartComm, &status);
+                 mygrid->CartComm, &status));
 
     
     // Unpack
@@ -575,17 +575,17 @@ void DataBlock::ExchangeX3(){
     // Send to the right
     int procSend, procRecv;
     MPI_Status status;
-    MPI_Cart_shift(mygrid->CartComm,2,1,&procRecv,&procSend );   // We receive from procRecv, and we send to procSend
+    MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,2,1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
     Kokkos::fence();
-    MPI_Sendrecv(BufferSendX3[faceRight].data(), bufferSizeX3, realMPI, procSend, 300,
+    MPI_SAFE_CALL(MPI_Sendrecv(BufferSendX3[faceRight].data(), bufferSizeX3, realMPI, procSend, 300,
                  BufferRecvX3[faceLeft].data(), bufferSizeX3, realMPI, procRecv, 300,
-                 mygrid->CartComm, &status);
+                 mygrid->CartComm, &status));
     
     // Send to the left
-    MPI_Cart_shift(mygrid->CartComm,2,-1,&procRecv,&procSend );   // We receive from procRecv, and we send to procSend
-    MPI_Sendrecv(BufferSendX3[faceLeft].data(), bufferSizeX3, realMPI, procSend, 301,
+    MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,2,-1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
+    MPI_SAFE_CALL(MPI_Sendrecv(BufferSendX3[faceLeft].data(), bufferSizeX3, realMPI, procSend, 301,
                  BufferRecvX3[faceRight].data(), bufferSizeX3, realMPI, procRecv, 301,
-                 mygrid->CartComm, &status);
+                 mygrid->CartComm, &status));
 
     
     // Unpack

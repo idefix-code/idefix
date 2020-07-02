@@ -577,14 +577,14 @@ void DataBlock::ExchangeX3(){
     MPI_Status status;
     MPI_Cart_shift(mygrid->CartComm,2,1,&procRecv,&procSend );   // We receive from procRecv, and we send to procSend
     Kokkos::fence();
-    MPI_Sendrecv(BufferSendX3[faceRight].data(), bufferSizeX3, realMPI, procSend, 200,
-                 BufferRecvX3[faceLeft].data(), bufferSizeX3, realMPI, procRecv, 200,
+    MPI_Sendrecv(BufferSendX3[faceRight].data(), bufferSizeX3, realMPI, procSend, 300,
+                 BufferRecvX3[faceLeft].data(), bufferSizeX3, realMPI, procRecv, 300,
                  mygrid->CartComm, &status);
     
     // Send to the left
     MPI_Cart_shift(mygrid->CartComm,2,-1,&procRecv,&procSend );   // We receive from procRecv, and we send to procSend
-    MPI_Sendrecv(BufferSendX3[faceLeft].data(), bufferSizeX3, realMPI, procSend, 201,
-                 BufferRecvX3[faceRight].data(), bufferSizeX3, realMPI, procRecv, 201,
+    MPI_Sendrecv(BufferSendX3[faceLeft].data(), bufferSizeX3, realMPI, procSend, 301,
+                 BufferRecvX3[faceRight].data(), bufferSizeX3, realMPI, procRecv, 301,
                  mygrid->CartComm, &status);
 
     
@@ -628,7 +628,7 @@ void DataBlock::ExchangeX3(){
     idefix_for("StoreBufferX3BX3s",kbeg,kend,jbeg,jend,ibeg,iend,
                     KOKKOS_LAMBDA ( int k, int j, int i) {
                         Vs(BX3s,k,j,i) = BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
-                        Vs(BX3s,k+offset+1,j,i) = BufferRight(i + j*nx + k*nx*ny + VsIndex );
+                        Vs(BX3s,k+offset+1,j,i) = BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
                     });
 
     #endif

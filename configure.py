@@ -81,14 +81,11 @@ if gpu == "":
     gpu="Pascal60"
 
 if args.gpu:
-    if(args.mpi):
-
-        raise NotImplementedError('MPI+Cuda compiler is not implemented yet')
     makefileOptions['cxx'] = '${KOKKOS_PATH}/bin/nvcc_wrapper'
     makefileOptions['extraLine'] += '\nKOKKOS_CUDA_OPTIONS = "enable_lambda"'
     makefileOptions['kokkosDevices'] = '"Cuda"'
     makefileOptions['kokkosArch'] = cpu+","+gpu
-    makefileOptions['cxxflags'] = "-O3"
+    makefileOptions['cxxflags'] = "-O3 "
 
     # This assumes openmpi. TODO: do a more general routine for all compilers
     if(args.mpi):
@@ -110,7 +107,7 @@ else:
         makefileOptions['kokkosDevices'] = '"Serial"'
 
 if(args.mpi):
-    makefileOptions['cxxflags'] += " -D WITH_MPI"
+    makefileOptions['cxxflags'] += " -DWITH_MPI"
 
 if args.mhd:
     makefileOptions['extraIncludeDir'] += " -I$(SRC)/hydro/MHDsolvers"

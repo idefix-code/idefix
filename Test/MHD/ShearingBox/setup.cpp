@@ -77,7 +77,7 @@ void Setup::InitFlow(DataBlock &data) {
     DataBlockHost d(data);
     real x,y,z;
     
-    real B0 = 0.1;
+    real B0 = 0.02;
     real cs2 = gammaIdeal*omega*omega;
 
     

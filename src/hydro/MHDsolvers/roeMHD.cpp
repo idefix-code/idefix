@@ -3,19 +3,6 @@
 
 #define ROE_AVERAGE 0
 
-enum KWAVES {
-    /*RHO*/KFASTM = 0, KFASTP /*MX1*/
-#if HAVE_ENERGY
-  , KENTRP /*ENG*/
-#endif
-  , KDIVB /*BX1*/
-#if COMPONENTS >= 2
-  , KSLOWM /*MX2*/, KSLOWP /*BX2*/
-    #if COMPONENTS == 3
-  , KALFVM/*MX3*/, KALFVP /*BX3*/
-    #endif
-#endif
-};
 
 /*! Return the sign of x. */
 #define DSIGN(x)      ( (x) >= 0.0 ? (1.0) : (-1.0))
@@ -41,6 +28,8 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
     // References to required emf components
     IdefixArray3D<real> Eb;
     IdefixArray3D<real> Et;
+    
+    IdefixArray3D<int> SV;
 
 
     real gamma_m1=gamma-ONE_F;
@@ -70,6 +59,7 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
 
             Et = data.emf.ezi;
             Eb = data.emf.eyi;
+            SV = data.emf.svx;
 
             D_EXPAND( st = -ONE_F;  ,
                                     ,
@@ -86,6 +76,7 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
 
             Et = data.emf.ezj;
             Eb = data.emf.exj;
+            SV = data.emf.svy;
 
             D_EXPAND( st = +ONE_F;  ,
                                     ,
@@ -102,6 +93,7 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
 
             Et = data.emf.eyk;
             Eb = data.emf.exk;
+            SV = data.emf.svz;
 
             D_EXPAND( st = -ONE_F;  ,
                                     ,
@@ -1293,6 +1285,14 @@ void RoeMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
         D_EXPAND(Et(k,j,i) = st*Flux(BXt,k,j,i); ,
                                                     ,
                     Eb(k,j,i) = sb*Flux(BXb,k,j,i); )
+        
+#if EMF_AVERAGE == UCT_CONTACT
+        int s = 0;
+        if      (Flux(RHO,k,j,i) >  eps_UCT_CONTACT) s =  1;
+        else if (Flux(RHO,k,j,i) < -eps_UCT_CONTACT) s = -1;
+
+        SV(k,j,i) = s;
+#endif
 
     });
 

@@ -163,6 +163,14 @@ ElectroMotiveForce::ElectroMotiveForce(DataBlock *data) {
               exk = IdefixArray3D<real>("EMF_exj", data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]) ;
               eyi = IdefixArray3D<real>("EMF_eyi", data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]) ;
               eyk = IdefixArray3D<real>("EMF_eyi", data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]) ; )
+    
+    EXPAND(   svx = IdefixArray3D<int>("EMF_svx", data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]) ;  ,
+              svy = IdefixArray3D<int>("EMF_svy", data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]) ;  ,
+              svz = IdefixArray3D<int>("EMF_svz", data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]) ;  )
+    
+    Ex1 = IdefixArray3D<real>("EMF_Ex1", data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]) ;
+    Ex2 = IdefixArray3D<real>("EMF_Ex2", data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]) ;
+    Ex3 = IdefixArray3D<real>("EMF_Ex3", data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]) ;
 
     #endif
     Kokkos::Profiling::popRegion();

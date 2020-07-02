@@ -64,7 +64,8 @@ OutputVTK::OutputVTK(Input &input, DataBlock &datain, real t)
     data.SyncFromDevice();
 
     // Pointer to global grid
-    Grid *gridin = datain.mygrid;
+    GridHost grid(*datain.mygrid);
+    grid.SyncFromDevice();
 
     /* Note that there are two kinds of dimensions:
         - nx1, nx2, nx3, derived from the grid, which are the global dimensions
@@ -72,9 +73,9 @@ OutputVTK::OutputVTK(Input &input, DataBlock &datain, real t)
     */
 
     // Create the coordinate array required in VTK files
-    this->nx1 = gridin->np_int[IDIR];
-    this->nx2 = gridin->np_int[JDIR];
-    this->nx3 = gridin->np_int[KDIR];
+    this->nx1 = grid.np_int[IDIR];
+    this->nx2 = grid.np_int[JDIR];
+    this->nx3 = grid.np_int[KDIR];
 
     this->nx1loc = data.np_int[IDIR];
     this->nx2loc = data.np_int[JDIR];
@@ -102,15 +103,15 @@ OutputVTK::OutputVTK(Input &input, DataBlock &datain, real t)
     this->znode = new float[nx3+KOFFSET];
 
     for (long int i = 0; i < nx1 + IOFFSET; i++) {
-        xnode[i] = BigEndian(gridin->xl[IDIR](i + gridin->nghost[IDIR]));
+        xnode[i] = BigEndian(grid.xl[IDIR](i + grid.nghost[IDIR]));
     }
     for (long int j = 0; j < nx2 + JOFFSET; j++)    {
-        ynode[j] = BigEndian(gridin->xl[JDIR](j + gridin->nghost[JDIR]));
+        ynode[j] = BigEndian(grid.xl[JDIR](j + grid.nghost[JDIR]));
     }
     for (long int k = 0; k < nx3 + KOFFSET; k++)
     {
         if(DIMENSIONS==2) znode[k] = BigEndian(0.0);
-        else znode[k] = BigEndian(gridin->xl[KDIR](k + gridin->nghost[KDIR]));
+        else znode[k] = BigEndian(grid.xl[KDIR](k + grid.nghost[KDIR]));
     }
 #if VTK_FORMAT == VTK_STRUCTURED_GRID   // VTK_FORMAT
         /* -- Allocate memory for node_coord which is later used -- */
@@ -124,8 +125,8 @@ OutputVTK::OutputVTK(Input &input, DataBlock &datain, real t)
 	int subsize[3];
     for(int dir = 0; dir < 3 ; dir++) {
         // VTK assumes Fortran array ordering, hence arrays dimensions are filled backwards
-        start[2-dir] = datain.gbeg[dir]-gridin->nghost[dir];
-        size[2-dir] = gridin->np_int[dir];
+        start[2-dir] = datain.gbeg[dir]-grid.nghost[dir];
+        size[2-dir] = grid.np_int[dir];
         subsize[2-dir] = datain.np_int[dir];
     }
 	MPI_Type_create_subarray(3, size, subsize, start, MPI_ORDER_C, MPI_FLOAT, &this->view);

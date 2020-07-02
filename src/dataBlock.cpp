@@ -306,6 +306,7 @@ void DataBlock::ExchangeX1() {
     int procSend, procRecv;
     MPI_Status status;
     MPI_Cart_shift(mygrid->CartComm,0,1,&procRecv,&procSend );   // We receive from procRecv, and we send to procSend
+    Kokkos::fence();
     MPI_Sendrecv(BufferSendX1[faceRight].data(), bufferSizeX1, realMPI, procSend, 100,
                  BufferRecvX1[faceLeft].data(), bufferSizeX1, realMPI, procRecv, 100,
                  mygrid->CartComm, &status);
@@ -440,6 +441,7 @@ void DataBlock::ExchangeX2() {
     int procSend, procRecv;
     MPI_Status status;
     MPI_Cart_shift(mygrid->CartComm,1,1,&procRecv,&procSend );   // We receive from procRecv, and we send to procSend
+    Kokkos::fence();
     MPI_Sendrecv(BufferSendX2[faceRight].data(), bufferSizeX2, realMPI, procSend, 200,
                  BufferRecvX2[faceLeft].data(), bufferSizeX2, realMPI, procRecv, 200,
                  mygrid->CartComm, &status);
@@ -574,6 +576,7 @@ void DataBlock::ExchangeX3(){
     int procSend, procRecv;
     MPI_Status status;
     MPI_Cart_shift(mygrid->CartComm,2,1,&procRecv,&procSend );   // We receive from procRecv, and we send to procSend
+    Kokkos::fence();
     MPI_Sendrecv(BufferSendX3[faceRight].data(), bufferSizeX3, realMPI, procSend, 200,
                  BufferRecvX3[faceLeft].data(), bufferSizeX3, realMPI, procRecv, 200,
                  mygrid->CartComm, &status);

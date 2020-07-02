@@ -6,7 +6,7 @@ DataBlockHost::DataBlockHost() {
 }
 DataBlockHost::DataBlockHost(DataBlock& datain) {
     
-    Kokkos::Profiling::pushRegion("DataBlockHost::DataBlockHost(DataBlock)");
+    idfx::pushRegion("DataBlockHost::DataBlockHost(DataBlock)");
 
     // copy the dataBlock object for later use
     this->data=&datain; 
@@ -48,14 +48,14 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
 
     Kokkos::deep_copy(dV,data->dV);
 
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 
 }
 
 // Synchronisation routines of Data (*Only*)
 void DataBlockHost::SyncToDevice() {
 
-    Kokkos::Profiling::pushRegion("DataBlockHost::SyncToDevice()");
+    idfx::pushRegion("DataBlockHost::SyncToDevice()");
 
     Kokkos::deep_copy(data->Vc,Vc);
 #if MHD == YES
@@ -63,19 +63,19 @@ void DataBlockHost::SyncToDevice() {
 #endif
     Kokkos::deep_copy(data->Uc,Uc);
 
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 }
 
 void DataBlockHost::SyncFromDevice() {
 
-    Kokkos::Profiling::pushRegion("DataBlockHost::SyncFromDevice()");
+    idfx::pushRegion("DataBlockHost::SyncFromDevice()");
     Kokkos::deep_copy(Vc,data->Vc);
 #if MHD == YES
     Kokkos::deep_copy(Vs,data->Vs);
 #endif
     Kokkos::deep_copy(Uc,data->Uc);
 
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 }
 
 void DataBlockHost::MakeVsFromAmag(IdefixHostArray4D<real> &Ain) {

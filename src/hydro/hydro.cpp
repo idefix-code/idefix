@@ -9,7 +9,7 @@
 
 
 Hydro::Hydro(Input &input, Grid &grid) {
-    Kokkos::Profiling::pushRegion("Hydro::Hydro(DataBock)");
+    idfx::pushRegion("Hydro::Hydro(DataBock)");
 
     this->gamma = 5.0/3.0;
     this->C2Iso = 1.0;
@@ -74,7 +74,7 @@ Hydro::Hydro(Input &input, Grid &grid) {
         this->haveShearingBox = false;
     }
 
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 }
 
 Hydro::Hydro() {
@@ -93,7 +93,7 @@ real Hydro::GetC2iso() {
 // Convect Conservative to Primitive variable
 void Hydro::ConvertConsToPrim(DataBlock & data) {
 
-    Kokkos::Profiling::pushRegion("Hydro::ConvertConsToPrim");
+    idfx::pushRegion("Hydro::ConvertConsToPrim");
 
     IdefixArray4D<real> Vc = data.Vc;
     IdefixArray4D<real> Uc = data.Uc;
@@ -172,7 +172,7 @@ void Hydro::ConvertConsToPrim(DataBlock & data) {
 
             });
 
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 
 }
 
@@ -180,7 +180,7 @@ void Hydro::ConvertConsToPrim(DataBlock & data) {
 // Convert Primitive to conservative variables
 void Hydro::ConvertPrimToCons(DataBlock & data) {
 
-    Kokkos::Profiling::pushRegion("Hydro::ConvertPrimToCons");
+    idfx::pushRegion("Hydro::ConvertPrimToCons");
 
     IdefixArray4D<real> Vc = data.Vc;
     IdefixArray4D<real> Uc = data.Uc;
@@ -261,7 +261,7 @@ void Hydro::ConvertPrimToCons(DataBlock & data) {
                 
             });
 
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 }
 
 
@@ -278,7 +278,7 @@ void Hydro::ExtrapolatePrimVar(DataBlock &data, int dir) {
     int iextend, jextend,kextend;
     int BXn;
 
-    Kokkos::Profiling::pushRegion("Hydro::ExtrapolatePrimVar");
+    idfx::pushRegion("Hydro::ExtrapolatePrimVar");
     // Offset is in the direction of integration
     ioffset=joffset=koffset=0;
 
@@ -358,13 +358,13 @@ void Hydro::ExtrapolatePrimVar(DataBlock &data, int dir) {
 
 
 
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 }
 
 // Compute Riemann fluxes from states
 void Hydro::CalcRiemannFlux(DataBlock & data, int dir) {
 
-    Kokkos::Profiling::pushRegion("Hydro::CalcRiemannFlux");
+    idfx::pushRegion("Hydro::CalcRiemannFlux");
     
     switch (mySolver) {
     #if MHD == YES
@@ -390,14 +390,14 @@ void Hydro::CalcRiemannFlux(DataBlock & data, int dir) {
             break;
     }
 
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 
 }
 
 // Compute the right handside in direction dir from conservative equation, with timestep dt
 void Hydro::CalcRightHandSide(DataBlock &data, int dir, real dt) {
 
-    Kokkos::Profiling::pushRegion("Hydro::CalcRightHandSide");
+    idfx::pushRegion("Hydro::CalcRightHandSide");
     IdefixArray4D<real> Uc = data.Uc;
     IdefixArray1D<real> dx = data.dx[dir];
     IdefixArray4D<real> Flux = data.FluxRiemann;
@@ -430,13 +430,13 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real dt) {
 
         });
 
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 }
 
 // Add source terms
 void Hydro::AddSourceTerms(DataBlock &data, real dt) {
 
-    Kokkos::Profiling::pushRegion("Hydro::AddSourceTerms");
+    idfx::pushRegion("Hydro::AddSourceTerms");
     IdefixArray4D<real> Uc = data.Uc;
     IdefixArray4D<real> Vc = data.Vc;
 
@@ -461,13 +461,13 @@ void Hydro::AddSourceTerms(DataBlock &data, real dt) {
             }
         });
     
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
     
 }
 
 // Compute Corner EMFs from the one stored in the Riemann step
 void Hydro::CalcCornerEMF(DataBlock &data, real t) {
-        Kokkos::Profiling::pushRegion("Hydro::CalcCornerEMF");
+        idfx::pushRegion("Hydro::CalcCornerEMF");
 
         // Corned EMFs
         IdefixArray3D<real> Ex = data.emf.ex;
@@ -499,12 +499,12 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
 
                     });
 
-        Kokkos::Profiling::popRegion();
+        idfx::popRegion();
 }
 
 // Evolve the magnetic field in Vs according to Constranied transport
 void Hydro::EvolveMagField(DataBlock &data, real t, real dt) {
-    Kokkos::Profiling::pushRegion("Hydro::EvolveMagField");
+    idfx::pushRegion("Hydro::EvolveMagField");
 
     // Corned EMFs
     IdefixArray3D<real> Ex1 = data.emf.ex;
@@ -543,11 +543,11 @@ void Hydro::EvolveMagField(DataBlock &data, real t, real dt) {
                         #endif
 
                     });
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 }
 
 void Hydro::ReconstructVcField(DataBlock & data,  IdefixArray4D<real> &Vc) {
-    Kokkos::Profiling::pushRegion("Hydro::ReconstructVcField");
+    idfx::pushRegion("Hydro::ReconstructVcField");
     IdefixArray4D<real> Vs=data.Vs;
 
     // Reconstruct cell average field when using CT
@@ -558,13 +558,13 @@ void Hydro::ReconstructVcField(DataBlock & data,  IdefixArray4D<real> &Vc) {
                                     Vc(BX3,k,j,i) = HALF_F * (Vs(BX3s,k,j,i) + Vs(BX3s,k+1,j,i)) ; )
                        
                     });
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 }
 
 
 
 void Hydro::ReconstructNormalField(DataBlock &data) {
-    Kokkos::Profiling::pushRegion("Hydro::ReconstructNormalField");
+    idfx::pushRegion("Hydro::ReconstructNormalField");
 
     // Reconstruct the field
     IdefixArray4D<real> Vc = data.Vc;
@@ -649,14 +649,14 @@ void Hydro::ReconstructNormalField(DataBlock &data) {
 
     #endif  
     
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 }
 
 
 // Set Boundary conditions
 void Hydro::SetBoundary(DataBlock &data, real t) {
 
-    Kokkos::Profiling::pushRegion("Hydro::SetBoundary");
+    idfx::pushRegion("Hydro::SetBoundary");
 
     IdefixArray4D<real> Vc = data.Vc;
     IdefixArray4D<real> Vs = data.Vs;
@@ -846,7 +846,7 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
     ReconstructVcField(data, data.Vc);
     #endif
 
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 
 }
 

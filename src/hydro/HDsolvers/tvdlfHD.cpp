@@ -5,7 +5,7 @@
 void TvdlfHD(DataBlock & data, int dir, real gamma, real C2Iso) {
     int ioffset,joffset,koffset;
 
-    Kokkos::Profiling::pushRegion("TVDLF_Solver");
+    idfx::pushRegion("TVDLF_Solver");
     ioffset=joffset=koffset=0;
     // Determine the offset along which we do the extrapolation
     if(dir==IDIR) ioffset=1;
@@ -154,7 +154,7 @@ void TvdlfHD(DataBlock & data, int dir, real gamma, real C2Iso) {
 
             });
 
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 
 }
 

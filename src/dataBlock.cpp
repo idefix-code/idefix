@@ -9,7 +9,7 @@ void DataBlock::InitFromGrid(Grid &grid) {
     // This initialisation is only valid for *serial*
     // MPI initialisation will involve domain decomposition of grids into DataBlocks
 
-    Kokkos::Profiling::pushRegion("DataBlock::InitFromGrid");
+    idfx::pushRegion("DataBlock::InitFromGrid");
 
     this->mygrid=&grid;
 
@@ -224,7 +224,7 @@ void DataBlock::InitFromGrid(Grid &grid) {
         }
     }
 
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
     // TODO: A proper initialisation of A and dV should be done at this stage
 }
 
@@ -238,7 +238,7 @@ void DataBlock::ExchangeAll(){
 }
 
 void DataBlock::ExchangeX1() {
-    Kokkos::Profiling::pushRegion("DataBlock::ExchangeX1");
+    idfx::pushRegion("DataBlock::ExchangeX1");
 #ifdef WITH_MPI
     // Load  the buffers with data
     int ibeg,iend,jbeg,jend,kbeg,kend,offset;
@@ -368,12 +368,12 @@ void DataBlock::ExchangeX1() {
 #else
     IDEFIX_ERROR("You should not call DataBlock exchange routines without MPI");
 #endif
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 }
 
 
 void DataBlock::ExchangeX2() {
-    Kokkos::Profiling::pushRegion("DataBlock::ExchangeX2");
+    idfx::pushRegion("DataBlock::ExchangeX2");
 #ifdef WITH_MPI
     // Load  the buffers with data
     int ibeg,iend,jbeg,jend,kbeg,kend,offset;
@@ -503,12 +503,12 @@ void DataBlock::ExchangeX2() {
 #else
     IDEFIX_ERROR("You should not call DataBlock exchange routines without MPI");
 #endif
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 }
 
 
 void DataBlock::ExchangeX3(){
-    Kokkos::Profiling::pushRegion("DataBlock::ExchangeX3");
+    idfx::pushRegion("DataBlock::ExchangeX3");
 #ifdef WITH_MPI
     // Load  the buffers with data
     int ibeg,iend,jbeg,jend,kbeg,kend,offset;
@@ -638,7 +638,7 @@ void DataBlock::ExchangeX3(){
 #else
     IDEFIX_ERROR("You should not call DataBlock exchange routines without MPI");
 #endif
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 }
 
 
@@ -649,7 +649,7 @@ ElectroMotiveForce::ElectroMotiveForce() {
 
 // Init the emf from a datablock pointer
 ElectroMotiveForce::ElectroMotiveForce(DataBlock *data) {
-    Kokkos::Profiling::pushRegion("ElectroMotiveForce::Constructor(Datablock*)");
+    idfx::pushRegion("ElectroMotiveForce::Constructor(Datablock*)");
 
     #if MHD == YES
     D_EXPAND( ez = IdefixArray3D<real>("EMF_ez", data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]) ;     ,
@@ -666,6 +666,6 @@ ElectroMotiveForce::ElectroMotiveForce(DataBlock *data) {
               eyk = IdefixArray3D<real>("EMF_eyi", data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]) ; )
 
     #endif
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 
 }

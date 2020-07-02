@@ -3,7 +3,7 @@
 #include "timeIntegrator.hpp"
 
 TimeIntegrator::TimeIntegrator(Input & input, Hydro &physics) {
-    Kokkos::Profiling::pushRegion("TimeIntegrator::TimeIntegrator(Input...)");
+    idfx::pushRegion("TimeIntegrator::TimeIntegrator(Input...)");
 
     this->hydro=&physics;
     this->timer.reset();
@@ -30,7 +30,7 @@ TimeIntegrator::TimeIntegrator(Input & input, Hydro &physics) {
     
     this->haveUserSourceTerm = false;
 
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 
 }
 
@@ -46,7 +46,7 @@ Hydro& TimeIntegrator::GetHydro() {
 // Compute one Stage of the time Integrator
 void TimeIntegrator::Stage(DataBlock &data) {
     
-    Kokkos::Profiling::pushRegion("TimeIntegrator::Stage");
+    idfx::pushRegion("TimeIntegrator::Stage");
     // Apply Boundary conditions
     hydro->SetBoundary(data,t);
 
@@ -78,11 +78,11 @@ void TimeIntegrator::Stage(DataBlock &data) {
     // Convert back into primitive variables
     hydro->ConvertConsToPrim(data);
 
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 }
 
 void TimeIntegrator::ReinitInvDt(DataBlock & data) {
-    Kokkos::Profiling::pushRegion("TimeIntegrator::ReinitInvDt");
+    idfx::pushRegion("TimeIntegrator::ReinitInvDt");
 
     IdefixArray3D<real> InvDtHypLoc=data.InvDtHyp;
     IdefixArray3D<real> InvDtParLoc=data.InvDtPar;
@@ -93,7 +93,7 @@ void TimeIntegrator::ReinitInvDt(DataBlock & data) {
                     InvDtParLoc(k,j,i) = ZERO_F;
             });
 
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 }
 
 // Compute one full cycle of the time Integrator
@@ -107,7 +107,7 @@ void TimeIntegrator::Cycle(DataBlock & data) {
     IdefixArray3D<real> InvDtParLoc=data.InvDtPar;
     real newdt;
 
-    Kokkos::Profiling::pushRegion("TimeIntegrator::Cycle");
+    idfx::pushRegion("TimeIntegrator::Cycle");
 
     if(timer.seconds()-lastLog >= 1.0) {
     //if(ncycles%1==0) {
@@ -187,7 +187,7 @@ void TimeIntegrator::Cycle(DataBlock & data) {
 
     ncycles++;
 
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 }
 
 real TimeIntegrator::getDt() {

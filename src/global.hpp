@@ -9,6 +9,9 @@ namespace idfx {
     extern int psize;
     extern IdefixOstream cout;  // custom cout for idefix
 
+    void pushRegion(const std::string&);
+    void popRegion();
+
 
 }
 

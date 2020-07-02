@@ -7,7 +7,7 @@ Grid::Grid() {
 }
 
 Grid::Grid(Input &input) {
-    Kokkos::Profiling::pushRegion("Grid::Grid(Input)");
+    idfx::pushRegion("Grid::Grid(Input)");
     int npoints[3];
 
 
@@ -135,7 +135,7 @@ Grid::Grid(Input &input) {
 #endif
 
 
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 
 }
 

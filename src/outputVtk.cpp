@@ -144,7 +144,7 @@ int OutputVTK::Write(DataBlock &datain, real t)
     if(t<this->tnext) return(0);
 
     this->tnext+= this->tperiod;
-    Kokkos::Profiling::pushRegion("OutputVTK::Write");
+    idfx::pushRegion("OutputVTK::Write");
 
     idfx::cout << "OutputVTK::Write file n " << vtkFileNumber << "..." << std::flush;
 
@@ -205,7 +205,7 @@ int OutputVTK::Write(DataBlock &datain, real t)
     // Make file number
 
     idfx::cout << "done in " << timer.seconds() << " s." << std::endl;
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
     // One day, we will have a return code.
     return(0);
 }

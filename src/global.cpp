@@ -7,6 +7,10 @@ namespace idfx {
 
     IdefixOstream cout;
 
+#ifdef DEBUG
+    static int regionIndent = 0;
+#endif
+
 #ifdef WITH_MPI
     extern MPI_Comm CartComm;
 #endif
@@ -23,6 +27,25 @@ namespace idfx {
         return(0);
 
     }   // Initialisation routine for idefix
+
+    void pushRegion(const std::string& kName) {
+        Kokkos::Profiling::pushRegion(kName);
+        
+        #ifdef DEBUG
+        regionIndent=regionIndent+4;
+        for(int i=0; i < regionIndent ; i++) {
+            cout << "-";
+        }
+        cout << "> " << kName << std::endl;
+        #endif
+    }
+
+    void popRegion() {
+        Kokkos::Profiling::popRegion();
+        #ifdef DEBUG
+        regionIndent = regionIndent-4;
+        #endif
+    }
 
     // Init the iostream with defined rank
     void IdefixOstream::init(int rank) {

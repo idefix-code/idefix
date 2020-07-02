@@ -7,7 +7,7 @@
 void RoeHD(DataBlock & data, int dir, real gamma, real C2Iso) {
     int ioffset,joffset,koffset;
 
-    Kokkos::Profiling::pushRegion("ROE_Solver");
+    idfx::pushRegion("ROE_Solver");
     ioffset=joffset=koffset=0;
     // Determine the offset along which we do the extrapolation
     switch(dir) {
@@ -586,6 +586,6 @@ void RoeHD(DataBlock & data, int dir, real gamma, real C2Iso) {
 
             });
 
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 
 }

@@ -5,7 +5,7 @@
 void HllcHD(DataBlock & data, int dir, real gamma, real C2Iso) {
     int ioffset,joffset,koffset;
 
-    Kokkos::Profiling::pushRegion("HLLC_Solver");
+    idfx::pushRegion("HLLC_Solver");
     
     ioffset=joffset=koffset=0;
     // Determine the offset along which we do the extrapolation
@@ -369,6 +369,6 @@ void HllcHD(DataBlock & data, int dir, real gamma, real C2Iso) {
                 invDt(k,j,i) += cmax/dx(ig);
             });
 
-    Kokkos::Profiling::popRegion();
+    idfx::popRegion();
 
 }

@@ -60,6 +60,8 @@ makefileOptions['extraHeaders']=""
 makefileOptions['extraObj']=""
 makefileOptions['extraLine']=""
 makefileOptions['cxxflags']=""
+makefileOptions['ldflags']=""
+
 
 # extract cpu & gpu architectures from args.arch
 cpu=""
@@ -80,12 +82,21 @@ if gpu == "":
 
 if args.gpu:
     if(args.mpi):
+
         raise NotImplementedError('MPI+Cuda compiler is not implemented yet')
     makefileOptions['cxx'] = '${KOKKOS_PATH}/bin/nvcc_wrapper'
     makefileOptions['extraLine'] += '\nKOKKOS_CUDA_OPTIONS = "enable_lambda"'
     makefileOptions['kokkosDevices'] = '"Cuda"'
     makefileOptions['kokkosArch'] = cpu+","+gpu
     makefileOptions['cxxflags'] = "-O3"
+
+    # This assumes openmpi. TODO: do a more general routine for all compilers
+    if(args.mpi):
+        stream=os.popen('mpicxx --showme:compile')
+        makefileOptions['cxxflags'] += stream.read().strip()
+        stream=os.popen('mpicxx --showme:link')
+        makefileOptions['ldflags'] += stream.read().strip()
+
 else:
     if(args.mpi):
         makefileOptions['cxx'] = "mpicxx"

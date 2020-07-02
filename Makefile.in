@@ -28,7 +28,7 @@ CXXFLAGS = @cxxflags@
 @extraLine@
 
 LINK = ${CXX}
-LINKFLAGS = 
+LINKFLAGS = @ldflags@
 
 DEPFLAGS = -M
 

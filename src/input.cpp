@@ -4,7 +4,7 @@
 #include "gitversion.h"
 
 Input::Input() {
-    std::cout << "Creating Input\n";
+    idfx::cout << "Creating Input\n";
     
 
     /*
@@ -33,12 +33,14 @@ Input::Input() {
 // Blockname should refer to one of Idefix class which will use the parameters in said block
 // Everything is stored in a map of maps of vectors of strings :-)
 
-Input::Input(std::string filename) {
+Input::Input(std::string filename, int argc, char* argv[] ) {
     std::ifstream file;
     std::string line, lineWithComments, blockName, paramName, paramValue;
     std::size_t firstChar, lastChar;
     bool haveBlock = false;
     std::stringstream msg;
+
+    Input::ParseCommandLine(argc,argv);
 
     try
     {
@@ -90,27 +92,56 @@ Input::Input(std::string filename) {
     file.close();
 }
 
+// This routine parse command line options
+void Input::ParseCommandLine(int argc, char **argv) {
+    std::stringstream msg;
+    for(int i = 1 ; i < argc ; i++) {
+        // MPI decomposition argument
+        if(std::string(argv[i]) == "-dec") {
+            #ifndef WITH_MPI
+            IDEFIX_ERROR("Domain decomposition option '-dec' only makes sense when MPI is enabled");
+            #endif    
+            // Loop on dimensions
+            for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
+                if ((++i) >= argc) {
+                    D_SELECT(msg << "You must specify -dec n1";  ,
+                            msg << "You must specify -dec n1 n2";  ,
+                            msg << "You must specify -dec n1 n2 n3"; )
+                    IDEFIX_ERROR(msg);
+                }
+                // Store this
+                inputParameters["CommandLine"]["dec"].push_back(std::string(argv[i]));
+            }
+        }
+        else {
+            msg << "Unknown option" << argv[i];
+            IDEFIX_ERROR(msg);
+        }
+    }
+}
+
+
 // This routine prints the parameters stored in the inputParameters structure
 void Input::PrintParameters() {
     std::string blockName, paramName, paramValue;
-    std::cout << "-----------------------------------------------------------------------------" << std::endl;
-    std::cout << "Input Parameters:" << std::endl;
-    std::cout << "-----------------------------------------------------------------------------" << std::endl;
+    idfx::cout << "-----------------------------------------------------------------------------" << std::endl;
+    idfx::cout << "Input Parameters:" << std::endl;
+    idfx::cout << "-----------------------------------------------------------------------------" << std::endl;
     for(std::map<std::string, std::map<std::string, std::vector<std::string>>>::iterator block = inputParameters.begin(); block != inputParameters.end(); block++ ) {
         blockName=block->first;
-        std::cout << "[" << blockName << "]" << std::endl;
+        idfx::cout << "[" << blockName << "]" << std::endl;
         for(std::map<std::string, std::vector<std::string>>::iterator param = block->second.begin(); param !=block->second.end(); param++) {
             paramName=param->first;
-            std::cout << "\t" << paramName << "\t";
+            idfx::cout << "\t" << paramName << "\t";
             for(std::vector<std::string>::iterator value = param->second.begin(); value != param->second.end(); value++){
                 paramValue = *value;
-                std::cout << "\t" << paramValue;
+                idfx::cout << "\t" << paramValue;
             } 
-            std::cout << std::endl;
+            idfx::cout << std::endl;
         }
     }
-    std::cout << "-----------------------------------------------------------------------------" << std::endl;
-    std::cout << "-----------------------------------------------------------------------------" << std::endl;
+    idfx::cout << "-----------------------------------------------------------------------------" << std::endl;
+    idfx::cout << "-----------------------------------------------------------------------------" << std::endl;
 
 }
 
@@ -236,49 +267,49 @@ int Input::CheckEntry(std::string blockName, std::string paramName) {
 }
 
 void Input::PrintLogo() {
-    std::cout << "                                  .:HMMMMHn:.  ..:n.."<< std::endl;
-    std::cout << "                                .H*'``     `'%HM'''''!x."<< std::endl;
-    std::cout << "         :x                    x*`           .(MH:    `#h."<< std::endl;
-    std::cout << "        x.`M                   M>        :nMMMMMMMh.     `n."<< std::endl;
-    std::cout << "         *kXk..                XL  nnx:.XMMMMMMMMMMML   .. 4X."<< std::endl;
-    std::cout << "          )MMMMMx              'M   `^?M*MMMMMMMMMMMM:HMMMHHMM."<< std::endl;
-    std::cout << "          MMMMMMMX              ?k    'X ..'*MMMMMMM.#MMMMMMMMMx"<< std::endl;
-    std::cout << "         XMMMMMMMX               4:    M:MhHxxHHHx`MMx`MMMMMMMMM>"<< std::endl;
-    std::cout << "         XM!`   ?M                `x   4MM'`''``HHhMMX  'MMMMMMMM"<< std::endl;
-    std::cout << "         4M      M                 `:   *>     `` .('MX   '*MMMM'"<< std::endl;
-    std::cout << "          MX     `X.nnx..                        ..XMx`     'M*X"<< std::endl;
-    std::cout << "           ?h.    ''```^'*!Hx.     :Mf     xHMh  M**MMM      4L`"<< std::endl;
-    std::cout << "            `*Mx           `'*n.x. 4M>   :M` `` 'M    `       %"<< std::endl;
-    std::cout << "             '%                ``*MHMX   X>      !"<< std::endl;
-    std::cout << "            :!                    `#MM>  X>      `   :x"<< std::endl;
-    std::cout << "           :M                        ?M  `X     .  ..'M"<< std::endl;
-    std::cout << "           XX                       .!*X  `x   XM( MMx`h"<< std::endl;
-    std::cout << "          'M>::                        `M: `+  MMX XMM `:"<< std::endl;
-    std::cout << "          'M> M                         'X    'MMX ?MMk.Xx.."<< std::endl;
-    std::cout << "          'M> ?L                     ...:!     MMX.H**'MMMM*h"<< std::endl;
-    std::cout << "           M>  #L                  :!'`MM.    . X*`.xHMMMMMnMk."<< std::endl;
-    std::cout << "           `!   #h.      :L           XM'*hxHMM*MhHMMMMMMMMMM'#h"<< std::endl;
-    std::cout << "           +     XMh:    4!      x   :f   MM'   `*MMMMMMMMMM%  `X"<< std::endl;
-    std::cout << "           M     Mf``tHhxHM      M>  4k xxX'      `#MMMMMMMf    `M .>"<< std::endl;
-    std::cout << "          :f     M   `MMMMM:     M>   M!MMM:         '*MMf'     'MH*"<< std::endl;
-    std::cout << "          !     Xf   'MMMMMX     `X   X>'h.`          :P*Mx.   .d*~.."<< std::endl;
-    std::cout << "        :M      X     4MMMMM>     !   X~ `Mh.      .nHL..M#'%nnMhH!'`"<< std::endl;
-    std::cout << "       XM      d>     'X`'**h     'h  M   ^'MMHH+*'`  ''''   `'**'"<< std::endl;
-    std::cout << "    %nxM>      *x+x.:. XL.. `k     `::X"<< std::endl;
-    std::cout << ":nMMHMMM:.  X>  Mn`*MMMMMHM: `:     ?MMn."<< std::endl;
-    std::cout << "    `'**MML M>  'MMhMMMMMMMM  #      `M:^*x"<< std::endl;
-    std::cout << "         ^*MMttnnMMMMMMMMMMMH>.        M:.4X"<< std::endl;
-    std::cout << "                        `MMMM>X   (   .MMM:MM!   ."<< std::endl;
-    std::cout << "                          `'''4x.dX  +^ `''MMMMHM?L.."<< std::endl;
-    std::cout << "                                ``'           `'`'`'`"<< std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << std::endl;
-    std::cout << "           This is Idefix " << GITVERSION << std::endl;
+    idfx::cout << "                                  .:HMMMMHn:.  ..:n.."<< std::endl;
+    idfx::cout << "                                .H*'``     `'%HM'''''!x."<< std::endl;
+    idfx::cout << "         :x                    x*`           .(MH:    `#h."<< std::endl;
+    idfx::cout << "        x.`M                   M>        :nMMMMMMMh.     `n."<< std::endl;
+    idfx::cout << "         *kXk..                XL  nnx:.XMMMMMMMMMMML   .. 4X."<< std::endl;
+    idfx::cout << "          )MMMMMx              'M   `^?M*MMMMMMMMMMMM:HMMMHHMM."<< std::endl;
+    idfx::cout << "          MMMMMMMX              ?k    'X ..'*MMMMMMM.#MMMMMMMMMx"<< std::endl;
+    idfx::cout << "         XMMMMMMMX               4:    M:MhHxxHHHx`MMx`MMMMMMMMM>"<< std::endl;
+    idfx::cout << "         XM!`   ?M                `x   4MM'`''``HHhMMX  'MMMMMMMM"<< std::endl;
+    idfx::cout << "         4M      M                 `:   *>     `` .('MX   '*MMMM'"<< std::endl;
+    idfx::cout << "          MX     `X.nnx..                        ..XMx`     'M*X"<< std::endl;
+    idfx::cout << "           ?h.    ''```^'*!Hx.     :Mf     xHMh  M**MMM      4L`"<< std::endl;
+    idfx::cout << "            `*Mx           `'*n.x. 4M>   :M` `` 'M    `       %"<< std::endl;
+    idfx::cout << "             '%                ``*MHMX   X>      !"<< std::endl;
+    idfx::cout << "            :!                    `#MM>  X>      `   :x"<< std::endl;
+    idfx::cout << "           :M                        ?M  `X     .  ..'M"<< std::endl;
+    idfx::cout << "           XX                       .!*X  `x   XM( MMx`h"<< std::endl;
+    idfx::cout << "          'M>::                        `M: `+  MMX XMM `:"<< std::endl;
+    idfx::cout << "          'M> M                         'X    'MMX ?MMk.Xx.."<< std::endl;
+    idfx::cout << "          'M> ?L                     ...:!     MMX.H**'MMMM*h"<< std::endl;
+    idfx::cout << "           M>  #L                  :!'`MM.    . X*`.xHMMMMMnMk."<< std::endl;
+    idfx::cout << "           `!   #h.      :L           XM'*hxHMM*MhHMMMMMMMMMM'#h"<< std::endl;
+    idfx::cout << "           +     XMh:    4!      x   :f   MM'   `*MMMMMMMMMM%  `X"<< std::endl;
+    idfx::cout << "           M     Mf``tHhxHM      M>  4k xxX'      `#MMMMMMMf    `M .>"<< std::endl;
+    idfx::cout << "          :f     M   `MMMMM:     M>   M!MMM:         '*MMf'     'MH*"<< std::endl;
+    idfx::cout << "          !     Xf   'MMMMMX     `X   X>'h.`          :P*Mx.   .d*~.."<< std::endl;
+    idfx::cout << "        :M      X     4MMMMM>     !   X~ `Mh.      .nHL..M#'%nnMhH!'`"<< std::endl;
+    idfx::cout << "       XM      d>     'X`'**h     'h  M   ^'MMHH+*'`  ''''   `'**'"<< std::endl;
+    idfx::cout << "    %nxM>      *x+x.:. XL.. `k     `::X"<< std::endl;
+    idfx::cout << ":nMMHMMM:.  X>  Mn`*MMMMMHM: `:     ?MMn."<< std::endl;
+    idfx::cout << "    `'**MML M>  'MMhMMMMMMMM  #      `M:^*x"<< std::endl;
+    idfx::cout << "         ^*MMttnnMMMMMMMMMMMH>.        M:.4X"<< std::endl;
+    idfx::cout << "                        `MMMM>X   (   .MMM:MM!   ."<< std::endl;
+    idfx::cout << "                          `'''4x.dX  +^ `''MMMMHM?L.."<< std::endl;
+    idfx::cout << "                                ``'           `'`'`'`"<< std::endl;
+    idfx::cout << std::endl;
+    idfx::cout << std::endl;
+    idfx::cout << std::endl;
+    idfx::cout << "           This is Idefix " << GITVERSION << std::endl;
 #ifdef KOKKOS_ENABLE_CUDA
-    std::cout << "               Compiled for GPU (nvidia-CUDA) " << std::endl;
+    idfx::cout << "               Compiled for GPU (nvidia-CUDA) " << std::endl;
 #else
-    std::cout << "               Compiled for CPUs " << std::endl;
+    idfx::cout << "               Compiled for CPUs " << std::endl;
 #endif
 
 }

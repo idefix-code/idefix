@@ -37,6 +37,10 @@ parser.add_argument("-openmp",
                     help="enable OpenMP parallelism",
                     action="store_true")
 
+parser.add_argument("-mpi",
+                    help="enable MPI parallelism",
+                    action="store_true")
+
 args=parser.parse_args()
 
 idefixDir = os.getenv("IDEFIX_DIR")
@@ -55,6 +59,9 @@ makefileOptions['extraVpath']=""
 makefileOptions['extraHeaders']=""
 makefileOptions['extraObj']=""
 makefileOptions['extraLine']=""
+makefileOptions['cxxflags']=""
+makefileOptions['ldflags']=""
+
 
 # extract cpu & gpu architectures from args.arch
 cpu=""
@@ -78,15 +85,29 @@ if args.gpu:
     makefileOptions['extraLine'] += '\nKOKKOS_CUDA_OPTIONS = "enable_lambda"'
     makefileOptions['kokkosDevices'] = '"Cuda"'
     makefileOptions['kokkosArch'] = cpu+","+gpu
-    makefileOptions['cxxflags'] = "-O3"
+    makefileOptions['cxxflags'] = "-O3 "
+
+    # This assumes openmpi. TODO: do a more general routine for all compilers
+    if(args.mpi):
+        stream=os.popen('mpicxx --showme:compile')
+        makefileOptions['cxxflags'] += stream.read().strip()
+        stream=os.popen('mpicxx --showme:link')
+        makefileOptions['ldflags'] += stream.read().strip()
+
 else:
-    makefileOptions['cxx'] = "g++"
+    if(args.mpi):
+        makefileOptions['cxx'] = "mpicxx"
+    else:
+        makefileOptions['cxx'] = "g++"
     makefileOptions['kokkosArch'] = cpu
     makefileOptions['cxxflags'] = "-O3"
     if args.openmp:
          makefileOptions['kokkosDevices'] = '"OpenMP"'
     else:
         makefileOptions['kokkosDevices'] = '"Serial"'
+
+if(args.mpi):
+    makefileOptions['cxxflags'] += " -DWITH_MPI"
 
 if args.mhd:
     makefileOptions['extraIncludeDir'] += " -I$(SRC)/hydro/MHDsolvers"

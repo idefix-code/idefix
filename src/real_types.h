@@ -8,8 +8,14 @@
  */
 #ifdef USE_DOUBLE
 using real = double;
+#ifdef WITH_MPI
+#define realMPI     MPI_DOUBLE
+#endif
 #else
 using real = float;
+#ifdef WITH_MPI
+#define realMPI      MPI_FLOAT
+#endif
 #endif // USE_DOUBLE
 
 // math function

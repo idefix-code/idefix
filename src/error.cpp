@@ -11,17 +11,20 @@ void ErrorHandler(const int ErrorType,
 
     if (ErrorType == ERROR_WARNING)
     {
-        std::cout << "------------------------------------------------------------------------------" << std::endl;
-        std::cout << "## WARNING in function " << ErrorFunction << " file " << ErrorFile << " line " << ErrorLine << std::endl;
-        std::cout << ErrorMessage.str() << std::endl;
-        std::cout << "------------------------------------------------------------------------------" << std::endl;
+        idfx::cout << "------------------------------------------------------------------------------" << std::endl;
+        idfx::cout << "## WARNING in function " << ErrorFunction << " file " << ErrorFile << " line " << ErrorLine << std::endl;
+        idfx::cout << ErrorMessage.str() << std::endl;
+        idfx::cout << "------------------------------------------------------------------------------" << std::endl;
     }
     else
     {
-        std::cout << "------------------------------------------------------------------------------" << std::endl;
-        std::cout << "### FATAL ERROR in function " << ErrorFunction << " file " << ErrorFile << " line " << ErrorLine << std::endl;
-        std::cout << ErrorMessage.str() << std::endl;
-        std::cout << "------------------------------------------------------------------------------" << std::endl;
+        idfx::cout << "------------------------------------------------------------------------------" << std::endl;
+        idfx::cout << "### FATAL ERROR in function " << ErrorFunction << " file " << ErrorFile << " line " << ErrorLine << std::endl;
+        idfx::cout << ErrorMessage.str() << std::endl;
+        idfx::cout << "------------------------------------------------------------------------------" << std::endl;
+        #ifdef WITH_MPI
+        MPI_Abort(MPI_COMM_WORLD,1);
+        #endif
         exit(1);
     }
 }
@@ -35,17 +38,20 @@ void ErrorHandler(const int ErrorType,
 
     if (ErrorType == ERROR_WARNING)
     {
-        std::cout << "------------------------------------------------------------------------------" << std::endl;
-        std::cout << "## WARNING in function " << ErrorFunction << " file " << ErrorFile << " line " << ErrorLine << std::endl;
-        std::cout << ErrorMessage << std::endl;
-        std::cout << "------------------------------------------------------------------------------" << std::endl;
+        idfx::cout << "------------------------------------------------------------------------------" << std::endl;
+        idfx::cout << "## WARNING in function " << ErrorFunction << " file " << ErrorFile << " line " << ErrorLine << std::endl;
+        idfx::cout << ErrorMessage << std::endl;
+        idfx::cout << "------------------------------------------------------------------------------" << std::endl;
     }
     else
     {
-        std::cout << "------------------------------------------------------------------------------" << std::endl;
-        std::cout << "### FATAL ERROR in function " << ErrorFunction << " file " << ErrorFile << " line " << ErrorLine << std::endl;
-        std::cout << ErrorMessage << std::endl;
-        std::cout << "------------------------------------------------------------------------------" << std::endl;
+        idfx::cout << "------------------------------------------------------------------------------" << std::endl;
+        idfx::cout << "### FATAL ERROR in function " << ErrorFunction << " file " << ErrorFile << " line " << ErrorLine << std::endl;
+        idfx::cout << ErrorMessage << std::endl;
+        idfx::cout << "------------------------------------------------------------------------------" << std::endl;
+        #ifdef WITH_MPI
+        MPI_Abort(MPI_COMM_WORLD,1);
+        #endif
         exit(1);
     }
 }

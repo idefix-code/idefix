@@ -49,7 +49,7 @@ Hydro::Hydro(Input &input, Grid &grid) {
         this->OmegaX2 = input.GetReal("Hydro","Rotation",1);
         this->OmegaX3 = input.GetReal("Hydro","Rotation",2);
 
-        std::cout << "Rotation enabled with Omega=(" << this->OmegaX1 << ", " << this->OmegaX2 << ", " << this->OmegaX3 << ")" << std::endl;
+        idfx::cout << "Rotation enabled with Omega=(" << this->OmegaX1 << ", " << this->OmegaX2 << ", " << this->OmegaX3 << ")" << std::endl;
     }
     else {
         this->haveRotation = false;
@@ -67,8 +67,8 @@ Hydro::Hydro(Input &input, Grid &grid) {
         // Get box size
         this->sbLx = grid.xend[IDIR] - grid.xbeg[IDIR];
 
-        std::cout << "xbeg=" << grid.xbeg[IDIR] << "xend=" << grid.xend[IDIR] <<std::endl;
-        std::cout << "ShearingBox enabled with Shear rate=" << this->sbS <<  "and Lx=" << sbLx << std::endl;
+        idfx::cout << "xbeg=" << grid.xbeg[IDIR] << "xend=" << grid.xend[IDIR] <<std::endl;
+        idfx::cout << "ShearingBox enabled with Shear rate=" << this->sbS <<  "and Lx=" << sbLx << std::endl;
     }
     else {
         this->haveShearingBox = false;
@@ -852,6 +852,20 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
     
 
     for(int dir=0 ; dir < DIMENSIONS ; dir++ ) {
+        // MPI Exchange data when needed
+        if(data.mygrid->nproc[dir]>1) {
+            switch(dir) {
+                case 0:
+                    data.ExchangeX1();
+                    break;
+                case 1:
+                    data.ExchangeX2();
+                    break;
+                case 2:
+                    data.ExchangeX3();
+                    break;
+            }
+        }
 
         ioffset = (dir == IDIR) ? data.np_int[IDIR] : 0;
         joffset = (dir == JDIR) ? data.np_int[JDIR] : 0;
@@ -867,7 +881,11 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
         kend= (dir == KDIR) ? kghost : data.np_tot[KDIR];
 
         switch(data.lbound[dir]) {
+            case internal:
+                // internal is used for MPI-enforced boundary conditions. Nothing to be done here.
+                break;
             case periodic:
+                if(data.mygrid->nproc[dir] > 1) break; // Periodicity already enforced by MPI calls
                 idefix_for("BoundaryBegPeriodic",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
                     KOKKOS_LAMBDA (int n, int k, int j, int i) {
                 
@@ -905,6 +923,7 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                 #endif
                 break;
             case shearingbox:
+                if(data.mygrid->nproc[dir] > 1) IDEFIX_ERROR("Not implemented"); // Periodicity already enforced by MPI calls
                 idefix_for("BoundaryBegShearingBox",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
                     KOKKOS_LAMBDA (int n, int k, int j, int i) {
                         real voffset= (n == VX2) ? - sbLx * sbS : ZERO_F;
@@ -933,7 +952,11 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
         kend = data.np_tot[KDIR];
 
         switch(data.rbound[dir]) {
+            case internal:
+                // internal is used for MPI-enforced boundary conditions. Nothing to be done here.
+                break;
             case periodic:
+                if(data.mygrid->nproc[dir] > 1) break; // Periodicity already enforced by MPI calls
                 idefix_for("BoundaryEndPeriodic",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
                     KOKKOS_LAMBDA (int n, int k, int j, int i) {
                 
@@ -969,6 +992,7 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                 #endif
                 break;
             case shearingbox:
+                if(data.mygrid->nproc[dir] > 1) IDEFIX_ERROR("Not implemented"); // Periodicity already enforced by MPI calls   
                 idefix_for("BoundaryEndShearingBox",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
                     KOKKOS_LAMBDA (int n, int k, int j, int i) {
                         real voffset= (n == VX2) ? + sbLx * sbS : ZERO_F;
@@ -1028,6 +1052,11 @@ real Hydro::CheckDivB(DataBlock &data) {
 
             }, Kokkos::Max<real>(divB) );
 
+    #ifdef WITH_MPI
+    if(idfx::psize>1) {
+        MPI_Allreduce(MPI_IN_PLACE, &divB, 1, realMPI, MPI_MAX, MPI_COMM_WORLD);
+    }
+    #endif
     return(divB);
 }
 
@@ -1062,7 +1091,7 @@ real Hydro::CheckDivB(DataBlock &data) {
             }
         }
     }
-    //std::cout << "divB=" << divB << "(i,j,k)=(" << iref << "," << jref << "," << kref << ")" << std::endl;
+    //idfx::cout << "divB=" << divB << "(i,j,k)=(" << iref << "," << jref << "," << kref << ")" << std::endl;
     return(divB);
 
 }

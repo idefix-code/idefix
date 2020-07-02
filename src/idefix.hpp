@@ -1,8 +1,12 @@
 #ifndef IDEFIX_HPP
 #define IDEFIX_HPP
 #include <iostream>
+#include <fstream>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_DualView.hpp>
+#ifdef WITH_MPI
+#include <mpi.h>
+#endif
 
 using Device = Kokkos::DefaultExecutionSpace;
 using Layout = Kokkos::LayoutRight;
@@ -122,7 +126,7 @@ enum BoundaryType { internal, periodic, outflow, shearingbox, userdef};
 enum BoundarySide { left, right};
 
 
-
+#include "global.hpp"
 #include "error.hpp"
 #include "macros.hpp"
 #include "loop.hpp"
@@ -139,7 +143,7 @@ enum BoundarySide { left, right};
 #include "outputVtk.hpp"
 
 #ifndef MHD
-#error MHD flag should be set to yes or no in definitions.hpp
+#error MHD flag should be set to yes or no
 #endif
 
 

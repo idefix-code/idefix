@@ -10,7 +10,7 @@
 class Input {
 public:
     // Constructor from a file
-    Input (std::string );
+    Input (std::string, int, char ** );
     void PrintParameters();
 
     // Accessor to input parameters
@@ -24,6 +24,7 @@ public:
 private:
     
     std::map<std::string,std::map<std::string,std::vector<std::string>>>   inputParameters;
+    void ParseCommandLine(int , char **argv);
 };
 
 #endif

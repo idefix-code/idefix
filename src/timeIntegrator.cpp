@@ -110,12 +110,12 @@ void TimeIntegrator::Cycle(DataBlock & data) {
     Kokkos::Profiling::pushRegion("TimeIntegrator::Cycle");
 
     if(timer.seconds()-lastLog >= 1.0) {
-    //if(ncycles%100==0) {
+    //if(ncycles%1==0) {
         lastLog = timer.seconds();
-        std::cout << "TimeIntegrator: t=" << t << " Cycle " << ncycles << " dt=" << dt << std::endl;
+        idfx::cout << "TimeIntegrator: t=" << t << " Cycle " << ncycles << " dt=" << dt << std::endl;
         #if MHD == YES
         // Check divB
-        std::cout << "\t maxdivB=" << hydro->CheckDivB(data) << std::endl;
+        idfx::cout << "\t maxdivB=" << hydro->CheckDivB(data) << std::endl;
         #endif
     }
 
@@ -145,9 +145,15 @@ void TimeIntegrator::Cycle(DataBlock & data) {
 
                 dtmin=FMIN(ONE_F/InvDt,dtmin);
             }, Kokkos::Min<real>(newdt) );
-
+            Kokkos::fence();
             //newdt=newdt*cfl*DIMENSIONS;   // For some reason, pluto divides by dimensions here, but it is then unstable...
             newdt=newdt*cfl;
+        #ifdef WITH_MPI
+            if(idfx::psize>1) {
+                
+                MPI_Allreduce(MPI_IN_PLACE, &newdt, 1, realMPI, MPI_MIN, MPI_COMM_WORLD);
+            }
+        #endif
         }
 
         // Is this not the first stage?

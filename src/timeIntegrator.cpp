@@ -145,11 +145,12 @@ void TimeIntegrator::Cycle(DataBlock & data) {
 
                 dtmin=FMIN(ONE_F/InvDt,dtmin);
             }, Kokkos::Min<real>(newdt) );
-
+            Kokkos::fence();
             //newdt=newdt*cfl*DIMENSIONS;   // For some reason, pluto divides by dimensions here, but it is then unstable...
             newdt=newdt*cfl;
         #ifdef WITH_MPI
             if(idfx::psize>1) {
+                
                 MPI_Allreduce(MPI_IN_PLACE, &newdt, 1, realMPI, MPI_MIN, MPI_COMM_WORLD);
             }
         #endif

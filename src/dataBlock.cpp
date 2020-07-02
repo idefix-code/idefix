@@ -295,8 +295,8 @@ void DataBlock::ExchangeX1() {
 
     idefix_for("LoadBufferX1BX3s",kbeg,kend+1,jbeg,jend,ibeg,iend,
                     KOKKOS_LAMBDA (int k, int j, int i) {
-                        BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*(ny+1) + VsIndex ) = Vs(BX3s,k,j,i+nx);
-                        BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*(ny+1) + VsIndex ) = Vs(BX3s,k,j,i+offset-nx);
+                        BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) = Vs(BX3s,k,j,i+nx);
+                        BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) = Vs(BX3s,k,j,i+offset-nx);
                     });
 
     #endif
@@ -358,7 +358,7 @@ void DataBlock::ExchangeX1() {
     idefix_for("StoreBufferX1BX3s",kbeg,kend+1,jbeg,jend,ibeg,iend,
                     KOKKOS_LAMBDA ( int k, int j, int i) {
                         Vs(BX3s,k,j,i) = BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
-                        Vs(BX3s,k,j,i+offset) = BufferRight(i + j*nx + k*nx*ny + VsIndex );
+                        Vs(BX3s,k,j,i+offset) = BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
                     });
 
     #endif
@@ -426,7 +426,7 @@ void DataBlock::ExchangeX2() {
     #endif
 
     #if DIMENSIONS == 3
-    VsIndex = (NVAR+1)*nx*ny*nz + nx*(ny+1)*nz;
+    VsIndex = (NVAR+1)*nx*ny*nz + (nx+1)*ny*nz;
 
     idefix_for("LoadBufferX2BX3s",kbeg,kend+1,jbeg,jend,ibeg,iend,
                     KOKKOS_LAMBDA (int k, int j, int i) {
@@ -488,12 +488,12 @@ void DataBlock::ExchangeX2() {
     #endif
 
     #if DIMENSIONS == 3
-    VsIndex = (NVAR+1)*nx*ny*nz + nx*(ny+1)*nz;
+    VsIndex = (NVAR+1)*nx*ny*nz + (nx+1)*ny*nz;
 
     idefix_for("StoreBufferX2BX3s",kbeg,kend+1,jbeg,jend,ibeg,iend,
                     KOKKOS_LAMBDA ( int k, int j, int i) {
                         Vs(BX3s,k,j,i) = BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
-                        Vs(BX3s,k,j+offset,i) = BufferRight(i + j*nx + k*nx*ny + VsIndex );
+                        Vs(BX3s,k,j+offset,i) = BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
                     });
 
     #endif

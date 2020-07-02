@@ -151,7 +151,7 @@ void TimeIntegrator::Cycle(DataBlock & data) {
         #ifdef WITH_MPI
             if(idfx::psize>1) {
                 
-                MPI_Allreduce(MPI_IN_PLACE, &newdt, 1, realMPI, MPI_MIN, MPI_COMM_WORLD);
+                MPI_SAFE_CALL(MPI_Allreduce(MPI_IN_PLACE, &newdt, 1, realMPI, MPI_MIN, MPI_COMM_WORLD));
             }
         #endif
         }

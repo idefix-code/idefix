@@ -93,7 +93,6 @@ Grid::Grid(Input &input) {
 
     // Check if the dec option has been passed when number of procs > 1
     if(idfx::psize>1) {
-        bool autoDecomposition=false;
 
         if(input.CheckEntry("CommandLine","dec")  != DIMENSIONS) {
             // No command line decomposition, see if auto-decomposition is possible (only when nproc and dimensions are powers of 2)

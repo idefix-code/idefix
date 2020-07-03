@@ -136,7 +136,7 @@ Grid::Grid(Input &input) {
     MPI_Cart_coords(CartComm, idfx::prank, 3, xproc);
     
     MPI_Barrier(MPI_COMM_WORLD);
-    idfx::cout << "Proc dimensions (";
+    idfx::cout << "Grid:: Current MPI proc dimensions (";
 
     for(int dir = 0; dir < 3; dir++) {
         idfx::cout << xproc[dir];

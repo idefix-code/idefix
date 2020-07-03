@@ -40,8 +40,8 @@ void Setup::InitFlow(DataBlock &data) {
                 d.Vc(RHO,k,j,i) = 25.0/(36.0*M_PI);
                 d.Vc(PRS,k,j,i) = 5.0/(12.0*M_PI);
                 d.Vc(VX1,k,j,i) = -sin(2.0*M_PI*y);
-                d.Vc(VX2,k,j,i) = sin(2.0*M_PI*x);
-                d.Vc(VX3,k,j,i) = 0.0;
+                d.Vc(VX2,k,j,i) = sin(2.0*M_PI*x)+cos(2.0*M_PI*z);
+                d.Vc(VX3,k,j,i) = cos(2.0*M_PI*x);
                 
                 d.Vs(BX1s,k,j,i) = -B0*sin(2.0*M_PI*y);
                 d.Vs(BX2s,k,j,i) = B0*sin(4.0*M_PI*x);

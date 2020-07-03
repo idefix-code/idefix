@@ -44,7 +44,7 @@ void Setup::InitFlow(DataBlock &data) {
                 d.Vc(VX3,k,j,i) = 0.0;
                 
                 d.Vs(BX1s,k,j,i) = -B0*sin(2.0*M_PI*y);
-                d.Vs(BX2s,k,j,i) = B0*sin(4.0*M_PI*x+2.0*M_PI*z);
+                d.Vs(BX2s,k,j,i) = B0*sin(4.0*M_PI*x);
                 d.Vs(BX3s,k,j,i) = B0*(cos(2.0*M_PI*x)+sin(2.0*M_PI*y));
 
             }

@@ -93,24 +93,37 @@ Grid::Grid(Input &input) {
 
     // Check if the dec option has been passed when number of procs > 1
     if(idfx::psize>1) {
+        bool autoDecomposition=false;
 
         if(input.CheckEntry("CommandLine","dec")  != DIMENSIONS) {
-            IDEFIX_ERROR("When using MPI with np > 1, -dec option is mandatory.");
+            // No command line decomposition, see if auto-decomposition is possible (only when nproc and dimensions are powers of 2)
+            bool autoDecomposition=true;
+            if(!isPow2(idfx::psize)) autoDecomposition=false;
+            for(int dir = 0; dir < 3; dir++) {
+                if(np_int[dir]>1) {
+                    if(!isPow2(np_int[dir])) autoDecomposition=false;
+                }
+            } 
+            if(autoDecomposition) makeDomainDecomposition();
+            else IDEFIX_ERROR("-dec option is mandatory when nproc or nx1, nx2, nx3 are not powers of 2.");
         }
-        int ntot=1;
-        for(int dir=0 ; dir < DIMENSIONS; dir++) {
-            nproc[dir] = input.GetInt("CommandLine","dec",dir);
-            ntot = ntot * nproc[dir];
-        }
-        if(ntot != idfx::psize) {
-            std::stringstream msg;
-            msg << "The number of MPI process (" << idfx::psize << ") does not match your domain decomposition (";
+        else {
+            // Manual domain decomposition (with -dec option)
+            int ntot=1;
             for(int dir=0 ; dir < DIMENSIONS; dir++) {
-                msg << nproc[dir];
-                if(dir<DIMENSIONS-1) msg << ", ";
+                nproc[dir] = input.GetInt("CommandLine","dec",dir);
+                ntot = ntot * nproc[dir];
             }
-            msg << ").";
-            IDEFIX_ERROR(msg);
+            if(ntot != idfx::psize) {
+                std::stringstream msg;
+                msg << "The number of MPI process (" << idfx::psize << ") does not match your domain decomposition (";
+                for(int dir=0 ; dir < DIMENSIONS; dir++) {
+                    msg << nproc[dir];
+                    if(dir<DIMENSIONS-1) msg << ", ";
+                }
+                msg << ").";
+                IDEFIX_ERROR(msg);
+            }
         }
     }
 
@@ -139,6 +152,45 @@ Grid::Grid(Input &input) {
 
 }
 
+bool Grid::isPow2(int n) {
+    return( (n & (n-1)) == 0);
+}
+
+// Produce a domain decomposition in nProc assuming psize and np_int[] are powers of 2
+void Grid::makeDomainDecomposition() {
+    // initialize the routine
+    int nleft=idfx::psize;
+    int nlocal[3];
+    for(int dir = 0; dir < 3; dir++) {
+        nproc[dir] = 1;
+        nlocal[dir] = np_int[dir];
+    }
+
+    // Loop 
+    while(nleft>1) {
+        // Find the direction where there is a maximum of point
+        int dirmax;
+        int nmax=1;
+
+        for(int dir = 2; dir >= 0; dir--) { // We do this loop backward so that we divide the domain first in the last dimension (better for cache optimisation)
+            if(nlocal[dir]>nmax ) {
+                nmax=nlocal[dir];
+                dirmax=dir;
+            }
+        }
+        // At this point, we have nmax points in direction dirmax, which is the direction we're going to divide by 2
+        if(nmax==1) IDEFIX_ERROR("Your domain size is too small to be decomposed on this number of MPI processes");
+        nlocal[dirmax]=nlocal[dirmax]/2;
+        nproc[dirmax]=nproc[dirmax]*2;
+        nleft=nleft/2;
+    }
+
+    idfx::cout << "Grid::makeDomainDecomposition grid is (";
+    for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
+        idfx::cout << " " << nproc[dir] << " ";
+    }
+    idfx::cout << ")" << std::endl;
+}
 /*
 Grid& Grid::operator=(const Grid& grid) {
     for(int dir = 0 ; dir < 3 ; dir++) {

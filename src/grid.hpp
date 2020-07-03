@@ -35,7 +35,10 @@ public:
     // Copyt
     //Grid& operator=(const Grid& );
 
-
+private:
+    // Check if number is a power of 2
+    bool isPow2(int);
+    void makeDomainDecomposition();
 
 };
 

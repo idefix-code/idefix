@@ -90,9 +90,9 @@ if args.gpu:
     # This assumes openmpi or intelmpi
     if(args.mpi):
         # Environment variable for openmpi
-        makefileOptions['extraLine'] += '\nOMPI_CXX=' + makefileOptions['cxx'] +"\n"
+        makefileOptions['extraLine'] += '\nexport OMPI_CXX=' + makefileOptions['cxx'] +"\n"
         # Environment variable for intelMPI
-        makefileOptions['extraLine'] += '\nI_MPI_CXX=' + makefileOptions['cxx'] +"\n"
+        makefileOptions['extraLine'] += '\nexport I_MPI_CXX=' + makefileOptions['cxx'] +"\n"
         # Replace nvcc by mpi compileer
         makefileOptions['cxx'] = 'mpicxx'
 

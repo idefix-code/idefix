@@ -17,7 +17,7 @@ static real shear;
 real randm(void) {
     const int a    =    16807;
     const int m =    2147483647;
-    static int in0 = 13763;
+    static int in0 = 13763 + 2417*idfx::prank;
     int q;
     
     /* find random number  */

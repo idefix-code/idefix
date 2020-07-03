@@ -747,20 +747,30 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                 #endif
                 break;
             case shearingbox:
-                if(data.mygrid->nproc[dir] > 1) IDEFIX_ERROR("Not implemented"); // Periodicity already enforced by MPI calls
-                idefix_for("BoundaryBegShearingBox",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
-                    KOKKOS_LAMBDA (int n, int k, int j, int i) {
-                        real voffset= (n == VX2) ? - sbLx * sbS : ZERO_F;
-                        Vc(n,k,j,i) = Vc(n,k+koffset,j+joffset,i+ioffset) + voffset;
-                    });
-                #if MHD == YES
-                idefix_for("BoundaryBegShearingBoxVs",0,DIMENSIONS,kbeg,kend,jbeg,jend,ibeg,iend,
-                    KOKKOS_LAMBDA (int n, int k, int j, int i) {
+                if(data.mygrid->nproc[dir] > 1) {
+                    // if shearing box enabled, the MPI call has already enforced strict periodicicty, so we just need to enforce the offset
+                    real voffset=-sbLx*sbS;
 
-                        // Don't touch the normal component !
-                        if(n != dir) Vs(n,k,j,i) = Vs(n,k+koffset,j+joffset,i+ioffset);
-                    });
-                #endif
+                    idefix_for("BoundaryBegShearingBox",kbeg,kend,jbeg,jend,ibeg,iend,
+                        KOKKOS_LAMBDA (int k, int j, int i) {
+                            Vc(VX2,k,j,i) = Vc(VX2,k,j,i) + voffset;
+                        });
+                }
+                else {
+                    idefix_for("BoundaryBegShearingBox",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+                        KOKKOS_LAMBDA (int n, int k, int j, int i) {
+                            real voffset= (n == VX2) ? - sbLx * sbS : ZERO_F;
+                            Vc(n,k,j,i) = Vc(n,k+koffset,j+joffset,i+ioffset) + voffset;
+                        });
+                    #if MHD == YES
+                    idefix_for("BoundaryBegShearingBoxVs",0,DIMENSIONS,kbeg,kend,jbeg,jend,ibeg,iend,
+                        KOKKOS_LAMBDA (int n, int k, int j, int i) {
+
+                            // Don't touch the normal component !
+                            if(n != dir) Vs(n,k,j,i) = Vs(n,k+koffset,j+joffset,i+ioffset);
+                        });
+                    #endif
+                }
                 break;
             default:
                 std::stringstream msg ("Boundary condition type is not yet implemented");
@@ -816,20 +826,30 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                 #endif
                 break;
             case shearingbox:
-                if(data.mygrid->nproc[dir] > 1) IDEFIX_ERROR("Not implemented"); // Periodicity already enforced by MPI calls   
-                idefix_for("BoundaryEndShearingBox",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
-                    KOKKOS_LAMBDA (int n, int k, int j, int i) {
-                        real voffset= (n == VX2) ? + sbLx * sbS : ZERO_F;
+                if(data.mygrid->nproc[dir] > 1) {
+                    // if shearing box enabled, the MPI call has already enforced strict periodicicty, so we just need to enforce the offset
+                    real voffset=sbLx*sbS;
 
-                        Vc(n,k,j,i) = Vc(n,k-koffset,j-joffset,i-ioffset) + voffset;
-                    });
-                #if MHD == YES
-                idefix_for("BoundaryEndShearingBoxVs",0,DIMENSIONS,kbeg,kend,jbeg,jend,ibeg,iend,
-                    KOKKOS_LAMBDA (int n, int k, int j, int i) {
-                        // Don't touch the normal component !
-                        if(n != dir) Vs(n,k,j,i) = Vs(n,k-koffset,j-joffset,i-ioffset);                        
-                    });
-                #endif
+                    idefix_for("BoundaryEndShearingBox",kbeg,kend,jbeg,jend,ibeg,iend,
+                        KOKKOS_LAMBDA (int k, int j, int i) {
+                            Vc(VX2,k,j,i) = Vc(VX2,k,j,i) + voffset;
+                        });
+                }
+                else {
+                    idefix_for("BoundaryEndShearingBox",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+                        KOKKOS_LAMBDA (int n, int k, int j, int i) {
+                            real voffset= (n == VX2) ? + sbLx * sbS : ZERO_F;
+
+                            Vc(n,k,j,i) = Vc(n,k-koffset,j-joffset,i-ioffset) + voffset;
+                        });
+                    #if MHD == YES
+                    idefix_for("BoundaryEndShearingBoxVs",0,DIMENSIONS,kbeg,kend,jbeg,jend,ibeg,iend,
+                        KOKKOS_LAMBDA (int n, int k, int j, int i) {
+                            // Don't touch the normal component !
+                            if(n != dir) Vs(n,k,j,i) = Vs(n,k-koffset,j-joffset,i-ioffset);                        
+                        });
+                    #endif
+                }
                 break;
             default:
                 std::stringstream msg("Boundary condition type is not yet implemented");

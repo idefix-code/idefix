@@ -87,15 +87,12 @@ if args.gpu:
     makefileOptions['kokkosArch'] = cpu+","+gpu
     makefileOptions['cxxflags'] = "-O3 "
 
-    # This assumes openmpi or intelmpi
+    # This assumes openmpi. TODO: do a more general routine for all compilers
     if(args.mpi):
-        # Environment variable for openmpi
-        makefileOptions['extraLine'] += '\nexport OMPI_CXX=' + makefileOptions['cxx'] +"\n"
-        # Environment variable for intelMPI
-        makefileOptions['extraLine'] += '\nexport I_MPI_CXX=' + makefileOptions['cxx'] +"\n"
-        # Replace nvcc by mpi compileer
-        makefileOptions['cxx'] = 'mpicxx'
-
+        stream=os.popen('mpicxx --showme:compile')
+        makefileOptions['cxxflags'] += stream.read().strip()
+        stream=os.popen('mpicxx --showme:link')
+        makefileOptions['ldflags'] += stream.read().strip()
 else:
     if(args.mpi):
         makefileOptions['cxx'] = "mpicxx"

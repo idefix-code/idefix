@@ -52,7 +52,7 @@ Profiling
 use the kokkos profiler tool, which can be downloaded from kokkos-tools (on github)
 Then set the environement variable:
 
-`export KOKKOS_PROFILE_LIBRARY=~/Kokkos/kokkos-tools/src/tools/space-time-stack/kp_space_time_stack.so``
+`export KOKKOS_PROFILE_LIBRARY=~/Kokkos/kokkos-tools/src/tools/space-time-stack/kp_space_time_stack.so`
 
 and then simply run the code (no need to recompile)
 

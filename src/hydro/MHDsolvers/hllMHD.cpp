@@ -350,8 +350,8 @@ void HllMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
         
 #if EMF_AVERAGE == UCT_CONTACT
         int s = 0;
-        if      (Flux(RHO,k,j,i) >  eps_UCT_CONTACT) s =  1;
-        else if (Flux(RHO,k,j,i) < -eps_UCT_CONTACT) s = -1;
+        if (Flux(RHO,k,j,i) >  eps_UCT_CONTACT) s =  1;
+        if (Flux(RHO,k,j,i) < -eps_UCT_CONTACT) s = -1;
 
         SV(k,j,i) = s;
 #endif

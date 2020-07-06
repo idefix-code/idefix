@@ -5,7 +5,7 @@
 
 
 #define     SMALL_PRESSURE_FIX      (1.0e-5)
-#define     eps_UCT_CONTACT          1.e-6
+#define     eps_UCT_CONTACT         (1.0e-6)
 
 // Solver type
 #if MHD == YES

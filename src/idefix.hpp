@@ -111,9 +111,14 @@ using Layout = Kokkos::LayoutRight;
 
 #define NVAR    (NFLX)
 
+/*---- EMFs -----*/
+#define ARITHMETIC   1
+#define UCT0         2
+#define UCT_CONTACT  3
 
-
-
+#ifndef EMF_AVERAGE
+    #define EMF_AVERAGE     ARITHMETIC
+#endif
 
 
 // Types of boundary which can be treated

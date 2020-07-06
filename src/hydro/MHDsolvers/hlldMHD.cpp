@@ -22,6 +22,8 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
     // References to required emf components
     IdefixArray3D<real> Eb;
     IdefixArray3D<real> Et;
+    
+    IdefixArray3D<int> SV;
 
 
     real gamma_m1=gamma-ONE_F;
@@ -53,16 +55,17 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
                     sb = +ONE_F;  )
 #if !HAVE_ENERGY
             EXPAND( MXn = MX1; 
-                    BXn = BX1;       , 
-                    MXt = MX2;       , 
-                    MXb = MX3;       )
+                    BXn = BX1;    , 
+                    MXt = MX2;    , 
+                    MXb = MX3;    )
 #endif
-            EXPAND(                 , 
-                    BXt = BX2;       ,
-                    BXb = BX3;       )
+            EXPAND(               , 
+                    BXt = BX2;    ,
+                    BXb = BX3;    )
 
             Et = data.emf.ezi;
             Eb = data.emf.eyi;
+            SV = data.emf.svx;
 
             break;
         case(JDIR):
@@ -75,18 +78,17 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
                     sb = -ONE_F;  )
 #if !HAVE_ENERGY
             EXPAND(MXn = MX2; 
-                   BXn = BX2;       , 
-                   MXt = MX1;       , 
-                   MXb = MX3;       )
+                   BXn = BX2;     , 
+                   MXt = MX1;     , 
+                   MXb = MX3;     )
 #endif
-            EXPAND(                 , 
-                   BXt = BX1;       , 
-                   BXb = BX3;       )
+            EXPAND(               , 
+                   BXt = BX1;     , 
+                   BXb = BX3;     )
 
             Et = data.emf.ezj;
             Eb = data.emf.exj;
-
-            
+            SV = data.emf.svy;
             
             break;
         case(KDIR):
@@ -98,18 +100,17 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
                     sb = +ONE_F;  )
 #if !HAVE_ENERGY
             EXPAND(MXn = MX3; 
-                   BXn = BX3;       , 
-                   MXt = MX1;       , 
-                   MXb = MX2;       )
+                   BXn = BX3;     , 
+                   MXt = MX1;     , 
+                   MXb = MX2;     )
 #endif
-            EXPAND(                 , 
-                   BXt = BX1;       , 
-                   BXb = BX2;       )
+            EXPAND(               , 
+                   BXt = BX1;     , 
+                   BXb = BX2;     )
 
             Et = data.emf.eyk;
             Eb = data.emf.exk;
-
-            
+            SV = data.emf.svz;
             
             break;
         default:
@@ -1117,6 +1118,14 @@ void HlldMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
         D_EXPAND(Et(k,j,i) = st*Flux(BXt,k,j,i); ,
                                                     ,
                     Eb(k,j,i) = sb*Flux(BXb,k,j,i); )
+        
+#if EMF_AVERAGE == UCT_CONTACT
+        int s = 0;
+        if (Flux(RHO,k,j,i) >  eps_UCT_CONTACT) s =  1;
+        if (Flux(RHO,k,j,i) < -eps_UCT_CONTACT) s = -1;
+
+        SV(k,j,i) = s;
+#endif
 
     });
 

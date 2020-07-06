@@ -20,6 +20,14 @@ class ElectroMotiveForce {
         IdefixArray3D<real>     ex;
         IdefixArray3D<real>     ey;
         IdefixArray3D<real>     ez;
+        
+        IdefixArray3D<int>      svx;
+        IdefixArray3D<int>      svy;
+        IdefixArray3D<int>      svz;
+        
+        IdefixArray3D<real>     Ex1;
+        IdefixArray3D<real>     Ex2;
+        IdefixArray3D<real>     Ex3;
 
         /* Range of existence */
         int  ibeg, jbeg, kbeg;

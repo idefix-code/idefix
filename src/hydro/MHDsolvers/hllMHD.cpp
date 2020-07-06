@@ -22,6 +22,8 @@ void HllMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
     // References to required emf components
     IdefixArray3D<real> Eb;
     IdefixArray3D<real> Et;
+    
+    IdefixArray3D<int> SV;
 
 
     real gamma_m1=gamma-ONE_F;
@@ -49,6 +51,7 @@ void HllMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
 
             Et = data.emf.ezi;
             Eb = data.emf.eyi;
+            SV = data.emf.svx;
 
             D_EXPAND( st = -1.0;  ,
                                   ,
@@ -65,6 +68,7 @@ void HllMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
 
             Et = data.emf.ezj;
             Eb = data.emf.exj;
+            SV = data.emf.svy;
 
             D_EXPAND( st = +1.0;  ,
                                   ,
@@ -81,6 +85,7 @@ void HllMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
 
             Et = data.emf.eyk;
             Eb = data.emf.exk;
+            SV = data.emf.svz;
 
             D_EXPAND( st = -1.0;  ,
                                   ,
@@ -342,6 +347,14 @@ void HllMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
         D_EXPAND(Et(k,j,i) = st*Flux(BXt,k,j,i); ,
                                                     ,
                     Eb(k,j,i) = sb*Flux(BXb,k,j,i); )
+        
+#if EMF_AVERAGE == UCT_CONTACT
+        int s = 0;
+        if (Flux(RHO,k,j,i) >  eps_UCT_CONTACT) s =  1;
+        if (Flux(RHO,k,j,i) < -eps_UCT_CONTACT) s = -1;
+
+        SV(k,j,i) = s;
+#endif
 
     });
 

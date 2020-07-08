@@ -114,8 +114,8 @@ void Input::ParseCommandLine(int argc, char **argv) {
             }
         }
         else {
-            msg << "Unknown option, passing it to Kokkos" << argv[i];
-            IDEFIX_WARNING(msg);
+            msg << "Unknown option " << argv[i];
+            IDEFIX_ERROR(msg);
         }
     }
 }

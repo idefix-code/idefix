@@ -597,9 +597,9 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
     IdefixArray3D<int> svz = data.emf.svz;
     
     idefix_for("EMF_ArithmeticAverage",
-                KOFFSET,data.np_tot[KDIR]-KOFFSET,
-                JOFFSET,data.np_tot[JDIR]-JOFFSET,
-                IOFFSET,data.np_tot[IDIR]-IOFFSET,
+                data.beg[KDIR],data.end[KDIR]+KOFFSET,
+                data.beg[JDIR],data.end[JDIR]+JOFFSET,
+                data.beg[IDIR],data.end[IDIR]+IOFFSET,
                 KOKKOS_LAMBDA (int k, int j, int i) {
 
                     // CT_EMF_ArithmeticAverage (emf, 1.0);

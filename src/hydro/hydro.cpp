@@ -567,6 +567,7 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
                     ezj(k,j,i) *= TWO_F;
                     ezi(k,j,i) -= HALF_F*(Ex3(k,j,i-1) + Ex3(k,j,i));
                     ezj(k,j,i) -= HALF_F*(Ex3(k,j-1,i) + Ex3(k,j,i));
+
                 });
     
     idefix_for("CalcCornerEMF",
@@ -596,9 +597,9 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
     IdefixArray3D<int> svz = data.emf.svz;
     
     idefix_for("EMF_ArithmeticAverage",
-                data.beg[KDIR],data.end[KDIR]+KOFFSET,
-                data.beg[JDIR],data.end[JDIR]+JOFFSET,
-                data.beg[IDIR],data.end[IDIR]+IOFFSET,
+                KOFFSET,data.np_tot[KDIR]-KOFFSET,
+                JOFFSET,data.np_tot[JDIR]-JOFFSET,
+                IOFFSET,data.np_tot[IDIR]-IOFFSET,
                 KOKKOS_LAMBDA (int k, int j, int i) {
 
                     // CT_EMF_ArithmeticAverage (emf, 1.0);
@@ -612,13 +613,6 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
     #else
                     ez(k,j,i) = w * (TWO_F*ezi(k,j,i) + ezj(k,j,i) + ezj(k,j,i-1));
     #endif
-                });
-    
-    idefix_for("CalcCornerEMF",
-                data.beg[KDIR],data.end[KDIR]+KOFFSET,
-                data.beg[JDIR],data.end[JDIR]+JOFFSET,
-                data.beg[IDIR],data.end[IDIR]+IOFFSET,
-                KOKKOS_LAMBDA (int k, int j, int i) {
                     
                     //CT_EMF_IntegrateToCorner (data, emf, grid);
                     int iu, ju, ku;
@@ -637,38 +631,38 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
                     // Span X - Faces:    dEz/dy, dEy/dz
 
                     if (sx == 0) {
-                        ez(k,j,i) += HALF_F*(ezj(k,j,i-1)   - Ex3(k,j,i-1) + ezj(k,j,i)   - Ex3(k,j,i));
-                        ez(k,j,i) -= HALF_F*(Ex3(k,j+1,i-1) - ezj(k,j,i-1) + Ex3(k,j+1,i) - ezj(k,j,i));
+                        ez(k,j,i) += HALF_F*(ezj(k,j,i-1) - Ex3(k,j-1,i-1) + ezj(k,j,i) - Ex3(k,j-1,i));
+                        ez(k,j,i) -= HALF_F*(Ex3(k,j,i-1) - ezj(k,j,i-1)   + Ex3(k,j,i) - ezj(k,j,i));
     #if DIMENSIONS == 3
-                        ey(k,j,i) += HALF_F*(eyk(k,j,i-1)   - Ex2(k,j,i-1) + eyk(k,j,i)   - Ex2(k,j,i));
-                        ey(k,j,i) -= HALF_F*(Ex2(k+1,j,i-1) - eyk(k,j,i-1) + Ex2(k+1,j,i) - eyk(k,j,i));
+                        ey(k,j,i) += HALF_F*(eyk(k,j,i-1) - Ex2(k-1,j,i-1) + eyk(k,j,i) - Ex2(k-1,j,i));
+                        ey(k,j,i) -= HALF_F*(Ex2(k,j,i-1) - eyk(k,j,i-1)   + Ex2(k,j,i) - eyk(k,j,i));
     #endif
                     }
                     else {
-                        ez(k,j,i) += ezj(k,j,iu)   - Ex3(k,j,iu);
-                        ez(k,j,i) -= Ex3(k,j+1,iu) - ezj(k,j,iu);
+                        ez(k,j,i) += ezj(k,j,iu) - Ex3(k,j-1,iu);
+                        ez(k,j,i) -= Ex3(k,j,iu) - ezj(k,j,iu);
     #if DIMENSIONS == 3
-                        ey(k,j,i) += eyk(k,j,iu)   - Ex2(k,j,iu);
-                        ey(k,j,i) -= Ex2(k+1,j,iu) - eyk(k,j,iu);
+                        ey(k,j,i) += eyk(k,j,iu) - Ex2(k-1,j,iu);
+                        ey(k,j,i) -= Ex2(k,j,iu) - eyk(k,j,iu);
     #endif
                     }
 
                     // Span Y - Faces:    dEz/dx, dEx/dz
 
                     if (sy == 0) {
-                        ez(k,j,i) += HALF_F*(ezi(k,j-1,i)   - Ex3(k,j-1,i) + ezi(k,j,i)   - Ex3(k,j,i));
-                        ez(k,j,i) -= HALF_F*(Ex3(k,j-1,i+1) - ezi(k,j-1,i) + Ex3(k,j,i+1) - ezi(k,j,i));
+                        ez(k,j,i) += HALF_F*(ezi(k,j-1,i) - Ex3(k,j-1,i-1) + ezi(k,j,i) - Ex3(k,j,i-1));
+                        ez(k,j,i) -= HALF_F*(Ex3(k,j-1,i) - ezi(k,j-1,i)   + Ex3(k,j,i) - ezi(k,j,i));
     #if DIMENSIONS == 3
-                        ex(k,j,i) += HALF_F*(exk(k,j-1,i)   - Ex1(k,j-1,i) + exk(k,j,i)   - Ex1(k,j,i));
-                        ex(k,j,i) -= HALF_F*(Ex1(k+1,j-1,i) - exk(k,j-1,i) + Ex1(k+1,j,i) - exk(k,j,i));
+                        ex(k,j,i) += HALF_F*(exk(k,j-1,i) - Ex1(k-1,j-1,i) + exk(k,j,i) - Ex1(k-1,j,i));
+                        ex(k,j,i) -= HALF_F*(Ex1(k,j-1,i) - exk(k,j-1,i)   + Ex1(k,j,i) - exk(k,j,i));
     #endif
                     }
                     else {
-                        ez(k,j,i) += ezi(k,ju,i)   - Ex3(k,ju,i);
-                        ez(k,j,i) -= Ex3(k,ju,i+1) - ezi(k,ju,i);
+                        ez(k,j,i) += ezi(k,ju,i) - Ex3(k,ju,i-1);
+                        ez(k,j,i) -= Ex3(k,ju,i) - ezi(k,ju,i);
     #if DIMENSIONS == 3
-                        ex(k,j,i) += exk(k,ju,i)   - Ex1(k,ju,i);
-                        ex(k,j,i) -= Ex1(k+1,ju,i) - exk(k,ju,i);
+                        ex(k,j,i) += exk(k,ju,i) - Ex1(k-1,ju,i);
+                        ex(k,j,i) -= Ex1(k,ju,i) - exk(k,ju,i);
     #endif
                     }
 
@@ -676,16 +670,16 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
 
     #if DIMENSIONS == 3
                     if (sz == 0) {
-                        ex(k,j,i) += HALF_F*(exj(k-1,j,i)   - Ex1(k-1,j,i) + exj(k,j,i)   - Ex1(k,j,i));
-                        ex(k,j,i) -= HALF_F*(Ex1(k-1,j+1,i) - exj(k-1,j,i) + Ex1(k,j+1,i) - exj(k,j,i));
-                        ey(k,j,i) += HALF_F*(eyi(k-1,j,i)   - Ex2(k-1,j,i) + eyi(k,j,i)   - Ex2(k,j,i));
-                        ey(k,j,i) -= HALF_F*(Ex2(k-1,j,i+1) - eyi(k-1,j,i) + Ex2(k,j,i+1) - eyi(k,j,i));
+                        ex(k,j,i) += HALF_F*(exj(k-1,j,i) - Ex1(k-1,j-1,i) + exj(k,j,i) - Ex1(k,j-1,i));
+                        ex(k,j,i) -= HALF_F*(Ex1(k-1,j,i) - exj(k-1,j,i)   + Ex1(k,j,i) - exj(k,j,i));
+                        ey(k,j,i) += HALF_F*(eyi(k-1,j,i) - Ex2(k-1,j,i-1) + eyi(k,j,i) - Ex2(k,j,i-1));
+                        ey(k,j,i) -= HALF_F*(Ex2(k-1,j,i) - eyi(k-1,j,i)   + Ex2(k,j,i) - eyi(k,j,i));
                     }
                     else {
-                        ex(k,j,i) += exj(ku,j,i)   - Ex1(ku,j,i);
-                        ex(k,j,i) -= Ex1(ku,j+1,i) - exj(ku,j,i);
-                        ey(k,j,i) += eyi(ku,j,i)   - Ex2(ku,j,i);
-                        ey(k,j,i) -= Ex2(ku,j,i+1) - eyi(ku,j,i);
+                        ex(k,j,i) += exj(ku,j,i) - Ex1(ku,j-1,i);
+                        ex(k,j,i) -= Ex1(ku,j,i) - exj(ku,j,i);
+                        ey(k,j,i) += eyi(ku,j,i) - Ex2(ku,j,i-1);
+                        ey(k,j,i) -= Ex2(ku,j,i) - eyi(ku,j,i);
                     }
 
                     ex(k,j,i) *= ONE_FOURTH_F;

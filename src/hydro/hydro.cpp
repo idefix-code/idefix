@@ -399,8 +399,9 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real dt) {
 
     idfx::pushRegion("Hydro::CalcRightHandSide");
     IdefixArray4D<real> Uc = data.Uc;
-    IdefixArray1D<real> dx = data.dx[dir];
     IdefixArray4D<real> Flux = data.FluxRiemann;
+    IdefixArray3D<real> A = data.A[dir];
+    IdefixArray3D<real> dV = data.dV;
 
     int ioffset,joffset,koffset;
     ioffset=joffset=koffset=0;
@@ -412,8 +413,7 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real dt) {
     idefix_for("CalcRightHandSide",data.beg[KDIR],data.end[KDIR],data.beg[JDIR],data.end[JDIR],data.beg[IDIR],data.end[IDIR],
         KOKKOS_LAMBDA (int k, int j, int i) {
             
-            const int ig = ioffset*i + joffset*j + koffset*k;
-            real dtdx=dt / dx(ig);
+            real dtdV=dt / dV(k,j,i);
 
             for(int nv = 0 ; nv < NVAR ; nv++) {
                 // Do not evolve the field components if they are computed by CT (i.e. if they are in Vs)
@@ -423,7 +423,7 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real dt) {
                           if(nv == BX3) continue;  ) 
                 
 
-                Uc(nv,k,j,i) = Uc(nv,k,j,i) -  dtdx*(Flux(nv, k+koffset, j+joffset, i+ioffset) - Flux(nv, k, j, i));
+                Uc(nv,k,j,i) = Uc(nv,k,j,i) -  dtdV*(Flux(nv, k+koffset, j+joffset, i+ioffset)*A(k+koffset, j+joffset, i+ioffset) - Flux(nv, k, j, i)*A(k,j,i));
             }
 
             
@@ -710,6 +710,14 @@ void Hydro::EvolveMagField(DataBlock &data, real t, real dt) {
     IdefixArray1D<real> x2=data.x[JDIR];
     IdefixArray1D<real> x3=data.x[KDIR];
 
+    IdefixArray1D<real> x1p=data.xr[IDIR];
+    IdefixArray1D<real> x2p=data.xr[JDIR];
+    IdefixArray1D<real> x3p=data.xr[KDIR];
+
+    IdefixArray1D<real> x1m=data.xl[IDIR];
+    IdefixArray1D<real> x2m=data.xl[JDIR];
+    IdefixArray1D<real> x3m=data.xl[KDIR];
+
     IdefixArray1D<real> dx1=data.dx[IDIR];
     IdefixArray1D<real> dx2=data.dx[JDIR];
     IdefixArray1D<real> dx3=data.dx[KDIR];
@@ -719,18 +727,75 @@ void Hydro::EvolveMagField(DataBlock &data, real t, real dt) {
     idefix_for("EvolvMagField",data.beg[KDIR],data.end[KDIR]+KOFFSET,data.beg[JDIR],data.end[JDIR]+JOFFSET,data.beg[IDIR],data.end[IDIR]+IOFFSET,
                     KOKKOS_LAMBDA (int k, int j, int i) {
                         
-                        Vs(BX1s,k,j,i) = Vs(BX1s,k,j,i) + ( D_EXPAND( ZERO_F                                     ,
-                                                                      - dt/dx2(j) * (Ex3(k,j+1,i) - Ex3(k,j,i) )  ,
-                                                                      + dt/dx3(k) * (Ex2(k+1,j,i) - Ex2(k,j,i) ) ));
+                        real rhsx1, rhsx2, rhsx3;
+
+                        #if GEOMETRY == CARTESIAN
+                            rhsx1 = D_EXPAND( ZERO_F                                     ,
+                                            - dt/dx2(j) * (Ex3(k,j+1,i) - Ex3(k,j,i) )  ,
+                                            + dt/dx3(k) * (Ex2(k+1,j,i) - Ex2(k,j,i) ) );
+                                            
+                            #if DIMENSIONS >= 2
+                            rhsx2 =  D_EXPAND(   dt/dx1(i) * (Ex3(k,j,i+1) - Ex3(k,j,i) )  ,
+                                                                                            ,
+                                                - dt/dx3(k) * (Ex1(k+1,j,i) - Ex1(k,j,i) ) );
+                            #endif
+                            #if DIMENSIONS == 3
+                            rhsx3 =    - dt/dx1(i) * (Ex2(k,j,i+1) - Ex2(k,j,i) )  
+                                       + dt/dx2(j) * (Ex1(k,j+1,i) - Ex1(k,j,i) ) );
+                            #endif
+
+                        #elif GEOMETRY == CYLINDRICAL
+                            rhsx1 = - dt/dx2(j) * (Ex3(k,j+1,i) - Ex3(k,j,i) );
+                            #if DIMENSIONS >= 2
+                            rhsx2 = dt * (FABS(x1p(i)) * Ex3(k,j,i+1) - FABS(x1m(i)) * Ex3(k,j,i)) / FABS(x1(i)*dx1(i));
+                            #endif
+
+                        #elif GEOMETRY == POLAR
+
+                            rhsx1 = D_EXPAND( ZERO_F                                     ,
+                                            - dt/(FABS(x1p(i)) * dx2(j)) * (Ex3(k,j+1,i) - Ex3(k,j,i) )  ,
+                                            + dt/dx3(k) * (Ex2(k+1,j,i) - Ex2(k,j,i) ) );
+
+                            #if DIMENSIONS >= 2
+                            rhsx2 =  D_EXPAND(   dt/dx1(i) * (Ex3(k,j,i+1) - Ex3(k,j,i) )  ,
+                                                                                            ,
+                                                - dt/dx3(k) * (Ex1(k+1,j,i) - Ex1(k,j,i) ) );
+                            #endif
+                            #if DIMENSIONS == 3
+                            rhsx3 =    dt/(FABS(x1(i))) * (
+                                            -  (x1m(i+1)*Ex2(k,j,i+1) - x1m(i)*Ex2(k,j,i) ) / dx1(i) 
+                                            +  (Ex1(k,j+1,i) - Ex1(k,j,i) ) / dx2(j) );
+                            #endif
+
+                        #elif GEOMETRY == SPHERICAL
+                            real dV2 = FABS(cos(x2m(j)) - cos(x2p(j)));
+                            real Ax2p = FABS(sin(x2p(j)));
+                            real Ax2m = FABS(sin(x2m(j)));
+
+                            rhsx1 = D_EXPAND( ZERO_F                                     ,
+                                            - dt/(x1p(i)*dV2) * ( Ax2p*Ex3(k,j+1,i) - Ax2m*Ex3(k,j,i) )  ,
+                                            + dt*dx2(j)/(x1m(i)*dV2*dx3(k))*(Ex2(k+1,j,i) - Ex2(k,j,i) ) );
+                                            
+                            #if DIMENSIONS >= 2
+                            rhsx2 =  D_EXPAND(   dt/(x1(i)*dx1(i)) * (x1m(i+1)*Ex3(k,j,i+1) - x1m(i)*Ex3(k,j,i) )  ,
+                                                                                            ,
+                                                - dt/(x1(i)*Ax2m*dx3(k)) * (Ex1(k+1,j,i) - Ex1(k,j,i) ) );
+                            #endif
+                            #if DIMENSIONS == 3
+                            rhsx3 =    - dt/(x1(i)*dx1(i)) * (x1m(i+1)*Ex2(k,j,i+1) - x1m(i)*Ex2(k,j,i) )  
+                                       + dt/(x1(i)*dx2(j)) * (Ex1(k,j+1,i) - Ex1(k,j,i) ) );                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     * (Ex2(k+1,j,i) - Ex2(k,j,i) ) );
+                            #endif
+                        #endif
+
+
+
+                        Vs(BX1s,k,j,i) = Vs(BX1s,k,j,i) + rhsx1;
+
                         #if DIMENSIONS >= 2
-                        Vs(BX2s,k,j,i) = Vs(BX2s,k,j,i) + ( D_EXPAND(   dt/dx1(i) * (Ex3(k,j,i+1) - Ex3(k,j,i) )  ,
-                                                                                                                  ,
-                                                                      - dt/dx3(k) * (Ex1(k+1,j,i) - Ex1(k,j,i) ) ));
+                        Vs(BX2s,k,j,i) = Vs(BX2s,k,j,i) + rhsx2;
                         #endif
                         #if DIMENSIONS == 3
-                        Vs(BX3s,k,j,i) = Vs(BX3s,k,j,i) + (  - dt/dx1(i) * (Ex2(k,j,i+1) - Ex2(k,j,i) )  
-                                                             + dt/dx2(j) * (Ex1(k,j+1,i) - Ex1(k,j,i) ) );
-
+                        Vs(BX3s,k,j,i) = Vs(BX3s,k,j,i) + rhsx3;
                         #endif
 
                     });
@@ -1069,6 +1134,10 @@ real Hydro::CheckDivB(DataBlock &data) {
     IdefixArray1D<real> dx1 = data.dx[IDIR];
     IdefixArray1D<real> dx2 = data.dx[JDIR];
     IdefixArray1D<real> dx3 = data.dx[KDIR];
+    IdefixArray3D<real> Ax1 = data.A[IDIR];
+    IdefixArray3D<real> Ax2 = data.A[JDIR];
+    IdefixArray3D<real> Ax3 = data.A[KDIR];
+    IdefixArray3D<real> dV = data.dV;
     
 
     Kokkos::parallel_reduce("CheckDivB",
@@ -1079,11 +1148,11 @@ real Hydro::CheckDivB(DataBlock &data) {
 
                 dB1=dB2=dB3=ZERO_F;
 
-                D_EXPAND( dB1=(Vs(BX1s,k,j,i+1)-Vs(BX1s,k,j,i))/(dx1(i)); ,
-                          dB2=(Vs(BX2s,k,j+1,i)-Vs(BX2s,k,j,i))/(dx2(j)); ,
-                          dB3=(Vs(BX3s,k+1,j,i)-Vs(BX3s,k,j,i))/(dx3(k));  )
+                D_EXPAND( dB1=(Ax1(k,j,i+1)*Vs(BX1s,k,j,i+1)-Ax1(k,j,i)*Vs(BX1s,k,j,i)); ,
+                          dB2=(Ax2(k,j+1,i)*Vs(BX2s,k,j+1,i)-Ax2(k,j,i)*Vs(BX2s,k,j,i)); ,
+                          dB3=(Ax3(k+1,j,i)*Vs(BX3s,k+1,j,i)-Ax3(k,j,i)*Vs(BX3s,k,j,i));  )
                 
-                divBmax=FMAX(FABS(D_EXPAND(dB1, +dB2, +dB3)),divBmax);
+                divBmax=FMAX(FABS(D_EXPAND(dB1, +dB2, +dB3))/dV(k,j,i),divBmax);
 
             }, Kokkos::Max<real>(divB) );
 

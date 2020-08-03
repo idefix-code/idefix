@@ -48,6 +48,7 @@ public:
     IdefixArray1D<real> xr[3];     // cell right interface
     IdefixArray1D<real> xl[3];     // cell left interface
     IdefixArray1D<real> dx[3];     // cell width
+    IdefixArray1D<real> xgc[3];     // cell geometrical cell center
 
     real xbeg[3];                   // Beginning of datablocl
     real xend[3];                   // End of datablock
@@ -120,7 +121,8 @@ private:
     int bufferSizeX2;
     int bufferSizeX3;
 
-
+    // Make the geometrical coefficients of the grid
+    void MakeGeometry();
 };
 
 

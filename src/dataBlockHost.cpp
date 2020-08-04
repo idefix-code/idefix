@@ -83,22 +83,49 @@ void DataBlockHost::MakeVsFromAmag(IdefixHostArray4D<real> &Ain) {
     IdefixHostArray1D<real> dx2 = this->dx[JDIR];
     IdefixHostArray1D<real> dx3 = this->dx[KDIR];
 
+    IdefixHostArray1D<real> x1m = this->xl[IDIR];
+    IdefixHostArray1D<real> x1 = this->x[IDIR];
+
+
     #if MHD == YES
 
     for(int k = data->beg[KDIR] ; k < data->end[KDIR] +1 ; k++) {
         for(int j = data->beg[JDIR] ; j < data->end[JDIR] +1 ; j++) {
             for(int i = data->beg[IDIR] ; i < data->end[IDIR] +1; i++) {
-                Vs(BX1s,k,j,i) = D_EXPAND( ZERO_F                                     ,
-                                                - 1/dx2(j) * (Ain(KDIR,k,j+1,i) - Ain(KDIR,k,j,i) )  ,
-                                                + 1/dx3(k) * (Ain(JDIR,k+1,j,i) - Ain(JDIR,k,j,i) ) );
-                #if DIMENSIONS >= 2
-                Vs(BX2s,k,j,i) =  D_EXPAND(   1/dx1(i) * (Ain(KDIR,k,j,i+1) - Ain(KDIR,k,j,i) )  ,
-                                                                                                ,
-                                            - 1/dx3(k) * (Ain(IDIR,k+1,j,i) - Ain(IDIR,k,j,i) ) );
+                #if GEOMETRY == CARTESIAN
+                    Vs(BX1s,k,j,i) = D_EXPAND( ZERO_F                                     ,
+                                                    - 1/dx2(j) * (Ain(KDIR,k,j+1,i) - Ain(KDIR,k,j,i) )  ,
+                                                    + 1/dx3(k) * (Ain(JDIR,k+1,j,i) - Ain(JDIR,k,j,i) ) );
+                    #if DIMENSIONS >= 2
+                    Vs(BX2s,k,j,i) =  D_EXPAND(   1/dx1(i) * (Ain(KDIR,k,j,i+1) - Ain(KDIR,k,j,i) )  ,
+                                                                                                    ,
+                                                - 1/dx3(k) * (Ain(IDIR,k+1,j,i) - Ain(IDIR,k,j,i) ) );
+                    #endif
+                    #if DIMENSIONS == 3
+                    Vs(BX3s,k,j,i) =  - 1/dx1(i) * (Ain(JDIR,k,j,i+1) - Ain(JDIR,k,j,i) )  
+                                    + 1/dx2(j) * (Ain(IDIR,k,j+1,i) - Ain(IDIR,k,j,i) ) ;
+                    #endif
                 #endif
-                #if DIMENSIONS == 3
-                Vs(BX3s,k,j,i) =  - 1/dx1(i) * (Ain(JDIR,k,j,i+1) - Ain(JDIR,k,j,i) )  
-                                  + 1/dx2(j) * (Ain(IDIR,k,j+1,i) - Ain(IDIR,k,j,i) ) ;
+                #if GEOMETRY == CYLINDRICAL
+                    IDEFIX_ERROR("Not yet defined");
+                #endif
+                #if GEOMETRY == POLAR
+                    Vs(BX1s,k,j,i) = D_EXPAND( ZERO_F                                     ,
+                                                    - 1/(x1m(i)*dx2(j)) * (Ain(KDIR,k,j+1,i) - Ain(KDIR,k,j,i) )  ,
+                                                    + 1/dx3(k) * (Ain(JDIR,k+1,j,i) - Ain(JDIR,k,j,i) ) );
+
+                    Vs(BX2s,k,j,i) =  D_EXPAND(   1/dx1(i) * (Ain(KDIR,k,j,i+1) - Ain(KDIR,k,j,i) )  ,
+                                                                                                    ,
+                                                - 1/dx3(k) * (Ain(IDIR,k+1,j,i) - Ain(IDIR,k,j,i) ) );
+                    
+                    #if DIMENSIONS == 3
+                    Vs(BX3s,k,j,i) =  - 1/(x1(i)*dx1(i)) * (x1m(i+1)*Ain(JDIR,k,j,i+1) - x1m(i)*Ain(JDIR,k,j,i) )  
+                                    + 1/(x1(i)*dx2(j)) * (Ain(IDIR,k,j+1,i) - Ain(IDIR,k,j,i) ) ;
+                    #endif
+
+                #endif
+                #if GEOMETRY == SPHERICAL
+                    IDEFIX_ERROR("Not yet defined");
                 #endif
             }
         }

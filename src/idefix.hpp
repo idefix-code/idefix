@@ -31,6 +31,18 @@ using Layout = Kokkos::LayoutRight;
 #define     YES     255
 #define     NO      0
 
+/* ---- Geometry Labels ( > 0) ----  */
+
+#define CARTESIAN    1
+#define CYLINDRICAL  2
+#define POLAR        3
+#define SPHERICAL    4
+
+#define     IDIR    0
+#define     JDIR    1
+#define     KDIR    2
+
+
 // Basic configuration
 #include "real_types.h"
 #include "definitions.hpp"
@@ -76,19 +88,70 @@ using Layout = Kokkos::LayoutRight;
 #define BX2s  1
 #define BX3s  2
 
+// User-Friendly variables in non-cartesian geometry
+#if GEOMETRY == CYLINDRICAL
+  #if COMPONENTS >= 1
+    #define iVR    VX1
+    #define iMR    MX1
+    #define iBR    BX1
+  #endif
+
+  #if COMPONENTS >= 2
+    #define iVZ    VX2
+    #define iMZ    MX2
+    #define iBZ    BX2
+  #endif
+
+  #if COMPONENTS >= 3 
+    #define iVPHI  VX3
+    #define iMPHI  MX3
+    #define iBPHI  BX3
+  #endif  
+#endif
+
+#if GEOMETRY == POLAR
+  #if COMPONENTS >= 1
+    #define iVR    VX1
+    #define iMR    MX1
+    #define iBR    BX1
+  #endif
+
+  #if COMPONENTS >= 2 
+    #define iVPHI  VX2
+    #define iMPHI  MX2
+    #define iBPHI  BX2
+  #endif  
+
+  #if COMPONENTS == 3
+    #define iVZ    VX3
+    #define iMZ    MX3
+    #define iBZ    BX3
+  #endif
+#endif
+
+#if GEOMETRY == SPHERICAL
+  #if COMPONENTS >= 1
+    #define iVR    VX1
+    #define iMR    MX1
+    #define iBR    BX1
+  #endif
+  
+  #if COMPONENTS >= 2
+    #define iVTH   VX2
+    #define iMTH   MX2
+    #define iBTH   BX2
+  #endif
+ 
+  #if COMPONENTS == 3    
+    #define iVPHI  VX3
+    #define iMPHI  MX3
+    #define iBPHI  BX3
+  #endif
+#endif
 
 // Some macro definitions
 
-/* ---- Geometry Labels ( > 0) ----  */
 
-#define CARTESIAN    1
-#define CYLINDRICAL  2
-#define POLAR        3
-#define SPHERICAL    4
-
-#define     IDIR    0
-#define     JDIR    1
-#define     KDIR    2
 
 
 

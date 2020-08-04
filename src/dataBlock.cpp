@@ -72,6 +72,16 @@ void DataBlock::InitFromGrid(Grid &grid) {
     Vc = IdefixArray4D<real>("DataBlock_Vc", NVAR, np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
     Uc = IdefixArray4D<real>("DataBlock_Uc", NVAR, np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
     Vc0 = IdefixArray4D<real>("DataBlock_Vc0", NVAR, np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
+
+
+    
+#if GEOMETRY == SPHERICAL 
+    rt = IdefixArray1D<real>("DataBlock_rt",np_tot[IDIR]);
+    sm = IdefixArray1D<real>("DataBlock_sm",np_tot[JDIR]);
+    s = IdefixArray1D<real>("DataBlock_s",np_tot[JDIR]);
+    dmu = IdefixArray1D<real>("DataBlock_dmu",np_tot[JDIR]);
+#endif
+
 #if MHD == YES
 
     Vs = IdefixArray4D<real>("DataBlock_Vs", DIMENSIONS, np_tot[KDIR]+KOFFSET, np_tot[JDIR]+JOFFSET, np_tot[IDIR]+IOFFSET);
@@ -249,6 +259,10 @@ void DataBlock::MakeGeometry() {
     IdefixArray1D<real> x1m = this->xl[IDIR];
     IdefixArray1D<real> x2m = this->xl[JDIR];
     IdefixArray1D<real> x3m = this->xl[KDIR];
+    IdefixArray1D<real> rt  = this->rt;
+    IdefixArray1D<real> sm  = this->sm;
+    IdefixArray1D<real> s   = this->s;
+    IdefixArray1D<real> dmu = this->dmu;
 
     idefix_for("Volumes",0,this->np_tot[KDIR],0,this->np_tot[JDIR],0,this->np_tot[IDIR],
         KOKKOS_LAMBDA (int k, int j, int i) {
@@ -288,6 +302,7 @@ void DataBlock::MakeGeometry() {
                     #elif GEOMETRY == SPHERICAL
                         x1gc(i) = x1(i) + 2.0*x1(i)*dx1(i)*dx1(i)/
                                                     (12.0*x1(i)*x1(i) + dx1(i)*dx1(i));
+                        rt(i) = (x1p(i)*x1p(i)*x1p(i) - x1m(i)*x1m(i)*x1m(i)) / (x1p(i)*x1p(i)-x1r(i)*x1r(i)) / 1.5;
                     #endif
                 });
 
@@ -300,6 +315,9 @@ void DataBlock::MakeGeometry() {
                         real xL = x2m(j);
                         real xR = x2p(j);
                         x2gc(j)  = (sin(xR) - sin(xL)+ xL*cos(xL) - xR*cos(xR)) / (cos(xL)-cos(xR));
+                        sm(j) = FABS(sin(xL));
+                        s(j) = FABS(sin(x2(j)));
+                        dmu(j) = FABS(cos(xL)-cos(xR));
                     #endif
                 });
     

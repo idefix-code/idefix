@@ -49,6 +49,10 @@ public:
     IdefixArray1D<real> xl[3];     // cell left interface
     IdefixArray1D<real> dx[3];     // cell width
     IdefixArray1D<real> xgc[3];     // cell geometrical cell center
+    IdefixArray1D<real> rt;         // In spherical coordinates, gives \tilde{r}
+    IdefixArray1D<real> sm;         //  In spherical coordinates, gives fabs(sin(th)) at a j-1/2 interface
+    IdefixArray1D<real> s;          // In spherical coordinates, gives fabs(sin(th))at the cell center
+    IdefixArray1D<real> dmu;        // In spherical coordinates, gives the \theta volume = fabs(cos(th_m) - cos(th_p)) */
 
     real xbeg[3];                   // Beginning of datablocl
     real xend[3];                   // End of datablock

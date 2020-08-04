@@ -402,6 +402,12 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real dt) {
     IdefixArray4D<real> Flux = data.FluxRiemann;
     IdefixArray3D<real> A = data.A[dir];
     IdefixArray3D<real> dV = data.dV;
+    IdefixArray1D<real> x1m = data.xl[IDIR];
+    IdefixArray1D<real> x1 = data.x[IDIR];
+    IdefixArray1D<real> sm = data.sm;
+    IdefixArray1D<real> rt = data.rt;
+    IdefixArray1D<real> s = data.s;
+    IdefixArray1D<real> dx = data.dx[dir];
 
     int ioffset,joffset,koffset;
     ioffset=joffset=koffset=0;
@@ -410,11 +416,89 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real dt) {
     if(dir==JDIR) joffset=1;
     if(dir==KDIR) koffset=1;
 
+    idefix_for("CalcTotalFlux",data.beg[KDIR],data.end[KDIR]+koffset,data.beg[JDIR],data.end[JDIR]+joffset,data.beg[IDIR],data.end[IDIR]+ioffset,
+            KOKKOS_LAMBDA (int k, int j, int i) {
+                for(int nv = 0 ; nv < NVAR ; nv++) {
+                    Flux(nv,k,j,i) = Flux(nv,k,j,i) * A(k,j,i);
+                }
+
+                // TODO: Should add gravitational potential here and Fargo source terms when needed
+
+                // Curvature terms
+                #if    (GEOMETRY == POLAR       && COMPONENTS >= 2) \
+                        || (GEOMETRY == CYLINDRICAL && COMPONENTS == 3) 
+                    if(dir==IDIR) {
+                        Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(x1m(i));   // Conserve angular momentum, hence flux is R*Bphi
+                        #if MHD == YES
+                        Flux(iBPHI,k,j,i) = Flux(iBPHI,k,j,i) / A(k,j,i);   // No area for this one
+                        #endif // MHD
+                    }
+                #endif // GEOMETRY==POLAR OR CYLINDRICAL
+
+                #if GEOMETRY == SPHERICAL
+                    if(dir==IDIR) {
+                        #if COMPONENTS == 3
+                            Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(x1m(i));
+                        #endif // COMPONENTS == 3
+                        #if MHD == YES
+                            EXPAND(                                            ,
+                                Flux(iBTH,k,j,i)  = Flux(iBTH,k,j,i) * x1m(i) / A(k,j,i);  ,
+                                Flux(iBPHI,k,j,i) = Flux(iBPHI,k,j,i) * x1m(i) / A(k,j,i); )
+                        #endif // MHD
+                    }
+                       
+                    if(dir==JDIR) {
+                        #if COMPONENTS == 3  
+                            Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(sm(j));
+                            #if PHYSICS == MHD
+                                Flux(iBPHI,k,j,i) = Flux(iBPHI,k,j,i)  / A(k,j,i);
+                            #endif // MHD
+                        #endif // COMPONENTS = 3
+                    }
+                #endif // GEOMETRY == SPHERICAL
+
+
+            });
+
     idefix_for("CalcRightHandSide",data.beg[KDIR],data.end[KDIR],data.beg[JDIR],data.end[JDIR],data.beg[IDIR],data.end[IDIR],
         KOKKOS_LAMBDA (int k, int j, int i) {
             
             real dtdV=dt / dV(k,j,i);
+            real rhs[NVAR];
 
+            for(int nv = 0 ; nv < NVAR ; nv++) {
+                rhs[nv] = -  dtdV*(Flux(nv, k+koffset, j+joffset, i+ioffset) - Flux(nv, k, j, i));
+                // Do not evolve the field components if they are computed by CT (i.e. if they are in Vs)
+            }
+
+            #if GEOMETRY != CARTESIAN
+                if(dir==IDIR) {
+                    #ifdef iMPHI
+                        rhs[iMPHI] = rhs[iMPHI] / x1(i); 
+                    #endif
+                    #if (GEOMETRY == POLAR || GEOMETRY == CYLINDRICAL) &&  (defined iBPHI)
+                        rhs[iBPHI] = - dt / dx(i) * (Flux(iBPHI, k, j, i+1) - Flux(iBPHI, k, j, i) );
+
+                    #elif (GEOMETRY == SPHERICAL) && (PHYSICS == MHD)
+                        real q = dt / (x1(i)*dx(i));
+                        EXPAND(                                                                     ,
+                                rhs[iBTH]  = -q * ((Flux(iBTH, k, j, i+1)  - Flux(iBTH, k, j, i) ));  ,
+                                rhs[iBPHI] = -q * ((Flux(iBPHI, k, j, i+1) - Flux(iBPHI, k, j, i) )); )
+                    #endif
+                }
+                if(dir==JDIR) {
+                    #if (GEOMETRY == SPHERICAL) && (COMPONENTS == 3)
+                        rhs[iMPHI] /= FABS(s(j));
+                        #if PHYSICS == MHD
+                            rhs[iBPHI] = -dt / (rt(i)*dx(j)) * (Flux(iBPHI, k, j+1, i) - Flux(iBPHI, k, j, i));
+                        #endif // MHD
+                    #endif // GEOMETRY
+                }
+            // Nothing for KDIR
+
+            #endif // GEOMETRY != CARTESIAN
+            
+            // Evolve the field components
             for(int nv = 0 ; nv < NVAR ; nv++) {
                 // Do not evolve the field components if they are computed by CT (i.e. if they are in Vs)
                 
@@ -423,9 +507,8 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real dt) {
                           if(nv == BX3) continue;  ) 
                 
 
-                Uc(nv,k,j,i) = Uc(nv,k,j,i) -  dtdV*(Flux(nv, k+koffset, j+joffset, i+ioffset)*A(k+koffset, j+joffset, i+ioffset) - Flux(nv, k, j, i)*A(k,j,i));
+                Uc(nv,k,j,i) = Uc(nv,k,j,i) + rhs[nv];
             }
-
             
 
         });

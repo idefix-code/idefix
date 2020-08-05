@@ -9,8 +9,6 @@ public:
 
     void InitFlow(DataBlock &);
     void MakeAnalysis(DataBlock&, real);
-    void SetUserdefBoundary(DataBlock&, int, BoundarySide, real );
-    void ComputeUserStep(DataBlock&, real, real);
 
 };
 

@@ -2,8 +2,6 @@
 #define HYDRO_HPP
 #include "../idefix.hpp"
 
-
-
 #define     SMALL_PRESSURE_FIX      (1.0e-5)
 #define     eps_UCT_CONTACT         (1.0e-6)
 
@@ -13,6 +11,8 @@ enum Solver {TVDLF=1, HLL, HLLD, ROE};
 #else
 enum Solver {TVDLF=1, HLL, HLLC, ROE};
 #endif
+
+using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side, const real t);
 
 class Hydro {
 public:
@@ -36,6 +36,10 @@ public:
 
     // Source terms
     bool haveSourceTerms;
+
+    // Enroll user-defined boundary conditions
+    void EnrollUserDefBoundary(UserDefBoundaryFunc);
+
 private:
 
     real C2Iso;
@@ -52,6 +56,11 @@ private:
     real sbS;
     // Box width for shearing box problems
     real sbLx;
+
+    // User defined Boundary conditions
+    UserDefBoundaryFunc userDefBoundaryFunc;
+    bool haveUserDefBoundary;
+
 };
 
 

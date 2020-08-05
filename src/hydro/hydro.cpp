@@ -34,6 +34,9 @@ Hydro::Hydro(Input &input, Grid &grid) {
     #endif
         IDEFIX_ERROR(msg);
     }
+    
+    // No userdefBoundary by default
+    this->haveUserDefBoundary = false;
 
     // Source terms (always activated when non-cartesian geometry because of curvature source terms)
     #if GEOMETRY == CARTESIAN
@@ -79,6 +82,11 @@ Hydro::Hydro(Input &input, Grid &grid) {
     }
 
     idfx::popRegion();
+}
+
+void Hydro::EnrollUserDefBoundary(UserDefBoundaryFunc myFunc) {
+    this->userDefBoundaryFunc = myFunc;
+    this->haveUserDefBoundary = true;
 }
 
 Hydro::Hydro() {
@@ -569,9 +577,12 @@ void Hydro::AddSourceTerms(DataBlock &data, real dt) {
                 real vphi,Sm;
                 vphi = Vc(iVPHI,k,j,i);
                 if(haveRotation) vphi += OmegaX3*x1(i);
-                Sm = Vc(RHO,k,j,i) * vphi*vphi; // Centrifugal       
+                Sm = Vc(RHO,k,j,i) * vphi*vphi;     // Centrifugal
+                Sm += Vc(PRS,k,j,i);               // Pressure (because we're including pressure in the flux, we need that to get the radial pressure gradient)       
                 #if MHD==YES
                     Sm -=  Vc(iBPHI,k,j,i)*Vc(iBPHI,k,j,i); // Hoop stress
+                    // Magnetic pressus
+                    Sm += 0.5*(EXPAND(Vc(BX1,k,j,i)*Vc(BX1,k,j,i) , +Vc(BX2,k,j,i)*Vc(BX2,k,j,i), +Vc(BX3,k,j,i)*Vc(BX3,k,j,i)));
                 #endif // MHD
                 Uc(MX1,k,j,i) += dt * Sm / x1(i);
 
@@ -585,7 +596,6 @@ void Hydro::AddSourceTerms(DataBlock &data, real dt) {
                 #endif
                 Uc(MX1,k,j,i) += dt*Sm/x1(i);
                 
-                // To be continued
                 ct = 1.0/TAN(x2(j));
                 Sm = Vc(RHO,k,j,i) * (EXPAND( ZERO_F, - Vc(iVTH,k,j,i)*Vc(iVR,k,j,i), + ct*vphi*vphi)); // Centrifugal
                 #if MHD == YES
@@ -1168,6 +1178,11 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                     #endif
                 }
                 break;
+            case userdef:
+                if(this->haveUserDefBoundary) this->userDefBoundaryFunc(data, dir, left, t);
+                else IDEFIX_ERROR("No function has been enrolled to define your own boundary conditions");
+                break;
+
             default:
                 std::stringstream msg ("Boundary condition type is not yet implemented");
                 IDEFIX_ERROR(msg);
@@ -1246,6 +1261,10 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                         });
                     #endif
                 }
+                break;
+            case userdef:
+                if(this->haveUserDefBoundary) this->userDefBoundaryFunc(data, dir, right, t);
+                else IDEFIX_ERROR("No function has been enrolled to define your own boundary conditions");
                 break;
             default:
                 std::stringstream msg("Boundary condition type is not yet implemented");

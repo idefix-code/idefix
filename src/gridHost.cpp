@@ -67,7 +67,7 @@ void GridHost::MakeGrid(Input &input) {
             std::string lboundString, rboundString;
             switch(lbound[dir]) {
                 case outflow:
-                    lboundString="outlow";
+                    lboundString="outflow";
                     break;
                 case periodic:
                     lboundString="periodic";
@@ -86,7 +86,7 @@ void GridHost::MakeGrid(Input &input) {
             }
             switch(rbound[dir]) {
                 case outflow:
-                    rboundString="outlow";
+                    rboundString="outflow";
                     break;
                 case periodic:
                     rboundString="periodic";

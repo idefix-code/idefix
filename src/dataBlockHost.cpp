@@ -89,9 +89,9 @@ void DataBlockHost::MakeVsFromAmag(IdefixHostArray4D<real> &Ain) {
 
     #if MHD == YES
 
-    for(int k = data->beg[KDIR] ; k < data->end[KDIR] +1 ; k++) {
-        for(int j = data->beg[JDIR] ; j < data->end[JDIR] +1 ; j++) {
-            for(int i = data->beg[IDIR] ; i < data->end[IDIR] +1; i++) {
+    for(int k = data->beg[KDIR] ; k < data->end[KDIR] +KOFFSET ; k++) {
+        for(int j = data->beg[JDIR] ; j < data->end[JDIR] +JOFFSET ; j++) {
+            for(int i = data->beg[IDIR] ; i < data->end[IDIR] +IOFFSET; i++) {
                 #if GEOMETRY == CARTESIAN
                     Vs(BX1s,k,j,i) = D_EXPAND( ZERO_F                                     ,
                                                     - 1/dx2(j) * (Ain(KDIR,k,j+1,i) - Ain(KDIR,k,j,i) )  ,

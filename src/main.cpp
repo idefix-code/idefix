@@ -67,6 +67,8 @@ int main( int argc, char* argv[] )
     // Apply initial conditions
     idfx::cout << "Creating initial conditions" << std::endl;
     mysetup.InitFlow(data);
+    // Debug
+    output.Write(data,Tint.getT());
 
     idfx::cout << "Applying boundary conditions" << std::endl;
     hydro.SetBoundary(data,Tint.getT());

@@ -35,8 +35,12 @@ Hydro::Hydro(Input &input, Grid &grid) {
         IDEFIX_ERROR(msg);
     }
 
-    // Source terms
+    // Source terms (always activated when non-cartesian geometry because of curvature source terms)
+    #if GEOMETRY == CARTESIAN
     this->haveSourceTerms = false;
+    #else
+    this->haveSourceTerms = true;
+    #endif
 
     // Check whether we have rotation
     int rotation = input.CheckEntry("Hydro","Rotation");
@@ -522,6 +526,12 @@ void Hydro::AddSourceTerms(DataBlock &data, real dt) {
     idfx::pushRegion("Hydro::AddSourceTerms");
     IdefixArray4D<real> Uc = data.Uc;
     IdefixArray4D<real> Vc = data.Vc;
+    IdefixArray1D<real> x1 = data.x[IDIR]; 
+    IdefixArray1D<real> x2 = data.x[JDIR]; 
+    #if GEOMETRY == SPHERICAL
+    IdefixArray1D<real> s  = data.s;
+    IdefixArray1D<real> rt = data.rt;
+    #endif
 
     real OmegaX1 = this->OmegaX1;
     real OmegaX2 = this->OmegaX2;
@@ -530,18 +540,60 @@ void Hydro::AddSourceTerms(DataBlock &data, real dt) {
     
     idefix_for("AddSourceTerms",data.beg[KDIR],data.end[KDIR],data.beg[JDIR],data.end[JDIR],data.beg[IDIR],data.end[IDIR],
         KOKKOS_LAMBDA (int k, int j, int i) {
-            if(haveRotation) {
-                #if COMPONENTS == 3
-                Uc(MX1,k,j,i) += TWO_F * dt * Vc(RHO,k,j,i) * (OmegaX3 * Vc(VX2,k,j,i) - OmegaX2 * Vc(VX3,k,j,i));
-                Uc(MX2,k,j,i) += TWO_F * dt * Vc(RHO,k,j,i) * (OmegaX1 * Vc(VX3,k,j,i) - OmegaX3 * Vc(VX1,k,j,i));
-                Uc(MX3,k,j,i) += TWO_F * dt * Vc(RHO,k,j,i) * (OmegaX2 * Vc(VX1,k,j,i) - OmegaX1 * Vc(VX2,k,j,i));
-                #endif
-                #if COMPONENTS == 2
-                Uc(MX1,k,j,i) += TWO_F * dt * Vc(RHO,k,j,i) * (   OmegaX3 * Vc(VX2,k,j,i) );
-                Uc(MX2,k,j,i) += TWO_F * dt * Vc(RHO,k,j,i) * ( - OmegaX3 * Vc(VX1,k,j,i) );
-                #endif
 
-            }
+            #if GEOMETRY == CARTESIAN
+                if(haveRotation) {
+                    #if COMPONENTS == 3
+                    Uc(MX1,k,j,i) += TWO_F * dt * Vc(RHO,k,j,i) * (OmegaX3 * Vc(VX2,k,j,i) - OmegaX2 * Vc(VX3,k,j,i));
+                    Uc(MX2,k,j,i) += TWO_F * dt * Vc(RHO,k,j,i) * (OmegaX1 * Vc(VX3,k,j,i) - OmegaX3 * Vc(VX1,k,j,i));
+                    Uc(MX3,k,j,i) += TWO_F * dt * Vc(RHO,k,j,i) * (OmegaX2 * Vc(VX1,k,j,i) - OmegaX1 * Vc(VX2,k,j,i));
+                    #endif
+                    #if COMPONENTS == 2
+                    Uc(MX1,k,j,i) += TWO_F * dt * Vc(RHO,k,j,i) * (   OmegaX3 * Vc(VX2,k,j,i) );
+                    Uc(MX2,k,j,i) += TWO_F * dt * Vc(RHO,k,j,i) * ( - OmegaX3 * Vc(VX1,k,j,i) );
+                    #endif
+
+                }
+            #elif GEOMETRY == CYLINDRICAL
+                #if COMPONENTS == 3
+                    real vphi,Sm;
+                    vphi = Vc(iVPHI,k,j,i);
+                    if(haveRotation) vphi += OmegaX3*x1(i);
+                    Sm = Vc(RHO,k,j,i) * vphi*vphi; // Centrifugal       
+                    #if MHD==YES
+                        Sm -=  Vc(iBPHI,k,j,i)*Vc(iBPHI,k,j,i); // Hoop stress
+                    #endif // MHD
+                    Uc(MX1,k,j,i) += dt * Sm / x1(i);
+                #endif // COMPONENTS
+            #elif GEOMETRY == POLAR
+                real vphi,Sm;
+                vphi = Vc(iVPHI,k,j,i);
+                if(haveRotation) vphi += OmegaX3*x1(i);
+                Sm = Vc(RHO,k,j,i) * vphi*vphi; // Centrifugal       
+                #if MHD==YES
+                    Sm -=  Vc(iBPHI,k,j,i)*Vc(iBPHI,k,j,i); // Hoop stress
+                #endif // MHD
+                Uc(MX1,k,j,i) += dt * Sm / x1(i);
+
+            #elif GEOMETRY == SPHERICAL
+                real vphi,Sm,ct; 
+                vphi = SELECT(ZERO_F, ZERO_F, Vc(iVPHI,k,j,i));
+                if(haveRotation) vphi += OmegaX3*x1(i)*s(j);
+                Sm = Vc(RHO,k,j,i) * (EXPAND( ZERO_F, + Vc(VX2,k,j,i)*Vc(VX2,k,j,i), + vphi*vphi)); // Centrifugal
+                #if MHD == YES
+                    Sm -= EXPAND( ZERO_F, + Vc(iBTH,k,j,i)*Vc(iBTH,k,j,i), + Vc(iBPHI,k,j,i)*Vc(iBPHI,k,j,i)); // Hoop stress
+                #endif
+                Uc(MX1,k,j,i) += dt*Sm/x1(i);
+                
+                // To be continued
+                ct = 1.0/TAN(x2(j));
+                Sm = Vc(RHO,k,j,i) * (EXPAND( ZERO_F, - Vc(iVTH,k,j,i)*Vc(iVR,k,j,i), + ct*vphi*vphi)); // Centrifugal
+                #if MHD == YES
+                    Sm += EXPAND( ZERO_F, + Vc(iBTH,k,j,i)*Vc(iBR,k,j,i), - ct*Vc(iBPHI,k,j,i)*Vc(iBPHI,k,j,i)); // Hoop stress
+                #endif
+                Uc(MX2,k,j,i) += dt*Sm / rt(i);
+            #endif
+
         });
     
     idfx::popRegion();
@@ -836,7 +888,7 @@ void Hydro::EvolveMagField(DataBlock &data, real t, real dt) {
                         #elif GEOMETRY == POLAR
 
                             rhsx1 = D_EXPAND( ZERO_F                                     ,
-                                            - dt/(FABS(x1p(i)) * dx2(j)) * (Ex3(k,j+1,i) - Ex3(k,j,i) )  ,
+                                            - dt/(FABS(x1m(i)) * dx2(j)) * (Ex3(k,j+1,i) - Ex3(k,j,i) )  ,
                                             + dt/dx3(k) * (Ex2(k+1,j,i) - Ex2(k,j,i) ) );
 
                             #if DIMENSIONS >= 2
@@ -916,6 +968,10 @@ void Hydro::ReconstructNormalField(DataBlock &data) {
     IdefixArray1D<real> dx2=data.dx[JDIR];
     IdefixArray1D<real> dx3=data.dx[KDIR];
 
+    IdefixArray3D<real> Ax1=data.A[IDIR];
+    IdefixArray3D<real> Ax2=data.A[JDIR];
+    IdefixArray3D<real> Ax3=data.A[KDIR];
+
     int nstart, nend;
     int nx1,nx2,nx3;
 
@@ -930,17 +986,18 @@ void Hydro::ReconstructNormalField(DataBlock &data) {
 
     idefix_for("ReconstructBX1s",0,nx3,0,nx2,
                     KOKKOS_LAMBDA (int k, int j) {
-                        
+
+
                         for(int i = nstart ; i>=0 ; i-- ) {
-                            Vs(BX1s,k,j,i) = Vs(BX1s,k,j,i+1) + dx1(i)*(  D_EXPAND(      ZERO_F                                       ,                    
-                                                                                     +  (Vs(BX2s,k,j+1,i) - Vs(BX2s,k,j,i))/dx2(j)  , 
-                                                                                     +  (Vs(BX3s,k+1,j,i) - Vs(BX3s,k,j,i))/dx3(k)) );
+                            Vs(BX1s,k,j,i) = 1/ Ax1(k,j,i) * (   Ax1(k,j,i+1)*Vs(BX1s,k,j,i+1)  +   (D_EXPAND( ZERO_F                                       ,                    
+                                                                                            +  Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i)  , 
+                                                                                            +  Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))) ;
                         }
 
                         for(int i = nend ; i<nx1 ; i++ ) {
-                            Vs(BX1s,k,j,i+1) = Vs(BX1s,k,j,i) -   dx1(i)*(  D_EXPAND(      ZERO_F                                     ,              
-                                                                                     +  (Vs(BX2s,k,j+1,i) - Vs(BX2s,k,j,i))/dx2(j)  , 
-                                                                                     +  (Vs(BX3s,k+1,j,i) - Vs(BX3s,k,j,i))/dx3(k)) );
+                            Vs(BX1s,k,j,i+1) = 1/ Ax1(k,j,i+1) * (   Ax1(k,j,i)*Vs(BX1s,k,j,i)  -   (D_EXPAND(      ZERO_F                                       ,                    
+                                                                                            +  Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i)  , 
+                                                                                            +  Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))) ;
                         }
                         
 
@@ -953,14 +1010,14 @@ void Hydro::ReconstructNormalField(DataBlock &data) {
     idefix_for("ReconstructBX2s",0,data.np_tot[KDIR],0,data.np_tot[IDIR],
                     KOKKOS_LAMBDA (int k, int i) {
                         for(int j = nstart ; j>=0 ; j-- ) {
-                            Vs(BX2s,k,j,i) = Vs(BX2s,k,j+1,i) + dx2(j)*(  D_EXPAND(     (Vs(BX1s,k,j,i+1) - Vs(BX1s,k,j,i))/dx1(i)  ,                     
-                                                                                                                                      , 
-                                                                                     +  (Vs(BX3s,k+1,j,i) - Vs(BX3s,k,j,i))/dx3(k)) );
+                            Vs(BX2s,k,j,i) = 1/ Ax2(k,j,i) * (   Ax2(k,j+1,i)*Vs(BX2s,k,j+1,i)  +   (D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  , 
+                                                                                                                                                                              , 
+                                                                                                            +  Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))) ;
                         }
                         for(int j = nend ; j<nx2 ; j++ ) {
-                            Vs(BX2s,k,j+1,i) = Vs(BX2s,k,j,i) -   dx2(j)*(  D_EXPAND(   (Vs(BX1s,k,j,i+1) - Vs(BX1s,k,j,i))/dx1(i)  ,                     
-                                                                                                                                      , 
-                                                                                     +  (Vs(BX3s,k+1,j,i) - Vs(BX3s,k,j,i))/dx3(k)) );
+                            Vs(BX2s,k,j+1,i) = 1/ Ax2(k,j+1,i) * (   Ax2(k,j,i)*Vs(BX2s,k,j,i)  -   (D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  , 
+                                                                                                                                                                              , 
+                                                                                                            +  Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))) ;
                         }
                         
 
@@ -975,12 +1032,12 @@ void Hydro::ReconstructNormalField(DataBlock &data) {
     idefix_for("ReconstructBX3s",0,data.np_tot[JDIR],0,data.np_tot[IDIR],
                     KOKKOS_LAMBDA (int j, int i) {
                         for(int k = nstart ; k>=0 ; k-- ) {
-                            Vs(BX3s,k,j,i) = Vs(BX3s,k+1,j,i) + dx3(k)*(     (Vs(BX1s,k,j,i+1) - Vs(BX1s,k,j,i))/dx1(i)                  
-                                                                          +  (Vs(BX2s,k,j+1,i) - Vs(BX2s,k,j,i))/dx2(j) );
+                            Vs(BX3s,k,j,i) = 1/ Ax3(k,j,i) * (   Ax3(k+1,j,i)*Vs(BX3s,k+1,j,i)  +   ( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)
+                                                                                                    +  Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i) )) ;
                         }
                         for(int k = nend ; k<nx3 ; k++ ) {
-                            Vs(BX3s,k+1,j,i) = Vs(BX3s,k,j,i) -  dx3(k)*(     (Vs(BX1s,k,j,i+1) - Vs(BX1s,k,j,i))/dx1(i)                  
-                                                                           +  (Vs(BX2s,k,j+1,i) - Vs(BX2s,k,j,i))/dx2(j) );
+                            Vs(BX3s,k+1,j,i) = 1/ Ax3(k+1,j,i) * (   Ax3(k,j,i)*Vs(BX3s,k,j,i)  -   ( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)
+                                                                                                    +  Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i) )) ;
                         }
                         
 

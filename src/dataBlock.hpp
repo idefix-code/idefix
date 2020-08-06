@@ -108,7 +108,7 @@ public:
     void ExchangeX2();
     void ExchangeX3();
 
-    
+    void MakeGeometry(); 
 
     enum {faceRight, faceLeft};
 
@@ -129,8 +129,6 @@ private:
     int bufferSizeX2;
     int bufferSizeX3;
 
-    // Make the geometrical coefficients of the grid
-    void MakeGeometry();
 };
 
 

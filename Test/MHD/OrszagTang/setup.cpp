@@ -58,10 +58,6 @@ void Setup::MakeAnalysis(DataBlock & data, real t) {
 
 }
 
-// User-defined boundaries
-void Setup::SetUserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
-
-}
 
 
 // Do a specifically designed user step in the middle of the integration

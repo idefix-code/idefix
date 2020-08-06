@@ -1037,7 +1037,7 @@ void Hydro::ReconstructVcField(DataBlock & data,  IdefixArray4D<real> &Vc) {
 
 
 
-void Hydro::ReconstructNormalField(DataBlock &data) {
+void Hydro::ReconstructNormalField(DataBlock &data, int dir) {
     idfx::pushRegion("Hydro::ReconstructNormalField");
 
     // Reconstruct the field
@@ -1066,65 +1066,69 @@ void Hydro::ReconstructNormalField(DataBlock &data) {
     nx2=data.np_tot[JDIR];
     nx3=data.np_tot[KDIR];
 
+    if(dir==IDIR) {
+        idefix_for("ReconstructBX1s",0,nx3,0,nx2,
+                        KOKKOS_LAMBDA (int k, int j) {
 
-    idefix_for("ReconstructBX1s",0,nx3,0,nx2,
-                    KOKKOS_LAMBDA (int k, int j) {
 
+                            for(int i = nstart ; i>=0 ; i-- ) {
+                                Vs(BX1s,k,j,i) = 1/ Ax1(k,j,i) * (   Ax1(k,j,i+1)*Vs(BX1s,k,j,i+1)  +   (D_EXPAND( ZERO_F                                       ,                    
+                                                                                                +  Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i)  , 
+                                                                                                +  Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))) ;
+                            }
 
-                        for(int i = nstart ; i>=0 ; i-- ) {
-                            Vs(BX1s,k,j,i) = 1/ Ax1(k,j,i) * (   Ax1(k,j,i+1)*Vs(BX1s,k,j,i+1)  +   (D_EXPAND( ZERO_F                                       ,                    
-                                                                                            +  Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i)  , 
-                                                                                            +  Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))) ;
-                        }
+                            for(int i = nend ; i<nx1 ; i++ ) {
+                                Vs(BX1s,k,j,i+1) = 1/ Ax1(k,j,i+1) * (   Ax1(k,j,i)*Vs(BX1s,k,j,i)  -   (D_EXPAND(      ZERO_F                                       ,                    
+                                                                                                +  Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i)  , 
+                                                                                                +  Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))) ;
+                            }
+                            
 
-                        for(int i = nend ; i<nx1 ; i++ ) {
-                            Vs(BX1s,k,j,i+1) = 1/ Ax1(k,j,i+1) * (   Ax1(k,j,i)*Vs(BX1s,k,j,i)  -   (D_EXPAND(      ZERO_F                                       ,                    
-                                                                                            +  Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i)  , 
-                                                                                            +  Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))) ;
-                        }
-                        
-
-                    });
+                        });
+    }
 
     #if DIMENSIONS >=2
     
-    nstart = data.beg[JDIR]-1;
-    nend = data.end[JDIR];
-    idefix_for("ReconstructBX2s",0,data.np_tot[KDIR],0,data.np_tot[IDIR],
-                    KOKKOS_LAMBDA (int k, int i) {
-                        for(int j = nstart ; j>=0 ; j-- ) {
-                            Vs(BX2s,k,j,i) = 1/ Ax2(k,j,i) * (   Ax2(k,j+1,i)*Vs(BX2s,k,j+1,i)  +   (D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  , 
-                                                                                                                                                                              , 
-                                                                                                            +  Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))) ;
-                        }
-                        for(int j = nend ; j<nx2 ; j++ ) {
-                            Vs(BX2s,k,j+1,i) = 1/ Ax2(k,j+1,i) * (   Ax2(k,j,i)*Vs(BX2s,k,j,i)  -   (D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  , 
-                                                                                                                                                                              , 
-                                                                                                            +  Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))) ;
-                        }
-                        
+    if(dir==JDIR) {
+        nstart = data.beg[JDIR]-1;
+        nend = data.end[JDIR];
+        idefix_for("ReconstructBX2s",0,data.np_tot[KDIR],0,data.np_tot[IDIR],
+                        KOKKOS_LAMBDA (int k, int i) {
+                            for(int j = nstart ; j>=0 ; j-- ) {
+                                Vs(BX2s,k,j,i) = 1/ Ax2(k,j,i) * (   Ax2(k,j+1,i)*Vs(BX2s,k,j+1,i)  +   (D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  , 
+                                                                                                                                                                                , 
+                                                                                                                +  Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))) ;
+                            }
+                            for(int j = nend ; j<nx2 ; j++ ) {
+                                Vs(BX2s,k,j+1,i) = 1/ Ax2(k,j+1,i) * (   Ax2(k,j,i)*Vs(BX2s,k,j,i)  -   (D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  , 
+                                                                                                                                                                                , 
+                                                                                                                +  Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))) ;
+                            }
+                            
 
-                    });
-    #endif
-
+                        });
+        #endif
+    }
     #if DIMENSIONS == 3
     
-    nstart = data.beg[KDIR]-1;
-    nend = data.end[KDIR];
+    if(dir==KDIR) {
+        nstart = data.beg[KDIR]-1;
+        nend = data.end[KDIR];
 
-    idefix_for("ReconstructBX3s",0,data.np_tot[JDIR],0,data.np_tot[IDIR],
-                    KOKKOS_LAMBDA (int j, int i) {
-                        for(int k = nstart ; k>=0 ; k-- ) {
-                            Vs(BX3s,k,j,i) = 1/ Ax3(k,j,i) * (   Ax3(k+1,j,i)*Vs(BX3s,k+1,j,i)  +   ( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)
-                                                                                                    +  Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i) )) ;
-                        }
-                        for(int k = nend ; k<nx3 ; k++ ) {
-                            Vs(BX3s,k+1,j,i) = 1/ Ax3(k+1,j,i) * (   Ax3(k,j,i)*Vs(BX3s,k,j,i)  -   ( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)
-                                                                                                    +  Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i) )) ;
-                        }
-                        
+        idefix_for("ReconstructBX3s",0,data.np_tot[JDIR],0,data.np_tot[IDIR],
+                        KOKKOS_LAMBDA (int j, int i) {
+                            for(int k = nstart ; k>=0 ; k-- ) {
+                                Vs(BX3s,k,j,i) = 1/ Ax3(k,j,i) * (   Ax3(k+1,j,i)*Vs(BX3s,k+1,j,i)  +   ( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)
+                                                                                                        +  Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i) )) ;
+                            }
+                            for(int k = nend ; k<nx3 ; k++ ) {
+                                Vs(BX3s,k+1,j,i) = 1/ Ax3(k+1,j,i) * (   Ax3(k,j,i)*Vs(BX3s,k,j,i)  -   ( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)
+                                                                                                        +  Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i) )) ;
+                            }
+                            
 
-                    });
+                        });
+    }
 
     #endif  
     
@@ -1344,12 +1348,14 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                 IDEFIX_ERROR(msg);
 
         }
+        #if MHD == YES
+        // Reconstruct the normal field component when using CT
+        ReconstructNormalField(data,dir);
+        #endif
+
     }   // Loop on dimension ends
 
     #if MHD == YES
-    // Reconstruct the normal field component when using CT
-    ReconstructNormalField(data);
-
     // Remake the cell-centered field.
     ReconstructVcField(data, data.Vc);
     #endif

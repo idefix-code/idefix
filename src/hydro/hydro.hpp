@@ -26,7 +26,7 @@ public:
     void CalcRightHandSide(DataBlock &, int, real, real );
     void AddSourceTerms(DataBlock &, real, real );
     void ReconstructVcField(DataBlock &, IdefixArray4D<real> &);
-    void ReconstructNormalField(DataBlock &);
+    void ReconstructNormalField(DataBlock &, int);
     void EvolveMagField(DataBlock &, real, real);
     void CalcCornerEMF(DataBlock &, real );
     void SetBoundary(DataBlock &, real);

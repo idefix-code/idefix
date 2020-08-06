@@ -5,7 +5,7 @@ DataBlock::DataBlock() {
     // Do nothing
 }
 
-void DataBlock::InitFromGrid(Grid &grid) {
+void DataBlock::InitFromGrid(Grid &grid, Input &input) {
     // This initialisation is only valid for *serial*
     // MPI initialisation will involve domain decomposition of grids into DataBlocks
 
@@ -82,6 +82,9 @@ void DataBlock::InitFromGrid(Grid &grid) {
     dmu = IdefixArray1D<real>("DataBlock_dmu",np_tot[JDIR]);
 #endif
 
+    // Allocate gravitational potential when needed (dirty since it relies on the hydro block, but we have no other choice) 
+    if(input.CheckEntry("Hydro","GravPotential")>=0) phiP = IdefixArray3D<real>("DataBlock_A",np_tot[KDIR],np_tot[JDIR],np_tot[IDIR]);
+    
 #if MHD == YES
 
     Vs = IdefixArray4D<real>("DataBlock_Vs", DIMENSIONS, np_tot[KDIR]+KOFFSET, np_tot[JDIR]+JOFFSET, np_tot[IDIR]+IOFFSET);

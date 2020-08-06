@@ -47,7 +47,7 @@ int main( int argc, char* argv[] )
     // Make a data array
     DataBlock data;
 
-    data.InitFromGrid(grid);
+    data.InitFromGrid(grid, input);
 
     DataBlockHost dataHost(data);
     dataHost.SyncFromDevice();

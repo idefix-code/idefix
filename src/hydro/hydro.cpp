@@ -56,7 +56,7 @@ Hydro::Hydro(Input &input, Grid &grid) {
         this->OmegaX2 = input.GetReal("Hydro","Rotation",1);
         this->OmegaX3 = input.GetReal("Hydro","Rotation",2);
 
-        idfx::cout << "Rotation enabled with Omega=(" << this->OmegaX1 << ", " << this->OmegaX2 << ", " << this->OmegaX3 << ")" << std::endl;
+        idfx::cout << "Hydro: Rotation enabled with Omega=(" << this->OmegaX1 << ", " << this->OmegaX2 << ", " << this->OmegaX3 << ")" << std::endl;
     }
     else {
         this->haveRotation = false;
@@ -74,11 +74,25 @@ Hydro::Hydro(Input &input, Grid &grid) {
         // Get box size
         this->sbLx = grid.xend[IDIR] - grid.xbeg[IDIR];
 
-        idfx::cout << "xbeg=" << grid.xbeg[IDIR] << "xend=" << grid.xend[IDIR] <<std::endl;
-        idfx::cout << "ShearingBox enabled with Shear rate=" << this->sbS <<  "and Lx=" << sbLx << std::endl;
+        idfx::cout << "Hydro: ShearingBox enabled with Shear rate=" << this->sbS <<  "and Lx=" << sbLx << std::endl;
     }
     else {
         this->haveShearingBox = false;
+    }
+
+    // Gravitational potential
+    this->haveGravPotential = false;
+    this->gravPotentialFunc = nullptr;
+    int gravPotential = input.CheckEntry("Hydro","GravPotential");
+    if(gravPotential>=0) {
+        std::string potentialString = input.GetString("Hydro","GravPotential",0);
+        if(potentialString.compare("userdef") == 0) {
+            this->haveGravPotential = true;        
+            idfx::cout << "Hydro:: Enabling user-defined gravitational potential" << std::endl;
+        }
+        else {
+            IDEFIX_ERROR("Unknown type of gravitational potential in idefix.ini. Only userdef is implemented");
+        }
     }
 
     idfx::popRegion();
@@ -87,6 +101,13 @@ Hydro::Hydro(Input &input, Grid &grid) {
 void Hydro::EnrollUserDefBoundary(UserDefBoundaryFunc myFunc) {
     this->userDefBoundaryFunc = myFunc;
     this->haveUserDefBoundary = true;
+    idfx::cout << "Hydro: User-defined boundary condition has been enrolled" << std::endl;
+}
+
+void Hydro::EnrollGravPotential(GravPotentialFunc myFunc) {
+    if(!this->haveGravPotential) IDEFIX_ERROR("In order to enroll your gravitational potential, you need to enable it first in the .ini file.");
+    this->gravPotentialFunc = myFunc;
+    idfx::cout << "Hydro: User-defined gravitational potential has been enrolled" << std::endl;
 }
 
 Hydro::Hydro() {
@@ -407,10 +428,11 @@ void Hydro::CalcRiemannFlux(DataBlock & data, int dir) {
 }
 
 // Compute the right handside in direction dir from conservative equation, with timestep dt
-void Hydro::CalcRightHandSide(DataBlock &data, int dir, real dt) {
+void Hydro::CalcRightHandSide(DataBlock &data, int dir, real t, real dt) {
 
     idfx::pushRegion("Hydro::CalcRightHandSide");
     IdefixArray4D<real> Uc = data.Uc;
+    IdefixArray4D<real> Vc = data.Vc;
     IdefixArray4D<real> Flux = data.FluxRiemann;
     IdefixArray3D<real> A = data.A[dir];
     IdefixArray3D<real> dV = data.dV;
@@ -418,8 +440,31 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real dt) {
     IdefixArray1D<real> x1 = data.x[IDIR];
     IdefixArray1D<real> sm = data.sm;
     IdefixArray1D<real> rt = data.rt;
+    IdefixArray1D<real> dmu = data.dmu;
     IdefixArray1D<real> s = data.s;
     IdefixArray1D<real> dx = data.dx[dir];
+    IdefixArray1D<real> dx2 = data.dx[JDIR];
+    
+    // Gravitational potential
+    IdefixArray3D<real> phiP = data.phiP;
+    bool needPotential = this->haveGravPotential;
+
+    if(needPotential) {
+        IdefixArray1D<real> x1,x2,x3;
+
+        if(dir==IDIR) x1 = data.xl[IDIR];
+        else          x1 = data.x[IDIR];
+        if(dir==JDIR) x2 = data.xl[JDIR];
+        else          x2 = data.x[JDIR];
+        if(dir==KDIR) x3 = data.xl[KDIR];
+        else          x3 = data.x[KDIR];
+        
+        if(this->gravPotentialFunc == nullptr) IDEFIX_ERROR("Gravitational potential is enabled, but no user-defined potential has been enrolled.");
+
+        gravPotentialFunc(data, t, x1, x2, x3, phiP);
+    }
+
+    
 
     int ioffset,joffset,koffset;
     ioffset=joffset=koffset=0;
@@ -427,15 +472,23 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real dt) {
     if(dir==IDIR) ioffset=1;
     if(dir==JDIR) joffset=1;
     if(dir==KDIR) koffset=1;
+    
+
 
     idefix_for("CalcTotalFlux",data.beg[KDIR],data.end[KDIR]+koffset,data.beg[JDIR],data.end[JDIR]+joffset,data.beg[IDIR],data.end[IDIR]+ioffset,
             KOKKOS_LAMBDA (int k, int j, int i) {
+                
+                // TODO: Should add gravitational potential here and Fargo source terms when needed
+                #if HAVE_ENERGY
+                  if(needPotential) Flux(ENG, k, j, i) += Flux(RHO, k, j, i) * phiP(k,j,i) ;  // Potential at the cell face
+                #endif
+
+
                 for(int nv = 0 ; nv < NVAR ; nv++) {
                     Flux(nv,k,j,i) = Flux(nv,k,j,i) * A(k,j,i);
                 }
 
-                // TODO: Should add gravitational potential here and Fargo source terms when needed
-
+                
                 // Curvature terms
                 #if    (GEOMETRY == POLAR       && COMPONENTS >= 2) \
                         || (GEOMETRY == CYLINDRICAL && COMPONENTS == 3) 
@@ -480,7 +533,6 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real dt) {
 
             for(int nv = 0 ; nv < NVAR ; nv++) {
                 rhs[nv] = -  dtdV*(Flux(nv, k+koffset, j+joffset, i+ioffset) - Flux(nv, k, j, i));
-                // Do not evolve the field components if they are computed by CT (i.e. if they are in Vs)
             }
 
             #if GEOMETRY != CARTESIAN
@@ -509,7 +561,22 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real dt) {
             // Nothing for KDIR
 
             #endif // GEOMETRY != CARTESIAN
-            
+
+            // Potential terms
+            if(needPotential) {
+                const int ig = ioffset*i + joffset*j + koffset*k;
+                real dl = dx(ig);
+                #if GEOMETRY == POLAR
+                    if(dir==JDIR) dl = dl*x1(i);
+                #elif GEOMETRY == SPHERICAL
+                    if(dir==JDIR) dl = dl*rt(i);
+                    if(dir==KDIR) dl = dl*rt(i)*dmu(j)/dx2(j);
+                #endif
+                rhs[1+dir] -= dt/dl * Vc(RHO,k,j,i) * (phiP(k+koffset,j+joffset,i+ioffset) - phiP(k,j,i));      // Gravitational force in direction i
+                #if HAVE_ENERGY
+                    rhs[ENG] -=  HALF_F * (phiP(k+koffset,j+joffset,i+ioffset) + phiP(k,j,i)) * rhs[RHO];        // We conserve total energy without potential
+                #endif
+            }            
             // Evolve the field components
             for(int nv = 0 ; nv < NVAR ; nv++) {
                 // Do not evolve the field components if they are computed by CT (i.e. if they are in Vs)
@@ -529,7 +596,7 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real dt) {
 }
 
 // Add source terms
-void Hydro::AddSourceTerms(DataBlock &data, real dt) {
+void Hydro::AddSourceTerms(DataBlock &data, real t, real dt) {
 
     idfx::pushRegion("Hydro::AddSourceTerms");
     IdefixArray4D<real> Uc = data.Uc;
@@ -567,9 +634,11 @@ void Hydro::AddSourceTerms(DataBlock &data, real dt) {
                     real vphi,Sm;
                     vphi = Vc(iVPHI,k,j,i);
                     if(haveRotation) vphi += OmegaX3*x1(i);
-                    Sm = Vc(RHO,k,j,i) * vphi*vphi; // Centrifugal       
+                    Sm = Vc(RHO,k,j,i) * vphi*vphi; // Centrifugal     
+                    Sm += Vc(PRS,k,j,i);            // Presure (because pressure is included in the flux, additional source terms arise)
                     #if MHD==YES
                         Sm -=  Vc(iBPHI,k,j,i)*Vc(iBPHI,k,j,i); // Hoop stress
+                        Sm += 0.5*(EXPAND(Vc(BX1,k,j,i)*Vc(BX1,k,j,i) , +Vc(BX2,k,j,i)*Vc(BX2,k,j,i), +Vc(BX3,k,j,i)*Vc(BX3,k,j,i))); // Magnetic pressure
                     #endif // MHD
                     Uc(MX1,k,j,i) += dt * Sm / x1(i);
                 #endif // COMPONENTS
@@ -591,15 +660,19 @@ void Hydro::AddSourceTerms(DataBlock &data, real dt) {
                 vphi = SELECT(ZERO_F, ZERO_F, Vc(iVPHI,k,j,i));
                 if(haveRotation) vphi += OmegaX3*x1(i)*s(j);
                 Sm = Vc(RHO,k,j,i) * (EXPAND( ZERO_F, + Vc(VX2,k,j,i)*Vc(VX2,k,j,i), + vphi*vphi)); // Centrifugal
+                // TODO: ADD PRESSURE
                 #if MHD == YES
                     Sm -= EXPAND( ZERO_F, + Vc(iBTH,k,j,i)*Vc(iBTH,k,j,i), + Vc(iBPHI,k,j,i)*Vc(iBPHI,k,j,i)); // Hoop stress
+                    // TODO: ADD MAG. PRESSURE TERM
                 #endif
                 Uc(MX1,k,j,i) += dt*Sm/x1(i);
                 
                 ct = 1.0/TAN(x2(j));
                 Sm = Vc(RHO,k,j,i) * (EXPAND( ZERO_F, - Vc(iVTH,k,j,i)*Vc(iVR,k,j,i), + ct*vphi*vphi)); // Centrifugal
+                // TODO: ADD PRESSURE TERM
                 #if MHD == YES
                     Sm += EXPAND( ZERO_F, + Vc(iBTH,k,j,i)*Vc(iBR,k,j,i), - ct*Vc(iBPHI,k,j,i)*Vc(iBPHI,k,j,i)); // Hoop stress
+                    // TODO: ADD MAGNETIC PRESSURE TERM
                 #endif
                 Uc(MX2,k,j,i) += dt*Sm / rt(i);
             #endif

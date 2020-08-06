@@ -62,11 +62,11 @@ void TimeIntegrator::Stage(DataBlock &data) {
         hydro->CalcRiemannFlux(data, dir);
 
         // Step 3: compute the resulting evolution of the conserved variables, stored in Uc
-        hydro->CalcRightHandSide(data, dir, dt);
+        hydro->CalcRightHandSide(data, dir, t, dt);
     }
 
     // Step 4: add source terms to the conserved variables (curvature, rotation, etc)
-    if(hydro->haveSourceTerms) hydro->AddSourceTerms(data, dt);
+    if(hydro->haveSourceTerms) hydro->AddSourceTerms(data, t, dt);
     if(this->haveUserSourceTerm) this->userSourceTerm(data, t, dt);
 
 #if MHD == YES

@@ -13,6 +13,7 @@ enum Solver {TVDLF=1, HLL, HLLC, ROE};
 #endif
 
 using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side, const real t);
+using GravPotentialFunc = void (*) (DataBlock &, const real t, IdefixArray1D<real>&, IdefixArray1D<real>&, IdefixArray1D<real>&, IdefixArray3D<real> &);
 
 class Hydro {
 public:
@@ -22,8 +23,8 @@ public:
     void ConvertPrimToCons(DataBlock &);
     void ExtrapolatePrimVar(DataBlock &, int);
     void CalcRiemannFlux(DataBlock &, int);
-    void CalcRightHandSide(DataBlock &, int, real );
-    void AddSourceTerms(DataBlock &, real );
+    void CalcRightHandSide(DataBlock &, int, real, real );
+    void AddSourceTerms(DataBlock &, real, real );
     void ReconstructVcField(DataBlock &, IdefixArray4D<real> &);
     void ReconstructNormalField(DataBlock &);
     void EvolveMagField(DataBlock &, real, real);
@@ -37,8 +38,14 @@ public:
     // Source terms
     bool haveSourceTerms;
 
+    
+
     // Enroll user-defined boundary conditions
     void EnrollUserDefBoundary(UserDefBoundaryFunc);
+
+    // Enroll user-defined gravitational potential
+    void EnrollGravPotential(GravPotentialFunc);
+
 
 private:
 
@@ -60,6 +67,11 @@ private:
     // User defined Boundary conditions
     UserDefBoundaryFunc userDefBoundaryFunc;
     bool haveUserDefBoundary;
+
+    // User defined gravitational potential
+    GravPotentialFunc gravPotentialFunc;
+    bool haveGravPotential;
+
 
 };
 

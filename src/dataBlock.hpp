@@ -75,6 +75,10 @@ public:
     IdefixArray4D<real> PrimR;
     IdefixArray4D<real> FluxRiemann;
 
+    // Gravitational potential
+    IdefixArray3D<real> phiP;
+    
+
     // Name of the fields (used in outputs)
     std::vector<std::string> VcName;
     std::vector<std::string> VsName;
@@ -96,7 +100,7 @@ public:
     Grid *mygrid;
     
     // init from a Grid object
-    void InitFromGrid(Grid &);
+    void InitFromGrid(Grid &, Input &);
 
     // MPI Exchange functions
     void ExchangeAll();

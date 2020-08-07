@@ -638,7 +638,7 @@ void Hydro::AddSourceTerms(DataBlock &data, real t, real dt) {
                     Sm += Vc(PRS,k,j,i);            // Presure (because pressure is included in the flux, additional source terms arise)
                     #if MHD==YES
                         Sm -=  Vc(iBPHI,k,j,i)*Vc(iBPHI,k,j,i); // Hoop stress
-                        Sm += 0.5*(EXPAND(Vc(BX1,k,j,i)*Vc(BX1,k,j,i) , +Vc(BX2,k,j,i)*Vc(BX2,k,j,i), +Vc(BX3,k,j,i)*Vc(BX3,k,j,i))); // Magnetic pressure
+                        Sm += HALF_F*(EXPAND(Vc(BX1,k,j,i)*Vc(BX1,k,j,i) , +Vc(BX2,k,j,i)*Vc(BX2,k,j,i), +Vc(BX3,k,j,i)*Vc(BX3,k,j,i))); // Magnetic pressure
                     #endif // MHD
                     Uc(MX1,k,j,i) += dt * Sm / x1(i);
                 #endif // COMPONENTS
@@ -651,7 +651,7 @@ void Hydro::AddSourceTerms(DataBlock &data, real t, real dt) {
                 #if MHD==YES
                     Sm -=  Vc(iBPHI,k,j,i)*Vc(iBPHI,k,j,i); // Hoop stress
                     // Magnetic pressus
-                    Sm += 0.5*(EXPAND(Vc(BX1,k,j,i)*Vc(BX1,k,j,i) , +Vc(BX2,k,j,i)*Vc(BX2,k,j,i), +Vc(BX3,k,j,i)*Vc(BX3,k,j,i)));
+                    Sm += HALF_F*(EXPAND(Vc(BX1,k,j,i)*Vc(BX1,k,j,i) , +Vc(BX2,k,j,i)*Vc(BX2,k,j,i), +Vc(BX3,k,j,i)*Vc(BX3,k,j,i)));
                 #endif // MHD
                 Uc(MX1,k,j,i) += dt * Sm / x1(i);
 
@@ -660,19 +660,19 @@ void Hydro::AddSourceTerms(DataBlock &data, real t, real dt) {
                 vphi = SELECT(ZERO_F, ZERO_F, Vc(iVPHI,k,j,i));
                 if(haveRotation) vphi += OmegaX3*x1(i)*s(j);
                 Sm = Vc(RHO,k,j,i) * (EXPAND( ZERO_F, + Vc(VX2,k,j,i)*Vc(VX2,k,j,i), + vphi*vphi)); // Centrifugal
-                // TODO: ADD PRESSURE
+                Sm += 2.0*Vc(PRS,k,j,i);    // Pressure curvature
                 #if MHD == YES
                     Sm -= EXPAND( ZERO_F, + Vc(iBTH,k,j,i)*Vc(iBTH,k,j,i), + Vc(iBPHI,k,j,i)*Vc(iBPHI,k,j,i)); // Hoop stress
-                    // TODO: ADD MAG. PRESSURE TERM
+                    Sm += EXPAND(Vc(BX1,k,j,i)*Vc(BX1,k,j,i) , +Vc(BX2,k,j,i)*Vc(BX2,k,j,i), +Vc(BX3,k,j,i)*Vc(BX3,k,j,i)); // 2* mag pressure curvature
                 #endif
                 Uc(MX1,k,j,i) += dt*Sm/x1(i);
                 
                 ct = 1.0/TAN(x2(j));
                 Sm = Vc(RHO,k,j,i) * (EXPAND( ZERO_F, - Vc(iVTH,k,j,i)*Vc(iVR,k,j,i), + ct*vphi*vphi)); // Centrifugal
-                // TODO: ADD PRESSURE TERM
+                Sm += ct * Vc(PRS,k,j,i);       // Pressure curvature
                 #if MHD == YES
                     Sm += EXPAND( ZERO_F, + Vc(iBTH,k,j,i)*Vc(iBR,k,j,i), - ct*Vc(iBPHI,k,j,i)*Vc(iBPHI,k,j,i)); // Hoop stress
-                    // TODO: ADD MAGNETIC PRESSURE TERM
+                    Sm += HALF_F*ct*EXPAND(Vc(BX1,k,j,i)*Vc(BX1,k,j,i) , +Vc(BX2,k,j,i)*Vc(BX2,k,j,i), +Vc(BX3,k,j,i)*Vc(BX3,k,j,i)); // Magnetic pressure
                 #endif
                 Uc(MX2,k,j,i) += dt*Sm / rt(i);
             #endif

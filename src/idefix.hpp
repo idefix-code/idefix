@@ -199,7 +199,6 @@ enum BoundarySide { left, right};
 #include "gridHost.hpp"
 #include "dataBlock.hpp"
 #include "dataBlockHost.hpp"
-#include "test.hpp"
 #include "hydro.hpp"
 #include "timeIntegrator.hpp"
 #include "setup.hpp"

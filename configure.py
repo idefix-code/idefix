@@ -87,17 +87,21 @@ if args.gpu:
     makefileOptions['kokkosArch'] = cpu+","+gpu
     makefileOptions['cxxflags'] = "-O3 "
 
-    # This assumes openmpi. TODO: do a more general routine for all compilers
-    if(args.mpi):
-        stream=os.popen('mpicxx --showme:compile')
-        makefileOptions['cxxflags'] += stream.read().strip()
-        stream=os.popen('mpicxx --showme:link')
-        makefileOptions['ldflags'] += stream.read().strip()
+    # Enforce backend compiler for nvcc
+    if args.cxx:
+        makefileOptions['extraLine'] += '\nNVCC_WRAPPER_DEFAULT_COMPILER='+args.cxx
+    elif(args.mpi):
+        makefileOptions['extraLine'] += '\nNVCC_WRAPPER_DEFAULT_COMPILER=mpicxx'
 else:
-    if(args.mpi):
-        makefileOptions['cxx'] = "mpicxx"
+    if args.cxx:
+        makefileOptions['cxx'] = args.cxx
     else:
-        makefileOptions['cxx'] = "g++"
+        if(args.mpi):
+            makefileOptions['cxx'] = "mpicxx"
+        else:
+            makefileOptions['cxx'] = "g++"
+
+    
     makefileOptions['kokkosArch'] = cpu
     makefileOptions['cxxflags'] = "-O3"
     if args.openmp:
@@ -121,8 +125,6 @@ else:
     makefileOptions['extraObj'] += " hllcHD.o hllHD.o roeHD.o tvdlfHD.o"
     makefileOptions['cxxflags'] += " -DMHD=NO"
 
-if args.cxx:
-    makefileOptions['cxx'] = args.cxx
 
 
 

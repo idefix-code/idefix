@@ -261,20 +261,7 @@ void OutputVTK::WriteHeader(IdfxFileHandler fvtk)
     
     WriteHeaderString(header, fvtk);
 
-    /* -- Generate time info (VisIt reader only) -- */
-
-    /*
-#if VTK_TIME_INFO == YES
-  sprintf (header,"FIELD FieldData 1\n");
-  sprintf (header+strlen(header),"TIME 1 1 double\n");
-  double tt=g_time;
-  if (IsLittleEndian()) SWAP_VAR(tt);
-  VTK_HEADER_WRITE_STRING(header);
-  VTK_HEADER_WRITE_DBLARR(&tt, 1);
-  VTK_HEADER_WRITE_STRING("\n");
-#endif /* VTK_TIME_INFO */
-
-    sprintf(header, "DIMENSIONS %d %d %d\n",
+    sprintf(header, "DIMENSIONS %ld %ld %ld\n",
             nx1 + IOFFSET, nx2 + JOFFSET, nx3 + KOFFSET);
 
     WriteHeaderString(header, fvtk);
@@ -283,15 +270,15 @@ void OutputVTK::WriteHeader(IdfxFileHandler fvtk)
 
     /* -- Write rectilinear grid information -- */
 
-    sprintf(header, "X_COORDINATES %d float\n", nx1 + IOFFSET);
+    sprintf(header, "X_COORDINATES %ld float\n", nx1 + IOFFSET);
     WriteHeaderString(header, fvtk);
     WriteHeaderFloat(xnode, nx1 + IOFFSET, fvtk);
 
-    sprintf(header, "\nY_COORDINATES %d float\n", nx2 + JOFFSET);
+    sprintf(header, "\nY_COORDINATES %ld float\n", nx2 + JOFFSET);
     WriteHeaderString(header, fvtk);
     WriteHeaderFloat(ynode, nx2 + JOFFSET, fvtk);
 
-    sprintf(header, "\nZ_COORDINATES %d float\n", nx3 + KOFFSET);
+    sprintf(header, "\nZ_COORDINATES %ld float\n", nx3 + KOFFSET);
     WriteHeaderString(header, fvtk);
     WriteHeaderFloat(znode, nx3 + KOFFSET, fvtk);
 
@@ -299,7 +286,7 @@ void OutputVTK::WriteHeader(IdfxFileHandler fvtk)
 
     /* -- define node_coord -- */
 
-    sprintf(header, "POINTS %d float\n", (nx1 + IOFFSET) * (nx2 + JOFFSET) * (nx3 + KOFFSET));
+    sprintf(header, "POINTS %ld float\n", (nx1 + IOFFSET) * (nx2 + JOFFSET) * (nx3 + KOFFSET));
     WriteHeaderString(header, fvtk);
 
     /* -- Write structured grid information -- */
@@ -346,7 +333,7 @@ void OutputVTK::WriteHeader(IdfxFileHandler fvtk)
       to WriteVTK_Vector() or WriteVTK_Scalar()...]
    ----------------------------------------------------- */
 
-    sprintf(header, "\nCELL_DATA %d\n", nx1 * nx2 * nx3);
+    sprintf(header, "\nCELL_DATA %ld\n", nx1 * nx2 * nx3);
     WriteHeaderString(header, fvtk);
 }
 #undef VTK_STRUCTERED_GRID

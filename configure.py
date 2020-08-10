@@ -89,9 +89,9 @@ if args.gpu:
 
     # Enforce backend compiler for nvcc
     if args.cxx:
-        makefileOptions['extraLine'] += '\nNVCC_WRAPPER_DEFAULT_COMPILER='+args.cxx
+        makefileOptions['extraLine'] += '\nexport NVCC_WRAPPER_DEFAULT_COMPILER = '+args.cxx
     elif(args.mpi):
-        makefileOptions['extraLine'] += '\nNVCC_WRAPPER_DEFAULT_COMPILER=mpicxx'
+        makefileOptions['extraLine'] += '\nexport NVCC_WRAPPER_DEFAULT_COMPILER = mpicxx'
 else:
     if args.cxx:
         makefileOptions['cxx'] = args.cxx

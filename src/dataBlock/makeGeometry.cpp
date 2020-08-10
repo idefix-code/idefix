@@ -62,7 +62,7 @@ void DataBlock::MakeGeometry() {
                     #elif GEOMETRY == SPHERICAL
                         x1gc(i) = x1(i) + 2.0*x1(i)*dx1(i)*dx1(i)/
                                                     (12.0*x1(i)*x1(i) + dx1(i)*dx1(i));
-                        rt(i) = (x1p(i)*x1p(i)*x1p(i) - x1m(i)*x1m(i)*x1m(i)) / (x1p(i)*x1p(i)-x1r(i)*x1r(i)) / 1.5;
+                        rt(i) = (x1p(i)*x1p(i)*x1p(i) - x1m(i)*x1m(i)*x1m(i)) / (x1p(i)*x1p(i)-x1m(i)*x1m(i)) / 1.5;
                     #endif
                 });
 
@@ -155,7 +155,7 @@ void DataBlock::MakeGeometry() {
             #elif GEOMETRY == POLAR
                 Ax3(k,j,i) = D_EXPAND(x1(i)*dx1(i), *dx2(j), *ONE_F);   // = r*dr*dphi        
             #elif GEOMETRY == SPHERICAL
-                Ax3(k,j,i) = D_EXPAND(x1(i)*dx1(i), *dx2(j), **ONE_F);   // = r*dr*dth        
+                Ax3(k,j,i) = D_EXPAND(x1(i)*dx1(i), *dx2(j), *ONE_F);   // = r*dr*dth        
             #endif
         });
 

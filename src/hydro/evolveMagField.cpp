@@ -82,7 +82,7 @@ void Hydro::EvolveMagField(DataBlock &data, real t, real dt) {
 
                             rhsx1 = D_EXPAND( ZERO_F                                     ,
                                             - dt/(x1p(i)*dV2) * ( Ax2p*Ex3(k,j+1,i) - Ax2m*Ex3(k,j,i) )  ,
-                                            + dt*dx2(j)/(x1m(i)*dV2*dx3(k))*(Ex2(k+1,j,i) - Ex2(k,j,i) ) );
+                                            + dt*dx2(j)/(x1m(i)*dV2*dx3(k)) * (Ex2(k+1,j,i) - Ex2(k,j,i) ) );
                                             
                             #if DIMENSIONS >= 2
                             rhsx2 =  D_EXPAND(   dt/(x1(i)*dx1(i)) * (x1m(i+1)*Ex3(k,j,i+1) - x1m(i)*Ex3(k,j,i) )  ,
@@ -91,7 +91,7 @@ void Hydro::EvolveMagField(DataBlock &data, real t, real dt) {
                             #endif
                             #if DIMENSIONS == 3
                             rhsx3 =    - dt/(x1(i)*dx1(i)) * (x1m(i+1)*Ex2(k,j,i+1) - x1m(i)*Ex2(k,j,i) )  
-                                       + dt/(x1(i)*dx2(j)) * (Ex1(k,j+1,i) - Ex1(k,j,i) ) );                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     * (Ex2(k+1,j,i) - Ex2(k,j,i) ) );
+                                       + dt/(x1(i)*dx2(j)) * (Ex1(k,j+1,i) - Ex1(k,j,i) );
                             #endif
                         #endif
 

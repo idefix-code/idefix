@@ -31,7 +31,7 @@ void OutputVTK::WriteHeaderString(char* header, IdfxFileHandler fvtk) {
     }
     offset=offset+strlen(header);
 #else
-    fprintf (fvtk, header);
+    fprintf (fvtk, "%s", header);
 #endif
 
 }

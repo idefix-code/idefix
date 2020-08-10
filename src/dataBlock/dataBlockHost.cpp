@@ -84,7 +84,9 @@ void DataBlockHost::MakeVsFromAmag(IdefixHostArray4D<real> &Ain) {
     IdefixHostArray1D<real> dx3 = this->dx[KDIR];
 
     IdefixHostArray1D<real> x1m = this->xl[IDIR];
+    IdefixHostArray1D<real> x2m = this->xl[JDIR];
     IdefixHostArray1D<real> x1 = this->x[IDIR];
+    IdefixHostArray1D<real> x2 = this->x[JDIR];
 
 
     #if MHD == YES
@@ -125,7 +127,18 @@ void DataBlockHost::MakeVsFromAmag(IdefixHostArray4D<real> &Ain) {
 
                 #endif
                 #if GEOMETRY == SPHERICAL
-                    IDEFIX_ERROR("Not yet defined");
+                    Vs(BX1s,k,j,i) = D_EXPAND( ZERO_F                                     ,
+                                                    + 1/(x1m(i)*(cos(x2m(j))-cos(x2m(j+1)))) * (sin(x2m(j+1))*Ain(KDIR,k,j+1,i) - sin(x2m(j))*Ain(KDIR,k,j,i) )  ,
+                                                    - 1/(x1m(i)*sin(x2(j))*dx3(k)) * (Ain(JDIR,k+1,j,i) - Ain(JDIR,k,j,i) ) );
+
+                    Vs(BX2s,k,j,i) =  D_EXPAND(  - 1/(x1(i)*dx1(i)) * (x1m(i+1)*Ain(KDIR,k,j,i+1) - x1m(i)*Ain(KDIR,k,j,i) )  ,
+                                                                                                    ,
+                                                 + 1/(x1m(i)*sin(x2(j))*dx3(k)) * (Ain(IDIR,k+1,j,i) - Ain(IDIR,k,j,i) ) );
+                    
+                    #if DIMENSIONS == 3
+                    Vs(BX3s,k,j,i) =  1/(x1(i)*dx1(i)) * (x1m(i+1)*Ain(JDIR,k,j,i+1) - x1m(i)*Ain(JDIR,k,j,i) )  
+                                    - 1/(x1(i)*dx2(j)) * (Ain(IDIR,k,j+1,i) - Ain(IDIR,k,j,i) ) ;
+                    #endif
                 #endif
             }
         }

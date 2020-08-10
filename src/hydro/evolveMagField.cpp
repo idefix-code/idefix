@@ -81,7 +81,7 @@ void Hydro::EvolveMagField(DataBlock &data, real t, real dt) {
                             real Ax2m = FABS(sin(x2m(j)));
 
                             rhsx1 = D_EXPAND( ZERO_F                                     ,
-                                            - dt/(x1p(i)*dV2) * ( Ax2p*Ex3(k,j+1,i) - Ax2m*Ex3(k,j,i) )  ,
+                                            - dt/(x1m(i)*dV2) * ( Ax2p*Ex3(k,j+1,i) - Ax2m*Ex3(k,j,i) )  ,
                                             + dt*dx2(j)/(x1m(i)*dV2*dx3(k)) * (Ex2(k+1,j,i) - Ex2(k,j,i) ) );
                                             
                             #if DIMENSIONS >= 2

@@ -46,31 +46,26 @@ int main( int argc, char* argv[] )
 
     // Make a data array
     DataBlock data;
-
     data.InitFromGrid(grid, input);
 
-    DataBlockHost dataHost(data);
-    dataHost.SyncFromDevice();
-
-    idfx::cout << "Init Hydrodynamics" << std::endl;
+    idfx::cout << "Init Hydrodynamics." << std::endl;
     Hydro hydro(input, grid);
 
-    idfx::cout << "Init Time Integrator..." << std::endl;
+    idfx::cout << "Init Time Integrator." << std::endl;
     TimeIntegrator Tint(input, hydro);
 
-    idfx::cout << "Init Setup..." << std::endl;
-    Setup mysetup(input,grid,data,Tint);
+    idfx::cout << "Init Setup." << std::endl;
+    Setup mysetup(input,grid,data,hydro);
 
-    idfx::cout << "init Output Routines" << std::endl;
+    idfx::cout << "init Output Routines." << std::endl;
     OutputVTK output(input, data, Tint.getT()); 
     
     // Apply initial conditions
-    idfx::cout << "Creating initial conditions" << std::endl;
+    idfx::cout << "Creating initial conditions." << std::endl;
     mysetup.InitFlow(data);
 
-    idfx::cout << "Applying boundary conditions" << std::endl;
+    idfx::cout << "Applying boundary conditions." << std::endl;
     hydro.SetBoundary(data,Tint.getT());
-
 
     idfx::cout << "Write init vtk" << std::endl;
     output.Write(data,Tint.getT());
@@ -89,16 +84,6 @@ int main( int argc, char* argv[] )
     idfx::cout << "Reached t=" << Tint.getT() << std::endl;
     idfx::cout << "Completed in " << timer.seconds() << "seconds and " << Tint.getNcycles() << " cycles. Perfs are " << 1/tintegration << " cell updates/second." << std::endl;
     
-
-    // Make a test
-    /*
-    Test test(data);
-    int nrepeat=10000;
-    test.MakeTest(IDIR-1,nrepeat);
-    test.MakeTest(IDIR,nrepeat);
-    test.MakeTest(JDIR,nrepeat);
-    test.MakeTest(KDIR,nrepeat);
-    */
     idfx::cout << "Job's done" << std::endl;
   }
   Kokkos::finalize();

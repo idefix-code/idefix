@@ -28,15 +28,10 @@ TimeIntegrator::TimeIntegrator(Input & input, Hydro &physics) {
         w0[1] = 1.0/3.0;
     }
     
-    this->haveUserSourceTerm = false;
+    
 
     idfx::popRegion();
 
-}
-
-void TimeIntegrator::EnrollUserSourceTerm(SrcTermFunc myFunc) {
-    this->userSourceTerm = myFunc;
-    this->haveUserSourceTerm = true;
 }
 
 Hydro& TimeIntegrator::GetHydro() {
@@ -67,7 +62,6 @@ void TimeIntegrator::Stage(DataBlock &data) {
 
     // Step 4: add source terms to the conserved variables (curvature, rotation, etc)
     if(hydro->haveSourceTerms) hydro->AddSourceTerms(data, t, dt);
-    if(this->haveUserSourceTerm) this->userSourceTerm(data, t, dt);
 
 #if MHD == YES
     // Compute the field evolution according to CT
@@ -186,7 +180,7 @@ void TimeIntegrator::Cycle(DataBlock & data) {
     else dt=newdt;
 
     ncycles++;
-
+    
     idfx::popRegion();
 }
 

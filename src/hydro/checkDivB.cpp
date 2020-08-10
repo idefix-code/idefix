@@ -21,11 +21,15 @@ real Hydro::CheckDivB(DataBlock &data) {
                 real dB1,dB2,dB3;
 
                 dB1=dB2=dB3=ZERO_F;
-
+                
                 D_EXPAND( dB1=(Ax1(k,j,i+1)*Vs(BX1s,k,j,i+1)-Ax1(k,j,i)*Vs(BX1s,k,j,i)); ,
                           dB2=(Ax2(k,j+1,i)*Vs(BX2s,k,j+1,i)-Ax2(k,j,i)*Vs(BX2s,k,j,i)); ,
                           dB3=(Ax3(k+1,j,i)*Vs(BX3s,k+1,j,i)-Ax3(k,j,i)*Vs(BX3s,k,j,i));  )
                 
+                /*D_EXPAND( dB1=(Vs(BX1s,k,j,i+1)-Vs(BX1s,k,j,i))/(dx1(i)); ,
+                          dB2=(Vs(BX2s,k,j+1,i)-Vs(BX2s,k,j,i))/(dx2(j)); ,
+                          dB3=(Vs(BX3s,k+1,j,i)-Vs(BX3s,k,j,i))/(dx3(k));  )*/
+
                 divBmax=FMAX(FABS(D_EXPAND(dB1, +dB2, +dB3))/dV(k,j,i),divBmax);
 
             }, Kokkos::Max<real>(divB) );

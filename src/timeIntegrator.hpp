@@ -2,7 +2,7 @@
 #define TIMEINTEGRATOR_HPP
 #include "idefix.hpp"
 
-using SrcTermFunc = void (*) (DataBlock &, const real t, const real dt);
+
 
 class TimeIntegrator {
 public:
@@ -23,8 +23,7 @@ public:
     // Return the hydro object used by present TimeIntegrator
     Hydro &GetHydro();
 
-    // Add some user source terms
-    void EnrollUserSourceTerm(SrcTermFunc);
+    
 
 private:
     int nstages;
@@ -41,10 +40,6 @@ private:
     Kokkos::Timer timer;    // Internal timer of the integrator
     
     Hydro *hydro;
-
-    // User defined functions
-    SrcTermFunc userSourceTerm;
-    bool haveUserSourceTerm;
 };
 
 #endif

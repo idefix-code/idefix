@@ -64,12 +64,22 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                         Vc(n,k,j,i) = Vc(n,k+koffset,j+joffset,i+ioffset);
                     });
                 #if MHD == YES
-                idefix_for("BoundaryBegPeriodicVs",0,DIMENSIONS,kbeg,kend,jbeg,jend,ibeg,iend,
-                    KOKKOS_LAMBDA (int n, int k, int j, int i) {
+                    for(int component=0; component<DIMENSIONS; component++) {
+                        int ieb,jeb,keb;
+                        if(component == IDIR) ieb=iend+1;
+                        else ieb=iend;
+                        if(component == JDIR) jeb=jend+1;
+                        else jeb=jend;
+                        if(component == KDIR) keb=kend+1;
+                        else keb=kend;
+                        if(component != dir) { // skip normal component
+                            idefix_for("BoundaryBegShearingBoxVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
+                            KOKKOS_LAMBDA (int k, int j, int i) {
+                                Vs(component,k,j,i) = Vs(component,k+koffset,j+joffset,i+ioffset);                        
+                            });
+                         }
 
-                        // Don't touch the normal component !
-                        if(n != dir) Vs(n,k,j,i) = Vs(n,k+koffset,j+joffset,i+ioffset);
-                    });
+                    }
                 #endif
                 break;
             case outflow:
@@ -83,15 +93,27 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                         else Vc(n,k,j,i) = Vc(n,kref,jref,iref);
                     });
                 #if MHD == YES
-                idefix_for("BoundaryBegOutflowVs",0,DIMENSIONS,kbeg,kend,jbeg,jend,ibeg,iend,
-                    KOKKOS_LAMBDA (int n, int k, int j, int i) {
-                        int iref= (dir==IDIR) ? ighost : i;
-                        int jref= (dir==JDIR) ? jghost : j;
-                        int kref= (dir==KDIR) ? kghost : k;
+                    for(int component=0; component<DIMENSIONS; component++) {
+                        int ieb,jeb,keb;
+                        if(component == IDIR) ieb=iend+1;
+                        else ieb=iend;
+                        if(component == JDIR) jeb=jend+1;
+                        else jeb=jend;
+                        if(component == KDIR) keb=kend+1;
+                        else keb=kend;
+                        if(component != dir) { // skip normal component
+                            idefix_for("BoundaryBegOutflowVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
+                            KOKKOS_LAMBDA (int k, int j, int i) {
+                                int iref= (dir==IDIR) ? ighost : i;
+                                int jref= (dir==JDIR) ? jghost : j;
+                                int kref= (dir==KDIR) ? kghost : k;
 
-                        // Don't touch the normal component !
-                        if(n != dir) Vs(n,k,j,i) = Vs(n,kref,jref,iref);
-                    });
+                                // Don't touch the normal component !
+                                Vs(component,k,j,i) = Vs(component,kref,jref,iref);
+                            });
+                        }
+
+                    }
                 #endif
                 break;
             case shearingbox:
@@ -111,12 +133,22 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                             Vc(n,k,j,i) = Vc(n,k+koffset,j+joffset,i+ioffset) + voffset;
                         });
                     #if MHD == YES
-                    idefix_for("BoundaryBegShearingBoxVs",0,DIMENSIONS,kbeg,kend,jbeg,jend,ibeg,iend,
-                        KOKKOS_LAMBDA (int n, int k, int j, int i) {
+                    for(int component=0; component<DIMENSIONS; component++) {
+                            int ieb,jeb,keb;
+                            if(component == IDIR) ieb=iend+1;
+                            else ieb=iend;
+                            if(component == JDIR) jeb=jend+1;
+                            else jeb=jend;
+                            if(component == KDIR) keb=kend+1;
+                            else keb=kend;
+                            if(component != dir) { // skip normal component
+                                idefix_for("BoundaryBegShearingBoxVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
+                                KOKKOS_LAMBDA (int k, int j, int i) {
+                                    Vs(component,k,j,i) = Vs(component,k+koffset,j+joffset,i+ioffset);                        
+                                });
+                            }
 
-                            // Don't touch the normal component !
-                            if(n != dir) Vs(n,k,j,i) = Vs(n,k+koffset,j+joffset,i+ioffset);
-                        });
+                        }
                     #endif
                 }
                 break;
@@ -150,11 +182,22 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                         Vc(n,k,j,i) = Vc(n,k-koffset,j-joffset,i-ioffset);
                     });
                 #if MHD == YES
-                idefix_for("BoundaryEndPeriodicVs",0,DIMENSIONS,kbeg,kend,jbeg,jend,ibeg,iend,
-                    KOKKOS_LAMBDA (int n, int k, int j, int i) {
-                        // Don't touch the normal component !
-                        if(n != dir) Vs(n,k,j,i) = Vs(n,k-koffset,j-joffset,i-ioffset);                        
-                    });
+                    for(int component=0; component<DIMENSIONS; component++) {
+                        int ieb,jeb,keb;
+                        if(component == IDIR) ieb=iend+1;
+                        else ieb=iend;
+                        if(component == JDIR) jeb=jend+1;
+                        else jeb=jend;
+                        if(component == KDIR) keb=kend+1;
+                        else keb=kend;
+                        if(component != dir) { // skip normal component
+                            idefix_for("BoundaryEndPeriodicVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
+                                KOKKOS_LAMBDA (int k, int j, int i) {
+                                    Vs(component,k,j,i) = Vs(component,k-koffset,j-joffset,i-ioffset);                        
+                            });
+                        }
+
+                    }
                 #endif
                 break;
             case outflow:
@@ -168,14 +211,25 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                         else Vc(n,k,j,i) = Vc(n,kref,jref,iref);
                     });
                 #if MHD == YES
-                idefix_for("BoundaryEndOutflowVs",0,DIMENSIONS,kbeg,kend,jbeg,jend,ibeg,iend,
-                    KOKKOS_LAMBDA (int n, int k, int j, int i) {
-                        int iref= (dir==IDIR) ? ighost + ioffset - 1 : i;
-                        int jref= (dir==JDIR) ? jghost + joffset - 1 : j;
-                        int kref= (dir==KDIR) ? kghost + koffset - 1 : k;
+                    for(int component=0; component<DIMENSIONS; component++) {
+                        int ieb,jeb,keb;
+                        if(component == IDIR) ieb=iend+1;
+                        else ieb=iend;
+                        if(component == JDIR) jeb=jend+1;
+                        else jeb=jend;
+                        if(component == KDIR) keb=kend+1;
+                        else keb=kend;
+                        if(component != dir) { // skip normal component
+                            idefix_for("BoundaryEndOutflowVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
+                                KOKKOS_LAMBDA (int k, int j, int i) {
+                                    int iref= (dir==IDIR) ? ighost + ioffset - 1 : i;
+                                    int jref= (dir==JDIR) ? jghost + joffset - 1 : j;
+                                    int kref= (dir==KDIR) ? kghost + koffset - 1 : k;
+                                    Vs(component,k,j,i) = Vs(component,kref,jref,iref);                        
+                            });
+                        }
 
-                        if(n != dir) Vs(n,k,j,i) = Vs(n,kref,jref,iref);
-                    });
+                    }
                 #endif
                 break;
             case shearingbox:
@@ -196,11 +250,22 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                             Vc(n,k,j,i) = Vc(n,k-koffset,j-joffset,i-ioffset) + voffset;
                         });
                     #if MHD == YES
-                    idefix_for("BoundaryEndShearingBoxVs",0,DIMENSIONS,kbeg,kend,jbeg,jend,ibeg,iend,
-                        KOKKOS_LAMBDA (int n, int k, int j, int i) {
-                            // Don't touch the normal component !
-                            if(n != dir) Vs(n,k,j,i) = Vs(n,k-koffset,j-joffset,i-ioffset);                        
-                        });
+                        for(int component=0; component<DIMENSIONS; component++) {
+                            int ieb,jeb,keb;
+                            if(component == IDIR) ieb=iend+1;
+                            else ieb=iend;
+                            if(component == JDIR) jeb=jend+1;
+                            else jeb=jend;
+                            if(component == KDIR) keb=kend+1;
+                            else keb=kend;
+                            if(component != dir) { // skip normal component
+                                idefix_for("BoundaryEndShearingBoxVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
+                                KOKKOS_LAMBDA (int k, int j, int i) {
+                                    Vs(component,k,j,i) = Vs(component,k-koffset,j-joffset,i-ioffset);                        
+                                });
+                            }
+
+                        }
                     #endif
                 }
                 break;
@@ -277,21 +342,23 @@ void Hydro::ReconstructNormalField(DataBlock &data, int dir) {
     nx3=data.np_tot[KDIR];
 
     if(dir==IDIR) {
+        
         idefix_for("ReconstructBX1s",0,nx3,0,nx2,
                         KOKKOS_LAMBDA (int k, int j) {
 
-
+                            
                             for(int i = nstart ; i>=0 ; i-- ) {
                                 Vs(BX1s,k,j,i) = 1/ Ax1(k,j,i) * (   Ax1(k,j,i+1)*Vs(BX1s,k,j,i+1)  +   (D_EXPAND( ZERO_F                                       ,                    
                                                                                                 +  Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i)  , 
                                                                                                 +  Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))) ;
                             }
-
+                            
                             for(int i = nend ; i<nx1 ; i++ ) {
                                 Vs(BX1s,k,j,i+1) = 1/ Ax1(k,j,i+1) * (   Ax1(k,j,i)*Vs(BX1s,k,j,i)  -   (D_EXPAND(      ZERO_F                                       ,                    
                                                                                                 +  Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i)  , 
                                                                                                 +  Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))) ;
                             }
+                            
                             
 
                         });

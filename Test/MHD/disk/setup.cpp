@@ -58,10 +58,10 @@ Setup::Setup() {}
 
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
-Setup::Setup(Input &input, Grid &grid, DataBlock &data, TimeIntegrator &tint) {
+Setup::Setup(Input &input, Grid &grid, DataBlock &data, Hydro &hydro) {
     // Set the function for userdefboundary
-    tint.GetHydro().EnrollUserDefBoundary(&UserdefBoundary);
-    tint.GetHydro().EnrollGravPotential(&Potential);
+    hydro.EnrollUserDefBoundary(&UserdefBoundary);
+    hydro.EnrollGravPotential(&Potential);
 
 }
 

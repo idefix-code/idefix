@@ -148,6 +148,9 @@ int OutputVTK::Write(DataBlock &datain, real t)
 
     idfx::cout << "OutputVTK::Write file n " << vtkFileNumber << "..." << std::flush;
 
+    // Debug data structure
+    //datain.DumpToFile(std::string("Debug.")+std::to_string(vtkFileNumber));
+
     timer.reset();
 
     // Create a copy of the dataBlock on Host, and sync it.

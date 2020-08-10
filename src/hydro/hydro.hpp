@@ -12,8 +12,19 @@ enum Solver {TVDLF=1, HLL, HLLD, ROE};
 enum Solver {TVDLF=1, HLL, HLLC, ROE};
 #endif
 
+/*---- EMFs -----*/
+#define ARITHMETIC   1
+#define UCT0         2
+#define UCT_CONTACT  3
+
+#ifndef EMF_AVERAGE
+    #define EMF_AVERAGE     UCT_CONTACT
+#endif
+
+
 using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side, const real t);
 using GravPotentialFunc = void (*) (DataBlock &, const real t, IdefixArray1D<real>&, IdefixArray1D<real>&, IdefixArray1D<real>&, IdefixArray3D<real> &);
+using SrcTermFunc = void (*) (DataBlock &, const real t, const real dt);
 
 class Hydro {
 public:
@@ -38,14 +49,14 @@ public:
     // Source terms
     bool haveSourceTerms;
 
-    
-
     // Enroll user-defined boundary conditions
     void EnrollUserDefBoundary(UserDefBoundaryFunc);
 
     // Enroll user-defined gravitational potential
     void EnrollGravPotential(GravPotentialFunc);
 
+    // Add some user source terms
+    void EnrollUserSourceTerm(SrcTermFunc);
 
 private:
 
@@ -72,7 +83,9 @@ private:
     GravPotentialFunc gravPotentialFunc;
     bool haveGravPotential;
 
-
+    // User defined source term
+    SrcTermFunc userSourceTerm;
+    bool haveUserSourceTerm;
 };
 
 

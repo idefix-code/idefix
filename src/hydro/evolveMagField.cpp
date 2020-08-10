@@ -49,7 +49,7 @@ void Hydro::EvolveMagField(DataBlock &data, real t, real dt) {
                             #endif
                             #if DIMENSIONS == 3
                             rhsx3 =    - dt/dx1(i) * (Ex2(k,j,i+1) - Ex2(k,j,i) )  
-                                       + dt/dx2(j) * (Ex1(k,j+1,i) - Ex1(k,j,i) ) );
+                                       + dt/dx2(j) * (Ex1(k,j+1,i) - Ex1(k,j,i) );
                             #endif
 
                         #elif GEOMETRY == CYLINDRICAL

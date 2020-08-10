@@ -40,6 +40,7 @@ Hydro::Hydro(Input &input, Grid &grid) {
     #else
     this->haveSourceTerms = true;
     #endif
+    this->haveUserSourceTerm = false;
 
     // Check whether we have rotation
     int rotation = input.CheckEntry("Hydro","Rotation");
@@ -104,6 +105,13 @@ void Hydro::EnrollGravPotential(GravPotentialFunc myFunc) {
     if(!this->haveGravPotential) IDEFIX_ERROR("In order to enroll your gravitational potential, you need to enable it first in the .ini file.");
     this->gravPotentialFunc = myFunc;
     idfx::cout << "Hydro: User-defined gravitational potential has been enrolled" << std::endl;
+}
+
+void Hydro::EnrollUserSourceTerm(SrcTermFunc myFunc) {
+    this->userSourceTerm = myFunc;
+    this->haveUserSourceTerm = true;
+    this->haveSourceTerms = true;
+    idfx::cout << "Hydro: User-defined source term has been enrolled" << std::endl;
 }
 
 Hydro::Hydro() {

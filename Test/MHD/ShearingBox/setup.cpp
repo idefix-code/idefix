@@ -57,15 +57,15 @@ void UserStep(DataBlock &data, const real t, const real dt) {
 
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
-Setup::Setup(Input &input, Grid &grid, DataBlock &data, TimeIntegrator &tint) {
-    gammaIdeal=tint.GetHydro().GetGamma();
+Setup::Setup(Input &input, Grid &grid, DataBlock &data, Hydro &hydro) {
+    gammaIdeal=hydro.GetGamma();
 
     // Get rotation rate along vertical axis
     omega=input.GetReal("Hydro","Rotation",2);
     shear=input.GetReal("Hydro","ShearingBox",0);
 
     // Add our userstep to the timeintegrator
-    tint.EnrollUserSourceTerm(UserStep);
+    hydro.EnrollUserSourceTerm(UserStep);
 }
 
 // This routine initialize the flow
@@ -111,18 +111,12 @@ void Setup::InitFlow(DataBlock &data) {
 }
 
 
-// Analyse data to produce an output
-                     
-                     
+// Analyse data to produce an output      
                      
 void Setup::MakeAnalysis(DataBlock & data, real t) {
 
 }
 
-// User-defined boundaries
-void Setup::SetUserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
-
-}
 
 
 // Do a specifically designed user step in the middle of the integration

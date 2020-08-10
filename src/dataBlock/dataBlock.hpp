@@ -110,6 +110,9 @@ public:
 
     void MakeGeometry(); 
 
+    // Dump current datablock to a file for inspection
+    void DumpToFile(std::string filebase);
+
     enum {faceRight, faceLeft};
 
     DataBlock();

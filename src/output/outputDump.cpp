@@ -2,8 +2,16 @@
 
 OutputDump::OutputDump(Input &input, DataBlock &data, real t) {
     // Init the output period
-    this->tperiod=input.GetReal("Output","dmp",0);
-    this->tnext = t;
+    if(input.CheckEntry("Output","dmp")>0) {
+        this->tperiod=input.GetReal("Output","dmp",0);
+        this->tnext = t;
+    }
+    else {
+        this->tperiod = -1.0; // Disable dump outputs altogether
+        this->tnext = 0;
+    }
+
+    
     this->dumpFileNumber = 0;
 
     // Allocate scratch Array
@@ -272,6 +280,7 @@ int OutputDump::Write( Grid& grid, DataBlock &data, TimeIntegrator &tint, Output
 
     // Do we need an output?
     if(tint.getT()<this->tnext) return(0);
+    if(this->tperiod < 0) return(0);  // negative tperiod means dump outputs are disabled
 
     this->tnext+= this->tperiod;
 

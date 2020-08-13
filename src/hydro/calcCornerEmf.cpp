@@ -18,6 +18,7 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
     IdefixArray3D<real> ezi = data.emf.ezi;
     IdefixArray3D<real> ezj = data.emf.ezj;
 
+#if MHD == YES
 #if EMF_AVERAGE == ARITHMETIC
     idefix_for("CalcCornerEMF",
                 data.beg[KDIR],data.end[KDIR]+KOFFSET,
@@ -225,6 +226,6 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
 
                 });
 #endif
-
+#endif // MHD
     idfx::popRegion();
 }

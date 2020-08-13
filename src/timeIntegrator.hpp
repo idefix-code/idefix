@@ -5,6 +5,8 @@
 
 
 class TimeIntegrator {
+    friend class OutputDump;
+
 public:
     real getDt();      // Get current times step of time integrator
     long int getNcycles();  // Get current number of cycles

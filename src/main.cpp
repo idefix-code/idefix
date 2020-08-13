@@ -58,17 +58,27 @@ int main( int argc, char* argv[] )
     Setup mysetup(input,grid,data,hydro);
 
     idfx::cout << "init Output Routines." << std::endl;
-    OutputVTK output(input, data, Tint.getT()); 
+    OutputVTK outVTK(input, data, Tint.getT()); 
+    OutputDump outDMP(input, data, Tint.getT());
     
     // Apply initial conditions
-    idfx::cout << "Creating initial conditions." << std::endl;
-    mysetup.InitFlow(data);
+    
 
-    idfx::cout << "Applying boundary conditions." << std::endl;
-    hydro.SetBoundary(data,Tint.getT());
+      // Are we restarting?
+    if(input.CheckEntry("CommandLine","restart") > 0) {
+      idfx::cout << "Restarting from dump file"  << std::endl;
+      outDMP.Read(grid,data,Tint,outVTK,input.GetInt("CommandLine","restart",0));
+      hydro.SetBoundary(data,Tint.getT());
+      outVTK.Write(data,Tint.getT());
+    }
+    else {
+      idfx::cout << "Creating initial conditions." << std::endl;
+      mysetup.InitFlow(data);
+      hydro.SetBoundary(data,Tint.getT());
+      outDMP.Write(grid, data, Tint, outVTK);
+      outVTK.Write(data,Tint.getT());
+    }
 
-    idfx::cout << "Write init vtk" << std::endl;
-    output.Write(data,Tint.getT());
     idfx::cout << "Cycling Time Integrator..." << std::endl;
 
     Kokkos::Timer timer;
@@ -78,7 +88,8 @@ int main( int argc, char* argv[] )
     while(Tint.getT() < tstop) {
       if(tstop-Tint.getT() < Tint.getDt()) Tint.setDt(tstop-Tint.getT());
       Tint.Cycle(data);
-      output.Write(data, Tint.getT());
+      outDMP.Write(grid, data, Tint, outVTK);
+      outVTK.Write(data, Tint.getT());
     }
     double tintegration = (timer.seconds()/(grid.np_int[IDIR]*grid.np_int[JDIR]*grid.np_int[KDIR]*Tint.getNcycles()));
     idfx::cout << "Reached t=" << Tint.getT() << std::endl;

@@ -1,16 +1,11 @@
 #ifndef OUTPUTVTK_HPP
 #define OUTPUTVTK_HPP
-#include "idefix.hpp"
+#include "../idefix.hpp"
 
-
-// File handler depends on the type of I/O we use
-#ifdef WITH_MPI
-using IdfxFileHandler = MPI_File;
-#else
-using IdfxFileHandler = FILE*;
-#endif
 
 class OutputVTK {
+    friend class OutputDump;
+    
 public:
 
     OutputVTK(Input &, DataBlock &, real);                     // Create Output Object

@@ -176,6 +176,12 @@ using Layout = Kokkos::LayoutRight;
 
 
 
+// File handler depends on the type of I/O we use
+#ifdef WITH_MPI
+using IdfxFileHandler = MPI_File;
+#else
+using IdfxFileHandler = FILE*;
+#endif
 
 // Types of boundary which can be treated
 enum BoundaryType { internal, periodic, outflow, shearingbox, userdef};
@@ -196,6 +202,7 @@ enum BoundarySide { left, right};
 #include "timeIntegrator.hpp"
 #include "setup.hpp"
 #include "outputVtk.hpp"
+#include "outputDump.hpp"
 
 #ifndef MHD
 #error MHD flag should be set to yes or no

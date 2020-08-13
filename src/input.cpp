@@ -113,6 +113,10 @@ void Input::ParseCommandLine(int argc, char **argv) {
                 inputParameters["CommandLine"]["dec"].push_back(std::string(argv[i]));
             }
         }
+        if(std::string(argv[i]) == "-restart") {
+            if((++i) >= argc) IDEFIX_ERROR("You must specify -restart n where n is the dump file number");
+            inputParameters["CommandLine"]["restart"].push_back(std::string(argv[i]));
+        }
         else {
             msg << "Unknown option " << argv[i];
             IDEFIX_ERROR(msg);

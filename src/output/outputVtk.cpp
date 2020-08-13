@@ -1,4 +1,4 @@
-#include "outputVtk.hpp"
+#include "../idefix.hpp"
 #include "gitversion.h"
 
 #define VTK_RECTILINEAR_GRID    14

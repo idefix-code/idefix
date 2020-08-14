@@ -5,6 +5,13 @@
 
 enum DataType {DoubleType, SingleType, IntegerType};
 
+// Define data descriptor used for distributed I/O when MPI is enabled
+#ifdef WITH_MPI
+    using IdfxDataDescriptor = MPI_Datatype;
+#else   
+    using IdfxDataDescriptor = int;   // This is actually not used
+#endif
+
 class OutputDump {
 public:
 
@@ -25,8 +32,12 @@ private:
     // File offset
 #ifdef WITH_MPI
     MPI_Offset offset;
-    MPI_Datatype view;
 #endif
+    // These descriptors are only useful with MPI
+    IdfxDataDescriptor descC;     // Descriptor for cell-centered fields (Read & write)
+    IdfxDataDescriptor descSR[3]; // Descriptor for face-centered fields (Read)
+    IdfxDataDescriptor descSW[3]; // Descriptor for face-centered fields (Write)
+
 
     // len of field names
     const int nameSize  =  16;
@@ -34,10 +45,10 @@ private:
 
     void WriteString(IdfxFileHandler, char *);
     void WriteSerial(IdfxFileHandler, int, int *, DataType, char*, void*);
-    void WriteDistributed(IdfxFileHandler, int, int*, char*, real*);
+    void WriteDistributed(IdfxFileHandler, int, int*, int*, char*, IdfxDataDescriptor&, real*);
     void ReadNextFieldProperties(IdfxFileHandler, int&, int*, DataType&, std::string&);
     void ReadSerial(IdfxFileHandler, int, int*, DataType, void*);
-    void ReadDistributed(IdfxFileHandler, int, int*, void*);
+    void ReadDistributed(IdfxFileHandler, int, int*, int*, IdfxDataDescriptor&, void*);
 };
 
 #endif

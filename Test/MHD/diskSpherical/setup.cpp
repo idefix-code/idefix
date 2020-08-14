@@ -37,9 +37,39 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                         Vc(VX1,k,j,i) = Vc(VX1,k,j,ighost) /( sqrt(x1(i)/x1(ighost)));
                         Vc(VX2,k,j,i) = Vc(VX2,k,j,ighost) /( sqrt(x1(i)/x1(ighost)));
                         Vc(VX3,k,j,i) = Vc(VX3,k,j,ighost) /( sqrt(x1(i)/x1(ighost)));
-                        Vs(BX2s,k,j,i) = Vs(BX2s,k,j,ighost);
+                        Vs(BX2s,k,j,i) = ZERO_F;
+                        Vs(BX3s,k,j,i) = ZERO_F; 
 
                     });
+    }
+    if( dir==JDIR) {
+        IdefixArray4D<real> Vc = data.Vc;
+        IdefixArray4D<real> Vs = data.Vs;
+        int jghost;
+        int jbeg,jend;
+        if(side == left) {
+            jghost = data.beg[JDIR];
+            jbeg = 0;
+            jend = data.beg[JDIR];
+        }
+        else {
+            jghost = data.end[JDIR]-1;
+            jbeg=data.end[JDIR];
+            jend=data.np_tot[JDIR];
+        }
+        idefix_for("UserDefBoundary",0,data.np_tot[KDIR],jbeg,jend,0,data.np_tot[IDIR],
+                    KOKKOS_LAMBDA (int k, int j, int i) {
+                        Vc(RHO,k,j,i) = Vc(RHO,k,jghost,i);
+                        Vc(PRS,k,j,i) = Vc(PRS,k,jghost,i);
+                        Vc(VX1,k,j,i) = Vc(VX1,k,jghost,i);
+                        Vc(VX2,k,j,i) = ZERO_F;
+                        Vc(VX3,k,j,i) = Vc(VX3,k,jghost,i);
+                        Vs(BX1s,k,j,i) = ZERO_F;
+                        Vs(BX3s,k,j,i) = ZERO_F;
+
+                    });
+
+
     }
     
 }
@@ -90,7 +120,7 @@ void Setup::InitFlow(DataBlock &data) {
                 r=d.x[IDIR](i);
                 th=d.x[JDIR](j);
                 real R=r*sin(th);
-                
+                real z=r*cos(th);
                 real Vk=1.0/pow(R,0.5);
                 
                 real cs2=(epsilon*Vk)*(epsilon*Vk);
@@ -109,7 +139,7 @@ void Setup::InitFlow(DataBlock &data) {
                 
                 A(IDIR,k,j,i) = 0.0;
                 A(JDIR,k,j,i) = 0.0;
-                A(KDIR,k,j,i) = B0*epsilon/(2.0*M_PI)*cos(R/epsilon*2.0*M_PI)*exp(1.0/(cs2)*(1/r-1/R));
+                A(KDIR,k,j,i) = B0*epsilon*cos(R/epsilon)*fmax(1-(z*z)/(4*R*R*epsilon*epsilon),ZERO_F);
             }
         }
     }

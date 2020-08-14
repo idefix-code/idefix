@@ -494,13 +494,11 @@ int OutputDump::Write( Grid& grid, DataBlock &data, TimeIntegrator &tint, Output
     #endif
     IdfxFileHandler fileHdl;
 
-
-    idfx::pushRegion("OutputDump::Write");
-
     // Do we need an output?
     if(tint.getT()<this->tnext) return(0);
     if(this->tperiod < 0) return(0);  // negative tperiod means dump outputs are disabled
 
+    idfx::pushRegion("OutputDump::Write");
     this->tnext+= this->tperiod;
 
     idfx::cout << "OutputDump::Write file n " << dumpFileNumber << "..." << std::flush;

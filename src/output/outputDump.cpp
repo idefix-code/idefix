@@ -475,7 +475,9 @@ int OutputDump::Read( Grid& grid, DataBlock &data, TimeIntegrator &tint, OutputV
     dataHost.SyncToDevice();
 
     idfx::cout << "done in " << timer.seconds() << " s." << std::endl;
-    idfx::cout << "Restarting from t=" << tint.getT() << std::endl;
+    idfx::cout << "Restarting from t=" << tint.getT() << "." << std::endl;
+
+    idfx::popRegion();
 
     return(0);
 }

@@ -13,10 +13,19 @@
 #include <cstdlib>
 #include <cstring>
 #include <sys/time.h>
+#include <csignal>
 
 #include <Kokkos_Core.hpp>
 
 #include "idefix.hpp"
+
+bool abortRequested;
+
+void signalHandler(int signum) {
+  idfx::cout << "Main:: Caught interrupt " << signum << std::endl;
+  abortRequested=true;
+}
+
 
 int main( int argc, char* argv[] )
 {
@@ -29,6 +38,9 @@ int main( int argc, char* argv[] )
   {
 
     idfx::initialize();
+
+    signal(SIGINT, signalHandler); 
+    abortRequested=false; 
 
     Input input = Input("idefix.ini", argc, argv);
     input.PrintLogo();
@@ -69,14 +81,14 @@ int main( int argc, char* argv[] )
       idfx::cout << "Restarting from dump file"  << std::endl;
       outDMP.Read(grid,data,Tint,outVTK,input.GetInt("CommandLine","restart",0));
       hydro.SetBoundary(data,Tint.getT());
-      outVTK.Write(data,Tint.getT());
+      outVTK.CheckForWrite(data,Tint.getT());
     }
     else {
       idfx::cout << "Creating initial conditions." << std::endl;
       mysetup.InitFlow(data);
       hydro.SetBoundary(data,Tint.getT());
-      outDMP.Write(grid, data, Tint, outVTK);
-      outVTK.Write(data,Tint.getT());
+      outDMP.CheckForWrite(grid, data, Tint, outVTK);
+      outVTK.CheckForWrite(data,Tint.getT());
     }
 
     idfx::cout << "Cycling Time Integrator..." << std::endl;
@@ -88,8 +100,13 @@ int main( int argc, char* argv[] )
     while(Tint.getT() < tstop) {
       if(tstop-Tint.getT() < Tint.getDt()) Tint.setDt(tstop-Tint.getT());
       Tint.Cycle(data);
-      outDMP.Write(grid, data, Tint, outVTK);
-      outVTK.Write(data, Tint.getT());
+      outDMP.CheckForWrite(grid, data, Tint, outVTK);
+      outVTK.CheckForWrite(data, Tint.getT());
+      if(abortRequested) {
+        idfx::cout << "main::Saving current state and aborting calculation" << std::endl;
+        outDMP.Write(grid, data, Tint, outVTK);
+        break;
+      } 
     }
     double tintegration = (timer.seconds()/(grid.np_int[IDIR]*grid.np_int[JDIR]*grid.np_int[KDIR]*Tint.getNcycles()));
     idfx::cout << "Reached t=" << Tint.getT() << std::endl;
@@ -103,3 +120,4 @@ int main( int argc, char* argv[] )
 #endif
   return 0;
 }
+

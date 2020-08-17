@@ -135,15 +135,21 @@ OutputVTK::OutputVTK(Input &input, DataBlock &datain, real t)
 
 }
 
+int OutputVTK::CheckForWrite(DataBlock &datain, real t) {
+    // Do we need an output?
+    if(t<this->tnext) return(0);
+
+    this->tnext+= this->tperiod;
+    return(this->Write(datain,t));
+
+}
+
 int OutputVTK::Write(DataBlock &datain, real t)
 {
     IdfxFileHandler fileHdl;
     char filename[256];
 
-    // Do we need an output?
-    if(t<this->tnext) return(0);
-
-    this->tnext+= this->tperiod;
+    
     idfx::pushRegion("OutputVTK::Write");
 
     idfx::cout << "OutputVTK::Write file n " << vtkFileNumber << "..." << std::flush;

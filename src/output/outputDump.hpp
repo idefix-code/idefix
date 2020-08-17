@@ -17,6 +17,7 @@ public:
 
     OutputDump(Input &, DataBlock &, real);                             // Create Output Object
     int Write(Grid&, DataBlock &, TimeIntegrator&, OutputVTK&);         // Create a Dump file from the current state of the code
+    int CheckForWrite(Grid&, DataBlock &, TimeIntegrator&, OutputVTK&);         // Create a Dump file from the current state of the code
     int Read(Grid&, DataBlock &, TimeIntegrator&, OutputVTK&, int);     // Read and load a dump file as current state of the code
 
 private:

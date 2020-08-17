@@ -482,6 +482,14 @@ int OutputDump::Read( Grid& grid, DataBlock &data, TimeIntegrator &tint, OutputV
     return(0);
 }
 
+int OutputDump::CheckForWrite(Grid& grid, DataBlock &data, TimeIntegrator &tint, OutputVTK& ovtk) {
+    // Do we need an output?
+    if(tint.getT()<this->tnext) return(0);
+    if(this->tperiod < 0) return(0);  // negative tperiod means dump outputs are disabled
+    this->tnext+= this->tperiod;
+    return(this->Write(grid, data, tint, ovtk));
+
+}
 int OutputDump::Write( Grid& grid, DataBlock &data, TimeIntegrator &tint, OutputVTK& ovtk) {
     char filename[256];
     char fieldName[nameSize+1]; // +1 is just in case
@@ -493,13 +501,6 @@ int OutputDump::Write( Grid& grid, DataBlock &data, TimeIntegrator &tint, Output
     const DataType realType = SingleType;
     #endif
     IdfxFileHandler fileHdl;
-
-    // Do we need an output?
-    if(tint.getT()<this->tnext) return(0);
-    if(this->tperiod < 0) return(0);  // negative tperiod means dump outputs are disabled
-
-    idfx::pushRegion("OutputDump::Write");
-    this->tnext+= this->tperiod;
 
     idfx::cout << "OutputDump::Write file n " << dumpFileNumber << "..." << std::flush;
 

@@ -10,6 +10,7 @@ public:
 
     OutputVTK(Input &, DataBlock &, real);                     // Create Output Object
     int Write(DataBlock &, real);         // Create a VTK from the current DataBlock
+    int CheckForWrite(DataBlock &, real);
 
 private:
     int vtkFileNumber;

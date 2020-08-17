@@ -5,10 +5,10 @@
 int DataBlock::CheckNan()  {
     int nanVs=0;
     int nanVc=0;
-    int nantot;
 
     idfx::pushRegion("DataBlock::CheckNan");
-
+    IdefixArray4D<real> Vc=this->Vc;
+    
     Kokkos::parallel_reduce("checkNanVc",
                                 Kokkos::MDRangePolicy<Kokkos::Rank<4, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
                                 ({0,beg[KDIR],beg[JDIR],beg[IDIR]},{NVAR,end[KDIR], end[JDIR], end[IDIR]}),
@@ -19,6 +19,7 @@ int DataBlock::CheckNan()  {
 
     
     #if MHD == YES
+    IdefixArray4D<real> Vs=this->Vs;
     Kokkos::parallel_reduce("checkNanVs",
                                 Kokkos::MDRangePolicy<Kokkos::Rank<4, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
                                 ({0,beg[KDIR],beg[JDIR],beg[IDIR]},{DIMENSIONS,end[KDIR]+KOFFSET, end[JDIR]+JOFFSET, end[IDIR]+IOFFSET}),

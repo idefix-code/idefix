@@ -22,7 +22,7 @@
 bool abortRequested;
 
 void signalHandler(int signum) {
-  idfx::cout << "Main:: Caught interrupt " << signum << std::endl;
+  idfx::cout << std::endl << "Main:: Caught interrupt " << signum << std::endl;
   abortRequested=true;
 }
 
@@ -40,6 +40,8 @@ int main( int argc, char* argv[] )
     idfx::initialize();
 
     signal(SIGINT, signalHandler); 
+    signal(SIGTERM, signalHandler); 
+    signal(SIGUSR2, signalHandler); 
     abortRequested=false; 
 
     Input input = Input("idefix.ini", argc, argv);
@@ -103,7 +105,7 @@ int main( int argc, char* argv[] )
       outDMP.CheckForWrite(grid, data, Tint, outVTK);
       outVTK.CheckForWrite(data, Tint.getT());
       if(abortRequested) {
-        idfx::cout << "main::Saving current state and aborting calculation" << std::endl;
+        idfx::cout << "Main:: Saving current state and aborting calculation" << std::endl;
         outDMP.Write(grid, data, Tint, outVTK);
         break;
       } 

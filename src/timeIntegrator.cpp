@@ -17,6 +17,13 @@ TimeIntegrator::TimeIntegrator(Input & input, Hydro &physics) {
     ncycles=0;
     cfl=input.GetReal("TimeIntegrator","CFL",0);
 
+    if(input.CheckEntry("Output","log")>0) {
+        this->cyclePeriod=input.GetInt("Output","log",0);
+    }
+    else {
+        this->cyclePeriod = 100; // Default log every 100 loops
+    }
+
     if(nstages==2) {
         wc[0] = 0.5;
         w0[0] = 0.5;
@@ -106,9 +113,12 @@ void TimeIntegrator::Cycle(DataBlock & data) {
     idfx::pushRegion("TimeIntegrator::Cycle");
 
     //if(timer.seconds()-lastLog >= 1.0) {
-    if(ncycles%100==0) {
+    if(ncycles%cyclePeriod==0) {
+        double rawperf = (timer.seconds()-lastLog)/(data.mygrid->np_int[IDIR]*data.mygrid->np_int[JDIR]*data.mygrid->np_int[KDIR]*cyclePeriod);
         lastLog = timer.seconds();
+        
         idfx::cout << "TimeIntegrator: t=" << t << " Cycle " << ncycles << " dt=" << dt << std::endl;
+        if(ncycles>=cyclePeriod) idfx::cout << "\t " << 1/rawperf << " cell updates/second" << std::endl;
         #if MHD == YES
         // Check divB
         idfx::cout << "\t maxdivB=" << hydro->CheckDivB(data) << std::endl;

@@ -39,6 +39,7 @@ private:
     real cfl;   // CFL number
     long int ncycles;   // # of cycles
     double lastLog;     // # time for the last log
+    long int cyclePeriod;   // # of cycles between two logs
     Kokkos::Timer timer;    // Internal timer of the integrator
     
     Hydro *hydro;

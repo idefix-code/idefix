@@ -72,6 +72,8 @@ void TimeIntegrator::Stage(DataBlock &data) {
     // Convert back into primitive variables
     hydro->ConvertConsToPrim(data);
 
+    if(data.CheckNan()>0) IDEFIX_ERROR("Nan found after integration cycle");
+
     idfx::popRegion();
 }
 

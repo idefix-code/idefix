@@ -112,8 +112,10 @@ public:
 
     // Dump current datablock to a file for inspection
     void DumpToFile(std::string filebase);
-
     enum {faceRight, faceLeft};
+
+    // Return the number of cells who have Nans
+    int CheckNan();
 
     DataBlock();
 

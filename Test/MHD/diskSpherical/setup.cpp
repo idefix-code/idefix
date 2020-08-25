@@ -34,10 +34,11 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                     KOKKOS_LAMBDA (int k, int j, int i) {
                         Vc(RHO,k,j,i) = Vc(RHO,k,j,ighost)/ pow(x1(i)/x1(ighost),1.5);
                         Vc(PRS,k,j,i) = Vc(PRS,k,j,ighost)/ pow(x1(i)/x1(ighost),2.5);;
-                        Vc(VX1,k,j,i) = Vc(VX1,k,j,ighost) /( sqrt(x1(i)/x1(ighost)));
+                        if(Vc(VX1,k,j,ighost)>=ZERO_F) Vc(VX1,k,j,i)=ZERO_F;
+			else Vc(VX1,k,j,i) = Vc(VX1,k,j,ighost) /( sqrt(x1(i)/x1(ighost)));
                         Vc(VX2,k,j,i) = Vc(VX2,k,j,ighost) /( sqrt(x1(i)/x1(ighost)));
                         Vc(VX3,k,j,i) = Vc(VX3,k,j,ighost) /( sqrt(x1(i)/x1(ighost)));
-                        Vs(BX2s,k,j,i) = ZERO_F;
+                        Vs(BX2s,k,j,i) = Vs(BX2s,k,j,ighost);
                         Vs(BX3s,k,j,i) = ZERO_F; 
 
                     });
@@ -112,7 +113,7 @@ void Setup::InitFlow(DataBlock &data) {
     real vphi,f,r,th;
     
     real epsilon=0.1;
-    real beta=100;
+    real beta=1000;
     
     for(int k = 0; k < d.np_tot[KDIR] ; k++) {
         for(int j = 0; j < d.np_tot[JDIR] ; j++) {
@@ -128,7 +129,7 @@ void Setup::InitFlow(DataBlock &data) {
                 d.Vc(RHO,k,j,i) = 1.0/(R*sqrt(R))*exp(1.0/(cs2)*(1/r-1/R));
                 d.Vc(PRS,k,j,i) = cs2*d.Vc(RHO,k,j,i);
                 d.Vc(VX1,k,j,i) = 0.0;
-                d.Vc(VX2,k,j,i) = 1e-2*(0.5-randm());
+                d.Vc(VX2,k,j,i) = 1e-1*(0.5-randm());
                 d.Vc(VX3,k,j,i) = Vk*sqrt(R/r-2.5*cs2);
                 
                 d.Vs(BX1s,k,j,i) = 0.0;
@@ -137,6 +138,8 @@ void Setup::InitFlow(DataBlock &data) {
                 
                 real B0 = sqrt(2*cs2/(R*sqrt(R))/sqrt(beta));
                 
+		d.Vs(BX3s,k,j,i) = B0*cos(R/epsilon)*fmax(1-(z*z)/(4*R*R*epsilon*epsilon),ZERO_F);
+                d.Vs(BX3s,k,j,i) *= fmax(tanh(10*(R-1.5)),ZERO_F);
                 A(IDIR,k,j,i) = 0.0;
                 A(JDIR,k,j,i) = 0.0;
                 A(KDIR,k,j,i) = B0*epsilon*cos(R/epsilon)*fmax(1-(z*z)/(4*R*R*epsilon*epsilon),ZERO_F);
@@ -145,7 +148,7 @@ void Setup::InitFlow(DataBlock &data) {
     }
     
     // Make the field from the vector potential
-    d.MakeVsFromAmag(A);
+    //d.MakeVsFromAmag(A);
     
     // Send it all, if needed
     d.SyncToDevice();

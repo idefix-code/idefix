@@ -68,6 +68,7 @@ public:
     IdefixArray4D<real> Vc0;
     IdefixArray4D<real> Vs0;
     IdefixArray3D<real> InvDtHyp;
+    IdefixArray3D<real> cMax;       // Maximum propagation speed
     IdefixArray3D<real> InvDtPar;
 
     // Required by physics

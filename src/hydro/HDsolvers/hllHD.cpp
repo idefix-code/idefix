@@ -16,7 +16,7 @@ void HllHD(DataBlock & data, int dir, real gamma, real C2Iso) {
     IdefixArray4D<real> PrimR = data.PrimR;
     IdefixArray4D<real> Flux = data.FluxRiemann;
     IdefixArray1D<real> dx = data.dx[dir];
-    IdefixArray3D<real> invDt = data.InvDtHyp;
+    IdefixArray3D<real> cMax = data.cMax;
 
     real gamma_m1 = gamma - ONE_F;
 
@@ -189,10 +189,9 @@ void HllHD(DataBlock & data, int dir, real gamma, real C2Iso) {
                 }
 
 
-                //6-- Compute maximum dt for this sweep
-                const int ig = ioffset*i + joffset*j + koffset*k;
+                //6-- Compute maximum wave speed for this sweep
 
-                invDt(k,j,i) += cmax/dx(ig);
+                cMax(k,j,i) = cmax;
 
             });
 

@@ -19,6 +19,8 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real t, real dt) {
     IdefixArray1D<real> s = data.s;
     IdefixArray1D<real> dx = data.dx[dir];
     IdefixArray1D<real> dx2 = data.dx[JDIR];
+    IdefixArray3D<real> invDt = data.InvDtHyp;
+    IdefixArray3D<real> cMax = data.cMax;
     
     // Gravitational potential
     IdefixArray3D<real> phiP = data.phiP;
@@ -137,16 +139,22 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real t, real dt) {
 
             #endif // GEOMETRY != CARTESIAN
 
+            // Compute dt from max signal speed
+            const int ig = ioffset*i + joffset*j + koffset*k;
+            real dl = dx(ig);
+            #if GEOMETRY == POLAR
+                if(dir==JDIR) dl = dl*x1(i);
+            #elif GEOMETRY == SPHERICAL
+                if(dir==JDIR) dl = dl*rt(i);
+                if(dir==KDIR) dl = dl*rt(i)*dmu(j)/dx2(j);
+            #endif
+
+            invDt(k,j,i) = invDt(k,j,i) + FMAX(cMax(k+koffset,j+joffset,i+ioffset), cMax(k,j,i)) / dl;
+
+
             // Potential terms
             if(needPotential) {
-                const int ig = ioffset*i + joffset*j + koffset*k;
-                real dl = dx(ig);
-                #if GEOMETRY == POLAR
-                    if(dir==JDIR) dl = dl*x1(i);
-                #elif GEOMETRY == SPHERICAL
-                    if(dir==JDIR) dl = dl*rt(i);
-                    if(dir==KDIR) dl = dl*rt(i)*dmu(j)/dx2(j);
-                #endif
+                
                 rhs[1+dir] -= dt/dl * Vc(RHO,k,j,i) * (phiP(k+koffset,j+joffset,i+ioffset) - phiP(k,j,i));      // Gravitational force in direction i
                 #if HAVE_ENERGY
                     rhs[ENG] -=  HALF_F * (phiP(k+koffset,j+joffset,i+ioffset) + phiP(k,j,i)) * rhs[RHO];        // We conserve total energy without potential
@@ -163,6 +171,8 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real t, real dt) {
 
                 Uc(nv,k,j,i) = Uc(nv,k,j,i) + rhs[nv];
             }
+
+            
             
 
         });

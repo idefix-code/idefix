@@ -15,8 +15,7 @@ void TvdlfMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
     IdefixArray4D<real> PrimL = data.PrimL;
     IdefixArray4D<real> PrimR = data.PrimR;
     IdefixArray4D<real> Flux = data.FluxRiemann;
-    IdefixArray1D<real> dx = data.dx[dir];
-    IdefixArray3D<real> invDt = data.InvDtHyp;
+    IdefixArray3D<real> cMax = data.cMax;
 
     // References to required emf components
     IdefixArray3D<real> Eb;
@@ -288,10 +287,9 @@ void TvdlfMHD(DataBlock & data, int dir, real gamma, real C2Iso) {
         Flux(ENG,k,j,i) = HALF_F*(fluxL_ENG+fluxR_ENG - cmax*(uR_ENG-uL_ENG));
 #endif
 
-        //6-- Compute maximum dt for this sweep
-        const int ig = ioffset*i + joffset*j + koffset*k;
+        //6-- Compute maximum wave speed for this sweep
 
-        invDt(k,j,i) = FMAX(cmax/dx(ig),invDt(k,j,i));
+        cMax(k,j,i) = cmax;
 
         // 7-- Store the flux in the emf components
         D_EXPAND(Et(k,j,i) = st*Flux(BXt,k,j,i); ,

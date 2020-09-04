@@ -63,13 +63,14 @@ public:
     IdefixArray4D<real> Vc;     // Main cell-centered primitive variables index
     IdefixArray4D<real> Vs;     // Main face-centered varariables
     IdefixArray4D<real> Uc;     // Main cell-centered conservative variables
+    IdefixArray4D<real> J;      // Electrical current (only defined when non-ideal MHD effects are enabled)
 
     // Required by time integrator
     IdefixArray4D<real> Vc0;
     IdefixArray4D<real> Vs0;
-    IdefixArray3D<real> InvDtHyp;
+    IdefixArray3D<real> InvDt;
     IdefixArray3D<real> cMax;       // Maximum propagation speed
-    IdefixArray3D<real> InvDtPar;
+    IdefixArray3D<real> dMax;       // Maximum diffusion
 
     // Required by physics
     IdefixArray4D<real> PrimL;
@@ -118,6 +119,9 @@ public:
     // Return the number of cells who have Nans
     int CheckNan();
 
+    // Whether or not the current is defined
+    bool haveCurrent;
+
     DataBlock();
 
 private:
@@ -134,6 +138,9 @@ private:
     int bufferSizeX1;
     int bufferSizeX2;
     int bufferSizeX3;
+
+    
+
 
 };
 

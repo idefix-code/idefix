@@ -19,12 +19,16 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real t, real dt) {
     IdefixArray1D<real> s = data.s;
     IdefixArray1D<real> dx = data.dx[dir];
     IdefixArray1D<real> dx2 = data.dx[JDIR];
-    IdefixArray3D<real> invDt = data.InvDtHyp;
+    IdefixArray3D<real> invDt = data.InvDt;
     IdefixArray3D<real> cMax = data.cMax;
+    IdefixArray3D<real> dMax = data.dMax;
     
     // Gravitational potential
     IdefixArray3D<real> phiP = data.phiP;
     bool needPotential = this->haveGravPotential;
+
+    // parabolic terms
+    bool haveParabolicTerms = this->haveParabolicTerms;
 
     if(needPotential) {
         IdefixArray1D<real> x1,x2,x3;
@@ -150,6 +154,9 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real t, real dt) {
             #endif
 
             invDt(k,j,i) = invDt(k,j,i) + FMAX(cMax(k+koffset,j+joffset,i+ioffset), cMax(k,j,i)) / dl;
+            if(haveParabolicTerms) {
+                invDt(k,j,i) = invDt(k,j,i) + TWO_F * FMAX(dMax(k+koffset,j+joffset,i+ioffset), dMax(k,j,i)) / (dl*dl);
+            }
 
 
             // Potential terms

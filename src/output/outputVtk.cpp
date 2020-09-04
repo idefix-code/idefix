@@ -12,7 +12,11 @@
   #endif
 #endif
 
+// Whether or not we wand the staggered field in vtk outputs
 #define WRITE_STAGGERED_FIELD
+
+// Wheter or not we want the electrical current in vtk outputs (this is only defined if hydro requires it)
+#define WRITE_CURRENT
 
 /* ---------------------------------------------------------
     The following macros are specific to this file only 
@@ -200,6 +204,21 @@ int OutputVTK::Write(DataBlock &datain, real t)
         WriteScalar(fileHdl, vect3D, datain.VsName[nv]);
     }
 #endif // WRITE_STAGGERED_FIELD
+#ifdef WRITE_CURRENT
+    if(data.haveCurrent) {
+        for(int nv = 0 ; nv < 3 ; nv++) {
+            for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++ ) {
+                for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++ ) {
+                    for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
+                        vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc+  (k-data.beg[KDIR])*nx1loc*nx2loc] = BigEndian(float(data.J(nv,k,j,i)));
+                    }
+                }
+            }
+            std::string varname = "JX"+std::to_string(nv+1);
+            WriteScalar(fileHdl, vect3D, varname);
+        }
+    }
+#endif // WRITE_CURRENT
 
 #endif// MHD
 

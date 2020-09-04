@@ -11,6 +11,9 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
     // copy the dataBlock object for later use
     this->data=&datain; 
 
+    // By default, no current
+    this->haveCurrent = false;
+    
     // Create mirrors (should be mirror_view)
     for(int dir = 0 ; dir < 3 ; dir++) {
         x[dir] = Kokkos::create_mirror_view(data->x[dir]);
@@ -32,10 +35,15 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
 
     dV = Kokkos::create_mirror_view(data->dV);
     Vc = Kokkos::create_mirror_view(data->Vc);
+    Uc = Kokkos::create_mirror_view(data->Uc);
 #if MHD == YES
     Vs = Kokkos::create_mirror_view(data->Vs);
+    if(datain.haveCurrent) {
+        this->haveCurrent = datain.haveCurrent;
+        J = Kokkos::create_mirror_view(data->J);
+    }
 #endif
-    Uc = Kokkos::create_mirror_view(data->Uc);
+    
 
     // Store the grid informations from the dataBlock
     for(int dir = 0 ; dir < 3 ; dir++) {
@@ -60,6 +68,7 @@ void DataBlockHost::SyncToDevice() {
     Kokkos::deep_copy(data->Vc,Vc);
 #if MHD == YES
     Kokkos::deep_copy(data->Vs,Vs);
+    if(this->haveCurrent && data->haveCurrent) Kokkos::deep_copy(data->J,J);
 #endif
     Kokkos::deep_copy(data->Uc,Uc);
 
@@ -72,6 +81,7 @@ void DataBlockHost::SyncFromDevice() {
     Kokkos::deep_copy(Vc,data->Vc);
 #if MHD == YES
     Kokkos::deep_copy(Vs,data->Vs);
+    if(this->haveCurrent && data->haveCurrent) Kokkos::deep_copy(J,data->J);
 #endif
     Kokkos::deep_copy(Uc,data->Uc);
 

@@ -92,6 +92,55 @@ Hydro::Hydro(Input &input, Grid &grid) {
         }
     }
 
+    // Parabolic term
+    haveParabolicTerms = false;
+
+    // Nonideal MHD
+    haveResistivity = Disabled;
+    haveHall = Disabled;
+    haveAmbipolar = Disabled;
+
+    this->needCurrent = false;
+
+    #if MHD == YES
+    if(input.CheckEntry("Hydro","Resistivity")>=0 || 
+       input.CheckEntry("Hydro","Ambipolar")>=0 ||
+       input.CheckEntry("Hydro","Hall")>=0 ) {
+           this->needCurrent = true;
+           
+           if(input.CheckEntry("Hydro","Resistivity")>=0) {
+               if(input.GetString("Hydro","Resistivity",0).compare("constant") == 0) {
+                   this->etaO = input.GetReal("Hydro","Resistivity",1);
+                   this->haveParabolicTerms = true;
+                   haveResistivity = Constant;
+               }
+               else {
+                   IDEFIX_ERROR("Unknown resistivity coefficient in idefix.ini. Only constant coefficients are allowed.");
+               }
+           }
+           if(input.CheckEntry("Hydro","Ambipolar")>=0) {
+               if(input.GetString("Hydro","Ambipolar",0).compare("constant") == 0) {
+                   this->xA = input.GetReal("Hydro","Ambipolar",1);
+                   this->haveParabolicTerms = true;
+                   haveAmbipolar = Constant;
+               }
+               else {
+                   IDEFIX_ERROR("Unknown ambipolar coefficient in idefix.ini. Only constant coefficients are allowed.");
+               }
+           }
+           if(input.CheckEntry("Hydro","Hall")>=0) {
+               if(input.GetString("Hydro","Hall",0).compare("constant") == 0) {
+                   this->xH = input.GetReal("Hydro","Hall",1);
+                   haveHall = Constant;
+               }
+               else {
+                   IDEFIX_ERROR("Unknown Hall coefficient in idefix.ini. Only constant coefficients are allowed.");
+               }
+           }
+       }
+    #endif
+
+
     idfx::popRegion();
 }
 

@@ -21,6 +21,8 @@ enum Solver {TVDLF=1, HLL, HLLC, ROE};
     #define EMF_AVERAGE     UCT_CONTACT
 #endif
 
+// How are set parabolic terms
+enum ParabolicType {Disabled, Constant, UserDefFunction };
 
 using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side, const real t);
 using GravPotentialFunc = void (*) (DataBlock &, const real t, IdefixArray1D<real>&, IdefixArray1D<real>&, IdefixArray1D<real>&, IdefixArray3D<real> &);
@@ -34,12 +36,15 @@ public:
     void ConvertPrimToCons(DataBlock &);
     void ExtrapolatePrimVar(DataBlock &, int);
     void CalcRiemannFlux(DataBlock &, int);
+    void CalcParabolicFlux(DataBlock &, int);
     void CalcRightHandSide(DataBlock &, int, real, real );
+    void CalcCurrent(DataBlock &);
     void AddSourceTerms(DataBlock &, real, real );
     void ReconstructVcField(DataBlock &, IdefixArray4D<real> &);
     void ReconstructNormalField(DataBlock &, int);
     void EvolveMagField(DataBlock &, real, real);
     void CalcCornerEMF(DataBlock &, real );
+    void CalcNonidealEMF(DataBlock &, real );
     void SetBoundary(DataBlock &, real);
     void SetGamma(real);
     real GetGamma();
@@ -48,6 +53,15 @@ public:
 
     // Source terms
     bool haveSourceTerms;
+
+    // Parabolic terms
+    bool haveParabolicTerms;
+    
+    // Current
+    bool needCurrent;
+
+    // Nonideal MHD effects coefficients
+    ParabolicType haveResistivity, haveAmbipolar, haveHall;
 
     // Enroll user-defined boundary conditions
     void EnrollUserDefBoundary(UserDefBoundaryFunc);
@@ -86,6 +100,9 @@ private:
     // User defined source term
     SrcTermFunc userSourceTerm;
     bool haveUserSourceTerm;
+
+    real etaO, xH, xA;  // Ohmic resistivity, Hall, ambipolar
+
 };
 
 

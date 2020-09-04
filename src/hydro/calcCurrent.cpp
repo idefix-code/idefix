@@ -29,6 +29,7 @@ void Hydro::CalcCurrent(DataBlock &data) {
                     real Jx = ZERO_F, Jy = ZERO_F, Jz = ZERO_F;
 
                     Bx1_000 = Vs(BX1s,k,j,i);
+                    
                     #if DIMENSIONS >= 2
                         Bx1_0m0 = Vs(BX1s,k,j-1,i);
                         Bx2_000 = Vs(BX2s,k,j,i);
@@ -111,8 +112,8 @@ void Hydro::CalcCurrent(DataBlock &data) {
                         #endif
                         #if DIMENSIONS >= 2
                             Jx += + (a23Bx3_000 - a23Bx3_0m0)*d23;
-                            Jy += - (a13Bx3_000 - a13Bx3_m00)*d13;
                         #endif
+                        Jy += - (a13Bx3_000 - a13Bx3_m00)*d13;
                     #endif
 
                     #if COMPONENTS >= 2

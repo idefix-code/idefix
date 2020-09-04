@@ -1,5 +1,5 @@
 #define     COMPONENTS      3
-#define     DIMENSIONS      1
+#define     DIMENSIONS      3
 #define     HAVE_ENERGY     1
 
 

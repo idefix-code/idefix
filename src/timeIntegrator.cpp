@@ -67,7 +67,7 @@ void TimeIntegrator::Stage(DataBlock &data) {
         hydro->CalcRiemannFlux(data, dir);
 
         // Step 2.5: compute intercell parabolic flux when needed
-        if(hydro->haveParabolicTerms) hydro->CalcParabolicFlux(data, dir);
+        if(hydro->haveParabolicTerms) hydro->CalcParabolicFlux(data, dir, t);
 
         // Step 3: compute the resulting evolution of the conserved variables, stored in Uc
         hydro->CalcRightHandSide(data, dir, t, dt);

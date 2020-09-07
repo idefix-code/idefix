@@ -30,6 +30,7 @@ enum ParabolicType {Disabled, Constant, UserDefFunction };
 using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side, const real t);
 using GravPotentialFunc = void (*) (DataBlock &, const real t, IdefixArray1D<real>&, IdefixArray1D<real>&, IdefixArray1D<real>&, IdefixArray3D<real> &);
 using SrcTermFunc = void (*) (DataBlock &, const real t, const real dt);
+using DiffusivityFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
 
 
 class Hydro {
@@ -40,7 +41,7 @@ public:
     void ConvertPrimToCons(DataBlock &);
     void ExtrapolatePrimVar(DataBlock &, int);
     void CalcRiemannFlux(DataBlock &, int);
-    void CalcParabolicFlux(DataBlock &, int);
+    void CalcParabolicFlux(DataBlock &, int, const real);
     void CalcRightHandSide(DataBlock &, int, real, real );
     void CalcCurrent(DataBlock &);
     void AddSourceTerms(DataBlock &, real, real );
@@ -79,6 +80,13 @@ public:
     // Add some user source terms
     void EnrollUserSourceTerm(SrcTermFunc);
 
+    // Enroll user-defined ohmic, ambipolar and Hall diffusivities
+    void EnrollOhmicDiffusivity(DiffusivityFunc);
+    void EnrollAmbipolarDiffusivity(DiffusivityFunc);
+    void EnrollHallDiffusivity(DiffusivityFunc);
+
+
+
 private:
 
     real C2Iso;
@@ -107,7 +115,12 @@ private:
     SrcTermFunc userSourceTerm;
     bool haveUserSourceTerm;
 
-    real etaO, xH, xA;  // Ohmic resistivity, Hall, ambipolar
+    real etaO, xH, xA;  // Ohmic resistivity, Hall, ambipolar (when constant)
+
+    // Ohmic, Hall and ambipolar diffusivity (when function-defined)
+    DiffusivityFunc ohmicDiffusivityFunc;
+    DiffusivityFunc ambipolarDiffusivityFunc;
+    DiffusivityFunc hallDiffusivityFunc;
 
 };
 

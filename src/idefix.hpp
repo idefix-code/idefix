@@ -31,6 +31,11 @@ using Layout = Kokkos::LayoutRight;
 #define     YES     255
 #define     NO      0
 
+#ifndef MHD
+#warning MHD flag should be set to yes or no explicitly. I will assume MHD is enabled.
+#define MHD  YES
+#endif
+
 /* ---- Geometry Labels ( > 0) ----  */
 
 #define CARTESIAN    1
@@ -184,7 +189,7 @@ using IdfxFileHandler = FILE*;
 #endif
 
 // Types of boundary which can be treated
-enum BoundaryType { internal, periodic, outflow, shearingbox, userdef};
+enum BoundaryType { internal, periodic, reflective, outflow, shearingbox, userdef};
 enum BoundarySide { left, right};
 
 
@@ -204,9 +209,7 @@ enum BoundarySide { left, right};
 #include "outputVtk.hpp"
 #include "outputDump.hpp"
 
-#ifndef MHD
-#error MHD flag should be set to yes or no
-#endif
+
 
 
 #endif

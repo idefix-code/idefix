@@ -91,7 +91,6 @@ void DataBlock::InitFromGrid(Grid &grid, Hydro &hydro, Input &input) {
 
     
 #if MHD == YES
-
     Vs = IdefixArray4D<real>("DataBlock_Vs", DIMENSIONS, np_tot[KDIR]+KOFFSET, np_tot[JDIR]+JOFFSET, np_tot[IDIR]+IOFFSET);
     Vs0 = IdefixArray4D<real>("DataBlock_Vs0", DIMENSIONS, np_tot[KDIR]+KOFFSET, np_tot[JDIR]+JOFFSET, np_tot[IDIR]+IOFFSET);
 
@@ -102,6 +101,11 @@ void DataBlock::InitFromGrid(Grid &grid, Hydro &hydro, Input &input) {
            haveCurrent = true;
            J = IdefixArray4D<real>("DataBlock_J", 3, np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
        }
+
+    // Allocate nonideal MHD effects array when a user-defined function is used
+    if(hydro.haveResistivity ==  UserDefFunction) etaOhmic = IdefixArray3D<real>("DataBlock_etaOhmic",np_tot[KDIR],np_tot[JDIR],np_tot[IDIR]);
+    if(hydro.haveAmbipolar == UserDefFunction) xAmbipolar = IdefixArray3D<real>("DataBlock_xAmbipolar",np_tot[KDIR],np_tot[JDIR],np_tot[IDIR]);
+    if(hydro.haveHall == UserDefFunction) xHall = IdefixArray3D<real>("DataBlock_xHall",np_tot[KDIR],np_tot[JDIR],np_tot[IDIR]);
 #endif
 
     InvDt = IdefixArray3D<real>("DataBlock_InvDt", np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);

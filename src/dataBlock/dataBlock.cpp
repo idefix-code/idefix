@@ -5,7 +5,7 @@ DataBlock::DataBlock() {
     // Do nothing
 }
 
-void DataBlock::InitFromGrid(Grid &grid, Input &input) {
+void DataBlock::InitFromGrid(Grid &grid, Hydro &hydro, Input &input) {
     // This initialisation is only valid for *serial*
     // MPI initialisation will involve domain decomposition of grids into DataBlocks
 
@@ -85,8 +85,8 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
     dmu = IdefixArray1D<real>("DataBlock_dmu",np_tot[JDIR]);
 #endif
 
-    // Allocate gravitational potential when needed (dirty since it relies on the hydro block, but we have no other choice) 
-    if(input.CheckEntry("Hydro","GravPotential")>=0) phiP = IdefixArray3D<real>("DataBlock_A",np_tot[KDIR],np_tot[JDIR],np_tot[IDIR]);
+    // Allocate gravitational potential when needed
+    if(hydro.haveGravPotential) phiP = IdefixArray3D<real>("DataBlock_PhiP",np_tot[KDIR],np_tot[JDIR],np_tot[IDIR]);
 
 
     
@@ -97,10 +97,8 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
 
     this->emf = ElectroMotiveForce(this);
 
-    // Allocate current (when nonideal mhd effects are enabled)
-    if(input.CheckEntry("Hydro","Resistivity")>=0 || 
-       input.CheckEntry("Hydro","Ambipolar")>=0 ||
-       input.CheckEntry("Hydro","Hall")>=0 ) {
+    if(hydro.needCurrent) {
+    // Allocate current (when hydro needs it)
            haveCurrent = true;
            J = IdefixArray4D<real>("DataBlock_J", 3, np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
        }

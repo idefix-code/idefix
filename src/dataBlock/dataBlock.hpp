@@ -80,6 +80,10 @@ public:
     // Gravitational potential
     IdefixArray3D<real> phiP;
     
+    // Nonideal effect diffusion coefficient (only allocated when needed)
+    IdefixArray3D<real> etaOhmic;
+    IdefixArray3D<real> xHall;
+    IdefixArray3D<real> xAmbipolar;
 
     // Name of the fields (used in outputs)
     std::vector<std::string> VcName;
@@ -102,7 +106,7 @@ public:
     Grid *mygrid;
     
     // init from a Grid object
-    void InitFromGrid(Grid &, Input &);
+    void InitFromGrid(Grid &, Hydro &, Input &);
 
     // MPI Exchange functions
     void ExchangeAll();

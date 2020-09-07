@@ -5,6 +5,9 @@
 #define     SMALL_PRESSURE_FIX      (1.0e-5)
 #define     eps_UCT_CONTACT         (1.0e-6)
 
+// forward class Datablock declaration
+class DataBlock;
+
 // Solver type
 #if MHD == YES
 enum Solver {TVDLF=1, HLL, HLLD, ROE};
@@ -21,12 +24,13 @@ enum Solver {TVDLF=1, HLL, HLLC, ROE};
     #define EMF_AVERAGE     UCT_CONTACT
 #endif
 
-// How are set parabolic terms
+// Parabolic terms can have different status
 enum ParabolicType {Disabled, Constant, UserDefFunction };
 
 using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side, const real t);
 using GravPotentialFunc = void (*) (DataBlock &, const real t, IdefixArray1D<real>&, IdefixArray1D<real>&, IdefixArray1D<real>&, IdefixArray3D<real> &);
 using SrcTermFunc = void (*) (DataBlock &, const real t, const real dt);
+
 
 class Hydro {
 public:
@@ -59,6 +63,9 @@ public:
     
     // Current
     bool needCurrent;
+
+    // Whether gravitational potential is computed
+    bool haveGravPotential;
 
     // Nonideal MHD effects coefficients
     ParabolicType haveResistivity, haveAmbipolar, haveHall;
@@ -95,7 +102,6 @@ private:
 
     // User defined gravitational potential
     GravPotentialFunc gravPotentialFunc;
-    bool haveGravPotential;
 
     // User defined source term
     SrcTermFunc userSourceTerm;

@@ -39,16 +39,23 @@ void Setup::InitFlow(DataBlock &data) {
                 
                 d.Vc(RHO,k,j,i) = 1.0;
                 d.Vc(PRS,k,j,i) = 1.0;
-                d.Vc(VX1,k,j,i) = 1.0e-3*sin(2.0*M_PI*z);
-                d.Vc(VX2,k,j,i) = 0.0;
+                d.Vc(VX1,k,j,i) = 0.0;
+#if COMPONENTS >=2
+		d.Vc(BX2,k,j,i) = 0.0;
+		d.Vc(VX2,k,j,i) = 1.0e-3*sin(2.0*M_PI*x);
 #if COMPONENTS == 3
+		d.Vc(BX3,k,j,i) = 0.0;
                 d.Vc(VX3,k,j,i) = 0.0;
 #endif
+#endif
+
                 
-                d.Vs(BX1s,k,j,i) = 0.0;
+                d.Vs(BX1s,k,j,i) = B0;
+#if DIMENSIONS >=2
                 d.Vs(BX2s,k,j,i) = 0.0;
-#if COMPONENTS == 3
+#if DIMENSIONS >=3
                 d.Vs(BX3s,k,j,i) = B0;
+#endif
 #endif
 
             }

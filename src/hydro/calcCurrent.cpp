@@ -49,6 +49,8 @@ void Hydro::CalcCurrent(DataBlock &data) {
                         Bx3_m00 = Vs(BX3s,k,j,i-1);
                         Bx3_0m0 = Vs(BX3s,k,j-1,i);
                     #elif COMPONENTS == 3  && DIMENSIONS == 2 // DIMENSIONS 2 here
+                        Bx3_000 = Vc(BX3,k,j,i);
+                        Bx3_m00 = Vc(BX3,k,j,i-1);
                         Bx3_0m0 = Vc(BX3,k,j-1,i);
                     #endif
 

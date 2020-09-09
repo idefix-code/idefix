@@ -87,8 +87,8 @@ void Hydro::CalcParabolicFlux(DataBlock &data, int dir, const real t) {
                             Jx1 = AVERAGE_4D_XYZ(J, IDIR, kp1, jp1, i);  )
 
                     EXPAND( Bx1 = Vs(BX1s,k,j,i);                             ,
-                            Bx2 = HALF_F*( Vc(BX2,k,j,i) + Vc(BX2,k,j,ip1)); ,
-                            Bx3 = HALF_F*( Vc(BX3,k,j,i) + Vc(BX3,k,j,ip1)); )
+                            Bx2 = HALF_F*( Vc(BX2,k,j,i-1) + Vc(BX2,k,j,i)); ,
+                            Bx3 = HALF_F*( Vc(BX3,k,j,i-1) + Vc(BX3,k,j,i)); )
 
                     if(haveResistivity == UserDefFunction) eta = AVERAGE_3D_X(etaArr,k,j,i);
                     if(haveResistivity) {
@@ -139,9 +139,9 @@ void Hydro::CalcParabolicFlux(DataBlock &data, int dir, const real t) {
                             Jx1 = AVERAGE_4D_Z(J, IDIR, kp1, j, i);
                             Jx2 = AVERAGE_4D_XYZ(J, JDIR, kp1, j, ip1);  )
 
-                    EXPAND( Bx1 = HALF_F*( Vc(BX1,k,j,i) + Vc(BX1,k,jp1,i));    ,
+                    EXPAND( Bx1 = HALF_F*( Vc(BX1,k,j-1,i) + Vc(BX1,k,j,i));    ,
                             Bx2 = Vs(BX2s,k,j,i);                               ,
-                            Bx3 = HALF_F*( Vc(BX3,k,j,i) + Vc(BX3,k,jp1,i)); )
+                            Bx3 = HALF_F*( Vc(BX3,k,j-1,i) + Vc(BX3,k,j,i)); )
 
                     if(haveResistivity == UserDefFunction) eta = AVERAGE_3D_Y(etaArr,k,j,i);
 
@@ -191,8 +191,8 @@ void Hydro::CalcParabolicFlux(DataBlock &data, int dir, const real t) {
                     Jx2 = AVERAGE_4D_Y(J, JDIR, k, jp1, i);
                     Jx3 = AVERAGE_4D_XYZ(J, KDIR, k, jp1, ip1);
 
-                    Bx1 = HALF_F*( Vc(BX1,k,j,i) + Vc(BX1,kp1,j,i)); 
-                    Bx2 = HALF_F*( Vc(BX2,k,j,i) + Vc(BX2,kp1,j,i)); 
+                    Bx1 = HALF_F*( Vc(BX1,k-1,j,i) + Vc(BX1,k,j,i)); 
+                    Bx2 = HALF_F*( Vc(BX2,k-1,j,i) + Vc(BX2,k,j,i)); 
                     Bx3 = Vs(BX3s,k,j,i);
 
                     if(haveResistivity == UserDefFunction) eta = AVERAGE_3D_Z(etaArr,k,j,i);

@@ -77,7 +77,7 @@ Hydro::Hydro(Input &input, Grid &grid) {
         // Get box size
         this->sbLx = grid.xend[IDIR] - grid.xbeg[IDIR];
 
-        idfx::cout << "Hydro: ShearingBox enabled with Shear rate=" << this->sbS <<  "and Lx=" << sbLx << std::endl;
+        idfx::cout << "Hydro: ShearingBox enabled with Shear rate= " << this->sbS <<  "and Lx= " << sbLx << std::endl;
     }
     else {
         this->haveShearingBox = false;
@@ -120,11 +120,13 @@ Hydro::Hydro(Input &input, Grid &grid) {
            
            if(input.CheckEntry("Hydro","Resistivity")>=0) {
                if(input.GetString("Hydro","Resistivity",0).compare("constant") == 0) {
+                   idfx::cout << "Hydro: Enabling Ohmic resistivity with constant diffusivity." << std::endl;
                    this->etaO = input.GetReal("Hydro","Resistivity",1);
                    this->haveParabolicTerms = true;
                    this->haveResistivity = Constant;
                }
                else if(input.GetString("Hydro","Resistivity",0).compare("userdef") == 0) {
+                   idfx::cout << "Hydro: Enabling Ohmic resistivity with user-defined diffusivity function." << std::endl;
                    this->haveParabolicTerms = true;
                    this->haveResistivity = UserDefFunction;
                }
@@ -134,11 +136,13 @@ Hydro::Hydro(Input &input, Grid &grid) {
            }
            if(input.CheckEntry("Hydro","Ambipolar")>=0) {
                if(input.GetString("Hydro","Ambipolar",0).compare("constant") == 0) {
+                   idfx::cout << "Hydro: Enabling ambipolar diffusion with constant diffusivity." << std::endl;
                    this->xA = input.GetReal("Hydro","Ambipolar",1);
                    this->haveParabolicTerms = true;
                    this->haveAmbipolar = Constant;
                }
                else if(input.GetString("Hydro","Ambipolar",0).compare("userdef") == 0) {
+                   idfx::cout << "Hydro: Enabling ambipolar diffusion with user-defined diffusivity function." << std::endl;
                    this->haveParabolicTerms = true;
                    this->haveAmbipolar = UserDefFunction;
                }
@@ -148,10 +152,12 @@ Hydro::Hydro(Input &input, Grid &grid) {
            }
            if(input.CheckEntry("Hydro","Hall")>=0) {
                if(input.GetString("Hydro","Hall",0).compare("constant") == 0) {
+                   idfx::cout << "Hydro: Enabling Hall effect with constant diffusivity." << std::endl;
                    this->xH = input.GetReal("Hydro","Hall",1);
                    this->haveHall = Constant;
                }
                else if(input.GetString("Hydro","Hall",0).compare("userdef") == 0) {
+                   idfx::cout << "Hydro: Enabling Hall effect with user-defined diffusivity function." << std::endl;
                    this->haveHall = UserDefFunction;
                }
                else {

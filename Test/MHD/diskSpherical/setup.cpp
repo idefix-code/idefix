@@ -138,7 +138,7 @@ void Setup::InitFlow(DataBlock &data) {
                 
                 real B0 = sqrt(2*cs2/(R*sqrt(R))/sqrt(beta));
                 
-		d.Vs(BX3s,k,j,i) = B0*cos(R/epsilon)*fmax(1-(z*z)/(4*R*R*epsilon*epsilon),ZERO_F);
+                d.Vs(BX3s,k,j,i) = B0*cos(R/epsilon)*fmax(1-(z*z)/(4*R*R*epsilon*epsilon),ZERO_F);
                 d.Vs(BX3s,k,j,i) *= fmax(tanh(10*(R-1.5)),ZERO_F);
                 A(IDIR,k,j,i) = 0.0;
                 A(JDIR,k,j,i) = 0.0;

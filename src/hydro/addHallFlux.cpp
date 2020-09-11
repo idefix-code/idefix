@@ -14,6 +14,11 @@ void Hydro::AddHallFlux(DataBlock &data, int dir, const real t) {
     IdefixArray1D<real> x1 = data.x[IDIR];
     IdefixArray1D<real> rt = data.rt;
     IdefixArray1D<real> dmu = data.dmu;
+    ParabolicType haveHall = this->haveHall;
+    
+#if EMF_AVERAGE != ARITHMETIC
+    PLUTO_ERROR("the Hall effect module is demonstrated stable only when using EMF_AVERAGE=ARITHMETIC");
+#endif
 
 #if HAVE_ENERGY
     real gamma_m1 = this->gamma-1;
@@ -155,8 +160,8 @@ void Hydro::AddHallFlux(DataBlock &data, int dir, const real t) {
                 if(haveHall == UserDefFunction) xH = AVERAGE_3D_Y(xHallArr,k,j,i);             
             }
             if(dir == KDIR) {
-                Jx1 = AVERAGE_4D_X(J, IDIR, k, j, ip1);
-                Jx2 = AVERAGE_4D_Y(J, JDIR, k, jp1, i);
+                Jx1 = AVERAGE_4D_Y(J, IDIR, k, jp1, i);
+                Jx2 = AVERAGE_4D_X(J, JDIR, k, j, ip1);
                 Jx3 = AVERAGE_4D_XYZ(J, KDIR, k, jp1, ip1);
 
                 if(haveHall == UserDefFunction) xH = AVERAGE_3D_Z(xHallArr,k,j,i);  

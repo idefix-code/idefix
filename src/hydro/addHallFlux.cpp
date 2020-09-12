@@ -16,8 +16,8 @@ void Hydro::AddHallFlux(DataBlock &data, int dir, const real t) {
     IdefixArray1D<real> dmu = data.dmu;
     ParabolicType haveHall = this->haveHall;
     
-#if EMF_AVERAGE != ARITHMETIC
-    PLUTO_ERROR("the Hall effect module is demonstrated stable only when using EMF_AVERAGE=ARITHMETIC");
+#if EMF_AVERAGE == UCT_CONTACT
+    IDEFIX_ERROR("the Hall effect module is demonstrated stable only when using EMF_AVERAGE=ARITHMETIC or UCTO");
 #endif
 
 #if HAVE_ENERGY

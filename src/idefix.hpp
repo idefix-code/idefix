@@ -24,6 +24,7 @@ using Layout = Kokkos::LayoutRight;
 #define INDEX_LOOP
 #else
 #define TP_INNERX_LOOP
+//#define SIMD_LOOP
 #endif
 
 #define USE_DOUBLE

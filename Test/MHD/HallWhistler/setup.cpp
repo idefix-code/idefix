@@ -40,21 +40,21 @@ void Setup::InitFlow(DataBlock &data) {
 		B0z=3*B0x;
 
 		/* 2D inclined */
-		/*
-		B0x=1/sqrt(5);
+
+		B0y=1/sqrt(5);
 		B0z=2/sqrt(5);
-		B0y=0.0;
-		*/
-		
+		B0x=0.0;
+
+
 		// inclined wavevector
 		kx = 2.0*M_PI*B0x*mode;
 		ky = 2.0*M_PI*B0y*mode;
 		kz = 2.0*M_PI*B0z*mode;
 
 		// Perturbation, perpendicular to the Field
-		qx=2/sqrt(5);
+		qy=2/sqrt(5);
 		qz=-1/sqrt(5);
-		qy=0.0;
+		qx=0.0;
 
     for(int k = 0; k < d.np_tot[KDIR] ; k++) {
         for(int j = 0; j < d.np_tot[JDIR] ; j++) {

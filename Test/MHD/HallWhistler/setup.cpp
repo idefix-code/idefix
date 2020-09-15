@@ -41,10 +41,11 @@ void Setup::InitFlow(DataBlock &data) {
 
 		/* 2D inclined */
 
+		/*
 		B0y=1/sqrt(5);
 		B0z=2/sqrt(5);
 		B0x=0.0;
-
+		*/
 
 		// inclined wavevector
 		kx = 2.0*M_PI*B0x*mode;

@@ -151,6 +151,11 @@ Hydro::Hydro(Input &input, Grid &grid) {
                }
            }
            if(input.CheckEntry("Hydro","Hall")>=0) {
+               // Check consistency
+               if(mySolver != HLL ) IDEFIX_ERROR("Hall effect is only compatible with HLL Riemann solver.");
+               #if EMF_AVERAGE != ARITHMETIC
+                    IDEFIX_ERROR("the Hall effect module is demonstrated stable only when using EMF_AVERAGE=ARITHMETIC");
+                #endif
                if(input.GetString("Hydro","Hall",0).compare("constant") == 0) {
                    idfx::cout << "Hydro: Enabling Hall effect with constant diffusivity." << std::endl;
                    this->xH = input.GetReal("Hydro","Hall",1);

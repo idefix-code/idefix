@@ -14,15 +14,20 @@
 #endif
 
 // Compute Riemann fluxes from states
-void Hydro::CalcRiemannFlux(DataBlock & data, int dir) {
+void Hydro::CalcRiemannFlux(DataBlock & data, int dir, const real t) {
 
     idfx::pushRegion("Hydro::CalcRiemannFlux");
-    
+
+    if(haveHall == UserDefFunction && dir == IDIR) {
+        if(hallDiffusivityFunc) hallDiffusivityFunc(data, t, data.xHall);
+        else IDEFIX_ERROR("No user-defined Hall diffusivity function has been enrolled");
+    }
+
     switch (mySolver) {
     #if MHD == YES
         case TVDLF: TvdlfMHD(data, dir, this->gamma, this->C2Iso);
             break;
-        case HLL:   HllMHD(data, dir, this->gamma, this->C2Iso);
+        case HLL:   HllMHD(data, dir, this->gamma, this->C2Iso, this->haveHall, this->xH);
             break;
         case HLLD:  HlldMHD(data, dir, this->gamma, this->C2Iso);
             break;

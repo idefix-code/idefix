@@ -11,7 +11,7 @@
 #include "../idefix.hpp"
 
 void TvdlfMHD(DataBlock &, int, real, real);
-void HllMHD(DataBlock &, int, real, real);
+void HllMHD(DataBlock &, int, real, real, ParabolicType, real);
 void HlldMHD(DataBlock &, int, real, real);
 void RoeMHD(DataBlock &, int, real, real);
 

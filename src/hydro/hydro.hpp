@@ -46,7 +46,7 @@ public:
     void ConvertConsToPrim(DataBlock &);
     void ConvertPrimToCons(DataBlock &);
     void ExtrapolatePrimVar(DataBlock &, int);
-    void CalcRiemannFlux(DataBlock &, int);
+    void CalcRiemannFlux(DataBlock &, int, const real);
     void AddHallFlux(DataBlock &, int, const real);
     void CalcParabolicFlux(DataBlock &, int, const real);
     void CalcRightHandSide(DataBlock &, int, real, real );

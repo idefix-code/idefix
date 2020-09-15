@@ -409,7 +409,7 @@ void HllMHD(DataBlock & data, int dir, real gamma, real C2Iso, ParabolicType hav
 
             #if HAVE_ENERGY
                 real JB = EXPAND(uL_BX1*Jx1,  +uL_BX2*Jx2, +uL_BX3*Jx3 );
-                real b2 = EXPAND(uL_BX1*uL_BX1, +uL_BX2*uL_BX2, +uL_BX3*uL_BX3);
+                real b2 = HALF_F*(EXPAND(uL_BX1*uL_BX1, +uL_BX2*uL_BX2, +uL_BX3*uL_BX3));
                 if(dir == IDIR) fluxL_ENG += -xH* (Jx1*b2 - JB*uL_BX1);
                 #if COMPONENTS>=2
                 if(dir == JDIR) fluxL_ENG += -xH* (Jx2*b2 - JB*uL_BX2);
@@ -419,7 +419,7 @@ void HllMHD(DataBlock & data, int dir, real gamma, real C2Iso, ParabolicType hav
                 #endif
 
                 JB = EXPAND(uR_BX1*Jx1,  +uR_BX2*Jx2, +uR_BX3*Jx3 );
-                b2 = EXPAND(uR_BX1*uR_BX1, +uR_BX2*uR_BX2, +uR_BX3*uR_BX3);
+                b2 = HALF_F*(EXPAND(uR_BX1*uR_BX1, +uR_BX2*uR_BX2, +uR_BX3*uR_BX3));
                 if(dir == IDIR) fluxR_ENG += -xH* (Jx1*b2 - JB*uR_BX1);
                 #if COMPONENTS>=2
                 if(dir == JDIR) fluxR_ENG += -xH* (Jx2*b2 - JB*uR_BX2);

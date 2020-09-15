@@ -15,6 +15,7 @@ public:
 
     IdefixArray4D<real>::HostMirror Vc;     // Main cell-centered primitive variables index
     IdefixArray4D<real>::HostMirror Vs;     // Main face-centered primitive variables index
+    IdefixArray4D<real>::HostMirror J;      // Current (only when haveCurrent is enabled)
     IdefixArray4D<real>::HostMirror Uc;     // Main cell-centered conservative variables
 
     real xbeg[3];                   // Beginning of dataBlock
@@ -46,6 +47,9 @@ public:
     // Synchronisation routines
     void SyncToDevice();
     void SyncFromDevice();
+
+    // Whether or not the current is defined
+    bool haveCurrent;
 
 
 private:

@@ -82,6 +82,42 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                     }
                 #endif
                 break;
+            case reflective:
+                idefix_for("BoundaryBegReflective",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+                    KOKKOS_LAMBDA (int n, int k, int j, int i) {
+                        int iref= (dir==IDIR) ? ighost : i;
+                        int jref= (dir==JDIR) ? jghost : j;
+                        int kref= (dir==KDIR) ? kghost : k;
+
+                        if( n==VX1+dir) {
+                            Vc(n,k,j,i) = ZERO_F;
+                        }
+                        else Vc(n,k,j,i) = Vc(n,kref,jref,iref);
+                    });
+                #if MHD == YES
+                    for(int component=0; component<DIMENSIONS; component++) {
+                        int ieb,jeb,keb;
+                        if(component == IDIR) ieb=iend+1;
+                        else ieb=iend;
+                        if(component == JDIR) jeb=jend+1;
+                        else jeb=jend;
+                        if(component == KDIR) keb=kend+1;
+                        else keb=kend;
+                        if(component != dir) { // skip normal component
+                            idefix_for("BoundaryBegOutflowVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
+                            KOKKOS_LAMBDA (int k, int j, int i) {
+                                int iref= (dir==IDIR) ? ighost : i;
+                                int jref= (dir==JDIR) ? jghost : j;
+                                int kref= (dir==KDIR) ? kghost : k;
+
+                                // Don't touch the normal component !
+                                Vs(component,k,j,i) = Vs(component,kref,jref,iref);
+                            });
+                        }
+
+                    }
+                #endif
+                break;
             case outflow:
                 idefix_for("BoundaryBegOutflow",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
                     KOKKOS_LAMBDA (int n, int k, int j, int i) {
@@ -89,7 +125,9 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                         int jref= (dir==JDIR) ? jghost : j;
                         int kref= (dir==KDIR) ? kghost : k;
 
-                        if(n==VX1+dir) Vc(n,k,j,i) = ZERO_F;
+                        if( (n==VX1+dir) && (Vc(n,kref,jref,iref) >= ZERO_F)) {
+                            Vc(n,k,j,i) = ZERO_F;
+                        }
                         else Vc(n,k,j,i) = Vc(n,kref,jref,iref);
                     });
                 #if MHD == YES
@@ -200,6 +238,38 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                     }
                 #endif
                 break;
+            case reflective:
+                idefix_for("BoundaryEndReflective",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+                    KOKKOS_LAMBDA (int n, int k, int j, int i) {
+                        int iref= (dir==IDIR) ? ighost + ioffset - 1 : i;
+                        int jref= (dir==JDIR) ? jghost + joffset - 1 : j;
+                        int kref= (dir==KDIR) ? kghost + koffset - 1 : k;
+
+                        if( n==VX1+dir) Vc(n,k,j,i) = ZERO_F;
+                        else Vc(n,k,j,i) = Vc(n,kref,jref,iref);
+                    });
+                #if MHD == YES
+                    for(int component=0; component<DIMENSIONS; component++) {
+                        int ieb,jeb,keb;
+                        if(component == IDIR) ieb=iend+1;
+                        else ieb=iend;
+                        if(component == JDIR) jeb=jend+1;
+                        else jeb=jend;
+                        if(component == KDIR) keb=kend+1;
+                        else keb=kend;
+                        if(component != dir) { // skip normal component
+                            idefix_for("BoundaryEndReflectiveVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
+                                KOKKOS_LAMBDA (int k, int j, int i) {
+                                    int iref= (dir==IDIR) ? ighost + ioffset - 1 : i;
+                                    int jref= (dir==JDIR) ? jghost + joffset - 1 : j;
+                                    int kref= (dir==KDIR) ? kghost + koffset - 1 : k;
+                                    Vs(component,k,j,i) = Vs(component,kref,jref,iref);                        
+                            });
+                        }
+
+                    }
+                #endif
+                break;
             case outflow:
                 idefix_for("BoundaryEndOutflow",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
                     KOKKOS_LAMBDA (int n, int k, int j, int i) {
@@ -207,7 +277,9 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
                         int jref= (dir==JDIR) ? jghost + joffset - 1 : j;
                         int kref= (dir==KDIR) ? kghost + koffset - 1 : k;
 
-                        if(n==VX1+dir) Vc(n,k,j,i) = ZERO_F;
+                        if( (n==VX1+dir) && (Vc(n,kref,jref,iref) <= ZERO_F)) {
+                            Vc(n,k,j,i) = ZERO_F;
+                        }
                         else Vc(n,k,j,i) = Vc(n,kref,jref,iref);
                     });
                 #if MHD == YES

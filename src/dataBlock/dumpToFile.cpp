@@ -15,10 +15,20 @@ void DataBlock::DumpToFile(std::string filebase)  {
 
     IdefixArray4D<real>::HostMirror locVc = Kokkos::create_mirror_view(this->Vc);
     Kokkos::deep_copy(locVc,this->Vc);
+
+    IdefixArray4D<real>::HostMirror locFlux = Kokkos::create_mirror_view(this->FluxRiemann);
+    Kokkos::deep_copy(locFlux, this->FluxRiemann);
 #if MHD == YES
     IdefixArray4D<real>::HostMirror locVs = Kokkos::create_mirror_view(this->Vs);
     Kokkos::deep_copy(locVs,this->Vs);
+
+    IdefixArray4D<real>::HostMirror locJ;
+    if(haveCurrent) {
+        locJ = Kokkos::create_mirror_view(this->J);
+        Kokkos::deep_copy(locJ, this->J);
+    }
 #endif
+    
 
     // Data format:
     // First groupe is nfield (number of 4D arrays written)
@@ -30,9 +40,10 @@ void DataBlock::DumpToFile(std::string filebase)  {
 
     fileHdl = fopen(filename.c_str(),"wb");
 #if MHD== YES
-    nfield = 2;
+    nfield = 3;
+    if(haveCurrent) nfield++;
 #else
-    nfield = 1;
+    nfield = 2;
 #endif
     fwrite(&nfield, sizeof(real), 1, fileHdl);
 
@@ -49,8 +60,22 @@ void DataBlock::DumpToFile(std::string filebase)  {
 
     fwrite(locVc.data(), sizeof(real), nx1*nx2*nx3*nv, fileHdl);
 
+    // Write Flux
+    nx1=this->np_tot[IDIR];
+    nx2=this->np_tot[JDIR];
+    nx3=this->np_tot[KDIR];
+    nv=NVAR;
+
+    fwrite(&nx1, sizeof(real),1,fileHdl);
+    fwrite(&nx2, sizeof(real),1,fileHdl);
+    fwrite(&nx3, sizeof(real),1,fileHdl);
+    fwrite(&nv, sizeof(real),1,fileHdl);
+
+    fwrite(locFlux.data(), sizeof(real), nx1*nx2*nx3*nv, fileHdl);
+
     // Write Vs
 #if MHD == YES
+    
     nx1=nx1+IOFFSET;
     nx2=nx2+JOFFSET;
     nx3=nx3+KOFFSET;
@@ -62,6 +87,21 @@ void DataBlock::DumpToFile(std::string filebase)  {
     fwrite(&nv, sizeof(real),1,fileHdl);
 
     fwrite(locVs.data(), sizeof(real), nx1*nx2*nx3*nv, fileHdl);
+
+    if(haveCurrent) {
+        nx1=this->np_tot[IDIR];
+        nx2=this->np_tot[JDIR];
+        nx3=this->np_tot[KDIR];
+        nv=3;
+
+        fwrite(&nx1, sizeof(real),1,fileHdl);
+        fwrite(&nx2, sizeof(real),1,fileHdl);
+        fwrite(&nx3, sizeof(real),1,fileHdl);
+        fwrite(&nv, sizeof(real),1,fileHdl);
+
+        fwrite(locJ.data(), sizeof(real), nx1*nx2*nx3*nv, fileHdl);
+    }
+
 #endif
 
     fclose(fileHdl);

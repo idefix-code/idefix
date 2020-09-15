@@ -5,6 +5,9 @@
 #define     SMALL_PRESSURE_FIX      (1.0e-5)
 #define     eps_UCT_CONTACT         (1.0e-6)
 
+// forward class Datablock declaration
+class DataBlock;
+
 // Solver type
 #if MHD == YES
 enum Solver {TVDLF=1, HLL, HLLD, ROE};
@@ -21,10 +24,14 @@ enum Solver {TVDLF=1, HLL, HLLC, ROE};
     #define EMF_AVERAGE     UCT_CONTACT
 #endif
 
+// Parabolic terms can have different status
+enum ParabolicType {Disabled, Constant, UserDefFunction };
 
 using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side, const real t);
 using GravPotentialFunc = void (*) (DataBlock &, const real t, IdefixArray1D<real>&, IdefixArray1D<real>&, IdefixArray1D<real>&, IdefixArray3D<real> &);
 using SrcTermFunc = void (*) (DataBlock &, const real t, const real dt);
+using DiffusivityFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
+
 
 class Hydro {
 public:
@@ -34,12 +41,16 @@ public:
     void ConvertPrimToCons(DataBlock &);
     void ExtrapolatePrimVar(DataBlock &, int);
     void CalcRiemannFlux(DataBlock &, int);
+    void AddHallFlux(DataBlock &, int, const real);
+    void CalcParabolicFlux(DataBlock &, int, const real);
     void CalcRightHandSide(DataBlock &, int, real, real );
+    void CalcCurrent(DataBlock &);
     void AddSourceTerms(DataBlock &, real, real );
     void ReconstructVcField(DataBlock &, IdefixArray4D<real> &);
     void ReconstructNormalField(DataBlock &, int);
     void EvolveMagField(DataBlock &, real, real);
     void CalcCornerEMF(DataBlock &, real );
+    void CalcNonidealEMF(DataBlock &, real );
     void SetBoundary(DataBlock &, real);
     void SetGamma(real);
     real GetGamma();
@@ -49,6 +60,18 @@ public:
     // Source terms
     bool haveSourceTerms;
 
+    // Parabolic terms
+    bool haveParabolicTerms;
+    
+    // Current
+    bool needCurrent;
+
+    // Whether gravitational potential is computed
+    bool haveGravPotential;
+
+    // Nonideal MHD effects coefficients
+    ParabolicType haveResistivity, haveAmbipolar, haveHall;
+
     // Enroll user-defined boundary conditions
     void EnrollUserDefBoundary(UserDefBoundaryFunc);
 
@@ -57,6 +80,13 @@ public:
 
     // Add some user source terms
     void EnrollUserSourceTerm(SrcTermFunc);
+
+    // Enroll user-defined ohmic, ambipolar and Hall diffusivities
+    void EnrollOhmicDiffusivity(DiffusivityFunc);
+    void EnrollAmbipolarDiffusivity(DiffusivityFunc);
+    void EnrollHallDiffusivity(DiffusivityFunc);
+
+
 
 private:
 
@@ -81,11 +111,18 @@ private:
 
     // User defined gravitational potential
     GravPotentialFunc gravPotentialFunc;
-    bool haveGravPotential;
 
     // User defined source term
     SrcTermFunc userSourceTerm;
     bool haveUserSourceTerm;
+
+    real etaO, xH, xA;  // Ohmic resistivity, Hall, ambipolar (when constant)
+
+    // Ohmic, Hall and ambipolar diffusivity (when function-defined)
+    DiffusivityFunc ohmicDiffusivityFunc;
+    DiffusivityFunc ambipolarDiffusivityFunc;
+    DiffusivityFunc hallDiffusivityFunc;
+
 };
 
 

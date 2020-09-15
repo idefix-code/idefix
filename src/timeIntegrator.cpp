@@ -55,6 +55,9 @@ void TimeIntegrator::Stage(DataBlock &data) {
     // Convert current state into conservative variable and save it
     hydro->ConvertPrimToCons(data);
 
+    // Compute current when needed
+    if(hydro->needCurrent) hydro->CalcCurrent(data);
+
     // Loop on all of the directions
     for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
         // Step one: extrapolate the variables to the sides, result is stored in the physics object
@@ -63,6 +66,12 @@ void TimeIntegrator::Stage(DataBlock &data) {
         // Step 2: compute the intercell flux with our Riemann solver, store the resulting InvDt
         hydro->CalcRiemannFlux(data, dir);
 
+        // Step 2.1: Add intercell flux due to Hall, computed with HLL Riemann solver
+        if(hydro->haveHall) hydro->AddHallFlux(data, dir, t);
+        
+        // Step 2.5: compute intercell parabolic flux when needed
+        if(hydro->haveParabolicTerms) hydro->CalcParabolicFlux(data, dir, t);
+
         // Step 3: compute the resulting evolution of the conserved variables, stored in Uc
         hydro->CalcRightHandSide(data, dir, t, dt);
     }
@@ -70,9 +79,10 @@ void TimeIntegrator::Stage(DataBlock &data) {
     // Step 4: add source terms to the conserved variables (curvature, rotation, etc)
     if(hydro->haveSourceTerms) hydro->AddSourceTerms(data, t, dt);
 
-#if MHD == YES
+#if MHD == YES && DIMENSIONS >= 2
     // Compute the field evolution according to CT
     hydro->CalcCornerEMF(data, t);
+    if(hydro->haveResistivity || hydro->haveAmbipolar) hydro->CalcNonidealEMF(data,t);
     hydro->EvolveMagField(data, t, dt);
     hydro->ReconstructVcField(data, data.Uc);
 #endif
@@ -87,13 +97,11 @@ void TimeIntegrator::Stage(DataBlock &data) {
 void TimeIntegrator::ReinitInvDt(DataBlock & data) {
     idfx::pushRegion("TimeIntegrator::ReinitInvDt");
 
-    IdefixArray3D<real> InvDtHypLoc=data.InvDtHyp;
-    IdefixArray3D<real> InvDtParLoc=data.InvDtPar;
+    IdefixArray3D<real> InvDt=data.InvDt;
 
     idefix_for("InitInvDt",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
                 KOKKOS_LAMBDA (int k, int j, int i) {
-                    InvDtHypLoc(k,j,i) = ZERO_F;
-                    InvDtParLoc(k,j,i) = ZERO_F;
+                    InvDt(k,j,i) = ZERO_F;
             });
 
     idfx::popRegion();
@@ -106,8 +114,8 @@ void TimeIntegrator::Cycle(DataBlock & data) {
     IdefixArray4D<real> Vs = data.Vs;
     IdefixArray4D<real> Vc0 = data.Vc0;
     IdefixArray4D<real> Vs0 = data.Vs0;
-    IdefixArray3D<real> InvDtHypLoc=data.InvDtHyp;
-    IdefixArray3D<real> InvDtParLoc=data.InvDtPar;
+    IdefixArray3D<real> InvDt=data.InvDt;
+
     real newdt;
 
     idfx::pushRegion("TimeIntegrator::Cycle");
@@ -146,13 +154,12 @@ void TimeIntegrator::Cycle(DataBlock & data) {
                                 Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
                                 ({0,0,0},{data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]}),
                                 KOKKOS_LAMBDA (int k, int j, int i, real &dtmin) {
-                real InvDt;
-                InvDt = SQRT(InvDtHypLoc(k,j,i) * InvDtHypLoc(k,j,i) + InvDtParLoc(k,j,i) * InvDtParLoc(k,j,i));
 
-                dtmin=FMIN(ONE_F/InvDt,dtmin);
+                dtmin=FMIN(ONE_F/InvDt(k,j,i),dtmin);
+
             }, Kokkos::Min<real>(newdt) );
             Kokkos::fence();
-            //newdt=newdt*cfl*DIMENSIONS;   // For some reason, pluto divides by dimensions here, but it is then unstable...
+            
             newdt=newdt*cfl;
         #ifdef WITH_MPI
             if(idfx::psize>1) {

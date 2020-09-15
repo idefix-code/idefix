@@ -39,8 +39,8 @@ int main( int argc, char* argv[] )
 
     idfx::initialize();
 
-    signal(SIGINT, signalHandler); 
-    signal(SIGTERM, signalHandler); 
+    //signal(SIGINT, signalHandler); 
+    //signal(SIGTERM, signalHandler); 
     signal(SIGUSR2, signalHandler); 
     abortRequested=false; 
 
@@ -58,15 +58,15 @@ int main( int argc, char* argv[] )
     gridHost.MakeGrid(input);
     gridHost.SyncToDevice();
 
-    // Make a data array
-    DataBlock data;
-    data.InitFromGrid(grid, input);
-
     idfx::cout << "Init Hydrodynamics." << std::endl;
     Hydro hydro(input, grid);
 
     idfx::cout << "Init Time Integrator." << std::endl;
     TimeIntegrator Tint(input, hydro);
+
+    // Make a datablock
+    DataBlock data;
+    data.InitFromGrid(grid, hydro, input);
 
     idfx::cout << "Init Setup." << std::endl;
     Setup mysetup(input,grid,data,hydro);

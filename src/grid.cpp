@@ -44,6 +44,7 @@ Grid::Grid(Input &input) {
         std::string boundary = input.GetString("Boundary",label,0);
         if(boundary.compare("outflow") == 0) lbound[dir] = outflow;
         else if(boundary.compare("periodic") == 0) lbound[dir] = periodic;
+        else if(boundary.compare("reflective") == 0) lbound[dir] = reflective;
         else if(boundary.compare("internal") == 0) lbound[dir] = internal;
         else if(boundary.compare("shearingbox") == 0) lbound[dir] = shearingbox;
         else if(boundary.compare("userdef") == 0) lbound[dir] = userdef;
@@ -57,6 +58,7 @@ Grid::Grid(Input &input) {
         boundary = input.GetString("Boundary",label,0);
         if(boundary.compare("outflow") == 0) rbound[dir] = outflow;
         else if(boundary.compare("periodic") == 0) rbound[dir] = periodic;
+        else if(boundary.compare("reflective") == 0) rbound[dir] = reflective;
         else if(boundary.compare("internal") == 0) rbound[dir] = internal;
         else if(boundary.compare("shearingbox") == 0) rbound[dir] = shearingbox;
         else if(boundary.compare("userdef") == 0) rbound[dir] = userdef;

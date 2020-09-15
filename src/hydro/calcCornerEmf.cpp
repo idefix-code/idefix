@@ -18,7 +18,7 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
     IdefixArray3D<real> ezi = data.emf.ezi;
     IdefixArray3D<real> ezj = data.emf.ezj;
 
-#if MHD == YES
+#if MHD == YES && DIMENSIONS >= 2
 #if EMF_AVERAGE == ARITHMETIC
     idefix_for("CalcCornerEMF",
                 data.beg[KDIR],data.end[KDIR]+KOFFSET,
@@ -50,6 +50,12 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
     IdefixArray3D<real> Ex2 = data.emf.Ex2;
     IdefixArray3D<real> Ex3 = data.emf.Ex3;
 
+    // Required by Hall effect
+    IdefixArray4D<real> J = data.J;
+    real xHConstant = this->xH;
+    ParabolicType haveHall = this->haveHall;
+    IdefixArray3D<real> xHallArr = data.xHall;
+
     idefix_for("CalcCenterEMF",
                 0,data.np_tot[KDIR],
                 0,data.np_tot[JDIR],
@@ -76,7 +82,40 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
                     Ex2(k,j,i) = (vx1*Bx3 - vx3*Bx1);
                     #endif
                     Ex3(k,j,i) = (vx2*Bx1 - vx1*Bx2);
+
+                    // Compute Hall-induced centered EMF when needed
+                    if(haveHall) {
+                        // We store Jx1, Jx2, Jx3 in vx1, vx2 and vx3
+                        int ip1,jp1,kp1;
+
+                        ip1=i+1;
+                        #if DIMENSIONS >=2
+                            jp1 = j+1;
+                        #else
+                            jp1=j;
+                        #endif
+                        #if DIMENSIONS == 3
+                            kp1 = k+1;
+                        #else
+                            kp1 = k;
+                        #endif
+                        vx1 = AVERAGE_4D_YZ(J, IDIR, kp1, jp1, i);
+                        vx2 = AVERAGE_4D_XZ(J, JDIR, kp1, j, ip1);
+                        vx3 = AVERAGE_4D_XY(J, KDIR, k, jp1, ip1);
+
+                        if(haveHall == UserDefFunction) xH = xHallArr(k,j,i);
+                        else xH = xHConstant;
+
+                        #if DIMENSIONS == 3
+                        Ex1(k,j,i) += - xH*(vx3*Bx2 - vx2*Bx3);
+                        Ex2(k,j,i) += - xH*(vx1*Bx3 - vx3*Bx1);
+                        #endif
+                        Ex3(k,j,i) += - xH*(vx2*Bx1 - vx1*Bx2);
+                    }
                 });
+
+    
+
 #endif
 
     // 1. averaging scheme

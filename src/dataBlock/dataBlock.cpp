@@ -5,7 +5,7 @@ DataBlock::DataBlock() {
     // Do nothing
 }
 
-void DataBlock::InitFromGrid(Grid &grid, Input &input) {
+void DataBlock::InitFromGrid(Grid &grid, Hydro &hydro, Input &input) {
     // This initialisation is only valid for *serial*
     // MPI initialisation will involve domain decomposition of grids into DataBlocks
 
@@ -15,6 +15,9 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
 
     // Make a local copy of the grid for future usage.
     GridHost gridHost(grid);
+
+    // Say we don't yet have current (default)
+    haveCurrent = false;
 
     // Get the number of points from the parent grid object
     for(int dir = 0 ; dir < 3 ; dir++) {
@@ -82,20 +85,32 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
     dmu = IdefixArray1D<real>("DataBlock_dmu",np_tot[JDIR]);
 #endif
 
-    // Allocate gravitational potential when needed (dirty since it relies on the hydro block, but we have no other choice) 
-    if(input.CheckEntry("Hydro","GravPotential")>=0) phiP = IdefixArray3D<real>("DataBlock_A",np_tot[KDIR],np_tot[JDIR],np_tot[IDIR]);
+    // Allocate gravitational potential when needed
+    if(hydro.haveGravPotential) phiP = IdefixArray3D<real>("DataBlock_PhiP",np_tot[KDIR],np_tot[JDIR],np_tot[IDIR]);
+
+
     
 #if MHD == YES
-
     Vs = IdefixArray4D<real>("DataBlock_Vs", DIMENSIONS, np_tot[KDIR]+KOFFSET, np_tot[JDIR]+JOFFSET, np_tot[IDIR]+IOFFSET);
     Vs0 = IdefixArray4D<real>("DataBlock_Vs0", DIMENSIONS, np_tot[KDIR]+KOFFSET, np_tot[JDIR]+JOFFSET, np_tot[IDIR]+IOFFSET);
 
     this->emf = ElectroMotiveForce(this);
+
+    if(hydro.needCurrent) {
+    // Allocate current (when hydro needs it)
+           haveCurrent = true;
+           J = IdefixArray4D<real>("DataBlock_J", 3, np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
+       }
+
+    // Allocate nonideal MHD effects array when a user-defined function is used
+    if(hydro.haveResistivity ==  UserDefFunction) etaOhmic = IdefixArray3D<real>("DataBlock_etaOhmic",np_tot[KDIR],np_tot[JDIR],np_tot[IDIR]);
+    if(hydro.haveAmbipolar == UserDefFunction) xAmbipolar = IdefixArray3D<real>("DataBlock_xAmbipolar",np_tot[KDIR],np_tot[JDIR],np_tot[IDIR]);
+    if(hydro.haveHall == UserDefFunction) xHall = IdefixArray3D<real>("DataBlock_xHall",np_tot[KDIR],np_tot[JDIR],np_tot[IDIR]);
 #endif
 
-    InvDtHyp = IdefixArray3D<real>("DataBlock_InvDtHyp", np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
-    InvDtPar = IdefixArray3D<real>("DataBlock_InvDtPar", np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
+    InvDt = IdefixArray3D<real>("DataBlock_InvDt", np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
     cMax = IdefixArray3D<real>("DataBlock_cMax", np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
+    dMax = IdefixArray3D<real>("DataBlock_dMax", np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
     PrimL =  IdefixArray4D<real>("DataBlock_PrimL", NVAR, np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
     PrimR =  IdefixArray4D<real>("DataBlock_PrimR", NVAR, np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
     FluxRiemann =  IdefixArray4D<real>("DataBlock_FluxRiemann", NVAR, np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);

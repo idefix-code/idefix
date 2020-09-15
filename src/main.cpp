@@ -39,8 +39,8 @@ int main( int argc, char* argv[] )
 
     idfx::initialize();
 
-    signal(SIGINT, signalHandler); 
-    signal(SIGTERM, signalHandler); 
+    //signal(SIGINT, signalHandler); 
+    //signal(SIGTERM, signalHandler); 
     signal(SIGUSR2, signalHandler); 
     abortRequested=false; 
 

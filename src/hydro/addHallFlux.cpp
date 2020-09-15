@@ -1,3 +1,9 @@
+// ********************************************************************************************************
+// Idefix MHD astrophysical code
+// Copyright(C) 2020 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr and other code contributors
+// Licensed under CeCILL 2.1 License, see COPYING for more information
+// ********************************************************************************************************
+
 #include "../idefix.hpp"
 
 void Hydro::AddHallFlux(DataBlock &data, int dir, const real t) {
@@ -16,9 +22,7 @@ void Hydro::AddHallFlux(DataBlock &data, int dir, const real t) {
     IdefixArray1D<real> dmu = data.dmu;
     ParabolicType haveHall = this->haveHall;
     
-#if EMF_AVERAGE != ARITHMETIC
-    IDEFIX_ERROR("the Hall effect module is demonstrated stable only when using EMF_AVERAGE=ARITHMETIC");
-#endif
+
 
 #if HAVE_ENERGY
     real gamma_m1 = this->gamma-1;

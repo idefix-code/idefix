@@ -1,3 +1,9 @@
+// ********************************************************************************************************
+// Idefix MHD astrophysical code
+// Copyright(C) 2020 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr and other code contributors
+// Licensed under CeCILL 2.1 License, see COPYING for more information
+// ********************************************************************************************************
+
 #ifndef _LOOP_HPP_
 #define _LOOP_HPP_
 

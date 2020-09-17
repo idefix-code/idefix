@@ -7,6 +7,7 @@
 #include "../idefix.hpp"
 #include "hydro.hpp"
 
+
 real Hydro::CheckDivB(DataBlock &data) {
     real divB;
     IdefixArray4D<real> Vs = data.Vs;
@@ -31,9 +32,6 @@ real Hydro::CheckDivB(DataBlock &data) {
                           dB2=(Ax2(k,j+1,i)*Vs(BX2s,k,j+1,i)-Ax2(k,j,i)*Vs(BX2s,k,j,i)); ,
                           dB3=(Ax3(k+1,j,i)*Vs(BX3s,k+1,j,i)-Ax3(k,j,i)*Vs(BX3s,k,j,i));  )
                 
-                /*D_EXPAND( dB1=(Vs(BX1s,k,j,i+1)-Vs(BX1s,k,j,i))/(dx1(i)); ,
-                          dB2=(Vs(BX2s,k,j+1,i)-Vs(BX2s,k,j,i))/(dx2(j)); ,
-                          dB3=(Vs(BX3s,k+1,j,i)-Vs(BX3s,k,j,i))/(dx3(k));  )*/
 
                 divBmax=FMAX(FABS(D_EXPAND(dB1, +dB2, +dB3))/dV(k,j,i),divBmax);
 
@@ -48,14 +46,16 @@ real Hydro::CheckDivB(DataBlock &data) {
 }
 
 
+
 /*
 real Hydro::CheckDivB(DataBlock &data) {
 
     real divB=0;
     IdefixArray4D<real> Vs = data.Vs;
-    IdefixArray1D<real> dx1 = data.dx[IDIR];
-    IdefixArray1D<real> dx2 = data.dx[JDIR];
-    IdefixArray1D<real> dx3 = data.dx[KDIR];
+    IdefixArray3D<real> Ax1 = data.A[IDIR];
+    IdefixArray3D<real> Ax2 = data.A[JDIR];
+    IdefixArray3D<real> Ax3 = data.A[KDIR];
+    IdefixArray3D<real> dV = data.dV;
 
     int iref,jref,kref;
     
@@ -66,22 +66,27 @@ real Hydro::CheckDivB(DataBlock &data) {
 
                 dB1=dB2=dB3=ZERO_F;
 
-                D_EXPAND( dB1=(Vs(BX1s,k,j,i+1)-Vs(BX1s,k,j,i))/(dx1(i)); ,
-                          dB2=(Vs(BX2s,k,j+1,i)-Vs(BX2s,k,j,i))/(dx2(j)); ,
-                          dB3=(Vs(BX3s,k+1,j,i)-Vs(BX3s,k,j,i))/(dx3(k));  )
+                D_EXPAND( dB1=(Ax1(k,j,i+1)*Vs(BX1s,k,j,i+1)-Ax1(k,j,i)*Vs(BX1s,k,j,i)); ,
+                          dB2=(Ax2(k,j+1,i)*Vs(BX2s,k,j+1,i)-Ax2(k,j,i)*Vs(BX2s,k,j,i)); ,
+                          dB3=(Ax3(k+1,j,i)*Vs(BX3s,k+1,j,i)-Ax3(k,j,i)*Vs(BX3s,k,j,i));  )
                 
-                if(FABS(D_EXPAND(dB1, +dB2, +dB3)) > divB) {
+                if(FABS(D_EXPAND(dB1, +dB2, +dB3))/dV(k,j,i) > divB) {
                     iref=i;
                     jref=j;
                     kref=k;
-                    divB=FABS(D_EXPAND(dB1, +dB2, +dB3));
+                    divB=FABS(D_EXPAND(dB1, +dB2, +dB3))/dV(k,j,i);
                 }
             }
         }
     }
-    //idfx::cout << "divB=" << divB << "(i,j,k)=(" << iref << "," << jref << "," << kref << ")" << std::endl;
+    idfx::cout << "divB=" << divB << "(i,j,k)=(" << iref << "," << jref << "," << kref << ")" << std::endl;
+    idfx::cout << "dV=" << dV(kref,jref,iref) << std::endl;
+    idfx::cout << " Ax1=" <<Ax1(kref,jref,iref) << " ; " << Ax1(kref,jref,iref+1) << std::endl;
+    idfx::cout << " Ax2=" <<Ax2(kref,jref,iref) << " ; " << Ax2(kref,jref+1,iref) << std::endl;
+    idfx::cout << " Bx1=" <<Vs(BX1s,kref,jref,iref) << " ; " << Vs(BX1s,kref,jref,iref+1) << std::endl;
+    idfx::cout << " Bx2=" <<Vs(BX2s,kref,jref,iref) << " ; " << Vs(BX2s,kref,jref+1,iref) << std::endl;
     return(divB);
 
 }
-
 */
+

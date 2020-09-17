@@ -71,7 +71,8 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                     KOKKOS_LAMBDA (int k, int j, int i) {
                         real R=x1(i)*sin(x2(j));
                         real z=x1(i)*cos(x2(j));
-                        real Omega=1.0/(R*sqrt(R)) * sqrt( R / sqrt(R*R + z*z) -2.5*epsilon*epsilon );
+                        
+                        real Omega=R;
                         Vc(RHO,k,j,i) = Vc(RHO,k,j,ighost);
                         Vc(PRS,k,j,i) = Vc(PRS,k,j,ighost);
                         if(Vc(VX1,k,j,ighost)>=ZERO_F) Vc(VX1,k,j,i)=ZERO_F;
@@ -213,7 +214,11 @@ void Setup::InitFlow(DataBlock &data) {
                 }
 
                 // Vector potential on the corner
-                R=d.xl[IDIR](i) * sin(d.xl[JDIR](j));
+                real s=sin(d.xl[JDIR](j));
+                if(FABS(s) < 1e-5) s=1e-5;
+                
+                R=d.xl[IDIR](i) * s;
+
                 if(R>Rin) {
                   A(KDIR,k,j,i) = B0*(pow(Rin,m+2.0)/R * (0.5-1.0/(m+2.0)) + pow(R,m+1.0)/(m+2.0));
                 }
@@ -241,6 +246,27 @@ void Setup::InitFlow(DataBlock &data) {
 
     // Make the field from the vector potential
     d.MakeVsFromAmag(A);
+    
+    // Clean up around the axis
+    for(int k = 0; k < d.np_tot[KDIR] ; k++) {
+    for(int j = 0; j < d.np_tot[JDIR] ; j++) {
+        for(int i = 0; i < d.np_tot[IDIR] ; i++) {
+            real r=d.x[IDIR](i);
+            real th=d.x[JDIR](j);
+            real z=r*cos(th);
+            real R=r*sin(th);
+            
+            if(R<0.2*Rin) {
+                d.Vs(BX1s,k,j,i) = ZERO_F;
+                d.Vs(BX2s,k,j,i) = ZERO_F;
+            }
+        }
+    }}
+    
+            
+    for(int j=0; j < d.np_tot[JDIR]; j++) {
+        printf("Bx1s[0,%d,3]=%.3e, Bx2s[0,j,3]=%.3e\n",j,d.Vs(BX1s,0,j,3),d.Vs(BX2s,0,j,3));
+    }
 
     // Send it all, if needed
     d.SyncToDevice();

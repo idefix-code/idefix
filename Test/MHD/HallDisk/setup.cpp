@@ -34,8 +34,9 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                     KOKKOS_LAMBDA (int k, int j, int i) {
                         Vc(RHO,k,j,i) = Vc(RHO,k,j,ighost);
                         Vc(PRS,k,j,i) = Vc(PRS,k,j,ighost);
-                        Vc(VX1,k,j,i) = Vc(VX1,k,j,ighost) * sqrt(x1(i)/x1(ighost));
-                        Vc(VX2,k,j,i) = Vc(VX2,k,j,ighost) * sqrt(x1(i)/x1(ighost));
+                        if(Vc(VX1,k,j,ighost) < ZERO_F) Vc(VX1,k,j,i) = Vc(VX1,k,j,ighost) * sqrt(x1(i)/x1(ighost));
+                        else Vc(VX1,k,j,i) = ZERO_F;
+                        Vc(VX2,k,j,i) = 1/ sqrt(x1(i));
                         Vc(VX3,k,j,i) = Vc(VX3,k,j,ighost) * sqrt(x1(i)/x1(ighost));
                         Vs(BX2s,k,j,i) = Vs(BX2s,k,j,ighost);
                         Vs(BX3s,k,j,i) = Vs(BX3s,k,j,ighost);
@@ -66,7 +67,10 @@ void Hall(DataBlock& data, const real t, IdefixArray3D<real> &xH) {
         else if(x1(i) < 1.6) f = 10.0*(x1(i)-1.5);
         else f=1.0;
 
-        xH(k,j,i) = 0.1*pow(x1(i),-0.5)*f;
+	real g=0.0;
+	if(t>200.0 && t< 201.0) g=t-100.0;
+      	if(t>201.0) g=1.0;
+        xH(k,j,i) = 0.1*g*pow(x1(i),-0.5)*f;
   });
 }
 // Default constructor
@@ -92,7 +96,7 @@ void Setup::InitFlow(DataBlock &data) {
     real x,y,z;
 
     real vphi,f,r,th;
-    real beta=1e4;
+    real beta=1e3;
 
     for(int k = 0; k < d.np_tot[KDIR] ; k++) {
         for(int j = 0; j < d.np_tot[JDIR] ; j++) {

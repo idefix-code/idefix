@@ -4,8 +4,8 @@ INCLUDE_DIRS = -I, -I. -I$(SRC) -I$(SRC)/hydro -I$(SRC)/dataBlock -I$(SRC)/outpu
 VPATH 		 = ./:$(SRC):$(SRC)/hydro:$(SRC)/dataBlock:$(SRC)/output:$(SRC)/hydro/MHDsolvers
 
 KOKKOS_PATH = ${IDEFIX_DIR}/src/kokkos
-KOKKOS_DEVICES = "Serial"
-KOKKOS_ARCH = BDW
+KOKKOS_DEVICES = "Cuda"
+KOKKOS_ARCH = BDW,Pascal61
 
 # include local rules which are not hosted on git
 # Can Makefile.local can redefine the make rules
@@ -25,10 +25,12 @@ OBJ +=  hlldMHD.o hllMHD.o roeMHD.o tvdlfMHD.o
 
 default: build
 
-CXX = g++
-CXXFLAGS = -O3 -DMHD=YES
+CXX = ${KOKKOS_PATH}/bin/nvcc_wrapper
+CXXFLAGS = -O3  -DWITH_MPI -DMHD=YES
 
 
+KOKKOS_CUDA_OPTIONS = "enable_lambda"
+export NVCC_WRAPPER_DEFAULT_COMPILER = mpicxx
 
 LINK = ${CXX}
 LINKFLAGS = 

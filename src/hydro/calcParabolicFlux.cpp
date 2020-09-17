@@ -241,4 +241,5 @@ void Hydro::CalcParabolicFlux(DataBlock &data, int dir, const real t) {
 
             });
 
+	idfx::popRegion();
 }

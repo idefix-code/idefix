@@ -1,11 +1,11 @@
 #include "idefix.hpp"
 #include "setup.hpp"
 
-real epsilon;
-real epsilonTop;
-real beta;
-real Hideal;
-real AmMid;
+real epsilonGlob;
+real epsilonTopGlob;
+real betaGlob;
+real HidealGlob;
+real AmMidGlob;
 
 /*********************************************/
 /**
@@ -34,9 +34,9 @@ void Ambipolar(DataBlock& data, real t, IdefixArray3D<real> &xAin) {
   IdefixArray1D<real> x2=data.x[JDIR];
   IdefixArray4D<real> Vc=data.Vc;
 
-  real Hideal = Hideal;
-  real epsilon = epsilon;
-  real AmMid = AmMid;
+  real Hideal = HidealGlob;
+  real epsilon = epsilonGlob;
+  real AmMid = AmMidGlob;
   real etamax = 10*epsilon*epsilon; // Corresponds to Rm=0.1
 
   idefix_for("Ambipolar",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
@@ -52,7 +52,6 @@ void Ambipolar(DataBlock& data, real t, IdefixArray3D<real> &xAin) {
                 real eta = B2/(Omega*Am*Vc(RHO,k,j,i));
                 if(eta>etamax) xA(k,j,i) = etamax/B2;
                 else xA(k,j,i) = 1.0/(Omega*Am*Vc(RHO,k,j,i));
-                xA(k,j,i) = ZERO_F;
               });
 
 }
@@ -66,8 +65,8 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
         IdefixArray1D<real> x2 = data.x[JDIR];
 
         int ighost = data.nghost[IDIR];
-        real epsilon=epsilon;
-
+        real epsilon=epsilonGlob;
+	real epsilonTop=epsilonTopGlob;
         idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,ighost,
                     KOKKOS_LAMBDA (int k, int j, int i) {
                         real R=x1(i)*sin(x2(j));
@@ -90,7 +89,8 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                           if(Vc(RHO,k,j,i) < 1e-8) {
                             real T = Vc(PRS,k,j,i)/Vc(RHO,k,j,i);
                             Vc(RHO,k,j,i) = 1e-8;
-                            Vc(PRS,k,j,i) = 1e-8*epsilonTop*epsilonTop;
+                            //Vc(PRS,k,j,i) = 1e-8*epsilonTop*epsilonTop;
+			    Vc(PRS,k,j,i) = 1e-8*T;
                           }
 
                       });
@@ -153,11 +153,11 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Hydro &hydro) {
     hydro.EnrollGravPotential(&Potential);
     hydro.EnrollAmbipolarDiffusivity(&Ambipolar);
     hydro.SetGamma(1.05);
-    epsilon = input.GetReal("Setup","epsilon",0);
-    epsilonTop = input.GetReal("Setup","epsilonTop",0);
-    beta = input.GetReal("Setup","beta",0);
-    Hideal = input.GetReal("Setup","Hideal",0);
-    AmMid = input.GetReal("Setup","Am",0);
+    epsilonGlob = input.GetReal("Setup","epsilon",0);
+    epsilonTopGlob = input.GetReal("Setup","epsilonTop",0);
+    betaGlob = input.GetReal("Setup","beta",0);
+    HidealGlob = input.GetReal("Setup","Hideal",0);
+    AmMidGlob = input.GetReal("Setup","Am",0);
 
 }
 
@@ -175,7 +175,7 @@ void Setup::InitFlow(DataBlock &data) {
 
     real Rin=1.0;
     real m=-5.0/4.0;
-    real B0 = epsilon*sqrt(2.0/beta);
+    real B0 = epsilonGlob*sqrt(2.0/betaGlob);
 
     for(int k = 0; k < d.np_tot[KDIR] ; k++) {
         for(int j = 0; j < d.np_tot[JDIR] ; j++) {
@@ -185,20 +185,20 @@ void Setup::InitFlow(DataBlock &data) {
                 real z=r*cos(th);
                 real R=r*sin(th);
                 if(R>Rin) {
-                    real Zh = epsilon*FABS(z/R);
-                    real csdisk = epsilon/sqrt(R);
-                    real cscorona = epsilonTop/sqrt(R);
-                    real cs2=0.5*(csdisk*csdisk+cscorona*cscorona)+0.5*(cscorona*cscorona-csdisk*csdisk)*tanh(6*log(Zh/Hideal));
+                    real Zh = epsilonGlob*FABS(z/R);
+                    real csdisk = epsilonGlob/sqrt(R);
+                    real cscorona = epsilonTopGlob/sqrt(R);
+                    real cs2=0.5*(csdisk*csdisk+cscorona*cscorona)+0.5*(cscorona*cscorona-csdisk*csdisk)*tanh(6*log(Zh/HidealGlob));
                     d.Vc(RHO,k,j,i) = 1.0/(R*sqrt(R))  * exp(1.0/ (csdisk*csdisk) * (1.0/sqrt(R*R+z*z)-1.0/R)) ;
                     d.Vc(VX3,k,j,i) = 1.0/sqrt(R) * sqrt( R / sqrt(R*R + z*z) -2.5*csdisk*csdisk );
                     d.Vc(PRS,k,j,i) = cs2*d.Vc(RHO,k,j,i);
 
                 }
                 else {
-                  real Zh = epsilon*FABS(z/Rin);
-                  real csdisk = epsilon/sqrt(Rin);
-                  real cscorona = epsilonTop/sqrt(Rin);
-                  real cs2=0.5*(csdisk*csdisk+cscorona*cscorona)+0.5*(cscorona*cscorona-csdisk*csdisk)*tanh(6*log(Zh/Hideal));
+                  real Zh = epsilonGlob*FABS(z/Rin);
+                  real csdisk = epsilonGlob/sqrt(Rin);
+                  real cscorona = epsilonTopGlob/sqrt(Rin);
+                  real cs2=0.5*(csdisk*csdisk+cscorona*cscorona)+0.5*(cscorona*cscorona-csdisk*csdisk)*tanh(6*log(Zh/HidealGlob));
                   d.Vc(RHO,k,j,i) = 1.0/(Rin*sqrt(Rin))  * exp(1.0/ (csdisk*csdisk) * (1.0/sqrt(Rin*Rin+z*z)-1.0/Rin));
                   d.Vc(VX3,k,j,i) = 1.0/sqrt(Rin) * sqrt( Rin / sqrt(Rin*Rin + z*z) -2.5*csdisk*csdisk );
                   d.Vc(PRS,k,j,i) = cs2*d.Vc(RHO,k,j,i);

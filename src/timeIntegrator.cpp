@@ -72,8 +72,6 @@ void TimeIntegrator::Stage(DataBlock &data) {
         // Step 2: compute the intercell flux with our Riemann solver, store the resulting InvDt
         hydro->CalcRiemannFlux(data, dir, t);
 
-        // Step 2.1: Add intercell flux due to Hall, computed with HLL Riemann solver
-        //if(hydro->haveHall) hydro->AddHallFlux(data, dir, t);
         
         // Step 2.5: compute intercell parabolic flux when needed
         if(hydro->haveParabolicTerms) hydro->CalcParabolicFlux(data, dir, t);

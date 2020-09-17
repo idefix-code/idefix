@@ -12,6 +12,7 @@ void DataBlock::DumpToFile(std::string filebase)  {
     real nx2;
     real nx3;
     real nv;
+    static int n=0;
 
     IdefixArray4D<real>::HostMirror locVc = Kokkos::create_mirror_view(this->Vc);
     Kokkos::deep_copy(locVc,this->Vc);
@@ -36,8 +37,8 @@ void DataBlock::DumpToFile(std::string filebase)  {
     // nx1, nx2, nx3, nvar then the data, then off you go 
     std::string dot = std::string(".");
     std::string ext = std::string("idfx");
-    std::string filename = filebase + dot + std::to_string(idfx::prank) + dot + ext;
-
+    std::string filename = filebase + dot + std::to_string(n) + dot+ std::to_string(idfx::prank) + dot + ext;
+    n++;
     fileHdl = fopen(filename.c_str(),"wb");
 #if MHD== YES
     nfield = 3;

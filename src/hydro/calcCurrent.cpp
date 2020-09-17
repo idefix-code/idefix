@@ -101,7 +101,7 @@ void Hydro::CalcCurrent(DataBlock &data) {
                             a12Bx2_m00 = Bx2_m00 * r(i-1);
                         #endif
                         #if COMPONENTS == 3
-                            a13Bx3_000 = Bx3_000 * r(i));
+                            a13Bx3_000 = Bx3_000 * r(i);
                             a13Bx3_m00 = Bx3_m00 * r(i-1);
                             #if DIMENSIONS >= 2
                                 a23Bx3_000 = Bx3_000 * FABS(SIN(th(j)));

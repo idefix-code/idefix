@@ -22,6 +22,7 @@ void HllMHD(DataBlock & data, int dir, real gamma, real C2Iso, ParabolicType hav
     IdefixArray4D<real> J = data.J;
     IdefixArray3D<real> xHallArr = data.xHall;
     IdefixArray1D<real> dx = data.dx[dir];
+    IdefixArray1D<real> dx2 = data.dx[JDIR];
     IdefixArray1D<real> x1 = data.x[IDIR];
     IdefixArray1D<real> rt = data.rt;
     IdefixArray1D<real> dmu = data.dmu;
@@ -399,11 +400,19 @@ void HllMHD(DataBlock & data, int dir, real gamma, real C2Iso, ParabolicType hav
                 Jx2 = AVERAGE_4D_X(J, JDIR, k, j, ip1);
                 Jx3 = AVERAGE_4D_XYZ(J, KDIR, k, jp1, ip1);
 
-                fluxL_BX1 += -xH* (  Jx3*uL_BX1 - Jx1*uL_BX3 );
-                fluxR_BX1 += -xH* (  Jx3*uR_BX1 - Jx1*uR_BX3 );
+                fluxL_BX1 += -xH* (  Jx3*uL_BX1  );
+                fluxR_BX1 += -xH* (  Jx3*uR_BX1  );
 
-                fluxL_BX2 += -xH* (  Jx3*uL_BX2 - Jx2*uL_BX3 );
-                fluxR_BX2 += -xH* (  Jx3*uR_BX2 - Jx2*uR_BX3 );
+                fluxL_BX2 += -xH* (  Jx3*uL_BX2  );
+                fluxR_BX2 += -xH* (  Jx3*uR_BX2  );
+
+                #if COMPONENTS==3
+                fluxL_BX1 += -xH* (   - Jx1*uL_BX3 );
+                fluxR_BX1 += -xH* (   - Jx1*uR_BX3 );
+
+                fluxL_BX2 += -xH* (   - Jx2*uL_BX3 );
+                fluxR_BX2 += -xH* (   - Jx2*uR_BX3 );
+                #endif
 
             }
 

@@ -102,7 +102,7 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real t, real dt) {
                     if(dir==JDIR) {
                         #if COMPONENTS == 3  
                             Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(sm(j));
-                            #if PHYSICS == MHD
+                            #if MHD == YES
                                 Flux(iBPHI,k,j,i) = Flux(iBPHI,k,j,i)  / A(k,j,i);
                             #endif // MHD
                         #endif // COMPONENTS = 3
@@ -130,7 +130,7 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real t, real dt) {
                     #if (GEOMETRY == POLAR || GEOMETRY == CYLINDRICAL) &&  (defined iBPHI)
                         rhs[iBPHI] = - dt / dx(i) * (Flux(iBPHI, k, j, i+1) - Flux(iBPHI, k, j, i) );
 
-                    #elif (GEOMETRY == SPHERICAL) && (PHYSICS == MHD)
+                    #elif (GEOMETRY == SPHERICAL) && (MHD == YES)
                         real q = dt / (x1(i)*dx(i));
                         EXPAND(                                                                     ,
                                 rhs[iBTH]  = -q * ((Flux(iBTH, k, j, i+1)  - Flux(iBTH, k, j, i) ));  ,
@@ -140,7 +140,7 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real t, real dt) {
                 if(dir==JDIR) {
                     #if (GEOMETRY == SPHERICAL) && (COMPONENTS == 3)
                         rhs[iMPHI] /= FABS(s(j));
-                        #if PHYSICS == MHD
+                        #if MHD == YES
                             rhs[iBPHI] = -dt / (rt(i)*dx(j)) * (Flux(iBPHI, k, j+1, i) - Flux(iBPHI, k, j, i));
                         #endif // MHD
                     #endif // GEOMETRY

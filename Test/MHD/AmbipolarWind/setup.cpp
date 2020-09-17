@@ -123,8 +123,8 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                         Vc(PRS,k,j,i) = Vc(PRS,k,jghost,i);
                         Vc(VX1,k,j,i) = Vc(VX1,k,jghost,i);
                         Vc(VX2,k,j,i) = ZERO_F;
-                        Vc(VX3,k,j,i) = Vc(VX3,k,jghost,i);
-                        Vs(BX1s,k,j,i) = ZERO_F;
+                        Vc(VX3,k,j,i) = ZERO_F;
+                        Vs(BX1s,k,j,i) = Vs(BX1s,k,jghost,i);
                         Vs(BX3s,k,j,i) = ZERO_F;
 
                     });

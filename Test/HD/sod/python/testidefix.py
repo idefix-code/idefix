@@ -35,7 +35,7 @@ x= values['x']
 
 solinterp=interp1d(x,p)
 
-error=np.sqrt(np.mean((V.data['PRS'][:,0,0]-solinterp(V.x))**2/solinterp(V.x)**2))
+error=np.sqrt(np.mean((V.data['PRS'][:,0,0]-solinterp(V.x))**2))
 
 print("Error=%e"%error)
 if error<1e-1:

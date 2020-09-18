@@ -117,7 +117,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                         real Omega=R;
                         Vc(RHO,k,j,i) = Vc(RHO,k,j,ighost);
                         Vc(PRS,k,j,i) = Vc(PRS,k,j,ighost);
-                        if(Vc(VX1,k,j,ighost)>=ZERO_F) Vc(VX1,k,j,i)=ZERO_F;
+                        if(Vc(VX1,k,j,ighost)>=ZERO_F) Vc(VX1,k,j,i) = - Vc(VX1,k,j,2*ighost-i);
 			                   else Vc(VX1,k,j,i) = Vc(VX1,k,j,ighost);
                         Vc(VX2,k,j,i) = Vc(VX2,k,j,ighost);
                         Vc(VX3,k,j,i) = R*Omega;
@@ -164,7 +164,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                         Vc(RHO,k,j,i) = Vc(RHO,k,jghost,i);
                         Vc(PRS,k,j,i) = Vc(PRS,k,jghost,i);
                         Vc(VX1,k,j,i) = Vc(VX1,k,jghost,i);
-                        Vc(VX2,k,j,i) = ZERO_F;
+                        Vc(VX2,k,j,i) = - Vc(VX2,k,2*jghost-j,i);
                         Vc(VX3,k,j,i) = ZERO_F;
                         Vs(BX1s,k,j,i) = Vs(BX1s,k,jghost,i);
                         Vc(BX3,k,j,i) = ZERO_F;

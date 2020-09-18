@@ -97,6 +97,25 @@ void MySourceTerm(DataBlock &data, const real t, const real dtin) {
 
 
 }
+
+void InternalBoundary(DataBlock& data, const real t) {
+  IdefixArray4D<real> Vc = data.Vc;
+  IdefixArray4D<real> Vs = data.Vs;
+
+  real vAmax=10.0;
+
+  idefix_for("InternalBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
+              KOKKOS_LAMBDA (int k, int j, int i) {
+                real b2=EXPAND(Vc(BX1,k,j,i)*Vc(BX1,k,j,i) , +Vc(BX2,k,j,i)*Vc(BX2,k,j,i), +Vc(BX3,k,j,i)*Vc(BX3,k,j,i) ) ;
+                real va2=b2/Vc(RHO,k,j,i);
+                if(va2>vAmax*vAmax) {
+                  real T = Vc(PRS,k,j,i)/Vc(RHO,k,j,i);
+                  Vc(RHO,k,j,i) = b2/(vAmax*vAmax);
+                  Vc(PRS,k,j,i) = T*Vc(RHO,k,j,i);
+                }
+              });
+
+}
 // User-defined boundaries
 void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 
@@ -107,8 +126,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
         IdefixArray1D<real> x2 = data.x[JDIR];
 
         int ighost = data.nghost[IDIR];
-        real epsilon=epsilonGlob;
-	real epsilonTop=epsilonTopGlob;
+
         idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,ighost,
                     KOKKOS_LAMBDA (int k, int j, int i) {
                         real R=x1(i)*sin(x2(j));
@@ -125,19 +143,6 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                         Vc(BX3,k,j,i) = ZERO_F;
 
                     });
-
-
-          idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
-                      KOKKOS_LAMBDA (int k, int j, int i) {
-                          if(Vc(RHO,k,j,i) < 1e-8) {
-                            real T = Vc(PRS,k,j,i)/Vc(RHO,k,j,i);
-                            Vc(RHO,k,j,i) = 1e-8;
-                            //Vc(PRS,k,j,i) = 1e-8*epsilonTop*epsilonTop;
-			    Vc(PRS,k,j,i) = 1e-8*T;
-                          }
-
-                      });
-
 
     }
 
@@ -197,6 +202,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Hydro &hydro) {
     hydro.EnrollGravPotential(&Potential);
     hydro.EnrollAmbipolarDiffusivity(&Ambipolar);
     hydro.EnrollUserSourceTerm(&MySourceTerm);
+    hydro.EnrollInternalBoundary(&InternalBoundary);
     hydro.SetGamma(1.05);
     gammaGlob=hydro.GetGamma();
     epsilonGlob = input.GetReal("Setup","epsilon",0);

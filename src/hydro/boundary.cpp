@@ -27,7 +27,7 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
     real sbS = this->sbS;
 
     // X1 boundary conditions
-    
+    if(haveInternalBoundary) internalBoundaryFunc(data, t);
 
     for(int dir=0 ; dir < DIMENSIONS ; dir++ ) {
         // MPI Exchange data when needed

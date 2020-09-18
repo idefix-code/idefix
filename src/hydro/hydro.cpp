@@ -46,6 +46,7 @@ Hydro::Hydro(Input &input, Grid &grid) {
     
     // No userdefBoundary by default
     this->haveUserDefBoundary = false;
+    this->haveInternalBoundary = false;
 
     // Source terms (always activated when non-cartesian geometry because of curvature source terms)
     #if GEOMETRY == CARTESIAN
@@ -187,6 +188,12 @@ void Hydro::EnrollUserDefBoundary(UserDefBoundaryFunc myFunc) {
     this->userDefBoundaryFunc = myFunc;
     this->haveUserDefBoundary = true;
     idfx::cout << "Hydro: User-defined boundary condition has been enrolled" << std::endl;
+}
+
+void Hydro::EnrollInternalBoundary(InternalBoundaryFunc myFunc) {
+    this->internalBoundaryFunc = myFunc;
+    this->haveInternalBoundary = true;
+    idfx::cout << "Hydro: User-defined internal boundary condition has been enrolled" << std::endl;
 }
 
 void Hydro::EnrollGravPotential(GravPotentialFunc myFunc) {

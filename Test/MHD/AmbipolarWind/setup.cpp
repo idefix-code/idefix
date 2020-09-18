@@ -113,6 +113,11 @@ void InternalBoundary(DataBlock& data, const real t) {
                   Vc(RHO,k,j,i) = b2/(vAmax*vAmax);
                   Vc(PRS,k,j,i) = T*Vc(RHO,k,j,i);
                 }
+		if(Vc(RHO,k,j,i) < 1e-8) {
+		  real T= Vc(PRS,k,j,i)/Vc(RHO,k,j,i);
+		  Vc(RHO,k,j,i)=1e-8;
+		  Vc(PRS,k,j,i)=T*Vc(RHO,k,j,i);
+		}
               });
 
 }

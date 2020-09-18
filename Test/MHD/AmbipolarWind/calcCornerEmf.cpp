@@ -46,12 +46,12 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
 
                 });
 #endif
-    
+
 #if EMF_AVERAGE == UCT_CONTACT || EMF_AVERAGE == UCT0
 
     // 0. Compute cell-centered emf.
     IdefixArray4D<real> Vc = data.Vc;
-    
+
     IdefixArray3D<real> Ex1 = data.emf.Ex1;
     IdefixArray3D<real> Ex2 = data.emf.Ex2;
     IdefixArray3D<real> Ex3 = data.emf.Ex3;
@@ -82,7 +82,7 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
                             Bx3 = Vc(BX3,k,j,i);  )
 
                     // -- Compute inductive electric field
-                    
+
                     #if DIMENSIONS == 3
                     Ex1(k,j,i) = (vx3*Bx2 - vx2*Bx3);
                     Ex2(k,j,i) = (vx1*Bx3 - vx3*Bx1);
@@ -120,7 +120,7 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
                     }
                 });
 
-    
+
 
 #endif
 
@@ -138,7 +138,7 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
                     exk(k,j,i) *= TWO_F;
                     eyi(k,j,i) *= TWO_F;
                     eyk(k,j,i) *= TWO_F;
-    
+
                     exj(k,j,i) -= HALF_F*(Ex1(k,j-1,i) + Ex1(k,j,i));
                     exk(k,j,i) -= HALF_F*(Ex1(k-1,j,i) + Ex1(k,j,i));
 
@@ -151,7 +151,7 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
                     ezj(k,j,i) -= HALF_F*(Ex3(k,j-1,i) + Ex3(k,j,i));
 
                 });
-    
+
     idefix_for("CalcCornerEMF",
                 data.beg[KDIR],data.end[KDIR]+KOFFSET,
                 data.beg[JDIR],data.end[JDIR]+JOFFSET,
@@ -172,12 +172,12 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
 
                 });
 #endif
-    
+
 #if EMF_AVERAGE == UCT_CONTACT
     IdefixArray3D<int> svx = data.emf.svx;
     IdefixArray3D<int> svy = data.emf.svy;
     IdefixArray3D<int> svz = data.emf.svz;
-    
+
     idefix_for("EMF_ArithmeticAverage",
                 data.beg[KDIR],data.end[KDIR]+KOFFSET,
                 data.beg[JDIR],data.end[JDIR]+JOFFSET,
@@ -195,7 +195,7 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
     #else
                     ez(k,j,i) = w * (TWO_F*ezi(k,j,i) + ezj(k,j,i) + ezj(k,j,i-1));
     #endif
-                    
+
                     //CT_EMF_IntegrateToCorner (data, emf, grid);
                     int iu, ju, ku;
                     D_EXPAND( int sx;  ,
@@ -268,11 +268,8 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
                     ey(k,j,i) *= ONE_FOURTH_F;
     #endif
                     ez(k,j,i) *= ONE_FOURTH_F;
-                
-        if(ez(k,j,i)!=ez(k,j,i)) {
-            printf("Shit (%d,%d)\n",i,j);
-            exit(1);
-        }
+
+
                 });
 #endif
 #endif // MHD

@@ -6,6 +6,7 @@ real epsilonTopGlob;
 real betaGlob;
 real HidealGlob;
 real AmMidGlob;
+real gammaGlob;
 
 /*********************************************/
 /**
@@ -55,6 +56,47 @@ void Ambipolar(DataBlock& data, real t, IdefixArray3D<real> &xAin) {
               });
 
 }
+
+void MySourceTerm(DataBlock &data, const real t, const real dtin) {
+  IdefixArray4D<real> Vc = data.Vc;
+  IdefixArray4D<real> Uc = data.Uc;
+  IdefixArray1D<real> x1=data.x[IDIR];
+  IdefixArray1D<real> x2=data.x[JDIR];
+  real epsilonTop = epsilonTopGlob;
+  real epsilon = epsilonGlob;
+  real tauGlob=0.1;
+  real gamma_m1=gammaGlob-1.0;
+  real dt=dtin;
+  real Hideal=HidealGlob;
+  idefix_for("MySourceTerm",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
+              KOKKOS_LAMBDA (int k, int j, int i) {
+                real r=x1(i);
+                real th=x2(j);
+                real z=r*cos(th);
+                real R=r*sin(th);
+                real cs2, tau;
+                if(R>1.0) {
+                    real Zh = FABS(z/R)/epsilon;
+                    real csdisk = epsilon/sqrt(R);
+                    real cscorona = epsilonTop/sqrt(R);
+                    cs2=0.5*(csdisk*csdisk+cscorona*cscorona)+0.5*(cscorona*cscorona-csdisk*csdisk)*tanh(6*log(Zh/Hideal));
+                    tau= tauGlob*sqrt(R);
+                }
+                else {
+                    real Zh = FABS(z)/epsilon;
+                    real csdisk = epsilon;
+                    real cscorona = epsilonTop;
+                    cs2=0.5*(csdisk*csdisk+cscorona*cscorona)+0.5*(cscorona*cscorona-csdisk*csdisk)*tanh(6*log(Zh/Hideal));
+                    tau=tauGlob;
+                }
+                // Cooling /heatig function
+                real Ptarget = cs2*Vc(RHO,k,j,i);
+
+                Uc(ENG,k,j,i) += -dt*(Vc(PRS,k,j,i)-Ptarget)/(tau*gamma_m1);
+              });
+
+
+}
 // User-defined boundaries
 void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 
@@ -71,7 +113,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                     KOKKOS_LAMBDA (int k, int j, int i) {
                         real R=x1(i)*sin(x2(j));
                         real z=x1(i)*cos(x2(j));
-                        
+
                         real Omega=R;
                         Vc(RHO,k,j,i) = Vc(RHO,k,j,ighost);
                         Vc(PRS,k,j,i) = Vc(PRS,k,j,ighost);
@@ -79,7 +121,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 			                   else Vc(VX1,k,j,i) = Vc(VX1,k,j,ighost);
                         Vc(VX2,k,j,i) = Vc(VX2,k,j,ighost);
                         Vc(VX3,k,j,i) = R*Omega;
-                        Vs(BX2s,k,j,i) = Vs(BX2s,k,j,ighost);
+                        Vs(BX2s,k,j,i) = ZERO_F;
                         Vc(BX3,k,j,i) = ZERO_F;
 
                     });
@@ -125,7 +167,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                         Vc(VX2,k,j,i) = ZERO_F;
                         Vc(VX3,k,j,i) = ZERO_F;
                         Vs(BX1s,k,j,i) = Vs(BX1s,k,jghost,i);
-                        Vs(BX3s,k,j,i) = ZERO_F;
+                        Vc(BX3,k,j,i) = ZERO_F;
 
                     });
 
@@ -143,6 +185,7 @@ void Potential(DataBlock& data, const real t, IdefixArray1D<real>& x1, IdefixArr
 
 }
 
+
 // Default constructor
 Setup::Setup() {}
 
@@ -153,13 +196,15 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Hydro &hydro) {
     hydro.EnrollUserDefBoundary(&UserdefBoundary);
     hydro.EnrollGravPotential(&Potential);
     hydro.EnrollAmbipolarDiffusivity(&Ambipolar);
+    hydro.EnrollUserSourceTerm(&MySourceTerm);
     hydro.SetGamma(1.05);
+    gammaGlob=hydro.GetGamma();
     epsilonGlob = input.GetReal("Setup","epsilon",0);
     epsilonTopGlob = input.GetReal("Setup","epsilonTop",0);
     betaGlob = input.GetReal("Setup","beta",0);
     HidealGlob = input.GetReal("Setup","Hideal",0);
     AmMidGlob = input.GetReal("Setup","Am",0);
-
+    printf("eps=%g, epstop=%g, Hideal=%g\n",epsilonGlob,epsilonTopGlob,HidealGlob);
 }
 
 // This routine initialize the flow
@@ -186,7 +231,7 @@ void Setup::InitFlow(DataBlock &data) {
                 real z=r*cos(th);
                 real R=r*sin(th);
                 if(R>Rin) {
-                    real Zh = epsilonGlob*FABS(z/R);
+                    real Zh = FABS(z/R)/epsilonGlob;
                     real csdisk = epsilonGlob/sqrt(R);
                     real cscorona = epsilonTopGlob/sqrt(R);
                     real cs2=0.5*(csdisk*csdisk+cscorona*cscorona)+0.5*(cscorona*cscorona-csdisk*csdisk)*tanh(6*log(Zh/HidealGlob));
@@ -196,7 +241,7 @@ void Setup::InitFlow(DataBlock &data) {
 
                 }
                 else {
-                  real Zh = epsilonGlob*FABS(z/Rin);
+                  real Zh = FABS(z/Rin)/epsilonGlob;
                   real csdisk = epsilonGlob/sqrt(Rin);
                   real cscorona = epsilonTopGlob/sqrt(Rin);
                   real cs2=0.5*(csdisk*csdisk+cscorona*cscorona)+0.5*(cscorona*cscorona-csdisk*csdisk)*tanh(6*log(Zh/HidealGlob));
@@ -216,7 +261,7 @@ void Setup::InitFlow(DataBlock &data) {
                 // Vector potential on the corner
                 real s=sin(d.xl[JDIR](j));
                 if(FABS(s) < 1e-5) s=1e-5;
-                
+
                 R=d.xl[IDIR](i) * s;
 
                 if(R>Rin) {
@@ -246,7 +291,7 @@ void Setup::InitFlow(DataBlock &data) {
 
     // Make the field from the vector potential
     d.MakeVsFromAmag(A);
-    
+
     // Clean up around the axis
     for(int k = 0; k < d.np_tot[KDIR] ; k++) {
     for(int j = 0; j < d.np_tot[JDIR] ; j++) {
@@ -255,18 +300,14 @@ void Setup::InitFlow(DataBlock &data) {
             real th=d.x[JDIR](j);
             real z=r*cos(th);
             real R=r*sin(th);
-            
+
             if(R<0.2*Rin) {
                 d.Vs(BX1s,k,j,i) = ZERO_F;
                 d.Vs(BX2s,k,j,i) = ZERO_F;
             }
         }
     }}
-    
-            
-    for(int j=0; j < d.np_tot[JDIR]; j++) {
-        printf("Bx1s[0,%d,3]=%.3e, Bx2s[0,j,3]=%.3e\n",j,d.Vs(BX1s,0,j,3),d.Vs(BX2s,0,j,3));
-    }
+
 
     // Send it all, if needed
     d.SyncToDevice();

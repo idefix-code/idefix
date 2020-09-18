@@ -74,10 +74,10 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real t, real dt) {
                 if(Ax<1e-10) Ax=1e-10;    // Essentially to avoid singularity around poles
                 for(int nv = 0 ; nv < NVAR ; nv++) {
                     Flux(nv,k,j,i) = Flux(nv,k,j,i) * Ax;
-                    if(Flux(nv,k,j,i)!=Flux(nv,k,j,i)) {
+                    /*if(Flux(nv,k,j,i)!=Flux(nv,k,j,i)) {
                         printf("Shit Flux at dir=%d var=%d (%d,%d)\n",dir,nv,i,j);
                         exit(1);
-                    }
+                    }*/
                 }
 
                 
@@ -185,11 +185,12 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real t, real dt) {
                 D_EXPAND( if(nv == BX1) continue;   ,
                           if(nv == BX2) continue;   ,
                           if(nv == BX3) continue;  ) 
-                
+                /*
                 if(rhs[nv]!=rhs[nv]) {
                     printf("Wrong Riemann RHS for var %d in dir=%d\n",nv,dir);
                     exit(1);
                 }
+		*/
                 Uc(nv,k,j,i) = Uc(nv,k,j,i) + rhs[nv];
             }
 

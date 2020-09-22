@@ -57,7 +57,7 @@ namespace idfx {
     void IdefixOstream::init(int rank) {
         char logFileName[20];
         sprintf(logFileName,"idefix.%d.log",rank);
-        this->my_fstream = std::ofstream(logFileName);
+        this->my_fstream.open(logFileName);
         if(rank==0) this->toscreen=true;
         else this->toscreen=false;
     }

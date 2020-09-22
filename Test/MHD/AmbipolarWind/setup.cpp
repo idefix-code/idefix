@@ -57,6 +57,21 @@ void Ambipolar(DataBlock& data, real t, IdefixArray3D<real> &xAin) {
 
 }
 
+void Resistivity(DataBlock& data, real t, IdefixArray3D<real> &etain) {
+  IdefixArray3D<real> eta = etain;
+  IdefixArray1D<real> x1=data.x[IDIR];
+  IdefixArray1D<real> x2=data.x[JDIR];
+  IdefixArray4D<real> Vc=data.Vc;
+
+  real epsilon = epsilonGlob;
+
+  idefix_for("Resistivity",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
+              KOKKOS_LAMBDA (int k, int j, int i) {
+                    eta(k,j,i) = x1(i) < 1.2 ? epsilon*epsilon : ZERO_F;
+              });
+
+}
+
 void MySourceTerm(DataBlock &data, const real t, const real dtin) {
   IdefixArray4D<real> Vc = data.Vc;
   IdefixArray4D<real> Uc = data.Uc;
@@ -98,9 +113,25 @@ void MySourceTerm(DataBlock &data, const real t, const real dtin) {
 
 }
 
+void EmfBoundary(DataBlock& data, const real t) {
+    if(data.lbound[IDIR] == userdef) {
+        IdefixArray3D<real> Ex1 = data.emf.ex;
+        IdefixArray3D<real> Ex2 = data.emf.ey;
+        IdefixArray3D<real> Ex3 = data.emf.ez;
+        int ighost = data.nghost[IDIR];
+        
+        idefix_for("EMFBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,ighost+1,
+                    KOKKOS_LAMBDA (int k, int j, int i) {
+            Ex3(k,j,i) = ZERO_F;
+        });
+    }
+}
+    
 void InternalBoundary(DataBlock& data, const real t) {
   IdefixArray4D<real> Vc = data.Vc;
   IdefixArray4D<real> Vs = data.Vs;
+  IdefixArray1D<real> x1=data.x[IDIR];
+  IdefixArray1D<real> x2=data.x[JDIR];
 
   real vAmax=10.0;
 
@@ -108,11 +139,25 @@ void InternalBoundary(DataBlock& data, const real t) {
               KOKKOS_LAMBDA (int k, int j, int i) {
                 real b2=EXPAND(Vc(BX1,k,j,i)*Vc(BX1,k,j,i) , +Vc(BX2,k,j,i)*Vc(BX2,k,j,i), +Vc(BX3,k,j,i)*Vc(BX3,k,j,i) ) ;
                 real va2=b2/Vc(RHO,k,j,i);
-                if(va2>vAmax*vAmax) {
+                real myMax=vAmax;
+                if(x1(i)<1.1) myMax=myMax/50.0;
+                if(va2>myMax*myMax) {
                   real T = Vc(PRS,k,j,i)/Vc(RHO,k,j,i);
-                  Vc(RHO,k,j,i) = b2/(vAmax*vAmax);
+                  Vc(RHO,k,j,i) = b2/(myMax*myMax);
                   Vc(PRS,k,j,i) = T*Vc(RHO,k,j,i);
                 }
+                if(Vc(RHO,k,j,i) < 1e-8) {
+                  real T= Vc(PRS,k,j,i)/Vc(RHO,k,j,i);
+                  Vc(RHO,k,j,i)=1e-8;
+                  Vc(PRS,k,j,i)=T*Vc(RHO,k,j,i);
+                }
+                /*
+                  real R = x1(i)*sin(x2(j));
+                  if(R<1.0) {
+                      Vc(VX1,k,j,i) = ZERO_F;
+                      Vc(VX2,k,j,i) = ZERO_F;
+                      Vc(VX3,k,j,i) = R;
+                  }*/
               });
 
 }
@@ -201,8 +246,10 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Hydro &hydro) {
     hydro.EnrollUserDefBoundary(&UserdefBoundary);
     hydro.EnrollGravPotential(&Potential);
     hydro.EnrollAmbipolarDiffusivity(&Ambipolar);
+    hydro.EnrollOhmicDiffusivity(&Resistivity);
     hydro.EnrollUserSourceTerm(&MySourceTerm);
     hydro.EnrollInternalBoundary(&InternalBoundary);
+    hydro.EnrollEmfBoundary(&EmfBoundary);
     hydro.SetGamma(1.05);
     gammaGlob=hydro.GetGamma();
     epsilonGlob = input.GetReal("Setup","epsilon",0);

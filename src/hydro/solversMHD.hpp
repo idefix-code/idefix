@@ -150,7 +150,11 @@ KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real &Vc_RHO, ARG_EXPAND(real &Vc_VX1, 
     
     // Check pressure positivity
     if(Vc_PRS<= ZERO_F) {
+        #ifdef SMALL_PRESSURE_TEMPERATURE
+        Vc_PRS = SMALL_PRESSURE_TEMPERATURE*Vc_RHO;
+        #else
         Vc_PRS = SMALL_PRESSURE_FIX;
+        #endif
         Uc_ENG = Vc_PRS/gamma_m1+kin+mag;
     }
 #endif  // Have_energy

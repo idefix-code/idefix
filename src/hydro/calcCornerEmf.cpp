@@ -271,6 +271,8 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
 
                 });
 #endif
+
+    if(haveEmfBoundary) emfBoundaryFunc(data,t);
 #endif // MHD
     idfx::popRegion();
 }

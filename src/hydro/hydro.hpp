@@ -37,6 +37,7 @@ using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side, c
 using GravPotentialFunc = void (*) (DataBlock &, const real t, IdefixArray1D<real>&, IdefixArray1D<real>&, IdefixArray1D<real>&, IdefixArray3D<real> &);
 using SrcTermFunc = void (*) (DataBlock &, const real t, const real dt);
 using InternalBoundaryFunc = void (*) (DataBlock &, const real t);
+using EmfBoundaryFunc = void (*) (DataBlock &, const real t);
 using DiffusivityFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
 
 
@@ -81,6 +82,7 @@ public:
     // Enroll user-defined boundary conditions
     void EnrollUserDefBoundary(UserDefBoundaryFunc);
     void EnrollInternalBoundary(InternalBoundaryFunc);
+    void EnrollEmfBoundary(EmfBoundaryFunc);
 
     // Enroll user-defined gravitational potential
     void EnrollGravPotential(GravPotentialFunc);
@@ -119,6 +121,10 @@ private:
     // Internal boundary function
     bool haveInternalBoundary;
     InternalBoundaryFunc internalBoundaryFunc;
+
+    // Emf boundary conditions
+    bool haveEmfBoundary;
+    EmfBoundaryFunc emfBoundaryFunc;
 
     // User defined gravitational potential
     GravPotentialFunc gravPotentialFunc;

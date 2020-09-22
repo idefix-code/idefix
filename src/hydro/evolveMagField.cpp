@@ -36,7 +36,7 @@ void Hydro::EvolveMagField(DataBlock &data, real t, real dt) {
     IdefixArray1D<real> dx2=data.dx[JDIR];
     IdefixArray1D<real> dx3=data.dx[KDIR];
 
-
+    if(haveEmfBoundary) emfBoundaryFunc(data,t);
 
     idefix_for("EvolvMagField",data.beg[KDIR],data.end[KDIR]+KOFFSET,data.beg[JDIR],data.end[JDIR]+JOFFSET,data.beg[IDIR],data.end[IDIR]+IOFFSET,
                     KOKKOS_LAMBDA (int k, int j, int i) {

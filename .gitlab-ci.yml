@@ -3,7 +3,7 @@ image: python:3.7-alpine
 test:
   stage: test
   script:
-  - pip install -U sphinx
+  - pip install -U sphinx sphinx-rtd-theme
   - sphinx-build -b html doc/source public
   only:
   - branches
@@ -13,7 +13,7 @@ test:
 pages:
   stage: deploy
   script:
-  - pip install -U sphinx
+  - pip install -U sphinx sphinx-rtd-theme
   - sphinx-build -b html doc/source public
   artifacts:
     paths:

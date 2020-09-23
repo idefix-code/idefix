@@ -1,6 +1,6 @@
-===================
-Code configuration
-===================
+=====================
+General configuration
+=====================
 First, it is good practice to set the environment variable ``IDEFIX_DIR`` to the root path of your *Idefix* distribution, as it is needed at several stages. Setting up *Idefix* for a particular problem implies editing several files, some of which are automatically generated. There are essentially 4 files to a proper *Idefix* setup:
 
 ``definitions.hpp``
@@ -46,16 +46,17 @@ made to limit their number to a minimum. Each option is a C preprocessor directi
     Whether or not we solve the total energy equation. If defined, the code uses an ideal equation of state with the adiabatic index :math:`\gamma` set in the input file. Otherwise, the equation of state is isothermal.
 
 ``ORDER``
-    Spatial order of the reconstruction scheme. As of now, can be 1 (first order, donnor cell reconstruction) or 2 (second order, slope limited Van-leer linear reconstruction)
+    Spatial order of the reconstruction scheme. As of now, can be 1 (first order, donor cell reconstruction) or 2 (second order, slope limited Van-leer linear reconstruction)
 
 ``EMF_AVERAGE``
     Choose the type of cell corner EMF reconstruction scheme when using MHD. Can be either ``ARITHMETIC``, ``UCT0`` or ``UCT_CONTACT``, following the definition of Gardiner & Stone (2005).
 
-Code configuration
-==================
+Creating the Makefile
+=====================
 
 Because the code can be configured for many architectures, it relies on a python configuration script ``$IDEFIX_DIR/configure.py`` to generate the makefile needed. This script accepts
 many options to adapt the generated makefile to the architecture on which one wants to run. A complete list of options can be obtained by running ``$IDEFIX_DIR/configure.py -h``. These options are:
+
 ``-h, --help``
     Display the help message and exit
 ``-mhd``

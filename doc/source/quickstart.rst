@@ -62,7 +62,7 @@ Finally, we compile and run the code::
     make -j 8
     ./idefix
     
-This test being one dimensional, it runs very fast. We can check that the final solution match the prediction of the sock tube problem. To this end, we go to the python
+This test being one dimensional, it runs very fast. We can check that the final solution match the prediction of the shock tube problem. To this end, we go to the python
 subdirectory and run the test::
 
     cd python

@@ -10,9 +10,9 @@ Idefix code documentation
 About *Idefix*
 =================
 *Idefix* is designed to be a performance-portable astrophysical code. This means that it can run both on your laptop's cpu or on the largest GPU HPCs recently
-bought by your university. More technically, *Idefix* can run in serial, use OpenMP and/or MPI (message passing interface) for parralelisation, and use CUDA or Xeon-Phi for
+bought by your university. More technically, *Idefix* can run in serial, use OpenMP and/or MPI (message passing interface) for parallelization, and use CUDA or Xeon-Phi for
 out of chip acceleration. Of course, all these capabilities are embedded within one single code, so the code relies on relatively abstracted classes and objects available in C++ 11, which are not necessarily
-familiar to astrophysicst. A large effort has been devoted to simplify this level of abstraction so that the code can be modified by researchers and students familiar with C and who are aware of basic object-oriented concepts.
+familiar to astrophysicists. A large effort has been devoted to simplify this level of abstraction so that the code can be modified by researchers and students familiar with C and who are aware of basic object-oriented concepts.
 
 In order to ease the transition from more common codes, *Idefix* has been designed to be very close to the PLUTO code. Several of the data structures have identical names, input files are very similar and the numerical integration
 algorithm is essentially the same (but with some major modification to its structure). Hence, your favourite PLUTO setup can be converted into an *Idefix* setup within a couple of hours.

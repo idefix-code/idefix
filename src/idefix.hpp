@@ -38,6 +38,8 @@ using Layout = Kokkos::LayoutRight;
 #define     YES     255
 #define     NO      0
 
+#define     SMALL_NUMBER      (1e-10)
+
 #ifndef MHD
 #warning MHD flag should be set to yes or no explicitly. I will assume MHD is enabled.
 #define MHD  YES

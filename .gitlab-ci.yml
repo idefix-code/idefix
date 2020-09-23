@@ -1,0 +1,23 @@
+image: python:3.7-alpine
+
+test:
+  stage: test
+  script:
+  - pip install -U sphinx
+  - sphinx-build -b html doc/source public
+  only:
+  - branches
+  except:
+  - master
+
+pages:
+  stage: deploy
+  script:
+  - pip install -U sphinx
+  - sphinx-build -b html doc/source public
+  artifacts:
+    paths:
+    - public
+  only:
+  - master
+

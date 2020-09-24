@@ -70,9 +70,18 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real t, real dt) {
                   if(needPotential) Flux(ENG, k, j, i) += Flux(RHO, k, j, i) * phiP(k,j,i) ;  // Potential at the cell face
                 #endif
 
+                real Ax = A(k,j,i);
+                
+                #if GEOMETRY != CARTESIAN
+                    if(Ax<SMALL_NUMBER) Ax=SMALL_NUMBER;    // Essentially to avoid singularity around poles
+                #endif
 
                 for(int nv = 0 ; nv < NVAR ; nv++) {
-                    Flux(nv,k,j,i) = Flux(nv,k,j,i) * A(k,j,i);
+                    Flux(nv,k,j,i) = Flux(nv,k,j,i) * Ax;
+                    /*if(Flux(nv,k,j,i)!=Flux(nv,k,j,i)) {
+                        printf("Shit Flux at dir=%d var=%d (%d,%d)\n",dir,nv,i,j);
+                        exit(1);
+                    }*/
                 }
 
                 
@@ -82,7 +91,7 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real t, real dt) {
                     if(dir==IDIR) {
                         Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(x1m(i));   // Conserve angular momentum, hence flux is R*Bphi
                         #if MHD == YES
-                        Flux(iBPHI,k,j,i) = Flux(iBPHI,k,j,i) / A(k,j,i);   // No area for this one
+                        Flux(iBPHI,k,j,i) = Flux(iBPHI,k,j,i) / Ax;   // No area for this one
                         #endif // MHD
                     }
                 #endif // GEOMETRY==POLAR OR CYLINDRICAL
@@ -94,8 +103,8 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real t, real dt) {
                         #endif // COMPONENTS == 3
                         #if MHD == YES
                             EXPAND(                                            ,
-                                Flux(iBTH,k,j,i)  = Flux(iBTH,k,j,i) * x1m(i) / A(k,j,i);  ,
-                                Flux(iBPHI,k,j,i) = Flux(iBPHI,k,j,i) * x1m(i) / A(k,j,i); )
+                                Flux(iBTH,k,j,i)  = Flux(iBTH,k,j,i) * x1m(i) / Ax;  ,
+                                Flux(iBPHI,k,j,i) = Flux(iBPHI,k,j,i) * x1m(i) / Ax; )
                         #endif // MHD
                     }
                        
@@ -103,7 +112,7 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real t, real dt) {
                         #if COMPONENTS == 3  
                             Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(sm(j));
                             #if MHD == YES
-                                Flux(iBPHI,k,j,i) = Flux(iBPHI,k,j,i)  / A(k,j,i);
+                                Flux(iBPHI,k,j,i) = Flux(iBPHI,k,j,i)  / Ax;
                             #endif // MHD
                         #endif // COMPONENTS = 3
                     }
@@ -180,8 +189,12 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real t, real dt) {
                 D_EXPAND( if(nv == BX1) continue;   ,
                           if(nv == BX2) continue;   ,
                           if(nv == BX3) continue;  ) 
-                
-
+                /*
+                if(rhs[nv]!=rhs[nv]) {
+                    printf("Wrong Riemann RHS for var %d in dir=%d\n",nv,dir);
+                    exit(1);
+                }
+		*/
                 Uc(nv,k,j,i) = Uc(nv,k,j,i) + rhs[nv];
             }
 

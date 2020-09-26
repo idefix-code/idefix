@@ -108,7 +108,14 @@ void MySourceTerm(DataBlock &data, const real t, const real dtin) {
                 real Ptarget = cs2*Vc(RHO,k,j,i);
 
                 Uc(ENG,k,j,i) += -dt*(Vc(PRS,k,j,i)-Ptarget)/(tau*gamma_m1);
-              });
+
+		// Velocity relaxation
+		if(R<1.5) {
+			Uc(MX1,k,j,i) += -dt/tauGlob*(Vc(VX1,k,j,i)*Vc(RHO,k,j,i));
+			Uc(MX2,k,j,i) += -dt/tauGlob*(Vc(VX2,k,j,i)*Vc(RHO,k,j,i));
+		}
+
+});
 
 
 }
@@ -119,14 +126,14 @@ void EmfBoundary(DataBlock& data, const real t) {
         IdefixArray3D<real> Ex2 = data.emf.ey;
         IdefixArray3D<real> Ex3 = data.emf.ez;
         int ighost = data.nghost[IDIR];
-        
+
         idefix_for("EMFBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,ighost+1,
                     KOKKOS_LAMBDA (int k, int j, int i) {
             Ex3(k,j,i) = ZERO_F;
         });
     }
 }
-    
+
 void InternalBoundary(DataBlock& data, const real t) {
   IdefixArray4D<real> Vc = data.Vc;
   IdefixArray4D<real> Vs = data.Vs;
@@ -140,7 +147,7 @@ void InternalBoundary(DataBlock& data, const real t) {
                 real b2=EXPAND(Vc(BX1,k,j,i)*Vc(BX1,k,j,i) , +Vc(BX2,k,j,i)*Vc(BX2,k,j,i), +Vc(BX3,k,j,i)*Vc(BX3,k,j,i) ) ;
                 real va2=b2/Vc(RHO,k,j,i);
                 real myMax=vAmax;
-                if(x1(i)<1.1) myMax=myMax/50.0;
+                //if(x1(i)<1.1) myMax=myMax/50.0;
                 if(va2>myMax*myMax) {
                   real T = Vc(PRS,k,j,i)/Vc(RHO,k,j,i);
                   Vc(RHO,k,j,i) = b2/(myMax*myMax);
@@ -184,7 +191,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 			                   else Vc(VX1,k,j,i) = Vc(VX1,k,j,ighost);
                         Vc(VX2,k,j,i) = Vc(VX2,k,j,ighost);
                         Vc(VX3,k,j,i) = R*Omega;
-                        Vs(BX2s,k,j,i) = ZERO_F;
+                        Vs(BX2s,k,j,i) = Vs(BX2s,k,j,ighost);
                         Vc(BX3,k,j,i) = ZERO_F;
 
                     });
@@ -246,7 +253,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Hydro &hydro) {
     hydro.EnrollUserDefBoundary(&UserdefBoundary);
     hydro.EnrollGravPotential(&Potential);
     hydro.EnrollAmbipolarDiffusivity(&Ambipolar);
-    hydro.EnrollOhmicDiffusivity(&Resistivity);
+    //hydro.EnrollOhmicDiffusivity(&Resistivity);
     hydro.EnrollUserSourceTerm(&MySourceTerm);
     hydro.EnrollInternalBoundary(&InternalBoundary);
     hydro.EnrollEmfBoundary(&EmfBoundary);
@@ -305,9 +312,9 @@ void Setup::InitFlow(DataBlock &data) {
                 d.Vc(VX1,k,j,i) = ZERO_F;
                 d.Vc(VX2,k,j,i) = ZERO_F;
 
-                if(d.Vc(RHO,k,j,i) < 1e-6) {
+                if(d.Vc(RHO,k,j,i) < 1e-9) {
                   real T2=d.Vc(PRS,k,j,i)/d.Vc(RHO,k,j,i);
-                  d.Vc(RHO,k,j,i) = 1e-6;
+                  d.Vc(RHO,k,j,i) = 1e-9;
                   d.Vc(PRS,k,j,i) = T2*d.Vc(RHO,k,j,i);
                 }
 

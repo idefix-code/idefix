@@ -106,12 +106,12 @@ void DataBlockHost::MakeVsFromAmag(IdefixHostArray4D<real> &Ain) {
             for(int i = data->beg[IDIR] ; i < data->end[IDIR] +IOFFSET; i++) {
                 #if GEOMETRY == CARTESIAN
                     Vs(BX1s,k,j,i) = D_EXPAND( ZERO_F                                     ,
-                                                      1/dx2(j) * (Ain(KDIR,k,j+1,i) - Ain(KDIR,k,j,i) )  ,
+                                                    +  1/dx2(j) * (Ain(KDIR,k,j+1,i) - Ain(KDIR,k,j,i) )  ,
                                                     - 1/dx3(k) * (Ain(JDIR,k+1,j,i) - Ain(JDIR,k,j,i) ) );
                     #if DIMENSIONS >= 2
                     Vs(BX2s,k,j,i) =  D_EXPAND( - 1/dx1(i) * (Ain(KDIR,k,j,i+1) - Ain(KDIR,k,j,i) )  ,
                                                                                                     ,
-                                                  1/dx3(k) * (Ain(IDIR,k+1,j,i) - Ain(IDIR,k,j,i) ) );
+                                                 + 1/dx3(k) * (Ain(IDIR,k+1,j,i) - Ain(IDIR,k,j,i) ) );
                     #endif
                     #if DIMENSIONS == 3
                     Vs(BX3s,k,j,i) =   1/dx1(i) * (Ain(JDIR,k,j,i+1) - Ain(JDIR,k,j,i) )  
@@ -123,7 +123,7 @@ void DataBlockHost::MakeVsFromAmag(IdefixHostArray4D<real> &Ain) {
                 #endif
                 #if GEOMETRY == POLAR
                     Vs(BX1s,k,j,i) = D_EXPAND( ZERO_F                                     ,
-                                                      1/(x1m(i)*dx2(j)) * (Ain(KDIR,k,j+1,i) - Ain(KDIR,k,j,i) )  ,
+                                                    +  1/(x1m(i)*dx2(j)) * (Ain(KDIR,k,j+1,i) - Ain(KDIR,k,j,i) )  ,
                                                     - 1/dx3(k) * (Ain(JDIR,k+1,j,i) - Ain(JDIR,k,j,i) ) );
 
                     Vs(BX2s,k,j,i) =  D_EXPAND( - 1/dx1(i) * (Ain(KDIR,k,j,i+1) - Ain(KDIR,k,j,i) )  ,

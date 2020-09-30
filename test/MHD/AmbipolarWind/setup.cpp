@@ -121,15 +121,32 @@ void MySourceTerm(DataBlock &data, const real t, const real dtin) {
 }
 
 void EmfBoundary(DataBlock& data, const real t) {
+    IdefixArray3D<real> Ex1 = data.emf.ex;
+    IdefixArray3D<real> Ex2 = data.emf.ey;
+    IdefixArray3D<real> Ex3 = data.emf.ez;
     if(data.lbound[IDIR] == userdef) {
-        IdefixArray3D<real> Ex1 = data.emf.ex;
-        IdefixArray3D<real> Ex2 = data.emf.ey;
-        IdefixArray3D<real> Ex3 = data.emf.ez;
+
         int ighost = data.nghost[IDIR];
 
         idefix_for("EMFBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,ighost+1,
                     KOKKOS_LAMBDA (int k, int j, int i) {
             Ex3(k,j,i) = ZERO_F;
+        });
+    }
+    if(data.lbound[JDIR] == userdef) {
+        int jghost = data.nghost[JDIR];
+        //printf("I'mbeing called\n");
+        idefix_for("EMFBoundary",0,data.np_tot[KDIR],0,data.np_tot[IDIR],
+                    KOKKOS_LAMBDA (int k, int i) {
+            Ex3(k,jghost,i) = ZERO_F;
+        });
+    }
+    if(data.rbound[JDIR] == userdef) {
+        int jghost = data.end[JDIR];
+        //printf("I'mbeing called\n");
+        idefix_for("EMFBoundary",0,data.np_tot[KDIR],0,data.np_tot[IDIR],
+                    KOKKOS_LAMBDA (int k, int i) {
+            Ex3(k,jghost,i) = ZERO_F;
         });
     }
 }

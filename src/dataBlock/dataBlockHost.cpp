@@ -42,6 +42,11 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
         this->haveCurrent = datain.haveCurrent;
         J = Kokkos::create_mirror_view(data->J);
     }
+    D_EXPAND( Ex3 = Kokkos::create_mirror_view(data->emf.ez);    ,
+                                                               ,
+              Ex1 = Kokkos::create_mirror_view(data->emf.ex);
+              Ex2 = Kokkos::create_mirror_view(data->emf.ey); )
+
 #endif
     
 
@@ -69,6 +74,10 @@ void DataBlockHost::SyncToDevice() {
 #if MHD == YES
     Kokkos::deep_copy(data->Vs,Vs);
     if(this->haveCurrent && data->haveCurrent) Kokkos::deep_copy(data->J,J);
+    D_EXPAND( Kokkos::deep_copy(data->emf.ez,Ex3);   ,
+                                                    ,
+              Kokkos::deep_copy(data->emf.ex,Ex1);
+              Kokkos::deep_copy(data->emf.ey,Ex2);)
 #endif
     Kokkos::deep_copy(data->Uc,Uc);
 
@@ -82,6 +91,11 @@ void DataBlockHost::SyncFromDevice() {
 #if MHD == YES
     Kokkos::deep_copy(Vs,data->Vs);
     if(this->haveCurrent && data->haveCurrent) Kokkos::deep_copy(J,data->J);
+
+    D_EXPAND( Kokkos::deep_copy(Ex3,data->emf.ez);   ,
+                                                    ,
+              Kokkos::deep_copy(Ex1,data->emf.ex);
+              Kokkos::deep_copy(Ex2,data->emf.ey);)
 #endif
     Kokkos::deep_copy(Uc,data->Uc);
 

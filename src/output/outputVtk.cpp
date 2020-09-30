@@ -24,6 +24,8 @@
 // Wheter or not we want the electrical current in vtk outputs (this is only defined if hydro requires it)
 #define WRITE_CURRENT
 
+// Whether of not we want to write EMFs
+#define WRITE_EMF
 /* ---------------------------------------------------------
     The following macros are specific to this file only 
     and are used to ease up serial/parallel implementation
@@ -225,6 +227,39 @@ int OutputVTK::Write(DataBlock &datain, real t)
         }
     }
 #endif // WRITE_CURRENT
+#ifdef WRITE_EMF
+            for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++ ) {
+                for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++ ) {
+                    for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
+                        vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc+  (k-data.beg[KDIR])*nx1loc*nx2loc] = BigEndian(float(data.Ex3(k,j,i)));
+                    }
+                }
+            }
+            std::string varname = "EX3";
+            WriteScalar(fileHdl, vect3D, varname);
+        #if DIMENSIONS == 3
+            for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++ ) {
+                for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++ ) {
+                    for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
+                        vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc+  (k-data.beg[KDIR])*nx1loc*nx2loc] = BigEndian(float(data.Ex1(k,j,i)));
+                    }
+                }
+            }
+            varname = "EX1";
+            WriteScalar(fileHdl, vect3D, varname);
+
+            for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++ ) {
+                for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++ ) {
+                    for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
+                        vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc+  (k-data.beg[KDIR])*nx1loc*nx2loc] = BigEndian(float(data.Ex2(k,j,i)));
+                    }
+                }
+            }
+            varname = "EX2";
+            WriteScalar(fileHdl, vect3D, varname);
+        #endif // DIMENSIONS
+        
+#endif // WRITE_EMF
 
 #endif// MHD
 

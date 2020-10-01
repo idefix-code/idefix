@@ -26,12 +26,14 @@ using Layout = Kokkos::LayoutRight;
 
 // Hopefully a master switch which detects which loop is needed on the architecture
 
+
 #ifdef KOKKOS_ENABLE_CUDA
 #define INDEX_LOOP
 #else
 #define TP_INNERX_LOOP
 //#define SIMD_LOOP
 #endif
+
 
 #define USE_DOUBLE
 

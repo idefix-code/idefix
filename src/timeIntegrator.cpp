@@ -16,7 +16,7 @@ TimeIntegrator::TimeIntegrator(Input & input, Hydro &physics) {
     this->lastLog=timer.seconds();
 
     nstages=input.GetInt("TimeIntegrator","nstages",0);
-    
+
     dt=input.GetReal("TimeIntegrator","first_dt",0);
 
     t=0.0;
@@ -40,8 +40,8 @@ TimeIntegrator::TimeIntegrator(Input & input, Hydro &physics) {
         wc[1] = 2.0/3.0;
         w0[1] = 1.0/3.0;
     }
-    
-    
+
+
 
     idfx::popRegion();
 
@@ -53,7 +53,7 @@ Hydro& TimeIntegrator::GetHydro() {
 
 // Compute one Stage of the time Integrator
 void TimeIntegrator::Stage(DataBlock &data) {
-    
+
     idfx::pushRegion("TimeIntegrator::Stage");
     // Apply Boundary conditions
     hydro->SetBoundary(data,t);
@@ -72,7 +72,7 @@ void TimeIntegrator::Stage(DataBlock &data) {
         // Step 2: compute the intercell flux with our Riemann solver, store the resulting InvDt
         hydro->CalcRiemannFlux(data, dir, t);
 
-        
+
         // Step 2.5: compute intercell parabolic flux when needed
         if(hydro->haveParabolicTerms) hydro->CalcParabolicFlux(data, dir, t);
 
@@ -92,8 +92,6 @@ void TimeIntegrator::Stage(DataBlock &data) {
 #endif
     // Convert back into primitive variables
     hydro->ConvertConsToPrim(data);
-
-    if(data.CheckNan()>0) IDEFIX_ERROR("Nan found after integration cycle");
 
     idfx::popRegion();
 }
@@ -128,7 +126,7 @@ void TimeIntegrator::Cycle(DataBlock & data) {
     if(ncycles%cyclePeriod==0) {
         double rawperf = (timer.seconds()-lastLog)/(data.mygrid->np_int[IDIR]*data.mygrid->np_int[JDIR]*data.mygrid->np_int[KDIR]*cyclePeriod);
         lastLog = timer.seconds();
-        
+
         idfx::cout << "TimeIntegrator: t=" << t << " Cycle " << ncycles << " dt=" << dt << std::endl;
         if(ncycles>=cyclePeriod) idfx::cout << "\t " << 1/rawperf << " cell updates/second" << std::endl;
         #if MHD == YES
@@ -152,6 +150,9 @@ void TimeIntegrator::Cycle(DataBlock & data) {
         // Update Vc & Vs
         Stage(data);
 
+        // Look for Nans every now and then (this actually cost a lot of time on GPUs because streams are divergent)
+        if(ncycles%100==0) if(data.CheckNan()>0) IDEFIX_ERROR("Nan found after integration cycle");
+        
         // Compute next time_step during first stage
         if(stage==0) {
             Kokkos::parallel_reduce("Timestep_reduction",
@@ -163,11 +164,11 @@ void TimeIntegrator::Cycle(DataBlock & data) {
 
             }, Kokkos::Min<real>(newdt) );
             Kokkos::fence();
-            
+
             newdt=newdt*cfl;
         #ifdef WITH_MPI
             if(idfx::psize>1) {
-                
+
                 MPI_SAFE_CALL(MPI_Allreduce(MPI_IN_PLACE, &newdt, 1, realMPI, MPI_MIN, MPI_COMM_WORLD));
             }
         #endif
@@ -195,7 +196,7 @@ void TimeIntegrator::Cycle(DataBlock & data) {
     // Update current time
     t=t+dt;
 
-    
+
     // Next time step
     if(newdt>1.1*dt) {
         dt=1.1*dt;
@@ -203,7 +204,7 @@ void TimeIntegrator::Cycle(DataBlock & data) {
     else dt=newdt;
 
     ncycles++;
-    
+
     idfx::popRegion();
 }
 
@@ -217,7 +218,7 @@ real TimeIntegrator::getT() {
 
 void TimeIntegrator::setDt(real dtin) {
     dt=dtin;
-} 
+}
 
 long int TimeIntegrator::getNcycles() {
     return(ncycles);

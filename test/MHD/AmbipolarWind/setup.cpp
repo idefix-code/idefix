@@ -43,7 +43,7 @@ void Ambipolar(DataBlock& data, real t, IdefixArray3D<real> &xAin) {
   idefix_for("Ambipolar",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
               KOKKOS_LAMBDA (int k, int j, int i) {
                 real z=x1(i)*cos(x2(j));
-                real R=FMAX(FABS(x1(i)*cos(x2(j))),ONE_F);
+                real R=FMAX(FABS(x1(i)*sin(x2(j))),ONE_F);
                 real Omega=pow(R,-1.5);
 
                 real q = z/(Hideal*R*epsilon);
@@ -111,8 +111,8 @@ void MySourceTerm(DataBlock &data, const real t, const real dtin) {
 
 		// Velocity relaxation
 		if(R<1.5) {
-			Uc(MX1,k,j,i) += -dt/tauGlob*(Vc(VX1,k,j,i)*Vc(RHO,k,j,i));
-			Uc(MX2,k,j,i) += -dt/tauGlob*(Vc(VX2,k,j,i)*Vc(RHO,k,j,i));
+			Uc(MX1,k,j,i) += -dt*(Vc(VX1,k,j,i)*Vc(RHO,k,j,i));
+			Uc(MX2,k,j,i) += -dt*(Vc(VX2,k,j,i)*Vc(RHO,k,j,i));
 		}
 
 });
@@ -195,13 +195,12 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
         IdefixArray1D<real> x2 = data.x[JDIR];
 
         int ighost = data.nghost[IDIR];
-
+        real Omega=1.0;
         idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,ighost,
                     KOKKOS_LAMBDA (int k, int j, int i) {
                         real R=x1(i)*sin(x2(j));
                         real z=x1(i)*cos(x2(j));
 
-                        real Omega=R;
                         Vc(RHO,k,j,i) = Vc(RHO,k,j,ighost);
                         Vc(PRS,k,j,i) = Vc(PRS,k,j,ighost);
                         if(Vc(VX1,k,j,ighost)>=ZERO_F) Vc(VX1,k,j,i) = - Vc(VX1,k,j,2*ighost-i);

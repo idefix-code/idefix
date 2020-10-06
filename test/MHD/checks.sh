@@ -3,7 +3,7 @@
 rep_list="sod AmbipolarCshock HallWhistler OrszagTang"
 
 cwd=$(pwd)
-IDEFIX_DIR=$cwd/../..
+export IDEFIX_DIR=$cwd/../..
 echo $IDEFIX_DIR
 
 set -e

@@ -19,8 +19,8 @@ First, it is good practice to set the environment variable ``IDEFIX_DIR`` to the
 
 Usually, one starts a new project by copying an example from the test suite of idefix in ``$IDEFIX_DIR/test``. From there, one modifies the setup for the particular problem at hand.
 
-Problem header file
-===================
+Problem header file ``definitions.hpp``
+=======================================
 The problem header file ``definitions.hpp`` contains major parameters which strongly affect the code structure. For this reason, they require re-compilation. A particular effort has been
 made to limit their number to a minimum. Each option is a C preprocessor directive. The available options are listed below
 
@@ -42,8 +42,8 @@ made to limit their number to a minimum. Each option is a C preprocessor directi
      + ``SPHERICAL``: spherical frame :math:`(x_1,x_2,x_3)=(R,\theta,\phi)` which can be used in 1D, 2D or 3D.
 
 
-``HAVE_ENERGY``
-    Whether or not we solve the total energy equation. If defined, the code uses an ideal equation of state with the adiabatic index :math:`\gamma` set in the input file. Otherwise, the equation of state is isothermal.
+``ISOTHERMAL``
+    If ISOTHERMAL is defined, then the code does not solve the energy equation and instead assume a globally isothermal flow. Otherwise, the flow is assumed to be adiabatic.
 
 ``ORDER``
     Spatial order of the reconstruction scheme. As of now, can be 1 (first order, donor cell reconstruction) or 2 (second order, slope limited Van-leer linear reconstruction)
@@ -77,12 +77,74 @@ many options to adapt the generated makefile to the architecture on which one wa
 ``-mpi``
     Enable MPI (message passing interface) when available. Note that this option can be used in conjonction with -gpu to run idefix simultaneously on several GPUs. This feature requires a CUDA-aware installation of MPI, such as OpenMPI.
 
-Problem Setup
-=============
+Problem Setup ``setup.cpp``
+===========================
 
 
-Problem input file
-==================
+Problem input file ``idefix.ini``
+=================================
+
+The problem input file is by default named ``idefix.ini``. It is possible to start idefix with an other input file using the `-i` command line option.
+
+The problem input file is read when *Idefix* starts. It is splitted into several sections, each section name corresponding to a C++ class in Idefix structure. Inside each section, each line defines an entry, which can have has many parameters as one wish
+(note that it requires at least one parameter). The input file
+allows for comments, which should start with ``#``.
+
+.. tip::
+    Note that you can add arbitray sections and entries in the input file freely. *Idefix* will automatically read and store them on startup. They are then accessible in the code using the
+    ``Input::GetReal(..)``, ``Input::GetInt(...)`` and ``Input::GetString(..)`` methods defined in the ``Input`` class.
+
+The ``Grid`` section
+--------------------
+The grid section defines the grid total dimension. It consists of 3 entries ``X1-grid``, ``X2-grid`` and ``X3-grid``. Each entry defines the repartition of the grid point in the corresponding direction (the grid is always rectilinear).
+Each entry defines a series of grid blocks, which can have various spacing. The definition of the grid points is as follows
+
++-------------+-------------+---------------------+--------------------------+---------------------------------+---------------------------------+----------------------------------------------+-----+---------------------+
+|             | Entry name  |   number of blocks  |  begining of first block | number of points in first block | grid spacing in first block     | end of first block/beginning of second block | ... | end of nth block    |
++=============+=============+=====================+==========================+=================================+=================================+==============================================+=====+=====================+
+|             | X1/2/3-Grid |  integer number >= 1| floating point           | integer                         | can be u, l+, l-, s             |  floating point                              | ... | floating point      |
++-------------+-------------+---------------------+--------------------------+---------------------------------+---------------------------------+----------------------------------------------+-----+---------------------+
+| Example     | X1-Grid     |  1                  |  0.0                     | 64                              |  u                              | 1.0                                          |     |                     |
++-------------+-------------+---------------------+--------------------------+---------------------------------+---------------------------------+----------------------------------------------+-----+---------------------+
+
+In the example above, we define in ``X1`` direction a uniform grid of 64 points starting at ``X1=0.0`` and ending at ``X1=1.0``. The grid spacing can be either uniform (``u``), increasing or decreasing logarithmically (``l+``/``l-``) or stretched (``s``).
+
+.. warning::
+    As of version 0.4, *Idefix* supports only one single uniform block in each direction.
+
+
+The ``TimeIntegrator`` section
+------------------------------
+
+This section is used by *Idefix* time integrator class to define the time integrator method and related variables. The entries of this section are as followed
+
+
++----------------+--------------------+------------------------------------------------+
+|  Entry name    | Parameter type     | Comment                                        |
++================+====================+================================================+
+| CFL            | float              | CFL number. Should be < 1 to ensure stability  |
++----------------+--------------------+------------------------------------------------+
+| CFL_max_var    | float              | fraction by which dt is allowed to increase    |
+|                |                    | between two successive timesteps               |
++----------------+--------------------+------------------------------------------------+
+| tstop          | float              | time when the code stops                       |
++----------------+--------------------+------------------------------------------------+
+| first_dt       | float              | first timestep used by the integrator          |
++----------------+--------------------+------------------------------------------------+
+| nstages        | integer            | number of stages of the integrator. Can be     |
+|                |                    | either 1, 2 or 3. 1=First order Euler method   |
+|                |                    | 2, 3= second and third order TVD Runge-Kutta   |
++----------------+--------------------+------------------------------------------------+
+
+.. note::
+    The ``first_dt`` is necessary since wave speeds are evaluated when Riemann problems are solved, hence the CFL
+    condition can only be evaluated after the first timestep.
+
+.. warning::
+    As of version 0.4, *Idefix* ignores ``CFL_max_var``, which is by default set to 1.1.
+
+Command line options
+====================
 
 
 Migrating from PLUTO

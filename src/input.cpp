@@ -39,22 +39,22 @@ Input::Input() {
 // Blockname should refer to one of Idefix class which will use the parameters in said block
 // Everything is stored in a map of maps of vectors of strings :-)
 
-Input::Input(std::string filename, int argc, char* argv[] ) {
+Input::Input(int argc, char* argv[] ) {
     std::ifstream file;
     std::string line, lineWithComments, blockName, paramName, paramValue;
     std::size_t firstChar, lastChar;
     bool haveBlock = false;
     std::stringstream msg;
 
+    // Default input file name
+    this->inputFileName = std::string("idefix.ini");
+
     Input::ParseCommandLine(argc,argv);
 
-    try
-    {
-        file.open(filename);
-    }
-    catch(...)
-    {
-        msg << "Input constructor cannot open file " << filename;
+    file.open(this->inputFileName);
+
+    if(!file) {
+        msg << "Input constructor cannot open input file " << this->inputFileName;
         IDEFIX_ERROR(msg);
     }
 
@@ -70,7 +70,7 @@ Input::Input(std::string filename, int argc, char* argv[] ) {
             lastChar = (line.find_first_of("]", firstChar));
 
             if (lastChar == std::string::npos) {
-                msg << "Block name '" << blockName << "' in file '" << filename << "' not properly ended";
+                msg << "Block name '" << blockName << "' in file '" << this->inputFileName << "' not properly ended";
                 IDEFIX_ERROR(msg);
             }
             blockName.assign(line, firstChar, lastChar-1);
@@ -81,7 +81,7 @@ Input::Input(std::string filename, int argc, char* argv[] ) {
 
         // At this point, we should have a parameter set in the line
         if(haveBlock == false) {
-            msg << "Input file '" << filename << "' must specify a block name before the first parameter";
+            msg << "Input file '" << this->inputFileName << "' must specify a block name before the first parameter";
             IDEFIX_ERROR(msg);
         }
 
@@ -123,6 +123,11 @@ void Input::ParseCommandLine(int argc, char **argv) {
             if((++i) >= argc) IDEFIX_ERROR("You must specify -restart n where n is the dump file number");
             inputParameters["CommandLine"]["restart"].push_back(std::string(argv[i]));
         }
+        if(std::string(argv[i]) == "-i") {   
+            // Loop on dimensions
+            if((++i) >= argc) IDEFIX_ERROR("You must specify -i filename where filename is the name of the input file.");
+            this->inputFileName = std::string(argv[i]);
+        }
         else {
             msg << "Unknown option " << argv[i];
             //IDEFIX_ERROR(msg);
@@ -135,7 +140,7 @@ void Input::ParseCommandLine(int argc, char **argv) {
 void Input::PrintParameters() {
     std::string blockName, paramName, paramValue;
     idfx::cout << "-----------------------------------------------------------------------------" << std::endl;
-    idfx::cout << "Input Parameters:" << std::endl;
+    idfx::cout << "Input Parameters using input file " << this->inputFileName << ":" << std::endl;
     idfx::cout << "-----------------------------------------------------------------------------" << std::endl;
     for(std::map<std::string, std::map<std::string, std::vector<std::string>>>::iterator block = inputParameters.begin(); block != inputParameters.end(); block++ ) {
         blockName=block->first;

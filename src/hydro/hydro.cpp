@@ -15,13 +15,23 @@ Hydro::Hydro(Input &input, Grid &grid) {
     idfx::pushRegion("Hydro::Hydro(input)");
 
     if(input.CheckEntry("Hydro","gamma")>0) this->gamma = input.GetReal("Hydro","gamma",0);
-    else this->gamma = 5.0/3.0;
+    else {
+        this->gamma = 5.0/3.0;
+        idfx::cout << "Hydro:: Warning! no gamma has been set in the input file, assuming gamma=5/3." << std::endl;
+    }
 
     if(input.CheckEntry("Hydro","csiso")>0) {
         real cs = input.GetReal("Hydro","csiso",0);
         this->C2Iso = cs*cs;
     }
-    else this->C2Iso = 1.0;
+    else {
+        #if HAVE_ENERGY
+            // set the isothermal soundspeed, even though it will not be used
+            this->C2Iso = 1.0;
+        #else
+            IDEFIX_ERROR("You are using the ISOTHERMAL approximation but have not set csiso in the ini file.");
+        #endif
+    }
     
     // read Solver from input file
     std::string solverString = input.GetString("Hydro","Solver",0);

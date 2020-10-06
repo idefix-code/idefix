@@ -9,8 +9,19 @@ import numpy as np
 from scipy.integrate import ode
 import matplotlib.pyplot as plt
 import idefixTools as idfx
+import argparse
+import sys
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-noplot",
+                    default=False,
+                    help="disable plotting",
+                    action="store_true")
 
 
+args=parser.parse_args()
+
+# Parameters from Maclow+ 1995
 theta=np.pi/4
 M=50
 b0=np.sin(theta)
@@ -28,7 +39,7 @@ def f(x,D):
     return(diff)
 
 # load solution
-V=idfx.readVTKCart('../data.0100.vtk')
+V=idfx.readVTKCart('../data.0001.vtk')
 
 DSim=V.data['RHO'].flatten()
 if(V.y.size>V.x.size):    
@@ -64,36 +75,43 @@ for i in range(x.size):
 
 bTh=np.sqrt(b0**2+2*A**2*(Dth-1)*(1/Dth-1/M**2))
 
-plt.close('all')
-plt.figure()
-plt.subplot(211)
-plt.plot(x[:iend]/L,bSim[:iend],'--',label='Sim')
-plt.plot(x[:iend]/L,bTh[:iend],label='Theoretical')
-plt.xlabel('x/L')
-plt.ylabel('b')
-plt.subplot(212)
 errb=(bSim[:iend]-bTh[:iend])/np.amax(bTh[:iend])
-plt.plot(x[:iend]/L,errb,'--',label='Error')
-plt.xlabel('x/L')
-plt.ylabel('b')
-plt.legend()
-
-plt.figure()
-plt.subplot(211)
-plt.plot(x[:iend]/L,DSim[:iend],label='Sim')
-plt.plot(x[:iend]/L,Dth[:iend],'--',label='Theoretical')
-plt.xlabel('x/L')
-plt.ylabel('D')
-plt.subplot(212)
 errD=(DSim[:iend]-Dth[:iend])/np.amax(Dth[:iend])
-plt.plot(x[:iend]/L,errD,'--',label='Error')
-plt.xlabel('x/L')
-plt.ylabel('D')
-plt.legend()
+
+if(not args.noplot):
+    plt.close('all')
+    plt.figure()
+    plt.subplot(211)
+    plt.plot(x[:iend]/L,bSim[:iend],'--',label='Sim')
+    plt.plot(x[:iend]/L,bTh[:iend],label='Theoretical')
+    plt.xlabel('x/L')
+    plt.ylabel('b')
+    plt.subplot(212)    
+    plt.plot(x[:iend]/L,errb,'--',label='Error')
+    plt.xlabel('x/L')
+    plt.ylabel('b')
+    plt.legend()
+
+    plt.figure()
+    plt.subplot(211)
+    plt.plot(x[:iend]/L,DSim[:iend],label='Sim')
+    plt.plot(x[:iend]/L,Dth[:iend],'--',label='Theoretical')
+    plt.xlabel('x/L')
+    plt.ylabel('D')
+    plt.subplot(212)
+    plt.plot(x[:iend]/L,errD,'--',label='Error')
+    plt.xlabel('x/L')
+    plt.ylabel('D')
+    plt.legend()
+    
+    plt.ioff()
+    plt.show()
 
 err=np.mean(0.5*np.sqrt(errb**2+errD**2))
 print("Error total=%e"%err)
 if(err<5e-3):
     print("Success!")
+    sys.exit(0)
 else:
     print("Failed!")
+    sys.exit(1)

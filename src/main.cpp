@@ -50,7 +50,7 @@ int main( int argc, char* argv[] )
     signal(SIGUSR2, signalHandler); 
     abortRequested=false; 
 
-    Input input = Input("idefix.ini", argc, argv);
+    Input input = Input(argc, argv);
     input.PrintLogo();
     input.PrintParameters();
 
@@ -64,20 +64,20 @@ int main( int argc, char* argv[] )
     gridHost.MakeGrid(input);
     gridHost.SyncToDevice();
 
-    idfx::cout << "Init Hydrodynamics." << std::endl;
+    idfx::cout << "Main::Init Hydrodynamics." << std::endl;
     Hydro hydro(input, grid);
 
-    idfx::cout << "Init Time Integrator." << std::endl;
+    idfx::cout << "Main::Init Time Integrator." << std::endl;
     TimeIntegrator Tint(input, hydro);
 
     // Make a datablock
     DataBlock data;
     data.InitFromGrid(grid, hydro, input);
 
-    idfx::cout << "Init Setup." << std::endl;
+    idfx::cout << "Main::Init Setup." << std::endl;
     Setup mysetup(input,grid,data,hydro);
 
-    idfx::cout << "init Output Routines." << std::endl;
+    idfx::cout << "Main::Onit Output Routines." << std::endl;
     OutputVTK outVTK(input, data, Tint.getT()); 
     OutputDump outDMP(input, data, Tint.getT());
     
@@ -86,20 +86,20 @@ int main( int argc, char* argv[] )
 
       // Are we restarting?
     if(input.CheckEntry("CommandLine","restart") > 0) {
-      idfx::cout << "Restarting from dump file"  << std::endl;
+      idfx::cout << "Main::Restarting from dump file"  << std::endl;
       outDMP.Read(grid,data,Tint,outVTK,input.GetInt("CommandLine","restart",0));
       hydro.SetBoundary(data,Tint.getT());
       outVTK.CheckForWrite(data,Tint.getT());
     }
     else {
-      idfx::cout << "Creating initial conditions." << std::endl;
+      idfx::cout << "Main::Creating initial conditions." << std::endl;
       mysetup.InitFlow(data);
       hydro.SetBoundary(data,Tint.getT());
       outDMP.CheckForWrite(grid, data, Tint, outVTK);
       outVTK.CheckForWrite(data,Tint.getT());
     }
 
-    idfx::cout << "Cycling Time Integrator..." << std::endl;
+    idfx::cout << "Main::Cycling Time Integrator..." << std::endl;
 
     Kokkos::Timer timer;
 
@@ -117,10 +117,10 @@ int main( int argc, char* argv[] )
       } 
     }
     double tintegration = (timer.seconds()/(grid.np_int[IDIR]*grid.np_int[JDIR]*grid.np_int[KDIR]*Tint.getNcycles()));
-    idfx::cout << "Reached t=" << Tint.getT() << std::endl;
-    idfx::cout << "Completed in " << timer.seconds() << "seconds and " << Tint.getNcycles() << " cycles. Perfs are " << 1/tintegration << " cell updates/second." << std::endl;
+    idfx::cout << "Main::Reached t=" << Tint.getT() << std::endl;
+    idfx::cout << "Main::Completed in " << timer.seconds() << "seconds and " << Tint.getNcycles() << " cycles. Perfs are " << 1/tintegration << " cell updates/second." << std::endl;
     
-    idfx::cout << "Job's done" << std::endl;
+    idfx::cout << "Main::Job's done" << std::endl;
   }
   Kokkos::finalize();
 #ifdef WITH_MPI    

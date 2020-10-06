@@ -8,10 +8,10 @@ Created on Thu Mar  5 11:29:41 2020
 
 import idefixTools as idfx
 import sod
-import sys
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
+import sys
 from scipy.interpolate import interp1d
 
 parser = argparse.ArgumentParser()
@@ -24,7 +24,7 @@ parser.add_argument("-noplot",
 args=parser.parse_args()
 
 V=idfx.readVTKCart('../data.0002.vtk')
-gamma = 1.4
+gamma = 1.00000000001
 npts = 5000
 
 # left_state and right_state set p, rho and u
@@ -33,7 +33,7 @@ npts = 5000
 # t is the time evolution for which positions and states in tube should be calculated
 # gamma denotes specific heat
 # note that gamma and npts are default parameters (1.4 and 500) in solve function
-positions, regions, values = sod.solve(left_state=(1, 1, 0), right_state=(0.1, 0.125, 0.),
+positions, regions, values = sod.solve(left_state=(1, 1, 0), right_state=(0.125, 0.125, 0.),
                                        geometry=(0., 1., 0.5), t=0.2, gamma=gamma, npts=npts)
 
 
@@ -44,7 +44,11 @@ u = values['u']
 x= values['x']
 
 
-solinterp=interp1d(x,p)
+solinterp=interp1d(x,u)
+
+error=np.mean(np.fabs((V.data['VX1'][:,0,0]-solinterp(V.x))))
+
+
 
 
 if(not args.noplot):
@@ -58,17 +62,11 @@ if(not args.noplot):
     plt.plot(V.x,V.data['VX1'][:,0,0],'+',markersize=2)
     plt.title('Velocity')
 
-    plt.figure(3)
-    plt.plot(x,p)
-    plt.plot(V.x,V.data['PRS'][:,0,0],'+',markersize=2)
-    plt.title('Pressure')
-
     plt.ioff()
     plt.show()
 
-error=np.mean(np.fabs(V.data['PRS'][:,0,0]-solinterp(V.x)))
 print("Error=%e"%error)
-if error<1e-2:
+if error<1e-1:
     print("SUCCESS!")
     sys.exit(0)
 else:

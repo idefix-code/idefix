@@ -16,7 +16,7 @@
 class Input {
 public:
     // Constructor from a file
-    Input (std::string, int, char ** );
+    Input (int, char ** );
     void PrintParameters();
 
     // Accessor to input parameters
@@ -28,7 +28,7 @@ public:
     Input();
     void PrintLogo();
 private:
-    
+    std::string inputFileName;
     std::map<std::string,std::map<std::string,std::vector<std::string>>>   inputParameters;
     void ParseCommandLine(int , char **argv);
 };

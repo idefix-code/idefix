@@ -63,6 +63,14 @@ using Layout = Kokkos::LayoutRight;
 #include "real_types.h"
 #include "definitions.hpp"
 
+// Check whether we're isothermal. If we're not, then we need to solve an energy equation
+#ifndef HAVE_ENERGY
+  #ifdef ISOTHERMAL
+    #define HAVE_ENERGY   0
+  #else
+    #define HAVE_ENERGY   1
+  #endif
+#endif
 
 // Shortcuts for fields used in the code
 

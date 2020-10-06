@@ -14,8 +14,19 @@ Created on Thu Sep  3 17:09:32 2020
 """
 import idefixTools as idfx
 import numpy as np
+import argparse
+import sys
 import matplotlib.pyplot as plt
 from scipy.signal import argrelextrema
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-noplot",
+                    default=False,
+                    help="disable plotting",
+                    action="store_true")
+
+
+args=parser.parse_args()
 
 rep='../'
 nend=1000
@@ -87,20 +98,26 @@ imax=argrelextrema(sp,np.greater,order=10)[0][0]
 f_wnum=f[imax]
 error=np.fabs(f_w-f_wnum)/f_w
 print("Theoretical whistler frequency=%g, numerical=%g, error=%g"%(f_w,f_wnum,error))
+
+
+if(not args.noplot):
+    plt.figure()
+    plt.loglog(f,sp,label='signal')
+    plt.loglog(f_w+0*r,r,'--',label='whistler')
+    plt.loglog(f_i+0*r,r,'-.',label='ion cyclotron')
+    plt.loglog(f_A+0*r,r,':',label='Alfven')
+    plt.xlabel('frequency')
+    plt.ylabel('By amplitude')
+    plt.legend()
+    
+    plt.ioff()
+    plt.show()
+    
+
+
 if(error<0.05):
     print("SUCCESS")
+    sys.exit(1)
 else:
     print("Failed")
-
-
-plt.figure()
-plt.loglog(f,sp,label='signal')
-plt.loglog(f_w+0*r,r,'--',label='whistler')
-plt.loglog(f_i+0*r,r,'-.',label='ion cyclotron')
-plt.loglog(f_A+0*r,r,':',label='Alfven')
-plt.xlabel('frequency')
-plt.ylabel('By amplitude')
-plt.legend()
-plt.show()
-
-
+    sys.exit(0)

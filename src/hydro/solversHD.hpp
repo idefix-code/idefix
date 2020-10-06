@@ -24,7 +24,7 @@ static KOKKOS_INLINE_FUNCTION void K_Flux(real &F_RHO, ARG_EXPAND(real &F_MX1, r
 #if HAVE_ENERGY
     F_MXn     = V_PRS;
 
-#elif EOS == ISOTHERMAL
+#else
     // Add back pressure in the flux
     F_MXn     = C2Iso * V_RHO;
 #endif

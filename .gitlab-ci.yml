@@ -1,6 +1,5 @@
 
 
-
 test:
   image: ubuntu:latest
 
@@ -24,8 +23,8 @@ test:
     - git submodule update
     - cd test
     - ./checks.sh
-  #only:
-  #- schedules
+  only:
+  - schedules
   #except:
   #- master
 

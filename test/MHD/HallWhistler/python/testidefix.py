@@ -117,7 +117,7 @@ if(not args.noplot):
 
 if(error<0.05):
     print("SUCCESS")
-    sys.exit(1)
+    sys.exit(0)
 else:
     print("Failed")
-    sys.exit(0)
+    sys.exit(1)

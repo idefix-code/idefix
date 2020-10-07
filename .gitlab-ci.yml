@@ -16,8 +16,8 @@ test:
   script:
     - cat /proc/cpuinfo
     - gcc --version
-    - pip install numpy
-    - pip install scipy
+    - pip3 install numpy
+    - pip3 install scipy
     - git submodule init
     - git submodule update
     - cd test
@@ -30,7 +30,7 @@ test:
 pages:
   stage: deploy
   script:
-  - pip install -U sphinx sphinx-rtd-theme
+  - pip3 install -U sphinx sphinx-rtd-theme
   - sphinx-build -b html doc/source public
   artifacts:
     paths:

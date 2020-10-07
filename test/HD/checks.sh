@@ -3,7 +3,7 @@
 rep_list="sod-iso sod"
 
 cwd=$(pwd)
-IDEFIX_DIR=$cwd/../..
+export IDEFIX_DIR=$cwd/../..
 echo $IDEFIX_DIR
 
 set -e
@@ -16,7 +16,7 @@ for rep in $rep_list; do
     echo "***********************************************"
     echo "Making  $rep"
     echo "***********************************************"
-    make
+    make clean; make -j 4
 
     ini_files=$(ls *.ini)
     for ini in $ini_files; do

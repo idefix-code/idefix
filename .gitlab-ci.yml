@@ -3,12 +3,14 @@ image: python:3.7-alpine
 test:
   stage: test
   script:
-  - pip install -U sphinx sphinx-rtd-theme
-  - sphinx-build -b html doc/source public
+    - cat /proc/cpuinfo
+    - gcc --version
+    - cd test/HD
+    - ./checks.sh
   only:
   - branches
-  except:
-  - master
+  #except:
+  #- master
 
 pages:
   stage: deploy

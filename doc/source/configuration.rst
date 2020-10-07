@@ -80,6 +80,14 @@ many options to adapt the generated makefile to the architecture on which one wa
 Problem Setup ``setup.cpp``
 ===========================
 
+The setup class
+---------------
+
+
+
+Function enrollment
+-------------------
+
 
 Problem input file ``idefix.ini``
 =================================
@@ -124,16 +132,16 @@ This section is used by *Idefix* time integrator class to define the time integr
 +================+====================+================================================+
 | CFL            | float              | CFL number. Should be < 1 to ensure stability  |
 +----------------+--------------------+------------------------------------------------+
-| CFL_max_var    | float              | fraction by which dt is allowed to increase    |
-|                |                    | between two successive timesteps               |
+| CFL_max_var    | float              | | fraction by which dt is allowed to increase  |
+|                |                    | | between two successive timesteps             |
 +----------------+--------------------+------------------------------------------------+
 | tstop          | float              | time when the code stops                       |
 +----------------+--------------------+------------------------------------------------+
 | first_dt       | float              | first timestep used by the integrator          |
 +----------------+--------------------+------------------------------------------------+
-| nstages        | integer            | number of stages of the integrator. Can be     |
-|                |                    | either 1, 2 or 3. 1=First order Euler method   |
-|                |                    | 2, 3= second and third order TVD Runge-Kutta   |
+| nstages        | integer            | | number of stages of the integrator. Can be   |
+|                |                    | | either 1, 2 or 3. 1=First order Euler method |
+|                |                    | | 2, 3= second and third order TVD Runge-Kutta |
 +----------------+--------------------+------------------------------------------------+
 
 .. note::
@@ -142,6 +150,83 @@ This section is used by *Idefix* time integrator class to define the time integr
 
 .. warning::
     As of version 0.4, *Idefix* ignores ``CFL_max_var``, which is by default set to 1.1.
+
+
+The ``Hydro`` section
+---------------------
+
+This section is used by the hydrodynamics class of *Idefix*. It defines the hydrodynamic parameters, and allows one to add some physics. The parameters are as followed:
+
++----------------+--------------------+----------------------------------------------------------+
+|  Entry name    | Parameter type     | Comment                                                  |
++================+====================+==========================================================+
+| Solver         | string             | | Type of Riemann Solver. In hydro can be any of         |
+|                |                    | | ``tvdlf``, ``hll``, ``hllc`` and ``roe``.              |
+|                |                    | | In MHD, can be ``tvdlf``, ``hll``, ``hlld``            |
+|                |                    | | and ``roe``                                            |
++----------------+--------------------+----------------------------------------------------------+
+| csiso          | float              | | Isothermal sound speed. Only used when                 |
+|                |                    | | ISOTHERMAL is defined in ``definition.hpp``            |
++----------------+--------------------+----------------------------------------------------------+
+| gamma          | float              | Adiabatic index when ISOTHERMAL is not defined           |
++----------------+--------------------+----------------------------------------------------------+
+| Resistivity    | string, float      | | Switches on Ohmic diffusion. String can be             |
+|                |                    | | either ``constant`` or ``userdef``.                    |
+|                |                    | | When ``constant``, the second parameter is the         |
+|                |                    | | Ohmic diffusion coefficient.                           |
+|                |                    | | When ``userdef``, the ``Hydro`` class expects a        |
+|                |                    | | user-defined diffusivity function to be enrolled with  |
+|                |                    | | ``Hydro::EnrollOhmicDiffusivity(DiffusivityFunc)``     |
+|                |                    | | In this case, the second parameter is not used.        |
++----------------+--------------------+----------------------------------------------------------+
+| Ambipolar      | string, float      | | Switches on ambipolar diffusion. String can be         |
+|                |                    | | either ``constant`` or ``userdef``.                    |
+|                |                    | | When ``constant``, the second parameter is the         |
+|                |                    | | ambipolar diffusion coefficient.                       |
+|                |                    | | When ``userdef``, the ``Hydro`` class expects a        |
+|                |                    | | user-defined diffusivity function to be enrolled with  |
+|                |                    | | ``Hydro::EnrollAmbipolarDiffusivity(DiffusivityFunc)`` |
+|                |                    | | In this case, the second parameter is not used.        |
++----------------+--------------------+----------------------------------------------------------+
+| Hall           | string, float      | | Switches on Hall effect. String can be                 |
+|                |                    | | either ``constant`` or ``userdef``.                    |
+|                |                    | | When ``constant``, the second parameter is the         |
+|                |                    | | Hall diffusion coefficient.                            |
+|                |                    | | When ``userdef``, the ``Hydro`` class expects a        |
+|                |                    | | user-defined diffusivity function to be enrolled with  |
+|                |                    | | ``Hydro::EnrollHallDiffusivity(DiffusivityFunc)``      |
+|                |                    | | In this case, the second parameter is not used.        |
++----------------+--------------------+----------------------------------------------------------+
+| GravPotential  | string             | | Switches on an external gravitational potential.       |
+|                |                    | | Only ``userdef`` is allowed.                           |
+|                |                    | | When ``userdef is set, the ``Hydro`` class expects     |
+|                |                    | | a user-defined potential function to be enrolled with  |
+|                |                    | | ``Hydro::EnrollGravPotential(GravPotentialFunc)``      |   
++----------------+--------------------+----------------------------------------------------------+
+| Rotation       | float,float,float  | | Add rotation with rhe rotation vector components given |
+|                |                    | | as parameters. This entry only adds Coriolis force.    |
++----------------+--------------------+----------------------------------------------------------+
+| ShearingBox    | float              | | Enable shearing box source terms.  The entry parameter |
+|                |                    | | corresponds to the shear rate                          |
+|                |                    |  :math:`dv_{x2}/d x_1`.                                  |
+|                |                    | | Note that this is not sufficient to fully define a     |
+|                |                    | | shearing box: boundary conditions are also required.   | 
++----------------+--------------------+----------------------------------------------------------+
+
+
+
+.. note::
+    The Hall effect is implemented directly in the HLL Riemann solver following Lesur, Kunz & Fromang (2014)
+    and adding the whistler speed only to the magnetic flux function, following Marchand et al. (2019).
+    For these reasons, Hall can only be used in conjonction with the HLL Riemann solver. In addition, only
+    the arithmetic Emf reconstruction scheme has been shown to work systematically with Hall, and is therefore
+    strongly recommended for production runs.   
+
+The ``Boundary`` section
+------------------------
+
+This section describes the boundary conditions of the code. 
+
 
 Command line options
 ====================

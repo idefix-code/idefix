@@ -9,14 +9,18 @@ before_script:
   - export DEBIAN_FRONTEND=noninteractive
   - apt-get update -qq
   - apt-get install -qq build-essential openmpi-bin python3 python3-pip bc
-  - export IDEFIX_DIR=$(pwd)/idefix
+
 
 test:
   stage: test
   script:
     - cat /proc/cpuinfo
     - gcc --version
-    - cd test/HD
+    - pip install numpy
+    - pip install scipy
+    - git submodule init
+    - git submodule update
+    - cd test
     - ./checks.sh
   only:
   - branches

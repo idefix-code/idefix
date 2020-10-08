@@ -7,6 +7,7 @@ real betaGlob;
 real HidealGlob;
 real AmMidGlob;
 real gammaGlob;
+real densityFloorGlob;
 
 /*********************************************/
 /**
@@ -110,7 +111,7 @@ void MySourceTerm(DataBlock &data, const real t, const real dtin) {
                 Uc(ENG,k,j,i) += -dt*(Vc(PRS,k,j,i)-Ptarget)/(tau*gamma_m1);
 
 		// Velocity relaxation
-		if(R<1.5) {
+		if(R<1.2) {
 			Uc(MX1,k,j,i) += -dt*(Vc(VX1,k,j,i)*Vc(RHO,k,j,i));
 			Uc(MX2,k,j,i) += -dt*(Vc(VX2,k,j,i)*Vc(RHO,k,j,i));
 		}
@@ -158,7 +159,7 @@ void InternalBoundary(DataBlock& data, const real t) {
   IdefixArray1D<real> x2=data.x[JDIR];
 
   real vAmax=10.0;
-
+  real densityFloor = densityFloorGlob;
   idefix_for("InternalBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
               KOKKOS_LAMBDA (int k, int j, int i) {
                 real b2=EXPAND(Vc(BX1,k,j,i)*Vc(BX1,k,j,i) , +Vc(BX2,k,j,i)*Vc(BX2,k,j,i), +Vc(BX3,k,j,i)*Vc(BX3,k,j,i) ) ;
@@ -170,9 +171,9 @@ void InternalBoundary(DataBlock& data, const real t) {
                   Vc(RHO,k,j,i) = b2/(myMax*myMax);
                   Vc(PRS,k,j,i) = T*Vc(RHO,k,j,i);
                 }
-                if(Vc(RHO,k,j,i) < 1e-8) {
+                if(Vc(RHO,k,j,i) < densityFloor) {
                   real T= Vc(PRS,k,j,i)/Vc(RHO,k,j,i);
-                  Vc(RHO,k,j,i)=1e-8;
+                  Vc(RHO,k,j,i)=densityFloor;
                   Vc(PRS,k,j,i)=T*Vc(RHO,k,j,i);
                 }
                 /*
@@ -280,7 +281,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Hydro &hydro) {
     betaGlob = input.GetReal("Setup","beta",0);
     HidealGlob = input.GetReal("Setup","Hideal",0);
     AmMidGlob = input.GetReal("Setup","Am",0);
-    printf("eps=%g, epstop=%g, Hideal=%g\n",epsilonGlob,epsilonTopGlob,HidealGlob);
+    densityFloorGlob = input.GetReal("Setup","densityFloor",0);
 }
 
 // This routine initialize the flow
@@ -328,38 +329,25 @@ void Setup::InitFlow(DataBlock &data) {
                 d.Vc(VX1,k,j,i) = ZERO_F;
                 d.Vc(VX2,k,j,i) = ZERO_F;
 
-                if(d.Vc(RHO,k,j,i) < 1e-9) {
+                if(d.Vc(RHO,k,j,i) < densityFloorGlob) {
                   real T2=d.Vc(PRS,k,j,i)/d.Vc(RHO,k,j,i);
-                  d.Vc(RHO,k,j,i) = 1e-9;
+                  d.Vc(RHO,k,j,i) = densityFloorGlob;
                   d.Vc(PRS,k,j,i) = T2*d.Vc(RHO,k,j,i);
                 }
 
                 // Vector potential on the corner
                 real s=sin(d.xl[JDIR](j));
-                if(FABS(s) < 1e-5) s=1e-5;
-
                 R=d.xl[IDIR](i) * s;
-
-                if(R>Rin) {
-                  A(KDIR,k,j,i) = B0*(pow(Rin,m+2.0)/R * (0.5-1.0/(m+2.0)) + pow(R,m+1.0)/(m+2.0));
-                }
-                else {
-                  A(KDIR,k,j,i) = B0*(pow(Rin,m)*Rin/2.0)*Rin/R;
-                }
 
                 A(IDIR,k,j,i) = ZERO_F;
                 A(JDIR,k,j,i) = ZERO_F;
-                /*
-                if(j<5 && i<5) {
-                  printf("A(%d,%d)=%.2e ",i,j,A(KDIR,k,j,i));
-                  if(i==4) printf("\n");
-                }*/
-                /*
-                if(j<5 && i<5) {
-                  printf("R(%d,%d)=%.2e ",i,j,R);
-                  if(i==4) printf("\n");
+
+                if(R>Rin) {
+                  A(KDIR,k,j,i) = B0*(pow(Rin,m+2.0)/R * (-1.0/(m+2.0)) + pow(R,m+1.0)/(m+2.0));
                 }
-                */
+                else {
+                  A(KDIR,k,j,i) = 0.0;
+                }
 
             }
         }
@@ -367,22 +355,6 @@ void Setup::InitFlow(DataBlock &data) {
 
     // Make the field from the vector potential
     d.MakeVsFromAmag(A);
-
-    // Clean up around the axis
-    for(int k = 0; k < d.np_tot[KDIR] ; k++) {
-    for(int j = 0; j < d.np_tot[JDIR] ; j++) {
-        for(int i = 0; i < d.np_tot[IDIR] ; i++) {
-            real r=d.x[IDIR](i);
-            real th=d.x[JDIR](j);
-            real z=r*cos(th);
-            real R=r*sin(th);
-
-            if(R<0.2*Rin) {
-                d.Vs(BX1s,k,j,i) = ZERO_F;
-                d.Vs(BX2s,k,j,i) = ZERO_F;
-            }
-        }
-    }}
 
 
     // Send it all, if needed

@@ -11,6 +11,8 @@ namespace idfx {
     int prank;
     int psize;
 
+    double mpiTimer;
+
     IdefixOstream cout;
 
 #ifdef DEBUG
@@ -31,6 +33,7 @@ namespace idfx {
         #endif
         cout.init(prank);
         return(0);
+        mpiTimer = 0.0;
 
     }   // Initialisation routine for idefix
 

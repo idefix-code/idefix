@@ -45,6 +45,7 @@ private:
     real cfl;   // CFL number
     long int ncycles;   // # of cycles
     double lastLog;     // # time for the last log
+    double lastMpiLog;  // # time for the last MPI log
     long int cyclePeriod;   // # of cycles between two logs
     Kokkos::Timer timer;    // Internal timer of the integrator
     

@@ -14,6 +14,7 @@ TimeIntegrator::TimeIntegrator(Input & input, Hydro &physics) {
     this->hydro=&physics;
     this->timer.reset();
     this->lastLog=timer.seconds();
+    this->lastMpiLog=idfx::mpiTimer;
 
     nstages=input.GetInt("TimeIntegrator","nstages",0);
 
@@ -125,10 +126,21 @@ void TimeIntegrator::Cycle(DataBlock & data) {
     //if(timer.seconds()-lastLog >= 1.0) {
     if(ncycles%cyclePeriod==0) {
         double rawperf = (timer.seconds()-lastLog)/(data.mygrid->np_int[IDIR]*data.mygrid->np_int[JDIR]*data.mygrid->np_int[KDIR]*cyclePeriod);
+        #ifdef WITH_MPI
+            // measure the time spent in the MPI calls
+            double mpiOverhead = (idfx::mpiTimer-lastMpiLog)/(timer.seconds()-lastLog-idfx::mpiTimer+lastMpiLog)*100;
+            lastMpiLog = idfx::mpiTimer;
+        #endif
         lastLog = timer.seconds();
 
         idfx::cout << "TimeIntegrator: t=" << t << " Cycle " << ncycles << " dt=" << dt << std::endl;
-        if(ncycles>=cyclePeriod) idfx::cout << "\t " << 1/rawperf << " cell updates/second" << std::endl;
+        if(ncycles>=cyclePeriod) {
+            idfx::cout << "\t " << 1/rawperf << " cell updates/second"; 
+            #ifdef WITH_MPI
+                idfx::cout << " ; " << mpiOverhead << "% MPI overhead";
+            #endif
+            idfx::cout << std::endl;
+        }
         #if MHD == YES
         // Check divB
         idfx::cout << "\t maxdivB=" << hydro->CheckDivB(data) << std::endl;

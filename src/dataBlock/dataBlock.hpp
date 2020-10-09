@@ -149,7 +149,8 @@ private:
     int bufferSizeX2;
     int bufferSizeX3;
 
-    
+    // Timer (used by MPI)
+    Kokkos::Timer timer;    // Internal timer of the datablock
 
 
 };

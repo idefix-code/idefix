@@ -19,6 +19,8 @@ void DataBlock::ExchangeAll(){
 void DataBlock::ExchangeX1() {
     idfx::pushRegion("DataBlock::ExchangeX1");
 #ifdef WITH_MPI
+    // init MPI Timer
+    idfx::mpiTimer -= timer.seconds();
     // Load  the buffers with data
     int ibeg,iend,jbeg,jend,kbeg,kend,offset;
     int nx,ny,nz;
@@ -142,7 +144,8 @@ void DataBlock::ExchangeX1() {
 
     #endif
 #endif
-
+    // Stop MPI Timer
+    idfx::mpiTimer += timer.seconds();
 
 #else
     IDEFIX_ERROR("You should not call DataBlock exchange routines without MPI");
@@ -154,6 +157,8 @@ void DataBlock::ExchangeX1() {
 void DataBlock::ExchangeX2() {
     idfx::pushRegion("DataBlock::ExchangeX2");
 #ifdef WITH_MPI
+    // init MPI Timer
+    idfx::mpiTimer -= timer.seconds();
     // Load  the buffers with data
     int ibeg,iend,jbeg,jend,kbeg,kend,offset;
     int nx,ny,nz;
@@ -276,8 +281,10 @@ void DataBlock::ExchangeX2() {
                     });
 
     #endif
-#endif
 
+#endif
+    // Stop MPI Timer
+    idfx::mpiTimer += timer.seconds();
 
 #else
     IDEFIX_ERROR("You should not call DataBlock exchange routines without MPI");
@@ -289,6 +296,8 @@ void DataBlock::ExchangeX2() {
 void DataBlock::ExchangeX3(){
     idfx::pushRegion("DataBlock::ExchangeX3");
 #ifdef WITH_MPI
+    // init MPI Timer
+    idfx::mpiTimer -= timer.seconds();
     // Load  the buffers with data
     int ibeg,iend,jbeg,jend,kbeg,kend,offset;
     int nx,ny,nz;
@@ -411,8 +420,10 @@ void DataBlock::ExchangeX3(){
                     });
 
     #endif
-#endif
 
+#endif
+    // Stop MPI Timer
+    idfx::mpiTimer += timer.seconds();
 
 #else
     IDEFIX_ERROR("You should not call DataBlock exchange routines without MPI");

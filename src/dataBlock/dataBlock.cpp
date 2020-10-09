@@ -8,7 +8,7 @@
 #include "dataBlock.hpp"
 
 DataBlock::DataBlock() {
-    // Do nothing
+    this->timer.reset(); 
 }
 
 void DataBlock::InitFromGrid(Grid &grid, Hydro &hydro, Input &input) {

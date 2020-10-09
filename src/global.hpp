@@ -14,6 +14,7 @@ namespace idfx {
     extern int prank;       // parallel rank
     extern int psize;
     extern IdefixOstream cout;  // custom cout for idefix
+    extern double mpiTimer;   // Measure MPI perfs as you go
 
     void pushRegion(const std::string&);
     void popRegion();

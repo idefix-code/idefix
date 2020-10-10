@@ -7,6 +7,7 @@
 #include "../idefix.hpp"
 #include "dataBlock.hpp"
 
+//#define MPI_NON_BLOCKING
 // MPI Routines exchange
 void DataBlock::ExchangeAll(){
 #ifdef WITH_MPI
@@ -83,21 +84,50 @@ void DataBlock::ExchangeX1() {
     #endif
 #endif
 
-    // Send to the right
+   
     int procSend, procRecv;
-    MPI_Status status;
-    MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,0,1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
-    Kokkos::fence();
-    MPI_SAFE_CALL(MPI_Sendrecv(BufferSendX1[faceRight].data(), bufferSizeX1, realMPI, procSend, 100,
-                 BufferRecvX1[faceLeft].data(), bufferSizeX1, realMPI, procRecv, 100,
-                 mygrid->CartComm, &status));
     
-    // Send to the left
-    MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,0,-1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
-    MPI_SAFE_CALL(MPI_Sendrecv(BufferSendX1[faceLeft].data(), bufferSizeX1, realMPI, procSend, 101,
-                 BufferRecvX1[faceRight].data(), bufferSizeX1, realMPI, procRecv, 101,
-                 mygrid->CartComm, &status));
+    
+    Kokkos::fence();
+    #ifdef MPI_NON_BLOCKING
+        MPI_Status sendStatus[2];
+        MPI_Status recvStatus[2];
+        MPI_Request sendRequest[2];
+        MPI_Request recvRequest[2];
 
+
+        MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,0,1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
+        MPI_SAFE_CALL(MPI_Isend(BufferSendX1[faceRight].data(), bufferSizeX1, realMPI, procSend, 100,
+                    mygrid->CartComm, &sendRequest[0]));
+        
+        MPI_SAFE_CALL(MPI_Irecv(BufferRecvX1[faceLeft].data(), bufferSizeX1, realMPI, procRecv, 100,
+                    mygrid->CartComm, &recvRequest[0]));
+
+        // Send to the left
+        MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,0,-1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
+        MPI_SAFE_CALL(MPI_Isend(BufferSendX1[faceLeft].data(), bufferSizeX1, realMPI, procSend, 101,
+                    mygrid->CartComm, &sendRequest[1]));
+        
+        MPI_SAFE_CALL(MPI_Irecv(BufferRecvX1[faceRight].data(), bufferSizeX1, realMPI, procRecv, 101,
+                    mygrid->CartComm, &recvRequest[1]));
+
+                
+        // Wait for recv to complete (we don't care about the sends)
+        MPI_Waitall(2, recvRequest, recvStatus);
+    #else
+        MPI_Status status;
+         // Send to the right
+        MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,0,1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
+        MPI_SAFE_CALL(MPI_Sendrecv(BufferSendX1[faceRight].data(), bufferSizeX1, realMPI, procSend, 100,
+                    BufferRecvX1[faceLeft].data(), bufferSizeX1, realMPI, procRecv, 100,
+                    mygrid->CartComm, &status));
+        
+        // Send to the left
+        MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,0,-1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
+        MPI_SAFE_CALL(MPI_Sendrecv(BufferSendX1[faceLeft].data(), bufferSizeX1, realMPI, procSend, 101,
+                    BufferRecvX1[faceRight].data(), bufferSizeX1, realMPI, procRecv, 101,
+                    mygrid->CartComm, &status));
+    #endif
     
     // Unpack
     BufferLeft=BufferRecvX1[faceLeft];
@@ -144,6 +174,11 @@ void DataBlock::ExchangeX1() {
 
     #endif
 #endif
+    #ifdef MPI_NON_BLOCKING
+        // Wait for the sends if they have not yet completed
+        MPI_Waitall(2, sendRequest, sendStatus);
+    #endif
+
     // Stop MPI Timer
     idfx::mpiTimer += timer.seconds();
 
@@ -221,20 +256,50 @@ void DataBlock::ExchangeX2() {
     #endif
 #endif
 
+    
     // Send to the right
     int procSend, procRecv;
-    MPI_Status status;
-    MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,1,1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
+
     Kokkos::fence();
-    MPI_SAFE_CALL(MPI_Sendrecv(BufferSendX2[faceRight].data(), bufferSizeX2, realMPI, procSend, 200,
-                 BufferRecvX2[faceLeft].data(), bufferSizeX2, realMPI, procRecv, 200,
-                 mygrid->CartComm, &status));
-    
-    // Send to the left
-    MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,1,-1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
-    MPI_SAFE_CALL(MPI_Sendrecv(BufferSendX2[faceLeft].data(), bufferSizeX2, realMPI, procSend, 201,
-                 BufferRecvX2[faceRight].data(), bufferSizeX2, realMPI, procRecv, 201,
-                 mygrid->CartComm, &status));
+    #ifdef MPI_NON_BLOCKING
+        MPI_Status sendStatus[2];
+        MPI_Status recvStatus[2];
+        MPI_Request sendRequest[2];
+        MPI_Request recvRequest[2];
+
+
+        MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,1,1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
+        MPI_SAFE_CALL(MPI_Isend(BufferSendX2[faceRight].data(), bufferSizeX2, realMPI, procSend, 100,
+                    mygrid->CartComm, &sendRequest[0]));
+        
+        MPI_SAFE_CALL(MPI_Irecv(BufferRecvX2[faceLeft].data(), bufferSizeX2, realMPI, procRecv, 100,
+                    mygrid->CartComm, &recvRequest[0]));
+
+        // Send to the left
+        MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,1,-1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
+        MPI_SAFE_CALL(MPI_Isend(BufferSendX2[faceLeft].data(), bufferSizeX2, realMPI, procSend, 101,
+                    mygrid->CartComm, &sendRequest[1]));
+        
+        MPI_SAFE_CALL(MPI_Irecv(BufferRecvX2[faceRight].data(), bufferSizeX2, realMPI, procRecv, 101,
+                    mygrid->CartComm, &recvRequest[1]));
+
+                
+        // Wait for recv to complete (we don't care about the sends)
+        MPI_Waitall(2, recvRequest, recvStatus);
+    #else
+        MPI_Status status;
+        MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,1,1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
+        
+        MPI_SAFE_CALL(MPI_Sendrecv(BufferSendX2[faceRight].data(), bufferSizeX2, realMPI, procSend, 200,
+                    BufferRecvX2[faceLeft].data(), bufferSizeX2, realMPI, procRecv, 200,
+                    mygrid->CartComm, &status));
+        
+        // Send to the left
+        MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,1,-1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
+        MPI_SAFE_CALL(MPI_Sendrecv(BufferSendX2[faceLeft].data(), bufferSizeX2, realMPI, procSend, 201,
+                    BufferRecvX2[faceRight].data(), bufferSizeX2, realMPI, procRecv, 201,
+                    mygrid->CartComm, &status));
+    #endif
 
     
     // Unpack
@@ -283,6 +348,10 @@ void DataBlock::ExchangeX2() {
     #endif
 
 #endif
+    #ifdef MPI_NON_BLOCKING
+        // Wait for the sends if they have not yet completed
+        MPI_Waitall(2, sendRequest, sendStatus);
+    #endif
     // Stop MPI Timer
     idfx::mpiTimer += timer.seconds();
 
@@ -362,18 +431,47 @@ void DataBlock::ExchangeX3(){
 
     // Send to the right
     int procSend, procRecv;
-    MPI_Status status;
-    MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,2,1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
-    Kokkos::fence();
-    MPI_SAFE_CALL(MPI_Sendrecv(BufferSendX3[faceRight].data(), bufferSizeX3, realMPI, procSend, 300,
-                 BufferRecvX3[faceLeft].data(), bufferSizeX3, realMPI, procRecv, 300,
-                 mygrid->CartComm, &status));
     
-    // Send to the left
-    MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,2,-1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
-    MPI_SAFE_CALL(MPI_Sendrecv(BufferSendX3[faceLeft].data(), bufferSizeX3, realMPI, procSend, 301,
-                 BufferRecvX3[faceRight].data(), bufferSizeX3, realMPI, procRecv, 301,
-                 mygrid->CartComm, &status));
+    Kokkos::fence();
+    #ifdef MPI_NON_BLOCKING
+        MPI_Status sendStatus[2];
+        MPI_Status recvStatus[2];
+        MPI_Request sendRequest[2];
+        MPI_Request recvRequest[2];
+
+
+        MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,2,1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
+        MPI_SAFE_CALL(MPI_Isend(BufferSendX3[faceRight].data(), bufferSizeX3, realMPI, procSend, 100,
+                    mygrid->CartComm, &sendRequest[0]));
+        
+        MPI_SAFE_CALL(MPI_Irecv(BufferRecvX3[faceLeft].data(), bufferSizeX3, realMPI, procRecv, 100,
+                    mygrid->CartComm, &recvRequest[0]));
+
+        // Send to the left
+        MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,2,-1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
+        MPI_SAFE_CALL(MPI_Isend(BufferSendX3[faceLeft].data(), bufferSizeX3, realMPI, procSend, 101,
+                    mygrid->CartComm, &sendRequest[1]));
+        
+        MPI_SAFE_CALL(MPI_Irecv(BufferRecvX3[faceRight].data(), bufferSizeX3, realMPI, procRecv, 101,
+                    mygrid->CartComm, &recvRequest[1]));
+
+                
+        // Wait for recv to complete (we don't care about the sends)
+        MPI_Waitall(2, recvRequest, recvStatus);
+    #else
+        MPI_Status status;
+        MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,2,1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
+
+        MPI_SAFE_CALL(MPI_Sendrecv(BufferSendX3[faceRight].data(), bufferSizeX3, realMPI, procSend, 300,
+                    BufferRecvX3[faceLeft].data(), bufferSizeX3, realMPI, procRecv, 300,
+                    mygrid->CartComm, &status));
+        
+        // Send to the left
+        MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,2,-1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
+        MPI_SAFE_CALL(MPI_Sendrecv(BufferSendX3[faceLeft].data(), bufferSizeX3, realMPI, procSend, 301,
+                    BufferRecvX3[faceRight].data(), bufferSizeX3, realMPI, procRecv, 301,
+                    mygrid->CartComm, &status));
+    #endif
 
     
     // Unpack
@@ -422,6 +520,10 @@ void DataBlock::ExchangeX3(){
     #endif
 
 #endif
+    #ifdef MPI_NON_BLOCKING
+        // Wait for the sends if they have not yet completed
+        MPI_Waitall(2, sendRequest, sendStatus);
+    #endif
     // Stop MPI Timer
     idfx::mpiTimer += timer.seconds();
 

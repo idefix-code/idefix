@@ -136,6 +136,8 @@ public:
 
 private:
     
+    // Init MPI routines
+    void InitExchange();
 
     // Buffers for MPI calls
     IdefixArray1D<real> BufferSendX1[2];
@@ -144,6 +146,16 @@ private:
     IdefixArray1D<real> BufferRecvX1[2];
     IdefixArray1D<real> BufferRecvX2[2];
     IdefixArray1D<real> BufferRecvX3[2];
+
+    #ifdef WITH_MPI
+        // Requests for MPI persistent communications
+        MPI_Request sendRequestX1[2];
+        MPI_Request sendRequestX2[2];
+        MPI_Request sendRequestX3[2];
+        MPI_Request recvRequestX1[2];
+        MPI_Request recvRequestX2[2];
+        MPI_Request recvRequestX3[2];
+    #endif
 
     int bufferSizeX1;
     int bufferSizeX2;

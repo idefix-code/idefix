@@ -121,69 +121,8 @@ void DataBlock::InitFromGrid(Grid &grid, Hydro &hydro, Input &input) {
     PrimR =  IdefixArray4D<real>("DataBlock_PrimR", NVAR, np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
     FluxRiemann =  IdefixArray4D<real>("DataBlock_FluxRiemann", NVAR, np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
 
-// Init MPI Buffer Arrays
-#ifdef WITH_MPI
-    bufferSizeX1 = 0;
-    bufferSizeX2 = 0;
-    bufferSizeX3 = 0;
-
-    // Number of cells in X1 boundary condition:
-    bufferSizeX1 = nghost[IDIR] * np_int[JDIR] * np_int[KDIR] * NVAR;
-
-    #if MHD == YES
-    // BX1s
-    bufferSizeX1 += nghost[IDIR] * np_int[JDIR] * np_int[KDIR];
-    #if DIMENSIONS>=2
-    bufferSizeX1 += nghost[IDIR] * (np_int[JDIR]+1) * np_int[KDIR];
-    #endif
-    #if DIMENSIONS==3
-    bufferSizeX1 += nghost[IDIR] * np_int[JDIR] * (np_int[KDIR]+1);
-    #endif  // DIMENSIONS
-    #endif  // MHD
-
-    BufferRecvX1[faceLeft ] = IdefixArray1D<real>("BufferRecvX1Left", bufferSizeX1);
-    BufferRecvX1[faceRight] = IdefixArray1D<real>("BufferRecvX1Right",bufferSizeX1);
-    BufferSendX1[faceLeft ] = IdefixArray1D<real>("BufferSendX1Left", bufferSizeX1);
-    BufferSendX1[faceRight] = IdefixArray1D<real>("BufferSendX1Right",bufferSizeX1);
-
-    // Number of cells in X2 boundary condition (only required when problem >2D):
-#if DIMENSIONS >= 2 
-    bufferSizeX2 = np_tot[IDIR] * nghost[JDIR] * np_int[KDIR] * NVAR;
-    #if MHD == YES
-    // BX1s
-    bufferSizeX2 += (np_tot[IDIR]+1) * nghost[JDIR] * np_int[KDIR];
-    // BX2s
-    bufferSizeX2 += np_tot[IDIR] * nghost[JDIR] * np_int[KDIR];
-    #if DIMENSIONS==3
-    bufferSizeX2 += np_tot[IDIR] * nghost[JDIR] * (np_int[KDIR]+1);
-    #endif  // DIMENSIONS
-    #endif  // MHD
-
-    BufferRecvX2[faceLeft ] = IdefixArray1D<real>("BufferRecvX2Left", bufferSizeX2);
-    BufferRecvX2[faceRight] = IdefixArray1D<real>("BufferRecvX2Right",bufferSizeX2);
-    BufferSendX2[faceLeft ] = IdefixArray1D<real>("BufferSendX2Left", bufferSizeX2);
-    BufferSendX2[faceRight] = IdefixArray1D<real>("BufferSendX2Right",bufferSizeX2);
-
-#endif
-// Number of cells in X3 boundary condition (only required when problem is 3D):
-#if DIMENSIONS ==3  
-    bufferSizeX3 = np_tot[IDIR] * np_tot[JDIR] * nghost[KDIR] * NVAR;
-
-    #if MHD == YES
-    // BX1s
-    bufferSizeX3 += (np_tot[IDIR]+1) * np_tot[JDIR] * nghost[KDIR];
-    // BX2s
-    bufferSizeX3 += np_tot[IDIR] * (np_tot[JDIR]+1) * nghost[KDIR];
-    // BX3s (not needed because reconstructed)
-    bufferSizeX3 += np_tot[IDIR] * np_tot[JDIR] * nghost[KDIR];
-    #endif  // DIMENSIONS
-    #endif  // MHD
-
-    BufferRecvX3[faceLeft ] = IdefixArray1D<real>("BufferRecvX3Left", bufferSizeX3);
-    BufferRecvX3[faceRight] = IdefixArray1D<real>("BufferRecvX3Right",bufferSizeX3);
-    BufferSendX3[faceLeft ] = IdefixArray1D<real>("BufferSendX3Left", bufferSizeX3);
-    BufferSendX3[faceRight] = IdefixArray1D<real>("BufferSendX3Right",bufferSizeX3);
-#endif
+// Init MPI stack when needed
+    this->InitExchange();
 
 
     // Copy the relevant part of the coordinate system to the datablock

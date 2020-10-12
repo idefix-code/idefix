@@ -8,7 +8,7 @@
 #include "dataBlock.hpp"
 
 DataBlock::DataBlock() {
-    this->timer.reset(); 
+
 }
 
 void DataBlock::InitFromGrid(Grid &grid, Hydro &hydro, Input &input) {
@@ -122,7 +122,9 @@ void DataBlock::InitFromGrid(Grid &grid, Hydro &hydro, Input &input) {
     FluxRiemann =  IdefixArray4D<real>("DataBlock_FluxRiemann", NVAR, np_tot[KDIR], np_tot[JDIR], np_tot[IDIR]);
 
 // Init MPI stack when needed
-    this->InitExchange();
+#ifdef WITH_MPI
+    mpi.InitFromDataBlock(this);
+#endif
 
 
     // Copy the relevant part of the coordinate system to the datablock

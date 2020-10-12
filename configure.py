@@ -109,18 +109,22 @@ else:
     else:
         makefileOptions['kokkosDevices'] = '"Serial"'
 
-if(args.mpi):
+if args.mpi:
+    makefileOptions['extraIncludeDir'] += " -I$(SRC)/DataBlock/mpi"
+    makefileOptions['extraVpath'] += ":$(SRC)/DataBlock/mpi"
+    makefileOptions['extraHeaders'] += " mpi.hpp"
+    makefileOptions['extraObj'] += " mpi.o"
     makefileOptions['cxxflags'] += " -DWITH_MPI"
 
 if args.mhd:
     makefileOptions['extraIncludeDir'] += " -I$(SRC)/hydro/MHDsolvers"
-    makefileOptions['extraVpath'] += "$(SRC)/hydro/MHDsolvers"
+    makefileOptions['extraVpath'] += ":$(SRC)/hydro/MHDsolvers"
     makefileOptions['extraHeaders'] += " solversMHD.hpp"
     makefileOptions['extraObj'] += " hlldMHD.o hllMHD.o roeMHD.o tvdlfMHD.o"
     makefileOptions['cxxflags'] += " -DMHD=YES"
 else:
     makefileOptions['extraIncludeDir'] += " -I$(SRC)/hydro/HDsolvers"
-    makefileOptions['extraVpath'] += "$(SRC)/hydro/HDsolvers"
+    makefileOptions['extraVpath'] += ":$(SRC)/hydro/HDsolvers"
     makefileOptions['extraHeaders'] += " solversHD.hpp"
     makefileOptions['extraObj'] += " hllcHD.o hllHD.o roeHD.o tvdlfHD.o"
     makefileOptions['cxxflags'] += " -DMHD=NO"

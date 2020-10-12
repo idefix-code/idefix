@@ -221,6 +221,9 @@ enum BoundarySide { left, right};
 #include "grid.hpp"
 #include "gridHost.hpp"
 #include "hydro.hpp"
+#ifdef WITH_MPI
+#include "mpi.hpp"
+#endif
 #include "dataBlock.hpp"
 #include "dataBlockHost.hpp"
 #include "timeIntegrator.hpp"

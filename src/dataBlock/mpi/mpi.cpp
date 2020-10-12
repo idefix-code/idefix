@@ -4,146 +4,164 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ********************************************************************************************************
 
-#include "../idefix.hpp"
+#include "../../idefix.hpp"
 #include "dataBlock.hpp"
 
 //#define MPI_NON_BLOCKING
-//#define MPI_PERSISTENT
+#define MPI_PERSISTENT
 
 // MPI Routines exchange
-void DataBlock::ExchangeAll(){
-#ifdef WITH_MPI
-
-#else
-    IDEFIX_ERROR("You should not call DataBlock exchange routines without MPI");
-#endif
+void Mpi::ExchangeAll(){
+    IDEFIX_ERROR("Not Implemented");
 }
 
-void DataBlock::InitExchange() {
+void Mpi::InitFromDataBlock(DataBlock *datain) {
+    this->data = datain;
+    this->mygrid = datain->mygrid;
+    this->timer.reset(); 
 
-    #ifdef WITH_MPI
-        // Init exchange when needed
-        bufferSizeX1 = 0;
-        bufferSizeX2 = 0;
-        bufferSizeX3 = 0;
+    // Init exchange datasets
+    bufferSizeX1 = 0;
+    bufferSizeX2 = 0;
+    bufferSizeX3 = 0;
 
-        // Number of cells in X1 boundary condition:
-        bufferSizeX1 = nghost[IDIR] * np_int[JDIR] * np_int[KDIR] * NVAR;
+    // Number of cells in X1 boundary condition:
+    bufferSizeX1 = data->nghost[IDIR] * data->np_int[JDIR] * data->np_int[KDIR] * NVAR;
 
-        #if MHD == YES
-        // BX1s
-        bufferSizeX1 += nghost[IDIR] * np_int[JDIR] * np_int[KDIR];
-        #if DIMENSIONS>=2
-        bufferSizeX1 += nghost[IDIR] * (np_int[JDIR]+1) * np_int[KDIR];
-        #endif
-        #if DIMENSIONS==3
-        bufferSizeX1 += nghost[IDIR] * np_int[JDIR] * (np_int[KDIR]+1);
-        #endif  // DIMENSIONS
-        #endif  // MHD
-
-        BufferRecvX1[faceLeft ] = IdefixArray1D<real>("BufferRecvX1Left", bufferSizeX1);
-        BufferRecvX1[faceRight] = IdefixArray1D<real>("BufferRecvX1Right",bufferSizeX1);
-        BufferSendX1[faceLeft ] = IdefixArray1D<real>("BufferSendX1Left", bufferSizeX1);
-        BufferSendX1[faceRight] = IdefixArray1D<real>("BufferSendX1Right",bufferSizeX1);
-
-        // Number of cells in X2 boundary condition (only required when problem >2D):
-    #if DIMENSIONS >= 2 
-        bufferSizeX2 = np_tot[IDIR] * nghost[JDIR] * np_int[KDIR] * NVAR;
-        #if MHD == YES
-        // BX1s
-        bufferSizeX2 += (np_tot[IDIR]+1) * nghost[JDIR] * np_int[KDIR];
-        // BX2s
-        bufferSizeX2 += np_tot[IDIR] * nghost[JDIR] * np_int[KDIR];
-        #if DIMENSIONS==3
-        bufferSizeX2 += np_tot[IDIR] * nghost[JDIR] * (np_int[KDIR]+1);
-        #endif  // DIMENSIONS
-        #endif  // MHD
-
-        BufferRecvX2[faceLeft ] = IdefixArray1D<real>("BufferRecvX2Left", bufferSizeX2);
-        BufferRecvX2[faceRight] = IdefixArray1D<real>("BufferRecvX2Right",bufferSizeX2);
-        BufferSendX2[faceLeft ] = IdefixArray1D<real>("BufferSendX2Left", bufferSizeX2);
-        BufferSendX2[faceRight] = IdefixArray1D<real>("BufferSendX2Right",bufferSizeX2);
-
+    #if MHD == YES
+    // BX1s
+    bufferSizeX1 += data->nghost[IDIR] * data->np_int[JDIR] * data->np_int[KDIR];
+    #if DIMENSIONS>=2
+    bufferSizeX1 += data->nghost[IDIR] * (data->np_int[JDIR]+1) * data->np_int[KDIR];
     #endif
-    // Number of cells in X3 boundary condition (only required when problem is 3D):
-    #if DIMENSIONS ==3  
-        bufferSizeX3 = np_tot[IDIR] * np_tot[JDIR] * nghost[KDIR] * NVAR;
+    #if DIMENSIONS==3
+    bufferSizeX1 += data->nghost[IDIR] * data->np_int[JDIR] * (data->np_int[KDIR]+1);
+    #endif  // DIMENSIONS
+    #endif  // MHD
 
-        #if MHD == YES
-        // BX1s
-        bufferSizeX3 += (np_tot[IDIR]+1) * np_tot[JDIR] * nghost[KDIR];
-        // BX2s
-        bufferSizeX3 += np_tot[IDIR] * (np_tot[JDIR]+1) * nghost[KDIR];
-        // BX3s (not needed because reconstructed)
-        bufferSizeX3 += np_tot[IDIR] * np_tot[JDIR] * nghost[KDIR];
-        #endif  // MHD
+    BufferRecvX1[faceLeft ] = IdefixArray1D<real>("BufferRecvX1Left", bufferSizeX1);
+    BufferRecvX1[faceRight] = IdefixArray1D<real>("BufferRecvX1Right",bufferSizeX1);
+    BufferSendX1[faceLeft ] = IdefixArray1D<real>("BufferSendX1Left", bufferSizeX1);
+    BufferSendX1[faceRight] = IdefixArray1D<real>("BufferSendX1Right",bufferSizeX1);
 
-        BufferRecvX3[faceLeft ] = IdefixArray1D<real>("BufferRecvX3Left", bufferSizeX3);
-        BufferRecvX3[faceRight] = IdefixArray1D<real>("BufferRecvX3Right",bufferSizeX3);
-        BufferSendX3[faceLeft ] = IdefixArray1D<real>("BufferSendX3Left", bufferSizeX3);
-        BufferSendX3[faceRight] = IdefixArray1D<real>("BufferSendX3Right",bufferSizeX3);
-    #endif // DIMENSIONS
-    #ifdef MPI_PERSISTENT
-        // Init persistent MPI communications
-        int procSend, procRecv;
+    // Number of cells in X2 boundary condition (only required when problem >2D):
+#if DIMENSIONS >= 2 
+    bufferSizeX2 = data->np_tot[IDIR] * data->nghost[JDIR] * data->np_int[KDIR] * NVAR;
+    #if MHD == YES
+    // BX1s
+    bufferSizeX2 += (data->np_tot[IDIR]+1) * data->nghost[JDIR] * data->np_int[KDIR];
+    // BX2s
+    bufferSizeX2 += data->np_tot[IDIR] * data->nghost[JDIR] * data->np_int[KDIR];
+    #if DIMENSIONS==3
+    bufferSizeX2 += data->np_tot[IDIR] * data->nghost[JDIR] * (data->np_int[KDIR]+1);
+    #endif  // DIMENSIONS
+    #endif  // MHD
 
-        // X1-dir exchanges
-        MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,0,1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
-        MPI_SAFE_CALL(MPI_Send_init(BufferSendX1[faceRight].data(), bufferSizeX1, realMPI, procSend, 100,
-                    mygrid->CartComm, &sendRequestX1[faceRight]));
+    BufferRecvX2[faceLeft ] = IdefixArray1D<real>("BufferRecvX2Left", bufferSizeX2);
+    BufferRecvX2[faceRight] = IdefixArray1D<real>("BufferRecvX2Right",bufferSizeX2);
+    BufferSendX2[faceLeft ] = IdefixArray1D<real>("BufferSendX2Left", bufferSizeX2);
+    BufferSendX2[faceRight] = IdefixArray1D<real>("BufferSendX2Right",bufferSizeX2);
 
-        MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX1[faceLeft].data(), bufferSizeX1, realMPI, procRecv, 100,
-                    mygrid->CartComm, &recvRequestX1[faceLeft]));
+#endif
+// Number of cells in X3 boundary condition (only required when problem is 3D):
+#if DIMENSIONS ==3  
+    bufferSizeX3 = data->np_tot[IDIR] * data->np_tot[JDIR] * data->nghost[KDIR] * NVAR;
+
+    #if MHD == YES
+    // BX1s
+    bufferSizeX3 += (data->np_tot[IDIR]+1) * data->np_tot[JDIR] * data->nghost[KDIR];
+    // BX2s
+    bufferSizeX3 += data->np_tot[IDIR] * (data->np_tot[JDIR]+1) * data->nghost[KDIR];
+    // BX3s (not needed because reconstructed)
+    bufferSizeX3 += data->np_tot[IDIR] * data->np_tot[JDIR] * data->nghost[KDIR];
+    #endif  // MHD
+
+    BufferRecvX3[faceLeft ] = IdefixArray1D<real>("BufferRecvX3Left", bufferSizeX3);
+    BufferRecvX3[faceRight] = IdefixArray1D<real>("BufferRecvX3Right",bufferSizeX3);
+    BufferSendX3[faceLeft ] = IdefixArray1D<real>("BufferSendX3Left", bufferSizeX3);
+    BufferSendX3[faceRight] = IdefixArray1D<real>("BufferSendX3Right",bufferSizeX3);
+#endif // DIMENSIONS
+#ifdef MPI_PERSISTENT
+    // Init persistent MPI communications
+    int procSend, procRecv;
+
+    // X1-dir exchanges
+    MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,0,1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
+    MPI_SAFE_CALL(MPI_Send_init(BufferSendX1[faceRight].data(), bufferSizeX1, realMPI, procSend, 100,
+                mygrid->CartComm, &sendRequestX1[faceRight]));
+
+    MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX1[faceLeft].data(), bufferSizeX1, realMPI, procRecv, 100,
+                mygrid->CartComm, &recvRequestX1[faceLeft]));
+
+    // Send to the left
+    MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,0,-1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
+
+    MPI_SAFE_CALL(MPI_Send_init(BufferSendX1[faceLeft].data(), bufferSizeX1, realMPI, procSend, 101,
+                mygrid->CartComm, &sendRequestX1[faceLeft]));
+    MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX1[faceRight].data(), bufferSizeX1, realMPI, procRecv, 101,
+                mygrid->CartComm, &recvRequestX1[faceRight]));
+
+    #if DIMENSIONS >= 2
+        MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,1,1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
+        MPI_SAFE_CALL(MPI_Send_init(BufferSendX2[faceRight].data(), bufferSizeX2, realMPI, procSend, 200,
+                    mygrid->CartComm, &sendRequestX2[faceRight]));
+
+        MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX2[faceLeft].data(), bufferSizeX2, realMPI, procRecv, 200,
+                    mygrid->CartComm, &recvRequestX2[faceLeft]));
 
         // Send to the left
-        MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,0,-1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
+        MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,1,-1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
 
-        MPI_SAFE_CALL(MPI_Send_init(BufferSendX1[faceLeft].data(), bufferSizeX1, realMPI, procSend, 101,
-                    mygrid->CartComm, &sendRequestX1[faceLeft]));
-        MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX1[faceRight].data(), bufferSizeX1, realMPI, procRecv, 101,
-                    mygrid->CartComm, &recvRequestX1[faceRight]));
+        MPI_SAFE_CALL(MPI_Send_init(BufferSendX2[faceLeft].data(), bufferSizeX2, realMPI, procSend, 201,
+                    mygrid->CartComm, &sendRequestX2[faceLeft]));
+        MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX2[faceRight].data(), bufferSizeX2, realMPI, procRecv, 201,
+                    mygrid->CartComm, &recvRequestX2[faceRight]));
+    #endif
+    #if DIMENSIONS == 3
+        MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,2,1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
+        MPI_SAFE_CALL(MPI_Send_init(BufferSendX3[faceRight].data(), bufferSizeX3, realMPI, procSend, 300,
+                    mygrid->CartComm, &sendRequestX3[faceRight]));
 
-        #if DIMENSIONS >= 2
-            MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,1,1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
-            MPI_SAFE_CALL(MPI_Send_init(BufferSendX2[faceRight].data(), bufferSizeX2, realMPI, procSend, 200,
-                        mygrid->CartComm, &sendRequestX2[faceRight]));
+        MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX3[faceLeft].data(), bufferSizeX3, realMPI, procRecv, 300,
+                    mygrid->CartComm, &recvRequestX3[faceLeft]));
 
-            MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX2[faceLeft].data(), bufferSizeX2, realMPI, procRecv, 200,
-                        mygrid->CartComm, &recvRequestX2[faceLeft]));
+        // Send to the left
+        MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,2,-1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
 
-            // Send to the left
-            MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,1,-1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
-
-            MPI_SAFE_CALL(MPI_Send_init(BufferSendX2[faceLeft].data(), bufferSizeX2, realMPI, procSend, 201,
-                        mygrid->CartComm, &sendRequestX2[faceLeft]));
-            MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX2[faceRight].data(), bufferSizeX2, realMPI, procRecv, 201,
-                        mygrid->CartComm, &recvRequestX2[faceRight]));
-        #endif
-        #if DIMENSIONS == 3
-            MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,2,1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
-            MPI_SAFE_CALL(MPI_Send_init(BufferSendX3[faceRight].data(), bufferSizeX3, realMPI, procSend, 300,
-                        mygrid->CartComm, &sendRequestX3[faceRight]));
-
-            MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX3[faceLeft].data(), bufferSizeX3, realMPI, procRecv, 300,
-                        mygrid->CartComm, &recvRequestX3[faceLeft]));
-
-            // Send to the left
-            MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,2,-1,&procRecv,&procSend ));   // We receive from procRecv, and we send to procSend
-
-            MPI_SAFE_CALL(MPI_Send_init(BufferSendX3[faceLeft].data(), bufferSizeX3, realMPI, procSend, 301,
-                        mygrid->CartComm, &sendRequestX3[faceLeft]));
-            MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX3[faceRight].data(), bufferSizeX3, realMPI, procRecv, 301,
-                        mygrid->CartComm, &recvRequestX3[faceRight]));
-        #endif
-
-                
+        MPI_SAFE_CALL(MPI_Send_init(BufferSendX3[faceLeft].data(), bufferSizeX3, realMPI, procSend, 301,
+                    mygrid->CartComm, &sendRequestX3[faceLeft]));
+        MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX3[faceRight].data(), bufferSizeX3, realMPI, procRecv, 301,
+                    mygrid->CartComm, &recvRequestX3[faceRight]));
     #endif
 
-    #endif //MPI
+            
+#endif
+
 }
-void DataBlock::ExchangeX1() {
-    idfx::pushRegion("DataBlock::ExchangeX1");
-#ifdef WITH_MPI
+
+// Destructor (clean up persistent communication channels)
+Mpi::~Mpi() {
+    // Properly clean up the mess
+    #ifdef MPI_PERSISTENT
+    idfx::cout << "Mpi:: Cleaning up MPI persistent communication channels" << std::endl;
+    for(int i=0 ; i< 2; i++) {
+        MPI_Request_free( &sendRequestX1[i]);
+        MPI_Request_free( &recvRequestX1[i]);
+        #if DIMENSIONS >= 2
+            MPI_Request_free( &sendRequestX2[i]);
+            MPI_Request_free( &recvRequestX2[i]);
+        #endif
+        #if DIMENSIONS == 3
+            MPI_Request_free( &sendRequestX3[i]);
+            MPI_Request_free( &recvRequestX3[i]);
+        #endif
+    }
+    #endif
+} 
+
+void Mpi::ExchangeX1() {
+    idfx::pushRegion("Mpi::ExchangeX1");
+
     // init MPI Timer
     idfx::mpiTimer -= timer.seconds();
     // Load  the buffers with data
@@ -151,21 +169,21 @@ void DataBlock::ExchangeX1() {
     int nx,ny,nz;
     IdefixArray1D<real> BufferLeft=BufferSendX1[faceLeft];
     IdefixArray1D<real> BufferRight=BufferSendX1[faceRight];
-    IdefixArray4D<real> Vc=this->Vc;
+    IdefixArray4D<real> Vc=data->Vc;
 #if MHD==YES
-    IdefixArray4D<real> Vs=this->Vs;
+    IdefixArray4D<real> Vs=data->Vs;
     int VsIndex;
 #endif
     // Coordinates of the ghost region which needs to be transfered
     ibeg = 0;
-    iend = nghost[IDIR]; 
-    nx = nghost[IDIR];                    // Number of points in x
-    offset = end[IDIR];   // Distance between beginning of left and right ghosts
-    jbeg = beg[JDIR];
-    jend = end[JDIR];
+    iend = data->nghost[IDIR]; 
+    nx = data->nghost[IDIR];                    // Number of points in x
+    offset = data->end[IDIR];   // Distance between beginning of left and right ghosts
+    jbeg = data->beg[JDIR];
+    jend = data->end[JDIR];
     ny = jend - jbeg;
-    kbeg = beg[KDIR];
-    kend = end[KDIR];   
+    kbeg = data->beg[KDIR];
+    kend = data->end[KDIR];   
     nz = kend - kbeg;
 
     idefix_for("LoadBufferX1Vc",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
@@ -318,16 +336,13 @@ void DataBlock::ExchangeX1() {
     // Stop MPI Timer
     idfx::mpiTimer += timer.seconds();
 
-#else
-    IDEFIX_ERROR("You should not call DataBlock exchange routines without MPI");
-#endif
     idfx::popRegion();
 }
 
 
-void DataBlock::ExchangeX2() {
-    idfx::pushRegion("DataBlock::ExchangeX2");
-#ifdef WITH_MPI
+void Mpi::ExchangeX2() {
+    idfx::pushRegion("Mpi::ExchangeX2");
+
     // init MPI Timer
     idfx::mpiTimer -= timer.seconds();
     // Load  the buffers with data
@@ -335,21 +350,21 @@ void DataBlock::ExchangeX2() {
     int nx,ny,nz;
     IdefixArray1D<real> BufferLeft=BufferSendX2[faceLeft];
     IdefixArray1D<real> BufferRight=BufferSendX2[faceRight];
-    IdefixArray4D<real> Vc=this->Vc;
+    IdefixArray4D<real> Vc=data->Vc;
 #if MHD==YES
-    IdefixArray4D<real> Vs=this->Vs;
+    IdefixArray4D<real> Vs=data->Vs;
     int VsIndex;
 #endif
     // Coordinates of the ghost region which needs to be transfered
     ibeg = 0;
-    iend = np_tot[IDIR]; 
-    nx = np_tot[IDIR];                    // Number of points in x
+    iend = data->np_tot[IDIR]; 
+    nx = data->np_tot[IDIR];                    // Number of points in x
     jbeg = 0;
-    jend = nghost[JDIR];
-    offset = end[JDIR];   // Distance between beginning of left and right ghosts
-    ny = nghost[JDIR];
-    kbeg = beg[KDIR];
-    kend = end[KDIR];   
+    jend = data->nghost[JDIR];
+    offset = data->end[JDIR];   // Distance between beginning of left and right ghosts
+    ny = data->nghost[JDIR];
+    kbeg = data->beg[KDIR];
+    kend = data->end[KDIR];   
     nz = kend - kbeg;
 
     idefix_for("LoadBufferX2Vc",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
@@ -502,16 +517,13 @@ void DataBlock::ExchangeX2() {
     // Stop MPI Timer
     idfx::mpiTimer += timer.seconds();
 
-#else
-    IDEFIX_ERROR("You should not call DataBlock exchange routines without MPI");
-#endif
     idfx::popRegion();
 }
 
 
-void DataBlock::ExchangeX3(){
-    idfx::pushRegion("DataBlock::ExchangeX3");
-#ifdef WITH_MPI
+void Mpi::ExchangeX3(){
+    idfx::pushRegion("Mpi::ExchangeX3");
+
     // init MPI Timer
     idfx::mpiTimer -= timer.seconds();
     // Load  the buffers with data
@@ -519,22 +531,22 @@ void DataBlock::ExchangeX3(){
     int nx,ny,nz;
     IdefixArray1D<real> BufferLeft=BufferSendX3[faceLeft];
     IdefixArray1D<real> BufferRight=BufferSendX3[faceRight];
-    IdefixArray4D<real> Vc=this->Vc;
+    IdefixArray4D<real> Vc=data->Vc;
 #if MHD==YES
-    IdefixArray4D<real> Vs=this->Vs;
+    IdefixArray4D<real> Vs=data->Vs;
     int VsIndex;
 #endif
     // Coordinates of the ghost region which needs to be transfered
     ibeg = 0;
-    iend = np_tot[IDIR]; 
-    nx = np_tot[IDIR];                    // Number of points in x
+    iend = data->np_tot[IDIR]; 
+    nx = data->np_tot[IDIR];                    // Number of points in x
     jbeg = 0;
-    jend = np_tot[JDIR];  
-    ny = np_tot[JDIR];
+    jend = data->np_tot[JDIR];  
+    ny = data->np_tot[JDIR];
     kbeg = 0;
-    kend = nghost[KDIR];
-    offset = end[KDIR];   // Distance between beginning of left and right ghosts
-    nz = nghost[KDIR];
+    kend = data->nghost[KDIR];
+    offset = data->end[KDIR];   // Distance between beginning of left and right ghosts
+    nz = data->nghost[KDIR];
 
     idefix_for("LoadBufferX3Vc",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
                     KOKKOS_LAMBDA (int n, int k, int j, int i) {
@@ -685,8 +697,5 @@ void DataBlock::ExchangeX3(){
     // Stop MPI Timer
     idfx::mpiTimer += timer.seconds();
 
-#else
-    IDEFIX_ERROR("You should not call DataBlock exchange routines without MPI");
-#endif
     idfx::popRegion();
 }

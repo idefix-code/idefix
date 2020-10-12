@@ -10,8 +10,9 @@
 
 #define     BOUNDARY_
 
-// Forward declaration of DataBlock
+// Forward declarations
 class DataBlock;
+
 class ElectroMotiveForce {
     public:
         /* Face centered emf components */
@@ -114,17 +115,15 @@ public:
     // init from a Grid object
     void InitFromGrid(Grid &, Hydro &, Input &);
 
-    // MPI Exchange functions
-    void ExchangeAll();
-    void ExchangeX1();
-    void ExchangeX2();
-    void ExchangeX3();
+    #ifdef WITH_MPI
+    Mpi mpi;                        // Mpi object when WITH_MPI is set
+    #endif
 
+    
     void MakeGeometry(); 
 
     // Dump current datablock to a file for inspection
     void DumpToFile(std::string filebase);
-    enum {faceRight, faceLeft};
 
     // Return the number of cells who have Nans
     int CheckNan();
@@ -136,33 +135,6 @@ public:
 
 private:
     
-    // Init MPI routines
-    void InitExchange();
-
-    // Buffers for MPI calls
-    IdefixArray1D<real> BufferSendX1[2];
-    IdefixArray1D<real> BufferSendX2[2];
-    IdefixArray1D<real> BufferSendX3[2];
-    IdefixArray1D<real> BufferRecvX1[2];
-    IdefixArray1D<real> BufferRecvX2[2];
-    IdefixArray1D<real> BufferRecvX3[2];
-
-    #ifdef WITH_MPI
-        // Requests for MPI persistent communications
-        MPI_Request sendRequestX1[2];
-        MPI_Request sendRequestX2[2];
-        MPI_Request sendRequestX3[2];
-        MPI_Request recvRequestX1[2];
-        MPI_Request recvRequestX2[2];
-        MPI_Request recvRequestX3[2];
-    #endif
-
-    int bufferSizeX1;
-    int bufferSizeX2;
-    int bufferSizeX3;
-
-    // Timer (used by MPI)
-    Kokkos::Timer timer;    // Internal timer of the datablock
 
 
 };

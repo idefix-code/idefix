@@ -31,19 +31,21 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
 
     for(int dir=0 ; dir < DIMENSIONS ; dir++ ) {
         // MPI Exchange data when needed
-        if(data.mygrid->nproc[dir]>1) {
-            switch(dir) {
-                case 0:
-                    data.ExchangeX1();
-                    break;
-                case 1:
-                    data.ExchangeX2();
-                    break;
-                case 2:
-                    data.ExchangeX3();
-                    break;
+        #ifdef WITH_MPI
+            if(data.mygrid->nproc[dir]>1) {
+                switch(dir) {
+                    case 0:
+                        data.mpi.ExchangeX1();
+                        break;
+                    case 1:
+                        data.mpi.ExchangeX2();
+                        break;
+                    case 2:
+                        data.mpi.ExchangeX3();
+                        break;
+                }
             }
-        }
+        #endif
 
         ioffset = (dir == IDIR) ? data.np_int[IDIR] : 0;
         joffset = (dir == JDIR) ? data.np_int[JDIR] : 0;

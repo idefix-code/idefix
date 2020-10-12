@@ -110,8 +110,8 @@ else:
         makefileOptions['kokkosDevices'] = '"Serial"'
 
 if args.mpi:
-    makefileOptions['extraIncludeDir'] += " -I$(SRC)/DataBlock/mpi"
-    makefileOptions['extraVpath'] += ":$(SRC)/DataBlock/mpi"
+    makefileOptions['extraIncludeDir'] += " -I$(SRC)/dataBlock/mpi"
+    makefileOptions['extraVpath'] += ":$(SRC)/dataBlock/mpi"
     makefileOptions['extraHeaders'] += " mpi.hpp"
     makefileOptions['extraObj'] += " mpi.o"
     makefileOptions['cxxflags'] += " -DWITH_MPI"

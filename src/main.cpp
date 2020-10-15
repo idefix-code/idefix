@@ -36,11 +36,19 @@ void signalHandler(int signum) {
 int main( int argc, char* argv[] )
 {
 
+// When running on GPUS allocated from a SLURM scheduler, Kokkos needs to be initialised *before* the MPI layer
+#ifdef SLURM_MPI
+    Kokkos::initialize( argc, argv );
+#endif
+
 #ifdef WITH_MPI    
   MPI_Init(&argc,&argv);
 #endif
 
+#ifndef SLURM_MPI
   Kokkos::initialize( argc, argv );
+#endif
+
   {
 
     idfx::initialize();

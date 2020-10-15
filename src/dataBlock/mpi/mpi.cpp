@@ -174,6 +174,13 @@ void Mpi::ExchangeX1() {
     IdefixArray4D<real> Vs=data->Vs;
     int VsIndex;
 #endif
+// If MPI Persistent, start receiving even before the buffers are filled
+#ifdef MPI_PERSISTENT
+    MPI_Status sendStatus[2];
+    MPI_Status recvStatus[2];
+    
+    MPI_SAFE_CALL(MPI_Startall(2, recvRequestX1));
+#endif
     // Coordinates of the ghost region which needs to be transfered
     ibeg = 0;
     iend = data->nghost[IDIR]; 
@@ -226,19 +233,15 @@ void Mpi::ExchangeX1() {
     #endif
 #endif
 
-   
-    int procSend, procRecv;
-    
-    
+    // Wait for completion before sending out everything
     Kokkos::fence();
-    #ifdef MPI_PERSISTENT
-        MPI_Status sendStatus[2];
-        MPI_Status recvStatus[2];
-        MPI_SAFE_CALL(MPI_Startall(2, recvRequestX1));
-        MPI_SAFE_CALL(MPI_Startall(2, sendRequestX1));
 
+    #ifdef MPI_PERSISTENT
+        MPI_SAFE_CALL(MPI_Startall(2, sendRequestX1));
+        // Wait for buffers to be received
         MPI_Waitall(2,recvRequestX1,recvStatus);
     #else
+    int procSend, procRecv;
     #ifdef MPI_NON_BLOCKING
         MPI_Status sendStatus[2];
         MPI_Status recvStatus[2];
@@ -355,6 +358,13 @@ void Mpi::ExchangeX2() {
     IdefixArray4D<real> Vs=data->Vs;
     int VsIndex;
 #endif
+// If MPI Persistent, start receiving even before the buffers are filled
+#ifdef MPI_PERSISTENT
+    MPI_Status sendStatus[2];
+    MPI_Status recvStatus[2];
+    
+    MPI_SAFE_CALL(MPI_Startall(2, recvRequestX2));
+#endif
     // Coordinates of the ghost region which needs to be transfered
     ibeg = 0;
     iend = data->np_tot[IDIR]; 
@@ -409,17 +419,13 @@ void Mpi::ExchangeX2() {
 
     
     // Send to the right
-    int procSend, procRecv;
-
+    
     Kokkos::fence();
      #ifdef MPI_PERSISTENT
-        MPI_Status sendStatus[2];
-        MPI_Status recvStatus[2];
-        MPI_SAFE_CALL(MPI_Startall(2, recvRequestX2));
         MPI_SAFE_CALL(MPI_Startall(2, sendRequestX2));
-
         MPI_Waitall(2,recvRequestX2,recvStatus);
     #else
+        int procSend, procRecv;
     #ifdef MPI_NON_BLOCKING
         MPI_Status sendStatus[2];
         MPI_Status recvStatus[2];
@@ -536,6 +542,13 @@ void Mpi::ExchangeX3(){
     IdefixArray4D<real> Vs=data->Vs;
     int VsIndex;
 #endif
+// If MPI Persistent, start receiving even before the buffers are filled
+#ifdef MPI_PERSISTENT
+    MPI_Status sendStatus[2];
+    MPI_Status recvStatus[2];
+    
+    MPI_SAFE_CALL(MPI_Startall(2, recvRequestX3));
+#endif
     // Coordinates of the ghost region which needs to be transfered
     ibeg = 0;
     iend = data->np_tot[IDIR]; 
@@ -589,17 +602,14 @@ void Mpi::ExchangeX3(){
 #endif
 
     // Send to the right
-    int procSend, procRecv;
-    
+
     Kokkos::fence();
      #ifdef MPI_PERSISTENT
-        MPI_Status sendStatus[2];
-        MPI_Status recvStatus[2];
-        MPI_SAFE_CALL(MPI_Startall(2, recvRequestX3));
         MPI_SAFE_CALL(MPI_Startall(2, sendRequestX3));
 
         MPI_Waitall(2,recvRequestX3,recvStatus);
     #else
+    int procSend, procRecv;
     #ifdef MPI_NON_BLOCKING
         MPI_Status sendStatus[2];
         MPI_Status recvStatus[2];

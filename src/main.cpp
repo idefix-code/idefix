@@ -41,7 +41,7 @@ int main( int argc, char* argv[] )
     Kokkos::initialize( argc, argv );
 #endif
 
-#ifdef WITH_MPI    
+#ifdef WITH_MPI
   MPI_Init(&argc,&argv);
 #endif
 
@@ -53,10 +53,10 @@ int main( int argc, char* argv[] )
 
     idfx::initialize();
 
-    //signal(SIGINT, signalHandler); 
-    //signal(SIGTERM, signalHandler); 
-    signal(SIGUSR2, signalHandler); 
-    abortRequested=false; 
+    //signal(SIGINT, signalHandler);
+    //signal(SIGTERM, signalHandler);
+    signal(SIGUSR2, signalHandler);
+    abortRequested=false;
 
     Input input = Input(argc, argv);
     input.PrintLogo();
@@ -86,11 +86,11 @@ int main( int argc, char* argv[] )
     Setup mysetup(input,grid,data,hydro);
 
     idfx::cout << "Main::Onit Output Routines." << std::endl;
-    OutputVTK outVTK(input, data, Tint.getT()); 
+    OutputVTK outVTK(input, data, Tint.getT());
     OutputDump outDMP(input, data, Tint.getT());
-    
+
     // Apply initial conditions
-    
+
 
       // Are we restarting?
     if(input.CheckEntry("CommandLine","restart") > 0) {
@@ -122,18 +122,17 @@ int main( int argc, char* argv[] )
         idfx::cout << "Main:: Saving current state and aborting calculation" << std::endl;
         outDMP.Write(grid, data, Tint, outVTK);
         break;
-      } 
+      }
     }
-    double tintegration = (timer.seconds()/(grid.np_int[IDIR]*grid.np_int[JDIR]*grid.np_int[KDIR]*Tint.getNcycles()));
+    double tintegration = timer.seconds()/grid.np_int[IDIR]/grid.np_int[JDIR]/grid.np_int[KDIR]/Tint.getNcycles();
     idfx::cout << "Main::Reached t=" << Tint.getT() << std::endl;
     idfx::cout << "Main::Completed in " << timer.seconds() << "seconds and " << Tint.getNcycles() << " cycles. Perfs are " << 1/tintegration << " cell updates/second." << std::endl;
-    
+
     idfx::cout << "Main::Job's done" << std::endl;
   }
   Kokkos::finalize();
-#ifdef WITH_MPI    
+#ifdef WITH_MPI
   MPI_Finalize();
 #endif
   return 0;
 }
-

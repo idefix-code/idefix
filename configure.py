@@ -142,5 +142,34 @@ for key, val in makefileOptions.items():
 with open(oMakefile,'w') as file:
     file.write(makefile)
 
+# print information
+print("-----------------------------------------------------------")
+print("Idefix succesfully configured with the following options:")
+print("")
+if(args.mhd):
+    print("MHD: enabled")
+else:
+    print("MHD: disabled")
+
+print("Compiler: "+makefileOptions['cxx'])
+if args.mpi:
+    print("MPI: enabled")
+else:
+    print("MPI: disabled")
+if args.gpu:
+    print("Execution target: GPU")
+    print("Target architecture: "+gpu)
+else:
+    print("Execution target: CPU")
+    print("Target architecture: "+cpu)
+    if args.openmp:
+        print("OpenMP parallelism: enabled")
+    else:
+        print("OpenMP parallelism: disabled")
+print("Compiler: "+makefileOptions['cxx'])
+print("Cflags: "+makefileOptions['cxxflags'])
+print("-----------------------------------------------------------")
+
+
 
 

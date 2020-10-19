@@ -25,18 +25,14 @@ Grid::Grid(Input &input) {
         nghost[dir] = 0;
         std::string label = std::string("X")+std::to_string(dir+1)+std::string("-grid");
         int numPatch = input.GetInt("Grid",label,0);
-        if(numPatch>1) {
-            std::stringstream msg;
-            msg << "While creating Grid: this version of idefix doesn't handle more than one grid patch in each direction" << std::endl;
-            msg << "We will build a grid based only on the first patch.";
-            IDEFIX_WARNING(msg); 
-        }
 
         if(dir<DIMENSIONS) {
-            npoints[dir] = input.GetInt("Grid",label,2);
             nghost[dir] = 2;
+            npoints[dir] = 0;
+            for(int patch = 0; patch < numPatch ; patch++) {
+                npoints[dir] += input.GetInt("Grid",label,2+3*patch );
+            }
         }
-
     }
 
 
@@ -44,7 +40,6 @@ Grid::Grid(Input &input) {
         np_tot[dir] = npoints[dir] + 2*nghost[dir];
         np_int[dir] = npoints[dir];
 
-        // Boundary conditions are yet to be defined
         
         std::string label = std::string("X")+std::to_string(dir+1)+std::string("-beg");
         std::string boundary = input.GetString("Boundary",label,0);

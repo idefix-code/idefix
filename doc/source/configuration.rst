@@ -110,12 +110,12 @@ Each entry defines a series of grid blocks, which can have various spacing. The 
 +-------------+-------------+---------------------+--------------------------+---------------------------------+---------------------------------+----------------------------------------------+-----+---------------------+
 |             | Entry name  |   number of blocks  |  begining of first block | number of points in first block | grid spacing in first block     | end of first block/beginning of second block | ... | end of nth block    |
 +=============+=============+=====================+==========================+=================================+=================================+==============================================+=====+=====================+
-|             | X1/2/3-Grid |  integer number >= 1| floating point           | integer                         | can be u, l, s             |  floating point                              | ... | floating point      |
+|             | X1/2/3-Grid |  integer number >= 1| floating point           | integer                         | can be u, l, s                  |  floating point                              | ... | floating point      |
 +-------------+-------------+---------------------+--------------------------+---------------------------------+---------------------------------+----------------------------------------------+-----+---------------------+
 | Example     | X1-Grid     |  1                  |  0.0                     | 64                              |  u                              | 1.0                                          |     |                     |
 +-------------+-------------+---------------------+--------------------------+---------------------------------+---------------------------------+----------------------------------------------+-----+---------------------+
 
-In the example above, we define in ``X1`` direction a uniform grid of 64 points starting at ``X1=0.0`` and ending at ``X1=1.0``. The grid spacing can be either uniform (``u``), increasing or decreasing logarithmically (``l+``/``l-``) or stretched (``s``).
+In the example above, we define in ``X1`` direction a uniform grid of 64 points starting at ``X1=0.0`` and ending at ``X1=1.0``. The grid spacing can be either uniform (``u``), increasing logarithmically (``l``) or stretched (``s``).
 
 .. warning::
     As of version 0.5, *Idefix* supports only uniform and logarithmically-spaced grids.

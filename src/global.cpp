@@ -32,8 +32,8 @@ namespace idfx {
         prank=0;
         #endif
         cout.init(prank);
-        return(0);
         mpiTimer = 0.0;
+        return(0);
 
     }   // Initialisation routine for idefix
 

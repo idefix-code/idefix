@@ -35,19 +35,23 @@ void signalHandler(int signum) {
 
 int main( int argc, char* argv[] )
 {
+  bool haveSlurm = false;
 
 // When running on GPUS allocated from a SLURM scheduler, Kokkos needs to be initialised *before* the MPI layer
-#ifdef SLURM_MPI
-    Kokkos::initialize( argc, argv );
+#ifdef KOKKOS_ENABLE_CUDA
+  if(std::getenv("SLURM_JOB_ID") != NULL) {
+    haveSlurm = true;
+  }
 #endif
+
+  if(haveSlurm)  Kokkos::initialize( argc, argv );
 
 #ifdef WITH_MPI
   MPI_Init(&argc,&argv);
 #endif
 
-#ifndef SLURM_MPI
-  Kokkos::initialize( argc, argv );
-#endif
+  if(!haveSlurm) Kokkos::initialize( argc, argv );
+
 
   {
 
@@ -62,6 +66,7 @@ int main( int argc, char* argv[] )
     input.PrintLogo();
     input.PrintParameters();
 
+    if(haveSlurm) idfx::cout << "Main:: detected you were runnning on a SLURM scheduler with CUDA. Kokkos has been initialised accordingly." << std::endl;
     // Allocate the grid on device
     Grid grid(input);
 

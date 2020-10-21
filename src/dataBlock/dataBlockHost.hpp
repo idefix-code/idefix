@@ -17,6 +17,7 @@ public:
     IdefixArray4D<real>::HostMirror Vs;     // Main face-centered primitive variables index
     IdefixArray4D<real>::HostMirror J;      // Current (only when haveCurrent is enabled)
     IdefixArray4D<real>::HostMirror Uc;     // Main cell-centered conservative variables
+    IdefixArray3D<real>::HostMirror InvDt;
 
     IdefixArray3D<real>::HostMirror Ex1;    // x1 electric field
     IdefixArray3D<real>::HostMirror Ex2;    // x2 electric field

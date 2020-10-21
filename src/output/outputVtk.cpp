@@ -26,6 +26,9 @@
 
 // Whether of not we want to write EMFs
 #define WRITE_EMF
+
+// Whether or not we want to write the cfl dt
+#define WRITE_DT
 /* ---------------------------------------------------------
     The following macros are specific to this file only 
     and are used to ease up serial/parallel implementation
@@ -228,6 +231,7 @@ int OutputVTK::Write(DataBlock &datain, real t)
     }
 #endif // WRITE_CURRENT
 #ifdef WRITE_EMF
+       {
             for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++ ) {
                 for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++ ) {
                     for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
@@ -258,10 +262,23 @@ int OutputVTK::Write(DataBlock &datain, real t)
             varname = "EX2";
             WriteScalar(fileHdl, vect3D, varname);
         #endif // DIMENSIONS
-        
+       }
 #endif // WRITE_EMF
-
+    
 #endif// MHD
+#ifdef WRITE_DT
+    {
+        for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++ ) {
+                for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++ ) {
+                    for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
+                        vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc+  (k-data.beg[KDIR])*nx1loc*nx2loc] = BigEndian(float(1/data.InvDt(k,j,i)));
+                    }
+                }
+            }
+        std::string varname = "Dt";
+        WriteScalar(fileHdl, vect3D, varname);
+    }
+#endif
 
 
 #ifdef WITH_MPI

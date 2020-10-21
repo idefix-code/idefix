@@ -67,13 +67,14 @@ int main( int argc, char* argv[] )
     input.PrintParameters();
 
     if(haveSlurm) idfx::cout << "Main:: detected you were runnning on a SLURM scheduler with CUDA. Kokkos has been initialised accordingly." << std::endl;
+    
+    idfx::cout << "Main::Init Grid." << std::endl;
     // Allocate the grid on device
     Grid grid(input);
-
-    // Allocate the grid on host as a mirror
+    // Allocate the grid image on host 
     GridHost gridHost(grid);
 
-    // Actually make the grid
+    // Actually make the grid on host and sync it on the device
     gridHost.MakeGrid(input);
     gridHost.SyncToDevice();
 
@@ -84,6 +85,7 @@ int main( int argc, char* argv[] )
     TimeIntegrator Tint(input, hydro);
 
     // Make a datablock
+    idfx::cout << "Main::Init DataBlock." << std::endl;
     DataBlock data;
     data.InitFromGrid(grid, hydro, input);
 

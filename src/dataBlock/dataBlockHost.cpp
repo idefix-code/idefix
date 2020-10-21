@@ -36,6 +36,7 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
     dV = Kokkos::create_mirror_view(data->dV);
     Vc = Kokkos::create_mirror_view(data->Vc);
     Uc = Kokkos::create_mirror_view(data->Uc);
+    InvDt = Kokkos::create_mirror_view(data->InvDt);
 #if MHD == YES
     Vs = Kokkos::create_mirror_view(data->Vs);
     if(datain.haveCurrent) {
@@ -71,6 +72,7 @@ void DataBlockHost::SyncToDevice() {
     idfx::pushRegion("DataBlockHost::SyncToDevice()");
 
     Kokkos::deep_copy(data->Vc,Vc);
+    Kokkos::deep_copy(data->InvDt,InvDt);
 #if MHD == YES
     Kokkos::deep_copy(data->Vs,Vs);
     if(this->haveCurrent && data->haveCurrent) Kokkos::deep_copy(data->J,J);
@@ -88,6 +90,7 @@ void DataBlockHost::SyncFromDevice() {
 
     idfx::pushRegion("DataBlockHost::SyncFromDevice()");
     Kokkos::deep_copy(Vc,data->Vc);
+    Kokkos::deep_copy(InvDt,data->InvDt);
 #if MHD == YES
     Kokkos::deep_copy(Vs,data->Vs);
     if(this->haveCurrent && data->haveCurrent) Kokkos::deep_copy(J,data->J);

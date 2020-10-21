@@ -17,7 +17,7 @@ Grid::Grid(Input &input) {
     int npoints[3];
 
 
-    idfx::cout << "Building Grid... " << std::endl;
+    idfx::cout << "Grid::Grid allocating Grid." << std::endl;
     
     // Get grid size from input file, block [Grid]
     for(int dir = 0 ; dir < 3 ; dir++) {
@@ -114,6 +114,9 @@ Grid::Grid(Input &input) {
             int ntot=1;
             for(int dir=0 ; dir < DIMENSIONS; dir++) {
                 nproc[dir] = input.GetInt("CommandLine","dec",dir);
+                // Check that the dimension is effectively divisible by number of procs
+                if(np_int[dir] % nproc[dir])  IDEFIX_ERROR("Grid size must be a multiple of the domain decomposition");
+                // Count the total number of procs we'll need for the specified domain decomposition
                 ntot = ntot * nproc[dir];
             }
             if(ntot != idfx::psize) {
@@ -139,7 +142,7 @@ Grid::Grid(Input &input) {
     MPI_Cart_coords(CartComm, idfx::prank, 3, xproc);
     
     MPI_Barrier(MPI_COMM_WORLD);
-    idfx::cout << "Grid:: Current MPI proc dimensions (";
+    idfx::cout << "Grid::Grid Current MPI proc coordinates (";
 
     for(int dir = 0; dir < 3; dir++) {
         idfx::cout << xproc[dir];

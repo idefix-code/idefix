@@ -274,7 +274,6 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Hydro &hydro) {
     hydro.EnrollUserSourceTerm(&MySourceTerm);
     hydro.EnrollInternalBoundary(&InternalBoundary);
     hydro.EnrollEmfBoundary(&EmfBoundary);
-    hydro.SetGamma(1.05);
     gammaGlob=hydro.GetGamma();
     epsilonGlob = input.GetReal("Setup","epsilon",0);
     epsilonTopGlob = input.GetReal("Setup","epsilonTop",0);

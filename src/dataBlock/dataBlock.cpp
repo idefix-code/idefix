@@ -21,6 +21,7 @@ void DataBlock::InitFromGrid(Grid &grid, Hydro &hydro, Input &input) {
 
     // Make a local copy of the grid for future usage.
     GridHost gridHost(grid);
+    gridHost.SyncFromDevice();
 
     // Say we don't yet have current (default)
     haveCurrent = false;
@@ -28,12 +29,9 @@ void DataBlock::InitFromGrid(Grid &grid, Hydro &hydro, Input &input) {
     // Get the number of points from the parent grid object
     for(int dir = 0 ; dir < 3 ; dir++) {
 
-        // Check that the dimension is effectively divisible by number of procs
-        if(grid.np_int[dir] % grid.nproc[dir]) {
-            IDEFIX_ERROR("Grid size must be a multiple of the domain decomposition");
-        }
 
         nghost[dir] = grid.nghost[dir];
+        // Domain decomposition: decompose the full domain size in grid by the number of processes in that direction
         np_int[dir] = grid.np_int[dir]/grid.nproc[dir];
         np_tot[dir] = np_int[dir]+2*nghost[dir];
         

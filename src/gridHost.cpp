@@ -142,7 +142,6 @@ void GridHost::MakeGrid(Input &input) {
                             xr[dir](i+idxstart) = patchStart + q*(pow(q,i+1)-1)/(q-1)*delta;
                             dx[dir](i+idxstart) = pow(q,i+1)*delta;
                             x[dir](i+idxstart)= 0.5*(xr[dir](i+idxstart) + xl[dir](i+idxstart));
-                            idfx::cout << "i=" << i << "xl=" <<  xl[dir](i+idxstart) << " xr=" << xr[dir](i+idxstart) << std::endl;
                         }
                     }
                     else {
@@ -151,7 +150,6 @@ void GridHost::MakeGrid(Input &input) {
                             xr[dir](i+idxstart) = patchEnd - q*(pow(q,patchSize-i-1)-1)/(q-1)*delta;
                             dx[dir](i+idxstart) = pow(q,patchSize-i+1)*delta;
                             x[dir](i+idxstart)= 0.5*(xr[dir](i+idxstart) + xl[dir](i+idxstart));
-                            idfx::cout << "i=" << i << "xl=" <<  xl[dir](i+idxstart) << " xr=" << xr[dir](i+idxstart) << std::endl;
                         }
                     }
                 }    

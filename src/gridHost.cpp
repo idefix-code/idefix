@@ -96,6 +96,65 @@ void GridHost::MakeGrid(Input &input) {
                         x[dir](i+idxstart)= 0.5*(xr[dir](i+idxstart) + xl[dir](i+idxstart));
                     }
                 }
+                else if((patchType.compare("s+")==0)||(patchType.compare("s-")==0)) {
+                    // Stretched grid
+                    // - means we take the initial dx on the left side, + on the right side
+                    // refPatch corresponds to the patch from which we compute the initial dx of the stretched grid
+                    int refPatch=patch;
+                    if(patchType.compare("s+")==0) {
+                        refPatch=patch+1;
+                    }
+                    else {
+                        refPatch=patch-1;
+                    }
+                    // Sanity check
+                    // Check that the reference patch actually exist
+                    if(refPatch<0 || refPatch >= numPatch) {
+                        IDEFIX_ERROR("You're attempting to construct a stretched patch from a non-existent patch");
+                    }
+                    // Check that the reference patch is a uniform one
+                    if(input.GetString("Grid",label,3+3*refPatch).compare("u")) {
+                        IDEFIX_ERROR("You're attempting to construct a stretched patch from a non-uniform grid");
+                    }
+                    // Ok, we have a well-behaved reference patch, compute dx from the reference patch
+                    real refPatchStart = input.GetReal("Grid",label,1+refPatch*3);
+                    real refPatchEnd = input.GetReal("Grid",label,4+refPatch*3);
+                    int refPatchSize = input.GetInt("Grid",label,2+refPatch*3);
+                    double delta = (refPatchEnd-refPatchStart)/refPatchSize;
+                    double logdelta = log((patchEnd-patchStart)/delta);
+                    // Next we have to compute the stretch factor q. Let's start with a guess
+                    double q=1.05;
+                    // Use Newton method
+                    for(int iter=0; iter <= 50; iter++) {
+                        double f = log((pow(q,patchSize+1)-q)/(q-1))-logdelta;
+                        double fp = ((patchSize+1)*pow(q,patchSize)-1)/(pow(q,patchSize+1)-q)-1/(q-1);
+                        double dq = f/fp;
+                        // advance the guess
+                        q = q - dq;
+                        // Check whether we have converged
+                        if(fabs(dq)<1e-14*q) break;
+                        if(iter==50) IDEFIX_ERROR("Failed to create the stretched grid");
+                    }
+                    // once we know q, we can make the grid
+                    if(patchType.compare("s-")==0) {
+                        for(int i = 0 - ghostStart ; i < patchSize + ghostEnd ; i++) {    
+                            xl[dir](i+idxstart) = patchStart + q*(pow(q,i)-1)/(q-1)*delta;
+                            xr[dir](i+idxstart) = patchStart + q*(pow(q,i+1)-1)/(q-1)*delta;
+                            dx[dir](i+idxstart) = pow(q,i+1)*delta;
+                            x[dir](i+idxstart)= 0.5*(xr[dir](i+idxstart) + xl[dir](i+idxstart));
+                            idfx::cout << "i=" << i << "xl=" <<  xl[dir](i+idxstart) << " xr=" << xr[dir](i+idxstart) << std::endl;
+                        }
+                    }
+                    else {
+                        for(int i = 0 - ghostStart ; i < patchSize + ghostEnd ; i++) {    
+                            xl[dir](i+idxstart) = patchEnd - q*(pow(q,patchSize-i)-1)/(q-1)*delta;
+                            xr[dir](i+idxstart) = patchEnd - q*(pow(q,patchSize-i-1)-1)/(q-1)*delta;
+                            dx[dir](i+idxstart) = pow(q,patchSize-i+1)*delta;
+                            x[dir](i+idxstart)= 0.5*(xr[dir](i+idxstart) + xl[dir](i+idxstart));
+                            idfx::cout << "i=" << i << "xl=" <<  xl[dir](i+idxstart) << " xr=" << xr[dir](i+idxstart) << std::endl;
+                        }
+                    }
+                }    
                 else {
                     std::stringstream msg;
                     msg << "GridHost::MakeGrid: Unknown grid type :" << patchType << std::endl;

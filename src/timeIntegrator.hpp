@@ -15,7 +15,7 @@ class TimeIntegrator {
 
 public:
     real getDt();      // Get current times step of time integrator
-    long int getNcycles();  // Get current number of cycles
+    int64_t getNcycles();  // Get current number of cycles
     void setDt(real );      // Set specific dt for time integrator  
     real getT();       // Get current time of time integrator
 
@@ -43,7 +43,7 @@ private:
     real dt;    // Current timestep
     real t;     // Current time
     real cfl;   // CFL number
-    long int ncycles;   // # of cycles
+    int64_t ncycles;   // # of cycles
     double lastLog;     // # time for the last log
     double lastMpiLog;  // # time for the last MPI log
     long int cyclePeriod;   // # of cycles between two logs

@@ -253,7 +253,7 @@ int Input::GetInt(std::string blockName, std::string paramName, int num) {
   return(value);
 }
 
-// Check that an entry is present in the ini file. 
+// Check that an entry is present in the ini file.
 // If yes, return the number of parameters for given entry
 int Input::CheckEntry(std::string blockName, std::string paramName) {
   int result=-1;

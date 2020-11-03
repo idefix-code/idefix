@@ -1,13 +1,14 @@
-// ********************************************************************************************************
+// ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr and other code contributors
+// Copyright(C) 2020 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+// and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
-// ********************************************************************************************************
+// ***********************************************************************************
 
-#ifndef IDEFIX_HPP
-#define IDEFIX_HPP
-#include <iostream>
+#ifndef IDEFIX_HPP_
+#define IDEFIX_HPP_
 #include <fstream>
+#include <iostream>
 #include <Kokkos_Core.hpp>
 #include <Kokkos_DualView.hpp>
 #ifdef WITH_MPI
@@ -60,8 +61,9 @@ using Layout = Kokkos::LayoutRight;
 
 
 // Basic configuration
-#include "real_types.h"
 #include "definitions.hpp"
+#include "real_types.hpp"
+
 
 // Check whether we're isothermal. If we're not, then we need to solve an energy equation
 #ifndef HAVE_ENERGY
@@ -126,11 +128,11 @@ using Layout = Kokkos::LayoutRight;
     #define iBZ    BX2
   #endif
 
-  #if COMPONENTS >= 3 
+  #if COMPONENTS >= 3
     #define iVPHI  VX3
     #define iMPHI  MX3
     #define iBPHI  BX3
-  #endif  
+  #endif
 #endif
 
 #if GEOMETRY == POLAR
@@ -140,11 +142,11 @@ using Layout = Kokkos::LayoutRight;
     #define iBR    BX1
   #endif
 
-  #if COMPONENTS >= 2 
+  #if COMPONENTS >= 2
     #define iVPHI  VX2
     #define iMPHI  MX2
     #define iBPHI  BX2
-  #endif  
+  #endif
 
   #if COMPONENTS == 3
     #define iVZ    VX3
@@ -159,14 +161,14 @@ using Layout = Kokkos::LayoutRight;
     #define iMR    MX1
     #define iBR    BX1
   #endif
-  
+
   #if COMPONENTS >= 2
     #define iVTH   VX2
     #define iMTH   MX2
     #define iBTH   BX2
   #endif
- 
-  #if COMPONENTS == 3    
+
+  #if COMPONENTS == 3
     #define iVPHI  VX3
     #define iMPHI  MX3
     #define iBPHI  BX3
@@ -174,9 +176,6 @@ using Layout = Kokkos::LayoutRight;
 #endif
 
 // Some macro definitions
-
-
-
 
 
 #if DIMENSIONS == 1
@@ -234,4 +233,4 @@ enum BoundarySide { left, right};
 
 
 
-#endif
+#endif  //  IDEFIX_HPP_

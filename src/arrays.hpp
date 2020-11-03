@@ -7,7 +7,6 @@
 #ifndef IDEFIX_ARRAYS_HPP_
 #define IDEFIX_ARRAYS_HPP_
 
-#include "real_types.h"
 #include "idefix.hpp"
 
 template <typename T> using IdefixArray1D = Kokkos::View<T*, Layout, Device>;

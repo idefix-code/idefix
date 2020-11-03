@@ -11,7 +11,9 @@
 #include <iostream>
 #include "idefix.hpp"
 
-
+using IdefixParamContainer = std::vector<std::string>;
+using IdefixBlockContainer = std::map<std::string,IdefixParamContainer>;
+using IdefixInputContainer = std::map<std::string,IdefixBlockContainer>;
 
 class Input {
 public:
@@ -29,7 +31,7 @@ public:
     void PrintLogo();
 private:
     std::string inputFileName;
-    std::map<std::string,std::map<std::string,std::vector<std::string>>>   inputParameters;
+    IdefixInputContainer  inputParameters;
     void ParseCommandLine(int , char **argv);
 };
 

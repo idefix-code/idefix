@@ -5,7 +5,7 @@
 // ********************************************************************************************************
 
 #include "../idefix.hpp"
-#include "gitversion.h"
+#include "gitversion.hpp"
 
 #define VTK_RECTILINEAR_GRID    14
 #define VTK_STRUCTURED_GRID     35

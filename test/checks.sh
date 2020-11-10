@@ -35,7 +35,9 @@ for rep in $rep_HD_list; do
         python3 testidefix.py -noplot
         cd ..
     done
-    
+    make clean
+    rm -f *.vtk *.dbl
+
     cd $cwd
 done
 

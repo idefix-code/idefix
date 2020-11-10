@@ -1,6 +1,6 @@
 #define     COMPONENTS      3
 #define     DIMENSIONS      2
-#define     HAVE_ENERGY     1
+
 //#define     EMF_AVERAGE     ARITHMETIC
 
 #define     GEOMETRY        SPHERICAL

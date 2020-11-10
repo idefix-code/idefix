@@ -17,7 +17,9 @@ Hydro::Hydro(Input &input, Grid &grid) {
     if(input.CheckEntry("Hydro","gamma")>0) this->gamma = input.GetReal("Hydro","gamma",0);
     else {
         this->gamma = 5.0/3.0;
-        idfx::cout << "Hydro:: Warning! no gamma has been set in the input file, assuming gamma=5/3." << std::endl;
+        #if HAVE_ENERGY
+          idfx::cout << "Hydro:: Warning! no gamma has been set in the input file, assuming gamma=5/3." << std::endl;
+        #endif
     }
 
     if(input.CheckEntry("Hydro","csiso")>0) {

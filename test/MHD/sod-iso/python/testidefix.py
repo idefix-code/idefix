@@ -25,7 +25,7 @@ args=parser.parse_args()
 V=idfx.readVTKCart('../data.0001.vtk')
 U=idfx.readVTKCart('data.ref.vtk')
 
-solinterp=interp1d(U.x,U.data['prs'][:,0,0])
+solinterp=interp1d(U.x,U.data['rho'][:,0,0])
 
 if(not args.noplot):
     plt.figure(1)
@@ -58,20 +58,13 @@ if(not args.noplot):
     plt.title('Y field')
 
 
-    plt.figure(6)
-    #plt.plot(x,p)
-    plt.plot(V.x,V.data['PRS'][:,0,0],'+',markersize=2)
-    #plt.plot(V.x,solinterp(V.x))
-    plt.plot(U.x,U.data['prs'][:,0,0])
-    plt.title('Pressure')
-
     plt.ioff()
     plt.show()
 
-error=np.mean(np.fabs(V.data['PRS'][:,0,0]-solinterp(V.x))**2/solinterp(V.x))
+error=np.mean(np.fabs(V.data['RHO'][:,0,0]-solinterp(V.x))**2/solinterp(V.x))
 
 print("Error=%e"%error)
-if error<1e-4:
+if error<5e-4:
     print("SUCCESS!")
 else:
     print("FAILURE!")

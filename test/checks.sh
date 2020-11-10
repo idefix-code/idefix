@@ -1,7 +1,7 @@
 #!/bin/sh   
 
 rep_HD_list="sod-iso sod"
-rep_MHD_list="sod AmbipolarCshock HallWhistler OrszagTang"
+rep_MHD_list="sod-iso sod AmbipolarCshock HallWhistler OrszagTang"
 
 cwd=$(pwd)
 export IDEFIX_DIR=$cwd/..

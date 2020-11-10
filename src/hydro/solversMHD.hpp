@@ -83,7 +83,7 @@ KOKKOS_INLINE_FUNCTION void K_Flux(real &F_RHO, ARG_EXPAND(real &F_MX1, real &F_
 
     #if HAVE_ENERGY
     real ptot  = V_PRS + HALF_F*Bmag2;
-    #elif EOS == ISOTHERMAL
+    #elif defined(ISOTHERMAL)
     real ptot  = C2Iso * V_RHO + HALF_F*Bmag2;
     #else
     #error "K_Flux not defined for this EOS!"

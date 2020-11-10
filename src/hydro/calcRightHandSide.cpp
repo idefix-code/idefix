@@ -169,7 +169,7 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real t, real dt) {
                 else if(dir==KDIR) dl = dl*rt(i)*dmu(j)/dx2(j);
             #endif
 
-            invDt(k,j,i) = invDt(k,j,i) + FMAX(cMax(k+koffset,j+joffset,i+ioffset), cMax(k,j,i)) / dl;
+            invDt(k,j,i) = invDt(k,j,i) + HALF_F*(cMax(k+koffset,j+joffset,i+ioffset) + cMax(k,j,i)) / dl;
             if(haveParabolicTerms) {
                 invDt(k,j,i) = invDt(k,j,i) + TWO_F * FMAX(dMax(k+koffset,j+joffset,i+ioffset), dMax(k,j,i)) / (dl*dl);
             }

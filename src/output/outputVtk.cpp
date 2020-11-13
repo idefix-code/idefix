@@ -51,7 +51,7 @@ void OutputVTK::WriteHeaderString(char* header, IdfxFileHandler fvtk) {
 
 }
 
-void OutputVTK::WriteHeaderFloat(float* buffer, long int nelem, IdfxFileHandler fvtk) {
+void OutputVTK::WriteHeaderFloat(float* buffer, int64_t nelem, IdfxFileHandler fvtk) {
 #ifdef WITH_MPI
     MPI_Status status;
     MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL ));
@@ -117,13 +117,13 @@ OutputVTK::OutputVTK(Input &input, DataBlock &datain, real t)
     this->ynode = new float[nx2+JOFFSET];
     this->znode = new float[nx3+KOFFSET];
 
-    for (long int i = 0; i < nx1 + IOFFSET; i++) {
+    for (int32_t i = 0; i < nx1 + IOFFSET; i++) {
         xnode[i] = BigEndian(grid.xl[IDIR](i + grid.nghost[IDIR]));
     }
-    for (long int j = 0; j < nx2 + JOFFSET; j++)    {
+    for (int32_t j = 0; j < nx2 + JOFFSET; j++)    {
         ynode[j] = BigEndian(grid.xl[JDIR](j + grid.nghost[JDIR]));
     }
-    for (long int k = 0; k < nx3 + KOFFSET; k++)
+    for (int32_t k = 0; k < nx3 + KOFFSET; k++)
     {
         if(DIMENSIONS==2) znode[k] = BigEndian(0.0);
         else znode[k] = BigEndian(grid.xl[KDIR](k + grid.nghost[KDIR]));
@@ -344,7 +344,7 @@ void OutputVTK::WriteHeader(IdfxFileHandler fvtk)
     
     WriteHeaderString(header, fvtk);
 
-    sprintf(header, "DIMENSIONS %ld %ld %ld\n",
+    sprintf(header, "DIMENSIONS %lld %lld %lld\n",
             nx1 + IOFFSET, nx2 + JOFFSET, nx3 + KOFFSET);
 
     WriteHeaderString(header, fvtk);
@@ -353,15 +353,15 @@ void OutputVTK::WriteHeader(IdfxFileHandler fvtk)
 
     /* -- Write rectilinear grid information -- */
 
-    sprintf(header, "X_COORDINATES %ld float\n", nx1 + IOFFSET);
+    sprintf(header, "X_COORDINATES %lld float\n", nx1 + IOFFSET);
     WriteHeaderString(header, fvtk);
     WriteHeaderFloat(xnode, nx1 + IOFFSET, fvtk);
 
-    sprintf(header, "\nY_COORDINATES %ld float\n", nx2 + JOFFSET);
+    sprintf(header, "\nY_COORDINATES %lld float\n", nx2 + JOFFSET);
     WriteHeaderString(header, fvtk);
     WriteHeaderFloat(ynode, nx2 + JOFFSET, fvtk);
 
-    sprintf(header, "\nZ_COORDINATES %ld float\n", nx3 + KOFFSET);
+    sprintf(header, "\nZ_COORDINATES %lld float\n", nx3 + KOFFSET);
     WriteHeaderString(header, fvtk);
     WriteHeaderFloat(znode, nx3 + KOFFSET, fvtk);
 
@@ -369,17 +369,17 @@ void OutputVTK::WriteHeader(IdfxFileHandler fvtk)
 
     /* -- define node_coord -- */
 
-    sprintf(header, "POINTS %ld float\n", (nx1 + IOFFSET) * (nx2 + JOFFSET) * (nx3 + KOFFSET));
+    sprintf(header, "POINTS %lld float\n", (nx1 + IOFFSET) * (nx2 + JOFFSET) * (nx3 + KOFFSET));
     WriteHeaderString(header, fvtk);
 
     /* -- Write structured grid information -- */
 
     x1 = x2 = x3 = 0.0;
-    for (long int k = 0; k < nx3 + KOFFSET; k++)
+    for (int32_t k = 0; k < nx3 + KOFFSET; k++)
     {
-        for (long int j = 0; j < nx2 + JOFFSET; j++)
+        for (int32_t j = 0; j < nx2 + JOFFSET; j++)
         {
-            for (long int i = 0; i < nx1 + IOFFSET; i++)
+            for (int32_t i = 0; i < nx1 + IOFFSET; i++)
             {
                 D_EXPAND(x1 = BigEndian(xnode[i]); , // BigEndian allows us to get back to little endian when needed  
                          x2 = BigEndian(ynode[j]);,
@@ -416,7 +416,7 @@ void OutputVTK::WriteHeader(IdfxFileHandler fvtk)
       to WriteVTK_Vector() or WriteVTK_Scalar()...]
    ----------------------------------------------------- */
 
-    sprintf(header, "\nCELL_DATA %ld\n", nx1 * nx2 * nx3);
+    sprintf(header, "\nCELL_DATA %lld\n", nx1 * nx2 * nx3);
     WriteHeaderString(header, fvtk);
 }
 #undef VTK_STRUCTERED_GRID

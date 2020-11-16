@@ -66,7 +66,7 @@ if(not args.noplot):
     plt.show()
 
 print("Error=%e"%error)
-if error<1e-1:
+if error<5e-3:
     print("SUCCESS!")
     sys.exit(0)
 else:

@@ -52,11 +52,7 @@ Hydro& TimeIntegrator::GetHydro() {
 // Compute one Stage of the time Integrator
 void TimeIntegrator::Stage(DataBlock &data) {
   idfx::pushRegion("TimeIntegrator::Stage");
-  // Apply Boundary conditions
-  hydro->SetBoundary(data,t);
 
-  // Convert current state into conservative variable and save it
-  hydro->ConvertPrimToCons(data);
 
   // Compute current when needed
   if(hydro->needCurrent) hydro->CalcCurrent(data);
@@ -85,10 +81,7 @@ void TimeIntegrator::Stage(DataBlock &data) {
   hydro->CalcCornerEMF(data, t);
   if(hydro->haveResistivity || hydro->haveAmbipolar) hydro->CalcNonidealEMF(data,t);
   hydro->EvolveMagField(data, t, dt);
-  hydro->ReconstructVcField(data, data.Uc);
 #endif
-  // Convert back into primitive variables
-  hydro->ConvertConsToPrim(data);
 
   idfx::popRegion();
 }
@@ -109,9 +102,9 @@ void TimeIntegrator::ReinitInvDt(DataBlock & data) {
 // Compute one full cycle of the time Integrator
 void TimeIntegrator::Cycle(DataBlock & data) {
   // Do one cycle
-  IdefixArray4D<real> Vc = data.Vc;
+  IdefixArray4D<real> Uc = data.Uc;
   IdefixArray4D<real> Vs = data.Vs;
-  IdefixArray4D<real> Vc0 = data.Vc0;
+  IdefixArray4D<real> Uc0 = data.Uc0;
   IdefixArray4D<real> Vs0 = data.Vs0;
   IdefixArray3D<real> InvDt=data.InvDt;
 
@@ -145,9 +138,16 @@ void TimeIntegrator::Cycle(DataBlock & data) {
     #endif
   }
 
+    // Apply Boundary conditions
+  hydro->SetBoundary(data,t);
+
+  // Convert current state into conservative variable and save it
+  hydro->ConvertPrimToCons(data);
+
+
   // Store initial stage for multi-stage time integrators
   if(nstages>1) {
-    Kokkos::deep_copy(Vc0,Vc);
+    Kokkos::deep_copy(Uc0,Uc);
   #if MHD == YES
     Kokkos::deep_copy(Vs0,Vs);
   #endif
@@ -157,8 +157,11 @@ void TimeIntegrator::Cycle(DataBlock & data) {
   ReinitInvDt(data);
 
   for(int stage=0; stage < nstages ; stage++) {
-    // Update Vc & Vs
+    // Update Uc & Vs
     Stage(data);
+    #if MHD == YES && DIMENSIONS >= 2
+    hydro->ReconstructVcField(data, data.Uc);
+    #endif
 
     // Look for Nans every now and then (this actually cost a lot of time on GPUs
     // because streams are divergent)
@@ -189,7 +192,7 @@ void TimeIntegrator::Cycle(DataBlock & data) {
 
       idefix_for("Cycle-update",0,NVAR,0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
             KOKKOS_LAMBDA (int n, int k, int j, int i) {
-              Vc(n,k,j,i) = wcs*Vc(n,k,j,i) + w0s*Vc0(n,k,j,i);
+              Uc(n,k,j,i) = wcs*Uc(n,k,j,i) + w0s*Uc0(n,k,j,i);
       });
 
     #if MHD==YES
@@ -201,6 +204,15 @@ void TimeIntegrator::Cycle(DataBlock & data) {
       });
     #endif
     }
+    hydro->ConvertConsToPrim(data);
+    
+    // Check if this is our last stage
+    if(stage<nstages-1) {
+      // No: Apply boundary conditions & Recompute conservative variables
+        hydro->SetBoundary(data,t);
+        hydro->ConvertPrimToCons(data);
+    }
+
   }
 
   // Update current time

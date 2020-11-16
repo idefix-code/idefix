@@ -14,8 +14,10 @@
 Hydro::Hydro(Input &input, Grid &grid) {
     idfx::pushRegion("Hydro::Hydro(input)");
 
-    if(input.CheckEntry("Hydro","gamma")>0) this->gamma = input.GetReal("Hydro","gamma",0);
-    else {
+    if(input.CheckEntry("Hydro","gamma")>0) {
+      this->gamma = input.GetReal("Hydro","gamma",0);
+      idfx::cout << "Hydro:: adiabatic EOS with gamma=" << this->gamma <<std::endl;
+    } else {
         this->gamma = 5.0/3.0;
         #if HAVE_ENERGY
           idfx::cout << "Hydro:: Warning! no gamma has been set in the input file, assuming gamma=5/3." << std::endl;
@@ -252,10 +254,6 @@ Hydro::Hydro() {
 
 real Hydro::GetGamma() {
     return(this->gamma);
-}
-
-void Hydro::SetGamma(real newGamma) {
-    this->gamma=newGamma;
 }
 
 real Hydro::GetC2iso() {

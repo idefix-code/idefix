@@ -59,7 +59,6 @@ public:
     void CalcCornerEMF(DataBlock &, real );
     void CalcNonidealEMF(DataBlock &, real );
     void SetBoundary(DataBlock &, real);
-    void SetGamma(real);
     real GetGamma();
     real GetC2iso();
     real CheckDivB(DataBlock &);

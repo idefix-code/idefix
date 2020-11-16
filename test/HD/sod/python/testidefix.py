@@ -68,7 +68,7 @@ if(not args.noplot):
 
 error=np.mean(np.fabs(V.data['PRS'][:,0,0]-solinterp(V.x)))
 print("Error=%e"%error)
-if error<1e-2:
+if error<2e-3:
     print("SUCCESS!")
     sys.exit(0)
 else:

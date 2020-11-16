@@ -73,7 +73,7 @@ public:
     IdefixArray4D<real> J;      // Electrical current (only defined when non-ideal MHD effects are enabled)
 
     // Required by time integrator
-    IdefixArray4D<real> Vc0;
+    IdefixArray4D<real> Uc0;
     IdefixArray4D<real> Vs0;
     IdefixArray3D<real> InvDt;
     IdefixArray3D<real> cMax;       // Maximum propagation speed

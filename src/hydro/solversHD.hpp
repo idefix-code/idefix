@@ -98,9 +98,9 @@ static KOKKOS_INLINE_FUNCTION void K_PrimToCons(real &Uc_RHO, ARG_EXPAND(real &U
 #if HAVE_ENERGY
 
     Uc_ENG = Vc_PRS / gamma_m1 
-                + HALF_F * Vc_RHO * EXPAND(  Vc_VX1*Vc_VX1 , 
+                + HALF_F * Vc_RHO * (EXPAND(  Vc_VX1*Vc_VX1 , 
                                          + Vc_VX2*Vc_VX2 ,
-                                         + Vc_VX3*Vc_VX3 ); 
+                                         + Vc_VX3*Vc_VX3 )); 
 #endif  // Have_energy
 
 }

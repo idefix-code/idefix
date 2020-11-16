@@ -1,6 +1,6 @@
 #!/bin/sh   
 
-rep_HD_list="sod-iso sod"
+rep_HD_list="sod-iso sod MachReflection"
 rep_MHD_list="sod-iso sod AmbipolarCshock HallWhistler OrszagTang"
 
 cwd=$(pwd)

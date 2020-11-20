@@ -120,13 +120,13 @@ if args.mhd:
     makefileOptions['extraIncludeDir'] += " -I$(SRC)/hydro/MHDsolvers"
     makefileOptions['extraVpath'] += ":$(SRC)/hydro/MHDsolvers"
     makefileOptions['extraHeaders'] += " solversMHD.hpp"
-    makefileOptions['extraObj'] += " hlldMHD.o hllMHD.o roeMHD.o tvdlfMHD.o"
+    makefileOptions['extraObj'] += ""
     makefileOptions['cxxflags'] += " -DMHD=YES"
 else:
     makefileOptions['extraIncludeDir'] += " -I$(SRC)/hydro/HDsolvers"
     makefileOptions['extraVpath'] += ":$(SRC)/hydro/HDsolvers"
     makefileOptions['extraHeaders'] += " solversHD.hpp"
-    makefileOptions['extraObj'] += " hllcHD.o hllHD.o roeHD.o tvdlfHD.o"
+    makefileOptions['extraObj'] += ""
     makefileOptions['cxxflags'] += " -DMHD=NO"
 
 

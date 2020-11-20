@@ -1,144 +1,143 @@
-// ********************************************************************************************************
+// ***********************************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr and other code contributors
+// Copyright(C) 2020 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr
+// and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
-// ********************************************************************************************************
+// ***********************************************************************************************
 
-#ifndef DATABLOCK_HPP
-#define DATABLOCK_HPP
+#ifndef DATABLOCK_DATABLOCK_HPP_
+#define DATABLOCK_DATABLOCK_HPP_
+
+#include <vector>
+#include <string>
 #include "idefix.hpp"
 
-#define     BOUNDARY_
+#define BOUNDARY_
 
 // Forward declarations
 class DataBlock;
 
 class ElectroMotiveForce {
-    public:
-        /* Face centered emf components */
-        IdefixArray3D<real>     exj;
-        IdefixArray3D<real>     exk;
-        IdefixArray3D<real>     eyi;
-        IdefixArray3D<real>     eyk;
-        IdefixArray3D<real>     ezi;
-        IdefixArray3D<real>     ezj;
+ public:
+  // Face centered emf components
+  IdefixArray3D<real>     exj;
+  IdefixArray3D<real>     exk;
+  IdefixArray3D<real>     eyi;
+  IdefixArray3D<real>     eyk;
+  IdefixArray3D<real>     ezi;
+  IdefixArray3D<real>     ezj;
 
-        /* Edge centered emf components */
-        IdefixArray3D<real>     ex;
-        IdefixArray3D<real>     ey;
-        IdefixArray3D<real>     ez;
-        
-        IdefixArray3D<int>      svx;
-        IdefixArray3D<int>      svy;
-        IdefixArray3D<int>      svz;
-        
-        IdefixArray3D<real>     Ex1;
-        IdefixArray3D<real>     Ex2;
-        IdefixArray3D<real>     Ex3;
+  // Edge centered emf components
+  IdefixArray3D<real>     ex;
+  IdefixArray3D<real>     ey;
+  IdefixArray3D<real>     ez;
 
-        /* Range of existence */
-        int  ibeg, jbeg, kbeg;
-        int  iend, jend, kend;
+  IdefixArray3D<int>      svx;
+  IdefixArray3D<int>      svy;
+  IdefixArray3D<int>      svz;
 
-        // Constructor from datablock structure
-        ElectroMotiveForce(DataBlock *);
+  IdefixArray3D<real>     Ex1;
+  IdefixArray3D<real>     Ex2;
+  IdefixArray3D<real>     Ex3;
 
-        // Default constructor
-        ElectroMotiveForce();
+  // Range of existence
+  int  ibeg, jbeg, kbeg;
+  int  iend, jend, kend;
 
+  // Constructor from datablock structure
+  explicit ElectroMotiveForce(DataBlock *);
+
+  // Default constructor
+  ElectroMotiveForce();
 };
 
 class DataBlock {
-public:
-    // Local grid information
-    IdefixArray1D<real> x[3];      // geometrical central points
-    IdefixArray1D<real> xr[3];     // cell right interface
-    IdefixArray1D<real> xl[3];     // cell left interface
-    IdefixArray1D<real> dx[3];     // cell width
-    IdefixArray1D<real> xgc[3];     // cell geometrical cell center
-    IdefixArray1D<real> rt;         // In spherical coordinates, gives \tilde{r}
-    IdefixArray1D<real> sm;         //  In spherical coordinates, gives fabs(sin(th)) at a j-1/2 interface
-    IdefixArray1D<real> s;          // In spherical coordinates, gives fabs(sin(th))at the cell center
-    IdefixArray1D<real> dmu;        // In spherical coordinates, gives the \theta volume = fabs(cos(th_m) - cos(th_p)) */
+ public:
+  // Local grid information
+  IdefixArray1D<real> x[3];    // geometrical central points
+  IdefixArray1D<real> xr[3];   // cell right interface
+  IdefixArray1D<real> xl[3];   // cell left interface
+  IdefixArray1D<real> dx[3];   // cell width
+  IdefixArray1D<real> xgc[3];  // cell geometrical cell center
+  IdefixArray1D<real> rt;      // In spherical coordinates, gives \tilde{r}
+  IdefixArray1D<real> sm;      // In spherical coordinates,
+                               // gives fabs(sin(th)) at a j-1/2 interface
+  IdefixArray1D<real> s;       // In spherical coordinates, gives fabs(sin(th))at the cell center
+  IdefixArray1D<real> dmu;     // In spherical coordinates,
+                               // gives the \theta volume = fabs(cos(th_m) - cos(th_p))
 
-    real xbeg[3];                   // Beginning of datablocl
-    real xend[3];                   // End of datablock
+  real xbeg[3];                // Beginning of datablocl
+  real xend[3];                // End of datablock
 
-    IdefixArray3D<real> dV;     // cell volume
-    IdefixArray3D<real> A[3];      // cell right interface area
+  IdefixArray3D<real> dV;      // cell volume
+  IdefixArray3D<real> A[3];    // cell right interface area
 
-    IdefixArray4D<real> Vc;     // Main cell-centered primitive variables index
-    IdefixArray4D<real> Vs;     // Main face-centered varariables
-    IdefixArray4D<real> Uc;     // Main cell-centered conservative variables
-    IdefixArray4D<real> J;      // Electrical current (only defined when non-ideal MHD effects are enabled)
+  IdefixArray4D<real> Vc;      // Main cell-centered primitive variables index
+  IdefixArray4D<real> Vs;      // Main face-centered varariables
+  IdefixArray4D<real> Uc;      // Main cell-centered conservative variables
+  IdefixArray4D<real> J;       // Electrical current
+                               // (only defined when non-ideal MHD effects are enabled)
 
-    // Required by time integrator
-    IdefixArray4D<real> Uc0;
-    IdefixArray4D<real> Vs0;
-    IdefixArray3D<real> InvDt;
-    IdefixArray3D<real> cMax;       // Maximum propagation speed
-    IdefixArray3D<real> dMax;       // Maximum diffusion
+  // Required by time integrator
+  IdefixArray4D<real> Uc0;
+  IdefixArray4D<real> Vs0;
+  IdefixArray3D<real> InvDt;
+  IdefixArray3D<real> cMax;    // Maximum propagation speed
+  IdefixArray3D<real> dMax;    // Maximum diffusion
 
-    // Required by physics
-    IdefixArray4D<real> PrimL;
-    IdefixArray4D<real> PrimR;
-    IdefixArray4D<real> FluxRiemann;
+  // Required by physics
+  IdefixArray4D<real> PrimL;
+  IdefixArray4D<real> PrimR;
+  IdefixArray4D<real> FluxRiemann;
 
-    // Gravitational potential
-    IdefixArray3D<real> phiP;
-    
-    // Nonideal effect diffusion coefficient (only allocated when needed)
-    IdefixArray3D<real> etaOhmic;
-    IdefixArray3D<real> xHall;
-    IdefixArray3D<real> xAmbipolar;
+  // Gravitational potential
+  IdefixArray3D<real> phiP;
+  
+  // Nonideal effect diffusion coefficient (only allocated when needed)
+  IdefixArray3D<real> etaOhmic;
+  IdefixArray3D<real> xHall;
+  IdefixArray3D<real> xAmbipolar;
 
-    // Name of the fields (used in outputs)
-    std::vector<std::string> VcName;
-    std::vector<std::string> VsName;
-   
-    int np_tot[3];                  // total number of grid points
-    int np_int[3];                  // internal number of grid points
+  // Name of the fields (used in outputs)
+  std::vector<std::string> VcName;
+  std::vector<std::string> VsName;
+  
+  int np_tot[3];               // total number of grid points
+  int np_int[3];               // internal number of grid points
 
-    int nghost[3];                  // number of ghost cells
-    BoundaryType lbound[3];                  // Boundary condition to the left
-    BoundaryType rbound[3];                  // Boundary condition to the right
+  int nghost[3];               // number of ghost cells
+  BoundaryType lbound[3];      // Boundary condition to the left
+  BoundaryType rbound[3];      // Boundary condition to the right
 
-    int beg[3];                     // Begining of internal indices
-    int end[3];                     // End of internal indices
+  int beg[3];                  // Begining of internal indices
+  int end[3];                  // End of internal indices
 
-    int gbeg[3];                    // Begining of local block in the grid (internal)
-    int gend[3];                    // End of local block in the grid (internal)
+  int gbeg[3];                 // Begining of local block in the grid (internal)
+  int gend[3];                 // End of local block in the grid (internal)
 
-    ElectroMotiveForce emf;
-    Grid *mygrid;
-    
-    // init from a Grid object
-    void InitFromGrid(Grid &, Hydro &, Input &);
+  ElectroMotiveForce emf;
+  Grid *mygrid;
+  
+  // init from a Grid object
+  void InitFromGrid(Grid &, Hydro &, Input &);
 
-    #ifdef WITH_MPI
-    Mpi mpi;                        // Mpi object when WITH_MPI is set
-    #endif
+  #ifdef WITH_MPI
+  Mpi mpi;                     // Mpi object when WITH_MPI is set
+  #endif
 
-    
-    void MakeGeometry(); 
+  
+  void MakeGeometry(); 
 
-    // Dump current datablock to a file for inspection
-    void DumpToFile(std::string filebase);
+  // Dump current datablock to a file for inspection
+  void DumpToFile(std::string filebase);
 
-    // Return the number of cells who have Nans
-    int CheckNan();
+  // Return the number of cells who have Nans
+  int CheckNan();
 
-    // Whether or not the current is defined
-    bool haveCurrent;
+  // Whether or not the current is defined
+  bool haveCurrent;
 
-    DataBlock();
-
-private:
-    
-
-
+  DataBlock();
 };
 
-
-
-#endif
+#endif // DATABLOCK_DATABLOCK_HPP_

@@ -25,22 +25,86 @@ void Hydro::CalcRiemannFlux(DataBlock & data, int dir, const real t) {
 
     switch (mySolver) {
     #if MHD == YES
-        case TVDLF: TvdlfMHD(data, dir, this->gamma, this->C2Iso);
+        case TVDLF:
+            switch(dir) {
+                case IDIR: TvdlfMHD<IDIR,MX1,MX2,MX3,BX1,BX2,BX3>(data, this->gamma, this->C2Iso);
+                    break;
+                case JDIR: TvdlfMHD<JDIR,MX2,MX1,MX3,BX2,BX1,BX3>(data, this->gamma, this->C2Iso);
+                    break;
+                case KDIR: TvdlfMHD<KDIR,MX3,MX1,MX2,BX3,BX1,BX2>(data, this->gamma, this->C2Iso);
+                    break;
+            }
             break;
-        case HLL:   HllMHD(data, dir, this->gamma, this->C2Iso, this->haveHall, this->xH);
+        case HLL:
+            switch(dir) {
+                case IDIR: HllMHD<IDIR,MX1,MX2,MX3,BX1,BX2,BX3>(data, this->gamma, this->C2Iso, this->haveHall, this->xH);
+                    break;
+                case JDIR: HllMHD<JDIR,MX2,MX1,MX3,BX2,BX1,BX3>(data, this->gamma, this->C2Iso, this->haveHall, this->xH);
+                    break;
+                case KDIR: HllMHD<KDIR,MX3,MX1,MX2,BX3,BX1,BX2>(data, this->gamma, this->C2Iso, this->haveHall, this->xH);
+                    break;
+            }
             break;
-        case HLLD:  HlldMHD(data, dir, this->gamma, this->C2Iso);
+        case HLLD:
+            switch(dir) {
+                case IDIR: HlldMHD<IDIR,MX1,MX2,MX3,BX1,BX2,BX3>(data, this->gamma, this->C2Iso);
+                    break;
+                case JDIR: HlldMHD<JDIR,MX2,MX1,MX3,BX2,BX1,BX3>(data, this->gamma, this->C2Iso);
+                    break;
+                case KDIR: HlldMHD<KDIR,MX3,MX1,MX2,BX3,BX1,BX2>(data, this->gamma, this->C2Iso);
+                    break;
+            }
             break;
-        case ROE:   RoeMHD(data, dir, this->gamma, this->C2Iso);
+        case ROE:
+            switch(dir) {
+                case IDIR: RoeMHD<IDIR,MX1,MX2,MX3,BX1,BX2,BX3>(data, this->gamma, this->C2Iso);
+                    break;
+                case JDIR: RoeMHD<JDIR,MX2,MX1,MX3,BX2,BX1,BX3>(data, this->gamma, this->C2Iso);
+                    break;
+                case KDIR: RoeMHD<KDIR,MX3,MX1,MX2,BX3,BX1,BX2>(data, this->gamma, this->C2Iso);
+                    break;
+            }
             break;
     #else
-        case TVDLF: TvdlfHD(data, dir, this->gamma, this->C2Iso);
+        case TVDLF: 
+            switch(dir) {
+                case IDIR: TvdlfHD<IDIR,MX1,MX2,MX3>(data, this->gamma, this->C2Iso);
+                    break;
+                case JDIR: TvdlfHD<JDIR,MX2,MX1,MX3>(data, this->gamma, this->C2Iso);
+                    break;
+                case KDIR: TvdlfHD<KDIR,MX3,MX1,MX2>(data, this->gamma, this->C2Iso);
+                    break;
+            }
             break;
-        case HLL:   HllHD(data, dir, this->gamma, this->C2Iso);
+        case HLL:
+            switch(dir) {
+                case IDIR: HllHD<IDIR,MX1,MX2,MX3>(data, this->gamma, this->C2Iso);
+                    break;
+                case JDIR: HllHD<JDIR,MX2,MX1,MX3>(data, this->gamma, this->C2Iso);
+                    break;
+                case KDIR: HllHD<KDIR,MX3,MX1,MX2>(data, this->gamma, this->C2Iso);
+                    break;
+            }
             break;
-        case HLLC:  HllcHD(data, dir, this->gamma, this->C2Iso);
+        case HLLC:
+            switch(dir) {
+                case IDIR: HllcHD<IDIR,MX1,MX2,MX3>(data, this->gamma, this->C2Iso);
+                    break;
+                case JDIR: HllcHD<JDIR,MX2,MX1,MX3>(data, this->gamma, this->C2Iso);
+                    break;
+                case KDIR: HllcHD<KDIR,MX3,MX1,MX2>(data, this->gamma, this->C2Iso);
+                    break;
+            }
             break;
-        case ROE:   RoeHD(data, dir, this->gamma, this->C2Iso);
+        case ROE:
+            switch(dir) {
+                case IDIR: RoeHD<IDIR,MX1,MX2,MX3>(data, this->gamma, this->C2Iso);
+                    break;
+                case JDIR: RoeHD<JDIR,MX2,MX1,MX3>(data, this->gamma, this->C2Iso);
+                    break;
+                case KDIR: RoeHD<KDIR,MX3,MX1,MX2>(data, this->gamma, this->C2Iso);
+                    break;
+            }
             break;
     #endif
         default: // do nothing

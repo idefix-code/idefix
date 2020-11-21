@@ -93,7 +93,6 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Hydro &hydro) {
     // Set the function for userdefboundary
     hydro.EnrollUserDefBoundary(&UserdefBoundary);
     hydro.EnrollGravPotential(&Potential);
-    hydro.SetGamma(1.05);
 }
 
 // This routine initialize the flow

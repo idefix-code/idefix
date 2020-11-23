@@ -42,6 +42,11 @@ real Hydro::CheckDivB(DataBlock &data) {
         MPI_Allreduce(MPI_IN_PLACE, &divB, 1, realMPI, MPI_MAX, MPI_COMM_WORLD);
     }
     #endif
+
+    if(divB>1e-10) {
+      IDEFIX_ERROR("\nHydro::CheckDivB divB>1e-10, check your calculation");
+    }
+
     return(divB);
 }
 

@@ -8,6 +8,7 @@ export IDEFIX_DIR=$cwd/..
 echo $IDEFIX_DIR
 
 set -e
+options=""
 
 # HD tests
 for rep in $rep_HD_list; do
@@ -15,7 +16,7 @@ for rep in $rep_HD_list; do
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "***********************************************"
-    python3 $IDEFIX_DIR/configure.py
+    python3 $IDEFIX_DIR/configure.py $options
     echo "***********************************************"
     echo "Making  $rep"
     echo "***********************************************"
@@ -47,7 +48,7 @@ for rep in $rep_MHD_list; do
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "***********************************************"
-    python3 $IDEFIX_DIR/configure.py -mhd
+    python3 $IDEFIX_DIR/configure.py -mhd $options
     echo "***********************************************"
     echo "Making  $rep"
     echo "***********************************************"

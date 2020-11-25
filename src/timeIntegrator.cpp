@@ -134,7 +134,11 @@ void TimeIntegrator::Cycle(DataBlock & data) {
     }
     #if MHD == YES
     // Check divB
-    idfx::cout << "\t maxdivB=" << hydro->CheckDivB(data) << std::endl;
+    real divB =  hydro->CheckDivB(data);
+    idfx::cout << "\t maxdivB=" << divB << std::endl;
+    if(divB>1e-10) {
+      IDEFIX_ERROR("TimeIntegrator::Cycle divB>1e-10, check your calculation");
+    }
     #endif
   }
 

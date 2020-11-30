@@ -114,16 +114,14 @@ void DataBlock::MakeGeometry() {
 #elif GEOMETRY == CYLINDRICAL
       if(i == end) {
         Ax1(k,j,i) = D_EXPAND(FABS(x1p(i-1)), *dx2(j), *ONE_F);
-      }
-      else {
+      } else {
         Ax1(k,j,i) = D_EXPAND(FABS(x1m(i)), *dx2(j), *ONE_F); // r*dz
       }
 
 #elif GEOMETRY == POLAR
       if(i == end) {
         Ax1(k,j,i) = D_EXPAND(FABS(x1p(i-1)), *dx2(j), *dx3(k));
-      }
-      else {
+      } else {
         Ax1(k,j,i) = D_EXPAND(FABS(x1m(i)), *dx2(j), *dx3(k)); // r*dphi*dz
       }
 
@@ -131,8 +129,7 @@ void DataBlock::MakeGeometry() {
       real dmu = FABS(cos(x2m(j)) - cos(x2p(j)));
       if(i == end) {
         Ax1(k,j,i) = D_EXPAND(x1p(i-1)*x1p(i-1), *dmu, *dx3(k));
-      }
-      else {
+      } else {
         Ax1(k,j,i) = D_EXPAND(x1m(i)*x1m(i), *dmu, *dx3(k)); // r^2*dmu*dphi
       }
 #endif
@@ -155,8 +152,7 @@ void DataBlock::MakeGeometry() {
 #elif GEOMETRY == SPHERICAL
       if (j == end) {
         Ax2(k,j,i) = D_EXPAND(x1(i)*dx1(i), *FABS(sin(x2p(j-1))), *dx3(k)); 
-      }
-      else {
+      } else {
         Ax2(k,j,i) = D_EXPAND(x1(i)*dx1(i), *FABS(sin(x2m(j))), *dx3(k)); // = r*dr*sin(thp)*dphi
       }
 #endif

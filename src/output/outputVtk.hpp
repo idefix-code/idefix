@@ -8,6 +8,7 @@
 #ifndef OUTPUT_OUTPUTVTK_HPP_
 #define OUTPUT_OUTPUTVTK_HPP_
 #include <string>
+#include "outputVtk.hpp"
 #include "../idefix.hpp"
 
 

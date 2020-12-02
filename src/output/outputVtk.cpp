@@ -5,6 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************************
 
+#include "outputVtk.hpp"
 #include "gitversion.hpp"
 #include "../idefix.hpp"
 

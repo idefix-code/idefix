@@ -15,21 +15,22 @@
 
 #define KFASTM 0
 #define KFASTP 1
+#define KDIVB  2
 
 #if HAVE_ENERGY
 
-#define KENTRP 2
+#define KENTRP 3
+#define KSLOWM 4
+#define KSLOWP 5
+#define KALFVM 6
+#define KALFVP 7
+
+#else
+
 #define KSLOWM 3
 #define KSLOWP 4
 #define KALFVM 5
 #define KALFVP 6
-
-#else
-
-#define KSLOWM 2
-#define KSLOWP 3
-#define KALFVM 4
-#define KALFVP 5
 
 #endif
 
@@ -168,8 +169,8 @@ void RoeMHD(DataBlock & data, real gamma, real C2Iso) {
       // --- Compute the square of the sound speed
       real a, a2, a2L, a2R;
 #if HAVE_ENERGY
-      a2L = gamma * vL[PRS] / vL[RHO];
-      a2R = gamma * vR[PRS] / vR[RHO];
+      // a2L = gamma * vL[PRS] / vL[RHO];
+      // a2R = gamma * vR[PRS] / vR[RHO];
 #else
       a2L = C2Iso;
       a2R = C2Iso;
@@ -209,10 +210,6 @@ void RoeMHD(DataBlock & data, real gamma, real C2Iso) {
                By = sr*vL[BXt] + sl*vR[BXt];  ,
                Bz = sr*vL[BXb] + sl*vR[BXb];  )
 
-      EXPAND ( Bx = sr*vL[BXn] + sl*vR[BXn];  ,
-               By = sr*vL[BXt] + sl*vR[BXt];  ,
-               Bz = sr*vL[BXb] + sl*vR[BXb];  )
-
       sBx = (Bx >= 0.0 ? 1.0 : -1.0);
 
       EXPAND( bx = Bx/sqrt_rho;  ,
@@ -222,15 +219,9 @@ void RoeMHD(DataBlock & data, real gamma, real C2Iso) {
       bt2   = EXPAND(0.0  , + by*by, + bz*bz);
       b2    = bx*bx + bt2;
       Btmag = sqrt(bt2*rho);
-
-      real X, vdm, BdB;
       
-      X  = EXPAND(dV[BXn]*dV[BXn], + dV[BXt]*dV[BXt], + dV[BXb]*dV[BXb]);
-      X /= (sqr_rho_L + sqr_rho_R)*(sqr_rho_L + sqr_rho_R)*2.0;   
-
-      vdm = EXPAND(u*dU[Xn],  + v*dU[Xt],  + w*dU[Xb]);
-
-      BdB = EXPAND(Bx*dU[BXn], + By*dU[BXt], + Bz*dU[BXb]);
+      real X  = EXPAND(dV[BXn]*dV[BXn], + dV[BXt]*dV[BXt], + dV[BXb]*dV[BXb]);
+      X /= (sqr_rho_L + sqr_rho_R)*(sqr_rho_L + sqr_rho_R)*2.0;
 
       
       real Bmag2L, Bmag2R, pL, pR;
@@ -240,13 +231,18 @@ void RoeMHD(DataBlock & data, real gamma, real C2Iso) {
       pL  = vL[PRS] + HALF_F*Bmag2L;
       pR  = vR[PRS] + HALF_F*Bmag2R;
 #else
-      pL  = a2L*vL[RHO] + HALF_F*Bmag2L;
-      pR  = a2R*vR[RHO] + HALF_F*Bmag2R;
+      // pL  = a2L*vL[RHO] + HALF_F*Bmag2L;
+      // pR  = a2R*vR[RHO] + HALF_F*Bmag2R;
 #endif
       
       // 6d. Compute enthalpy and sound speed.
 #if HAVE_ENERGY
       real vel2, HL, HR, H, Hgas;
+      real vdm, BdB;
+      
+      vdm = EXPAND(u*dU[Xn],  + v*dU[Xt],  + w*dU[Xb]);
+      BdB = EXPAND(Bx*dU[BXn], + By*dU[BXt], + Bz*dU[BXb]);
+      
       vel2    = EXPAND(u*u, + v*v, + w*w);
       dV[PRS] = gamma_m1*((0.5*vel2 - X)*dV[RHO] - vdm + dU[ENG] - BdB); 
       
@@ -352,7 +348,6 @@ void RoeMHD(DataBlock & data, real gamma, real C2Iso) {
       scrh    = alpha_s*cs*sBx;
       beta_dv = EXPAND(0.0, + beta_y*dV[Xt], + beta_z*dV[Xb]);
       beta_dB = EXPAND(0.0, + beta_y*dV[BXt], + beta_z*dV[BXb]);
-      beta_v  = EXPAND(0.0, + beta_y*v,       + beta_z*w);
 
       Rc[RHO][kk] = alpha_f;
       EXPAND( Rc[Xn][kk] = alpha_f*lambda[kk];       ,
@@ -364,16 +359,17 @@ void RoeMHD(DataBlock & data, real gamma, real C2Iso) {
               Rc[BXb][kk] = alpha_s*a*beta_z/sqrt_rho;  )
 
 #if HAVE_ENERGY
+      beta_v  = EXPAND(0.0, + beta_y*v,       + beta_z*w);
       Rc[ENG][kk] =   alpha_f*(Hgas - u*cf) + scrh*beta_v
                   + alpha_s*a*Btmag/sqrt_rho;
 
-      eta[kk] =   alpha_f*(X*dV[RHO] + dV[PRS]) + rho*scrh*beta_dv
-              - rho*alpha_f*cf*dV[Xn]        + sqrt_rho*alpha_s*a*beta_dB;
+      eta[kk] =   alpha_f*(X*dV[RHO] + dV[PRS]);
 #else
-      eta[kk] =   alpha_f*(0.0*X + a2)*dV[RHO] + rho*scrh*beta_dv
-              - rho*alpha_f*cf*dV[Xn] + sqrt_rho*alpha_s*a*beta_dB;
+      // eta[kk] =   alpha_f*(0.0*X + a2)*dV[RHO] + rho*scrh*beta_dv
+      //        - rho*alpha_f*cf*dV[Xn] + sqrt_rho*alpha_s*a*beta_dB;
+      eta[kk] =   alpha_f*a2*dV[RHO];
 #endif
-      
+      eta[kk] += rho*scrh*beta_dv - rho*alpha_f*cf*dV[Xn] + sqrt_rho*alpha_s*a*beta_dB;
       eta[kk] *= 0.5/a2;
 
       // Fast wave:  u + c_f
@@ -432,8 +428,7 @@ void RoeMHD(DataBlock & data, real gamma, real C2Iso) {
 
       kk = KDIVB;
       lambda[kk] = u;
-
-      Rc[BXn][kk] = eta[kk] = 0.0;
+      eta[kk] = 0.0;
       
 #if COMPONENTS > 1    
       // Slow wave:  u - c_s

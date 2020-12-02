@@ -1,8 +1,9 @@
-// ********************************************************************************************************
+// ***********************************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr and other code contributors
+// Copyright(C) 2020 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr
+// and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
-// ********************************************************************************************************
+// ***********************************************************************************************
 
 /*
 //@HEADER
@@ -14,11 +15,13 @@
 //@HEADER
 */
 
+
+#include <sys/time.h>
+
 #include <limits>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <sys/time.h>
 #include <csignal>
 
 #include <Kokkos_Core.hpp>
@@ -33,11 +36,11 @@ void signalHandler(int signum) {
 }
 
 
-int main( int argc, char* argv[] )
-{
+int main( int argc, char* argv[] ) {
   bool haveSlurm = false;
 
-// When running on GPUS allocated from a SLURM scheduler, Kokkos needs to be initialised *before* the MPI layer
+  // When running on GPUS allocated from a SLURM scheduler,
+  // Kokkos needs to be initialised *before* the MPI layer
 #ifdef KOKKOS_ENABLE_CUDA
   if(std::getenv("SLURM_JOB_ID") != NULL) {
     haveSlurm = true;
@@ -54,7 +57,6 @@ int main( int argc, char* argv[] )
 
 
   {
-
     idfx::initialize();
 
     //signal(SIGINT, signalHandler);
@@ -66,7 +68,9 @@ int main( int argc, char* argv[] )
     input.PrintLogo();
     input.PrintParameters();
 
-    if(haveSlurm) idfx::cout << "Main:: detected you were runnning on a SLURM scheduler with CUDA. Kokkos has been initialised accordingly." << std::endl;
+    if(haveSlurm)
+      idfx::cout << "Main:: detected you were runnning on a SLURM scheduler with CUDA. "
+                    "Kokkos has been initialised accordingly." << std::endl;
     
     idfx::cout << "Main::Init Grid." << std::endl;
     // Allocate the grid on device
@@ -98,15 +102,13 @@ int main( int argc, char* argv[] )
 
     // Apply initial conditions
 
-
-      // Are we restarting?
+    // Are we restarting?
     if(input.CheckEntry("CommandLine","restart") > 0) {
       idfx::cout << "Main::Restarting from dump file"  << std::endl;
       outDMP.Read(grid,data,Tint,outVTK,input.GetInt("CommandLine","restart",0));
       hydro.SetBoundary(data,Tint.getT());
       outVTK.CheckForWrite(data,Tint.getT());
-    }
-    else {
+    } else {
       idfx::cout << "Main::Creating initial conditions." << std::endl;
       mysetup.InitFlow(data);
       hydro.SetBoundary(data,Tint.getT());
@@ -131,15 +133,22 @@ int main( int argc, char* argv[] )
         break;
       }
     }
-    double tintegration = timer.seconds()/grid.np_int[IDIR]/grid.np_int[JDIR]/grid.np_int[KDIR]/Tint.getNcycles();
+    
+    double tintegration = timer.seconds() / grid.np_int[IDIR] / grid.np_int[JDIR]
+                            / grid.np_int[KDIR] / Tint.getNcycles();
+    
     idfx::cout << "Main::Reached t=" << Tint.getT() << std::endl;
-    idfx::cout << "Main::Completed in " << timer.seconds() << "seconds and " << Tint.getNcycles() << " cycles. Perfs are " << 1/tintegration << " cell updates/second." << std::endl;
+    idfx::cout << "Main::Completed in " << timer.seconds() << "seconds and " << Tint.getNcycles()
+               << " cycles. Perfs are " << 1/tintegration << " cell updates/second." << std::endl;
 
     idfx::cout << "Main::Job's done" << std::endl;
   }
+  
   Kokkos::finalize();
+
 #ifdef WITH_MPI
   MPI_Finalize();
 #endif
+  
   return 0;
 }

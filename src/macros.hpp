@@ -1,10 +1,9 @@
-
-// ***********************************************************************************
+// ***********************************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+// Copyright(C) 2020 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
-// ***********************************************************************************
+// ***********************************************************************************************
 // Most of these macros are identical to the one defined in the Pluto code (c) A. Mignone & col.
 
 #ifndef MACROS_HPP_
@@ -77,12 +76,12 @@
   #define AVERAGE_3D_Y(q,k,j,i)   (0.5*(q(k,j,i) + q(k,j-1,i)))
   #define AVERAGE_3D_Z(q,k,j,i)    (q(0,j,i))
 
-  #define AVERAGE_3D_XY(q,k,j,i)   ( 0.25*(  q(k,j,i)   + q(k,j,i-1) \
+  #define AVERAGE_3D_XY(q,k,j,i)   ( 0.25*(  q(k,j,i)   + q(k,j,i-1)      \
                                         + q(k,j-1,i) + q(k,j-1,i-1)) )
   #define AVERAGE_3D_XZ(q,k,j,i)   (0.5*(q(0,j,i) + q(0,j,i-1)))
   #define AVERAGE_3D_YZ(q,k,j,i)   (0.5*(q(0,j,i) + q(0,j-1,i)))
 
-  #define AVERAGE_3D_XYZ(q,k,j,i)  (0.25*(  q(0,j,i)   + q(0,j,i-1)        \
+  #define AVERAGE_3D_XYZ(q,k,j,i)  (0.25*(  q(0,j,i)   + q(0,j,i-1)       \
                                        + q(0,j-1,i) + q(0,j-1,i-1)))
 
 #elif DIMENSIONS == 3
@@ -90,15 +89,15 @@
   #define AVERAGE_3D_Y(q,k,j,i)   (0.5*(q(k,j,i) + q(k,j-1,i)))
   #define AVERAGE_3D_Z(q,k,j,i)   (0.5*(q(k,j,i) + q(k-1,j,i)))
 
-  #define AVERAGE_3D_XY(q,k,j,i)  (0.25*(  q(k,j,i)   + q(k,j,i-1) \
+  #define AVERAGE_3D_XY(q,k,j,i)  (0.25*(  q(k,j,i)   + q(k,j,i-1)        \
                                        + q(k,j-1,i) + q(k,j-1,i-1)) )
-  #define AVERAGE_3D_XZ(q,k,j,i)  (0.25*(  q(k,j,i)   + q(k,j,i-1) \
+  #define AVERAGE_3D_XZ(q,k,j,i)  (0.25*(  q(k,j,i)   + q(k,j,i-1)        \
                                        + q(k-1,j,i) + q(k-1,j,i-1)) )
-  #define AVERAGE_3D_YZ(q,k,j,i)  (0.25*(  q(k,j,i)   + q(k,j-1,i) \
+  #define AVERAGE_3D_YZ(q,k,j,i)  (0.25*(  q(k,j,i)   + q(k,j-1,i)        \
                                        + q(k-1,j,i) + q(k-1,j-1,i)) )
-  #define AVERAGE_3D_XYZ(q,k,j,i) (0.125*(  q(k,j,i)   + q(k,j,i-1)        \
-                                       + q(k,j-1,i) + q(k,j-1,i-1)      \
-                                       + q(k-1,j,i)   + q(k-1,j,i-1)    \
+  #define AVERAGE_3D_XYZ(q,k,j,i) (0.125*(  q(k,j,i)   + q(k,j,i-1)       \
+                                       + q(k,j-1,i) + q(k,j-1,i-1)        \
+                                       + q(k-1,j,i)   + q(k-1,j,i-1)      \
                                        + q(k-1,j-1,i) + q(k-1,j-1,i-1)))
 #endif
 
@@ -122,12 +121,12 @@
   #define AVERAGE_4D_Y(q,n,k,j,i)   (0.5*(q(n,k,j,i) + q(n,k,j-1,i)))
   #define AVERAGE_4D_Z(q,n,k,j,i)    (q(n,0,j,i))
 
-  #define AVERAGE_4D_XY(q,n,k,j,i)   ( 0.25*(  q(n,k,j,i)   + q(n,k,j,i-1) \
+  #define AVERAGE_4D_XY(q,n,k,j,i)   ( 0.25*(  q(n,k,j,i)   + q(n,k,j,i-1)    \
                                         + q(n,k,j-1,i) + q(n,k,j-1,i-1)) )
   #define AVERAGE_4D_XZ(q,n,k,j,i)   (0.5*(q(n,0,j,i) + q(n,0,j,i-1)))
   #define AVERAGE_4D_YZ(q,n,k,j,i)   (0.5*(q(n,0,j,i) + q(n,0,j-1,i)))
 
-  #define AVERAGE_4D_XYZ(q,n,k,j,i)  (0.25*(  q(n,0,j,i)   + q(n,0,j,i-1)        \
+  #define AVERAGE_4D_XYZ(q,n,k,j,i)  (0.25*(  q(n,0,j,i)   + q(n,0,j,i-1)    \
                                        + q(n,0,j-1,i) + q(n,0,j-1,i-1)))
 
 #elif DIMENSIONS == 3
@@ -135,15 +134,15 @@
   #define AVERAGE_4D_Y(q,n,k,j,i)   (0.5*(q(n,k,j,i) + q(n,k,j-1,i)))
   #define AVERAGE_4D_Z(q,n,k,j,i)   (0.5*(q(n,k,j,i) + q(n,k-1,j,i)))
 
-  #define AVERAGE_4D_XY(q,n,k,j,i)  (0.25*(  q(n,k,j,i)   + q(n,k,j,i-1) \
+  #define AVERAGE_4D_XY(q,n,k,j,i)  (0.25*(  q(n,k,j,i)   + q(n,k,j,i-1)     \
                                        + q(n,k,j-1,i) + q(n,k,j-1,i-1)) )
-  #define AVERAGE_4D_XZ(q,n,k,j,i)  (0.25*(  q(n,k,j,i)   + q(n,k,j,i-1) \
+  #define AVERAGE_4D_XZ(q,n,k,j,i)  (0.25*(  q(n,k,j,i)   + q(n,k,j,i-1)     \
                                        + q(n,k-1,j,i) + q(n,k-1,j,i-1)) )
-  #define AVERAGE_4D_YZ(q,n,k,j,i)  (0.25*(  q(n,k,j,i)   + q(n,k,j-1,i) \
+  #define AVERAGE_4D_YZ(q,n,k,j,i)  (0.25*(  q(n,k,j,i)   + q(n,k,j-1,i)     \
                                        + q(n,k-1,j,i) + q(n,k-1,j-1,i)) )
-  #define AVERAGE_4D_XYZ(q,n,k,j,i) (0.125*(  q(n,k,j,i)   + q(n,k,j,i-1)        \
-                                       + q(n,k,j-1,i) + q(n,k,j-1,i-1)      \
-                                       + q(n,k-1,j,i)   + q(n,k-1,j,i-1)    \
+  #define AVERAGE_4D_XYZ(q,n,k,j,i) (0.125*(  q(n,k,j,i)   + q(n,k,j,i-1)    \
+                                       + q(n,k,j-1,i) + q(n,k,j-1,i-1)       \
+                                       + q(n,k-1,j,i)   + q(n,k-1,j,i-1)     \
                                        + q(n,k-1,j-1,i) + q(n,k-1,j-1,i-1)))
 #endif
 
@@ -198,17 +197,17 @@
   #endif
 #endif
 
-#define MPI_SAFE_CALL(cmd) {                                                  \
-        int mpiErrNo = (cmd);                                                 \
-        if (MPI_SUCCESS != mpiErrNo) {                                        \
-            char msg[MPI_MAX_ERROR_STRING];                                   \
-            int len;                                                          \
-            std::stringstream stream;                                         \
-            MPI_Error_string(mpiErrNo, msg, &len);                            \
-            stream << "MPI failed with error code :" << mpiErrNo              \
-                                << " " << msg << std::endl;                   \
-            IDEFIX_ERROR(stream);                                             \
-        }                                                                     \
-    }
+#define MPI_SAFE_CALL(cmd) {                                          \
+  int mpiErrNo = (cmd);                                               \
+  if (MPI_SUCCESS != mpiErrNo) {                                      \
+    char msg[MPI_MAX_ERROR_STRING];                                   \
+    int len;                                                          \
+    std::stringstream stream;                                         \
+    MPI_Error_string(mpiErrNo, msg, &len);                            \
+    stream << "MPI failed with error code :" << mpiErrNo              \
+                        << " " << msg << std::endl;                   \
+    IDEFIX_ERROR(stream);                                             \
+  }                                                                   \
+}
 
 #endif // MACROS_HPP_

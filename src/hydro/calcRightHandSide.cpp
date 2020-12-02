@@ -121,8 +121,7 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real t, real dt) {
             Flux(iBTH,k,j,i)  = Flux(iBTH,k,j,i) * x1m(i) / Ax;  ,
             Flux(iBPHI,k,j,i) = Flux(iBPHI,k,j,i) * x1m(i) / Ax; )
   #endif // MHD
-      }
-      else if(dir==JDIR) {
+      } else if(dir==JDIR) {
   #if COMPONENTS == 3
         Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(sm(j));
     #if MHD == YES
@@ -164,8 +163,7 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real t, real dt) {
                 rhs[iBTH]  = -q * ((Flux(iBTH, k, j, i+1)  - Flux(iBTH, k, j, i) ));  ,
                 rhs[iBPHI] = -q * ((Flux(iBPHI, k, j, i+1) - Flux(iBPHI, k, j, i) )); )
   #endif
-      }
-      else if(dir==JDIR) {
+      } else if(dir==JDIR) {
   #if (GEOMETRY == SPHERICAL) && (COMPONENTS == 3)
         rhs[iMPHI] /= FABS(s(j));
     #if MHD == YES

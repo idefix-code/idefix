@@ -217,8 +217,7 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
         ey(k,j,i) += HALF_F*(eyk(k,j,i-1) - Ex2(k-1,j,i-1) + eyk(k,j,i) - Ex2(k-1,j,i));
         ey(k,j,i) -= HALF_F*(Ex2(k,j,i-1) - eyk(k,j,i-1)   + Ex2(k,j,i) - eyk(k,j,i));
     #endif
-      }
-      else {
+      } else {
         ez(k,j,i) += ezj(k,j,iu) - Ex3(k,j-1,iu);
         ez(k,j,i) -= Ex3(k,j,iu) - ezj(k,j,iu);
     #if DIMENSIONS == 3
@@ -236,8 +235,7 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
         ex(k,j,i) += HALF_F*(exk(k,j-1,i) - Ex1(k-1,j-1,i) + exk(k,j,i) - Ex1(k-1,j,i));
         ex(k,j,i) -= HALF_F*(Ex1(k,j-1,i) - exk(k,j-1,i)   + Ex1(k,j,i) - exk(k,j,i));
     #endif
-      }
-      else {
+      } else {
         ez(k,j,i) += ezi(k,ju,i) - Ex3(k,ju,i-1);
         ez(k,j,i) -= Ex3(k,ju,i) - ezi(k,ju,i);
     #if DIMENSIONS == 3
@@ -254,8 +252,7 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
         ex(k,j,i) -= HALF_F*(Ex1(k-1,j,i) - exj(k-1,j,i)   + Ex1(k,j,i) - exj(k,j,i));
         ey(k,j,i) += HALF_F*(eyi(k-1,j,i) - Ex2(k-1,j,i-1) + eyi(k,j,i) - Ex2(k,j,i-1));
         ey(k,j,i) -= HALF_F*(Ex2(k-1,j,i) - eyi(k-1,j,i)   + Ex2(k,j,i) - eyi(k,j,i));
-      }
-      else {
+      } else {
         ex(k,j,i) += exj(ku,j,i) - Ex1(ku,j-1,i);
         ex(k,j,i) -= Ex1(ku,j,i) - exj(ku,j,i);
         ey(k,j,i) += eyi(ku,j,i) - Ex2(ku,j,i-1);

@@ -200,8 +200,7 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
               Vc(VX2,k,j,i) = Vc(VX2,k,j,i) + voffset;
             }
           );
-        }
-        else {
+        } else {
           idefix_for("BoundaryBegShearingBox",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
             KOKKOS_LAMBDA (int n, int k, int j, int i) {
               real voffset= (n == VX2) ? - sbLx * sbS : ZERO_F;
@@ -390,8 +389,7 @@ void Hydro::SetBoundary(DataBlock &data, real t) {
               Vc(VX2,k,j,i) = Vc(VX2,k,j,i) + voffset;
             }
           );
-        }
-        else {
+        } else {
           idefix_for("BoundaryEndShearingBox",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
             KOKKOS_LAMBDA (int n, int k, int j, int i) {
               real voffset= (n == VX2) ? + sbLx * sbS : ZERO_F;

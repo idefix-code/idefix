@@ -1,11 +1,13 @@
-// ********************************************************************************************************
+// ***********************************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr and other code contributors
+// Copyright(C) 2020 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr
+// and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
-// ********************************************************************************************************
+// ***********************************************************************************************
 
-#ifndef HYDRO_HPP
-#define HYDRO_HPP
+#ifndef HYDRO_HYDRO_HPP_
+#define HYDRO_HYDRO_HPP_
+
 #include "../idefix.hpp"
 
 #define     SMALL_PRESSURE_FIX      (1.0e-5)
@@ -26,15 +28,19 @@ enum Solver {TVDLF=1, HLL, HLLC, ROE};
 #define UCT0         2
 #define UCT_CONTACT  3
 
+// Default EMF_AVERAGE value
 #ifndef EMF_AVERAGE
-    #define EMF_AVERAGE     UCT_CONTACT
+  #define EMF_AVERAGE     UCT_CONTACT
 #endif
 
 // Parabolic terms can have different status
 enum ParabolicType {Disabled, Constant, UserDefFunction };
 
 using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side, const real t);
-using GravPotentialFunc = void (*) (DataBlock &, const real t, IdefixArray1D<real>&, IdefixArray1D<real>&, IdefixArray1D<real>&, IdefixArray3D<real> &);
+using GravPotentialFunc = void (*) (DataBlock &, const real t, IdefixArray1D<real>&,
+                                    IdefixArray1D<real>&, IdefixArray1D<real>&,
+                                    IdefixArray3D<real> &);
+
 using SrcTermFunc = void (*) (DataBlock &, const real t, const real dt);
 using InternalBoundaryFunc = void (*) (DataBlock &, const real t);
 using EmfBoundaryFunc = void (*) (DataBlock &, const real t);
@@ -42,105 +48,99 @@ using DiffusivityFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real>
 
 
 class Hydro {
-public:
-    Hydro();
-    Hydro(Input &, Grid &);
-    void ConvertConsToPrim(DataBlock &);
-    void ConvertPrimToCons(DataBlock &);
-    void ExtrapolatePrimVar(DataBlock &, int);
-    void CalcRiemannFlux(DataBlock &, int, const real);
-    void CalcParabolicFlux(DataBlock &, int, const real);
-    void CalcRightHandSide(DataBlock &, int, real, real );
-    void CalcCurrent(DataBlock &);
-    void AddSourceTerms(DataBlock &, real, real );
-    void ReconstructVcField(DataBlock &, IdefixArray4D<real> &);
-    void ReconstructNormalField(DataBlock &, int);
-    void EvolveMagField(DataBlock &, real, real);
-    void CalcCornerEMF(DataBlock &, real );
-    void CalcNonidealEMF(DataBlock &, real );
-    void SetBoundary(DataBlock &, real);
-    real GetGamma();
-    real GetC2iso();
-    real CheckDivB(DataBlock &);
+ public:
+  Hydro();
+  Hydro(Input &, Grid &);
+  void ConvertConsToPrim(DataBlock &);
+  void ConvertPrimToCons(DataBlock &);
+  void ExtrapolatePrimVar(DataBlock &, int);
+  void CalcRiemannFlux(DataBlock &, int, const real);
+  void CalcParabolicFlux(DataBlock &, int, const real);
+  void CalcRightHandSide(DataBlock &, int, real, real );
+  void CalcCurrent(DataBlock &);
+  void AddSourceTerms(DataBlock &, real, real );
+  void ReconstructVcField(DataBlock &, IdefixArray4D<real> &);
+  void ReconstructNormalField(DataBlock &, int);
+  void EvolveMagField(DataBlock &, real, real);
+  void CalcCornerEMF(DataBlock &, real );
+  void CalcNonidealEMF(DataBlock &, real );
+  void SetBoundary(DataBlock &, real);
+  real GetGamma();
+  real GetC2iso();
+  real CheckDivB(DataBlock &);
 
-    // Source terms
-    bool haveSourceTerms;
+  // Source terms
+  bool haveSourceTerms;
 
-    // Parabolic terms
-    bool haveParabolicTerms;
-    
-    // Current
-    bool needCurrent;
+  // Parabolic terms
+  bool haveParabolicTerms;
+  
+  // Current
+  bool needCurrent;
 
-    // Whether gravitational potential is computed
-    bool haveGravPotential;
+  // Whether gravitational potential is computed
+  bool haveGravPotential;
 
-    // Nonideal MHD effects coefficients
-    ParabolicType haveResistivity, haveAmbipolar, haveHall;
+  // Nonideal MHD effects coefficients
+  ParabolicType haveResistivity, haveAmbipolar, haveHall;
 
-    // Enroll user-defined boundary conditions
-    void EnrollUserDefBoundary(UserDefBoundaryFunc);
-    void EnrollInternalBoundary(InternalBoundaryFunc);
-    void EnrollEmfBoundary(EmfBoundaryFunc);
+  // Enroll user-defined boundary conditions
+  void EnrollUserDefBoundary(UserDefBoundaryFunc);
+  void EnrollInternalBoundary(InternalBoundaryFunc);
+  void EnrollEmfBoundary(EmfBoundaryFunc);
 
-    // Enroll user-defined gravitational potential
-    void EnrollGravPotential(GravPotentialFunc);
+  // Enroll user-defined gravitational potential
+  void EnrollGravPotential(GravPotentialFunc);
 
-    // Add some user source terms
-    void EnrollUserSourceTerm(SrcTermFunc);
+  // Add some user source terms
+  void EnrollUserSourceTerm(SrcTermFunc);
 
-    // Enroll user-defined ohmic, ambipolar and Hall diffusivities
-    void EnrollOhmicDiffusivity(DiffusivityFunc);
-    void EnrollAmbipolarDiffusivity(DiffusivityFunc);
-    void EnrollHallDiffusivity(DiffusivityFunc);
+  // Enroll user-defined ohmic, ambipolar and Hall diffusivities
+  void EnrollOhmicDiffusivity(DiffusivityFunc);
+  void EnrollAmbipolarDiffusivity(DiffusivityFunc);
+  void EnrollHallDiffusivity(DiffusivityFunc);
 
+ private:
+  real C2Iso;
+  real gamma;
 
+  Solver mySolver;
 
-private:
+  // Rotation vector
+  bool haveRotation;
+  real OmegaX1, OmegaX2, OmegaX3;
 
-    real C2Iso;
-    real gamma;
+  bool haveShearingBox;
+  // Shear rate for shearing box problems
+  real sbS;
+  // Box width for shearing box problems
+  real sbLx;
 
-    Solver mySolver;
+  // User defined Boundary conditions
+  UserDefBoundaryFunc userDefBoundaryFunc;
+  bool haveUserDefBoundary;
 
-    // Rotation vector
-    bool haveRotation;
-    real OmegaX1, OmegaX2, OmegaX3;
+  // Internal boundary function
+  bool haveInternalBoundary;
+  InternalBoundaryFunc internalBoundaryFunc;
 
-    bool haveShearingBox;
-    // Shear rate for shearing box problems
-    real sbS;
-    // Box width for shearing box problems
-    real sbLx;
+  // Emf boundary conditions
+  bool haveEmfBoundary;
+  EmfBoundaryFunc emfBoundaryFunc;
 
-    // User defined Boundary conditions
-    UserDefBoundaryFunc userDefBoundaryFunc;
-    bool haveUserDefBoundary;
+  // User defined gravitational potential
+  GravPotentialFunc gravPotentialFunc;
 
-    // Internal boundary function
-    bool haveInternalBoundary;
-    InternalBoundaryFunc internalBoundaryFunc;
+  // User defined source term
+  SrcTermFunc userSourceTerm;
+  bool haveUserSourceTerm;
 
-    // Emf boundary conditions
-    bool haveEmfBoundary;
-    EmfBoundaryFunc emfBoundaryFunc;
+  real etaO, xH, xA;  // Ohmic resistivity, Hall, ambipolar (when constant)
 
-    // User defined gravitational potential
-    GravPotentialFunc gravPotentialFunc;
-
-    // User defined source term
-    SrcTermFunc userSourceTerm;
-    bool haveUserSourceTerm;
-
-    real etaO, xH, xA;  // Ohmic resistivity, Hall, ambipolar (when constant)
-
-    // Ohmic, Hall and ambipolar diffusivity (when function-defined)
-    DiffusivityFunc ohmicDiffusivityFunc;
-    DiffusivityFunc ambipolarDiffusivityFunc;
-    DiffusivityFunc hallDiffusivityFunc;
-
+  // Ohmic, Hall and ambipolar diffusivity (when function-defined)
+  DiffusivityFunc ohmicDiffusivityFunc;
+  DiffusivityFunc ambipolarDiffusivityFunc;
+  DiffusivityFunc hallDiffusivityFunc;
 };
 
-
-
-#endif
+#endif // HYDRO_HYDRO_HPP_

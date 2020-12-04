@@ -1,2 +1,18 @@
 doc/*
-Test/*.o
+
+# compiled files
+**/__pycache__
+**/idefix
+
+# generated files
+*.log
+src/gitversion.hpp
+**/libkokkos.a
+**/KokkosCore_config.h
+
+# test artifacts
+test/**/*.o
+test/**/*.vtk
+test/**/*.dmp
+test/**/*.tmp
+test/**/Makefile

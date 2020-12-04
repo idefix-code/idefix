@@ -1,6 +1,8 @@
 Download:
 ---------
-    git clone
+    # using either ssh or https url as <address>
+    git clone <address>
+    cd idefix
     git submodule init
     git submodule update
 
@@ -9,7 +11,7 @@ Compile an example:
 Go to the example directory:
 for exmaple : 
     
-`cd Test/HD/sod`
+`cd test/HD/sod`
 
 set the `IDEFIX_DIR` environment variable
     

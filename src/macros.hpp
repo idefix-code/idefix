@@ -152,18 +152,7 @@
                                        + q(n,k-1,j-1,i) + q(n,k-1,j-1,i-1)))
 #endif
 
-// Macros used in function declarations
-#if COMPONENTS == 1
-  #define ARG_EXPAND(a,b,c) a
-#endif
 
-#if COMPONENTS == 2
-  #define ARG_EXPAND(a,b,c) a,b
-#endif
-
-#if COMPONENTS == 3
-  
-#endif
 
 #define MPI_SAFE_CALL(cmd) {                                          \
   int mpiErrNo = (cmd);                                               \

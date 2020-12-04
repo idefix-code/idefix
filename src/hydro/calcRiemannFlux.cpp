@@ -116,12 +116,16 @@ void Hydro::CalcRiemannFlux(DataBlock & data, int dir, const real t) {
         case IDIR:
           TvdlfHD<IDIR,MX1,MX2,MX3>(data, this->gamma, this->C2Iso);
           break;
+#if DIMENSIONS >= 2
         case JDIR:
           TvdlfHD<JDIR,MX2,MX1,MX3>(data, this->gamma, this->C2Iso);
           break;
+#endif
+#if DIMENSIONS == 3
         case KDIR:
           TvdlfHD<KDIR,MX3,MX1,MX2>(data, this->gamma, this->C2Iso);
           break;
+#endif
       }
       break;
     case HLL:
@@ -129,12 +133,16 @@ void Hydro::CalcRiemannFlux(DataBlock & data, int dir, const real t) {
         case IDIR:
           HllHD<IDIR,MX1,MX2,MX3>(data, this->gamma, this->C2Iso);
           break;
+#if DIMENSIONS >= 2
         case JDIR:
           HllHD<JDIR,MX2,MX1,MX3>(data, this->gamma, this->C2Iso);
           break;
+#endif
+#if DIMENSIONS == 3
         case KDIR:
           HllHD<KDIR,MX3,MX1,MX2>(data, this->gamma, this->C2Iso);
           break;
+#endif
       }
       break;
     case HLLC:
@@ -142,12 +150,16 @@ void Hydro::CalcRiemannFlux(DataBlock & data, int dir, const real t) {
         case IDIR:
           HllcHD<IDIR,MX1,MX2,MX3>(data, this->gamma, this->C2Iso);
           break;
+#if DIMENSIONS >= 2
         case JDIR:
           HllcHD<JDIR,MX2,MX1,MX3>(data, this->gamma, this->C2Iso);
           break;
+#endif
+#if DIMENSIONS == 3
         case KDIR:
           HllcHD<KDIR,MX3,MX1,MX2>(data, this->gamma, this->C2Iso);
           break;
+#endif
       }
       break;
     case ROE:
@@ -155,12 +167,16 @@ void Hydro::CalcRiemannFlux(DataBlock & data, int dir, const real t) {
         case IDIR:
           RoeHD<IDIR,MX1,MX2,MX3>(data, this->gamma, this->C2Iso);
           break;
+#if DIMENSIONS >= 2
         case JDIR:
           RoeHD<JDIR,MX2,MX1,MX3>(data, this->gamma, this->C2Iso);
           break;
+#endif
+#if DIMENSIONS == 3
         case KDIR:
           RoeHD<KDIR,MX3,MX1,MX2>(data, this->gamma, this->C2Iso);
           break;
+#endif
       }
       break;
 #endif

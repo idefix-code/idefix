@@ -3,19 +3,27 @@
 rep_HD_list="sod-iso sod MachReflection"
 rep_MHD_list="sod-iso sod AmbipolarCshock HallWhistler OrszagTang"
 
-cwd=$(pwd)
-export IDEFIX_DIR=$cwd/..
+# refer to the parent dir of this file, wherever this is called from
+# a python equivalent is e.g.
+#
+# import pathlib
+# TEST_DIR = pathlib.Path(__file__).parent
+TEST_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+# todo: add a warning here if the env var is already defined _and_ different
+export IDEFIX_DIR=$TEST_DIR/..
 echo $IDEFIX_DIR
 
 set -e
+options=""
 
 # HD tests
 for rep in $rep_HD_list; do
-    cd HD/$rep
+    cd $TEST_DIR/HD/$rep
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "***********************************************"
-    python3 $IDEFIX_DIR/configure.py
+    python3 $IDEFIX_DIR/configure.py $options
     echo "***********************************************"
     echo "Making  $rep"
     echo "***********************************************"
@@ -37,17 +45,15 @@ for rep in $rep_HD_list; do
     done
     make clean
     rm -f *.vtk *.dbl
-
-    cd $cwd
 done
 
 # MHD tests
 for rep in $rep_MHD_list; do
-    cd MHD/$rep
+    cd $TEST_DIR/MHD/$rep
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "***********************************************"
-    python3 $IDEFIX_DIR/configure.py -mhd
+    python3 $IDEFIX_DIR/configure.py -mhd $options
     echo "***********************************************"
     echo "Making  $rep"
     echo "***********************************************"
@@ -68,7 +74,7 @@ for rep in $rep_MHD_list; do
         cd ..
     done
     
-    cd $cwd
+    cd $TEST_DIR
 done
 
 

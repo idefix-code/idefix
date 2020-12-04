@@ -1,6 +1,8 @@
 Download:
 ---------
-    git clone
+    # using either ssh or https url as <address>
+    git clone <address>
+    cd idefix
     git submodule init
     git submodule update
 
@@ -9,7 +11,7 @@ Compile an example:
 Go to the example directory:
 for exmaple : 
     
-`cd Test/HD/sod`
+`cd test/HD/sod`
 
 set the `IDEFIX_DIR` environment variable
     
@@ -60,3 +62,15 @@ Debugging
 -------------------
 Add `#define DEBUG` in definitions.hpp and recompile. More to come...
 
+Running tests
+-------------------
+Tests require Python 3 along with some third party dependencies to be installed.
+To install those deps, run
+```
+pip install -r test/python_requirements.txt
+```
+
+The test suite itself is then run with
+```
+bash test/checks.sh
+```

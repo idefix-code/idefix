@@ -1,11 +1,12 @@
-// ********************************************************************************************************
+// ***********************************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr and other code contributors
+// Copyright(C) 2020 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr
+// and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
-// ********************************************************************************************************
+// ***********************************************************************************************
 
-#ifndef REAL_TYPE_H
-#define REAL_TYPE_H
+#ifndef REAL_TYPES_HPP_
+#define REAL_TYPES_HPP_
 
 #include <math.h>
 
@@ -13,19 +14,24 @@
  * \typedef real_t (alias to float or double)
  */
 #ifdef USE_DOUBLE
+
 using real = double;
 #ifdef WITH_MPI
-#define realMPI     MPI_DOUBLE
+  #define realMPI     MPI_DOUBLE
 #endif
+
 #else
+
 using real = float;
 #ifdef WITH_MPI
-#define realMPI      MPI_FLOAT
+  #define realMPI      MPI_FLOAT
 #endif
+
 #endif // USE_DOUBLE
 
 // math function
 #if defined(USE_DOUBLE) ||  defined(USE_MIXED_PRECISION)
+
 #define FMAX(x,y) fmax(x,y)
 #define FMIN(x,y) fmin(x,y)
 #define SQRT(x) sqrt(x)
@@ -41,7 +47,9 @@ using real = float;
 #define ONE_F  (1.0)
 #define TWO_F  (2.0)
 #define FOUR_F  (4.0)
+
 #else
+
 #define FMAX(x,y) fmaxf(x,y)
 #define FMIN(x,y) fminf(x,y)
 #define SQRT(x) sqrtf(x)
@@ -59,5 +67,4 @@ using real = float;
 #define FOUR_F  (4.0f)
 #endif // USE_DOUBLE
 
-
-#endif // REAL_TYPE_H
+#endif // REAL_TYPES_HPP_

@@ -92,9 +92,9 @@ void TimeIntegrator::ReinitInvDt(DataBlock & data) {
   IdefixArray3D<real> InvDt=data.InvDt;
 
   idefix_for("InitInvDt",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
-        KOKKOS_LAMBDA (int k, int j, int i) {
-          InvDt(k,j,i) = ZERO_F;
-      });
+    KOKKOS_LAMBDA (int k, int j, int i) {
+      InvDt(k,j,i) = ZERO_F;
+  });
 
   idfx::popRegion();
 }
@@ -116,23 +116,24 @@ void TimeIntegrator::Cycle(DataBlock & data) {
   if(ncycles%cyclePeriod==0) {
     double rawperf = (timer.seconds()-lastLog)/(data.mygrid->np_int[IDIR]*data.mygrid->np_int[JDIR]
                       *data.mygrid->np_int[KDIR]*cyclePeriod);
-    #ifdef WITH_MPI
-      // measure the time spent in the MPI calls
-      double mpiOverhead = (idfx::mpiTimer-lastMpiLog)/
-                            (timer.seconds()-lastLog-idfx::mpiTimer+lastMpiLog)*100;
-      lastMpiLog = idfx::mpiTimer;
-    #endif
+#ifdef WITH_MPI
+    // measure the time spent in the MPI calls
+    double mpiOverhead = (idfx::mpiTimer-lastMpiLog)
+                            / (timer.seconds()-lastLog-idfx::mpiTimer+lastMpiLog)*100;
+    lastMpiLog = idfx::mpiTimer;
+#endif
     lastLog = timer.seconds();
 
     idfx::cout << "TimeIntegrator: t=" << t << " Cycle " << ncycles << " dt=" << dt << std::endl;
     if(ncycles>=cyclePeriod) {
       idfx::cout << "\t " << 1/rawperf << " cell updates/second";
-      #ifdef WITH_MPI
-        idfx::cout << " ; " << mpiOverhead << "% MPI overhead";
-      #endif
+#ifdef WITH_MPI
+      idfx::cout << " ; " << mpiOverhead << "% MPI overhead";
+#endif
       idfx::cout << std::endl;
     }
-    #if MHD == YES
+
+#if MHD == YES
     // Check divB
     real divB =  hydro->CheckDivB(data);
     idfx::cout << "\t maxdivB=" << divB << std::endl;
@@ -152,9 +153,9 @@ void TimeIntegrator::Cycle(DataBlock & data) {
   // Store initial stage for multi-stage time integrators
   if(nstages>1) {
     Kokkos::deep_copy(Uc0,Uc);
-  #if MHD == YES
+#if MHD == YES
     Kokkos::deep_copy(Vs0,Vs);
-  #endif
+#endif
   }
 
   // Reinit timestep
@@ -163,9 +164,9 @@ void TimeIntegrator::Cycle(DataBlock & data) {
   for(int stage=0; stage < nstages ; stage++) {
     // Update Uc & Vs
     Stage(data);
-    #if MHD == YES && DIMENSIONS >= 2
+#if MHD == YES && DIMENSIONS >= 2
     hydro->ReconstructVcField(data, data.Uc);
-    #endif
+#endif
 
     // Look for Nans every now and then (this actually cost a lot of time on GPUs
     // because streams are divergent)
@@ -176,17 +177,18 @@ void TimeIntegrator::Cycle(DataBlock & data) {
       Kokkos::parallel_reduce("Timestep_reduction",
               Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
               ({0,0,0},{data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]}),
-              KOKKOS_LAMBDA (int k, int j, int i, real &dtmin) {
-                dtmin=FMIN(ONE_F/InvDt(k,j,i),dtmin);
+        KOKKOS_LAMBDA (int k, int j, int i, real &dtmin) {
+          dtmin=FMIN(ONE_F/InvDt(k,j,i),dtmin);
       }, Kokkos::Min<real>(newdt) );
+      
       Kokkos::fence();
 
       newdt=newdt*cfl;
-    #ifdef WITH_MPI
+#ifdef WITH_MPI
       if(idfx::psize>1) {
         MPI_SAFE_CALL(MPI_Allreduce(MPI_IN_PLACE, &newdt, 1, realMPI, MPI_MIN, MPI_COMM_WORLD));
       }
-    #endif
+#endif
     }
 
     // Is this not the first stage?
@@ -195,28 +197,27 @@ void TimeIntegrator::Cycle(DataBlock & data) {
       real w0s=w0[stage-1];
 
       idefix_for("Cycle-update",0,NVAR,0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
-            KOKKOS_LAMBDA (int n, int k, int j, int i) {
-              Uc(n,k,j,i) = wcs*Uc(n,k,j,i) + w0s*Uc0(n,k,j,i);
+        KOKKOS_LAMBDA (int n, int k, int j, int i) {
+          Uc(n,k,j,i) = wcs*Uc(n,k,j,i) + w0s*Uc0(n,k,j,i);
       });
 
-    #if MHD==YES
+#if MHD==YES
       idefix_for("Cycle-update",0,DIMENSIONS,0,data.np_tot[KDIR]+KOFFSET,
                                              0,data.np_tot[JDIR]+JOFFSET,
                                              0,data.np_tot[IDIR]+IOFFSET,
-            KOKKOS_LAMBDA (int n, int k, int j, int i) {
-              Vs(n,k,j,i) = wcs*Vs(n,k,j,i) + w0s*Vs0(n,k,j,i);
+        KOKKOS_LAMBDA (int n, int k, int j, int i) {
+          Vs(n,k,j,i) = wcs*Vs(n,k,j,i) + w0s*Vs0(n,k,j,i);
       });
-    #endif
+#endif
     }
     hydro->ConvertConsToPrim(data);
     
     // Check if this is our last stage
     if(stage<nstages-1) {
       // No: Apply boundary conditions & Recompute conservative variables
-        hydro->SetBoundary(data,t);
-        hydro->ConvertPrimToCons(data);
+      hydro->SetBoundary(data,t);
+      hydro->ConvertPrimToCons(data);
     }
-
   }
 
   // Update current time

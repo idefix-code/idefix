@@ -20,6 +20,9 @@ enum DataType {DoubleType, SingleType, IntegerType};
   using IdfxDataDescriptor = int;   // This is actually not used
 #endif
 
+// Forward class declaration
+class OutputVTK;
+
 class OutputDump {
  public:
   OutputDump(Input &, DataBlock &, real);               // Create Output Object

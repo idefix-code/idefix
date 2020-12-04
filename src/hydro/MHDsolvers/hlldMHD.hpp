@@ -12,8 +12,8 @@
 #include "solversMHD.hpp"
 
 // Compute Riemann fluxes from states using HLLD solver
-template<const int DIR, const int Xn, const int Xt, const int Xb,
-         const int BXn, const int BXt, const int BXb>
+template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
+         ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
 void HlldMHD(DataBlock & data, real gamma, real C2Iso) {
   idfx::pushRegion("HLLD_MHD");
     
@@ -173,8 +173,8 @@ void HlldMHD(DataBlock & data, real gamma, real C2Iso) {
         fluxR[nv] = uR[nv];
       }
       
-      K_Flux(fluxL, vL, fluxL, C2Iso, Xn, Xt, Xb, BXn, BXt, BXb);
-      K_Flux(fluxR, vR, fluxR, C2Iso, Xn, Xt, Xb, BXn, BXt, BXb);
+      K_Flux(fluxL, vL, fluxL, C2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
+      K_Flux(fluxR, vR, fluxR, C2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
       
       real ptR, ptL;
 

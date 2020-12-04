@@ -12,8 +12,8 @@
 #include "solversMHD.hpp"
 
 // Compute Riemann fluxes from states using TVDLF solver
-template<const int DIR, const int Xn, const int Xt, const int Xb,
-         const int BXn, const int BXt, const int BXb>
+template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
+                        ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
 void TvdlfMHD(DataBlock & data, real gamma, real C2Iso) {
   int ioffset,joffset,koffset;
   int iextend, jextend,kextend;
@@ -143,8 +143,8 @@ void TvdlfMHD(DataBlock & data, real gamma, real C2Iso) {
       K_PrimToCons(uR, vR, gamma_m1);
 
       // 3-- Compute the left and right fluxes
-      K_Flux(fluxL, vL, uL, C2Iso, Xn, Xt, Xb, BXn, BXt, BXb);
-      K_Flux(fluxR, vR, uR, C2Iso, Xn, Xt, Xb, BXn, BXt, BXb);
+      K_Flux(fluxL, vL, uL, C2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
+      K_Flux(fluxR, vR, uR, C2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
       
 
       // 5-- Compute the flux from the left and right states

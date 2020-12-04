@@ -30,28 +30,34 @@ void Hydro::CalcRiemannFlux(DataBlock & data, int dir, const real t) {
     case TVDLF:
       switch(dir) {
         case IDIR:
-          TvdlfMHD<IDIR,MX1,MX2,MX3,BX1,BX2,BX3>(data, this->gamma, this->C2Iso);
+          TvdlfMHD<IDIR,ARG_EXPAND(MX1,MX2,MX3),
+                   ARG_EXPAND(BX1,BX2,BX3)>(data, this->gamma, this->C2Iso);
           break;
         case JDIR:
-          TvdlfMHD<JDIR,MX2,MX1,MX3,BX2,BX1,BX3>(data, this->gamma, this->C2Iso);
+          TvdlfMHD<JDIR,ARG_EXPAND(MX2,MX1,MX3),
+                   ARG_EXPAND(BX2,BX1,BX3)>(data, this->gamma, this->C2Iso);
           break;
         case KDIR:
-          TvdlfMHD<KDIR,MX3,MX1,MX2,BX3,BX1,BX2>(data, this->gamma, this->C2Iso);
+          TvdlfMHD<KDIR,ARG_EXPAND(MX3,MX1,MX2),
+                   ARG_EXPAND(BX3,BX1,BX2)>(data, this->gamma, this->C2Iso);
           break;
       }
       break;
     case HLL:
       switch(dir) {
         case IDIR:
-          HllMHD<IDIR,MX1,MX2,MX3,BX1,BX2,BX3>(data, this->gamma, this->C2Iso,
+          HllMHD<IDIR,ARG_EXPAND(MX1,MX2,MX3),
+                 ARG_EXPAND(BX1,BX2,BX3)>(data, this->gamma, this->C2Iso,
                                                this->haveHall, this->xH);
           break;
         case JDIR:
-          HllMHD<JDIR,MX2,MX1,MX3,BX2,BX1,BX3>(data, this->gamma, this->C2Iso,
+          HllMHD<JDIR,ARG_EXPAND(MX2,MX1,MX3),
+                 ARG_EXPAND(BX2,BX1,BX3)>(data, this->gamma, this->C2Iso,
                                                this->haveHall, this->xH);
           break;
         case KDIR:
-          HllMHD<KDIR,MX3,MX1,MX2,BX3,BX1,BX2>(data, this->gamma, this->C2Iso,
+          HllMHD<KDIR,ARG_EXPAND(MX3,MX1,MX2),
+                 ARG_EXPAND(BX3,BX1,BX2)>(data, this->gamma, this->C2Iso,
                                                this->haveHall, this->xH);
           break;
       }
@@ -59,26 +65,32 @@ void Hydro::CalcRiemannFlux(DataBlock & data, int dir, const real t) {
     case HLLD:
       switch(dir) {
         case IDIR:
-          HlldMHD<IDIR,MX1,MX2,MX3,BX1,BX2,BX3>(data, this->gamma, this->C2Iso);
+          HlldMHD<IDIR,ARG_EXPAND(MX1,MX2,MX3),
+                  ARG_EXPAND(BX1,BX2,BX3)>(data, this->gamma, this->C2Iso);
           break;
         case JDIR:
-          HlldMHD<JDIR,MX2,MX1,MX3,BX2,BX1,BX3>(data, this->gamma, this->C2Iso);
+          HlldMHD<JDIR,ARG_EXPAND(MX2,MX1,MX3),
+                  ARG_EXPAND(BX2,BX1,BX3)>(data, this->gamma, this->C2Iso);
           break;
         case KDIR:
-          HlldMHD<KDIR,MX3,MX1,MX2,BX3,BX1,BX2>(data, this->gamma, this->C2Iso);
+          HlldMHD<KDIR,ARG_EXPAND(MX3,MX1,MX2),
+                  ARG_EXPAND(BX3,BX1,BX2)>(data, this->gamma, this->C2Iso);
           break;
       }
       break;
     case ROE:
       switch(dir) {
         case IDIR:
-          RoeMHD<IDIR,MX1,MX2,MX3,BX1,BX2,BX3>(data, this->gamma, this->C2Iso);
+          RoeMHD<IDIR,ARG_EXPAND(MX1,MX2,MX3),
+                 ARG_EXPAND(BX1,BX2,BX3)>(data, this->gamma, this->C2Iso);
           break;
         case JDIR:
-          RoeMHD<JDIR,MX2,MX1,MX3,BX2,BX1,BX3>(data, this->gamma, this->C2Iso);
+          RoeMHD<JDIR,ARG_EXPAND(MX2,MX1,MX3),
+                 ARG_EXPAND(BX2,BX1,BX3)>(data, this->gamma, this->C2Iso);
           break;
         case KDIR:
-          RoeMHD<KDIR,MX3,MX1,MX2,BX3,BX1,BX2>(data, this->gamma, this->C2Iso);
+          RoeMHD<KDIR,ARG_EXPAND(MX3,MX1,MX2),
+                 ARG_EXPAND(BX3,BX1,BX2)>(data, this->gamma, this->C2Iso);
           break;
       }
       break;

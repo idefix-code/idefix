@@ -13,8 +13,8 @@
 // Local Kokkos Inline functions
 
 KOKKOS_INLINE_FUNCTION void K_Flux(real F[], real V[], real U[], real C2Iso,
-                                   const int Xn, const int Xt, const int Xb,
-                                   const int BXn, const int BXt, const int BXb) {
+                                   ARG_EXPAND(const int Xn, const int Xt, const int Xb),
+                                   ARG_EXPAND(const int BXn, const int BXt, const int BXb)) {
   F[RHO] = U[Xn];
   EXPAND( F[MX1] = U[MX1]*V[Xn] - V[BXn]*V[BX1]; ,
           F[MX2] = U[MX2]*V[Xn] - V[BXn]*V[BX2]; ,

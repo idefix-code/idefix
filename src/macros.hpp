@@ -13,20 +13,24 @@
 #if COMPONENTS == 1
   #define EXPAND(a,b,c) a
   #define SELECT(a,b,c) a
+  #define ARG_EXPAND(a,b,c) a
 #endif
 
 #if COMPONENTS == 2
   #define EXPAND(a,b,c) a b
   #define SELECT(a,b,c) b
+  #define ARG_EXPAND(a,b,c) a,b
 #endif
 
 #if COMPONENTS == 3
   #define EXPAND(a,b,c) a b c
   #define SELECT(a,b,c) c
+  #define ARG_EXPAND(a,b,c) a,b,c
 #endif
 
 #if DIMENSIONS == 1
   #define D_EXPAND(a,b,c)  a
+  #define ARG_DEXPAND(a,b,c) a
   #define D_SELECT(a,b,c)  a
   #define IOFFSET 1
   #define JOFFSET 0
@@ -35,6 +39,7 @@
 
 #if DIMENSIONS == 2
   #define D_EXPAND(a,b,c) a b
+  #define ARG_DEXPAND(a,b,c) a,b
   #define D_SELECT(a,b,c) b
   #define IOFFSET 1
   #define JOFFSET 1
@@ -43,6 +48,7 @@
 
 #if DIMENSIONS == 3
   #define D_EXPAND(a,b,c) a b c
+  #define ARG_DEXPAND(a,b,c) a,b,c
   #define D_SELECT(a,b,c) c
   #define IOFFSET 1
   #define JOFFSET 1
@@ -146,55 +152,17 @@
                                        + q(n,k-1,j-1,i) + q(n,k-1,j-1,i-1)))
 #endif
 
-// Macros used in Riemann solvers
-#if MHD == YES
-  #if COMPONENTS == 1
-    #if HAVE_ENERGY
-      #define ARG_EXPAND(a,b,c,f,g,h,e) a,f,e
-    #else
-      #define ARG_EXPAND(a,b,c,f,g,h,e) a,f
-    #endif
-  #endif
+// Macros used in function declarations
+#if COMPONENTS == 1
+  #define ARG_EXPAND(a,b,c) a
+#endif
 
-  #if COMPONENTS == 2
-    #if HAVE_ENERGY
-      #define ARG_EXPAND(a,b,c,f,g,h,e) a,b,f,g,e
-    #else
-      #define ARG_EXPAND(a,b,c,f,g,h,e) a,b,f,g
-    #endif
-  #endif
+#if COMPONENTS == 2
+  #define ARG_EXPAND(a,b,c) a,b
+#endif
 
-  #if COMPONENTS == 3
-    #if HAVE_ENERGY
-      #define ARG_EXPAND(a,b,c,f,g,h,e) a,b,c,f,g,h,e
-    #else
-      #define ARG_EXPAND(a,b,c,f,g,h,e) a,b,c,f,g,h
-    #endif
-  #endif
-#else
-  #if COMPONENTS == 1
-    #if HAVE_ENERGY
-      #define ARG_EXPAND(a,b,c,e) a,e
-    #else
-      #define ARG_EXPAND(a,b,c,e) a
-    #endif
-  #endif
-
-  #if COMPONENTS == 2
-    #if HAVE_ENERGY
-      #define ARG_EXPAND(a,b,c,e) a,b,e
-    #else
-      #define ARG_EXPAND(a,b,c,e) a,b
-    #endif
-  #endif
-
-  #if COMPONENTS == 3
-    #if HAVE_ENERGY
-      #define ARG_EXPAND(a,b,c,e) a,b,c,e
-    #else
-      #define ARG_EXPAND(a,b,c,e) a,b,c
-    #endif
-  #endif
+#if COMPONENTS == 3
+  
 #endif
 
 #define MPI_SAFE_CALL(cmd) {                                          \

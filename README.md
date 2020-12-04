@@ -60,3 +60,15 @@ Debugging
 -------------------
 Add `#define DEBUG` in definitions.hpp and recompile. More to come...
 
+Running tests
+-------------------
+Tests require Python 3 along with some third party dependencies to be installed.
+To install those deps, run
+```
+pip install -r test/python_requirements.txt
+```
+
+The test suite itself is then run with
+```
+bash test/checks.sh
+```

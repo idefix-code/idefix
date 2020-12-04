@@ -1,0 +1,6 @@
+# note: version requirements are indicative and tests # should be able to run with
+# older versions of our dependencies, though it is not guaranteed.
+
+numpy>=1.19.4
+matplotlib>=3.3.3
+scipy>=1.5.4

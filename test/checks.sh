@@ -10,8 +10,25 @@ rep_MHD_list="sod-iso sod AmbipolarCshock HallWhistler OrszagTang"
 # TEST_DIR = pathlib.Path(__file__).parent
 TEST_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-# todo: add a warning here if the env var is already defined _and_ different
-export IDEFIX_DIR=$TEST_DIR/..
+
+function resolve_path {
+    # relying on Python, which is required by tests themsleves
+    # for this problem is solved by a one liner for all plateforms (including OSX)
+    python -c "from pathlib import Path; print(Path('$1').resolve())"
+}
+
+target_dir=$(resolve_path $TEST_DIR/..)
+
+if [ -z ${var+IDEFIX_DIR} ] ; then
+    global_dir=$(resolve_path $IDEFIX_DIR)
+    if [ $target_dir != $global_dir ] ; then
+        echo \
+        "Warning: IDEFIX_DIR is set globally to $global_dir" \
+        ", but is redefined to $target_dir"
+    fi
+fi
+
+export IDEFIX_DIR=$target_dir
 echo $IDEFIX_DIR
 
 set -e

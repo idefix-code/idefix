@@ -102,6 +102,31 @@ class Hydro {
   void EnrollAmbipolarDiffusivity(DiffusivityFunc);
   void EnrollHallDiffusivity(DiffusivityFunc);
 
+  // Riemann Solvers
+#if MHD == YES
+  template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
+         ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
+    void HlldMHD();
+  template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
+         ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
+    void HllMHD();
+  template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
+         ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
+    void RoeMHD();
+  template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
+                        ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
+    void TvdlfMHD();
+#else
+  template<const int DIR, const int Xn, const int Xt, const int Xb>
+    void HllcHD();
+  template<const int DIR, const int Xn, const int Xt, const int Xb>
+    void HllHD();
+  template<const int DIR, const int Xn, const int Xt, const int Xb>
+    void RoeHD();
+  template<const int DIR, const int Xn, const int Xt, const int Xb>
+    void TvdlfHD();
+#endif
+
   // Arrays required by the Hydro object
   IdefixArray4D<real> Vc;      // Main cell-centered primitive variables index
   IdefixArray4D<real> Vs;      // Main face-centered varariables
@@ -184,30 +209,7 @@ class Hydro {
   IdefixArray3D<real> xHall;
   IdefixArray3D<real> xAmbipolar;
 
-  // Riemann Solvers
-#if MHD == YES
-  template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
-         ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
-    void HlldMHD();
-  template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
-         ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
-    void HllMHD();
-  template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
-         ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
-    void RoeMHD();
-  template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
-                        ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
-    void TvdlfMHD();
-#else
-  template<const int DIR, const int Xn, const int Xt, const int Xb>
-    void HllcHD();
-  template<const int DIR, const int Xn, const int Xt, const int Xb>
-    void HllHD();
-  template<const int DIR, const int Xn, const int Xt, const int Xb>
-    void RoeHD();
-  template<const int DIR, const int Xn, const int Xt, const int Xb>
-    void TvdlfHD();
-#endif
+  
 
 };
 

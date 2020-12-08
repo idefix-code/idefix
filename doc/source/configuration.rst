@@ -94,7 +94,7 @@ Problem input file ``idefix.ini``
 
 The problem input file is by default named ``idefix.ini``. It is possible to start idefix with an other input file using the `-i` command line option.
 
-The problem input file is read when *Idefix* starts. It is splitted into several sections, each section name corresponding to a C++ class in Idefix structure. Inside each section, each line defines an entry, which can have has many parameters as one wish
+The problem input file is read when *Idefix* starts. It is splitted into several sections, each section name corresponding to a C++ class in Idefix structure. Inside each section, each line defines an entry, which can have as many parameters as one wishes
 (note that it requires at least one parameter). The input file
 allows for comments, which should start with ``#``.
 

@@ -6,7 +6,6 @@
 // ***********************************************************************************************
 
 #include "../idefix.hpp"
-#include "dataBlock.hpp"
 
 // Initialisation of electromotive force object
 ElectroMotiveForce::ElectroMotiveForce() {

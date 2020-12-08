@@ -15,9 +15,9 @@ class OutputVTK {
   friend class OutputDump;
 
  public:
-  OutputVTK(Input &, DataBlock &, real);           // Create Output Object
-  int Write(DataBlock &, real);     // Create a VTK from the current DataBlock
-  int CheckForWrite(DataBlock &, real);
+  OutputVTK(Input &, DataBlock &);           // Create Output Object
+  int Write(DataBlock &);     // Create a VTK from the current DataBlock
+  int CheckForWrite(DataBlock &);
 
  private:
   int vtkFileNumber;

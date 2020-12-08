@@ -16,18 +16,18 @@ Setup::Setup() {}
 
 void AmbipolarFunction(DataBlock &data, real t, IdefixArray3D<real> &xAin ) {
     IdefixArray3D<real> xA = xAin;
-    IdefixArray4D<real> Vc = data.Vc;
+    IdefixArray4D<real> Vc = data.hydro.Vc;
     idefix_for("AmbipolarFunction",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
         xA(k,j,i) = 2.0/Vc(RHO,k,j,i);
     });
-    
+
 }
 // User-defined boundaries
 void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
     if( (dir==IDIR) && (side == left)) {
-        IdefixArray4D<real> Vc = data.Vc;
-        IdefixArray4D<real> Vs = data.Vs;
+        IdefixArray4D<real> Vc = data.hydro.Vc;
+        IdefixArray4D<real> Vs = data.hydro.Vs;
 
         int ighost = data.nghost[IDIR];
         idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,ighost,
@@ -49,8 +49,8 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
         });
     }
     if( (dir==IDIR) && (side == right)) {
-            IdefixArray4D<real> Vc = data.Vc;
-            IdefixArray4D<real> Vs = data.Vs;
+            IdefixArray4D<real> Vc = data.hydro.Vc;
+            IdefixArray4D<real> Vs = data.hydro.Vs;
 
             int ighost = data.end[IDIR]-1;
         idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],data.end[IDIR],data.np_tot[IDIR],
@@ -69,26 +69,26 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                                 D_EXPAND(                          ,
                                          Vs(BX2s,k,j,i) = Vs(BX2s,k,j,2*ighost-i);  ,
                                          Vs(BX3s,k,j,i) = Vs(BX3s,k,j,2*ighost-i); )
-                            
+
             });
         }
-            
-        
-    
+
+
+
 }
 
 
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
-Setup::Setup(Input &input, Grid &grid, DataBlock &data, Hydro &hydro) {
-    hydro.EnrollUserDefBoundary(&UserdefBoundary);
-    hydro.EnrollAmbipolarDiffusivity(&AmbipolarFunction);
-    cs=sqrt(hydro.GetC2iso());
+Setup::Setup(Input &input, Grid &grid, DataBlock &data) {
+    data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
+    data.hydro.EnrollAmbipolarDiffusivity(&AmbipolarFunction);
+    cs=sqrt(data.hydro.GetC2iso());
 }
 
 // This routine initialize the flow
 // Note that data is on the device.
-// One can therefore define locally 
+// One can therefore define locally
 // a datahost and sync it, if needed
 void Setup::InitFlow(DataBlock &data) {
     // Create a host copy
@@ -98,14 +98,14 @@ void Setup::InitFlow(DataBlock &data) {
     real M=50;
     real theta=M_PI/4.0;
     real A=10.0;
-    
+
     // D obtained analytically
     real D=17.7532;
-    
+
     real vs=M*cs;
-    
+
     real vin=vs*(1-1/D);
-    
+
     real B0 = vs/A;
     for(int k = 0; k < d.np_tot[KDIR] ; k++) {
         for(int j = 0; j < d.np_tot[JDIR] ; j++) {
@@ -113,7 +113,7 @@ void Setup::InitFlow(DataBlock &data) {
                 x=d.x[IDIR](i);
                 y=d.x[JDIR](j);
                 z=d.x[KDIR](k);
-                
+
                 d.Vc(RHO,k,j,i) = 1.0;
 #if HAVE_ENERGY
                 d.Vc(PRS,k,j,i) = 1.0;
@@ -130,19 +130,12 @@ void Setup::InitFlow(DataBlock &data) {
             }
         }
     }
-    
+
     // Send it all, if needed
     d.SyncToDevice();
 }
 
 // Analyse data to produce an output
-void Setup::MakeAnalysis(DataBlock & data, real t) {
-
-}
-
-
-
-// Do a specifically designed user step in the middle of the integration
-void ComputeUserStep(DataBlock &data, real t, real dt) {
+void Setup::MakeAnalysis(DataBlock & data) {
 
 }

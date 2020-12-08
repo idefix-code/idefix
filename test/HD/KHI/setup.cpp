@@ -7,7 +7,7 @@ Setup::Setup() {}
 
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
-Setup::Setup(Input &input, Grid &grid, DataBlock &data, Hydro &hydro) {
+Setup::Setup(Input &input, Grid &grid, DataBlock &data) {
 
 }
 
@@ -45,13 +45,8 @@ void Setup::InitFlow(DataBlock &data) {
 }
 
 // Analyse data to produce an output
-void Setup::MakeAnalysis(DataBlock & data, real t) {
+void Setup::MakeAnalysis(DataBlock & data) {
 
 }
 
 
-
-// Do a specifically designed user step in the middle of the integration
-void ComputeUserStep(DataBlock &data, real t, real dt) {
-
-}

@@ -19,19 +19,20 @@ void DataBlock::DumpToFile(std::string filebase)  {
   real nv;
   static int n=0;
 
-  IdefixArray4D<real>::HostMirror locVc = Kokkos::create_mirror_view(this->Vc);
-  Kokkos::deep_copy(locVc,this->Vc);
+  IdefixArray4D<real>::HostMirror locVc = Kokkos::create_mirror_view(this->hydro.Vc);
+  Kokkos::deep_copy(locVc,this->hydro.Vc);
 
-  IdefixArray4D<real>::HostMirror locFlux = Kokkos::create_mirror_view(this->FluxRiemann);
-  Kokkos::deep_copy(locFlux, this->FluxRiemann);
+  // TODO(lesurg) Make datablock a friend of hydro to get the Riemann flux?
+  //IdefixArray4D<real>::HostMirror locFlux = Kokkos::create_mirror_view(this->hydro.FluxRiemann);
+  //Kokkos::deep_copy(locFlux, this->FluxRiemann);
 #if MHD == YES
-  IdefixArray4D<real>::HostMirror locVs = Kokkos::create_mirror_view(this->Vs);
-  Kokkos::deep_copy(locVs,this->Vs);
+  IdefixArray4D<real>::HostMirror locVs = Kokkos::create_mirror_view(this->hydro.Vs);
+  Kokkos::deep_copy(locVs,this->hydro.Vs);
 
   IdefixArray4D<real>::HostMirror locJ;
-  if(haveCurrent) {
-    locJ = Kokkos::create_mirror_view(this->J);
-    Kokkos::deep_copy(locJ, this->J);
+  if(hydro.haveCurrent) {
+    locJ = Kokkos::create_mirror_view(this->hydro.J);
+    Kokkos::deep_copy(locJ, this->hydro.J);
   }
 #endif
 
@@ -47,10 +48,10 @@ void DataBlock::DumpToFile(std::string filebase)  {
   fileHdl = fopen(filename.c_str(),"wb");
 
 #if MHD== YES
-  nfield = 3;
-  if(haveCurrent) nfield++;
-#else
   nfield = 2;
+  if(hydro.haveCurrent) nfield++;
+#else
+  nfield = 1;
 #endif
 
   fwrite(&nfield, sizeof(real), 1, fileHdl);
@@ -69,6 +70,7 @@ void DataBlock::DumpToFile(std::string filebase)  {
   fwrite(locVc.data(), sizeof(real), nx1*nx2*nx3*nv, fileHdl);
 
   // Write Flux
+  /*
   nx1=this->np_tot[IDIR];
   nx2=this->np_tot[JDIR];
   nx3=this->np_tot[KDIR];
@@ -80,6 +82,7 @@ void DataBlock::DumpToFile(std::string filebase)  {
   fwrite(&nv, sizeof(real),1,fileHdl);
 
   fwrite(locFlux.data(), sizeof(real), nx1*nx2*nx3*nv, fileHdl);
+  */
 
   // Write Vs
 #if MHD == YES
@@ -95,7 +98,7 @@ void DataBlock::DumpToFile(std::string filebase)  {
 
   fwrite(locVs.data(), sizeof(real), nx1*nx2*nx3*nv, fileHdl);
 
-  if(haveCurrent) {
+  if(hydro.haveCurrent) {
     nx1=this->np_tot[IDIR];
     nx2=this->np_tot[JDIR];
     nx3=this->np_tot[KDIR];

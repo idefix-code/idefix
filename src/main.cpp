@@ -82,54 +82,51 @@ int main( int argc, char* argv[] ) {
     gridHost.MakeGrid(input);
     gridHost.SyncToDevice();
 
-    idfx::cout << "Main::Init Hydrodynamics." << std::endl;
-    Hydro hydro(input, grid);
-
-    idfx::cout << "Main::Init Time Integrator." << std::endl;
-    TimeIntegrator Tint(input, hydro);
-
     // Make a datablock
     idfx::cout << "Main::Init DataBlock." << std::endl;
     DataBlock data;
-    data.InitFromGrid(grid, hydro, input);
+    data.InitFromGrid(grid, input);
+
+    idfx::cout << "Main::Init Time Integrator." << std::endl;
+    TimeIntegrator Tint(input,data);
 
     idfx::cout << "Main::Init Setup." << std::endl;
-    Setup mysetup(input,grid,data,hydro);
+    Setup mysetup(input,grid,data);
 
     idfx::cout << "Main::Onit Output Routines." << std::endl;
-    OutputVTK outVTK(input, data, Tint.getT());
-    OutputDump outDMP(input, data, Tint.getT());
+    OutputVTK outVTK(input, data);
+    OutputDump outDMP(input, data);
 
     // Apply initial conditions
 
     // Are we restarting?
     if(input.CheckEntry("CommandLine","restart") > 0) {
       idfx::cout << "Main::Restarting from dump file"  << std::endl;
-      outDMP.Read(grid,data,Tint,outVTK,input.GetInt("CommandLine","restart",0));
-      hydro.SetBoundary(data,Tint.getT());
-      outVTK.CheckForWrite(data,Tint.getT());
+      outDMP.Read(grid,data,outVTK,input.GetInt("CommandLine","restart",0));
+      data.hydro.SetBoundary(data.t);
+      outVTK.CheckForWrite(data);
     } else {
       idfx::cout << "Main::Creating initial conditions." << std::endl;
       mysetup.InitFlow(data);
-      hydro.SetBoundary(data,Tint.getT());
-      outDMP.CheckForWrite(grid, data, Tint, outVTK);
-      outVTK.CheckForWrite(data,Tint.getT());
+      data.hydro.SetBoundary(data.t);
+      outDMP.CheckForWrite(grid, data, outVTK);
+      outVTK.CheckForWrite(data);
     }
 
     idfx::cout << "Main::Cycling Time Integrator..." << std::endl;
 
     Kokkos::Timer timer;
 
-    real tstop=input.GetReal("TimeIntegrator","tstop",0);
+    real tstop = input.GetReal("TimeIntegrator","tstop",0);
 
-    while(Tint.getT() < tstop) {
-      if(tstop-Tint.getT() < Tint.getDt()) Tint.setDt(tstop-Tint.getT());
-      Tint.Cycle(data);
-      outDMP.CheckForWrite(grid, data, Tint, outVTK);
-      outVTK.CheckForWrite(data, Tint.getT());
+    while(data.t < tstop) {
+      if(tstop-data.t < data.dt) data.dt = tstop-data.t;
+      Tint.Cycle(data); 
+      outDMP.CheckForWrite(grid, data, outVTK);
+      outVTK.CheckForWrite(data);
       if(abortRequested) {
         idfx::cout << "Main:: Saving current state and aborting calculation" << std::endl;
-        outDMP.Write(grid, data, Tint, outVTK);
+        outDMP.Write(grid, data, outVTK);
         break;
       }
     }
@@ -137,7 +134,7 @@ int main( int argc, char* argv[] ) {
     double tintegration = timer.seconds() / grid.np_int[IDIR] / grid.np_int[JDIR]
                             / grid.np_int[KDIR] / Tint.getNcycles();
     
-    idfx::cout << "Main::Reached t=" << Tint.getT() << std::endl;
+    idfx::cout << "Main::Reached t=" << data.t << std::endl;
     idfx::cout << "Main::Completed in " << timer.seconds() << "seconds and " << Tint.getNcycles()
                << " cycles. Perfs are " << 1/tintegration << " cell updates/second." << std::endl;
 

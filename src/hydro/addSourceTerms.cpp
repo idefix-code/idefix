@@ -9,16 +9,16 @@
 #include "hydro.hpp"
 
 // Add source terms
-void Hydro::AddSourceTerms(DataBlock &data, real t, real dt) {
+void Hydro::AddSourceTerms(real t, real dt) {
   idfx::pushRegion("Hydro::AddSourceTerms");
   
-  IdefixArray4D<real> Uc = data.Uc;
-  IdefixArray4D<real> Vc = data.Vc;
-  IdefixArray1D<real> x1 = data.x[IDIR]; 
-  IdefixArray1D<real> x2 = data.x[JDIR]; 
+  IdefixArray4D<real> Uc = this->Uc;
+  IdefixArray4D<real> Vc = this->Vc;
+  IdefixArray1D<real> x1 = data->x[IDIR]; 
+  IdefixArray1D<real> x2 = data->x[JDIR]; 
 #if GEOMETRY == SPHERICAL
-  IdefixArray1D<real> s  = data.s;
-  IdefixArray1D<real> rt = data.rt;
+  IdefixArray1D<real> s  = data->s;
+  IdefixArray1D<real> rt = data->rt;
 #endif
 
   real OmegaX1 = this->OmegaX1;
@@ -26,12 +26,12 @@ void Hydro::AddSourceTerms(DataBlock &data, real t, real dt) {
   real OmegaX3 = this->OmegaX3;
   bool haveRotation = this->haveRotation;
   
-  if(haveUserSourceTerm) userSourceTerm(data, t, dt);
+  if(haveUserSourceTerm) userSourceTerm(*data, t, dt);
 
   idefix_for("AddSourceTerms",
-             data.beg[KDIR],data.end[KDIR],
-             data.beg[JDIR],data.end[JDIR],
-             data.beg[IDIR],data.end[IDIR],
+             data->beg[KDIR],data->end[KDIR],
+             data->beg[JDIR],data->end[JDIR],
+             data->beg[IDIR],data->end[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
 #if GEOMETRY == CARTESIAN
       if(haveRotation) {

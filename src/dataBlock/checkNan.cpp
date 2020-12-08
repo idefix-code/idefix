@@ -14,7 +14,7 @@ int DataBlock::CheckNan()  {
   int nanVc=0;
 
   idfx::pushRegion("DataBlock::CheckNan");
-  IdefixArray4D<real> Vc=this->Vc;
+  IdefixArray4D<real> Vc=this->hydro.Vc;
 
   Kokkos::parallel_reduce("checkNanVc",
         Kokkos::MDRangePolicy<Kokkos::Rank<4, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
@@ -26,7 +26,7 @@ int DataBlock::CheckNan()  {
   );
 
 #if MHD == YES
-  IdefixArray4D<real> Vs=this->Vs;
+  IdefixArray4D<real> Vs=this->hydro.Vs;
   Kokkos::parallel_reduce("checkNanVs",
       Kokkos::MDRangePolicy<Kokkos::Rank<4, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
         ({0,beg[KDIR],beg[JDIR],beg[IDIR]},
@@ -39,6 +39,8 @@ int DataBlock::CheckNan()  {
 #endif
   
   if(nanVc+nanVs>0) {
+    // TODO(lesurg): limit the number of nans displayed here
+    
     std::cout << "DataBlock:: rank " << idfx::prank << " found " << nanVc
       << " Nans in the current datablock. Details will be in corresponding process log file."
       << std::endl;
@@ -53,7 +55,7 @@ int DataBlock::CheckNan()  {
           for(int i = beg[IDIR] ; i < end[IDIR] ; i++) {
             if(std::isnan(dataHost.Vc(n,k,j,i))) {
               idfx::cout << "rank " << idfx::prank << ": Nan found  in variable "
-                << this->VcName[n] << std::endl;
+                << this->hydro.VcName[n] << std::endl;
 
               idfx::cout << "      global (i,j,k) = (" << i-beg[IDIR]+gbeg[IDIR]-nghost[IDIR]
                 << ", " << j-beg[JDIR]+gbeg[JDIR]-nghost[JDIR] << ", "
@@ -74,7 +76,7 @@ int DataBlock::CheckNan()  {
           for(int i = beg[IDIR] ; i < end[IDIR]+IOFFSET ; i++) {
             if(std::isnan(dataHost.Vs(n,k,j,i))) {
               idfx::cout << "rank " << idfx::prank << ": Nan found  in variable "
-                << this->VsName[n] << std::endl;
+                << this->hydro.VsName[n] << std::endl;
               idfx::cout << "      global (i,j,k) = (" << i-beg[IDIR]+gbeg[IDIR]-nghost[IDIR]
                 << ", " << j-beg[JDIR]+gbeg[JDIR]-nghost[JDIR] << ", "
                 << k-beg[KDIR]+gbeg[KDIR]-nghost[KDIR] << ")" << std::endl;

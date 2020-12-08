@@ -15,12 +15,12 @@
 #endif
 
 // Compute Riemann fluxes from states
-void Hydro::CalcRiemannFlux(DataBlock & data, int dir, const real t) {
+void Hydro::CalcRiemannFlux(int dir, const real t) {
   idfx::pushRegion("Hydro::CalcRiemannFlux");
 
-  if(haveHall == UserDefFunction && dir == IDIR) {
-    if(hallDiffusivityFunc)
-      hallDiffusivityFunc(data, t, data.xHall);
+  if(this->haveHall == UserDefFunction && dir == IDIR) {
+    if(this->hallDiffusivityFunc)
+      hallDiffusivityFunc(*data, t, this->xHall);
     else
       IDEFIX_ERROR("No user-defined Hall diffusivity function has been enrolled");
   }
@@ -30,19 +30,19 @@ void Hydro::CalcRiemannFlux(DataBlock & data, int dir, const real t) {
     case TVDLF:
       switch(dir) {
         case IDIR:
-          TvdlfMHD<IDIR,ARG_EXPAND(MX1,MX2,MX3),
-                   ARG_EXPAND(BX1,BX2,BX3)>(data, this->gamma, this->C2Iso);
+          this->TvdlfMHD<IDIR,ARG_EXPAND(MX1,MX2,MX3),
+                   ARG_EXPAND(BX1,BX2,BX3)>();
           break;
 #if DIMENSIONS >= 2
         case JDIR:
-          TvdlfMHD<JDIR,ARG_EXPAND(MX2,MX1,MX3),
-                   ARG_EXPAND(BX2,BX1,BX3)>(data, this->gamma, this->C2Iso);
+          this->TvdlfMHD<JDIR,ARG_EXPAND(MX2,MX1,MX3),
+                   ARG_EXPAND(BX2,BX1,BX3)>();
           break;
 #endif
 #if DIMENSIONS == 3
         case KDIR:
-          TvdlfMHD<KDIR,ARG_EXPAND(MX3,MX1,MX2),
-                   ARG_EXPAND(BX3,BX1,BX2)>(data, this->gamma, this->C2Iso);
+          this->TvdlfMHD<KDIR,ARG_EXPAND(MX3,MX1,MX2),
+                   ARG_EXPAND(BX3,BX1,BX2)>();
           break;
 #endif
       }
@@ -50,22 +50,19 @@ void Hydro::CalcRiemannFlux(DataBlock & data, int dir, const real t) {
     case HLL:
       switch(dir) {
         case IDIR:
-          HllMHD<IDIR,ARG_EXPAND(MX1,MX2,MX3),
-                 ARG_EXPAND(BX1,BX2,BX3)>(data, this->gamma, this->C2Iso,
-                                               this->haveHall, this->xH);
+          this->HllMHD<IDIR,ARG_EXPAND(MX1,MX2,MX3),
+                 ARG_EXPAND(BX1,BX2,BX3)>();
           break;
 #if DIMENSIONS >= 2
         case JDIR:
-          HllMHD<JDIR,ARG_EXPAND(MX2,MX1,MX3),
-                 ARG_EXPAND(BX2,BX1,BX3)>(data, this->gamma, this->C2Iso,
-                                               this->haveHall, this->xH);
+          this->HllMHD<JDIR,ARG_EXPAND(MX2,MX1,MX3),
+                 ARG_EXPAND(BX2,BX1,BX3)>();
           break;
 #endif
 #if DIMENSIONS == 3
         case KDIR:
-          HllMHD<KDIR,ARG_EXPAND(MX3,MX1,MX2),
-                 ARG_EXPAND(BX3,BX1,BX2)>(data, this->gamma, this->C2Iso,
-                                               this->haveHall, this->xH);
+          this->HllMHD<KDIR,ARG_EXPAND(MX3,MX1,MX2),
+                 ARG_EXPAND(BX3,BX1,BX2)>();
           break;
 #endif
       }
@@ -73,19 +70,19 @@ void Hydro::CalcRiemannFlux(DataBlock & data, int dir, const real t) {
     case HLLD:
       switch(dir) {
         case IDIR:
-          HlldMHD<IDIR,ARG_EXPAND(MX1,MX2,MX3),
-                  ARG_EXPAND(BX1,BX2,BX3)>(data, this->gamma, this->C2Iso);
+          this->HlldMHD<IDIR,ARG_EXPAND(MX1,MX2,MX3),
+                  ARG_EXPAND(BX1,BX2,BX3)>();
           break;
 #if DIMENSIONS >= 2
         case JDIR:
-          HlldMHD<JDIR,ARG_EXPAND(MX2,MX1,MX3),
-                  ARG_EXPAND(BX2,BX1,BX3)>(data, this->gamma, this->C2Iso);
+          this->HlldMHD<JDIR,ARG_EXPAND(MX2,MX1,MX3),
+                  ARG_EXPAND(BX2,BX1,BX3)>();
           break;
 #endif
 #if DIMENSIONS == 3
         case KDIR:
-          HlldMHD<KDIR,ARG_EXPAND(MX3,MX1,MX2),
-                  ARG_EXPAND(BX3,BX1,BX2)>(data, this->gamma, this->C2Iso);
+          this->HlldMHD<KDIR,ARG_EXPAND(MX3,MX1,MX2),
+                  ARG_EXPAND(BX3,BX1,BX2)>();
           break;
 #endif
       }
@@ -93,19 +90,19 @@ void Hydro::CalcRiemannFlux(DataBlock & data, int dir, const real t) {
     case ROE:
       switch(dir) {
         case IDIR:
-          RoeMHD<IDIR,ARG_EXPAND(MX1,MX2,MX3),
-                 ARG_EXPAND(BX1,BX2,BX3)>(data, this->gamma, this->C2Iso);
+          this->RoeMHD<IDIR,ARG_EXPAND(MX1,MX2,MX3),
+                 ARG_EXPAND(BX1,BX2,BX3)>();
           break;
 #if DIMENSIONS >= 2
         case JDIR:
-          RoeMHD<JDIR,ARG_EXPAND(MX2,MX1,MX3),
-                 ARG_EXPAND(BX2,BX1,BX3)>(data, this->gamma, this->C2Iso);
+          this->RoeMHD<JDIR,ARG_EXPAND(MX2,MX1,MX3),
+                 ARG_EXPAND(BX2,BX1,BX3)>();
           break;
 #endif
 #if DIMENSIONS == 3
         case KDIR:
-          RoeMHD<KDIR,ARG_EXPAND(MX3,MX1,MX2),
-                 ARG_EXPAND(BX3,BX1,BX2)>(data, this->gamma, this->C2Iso);
+          this->RoeMHD<KDIR,ARG_EXPAND(MX3,MX1,MX2),
+                 ARG_EXPAND(BX3,BX1,BX2)>();
           break;
 #endif
       }
@@ -114,16 +111,16 @@ void Hydro::CalcRiemannFlux(DataBlock & data, int dir, const real t) {
     case TVDLF: 
       switch(dir) {
         case IDIR:
-          TvdlfHD<IDIR,MX1,MX2,MX3>(data, this->gamma, this->C2Iso);
+          this->TvdlfHD<IDIR,MX1,MX2,MX3>();
           break;
 #if DIMENSIONS >= 2
         case JDIR:
-          TvdlfHD<JDIR,MX2,MX1,MX3>(data, this->gamma, this->C2Iso);
+          this->TvdlfHD<JDIR,MX2,MX1,MX3>();
           break;
 #endif
 #if DIMENSIONS == 3
         case KDIR:
-          TvdlfHD<KDIR,MX3,MX1,MX2>(data, this->gamma, this->C2Iso);
+          this->TvdlfHD<KDIR,MX3,MX1,MX2>();
           break;
 #endif
       }
@@ -131,16 +128,16 @@ void Hydro::CalcRiemannFlux(DataBlock & data, int dir, const real t) {
     case HLL:
       switch(dir) {
         case IDIR:
-          HllHD<IDIR,MX1,MX2,MX3>(data, this->gamma, this->C2Iso);
+          this->HllHD<IDIR,MX1,MX2,MX3>();
           break;
 #if DIMENSIONS >= 2
         case JDIR:
-          HllHD<JDIR,MX2,MX1,MX3>(data, this->gamma, this->C2Iso);
+          this->HllHD<JDIR,MX2,MX1,MX3>();
           break;
 #endif
 #if DIMENSIONS == 3
         case KDIR:
-          HllHD<KDIR,MX3,MX1,MX2>(data, this->gamma, this->C2Iso);
+          this->HllHD<KDIR,MX3,MX1,MX2>();
           break;
 #endif
       }
@@ -148,16 +145,16 @@ void Hydro::CalcRiemannFlux(DataBlock & data, int dir, const real t) {
     case HLLC:
       switch(dir) {
         case IDIR:
-          HllcHD<IDIR,MX1,MX2,MX3>(data, this->gamma, this->C2Iso);
+          this->HllcHD<IDIR,MX1,MX2,MX3>();
           break;
 #if DIMENSIONS >= 2
         case JDIR:
-          HllcHD<JDIR,MX2,MX1,MX3>(data, this->gamma, this->C2Iso);
+          this->HllcHD<JDIR,MX2,MX1,MX3>();
           break;
 #endif
 #if DIMENSIONS == 3
         case KDIR:
-          HllcHD<KDIR,MX3,MX1,MX2>(data, this->gamma, this->C2Iso);
+          this->HllcHD<KDIR,MX3,MX1,MX2>();
           break;
 #endif
       }
@@ -165,16 +162,16 @@ void Hydro::CalcRiemannFlux(DataBlock & data, int dir, const real t) {
     case ROE:
       switch(dir) {
         case IDIR:
-          RoeHD<IDIR,MX1,MX2,MX3>(data, this->gamma, this->C2Iso);
+          this->RoeHD<IDIR,MX1,MX2,MX3>();
           break;
 #if DIMENSIONS >= 2
         case JDIR:
-          RoeHD<JDIR,MX2,MX1,MX3>(data, this->gamma, this->C2Iso);
+          this->RoeHD<JDIR,MX2,MX1,MX3>();
           break;
 #endif
 #if DIMENSIONS == 3
         case KDIR:
-          RoeHD<KDIR,MX3,MX1,MX2>(data, this->gamma, this->C2Iso);
+          this->RoeHD<KDIR,MX3,MX1,MX2>();
           break;
 #endif
       }

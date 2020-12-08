@@ -9,29 +9,29 @@
 #include "hydro.hpp"
 
 // Compute Corner EMFs from the one stored in the Riemann step
-void Hydro::CalcCornerEMF(DataBlock &data, real t) {
+void Hydro::CalcCornerEMF(real t) {
   idfx::pushRegion("Hydro::CalcCornerEMF");
 
   // Corned EMFs
-  IdefixArray3D<real> ex = data.emf.ex;
-  IdefixArray3D<real> ey = data.emf.ey;
-  IdefixArray3D<real> ez = data.emf.ez;
+  IdefixArray3D<real> ex = this->emf.ex;
+  IdefixArray3D<real> ey = this->emf.ey;
+  IdefixArray3D<real> ez = this->emf.ez;
 
   // Face-centered EMFs
-  IdefixArray3D<real> exj = data.emf.exj;
-  IdefixArray3D<real> exk = data.emf.exk;
-  IdefixArray3D<real> eyi = data.emf.eyi;
-  IdefixArray3D<real> eyk = data.emf.eyk;
-  IdefixArray3D<real> ezi = data.emf.ezi;
-  IdefixArray3D<real> ezj = data.emf.ezj;
+  IdefixArray3D<real> exj = this->emf.exj;
+  IdefixArray3D<real> exk = this->emf.exk;
+  IdefixArray3D<real> eyi = this->emf.eyi;
+  IdefixArray3D<real> eyk = this->emf.eyk;
+  IdefixArray3D<real> ezi = this->emf.ezi;
+  IdefixArray3D<real> ezj = this->emf.ezj;
 
 #if MHD == YES && DIMENSIONS >= 2
   
   #if EMF_AVERAGE == ARITHMETIC
   idefix_for("CalcCornerEMF",
-             data.beg[KDIR],data.end[KDIR]+KOFFSET,
-             data.beg[JDIR],data.end[JDIR]+JOFFSET,
-             data.beg[IDIR],data.end[IDIR]+IOFFSET,
+             data->beg[KDIR],data->end[KDIR]+KOFFSET,
+             data->beg[JDIR],data->end[JDIR]+JOFFSET,
+             data->beg[IDIR],data->end[IDIR]+IOFFSET,
     KOKKOS_LAMBDA (int k, int j, int i) {
                   // CT_EMF_ArithmeticAverage (emf, 0.25);
       real w = ONE_FOURTH_F;
@@ -50,22 +50,22 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
   
   #if EMF_AVERAGE == UCT_CONTACT || EMF_AVERAGE == UCT0
   // 0. Compute cell-centered emf.
-  IdefixArray4D<real> Vc = data.Vc;
+  IdefixArray4D<real> Vc = this->Vc;
   
-  IdefixArray3D<real> Ex1 = data.emf.Ex1;
-  IdefixArray3D<real> Ex2 = data.emf.Ex2;
-  IdefixArray3D<real> Ex3 = data.emf.Ex3;
+  IdefixArray3D<real> Ex1 = this->emf.Ex1;
+  IdefixArray3D<real> Ex2 = this->emf.Ex2;
+  IdefixArray3D<real> Ex3 = this->emf.Ex3;
 
   // Required by Hall effect
-  IdefixArray4D<real> J = data.J;
+  IdefixArray4D<real> J = this->J;
   real xHConstant = this->xH;
   ParabolicType haveHall = this->haveHall;
-  IdefixArray3D<real> xHallArr = data.xHall;
+  IdefixArray3D<real> xHallArr = this->xHall;
 
   idefix_for("CalcCenterEMF",
-             0,data.np_tot[KDIR],
-             0,data.np_tot[JDIR],
-             0,data.np_tot[IDIR],
+             0,data->np_tot[KDIR],
+             0,data->np_tot[JDIR],
+             0,data->np_tot[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
       real vx1, vx2, vx3;
       real Bx1, Bx2, Bx3;
@@ -129,9 +129,9 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
   // 1. averaging scheme
   #if EMF_AVERAGE == UCT0
   idefix_for("CalcCornerEMF",
-             data.beg[KDIR]-KOFFSET,data.end[KDIR]+KOFFSET,
-             data.beg[JDIR]-JOFFSET,data.end[JDIR]+JOFFSET,
-             data.beg[IDIR]-IOFFSET,data.end[IDIR]+IOFFSET,
+             data->beg[KDIR]-KOFFSET,data->end[KDIR]+KOFFSET,
+             data->beg[JDIR]-JOFFSET,data->end[JDIR]+JOFFSET,
+             data->beg[IDIR]-IOFFSET,data->end[IDIR]+IOFFSET,
     KOKKOS_LAMBDA (int k, int j, int i) {
     #if DIMENSIONS == 3
       exj(k,j,i) *= TWO_F;
@@ -153,9 +153,9 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
   );
   
   idefix_for("CalcCornerEMF",
-             data.beg[KDIR],data.end[KDIR]+KOFFSET,
-             data.beg[JDIR],data.end[JDIR]+JOFFSET,
-             data.beg[IDIR],data.end[IDIR]+IOFFSET,
+             data->beg[KDIR],data->end[KDIR]+KOFFSET,
+             data->beg[JDIR],data->end[JDIR]+JOFFSET,
+             data->beg[IDIR],data->end[IDIR]+IOFFSET,
     KOKKOS_LAMBDA (int k, int j, int i) {
       // CT_EMF_ArithmeticAverage (emf, 0.25);
       real w = ONE_FOURTH_F;
@@ -173,14 +173,14 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
   #endif // EMF_AVERAGE
   
   #if EMF_AVERAGE == UCT_CONTACT
-  IdefixArray3D<int> svx = data.emf.svx;
-  IdefixArray3D<int> svy = data.emf.svy;
-  IdefixArray3D<int> svz = data.emf.svz;
+  IdefixArray3D<int> svx = this->emf.svx;
+  IdefixArray3D<int> svy = this->emf.svy;
+  IdefixArray3D<int> svz = this->emf.svz;
   
   idefix_for("EMF_ArithmeticAverage",
-             data.beg[KDIR],data.end[KDIR]+KOFFSET,
-             data.beg[JDIR],data.end[JDIR]+JOFFSET,
-             data.beg[IDIR],data.end[IDIR]+IOFFSET,
+             data->beg[KDIR],data->end[KDIR]+KOFFSET,
+             data->beg[JDIR],data->end[JDIR]+JOFFSET,
+             data->beg[IDIR],data->end[IDIR]+IOFFSET,
     KOKKOS_LAMBDA (int k, int j, int i) {
       // CT_EMF_ArithmeticAverage (emf, 1.0);
       real w = ONE_F;
@@ -268,7 +268,7 @@ void Hydro::CalcCornerEMF(DataBlock &data, real t) {
   #endif // EMF_AVERAGE
 
   if(haveEmfBoundary)
-    emfBoundaryFunc(data,t);
+    emfBoundaryFunc(*data, t);
   
 #endif // MHD
   

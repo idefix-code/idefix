@@ -9,18 +9,18 @@
 #include "hydro.hpp"
 
 // Compute parabolic fluxes
-void Hydro::CalcParabolicFlux(DataBlock &data, int dir, const real t) {
+void Hydro::CalcParabolicFlux(int dir, const real t) {
   idfx::pushRegion("Hydro::CalcParabolicFlux");
 
   int ioffset,joffset,koffset;
 
-  IdefixArray4D<real> Flux = data.FluxRiemann;
-  IdefixArray4D<real> Vc   = data.Vc;
-  IdefixArray4D<real> Vs   = data.Vs;
-  IdefixArray3D<real> dMax = data.dMax;
-  IdefixArray4D<real> J    = data.J;
-  IdefixArray3D<real> etaArr = data.etaOhmic;
-  IdefixArray3D<real> xAmbiArr = data.xAmbipolar;
+  IdefixArray4D<real> Flux = this->FluxRiemann;
+  IdefixArray4D<real> Vc   = this->Vc;
+  IdefixArray4D<real> Vs   = this->Vs;
+  IdefixArray3D<real> dMax = this->dMax;
+  IdefixArray4D<real> J    = this->J;
+  IdefixArray3D<real> etaArr = this->etaOhmic;
+  IdefixArray3D<real> xAmbiArr = this->xAmbipolar;
 
   // these two are required to ensure that the type is captured by KOKKOS_LAMBDA
   ParabolicType haveResistivity = this->haveResistivity;
@@ -49,14 +49,14 @@ void Hydro::CalcParabolicFlux(DataBlock &data, int dir, const real t) {
   // Load the diffusivity array when required
   if(haveResistivity == UserDefFunction && dir == IDIR) {
     if(ohmicDiffusivityFunc)
-      ohmicDiffusivityFunc(data, t, etaArr);
+      ohmicDiffusivityFunc(*data, t, etaArr);
     else
       IDEFIX_ERROR("No user-defined Ohmic diffusivity function has been enrolled");
   }
   
   if(haveAmbipolar == UserDefFunction && dir == IDIR) {
     if(ambipolarDiffusivityFunc)
-      ambipolarDiffusivityFunc(data, t, xAmbiArr);
+      ambipolarDiffusivityFunc(*data, t, xAmbiArr);
     else
       IDEFIX_ERROR("No user-defined ambipolar diffusivity function has been enrolled");
   }
@@ -64,9 +64,9 @@ void Hydro::CalcParabolicFlux(DataBlock &data, int dir, const real t) {
   // Note the flux follows the same sign convention as the hyperbolic flux
   // HEnce signs are reversed compared to the parabolic fluxes found in Pluto 4.3
   idefix_for("CalcParabolicFlux",
-             data.beg[KDIR],data.end[KDIR]+koffset,
-             data.beg[JDIR],data.end[JDIR]+joffset,
-             data.beg[IDIR],data.end[IDIR]+ioffset,
+             data->beg[KDIR],data->end[KDIR]+koffset,
+             data->beg[JDIR],data->end[JDIR]+joffset,
+             data->beg[IDIR],data->end[IDIR]+ioffset,
     KOKKOS_LAMBDA (int k, int j, int i) {
       real Jx1, Jx2, Jx3;
       real Bx1, Bx2, Bx3;

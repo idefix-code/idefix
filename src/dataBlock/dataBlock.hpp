@@ -12,44 +12,8 @@
 #include <string>
 #include "idefix.hpp"
 
+//TODO(lesurg) What is this standing for?
 #define BOUNDARY_
-
-// Forward declarations
-class DataBlock;
-
-class ElectroMotiveForce {
- public:
-  // Face centered emf components
-  IdefixArray3D<real>     exj;
-  IdefixArray3D<real>     exk;
-  IdefixArray3D<real>     eyi;
-  IdefixArray3D<real>     eyk;
-  IdefixArray3D<real>     ezi;
-  IdefixArray3D<real>     ezj;
-
-  // Edge centered emf components
-  IdefixArray3D<real>     ex;
-  IdefixArray3D<real>     ey;
-  IdefixArray3D<real>     ez;
-
-  IdefixArray3D<int>      svx;
-  IdefixArray3D<int>      svy;
-  IdefixArray3D<int>      svz;
-
-  IdefixArray3D<real>     Ex1;
-  IdefixArray3D<real>     Ex2;
-  IdefixArray3D<real>     Ex3;
-
-  // Range of existence
-  int  ibeg, jbeg, kbeg;
-  int  iend, jend, kend;
-
-  // Constructor from datablock structure
-  explicit ElectroMotiveForce(DataBlock *);
-
-  // Default constructor
-  ElectroMotiveForce();
-};
 
 class DataBlock {
  public:
@@ -71,36 +35,6 @@ class DataBlock {
 
   IdefixArray3D<real> dV;      // cell volume
   IdefixArray3D<real> A[3];    // cell right interface area
-
-  IdefixArray4D<real> Vc;      // Main cell-centered primitive variables index
-  IdefixArray4D<real> Vs;      // Main face-centered varariables
-  IdefixArray4D<real> Uc;      // Main cell-centered conservative variables
-  IdefixArray4D<real> J;       // Electrical current
-                               // (only defined when non-ideal MHD effects are enabled)
-
-  // Required by time integrator
-  IdefixArray4D<real> Uc0;
-  IdefixArray4D<real> Vs0;
-  IdefixArray3D<real> InvDt;
-  IdefixArray3D<real> cMax;    // Maximum propagation speed
-  IdefixArray3D<real> dMax;    // Maximum diffusion
-
-  // Required by physics
-  IdefixArray4D<real> PrimL;
-  IdefixArray4D<real> PrimR;
-  IdefixArray4D<real> FluxRiemann;
-
-  // Gravitational potential
-  IdefixArray3D<real> phiP;
-  
-  // Nonideal effect diffusion coefficient (only allocated when needed)
-  IdefixArray3D<real> etaOhmic;
-  IdefixArray3D<real> xHall;
-  IdefixArray3D<real> xAmbipolar;
-
-  // Name of the fields (used in outputs)
-  std::vector<std::string> VcName;
-  std::vector<std::string> VsName;
   
   int np_tot[3];               // total number of grid points
   int np_int[3];               // internal number of grid points
@@ -115,16 +49,20 @@ class DataBlock {
   int gbeg[3];                 // Begining of local block in the grid (internal)
   int gend[3];                 // End of local block in the grid (internal)
 
-  ElectroMotiveForce emf;
+  real dt;                     // Current timestep
+  real t;                      // Current time
+
   Grid *mygrid;
   
-  // init from a Grid object
-  void InitFromGrid(Grid &, Hydro &, Input &);
-
   #ifdef WITH_MPI
   Mpi mpi;                     // Mpi object when WITH_MPI is set
   #endif
 
+  // The Hydro object attached to this datablock
+  Hydro hydro;
+
+  // init from a Grid object
+  void InitFromGrid(Grid &, Input &);
   
   void MakeGeometry(); 
 
@@ -134,10 +72,11 @@ class DataBlock {
   // Return the number of cells who have Nans
   int CheckNan();
 
-  // Whether or not the current is defined
-  bool haveCurrent;
+  // Evolve this DataBlock by dt
+  void EvolveStage();
 
   DataBlock();
+
 };
 
 #endif // DATABLOCK_DATABLOCK_HPP_

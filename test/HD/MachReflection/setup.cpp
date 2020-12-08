@@ -2,11 +2,11 @@
 #include "setup.hpp"
 
 // User-defined boundaries
-void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
+void UserdefBoundary(DataBlock & data, int dir, BoundarySide side, const real t) {
     const real alpha = 60./180.*M_PI;
 
     if( (dir==IDIR) && (side == left)) {
-        IdefixArray4D<real> Vc = data.Vc;
+        IdefixArray4D<real> Vc = data.hydro.Vc;
         int ighost = data.nghost[IDIR];
         idefix_for("UserDefBoundaryX1Beg",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,ighost,
                     KOKKOS_LAMBDA (int k, int j, int i) {
@@ -19,7 +19,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
     }
 
     if(dir==JDIR) {
-        IdefixArray4D<real> Vc = data.Vc;
+        IdefixArray4D<real> Vc = data.hydro.Vc;
         IdefixArray1D<real> x1 = data.x[IDIR];
         IdefixArray1D<real> x2 = data.x[JDIR];
         int jghost;
@@ -75,8 +75,8 @@ Setup::Setup() {}
 
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
-Setup::Setup(Input &input, Grid &grid, DataBlock &data, Hydro &hydro) {
-    hydro.EnrollUserDefBoundary(&UserdefBoundary);
+Setup::Setup(Input &input, Grid &grid, DataBlock &data) {
+    data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
 }
 
 // This routine initialize the flow
@@ -116,7 +116,7 @@ void Setup::InitFlow(DataBlock &data) {
 }
 
 // Analyse data to produce an output
-void Setup::MakeAnalysis(DataBlock & data, real t) {
+void Setup::MakeAnalysis(DataBlock & data) {
 
 }
 

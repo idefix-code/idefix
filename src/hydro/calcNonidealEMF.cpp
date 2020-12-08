@@ -10,18 +10,20 @@
 
 
 // Compute Corner EMFs from nonideal MHD
-void Hydro::CalcNonidealEMF(DataBlock &data, real t) {
+void Hydro::CalcNonidealEMF(real t) {
   idfx::pushRegion("Hydro::CalcNonidealEMF");
 
   // Corned EMFs
-  IdefixArray3D<real> ex = data.emf.ex;
-  IdefixArray3D<real> ey = data.emf.ey;
-  IdefixArray3D<real> ez = data.emf.ez;
-  IdefixArray4D<real> J = data.J;
-  IdefixArray4D<real> Vs = data.Vs;
-  IdefixArray4D<real> Vc = data.Vc;
-  IdefixArray3D<real> etaArr = data.etaOhmic;
-  IdefixArray3D<real> xAmbiArr = data.xAmbipolar;
+  IdefixArray3D<real> ex = this->emf.ex;
+  IdefixArray3D<real> ey = this->emf.ey;
+  IdefixArray3D<real> ez = this->emf.ez;
+  IdefixArray4D<real> J = this->J;
+  IdefixArray4D<real> Vs = this->Vs;
+  IdefixArray4D<real> Vc = this->Vc;
+
+  // These arrays have been previously computed in calcParabolicFlux
+  IdefixArray3D<real> etaArr = this->etaOhmic;
+  IdefixArray3D<real> xAmbiArr = this->xAmbipolar;
 
   // these two are required to ensure that the type is captured by KOKKOS_LAMBDA
   ParabolicType haveResistivity = this->haveResistivity;
@@ -33,9 +35,9 @@ void Hydro::CalcNonidealEMF(DataBlock &data, real t) {
 
 #if MHD == YES
   idefix_for("CalcNIEMF",
-             data.beg[KDIR],data.end[KDIR]+KOFFSET,
-             data.beg[JDIR],data.end[JDIR]+JOFFSET,
-             data.beg[IDIR],data.end[IDIR]+IOFFSET,
+             data->beg[KDIR],data->end[KDIR]+KOFFSET,
+             data->beg[JDIR],data->end[JDIR]+JOFFSET,
+             data->beg[IDIR],data->end[IDIR]+IOFFSET,
     KOKKOS_LAMBDA (int k, int j, int i) {
       real Bx1, Bx2, Bx3;
       real Jx1, Jx2, Jx3;

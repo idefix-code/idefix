@@ -12,8 +12,8 @@
 
 // Compute Riemann fluxes from states using HLLC solver
 template<const int DIR, const int Xn, const int Xt, const int Xb>
-void HllcHD(DataBlock & data, real gamma, real C2Iso) {
-  idfx::pushRegion("HLLC_Solver");
+void Hydro::HllcHD() {
+  idfx::pushRegion("Hydro::HLLC_Solver");
   
   int ioffset,joffset,koffset;
   ioffset=joffset=koffset=0;
@@ -32,17 +32,18 @@ void HllcHD(DataBlock & data, real gamma, real C2Iso) {
       IDEFIX_ERROR("Wrong direction");
   }
 
-  IdefixArray4D<real> PrimL = data.PrimL;
-  IdefixArray4D<real> PrimR = data.PrimR;
-  IdefixArray4D<real> Flux = data.FluxRiemann;
-  IdefixArray3D<real> cMax = data.cMax;
+  IdefixArray4D<real> PrimL = this->PrimL;
+  IdefixArray4D<real> PrimR = this->PrimR;
+  IdefixArray4D<real> Flux = this->FluxRiemann;
+  IdefixArray3D<real> cMax = this->cMax;
 
-  real gamma_m1 = gamma - ONE_F;
+  real gamma_m1 = this->gamma - ONE_F;
+  real C2Iso = this->C2Iso;
 
   idefix_for("HLLC_Kernel",
-             data.beg[KDIR],data.end[KDIR]+koffset,
-             data.beg[JDIR],data.end[JDIR]+joffset,
-             data.beg[IDIR],data.end[IDIR]+ioffset,
+             data->beg[KDIR],data->end[KDIR]+koffset,
+             data->beg[JDIR],data->end[JDIR]+joffset,
+             data->beg[IDIR],data->end[IDIR]+ioffset,
     KOKKOS_LAMBDA (int k, int j, int i) {
       // Primitive variables
       real vL[NVAR];

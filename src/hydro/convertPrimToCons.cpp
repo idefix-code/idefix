@@ -15,17 +15,17 @@
 #endif
 
 // Convert Primitive to conservative variables
-void Hydro::ConvertPrimToCons(DataBlock & data) {
+void Hydro::ConvertPrimToCons() {
   idfx::pushRegion("Hydro::ConvertPrimToCons");
 
-  IdefixArray4D<real> Vc = data.Vc;
-  IdefixArray4D<real> Uc = data.Uc;
+  IdefixArray4D<real> Vc = this->Vc;
+  IdefixArray4D<real> Uc = this->Uc;
   real gamma_m1=this->gamma-ONE_F;
 
   idefix_for("ConvertPrimToCons",
-             0,data.np_tot[KDIR],
-             0,data.np_tot[JDIR],
-             0,data.np_tot[IDIR],
+             0,data->np_tot[KDIR],
+             0,data->np_tot[JDIR],
+             0,data->np_tot[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
       real U[NVAR];
       real V[NVAR];

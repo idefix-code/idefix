@@ -11,8 +11,10 @@
 #include "hydro.hpp"
 
 
-Hydro::Hydro(Input &input, Grid &grid) {
+Hydro::Hydro(Input &input, Grid &grid, DataBlock *datain) {
   idfx::pushRegion("Hydro::Hydro(input)");
+  // Save the datablock to which we are attached from now on
+  this->data = datain;
 
   if(input.CheckEntry("Hydro","gamma")>0) {
     this->gamma = input.GetReal("Hydro","gamma",0);
@@ -211,6 +213,115 @@ Hydro::Hydro(Input &input, Grid &grid) {
   }
 #endif // MHD
 
+/////////////////////////////////////////
+//  ALLOCATION SECION ///////////////////
+/////////////////////////////////////////
+
+// We now allocate the fields required by the hydro solver
+  Vc = IdefixArray4D<real>("Hydro_Vc", NVAR,
+                           data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+  Uc = IdefixArray4D<real>("Hydro_Uc", NVAR,
+                           data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+  Uc0 = IdefixArray4D<real>("Hydro_Uc0", NVAR,
+                           data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+
+  InvDt = IdefixArray3D<real>("Hydro_InvDt", 
+                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+  cMax = IdefixArray3D<real>("Hydro_cMax", 
+                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+  dMax = IdefixArray3D<real>("Hydro_dMax", 
+                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+  PrimL =  IdefixArray4D<real>("Hydro_PrimL", NVAR, 
+                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+  PrimR =  IdefixArray4D<real>("Hydro_PrimR", NVAR, 
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+  FluxRiemann =  IdefixArray4D<real>("Hydro_FluxRiemann", NVAR,
+                                     data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+
+#if MHD == YES
+  Vs = IdefixArray4D<real>("Hydro_Vs", DIMENSIONS,
+              data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
+
+  Vs0 = IdefixArray4D<real>("Hydro_Vs0", DIMENSIONS,
+              data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
+  this->emf = ElectroMotiveForce(this->data);
+#endif
+
+
+// Allocate gravitational potential when needed
+  if(this->haveGravPotential)
+    phiP = IdefixArray3D<real>("Hydro_PhiP",
+                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+
+  if(this->needCurrent) {
+    // Allocate current (when hydro needs it)
+    this->haveCurrent = true;
+    J = IdefixArray4D<real>("Hydro_J", 3, 
+                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+  }
+
+  // Allocate nonideal MHD effects array when a user-defined function is used
+  if(this->haveResistivity ==  UserDefFunction)
+    etaOhmic = IdefixArray3D<real>("Hydro_etaOhmic",
+                                    data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+  if(this->haveAmbipolar == UserDefFunction)
+    xAmbipolar = IdefixArray3D<real>("Hydro_xAmbipolar",
+                                     data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+  if(this->haveHall == UserDefFunction)
+    xHall = IdefixArray3D<real>("Hydro_xHall",
+                                  data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+
+   // Fill the names of the fields
+  for(int i = 0 ; i < NVAR ;  i++) {
+    switch(i) {
+      case RHO:
+        VcName.push_back("RHO");
+        break;
+      case VX1:
+        VcName.push_back("VX1");
+        break;
+      case VX2:
+        VcName.push_back("VX2");
+        break;
+      case VX3:
+        VcName.push_back("VX3");
+        break;
+      case BX1:
+        VcName.push_back("BX1");
+        break;
+      case BX2:
+        VcName.push_back("BX2");
+        break;
+      case BX3:
+        VcName.push_back("BX3");
+        break;
+#if HAVE_ENERGY
+      case PRS:
+        VcName.push_back("PRS");
+        break;
+#endif
+      default:
+        VcName.push_back("Vc_"+std::to_string(i));
+    }
+  }
+
+  for(int i = 0 ; i < DIMENSIONS ; i++) {
+    switch(i) {
+      case 0:
+        VsName.push_back("BX1s");
+        break;
+      case 1:
+        VsName.push_back("BX2s");
+        break;
+      case 2:
+        VsName.push_back("BX3s");
+        break;
+      default:
+        VsName.push_back("Vs_"+std::to_string(i));
+    }
+  }
+
+  
 
   idfx::popRegion();
 }

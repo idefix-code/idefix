@@ -9,19 +9,19 @@
 #include "idefix.hpp"
 #include "timeIntegrator.hpp"
 
-TimeIntegrator::TimeIntegrator(Input & input, Hydro &physics) {
+TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
   idfx::pushRegion("TimeIntegrator::TimeIntegrator(Input...)");
 
-  this->hydro=&physics;
   this->timer.reset();
   this->lastLog=timer.seconds();
   this->lastMpiLog=idfx::mpiTimer;
 
   nstages=input.GetInt("TimeIntegrator","nstages",0);
 
-  dt=input.GetReal("TimeIntegrator","first_dt",0);
+  data.dt=input.GetReal("TimeIntegrator","first_dt",0);
+  data.t=0.0;
 
-  t=0.0;
+
   ncycles=0;
   cfl=input.GetReal("TimeIntegrator","CFL",0);
 
@@ -45,51 +45,11 @@ TimeIntegrator::TimeIntegrator(Input & input, Hydro &physics) {
   idfx::popRegion();
 }
 
-Hydro& TimeIntegrator::GetHydro() {
-  return (*this->hydro);
-}
 
-// Compute one Stage of the time Integrator
-void TimeIntegrator::Stage(DataBlock &data) {
-  idfx::pushRegion("TimeIntegrator::Stage");
-
-
-  // Compute current when needed
-  if(hydro->needCurrent) hydro->CalcCurrent(data);
-
-  // Loop on all of the directions
-  for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
-    // Step one: extrapolate the variables to the sides, result is stored in the physics object
-    hydro->ExtrapolatePrimVar(data, dir);
-
-    // Step 2: compute the intercell flux with our Riemann solver, store the resulting InvDt
-    hydro->CalcRiemannFlux(data, dir, t);
-
-
-    // Step 2.5: compute intercell parabolic flux when needed
-    if(hydro->haveParabolicTerms) hydro->CalcParabolicFlux(data, dir, t);
-
-    // Step 3: compute the resulting evolution of the conserved variables, stored in Uc
-    hydro->CalcRightHandSide(data, dir, t, dt);
-  }
-
-  // Step 4: add source terms to the conserved variables (curvature, rotation, etc)
-  if(hydro->haveSourceTerms) hydro->AddSourceTerms(data, t, dt);
-
-#if MHD == YES && DIMENSIONS >= 2
-  // Compute the field evolution according to CT
-  hydro->CalcCornerEMF(data, t);
-  if(hydro->haveResistivity || hydro->haveAmbipolar) hydro->CalcNonidealEMF(data,t);
-  hydro->EvolveMagField(data, t, dt);
-#endif
-
-  idfx::popRegion();
-}
-
-void TimeIntegrator::ReinitInvDt(DataBlock & data) {
+void TimeIntegrator::ReinitInvDt(DataBlock &data) {
   idfx::pushRegion("TimeIntegrator::ReinitInvDt");
 
-  IdefixArray3D<real> InvDt=data.InvDt;
+  IdefixArray3D<real> InvDt=data.hydro.InvDt;
 
   idefix_for("InitInvDt",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
@@ -100,13 +60,13 @@ void TimeIntegrator::ReinitInvDt(DataBlock & data) {
 }
 
 // Compute one full cycle of the time Integrator
-void TimeIntegrator::Cycle(DataBlock & data) {
+void TimeIntegrator::Cycle(DataBlock &data) {
   // Do one cycle
-  IdefixArray4D<real> Uc = data.Uc;
-  IdefixArray4D<real> Vs = data.Vs;
-  IdefixArray4D<real> Uc0 = data.Uc0;
-  IdefixArray4D<real> Vs0 = data.Vs0;
-  IdefixArray3D<real> InvDt=data.InvDt;
+  IdefixArray4D<real> Uc = data.hydro.Uc;
+  IdefixArray4D<real> Vs = data.hydro.Vs;
+  IdefixArray4D<real> Uc0 = data.hydro.Uc0;
+  IdefixArray4D<real> Vs0 = data.hydro.Vs0;
+  IdefixArray3D<real> InvDt = data.hydro.InvDt;
 
   real newdt;
 
@@ -124,7 +84,7 @@ void TimeIntegrator::Cycle(DataBlock & data) {
 #endif
     lastLog = timer.seconds();
 
-    idfx::cout << "TimeIntegrator: t=" << t << " Cycle " << ncycles << " dt=" << dt << std::endl;
+    idfx::cout << "TimeIntegrator: t=" << data.t << " Cycle " << ncycles << " dt=" << data.dt << std::endl;
     if(ncycles>=cyclePeriod) {
       idfx::cout << "\t " << 1/rawperf << " cell updates/second";
 #ifdef WITH_MPI
@@ -135,7 +95,7 @@ void TimeIntegrator::Cycle(DataBlock & data) {
 
 #if MHD == YES
     // Check divB
-    real divB =  hydro->CheckDivB(data);
+    real divB =  data.hydro.CheckDivB();
     idfx::cout << "\t maxdivB=" << divB << std::endl;
     if(divB>1e-10) {
       IDEFIX_ERROR("TimeIntegrator::Cycle divB>1e-10, check your calculation");
@@ -144,10 +104,11 @@ void TimeIntegrator::Cycle(DataBlock & data) {
   }
 
     // Apply Boundary conditions
-  hydro->SetBoundary(data,t);
+    // TODO(lesurg): Make a general boundary condition call in datablock
+  data.hydro.SetBoundary(data.t);
 
   // Convert current state into conservative variable and save it
-  hydro->ConvertPrimToCons(data);
+  data.hydro.ConvertPrimToCons();
 
 
   // Store initial stage for multi-stage time integrators
@@ -163,10 +124,7 @@ void TimeIntegrator::Cycle(DataBlock & data) {
 
   for(int stage=0; stage < nstages ; stage++) {
     // Update Uc & Vs
-    Stage(data);
-#if MHD == YES && DIMENSIONS >= 2
-    hydro->ReconstructVcField(data, data.Uc);
-#endif
+    data.EvolveStage();
 
     // Look for Nans every now and then (this actually cost a lot of time on GPUs
     // because streams are divergent)
@@ -210,25 +168,24 @@ void TimeIntegrator::Cycle(DataBlock & data) {
       });
 #endif
     }
-    hydro->ConvertConsToPrim(data);
+    data.hydro.ConvertConsToPrim();
     
     // Check if this is our last stage
     if(stage<nstages-1) {
       // No: Apply boundary conditions & Recompute conservative variables
-      hydro->SetBoundary(data,t);
-      hydro->ConvertPrimToCons(data);
+      data.hydro.SetBoundary(data.t);
+      data.hydro.ConvertPrimToCons();
     }
   }
 
   // Update current time
-  t=t+dt;
-
+  data.t=data.t+data.dt;
 
   // Next time step
-  if(newdt>1.1*dt) {
-    dt=1.1*dt;
+  if(newdt>1.1*data.dt) {
+    data.dt=1.1*data.dt;
   } else {
-    dt=newdt;
+    data.dt=newdt;
   }
 
   ncycles++;
@@ -236,17 +193,7 @@ void TimeIntegrator::Cycle(DataBlock & data) {
   idfx::popRegion();
 }
 
-real TimeIntegrator::getDt() {
-  return(dt);
-}
 
-real TimeIntegrator::getT() {
-  return (t);
-}
-
-void TimeIntegrator::setDt(real dtin) {
-  dt=dtin;
-}
 
 int64_t TimeIntegrator::getNcycles() {
   return(ncycles);

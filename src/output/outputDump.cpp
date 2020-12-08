@@ -11,11 +11,11 @@
 #define  NAMESIZE     16
 #define  FILENAMESIZE   256
 
-OutputDump::OutputDump(Input &input, DataBlock &data, real t) {
+OutputDump::OutputDump(Input &input, DataBlock &data) {
   // Init the output period
   if(input.CheckEntry("Output","dmp")>0) {
     this->tperiod=input.GetReal("Output","dmp",0);
-    this->tnext = t;
+    this->tnext = data.t;
   } else {
     this->tperiod = -1.0; // Disable dump outputs altogether
     this->tnext = 0;
@@ -360,8 +360,7 @@ void OutputDump::ReadDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, in
   #endif
 }
 
-int OutputDump::Read(Grid& grid, DataBlock &data, TimeIntegrator &tint,
-                     OutputVTK& ovtk, int readNumber ) {
+int OutputDump::Read(Grid& grid, DataBlock &data, OutputVTK& ovtk, int readNumber ) {
   char filename[FILENAMESIZE];
   int nx[3];
   int nxglob[3];
@@ -421,7 +420,7 @@ int OutputDump::Read(Grid& grid, DataBlock &data, TimeIntegrator &tint,
       // Matching Name is Vc-<<VcName>>
       int nv = -1;
       for(int n = 0 ; n < NVAR; n++) {
-        if(fieldName.compare(3,3,data.VcName[n],0,3)==0) nv=n; // Found matching field
+        if(fieldName.compare(3,3,data.hydro.VcName[n],0,3)==0) nv=n; // Found matching field
       }
       // Load it
       for(int dir = 0 ; dir < 3; dir++) {
@@ -450,7 +449,7 @@ int OutputDump::Read(Grid& grid, DataBlock &data, TimeIntegrator &tint,
       #if MHD == YES
         int nv = -1;
         for(int n = 0 ; n < DIMENSIONS; n++) {
-          if(fieldName.compare(3,4,data.VsName[n],0,4)==0) nv=n; // Found matching field
+          if(fieldName.compare(3,4,data.hydro.VsName[n],0,4)==0) nv=n; // Found matching field
         }
         if(nv<0) {
           IDEFIX_ERROR("Cannot find a field matching " + fieldName
@@ -475,9 +474,9 @@ int OutputDump::Read(Grid& grid, DataBlock &data, TimeIntegrator &tint,
                         from the restart dump are skipped");
       #endif
     } else if(fieldName.compare("time") == 0) {
-      ReadSerial(fileHdl, ndim, nxglob, type, &tint.t);
+      ReadSerial(fileHdl, ndim, nxglob, type, &data.t);
     } else if(fieldName.compare("dt") == 0) {
-      ReadSerial(fileHdl, ndim, nxglob, type, &tint.dt);
+      ReadSerial(fileHdl, ndim, nxglob, type, &data.dt);
     } else if(fieldName.compare("vtkFileNumber")==0) {
       ReadSerial(fileHdl, ndim, nxglob, type, &ovtk.vtkFileNumber);
     } else if(fieldName.compare("vtktnext")==0) {
@@ -502,22 +501,22 @@ int OutputDump::Read(Grid& grid, DataBlock &data, TimeIntegrator &tint,
   dataHost.SyncToDevice();
 
   idfx::cout << "done in " << timer.seconds() << " s." << std::endl;
-  idfx::cout << "Restarting from t=" << tint.getT() << "." << std::endl;
+  idfx::cout << "Restarting from t=" << data.t << "." << std::endl;
 
   idfx::popRegion();
 
   return(0);
 }
 
-int OutputDump::CheckForWrite(Grid& grid, DataBlock &data, TimeIntegrator &tint, OutputVTK& ovtk) {
+int OutputDump::CheckForWrite(Grid& grid, DataBlock &data, OutputVTK& ovtk) {
   // Do we need an output?
-  if(tint.getT()<this->tnext) return(0);
+  if(data.t<this->tnext) return(0);
   if(this->tperiod < 0) return(0);  // negative tperiod means dump outputs are disabled
   this->tnext+= this->tperiod;
-  return(this->Write(grid, data, tint, ovtk));
+  return(this->Write(grid, data, ovtk));
 }
 
-int OutputDump::Write( Grid& grid, DataBlock &data, TimeIntegrator &tint, OutputVTK& ovtk) {
+int OutputDump::Write( Grid& grid, DataBlock &data, OutputVTK& ovtk) {
   char filename[FILENAMESIZE];
   char fieldName[NAMESIZE+1]; // +1 is just in case
   int nx[3];
@@ -563,7 +562,7 @@ int OutputDump::Write( Grid& grid, DataBlock &data, TimeIntegrator &tint, Output
   dataHost.SyncFromDevice();
 
   for(int nv = 0 ; nv <NVAR ; nv++) {
-    std::snprintf(fieldName,NAMESIZE,"Vc-%s",data.VcName[nv].c_str());
+    std::snprintf(fieldName,NAMESIZE,"Vc-%s",data.hydro.VcName[nv].c_str());
     // Load the active domain in the scratch space
     for(int i = 0; i < 3 ; i++) {
       nx[i] = dataHost.np_int[i];
@@ -585,7 +584,7 @@ int OutputDump::Write( Grid& grid, DataBlock &data, TimeIntegrator &tint, Output
   #if MHD == YES
     // write staggered field components 
     for(int nv = 0 ; nv <DIMENSIONS ; nv++) {
-      std::snprintf(fieldName,NAMESIZE,"Vs-%s",data.VsName[nv].c_str());
+      std::snprintf(fieldName,NAMESIZE,"Vs-%s",data.hydro.VsName[nv].c_str());
       // Load the active domain in the scratch space
       for(int i = 0; i < 3 ; i++) {
         nx[i] = dataHost.np_int[i];
@@ -612,9 +611,9 @@ int OutputDump::Write( Grid& grid, DataBlock &data, TimeIntegrator &tint, Output
   // Write some raw data
   nx[0] = 1;
   std::snprintf(fieldName,NAMESIZE, "time");
-  WriteSerial(fileHdl, 1, nx, realType, fieldName, &tint.t);
+  WriteSerial(fileHdl, 1, nx, realType, fieldName, &data.t);
   std::snprintf(fieldName,NAMESIZE, "dt");
-  WriteSerial(fileHdl, 1, nx, realType, fieldName, &tint.dt);
+  WriteSerial(fileHdl, 1, nx, realType, fieldName, &data.dt);
   std::snprintf(fieldName,NAMESIZE, "vtkFileNumber");
   WriteSerial(fileHdl, 1, nx, IntegerType, fieldName, &ovtk.vtkFileNumber);
   std::snprintf(fieldName,NAMESIZE, "vtktnext");

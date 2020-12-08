@@ -1,6 +1,6 @@
 // ***********************************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr
+// Copyright(C) 2020 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************************
@@ -9,40 +9,38 @@
 #include "hydro.hpp"
 
 // Evolve the magnetic field in Vs according to Constranied transport
-void Hydro::EvolveMagField(DataBlock &data, real t, real dt) {
+void Hydro::EvolveMagField(real t, real dt) {
   idfx::pushRegion("Hydro::EvolveMagField");
 
   // Corned EMFs
-  IdefixArray3D<real> Ex1 = data.emf.ex;
-  IdefixArray3D<real> Ex2 = data.emf.ey;
-  IdefixArray3D<real> Ex3 = data.emf.ez;
+  IdefixArray3D<real> Ex1 = this->emf.ex;
+  IdefixArray3D<real> Ex2 = this->emf.ey;
+  IdefixArray3D<real> Ex3 = this->emf.ez;
 
   // Field
-  IdefixArray4D<real> Vs = data.Vs;
+  IdefixArray4D<real> Vs = this->Vs;
 
   // Coordinates
-  IdefixArray1D<real> x1=data.x[IDIR];
-  IdefixArray1D<real> x2=data.x[JDIR];
-  IdefixArray1D<real> x3=data.x[KDIR];
+  IdefixArray1D<real> x1=data->x[IDIR];
+  IdefixArray1D<real> x2=data->x[JDIR];
+  IdefixArray1D<real> x3=data->x[KDIR];
 
-  IdefixArray1D<real> x1p=data.xr[IDIR];
-  IdefixArray1D<real> x2p=data.xr[JDIR];
-  IdefixArray1D<real> x3p=data.xr[KDIR];
+  IdefixArray1D<real> x1p=data->xr[IDIR];
+  IdefixArray1D<real> x2p=data->xr[JDIR];
+  IdefixArray1D<real> x3p=data->xr[KDIR];
 
-  IdefixArray1D<real> x1m=data.xl[IDIR];
-  IdefixArray1D<real> x2m=data.xl[JDIR];
-  IdefixArray1D<real> x3m=data.xl[KDIR];
+  IdefixArray1D<real> x1m=data->xl[IDIR];
+  IdefixArray1D<real> x2m=data->xl[JDIR];
+  IdefixArray1D<real> x3m=data->xl[KDIR];
 
-  IdefixArray1D<real> dx1=data.dx[IDIR];
-  IdefixArray1D<real> dx2=data.dx[JDIR];
-  IdefixArray1D<real> dx3=data.dx[KDIR];
-
-  if(haveEmfBoundary) emfBoundaryFunc(data,t);
+  IdefixArray1D<real> dx1=data->dx[IDIR];
+  IdefixArray1D<real> dx2=data->dx[JDIR];
+  IdefixArray1D<real> dx3=data->dx[KDIR];
 
   idefix_for("EvolvMagField",
-             data.beg[KDIR],data.end[KDIR]+KOFFSET,
-             data.beg[JDIR],data.end[JDIR]+JOFFSET,
-             data.beg[IDIR],data.end[IDIR]+IOFFSET,
+             data->beg[KDIR],data->end[KDIR]+KOFFSET,
+             data->beg[JDIR],data->end[JDIR]+JOFFSET,
+             data->beg[IDIR],data->end[IDIR]+IOFFSET,
     KOKKOS_LAMBDA (int k, int j, int i) {
       real rhsx1, rhsx2, rhsx3;
 

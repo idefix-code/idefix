@@ -36,7 +36,8 @@ enum Solver {TVDLF=1, HLL, HLLC, ROE};
 // Parabolic terms can have different status
 enum ParabolicType {Disabled, Constant, UserDefFunction };
 
-using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side, const real t);
+using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side, 
+                                      const real t);
 using GravPotentialFunc = void (*) (DataBlock &, const real t, IdefixArray1D<real>&,
                                     IdefixArray1D<real>&, IdefixArray1D<real>&,
                                     IdefixArray3D<real> &);
@@ -50,24 +51,24 @@ using DiffusivityFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real>
 class Hydro {
  public:
   Hydro();
-  Hydro(Input &, Grid &);
-  void ConvertConsToPrim(DataBlock &);
-  void ConvertPrimToCons(DataBlock &);
-  void ExtrapolatePrimVar(DataBlock &, int);
-  void CalcRiemannFlux(DataBlock &, int, const real);
-  void CalcParabolicFlux(DataBlock &, int, const real);
-  void CalcRightHandSide(DataBlock &, int, real, real );
-  void CalcCurrent(DataBlock &);
-  void AddSourceTerms(DataBlock &, real, real );
-  void ReconstructVcField(DataBlock &, IdefixArray4D<real> &);
-  void ReconstructNormalField(DataBlock &, int);
-  void EvolveMagField(DataBlock &, real, real);
-  void CalcCornerEMF(DataBlock &, real );
-  void CalcNonidealEMF(DataBlock &, real );
-  void SetBoundary(DataBlock &, real);
+  Hydro(Input &, Grid &, DataBlock *);
+  void ConvertConsToPrim();
+  void ConvertPrimToCons();
+  void ExtrapolatePrimVar(int);
+  void CalcRiemannFlux(int, const real);
+  void CalcParabolicFlux(int, const real);
+  void CalcRightHandSide(int, real, real );
+  void CalcCurrent();
+  void AddSourceTerms(real, real );
+  void ReconstructVcField(IdefixArray4D<real> &);
+  void ReconstructNormalField(int);
+  void EvolveMagField(real, real);
+  void CalcCornerEMF(real );
+  void CalcNonidealEMF(real );
+  void SetBoundary(real);
   real GetGamma();
   real GetC2iso();
-  real CheckDivB(DataBlock &);
+  real CheckDivB();
 
   // Source terms
   bool haveSourceTerms;
@@ -76,6 +77,7 @@ class Hydro {
   bool haveParabolicTerms;
   
   // Current
+  bool haveCurrent;
   bool needCurrent;
 
   // Whether gravitational potential is computed
@@ -100,11 +102,34 @@ class Hydro {
   void EnrollAmbipolarDiffusivity(DiffusivityFunc);
   void EnrollHallDiffusivity(DiffusivityFunc);
 
+  // Arrays required by the Hydro object
+  IdefixArray4D<real> Vc;      // Main cell-centered primitive variables index
+  IdefixArray4D<real> Vs;      // Main face-centered varariables
+  IdefixArray4D<real> Uc;      // Main cell-centered conservative variables
+  IdefixArray4D<real> J;       // Electrical current
+                               // (only defined when non-ideal MHD effects are enabled)
+
+  // Name of the fields (used in outputs)
+  std::vector<std::string> VcName;
+  std::vector<std::string> VsName;
+
+  // Storing all of the electromotive forces
+  ElectroMotiveForce emf;
+
+  // Required by time integrator
+  IdefixArray4D<real> Uc0;
+  IdefixArray4D<real> Vs0;
+  IdefixArray3D<real> InvDt;
+
+
+
  private:
   real C2Iso;
   real gamma;
 
   Solver mySolver;
+
+  DataBlock *data;
 
   // Rotation vector
   bool haveRotation;
@@ -115,6 +140,7 @@ class Hydro {
   real sbS;
   // Box width for shearing box problems
   real sbLx;
+
 
   // User defined Boundary conditions
   UserDefBoundaryFunc userDefBoundaryFunc;
@@ -141,6 +167,48 @@ class Hydro {
   DiffusivityFunc ohmicDiffusivityFunc;
   DiffusivityFunc ambipolarDiffusivityFunc;
   DiffusivityFunc hallDiffusivityFunc;
+
+  IdefixArray3D<real> cMax;    // Maximum propagation speed
+  IdefixArray3D<real> dMax;    // Maximum diffusion speed
+
+  // Value extrapolated on faces
+  IdefixArray4D<real> PrimL;
+  IdefixArray4D<real> PrimR;
+  IdefixArray4D<real> FluxRiemann;
+
+  // Gravitational potential
+  IdefixArray3D<real> phiP;
+  
+  // Nonideal effect diffusion coefficient (only allocated when needed)
+  IdefixArray3D<real> etaOhmic;
+  IdefixArray3D<real> xHall;
+  IdefixArray3D<real> xAmbipolar;
+
+  // Riemann Solvers
+#if MHD == YES
+  template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
+         ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
+    void HlldMHD();
+  template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
+         ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
+    void HllMHD();
+  template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
+         ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
+    void RoeMHD();
+  template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
+                        ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
+    void TvdlfMHD();
+#else
+  template<const int DIR, const int Xn, const int Xt, const int Xb>
+    void HllcHD();
+  template<const int DIR, const int Xn, const int Xt, const int Xb>
+    void HllHD();
+  template<const int DIR, const int Xn, const int Xt, const int Xb>
+    void RoeHD();
+  template<const int DIR, const int Xn, const int Xt, const int Xb>
+    void TvdlfHD();
+#endif
+
 };
 
 #endif // HYDRO_HYDRO_HPP_

@@ -9,22 +9,22 @@
 #include "hydro.hpp"
 
 
-real Hydro::CheckDivB(DataBlock &data) {
+real Hydro::CheckDivB() {
   real divB;
-  IdefixArray4D<real> Vs = data.Vs;
-  IdefixArray1D<real> dx1 = data.dx[IDIR];
-  IdefixArray1D<real> dx2 = data.dx[JDIR];
-  IdefixArray1D<real> dx3 = data.dx[KDIR];
-  IdefixArray3D<real> Ax1 = data.A[IDIR];
-  IdefixArray3D<real> Ax2 = data.A[JDIR];
-  IdefixArray3D<real> Ax3 = data.A[KDIR];
-  IdefixArray3D<real> dV = data.dV;
+  IdefixArray4D<real> Vs = this->Vs;
+  IdefixArray1D<real> dx1 = data->dx[IDIR];
+  IdefixArray1D<real> dx2 = data->dx[JDIR];
+  IdefixArray1D<real> dx3 = data->dx[KDIR];
+  IdefixArray3D<real> Ax1 = data->A[IDIR];
+  IdefixArray3D<real> Ax2 = data->A[JDIR];
+  IdefixArray3D<real> Ax3 = data->A[KDIR];
+  IdefixArray3D<real> dV = data->dV;
   
 
   Kokkos::parallel_reduce("CheckDivB",
         Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
-            ({data.beg[KDIR],data.beg[JDIR],data.beg[IDIR]},
-             {data.end[KDIR], data.end[JDIR], data.end[IDIR]}),
+            ({data->beg[KDIR],data->beg[JDIR],data->beg[IDIR]},
+             {data->end[KDIR], data->end[JDIR], data->end[IDIR]}),
     KOKKOS_LAMBDA (int k, int j, int i, real &divBmax) {
       real dB1,dB2,dB3;
 
@@ -52,17 +52,17 @@ real Hydro::CheckDivB(DataBlock &data) {
 /*
 real Hydro::CheckDivB(DataBlock &data) {
   real divB=0;
-  IdefixArray4D<real> Vs = data.Vs;
-  IdefixArray3D<real> Ax1 = data.A[IDIR];
-  IdefixArray3D<real> Ax2 = data.A[JDIR];
-  IdefixArray3D<real> Ax3 = data.A[KDIR];
-  IdefixArray3D<real> dV = data.dV;
+  IdefixArray4D<real> Vs = this->Vs;
+  IdefixArray3D<real> Ax1 = data->A[IDIR];
+  IdefixArray3D<real> Ax2 = data->A[JDIR];
+  IdefixArray3D<real> Ax3 = data->A[KDIR];
+  IdefixArray3D<real> dV = data->dV;
 
   int iref,jref,kref;
   
-  for(int k = data.beg[KDIR] ; k < data.end[KDIR] ; k++) {
-    for(int j = data.beg[JDIR] ; j < data.end[JDIR] ; j++) {
-      for(int i = data.beg[IDIR] ; i < data.end[IDIR] ; i++) {
+  for(int k = data->beg[KDIR] ; k < data->end[KDIR] ; k++) {
+    for(int j = data->beg[JDIR] ; j < data->end[JDIR] ; j++) {
+      for(int i = data->beg[IDIR] ; i < data->end[IDIR] ; i++) {
         real dB1,dB2,dB3;
 
         dB1=dB2=dB3=ZERO_F;

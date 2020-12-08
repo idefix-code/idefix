@@ -9,24 +9,24 @@
 #include "hydro.hpp"
 
 // Compute the electrical current on faces
-void Hydro::CalcCurrent(DataBlock &data) {
+void Hydro::CalcCurrent() {
   idfx::pushRegion("Hydro::CalcCurrent");
-  IdefixArray4D<real> Vc = data.Vc;
-  IdefixArray4D<real> Vs = data.Vs;
-  IdefixArray4D<real> J = data.J;
+  IdefixArray4D<real> Vc = this->Vc;
+  IdefixArray4D<real> Vs = this->Vs;
+  IdefixArray4D<real> J = this->J;
 
-  IdefixArray1D<real> dx1 = data.dx[IDIR];
-  IdefixArray1D<real> dx2 = data.dx[JDIR];
-  IdefixArray1D<real> dx3 = data.dx[KDIR];
+  IdefixArray1D<real> dx1 = data->dx[IDIR];
+  IdefixArray1D<real> dx2 = data->dx[JDIR];
+  IdefixArray1D<real> dx3 = data->dx[KDIR];
 
-  IdefixArray1D<real> r = data.x[IDIR];
-  IdefixArray1D<real> rm = data.xl[IDIR];
-  IdefixArray1D<real> th = data.x[JDIR];
+  IdefixArray1D<real> r = data->x[IDIR];
+  IdefixArray1D<real> rm = data->xl[IDIR];
+  IdefixArray1D<real> th = data->x[JDIR];
 
   idefix_for("CalcCurrent",
-             KOFFSET,data.np_tot[KDIR],
-             JOFFSET,data.np_tot[JDIR],
-             IOFFSET,data.np_tot[IDIR],
+             KOFFSET,data->np_tot[KDIR],
+             JOFFSET,data->np_tot[JDIR],
+             IOFFSET,data->np_tot[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
       real Bx1_000 = ZERO_F, Bx1_0m0 = ZERO_F, Bx1_00m = ZERO_F;
       real Bx2_000 = ZERO_F, Bx2_m00 = ZERO_F, Bx2_00m = ZERO_F;

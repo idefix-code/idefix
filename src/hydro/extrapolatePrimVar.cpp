@@ -17,7 +17,7 @@
 // |-----------------------------------|------------------------------------||
 //          Vc(i-1)           PrimL(i)  PrimR(i)       Vc(i)
 
-void Hydro::ExtrapolatePrimVar(DataBlock &data, int dir) {
+void Hydro::ExtrapolatePrimVar(int dir) {
   int ioffset,joffset,koffset;
   int iextend, jextend,kextend;
   int BXn;
@@ -52,18 +52,18 @@ void Hydro::ExtrapolatePrimVar(DataBlock &data, int dir) {
                             )
   }
 
-  IdefixArray4D<real> Vc = data.Vc;
-  IdefixArray4D<real> Vs = data.Vs;
-  IdefixArray4D<real> PrimL = data.PrimL;
-  IdefixArray4D<real> PrimR = data.PrimR;
+  IdefixArray4D<real> Vc = this->Vc;
+  IdefixArray4D<real> Vs = this->Vs;
+  IdefixArray4D<real> PrimL = this->PrimL;
+  IdefixArray4D<real> PrimR = this->PrimR;
 
 
 #if ORDER == 1
 
   idefix_for("ExtrapolatePrimVar",
-             0,NVAR,data.beg[KDIR]-kextend,data.end[KDIR]+koffset+kextend,
-             data.beg[JDIR]-jextend,data.end[JDIR]+joffset+jextend,
-             data.beg[IDIR]-iextend,data.end[IDIR]+ioffset+iextend,
+             0,NVAR,data->beg[KDIR]-kextend,data->end[KDIR]+koffset+kextend,
+             data->beg[JDIR]-jextend,data->end[JDIR]+joffset+jextend,
+             data->beg[IDIR]-iextend,data->end[IDIR]+ioffset+iextend,
     KOKKOS_LAMBDA (int n, int k, int j, int i) {   
       // If normal component, the use Staggered field 
       if(n==BXn) {
@@ -77,9 +77,9 @@ void Hydro::ExtrapolatePrimVar(DataBlock &data, int dir) {
 
 #elif ORDER == 2
   idefix_for("ExtrapolatePrimVar",
-             0,NVAR,data.beg[KDIR]-koffset-kextend,data.end[KDIR]+koffset+kextend,
-             data.beg[JDIR]-joffset-jextend,data.end[JDIR]+joffset+jextend,
-             data.beg[IDIR]-ioffset-iextend,data.end[IDIR]+ioffset+iextend,
+             0,NVAR,data->beg[KDIR]-koffset-kextend,data->end[KDIR]+koffset+kextend,
+             data->beg[JDIR]-joffset-jextend,data->end[JDIR]+joffset+jextend,
+             data->beg[IDIR]-ioffset-iextend,data->end[IDIR]+ioffset+iextend,
     KOKKOS_LAMBDA (int n, int k, int j, int i) {
       if(n==BXn) {
         PrimL(n,k+koffset,j+joffset,i+ioffset) = Vs(dir,k+koffset,j+joffset,i+ioffset);

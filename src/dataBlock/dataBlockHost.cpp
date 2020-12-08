@@ -41,20 +41,20 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
   }
 
   dV = Kokkos::create_mirror_view(data->dV);
-  Vc = Kokkos::create_mirror_view(data->Vc);
-  Uc = Kokkos::create_mirror_view(data->Uc);
-  InvDt = Kokkos::create_mirror_view(data->InvDt);
+  Vc = Kokkos::create_mirror_view(data->hydro.Vc);
+  Uc = Kokkos::create_mirror_view(data->hydro.Uc);
+  InvDt = Kokkos::create_mirror_view(data->hydro.InvDt);
 
 #if MHD == YES
-  Vs = Kokkos::create_mirror_view(data->Vs);
-  if(datain.haveCurrent) {
-    this->haveCurrent = datain.haveCurrent;
-    J = Kokkos::create_mirror_view(data->J);
+  Vs = Kokkos::create_mirror_view(data->hydro.Vs);
+  if(data->hydro.haveCurrent) {
+    this->haveCurrent = data->hydro.haveCurrent;
+    J = Kokkos::create_mirror_view(data->hydro.J);
   }
-  D_EXPAND( Ex3 = Kokkos::create_mirror_view(data->emf.ez);  ,
+  D_EXPAND( Ex3 = Kokkos::create_mirror_view(data->hydro.emf.ez);  ,
                                                              ,
-            Ex1 = Kokkos::create_mirror_view(data->emf.ex);
-            Ex2 = Kokkos::create_mirror_view(data->emf.ey);  )
+            Ex1 = Kokkos::create_mirror_view(data->hydro.emf.ex);
+            Ex2 = Kokkos::create_mirror_view(data->hydro.emf.ey);  )
 #endif
 
   // Store the grid informations from the dataBlock
@@ -75,39 +75,39 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
 void DataBlockHost::SyncToDevice() {
   idfx::pushRegion("DataBlockHost::SyncToDevice()");
 
-  Kokkos::deep_copy(data->Vc,Vc);
-  Kokkos::deep_copy(data->InvDt,InvDt);
+  Kokkos::deep_copy(data->hydro.Vc,Vc);
+  Kokkos::deep_copy(data->hydro.InvDt,InvDt);
 
 #if MHD == YES
-  Kokkos::deep_copy(data->Vs,Vs);
-  if(this->haveCurrent && data->haveCurrent) Kokkos::deep_copy(data->J,J);
-  D_EXPAND( Kokkos::deep_copy(data->emf.ez,Ex3);  ,
+  Kokkos::deep_copy(data->hydro.Vs,Vs);
+  if(this->haveCurrent && data->hydro.haveCurrent) Kokkos::deep_copy(data->hydro.J,J);
+  D_EXPAND( Kokkos::deep_copy(data->hydro.emf.ez,Ex3);  ,
                                                   ,
-            Kokkos::deep_copy(data->emf.ex,Ex1);
-            Kokkos::deep_copy(data->emf.ey,Ex2);  )
+            Kokkos::deep_copy(data->hydro.emf.ex,Ex1);
+            Kokkos::deep_copy(data->hydro.emf.ey,Ex2);  )
 #endif
 
-  Kokkos::deep_copy(data->Uc,Uc);
+  Kokkos::deep_copy(data->hydro.Uc,Uc);
 
   idfx::popRegion();
 }
 
 void DataBlockHost::SyncFromDevice() {
   idfx::pushRegion("DataBlockHost::SyncFromDevice()");
-  Kokkos::deep_copy(Vc,data->Vc);
-  Kokkos::deep_copy(InvDt,data->InvDt);
+  Kokkos::deep_copy(Vc,data->hydro.Vc);
+  Kokkos::deep_copy(InvDt,data->hydro.InvDt);
 
 #if MHD == YES
-  Kokkos::deep_copy(Vs,data->Vs);
-  if(this->haveCurrent && data->haveCurrent) Kokkos::deep_copy(J,data->J);
+  Kokkos::deep_copy(Vs,data->hydro.Vs);
+  if(this->haveCurrent && data->hydro.haveCurrent) Kokkos::deep_copy(J,data->hydro.J);
 
-  D_EXPAND( Kokkos::deep_copy(Ex3,data->emf.ez);  ,
+  D_EXPAND( Kokkos::deep_copy(Ex3,data->hydro.emf.ez);  ,
                                                   ,
-            Kokkos::deep_copy(Ex1,data->emf.ex);
-            Kokkos::deep_copy(Ex2,data->emf.ey);  )
+            Kokkos::deep_copy(Ex1,data->hydro.emf.ex);
+            Kokkos::deep_copy(Ex2,data->hydro.emf.ey);  )
 #endif
 
-  Kokkos::deep_copy(Uc,data->Uc);
+  Kokkos::deep_copy(Uc,data->hydro.Uc);
 
   idfx::popRegion();
 }

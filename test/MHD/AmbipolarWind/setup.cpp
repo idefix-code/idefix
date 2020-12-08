@@ -34,7 +34,7 @@ void Ambipolar(DataBlock& data, real t, IdefixArray3D<real> &xAin) {
   IdefixArray3D<real> xA = xAin;
   IdefixArray1D<real> x1=data.x[IDIR];
   IdefixArray1D<real> x2=data.x[JDIR];
-  IdefixArray4D<real> Vc=data.Vc;
+  IdefixArray4D<real> Vc=data.hydro.Vc;
 
   real Hideal = HidealGlob;
   real epsilon = epsilonGlob;
@@ -62,7 +62,7 @@ void Resistivity(DataBlock& data, real t, IdefixArray3D<real> &etain) {
   IdefixArray3D<real> eta = etain;
   IdefixArray1D<real> x1=data.x[IDIR];
   IdefixArray1D<real> x2=data.x[JDIR];
-  IdefixArray4D<real> Vc=data.Vc;
+  IdefixArray4D<real> Vc=data.hydro.Vc;
 
   real epsilon = epsilonGlob;
 
@@ -74,8 +74,8 @@ void Resistivity(DataBlock& data, real t, IdefixArray3D<real> &etain) {
 }
 
 void MySourceTerm(DataBlock &data, const real t, const real dtin) {
-  IdefixArray4D<real> Vc = data.Vc;
-  IdefixArray4D<real> Uc = data.Uc;
+  IdefixArray4D<real> Vc = data.hydro.Vc;
+  IdefixArray4D<real> Uc = data.hydro.Uc;
   IdefixArray1D<real> x1=data.x[IDIR];
   IdefixArray1D<real> x2=data.x[JDIR];
   real epsilonTop = epsilonTopGlob;
@@ -122,9 +122,9 @@ void MySourceTerm(DataBlock &data, const real t, const real dtin) {
 }
 
 void EmfBoundary(DataBlock& data, const real t) {
-    IdefixArray3D<real> Ex1 = data.emf.ex;
-    IdefixArray3D<real> Ex2 = data.emf.ey;
-    IdefixArray3D<real> Ex3 = data.emf.ez;
+    IdefixArray3D<real> Ex1 = data.hydro.emf.ex;
+    IdefixArray3D<real> Ex2 = data.hydro.emf.ey;
+    IdefixArray3D<real> Ex3 = data.hydro.emf.ez;
     if(data.lbound[IDIR] == userdef) {
 
         int ighost = data.nghost[IDIR];
@@ -153,8 +153,8 @@ void EmfBoundary(DataBlock& data, const real t) {
 }
 
 void InternalBoundary(DataBlock& data, const real t) {
-  IdefixArray4D<real> Vc = data.Vc;
-  IdefixArray4D<real> Vs = data.Vs;
+  IdefixArray4D<real> Vc = data.hydro.Vc;
+  IdefixArray4D<real> Vs = data.hydro.Vs;
   IdefixArray1D<real> x1=data.x[IDIR];
   IdefixArray1D<real> x2=data.x[JDIR];
 
@@ -190,8 +190,8 @@ void InternalBoundary(DataBlock& data, const real t) {
 void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 
     if( (dir==IDIR) && (side == left)) {
-        IdefixArray4D<real> Vc = data.Vc;
-        IdefixArray4D<real> Vs = data.Vs;
+        IdefixArray4D<real> Vc = data.hydro.Vc;
+        IdefixArray4D<real> Vs = data.hydro.Vs;
         IdefixArray1D<real> x1 = data.x[IDIR];
         IdefixArray1D<real> x2 = data.x[JDIR];
 
@@ -216,8 +216,8 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
     }
 
     if( dir==JDIR) {
-        IdefixArray4D<real> Vc = data.Vc;
-        IdefixArray4D<real> Vs = data.Vs;
+        IdefixArray4D<real> Vc = data.hydro.Vc;
+        IdefixArray4D<real> Vs = data.hydro.Vs;
         int jghost;
         int jbeg,jend;
         if(side == left) {
@@ -265,16 +265,16 @@ Setup::Setup() {}
 
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
-Setup::Setup(Input &input, Grid &grid, DataBlock &data, Hydro &hydro) {
+Setup::Setup(Input &input, Grid &grid, DataBlock &data) {
     // Set the function for userdefboundary
-    hydro.EnrollUserDefBoundary(&UserdefBoundary);
-    hydro.EnrollGravPotential(&Potential);
-    hydro.EnrollAmbipolarDiffusivity(&Ambipolar);
-    //hydro.EnrollOhmicDiffusivity(&Resistivity);
-    hydro.EnrollUserSourceTerm(&MySourceTerm);
-    hydro.EnrollInternalBoundary(&InternalBoundary);
-    hydro.EnrollEmfBoundary(&EmfBoundary);
-    gammaGlob=hydro.GetGamma();
+    data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
+    data.hydro.EnrollGravPotential(&Potential);
+    data.hydro.EnrollAmbipolarDiffusivity(&Ambipolar);
+    //data.hydro.EnrollOhmicDiffusivity(&Resistivity);
+    data.hydro.EnrollUserSourceTerm(&MySourceTerm);
+    data.hydro.EnrollInternalBoundary(&InternalBoundary);
+    data.hydro.EnrollEmfBoundary(&EmfBoundary);
+    gammaGlob=data.hydro.GetGamma();
     epsilonGlob = input.GetReal("Setup","epsilon",0);
     epsilonTopGlob = input.GetReal("Setup","epsilonTop",0);
     betaGlob = input.GetReal("Setup","beta",0);
@@ -361,7 +361,7 @@ void Setup::InitFlow(DataBlock &data) {
 }
 
 // Analyse data to produce an output
-void Setup::MakeAnalysis(DataBlock & data, real t) {
+void Setup::MakeAnalysis(DataBlock & data) {
 
 }
 

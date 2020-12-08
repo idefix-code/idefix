@@ -25,8 +25,8 @@ real randm(void) {
 // User-defined boundaries
 void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
     if( (dir==IDIR) && (side == left)) {
-        IdefixArray4D<real> Vc = data.Vc;
-        IdefixArray4D<real> Vs = data.Vs;
+        IdefixArray4D<real> Vc = data.hydro.Vc;
+        IdefixArray4D<real> Vs = data.hydro.Vs;
         IdefixArray1D<real> x1 = data.x[IDIR];
 
         int ighost = data.nghost[IDIR];
@@ -78,11 +78,11 @@ Setup::Setup() {}
 
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
-Setup::Setup(Input &input, Grid &grid, DataBlock &data, Hydro &hydro) {
+Setup::Setup(Input &input, Grid &grid, DataBlock &data) {
     // Set the function for userdefboundary
-    hydro.EnrollUserDefBoundary(&UserdefBoundary);
-    hydro.EnrollGravPotential(&Potential);
-    hydro.EnrollHallDiffusivity(&Hall);
+    data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
+    data.hydro.EnrollGravPotential(&Potential);
+    data.hydro.EnrollHallDiffusivity(&Hall);
 }
 
 // This routine initialize the flow
@@ -122,14 +122,6 @@ void Setup::InitFlow(DataBlock &data) {
 }
 
 // Analyse data to produce an output
-void Setup::MakeAnalysis(DataBlock & data, real t) {
-
-}
-
-
-
-
-// Do a specifically designed user step in the middle of the integration
-void ComputeUserStep(DataBlock &data, real t, real dt) {
+void Setup::MakeAnalysis(DataBlock & data) {
 
 }

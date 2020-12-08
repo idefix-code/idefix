@@ -19,11 +19,11 @@ real randm(void) {
     const int m =    2147483647;
     static int in0 = 13763 + 2417*idfx::prank;
     int q;
-    
+
     /* find random number  */
     q= (int) fmod((double) a * in0, m);
     in0=q;
-    
+
     return((real) ((double) q/(double)m));
 }
 
@@ -33,8 +33,8 @@ Setup::Setup() {}
 // UserStep, here only gravity (vertical and radial)
 void UserStep(DataBlock &data, const real t, const real dt) {
     Kokkos::Profiling::pushRegion("Setup::UserStep");
-    IdefixArray4D<real> Uc = data.Uc;
-    IdefixArray4D<real> Vc = data.Vc;
+    IdefixArray4D<real> Uc = data.hydro.Uc;
+    IdefixArray4D<real> Vc = data.hydro.Vc;
     IdefixArray1D<real> x = data.x[IDIR];
     IdefixArray1D<real> z = data.x[KDIR];
 
@@ -51,43 +51,43 @@ void UserStep(DataBlock &data, const real t, const real dt) {
         });
 
     Kokkos::Profiling::popRegion();
-    
+
 }
 
 
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
-Setup::Setup(Input &input, Grid &grid, DataBlock &data, Hydro &hydro) {
-    gammaIdeal=hydro.GetGamma();
+Setup::Setup(Input &input, Grid &grid, DataBlock &data) {
+    gammaIdeal=data.hydro.GetGamma();
 
     // Get rotation rate along vertical axis
     omega=input.GetReal("Hydro","Rotation",2);
     shear=input.GetReal("Hydro","ShearingBox",0);
 
     // Add our userstep to the timeintegrator
-    hydro.EnrollUserSourceTerm(UserStep);
+    data.hydro.EnrollUserSourceTerm(UserStep);
 }
 
 // This routine initialize the flow
 // Note that data is on the device.
-// One can therefore define locally 
+// One can therefore define locally
 // a datahost and sync it, if needed
 void Setup::InitFlow(DataBlock &data) {
     // Create a host copy
     DataBlockHost d(data);
     real x,y,z;
-    
+
     real B0 = 0.02;
     real cs2 = gammaIdeal*omega*omega;
 
-    
+
     for(int k = 0; k < d.np_tot[KDIR] ; k++) {
         for(int j = 0; j < d.np_tot[JDIR] ; j++) {
             for(int i = 0; i < d.np_tot[IDIR] ; i++) {
                 x=d.x[IDIR](i);
                 y=d.x[JDIR](j);
                 z=d.x[KDIR](k);
-                
+
 #ifdef STRATIFIED
                 d.Vc(RHO,k,j,i) = 1.0*exp(-z*z/(2.0));
 #else
@@ -97,7 +97,7 @@ void Setup::InitFlow(DataBlock &data) {
                 d.Vc(VX1,k,j,i) = 0.1*(randm()-0.5);
                 d.Vc(VX2,k,j,i) = shear*x;
                 d.Vc(VX3,k,j,i) = 0.1*(randm()-0.5);
-                
+
                 d.Vs(BX1s,k,j,i) = 0;
                 d.Vs(BX2s,k,j,i) = 0;
                 d.Vs(BX3s,k,j,i) = B0;
@@ -105,15 +105,15 @@ void Setup::InitFlow(DataBlock &data) {
             }
         }
     }
-    
+
     // Send it all, if needed
     d.SyncToDevice();
 }
 
 
-// Analyse data to produce an output      
-                     
-void Setup::MakeAnalysis(DataBlock & data, real t) {
+// Analyse data to produce an output
+
+void Setup::MakeAnalysis(DataBlock & data) {
 
 }
 

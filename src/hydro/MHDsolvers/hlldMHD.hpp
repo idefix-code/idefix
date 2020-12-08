@@ -14,8 +14,8 @@
 // Compute Riemann fluxes from states using HLLD solver
 template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
          ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
-void HlldMHD(DataBlock & data, real gamma, real C2Iso) {
-  idfx::pushRegion("HLLD_MHD");
+void Hydro::HlldMHD() {
+  idfx::pushRegion("Hydro::HLLD_MHD");
     
   int ioffset,joffset,koffset;
   int iextend, jextend,kextend;
@@ -23,10 +23,10 @@ void HlldMHD(DataBlock & data, real gamma, real C2Iso) {
   // extension in perp to the direction of integration, as required by CT.
   iextend=jextend=kextend=0;
 
-  IdefixArray4D<real> PrimL = data.PrimL;
-  IdefixArray4D<real> PrimR = data.PrimR;
-  IdefixArray4D<real> Flux = data.FluxRiemann;
-  IdefixArray3D<real> cMax = data.cMax;
+  IdefixArray4D<real> PrimL = this->PrimL;
+  IdefixArray4D<real> PrimR = this->PrimR;
+  IdefixArray4D<real> Flux = this->FluxRiemann;
+  IdefixArray3D<real> cMax = this->cMax;
 
   // References to required emf components
   IdefixArray3D<real> Eb;
@@ -34,7 +34,9 @@ void HlldMHD(DataBlock & data, real gamma, real C2Iso) {
   
   IdefixArray3D<int> SV;
 
-  real gamma_m1=gamma-ONE_F;
+  real gamma_m1 = this->gamma-ONE_F;
+  real C2Iso = this->C2Iso;
+
 
   // st and sb will be useful only when Hall is included
   D_EXPAND( real st;  ,
@@ -50,9 +52,9 @@ void HlldMHD(DataBlock & data, real gamma, real C2Iso) {
                 kextend = 1;
                 sb = +ONE_F;  )
 
-      Et = data.emf.ezi;
-      Eb = data.emf.eyi;
-      SV = data.emf.svx;
+      Et = this->emf.ezi;
+      Eb = this->emf.eyi;
+      SV = this->emf.svx;
       break;
     case(JDIR):
       joffset=1;
@@ -63,9 +65,9 @@ void HlldMHD(DataBlock & data, real gamma, real C2Iso) {
                 kextend = 1;
                 sb = -ONE_F;  )
 
-      Et = data.emf.ezj;
-      Eb = data.emf.exj;
-      SV = data.emf.svy;
+      Et = this->emf.ezj;
+      Eb = this->emf.exj;
+      SV = this->emf.svy;
       break;
     case(KDIR):
       koffset=1;
@@ -75,18 +77,18 @@ void HlldMHD(DataBlock & data, real gamma, real C2Iso) {
                 jextend = 1;  ,
                 sb = +ONE_F;  )
 
-      Et = data.emf.eyk;
-      Eb = data.emf.exk;
-      SV = data.emf.svz;
+      Et = this->emf.eyk;
+      Eb = this->emf.exk;
+      SV = this->emf.svz;
       break;
     default:
       IDEFIX_ERROR("Wrong direction");
   }
 
   idefix_for("CalcRiemannFlux",
-             data.beg[KDIR]-kextend,data.end[KDIR]+koffset+kextend,
-             data.beg[JDIR]-jextend,data.end[JDIR]+joffset+jextend,
-             data.beg[IDIR]-iextend,data.end[IDIR]+ioffset+iextend,
+             data->beg[KDIR]-kextend,data->end[KDIR]+koffset+kextend,
+             data->beg[JDIR]-jextend,data->end[JDIR]+joffset+jextend,
+             data->beg[IDIR]-iextend,data->end[IDIR]+ioffset+iextend,
     KOKKOS_LAMBDA (int k, int j, int i) {
       // Primitive variables
       real vL[NVAR];

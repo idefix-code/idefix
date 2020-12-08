@@ -25,20 +25,19 @@ class OutputVTK;
 
 class OutputDump {
  public:
-  OutputDump(Input &, DataBlock &, real);               // Create Output Object
+  OutputDump(Input &, DataBlock &);               // Create Output Object
   // Create a Dump file from the current state of the code
-  int Write(Grid&, DataBlock &, TimeIntegrator&, OutputVTK&);
+  int Write(Grid&, DataBlock &, OutputVTK&);
   // Create a Dump file from the current state of the code
-  int CheckForWrite(Grid&, DataBlock &, TimeIntegrator&, OutputVTK&);
+  int CheckForWrite(Grid&, DataBlock &, OutputVTK&);
   // Read and load a dump file as current state of the code
-  int Read(Grid&, DataBlock &, TimeIntegrator&, OutputVTK&, int);
+  int Read(Grid&, DataBlock &, OutputVTK&, int);
 
  private:
   int dumpFileNumber;
   real tperiod, tnext;
 
   real *scrch;                            // Scratch array in host space
-
 
   // Timer
   Kokkos::Timer timer;
@@ -51,8 +50,6 @@ class OutputDump {
   IdfxDataDescriptor descC;   // Descriptor for cell-centered fields (Read & write)
   IdfxDataDescriptor descSR[3]; // Descriptor for face-centered fields (Read)
   IdfxDataDescriptor descSW[3]; // Descriptor for face-centered fields (Write)
-
-
 
   void WriteString(IdfxFileHandler, char *);
   void WriteSerial(IdfxFileHandler, int, int *, DataType, char*, void*);

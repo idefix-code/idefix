@@ -41,8 +41,8 @@
 // Compute Riemann fluxes from states using ROE solver
 template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
          ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
-void RoeMHD(DataBlock & data, real gamma, real C2Iso) {
-  idfx::pushRegion("ROE_MHD");
+void Hydro::RoeMHD() {
+  idfx::pushRegion("Hydro::ROE_MHD");
 
   int ioffset,joffset,koffset;
   int iextend, jextend,kextend;
@@ -51,10 +51,10 @@ void RoeMHD(DataBlock & data, real gamma, real C2Iso) {
   // extension in perp to the direction of integration, as required by CT.
   iextend=jextend=kextend=0;
 
-  IdefixArray4D<real> PrimL = data.PrimL;
-  IdefixArray4D<real> PrimR = data.PrimR;
-  IdefixArray4D<real> Flux = data.FluxRiemann;
-  IdefixArray3D<real> cMax = data.cMax;
+  IdefixArray4D<real> PrimL = this->PrimL;
+  IdefixArray4D<real> PrimR = this->PrimR;
+  IdefixArray4D<real> Flux = this->FluxRiemann;
+  IdefixArray3D<real> cMax = this->cMax;
 
   // References to required emf components
   IdefixArray3D<real> Eb;
@@ -62,8 +62,10 @@ void RoeMHD(DataBlock & data, real gamma, real C2Iso) {
   
   IdefixArray3D<int> SV;
 
+  real gamma_m1=this->gamma-ONE_F;
+  real C2Iso = this->C2Iso;
 
-  real gamma_m1=gamma-ONE_F;
+  // TODO(baghdads) what is this delta?
   real delta    = 1.e-6;
 
   // Define normal, tangent and bi-tanget indices
@@ -80,9 +82,9 @@ void RoeMHD(DataBlock & data, real gamma, real C2Iso) {
                 jextend = 1;  ,
                 kextend = 1;  )
 
-      Et = data.emf.ezi;
-      Eb = data.emf.eyi;
-      SV = data.emf.svx;
+      Et = this->emf.ezi;
+      Eb = this->emf.eyi;
+      SV = this->emf.svx;
 
       D_EXPAND( st = -ONE_F;  ,
                               ,
@@ -94,9 +96,9 @@ void RoeMHD(DataBlock & data, real gamma, real C2Iso) {
                               ,
                 kextend = 1;  )
           
-      Et = data.emf.ezj;
-      Eb = data.emf.exj;
-      SV = data.emf.svy;
+      Et = this->emf.ezj;
+      Eb = this->emf.exj;
+      SV = this->emf.svy;
 
       D_EXPAND( st = +ONE_F;  ,
                               ,
@@ -108,9 +110,9 @@ void RoeMHD(DataBlock & data, real gamma, real C2Iso) {
                 jextend = 1;  ,
                               )
 
-      Et = data.emf.eyk;
-      Eb = data.emf.exk;
-      SV = data.emf.svz;
+      Et = this->emf.eyk;
+      Eb = this->emf.exk;
+      SV = this->emf.svz;
 
       D_EXPAND( st = -ONE_F;  ,
                               ,
@@ -121,9 +123,9 @@ void RoeMHD(DataBlock & data, real gamma, real C2Iso) {
   }
 
   idefix_for("CalcRiemannFlux",
-             data.beg[KDIR]-kextend,data.end[KDIR]+koffset+kextend,
-             data.beg[JDIR]-jextend,data.end[JDIR]+joffset+jextend,
-             data.beg[IDIR]-iextend,data.end[IDIR]+ioffset+iextend,
+             data->beg[KDIR]-kextend,data->end[KDIR]+koffset+kextend,
+             data->beg[JDIR]-jextend,data->end[JDIR]+joffset+jextend,
+             data->beg[IDIR]-iextend,data->end[IDIR]+ioffset+iextend,
     KOKKOS_LAMBDA (int k, int j, int i) {
       // Primitive variables
       real vL[NVAR];

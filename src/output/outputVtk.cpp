@@ -69,10 +69,10 @@ void OutputVTK::WriteHeaderFloat(float* buffer, int64_t nelem, IdfxFileHandler f
 }
 
 /* Main constructor */
-OutputVTK::OutputVTK(Input &input, DataBlock &datain, real t) {
+OutputVTK::OutputVTK(Input &input, DataBlock &datain) {
   // Init the output period
   this->tperiod=input.GetReal("Output","vtk",0);
-  this->tnext = t;
+  this->tnext = datain.t;
 
   // Initialize the output structure
   // Create a local datablock as an image of gridin
@@ -154,24 +154,21 @@ OutputVTK::OutputVTK(Input &input, DataBlock &datain, real t) {
 #endif
 }
 
-int OutputVTK::CheckForWrite(DataBlock &datain, real t) {
+int OutputVTK::CheckForWrite(DataBlock &datain) {
   // Do we need an output?
-  if(t<this->tnext) return(0);
+  if(datain.t < this->tnext) return(0);
 
   this->tnext+= this->tperiod;
-  return(this->Write(datain,t));
+  return(this->Write(datain));
 }
 
-int OutputVTK::Write(DataBlock &datain, real t) {
+int OutputVTK::Write(DataBlock &datain) {
   idfx::pushRegion("OutputVTK::Write");
   
   IdfxFileHandler fileHdl;
   char filename[256];
 
   idfx::cout << "OutputVTK::Write file n " << vtkFileNumber << "..." << std::flush;
-
-  // Debug data structure
-  //datain.DumpToFile(std::string("Debug.")+std::to_string(vtkFileNumber));
 
   timer.reset();
 
@@ -203,7 +200,7 @@ int OutputVTK::Write(DataBlock &datain, real t) {
         }
       }
     }
-    WriteScalar(fileHdl, vect3D, datain.VcName[nv]);
+    WriteScalar(fileHdl, vect3D, datain.hydro.VcName[nv]);
   }
 
 #if MHD == YES
@@ -217,7 +214,7 @@ int OutputVTK::Write(DataBlock &datain, real t) {
         }
       }
     }
-    WriteScalar(fileHdl, vect3D, datain.VsName[nv]);
+    WriteScalar(fileHdl, vect3D, datain.hydro.VsName[nv]);
   }
   #endif // WRITE_STAGGERED_FIELD
 

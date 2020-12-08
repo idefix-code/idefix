@@ -16,16 +16,11 @@ class TimeIntegrator {
   friend class OutputDump;
 
  public:
-  real getDt();           // Get current times step of time integrator
   int64_t getNcycles();   // Get current number of cycles
-  void setDt(real );      // Set specific dt for time integrator  
-  real getT();            // Get current time of time integrator
-
 
   // Constructor from input and given datablock
-  TimeIntegrator(Input &, Hydro &);
+  TimeIntegrator(Input &, DataBlock &);
 
-  void Stage(DataBlock &);
   // Do one integration cycle
   void Cycle(DataBlock &);
   void ReinitInvDt(DataBlock & );
@@ -39,17 +34,13 @@ class TimeIntegrator {
   real w0[2];
   real wc[2];
 
-
-  real dt;    // Current timestep
-  real t;     // Current time
   real cfl;   // CFL number
   int64_t ncycles;        // # of cycles
   double lastLog;         // # time for the last log
   double lastMpiLog;      // # time for the last MPI log
   int64_t cyclePeriod;    // # of cycles between two logs
   Kokkos::Timer timer;    // Internal timer of the integrator
-  
-  Hydro *hydro;
+
 };
 
 #endif // TIMEINTEGRATOR_HPP_

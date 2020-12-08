@@ -10,28 +10,28 @@
 
 
 // Compute the right handside in direction dir from conservative equation, with timestep dt
-void Hydro::CalcRightHandSide(DataBlock &data, int dir, real t, real dt) {
+void Hydro::CalcRightHandSide(int dir, real t, real dt) {
   idfx::pushRegion("Hydro::CalcRightHandSide");
   
-  IdefixArray4D<real> Uc   = data.Uc;
-  IdefixArray4D<real> Vc   = data.Vc;
-  IdefixArray4D<real> Flux = data.FluxRiemann;
-  IdefixArray3D<real> A    = data.A[dir];
-  IdefixArray3D<real> dV   = data.dV;
-  IdefixArray1D<real> x1m  = data.xl[IDIR];
-  IdefixArray1D<real> x1   = data.x[IDIR];
-  IdefixArray1D<real> sm   = data.sm;
-  IdefixArray1D<real> rt   = data.rt;
-  IdefixArray1D<real> dmu  = data.dmu;
-  IdefixArray1D<real> s    = data.s;
-  IdefixArray1D<real> dx   = data.dx[dir];
-  IdefixArray1D<real> dx2  = data.dx[JDIR];
-  IdefixArray3D<real> invDt = data.InvDt;
-  IdefixArray3D<real> cMax = data.cMax;
-  IdefixArray3D<real> dMax = data.dMax;
+  IdefixArray4D<real> Uc   = this->Uc;
+  IdefixArray4D<real> Vc   = this->Vc;
+  IdefixArray4D<real> Flux = this->FluxRiemann;
+  IdefixArray3D<real> A    = data->A[dir];
+  IdefixArray3D<real> dV   = data->dV;
+  IdefixArray1D<real> x1m  = data->xl[IDIR];
+  IdefixArray1D<real> x1   = data->x[IDIR];
+  IdefixArray1D<real> sm   = data->sm;
+  IdefixArray1D<real> rt   = data->rt;
+  IdefixArray1D<real> dmu  = data->dmu;
+  IdefixArray1D<real> s    = data->s;
+  IdefixArray1D<real> dx   = data->dx[dir];
+  IdefixArray1D<real> dx2  = data->dx[JDIR];
+  IdefixArray3D<real> invDt = this->InvDt;
+  IdefixArray3D<real> cMax = this->cMax;
+  IdefixArray3D<real> dMax = this->dMax;
 
   // Gravitational potential
-  IdefixArray3D<real> phiP = data.phiP;
+  IdefixArray3D<real> phiP = this->phiP;
   bool needPotential = this->haveGravPotential;
 
   // parabolic terms
@@ -41,25 +41,25 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real t, real dt) {
     IdefixArray1D<real> x1,x2,x3;
 
     if(dir==IDIR)
-      x1 = data.xl[IDIR];
+      x1 = data->xl[IDIR];
     else
-      x1 = data.x[IDIR];
+      x1 = data->x[IDIR];
     
     if(dir==JDIR)
-      x2 = data.xl[JDIR];
+      x2 = data->xl[JDIR];
     else
-      x2 = data.x[JDIR];
+      x2 = data->x[JDIR];
     
     if(dir==KDIR)
-      x3 = data.xl[KDIR];
+      x3 = data->xl[KDIR];
     else
-      x3 = data.x[KDIR];
+      x3 = data->x[KDIR];
 
     if(this->gravPotentialFunc == nullptr)
       IDEFIX_ERROR("Gravitational potential is enabled, "
                    "but no user-defined potential has been enrolled.");
 
-    gravPotentialFunc(data, t, x1, x2, x3, phiP);
+    gravPotentialFunc(*data, t, x1, x2, x3, phiP);
   }
 
 
@@ -72,9 +72,9 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real t, real dt) {
 
 
   idefix_for("CalcTotalFlux",
-             data.beg[KDIR],data.end[KDIR]+koffset,
-             data.beg[JDIR],data.end[JDIR]+joffset,
-             data.beg[IDIR],data.end[IDIR]+ioffset,
+             data->beg[KDIR],data->end[KDIR]+koffset,
+             data->beg[JDIR],data->end[JDIR]+joffset,
+             data->beg[IDIR],data->end[IDIR]+ioffset,
     KOKKOS_LAMBDA (int k, int j, int i) {
       // TODO: Should add gravitational potential here and Fargo source terms when needed
 #if HAVE_ENERGY
@@ -135,9 +135,9 @@ void Hydro::CalcRightHandSide(DataBlock &data, int dir, real t, real dt) {
 
 
   idefix_for("CalcRightHandSide",
-             data.beg[KDIR],data.end[KDIR],
-             data.beg[JDIR],data.end[JDIR],
-             data.beg[IDIR],data.end[IDIR],
+             data->beg[KDIR],data->end[KDIR],
+             data->beg[JDIR],data->end[JDIR],
+             data->beg[IDIR],data->end[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
       //
       real dtdV=dt / dV(k,j,i);

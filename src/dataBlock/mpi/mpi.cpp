@@ -189,9 +189,9 @@ void Mpi::ExchangeX1() {
   int nx,ny,nz;
   IdefixArray1D<real> BufferLeft=BufferSendX1[faceLeft];
   IdefixArray1D<real> BufferRight=BufferSendX1[faceRight];
-  IdefixArray4D<real> Vc=data->Vc;
+  IdefixArray4D<real> Vc=data->hydro.Vc;
 #if MHD==YES
-  IdefixArray4D<real> Vs=data->Vs;
+  IdefixArray4D<real> Vs=data->hydro.Vs;
   int VsIndex;
 #endif
 
@@ -391,10 +391,10 @@ void Mpi::ExchangeX2() {
   int nx,ny,nz;
   IdefixArray1D<real> BufferLeft=BufferSendX2[faceLeft];
   IdefixArray1D<real> BufferRight=BufferSendX2[faceRight];
-  IdefixArray4D<real> Vc=data->Vc;
+  IdefixArray4D<real> Vc=data->hydro.Vc;
 
 #if MHD==YES
-  IdefixArray4D<real> Vs=data->Vs;
+  IdefixArray4D<real> Vs=data->hydro.Vs;
   int VsIndex;
 #endif
   
@@ -594,10 +594,10 @@ void Mpi::ExchangeX3() {
   int nx,ny,nz;
   IdefixArray1D<real> BufferLeft=BufferSendX3[faceLeft];
   IdefixArray1D<real> BufferRight=BufferSendX3[faceRight];
-  IdefixArray4D<real> Vc=data->Vc;
+  IdefixArray4D<real> Vc=data->hydro.Vc;
 
 #if MHD==YES
-  IdefixArray4D<real> Vs=data->Vs;
+  IdefixArray4D<real> Vs=data->hydro.Vs;
   int VsIndex;
 #endif
 

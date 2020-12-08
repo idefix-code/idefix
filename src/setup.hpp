@@ -13,10 +13,10 @@
 class Setup {
  public:
   Setup();
-  Setup(Input &, Grid &, DataBlock &, Hydro &);
+  Setup(Input &, Grid &, DataBlock &);
 
   void InitFlow(DataBlock &);
-  void MakeAnalysis(DataBlock&, real);
+  void MakeAnalysis(DataBlock&);
 };
 
 #endif // SETUP_HPP_

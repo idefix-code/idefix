@@ -14,7 +14,7 @@ TEST_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 function resolve_path {
     # relying on Python, which is required by tests themsleves
     # for this problem is solved by a one liner for all plateforms (including OSX)
-    python -c "from pathlib import Path; print(Path('$1').resolve())"
+    python3 -c "from pathlib import Path; print(Path('$1').resolve())"
 }
 
 target_dir=$(resolve_path $TEST_DIR/..)

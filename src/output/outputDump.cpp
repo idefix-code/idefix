@@ -21,6 +21,9 @@ OutputDump::OutputDump(Input &input, DataBlock &data) {
     this->tnext = 0;
   }
 
+  for (int idir=0; idir<3;idir++) {
+    this->periodicity[idir] = (data.mygrid->lbound[idir] == periodic);
+  }
   this->dumpFileNumber = 0;
 
   // Allocate scratch Array
@@ -101,6 +104,7 @@ void OutputDump::WriteSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
   if(type == DoubleType) size=sizeof(double);
   if(type == SingleType) size=sizeof(float);
   if(type == IntegerType) size=sizeof(int);
+  if(type == BoolType) size=sizeof(bool);
 
   // Write field name
 
@@ -485,6 +489,10 @@ int OutputDump::Read(Grid& grid, DataBlock &data, OutputVTK& ovtk, int readNumbe
       ReadSerial(fileHdl, ndim, nxglob, type, &this->dumpFileNumber);
     } else if(fieldName.compare("dumptnext")==0) {
       ReadSerial(fileHdl, ndim, nxglob, type, &this->tnext);
+    } else if(fieldName.compare("geometry")==0) {
+      ReadSerial(fileHdl, ndim, nxglob, type, &this->geometry);
+    } else if(fieldName.compare("periodicity")==0) {
+      ReadSerial(fileHdl, ndim, nxglob, type, &this->periodicity);
     } else {
       ReadSerial(fileHdl,ndim, nxglob, type, scrch);
       IDEFIX_WARNING("Unknown field "+fieldName+" in restart dump. Skipping.");
@@ -622,6 +630,12 @@ int OutputDump::Write( Grid& grid, DataBlock &data, OutputVTK& ovtk) {
   WriteSerial(fileHdl, 1, nx, IntegerType, fieldName, &this->dumpFileNumber);
   std::snprintf(fieldName,NAMESIZE, "dumptnext");
   WriteSerial(fileHdl, 1, nx, realType, fieldName, &this->tnext);
+  std::snprintf(fieldName,NAMESIZE, "geometry");
+  WriteSerial(fileHdl, 1, nx, IntegerType, fieldName, &this->geometry);
+
+  nx[0] = 3;
+  std::snprintf(fieldName,NAMESIZE, "periodicity");
+  WriteSerial(fileHdl, 1, nx, IntegerType, fieldName, &this->periodicity);
   
   // Write end of file
   scrch[0] = 0.0;

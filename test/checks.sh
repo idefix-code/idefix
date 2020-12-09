@@ -12,14 +12,14 @@ TEST_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 
 function resolve_path {
-    # relying on Python, which is required by tests themsleves
-    # for this problem is solved by a one liner for all plateforms (including OSX)
-    python3 -c "from pathlib import Path; print(Path('$1').resolve())"
+    # resolve relative paths
+    # work around the fact that `realpath` is not bundled with every UNIX distro
+    echo "`cd "$1";pwd`"
 }
 
 target_dir=$(resolve_path $TEST_DIR/..)
 
-if [ -z ${var+IDEFIX_DIR} ] ; then
+if [ -z ${var+IDEFIX_DIR} ] & [ -d "$IDEFIX_DIR" ] ; then
     global_dir=$(resolve_path $IDEFIX_DIR)
     if [ $target_dir != $global_dir ] ; then
         echo \

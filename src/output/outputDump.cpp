@@ -398,8 +398,12 @@ int OutputDump::Read(Grid& grid, DataBlock &data, OutputVTK& ovtk, int readNumbe
 #endif
   // File is open
 
-  // skip the header
+    // skip the header
+#ifdef WITH_MPI
+  this->offset += HEADERSIZE;
+#else
   fseek(fileHdl, HEADERSIZE, SEEK_SET);
+#endif
 
   // First thing is compare the total domain size
   for(int dir=0 ; dir < 3; dir++) {

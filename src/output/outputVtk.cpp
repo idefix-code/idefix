@@ -5,6 +5,9 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************************
 
+#include <string>
+#include <sstream>
+#include <iomanip>
 #include "outputVtk.hpp"
 #include "gitversion.hpp"
 #include "../idefix.hpp"
@@ -33,14 +36,14 @@
 // Whether or not we want to write the cfl dt
 #define WRITE_DT
 /* ---------------------------------------------------------
-    The following macros are specific to this file only 
+    The following macros are specific to this file only
     and are used to ease up serial/parallel implementation
-    for writing strings and real arrays 
-   --------------------------------------------------------- */   
-    
+    for writing strings and real arrays
+   --------------------------------------------------------- */
 
 
-void OutputVTK::WriteHeaderString(char* header, IdfxFileHandler fvtk) {
+
+void OutputVTK::WriteHeaderString(const char* header, IdfxFileHandler fvtk) {
 #ifdef WITH_MPI
   MPI_Status status;
   MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_BYTE,
@@ -112,7 +115,7 @@ OutputVTK::OutputVTK(Input &input, DataBlock &datain) {
   unsigned char *tmp2 = (unsigned char *) &tmp1;
   if (*tmp2 != 0)
     this->shouldSwapEndian = 1;
-  
+
   // Store coordinates for later use
   this->xnode = new float[nx1+IOFFSET];
   this->ynode = new float[nx2+JOFFSET];
@@ -132,7 +135,7 @@ OutputVTK::OutputVTK(Input &input, DataBlock &datain) {
   }
 #if VTK_FORMAT == VTK_STRUCTURED_GRID   // VTK_FORMAT
   /* -- Allocate memory for node_coord which is later used -- */
-  node_coord = new float[(nx1+IOFFSET)*3]; 
+  node_coord = new float[(nx1+IOFFSET)*3];
 #endif
 
   // Creat MPI view when using MPI I/O
@@ -140,14 +143,14 @@ OutputVTK::OutputVTK(Input &input, DataBlock &datain) {
   int start[3];
   int size[3];
   int subsize[3];
-  
+
   for(int dir = 0; dir < 3 ; dir++) {
     // VTK assumes Fortran array ordering, hence arrays dimensions are filled backwards
     start[2-dir] = datain.gbeg[dir]-grid.nghost[dir];
     size[2-dir] = grid.np_int[dir];
     subsize[2-dir] = datain.np_int[dir];
   }
-  
+
   MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start, MPI_ORDER_C,
                                          MPI_FLOAT, &this->view));
   MPI_SAFE_CALL(MPI_Type_commit(&this->view));
@@ -164,9 +167,9 @@ int OutputVTK::CheckForWrite(DataBlock &datain) {
 
 int OutputVTK::Write(DataBlock &datain) {
   idfx::pushRegion("OutputVTK::Write");
-  
+
   IdfxFileHandler fileHdl;
-  char filename[256];
+  std::string filename;
 
   idfx::cout << "OutputVTK::Write file n " << vtkFileNumber << "..." << std::flush;
 
@@ -176,18 +179,21 @@ int OutputVTK::Write(DataBlock &datain) {
   DataBlockHost data(datain);
   data.SyncFromDevice();
 
-  sprintf (filename, "data.%04d.vtk", vtkFileNumber);
+  std::stringstream ssfileName, ssvtkFileNum;
+  ssvtkFileNum << std::setfill('0') << std::setw(4) << vtkFileNumber;
+  ssfileName << "data." << ssvtkFileNum.str() << ".vtk";
+  filename = ssfileName.str();
 
   // Open file and write header
 #ifdef WITH_MPI
-  MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename,
+  MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
                               MPI_MODE_CREATE | MPI_MODE_RDWR | MPI_MODE_UNIQUE_OPEN,
                               MPI_INFO_NULL, &fileHdl));
   this->offset = 0;
 #else
-  fileHdl = fopen(filename,"wb");
+  fileHdl = fopen(filename.c_str(),"wb");
 #endif
-  
+
   WriteHeader(fileHdl);
 
   // Write field one by one
@@ -234,7 +240,7 @@ int OutputVTK::Write(DataBlock &datain) {
     }
   }
   #endif // WRITE_CURRENT
-  
+
   #ifdef WRITE_EMF
   {
     for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++ ) {
@@ -298,7 +304,7 @@ int OutputVTK::Write(DataBlock &datain) {
   vtkFileNumber++;
   // Make file number
   idfx::cout << "done in " << timer.seconds() << " s." << std::endl;
-  
+
   idfx::popRegion();
   // One day, we will have a return code.
   return(0);
@@ -316,67 +322,77 @@ void OutputVTK::WriteHeader(IdfxFileHandler fvtk) {
 * \todo  Write the grid using several processors.
 *********************************************************************** */
 
-  char header[1024];
+  std::string header;
+  std::stringstream ssheader;
   float x1, x2, x3;
 
   /* -------------------------------------------
   1. File version and identifier
   ------------------------------------------- */
 
-  sprintf(header, "# vtk DataFile Version 2.0\n");
+  ssheader << "# vtk DataFile Version 2.0" << std::endl;
 
   /* -------------------------------------------
   2. Header
   ------------------------------------------- */
 
-  sprintf(header + strlen(header), "Idefix %s VTK Data\n", GITVERSION);
+  ssheader << "Idefix " << GITVERSION << " VTK Data" << std::endl;
 
   /* ------------------------------------------
   3. File format
   ------------------------------------------ */
 
-  sprintf(header + strlen(header), "BINARY\n");
+  ssheader << "BINARY" << std::endl;
 
   /* ------------------------------------------
   4. Dataset structure
   ------------------------------------------ */
 
 #if VTK_FORMAT == VTK_RECTILINEAR_GRID
-  sprintf(header + strlen(header), "DATASET %s\n", "RECTILINEAR_GRID");
+  ssheader << "DATASET RECTILINEAR_GRID" << std::endl;
 #elif VTK_FORMAT == VTK_STRUCTURED_GRID
-  sprintf(header + strlen(header), "DATASET %s\n", "STRUCTURED_GRID");
+  ssheader << "DATASET STRUCTURED_GRID" << std::endl;
 #endif
 
-  
-  WriteHeaderString(header, fvtk);
 
-  sprintf(header, "DIMENSIONS %lld %lld %lld\n",
-          nx1 + IOFFSET, nx2 + JOFFSET, nx3 + KOFFSET);
+  ssheader << "DIMENSIONS " << nx1 + IOFFSET << " " << nx2 + JOFFSET << " " << nx3 + KOFFSET
+           << std::endl;
 
-  WriteHeaderString(header, fvtk);
+  header = ssheader.str();
+  WriteHeaderString(header.c_str(), fvtk);
 
 #if VTK_FORMAT == VTK_RECTILINEAR_GRID
 
   /* -- Write rectilinear grid information -- */
+  std::stringstream coordx, coordy, coordz;
 
-  sprintf(header, "X_COORDINATES %lld float\n", nx1 + IOFFSET);
-  WriteHeaderString(header, fvtk);
+  coordx << "X_COORDINATES " << nx1 + IOFFSET << " float" << std::endl;
+  header = coordx.str();
+  WriteHeaderString(header.c_str(), fvtk);
+
   WriteHeaderFloat(xnode, nx1 + IOFFSET, fvtk);
 
-  sprintf(header, "\nY_COORDINATES %lld float\n", nx2 + JOFFSET);
-  WriteHeaderString(header, fvtk);
+  coordy << std::endl << "Y_COORDINATES " << nx2 + JOFFSET << " float" << std::endl;
+  header = coordy.str();
+  WriteHeaderString(header.c_str(), fvtk);
+
   WriteHeaderFloat(ynode, nx2 + JOFFSET, fvtk);
 
-  sprintf(header, "\nZ_COORDINATES %lld float\n", nx3 + KOFFSET);
-  WriteHeaderString(header, fvtk);
+  coordz << std::endl << "Z_COORDINATES " << nx3 + KOFFSET << " float" << std::endl;
+  header = coordz.str();
+  WriteHeaderString(header.c_str(), fvtk);
+
   WriteHeaderFloat(znode, nx3 + KOFFSET, fvtk);
 
 #elif VTK_FORMAT == VTK_STRUCTURED_GRID
 
   /* -- define node_coord -- */
+  std::stringstream ssheader2;
 
-  sprintf(header, "POINTS %lld float\n", (nx1 + IOFFSET) * (nx2 + JOFFSET) * (nx3 + KOFFSET));
-  WriteHeaderString(header, fvtk);
+  ssheader2 << "POINTS " << (nx1 + IOFFSET) * (nx2 + JOFFSET) * (nx3 + KOFFSET) << " float"
+            << std::endl;
+  header = ssheader2.str();
+  WriteHeaderString(header.c_str(), fvtk);
 
   /* -- Write structured grid information -- */
 
@@ -404,7 +420,7 @@ void OutputVTK::WriteHeader(IdfxFileHandler fvtk) {
         node_coord[3*i+IDIR] = BigEndian(x1 * sin(x2));
         node_coord[3*i+JDIR] = BigEndian(x1 * cos(x2));
         node_coord[3*i+KDIR] = BigEndian(0.0);
-        
+
     #elif DIMENSIONS == 3
         node_coord[3*i+IDIR] = BigEndian(x1 * sin(x2) * cos(x3));
         node_coord[3*i+JDIR] = BigEndian(x1 * sin(x2) * sin(x3));
@@ -412,7 +428,7 @@ void OutputVTK::WriteHeader(IdfxFileHandler fvtk) {
     #endif // DIMENSIONS
   #endif // GEOMETRY
       }
-      
+
       WriteHeaderFloat(node_coord, 3 * (nx1 + IOFFSET),fvtk);
     }
   }
@@ -424,8 +440,10 @@ void OutputVTK::WriteHeader(IdfxFileHandler fvtk) {
     to WriteVTK_Vector() or WriteVTK_Scalar()...]
   ----------------------------------------------------- */
 
-  sprintf(header, "\nCELL_DATA %lld\n", nx1 * nx2 * nx3);
-  WriteHeaderString(header, fvtk);
+  std::stringstream ssheader3;
+  ssheader3 << std::endl << "CELL_DATA " << nx1 * nx2 * nx3 << std::endl;
+  header = ssheader3.str();
+  WriteHeaderString(header.c_str(), fvtk);
 }
 #undef VTK_STRUCTURED_GRID
 #undef VTK_RECTILINEAR_GRID
@@ -444,12 +462,13 @@ void OutputVTK::WriteScalar(IdfxFileHandler fvtk, float* Vin,  std::string &var_
 *********************************************************************** */
 
   int i, j, k;
-  char header[512];
+  std::stringstream ssheader;
 
-  sprintf(header, "\nSCALARS %s float\n", var_name.c_str());
-  sprintf(header + strlen(header), "LOOKUP_TABLE default\n");
+  ssheader << std::endl << "SCALARS " << var_name.c_str() << " float" << std::endl;
+  ssheader << "LOOKUP_TABLE default" << std::endl;
+  std::string header(ssheader.str());
 
-  WriteHeaderString(header, fvtk);
+  WriteHeaderString(header.c_str(), fvtk);
 
 #ifdef WITH_MPI
   MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_FLOAT, this->view,
@@ -462,8 +481,8 @@ void OutputVTK::WriteScalar(IdfxFileHandler fvtk, float* Vin,  std::string &var_
 }
 
 /* ****************************************************************************/
-/** Determines if the machine is little-endian.  If so, 
-  it will force the data to be big-endian. 
+/** Determines if the machine is little-endian.  If so,
+  it will force the data to be big-endian.
 @param in_number floating point number to be converted in big endian */
 /* *************************************************************************** */
 

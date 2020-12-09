@@ -17,14 +17,14 @@ GridHost::GridHost() {
 
 GridHost::GridHost(Grid &grid) {
   idfx::pushRegion("GridHost::GridHost(Grid)");
-  
+
   this->grid=&grid;
   for(int dir = 0 ; dir < 3 ; dir++) {
     nghost[dir] = grid.nghost[dir];
     np_tot[dir] = grid.np_tot[dir];
     np_int[dir] = grid.np_int[dir];
 
-    lbound[dir] = grid.lbound[dir]; 
+    lbound[dir] = grid.lbound[dir];
     rbound[dir] = grid.rbound[dir];
 
     xbeg[dir] = grid.xbeg[dir];
@@ -44,7 +44,7 @@ GridHost::GridHost(Grid &grid) {
 
 void GridHost::MakeGrid(Input &input) {
   idfx::pushRegion("GridHost::MakeGrid");
-  
+
   real xstart[3];
   real xend[3];
   // Create the grid
@@ -87,7 +87,7 @@ void GridHost::MakeGrid(Input &input) {
           }
         } else if(patchType.compare("l")==0) {
           // log-increasing patch
-            
+
           double alpha = (patchEnd + fabs(patchStart) - patchStart)/fabs(patchStart);
 
           for(int i = 0 - ghostStart ; i < patchSize + ghostEnd ; i++) {
@@ -103,7 +103,7 @@ void GridHost::MakeGrid(Input &input) {
           // - means we take the initial dx on the left side, + on the right side
           // refPatch corresponds to the patch from which we compute the initial dx
           // of the stretched grid
-          
+
           int refPatch=patch;
           if(patchType.compare("s+")==0) {
             refPatch=patch+1;
@@ -142,14 +142,14 @@ void GridHost::MakeGrid(Input &input) {
           }
           // once we know q, we can make the grid
           if(patchType.compare("s-")==0) {
-            for(int i = 0 - ghostStart ; i < patchSize + ghostEnd ; i++) {    
+            for(int i = 0 - ghostStart ; i < patchSize + ghostEnd ; i++) {
               xl[dir](i+idxstart) = patchStart + q*(pow(q,i)-1)/(q-1)*delta;
               xr[dir](i+idxstart) = patchStart + q*(pow(q,i+1)-1)/(q-1)*delta;
               dx[dir](i+idxstart) = pow(q,i+1)*delta;
               x[dir](i+idxstart)= 0.5*(xr[dir](i+idxstart) + xl[dir](i+idxstart));
             }
           } else {
-            for(int i = 0 - ghostStart ; i < patchSize + ghostEnd ; i++) {    
+            for(int i = 0 - ghostStart ; i < patchSize + ghostEnd ; i++) {
               xl[dir](i+idxstart) = patchEnd - q*(pow(q,patchSize-i)-1)/(q-1)*delta;
               xr[dir](i+idxstart) = patchEnd - q*(pow(q,patchSize-i-1)-1)/(q-1)*delta;
               dx[dir](i+idxstart) = pow(q,patchSize-i+1)*delta;
@@ -210,7 +210,7 @@ void GridHost::MakeGrid(Input &input) {
                  << "...." << np_int[dir] << "...." << xend[dir] << "\t" << rboundString
                  << std::endl;
     } else {
-      // dir >= DIMENSIONS/ Init simple uniform grid            
+      // dir >= DIMENSIONS/ Init simple uniform grid
       for(int i = 0 ; i < np_tot[dir] ; i++) {
         dx[dir](i) = (xend[dir]-xstart[dir])/(np_int[dir]);
         x[dir](i)=xstart[dir] + (i-nghost[dir]+HALF_F)*dx[dir](i);
@@ -225,7 +225,7 @@ void GridHost::MakeGrid(Input &input) {
 
 void GridHost::SyncFromDevice() {
   idfx::pushRegion("GridHost::SyncFromDevice");
-  
+
   for(int dir = 0 ; dir < 3 ; dir++) {
     Kokkos::deep_copy(x[dir],grid->x[dir]);
     Kokkos::deep_copy(xr[dir],grid->xr[dir]);
@@ -235,13 +235,13 @@ void GridHost::SyncFromDevice() {
     xbeg[dir] = grid->xbeg[dir];
     xend[dir] = grid->xend[dir];
   }
-  
+
   idfx::popRegion();
 }
 
 void GridHost::SyncToDevice() {
   idfx::pushRegion("GridHost::SyncToDevice");
-  
+
   // Sync with the device
   for(int dir = 0 ; dir < 3 ; dir++) {
     Kokkos::deep_copy(grid->x[dir],x[dir]);
@@ -252,6 +252,6 @@ void GridHost::SyncToDevice() {
     grid->xbeg[dir] = xbeg[dir];
     grid->xend[dir] = xend[dir];
   }
-  
+
   idfx::popRegion();
 }

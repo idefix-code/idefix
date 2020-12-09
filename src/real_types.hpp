@@ -34,7 +34,6 @@ using real = float;
 
 #define FMAX(x,y) fmax(x,y)
 #define FMIN(x,y) fmin(x,y)
-#define SQRT(x) sqrt(x)
 #define FABS(x) fabs(x)
 #define TAN(x) tan(x)
 #define SIN(x) sin(x)
@@ -52,7 +51,6 @@ using real = float;
 
 #define FMAX(x,y) fmaxf(x,y)
 #define FMIN(x,y) fminf(x,y)
-#define SQRT(x) sqrtf(x)
 #define FABS(x) fabsf(x)
 #define TAN(x) tanf(x)
 #define SIN(x) sinf(x)

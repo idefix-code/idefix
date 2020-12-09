@@ -115,13 +115,13 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
         i += IB;
         function(j,i);
     });
-    
+
     // MDRange loops
   } else if (lp == LoopPattern::MDRANGE) {
     Kokkos::parallel_for(NAME,
       Kokkos::MDRangePolicy<Kokkos::Rank<2, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
         ({JB,IB},{JE,IE}), function);
-      
+
     // TeamPolicies with single inner loops
   } else if (lp == LoopPattern::TPX || lp == LoopPattern::TPTTRTVR ) {
     const int NJ = JE - JB;
@@ -137,14 +137,13 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
     // SIMD FOR loops
   } else if (lp == LoopPattern::SIMDFOR) {
     for (auto j = JB; j < JE; j++)
-      #pragma omp simd
+#pragma omp simd
       for (auto i = IB; i < IE; i++)
         function(j,i);
   } else {
     throw std::runtime_error("Unknown/undefined LoopPattern used.");
   }
 }
-    
 
 
 // 3D loop
@@ -216,7 +215,7 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
   } else if (lp == LoopPattern::SIMDFOR) {
     for (auto k = KB; k < KE; k++)
       for (auto j = JB; j < JE; j++)
-        #pragma omp simd
+#pragma omp simd
         for (auto i = IB; i < IE; i++)
           function(k,j,i);
   } else {
@@ -308,7 +307,7 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
     for (auto n = NB; n < NE; n++)
       for (auto k = KB; k < KE; k++)
         for (auto j = JB; j < JE; j++)
-          #pragma omp simd
+#pragma omp simd
           for (auto i = IB; i < IE; i++)
             function(n,k,j,i);
   } else {

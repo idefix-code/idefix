@@ -36,7 +36,8 @@ void Hydro::HllcHD() {
   IdefixArray4D<real> PrimR = this->PrimR;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
-
+  
+  real gamma = this->gamma;
   real gamma_m1 = this->gamma - ONE_F;
   real C2Iso = this->C2Iso;
 

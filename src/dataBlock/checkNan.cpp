@@ -37,10 +37,10 @@ int DataBlock::CheckNan()  {
     , nanVs // reduction variable
   );
 #endif
-  
+
   if(nanVc+nanVs>0) {
     // TODO(lesurg): limit the number of nans displayed here
-    
+
     std::cout << "DataBlock:: rank " << idfx::prank << " found " << nanVc
       << " Nans in the current datablock. Details will be in corresponding process log file."
       << std::endl;
@@ -94,5 +94,3 @@ int DataBlock::CheckNan()  {
   idfx::popRegion();
   return(nanVc+nanVs);
 }
-
-    

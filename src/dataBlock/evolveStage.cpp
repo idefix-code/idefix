@@ -42,3 +42,4 @@ void DataBlock::EvolveStage() {
 
   idfx::popRegion();
 }
+

@@ -39,7 +39,7 @@ class DataBlockHost {
   int np_int[3];                          // internal number of grid points
 
   int nghost[3];                          // number of ghost cells
-  
+
   BoundaryType lbound[3];                 // Boundary condition to the left
   BoundaryType rbound[3];                 // Boundary condition to the right
 

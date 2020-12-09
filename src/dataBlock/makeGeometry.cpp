@@ -65,7 +65,7 @@ void DataBlock::MakeGeometry() {
       x1gc(i) = x1(i);
 
 #elif GEOMETRY == CYLINDRICAL || GEOMETRY == POLAR
-      x1gc(i) = x1(i) + dx1(i)*dx1(i)/(12.0*x1(i)); 
+      x1gc(i) = x1(i) + dx1(i)*dx1(i)/(12.0*x1(i));
 
 #elif GEOMETRY == SPHERICAL
       x1gc(i) = x1(i) + 2.0*x1(i)*dx1(i)*dx1(i)
@@ -91,7 +91,7 @@ void DataBlock::MakeGeometry() {
 #endif
     }
   );
-  
+
   // X3
   idefix_for("GeometricalCentersX3",0,np_tot[KDIR],
     KOKKOS_LAMBDA (int k) {
@@ -147,18 +147,18 @@ void DataBlock::MakeGeometry() {
       Ax2(k,j,i) = D_EXPAND(FABS(x1(i)), *dx1(i), *ONE_F);   // = r*dr
 
 #elif GEOMETRY == POLAR
-      Ax2(k,j,i) = D_EXPAND(dx1(i), *ONE_F, *dx3(k));        // = dr*dz    
+      Ax2(k,j,i) = D_EXPAND(dx1(i), *ONE_F, *dx3(k));        // = dr*dz
 
 #elif GEOMETRY == SPHERICAL
       if (j == end) {
-        Ax2(k,j,i) = D_EXPAND(x1(i)*dx1(i), *FABS(sin(x2p(j-1))), *dx3(k)); 
+        Ax2(k,j,i) = D_EXPAND(x1(i)*dx1(i), *FABS(sin(x2p(j-1))), *dx3(k));
       } else {
         Ax2(k,j,i) = D_EXPAND(x1(i)*dx1(i), *FABS(sin(x2m(j))), *dx3(k)); // = r*dr*sin(thp)*dphi
       }
 #endif
     }
   );
-  
+
   // X3 direction
   end = this->np_tot[KDIR];
   idefix_for("AreaX3",0,this->np_tot[KDIR]+KOFFSET,0,this->np_tot[JDIR],0,this->np_tot[IDIR],

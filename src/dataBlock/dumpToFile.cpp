@@ -39,7 +39,7 @@ void DataBlock::DumpToFile(std::string filebase)  {
   // Data format:
   // First groupe is nfield (number of 4D arrays written)
   // Then for each field:
-  // nx1, nx2, nx3, nvar then the data, then off you go 
+  // nx1, nx2, nx3, nvar then the data, then off you go
   std::string dot = std::string(".");
   std::string ext = std::string("idfx");
   std::string filename = filebase + dot + std::to_string(n)

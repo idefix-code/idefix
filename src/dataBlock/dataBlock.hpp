@@ -35,7 +35,7 @@ class DataBlock {
 
   IdefixArray3D<real> dV;      // cell volume
   IdefixArray3D<real> A[3];    // cell right interface area
-  
+
   int np_tot[3];               // total number of grid points
   int np_int[3];               // internal number of grid points
 
@@ -53,7 +53,7 @@ class DataBlock {
   real t;                      // Current time
 
   Grid *mygrid;
-  
+
   #ifdef WITH_MPI
   Mpi mpi;                     // Mpi object when WITH_MPI is set
   #endif
@@ -63,8 +63,8 @@ class DataBlock {
 
   // init from a Grid object
   void InitFromGrid(Grid &, Input &);
-  
-  void MakeGeometry(); 
+
+  void MakeGeometry();
 
   // Dump current datablock to a file for inspection
   void DumpToFile(std::string filebase);
@@ -76,7 +76,6 @@ class DataBlock {
   void EvolveStage();
 
   DataBlock();
-
 };
 
 #endif // DATABLOCK_DATABLOCK_HPP_

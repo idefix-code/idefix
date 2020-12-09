@@ -35,7 +35,7 @@ void Hydro::TvdlfMHD() {
   
   IdefixArray3D<int> SV;
 
-
+  real gamma = this->gamma;
   real gamma_m1=gamma-ONE_F;
   real C2Iso = this->C2Iso;
 

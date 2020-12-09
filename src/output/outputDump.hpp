@@ -53,7 +53,7 @@ class OutputDump {
   IdfxDataDescriptor descSR[3]; // Descriptor for face-centered fields (Read)
   IdfxDataDescriptor descSW[3]; // Descriptor for face-centered fields (Write)
 
-  void WriteString(IdfxFileHandler, char *);
+  void WriteString(IdfxFileHandler, char *, int);
   void WriteSerial(IdfxFileHandler, int, int *, DataType, char*, void*);
   void WriteDistributed(IdfxFileHandler, int, int*, int*, char*, IdfxDataDescriptor&, real*);
   void ReadNextFieldProperties(IdfxFileHandler, int&, int*, DataType&, std::string&);

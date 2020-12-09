@@ -6,10 +6,12 @@
 // ***********************************************************************************
 
 #include "outputDump.hpp"
+#include "gitversion.hpp"
 
 // Max size of array name
 #define  NAMESIZE     16
 #define  FILENAMESIZE   256
+#define  HEADERSIZE 128
 
 OutputDump::OutputDump(Input &input, DataBlock &data) {
   // Init the output period
@@ -81,17 +83,17 @@ OutputDump::OutputDump(Input &input, DataBlock &data) {
   #endif
 }
 
-void OutputDump::WriteString(IdfxFileHandler fileHdl, char *str) {
+void OutputDump::WriteString(IdfxFileHandler fileHdl, char *str, int size) {
   #ifdef WITH_MPI
     MPI_Status status;
     MPI_SAFE_CALL(MPI_File_set_view(fileHdl, this->offset,
                                     MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL ));
     if(idfx::prank==0) {
-      MPI_SAFE_CALL(MPI_File_write(fileHdl, str, NAMESIZE, MPI_CHAR, &status));
+      MPI_SAFE_CALL(MPI_File_write(fileHdl, str, size, MPI_CHAR, &status));
     }
-    offset=offset+NAMESIZE;
+    offset=offset+size;
   #else
-    fwrite (str, sizeof(char), NAMESIZE, fileHdl);
+    fwrite (str, sizeof(char), size, fileHdl);
   #endif
 }
 
@@ -107,7 +109,7 @@ void OutputDump::WriteSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
 
   // Write field name
 
-  WriteString(fileHdl, name);
+  WriteString(fileHdl, name, NAMESIZE);
 
   #ifdef WITH_MPI
     MPI_Status status;
@@ -179,7 +181,7 @@ void OutputDump::WriteDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, i
   #endif
 
   // Write field name
-  WriteString(fileHdl, name);
+  WriteString(fileHdl, name, NAMESIZE);
 
   #ifdef WITH_MPI
     MPI_Status status;
@@ -395,6 +397,10 @@ int OutputDump::Read(Grid& grid, DataBlock &data, OutputVTK& ovtk, int readNumbe
   fileHdl = fopen(filename,"rb");
 #endif
   // File is open
+
+  // skip the header
+  fseek(fileHdl, HEADERSIZE, SEEK_SET);
+
   // First thing is compare the total domain size
   for(int dir=0 ; dir < 3; dir++) {
     ReadNextFieldProperties(fileHdl, ndim, nx, type, fieldName);
@@ -406,6 +412,12 @@ int OutputDump::Read(Grid& grid, DataBlock &data, OutputVTK& ovtk, int readNumbe
 
     // Read coordinates
     ReadSerial(fileHdl, ndim, nx, type, scrch);
+
+    // skip left and right edges arrays
+    for (int iside=0; iside < 2; iside++) {
+      ReadNextFieldProperties(fileHdl, ndim, nx, type, fieldName);
+      ReadSerial(fileHdl, ndim, nx, type, scrch);
+    }
     // Todo: check that coordinates are identical
   }
   // Coordinates are ok, load the bulk
@@ -558,10 +570,23 @@ int OutputDump::Write( Grid& grid, DataBlock &data, OutputVTK& ovtk) {
   GridHost gridHost(grid);
   gridHost.SyncFromDevice();
 
+  char header[HEADERSIZE];
+  std::snprintf(header, HEADERSIZE, "Idefix %s Dump Data", GITVERSION);
+  WriteString(fileHdl, header, HEADERSIZE);
+
   for(int dir = 0; dir < 3 ; dir++) {
+    // cell centers
     std::snprintf(fieldName, NAMESIZE, "x%d",dir+1);
     WriteSerial(fileHdl, 1, &gridHost.np_int[dir], realType, fieldName, 
                 reinterpret_cast<void*> (gridHost.x[dir].data()+gridHost.nghost[dir]));
+    // cell left edges
+    std::snprintf(fieldName, NAMESIZE, "xl%d",dir+1);
+    WriteSerial(fileHdl, 1, &gridHost.np_int[dir], realType, fieldName,
+                reinterpret_cast<void*> (gridHost.xl[dir].data()+gridHost.nghost[dir]));
+    // cell right edges
+    std::snprintf(fieldName, NAMESIZE, "xr%d",dir+1);
+    WriteSerial(fileHdl, 1, &gridHost.np_int[dir], realType, fieldName,
+                reinterpret_cast<void*> (gridHost.xr[dir].data()+gridHost.nghost[dir]));
   }
 
   // Then write raw data from Vc

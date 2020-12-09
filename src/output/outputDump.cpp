@@ -571,7 +571,7 @@ int OutputDump::Write( Grid& grid, DataBlock &data, OutputVTK& ovtk) {
   gridHost.SyncFromDevice();
 
   char header[HEADERSIZE];
-  sprintf(header, "Idefix %s Dump Data", GITVERSION);
+  std::snprintf(header, HEADERSIZE, "Idefix %s Dump Data", GITVERSION);
   WriteString(fileHdl, header, HEADERSIZE);
 
   for(int dir = 0; dir < 3 ; dir++) {

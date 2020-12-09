@@ -18,7 +18,7 @@
 echo "Starting Google C++ Style cpplint.py test"
 set -e
 # Use "python[23] -u" to prevent buffering of sys.stdout,stderr.write() calls in cpplint.py and mix-up in Jenkins logs,
-find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/kokkos/*" -not -name "gitversion.hpp" -not -name "definitions.hpp" -print | xargs python -u ./cpplint.py --counting=detailed
+find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/kokkos/*" -not -name "gitversion.hpp" -print | xargs python -u ./cpplint.py --counting=detailed
 set +e
 echo "End of Google C++ Style cpplint.py test"
 
@@ -59,14 +59,14 @@ do
 
     # To lint each src/ file separately, use:
     # ./cpplint.py --counting=detailed "$file"
-done < <(find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/fft/plimpton/*" -print)
+done < <(find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/kokkos/*" -print)
 
 echo "End of std::sqrt(), std::cbrt(), \t test"
 
 # Search src/ C++ source code for trailing whitespace errors
 # (Google C++ Style Linter does not check for this, but flake8 via pycodestyle warning W291 will check *.py)
 echo "Checking for trailing whitespace in src/"
-find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp*" \) -not -path "*/fft/plimpton/*" -exec grep -n -E " +$" {} +
+find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp*" \) -not -path "*/kokkos/*" -exec grep -n -E " +$" {} +
 if [ $? -ne 1 ]; then echo "ERROR: Found C++ file(s) in src/ with trailing whitespace"; exit 1; fi
 echo "End of trailing whitespace test"
 
@@ -97,6 +97,6 @@ echo "Checking for correct file permissions in src/"
 
 # Furthermore, even the latest version of "git ls-tree" will silently fail & return nothing if [<path>...]
 # is in repository but does not match any tree contents.
-git ls-tree -r --full-tree HEAD src/ | awk '{print substr($1,4,5), $4}' | grep -v "644"
+git ls-tree -r --full-tree HEAD src/  | grep -v "commit" | awk '{print substr($1,4,5), $4}' | grep -v "644"
 if [ $? -ne 1 ]; then echo "ERROR: Found C++ file(s) in src/ with executable permission"; exit 1; fi
 echo "End of file permissions test"

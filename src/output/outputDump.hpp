@@ -35,6 +35,8 @@ class OutputDump {
 
  private:
   int dumpFileNumber;
+  int geometry{GEOMETRY};
+  int periodicity[3];
   real tperiod, tnext;
 
   real *scrch;                            // Scratch array in host space

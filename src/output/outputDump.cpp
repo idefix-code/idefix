@@ -91,7 +91,7 @@ void OutputDump::WriteString(IdfxFileHandler fileHdl, char *str) {
     }
     offset=offset+NAMESIZE;
   #else
-    fwrite (str, NAMESIZE, sizeof(char), fileHdl);
+    fwrite (str, sizeof(char), NAMESIZE, fileHdl);
   #endif
 }
 

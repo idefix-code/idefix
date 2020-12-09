@@ -64,12 +64,7 @@ void MySourceTerm(DataBlock &data, const real t, const real dtin) {
                 Uc(ENG,k,j,i) += -dt*(Vc(PRS,k,j,i)-Ptarget)/(tau*gamma_m1);
 
 		// Velocity relaxation
-		if(R<1.2) {
-			Uc(MX1,k,j,i) += -dt*(Vc(VX1,k,j,i)*Vc(RHO,k,j,i));
-			Uc(MX2,k,j,i) += -dt*(Vc(VX2,k,j,i)*Vc(RHO,k,j,i));
-		}
-
-});
+            });
 
 
 }
@@ -85,6 +80,7 @@ void EmfBoundary(DataBlock& data, const real t) {
         idefix_for("EMFBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,ighost+1,
                     KOKKOS_LAMBDA (int k, int j, int i) {
             Ex3(k,j,i) = ZERO_F;
+	    Ex2(k,j,i) = ZERO_F;
         });
     }
     if(data.lbound[JDIR] == userdef) {
@@ -93,6 +89,7 @@ void EmfBoundary(DataBlock& data, const real t) {
         idefix_for("EMFBoundary",0,data.np_tot[KDIR],0,data.np_tot[IDIR],
                     KOKKOS_LAMBDA (int k, int i) {
             Ex3(k,jghost,i) = ZERO_F;
+	    Ex1(k,jghost,i) = ZERO_F;
         });
     }
     if(data.rbound[JDIR] == userdef) {
@@ -101,6 +98,7 @@ void EmfBoundary(DataBlock& data, const real t) {
         idefix_for("EMFBoundary",0,data.np_tot[KDIR],0,data.np_tot[IDIR],
                     KOKKOS_LAMBDA (int k, int i) {
             Ex3(k,jghost,i) = ZERO_F;
+	    Ex1(k,jghost,i) = ZERO_F;
         });
     }
 }
@@ -161,10 +159,21 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 			                   else Vc(VX1,k,j,i) = Vc(VX1,k,j,ighost);
                         Vc(VX2,k,j,i) = Vc(VX2,k,j,ighost);
                         Vc(VX3,k,j,i) = R*Omega;
-                        Vs(BX2s,k,j,i) = Vs(BX2s,k,j,ighost);
-                        Vc(BX3,k,j,i) = ZERO_F;
-
                     });
+
+          idefix_for("UserDefBoundaryX1S",0,data.np_tot[KDIR],0,data.np_tot[JDIR]+1,0,ighost,
+                      KOKKOS_LAMBDA (int k, int j, int i) {
+
+                          Vs(BX2s,k,j,i) = ZERO_F;
+
+
+                      });
+
+          idefix_for("UserDefBoundaryX3S",0,data.np_tot[KDIR]+1,0,data.np_tot[JDIR],0,ighost,
+                      KOKKOS_LAMBDA (int k, int j, int i) {
+                          Vs(BX3s,k,j,i) = ZERO_F;
+
+            });
 
     }
 
@@ -190,12 +199,20 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                     KOKKOS_LAMBDA (int k, int j, int i) {
                         Vc(RHO,k,j,i) = Vc(RHO,k,jghost,i);
                         Vc(PRS,k,j,i) = Vc(PRS,k,jghost,i);
-                        Vc(VX1,k,j,i) = Vc(VX1,k,jghost,i);
-                        Vc(VX2,k,j,i) = - Vc(VX2,k,2*jghost-j,i);
+                        Vc(VX1,k,j,i) = ZERO_F;
+                        Vc(VX2,k,j,i) = ZERO_F;
                         Vc(VX3,k,j,i) = ZERO_F;
-                        Vs(BX1s,k,j,i) = Vs(BX1s,k,jghost,i);
-                        Vc(BX3,k,j,i) = ZERO_F;
 
+                    });
+
+        idefix_for("UserDefBoundary_X1s",0,data.np_tot[KDIR],jbeg,jend,0,data.np_tot[IDIR]+1,
+                    KOKKOS_LAMBDA (int k, int j, int i) {
+                        Vs(BX1s,k,j,i) = ZERO_F;
+                    });
+
+        idefix_for("UserDefBoundary_X3s",0,data.np_tot[KDIR]+1,jbeg,jend,0,data.np_tot[IDIR],
+                    KOKKOS_LAMBDA (int k, int j, int i) {
+                        Vs(BX3s,k,j,i) = ZERO_F;
                     });
 
 
@@ -224,7 +241,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data) {
   data.hydro.EnrollGravPotential(&Potential);
   data.hydro.EnrollUserSourceTerm(&MySourceTerm);
   data.hydro.EnrollInternalBoundary(&InternalBoundary);
-  data.hydro.EnrollEmfBoundary(&EmfBoundary);
+  //hydro.EnrollEmfBoundary(&EmfBoundary);
   gammaGlob=data.hydro.GetGamma();
   epsilonGlob = input.GetReal("Setup","epsilon",0);
   densityFloorGlob = input.GetReal("Setup","densityFloor",0);
@@ -282,7 +299,7 @@ void Setup::InitFlow(DataBlock &data) {
     }
 
     // Make the field from the vector potential
-    //d.MakeVsFromAmag(A);
+    d.MakeVsFromAmag(A);
 
     // Send it all, if needed
     d.SyncToDevice();
@@ -295,8 +312,3 @@ void Setup::MakeAnalysis(DataBlock & data) {
 
 
 
-
-// Do a specifically designed user step in the middle of the integration
-void ComputeUserStep(DataBlock &data, real t, real dt) {
-
-}

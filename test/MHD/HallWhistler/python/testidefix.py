@@ -68,17 +68,7 @@ for n in range(nend):
     
     
     
-    
-plt.close('all')
-plt.figure()
-plt.contourf(t,V.x,By.T,64)
-plt.title('By')
-plt.colorbar()
 
-plt.figure()
-plt.contourf(t,V.x,Bz.T,64)
-plt.title('Bz')
-plt.colorbar()
 
 # Theoretical speedes
 f_w=Va/(2*np.pi)*k*(np.sqrt(1+(k*lH/2)**2)+k*lH/2)
@@ -101,6 +91,18 @@ print("Theoretical whistler frequency=%g, numerical=%g, error=%g"%(f_w,f_wnum,er
 
 
 if(not args.noplot):
+        
+    plt.close('all')
+    plt.figure()
+    plt.contourf(t,V.x,By.T,64)
+    plt.title('By')
+    plt.colorbar()
+
+    plt.figure()
+    plt.contourf(t,V.x,Bz.T,64)
+    plt.title('Bz')
+    plt.colorbar()
+
     plt.figure()
     plt.loglog(f,sp,label='signal')
     plt.loglog(f_w+0*r,r,'--',label='whistler')

@@ -56,21 +56,21 @@ KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[], real gamma_m1) {
   EXPAND( Vc[BX1] = Uc[BX1];  ,
           Vc[BX2] = Uc[BX2];  ,
           Vc[BX3] = Uc[BX3];  )
-        
+
 
 #if HAVE_ENERGY
   real kin,mag;
-  kin = HALF_F / Uc[RHO] * (EXPAND( Uc[MX1]*Uc[MX1]   , 
+  kin = HALF_F / Uc[RHO] * (EXPAND( Uc[MX1]*Uc[MX1]   ,
                                    + Uc[MX2]*Uc[MX2]  ,
                                    + Uc[MX3]*Uc[MX3]  ));
 
-  mag = HALF_F * (EXPAND( Uc[BX1]*Uc[BX1]   , 
+  mag = HALF_F * (EXPAND( Uc[BX1]*Uc[BX1]   ,
                          + Uc[BX2]*Uc[BX2]  ,
                          + Uc[BX3]*Uc[BX3]  ));
 
 
   Vc[PRS] = gamma_m1 * (Uc[ENG] - kin - mag);
-  
+
   // Check pressure positivity
   if(Vc[PRS]<= ZERO_F) {
   #ifdef SMALL_PRESSURE_TEMPERATURE
@@ -78,7 +78,7 @@ KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[], real gamma_m1) {
   #else
     Vc[PRS] = SMALL_PRESSURE_FIX;
   #endif
-    
+
     Uc[ENG] = Vc[PRS]/gamma_m1+kin+mag;
   }
 #endif  // Have_energy
@@ -98,13 +98,13 @@ KOKKOS_INLINE_FUNCTION void K_PrimToCons(real Uc[], real Vc[], real gamma_m1) {
 
 #if HAVE_ENERGY
 
-  Uc[ENG] = Vc[PRS] / gamma_m1 
-              + HALF_F * Vc[RHO] * (EXPAND( Vc[VX1]*Vc[VX1]  , 
+  Uc[ENG] = Vc[PRS] / gamma_m1
+              + HALF_F * Vc[RHO] * (EXPAND( Vc[VX1]*Vc[VX1]  ,
                                           + Vc[VX2]*Vc[VX2]  ,
                                           + Vc[VX3]*Vc[VX3]  ))
-              + HALF_F * (EXPAND( Uc[BX1]*Uc[BX1]  , 
+              + HALF_F * (EXPAND( Uc[BX1]*Uc[BX1]  ,
                                 + Uc[BX2]*Uc[BX2]  ,
-                                + Uc[BX3]*Uc[BX3]  )); 
+                                + Uc[BX3]*Uc[BX3]  ));
 #endif  // Have_energy
 }
 

@@ -11,11 +11,11 @@
 // Add source terms
 void Hydro::AddSourceTerms(real t, real dt) {
   idfx::pushRegion("Hydro::AddSourceTerms");
-  
+
   IdefixArray4D<real> Uc = this->Uc;
   IdefixArray4D<real> Vc = this->Vc;
-  IdefixArray1D<real> x1 = data->x[IDIR]; 
-  IdefixArray1D<real> x2 = data->x[JDIR]; 
+  IdefixArray1D<real> x1 = data->x[IDIR];
+  IdefixArray1D<real> x2 = data->x[JDIR];
 #if GEOMETRY == SPHERICAL
   IdefixArray1D<real> s  = data->s;
   IdefixArray1D<real> rt = data->rt;
@@ -25,7 +25,7 @@ void Hydro::AddSourceTerms(real t, real dt) {
   real OmegaX2 = this->OmegaX2;
   real OmegaX3 = this->OmegaX3;
   bool haveRotation = this->haveRotation;
-  
+
   if(haveUserSourceTerm) userSourceTerm(*data, t, dt);
 
   idefix_for("AddSourceTerms",
@@ -54,7 +54,7 @@ void Hydro::AddSourceTerms(real t, real dt) {
       real vphi,Sm;
       vphi = Vc(iVPHI,k,j,i);
       if(haveRotation) vphi += OmegaX3*x1(i);
-      Sm = Vc(RHO,k,j,i) * vphi*vphi; // Centrifugal     
+      Sm = Vc(RHO,k,j,i) * vphi*vphi; // Centrifugal
       // Presure (because pressure is included in the flux, additional source terms arise)
       Sm += Vc(PRS,k,j,i);
     #if MHD==YES
@@ -85,7 +85,7 @@ void Hydro::AddSourceTerms(real t, real dt) {
       Uc(MX1,k,j,i) += dt * Sm / x1(i);
 
 #elif GEOMETRY == SPHERICAL
-      real vphi,Sm,ct; 
+      real vphi,Sm,ct;
       vphi = SELECT(ZERO_F, ZERO_F, Vc(iVPHI,k,j,i));
       if(haveRotation) vphi += OmegaX3*x1(i)*s(j);
       // Centrifugal
@@ -95,7 +95,7 @@ void Hydro::AddSourceTerms(real t, real dt) {
   #if MHD == YES
       // Hoop stress
       Sm -= EXPAND( ZERO_F   ,
-                    + Vc(iBTH,k,j,i)*Vc(iBTH,k,j,i)    , 
+                    + Vc(iBTH,k,j,i)*Vc(iBTH,k,j,i)    ,
                     + Vc(iBPHI,k,j,i)*Vc(iBPHI,k,j,i)  );
       // 2* mag pressure curvature
       Sm += EXPAND( Vc(BX1,k,j,i)*Vc(BX1,k,j,i)   ,
@@ -103,7 +103,7 @@ void Hydro::AddSourceTerms(real t, real dt) {
                     +Vc(BX3,k,j,i)*Vc(BX3,k,j,i)  );
   #endif
       Uc(MX1,k,j,i) += dt*Sm/x1(i);
-      
+
       ct = 1.0/TAN(x2(j));
        // Centrifugal
       Sm = Vc(RHO,k,j,i) * (EXPAND( ZERO_F, - Vc(iVTH,k,j,i)*Vc(iVR,k,j,i), + ct*vphi*vphi));
@@ -123,6 +123,6 @@ void Hydro::AddSourceTerms(real t, real dt) {
 #endif
     }
   );
-  
+
   idfx::popRegion();
 }

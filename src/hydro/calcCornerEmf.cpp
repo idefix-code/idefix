@@ -26,7 +26,7 @@ void Hydro::CalcCornerEMF(real t) {
   IdefixArray3D<real> ezj = this->emf.ezj;
 
 #if MHD == YES && DIMENSIONS >= 2
-  
+
   #if EMF_AVERAGE == ARITHMETIC
   idefix_for("CalcCornerEMF",
              data->beg[KDIR],data->end[KDIR]+KOFFSET,
@@ -47,11 +47,11 @@ void Hydro::CalcCornerEMF(real t) {
     }
   );
   #endif
-  
+
   #if EMF_AVERAGE == UCT_CONTACT || EMF_AVERAGE == UCT0
   // 0. Compute cell-centered emf.
   IdefixArray4D<real> Vc = this->Vc;
-  
+
   IdefixArray3D<real> Ex1 = this->emf.Ex1;
   IdefixArray3D<real> Ex2 = this->emf.Ex2;
   IdefixArray3D<real> Ex3 = this->emf.Ex3;
@@ -82,7 +82,7 @@ void Hydro::CalcCornerEMF(real t) {
               Bx3 = Vc(BX3,k,j,i);  )
 
       // -- Compute inductive electric field
-      
+
     #if DIMENSIONS == 3
       Ex1(k,j,i) = (vx3*Bx2 - vx2*Bx3);
       Ex2(k,j,i) = (vx1*Bx3 - vx3*Bx1);
@@ -151,7 +151,7 @@ void Hydro::CalcCornerEMF(real t) {
       ezj(k,j,i) -= HALF_F*(Ex3(k,j-1,i) + Ex3(k,j,i));
     }
   );
-  
+
   idefix_for("CalcCornerEMF",
              data->beg[KDIR],data->end[KDIR]+KOFFSET,
              data->beg[JDIR],data->end[JDIR]+JOFFSET,
@@ -171,12 +171,12 @@ void Hydro::CalcCornerEMF(real t) {
     }
   );
   #endif // EMF_AVERAGE
-  
+
   #if EMF_AVERAGE == UCT_CONTACT
   IdefixArray3D<int> svx = this->emf.svx;
   IdefixArray3D<int> svy = this->emf.svy;
   IdefixArray3D<int> svz = this->emf.svz;
-  
+
   idefix_for("EMF_ArithmeticAverage",
              data->beg[KDIR],data->end[KDIR]+KOFFSET,
              data->beg[JDIR],data->end[JDIR]+JOFFSET,
@@ -193,7 +193,7 @@ void Hydro::CalcCornerEMF(real t) {
     #else
       ez(k,j,i) = w * (TWO_F*ezi(k,j,i) + ezj(k,j,i) + ezj(k,j,i-1));
     #endif
-      
+
       //CT_EMF_IntegrateToCorner (data, emf, grid);
       int iu, ju, ku;
       D_EXPAND( int sx;  ,
@@ -269,8 +269,8 @@ void Hydro::CalcCornerEMF(real t) {
 
   if(haveEmfBoundary)
     emfBoundaryFunc(*data, t);
-  
+
 #endif // MHD
-  
+
   idfx::popRegion();
 }

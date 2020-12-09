@@ -39,10 +39,10 @@ Hydro::Hydro(Input &input, Grid &grid, DataBlock *datain) {
                  "but have not set csiso in the ini file.");
 #endif
   }
-  
+
   // read Solver from input file
   std::string solverString = input.GetString("Hydro","Solver",0);
-  
+
   if (solverString.compare("tvdlf") == 0) {
     mySolver = TVDLF;
   } else if (solverString.compare("hll") == 0) {
@@ -65,7 +65,7 @@ Hydro::Hydro(Input &input, Grid &grid, DataBlock *datain) {
 #endif
     IDEFIX_ERROR(msg);
   }
-  
+
   // No userdefBoundary by default
   this->haveUserDefBoundary = false;
   this->haveInternalBoundary = false;
@@ -105,7 +105,7 @@ Hydro::Hydro(Input &input, Grid &grid, DataBlock *datain) {
     if(shearingbox != 1) {
       IDEFIX_ERROR("Shearing box needs a scalar value for the shear rate in idefix.ini");
     }
-    
+
     this->sbS = input.GetReal("Hydro","ShearingBox",0);
     // Get box size
     this->sbLx = grid.xend[IDIR] - grid.xbeg[IDIR];
@@ -120,11 +120,11 @@ Hydro::Hydro(Input &input, Grid &grid, DataBlock *datain) {
   this->haveGravPotential = false;
   this->gravPotentialFunc = nullptr;
   int gravPotential = input.CheckEntry("Hydro","GravPotential");
-  
+
   if(gravPotential>=0) {
     std::string potentialString = input.GetString("Hydro","GravPotential",0);
     if(potentialString.compare("userdef") == 0) {
-      this->haveGravPotential = true;        
+      this->haveGravPotential = true;
       idfx::cout << "Hydro:: Enabling user-defined gravitational potential" << std::endl;
     } else {
       IDEFIX_ERROR("Unknown type of gravitational potential in idefix.ini. "
@@ -147,12 +147,12 @@ Hydro::Hydro(Input &input, Grid &grid, DataBlock *datain) {
   this->needCurrent = false;
 
 #if MHD == YES
-  if(input.CheckEntry("Hydro","Resistivity")>=0 || 
+  if(input.CheckEntry("Hydro","Resistivity")>=0 ||
      input.CheckEntry("Hydro","Ambipolar")>=0 ||
      input.CheckEntry("Hydro","Hall")>=0 ) {
     //
     this->needCurrent = true;
-    
+
     if(input.CheckEntry("Hydro","Resistivity")>=0) {
       if(input.GetString("Hydro","Resistivity",0).compare("constant") == 0) {
         idfx::cout << "Hydro: Enabling Ohmic resistivity with constant diffusivity." << std::endl;
@@ -169,7 +169,7 @@ Hydro::Hydro(Input &input, Grid &grid, DataBlock *datain) {
                      "Can only be constant or userdef.");
       }
     }
-    
+
     if(input.CheckEntry("Hydro","Ambipolar")>=0) {
       if(input.GetString("Hydro","Ambipolar",0).compare("constant") == 0) {
         idfx::cout << "Hydro: Enabling ambipolar diffusion with constant diffusivity."
@@ -187,17 +187,17 @@ Hydro::Hydro(Input &input, Grid &grid, DataBlock *datain) {
                      "Can only be constant or userdef.");
       }
     }
-    
+
     if(input.CheckEntry("Hydro","Hall")>=0) {
       // Check consistency
       if(mySolver != HLL )
         IDEFIX_ERROR("Hall effect is only compatible with HLL Riemann solver.");
-      
+
   #if EMF_AVERAGE != ARITHMETIC
       IDEFIX_ERROR("the Hall effect module is demonstrated stable only when using "
                    "EMF_AVERAGE=ARITHMETIC");
   #endif
-      
+
       if(input.GetString("Hydro","Hall",0).compare("constant") == 0) {
         idfx::cout << "Hydro: Enabling Hall effect with constant diffusivity." << std::endl;
         this->xH = input.GetReal("Hydro","Hall",1);
@@ -225,15 +225,15 @@ Hydro::Hydro(Input &input, Grid &grid, DataBlock *datain) {
   Uc0 = IdefixArray4D<real>("Hydro_Uc0", NVAR,
                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
-  InvDt = IdefixArray3D<real>("Hydro_InvDt", 
+  InvDt = IdefixArray3D<real>("Hydro_InvDt",
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  cMax = IdefixArray3D<real>("Hydro_cMax", 
+  cMax = IdefixArray3D<real>("Hydro_cMax",
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  dMax = IdefixArray3D<real>("Hydro_dMax", 
+  dMax = IdefixArray3D<real>("Hydro_dMax",
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  PrimL =  IdefixArray4D<real>("Hydro_PrimL", NVAR, 
+  PrimL =  IdefixArray4D<real>("Hydro_PrimL", NVAR,
                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  PrimR =  IdefixArray4D<real>("Hydro_PrimR", NVAR, 
+  PrimR =  IdefixArray4D<real>("Hydro_PrimR", NVAR,
                                 data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   FluxRiemann =  IdefixArray4D<real>("Hydro_FluxRiemann", NVAR,
                                      data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
@@ -256,7 +256,7 @@ Hydro::Hydro(Input &input, Grid &grid, DataBlock *datain) {
   if(this->needCurrent) {
     // Allocate current (when hydro needs it)
     this->haveCurrent = true;
-    J = IdefixArray4D<real>("Hydro_J", 3, 
+    J = IdefixArray4D<real>("Hydro_J", 3,
                             data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   }
 
@@ -271,7 +271,7 @@ Hydro::Hydro(Input &input, Grid &grid, DataBlock *datain) {
     xHall = IdefixArray3D<real>("Hydro_xHall",
                                   data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
-   // Fill the names of the fields
+  // Fill the names of the fields
   for(int i = 0 ; i < NVAR ;  i++) {
     switch(i) {
       case RHO:
@@ -321,7 +321,6 @@ Hydro::Hydro(Input &input, Grid &grid, DataBlock *datain) {
     }
   }
 
-  
 
   idfx::popRegion();
 }

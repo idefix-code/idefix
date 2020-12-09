@@ -207,7 +207,7 @@ void Hydro::SetBoundary(real t) {
               Vc(n,k,j,i) = Vc(n,k+koffset,j+joffset,i+ioffset) + voffset;
             }
           );
-          
+
 #if MHD == YES
           for(int component=0; component<DIMENSIONS; component++) {
             int ieb,jeb,keb;
@@ -267,7 +267,7 @@ void Hydro::SetBoundary(real t) {
             Vc(n,k,j,i) = Vc(n,k-koffset,j-joffset,i-ioffset);
           }
         );
-        
+
 #if MHD == YES
         for(int component=0; component<DIMENSIONS; component++) {
           int ieb,jeb,keb;
@@ -433,7 +433,7 @@ void Hydro::SetBoundary(real t) {
         std::stringstream msg("Boundary condition type is not yet implemented");
         IDEFIX_ERROR(msg);
     }
-    
+
 #if MHD == YES
     // Reconstruct the normal field component when using CT
     ReconstructNormalField(dir);
@@ -451,7 +451,7 @@ void Hydro::SetBoundary(real t) {
 
 void Hydro::ReconstructVcField(IdefixArray4D<real> &Vc) {
   idfx::pushRegion("Hydro::ReconstructVcField");
-  
+
   IdefixArray4D<real> Vs=this->Vs;
 
   // Reconstruct cell average field when using CT
@@ -462,7 +462,7 @@ void Hydro::ReconstructVcField(IdefixArray4D<real> &Vc) {
                 Vc(BX3,k,j,i) = HALF_F * (Vs(BX3s,k,j,i) + Vs(BX3s,k+1,j,i)) ;  )
     }
   );
-  
+
   idfx::popRegion();
 }
 
@@ -502,21 +502,21 @@ void Hydro::ReconstructNormalField(int dir) {
         for(int i = nstart ; i>=0 ; i-- ) {
           Vs(BX1s,k,j,i) = 1.0 / Ax1(k,j,i) * ( Ax1(k,j,i+1)*Vs(BX1s,k,j,i+1)
                           +(D_EXPAND( ZERO_F                                                 ,
-                            + Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i)  , 
+                            + Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i)  ,
                             + Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i)  )));
         }
-        
+
         for(int i = nend ; i<nx1 ; i++ ) {
           Vs(BX1s,k,j,i+1) = 1.0 / Ax1(k,j,i+1) * ( Ax1(k,j,i)*Vs(BX1s,k,j,i)
                             -(D_EXPAND(      ZERO_F                                           ,
-                             + Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i)  , 
+                             + Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i)  ,
                              + Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i)  )));
         }
       }
     );
   }
 
-#if DIMENSIONS >=2  
+#if DIMENSIONS >=2
   if(dir==JDIR) {
     nstart = data->beg[JDIR]-1;
     nend = data->end[JDIR];
@@ -524,21 +524,21 @@ void Hydro::ReconstructNormalField(int dir) {
       KOKKOS_LAMBDA (int k, int i) {
         for(int j = nstart ; j>=0 ; j-- ) {
           Vs(BX2s,k,j,i) = 1.0 / Ax2(k,j,i) * ( Ax2(k,j+1,i)*Vs(BX2s,k,j+1,i)
-                      +(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  , 
-                                                                                                 , 
+                      +(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
+                                                                                                 ,
                              + Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) )));
         }
         for(int j = nend ; j<nx2 ; j++ ) {
           Vs(BX2s,k,j+1,i) = 1.0 / Ax2(k,j+1,i) * ( Ax2(k,j,i)*Vs(BX2s,k,j,i)
                       -(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
-                                                                                                 , 
+                                                                                                 ,
                              + Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) )));
         }
       }
     );
   }
 #endif
-  
+
 #if DIMENSIONS == 3
   if(dir==KDIR) {
     nstart = data->beg[KDIR]-1;
@@ -559,7 +559,7 @@ void Hydro::ReconstructNormalField(int dir) {
       }
     );
   }
-#endif  
-  
+#endif
+
   idfx::popRegion();
 }

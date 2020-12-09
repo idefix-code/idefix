@@ -21,8 +21,8 @@ OutputDump::OutputDump(Input &input, DataBlock &data) {
     this->tnext = 0;
   }
 
-  for (int idir=0; idir<3;idir++) {
-    this->periodicity[idir] = (data.mygrid->lbound[idir] == periodic);
+  for (int dir=0; dir<3;dir++) {
+    this->periodicity[dir] = (data.mygrid->lbound[dir] == periodic);
   }
   this->dumpFileNumber = 0;
 
@@ -104,7 +104,6 @@ void OutputDump::WriteSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
   if(type == DoubleType) size=sizeof(double);
   if(type == SingleType) size=sizeof(float);
   if(type == IntegerType) size=sizeof(int);
-  if(type == BoolType) size=sizeof(bool);
 
   // Write field name
 

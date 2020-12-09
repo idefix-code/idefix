@@ -406,6 +406,12 @@ int OutputDump::Read(Grid& grid, DataBlock &data, OutputVTK& ovtk, int readNumbe
 
     // Read coordinates
     ReadSerial(fileHdl, ndim, nx, type, scrch);
+
+    // skip left and right edges arrays
+    for (int iside=0; iside < 2; iside++) {
+      ReadNextFieldProperties(fileHdl, ndim, nx, type, fieldName);
+      ReadSerial(fileHdl, ndim, nx, type, scrch);
+    }
     // Todo: check that coordinates are identical
   }
   // Coordinates are ok, load the bulk
@@ -559,9 +565,18 @@ int OutputDump::Write( Grid& grid, DataBlock &data, OutputVTK& ovtk) {
   gridHost.SyncFromDevice();
 
   for(int dir = 0; dir < 3 ; dir++) {
+    // cell centers
     std::snprintf(fieldName, NAMESIZE, "x%d",dir+1);
     WriteSerial(fileHdl, 1, &gridHost.np_int[dir], realType, fieldName, 
                 reinterpret_cast<void*> (gridHost.x[dir].data()+gridHost.nghost[dir]));
+    // cell left edges
+    std::snprintf(fieldName, NAMESIZE, "xl%d",dir+1);
+    WriteSerial(fileHdl, 1, &gridHost.np_int[dir], realType, fieldName,
+                reinterpret_cast<void*> (gridHost.xl[dir].data()+gridHost.nghost[dir]));
+    // cell right edges
+    std::snprintf(fieldName, NAMESIZE, "xr%d",dir+1);
+    WriteSerial(fileHdl, 1, &gridHost.np_int[dir], realType, fieldName,
+                reinterpret_cast<void*> (gridHost.xr[dir].data()+gridHost.nghost[dir]));
   }
 
   // Then write raw data from Vc

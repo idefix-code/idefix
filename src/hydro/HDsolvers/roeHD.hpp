@@ -29,7 +29,7 @@
 template<const int DIR, const int Xn, const int Xt, const int Xb>
 void Hydro::RoeHD() {
   idfx::pushRegion("Hydro::ROE_Solver");
-  
+
   int ioffset,joffset,koffset;
   // Determine the offset along which we do the extrapolation
   switch(DIR) {
@@ -53,11 +53,11 @@ void Hydro::RoeHD() {
   IdefixArray4D<real> PrimR = this->PrimR;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
-  
+
   real gamma = this->gamma;
   real gamma_m1 = this->gamma - ONE_F;
   real C2Iso = this->C2Iso;
-  
+
   idefix_for("ROE_Kernel",
              data->beg[KDIR],data->end[KDIR]+koffset,
              data->beg[JDIR],data->end[JDIR]+joffset,
@@ -75,13 +75,13 @@ void Hydro::RoeHD() {
       // Flux (left and right)
       real fluxL[NVAR];
       real fluxR[NVAR];
-      
+
       // Roe
       real Rc[NVAR][NVAR];
       real um[NVAR];
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-      #pragma unroll
+#pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
         vL[nv] = PrimL(nv,k,j,i);
         vR[nv] = PrimR(nv,k,j,i);
@@ -91,11 +91,11 @@ void Hydro::RoeHD() {
       // 2-- Compute the conservative variables
       K_PrimToCons(uL, vL, gamma_m1);
       K_PrimToCons(uR, vR, gamma_m1);
-      
+
       // 3-- Compute the left and right fluxes
       K_Flux(fluxL, vL, uL, C2Iso, Xn);
       K_Flux(fluxR, vR, uR, C2Iso, Xn);
-      
+
       // --- Compute the square of the sound speed
       real a, a2, a2L, a2R;
 #if HAVE_ENERGY
@@ -106,13 +106,13 @@ void Hydro::RoeHD() {
       a2L = C2Iso;
       a2R = C2Iso;
 #endif
-      
+
       //  ----  Define Wave Jumps  ----
 #if ROE_AVERAGE == YES
       real s, c;
-      s       = sqrt(vR[RHO]/vL[RHO]);
+      s       = std::sqrt(vR[RHO]/vL[RHO]);
       um[RHO] = vL[RHO]*s;
-      s       = ONE_F/(ONE_F + s); 
+      s       = ONE_F/(ONE_F + s);
       c       = ONE_F - s;
 
       EXPAND(um[VX1] = s*vL[VX1] + c*vR[VX1];  ,
@@ -121,20 +121,20 @@ void Hydro::RoeHD() {
 
   #if HAVE_ENERGY
       real gmm1_inv = ONE_F / gamma_m1;
-      
+
       vel2 = EXPAND(um[VX1]*um[VX1], + um[VX2]*um[VX2], + um[VX3]*um[VX3]);
 
       real hl, hr;
-      hl  = HALF_F*(EXPAND(vL[VX1]*vL[VX1], + vL[VX2]*vL[VX2], + vL[VX3]*vL[VX3]));    
+      hl  = HALF_F*(EXPAND(vL[VX1]*vL[VX1], + vL[VX2]*vL[VX2], + vL[VX3]*vL[VX3]));
       hl += a2L*gmm1_inv;
 
-      hr = HALF_F*(EXPAND(vR[VX1]*vR[VX1], + vR[VX2]*vR[VX2], + vR[VX3]*vR[VX3]));    
+      hr = HALF_F*(EXPAND(vR[VX1]*vR[VX1], + vR[VX2]*vR[VX2], + vR[VX3]*vR[VX3]));
       hr += a2R*gmm1_inv;
 
       h = s*hl + c*hr;
 
       /* -------------------------------------------------
-      the following should be  equivalent to 
+      the following should be  equivalent to
 
       scrh = EXPAND(   dv[VX1]*dv[VX1],
       + dv[VX2]*dv[VX2],
@@ -147,46 +147,46 @@ void Hydro::RoeHD() {
       -------------------------------------------------- */
 
       a2 = gamma_m1*(h - HALF_F*vel2);
-      a  = sqrt(a2);
+      a  = std::sqrt(a2);
   #else
       a2 = HALF_F*(a2L + a2R);
-      a  = sqrt(a2);
+      a  = std::sqrt(a2);
   #endif // HAVE_ENERGY
 #else
-      #pragma unroll
+#pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
         um[nv] = HALF_F*(vR[nv]+vL[nv]);
       }
   #if HAVE_ENERGY
       a2   = gamma*um[PRS]/um[RHO];
-      a    = sqrt(a2);
+      a    = std::sqrt(a2);
 
       vel2 = EXPAND(um[VX1]*um[VX1], + um[VX2]*um[VX2], + um[VX3]*um[VX3]);
       h    = HALF_F*vel2 + a2/gamma_m1;
   #else
       a2 = HALF_F*(a2L + a2R);
-      a  = sqrt(a2);
+      a  = std::sqrt(a2);
   #endif // HAVE_ENERGY
 #endif // ROE_AVERAGE == YES/NO
 
 // **********************************************************************************
       /* ----------------------------------------------------------------
-      define non-zero components of conservative eigenvectors Rc, 
-      eigenvalues (lambda) and wave strenght eta = L.du     
+      define non-zero components of conservative eigenvectors Rc,
+      eigenvalues (lambda) and wave strenght eta = L.du
       ----------------------------------------------------------------  */
 
       real lambda[NVAR], alambda[NVAR];
       real eta[NVAR];
 
-      #pragma unroll
+#pragma unroll
       for(int nv1 = 0 ; nv1 < NVAR; nv1++) {
-        #pragma unroll
+#pragma unroll
         for(int nv2 = 0 ; nv2 < NVAR; nv2++) {
           Rc[nv1][nv2] = 0;
         }
       }
-      
-      //  ---- (u - c_s)  ---- 
+
+      //  ---- (u - c_s)  ----
 
       // nn         = 0;
       lambda[I0] = um[Xn] - a;
@@ -197,7 +197,7 @@ void Hydro::RoeHD() {
 #endif
 
       Rc[RHO][I0]        = ONE_F;
-      
+
       EXPAND(Rc[Xn][I0] = um[Xn] - a;   ,
       Rc[Xt][I0] = um[Xt];       ,
       Rc[Xb][I0] = um[Xb];  )
@@ -205,7 +205,7 @@ void Hydro::RoeHD() {
       Rc[ENG][I0] = h - um[Xn]*a;
 #endif
 
-      /*  ---- (u + c_s)  ----  */ 
+      /*  ---- (u + c_s)  ----  */
 
       // nn         = 1;
       lambda[I1] = um[Xn] + a;
@@ -224,8 +224,8 @@ void Hydro::RoeHD() {
 #endif
 
 #if HAVE_ENERGY
-      /*  ----  (u)  ----  */ 
-      
+      /*  ----  (u)  ----  */
+
       // nn         = 2;
       lambda[IE] = um[Xn];
       eta[IE]    = dv[RHO] - dv[PRS]/a2;
@@ -238,27 +238,27 @@ void Hydro::RoeHD() {
 
 #if COMPONENTS > 1
 
-      /*  ----  (u)  ----  */ 
+      /*  ----  (u)  ----  */
 
       // nn++;
       lambda[I2] = um[Xn];
       eta[I2]    = um[RHO]*dv[Xt];
       Rc[Xt][I2] = ONE_F;
   #if HAVE_ENERGY
-      Rc[ENG][I2] = um[Xt];  
+      Rc[ENG][I2] = um[Xt];
   #endif
 #endif
 
 #if COMPONENTS > 2
 
-      /*  ----  (u)  ----  */ 
+      /*  ----  (u)  ----  */
 
       // nn++;
       lambda[I3] = um[Xn];
       eta[I3]    = um[RHO]*dv[Xb];
       Rc[Xb][I3] = ONE_F;
   #if HAVE_ENERGY
-      Rc[ENG][I3] = um[Xb];  
+      Rc[ENG][I3] = um[Xb];
   #endif
 #endif
 
@@ -268,7 +268,7 @@ void Hydro::RoeHD() {
       //g_maxMach = FMAX(FABS(um[Xn]/a), g_maxMach);
 
       /* ---------------------------------------------
-      use the HLL flux function if the interface 
+      use the HLL flux function if the interface
       lies within a strong shock.
       The effect of this switch is visible
       in the Mach reflection test.
@@ -283,7 +283,7 @@ void Hydro::RoeHD() {
       scrh /= FMIN(vL[RHO],vR[RHO]);
       scrh *= a*a;
 #endif
-      
+
 /*#if CHECK_ROE_MATRIX == YES
       for(int nv = 0 ; nv < NVAR; nv++) {
           um[nv] = ZERO_F;
@@ -302,7 +302,7 @@ void Hydro::RoeHD() {
           }
       }
 #endif*/
-      
+
       if (scrh > HALF_F && (vR[Xn] < vL[Xn])) {   /* -- tunable parameter -- */
 #if DIMENSIONS > 1
         real scrh1;
@@ -310,7 +310,7 @@ void Hydro::RoeHD() {
         bmin = FMIN(ZERO_F, lambda[0]);
         bmax = FMAX(ZERO_F, lambda[1]);
         scrh1 = ONE_F/(bmax - bmin);
-        #pragma unroll
+#pragma unroll
         for(int nv = 0 ; nv < NVAR; nv++) {
           Flux(nv,k,j,i)  = bmin*bmax*(uR[nv] - uL[nv])
                   +   bmax*fluxL[nv] - bmin*fluxR[nv];
@@ -319,10 +319,10 @@ void Hydro::RoeHD() {
 #endif
       } else {
         /* -----------------------------------------------------------
-                            compute Roe flux 
+                            compute Roe flux
         ----------------------------------------------------------- */
 
-        #pragma unroll
+#pragma unroll
         for(int nv = 0 ; nv < NVAR; nv++) {
           alambda[nv]  = fabs(lambda[nv]);
         }
@@ -336,10 +336,10 @@ void Hydro::RoeHD() {
           alambda[1] = HALF_F*lambda[1]*lambda[1]/delta + HALF_F*delta;
         }
 
-        #pragma unroll
+#pragma unroll
         for(int nv = 0 ; nv < NVAR; nv++) {
           Flux(nv,k,j,i) = fluxL[nv] + fluxR[nv];
-          #pragma unroll
+#pragma unroll
           for(int nv2 = 0 ; nv2 < NVAR; nv2++) {
             Flux(nv,k,j,i) -= alambda[nv2]*eta[nv2]*Rc[nv][nv2];
           }

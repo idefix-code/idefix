@@ -16,7 +16,7 @@ template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
          ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
 void Hydro::HlldMHD() {
   idfx::pushRegion("Hydro::HLLD_MHD");
-    
+
   int ioffset,joffset,koffset;
   int iextend, jextend,kextend;
   ioffset=joffset=koffset=0;
@@ -31,7 +31,7 @@ void Hydro::HlldMHD() {
   // References to required emf components
   IdefixArray3D<real> Eb;
   IdefixArray3D<real> Et;
-  
+
   IdefixArray3D<int> SV;
 
   real gamma = this->gamma;
@@ -43,7 +43,7 @@ void Hydro::HlldMHD() {
   D_EXPAND( real st;  ,
                       ,
             real sb;  )
-  
+
   switch(DIR) {
     case(IDIR):
       ioffset = 1;
@@ -107,7 +107,7 @@ void Hydro::HlldMHD() {
       real cL, cR, cmax;
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-      #pragma unroll
+#pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
         vL[nv] = PrimL(nv,k,j,i);
         vR[nv] = PrimR(nv,k,j,i);
@@ -131,9 +131,9 @@ void Hydro::HlldMHD() {
       Bmag2  = b1*b1 + Btmag2;
 
       cL = gpr - Bmag2;
-      cL = gpr + Bmag2 + sqrt(cL*cL + 4.0*gpr*Btmag2);
-      cL = sqrt(HALF_F*cL/vL[RHO]);
-      
+      cL = gpr + Bmag2 + std::sqrt(cL*cL + 4.0*gpr*Btmag2);
+      cL = std::sqrt(HALF_F*cL/vL[RHO]);
+
 #if HAVE_ENERGY
       gpr = gamma*vR[PRS];
 #else
@@ -150,35 +150,35 @@ void Hydro::HlldMHD() {
       Bmag2  = b1*b1 + Btmag2;
 
       cR = gpr - Bmag2;
-      cR = gpr + Bmag2 + sqrt(cR*cR + 4.0*gpr*Btmag2);
-      cR = sqrt(HALF_F*cR/vR[RHO]);
-      
-      // 4.1 
+      cR = gpr + Bmag2 + std::sqrt(cR*cR + 4.0*gpr*Btmag2);
+      cR = std::sqrt(HALF_F*cR/vR[RHO]);
+
+      // 4.1
       real cminL = vL[Xn] - cL;
       real cmaxL = vL[Xn] + cL;
-      
+
       real cminR = vR[Xn] - cR;
       real cmaxR = vR[Xn] + cR;
-      
+
       real SL = FMIN(cminL, cminR);
       real SR = FMAX(cmaxL, cmaxR);
-      
+
       cmax  = FMAX(FABS(SL), FABS(SR));
-      
+
       // 2-- Compute the conservative variables
       K_PrimToCons(uL, vL, gamma_m1);
       K_PrimToCons(uR, vR, gamma_m1);
 
       // 3-- Compute the left and right fluxes
-      #pragma unroll
+#pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
         fluxL[nv] = uL[nv];
         fluxR[nv] = uR[nv];
       }
-      
+
       K_Flux(fluxL, vL, fluxL, C2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
       K_Flux(fluxR, vR, fluxR, C2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
-      
+
       real ptR, ptL;
 
 #if HAVE_ENERGY
@@ -191,29 +191,29 @@ void Hydro::HlldMHD() {
 
       // 5-- Compute the flux from the left and right states
       if (SL > 0) {
-        #pragma unroll
+#pragma unroll
         for (int nv = 0 ; nv < NFLX; nv++) {
           Flux(nv,k,j,i) = fluxL[nv];
         }
       } else if (SR < 0) {
-        #pragma unroll
+#pragma unroll
         for (int nv = 0 ; nv < NFLX; nv++) {
           Flux(nv,k,j,i) = fluxR[nv];
         }
       } else {
         real usL[NVAR];
         real usR[NVAR];
-          
+
         real scrh, scrhL, scrhR, duL, duR, sBx, Bx, Bx1, SM, S1L, S1R;
-          
+
 #if HAVE_ENERGY
         real Uhll[NVAR];
         real vs, pts, sqrL, sqrR, vsL, vsR, wsL, wsR;
         int revert_to_hllc;
-          
+
         // 3c. Compute U*(L), U^*(R)
         scrh = 1.0/(SR - SL);
-        Bx1  = Bx = (SR*vR[BXn] - SL*vL[BXn])*scrh; 
+        Bx1  = Bx = (SR*vR[BXn] - SL*vL[BXn])*scrh;
         sBx  = (Bx > 0.0 ? 1.0 : -1.0);
 
         duL  = SL - vL[Xn];
@@ -222,28 +222,28 @@ void Hydro::HlldMHD() {
         scrh = 1.0/(duR*uR[RHO] - duL*uL[RHO]);
         SM   = (duR*uR[Xn] - duL*uL[Xn] - ptR + ptL)*scrh;
 
-        pts  = duR*uR[RHO]*ptL - duL*uL[RHO]*ptR + 
+        pts  = duR*uR[RHO]*ptL - duL*uL[RHO]*ptR +
                vL[RHO]*vR[RHO]*duR*duL*(vR[Xn]- vL[Xn]);
         pts *= scrh;
 
         usL[RHO] = uL[RHO]*duL/(SL - SM);
         usR[RHO] = uR[RHO]*duR/(SR - SM);
 
-        sqrL = sqrt(usL[RHO]);
-        sqrR = sqrt(usR[RHO]);
+        sqrL = std::sqrt(usL[RHO]);
+        sqrR = std::sqrt(usR[RHO]);
 
         S1L = SM - fabs(Bx)/sqrL;
         S1R = SM + fabs(Bx)/sqrR;
 
         /* -----------------------------------------------------------------
-        3d When S1L -> SL or S1R -> SR a degeneracy occurs. 
+        3d When S1L -> SL or S1R -> SR a degeneracy occurs.
         Although Miyoshi & Kusano say that no jump exists, we don't
-        think this is actually true. 
-        Indeed, vy*, vz*, By*, Bz* cannot be solved independently. 
+        think this is actually true.
+        Indeed, vy*, vz*, By*, Bz* cannot be solved independently.
         In this case we revert to the HLLC solver of Li (2005),  except
         for the term v.B in the region, which we compute in our own way.
         Note, that by comparing the expressions of Li (2005) and
-        Miyoshi & Kusano (2005), the only change involves a 
+        Miyoshi & Kusano (2005), the only change involves a
         re-definition of By* and Bz* in terms of By(HLL), Bz(HLL).
         ----------------------------------------------------------------- */
 
@@ -251,33 +251,33 @@ void Hydro::HlldMHD() {
 
         if ( (S1L - SL) <  1.e-4*(SM - SL) ) revert_to_hllc = 1;
         if ( (S1R - SR) > -1.e-4*(SR - SM) ) revert_to_hllc = 1;
-            
+
         if (revert_to_hllc) {
           scrh = 1.0/(SR - SL);
-          #pragma unroll
+#pragma unroll
           for(int nv = 0 ; nv < NVAR; nv++) {
             Uhll[nv]  = SR*uR[nv] - SL*uL[nv] + fluxL[nv] - fluxR[nv];
             Uhll[nv] *= scrh;
           }
-          
+
           // WHERE'S THE PRESSURE ?!?!?!?
           EXPAND( usL[BXn] = usR[BXn] = Uhll[BXn];  ,
                   usL[BXt] = usR[BXt] = Uhll[BXt];  ,
                   usL[BXb] = usR[BXb] = Uhll[BXb];  )
-  
+
           S1L = S1R = SM; // region ** should never be computed since
                           // fluxes are given in terms of UL* and UR*
         } else {
           // 3e. Compute states in the * regions
           scrhL = (uL[RHO]*duL*duL - Bx*Bx)/(uL[RHO]*duL*(SL - SM) - Bx*Bx);
           scrhR = (uR[RHO]*duR*duR - Bx*Bx)/(uR[RHO]*duR*(SR - SM) - Bx*Bx);
-  
+
           EXPAND( usL[BXn]  = Bx1;            ,
                   usL[BXt]  = uL[BXt]*scrhL;  ,
                   usL[BXb]  = uL[BXb]*scrhL;  )
 
           EXPAND( usR[BXn] = Bx1;            ,
-                  usR[BXt] = uR[BXt]*scrhR;  ,   
+                  usR[BXt] = uR[BXt]*scrhR;  ,
                   usR[BXb] = uR[BXb]*scrhR;  )
         }
 
@@ -291,9 +291,9 @@ void Hydro::HlldMHD() {
                 wsL = vL[Xb] - scrhL*(usL[BXb] - uL[BXb]);
                 wsR = vR[Xb] - scrhR*(usR[BXb] - uR[BXb]);  )
 
-        EXPAND( usL[Xn] = usL[RHO]*SM; 
+        EXPAND( usL[Xn] = usL[RHO]*SM;
                 usR[Xn] = usR[RHO]*SM;   ,
-        
+
                 usL[Xt] = usL[RHO]*vsL;
                 usR[Xt] = usR[RHO]*vsR;  ,
 
@@ -315,12 +315,12 @@ void Hydro::HlldMHD() {
     // 3c. Compute flux when S1L > 0 or S1R < 0
 
         if (S1L >= 0.0) {       //  ----  Region L*
-          #pragma unroll
+#pragma unroll
           for(int nv = 0 ; nv < NVAR; nv++) {
             Flux(nv,k,j,i) = fluxL[nv] + SL*(usL[nv] - uL[nv]);
           }
         } else if (S1R <= 0.0) {    //  ----  Region R*
-          #pragma unroll
+#pragma unroll
           for(int nv = 0 ; nv < NVAR; nv++) {
             Flux(nv,k,j,i) = fluxR[nv] + SR*(usR[nv] - uR[nv]);
           }
@@ -336,29 +336,29 @@ void Hydro::HlldMHD() {
           EXPAND(                      ,
                   vss  = sqrL*vsL + sqrR*vsR + (usR[BXt] - usL[BXt])*sBx;
                   vss /= sqrL + sqrR;  ,
-              
+
                   wss  = sqrL*wsL + sqrR*wsR + (usR[BXb] - usL[BXb])*sBx;
                   wss /= sqrL + sqrR;  )
 
           EXPAND( ussl[Xn] = ussl[RHO]*SM;
                   ussr[Xn] = ussr[RHO]*SM;   ,
-      
+
                   ussl[Xt] = ussl[RHO]*vss;
                   ussr[Xt] = ussr[RHO]*vss;  ,
-          
+
                   ussl[Xb] = ussl[RHO]*wss;
-                  ussr[Xb] = ussr[RHO]*wss;  )           
-      
+                  ussr[Xb] = ussr[RHO]*wss;  )
+
           EXPAND( ussl[BXn] = ussr[BXn] = Bx1;  ,
 
                   ussl[BXt]  = sqrL*usR[BXt] + sqrR*usL[BXt] + sqrL*sqrR*(vsR - vsL)*sBx;
-                  ussl[BXt] /= sqrL + sqrR;        
+                  ussl[BXt] /= sqrL + sqrR;
                   ussr[BXt]  = ussl[BXt];       ,
-          
+
                   ussl[BXb]  = sqrL*usR[BXb] + sqrR*usL[BXb] + sqrL*sqrR*(wsR - wsL)*sBx;
-                  ussl[BXb] /= sqrL + sqrR;        
+                  ussl[BXb] /= sqrL + sqrR;
                   ussr[BXb]  = ussl[BXb];      )
-          
+
           // -- Energy jump
 
           scrhL  = EXPAND(SM*Bx1, +  vsL*usL[BXt], +  wsL*usL[BXb]);
@@ -372,13 +372,13 @@ void Hydro::HlldMHD() {
 
 
           if (SM >= 0.0) { //  ----  Region L**
-            #pragma unroll  
+#pragma unroll
             for(int nv = 0 ; nv < NVAR; nv++) {
               Flux(nv,k,j,i) = fluxL[nv] + S1L*(ussl[nv]  - usL[nv])
                               + SL*(usL[nv] - uL[nv]);
               }
           } else {         //  ----  Region R**
-            #pragma unroll
+#pragma unroll
             for(int nv = 0 ; nv < NVAR; nv++) {
               Flux(nv,k,j,i) = fluxR[nv] + S1R*(ussr[nv]  - usR[nv])
                               + SR*(usR[nv] - uR[nv]);
@@ -389,28 +389,28 @@ void Hydro::HlldMHD() {
         real usc[NVAR];
         real rho, sqrho;
         int revert_to_hll;
-        
+
         scrh = 1.0/(SR - SL);
         duL = SL - vL[Xn];
         duR = SR - vR[Xn];
 
-        Bx1 = Bx = (SR*vR[BXn] - SL*vL[BXn])*scrh; 
+        Bx1 = Bx = (SR*vR[BXn] - SL*vL[BXn])*scrh;
 
         rho                = (uR[RHO]*duR - uL[RHO]*duL)*scrh;
         Flux(RHO,k,j,i) = (SL*uR[RHO]*duR - SR*uL[RHO]*duL)*scrh;
-            
+
         /* ---------------------------
             compute S*
         --------------------------- */
 
-        sqrho = sqrt(rho);
+        sqrho = std::sqrt(rho);
 
         SM  = Flux(RHO,k,j,i)/rho;
         S1L = SM - fabs(Bx)/sqrho;
         S1R = SM + fabs(Bx)/sqrho;
 
         /* ---------------------------------------------
-            Prevent degeneracies when S1L -> SL or 
+            Prevent degeneracies when S1L -> SL or
             S1R -> SR. Revert to HLL if necessary.
         --------------------------------------------- */
 
@@ -421,22 +421,22 @@ void Hydro::HlldMHD() {
 
         if (revert_to_hll) {
           scrh = 1.0/(SR - SL);
-          #pragma unroll
+#pragma unroll
           for(int nv = 0 ; nv < NVAR; nv++) {
             Flux(nv,k,j,i) = SL*SR*(uR[nv] - uL[nv])
                             + SR*fluxL[nv] - SL*fluxR[nv];
             Flux(nv,k,j,i) *= scrh;
           }
         } else {
-          Flux(Xn,k,j,i) = (SR*fluxL[Xn] - SL*fluxR[Xn] 
+          Flux(Xn,k,j,i) = (SR*fluxL[Xn] - SL*fluxR[Xn]
                           + SR*SL*(uR[Xn] - uL[Xn]))*scrh;
 
           Flux(BXn,k,j,i) = SR*SL*(uR[BXn] - uL[BXn])*scrh;
 
       /* ---------------------------
-                  Compute U*  
+                  Compute U*
           --------------------------- */
-          
+
           scrhL = 1.0/((SL - S1L)*(SL - S1R));
           scrhR = 1.0/((SR - S1L)*(SR - S1R));
 
@@ -448,29 +448,29 @@ void Hydro::HlldMHD() {
                   usR[Xb] = rho*vR[Xb] - Bx*uR[BXb]*(SM - vR[Xn])*scrhR;  )
 
           EXPAND(                                                       ;  ,
-                  usL[BXt] = uL[BXt]/rho*(uL[RHO]*duL*duL - Bx*Bx)*scrhL; 
+                  usL[BXt] = uL[BXt]/rho*(uL[RHO]*duL*duL - Bx*Bx)*scrhL;
                   usR[BXt] = uR[BXt]/rho*(uR[RHO]*duR*duR - Bx*Bx)*scrhR;  ,
 
-                  usL[BXb] = uL[BXb]/rho*(uL[RHO]*duL*duL - Bx*Bx)*scrhL;           
-                  usR[BXb] = uR[BXb]/rho*(uR[RHO]*duR*duR - Bx*Bx)*scrhR;  )           
+                  usL[BXb] = uL[BXb]/rho*(uL[RHO]*duL*duL - Bx*Bx)*scrhL;
+                  usR[BXb] = uR[BXb]/rho*(uR[RHO]*duR*duR - Bx*Bx)*scrhR;  )
 
           if (S1L >= 0.0) {  //  ----  Region L*  ----
             EXPAND(                                                   ;  ,
                     Flux(Xt,k,j,i) = fluxL[Xt] + SL*(usL[Xt] - uL[Xt]);  ,
-                    Flux(Xb,k,j,i) = fluxL[Xb] + SL*(usL[Xb] - uL[Xb]);  
+                    Flux(Xb,k,j,i) = fluxL[Xb] + SL*(usL[Xb] - uL[Xb]);
             )
             EXPAND(                                                       ;  ,
                     Flux(BXt,k,j,i) = fluxL[BXt] + SL*(usL[BXt] - uL[BXt]);  ,
-                    Flux(BXb,k,j,i) = fluxL[BXb] + SL*(usL[BXb] - uL[BXb]);  
+                    Flux(BXb,k,j,i) = fluxL[BXb] + SL*(usL[BXb] - uL[BXb]);
             )
           } else if (S1R <= 0.0) { //  ----  Region R*  ----
               EXPAND(                                                   ;  ,
                       Flux(Xt,k,j,i) = fluxR[Xt] + SR*(usR[Xt] - uR[Xt]);  ,
-                      Flux(Xb,k,j,i) = fluxR[Xb] + SR*(usR[Xb] - uR[Xb]);  
+                      Flux(Xb,k,j,i) = fluxR[Xb] + SR*(usR[Xb] - uR[Xb]);
               )
               EXPAND(                                                       ;  ,
                       Flux(BXt,k,j,i) = fluxR[BXt] + SR*(usR[BXt] - uR[BXt]);  ,
-                      Flux(BXb,k,j,i) = fluxR[BXb] + SR*(usR[BXb] - uR[BXb]);  
+                      Flux(BXb,k,j,i) = fluxR[BXb] + SR*(usR[BXb] - uR[BXb]);
               )
           } else {
             /* ---------------------------
@@ -480,22 +480,22 @@ void Hydro::HlldMHD() {
             sBx = (Bx > 0.0 ? 1.0 : -1.0);
 
             EXPAND(                                               ,
-                    usc[Xt] = 0.5*(usR[Xt] + usL[Xt] 
-                             + (usR[BXt] - usL[BXt])*sBx*sqrho);  ,     
-                    usc[Xb] = 0.5*(   usR[Xb] + usL[Xb] 
+                    usc[Xt] = 0.5*(usR[Xt] + usL[Xt]
+                             + (usR[BXt] - usL[BXt])*sBx*sqrho);  ,
+                    usc[Xb] = 0.5*(   usR[Xb] + usL[Xb]
                              + (usR[BXb] - usL[BXb])*sBx*sqrho);  )
-            
+
             EXPAND(                                              ,
-                    usc[BXt] = 0.5*(   usR[BXt] + usL[BXt]  
+                    usc[BXt] = 0.5*(   usR[BXt] + usL[BXt]
                               + (usR[Xt] - usL[Xt])*sBx/sqrho);  ,
-                    usc[BXb] = 0.5*(   usR[BXb] + usL[BXb] 
+                    usc[BXb] = 0.5*(   usR[BXb] + usL[BXb]
                               + (usR[Xb] - usL[Xb])*sBx/sqrho);  )
 
             EXPAND(                                             ,
                     Flux(Xt,k,j,i) = usc[Xt]*SM - Bx*usc[BXt];  ,
                     Flux(Xb,k,j,i) = usc[Xb]*SM - Bx*usc[BXb];  )
 
-                
+
             EXPAND(                                                  ,
                     Flux(BXt,k,j,i) = usc[BXt]*SM - Bx*usc[Xt]/rho;  ,
                     Flux(BXb,k,j,i) = usc[BXb]*SM - Bx*usc[Xb]/rho;  )
@@ -503,7 +503,7 @@ void Hydro::HlldMHD() {
         }
 #endif
       }
-              
+
       //6-- Compute maximum wave speed for this sweep
       cMax(k,j,i) = cmax;
 
@@ -511,7 +511,7 @@ void Hydro::HlldMHD() {
       D_EXPAND( Et(k,j,i) = st*Flux(BXt,k,j,i);  ,
                                                  ,
                 Eb(k,j,i) = sb*Flux(BXb,k,j,i);  )
-      
+
 #if EMF_AVERAGE == UCT_CONTACT
       int s = 0;
       if (Flux(RHO,k,j,i) >  eps_UCT_CONTACT) s =  1;

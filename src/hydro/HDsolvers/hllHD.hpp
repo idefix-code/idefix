@@ -14,7 +14,7 @@
 template<const int DIR, const int Xn, const int Xt, const int Xb>
 void Hydro::HllHD() {
   idfx::pushRegion("Hydro::HLL_Solver");
-  
+
   int ioffset,joffset,koffset;
   ioffset=joffset=koffset=0;
   // Determine the offset along which we do the extrapolation
@@ -52,7 +52,7 @@ void Hydro::HllHD() {
       real cL, cR, cmax;
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-      #pragma unroll
+#pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
         vL[nv] = PrimL(nv,k,j,i);
         vR[nv] = PrimR(nv,k,j,i);
@@ -60,25 +60,25 @@ void Hydro::HllHD() {
 
       // 2-- Get the wave speed
 #if HAVE_ENERGY
-      cL = SQRT( gamma *(vL[PRS]/vL[RHO]));
-      cR = SQRT( gamma *(vR[PRS]/vR[RHO]));
+      cL = std::sqrt( gamma *(vL[PRS]/vL[RHO]) );
+      cR = std::sqrt( gamma *(vR[PRS]/vR[RHO]) );
 #else
-      cL = SQRT(C2Iso);
+      cL = std::sqrt(C2Iso);
       cR = cL;
 #endif
-      
-      // 4.1 
+
+      // 4.1
       real cminL = vL[Xn] - cL;
       real cmaxL = vL[Xn] + cL;
-      
+
       real cminR = vR[Xn] - cR;
       real cmaxR = vR[Xn] + cR;
-      
+
       real SL = FMIN(cminL, cminR);
       real SR = FMAX(cmaxL, cmaxR);
-      
+
       cmax  = FMAX(FABS(SL), FABS(SR));
-      
+
       // 2-- Compute the conservative variables
       K_PrimToCons(uL, vL, gamma_m1);
       K_PrimToCons(uR, vR, gamma_m1);
@@ -89,17 +89,17 @@ void Hydro::HllHD() {
 
       // 5-- Compute the flux from the left and right states
       if (SL > 0) {
-        #pragma unroll
+#pragma unroll
         for (int nv = 0 ; nv < NFLX; nv++) {
           Flux(nv,k,j,i) = fluxL[nv];
         }
       } else if (SR < 0) {
-        #pragma unroll
+#pragma unroll
         for (int nv = 0 ; nv < NFLX; nv++) {
           Flux(nv,k,j,i) = fluxR[nv];
         }
       } else {
-        #pragma unroll
+#pragma unroll
         for(int nv = 0 ; nv < NFLX; nv++) {
           Flux(nv,k,j,i) = SL*SR*uR[nv] - SL*SR*uL[nv] + SR*fluxL[nv] - SL*fluxR[nv];
           Flux(nv,k,j,i) /= (SR - SL);

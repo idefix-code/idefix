@@ -14,7 +14,7 @@
 template<const int DIR, const int Xn, const int Xt, const int Xb>
 void Hydro::TvdlfHD() {
   idfx::pushRegion("Hydro::TVDLF_Solver");
-  
+
   int ioffset,joffset,koffset;
   ioffset=joffset=koffset=0;
   // Determine the offset along which we do the extrapolation
@@ -53,7 +53,7 @@ void Hydro::TvdlfHD() {
       real cRL, cmax;
 
       // 1-- Read primitive variables
-      #pragma unroll
+#pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
         vL[nv] = PrimL(nv,k,j,i);
         vR[nv] = PrimR(nv,k,j,i);
@@ -70,18 +70,18 @@ void Hydro::TvdlfHD() {
 
       // 4-- Get the wave speed
 #if HAVE_ENERGY
-      cRL = SQRT((gamma_m1+ONE_F)*(vRL[PRS]/vRL[RHO]));
+      cRL = std::sqrt( (gamma_m1+ONE_F)*(vRL[PRS]/vRL[RHO]) );
 #else
-      cRL = SQRT(C2Iso);
+      cRL = std::sqrt(C2Iso);
 #endif
       cmax = FMAX(FABS(vRL[Xn]+cRL),FABS(vRL[Xn]-cRL));
 
       // 5-- Compute the flux from the left and right states
-      #pragma unroll
+#pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
         Flux(nv,k,j,i) = HALF_F*(fluxL[nv]+fluxR[nv] - cmax*(uR[nv]-uL[nv]));
       }
-      
+
       //6-- Compute maximum wave speed for this sweep
       cMax(k,j,i) = cmax;
     }

@@ -15,11 +15,11 @@
 template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
                         ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
 void Hydro::TvdlfMHD() {
+  idfx::pushRegion("Hydro::TVDLF_MHD");
+
   int ioffset,joffset,koffset;
   int iextend, jextend,kextend;
 
-  idfx::pushRegion("Hydro::TVDLF_MHD");
-  
   ioffset=joffset=koffset=0;
   // extension in perp to the direction of integration, as required by CT.
   iextend=jextend=kextend=0;
@@ -32,7 +32,7 @@ void Hydro::TvdlfMHD() {
   // References to required emf components
   IdefixArray3D<real> Eb;
   IdefixArray3D<real> Et;
-  
+
   IdefixArray3D<int> SV;
 
   real gamma = this->gamma;
@@ -65,7 +65,7 @@ void Hydro::TvdlfMHD() {
       D_EXPAND( iextend = 1;  ,
                               ,
                 kextend = 1;  )
-      
+
       Et = this->emf.ezj;
       Eb = this->emf.exj;
       SV = this->emf.svy;
@@ -79,7 +79,7 @@ void Hydro::TvdlfMHD() {
       D_EXPAND( iextend = 1;  ,
                 jextend = 1;  ,
                               )
-          
+
       Et = this->emf.eyk;
       Eb = this->emf.exk;
       SV = this->emf.svz;
@@ -101,15 +101,15 @@ void Hydro::TvdlfMHD() {
       real vL[NVAR];
       real vR[NVAR];
       real v[NVAR];
-      
+
       real uL[NVAR];
       real uR[NVAR];
-      
+
       real fluxL[NVAR];
       real fluxR[NVAR];
-      
+
       // Load primitive variables
-      #pragma unroll
+#pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
         vL[nv] = PrimL(nv,k,j,i);
         vR[nv] = PrimR(nv,k,j,i);
@@ -133,8 +133,8 @@ void Hydro::TvdlfMHD() {
       B2=Bt2 + v[BXn]*v[BXn];
 
       cRL = gpr - B2;
-      cRL = cRL + B2 + SQRT(cRL*cRL + FOUR_F*gpr*Bt2);
-      cRL = SQRT(HALF_F * cRL/v[RHO]);
+      cRL = cRL + B2 + std::sqrt(cRL*cRL + FOUR_F*gpr*Bt2);
+      cRL = std::sqrt(HALF_F * cRL/v[RHO]);
 
       cmax = FMAX(FABS(v[Xn]+cRL),FABS(v[Xn]-cRL));
 
@@ -146,10 +146,10 @@ void Hydro::TvdlfMHD() {
       // 3-- Compute the left and right fluxes
       K_Flux(fluxL, vL, uL, C2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
       K_Flux(fluxR, vR, uR, C2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
-      
+
 
       // 5-- Compute the flux from the left and right states
-      #pragma unroll
+#pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
         Flux(nv,k,j,i) = HALF_F*(fluxL[nv] + fluxR[nv] + cmax*(uL[nv] - uR[nv]));
       }
@@ -161,7 +161,7 @@ void Hydro::TvdlfMHD() {
       D_EXPAND( Et(k,j,i) = st*Flux(BXt,k,j,i);  ,
                                                  ,
                 Eb(k,j,i) = sb*Flux(BXb,k,j,i);  )
-      
+
 #if EMF_AVERAGE == UCT_CONTACT
       int s = 0;
       if (Flux(RHO,k,j,i) >  eps_UCT_CONTACT) s =  1;

@@ -1,5 +1,8 @@
 check:
   image: python:3.7-alpine
+  before_script:
+    - apt-get install -qq build-essential bash
+
   stage: build
   script:
     - cd test/style

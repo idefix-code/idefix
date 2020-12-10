@@ -36,7 +36,7 @@ void Hydro::CalcCurrent() {
       real Jx = ZERO_F, Jy = ZERO_F, Jz = ZERO_F;
 
       Bx1_000 = Vs(BX1s,k,j,i);
-      
+
 #if DIMENSIONS >= 2
       Bx1_0m0 = Vs(BX1s,k,j-1,i);
       Bx2_000 = Vs(BX2s,k,j,i);
@@ -49,7 +49,7 @@ void Hydro::CalcCurrent() {
       Bx3_m00 = Vc(BX3,k,j,i-1);
   #endif
 #endif
-      
+
 #if DIMENSIONS == 3
       Bx1_00m = Vs(BX1s,k-1,j,i);
       Bx2_00m = Vs(BX2s,k-1,j,i);
@@ -116,7 +116,7 @@ void Hydro::CalcCurrent() {
 #endif
 
       // Compute actual current
-      
+
 #if COMPONENTS == 3
   #if DIMENSIONS == 3
       Jx +=  - (Bx2_000 - Bx2_00m)*d32;

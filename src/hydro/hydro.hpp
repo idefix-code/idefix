@@ -8,6 +8,8 @@
 #ifndef HYDRO_HYDRO_HPP_
 #define HYDRO_HYDRO_HPP_
 
+#include <string>
+#include <vector>
 #include "../idefix.hpp"
 
 #define     SMALL_PRESSURE_FIX      (1.0e-5)
@@ -36,7 +38,7 @@ enum Solver {TVDLF=1, HLL, HLLC, ROE};
 // Parabolic terms can have different status
 enum ParabolicType {Disabled, Constant, UserDefFunction };
 
-using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side, 
+using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side,
                                       const real t);
 using GravPotentialFunc = void (*) (DataBlock &, const real t, IdefixArray1D<real>&,
                                     IdefixArray1D<real>&, IdefixArray1D<real>&,
@@ -75,7 +77,7 @@ class Hydro {
 
   // Parabolic terms
   bool haveParabolicTerms;
-  
+
   // Current
   bool haveCurrent;
   bool needCurrent;
@@ -203,14 +205,11 @@ class Hydro {
 
   // Gravitational potential
   IdefixArray3D<real> phiP;
-  
+
   // Nonideal effect diffusion coefficient (only allocated when needed)
   IdefixArray3D<real> etaOhmic;
   IdefixArray3D<real> xHall;
   IdefixArray3D<real> xAmbipolar;
-
-  
-
 };
 
 #endif // HYDRO_HYDRO_HPP_

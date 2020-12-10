@@ -32,7 +32,7 @@ export IDEFIX_DIR=$target_dir
 echo $IDEFIX_DIR
 
 set -e
-options=""
+options=$@
 
 # HD tests
 for rep in $rep_HD_list; do

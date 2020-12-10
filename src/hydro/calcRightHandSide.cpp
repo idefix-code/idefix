@@ -12,7 +12,7 @@
 // Compute the right handside in direction dir from conservative equation, with timestep dt
 void Hydro::CalcRightHandSide(int dir, real t, real dt) {
   idfx::pushRegion("Hydro::CalcRightHandSide");
-  
+
   IdefixArray4D<real> Uc   = this->Uc;
   IdefixArray4D<real> Vc   = this->Vc;
   IdefixArray4D<real> Flux = this->FluxRiemann;
@@ -44,12 +44,12 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
       x1 = data->xl[IDIR];
     else
       x1 = data->x[IDIR];
-    
+
     if(dir==JDIR)
       x2 = data->xl[JDIR];
     else
       x2 = data->x[JDIR];
-    
+
     if(dir==KDIR)
       x3 = data->xl[KDIR];
     else
@@ -76,7 +76,7 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
              data->beg[JDIR],data->end[JDIR]+joffset,
              data->beg[IDIR],data->end[IDIR]+ioffset,
     KOKKOS_LAMBDA (int k, int j, int i) {
-      // TODO: Should add gravitational potential here and Fargo source terms when needed
+      // TODO(lesurg): Should add gravitational potential here and Fargo source terms when needed
 #if HAVE_ENERGY
       if(needPotential)
         Flux(ENG, k, j, i) += Flux(RHO, k, j, i) * phiP(k,j,i);  // Potential at the cell face
@@ -143,7 +143,7 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
       real dtdV=dt / dV(k,j,i);
       real rhs[NVAR];
 
-      #pragma unroll
+#pragma unroll
       for(int nv = 0 ; nv < NVAR ; nv++) {
         rhs[nv] = -  dtdV*(Flux(nv, k+koffset, j+joffset, i+ioffset) - Flux(nv, k, j, i));
       }
@@ -153,7 +153,7 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
   #ifdef iMPHI
         rhs[iMPHI] = rhs[iMPHI] / x1(i);
   #endif
-  
+
   #if (GEOMETRY == POLAR || GEOMETRY == CYLINDRICAL) &&  (defined iBPHI)
         rhs[iBPHI] = - dt / dx(i) * (Flux(iBPHI, k, j, i+1) - Flux(iBPHI, k, j, i) );
 
@@ -192,7 +192,7 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
 
       invDt(k,j,i) = invDt(k,j,i) + HALF_F*(cMax(k+koffset,j+joffset,i+ioffset)
                     + cMax(k,j,i)) / dl;
-      
+
       if(haveParabolicTerms) {
         invDt(k,j,i) = invDt(k,j,i) + TWO_F * FMAX(dMax(k+koffset,j+joffset,i+ioffset),
                                                    dMax(k,j,i)) / (dl*dl);
@@ -225,9 +225,9 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
         rhs[ENG] -=  HALF_F * (phiP(k+koffset,j+joffset,i+ioffset) + phiP(k,j,i)) * rhs[RHO];
 #endif
       }
-      
+
       // Evolve the field components
-      #pragma unroll
+#pragma unroll
       for(int nv = 0 ; nv < NVAR ; nv++) {
         // Do not evolve the field components if they are computed by CT (i.e. if they are in Vs)
         D_EXPAND( if(nv == BX1) { continue; }  ,

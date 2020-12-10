@@ -84,7 +84,8 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 #endif
     lastLog = timer.seconds();
 
-    idfx::cout << "TimeIntegrator: t=" << data.t << " Cycle " << ncycles << " dt=" << data.dt << std::endl;
+    idfx::cout << "TimeIntegrator: t=" << data.t << " Cycle " << ncycles << " dt=" << data.dt
+               << std::endl;
     if(ncycles>=cyclePeriod) {
       idfx::cout << "\t " << 1/rawperf << " cell updates/second";
 #ifdef WITH_MPI
@@ -138,7 +139,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
         KOKKOS_LAMBDA (int k, int j, int i, real &dtmin) {
           dtmin=FMIN(ONE_F/InvDt(k,j,i),dtmin);
       }, Kokkos::Min<real>(newdt) );
-      
+
       Kokkos::fence();
 
       newdt=newdt*cfl;
@@ -169,7 +170,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 #endif
     }
     data.hydro.ConvertConsToPrim();
-    
+
     // Check if this is our last stage
     if(stage<nstages-1) {
       // No: Apply boundary conditions & Recompute conservative variables

@@ -51,7 +51,7 @@ class OutputVTK {
   void WriteHeader(IdfxFileHandler);
   void WriteScalar(IdfxFileHandler, float*,  std::string &);
   float BigEndian(float);
-  void WriteHeaderString(char* , IdfxFileHandler );
+  void WriteHeaderString(const char* , IdfxFileHandler );
   void WriteHeaderFloat(float* , int64_t, IdfxFileHandler);
 };
 

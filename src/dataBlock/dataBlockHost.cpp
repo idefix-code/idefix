@@ -16,11 +16,11 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
   idfx::pushRegion("DataBlockHost::DataBlockHost(DataBlock)");
 
   // copy the dataBlock object for later use
-  this->data=&datain; 
+  this->data=&datain;
 
   // By default, no current
   this->haveCurrent = false;
-  
+
   // Create mirrors (should be mirror_view)
   for(int dir = 0 ; dir < 3 ; dir++) {
     x[dir] = Kokkos::create_mirror_view(data->x[dir]);
@@ -137,7 +137,7 @@ void DataBlockHost::MakeVsFromAmag(IdefixHostArray4D<real> &Ain) {
                                    + 1/dx3(k) * (Ain(IDIR,k+1,j,i) - Ain(IDIR,k,j,i) )  );
     #endif
     #if DIMENSIONS == 3
-        Vs(BX3s,k,j,i) = 1/dx1(i) * (Ain(JDIR,k,j,i+1) - Ain(JDIR,k,j,i) )  
+        Vs(BX3s,k,j,i) = 1/dx1(i) * (Ain(JDIR,k,j,i+1) - Ain(JDIR,k,j,i) )
                          - 1/dx2(j) * (Ain(IDIR,k,j+1,i) - Ain(IDIR,k,j,i) );
     #endif
   #endif

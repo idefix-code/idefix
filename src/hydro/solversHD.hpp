@@ -34,11 +34,11 @@ KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real *KOKKOS_RESTRICT Vc, const real *K
 
   EXPAND( Vc[VX1] = Uc[MX1]/Uc[RHO];  ,
           Vc[VX2] = Uc[MX2]/Uc[RHO];  ,
-          Vc[VX3] = Uc[MX3]/Uc[RHO];  )     
+          Vc[VX3] = Uc[MX3]/Uc[RHO];  )
 
 #if HAVE_ENERGY
   real kin;
-  kin = HALF_F / Uc[RHO] * (EXPAND( Uc[MX1]*Uc[MX1]  , 
+  kin = HALF_F / Uc[RHO] * (EXPAND( Uc[MX1]*Uc[MX1]  ,
                                   + Uc[MX2]*Uc[MX2]  ,
                                   + Uc[MX3]*Uc[MX3]  ));
 
@@ -56,10 +56,10 @@ KOKKOS_INLINE_FUNCTION void K_PrimToCons(real *KOKKOS_RESTRICT Uc, const real *K
 
 #if HAVE_ENERGY
 
-  Uc[ENG] = Vc[PRS] / gamma_m1 
-          + HALF_F * Vc[RHO] * (EXPAND(  Vc[VX1]*Vc[VX1]  , 
+  Uc[ENG] = Vc[PRS] / gamma_m1
+          + HALF_F * Vc[RHO] * (EXPAND(  Vc[VX1]*Vc[VX1]  ,
                                       + Vc[VX2]*Vc[VX2]   ,
-                                      + Vc[VX3]*Vc[VX3]   )); 
+                                      + Vc[VX3]*Vc[VX3]   ));
 #endif  // Have_energy
 }
 

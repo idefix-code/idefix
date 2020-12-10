@@ -19,7 +19,7 @@ real Hydro::CheckDivB() {
   IdefixArray3D<real> Ax2 = data->A[JDIR];
   IdefixArray3D<real> Ax3 = data->A[KDIR];
   IdefixArray3D<real> dV = data->dV;
-  
+
 
   Kokkos::parallel_reduce("CheckDivB",
         Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
@@ -29,7 +29,7 @@ real Hydro::CheckDivB() {
       real dB1,dB2,dB3;
 
       dB1=dB2=dB3=ZERO_F;
-      
+
       D_EXPAND( dB1=(Ax1(k,j,i+1)*Vs(BX1s,k,j,i+1)-Ax1(k,j,i)*Vs(BX1s,k,j,i));  ,
                 dB2=(Ax2(k,j+1,i)*Vs(BX2s,k,j+1,i)-Ax2(k,j,i)*Vs(BX2s,k,j,i));  ,
                 dB3=(Ax3(k+1,j,i)*Vs(BX3s,k+1,j,i)-Ax3(k,j,i)*Vs(BX3s,k,j,i));  )
@@ -59,7 +59,7 @@ real Hydro::CheckDivB(DataBlock &data) {
   IdefixArray3D<real> dV = data->dV;
 
   int iref,jref,kref;
-  
+
   for(int k = data->beg[KDIR] ; k < data->end[KDIR] ; k++) {
     for(int j = data->beg[JDIR] ; j < data->end[JDIR] ; j++) {
       for(int i = data->beg[IDIR] ; i < data->end[IDIR] ; i++) {
@@ -70,7 +70,7 @@ real Hydro::CheckDivB(DataBlock &data) {
         D_EXPAND( dB1=(Ax1(k,j,i+1)*Vs(BX1s,k,j,i+1)-Ax1(k,j,i)*Vs(BX1s,k,j,i)); ,
                   dB2=(Ax2(k,j+1,i)*Vs(BX2s,k,j+1,i)-Ax2(k,j,i)*Vs(BX2s,k,j,i)); ,
                   dB3=(Ax3(k+1,j,i)*Vs(BX3s,k+1,j,i)-Ax3(k,j,i)*Vs(BX3s,k,j,i));  )
-        
+
         if(FABS(D_EXPAND(dB1, +dB2, +dB3))/dV(k,j,i) > divB) {
           iref=i;
           jref=j;

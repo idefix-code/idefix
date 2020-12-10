@@ -19,7 +19,7 @@ Grid::Grid(Input &input) {
   idfx::pushRegion("Grid::Grid(Input)");
 
   idfx::cout << "Grid::Grid allocating Grid." << std::endl;
-  
+
   // Get grid size from input file, block [Grid]
   int npoints[3];
   for(int dir = 0 ; dir < 3 ; dir++) {
@@ -44,7 +44,7 @@ Grid::Grid(Input &input) {
 
     std::string label = std::string("X")+std::to_string(dir+1)+std::string("-beg");
     std::string boundary = input.GetString("Boundary",label,0);
-    
+
     if(boundary.compare("outflow") == 0) {
       lbound[dir] = outflow;
     } else if(boundary.compare("periodic") == 0) {
@@ -85,7 +85,7 @@ Grid::Grid(Input &input) {
   }
 
   // Allocate the grid structure on device. Initialisation will come from GridHost
-  
+
   for(int dir = 0 ; dir < 3 ; dir++) {
     x[dir] = IdefixArray1D<real>("Grid_x",np_tot[dir]);
     xr[dir] = IdefixArray1D<real>("Grid_xr",np_tot[dir]);
@@ -99,7 +99,7 @@ Grid::Grid(Input &input) {
     xproc[i] = 0;
   }
 
-#ifdef WITH_MPI 
+#ifdef WITH_MPI
   // Domain decomposition required for the grid
 
   // Init periodicity array
@@ -156,7 +156,7 @@ Grid::Grid(Input &input) {
   // Create cartesian communicator along with cartesian coordinates.
   MPI_Cart_create(MPI_COMM_WORLD, 3, nproc, period, 0, &CartComm);
   MPI_Cart_coords(CartComm, idfx::prank, 3, xproc);
-  
+
   MPI_Barrier(MPI_COMM_WORLD);
   idfx::cout << "Grid::Grid Current MPI proc coordinates (";
 
@@ -185,7 +185,7 @@ void Grid::makeDomainDecomposition() {
     nlocal[dir] = np_int[dir];
   }
 
-  // Loop 
+  // Loop
   while(nleft>1) {
     // Find the direction where there is a maximum of point
     int dirmax;

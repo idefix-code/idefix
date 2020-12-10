@@ -16,7 +16,7 @@ template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
          ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
 void Hydro::HllMHD() {
   idfx::pushRegion("Hydro::HLL_MHD");
-  
+
   int ioffset,joffset,koffset;
   int iextend, jextend,kextend;
   ioffset=joffset=koffset=0;
@@ -40,9 +40,9 @@ void Hydro::HllMHD() {
   // References to required emf components
   IdefixArray3D<real> Eb;
   IdefixArray3D<real> Et;
-  
+
   IdefixArray3D<int> SV;
-  
+
   real gamma = this->gamma;
   real xHConstant = this->xH;
   real gamma_m1=this->gamma-ONE_F;
@@ -88,7 +88,7 @@ void Hydro::HllMHD() {
       D_EXPAND( iextend = 1;  ,
               jextend = 1;    ,
               )
-      
+
       Et = this->emf.eyk;
       Eb = this->emf.exk;
       SV = this->emf.svz;
@@ -123,7 +123,7 @@ void Hydro::HllMHD() {
       real cL, cR, cmax;
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-      #pragma unroll
+#pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
         vL[nv] = PrimL(nv,k,j,i);
         vR[nv] = PrimR(nv,k,j,i);
@@ -148,9 +148,9 @@ void Hydro::HllMHD() {
       Bmag2  = b1*b1 + Btmag2;
 
       cL = gpr - Bmag2;
-      cL = gpr + Bmag2 + sqrt(cL*cL + 4.0*gpr*Btmag2);
-      cL = sqrt(HALF_F*cL/vL[RHO]);
-      
+      cL = gpr + Bmag2 + std::sqrt(cL*cL + 4.0*gpr*Btmag2);
+      cL = std::sqrt(HALF_F*cL/vL[RHO]);
+
 #if HAVE_ENERGY
       gpr = gamma*vR[PRS];
 #else
@@ -167,19 +167,19 @@ void Hydro::HllMHD() {
       Bmag2  = b1*b1 + Btmag2;
 
       cR = gpr - Bmag2;
-      cR = gpr + Bmag2 + sqrt(cR*cR + 4.0*gpr*Btmag2);
-      cR = sqrt(HALF_F*cR/vR[RHO]);
-      
-      // 4.1 
+      cR = gpr + Bmag2 + std::sqrt(cR*cR + 4.0*gpr*Btmag2);
+      cR = std::sqrt(HALF_F*cR/vR[RHO]);
+
+      // 4.1
       real cminL = vL[Xn] - cL;
       real cmaxL = vL[Xn] + cL;
-      
+
       real cminR = vR[Xn] - cR;
       real cmaxR = vR[Xn] + cR;
-      
+
       real SL = FMIN(cminL, cminR);
       real SR = FMAX(cmaxL, cmaxR);
-      
+
       // Signal speeds specific to B (different from the other ones when Hall is enabled)
       real SLb = SL;
       real SRb = SR;
@@ -203,7 +203,7 @@ void Hydro::HllMHD() {
             if(DIR==KDIR) dl = dl*rt(i)*dmu(j)/dx2(j);
         #endif
 
-        real cw = FABS(xH) * sqrt(Bmag2) / dl;
+        real cw = FABS(xH) * std::sqrt(Bmag2) / dl;
 
         cminL = cminL - cw;
         cmaxL = cmaxL + cw;
@@ -213,14 +213,14 @@ void Hydro::HllMHD() {
         SLb = FMIN(cminL, cminR);
         SRb = FMAX(cmaxL,cmaxR);
       }
-      
+
       cmax = FMAX(FABS(SLb), FABS(SRb));
-      
+
       // 2-- Compute the conservative variables
       K_PrimToCons(uL, vL, gamma_m1);
       K_PrimToCons(uR, vR, gamma_m1);
-      
-      #pragma unroll
+
+#pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
         fluxL[nv] = uL[nv];
         fluxR[nv] = uR[nv];
@@ -249,7 +249,7 @@ void Hydro::HllMHD() {
         if(DIR == IDIR) {
           Jx1 = AVERAGE_4D_XYZ(J, IDIR, kp1, jp1, i);
           Jx2 = AVERAGE_4D_Z(J, JDIR, kp1, j, i);
-          Jx3 = AVERAGE_4D_Y(J, KDIR, k, jp1, i);  
+          Jx3 = AVERAGE_4D_Y(J, KDIR, k, jp1, i);
           #if COMPONENTS >= 2
           fluxL[BX2] += -xH* (  Jx1*uL[BX2] - Jx2*uL[BX1] );
           fluxR[BX2] += -xH* (  Jx1*uR[BX2] - Jx2*uR[BX1] );
@@ -262,7 +262,7 @@ void Hydro::HllMHD() {
         if(DIR == JDIR) {
           Jx1 = AVERAGE_4D_Z(J, IDIR, kp1, j, i);
           Jx2 = AVERAGE_4D_XYZ(J, JDIR, kp1, j, ip1);
-          Jx3 = AVERAGE_4D_X(J, KDIR, k, j, ip1);     
+          Jx3 = AVERAGE_4D_X(J, KDIR, k, j, ip1);
 
           #if COMPONENTS >= 2
           fluxL[BX1] += -xH* (  Jx2*uL[BX1] - Jx1*uL[BX2] );
@@ -316,20 +316,20 @@ void Hydro::HllMHD() {
           #endif
       #endif
       }
-      
+
       // 5-- Compute the flux from the left and right states
       if (SL > 0) {
-        #pragma unroll
+#pragma unroll
         for (int nv = 0 ; nv < NFLX; nv++) {
           Flux(nv,k,j,i) = fluxL[nv];
         }
       } else if (SR < 0) {
-        #pragma unroll
+#pragma unroll
         for (int nv = 0 ; nv < NFLX; nv++) {
           Flux(nv,k,j,i) = fluxR[nv];
         }
       } else {
-        #pragma unroll
+#pragma unroll
         for(int nv = 0 ; nv < NFLX; nv++) {
           Flux(nv,k,j,i) = SL*SR*uR[nv] - SL*SR*uL[nv] + SR*fluxL[nv] - SL*fluxR[nv];
           Flux(nv,k,j,i) *= (1.0 / (SR - SL));
@@ -343,7 +343,7 @@ void Hydro::HllMHD() {
       D_EXPAND( Et(k,j,i) = st*Flux(BXt,k,j,i); ,
                                                 ,
                 Eb(k,j,i) = sb*Flux(BXb,k,j,i); )
-      
+
 #if EMF_AVERAGE == UCT_CONTACT
       int s = 0;
       if (Flux(RHO,k,j,i) >  eps_UCT_CONTACT) s =  1;

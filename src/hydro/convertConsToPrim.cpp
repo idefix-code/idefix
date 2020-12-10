@@ -29,15 +29,15 @@ void Hydro::ConvertConsToPrim() {
     KOKKOS_LAMBDA (int k, int j, int i) {
       real U[NVAR];
       real V[NVAR];
-      
-      #pragma unroll
+
+#pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
-        U[nv] = Uc(nv,k,j,i); 
+        U[nv] = Uc(nv,k,j,i);
       }
 
       K_ConsToPrim(V,U,gamma_m1);
 
-      #pragma unroll
+#pragma unroll
       for(int nv = 0 ; nv<NVAR; nv++) {
         Vc(nv,k,j,i) = V[nv];
       }

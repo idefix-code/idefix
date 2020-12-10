@@ -71,11 +71,11 @@ int main( int argc, char* argv[] ) {
     if(haveSlurm)
       idfx::cout << "Main:: detected you were runnning on a SLURM scheduler with CUDA. "
                     "Kokkos has been initialised accordingly." << std::endl;
-    
+
     idfx::cout << "Main::Init Grid." << std::endl;
     // Allocate the grid on device
     Grid grid(input);
-    // Allocate the grid image on host 
+    // Allocate the grid image on host
     GridHost gridHost(grid);
 
     // Actually make the grid on host and sync it on the device
@@ -121,7 +121,7 @@ int main( int argc, char* argv[] ) {
 
     while(data.t < tstop) {
       if(tstop-data.t < data.dt) data.dt = tstop-data.t;
-      Tint.Cycle(data); 
+      Tint.Cycle(data);
       outDMP.CheckForWrite(grid, data, outVTK);
       outVTK.CheckForWrite(data);
       if(abortRequested) {
@@ -130,22 +130,22 @@ int main( int argc, char* argv[] ) {
         break;
       }
     }
-    
+
     double tintegration = timer.seconds() / grid.np_int[IDIR] / grid.np_int[JDIR]
                             / grid.np_int[KDIR] / Tint.getNcycles();
-    
+
     idfx::cout << "Main::Reached t=" << data.t << std::endl;
     idfx::cout << "Main::Completed in " << timer.seconds() << "seconds and " << Tint.getNcycles()
                << " cycles. Perfs are " << 1/tintegration << " cell updates/second." << std::endl;
 
     idfx::cout << "Main::Job's done" << std::endl;
   }
-  
+
   Kokkos::finalize();
 
 #ifdef WITH_MPI
   MPI_Finalize();
 #endif
-  
+
   return 0;
 }

@@ -23,7 +23,7 @@ OutputDump::OutputDump(Input &input, DataBlock &data) {
     this->tnext = 0;
   }
 
-  for (int dir=0; dir<3;dir++) {
+  for (int dir=0; dir<3; dir++) {
     this->periodicity[dir] = (data.mygrid->lbound[dir] == periodic);
   }
   this->dumpFileNumber = 0;
@@ -478,7 +478,7 @@ int OutputDump::Read(Grid& grid, DataBlock &data, OutputVTK& ovtk, int readNumbe
           for(int dir = 0 ; dir < 3; dir++) nx[dir] = dataHost.np_int[dir];
           nx[nv]++;   // Extra cell in the dir direction for cell-centered fields
           ReadDistributed(fileHdl, ndim, nx, nxglob, descSR[nv], scrch);
-          
+
           for(int k = 0; k < nx[KDIR]; k++) {
             for(int j = 0 ; j < nx[JDIR]; j++) {
               for(int i = 0; i < nx[IDIR]; i++) {
@@ -562,7 +562,7 @@ int OutputDump::Write( Grid& grid, DataBlock &data, OutputVTK& ovtk) {
 
   // open file
 #ifdef WITH_MPI
-  MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename, 
+  MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename,
                               MPI_MODE_CREATE | MPI_MODE_RDWR | MPI_MODE_UNIQUE_OPEN,
                               MPI_INFO_NULL, &fileHdl));
   this->offset = 0;
@@ -581,7 +581,7 @@ int OutputDump::Write( Grid& grid, DataBlock &data, OutputVTK& ovtk) {
   for(int dir = 0; dir < 3 ; dir++) {
     // cell centers
     std::snprintf(fieldName, NAMESIZE, "x%d",dir+1);
-    WriteSerial(fileHdl, 1, &gridHost.np_int[dir], realType, fieldName, 
+    WriteSerial(fileHdl, 1, &gridHost.np_int[dir], realType, fieldName,
                 reinterpret_cast<void*> (gridHost.x[dir].data()+gridHost.nghost[dir]));
     // cell left edges
     std::snprintf(fieldName, NAMESIZE, "xl%d",dir+1);
@@ -618,7 +618,7 @@ int OutputDump::Write( Grid& grid, DataBlock &data, OutputVTK& ovtk) {
   }
 
   #if MHD == YES
-    // write staggered field components 
+    // write staggered field components
     for(int nv = 0 ; nv <DIMENSIONS ; nv++) {
       std::snprintf(fieldName,NAMESIZE,"Vs-%s",data.hydro.VsName[nv].c_str());
       // Load the active domain in the scratch space
@@ -630,7 +630,7 @@ int OutputDump::Write( Grid& grid, DataBlock &data, OutputVTK& ovtk) {
       //active face of the staggered mesh.
       if(grid.xproc[nv] == grid.nproc[nv] - 1  ) nx[nv]++;
       nxtot[nv]++;
-      
+
       for(int k = 0; k < nx[KDIR]; k++) {
         for(int j = 0 ; j < nx[JDIR]; j++) {
           for(int i = 0; i < nx[IDIR]; i++) {
@@ -664,7 +664,7 @@ int OutputDump::Write( Grid& grid, DataBlock &data, OutputVTK& ovtk) {
   nx[0] = 3;
   std::snprintf(fieldName,NAMESIZE, "periodicity");
   WriteSerial(fileHdl, 1, nx, IntegerType, fieldName, &this->periodicity);
-  
+
   // Write end of file
   scrch[0] = 0.0;
   std::snprintf(fieldName,NAMESIZE,"eof");
@@ -677,7 +677,6 @@ int OutputDump::Write( Grid& grid, DataBlock &data, OutputVTK& ovtk) {
   fclose(fileHdl);
 #endif
 
-  
 
   idfx::cout << "done in " << timer.seconds() << " s." << std::endl;
   idfx::popRegion();

@@ -53,7 +53,7 @@ void Hydro::CalcParabolicFlux(int dir, const real t) {
     else
       IDEFIX_ERROR("No user-defined Ohmic diffusivity function has been enrolled");
   }
-  
+
   if(haveAmbipolar == UserDefFunction && dir == IDIR) {
     if(ambipolarDiffusivityFunc)
       ambipolarDiffusivityFunc(*data, t, xAmbiArr);
@@ -86,12 +86,12 @@ void Hydro::CalcParabolicFlux(int dir, const real t) {
       kp1 = k;
 #endif
 
-      
+
       Jx1=Jx2=Jx3=ZERO_F;
 
       if(haveResistivity == Constant)
         eta = etaConstant;
-      
+
       if(haveAmbipolar == Constant)
         xA = xAConstant;
 
@@ -109,12 +109,12 @@ void Hydro::CalcParabolicFlux(int dir, const real t) {
 
         if(haveResistivity == UserDefFunction)
           eta = AVERAGE_3D_X(etaArr,k,j,i);
-        
+
         if(haveResistivity) {
           EXPAND(                                  ,
                   Flux(BX2,k,j,i) += - eta * Jx3;  ,
                   Flux(BX3,k,j,i) +=   eta * Jx2;  )
-          
+
 #if HAVE_ENERGY
           Flux(ENG,k,j,i) += EXPAND( ZERO_F            ,
                                     - Bx2 * eta * Jx3  ,
@@ -126,7 +126,7 @@ void Hydro::CalcParabolicFlux(int dir, const real t) {
 
         if(haveAmbipolar == UserDefFunction)
           xA = AVERAGE_3D_X(xAmbiArr,k,j,i);
-        
+
         if(haveAmbipolar) {
           real BdotB = EXPAND( Bx1*Bx1, +Bx2*Bx2, +Bx3*Bx3);
 
@@ -151,9 +151,9 @@ void Hydro::CalcParabolicFlux(int dir, const real t) {
           dMax(k,j,i) += xA*BdotB;
         }
       }
-      
+
       if(dir==JDIR) {
-        EXPAND( Jx3 = AVERAGE_4D_X(J, KDIR, k, j, ip1);   , 
+        EXPAND( Jx3 = AVERAGE_4D_X(J, KDIR, k, j, ip1);   ,
                                                           ,
                 Jx1 = AVERAGE_4D_Z(J, IDIR, kp1, j, i);
                 Jx2 = AVERAGE_4D_XYZ(J, JDIR, kp1, j, ip1);  )
@@ -166,21 +166,21 @@ void Hydro::CalcParabolicFlux(int dir, const real t) {
           eta = AVERAGE_3D_Y(etaArr,k,j,i);
 
         if(haveResistivity) {
-          EXPAND( Flux(BX1,k,j,i) += eta * Jx3;   ,  
+          EXPAND( Flux(BX1,k,j,i) += eta * Jx3;   ,
                                                   ,
                   Flux(BX3,k,j,i) += - eta * Jx1; )
-          
+
 #if HAVE_ENERGY
-          Flux(ENG,k,j,i) += EXPAND( Bx1 * eta * Jx3   , 
+          Flux(ENG,k,j,i) += EXPAND( Bx1 * eta * Jx3   ,
                                                        ,
-                                    - Bx3 * eta * Jx1  ); 
+                                    - Bx3 * eta * Jx1  );
 #endif
           dMax(k,j,i) += eta;
         }
 
         if(haveAmbipolar == UserDefFunction)
           xA = AVERAGE_3D_Y(xAmbiArr,k,j,i);
-        
+
         if(haveAmbipolar) {
           real BdotB = EXPAND( Bx1*Bx1, +Bx2*Bx2, +Bx3*Bx3);
 
@@ -205,32 +205,32 @@ void Hydro::CalcParabolicFlux(int dir, const real t) {
           dMax(k,j,i) += xA*BdotB;
         }
       }
-      
+
       if(dir==KDIR) {
         Jx1 = AVERAGE_4D_X(J, IDIR, k, j, ip1);
         Jx2 = AVERAGE_4D_Y(J, JDIR, k, jp1, i);
         Jx3 = AVERAGE_4D_XYZ(J, KDIR, k, jp1, ip1);
 
-        Bx1 = HALF_F*( Vc(BX1,k-1,j,i) + Vc(BX1,k,j,i)); 
-        Bx2 = HALF_F*( Vc(BX2,k-1,j,i) + Vc(BX2,k,j,i)); 
+        Bx1 = HALF_F*( Vc(BX1,k-1,j,i) + Vc(BX1,k,j,i));
+        Bx2 = HALF_F*( Vc(BX2,k-1,j,i) + Vc(BX2,k,j,i));
         Bx3 = Vs(BX3s,k,j,i);
 
         if(haveResistivity == UserDefFunction)
           eta = AVERAGE_3D_Z(etaArr,k,j,i);
-        
+
         if(haveResistivity) {
           Flux(BX1,k,j,i) += -eta * Jx2;
           Flux(BX2,k,j,i) += eta * Jx1;
-          
+
 #if HAVE_ENERGY
-          Flux(ENG,k,j,i) += - Bx1 * eta * Jx2 + Bx2 * eta * Jx1;  
+          Flux(ENG,k,j,i) += - Bx1 * eta * Jx2 + Bx2 * eta * Jx1;
 #endif
           dMax(k,j,i) += eta;
         }
 
         if(haveAmbipolar == UserDefFunction)
           xA = AVERAGE_3D_Z(xAmbiArr,k,j,i);
-        
+
         if(haveAmbipolar) {
           real BdotB = Bx1*Bx1 + Bx2*Bx2 + Bx3*Bx3;
 
@@ -242,14 +242,14 @@ void Hydro::CalcParabolicFlux(int dir, const real t) {
           Fx2 += -xA * JdotB * Bx1;
 #endif
 
-          Flux(BX1,k,j,i) += Fx1;  
+          Flux(BX1,k,j,i) += Fx1;
           Flux(BX2,k,j,i) += Fx2;
 
 #if HAVE_ENERGY
           Flux(ENG,k,j,i) += Bx1 * Fx1  + Bx2 * Fx2;
 #endif
 
-          dMax(k,j,i) += xA*BdotB;            
+          dMax(k,j,i) += xA*BdotB;
         }
       }
     }

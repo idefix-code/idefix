@@ -48,14 +48,14 @@ void Hydro::EvolveMagField(real t, real dt) {
       rhsx1 = D_EXPAND( ZERO_F                                     ,
                        - dt/dx2(j) * (Ex3(k,j+1,i) - Ex3(k,j,i) )  ,
                        + dt/dx3(k) * (Ex2(k+1,j,i) - Ex2(k,j,i) )  );
-                      
+
   #if DIMENSIONS >= 2
       rhsx2 =  D_EXPAND( dt/dx1(i) * (Ex3(k,j,i+1) - Ex3(k,j,i) )  ,
                                                                    ,
                         - dt/dx3(k) * (Ex1(k+1,j,i) - Ex1(k,j,i) ) );
   #endif
   #if DIMENSIONS == 3
-      rhsx3 = - dt/dx1(i) * (Ex2(k,j,i+1) - Ex2(k,j,i) )  
+      rhsx3 = - dt/dx1(i) * (Ex2(k,j,i+1) - Ex2(k,j,i) )
               + dt/dx2(j) * (Ex1(k,j+1,i) - Ex1(k,j,i) );
   #endif
 
@@ -77,7 +77,7 @@ void Hydro::EvolveMagField(real t, real dt) {
   #endif
   #if DIMENSIONS == 3
       rhsx3 = dt/(FABS(x1(i))) * (
-                  -  (x1m(i+1)*Ex2(k,j,i+1) - x1m(i)*Ex2(k,j,i) ) / dx1(i) 
+                  -  (x1m(i+1)*Ex2(k,j,i+1) - x1m(i)*Ex2(k,j,i) ) / dx1(i)
                   +  (Ex1(k,j+1,i) - Ex1(k,j,i) ) / dx2(j) );
   #endif
 
@@ -89,7 +89,7 @@ void Hydro::EvolveMagField(real t, real dt) {
       rhsx1 = D_EXPAND( ZERO_F                                                        ,
                        - dt/(x1m(i)*dV2) * ( Ax2p*Ex3(k,j+1,i) - Ax2m*Ex3(k,j,i) )    ,
                        + dt*dx2(j)/(x1m(i)*dV2*dx3(k)) * (Ex2(k+1,j,i) - Ex2(k,j,i) ) );
-                      
+
   #if DIMENSIONS >= 2
       rhsx2 =  D_EXPAND( dt/(x1(i)*dx1(i)) * (x1m(i+1)*Ex3(k,j,i+1) - x1m(i)*Ex3(k,j,i) )  ,
                                                                                            ,
@@ -111,6 +111,6 @@ void Hydro::EvolveMagField(real t, real dt) {
       Vs(BX3s,k,j,i) = Vs(BX3s,k,j,i) + rhsx3;
 #endif
   });
-  
+
   idfx::popRegion();
 }

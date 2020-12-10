@@ -32,7 +32,7 @@ void Hydro::ExtrapolatePrimVar(int dir) {
   // Determine the offset along which we do the extrapolation, as well as the perp extension
   if(dir==IDIR) {
     ioffset=1;
-    BXn = BX1; 
+    BXn = BX1;
     D_EXPAND(               ,
               jextend = 1;  ,
               kextend = 1;  )
@@ -46,7 +46,7 @@ void Hydro::ExtrapolatePrimVar(int dir) {
   }
   if(dir==KDIR) {
     koffset=1;
-    BXn = BX3; 
+    BXn = BX3;
     D_EXPAND( iextend = 1;  ,
               jextend = 1;  ,
                             )
@@ -64,8 +64,8 @@ void Hydro::ExtrapolatePrimVar(int dir) {
              0,NVAR,data->beg[KDIR]-kextend,data->end[KDIR]+koffset+kextend,
              data->beg[JDIR]-jextend,data->end[JDIR]+joffset+jextend,
              data->beg[IDIR]-iextend,data->end[IDIR]+ioffset+iextend,
-    KOKKOS_LAMBDA (int n, int k, int j, int i) {   
-      // If normal component, the use Staggered field 
+    KOKKOS_LAMBDA (int n, int k, int j, int i) {
+      // If normal component, the use Staggered field
       if(n==BXn) {
         PrimL(n,k,j,i) = Vs(dir,k,j,i);
         PrimR(n,k,j,i) = Vs(dir,k,j,i);
@@ -95,7 +95,7 @@ void Hydro::ExtrapolatePrimVar(int dir) {
         PrimR(n,k,j,i) = Vc(n,k,j,i) - HALF_F*dv;
       }
   });
-#else   
+#else
   #error ORDER should be 1 or 2
 #endif
 

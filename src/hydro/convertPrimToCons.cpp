@@ -29,15 +29,15 @@ void Hydro::ConvertPrimToCons() {
     KOKKOS_LAMBDA (int k, int j, int i) {
       real U[NVAR];
       real V[NVAR];
-      
-      #pragma unroll
+
+#pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
-        V[nv] = Vc(nv,k,j,i); 
+        V[nv] = Vc(nv,k,j,i);
       }
 
       K_PrimToCons(U,V,gamma_m1);
 
-      #pragma unroll
+#pragma unroll
       for(int nv = 0 ; nv<NVAR; nv++) {
         Uc(nv,k,j,i) = U[nv];
       }

@@ -33,18 +33,18 @@ void Hydro::CalcRiemannFlux(int dir, const real t) {
           this->TvdlfMHD<IDIR,ARG_EXPAND(MX1,MX2,MX3),
                    ARG_EXPAND(BX1,BX2,BX3)>();
           break;
-#if DIMENSIONS >= 2
+  #if DIMENSIONS >= 2
         case JDIR:
           this->TvdlfMHD<JDIR,ARG_EXPAND(MX2,MX1,MX3),
                    ARG_EXPAND(BX2,BX1,BX3)>();
           break;
-#endif
-#if DIMENSIONS == 3
+  #endif
+  #if DIMENSIONS == 3
         case KDIR:
           this->TvdlfMHD<KDIR,ARG_EXPAND(MX3,MX1,MX2),
                    ARG_EXPAND(BX3,BX1,BX2)>();
           break;
-#endif
+  #endif
       }
       break;
     case HLL:
@@ -53,18 +53,18 @@ void Hydro::CalcRiemannFlux(int dir, const real t) {
           this->HllMHD<IDIR,ARG_EXPAND(MX1,MX2,MX3),
                  ARG_EXPAND(BX1,BX2,BX3)>();
           break;
-#if DIMENSIONS >= 2
+  #if DIMENSIONS >= 2
         case JDIR:
           this->HllMHD<JDIR,ARG_EXPAND(MX2,MX1,MX3),
                  ARG_EXPAND(BX2,BX1,BX3)>();
           break;
-#endif
-#if DIMENSIONS == 3
+  #endif
+  #if DIMENSIONS == 3
         case KDIR:
           this->HllMHD<KDIR,ARG_EXPAND(MX3,MX1,MX2),
                  ARG_EXPAND(BX3,BX1,BX2)>();
           break;
-#endif
+  #endif
       }
       break;
     case HLLD:
@@ -73,18 +73,18 @@ void Hydro::CalcRiemannFlux(int dir, const real t) {
           this->HlldMHD<IDIR,ARG_EXPAND(MX1,MX2,MX3),
                   ARG_EXPAND(BX1,BX2,BX3)>();
           break;
-#if DIMENSIONS >= 2
+  #if DIMENSIONS >= 2
         case JDIR:
           this->HlldMHD<JDIR,ARG_EXPAND(MX2,MX1,MX3),
                   ARG_EXPAND(BX2,BX1,BX3)>();
           break;
-#endif
-#if DIMENSIONS == 3
+  #endif
+  #if DIMENSIONS == 3
         case KDIR:
           this->HlldMHD<KDIR,ARG_EXPAND(MX3,MX1,MX2),
                   ARG_EXPAND(BX3,BX1,BX2)>();
           break;
-#endif
+  #endif
       }
       break;
     case ROE:
@@ -93,36 +93,36 @@ void Hydro::CalcRiemannFlux(int dir, const real t) {
           this->RoeMHD<IDIR,ARG_EXPAND(MX1,MX2,MX3),
                  ARG_EXPAND(BX1,BX2,BX3)>();
           break;
-#if DIMENSIONS >= 2
+  #if DIMENSIONS >= 2
         case JDIR:
           this->RoeMHD<JDIR,ARG_EXPAND(MX2,MX1,MX3),
                  ARG_EXPAND(BX2,BX1,BX3)>();
           break;
-#endif
-#if DIMENSIONS == 3
+  #endif
+  #if DIMENSIONS == 3
         case KDIR:
           this->RoeMHD<KDIR,ARG_EXPAND(MX3,MX1,MX2),
                  ARG_EXPAND(BX3,BX1,BX2)>();
           break;
-#endif
+  #endif
       }
       break;
 #else
-    case TVDLF: 
+    case TVDLF:
       switch(dir) {
         case IDIR:
           this->TvdlfHD<IDIR,MX1,MX2,MX3>();
           break;
-#if DIMENSIONS >= 2
+  #if DIMENSIONS >= 2
         case JDIR:
           this->TvdlfHD<JDIR,MX2,MX1,MX3>();
           break;
-#endif
-#if DIMENSIONS == 3
+  #endif
+  #if DIMENSIONS == 3
         case KDIR:
           this->TvdlfHD<KDIR,MX3,MX1,MX2>();
           break;
-#endif
+  #endif
       }
       break;
     case HLL:
@@ -130,16 +130,16 @@ void Hydro::CalcRiemannFlux(int dir, const real t) {
         case IDIR:
           this->HllHD<IDIR,MX1,MX2,MX3>();
           break;
-#if DIMENSIONS >= 2
+  #if DIMENSIONS >= 2
         case JDIR:
           this->HllHD<JDIR,MX2,MX1,MX3>();
           break;
-#endif
-#if DIMENSIONS == 3
+  #endif
+  #if DIMENSIONS == 3
         case KDIR:
           this->HllHD<KDIR,MX3,MX1,MX2>();
           break;
-#endif
+  #endif
       }
       break;
     case HLLC:
@@ -147,16 +147,16 @@ void Hydro::CalcRiemannFlux(int dir, const real t) {
         case IDIR:
           this->HllcHD<IDIR,MX1,MX2,MX3>();
           break;
-#if DIMENSIONS >= 2
+  #if DIMENSIONS >= 2
         case JDIR:
           this->HllcHD<JDIR,MX2,MX1,MX3>();
           break;
-#endif
-#if DIMENSIONS == 3
+  #endif
+  #if DIMENSIONS == 3
         case KDIR:
           this->HllcHD<KDIR,MX3,MX1,MX2>();
           break;
-#endif
+  #endif
       }
       break;
     case ROE:
@@ -164,19 +164,19 @@ void Hydro::CalcRiemannFlux(int dir, const real t) {
         case IDIR:
           this->RoeHD<IDIR,MX1,MX2,MX3>();
           break;
-#if DIMENSIONS >= 2
+  #if DIMENSIONS >= 2
         case JDIR:
           this->RoeHD<JDIR,MX2,MX1,MX3>();
           break;
-#endif
-#if DIMENSIONS == 3
+  #endif
+  #if DIMENSIONS == 3
         case KDIR:
           this->RoeHD<KDIR,MX3,MX1,MX2>();
           break;
-#endif
+  #endif
       }
       break;
-#endif
+#endif // MHD
     default: // do nothing
       break;
   }

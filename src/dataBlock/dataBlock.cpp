@@ -31,7 +31,7 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
     // in that direction
     np_int[dir] = grid.np_int[dir]/grid.nproc[dir];
     np_tot[dir] = np_int[dir]+2*nghost[dir];
-    
+
     // Boundary conditions
     if (grid.xproc[dir]==0)
       lbound[dir] = grid.lbound[dir];
@@ -58,13 +58,13 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
 
   if(idfx::psize>1) {
     idfx::cout << "DataBlock::initFromGrid local size is " << std::endl;
-    
+
     for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
       idfx::cout << "\t Direction X" << (dir+1) << ": " << xbeg[dir] << "...." << np_int[dir]
         << "...." << xend[dir] << std::endl;
     }
   }
-  
+
   // Allocate the required fields
   for(int dir = 0 ; dir < 3 ; dir++) {
     x[dir] = IdefixArray1D<real>("DataBlock_x",np_tot[dir]);
@@ -72,14 +72,14 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
     xl[dir] = IdefixArray1D<real>("DataBlock_xl",np_tot[dir]);
     dx[dir] = IdefixArray1D<real>("DataBlock_dx",np_tot[dir]);
     xgc[dir] = IdefixArray1D<real>("DataBlock_xgc",np_tot[dir]);
-    
+
     A[dir] = IdefixArray3D<real>("DataBlock_A",
                                  np_tot[KDIR]+KOFFSET, np_tot[JDIR]+JOFFSET, np_tot[IDIR]+IOFFSET);
   }
 
   dV = IdefixArray3D<real>("DataBlock_dV",np_tot[KDIR],np_tot[JDIR],np_tot[IDIR]);
-  
-#if GEOMETRY == SPHERICAL 
+
+#if GEOMETRY == SPHERICAL
   rt = IdefixArray1D<real>("DataBlock_rt",np_tot[IDIR]);
   sm = IdefixArray1D<real>("DataBlock_sm",np_tot[JDIR]);
   s = IdefixArray1D<real>("DataBlock_s",np_tot[JDIR]);

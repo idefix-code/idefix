@@ -140,7 +140,7 @@ void Hydro::CalcNonidealEMF(real t) {
   #if DIMENSIONS == 3
         Jx1 = AVERAGE_4D_XZ(J, IDIR, k+1, j, i);
         Jx2 = AVERAGE_4D_YZ(J, JDIR, k+1, j, i);
-  #else   
+  #else
         Jx1 = AVERAGE_4D_X(J, IDIR, k, j, i);
         Jx2 = AVERAGE_4D_Y(J, JDIR, k, j, i);
   #endif

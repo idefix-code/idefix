@@ -14,7 +14,7 @@
 template<const int DIR, const int Xn, const int Xt, const int Xb>
 void Hydro::HllcHD() {
   idfx::pushRegion("Hydro::HLLC_Solver");
-  
+
   int ioffset,joffset,koffset;
   ioffset=joffset=koffset=0;
   // Determine the offset along which we do the extrapolation
@@ -36,7 +36,7 @@ void Hydro::HllcHD() {
   IdefixArray4D<real> PrimR = this->PrimR;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
-  
+
   real gamma = this->gamma;
   real gamma_m1 = this->gamma - ONE_F;
   real C2Iso = this->C2Iso;
@@ -62,7 +62,7 @@ void Hydro::HllcHD() {
       real cL, cR, cmax;
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-      #pragma unroll
+#pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
         vL[nv] = PrimL(nv,k,j,i);
         vR[nv] = PrimR(nv,k,j,i);
@@ -70,24 +70,24 @@ void Hydro::HllcHD() {
 
       // 2-- Get the wave speed
 #if HAVE_ENERGY
-      cL = SQRT( gamma *(vL[PRS]/vL[RHO]));
-      cR = SQRT( gamma *(vR[PRS]/vR[RHO]));
+      cL = std::sqrt( gamma *(vL[PRS]/vL[RHO]) );
+      cR = std::sqrt( gamma *(vR[PRS]/vR[RHO]) );
 #else
-      cL = SQRT(C2Iso);
+      cL = std::sqrt(C2Iso);
       cR = cL;
 #endif
 
       real cminL = vL[Xn] - cL;
       real cmaxL = vL[Xn] + cL;
-      
+
       real cminR = vR[Xn] - cR;
       real cmaxR = vR[Xn] + cR;
-      
+
       real SL = FMIN(cminL, cminR);
       real SR = FMAX(cmaxL, cmaxR);
-      
+
       cmax  = FMAX(FABS(SL), FABS(SR));
-      
+
       // 3-- Compute the conservative variables
       K_PrimToCons(uL, vL, gamma_m1);
       K_PrimToCons(uR, vR, gamma_m1);
@@ -98,12 +98,12 @@ void Hydro::HllcHD() {
 
       // 5-- Compute the flux from the left and right states
       if (SL > 0) {
-        #pragma unroll
+#pragma unroll
         for (int nv = 0 ; nv < NFLX; nv++) {
           Flux(nv,k,j,i) = fluxL[nv];
         }
       } else if (SR < 0) {
-        #pragma unroll
+#pragma unroll
         for (int nv = 0 ; nv < NFLX; nv++) {
           Flux(nv,k,j,i) = fluxR[nv];
         }
@@ -111,7 +111,7 @@ void Hydro::HllcHD() {
         real usL[NVAR];
         real usR[NVAR];
         real vs;
-          
+
 #if HAVE_ENERGY
         real qL, qR, wL, wR;
         qL = vL[PRS] + uL[Xn]*(vL[Xn] - SL);
@@ -150,15 +150,15 @@ void Hydro::HllcHD() {
                 usL[Xt] = rho*vL[Xt]; usR[Xt] = rho*vR[Xt]; ,
                 usL[Xb] = rho*vL[Xb]; usR[Xb] = rho*vR[Xb];)
 #endif
-        
+
     // Compute the flux from the left and right states
         if (vs >= 0.0) {
-          #pragma unroll
+#pragma unroll
           for(int nv = 0 ; nv < NVAR; nv++) {
             Flux(nv,k,j,i) = fluxL[nv] + SL*(usL[nv] - uL[nv]);
           }
         } else {
-          #pragma unroll
+#pragma unroll
           for(int nv = 0 ; nv < NVAR; nv++) {
             Flux(nv,k,j,i) = fluxR[nv] + SR*(usR[nv] - uR[nv]);
           }

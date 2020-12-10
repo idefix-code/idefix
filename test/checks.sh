@@ -33,6 +33,12 @@ echo $IDEFIX_DIR
 
 set -e
 options=$@
+# Run our linter
+echo "*************************************"
+echo "Checking code quality                "
+echo "*************************************"
+cd $TEST_DIR/style
+./check_idefix_style.sh
 
 # HD tests
 for rep in $rep_HD_list; do

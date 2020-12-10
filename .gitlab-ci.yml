@@ -6,7 +6,7 @@ check:
     - ./check_idefix_style.sh > code_quality.txt
   artifacts:
     reports:
-      code_quality: test/style/code_quality.txt
+      codequality: test/style/code_quality.txt
             
 
 test:

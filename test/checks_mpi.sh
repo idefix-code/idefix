@@ -1,7 +1,8 @@
 #!/bin/bash   
 
-rep_HD_list="sod-iso sod MachReflection"
-rep_MHD_list="sod-iso sod AmbipolarCshock HallWhistler OrszagTang"
+rep_HD_2D_mpi_list="MachReflection"
+rep_MHD_2D_mpi_list="OrszagTang"
+rep_MHD_3D_mpi_list="OrszagTang3D"
 
 # refer to the parent dir of this file, wherever this is called from
 # a python equivalent is e.g.
@@ -34,13 +35,13 @@ echo $IDEFIX_DIR
 set -e
 options=$@
 
-# HD tests
-for rep in $rep_HD_list; do
+# HD MPI tests
+for rep in $rep_HD_2D_mpi_list; do
     cd $TEST_DIR/HD/$rep
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "***********************************************"
-    python3 $IDEFIX_DIR/configure.py $options
+    python3 $IDEFIX_DIR/configure.py -mpi $options
     echo "***********************************************"
     echo "Making  $rep"
     echo "***********************************************"
@@ -51,7 +52,7 @@ for rep in $rep_HD_list; do
         echo "***********************************************"
         echo "Running  $rep with $ini"
         echo "***********************************************"
-        ./idefix -i $ini
+        mpirun -np 4 ./idefix -i $ini -dec 2 2
 
         cd python
         echo "***********************************************"
@@ -65,12 +66,12 @@ for rep in $rep_HD_list; do
 done
 
 # MHD tests
-for rep in $rep_MHD_list; do
+for rep in $rep_MHD_2D_mpi_list; do
     cd $TEST_DIR/MHD/$rep
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "***********************************************"
-    python3 $IDEFIX_DIR/configure.py -mhd $options
+    python3 $IDEFIX_DIR/configure.py -mhd -mpi $options
     echo "***********************************************"
     echo "Making  $rep"
     echo "***********************************************"
@@ -81,7 +82,7 @@ for rep in $rep_MHD_list; do
         echo "***********************************************"
         echo "Running  $rep with $ini"
         echo "***********************************************"
-        ./idefix -i $ini
+        mpirun -np 4 ./idefix -i $ini -dec 2 2
 
         cd python
         echo "***********************************************"
@@ -93,4 +94,35 @@ for rep in $rep_MHD_list; do
     
     cd $TEST_DIR
 done
+
+# MHD tests
+for rep in $rep_MHD_3D_mpi_list; do
+    cd $TEST_DIR/MHD/$rep
+    echo "***********************************************"
+    echo "Configuring  $rep"
+    echo "***********************************************"
+    python3 $IDEFIX_DIR/configure.py -mhd -mpi $options
+    echo "***********************************************"
+    echo "Making  $rep"
+    echo "***********************************************"
+    make clean; make -j 4
+
+    ini_files=$(ls *.ini)
+    for ini in $ini_files; do
+        echo "***********************************************"
+        echo "Running  $rep with $ini"
+        echo "***********************************************"
+        mpirun -np 8 ./idefix -i $ini -dec 2 2 2
+
+        cd python
+        echo "***********************************************"
+        echo "Testing  $rep with $ini"
+        echo "***********************************************"
+        python3 testidefix.py -noplot
+        cd ..
+    done
+    
+    cd $TEST_DIR
+done
+
 

@@ -22,7 +22,7 @@ find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path "*/kokko
 set +e
 echo "End of Google C++ Style cpplint.py test"
 
-# Begin custom Athena++ style rules and checks:
+# Begin custom Idefix style rules and checks:
 echo "Starting std::sqrt(), std::cbrt(), \t test"
 while read -r file
 do

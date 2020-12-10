@@ -23,6 +23,7 @@ test:
     - git submodule update
     - cd test
     - ./checks.sh
+    - ./checks_mpi.sh
   only:
   - schedules
   #except:

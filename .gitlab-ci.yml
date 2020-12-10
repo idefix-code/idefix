@@ -1,4 +1,13 @@
-
+check:
+  image: python:3.7-alpine
+  stage: build
+  script:
+    - cd test/style
+    - ./check_idefix_style.sh > code_quality.txt
+    artifacts:
+        reports:
+            code_quality: test/style/code_quality.txt
+            
 
 test:
   image: ubuntu:latest
@@ -24,8 +33,8 @@ test:
     - cd test
     - ./checks.sh
     - ./checks_mpi.sh
-  only:
-  - schedules
+  # only:
+  #- schedules
   #except:
   #- master
 

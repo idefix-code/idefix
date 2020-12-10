@@ -1,17 +1,3 @@
-check:
-  image: python:3.7-alpine
-  before_script:
-    - apt-get install -qq build-essential bash
-
-  stage: build
-  script:
-    - cd test/style
-    - ./check_idefix_style.sh > code_quality.txt
-  artifacts:
-    reports:
-      codequality: test/style/code_quality.txt
-            
-
 test:
   image: ubuntu:latest
 
@@ -33,9 +19,14 @@ test:
     - pip3 install matplotlib
     - git submodule init
     - git submodule update
-    - cd test
+    - cd test/style
+    - ./check_idefix_style.sh > code_quality.txt
+    - cd ..
     - ./checks.sh
     - ./checks_mpi.sh
+  artifacts:
+    reports:
+      codequality: test/style/code_quality.txt
   # only:
   #- schedules
   #except:

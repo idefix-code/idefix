@@ -35,6 +35,7 @@ class TimeIntegrator {
   real wc[2];
 
   real cfl;   // CFL number
+  real cflMaxVar; // Max CFL variation number
   int64_t ncycles;        // # of cycles
   double lastLog;         // # time for the last log
   double lastMpiLog;      // # time for the last MPI log

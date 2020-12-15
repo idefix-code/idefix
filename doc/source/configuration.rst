@@ -156,9 +156,6 @@ This section is used by *Idefix* time integrator class to define the time integr
     The ``first_dt`` is necessary since wave speeds are evaluated when Riemann problems are solved, hence the CFL
     condition can only be evaluated after the first timestep.
 
-.. warning::
-    As of version 0.4, *Idefix* ignores ``CFL_max_var``, which is by default set to 1.1.
-
 
 The ``Hydro`` section
 ---------------------

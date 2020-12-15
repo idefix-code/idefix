@@ -1,14 +1,8 @@
-check:
-  image: python:3.7-alpine
-  stage: build
-  script:
-    - cd test/style
-    - ./check_idefix_style.sh > code_quality.txt
-    artifacts:
-        reports:
-            code_quality: test/style/code_quality.txt
-            
-
+workflow:
+  rules:
+    - if: $CI_MERGE_REQUEST_ID               # Execute jobs in merge request context
+    - if: $CI_COMMIT_BRANCH == 'master'      # Execute jobs when a new commit is pushed to master branch
+    
 test:
   image: ubuntu:latest
 
@@ -30,9 +24,14 @@ test:
     - pip3 install matplotlib
     - git submodule init
     - git submodule update
-    - cd test
+    - cd test/style
+    - ./check_idefix_style.sh > code_quality.txt
+    - cd ..
     - ./checks.sh
     - ./checks_mpi.sh
+  artifacts:
+    reports:
+      codequality: test/style/code_quality.txt
   # only:
   #- schedules
   #except:

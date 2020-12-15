@@ -17,6 +17,13 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
   this->lastMpiLog=idfx::mpiTimer;
 
   nstages=input.GetInt("TimeIntegrator","nstages",0);
+  if(input.CheckEntry("TimeIntegrator","CFL_max_var")>0) {
+    cflMaxVar=input.GetReal("TimeIntegrator","CFL_max_var",0);
+  } else {
+    cflMaxVar=1.1;
+    idfx::cout << "TimeIntegrator:: No CFL_max_var defined. Using 1.1 by default." << std::endl;
+  }
+
 
   data.dt=input.GetReal("TimeIntegrator","first_dt",0);
   data.t=0.0;
@@ -183,8 +190,8 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   data.t=data.t+data.dt;
 
   // Next time step
-  if(newdt>1.1*data.dt) {
-    data.dt=1.1*data.dt;
+  if(newdt>cflMaxVar*data.dt) {
+    data.dt=cflMaxVar*data.dt;
   } else {
     data.dt=newdt;
   }

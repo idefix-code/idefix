@@ -115,11 +115,19 @@ Each entry defines a series of grid blocks, which can have various spacing. The 
 | Example     | X1-Grid     |  1                  |  0.0                     | 64                              |  u                              | 1.0                                          |     |                     |
 +-------------+-------------+---------------------+--------------------------+---------------------------------+---------------------------------+----------------------------------------------+-----+---------------------+
 
-In the example above, we define in ``X1`` direction a uniform grid of 64 points starting at ``X1=0.0`` and ending at ``X1=1.0``. The grid spacing can be either uniform (``u``), increasing logarithmically (``l``) or stretched (``s``).
+In the example above, we define in ``X1`` direction a uniform grid (``u``) of 64 points starting at ``X1=0.0`` and ending at ``X1=1.0``. 
 
-.. warning::
-    As of version 0.5, *Idefix* supports only uniform and logarithmically-spaced grids.
+The grid spacing can be one of the following:
 
+* Uniform spacing (``u``): a block with constant spacing is constructed. The grid spacing :math:`\Delta x` is defined as :math:`\Delta x=\frac{x_\mathrm{end}-x_\mathrm{start}}{N}`
+
+* Logarthmic spacing  (``l``): a block with logarithmic grid spacing, that is the spacing is proportional to the coordinate :math:`\Delta x\propto x`. More formally, the cell boundaries are defined as  :math:`x_{i-1/2}=x_\mathrm{start}\alpha^{i/N}` where  :math:`\alpha=\frac{x_\mathrm{end}+|x_\mathrm{start}|-x_\mathrm{start}}{|x_\mathrm{start}|}`. The grid spacing is then defined through :math:`\Delta x_i=x_{i+1/2}-x_{i-1/2}`. 
+
+* Stretcehd spacing (``s+`` or ``s-``): a block with a geometrically defined grid spacing. The spacing is defined to follow a geometrical series, with the reference spacing :math:`\Delta x_0` taken from the previous (``-``) or next (``+``) uniform block. Mathematically, the grid spacing is defined as :math:`\Delta x_i=\Delta x_0 r^{i-1}` for ``s+`` and  :math:`\Delta x_i=\Delta x_0 r^{N-i}` for ``s-``. The streching ratio :math:`r` is itself defined implicitly as :math:`\frac{r-r^{N+1}}{1-r}=\frac{x_\mathrm{end}-x_\mathrm{start}}{\Delta x_0}`
+
+
+.. tip::
+  Note that the stretched block requires at least one uniform block on one of it side to define the reference spacing :math:`\Delta x_0`
 
 The ``TimeIntegrator`` section
 ------------------------------
@@ -147,9 +155,6 @@ This section is used by *Idefix* time integrator class to define the time integr
 .. note::
     The ``first_dt`` is necessary since wave speeds are evaluated when Riemann problems are solved, hence the CFL
     condition can only be evaluated after the first timestep.
-
-.. warning::
-    As of version 0.4, *Idefix* ignores ``CFL_max_var``, which is by default set to 1.1.
 
 
 The ``Hydro`` section
@@ -225,11 +230,64 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 The ``Boundary`` section
 ------------------------
 
-This section describes the boundary conditions of the code. 
+This section describes the boundary conditions used by the code. There are 6 entries
+which need to be defined: ``X1-beg``, ``X2-beg``, ``X3-beg`` for the left boundaries in the direction X1, X2, X3,
+and ``X1-end``, ``X2-end``, ``X3-end`` for the right boundaries. Each boundary can be assigned the following types of conditions
+
++----------------+-----------------------------------------------------------------------------+
+| Boundary type  | Comment                                                                     |
++================+=============================================================================+
+| outflow        | | zero gradient on the density, pressure, tangential velocity and magnetic  |
+|                | | field. The normal velocity is set to zero gradient when it is flowing out |
+|                | | otherwise it is set to 0.                                                 |
++----------------+-----------------------------------------------------------------------------+
+| periodic       | | periodic boundary conditions. Each field is copied between beg and end    |
+|                | | sides of the boundary.                                                    |
++----------------+-----------------------------------------------------------------------------+
+| reflective     | | the normal component of the velocity is systematically reversed. Otherwise|
+|                | | identical to ``outflow``                                                  |
++----------------+-----------------------------------------------------------------------------+
+| shearingbox    | Shearing-box boudary conditions.                                            |
++----------------+-----------------------------------------------------------------------------+
+| userdef        | | User-defined boundary conditions. The boundary condition function         |
+|                | | should be enrolled in the setup constructor (see setup.cpp)               |
++----------------+-----------------------------------------------------------------------------+
+
+.. warning::
+    As of version 0.5, *Idefix* shearing-box assumes axisymmetry, i.e. NX2=1.
 
 
 Command line options
 ====================
+
+Several options can be provided at command line when running the code. These are listed below
+
++--------------------+--------------------------------------------------------------------------+
+| Option name        | Comment                                                                  |
++====================+==========================================================================+
+| -dec n1 n2 n3      | | Specify the MPI domain decomposition. Idefix will decompose the domain |
+|                    | | with n1 MPI processes in X1, n2 MPI processes in X2 and n3 processes   |
+|                    | | in X3. Note the number of arguments to -dec should be equal to         |
+|                    | | ``DIMENSIONS``.                                                        |
++--------------------+--------------------------------------------------------------------------+
+| -restart           | | specify the number of the dump file *Idefix* should restart from.      |
+|                    | | When used, does not use the inititial conditions from                  |
+|                    | | ``Setup::InitFlow()``                                                  |
++--------------------+--------------------------------------------------------------------------+
+| -i                 |   specify the name of the input file to be used (default ``idefix.ini``) |
++--------------------+--------------------------------------------------------------------------+
+
+In addition to these specific *Idefix* options, several Kokkos Options can be used on the command
+line when running *Idefix*:
+
++--------------------------+----------------------------------------------------------------------+
+| Option name              | Comment                                                              |
++==========================+======================================================================+
+| --kokkos-num-devices=x   | | Specify the number of devices (eg CUDA GPU) Kokkos should expect   |
+|                          | | This option is useful when each MPI process should be attached to  |
+|                          | | a different GPU. This option replace --kokkos-ndevices             |
+|                          | | which is now deprecated                                            |
++--------------------------+----------------------------------------------------------------------+                      
 
 
 Migrating from PLUTO

@@ -121,9 +121,9 @@ The grid spacing can be one of the following:
 
 * Uniform spacing (``u``): a block with constant spacing is constructed. The grid spacing :math:`\Delta x` is defined as :math:`\Delta x=\frac{x_\mathrm{end}-x_\mathrm{start}}{N}`
 
-* Logarthmic spacing  (``l``): a block with logarithmic grid spacing, that is the spacing is proportional to the coordinate :math:`\Delta x\propto x`. More formally, the cell boundaries are defined as  :math:`x_{i-1/2}=x_\mathrm{start}\alpha^{i/N}` where  :math:`\alpha=\frac{x_\mathrm{end}+|x_\mathrm{start}|-x_\mathrm{start}}{|x_\mathrm{start}|}`. The grid spacing is then defined through :math:`\Delta x_i=x_{i+1/2}-x_{i-1/2}`. 
+* Logarthmic spacing  (``l``): the block spacing is proportional to the coordinate :math:`\Delta x\propto x`. More formally, the cell boundaries are defined as  :math:`x_{i-1/2}=x_\mathrm{start}\alpha^{i/N}` where  :math:`\alpha=\frac{x_\mathrm{end}+|x_\mathrm{start}|-x_\mathrm{start}}{|x_\mathrm{start}|}`. The grid spacing is then defined through :math:`\Delta x_i=x_{i+1/2}-x_{i-1/2}`. 
 
-* Stretcehd spacing (``s+`` or ``s-``): a block with a geometrically defined grid spacing. The spacing is defined to follow a geometrical series, with the reference spacing :math:`\Delta x_0` taken from the previous (``-``) or next (``+``) uniform block. Mathematically, the grid spacing is defined as :math:`\Delta x_i=\Delta x_0 r^{i-1}` for ``s+`` and  :math:`\Delta x_i=\Delta x_0 r^{N-i}` for ``s-``. The streching ratio :math:`r` is itself defined implicitly as :math:`\frac{r-r^{N+1}}{1-r}=\frac{x_\mathrm{end}-x_\mathrm{start}}{\Delta x_0}`
+* Stretched spacing (``s+`` or ``s-``): the block spacing is defined to follow a geometrical series, with the reference spacing :math:`\Delta x_0` taken from the previous (``-``) or next (``+``) uniform block. Mathematically, the grid spacing is defined as :math:`\Delta x_i=\Delta x_0 r^{i-1}` for ``s+`` and  :math:`\Delta x_i=\Delta x_0 r^{N-i}` for ``s-``. The streching ratio :math:`r` is itself defined implicitly as :math:`\frac{r-r^{N+1}}{1-r}=\frac{x_\mathrm{end}-x_\mathrm{start}}{\Delta x_0}`
 
 
 .. tip::

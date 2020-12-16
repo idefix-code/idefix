@@ -219,9 +219,10 @@ enum BoundarySide { left, right};
 #include "input.hpp"
 #include "grid.hpp"
 #include "gridHost.hpp"
+#include "hydro_defs.hpp"
 #include "electroMotiveForce.hpp"
-#include "hydro.hpp"
 #include "viscosity.hpp"
+#include "hydro.hpp"
 #ifdef WITH_MPI
 #include "mpi.hpp"
 #endif

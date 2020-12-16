@@ -180,6 +180,12 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   if(newdt>cflMaxVar*data.dt) {
     data.dt=cflMaxVar*data.dt;
   } else {
+    if(ncycles==0 && newdt < 0.5*data.dt) {
+      std::stringstream msg;
+      msg << "Your guessed first_dt is too large. My next dt=" << newdt << std::endl;
+      msg << "Try to reduce first_dt in the ini file.";
+      IDEFIX_ERROR(msg);
+    }
     data.dt=newdt;
   }
 

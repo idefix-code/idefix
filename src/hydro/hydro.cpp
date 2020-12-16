@@ -11,8 +11,8 @@
 #include "hydro.hpp"
 
 
-Hydro::Hydro(Input &input, Grid &grid, DataBlock *datain) {
-  idfx::pushRegion("Hydro::Hydro(input)");
+void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
+  idfx::pushRegion("Hydro::Init");
   // Save the datablock to which we are attached from now on
   this->data = datain;
 
@@ -153,9 +153,9 @@ Hydro::Hydro(Input &input, Grid &grid, DataBlock *datain) {
   if(input.CheckEntry("Hydro","Viscosity")>=0) {
     this->haveParabolicTerms = true;
     this->haveViscosity = true;
-    this->viscosity = Viscosity(input, grid, this);
+    this->viscosity.Init(input, grid, this);
   }
-  
+
 #if MHD == YES
   if(input.CheckEntry("Hydro","Resistivity")>=0 ||
      input.CheckEntry("Hydro","Ambipolar")>=0 ||
@@ -413,15 +413,10 @@ void Hydro::ResetStage() {
   idfx::pushRegion("Hydro::ResetStage");
 
   IdefixArray3D<real> InvDt=this->InvDt;
-  IdefixArray3D<real> dMax=this->dMax;
-  bool haveParabolicTerms=this->haveParabolicTerms;
 
   idefix_for("HydroResetStage",0,data->np_tot[KDIR],0,data->np_tot[JDIR],0,data->np_tot[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
       InvDt(k,j,i) = ZERO_F;
-      if(haveParabolicTerms) {
-        dMax(k,j,i) = ZERO_F;
-      }
   });
 
   idfx::popRegion();

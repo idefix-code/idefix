@@ -6,7 +6,7 @@
 // ***********************************************************************************************
 
 // This source code is largely inspired from the viscous_flux of Pluto4.2 
-// (P. Tzeferacor & A Mignone)
+// ((c) P. Tzeferacos & A. Mignone)
 
 #include <string>
 

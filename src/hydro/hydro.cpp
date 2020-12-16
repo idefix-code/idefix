@@ -135,6 +135,9 @@ Hydro::Hydro(Input &input, Grid &grid, DataBlock *datain) {
   // Parabolic term
   haveParabolicTerms = false;
 
+  // Viscosity
+  haveViscosity = false;
+
   // Nonideal MHD
   haveResistivity = Disabled;
   haveHall = Disabled;
@@ -146,6 +149,13 @@ Hydro::Hydro(Input &input, Grid &grid, DataBlock *datain) {
 
   this->needCurrent = false;
 
+  // Check whether viscosity is enabled, if so, construct a viscosity object
+  if(input.CheckEntry("Hydro","Viscosity")>=0) {
+    this->haveParabolicTerms = true;
+    this->haveViscosity = true;
+    this->viscosity = Viscosity(input, grid, this);
+  }
+  
 #if MHD == YES
   if(input.CheckEntry("Hydro","Resistivity")>=0 ||
      input.CheckEntry("Hydro","Ambipolar")>=0 ||
@@ -396,4 +406,23 @@ real Hydro::GetGamma() {
 
 real Hydro::GetC2iso() {
   return(this->C2Iso);
+}
+
+void Hydro::ResetStage() {
+  // Reset variables required at the beginning of each stage (essentially linked to timestep evaluation)
+  idfx::pushRegion("Hydro::ResetStage");
+
+  IdefixArray3D<real> InvDt=this->InvDt;
+  IdefixArray3D<real> dMax=this->dMax;
+  bool haveParabolicTerms=this->haveParabolicTerms;
+
+  idefix_for("HydroResetStage",0,data->np_tot[KDIR],0,data->np_tot[JDIR],0,data->np_tot[IDIR],
+    KOKKOS_LAMBDA (int k, int j, int i) {
+      InvDt(k,j,i) = ZERO_F;
+      if(haveParabolicTerms) {
+        dMax(k,j,i) = ZERO_F;
+      }
+  });
+
+  idfx::popRegion();
 }

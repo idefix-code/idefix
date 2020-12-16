@@ -53,19 +53,6 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
 }
 
 
-void TimeIntegrator::ReinitInvDt(DataBlock &data) {
-  idfx::pushRegion("TimeIntegrator::ReinitInvDt");
-
-  IdefixArray3D<real> InvDt=data.hydro.InvDt;
-
-  idefix_for("InitInvDt",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
-    KOKKOS_LAMBDA (int k, int j, int i) {
-      InvDt(k,j,i) = ZERO_F;
-  });
-
-  idfx::popRegion();
-}
-
 // Compute one full cycle of the time Integrator
 void TimeIntegrator::Cycle(DataBlock &data) {
   // Do one cycle
@@ -127,8 +114,8 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 #endif
   }
 
-  // Reinit timestep
-  ReinitInvDt(data);
+  // Reinit datablock for a new stage
+  data.ResetStage();
 
   for(int stage=0; stage < nstages ; stage++) {
     // Update Uc & Vs

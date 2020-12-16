@@ -123,3 +123,7 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
 #endif
   idfx::popRegion();
 }
+
+void DataBlock::ResetStage() {
+  this->hydro.ResetStage();
+}

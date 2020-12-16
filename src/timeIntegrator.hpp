@@ -23,10 +23,7 @@ class TimeIntegrator {
 
   // Do one integration cycle
   void Cycle(DataBlock &);
-  void ReinitInvDt(DataBlock & );
 
-  // Return the hydro object used by present TimeIntegrator
-  Hydro &GetHydro();
 
  private:
   int nstages;

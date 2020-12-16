@@ -59,6 +59,7 @@ class Hydro {
   void ExtrapolatePrimVar(int);
   void CalcRiemannFlux(int, const real);
   void CalcParabolicFlux(int, const real);
+  void AddNonIdealMHDFlux(int, const real);
   void CalcRightHandSide(int, real, real );
   void CalcCurrent();
   void AddSourceTerms(real, real );
@@ -71,6 +72,7 @@ class Hydro {
   real GetGamma();
   real GetC2iso();
   real CheckDivB();
+  void ResetStage();
 
   // Source terms
   bool haveSourceTerms;
@@ -151,6 +153,8 @@ class Hydro {
 
 
  private:
+  friend class Viscosity;
+
   real C2Iso;
   real gamma;
 
@@ -210,6 +214,12 @@ class Hydro {
   IdefixArray3D<real> etaOhmic;
   IdefixArray3D<real> xHall;
   IdefixArray3D<real> xAmbipolar;
+
+  // Whether or not we have viscosity
+  bool haveViscosity;
+  // Viscosity object
+  Viscosity viscosity;
+
 };
 
 #endif // HYDRO_HYDRO_HPP_

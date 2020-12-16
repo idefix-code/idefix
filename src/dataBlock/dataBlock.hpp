@@ -75,6 +75,9 @@ class DataBlock {
   // Evolve this DataBlock by dt
   void EvolveStage();
 
+  // Reset the variables needed at each major integration Stage
+  void ResetStage();
+
   DataBlock();
 };
 

@@ -123,7 +123,7 @@ The grid spacing can be one of the following:
 
 * Logarthmic spacing  (``l``): the block spacing is proportional to the coordinate :math:`\Delta x\propto x`. More formally, the cell boundaries are defined as  :math:`x_{i-1/2}=x_\mathrm{start}\alpha^{i/N}` where  :math:`\alpha=\frac{x_\mathrm{end}+|x_\mathrm{start}|-x_\mathrm{start}}{|x_\mathrm{start}|}`. The grid spacing is then defined through :math:`\Delta x_i=x_{i+1/2}-x_{i-1/2}`. 
 
-* Stretched spacing (``s+`` or ``s-``): the block spacing is defined to follow a geometrical series, with the reference spacing :math:`\Delta x_0` taken from the previous (``-``) or next (``+``) uniform block. Mathematically, the grid spacing is defined as :math:`\Delta x_i=\Delta x_0 r^{i-1}` for ``s+`` and  :math:`\Delta x_i=\Delta x_0 r^{N-i}` for ``s-``. The streching ratio :math:`r` is itself defined implicitly as :math:`\frac{r-r^{N+1}}{1-r}=\frac{x_\mathrm{end}-x_\mathrm{start}}{\Delta x_0}`
+* Stretched spacing (``s+`` or ``s-``): the block spacing is defined to follow a geometrical series, starting from the reference spacing :math:`\Delta x_0` taken from the previous (``-``) or next (``+``) uniform block. Mathematically, the grid spacing is defined as :math:`\Delta x_i=\Delta x_0 r^{i-1}` for ``s+`` and  :math:`\Delta x_i=\Delta x_0 r^{N-i}` for ``s-``. The streching ratio :math:`r` is itself defined implicitly as :math:`\frac{r-r^{N+1}}{1-r}=\frac{x_\mathrm{end}-x_\mathrm{start}}{\Delta x_0}`
 
 
 .. tip::
@@ -135,22 +135,20 @@ The ``TimeIntegrator`` section
 This section is used by *Idefix* time integrator class to define the time integrator method and related variables. The entries of this section are as followed
 
 
-+----------------+--------------------+------------------------------------------------+
-|  Entry name    | Parameter type     | Comment                                        |
-+================+====================+================================================+
-| CFL            | float              | CFL number. Should be < 1 to ensure stability  |
-+----------------+--------------------+------------------------------------------------+
-| CFL_max_var    | float              | | fraction by which dt is allowed to increase  |
-|                |                    | | between two successive timesteps             |
-+----------------+--------------------+------------------------------------------------+
-| tstop          | float              | time when the code stops                       |
-+----------------+--------------------+------------------------------------------------+
-| first_dt       | float              | first timestep used by the integrator          |
-+----------------+--------------------+------------------------------------------------+
-| nstages        | integer            | | number of stages of the integrator. Can be   |
-|                |                    | | either 1, 2 or 3. 1=First order Euler method |
-|                |                    | | 2, 3= second and third order TVD Runge-Kutta |
-+----------------+--------------------+------------------------------------------------+
++----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
+|  Entry name    | Parameter type     | Comment                                                                                                   |
++================+====================+===========================================================================================================+
+| CFL            | float              | CFL number. Should be < 1 to ensure stability                                                             |
++----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
+| CFL_max_var    | float              | fraction by which :math:`dt` is allowed to increase between two  successive timesteps                     |
++----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
+| tstop          | float              | time when the code stops                                                                                  |
++----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
+| first_dt       | float              | first timestep used by the integrator                                                                     |
++----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
+| nstages        | integer            | | number of stages of the integrator. Can be  either 1, 2 or 3. 1=First order Euler method,               |
+|                |                    | | 2, 3 = second and third order  TVD Runge-Kutta                                                          |
++----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
 
 .. note::
     The ``first_dt`` is necessary since wave speeds are evaluated when Riemann problems are solved, hence the CFL
@@ -162,61 +160,46 @@ The ``Hydro`` section
 
 This section is used by the hydrodynamics class of *Idefix*. It defines the hydrodynamic parameters, and allows one to add some physics. The parameters are as followed:
 
-+----------------+--------------------+----------------------------------------------------------+
-|  Entry name    | Parameter type     | Comment                                                  |
-+================+====================+==========================================================+
-| Solver         | string             | | Type of Riemann Solver. In hydro can be any of         |
-|                |                    | | ``tvdlf``, ``hll``, ``hllc`` and ``roe``.              |
-|                |                    | | In MHD, can be ``tvdlf``, ``hll``, ``hlld``            |
-|                |                    | | and ``roe``                                            |
-+----------------+--------------------+----------------------------------------------------------+
-| csiso          | float              | | Isothermal sound speed. Only used when                 |
-|                |                    | | ISOTHERMAL is defined in ``definition.hpp``            |
-+----------------+--------------------+----------------------------------------------------------+
-| gamma          | float              | Adiabatic index when ISOTHERMAL is not defined           |
-+----------------+--------------------+----------------------------------------------------------+
-| Resistivity    | string, float      | | Switches on Ohmic diffusion. String can be             |
-|                |                    | | either ``constant`` or ``userdef``.                    |
-|                |                    | | When ``constant``, the second parameter is the         |
-|                |                    | | Ohmic diffusion coefficient.                           |
-|                |                    | | When ``userdef``, the ``Hydro`` class expects a        |
-|                |                    | | user-defined diffusivity function to be enrolled with  |
-|                |                    | | ``Hydro::EnrollOhmicDiffusivity(DiffusivityFunc)``     |
-|                |                    | | In this case, the second parameter is not used.        |
-+----------------+--------------------+----------------------------------------------------------+
-| Ambipolar      | string, float      | | Switches on ambipolar diffusion. String can be         |
-|                |                    | | either ``constant`` or ``userdef``.                    |
-|                |                    | | When ``constant``, the second parameter is the         |
-|                |                    | | ambipolar diffusion coefficient.                       |
-|                |                    | | When ``userdef``, the ``Hydro`` class expects a        |
-|                |                    | | user-defined diffusivity function to be enrolled with  |
-|                |                    | | ``Hydro::EnrollAmbipolarDiffusivity(DiffusivityFunc)`` |
-|                |                    | | In this case, the second parameter is not used.        |
-+----------------+--------------------+----------------------------------------------------------+
-| Hall           | string, float      | | Switches on Hall effect. String can be                 |
-|                |                    | | either ``constant`` or ``userdef``.                    |
-|                |                    | | When ``constant``, the second parameter is the         |
-|                |                    | | Hall diffusion coefficient.                            |
-|                |                    | | When ``userdef``, the ``Hydro`` class expects a        |
-|                |                    | | user-defined diffusivity function to be enrolled with  |
-|                |                    | | ``Hydro::EnrollHallDiffusivity(DiffusivityFunc)``      |
-|                |                    | | In this case, the second parameter is not used.        |
-+----------------+--------------------+----------------------------------------------------------+
-| GravPotential  | string             | | Switches on an external gravitational potential.       |
-|                |                    | | Only ``userdef`` is allowed.                           |
-|                |                    | | When ``userdef is set, the ``Hydro`` class expects     |
-|                |                    | | a user-defined potential function to be enrolled with  |
-|                |                    | | ``Hydro::EnrollGravPotential(GravPotentialFunc)``      |   
-+----------------+--------------------+----------------------------------------------------------+
-| Rotation       | float,float,float  | | Add rotation with rhe rotation vector components given |
-|                |                    | | as parameters. This entry only adds Coriolis force.    |
-+----------------+--------------------+----------------------------------------------------------+
-| ShearingBox    | float              | | Enable shearing box source terms.  The entry parameter |
-|                |                    | | corresponds to the shear rate                          |
-|                |                    |  :math:`dv_{x2}/d x_1`.                                  |
-|                |                    | | Note that this is not sufficient to fully define a     |
-|                |                    | | shearing box: boundary conditions are also required.   | 
-+----------------+--------------------+----------------------------------------------------------+
++----------------+--------------------+---------------------------------------------------------------------------------------------+
+|  Entry name    | Parameter type     | Comment                                                                                     |
++================+====================+=============================================================================================+
+| Solver         | string             | | Type of Riemann Solver. In hydro can be any of ``tvdlf``, ``hll``, ``hllc`` and ``roe``.  |
+|                |                    | | In MHD, can be ``tvdlf``, ``hll``, ``hlld`` and ``roe``                                   |
++----------------+--------------------+---------------------------------------------------------------------------------------------+
+| csiso          | float              | Isothermal sound speed. Only used when ISOTHERMAL is defined in ``definition.hpp``          |
++----------------+--------------------+---------------------------------------------------------------------------------------------+
+| gamma          | float              | Adiabatic index when ISOTHERMAL is not defined                                              |
++----------------+--------------------+---------------------------------------------------------------------------------------------+
+| Resistivity    | string, float      | | Switches on Ohmic diffusion. String can be  either ``constant`` or ``userdef``.           |
+|                |                    | | When ``constant``, the second parameter is the  Ohmic diffusion coefficient.              |
+|                |                    | | When ``userdef``, the ``Hydro`` class expects a user-defined diffusivity function         |
+|                |                    | | to be enrolled with   ``Hydro::EnrollOhmicDiffusivity(DiffusivityFunc)``                  |
+|                |                    | | In that case, the second parameter is not used.                                           |
++----------------+--------------------+---------------------------------------------------------------------------------------------+
+| Ambipolar      | string, float      | | Switches on ambipolar diffusion. String can be  either ``constant`` or ``userdef``.       |
+|                |                    | | When ``constant``, the second parameter is the ambipolar diffusion coefficient.           |
+|                |                    | | When ``userdef``, the ``Hydro`` class expects a user-defined diffusivity function         |
+|                |                    | | to be enrolled with   ``Hydro::EnrollAmbipolarDiffusivity(DiffusivityFunc)``              |
+|                |                    | | In that case, the second parameter is not used.                                           |
++----------------+--------------------+---------------------------------------------------------------------------------------------+
+| Hall           | string, float      | | Switches on Hall effect. String can be  either ``constant`` or ``userdef``.               |
+|                |                    | | When ``constant``, the second parameter is the  Hall diffusion coefficient.               |
+|                |                    | | When ``userdef``, the ``Hydro`` class expects a user-defined diffusivity function         |
+|                |                    | | to be enrolled with   ``Hydro::EnrollHallDiffusivity(DiffusivityFunc)``                   |
+|                |                    | | In that case, the second parameter is not used.                                           |
++----------------+--------------------+---------------------------------------------------------------------------------------------+
+| GravPotential  | string             | | Switches on an external gravitational potential. Only ``userdef`` is allowed.             |
+|                |                    | | When ``userdef is set, the ``Hydro`` class expects  a user-defined potential function     |
+|                |                    | | to be enrolled with  ``Hydro::EnrollGravPotential(GravPotentialFunc)``                    |   
++----------------+--------------------+---------------------------------------------------------------------------------------------+
+| Rotation       | float,float,float  | | Add rotation with rhe rotation vector components given as parameters.                     |
+|                |                    | | Note that this entry only adds Coriolis force.                                            |
++----------------+--------------------+---------------------------------------------------------------------------------------------+
+| ShearingBox    | float              | | Enable shearing box source terms.  The entry parameter corresponds to the shear rate      |
+|                |                    | | :math:`dv_{x2}/d x_1`.                                                                    | 
+|                |                    | | Note that this is not sufficient to fully define a shearing box: boundary conditions      |
+|                |                    | | are also required.                                                                        | 
++----------------+--------------------+---------------------------------------------------------------------------------------------+
 
 
 
@@ -234,24 +217,21 @@ This section describes the boundary conditions used by the code. There are 6 ent
 which need to be defined: ``X1-beg``, ``X2-beg``, ``X3-beg`` for the left boundaries in the direction X1, X2, X3,
 and ``X1-end``, ``X2-end``, ``X3-end`` for the right boundaries. Each boundary can be assigned the following types of conditions
 
-+----------------+-----------------------------------------------------------------------------+
-| Boundary type  | Comment                                                                     |
-+================+=============================================================================+
-| outflow        | | zero gradient on the density, pressure, tangential velocity and magnetic  |
-|                | | field. The normal velocity is set to zero gradient when it is flowing out |
-|                | | otherwise it is set to 0.                                                 |
-+----------------+-----------------------------------------------------------------------------+
-| periodic       | | periodic boundary conditions. Each field is copied between beg and end    |
-|                | | sides of the boundary.                                                    |
-+----------------+-----------------------------------------------------------------------------+
-| reflective     | | the normal component of the velocity is systematically reversed. Otherwise|
-|                | | identical to ``outflow``                                                  |
-+----------------+-----------------------------------------------------------------------------+
-| shearingbox    | Shearing-box boudary conditions.                                            |
-+----------------+-----------------------------------------------------------------------------+
-| userdef        | | User-defined boundary conditions. The boundary condition function         |
-|                | | should be enrolled in the setup constructor (see setup.cpp)               |
-+----------------+-----------------------------------------------------------------------------+
++----------------+------------------------------------------------------------------------------------------------------------------+
+| Boundary type  | Comment                                                                                                          |
++================+==================================================================================================================+
+| outflow        | | zero gradient on the density, pressure, tangential velocity and magnetic field. The normal velocity is set to  |
+|                | | zero gradient when it is flowing outwards otherwise it is set to 0.                                            |
++----------------+------------------------------------------------------------------------------------------------------------------+
+| periodic       |  Periodic boundary conditions. Each field is copied between beg and end sides of the boundary.                   |
++----------------+------------------------------------------------------------------------------------------------------------------+
+| reflective     | The normal component of the velocity is systematically reversed. Otherwise identical to ``outflow``.             |
++----------------+------------------------------------------------------------------------------------------------------------------+
+| shearingbox    | Shearing-box boudary conditions.                                                                                 |
++----------------+------------------------------------------------------------------------------------------------------------------+
+| userdef        | | User-defined boundary conditions. The boundary condition function should be enrolled in the setup constructor  |
+|                | | (see setup.cpp)                                                                                                |
++----------------+------------------------------------------------------------------------------------------------------------------+
 
 .. warning::
     As of version 0.5, *Idefix* shearing-box assumes axisymmetry, i.e. NX2=1.
@@ -262,33 +242,35 @@ Command line options
 
 Several options can be provided at command line when running the code. These are listed below
 
-+--------------------+--------------------------------------------------------------------------+
-| Option name        | Comment                                                                  |
-+====================+==========================================================================+
-| -dec n1 n2 n3      | | Specify the MPI domain decomposition. Idefix will decompose the domain |
-|                    | | with n1 MPI processes in X1, n2 MPI processes in X2 and n3 processes   |
-|                    | | in X3. Note the number of arguments to -dec should be equal to         |
-|                    | | ``DIMENSIONS``.                                                        |
-+--------------------+--------------------------------------------------------------------------+
-| -restart           | | specify the number of the dump file *Idefix* should restart from.      |
-|                    | | When used, does not use the inititial conditions from                  |
-|                    | | ``Setup::InitFlow()``                                                  |
-+--------------------+--------------------------------------------------------------------------+
-| -i                 |   specify the name of the input file to be used (default ``idefix.ini``) |
-+--------------------+--------------------------------------------------------------------------+
++--------------------+-------------------------------------------------------------------------------------------------------------------------+
+| Option name        | Comment                                                                                                                 |
++====================+=========================================================================================================================+
+| -dec n1 n2 n3      | | Specify the MPI domain decomposition. Idefix will decompose the domain with n1 MPI processes in X1,                   |
+|                    | | n2 MPI processes in X2 and n3 processes in X3. Note the number of arguments to -dec should be equal to ``DIMENSIONS``.|
++--------------------+-------------------------------------------------------------------------------------------------------------------------+
+| -restart           | | specify the number of the dump file *Idefix* should restart from. When used, does not use the initial                 |
+|                    | | conditions from ``Setup::InitFlow()``                                                                                 |
++--------------------+-------------------------------------------------------------------------------------------------------------------------+
+| -i                 |   specify the name of the input file to be used (default ``idefix.ini``)                                                |
++--------------------+-------------------------------------------------------------------------------------------------------------------------+
 
 In addition to these specific *Idefix* options, several Kokkos Options can be used on the command
 line when running *Idefix*:
 
-+--------------------------+----------------------------------------------------------------------+
-| Option name              | Comment                                                              |
-+==========================+======================================================================+
-| --kokkos-num-devices=x   | | Specify the number of devices (eg CUDA GPU) Kokkos should expect   |
-|                          | | This option is useful when each MPI process should be attached to  |
-|                          | | a different GPU. This option replace --kokkos-ndevices             |
-|                          | | which is now deprecated                                            |
-+--------------------------+----------------------------------------------------------------------+                      
++--------------------------+-------------------------------------------------------------------------------------------------------------------+
+| Option name              | Comment                                                                                                           |
++==========================+===================================================================================================================+
+| --kokkos-num-devices=x   | | Specify the number of devices (eg CUDA GPU) Kokkos should expect. This option is useful when each MPI           |
+|                          | | process should be attached to a different GPU. This option replace --kokkos-ndevices which is now deprecated    |
++--------------------------+-------------------------------------------------------------------------------------------------------------------+                    
 
+Signal Handling
+===============
+
+By default, *Idefix* is designed to capture the ``SIGUSR2`` UNIX signal sent by the host operating system when it is running. When such a signal is captured, *Idefix* finishes
+its current integration step, dumps a restart file and ends. This signal handling is therefore useful to tell *Idefix* that its allocated time for the current
+job is ending, and it is therefore time to stop the integration. Many modern jobs schedulers, such as OAR and SLURM, allow users to send UNIX signals
+before killing the jobs. Read the documentation of your job scheduler for more information.
 
 Migrating from PLUTO
 ====================

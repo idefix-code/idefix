@@ -107,6 +107,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
   IdefixArray4D<real> Flux = this->hydro->FluxRiemann;
   IdefixArray4D<real> viscSrc = this->viscSrc;
   IdefixArray3D<real> dMax = this->hydro->dMax;
+  IdefixArray1D<real> one_dmu = this->one_dmu;
   IdefixArray1D<real> x1 = this->hydro->data->x[IDIR];
   IdefixArray1D<real> x2 = this->hydro->data->x[JDIR];
   IdefixArray1D<real> x3 = this->hydro->data->x[KDIR];
@@ -153,6 +154,10 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
       dVxi = dVxj = dVxk = ZERO_F;
       dVyi = dVyj = dVyk = ZERO_F;
       dVzi = dVzj = dVzk = ZERO_F;
+      
+      ///////////////////////////////////////////
+      // IDIR sweep                            //
+      ///////////////////////////////////////////
 
       if(dir == IDIR) {
         EXPAND(  dVxi = D_DX_I(Vc,VX1)/dx1(i); , 
@@ -307,6 +312,11 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
 
         dMax(k,j,i) += (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k,j,i-1)));
       }
+
+      ///////////////////////////////////////////
+      // JDIR sweep                            //
+      ///////////////////////////////////////////
+
       if(dir == JDIR) {
         EXPAND(  dVxi = D_DX_J(Vc,VX1)/dx1(i);, 
                  dVyi = D_DX_J(Vc,VX2)/dx1(i);, 
@@ -328,8 +338,98 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
           tau_xy = eta1*(dVxj+dVyi);
           tau_yy = 2.0*eta1*dVyj + (eta2 - (2.0/3.0)*eta1)*divV;
           tau_yz = eta1*(dVzj + dVyk);
+        #endif // GEOMETRY == CARTESIAN
+
+        #if GEOMETRY == CYLINDRICAL
+          real vx1i = 0.5*(Vc(VX1,k,j-1,i)+Vc(VX1,k,j,i));
+
+          divV = D_EXPAND(vx1i/x1(i) + dVxi, + dVyj, 0.0);
+
+          tau_xy = eta1*(dVxj+dVyi);
+          tau_yy = 2.0*eta1*dVyj + (eta2 - (2.0/3.0)*eta1)*divV;
+          #if DIMENSIONS == 3
+          tau_yz = eta1*(dVyk);
+          #endif
+
+          // no source term
+          EXPAND( viscSrc(IDIR,k,j,i) = ZERO_F;  ,
+                  viscSrc(JDIR,k,j,i) = ZERO_F;  ,
+                  viscSrc(KDIR,k,j,i) = ZERO_F;  )
+        #endif // GEOMETRY == CYLINDRICAL
+
+        #if GEOMETRY == POLAR
+          real vx1i = 0.5*(Vc(VX1,k,j-1,i)+Vc(VX1,k,j,i));
+          real vx2i = 0.5*(Vc(VX2,k,j-1,i)+Vc(VX2,k,j,i));
+
+          divV = D_EXPAND(vx1i/x1(i) + dVxi, + dVyj/x1(i), + dVzk);
+
+          tau_xy = eta1*(dVxj/x1(i)+dVyi - vx2i/x1(i));
+          tau_yy = 2.0*eta1*(dVyj/x1(i) + vx1i/x1(i)) + (eta2 - (2.0/3.0)*eta1)*divV;
+          tau_yz = eta1*(dVzj/x1(i) + dVyk);
+
+          // no source term
+          EXPAND( viscSrc(IDIR,k,j,i) = ZERO_F;  ,
+                  viscSrc(JDIR,k,j,i) = ZERO_F;  ,
+                  viscSrc(KDIR,k,j,i) = ZERO_F;  )
         #endif
 
+        #if GEOMETRY == SPHERICAL
+          real tan_1 = 1.0/TAN(x2l(j));
+
+          // Trick to ensure that the axis does not lead to Nans
+          if(FABS(TAN(x2l(j))) < 1e-12 ) tan_1 = ZERO_F;
+
+          real s_1 = 1.0/SIN(x2l(j));
+
+          real vx1i = 0.5*(Vc(VX1,k,j-1,i)+Vc(VX1,k,j,i));
+          real vx2i = 0.5*(Vc(VX2,k,j-1,i)+Vc(VX2,k,j,i));
+
+          divV = D_EXPAND( 2.0*vx1i/x1(i) + dVxi,
+                          +(SIN(x2(j))*Vc(VX2,k,j,i) - FABS(SIN(x2(j-1)))*Vc(VX2,k,j-1,i))/x1(i)
+                           *one_dmu(j) , 
+                          + dVzk/x1(i)*s_1 );
+          
+          
+          // tau_xy is initially cell centered since it is involved in the source term
+          tau_xy = eta1*( 0.5*(Vc(VX1,k,j+1,i)-Vc(VX1,k,j-1,i))/x1(i)/dx2(j) - Vc(VX2,k,j,i)/x1(i));
+          tau_yy = 2.0*eta1*(dVyj/x1(i) + vx1i/x1(i)) + (eta2 - (2.0/3.0)*eta1)*divV;
+
+          tau_yz = dVzj/x1(i);
+          #if COMPONENTS == 3 
+            tau_yz += -tan_1/x1(i)*0.5*(Vc(VX3,k,j-1,i)+Vc(VX3,k,j,i));
+          #endif
+          #if DIMENSIONS == 3
+            tau_yz += s_1/x1(i)*dVyk;
+          #endif
+
+          // Compute cell-centered divV & sources terms
+          tan_1 = 1.0/TAN(x2(j));
+          s_1 = 1.0/SIN(x2(j));
+
+          divV = D_EXPAND( 0.5*(Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i-1))/dx1(i) + 2.0*Vc(VX1,k,j,i)/x1(i),
+                           +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i) 
+                           +Vc(VX2,k,j,i)/x1(i)*tan_1                                        ,
+                           +0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3(k)/x1(i)*s_1 );
+
+          tau_zz = Vc(VX1,k,j,i)/x1(i);
+          #if COMPONENTS >= 2
+            tau_zz += Vc(VX2,k,j,i)/x1(i)*tan_1;
+          #endif
+          #if DIMENSIONS == 3
+            tau_zz += 0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3(k)/x1(i)*s_1;
+          #endif
+          tau_zz = 2*eta1*tau_zz + (eta2-2.0/3.0*eta1)*divV;
+
+          EXPAND( viscSrc(IDIR,k,j,i) = ZERO_F;  ,
+                  viscSrc(JDIR,k,j,i) = (tau_xy - tau_zz*tan_1)/x1(i);  ,
+                  viscSrc(KDIR,k,j,i) = ZERO_F;  )
+
+
+          // New tau_xy, this time face-centered
+          tau_xy = eta1*(dVxj/x1(i)+dVyi - vx2i/x1(i));
+
+
+        #endif
         // Update flux with the stress tensor
         EXPAND( Flux(MX1, k, j, i) -= tau_xy; ,
                 Flux(MX2, k, j, i) -= tau_yy; ,
@@ -343,6 +443,11 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
 
         dMax(k,j,i) += (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k,j-1,i)));
       }
+
+      ///////////////////////////////////////////
+      // KDIR sweep                            //
+      ///////////////////////////////////////////
+
       if(dir == KDIR) {
         dVxi = D_DX_K(Vc,VX1)/dx1(i); 
         dVyi = D_DX_K(Vc,VX2)/dx1(i); 

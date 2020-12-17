@@ -47,10 +47,11 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
 
 #if MHD == YES
   Vs = Kokkos::create_mirror_view(data->hydro.Vs);
+  this->haveCurrent = data->hydro.haveCurrent;
   if(data->hydro.haveCurrent) {
-    this->haveCurrent = data->hydro.haveCurrent;
     J = Kokkos::create_mirror_view(data->hydro.J);
   }
+  
   D_EXPAND( Ex3 = Kokkos::create_mirror_view(data->hydro.emf.ez);  ,
                                                              ,
             Ex1 = Kokkos::create_mirror_view(data->hydro.emf.ex);

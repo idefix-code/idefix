@@ -73,7 +73,7 @@ void Viscosity::Init(Input &input, Grid &grid, Hydro *hydroin) {
 
   // Allocate and fill arrays when needed
   #if GEOMETRY != CARTESIAN
-    one_dmu = IDefixArray1D<real>("Viscosity_1dmu", hydro->data->np_tot[JDIR]);
+    one_dmu = IdefixArray1D<real>("Viscosity_1dmu", hydro->data->np_tot[JDIR]);
     IdefixArray1D<real> th = hydro->data->x[JDIR];
     idefix_for("ViscousInitGeometry",1,hydro->data->np_tot[JDIR],
       KOKKOS_LAMBDA(int j) {

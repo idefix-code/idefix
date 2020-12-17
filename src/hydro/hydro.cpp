@@ -268,6 +268,8 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
     this->haveCurrent = true;
     J = IdefixArray4D<real>("Hydro_J", 3,
                             data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+  } else {
+    this->haveCurrent = false;
   }
 
   // Allocate nonideal MHD effects array when a user-defined function is used

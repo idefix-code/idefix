@@ -105,6 +105,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
   idfx::pushRegion("Viscosity::AddViscousFlux");
   IdefixArray4D<real> Vc = this->hydro->Vc;
   IdefixArray4D<real> Flux = this->hydro->FluxRiemann;
+  IdefixArray4D<real> viscSrc = this->viscSrc;
   IdefixArray3D<real> dMax = this->hydro->dMax;
   IdefixArray1D<real> x1 = this->hydro->data->x[IDIR];
   IdefixArray1D<real> x2 = this->hydro->data->x[JDIR];
@@ -175,7 +176,122 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
           tau_xx = 2.0*eta1*dVxi + (eta2 - (2.0/3.0)*eta1)*divV;
           tau_xy = eta1*(dVxj + dVyi);
           tau_xz = eta1*(dVxk + dVzi);
-        #endif
+
+        // No source term in cartesian geometry
+        #endif // GEOMETRY == CARTESIAN
+        #if GEOMETRY == CYLINDRICAL
+          real one_dVr = x1(i)*FABS(x1(i))-x1(i-1)*FABS(x1(i-1));
+          real drrVr = (Vc(VX1,k,j,i)*x1(i)- Vc(VX1,k,j,i-1)*FABS(x1(i-1)))*one_dVr;
+          divV = D_EXPAND( drrVr, + dVyj, +ZERO_F);
+
+          tau_xx = 2.0*eta1*drrVr + (eta2 - (2.0/3.0)*eta1)*divV;
+          tau_xy = eta1*(dVxj + dVyi);
+          SELECT(  ,  
+                   , 
+                 tau_xz = eta1*0.5*(x1(i)+x1(i-1))/dx1(i)
+                          *(Vc(VX3,k,j,i)/x1(i) - Vc(VX3,k,j,i-1)/x1(i-1)); )
+
+          tau_xz = eta1*(dVxk + dVzi);
+
+          // compute tau_zz at cell center
+          divV = D_EXPAND(  0.5*(Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i-1))/dx1(i) + Vc(VX1,k,j,i)/x1(i),
+                           +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)                      ,
+                                                                                                 );
+          tau_zz = 2.0*eta1*Vc(VX1,k,j,i)/x1(i) + (eta2 - (2.0/3.0)*eta1)*divV;
+
+          EXPAND( viscSrc(IDIR,k,j,i) =  -tau_zz/x1(i);  ,
+                  viscSrc(JDIR,k,j,i) = ZERO_F;          ,
+                  viscSrc(KDIR,k,j,i) = ZERO_F;          )
+
+
+        #endif // GEOMETRY == CYLINDRICAL
+        #if GEOMETRY == POLAR
+          real vx1i = 0.5*(Vc(VX1,k,j,i-1)+Vc(VX1,k,j,i));
+          #if COMPONENTS >= 2
+            real vx2i = 0.5*(Vc(VX2,k,j,i-1)+Vc(VX2,k,j,i));
+          #endif
+
+          divV = D_EXPAND(vx1i/x1l(i) + dVxi, + dVyj/x1l(i), + dVzk);
+
+          tau_xx = 2.0*eta1*dVxi + (eta2 - (2.0/3.0)*eta1)*divV;
+          #if DIMENSIONS == 1
+            tau_xy = eta1*dVyi;
+          #else
+            tau_xy = eta1*(dVxj/x1l(i) + dVyi - vx2i/x1l(i));
+          #endif
+          tau_xz = eta1*(dVxk + dVzi);
+
+
+          // compute tau_yy at cell center
+          divV = D_EXPAND(  0.5*(Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i-1))/dx1(i) + Vc(VX1,k,j,i)/x1(i),
+                           +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i)                ,
+                           +0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3(k)                      ); 
+                           
+          #if DIMENSIONS == 1
+            tau_yy = 2.0*eta1*( Vc(VX1,k,j,i)/x1(i)) + (eta2 - (2.0/3.0)*eta1)*divV;
+          #else
+            tau_yy = 2.0*eta1*( 0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i) 
+                                + Vc(VX1,k,j,i)/x1(i)) 
+                                + (eta2 - (2.0/3.0)*eta1)*divV;
+          #endif
+          EXPAND( viscSrc(IDIR,k,j,i) =  -tau_yy/x1(i);  ,
+                  viscSrc(JDIR,k,j,i) = ZERO_F;          ,
+                  viscSrc(KDIR,k,j,i) = ZERO_F;          )
+        #endif // GEOMETRY == POLAR
+        #if GEOMETRY == SPHERICAL
+          real tan_1 = 1.0/TAN(x2(j));
+          real s_1 = 1.0/SIN(x2(j));
+
+          real vx1i = 0.5*(Vc(VX1,k,j,i-1)+Vc(VX1,k,j,i));
+          #if COMPONENTS >= 2
+            real vx2i = 0.5*(Vc(VX2,k,j,i-1)+Vc(VX2,k,j,i));
+          #endif
+          divV = D_EXPAND(2.0*vx1i/x1l(i) + dVxi, 
+                          + dVyj/x1l(i) + tan_1*vx2i/x1l(i), 
+                          + dVzk/x1l(i)*s_1 );
+
+          tau_xx = 2.0*eta1*dVxi + (eta2 - (2.0/3.0)*eta1)*divV;
+
+          tau_xy = dVxj + dVyi/x1l(i);
+          #if COMPONENTS >= 2
+          tau_xy += - vx2i/x1l(i);
+          #endif
+          tau_xy *= eta1;
+
+          tau_xz = dVxk + dVzi*s_1/x1l(i);
+          #if COMPONENTS == 3
+            tau_xz += - 0.5*(Vc(VX3,k,j,i-1)+Vc(VX3,k,j,i))/x1l(i);
+          #endif
+          tau_xz *= eta1;
+
+          // Compute tau_yy and tau_zz at cell center
+
+          divV = D_EXPAND( 0.5*(Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i-1))/dx1(i) + 2.0*Vc(VX1,k,j,i)/x1(i),
+                           +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i) 
+                           +Vc(VX2,k,j,i)/x1(i)*tan_1                                        ,
+                           +0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3(k)/x1(i)*s_1 );
+
+          tau_yy = Vc(VX1,k,j,i)/x1(i);
+          #if DIMENSIONS >= 2
+            tau_yy += 0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i);
+          #endif
+          tau_yy = 2.0*eta1*tau_yy + (eta2-2.0/3.0*eta1)*divV;
+
+          tau_zz = Vc(VX1,k,j,i)/x1(i);
+          #if COMPONENTS >= 2
+            tau_zz += Vc(VX2,k,j,i)*tan_1/x1(i);
+          #endif
+          #if DIMENSIONS == 3
+            tau_zz += 0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3(k)/x1(i)*s_1;
+          #endif
+          tau_zz = 2.0*eta1*tau_zz + (eta2-2.0/3.0*eta1)*divV;
+
+          EXPAND( viscSrc(IDIR,k,j,i) =  -(tau_yy + tau_zz)/x1(i);  ,
+                  viscSrc(JDIR,k,j,i) = ZERO_F;          ,
+                  viscSrc(KDIR,k,j,i) = ZERO_F;          )
+          
+
+        #endif // GEOMETRY == SPHERICAL
 
         // Update flux with the stress tensor
         EXPAND( Flux(MX1, k, j, i) -= tau_xx; ,

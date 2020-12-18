@@ -465,7 +465,44 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
           tau_xz = eta1*(dVxk+dVzi);
           tau_yz = eta1*(dVyk+dVzj);
           tau_zz = 2.0*eta1*dVzk + (eta2 - (2.0/3.0)*eta1)*divV;
-        #endif
+        #endif // GEOMETRY == CARTESIAN
+
+        #if GEOMETRY == POLAR
+          real vx1i = 0.5*(Vc(VX1,k-1,j,i)+Vc(VX1,k,j,i));
+
+          divV = vx1i/x1(i) + dVxi, + dVyj/x1(i), + dVzk;
+
+          tau_xz = eta1*(dVxk+dVzi);
+          tau_yz = eta1*(dVyk+dVzj);
+          tau_zz = 2.0*eta1*dVzk + (eta2 - (2.0/3.0)*eta1)*divV;
+
+          viscSrc(IDIR,k,j,i) = ZERO_F;
+          viscSrc(JDIR,k,j,i) = ZERO_F;
+          viscSrc(KDIR,k,j,i) = ZERO_F;
+
+        #endif // GEOMETRY == POLAR
+
+        #if GEOMETRY == SPHERICAL
+          real tan_1 = 1.0/TAN(x2(j));
+          real s_1 = 1/0/TAN(x2(k));
+
+
+          real vx1i = 0.5*(Vc(VX1,k-1,j,i)+Vc(VX1,k,j,i));
+          real vx2i = 0.5*(Vc(VX2,k-1,j,i)+Vc(VX2,k,j,i));
+          real vx3i = 0.5*(Vc(VX3,k-1,j,i)+Vc(VX3,k,j,i));
+
+          divV = 2.0*vx1i/x1(i) + dVxi + dVyj/x1(i) + tan_1*vx2i/x1(i) + dVzk/x1(i)*s_1 ;
+
+          tau_xz = eta1*(dVxk*s_1/x1(i) + dVzi - vx3i/x1(i));
+          tau_yz = eta1*(dVyk*s_1/x1(i) + dVzj/x1(i) - vx3i*tan_1/x1(i));
+          tau_zz = 2.0*eta1*( dVzk*s_1/x1(i) + vx1i/x1(i) + vx2i*tan_1/x1(i))
+                    + (eta2 - (2.0/3.0)*eta1)*divV;
+
+          viscSrc(IDIR,k,j,i) = ZERO_F;
+          viscSrc(JDIR,k,j,i) = ZERO_F;
+          viscSrc(KDIR,k,j,i) = ZERO_F;
+          
+        #endif //GEOMETRY == SPHERICAL
 
         // Update flux with the stress tensor
         EXPAND( Flux(MX1, k, j, i) -= tau_xz; ,

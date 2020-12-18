@@ -45,14 +45,17 @@ void Viscosity::Init(Input &input, Grid &grid, Hydro *hydroin) {
   idfx::pushRegion("Viscosity::Init");
   // Save the parent hydro object
   this->hydro = hydroin;
-  idfx::cout << "Hydro:" << hydroin << std::endl;
+
   if(input.CheckEntry("Hydro","Viscosity")>=0) {
     if(input.GetString("Hydro","Viscosity",0).compare("constant") == 0) {
-        idfx::cout << "Viscosity: Enabling constant viscosity function." << std::endl;
         this->eta1 = input.GetReal("Hydro","Viscosity",1);
+        idfx::cout << "Viscosity: Enabling constant viscosity function with eta1="
+                   << this->eta1 << " ."<< std::endl;
         // second viscosity?
         if(input.CheckEntry("Hydro","Viscosity")>2) {
           this->eta2 = input.GetReal("Hydro","Viscosity",2);
+          idfx::cout << "Viscosity: eta2="
+                   << this->eta2 << " ."<< std::endl;
         } else {
           this->eta2 = 0.0;
           idfx::cout << "Viscosity: Second viscosity not provided. Assuming it is 0." << std::endl;
@@ -501,7 +504,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
           viscSrc(IDIR,k,j,i) = ZERO_F;
           viscSrc(JDIR,k,j,i) = ZERO_F;
           viscSrc(KDIR,k,j,i) = ZERO_F;
-          
+
         #endif //GEOMETRY == SPHERICAL
 
         // Update flux with the stress tensor

@@ -16,3 +16,10 @@ test/**/*.vtk
 test/**/*.dmp
 test/**/*.tmp
 test/**/Makefile
+
+# machine specific cache and hidden files
+.*
+
+# tmp files
+*~
+*\#

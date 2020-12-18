@@ -473,7 +473,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
         #if GEOMETRY == POLAR
           real vx1i = 0.5*(Vc(VX1,k-1,j,i)+Vc(VX1,k,j,i));
 
-          divV = vx1i/x1(i) + dVxi, + dVyj/x1(i), + dVzk;
+          divV = vx1i/x1(i) + dVxi + dVyj/x1(i) + dVzk;
 
           tau_xz = eta1*(dVxk+dVzi);
           tau_yz = eta1*(dVyk+dVzj);

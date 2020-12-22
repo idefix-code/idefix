@@ -24,6 +24,8 @@ void Hydro::AddSourceTerms(real t, real dt) {
   real OmegaX1 = this->OmegaX1;
   real OmegaX2 = this->OmegaX2;
   real OmegaX3 = this->OmegaX3;
+
+  real C2Iso = this->C2Iso;
   bool haveRotation = this->haveRotation;
 
   if(haveUserSourceTerm) userSourceTerm(*data, t, dt);
@@ -74,7 +76,11 @@ void Hydro::AddSourceTerms(real t, real dt) {
       Sm = Vc(RHO,k,j,i) * vphi*vphi;     // Centrifugal
       // Pressure (because we're including pressure in the flux,
       // we need that to get the radial pressure gradient)
+#ifdef ISOTHERMAL
+      Sm += Vc(RHO,k,j,i)*C2Iso;
+#else
       Sm += Vc(PRS,k,j,i);
+#endif
   #if MHD==YES
       Sm -=  Vc(iBPHI,k,j,i)*Vc(iBPHI,k,j,i); // Hoop stress
       // Magnetic pressus

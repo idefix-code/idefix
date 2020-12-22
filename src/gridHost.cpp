@@ -171,6 +171,9 @@ void GridHost::MakeGrid(Input &input) {
         case outflow:
           lboundString="outflow";
           break;
+        case reflective:
+          lboundString="reflective";
+          break;
         case periodic:
           lboundString="periodic";
           break;
@@ -189,6 +192,9 @@ void GridHost::MakeGrid(Input &input) {
       switch(rbound[dir]) {
         case outflow:
           rboundString="outflow";
+          break;
+        case reflective:
+          rboundString="reflective";
           break;
         case periodic:
           rboundString="periodic";

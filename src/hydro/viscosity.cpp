@@ -99,7 +99,7 @@ void Viscosity::Init(Input &input, Grid &grid, Hydro *hydroin) {
 }
 
 
-void Viscosity::EnrollViscousDiffusivity(DiffusivityFunc myFunc) {
+void Viscosity::EnrollViscousDiffusivity(ViscousDiffusivityFunc myFunc) {
   if(this->haveViscosity < UserDefFunction) {
     IDEFIX_ERROR("Viscous diffusivity enrollment requires Hydro/Viscosity "
                  "to be set to userdef in .ini file");
@@ -134,9 +134,9 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
   // Compute viscosity if needed
   if(haveViscosity == UserDefFunction && dir == IDIR) {
     if(viscousDiffusivityFunc) {
-      viscousDiffusivityFunc(*data, t, eta1Arr, eta2Arr);
+      viscousDiffusivityFunc(*this->hydro->data, t, eta1Arr, eta2Arr);
     } else {
-      IDEFIX_ERROR("No user-defined viscosity function has been enrolled");)
+      IDEFIX_ERROR("No user-defined viscosity function has been enrolled");
     }
   }
 

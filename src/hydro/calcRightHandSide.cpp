@@ -158,7 +158,7 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
         rhs[iMPHI] = rhs[iMPHI] / x1(i);
   #endif
 
-  #if (GEOMETRY == POLAR || GEOMETRY == CYLINDRICAL) &&  (defined iBPHI)
+  #if (GEOMETRY == POLAR || GEOMETRY == CYLINDRICAL) &&  (defined iBPHI) && (MHD == YES)
         rhs[iBPHI] = - dt / dx(i) * (Flux(iBPHI, k, j, i+1) - Flux(iBPHI, k, j, i) );
 
   #elif (GEOMETRY == SPHERICAL) && (MHD == YES)

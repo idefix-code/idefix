@@ -25,7 +25,7 @@ class Viscosity {
   void AddViscousFlux(int, const real);
 
   // Enroll user-defined viscous diffusivity
-  void EnrollViscousDiffusivity(DiffusivityFunc);
+  void EnrollViscousDiffusivity(ViscousDiffusivityFunc);
 
   IdefixArray4D<real> viscSrc;  // Source terms of the viscous operator
   IdefixArray3D<real> eta1Arr;

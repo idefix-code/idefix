@@ -13,6 +13,9 @@
 // Forward class hydro declaration
 class Hydro;
 
+using ViscousDiffusivityFunc = void (*) (DataBlock &, const real t,
+                                         IdefixArray3D<real> &, IdefixArray3D<real> &);
+
 class Viscosity {
  public:
   Viscosity();  // Default (empty) constructor
@@ -25,6 +28,8 @@ class Viscosity {
   void EnrollViscousDiffusivity(DiffusivityFunc);
 
   IdefixArray4D<real> viscSrc;  // Source terms of the viscous operator
+  IdefixArray3D<real> eta1Arr;
+  IdefixArray3D<real> eta2Arr;
 
   // pre-computed geometrical factors in non-cartesian geometry
   IdefixArray1D<real> one_dmu;
@@ -34,10 +39,11 @@ class Viscosity {
 
   // type of viscosity function
   ParabolicType haveViscosity;
-  DiffusivityFunc viscousDiffusivityFunc;
+  ViscousDiffusivityFunc viscousDiffusivityFunc;
   
   // constant diffusion coefficient (when needed)
   real eta1, eta2;
+
 
 
 

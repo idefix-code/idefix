@@ -65,6 +65,13 @@ void Viscosity::Init(Input &input, Grid &grid, Hydro *hydroin) {
         idfx::cout << "Viscosity: Enabling user-defined viscosity function."
                    << std::endl;
         this->haveViscosity = UserDefFunction;
+        this->eta1Arr = IdefixArray3D<real>("ViscosityEta1Array",hydro->data->np_tot[KDIR],
+                                                                 hydro->data->np_tot[JDIR],
+                                                                 hydro->data->np_tot[IDIR]);
+        this->eta2Arr = IdefixArray3D<real>("ViscosityEta1Array",hydro->data->np_tot[KDIR],
+                                                                 hydro->data->np_tot[JDIR],
+                                                                 hydro->data->np_tot[IDIR]);
+
       } else {
         IDEFIX_ERROR("Unknown viscosity definition in idefix.ini. "
                      "Can only be constant or userdef.");
@@ -110,6 +117,8 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
   IdefixArray4D<real> Flux = this->hydro->FluxRiemann;
   IdefixArray4D<real> viscSrc = this->viscSrc;
   IdefixArray3D<real> dMax = this->hydro->dMax;
+  IdefixArray3D<real> eta1Arr = this->eta1Arr;
+  IdefixArray3D<real> eta2Arr = this->eta2Arr;
   IdefixArray1D<real> one_dmu = this->one_dmu;
   IdefixArray1D<real> x1 = this->hydro->data->x[IDIR];
   IdefixArray1D<real> x2 = this->hydro->data->x[JDIR];
@@ -121,6 +130,15 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
   IdefixArray1D<real> dx2 = this->hydro->data->dx[JDIR];
   IdefixArray1D<real> dx3 = this->hydro->data->dx[KDIR];
 
+
+  // Compute viscosity if needed
+  if(haveViscosity == UserDefFunction && dir == IDIR) {
+    if(viscousDiffusivityFunc) {
+      viscousDiffusivityFunc(*data, t, eta1Arr, eta2Arr);
+    } else {
+      IDEFIX_ERROR("No user-defined viscosity function has been enrolled");)
+    }
+  }
 
   int ibeg, iend, jbeg, jend, kbeg, kend;
   ibeg = this->hydro->data->beg[IDIR];
@@ -135,8 +153,8 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
   if(dir==JDIR) jend++;
   if(dir==KDIR) kend++;
 
-  real eta1 = this->eta1;
-  real eta2 = this->eta2; 
+  real eta1Constant = this->eta1;
+  real eta2Constant = this->eta2; 
 
   idefix_for("ViscousFlux",kbeg, kend, jbeg, jend, ibeg, iend,
     KOKKOS_LAMBDA (int k, int j, int i) {
@@ -157,12 +175,24 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
       dVxi = dVxj = dVxk = ZERO_F;
       dVyi = dVyj = dVyk = ZERO_F;
       dVzi = dVzj = dVzk = ZERO_F;
+
+      real eta1, eta2;
+      real etaC1, etaC2;
       
       ///////////////////////////////////////////
       // IDIR sweep                            //
       ///////////////////////////////////////////
-
       if(dir == IDIR) {
+        if(haveViscosity == UserDefFunction) {
+          etaC1 = eta1Arr(k,j,i);
+          eta1 = HALF_F*(eta1Arr(k,j,i-1)+eta1Arr(k,j,i));
+          etaC2 = eta2Arr(k,j,i);
+          eta2 = HALF_F*(eta2Arr(k,j,i-1)+eta2Arr(k,j,i));
+        } else {
+          etaC1 = eta1 = eta1Constant;
+          etaC2 = eta2 = eta2Constant;
+        }
+
         EXPAND(  dVxi = D_DX_I(Vc,VX1)/dx1(i); , 
                  dVyi = D_DX_I(Vc,VX2)/dx1(i); , 
                  dVzi = D_DX_I(Vc,VX3)/dx1(i); )
@@ -205,7 +235,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
           divV = D_EXPAND(  0.5*(Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i-1))/dx1(i) + Vc(VX1,k,j,i)/x1(i),
                            +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)                      ,
                                                                                                  );
-          tau_zz = 2.0*eta1*Vc(VX1,k,j,i)/x1(i) + (eta2 - (2.0/3.0)*eta1)*divV;
+          tau_zz = 2.0*etaC1*Vc(VX1,k,j,i)/x1(i) + (etaC2 - (2.0/3.0)*etaC1)*divV;
 
           EXPAND( viscSrc(IDIR,k,j,i) =  -tau_zz/x1(i);  ,
                   viscSrc(JDIR,k,j,i) = ZERO_F;          ,
@@ -236,11 +266,11 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
                            +0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3(k)                      ); 
                            
           #if DIMENSIONS == 1
-            tau_yy = 2.0*eta1*( Vc(VX1,k,j,i)/x1(i)) + (eta2 - (2.0/3.0)*eta1)*divV;
+            tau_yy = 2.0*etaC1*( Vc(VX1,k,j,i)/x1(i)) + (etaC2 - (2.0/3.0)*etaC1)*divV;
           #else
-            tau_yy = 2.0*eta1*( 0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i) 
+            tau_yy = 2.0*etaC1*( 0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i) 
                                 + Vc(VX1,k,j,i)/x1(i)) 
-                                + (eta2 - (2.0/3.0)*eta1)*divV;
+                                + (etaC2 - (2.0/3.0)*etaC1)*divV;
           #endif
           EXPAND( viscSrc(IDIR,k,j,i) =  -tau_yy/x1(i);  ,
                   viscSrc(JDIR,k,j,i) = ZERO_F;          ,
@@ -283,7 +313,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
           #if DIMENSIONS >= 2
             tau_yy += 0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i);
           #endif
-          tau_yy = 2.0*eta1*tau_yy + (eta2-2.0/3.0*eta1)*divV;
+          tau_yy = 2.0*etaC1*tau_yy + (etaC2-2.0/3.0*etaC1)*divV;
 
           tau_zz = Vc(VX1,k,j,i)/x1(i);
           #if COMPONENTS >= 2
@@ -292,7 +322,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
           #if DIMENSIONS == 3
             tau_zz += 0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3(k)/x1(i)*s_1;
           #endif
-          tau_zz = 2.0*eta1*tau_zz + (eta2-2.0/3.0*eta1)*divV;
+          tau_zz = 2.0*etaC1*tau_zz + (etaC2-2.0/3.0*etaC1)*divV;
 
           EXPAND( viscSrc(IDIR,k,j,i) =  -(tau_yy + tau_zz)/x1(i);  ,
                   viscSrc(JDIR,k,j,i) = ZERO_F;          ,
@@ -321,6 +351,16 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
       ///////////////////////////////////////////
 
       if(dir == JDIR) {
+        if(haveViscosity == UserDefFunction) {
+          etaC1 = eta1Arr(k,j,i);
+          eta1 = HALF_F*(eta1Arr(k,j-1,i)+eta1Arr(k,j,i));
+          etaC2 = eta2Arr(k,j,i);
+          eta2 = HALF_F*(eta2Arr(k,j-1,i)+eta2Arr(k,j,i));
+        } else {
+          etaC1 = eta1 = eta1Constant;
+          etaC2 = eta2 = eta2Constant;
+        }
+
         EXPAND(  dVxi = D_DX_J(Vc,VX1)/dx1(i);, 
                  dVyi = D_DX_J(Vc,VX2)/dx1(i);, 
                  dVzi = D_DX_J(Vc,VX3)/dx1(i); )
@@ -394,7 +434,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
           
           
           // tau_xy is initially cell centered since it is involved in the source term
-          tau_xy = eta1*( 0.5*(Vc(VX1,k,j+1,i)-Vc(VX1,k,j-1,i))/x1(i)/dx2(j) - Vc(VX2,k,j,i)/x1(i));
+          tau_xy = etaC1*( 0.5*(Vc(VX1,k,j+1,i)-Vc(VX1,k,j-1,i))/x1(i)/dx2(j) - Vc(VX2,k,j,i)/x1(i));
           tau_yy = 2.0*eta1*(dVyj/x1(i) + vx1i/x1(i)) + (eta2 - (2.0/3.0)*eta1)*divV;
 
           tau_yz = dVzj/x1(i);
@@ -452,6 +492,16 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
       ///////////////////////////////////////////
 
       if(dir == KDIR) {
+        if(haveViscosity == UserDefFunction) {
+          etaC1 = eta1Arr(k,j,i);
+          eta1 = HALF_F*(eta1Arr(k-1,j,i)+eta1Arr(k,j,i));
+          etaC2 = eta2Arr(k,j,i);
+          eta2 = HALF_F*(eta2Arr(k-1,j,i)+eta2Arr(k,j,i));
+        } else {
+          etaC1 = eta1 = eta1Constant;
+          etaC2 = eta2 = eta2Constant;
+        }
+
         dVxi = D_DX_K(Vc,VX1)/dx1(i); 
         dVyi = D_DX_K(Vc,VX2)/dx1(i); 
         dVzi = D_DX_K(Vc,VX3)/dx1(i);

@@ -29,6 +29,7 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
   IdefixArray3D<real> invDt = this->InvDt;
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> dMax = this->dMax;
+  IdefixArray4D<real> viscSrc = this->viscosity.viscSrc;
 
   // Gravitational potential
   IdefixArray3D<real> phiP = this->phiP;
@@ -36,6 +37,9 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
 
   // parabolic terms
   bool haveParabolicTerms = this->haveParabolicTerms;
+
+  // Viscosity
+  bool haveViscosity = this->haveViscosity;
 
   if(needPotential) {
     IdefixArray1D<real> x1,x2,x3;
@@ -154,7 +158,7 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
         rhs[iMPHI] = rhs[iMPHI] / x1(i);
   #endif
 
-  #if (GEOMETRY == POLAR || GEOMETRY == CYLINDRICAL) &&  (defined iBPHI)
+  #if (GEOMETRY == POLAR || GEOMETRY == CYLINDRICAL) &&  (defined iBPHI) && (MHD == YES)
         rhs[iBPHI] = - dt / dx(i) * (Flux(iBPHI, k, j, i+1) - Flux(iBPHI, k, j, i) );
 
   #elif (GEOMETRY == SPHERICAL) && (MHD == YES)
@@ -172,6 +176,14 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
   #endif // GEOMETRY
       }
       // Nothing for KDIR
+
+      // Viscosity source terms
+      if(haveViscosity) {
+#pragma unroll
+        for(int nv = 0 ; nv < COMPONENTS ; nv++) {
+          rhs[nv + VX1] += dt*viscSrc(nv,k,j,i);
+        }
+      }
 
 #endif // GEOMETRY != CARTESIAN
 

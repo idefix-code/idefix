@@ -115,11 +115,15 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
   this->MakeGeometry();
 
   // Initialize the hydro object attached to this datablock
-  this->hydro = Hydro(input, grid, this);
+  this->hydro.Init(input, grid, this);
 
   // Init MPI stack when needed
 #ifdef WITH_MPI
   mpi.InitFromDataBlock(this);
 #endif
   idfx::popRegion();
+}
+
+void DataBlock::ResetStage() {
+  this->hydro.ResetStage();
 }

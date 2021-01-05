@@ -11,8 +11,8 @@
 #include "hydro.hpp"
 
 
-Hydro::Hydro(Input &input, Grid &grid, DataBlock *datain) {
-  idfx::pushRegion("Hydro::Hydro(input)");
+void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
+  idfx::pushRegion("Hydro::Init");
   // Save the datablock to which we are attached from now on
   this->data = datain;
 
@@ -135,6 +135,9 @@ Hydro::Hydro(Input &input, Grid &grid, DataBlock *datain) {
   // Parabolic term
   haveParabolicTerms = false;
 
+  // Viscosity
+  haveViscosity = false;
+
   // Nonideal MHD
   haveResistivity = Disabled;
   haveHall = Disabled;
@@ -145,6 +148,13 @@ Hydro::Hydro(Input &input, Grid &grid, DataBlock *datain) {
   hallDiffusivityFunc = NULL;
 
   this->needCurrent = false;
+
+  // Check whether viscosity is enabled, if so, construct a viscosity object
+  if(input.CheckEntry("Hydro","Viscosity")>=0) {
+    this->haveParabolicTerms = true;
+    this->haveViscosity = true;
+    this->viscosity.Init(input, grid, this);
+  }
 
 #if MHD == YES
   if(input.CheckEntry("Hydro","Resistivity")>=0 ||
@@ -258,6 +268,8 @@ Hydro::Hydro(Input &input, Grid &grid, DataBlock *datain) {
     this->haveCurrent = true;
     J = IdefixArray4D<real>("Hydro_J", 3,
                             data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+  } else {
+    this->haveCurrent = false;
   }
 
   // Allocate nonideal MHD effects array when a user-defined function is used
@@ -396,4 +408,19 @@ real Hydro::GetGamma() {
 
 real Hydro::GetC2iso() {
   return(this->C2Iso);
+}
+
+void Hydro::ResetStage() {
+  // Reset variables required at the beginning of each stage
+  // (essentially linked to timestep evaluation)
+  idfx::pushRegion("Hydro::ResetStage");
+
+  IdefixArray3D<real> InvDt=this->InvDt;
+
+  idefix_for("HydroResetStage",0,data->np_tot[KDIR],0,data->np_tot[JDIR],0,data->np_tot[IDIR],
+    KOKKOS_LAMBDA (int k, int j, int i) {
+      InvDt(k,j,i) = ZERO_F;
+  });
+
+  idfx::popRegion();
 }

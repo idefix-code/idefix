@@ -51,9 +51,9 @@ From there, one sees 3 files and a directory:
 
 For the time being, the files are already set up for the Sod test problem. The only thing lacking is a ``makefile`` to actually compile the code.
 In *Idefix* the makefile is created by the ``configure.py`` script located in ``$IDEFIX_DIR``. For this quickstart, let us configure the code to run on
-the cpu in serial. Assuming a ``python 3`` interpreter is in the PATH, we simply type in::
+the cpu in serial. Assuming a ``python3`` interpreter is in the PATH, we simply type in::
 
-    python $IDEFIX_DIR/configure.py
+    python3 $IDEFIX_DIR/configure.py
 
 .. tip::
     If you want to use a specific C++ compiler which is not the default one on your configuration, you can add the ``-cxx=MyCompiler`` option to the configure script.
@@ -63,11 +63,11 @@ Finally, we compile and run the code::
     make -j 8
     ./idefix
     
-This test being one dimensional, it runs very fast. We can check that the final solution match the prediction of the shock tube problem. To this end, we go to the python
+This test being one dimensional, it runs very fast. We can check that the final solution match the prediction of the shock tube problem. To this end, we go to the ``python``
 subdirectory and run the test::
 
     cd python
-    python ./testidefix.py
+    python3 ./testidefix.py
 
 If everything goes well, ``testidefix.py`` will load the latest output produced by idefix, display it, compare it with an analytical solution and tell you 
 whether the error is acceptable or not.
@@ -82,7 +82,7 @@ The Orszag-Tang problem is a well known test problem for MHD codes. The configur
 As in the Sod test problem, there are 3 files in that directory which completely define the Orszag Tang test problem. We now need to configure the
 test with::
 
-    python $IDEFIX_DIR/configure.py -mhd
+    python3 $IDEFIX_DIR/configure.py -mhd
 
 .. caution::
     Do not forget the ``-mhd`` option to the configure script to tell *idefix* that you want to solve for MHD, otherwise *idefix* is compiled with hydro modules only. There is very little chance
@@ -99,14 +99,14 @@ to check that the last output is consistent with the reference output.
 .. tip::
     Given that the Orszag-Tang test can take a long time, you may want to accelerate your computation with a little bit of parallelisation. This can be done with openmp (assuming you have an openmp-compatible compiler)::
 
-        python $IDEFIX_DIR/configure.py -mhd -openmp
+        python3 $IDEFIX_DIR/configure.py -mhd -openmp
         make -j 8
         export OMP_NUM_THREADS=4
         ./idefix
 
     or assuming a MPI library is installed on your machine::
 
-        python $IDEFIX_DIR/configure.py -mhd -mpi
+        python3 $IDEFIX_DIR/configure.py -mhd -mpi
         make -j 8
         mpirun -np 4 ./idefix
 

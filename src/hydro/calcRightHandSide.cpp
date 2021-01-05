@@ -179,7 +179,7 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
 
       // Viscosity source terms
       if(haveViscosity) {
-        #pragma unroll
+#pragma unroll
         for(int nv = 0 ; nv < COMPONENTS ; nv++) {
           rhs[nv + VX1] += dt*viscSrc(nv,k,j,i);
         }

@@ -40,14 +40,9 @@ class Viscosity {
   // type of viscosity function
   ParabolicType haveViscosity;
   ViscousDiffusivityFunc viscousDiffusivityFunc;
-  
+
   // constant diffusion coefficient (when needed)
   real eta1, eta2;
-
-
-
-
-
 };
 
 #endif // HYDRO_VISCOSITY_HPP_

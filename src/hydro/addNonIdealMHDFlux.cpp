@@ -11,7 +11,7 @@
 // Compute parabolic fluxes
 void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
   idfx::pushRegion("Hydro::addNonIdealMHDFlux");
-  
+
   int ioffset,joffset,koffset;
 
   IdefixArray4D<real> Flux = this->FluxRiemann;

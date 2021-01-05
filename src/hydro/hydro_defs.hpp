@@ -49,4 +49,4 @@ using InternalBoundaryFunc = void (*) (DataBlock &, const real t);
 using EmfBoundaryFunc = void (*) (DataBlock &, const real t);
 using DiffusivityFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
 
-#endif //HYDRO_HYDRO_DEFS_HPP
+#endif //HYDRO_HYDRO_DEFS_HPP_

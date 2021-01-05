@@ -411,7 +411,8 @@ real Hydro::GetC2iso() {
 }
 
 void Hydro::ResetStage() {
-  // Reset variables required at the beginning of each stage (essentially linked to timestep evaluation)
+  // Reset variables required at the beginning of each stage
+  // (essentially linked to timestep evaluation)
   idfx::pushRegion("Hydro::ResetStage");
 
   IdefixArray3D<real> InvDt=this->InvDt;

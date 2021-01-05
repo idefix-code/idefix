@@ -5,7 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************************
 
-// This source code is largely inspired from the viscous_flux of Pluto4.2 
+// This source code is largely inspired from the viscous_flux of Pluto4.2
 // ((c) P. Tzeferacos & A. Mignone)
 
 #include <string>
@@ -34,8 +34,7 @@
                     - 0.25*(q(n,k,j,i - 1) + q(n,k - 1,j,i - 1)))
 
 #define D_DY_K(q,n)  (  0.25*(q(n,k,j + 1,i) + q(n,k - 1,j + 1,i)) \
-                    - 0.25*(q(n,k,j - 1,i) + q(n,k - 1,j - 1,i)))                
-
+                    - 0.25*(q(n,k,j - 1,i) + q(n,k - 1,j - 1,i)))
 
 Viscosity::Viscosity() {
   // Default constructor
@@ -90,11 +89,10 @@ void Viscosity::Init(Input &input, Grid &grid, Hydro *hydroin) {
       KOKKOS_LAMBDA(int j) {
         real scrch = 1.0-cos(th(j))-(1.0-cos(th(j-1))) * (th(j-1) > 0.0 ? 1.0:-1.0);
         dmu(j) = 1.0/scrch;
-
       });
   #endif
-  viscSrc = IdefixArray4D<real>("Viscosity_source", COMPONENTS, hydro->data->np_tot[KDIR], 
-                                                                hydro->data->np_tot[JDIR], 
+  viscSrc = IdefixArray4D<real>("Viscosity_source", COMPONENTS, hydro->data->np_tot[KDIR],
+                                                                hydro->data->np_tot[JDIR],
                                                                 hydro->data->np_tot[IDIR]);
   idfx::popRegion();
 }
@@ -109,7 +107,8 @@ void Viscosity::EnrollViscousDiffusivity(ViscousDiffusivityFunc myFunc) {
   idfx::cout << "Viscosity: User-defined viscous diffusion has been enrolled." << std::endl;
 }
 
-// This function computes the viscous flux and stores it in hydro->fluxRiemann (this avoids an extra array)
+// This function computes the viscous flux and stores it in hydro->fluxRiemann
+// (this avoids an extra array)
 // Associated source terms, present in non-cartesian geometry are also computed
 // and stored in this->viscSrc for later use (in calcRhs).
 void Viscosity::AddViscousFlux(int dir, const real t) {
@@ -156,7 +155,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
   if(dir==KDIR) kend++;
 
   real eta1Constant = this->eta1;
-  real eta2Constant = this->eta2; 
+  real eta2Constant = this->eta2;
 
   idefix_for("ViscousFlux",kbeg, kend, jbeg, jend, ibeg, iend,
     KOKKOS_LAMBDA (int k, int j, int i) {
@@ -180,7 +179,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
 
       real eta1, eta2;
       real etaC1, etaC2;
-      
+
       ///////////////////////////////////////////
       // IDIR sweep                            //
       ///////////////////////////////////////////
@@ -195,17 +194,17 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
           etaC2 = eta2 = eta2Constant;
         }
 
-        EXPAND(  dVxi = D_DX_I(Vc,VX1)/dx1(i); , 
-                 dVyi = D_DX_I(Vc,VX2)/dx1(i); , 
+        EXPAND(  dVxi = D_DX_I(Vc,VX1)/dx1(i); ,
+                 dVyi = D_DX_I(Vc,VX2)/dx1(i); ,
                  dVzi = D_DX_I(Vc,VX3)/dx1(i); )
 
         #if DIMENSIONS >= 2
-          EXPAND(  dVxj = D_DY_I(Vc,VX1)/dx2(j); , 
-                   dVyj = D_DY_I(Vc,VX2)/dx2(j); , 
+          EXPAND(  dVxj = D_DY_I(Vc,VX1)/dx2(j); ,
+                   dVyj = D_DY_I(Vc,VX2)/dx2(j); ,
                    dVzj = D_DY_I(Vc,VX3)/dx2(j); )
           #if DIMENSIONS == 3
-            dVxk = D_DZ_I(Vc,VX1)/dx3(k); 
-            dVyk = D_DZ_I(Vc,VX2)/dx3(k); 
+            dVxk = D_DZ_I(Vc,VX1)/dx3(k);
+            dVyk = D_DZ_I(Vc,VX2)/dx3(k);
             dVzk = D_DZ_I(Vc,VX3)/dx3(k);
           #endif
         #endif
@@ -226,8 +225,8 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
 
           tau_xx = 2.0*eta1*drrVr + (eta2 - (2.0/3.0)*eta1)*divV;
           tau_xy = eta1*(dVxj + dVyi);
-          SELECT(  ,  
-                   , 
+          SELECT(  ,
+                   ,
                  tau_xz = eta1*0.5*(x1(i)+x1(i-1))/dx1(i)
                           *(Vc(VX3,k,j,i)/x1(i) - Vc(VX3,k,j,i-1)/x1(i-1)); )
 
@@ -265,13 +264,13 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
           // compute tau_yy at cell center
           divV = D_EXPAND(  0.5*(Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i-1))/dx1(i) + Vc(VX1,k,j,i)/x1(i),
                            +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i)                ,
-                           +0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3(k)                      ); 
-                           
+                           +0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3(k)                      );
+
           #if DIMENSIONS == 1
             tau_yy = 2.0*etaC1*( Vc(VX1,k,j,i)/x1(i)) + (etaC2 - (2.0/3.0)*etaC1)*divV;
           #else
-            tau_yy = 2.0*etaC1*( 0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i) 
-                                + Vc(VX1,k,j,i)/x1(i)) 
+            tau_yy = 2.0*etaC1*( 0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i)
+                                + Vc(VX1,k,j,i)/x1(i))
                                 + (etaC2 - (2.0/3.0)*etaC1)*divV;
           #endif
           EXPAND( viscSrc(IDIR,k,j,i) =  -tau_yy/x1(i);  ,
@@ -286,8 +285,8 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
           #if COMPONENTS >= 2
             real vx2i = 0.5*(Vc(VX2,k,j,i-1)+Vc(VX2,k,j,i));
           #endif
-          divV = D_EXPAND(2.0*vx1i/x1l(i) + dVxi, 
-                          + dVyj/x1l(i) + tan_1*vx2i/x1l(i), 
+          divV = D_EXPAND(2.0*vx1i/x1l(i) + dVxi,
+                          + dVyj/x1l(i) + tan_1*vx2i/x1l(i),
                           + dVzk/x1l(i)*s_1 );
 
           tau_xx = 2.0*eta1*dVxi + (eta2 - (2.0/3.0)*eta1)*divV;
@@ -307,7 +306,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
           // Compute tau_yy and tau_zz at cell center
 
           divV = D_EXPAND( 0.5*(Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i-1))/dx1(i) + 2.0*Vc(VX1,k,j,i)/x1(i),
-                           +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i) 
+                           +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i)
                            +Vc(VX2,k,j,i)/x1(i)*tan_1                                        ,
                            +0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3(k)/x1(i)*s_1 );
 
@@ -329,7 +328,6 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
           EXPAND( viscSrc(IDIR,k,j,i) =  -(tau_yy + tau_zz)/x1(i);  ,
                   viscSrc(JDIR,k,j,i) = ZERO_F;          ,
                   viscSrc(KDIR,k,j,i) = ZERO_F;          )
-          
 
         #endif // GEOMETRY == SPHERICAL
 
@@ -337,13 +335,12 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
         EXPAND( Flux(MX1, k, j, i) -= tau_xx; ,
                 Flux(MX2, k, j, i) -= tau_xy; ,
                 Flux(MX3, k, j, i) -= tau_xz; )
-        
+
         #if HAVE_ENERGY
-          Flux(ENG, k, j, i) -= EXPAND(   0.5*(Vc(VX1,k,j,i) + Vc(VX1,k,j,i-1))*tau_xx  ,  
+          Flux(ENG, k, j, i) -= EXPAND(   0.5*(Vc(VX1,k,j,i) + Vc(VX1,k,j,i-1))*tau_xx  ,
                                         + 0.5*(Vc(VX2,k,j,i) + Vc(VX2,k,j,i-1))*tau_xy  ,
-                                        + 0.5*(Vc(VX3,k,j,i) + Vc(VX3,k,j,i-1))*tau_xz) ;
+                                        + 0.5*(Vc(VX3,k,j,i) + Vc(VX3,k,j,i-1))*tau_xz);
         #endif
-        
 
         dMax(k,j,i) += (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k,j,i-1)));
       }
@@ -363,20 +360,20 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
           etaC2 = eta2 = eta2Constant;
         }
 
-        EXPAND(  dVxi = D_DX_J(Vc,VX1)/dx1(i);, 
-                 dVyi = D_DX_J(Vc,VX2)/dx1(i);, 
+        EXPAND(  dVxi = D_DX_J(Vc,VX1)/dx1(i); ,
+                 dVyi = D_DX_J(Vc,VX2)/dx1(i); ,
                  dVzi = D_DX_J(Vc,VX3)/dx1(i); )
 
-        EXPAND(  dVxj = D_DY_J(Vc,VX1)/dx2(j);, 
-                 dVyj = D_DY_J(Vc,VX2)/dx2(j);, 
+        EXPAND(  dVxj = D_DY_J(Vc,VX1)/dx2(j); ,
+                 dVyj = D_DY_J(Vc,VX2)/dx2(j); ,
                  dVzj = D_DY_J(Vc,VX3)/dx2(j); )
 
         #if DIMENSIONS == 3
-          dVxk = D_DZ_J(Vc,VX1)/dx3(k); 
-          dVyk = D_DZ_J(Vc,VX2)/dx3(k); 
+          dVxk = D_DZ_J(Vc,VX1)/dx3(k);
+          dVyk = D_DZ_J(Vc,VX2)/dx3(k);
           dVzk = D_DZ_J(Vc,VX3)/dx3(k);
         #endif
-    
+
         #if GEOMETRY == CARTESIAN
           divV = D_EXPAND(dVxi, + dVyj, + dVzk);
 
@@ -431,16 +428,16 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
 
           divV = D_EXPAND( 2.0*vx1i/x1(i) + dVxi,
                           +(SIN(x2(j))*Vc(VX2,k,j,i) - FABS(SIN(x2(j-1)))*Vc(VX2,k,j-1,i))/x1(i)
-                           *one_dmu(j) , 
+                           *one_dmu(j) ,
                           + dVzk/x1(i)*s_1 );
-          
-          
+
           // tau_xy is initially cell centered since it is involved in the source term
-          tau_xy = etaC1*( 0.5*(Vc(VX1,k,j+1,i)-Vc(VX1,k,j-1,i))/x1(i)/dx2(j) - Vc(VX2,k,j,i)/x1(i));
+          tau_xy = etaC1*( 0.5*(Vc(VX1,k,j+1,i)-Vc(VX1,k,j-1,i))/x1(i)/dx2(j)
+                              - Vc(VX2,k,j,i)/x1(i));
           tau_yy = 2.0*eta1*(dVyj/x1(i) + vx1i/x1(i)) + (eta2 - (2.0/3.0)*eta1)*divV;
 
           tau_yz = dVzj/x1(i);
-          #if COMPONENTS == 3 
+          #if COMPONENTS == 3
             tau_yz += -tan_1/x1(i)*0.5*(Vc(VX3,k,j-1,i)+Vc(VX3,k,j,i));
           #endif
           #if DIMENSIONS == 3
@@ -452,8 +449,8 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
           s_1 = 1.0/SIN(x2(j));
 
           divV = D_EXPAND( 0.5*(Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i-1))/dx1(i) + 2.0*Vc(VX1,k,j,i)/x1(i),
-                           +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i) 
-                           +Vc(VX2,k,j,i)/x1(i)*tan_1                                        ,
+                           +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i)
+                           +Vc(VX2,k,j,i)/x1(i)*tan_1                                              ,
                            +0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3(k)/x1(i)*s_1 );
 
           tau_zz = Vc(VX1,k,j,i)/x1(i);
@@ -479,11 +476,11 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
         EXPAND( Flux(MX1, k, j, i) -= tau_xy; ,
                 Flux(MX2, k, j, i) -= tau_yy; ,
                 Flux(MX3, k, j, i) -= tau_yz; )
-        
+
         #if HAVE_ENERGY
-          Flux(ENG, k, j, i) -= EXPAND(   0.5*(Vc(VX1,k,j,i) + Vc(VX1,k,j-1,i))*tau_xy  ,  
+          Flux(ENG, k, j, i) -= EXPAND(   0.5*(Vc(VX1,k,j,i) + Vc(VX1,k,j-1,i))*tau_xy  ,
                                         + 0.5*(Vc(VX2,k,j,i) + Vc(VX2,k,j-1,i))*tau_yy  ,
-                                        + 0.5*(Vc(VX3,k,j,i) + Vc(VX3,k,j-1,i))*tau_yz) ;
+                                        + 0.5*(Vc(VX3,k,j,i) + Vc(VX3,k,j-1,i))*tau_yz);
         #endif
 
         dMax(k,j,i) += (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k,j-1,i)));
@@ -504,14 +501,14 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
           etaC2 = eta2 = eta2Constant;
         }
 
-        dVxi = D_DX_K(Vc,VX1)/dx1(i); 
-        dVyi = D_DX_K(Vc,VX2)/dx1(i); 
+        dVxi = D_DX_K(Vc,VX1)/dx1(i);
+        dVyi = D_DX_K(Vc,VX2)/dx1(i);
         dVzi = D_DX_K(Vc,VX3)/dx1(i);
         dVxj = D_DY_K(Vc,VX1)/dx2(j);
         dVyj = D_DY_K(Vc,VX2)/dx2(j);
-        dVzj = D_DY_K(Vc,VX3)/dx2(j); 
+        dVzj = D_DY_K(Vc,VX3)/dx2(j);
         dVxk = D_DZ_K(Vc,VX1)/dx3(k);
-        dVyk = D_DZ_K(Vc,VX2)/dx3(k); 
+        dVyk = D_DZ_K(Vc,VX2)/dx3(k);
         dVzk = D_DZ_K(Vc,VX3)/dx3(k);
 
         #if GEOMETRY == CARTESIAN
@@ -546,7 +543,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
           real vx2i = 0.5*(Vc(VX2,k-1,j,i)+Vc(VX2,k,j,i));
           real vx3i = 0.5*(Vc(VX3,k-1,j,i)+Vc(VX3,k,j,i));
 
-          divV = 2.0*vx1i/x1(i) + dVxi + dVyj/x1(i) + tan_1*vx2i/x1(i) + dVzk/x1(i)*s_1 ;
+          divV = 2.0*vx1i/x1(i) + dVxi + dVyj/x1(i) + tan_1*vx2i/x1(i) + dVzk/x1(i)*s_1;
 
           tau_xz = eta1*(dVxk*s_1/x1(i) + dVzi - vx3i/x1(i));
           tau_yz = eta1*(dVyk*s_1/x1(i) + dVzj/x1(i) - vx3i*tan_1/x1(i));
@@ -563,11 +560,11 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
         EXPAND( Flux(MX1, k, j, i) -= tau_xz; ,
                 Flux(MX2, k, j, i) -= tau_yz; ,
                 Flux(MX3, k, j, i) -= tau_zz; )
-        
+
         #if HAVE_ENERGY
-          Flux(ENG, k, j, i) -= EXPAND(   0.5*(Vc(VX1,k,j,i) + Vc(VX1,k-1,j,i))*tau_xz  ,  
+          Flux(ENG, k, j, i) -= EXPAND(   0.5*(Vc(VX1,k,j,i) + Vc(VX1,k-1,j,i))*tau_xz  ,
                                         + 0.5*(Vc(VX2,k,j,i) + Vc(VX2,k-1,j,i))*tau_yz  ,
-                                        + 0.5*(Vc(VX3,k,j,i) + Vc(VX3,k-1,j,i))*tau_zz) ;
+                                        + 0.5*(Vc(VX3,k,j,i) + Vc(VX3,k-1,j,i))*tau_zz);
         #endif
 
         dMax(k,j,i) += (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k-1,j,i)));

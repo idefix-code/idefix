@@ -185,7 +185,6 @@ class Hydro {
   bool haveViscosity;
   // Viscosity object
   Viscosity viscosity;
-
 };
 
 #endif // HYDRO_HYDRO_HPP_

@@ -1,3 +1,7 @@
+The latest documentation is available
+[here](https://discs.gricad-pages.univ-grenoble-alpes.fr/idefix/index.html).
+
+
 Download:
 ---------
 

@@ -1,10 +1,13 @@
 Download:
 ---------
+
+```shell
     # using either ssh or https url as <address>
     git clone <address>
     cd idefix
     git submodule init
     git submodule update
+```
 
 Compile an example:
 -------------------
@@ -15,7 +18,7 @@ for exmaple :
 
 set the `IDEFIX_DIR` environment variable
     
-`export IDEFIX_DIR=(idefix main folder)`
+`export IDEFIX_DIR=<idefix main folder>`
 
 Configure the code:
 
@@ -66,11 +69,11 @@ Running tests
 -------------------
 Tests require Python 3 along with some third party dependencies to be installed.
 To install those deps, run
-```
+```shell
 pip install -r test/python_requirements.txt
 ```
 
 The test suite itself is then run with
-```
+```shell
 bash test/checks.sh
 ```

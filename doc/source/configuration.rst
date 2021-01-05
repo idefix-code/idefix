@@ -54,7 +54,7 @@ made to limit their number to a minimum. Each option is a C preprocessor directi
 Creating the Makefile
 =====================
 
-Because the code can be configured for many architectures, it relies on a python configuration script ``$IDEFIX_DIR/configure.py`` to generate the makefile needed. This script accepts
+Because the code can be configured for many architectures, it relies on a Python configuration script ``$IDEFIX_DIR/configure.py`` to generate the makefile needed. This script accepts
 many options to adapt the generated makefile to the architecture on which one wants to run. A complete list of options can be obtained by running ``$IDEFIX_DIR/configure.py -h``. These options are:
 
 ``-h, --help``

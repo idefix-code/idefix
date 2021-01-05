@@ -132,7 +132,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
   IdefixArray1D<real> dx3 = this->hydro->data->dx[KDIR];
 
   ParabolicType haveViscosity = this->haveViscosity;
-  
+
   // Compute viscosity if needed
   if(haveViscosity == UserDefFunction && dir == IDIR) {
     if(viscousDiffusivityFunc) {
@@ -186,7 +186,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
       ///////////////////////////////////////////
       if(dir == IDIR) {
         if(haveViscosity == UserDefFunction) {
-          etaC1 = eta1Arr(k,j,i);
+          etaC1 = eta1Arr(k,j ,i);
           eta1 = HALF_F*(eta1Arr(k,j,i-1)+eta1Arr(k,j,i));
           etaC2 = eta2Arr(k,j,i);
           eta2 = HALF_F*(eta2Arr(k,j,i-1)+eta2Arr(k,j,i));
@@ -573,7 +573,6 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
         dMax(k,j,i) += (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k-1,j,i)));
       }
     });
-
 
   idfx::popRegion();
 }

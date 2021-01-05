@@ -29,7 +29,7 @@ void UserdefBoundary(DataBlock & data, int dir, BoundarySide side, const real t)
         IdefixArray1D<real> th = data.x[JDIR];
         if(side==right) {
           int ighost = data.end[IDIR]-1;
-          idefix_for("UserDefBoundaryX1Beg",0,data.np_tot[KDIR],0,data.np_tot[JDIR],data.end[IDIR],data.np_tot[IDIR],
+          idefix_for("UserDefBoundaryX1End",0,data.np_tot[KDIR],0,data.np_tot[JDIR],data.end[IDIR],data.np_tot[IDIR],
                       KOKKOS_LAMBDA (int k, int j, int i) {
                           if((th(j)>M_PI/2.0) && th(j)<3.0*M_PI/2) {
                             // Incoming flow
@@ -37,7 +37,7 @@ void UserdefBoundary(DataBlock & data, int dir, BoundarySide side, const real t)
                             Vc(VX1,k,j,i) = COS(th(j));
                             Vc(VX2,k,j,i) = -SIN(th(j));
                           } else {
-                            // outcoming flow=
+                            // outcoming flow
                             Vc(RHO,k,j,i) = Vc(RHO,k,j,ighost);
                             Vc(VX2,k,j,i) = Vc(VX2,k,j,ighost);
                             if(Vc(VX1,k,j,ighost) > ZERO_F) {
@@ -51,9 +51,10 @@ void UserdefBoundary(DataBlock & data, int dir, BoundarySide side, const real t)
         int ighost = data.beg[IDIR];
         idefix_for("UserDefBoundaryX1Beg",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,ighost,
                     KOKKOS_LAMBDA (int k, int j, int i) {
+                      // Central cylinder
                       Vc(RHO,k,j,i) = ONE_F;
                       Vc(VX1,k,j,i) = -Vc(VX1,k,j,2*ighost-i-1);
-                      Vc(VX2,k,j,i) = ZERO_F;
+                      Vc(VX2,k,j,i) = -Vc(VX2,k,j,2*ighost-i-1);;
                     });
     }
   }

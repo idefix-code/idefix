@@ -5,12 +5,12 @@ The latest documentation is available
 Download:
 ---------
 
+using either ssh or https url as `<address>`
 ```shell
-    # using either ssh or https url as <address>
-    git clone <address>
-    cd idefix
-    git submodule init
-    git submodule update
+git clone <address>
+cd idefix
+git submodule init
+git submodule update
 ```
 
 Installation:

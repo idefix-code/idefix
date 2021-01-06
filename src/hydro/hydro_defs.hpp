@@ -37,6 +37,7 @@ enum Solver {TVDLF=1, HLL, HLLC, ROE};
 
 // Parabolic terms can have different status
 enum ParabolicType {Disabled, Constant, UserDefFunction };
+enum IsoSoundSpeedType {Disabled, Constant, UserDefFunction };
 
 using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side,
                                       const real t);
@@ -48,5 +49,6 @@ using SrcTermFunc = void (*) (DataBlock &, const real t, const real dt);
 using InternalBoundaryFunc = void (*) (DataBlock &, const real t);
 using EmfBoundaryFunc = void (*) (DataBlock &, const real t);
 using DiffusivityFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
+using IsoSoundSpeedFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
 
 #endif //HYDRO_HYDRO_DEFS_HPP_

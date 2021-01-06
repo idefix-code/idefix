@@ -26,10 +26,12 @@ void Hydro::TvdlfHD() {
   IdefixArray4D<real> PrimR = this->PrimR;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
+  IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArr;
 
   real gamma = this->gamma;
   real gamma_m1=this->gamma-ONE_F;
-  real C2Iso = this->C2Iso;
+  real csIso = this->isoSoundSpeed;
+  IsoSoundSpeedType haveIsoCs = this->haveIsoSoundSpeed;
 
   idefix_for("TVDLF_Kernel",
              data->beg[KDIR],data->end[KDIR]+koffset,
@@ -72,7 +74,11 @@ void Hydro::TvdlfHD() {
 #if HAVE_ENERGY
       cRL = std::sqrt( (gamma_m1+ONE_F)*(vRL[PRS]/vRL[RHO]) );
 #else
-      cRL = std::sqrt(C2Iso);
+      if(haveIsoCs == UserDefFunction) {
+        cRL = HALF_F*(csIsoArr(k,j,i)+csIsoArr(k-koffset,j-joffset,i-ioffset));
+      } else {
+        cRL = csIso;
+      }
 #endif
       cmax = FMAX(FABS(vRL[Xn]+cRL),FABS(vRL[Xn]-cRL));
 

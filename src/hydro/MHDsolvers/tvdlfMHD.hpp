@@ -28,6 +28,7 @@ void Hydro::TvdlfMHD() {
   IdefixArray4D<real> PrimR = this->PrimR;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
+  IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArr;
 
   // References to required emf components
   IdefixArray3D<real> Eb;
@@ -37,7 +38,8 @@ void Hydro::TvdlfMHD() {
 
   real gamma = this->gamma;
   real gamma_m1=gamma-ONE_F;
-  real C2Iso = this->C2Iso;
+  real csIso = this->isoSoundSpeed;
+  IsoSoundSpeedType haveIsoCs = this->haveIsoSoundSpeed;
 
   // Define normal, tangent and bi-tanget indices
   // st and sb will be useful only when Hall is included
@@ -118,13 +120,23 @@ void Hydro::TvdlfMHD() {
 
       // Get the wave speed
       // Signal speeds
-      real cRL, cmax;
+      real cRL, cmax, c2Iso;
       real gpr, Bt2, B2;
+
+      // Init c2Isothermal (used only when isothermal approx is set)
+      c2Iso = ZERO_F;
 
 #if HAVE_ENERGY
       gpr=gamma*v[PRS];
 #else
-      gpr=C2Iso*v[RHO];
+      if(haveIsoCs == UserDefFunction) {
+        c2Iso = HALF_F*(csIsoArr(k,j,i)+csIsoArr(k-koffset,j-joffset,i-ioffset));
+        c2Iso = c2Iso*c2Iso;
+      } else {
+        c2Iso = csIso*csIso;
+      }
+
+      gpr = c2Iso*v[RHO];
 #endif
       Bt2=EXPAND( ZERO_F           ,
                   + v[BXt]*v[BXt]  ,
@@ -144,8 +156,8 @@ void Hydro::TvdlfMHD() {
       K_PrimToCons(uR, vR, gamma_m1);
 
       // 3-- Compute the left and right fluxes
-      K_Flux(fluxL, vL, uL, C2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
-      K_Flux(fluxR, vR, uR, C2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
+      K_Flux(fluxL, vL, uL, c2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
+      K_Flux(fluxR, vR, uR, c2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
 
 
       // 5-- Compute the flux from the left and right states

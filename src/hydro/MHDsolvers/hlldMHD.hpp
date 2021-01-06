@@ -27,6 +27,7 @@ void Hydro::HlldMHD() {
   IdefixArray4D<real> PrimR = this->PrimR;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
+  IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArr;
 
   // References to required emf components
   IdefixArray3D<real> Eb;
@@ -36,7 +37,8 @@ void Hydro::HlldMHD() {
 
   real gamma = this->gamma;
   real gamma_m1 = this->gamma-ONE_F;
-  real C2Iso = this->C2Iso;
+  real csIso = this->isoSoundSpeed;
+  IsoSoundSpeedType haveIsoCs = this->haveIsoSoundSpeed;
 
 
   // st and sb will be useful only when Hall is included
@@ -104,7 +106,11 @@ void Hydro::HlldMHD() {
       real fluxR[NVAR];
 
       // Signal speeds
-      real cL, cR, cmax;
+      real cL, cR, cmax, c2Iso;
+      
+      // Init c2Isothermal (used only when isothermal approx is set)
+      c2Iso = ZERO_F;
+
 
       // 1-- Store the primitive variables on the left, right, and averaged states
 #pragma unroll
@@ -118,7 +124,14 @@ void Hydro::HlldMHD() {
 #if HAVE_ENERGY
       gpr = gamma*vL[PRS];
 #else
-      gpr = C2Iso*vL[RHO];
+      if(haveIsoCs == UserDefFunction) {
+        c2Iso = HALF_F*(csIsoArr(k,j,i)+csIsoArr(k-koffset,j-joffset,i-ioffset));
+        c2Iso = c2Iso*c2Iso;
+      } else {
+        c2Iso = csIso*csIso;
+      }
+
+      gpr = c2Iso*vL[RHO];
 #endif
 
       // -- get total field
@@ -137,7 +150,7 @@ void Hydro::HlldMHD() {
 #if HAVE_ENERGY
       gpr = gamma*vR[PRS];
 #else
-      gpr = C2Iso*vR[RHO];
+      gpr = c2Iso*vR[RHO];
 #endif
 
       // -- get total field
@@ -176,8 +189,8 @@ void Hydro::HlldMHD() {
         fluxR[nv] = uR[nv];
       }
 
-      K_Flux(fluxL, vL, fluxL, C2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
-      K_Flux(fluxR, vR, fluxR, C2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
+      K_Flux(fluxL, vL, fluxL, c2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
+      K_Flux(fluxR, vR, fluxR, c2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
 
       real ptR, ptL;
 
@@ -185,8 +198,8 @@ void Hydro::HlldMHD() {
       ptL  = vL[PRS] + 0.5* ( EXPAND(vL[BX1]*vL[BX1] , + vL[BX2]*vL[BX2], + vL[BX3]*vL[BX3]) );
       ptR  = vR[PRS] + 0.5* ( EXPAND(vR[BX1]*vR[BX1] , + vR[BX2]*vR[BX2], + vR[BX3]*vR[BX3]) );
 #else
-      ptL  = C2Iso*vL[RHO] + 0.5* (EXPAND(vL[BX1]*vL[BX1], + vL[BX2]*vL[BX2], + vL[BX3]*vL[BX3]));
-      ptR  = C2Iso*vR[RHO] + 0.5* (EXPAND(vR[BX1]*vR[BX1], + vR[BX2]*vR[BX2], + vR[BX3]*vR[BX3]));
+      ptL  = c2Iso*vL[RHO] + 0.5* (EXPAND(vL[BX1]*vL[BX1], + vL[BX2]*vL[BX2], + vL[BX3]*vL[BX3]));
+      ptR  = c2Iso*vR[RHO] + 0.5* (EXPAND(vR[BX1]*vR[BX1], + vR[BX2]*vR[BX2], + vR[BX3]*vR[BX3]));
 #endif
 
       // 5-- Compute the flux from the left and right states

@@ -55,6 +55,7 @@ void Hydro::RoeMHD() {
   IdefixArray4D<real> PrimR = this->PrimR;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
+  IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArr;
 
   // References to required emf components
   IdefixArray3D<real> Eb;
@@ -64,7 +65,8 @@ void Hydro::RoeMHD() {
 
   real gamma = this->gamma;
   real gamma_m1=this->gamma-ONE_F;
-  real C2Iso = this->C2Iso;
+  real csIso = this->isoSoundSpeed;
+  IsoSoundSpeedType haveIsoCs = this->haveIsoSoundSpeed;
 
   // TODO(baghdads) what is this delta?
   real delta    = 1.e-6;
@@ -158,6 +160,21 @@ void Hydro::RoeMHD() {
       K_PrimToCons(uL, vL, gamma_m1);
       K_PrimToCons(uR, vR, gamma_m1);
 
+      // --- Compute the square of the sound speed
+      real a, a2, a2L, a2R;
+      #if HAVE_ENERGY
+        // a2L = gamma * vL[PRS] / vL[RHO];
+        // a2R = gamma * vR[PRS] / vR[RHO];
+      #else
+        if(haveIsoCs == UserDefFunction) {
+          a2L = HALF_F*(csIsoArr(k,j,i)+csIsoArr(k-koffset,j-joffset,i-ioffset));
+      } else {
+          a2L = csIso;
+      }
+      a2L = a2L*a2L;
+      a2R = a2R;
+      #endif
+
       // 3-- Compute the left and right fluxes
 #pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
@@ -165,19 +182,10 @@ void Hydro::RoeMHD() {
         fluxR[nv] = uR[nv];
         dU[nv] = uR[nv] - uL[nv];
       }
+      K_Flux(fluxL, vL, fluxL, a2L, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
+      K_Flux(fluxR, vR, fluxR, a2R, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
 
-      K_Flux(fluxL, vL, fluxL, C2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
-      K_Flux(fluxR, vR, fluxR, C2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
-
-      // --- Compute the square of the sound speed
-      real a, a2, a2L, a2R;
-#if HAVE_ENERGY
-      // a2L = gamma * vL[PRS] / vL[RHO];
-      // a2R = gamma * vR[PRS] / vR[RHO];
-#else
-      a2L = C2Iso;
-      a2R = C2Iso;
-#endif
+      
 
       // 5. Set eigenvectors components Rc = 0 initially
 #pragma unroll

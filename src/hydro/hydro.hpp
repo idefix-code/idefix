@@ -72,6 +72,9 @@ class Hydro {
   void EnrollAmbipolarDiffusivity(DiffusivityFunc);
   void EnrollHallDiffusivity(DiffusivityFunc);
 
+  // Enroll user-defined isothermal sound speed
+  void EnrollIsoSoundSpeed(IsoSoundSpeedFunc);
+
   // Riemann Solvers
 #if MHD == YES
   template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
@@ -121,7 +124,13 @@ class Hydro {
  private:
   friend class Viscosity;
 
-  real C2Iso;
+  // Isothermal EOS parameters
+  real isoSoundSpeed;
+  IsoSoundSpeedType haveIsoSoundSpeed;
+  IdefixArray3D<real> isoSoundSpeedArray;
+  IsoSoundSpeedFunc isoSoundSpeedFunc;
+
+  // Adiabatic EOS parameters
   real gamma;
 
   Solver mySolver;

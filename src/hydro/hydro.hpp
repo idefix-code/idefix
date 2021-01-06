@@ -36,7 +36,6 @@ class Hydro {
   void CalcNonidealEMF(real );
   void SetBoundary(real);
   real GetGamma();
-  real GetC2iso();
   real CheckDivB();
   void ResetStage();
 
@@ -54,7 +53,7 @@ class Hydro {
   bool haveGravPotential;
 
   // Nonideal MHD effects coefficients
-  ParabolicType haveResistivity, haveAmbipolar, haveHall;
+  HydroModuleStatus haveResistivity, haveAmbipolar, haveHall;
 
   // Enroll user-defined boundary conditions
   void EnrollUserDefBoundary(UserDefBoundaryFunc);
@@ -126,7 +125,7 @@ class Hydro {
 
   // Isothermal EOS parameters
   real isoSoundSpeed;
-  IsoSoundSpeedType haveIsoSoundSpeed;
+  HydroModuleStatus haveIsoSoundSpeed;
   IdefixArray3D<real> isoSoundSpeedArray;
   IsoSoundSpeedFunc isoSoundSpeedFunc;
 

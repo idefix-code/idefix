@@ -41,7 +41,7 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
         this->haveIsoSoundSpeed = UserDefFunction;
       } else {
         IDEFIX_ERROR("csiso admits only constant or userdef entries");
-      } 
+      }
     #endif
   } else {
 #if HAVE_ENERGY
@@ -438,9 +438,6 @@ real Hydro::GetGamma() {
   return(this->gamma);
 }
 
-real Hydro::GetC2iso() {
-  return(this->C2Iso);
-}
 
 void Hydro::ResetStage() {
   // Reset variables required at the beginning of each stage

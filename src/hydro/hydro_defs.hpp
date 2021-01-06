@@ -36,8 +36,7 @@ enum Solver {TVDLF=1, HLL, HLLC, ROE};
 #endif
 
 // Parabolic terms can have different status
-enum ParabolicType {Disabled, Constant, UserDefFunction };
-enum IsoSoundSpeedType {Disabled, Constant, UserDefFunction };
+enum HydroModuleStatus {Disabled, Constant, UserDefFunction };
 
 using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side,
                                       const real t);

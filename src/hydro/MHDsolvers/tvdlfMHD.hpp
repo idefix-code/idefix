@@ -28,7 +28,7 @@ void Hydro::TvdlfMHD() {
   IdefixArray4D<real> PrimR = this->PrimR;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
-  IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArr;
+  IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 
   // References to required emf components
   IdefixArray3D<real> Eb;
@@ -39,7 +39,7 @@ void Hydro::TvdlfMHD() {
   real gamma = this->gamma;
   real gamma_m1=gamma-ONE_F;
   real csIso = this->isoSoundSpeed;
-  IsoSoundSpeedType haveIsoCs = this->haveIsoSoundSpeed;
+  HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
 
   // Define normal, tangent and bi-tanget indices
   // st and sb will be useful only when Hall is included

@@ -26,12 +26,12 @@ void Hydro::HllHD() {
   IdefixArray4D<real> PrimR = this->PrimR;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
-  IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArr;
+  IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 
   real gamma = this->gamma;
   real gamma_m1 = this->gamma - ONE_F;
   real csIso = this->isoSoundSpeed;
-  IsoSoundSpeedType haveIsoCs = this->haveIsoSoundSpeed;
+  HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
 
   idefix_for("HLL_Kernel",
              data->beg[KDIR],data->end[KDIR]+koffset,
@@ -91,7 +91,7 @@ void Hydro::HllHD() {
 
       // 3-- Compute the left and right fluxes
       K_Flux(fluxL, vL, uL, cL, Xn);
-      K_Flux(fluxR, vR, uR, CR, Xn);
+      K_Flux(fluxR, vR, uR, cR, Xn);
 
       // 5-- Compute the flux from the left and right states
       if (SL > 0) {

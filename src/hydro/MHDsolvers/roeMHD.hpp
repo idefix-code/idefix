@@ -55,7 +55,7 @@ void Hydro::RoeMHD() {
   IdefixArray4D<real> PrimR = this->PrimR;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
-  IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArr;
+  IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 
   // References to required emf components
   IdefixArray3D<real> Eb;
@@ -66,7 +66,7 @@ void Hydro::RoeMHD() {
   real gamma = this->gamma;
   real gamma_m1=this->gamma-ONE_F;
   real csIso = this->isoSoundSpeed;
-  IsoSoundSpeedType haveIsoCs = this->haveIsoSoundSpeed;
+  HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
 
   // TODO(baghdads) what is this delta?
   real delta    = 1.e-6;
@@ -172,7 +172,7 @@ void Hydro::RoeMHD() {
           a2L = csIso;
       }
       a2L = a2L*a2L;
-      a2R = a2R;
+      a2R = a2L;
       #endif
 
       // 3-- Compute the left and right fluxes
@@ -184,8 +184,6 @@ void Hydro::RoeMHD() {
       }
       K_Flux(fluxL, vL, fluxL, a2L, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
       K_Flux(fluxR, vR, fluxR, a2R, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
-
-      
 
       // 5. Set eigenvectors components Rc = 0 initially
 #pragma unroll

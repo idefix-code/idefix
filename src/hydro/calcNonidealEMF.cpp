@@ -26,8 +26,8 @@ void Hydro::CalcNonidealEMF(real t) {
   IdefixArray3D<real> xAmbiArr = this->xAmbipolar;
 
   // these two are required to ensure that the type is captured by KOKKOS_LAMBDA
-  ParabolicType haveResistivity = this->haveResistivity;
-  ParabolicType haveAmbipolar = this->haveAmbipolar;
+  HydroModuleStatus haveResistivity = this->haveResistivity;
+  HydroModuleStatus haveAmbipolar = this->haveAmbipolar;
 
   real etaConstant = this->etaO;
   real xAConstant = this->xA;

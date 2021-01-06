@@ -53,12 +53,12 @@ void Hydro::RoeHD() {
   IdefixArray4D<real> PrimR = this->PrimR;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
-  IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArr;
+  IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 
   real gamma = this->gamma;
   real gamma_m1 = this->gamma - ONE_F;
   real csIso = this->isoSoundSpeed;
-  IsoSoundSpeedType haveIsoCs = this->haveIsoSoundSpeed;
+  HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
 
   idefix_for("ROE_Kernel",
              data->beg[KDIR],data->end[KDIR]+koffset,
@@ -114,8 +114,6 @@ void Hydro::RoeHD() {
       // 3-- Compute the left and right fluxes
       K_Flux(fluxL, vL, uL, a2L, Xn);
       K_Flux(fluxR, vR, uR, a2R, Xn);
-
-      
 
       //  ----  Define Wave Jumps  ----
 #if ROE_AVERAGE == YES

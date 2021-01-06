@@ -27,7 +27,7 @@ void Hydro::HlldMHD() {
   IdefixArray4D<real> PrimR = this->PrimR;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
-  IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArr;
+  IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 
   // References to required emf components
   IdefixArray3D<real> Eb;
@@ -38,7 +38,7 @@ void Hydro::HlldMHD() {
   real gamma = this->gamma;
   real gamma_m1 = this->gamma-ONE_F;
   real csIso = this->isoSoundSpeed;
-  IsoSoundSpeedType haveIsoCs = this->haveIsoSoundSpeed;
+  HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
 
 
   // st and sb will be useful only when Hall is included
@@ -107,7 +107,7 @@ void Hydro::HlldMHD() {
 
       // Signal speeds
       real cL, cR, cmax, c2Iso;
-      
+
       // Init c2Isothermal (used only when isothermal approx is set)
       c2Iso = ZERO_F;
 

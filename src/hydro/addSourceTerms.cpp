@@ -16,6 +16,9 @@ void Hydro::AddSourceTerms(real t, real dt) {
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray1D<real> x1 = data->x[IDIR];
   IdefixArray1D<real> x2 = data->x[JDIR];
+#ifdef ISOTHERMAL
+  IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
+#endif
 #if GEOMETRY == SPHERICAL
   IdefixArray1D<real> s  = data->s;
   IdefixArray1D<real> rt = data->rt;
@@ -25,7 +28,11 @@ void Hydro::AddSourceTerms(real t, real dt) {
   real OmegaX2 = this->OmegaX2;
   real OmegaX3 = this->OmegaX3;
 
-  real C2Iso = this->C2Iso;
+#ifdef ISOTHERMAL
+  real csIso = this->isoSoundSpeed;
+  HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
+#endif
+
   bool haveRotation = this->haveRotation;
 
   if(haveUserSourceTerm) userSourceTerm(*data, t, dt);
@@ -58,7 +65,18 @@ void Hydro::AddSourceTerms(real t, real dt) {
       if(haveRotation) vphi += OmegaX3*x1(i);
       Sm = Vc(RHO,k,j,i) * vphi*vphi; // Centrifugal
       // Presure (because pressure is included in the flux, additional source terms arise)
+    #ifdef ISOTHERMAL
+      real c2Iso;
+      if(haveIsoCs == UserDefFunction) {
+        c2Iso = csIsoArr(k,j,i);
+        c2Iso = c2Iso*c2Iso;
+      } else {
+        c2Iso = csIso*csIso;
+      }
+      Sm += Vc(RHO,k,j,i)*c2Iso;
+    #else
       Sm += Vc(PRS,k,j,i);
+    #endif // ISOTHERMAL
     #if MHD==YES
       Sm -=  Vc(iBPHI,k,j,i)*Vc(iBPHI,k,j,i); // Hoop stress
       // Magnetic pressure
@@ -76,11 +94,18 @@ void Hydro::AddSourceTerms(real t, real dt) {
       Sm = Vc(RHO,k,j,i) * vphi*vphi;     // Centrifugal
       // Pressure (because we're including pressure in the flux,
       // we need that to get the radial pressure gradient)
-#ifdef ISOTHERMAL
-      Sm += Vc(RHO,k,j,i)*C2Iso;
-#else
+  #ifdef ISOTHERMAL
+      real c2Iso;
+      if(haveIsoCs == UserDefFunction) {
+        c2Iso = csIsoArr(k,j,i);
+        c2Iso = c2Iso*c2Iso;
+      } else {
+        c2Iso = csIso*csIso;
+      }
+      Sm += Vc(RHO,k,j,i)*c2Iso;
+  #else
       Sm += Vc(PRS,k,j,i);
-#endif
+  #endif // ISOTHERMAL
   #if MHD==YES
       Sm -=  Vc(iBPHI,k,j,i)*Vc(iBPHI,k,j,i); // Hoop stress
       // Magnetic pressus
@@ -97,7 +122,18 @@ void Hydro::AddSourceTerms(real t, real dt) {
       // Centrifugal
       Sm = Vc(RHO,k,j,i) * (EXPAND( ZERO_F, + Vc(VX2,k,j,i)*Vc(VX2,k,j,i), + vphi*vphi));
       // Pressure curvature
+  #ifdef ISOTHERMAL
+      real c2Iso;
+      if(haveIsoCs == UserDefFunction) {
+        c2Iso = csIsoArr(k,j,i);
+        c2Iso = c2Iso*c2Iso;
+      } else {
+        c2Iso = csIso*csIso;
+      }
+      Sm += 2.0*Vc(RHO,k,j,i)*c2Iso;
+  #else
       Sm += 2.0*Vc(PRS,k,j,i);
+  #endif // ISOTHERMAL
   #if MHD == YES
       // Hoop stress
       Sm -= EXPAND( ZERO_F   ,
@@ -114,7 +150,11 @@ void Hydro::AddSourceTerms(real t, real dt) {
        // Centrifugal
       Sm = Vc(RHO,k,j,i) * (EXPAND( ZERO_F, - Vc(iVTH,k,j,i)*Vc(iVR,k,j,i), + ct*vphi*vphi));
       // Pressure curvature
+  #ifdef ISOTHERMAL
+      Sm += ct * c2Iso * Vc(RHO,k,j,i);
+  #else
       Sm += ct * Vc(PRS,k,j,i);
+  #endif
   #if MHD == YES
       // Hoop stress
       Sm += EXPAND( ZERO_F       ,

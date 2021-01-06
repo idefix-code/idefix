@@ -63,7 +63,7 @@ void MySourceTerm(DataBlock &data, const real t, const real dtin) {
 
                 Uc(ENG,k,j,i) += -dt*(Vc(PRS,k,j,i)-Ptarget)/(tau*gamma_m1);
 
-		// Velocity relaxation
+        // Velocity relaxation
             });
 
 
@@ -80,7 +80,7 @@ void EmfBoundary(DataBlock& data, const real t) {
         idefix_for("EMFBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,ighost+1,
                     KOKKOS_LAMBDA (int k, int j, int i) {
             Ex3(k,j,i) = ZERO_F;
-	    Ex2(k,j,i) = ZERO_F;
+        Ex2(k,j,i) = ZERO_F;
         });
     }
     if(data.lbound[JDIR] == userdef) {
@@ -89,7 +89,7 @@ void EmfBoundary(DataBlock& data, const real t) {
         idefix_for("EMFBoundary",0,data.np_tot[KDIR],0,data.np_tot[IDIR],
                     KOKKOS_LAMBDA (int k, int i) {
             Ex3(k,jghost,i) = ZERO_F;
-	    Ex1(k,jghost,i) = ZERO_F;
+        Ex1(k,jghost,i) = ZERO_F;
         });
     }
     if(data.rbound[JDIR] == userdef) {
@@ -98,7 +98,7 @@ void EmfBoundary(DataBlock& data, const real t) {
         idefix_for("EMFBoundary",0,data.np_tot[KDIR],0,data.np_tot[IDIR],
                     KOKKOS_LAMBDA (int k, int i) {
             Ex3(k,jghost,i) = ZERO_F;
-	    Ex1(k,jghost,i) = ZERO_F;
+        Ex1(k,jghost,i) = ZERO_F;
         });
     }
 }
@@ -156,7 +156,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                         Vc(RHO,k,j,i) = Vc(RHO,k,j,ighost);
                         Vc(PRS,k,j,i) = Vc(PRS,k,j,ighost);
                         if(Vc(VX1,k,j,ighost)>=ZERO_F) Vc(VX1,k,j,i) = - Vc(VX1,k,j,2*ighost-i);
-			                   else Vc(VX1,k,j,i) = Vc(VX1,k,j,ighost);
+                               else Vc(VX1,k,j,i) = Vc(VX1,k,j,ighost);
                         Vc(VX2,k,j,i) = Vc(VX2,k,j,ighost);
                         Vc(VX3,k,j,i) = R*Omega;
                     });
@@ -309,6 +309,3 @@ void Setup::InitFlow(DataBlock &data) {
 void Setup::MakeAnalysis(DataBlock & data) {
 
 }
-
-
-

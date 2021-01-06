@@ -48,5 +48,3 @@ void Setup::InitFlow(DataBlock &data) {
 void Setup::MakeAnalysis(DataBlock & data) {
 
 }
-
-

@@ -38,11 +38,11 @@ void Setup::InitFlow(DataBlock &data) {
                 d.Vc(PRS,k,j,i) = (d.x[IDIR](i)<50.0) ? 1.0 : 0.1;
 #endif
                 d.Vs(BX1s,k,j,i) = 0.75;
-		d.Vc(BX1,k,j,i) = 0.75;
+        d.Vc(BX1,k,j,i) = 0.75;
                 d.Vc(BX2,k,j,i) = (d.x[IDIR](i)<50.0) ? 1.0 : -1.0;
-		#if DIMENSIONS >= 2
-		d.Vs(BX2s,k,j,i) = (d.xl[IDIR](i)<50.0) ? 1.0 : -1.0;
-		#endif
+        #if DIMENSIONS >= 2
+        d.Vs(BX2s,k,j,i) = (d.xl[IDIR](i)<50.0) ? 1.0 : -1.0;
+        #endif
             }
         }
     }

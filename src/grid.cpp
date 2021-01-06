@@ -234,4 +234,3 @@ Grid& Grid::operator=(const Grid& grid) {
     return *this;
 }
 */
-

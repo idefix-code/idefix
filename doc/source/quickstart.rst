@@ -14,7 +14,7 @@ One first need to download *Idefix* from the public git. Say you want to install
     git submodule update
 
 Note that the ``idefix`` directory is automatically created by ``git clone``. Because Kokkos is embedded as a submodule of *Idefix*, the last two lines will download Kokkos for you and put it
-at the right place. 
+at the right place.
 
 The configuration and compilation of *Idefix* relies on the environement variable ``$IDEFIX_DIR``, which should point to the
 install directory of *Idefix*. We therefore conclude the installation with::
@@ -62,14 +62,14 @@ Finally, we compile and run the code::
 
     make -j 8
     ./idefix
-    
+
 This test being one dimensional, it runs very fast. We can check that the final solution match the prediction of the shock tube problem. To this end, we go to the ``python``
 subdirectory and run the test::
 
     cd python
     python3 ./testidefix.py
 
-If everything goes well, ``testidefix.py`` will load the latest output produced by idefix, display it, compare it with an analytical solution and tell you 
+If everything goes well, ``testidefix.py`` will load the latest output produced by idefix, display it, compare it with an analytical solution and tell you
 whether the error is acceptable or not.
 
 
@@ -111,4 +111,3 @@ to check that the last output is consistent with the reference output.
         mpirun -np 4 ./idefix
 
     In both cases, this will run the Orszag-Tang test with 4 threads/processes.
- 

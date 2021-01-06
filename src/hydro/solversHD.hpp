@@ -67,4 +67,3 @@ KOKKOS_INLINE_FUNCTION void K_PrimToCons(real *KOKKOS_RESTRICT Uc, const real *K
 #include "HDsolvers/hllHD.hpp"
 #include "HDsolvers/hllcHD.hpp"
 #include "HDsolvers/roeHD.hpp"
-

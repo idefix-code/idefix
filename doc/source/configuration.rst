@@ -4,7 +4,7 @@ General configuration
 First, it is good practice to set the environment variable ``IDEFIX_DIR`` to the root path of your *Idefix* distribution, as it is needed at several stages. Setting up *Idefix* for a particular problem implies editing several files, some of which are automatically generated. There are essentially 4 files to a proper *Idefix* setup:
 
 ``definitions.hpp``
-    The problem header file. It contains C preprocessor directives for configuration options which require a re-compilation of the code. 
+    The problem header file. It contains C preprocessor directives for configuration options which require a re-compilation of the code.
 
 ``setup.cpp``
     The physical setup definition. Its role is to define the initial conditions of the problem, but also to provide functions for user-defined
@@ -37,7 +37,7 @@ made to limit their number to a minimum. Each option is a C preprocessor directi
 
     The available options are:
      + ``CARTESIAN``: a cartesian frame :math:`(x_1,x_2,x_3)=(x,y,z)`
-     + ``CYLINDRICAL``: cylindrical frame, which should be used *only* in conjonction with ``DIMENSIONS=2`` (2D axisymmetric setup): :math:`(x_1,x_2,x_3)=(R,z,\phi)`. Note that because the frame is right handed, :math:`\phi` is reversed compared to its usual defitinition. 
+     + ``CYLINDRICAL``: cylindrical frame, which should be used *only* in conjonction with ``DIMENSIONS=2`` (2D axisymmetric setup): :math:`(x_1,x_2,x_3)=(R,z,\phi)`. Note that because the frame is right handed, :math:`\phi` is reversed compared to its usual defitinition.
      + ``POLAR``: a polar frame: :math:`(x_1,x_2,x_3)=(R,\phi,z)`. This geometry should be used when doing 3D cylindrical problems.
      + ``SPHERICAL``: spherical frame :math:`(x_1,x_2,x_3)=(R,\theta,\phi)` which can be used in 1D, 2D or 3D.
 
@@ -64,7 +64,7 @@ many options to adapt the generated makefile to the architecture on which one wa
 ``-gpu``
     Enable GPU target architecture (otherwise default target is cpu).
 ``-arch=xxx``
-    Compile for a specific CPU or GPU target. These corresponds to Kokkos target, so user can report to Kokkos documentation to get an up-to-date list of targets. At the time of writing, valid options are 
+    Compile for a specific CPU or GPU target. These corresponds to Kokkos target, so user can report to Kokkos documentation to get an up-to-date list of targets. At the time of writing, valid options are
      + Intel CPUs:    KNC, KNL, SNB, HSW, BDW, SKX
      + NVIDIA GPUs :  Kepler, Kepler30, Kepler32, Kepler35, Kepler37, Maxwell, Maxwell50, Maxwell52, Maxwell53, Pascal60, Pascal61, Volta70, Volta72, Turing75, Ampere80
      + ARM CPUS:      ARMv80, ARMv81, ARMv8-ThunderX, ARMv8-TX2
@@ -115,13 +115,13 @@ Each entry defines a series of grid blocks, which can have various spacing. The 
 | Example     | X1-Grid     |  1                  |  0.0                     | 64                              |  u                              | 1.0                                          |     |                     |
 +-------------+-------------+---------------------+--------------------------+---------------------------------+---------------------------------+----------------------------------------------+-----+---------------------+
 
-In the example above, we define in ``X1`` direction a uniform grid (``u``) of 64 points starting at ``X1=0.0`` and ending at ``X1=1.0``. 
+In the example above, we define in ``X1`` direction a uniform grid (``u``) of 64 points starting at ``X1=0.0`` and ending at ``X1=1.0``.
 
 The grid spacing can be one of the following:
 
 * Uniform spacing (``u``): a block with constant spacing is constructed. The grid spacing :math:`\Delta x` is defined as :math:`\Delta x=\frac{x_\mathrm{end}-x_\mathrm{start}}{N}`
 
-* Logarthmic spacing  (``l``): the block spacing is proportional to the coordinate :math:`\Delta x\propto x`. More formally, the cell boundaries are defined as  :math:`x_{i-1/2}=x_\mathrm{start}\alpha^{i/N}` where  :math:`\alpha=\frac{x_\mathrm{end}+|x_\mathrm{start}|-x_\mathrm{start}}{|x_\mathrm{start}|}`. The grid spacing is then defined through :math:`\Delta x_i=x_{i+1/2}-x_{i-1/2}`. 
+* Logarthmic spacing  (``l``): the block spacing is proportional to the coordinate :math:`\Delta x\propto x`. More formally, the cell boundaries are defined as  :math:`x_{i-1/2}=x_\mathrm{start}\alpha^{i/N}` where  :math:`\alpha=\frac{x_\mathrm{end}+|x_\mathrm{start}|-x_\mathrm{start}}{|x_\mathrm{start}|}`. The grid spacing is then defined through :math:`\Delta x_i=x_{i+1/2}-x_{i-1/2}`.
 
 * Stretched spacing (``s+`` or ``s-``): the block spacing is defined to follow a geometrical series, starting from the reference spacing :math:`\Delta x_0` taken from the previous (``-``) or next (``+``) uniform block. Mathematically, the grid spacing is defined as :math:`\Delta x_i=\Delta x_0 r^{i-1}` for ``s+`` and  :math:`\Delta x_i=\Delta x_0 r^{N-i}` for ``s-``. The streching ratio :math:`r` is itself defined implicitly as :math:`\frac{r-r^{N+1}}{1-r}=\frac{x_\mathrm{end}-x_\mathrm{start}}{\Delta x_0}`
 
@@ -197,15 +197,15 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | GravPotential  | string                  | | Switches on an external gravitational potential. Only ``userdef`` is allowed.             |
 |                |                         | | When ``userdef is set, the ``Hydro`` class expects  a user-defined potential function     |
-|                |                         | | to be enrolled with  ``Hydro::EnrollGravPotential(GravPotentialFunc)``                    |   
+|                |                         | | to be enrolled with  ``Hydro::EnrollGravPotential(GravPotentialFunc)``                    |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | Rotation       | float,float,float       | | Add rotation with rhe rotation vector components given as parameters.                     |
 |                |                         | | Note that this entry only adds Coriolis force.                                            |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | ShearingBox    | float                   | | Enable shearing box source terms.  The entry parameter corresponds to the shear rate      |
-|                |                         | | :math:`dv_{x2}/d x_1`.                                                                    | 
+|                |                         | | :math:`dv_{x2}/d x_1`.                                                                    |
 |                |                         | | Note that this is not sufficient to fully define a shearing box: boundary conditions      |
-|                |                         | | are also required.                                                                        | 
+|                |                         | | are also required.                                                                        |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 
 
@@ -215,7 +215,7 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
     and adding the whistler speed only to the magnetic flux function, following Marchand et al. (2019).
     For these reasons, Hall can only be used in conjonction with the HLL Riemann solver. In addition, only
     the arithmetic Emf reconstruction scheme has been shown to work systematically with Hall, and is therefore
-    strongly recommended for production runs.   
+    strongly recommended for production runs.
 
 The ``Boundary`` section
 ------------------------
@@ -269,7 +269,7 @@ line when running *Idefix*:
 +==========================+===================================================================================================================+
 | --kokkos-num-devices=x   | | Specify the number of devices (eg CUDA GPU) Kokkos should expect. This option is useful when each MPI           |
 |                          | | process should be attached to a different GPU. This option replace --kokkos-ndevices which is now deprecated    |
-+--------------------------+-------------------------------------------------------------------------------------------------------------------+                    
++--------------------------+-------------------------------------------------------------------------------------------------------------------+
 
 Signal Handling
 ===============

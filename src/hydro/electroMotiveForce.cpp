@@ -54,4 +54,3 @@ ElectroMotiveForce::ElectroMotiveForce(DataBlock *data) {
   #endif
   idfx::popRegion();
 }
-

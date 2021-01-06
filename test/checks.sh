@@ -1,4 +1,4 @@
-#!/bin/bash   
+#!/bin/bash
 
 rep_HD_list="sod-iso sod MachReflection ViscousFlowPastCylinder"
 rep_MHD_list="sod-iso sod AmbipolarCshock HallWhistler OrszagTang"
@@ -90,7 +90,6 @@ for rep in $rep_MHD_list; do
         python3 testidefix.py -noplot
         cd ..
     done
-    
+
     cd $TEST_DIR
 done
-

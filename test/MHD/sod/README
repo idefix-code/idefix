@@ -7,6 +7,3 @@ Third, run the code
 Then, go to the python directory and load the results, which are plotted against analytical solution
 cd python
 python testidefix.py
-
- 
-

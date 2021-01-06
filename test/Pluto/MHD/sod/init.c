@@ -39,10 +39,10 @@ void Init (real *us, real x1, real x2, real x3)
     us[BX3] = g_inputParam[BZ_RIGHT];
     #if EOS == IDEAL
      us[PRS] = g_inputParam[PR_RIGHT];
-    #endif 
+    #endif
   }
 
-#else 
+#else
 
   if (x1 > 50.0){
 
@@ -81,7 +81,7 @@ void Init (real *us, real x1, real x2, real x3)
 
 /* ********************************************************************* */
 void InitDomain (Data *d, Grid *grid)
-/*! 
+/*!
  * Assign initial condition by looping over the computational domain.
  * Called after the usual Init() function to assign initial conditions
  * on primitive variables.
@@ -94,7 +94,7 @@ void InitDomain (Data *d, Grid *grid)
 
 /* ********************************************************************* */
 void Analysis (const Data *d, Grid *grid)
-/* 
+/*
  *
  *
  *********************************************************************** */
@@ -102,21 +102,21 @@ void Analysis (const Data *d, Grid *grid)
 }
 
 /* ********************************************************************* */
-void UserDefBoundary (const Data *d, RBox *box, int side, Grid *grid) 
-/*! 
+void UserDefBoundary (const Data *d, RBox *box, int side, Grid *grid)
+/*!
  *  Assign user-defined boundary conditions.
  *
  * \param [in/out] d  pointer to the PLUTO data structure containing
- *                    cell-centered primitive quantities (d->Vc) and 
- *                    staggered magnetic fields (d->Vs, when used) to 
+ *                    cell-centered primitive quantities (d->Vc) and
+ *                    staggered magnetic fields (d->Vs, when used) to
  *                    be filled.
  * \param [in] box    pointer to a RBox structure containing the lower
  *                    and upper indices of the ghost zone-centers/nodes
  *                    or edges at which data values should be assigned.
- * \param [in] side   specifies on which side boundary conditions need 
- *                    to be assigned. side can assume the following 
+ * \param [in] side   specifies on which side boundary conditions need
+ *                    to be assigned. side can assume the following
  *                    pre-definite values: X1_BEG, X1_END,
- *                                         X2_BEG, X2_END, 
+ *                                         X2_BEG, X2_END,
  *                                         X3_BEG, X3_END.
  *                    The special value side == 0 is used to control
  *                    a region inside the computational domain.
@@ -125,10 +125,10 @@ void UserDefBoundary (const Data *d, RBox *box, int side, Grid *grid)
  *********************************************************************** */
 { }
 /* ************************************************************** */
-void USERDEF_BOUNDARY (const Data *d, int side, Grid *grid) 
-/* 
+void USERDEF_BOUNDARY (const Data *d, int side, Grid *grid)
+/*
  *
- * 
+ *
  **************************************************************** */
 {
 }

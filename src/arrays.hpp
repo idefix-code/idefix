@@ -37,5 +37,3 @@ template <typename T> using IdefixHostArray4D = Kokkos::View<T****, Layout, Host
 
 
 #endif // ARRAYS_HPP_
-
-

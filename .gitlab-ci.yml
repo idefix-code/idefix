@@ -20,12 +20,8 @@ test:
     - cat /proc/cpuinfo
     - gcc --version
 
-    # todo: move these to requirements_tests.txt
-    # pip3
-    - pip3 install numpy
-    - pip3 install scipy
-    - pip3 install matplotlib
-    - pip3 install pre-commit && pre-commit install
+    - pip3 install -r test/python_requirements.txt
+    - pre-commit install
 
     - git submodule init
     - git submodule update

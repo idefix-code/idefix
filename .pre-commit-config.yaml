@@ -17,4 +17,4 @@ repos:
     rev: 0.8.0
     hooks:
       - id: cpplint
-        args: [--counting=detailed]
+        args: [--counting=detailed, --exclude=test/*]

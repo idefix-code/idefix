@@ -55,13 +55,6 @@ done < <(find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp" \) -not -path
 
 echo "End of std::sqrt(), std::cbrt(), \t test"
 
-# Search src/ C++ source code for trailing whitespace errors
-# (Google C++ Style Linter does not check for this, but flake8 via pycodestyle warning W291 will check *.py)
-echo "Checking for trailing whitespace in src/"
-find ../../src/ -type f \( -name "*.cpp" -o -name "*.hpp*" \) -not -path "*/kokkos/*" -exec grep -n -E " +$" {} +
-if [ $? -ne 1 ]; then echo "ERROR: Found C++ file(s) in src/ with trailing whitespace"; exit 1; fi
-echo "End of trailing whitespace test"
-
 # Check that all files in src/ have the correct, non-executable octal permission 644
 # Git only tracks permission changes (when core.filemode=true) for the "user/owner" executable permissions bit,
 # and ignores the user read/write and all "group" and "other", setting file modes to 100644 or 100755 (exec)

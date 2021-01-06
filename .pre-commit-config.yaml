@@ -1,6 +1,11 @@
 exclude: "^(src/kokkos)"
 
 repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.4.0
+    hooks:
+      - id: trailing-whitespace
+
   - repo: https://gitlab.com/daverona/pre-commit/cpp
     rev: 0.8.0
     hooks:

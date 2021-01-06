@@ -9,7 +9,6 @@
 #define ARRAYS_HPP_
 
 #include "idefix.hpp"
-
 template <typename T> using IdefixArray1D =
                             Kokkos::View<T*, Layout, Device>;
 template <typename T> using IdefixArray2D =

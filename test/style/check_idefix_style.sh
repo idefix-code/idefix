@@ -21,11 +21,6 @@ do
     echo "Checking $file...."
     # sed -n '/\t/p' $file
 
-    # TYPE 1: may cause bugs, or introduces abhorrent style (e.g. mixing tabs and spaces).
-    # --------------------------
-    grep -n "$(printf '\t')" $file
-    if [ $? -ne 1 ]; then echo "ERROR: Do not use \t tab characters"; exit 1; fi
-
     # TYPE 2: strict ISO C++11 compilance and/or technical edge-cases.
     # Code would be fine for >95% of environments and libraries with these violations, but they may affect portability.
     # --------------------------

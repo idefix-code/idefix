@@ -11,3 +11,8 @@ repos:
     hooks:
       - id: cpplint
         args: [--counting=detailed]
+
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.1.7
+    hooks:
+      - id: remove-tabs

@@ -12,7 +12,7 @@
 
 // Local Kokkos Inline functions
 
-KOKKOS_INLINE_FUNCTION void K_Flux(real F[], real V[], real U[], real C2Iso,
+KOKKOS_INLINE_FUNCTION void K_Flux(real F[], real V[], real U[], real Cs2Iso,
                                    ARG_EXPAND(const int Xn, const int Xt, const int Xb),
                                    ARG_EXPAND(const int BXn, const int BXt, const int BXb)) {
   F[RHO] = U[Xn];
@@ -30,7 +30,7 @@ KOKKOS_INLINE_FUNCTION void K_Flux(real F[], real V[], real U[], real C2Iso,
   real ptot  = V[PRS] + HALF_F*Bmag2;
 
 #elif defined(ISOTHERMAL)
-  real ptot  = C2Iso * V[RHO] + HALF_F*Bmag2;
+  real ptot  = Cs2Iso * V[RHO] + HALF_F*Bmag2;
 
 #else
   #error "K_Flux not defined for this EOS!"

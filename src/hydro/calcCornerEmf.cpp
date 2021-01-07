@@ -59,7 +59,7 @@ void Hydro::CalcCornerEMF(real t) {
   // Required by Hall effect
   IdefixArray4D<real> J = this->J;
   real xHConstant = this->xH;
-  ParabolicType haveHall = this->haveHall;
+  HydroModuleStatus haveHall = this->haveHall;
   IdefixArray3D<real> xHallArr = this->xHall;
 
   idefix_for("CalcCenterEMF",

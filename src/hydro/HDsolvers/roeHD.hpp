@@ -53,10 +53,12 @@ void Hydro::RoeHD() {
   IdefixArray4D<real> PrimR = this->PrimR;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
+  IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 
   real gamma = this->gamma;
   real gamma_m1 = this->gamma - ONE_F;
-  real C2Iso = this->C2Iso;
+  real csIso = this->isoSoundSpeed;
+  HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
 
   idefix_for("ROE_Kernel",
              data->beg[KDIR],data->end[KDIR]+koffset,
@@ -88,14 +90,6 @@ void Hydro::RoeHD() {
         dv[nv] = vR[nv] - vL[nv];
       }
 
-      // 2-- Compute the conservative variables
-      K_PrimToCons(uL, vL, gamma_m1);
-      K_PrimToCons(uR, vR, gamma_m1);
-
-      // 3-- Compute the left and right fluxes
-      K_Flux(fluxL, vL, uL, C2Iso, Xn);
-      K_Flux(fluxR, vR, uR, C2Iso, Xn);
-
       // --- Compute the square of the sound speed
       real a, a2, a2L, a2R;
 #if HAVE_ENERGY
@@ -103,9 +97,23 @@ void Hydro::RoeHD() {
       a2R = gamma * vR[PRS] / vR[RHO];
       real h, vel2;
 #else
-      a2L = C2Iso;
-      a2R = C2Iso;
+      if(haveIsoCs == UserDefFunction) {
+        a2L = HALF_F*(csIsoArr(k,j,i)+csIsoArr(k-koffset,j-joffset,i-ioffset));
+      } else {
+        a2L = csIso;
+      }
+      // Take the square
+      a2L = a2L*a2L;
+      a2R = a2L;
 #endif
+
+      // 2-- Compute the conservative variables
+      K_PrimToCons(uL, vL, gamma_m1);
+      K_PrimToCons(uR, vR, gamma_m1);
+
+      // 3-- Compute the left and right fluxes
+      K_Flux(fluxL, vL, uL, a2L, Xn);
+      K_Flux(fluxR, vR, uR, a2R, Xn);
 
       //  ----  Define Wave Jumps  ----
 #if ROE_AVERAGE == YES

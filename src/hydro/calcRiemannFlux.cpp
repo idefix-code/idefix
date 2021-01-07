@@ -25,6 +25,13 @@ void Hydro::CalcRiemannFlux(int dir, const real t) {
       IDEFIX_ERROR("No user-defined Hall diffusivity function has been enrolled");
   }
 
+  if(this->haveIsoSoundSpeed == UserDefFunction && dir == IDIR) {
+    if(this->isoSoundSpeedFunc)
+      isoSoundSpeedFunc(*data, t, this->isoSoundSpeedArray);
+    else
+      IDEFIX_ERROR("No user-defined isothermal sound speed function has been enrolled");
+  }
+
   switch (mySolver) {
 #if MHD == YES
     case TVDLF:

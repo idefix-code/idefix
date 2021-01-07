@@ -22,7 +22,7 @@ t=dt*np.arange(0,nend)
 for n in range(nend):
     V=idfx.readVTKCart(rep+'/data.'+'%0*d'%(4,n)+'.vtk')
     Bx[n]=np.sqrt(np.mean(np.mean(V.data['BX1']**2,axis=2),axis=0))
-    
+
 plt.figure()
 plt.semilogy(t,Bx)
 plt.semilogy(t,Bx[-1]*np.exp(0.171*(t-t[-1])))
@@ -33,4 +33,3 @@ if np.abs(gr-0.171)/0.171<0.05:
     print("SUCCESS!")
 else:
     print("FAILED!")
-

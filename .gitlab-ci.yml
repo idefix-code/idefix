@@ -2,40 +2,42 @@ workflow:
   rules:
     - if: $CI_MERGE_REQUEST_ID               # Execute jobs in merge request context
     - if: $CI_COMMIT_BRANCH == 'master'      # Execute jobs when a new commit is pushed to master branch
-    
-test:
+
+variables:
+  OMPI_ALLOW_RUN_AS_ROOT: '1'
+  OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: '1'
+  OMPI_MCA_btl_vader_single_copy_mechanism: 'none' # https://github.com/open-mpi/ompi/issues/4948
+
+before_script:
+  - export DEBIAN_FRONTEND=noninteractive
+  - apt-get update -qq
+  - apt-get install -qq build-essential openmpi-bin python3 python3-pip bc git
+  - python3 -m pip install -r test/python_requirements.txt
+
+stages:
+    - checks
+    - deploy
+
+lint:
+  stage: checks
   image: ubuntu:latest
+  script:
+    - pre-commit install
+    - pre-commit run --all-files
 
-  variables:
-    OMPI_ALLOW_RUN_AS_ROOT: '1'
-    OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: '1'
-    OMPI_MCA_btl_vader_single_copy_mechanism: 'none' # https://github.com/open-mpi/ompi/issues/4948
-
-  before_script:
-    - export DEBIAN_FRONTEND=noninteractive
-    - apt-get update -qq
-    - apt-get install -qq build-essential openmpi-bin python3 python3-pip bc git
-  stage: test
+integration tests:
+  stage: checks
+  image: ubuntu:latest
   script:
     - cat /proc/cpuinfo
     - gcc --version
-    - pip3 install numpy
-    - pip3 install scipy
-    - pip3 install matplotlib
+
     - git submodule init
     - git submodule update
-    - cd test/style
-    - ./check_idefix_style.sh > code_quality.txt
-    - cd ..
+
+    - cd test
     - ./checks.sh
     - ./checks_mpi.sh
-  artifacts:
-    reports:
-      codequality: test/style/code_quality.txt
-  # only:
-  #- schedules
-  #except:
-  #- master
 
 pages:
   image: python:3.7-alpine
@@ -48,4 +50,3 @@ pages:
     - public
   only:
   - master
-

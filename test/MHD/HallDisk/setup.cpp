@@ -67,9 +67,9 @@ void Hall(DataBlock& data, const real t, IdefixArray3D<real> &xH) {
         else if(x1(i) < 1.6) f = 10.0*(x1(i)-1.5);
         else f=1.0;
 
-	real g=0.0;
-	if(t>200.0 && t< 201.0) g=t-100.0;
-      	if(t>201.0) g=1.0;
+    real g=0.0;
+    if(t>200.0 && t< 201.0) g=t-100.0;
+          if(t>201.0) g=1.0;
         xH(k,j,i) = 0.1*g*pow(x1(i),-0.5)*f;
   });
 }

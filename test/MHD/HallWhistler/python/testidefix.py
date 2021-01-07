@@ -61,13 +61,13 @@ t=dt*np.arange(0,nend)
 for n in range(nend):
     V=idfx.readVTKCart(rep+'/data.'+'%0*d'%(4,n)+'.vtk')
 
-    
+
     Bx[n,:]=V.data['BX1'][:,0,0]
     By[n,:]=V.data['BX2'][:,0,0]
     Bz[n,:]=V.data['BX3'][:,0,0]
-    
-    
-    
+
+
+
 
 
 # Theoretical speedes
@@ -91,7 +91,7 @@ print("Theoretical whistler frequency=%g, numerical=%g, error=%g"%(f_w,f_wnum,er
 
 
 if(not args.noplot):
-        
+
     plt.close('all')
     plt.figure()
     plt.contourf(t,V.x,By.T,64)
@@ -111,10 +111,10 @@ if(not args.noplot):
     plt.xlabel('frequency')
     plt.ylabel('By amplitude')
     plt.legend()
-    
+
     plt.ioff()
     plt.show()
-    
+
 
 
 if(error<0.05):

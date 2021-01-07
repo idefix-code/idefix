@@ -1,7 +1,7 @@
 #define     COMPONENTS      3
 #define     DIMENSIONS      3
 
-#define	    MHD		    YES
+#define        MHD            YES
 
 //#define    EMF_AVERAGE   ARITHMETIC
 

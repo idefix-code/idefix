@@ -35,14 +35,14 @@ def f(x,D):
     diff=(b-b0)/A**2*np.cos(theta)**2+np.sin(theta)
     diff=(b-D*diff)/(b**2+np.cos(theta)**2)
     diff=(b/A)*diff/(L*(1/D**2-1/M**2))
-    
+
     return(diff)
 
 # load solution
 V=idfx.readVTKCart('../data.0001.vtk')
 
 DSim=V.data['RHO'].flatten()
-if(V.y.size>V.x.size):    
+if(V.y.size>V.x.size):
     x=V.y
     bxSim=V.data['BX2'].flatten()
     bySim=V.data['BX3'].flatten()
@@ -54,7 +54,7 @@ else:
     x=V.x
     bxSim=V.data['BX1'].flatten()
     bySim=V.data['BX2'].flatten()
-    
+
 bSim=bySim/np.sqrt(bySim[0]**2+bxSim[0]**2)
 
 # Index where the two solutions are assumed to match
@@ -86,7 +86,7 @@ if(not args.noplot):
     plt.plot(x[:iend]/L,bTh[:iend],label='Theoretical')
     plt.xlabel('x/L')
     plt.ylabel('b')
-    plt.subplot(212)    
+    plt.subplot(212)
     plt.plot(x[:iend]/L,errb,'--',label='Error')
     plt.xlabel('x/L')
     plt.ylabel('b')
@@ -103,7 +103,7 @@ if(not args.noplot):
     plt.xlabel('x/L')
     plt.ylabel('D')
     plt.legend()
-    
+
     plt.ioff()
     plt.show()
 

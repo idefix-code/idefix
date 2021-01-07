@@ -3,7 +3,7 @@ import os
 import re
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-mhd", 
+parser.add_argument("-mhd",
                     default=False,
                     help="enable MHD",
                     action="store_true")
@@ -101,7 +101,7 @@ else:
         else:
             makefileOptions['cxx'] = "g++"
 
-    
+
     makefileOptions['kokkosArch'] = cpu
     makefileOptions['cxxflags'] = "-O3"
     if args.openmp:
@@ -169,7 +169,3 @@ else:
 print("Compiler: "+makefileOptions['cxx'])
 print("Cflags: "+makefileOptions['cxxflags'])
 print("-----------------------------------------------------------")
-
-
-
-

@@ -1,0 +1,20 @@
+exclude: "^(src/kokkos)"
+
+repos:
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.4.0
+    hooks:
+      - id: trailing-whitespace  # auto-fix trailing whitespaces
+      - id: end-of-file-fixer  # add EOF "\n" if missing
+
+  - repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.1.7
+    hooks:
+      - id: remove-tabs  # auto-fix tab/space mixing
+
+  - repo: https://gitlab.com/daverona/pre-commit/cpp
+    rev: 0.8.0
+    hooks:
+      - id: cpplint
+        args: [--counting=detailed, --exclude=test/*]

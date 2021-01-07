@@ -22,14 +22,14 @@ Set the `IDEFIX_DIR` environment variable to the absolute path of the directory
 export IDEFIX_DIR=<idefix main folder>
 ```
 
-Add this line to `~/.<shell_rc_file>` for a permanent install. 
+Add this line to `~/.<shell_rc_file>` for a permanent install.
 
 
 Compile an example:
 -------------------
 Go to the example directory:
-for exmaple : 
-    
+for exmaple :
+
 ```shell
 cd test/HD/sod
 ```

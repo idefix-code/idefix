@@ -1,4 +1,4 @@
-#!/bin/bash   
+#!/bin/bash
 
 rep_HD_2D_mpi_list="MachReflection"
 rep_MHD_2D_mpi_list="OrszagTang"
@@ -91,7 +91,7 @@ for rep in $rep_MHD_2D_mpi_list; do
         python3 testidefix.py -noplot
         cd ..
     done
-    
+
     cd $TEST_DIR
 done
 
@@ -121,8 +121,6 @@ for rep in $rep_MHD_3D_mpi_list; do
         python3 testidefix.py -noplot
         cd ..
     done
-    
+
     cd $TEST_DIR
 done
-
-

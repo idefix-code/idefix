@@ -188,6 +188,11 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     }
     data.dt=newdt;
   }
+  if(data.dt < 1e-15) {
+    std::stringstream msg;
+    msg << "dt = " << data.dt << " is too small.";
+    IDEFIX_ERROR(msg);
+  }
 
   ncycles++;
 

@@ -119,6 +119,10 @@ class Hydro {
   IdefixArray3D<real> InvDt;
 
 
+  // Whether or not we have viscosity
+  bool haveViscosity;
+  // Viscosity object
+  Viscosity viscosity;
 
  private:
   friend class Viscosity;
@@ -188,11 +192,6 @@ class Hydro {
   IdefixArray3D<real> etaOhmic;
   IdefixArray3D<real> xHall;
   IdefixArray3D<real> xAmbipolar;
-
-  // Whether or not we have viscosity
-  bool haveViscosity;
-  // Viscosity object
-  Viscosity viscosity;
 };
 
 #endif // HYDRO_HYDRO_HPP_

@@ -12,7 +12,7 @@
 // Local Kokkos Inlined functions
 
 KOKKOS_INLINE_FUNCTION void K_Flux(real *KOKKOS_RESTRICT F, const real *KOKKOS_RESTRICT V,
-                                   const real *KOKKOS_RESTRICT U, real C2Iso, const int Xn) {
+                                   const real *KOKKOS_RESTRICT U, real Cs2Iso, const int Xn) {
   F[RHO] = U[Xn];
 
   EXPAND( F[MX1] = U[MX1]*V[Xn];  ,
@@ -24,7 +24,7 @@ KOKKOS_INLINE_FUNCTION void K_Flux(real *KOKKOS_RESTRICT F, const real *KOKKOS_R
   F[Xn]  += V[PRS];
 #else
   // Add back pressure in the flux
-  F[Xn]  += C2Iso * V[RHO];
+  F[Xn]  += Cs2Iso * V[RHO];
 #endif
 }
 

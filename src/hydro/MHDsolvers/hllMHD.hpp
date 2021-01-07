@@ -27,8 +27,9 @@ void Hydro::HllMHD() {
   IdefixArray4D<real> PrimR = this->PrimR;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
+  IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 
-  ParabolicType haveHall = this->haveHall;
+  HydroModuleStatus haveHall = this->haveHall;
   IdefixArray4D<real> J = this->J;
   IdefixArray3D<real> xHallArr = this->xHall;
   IdefixArray1D<real> dx = data->dx[DIR];
@@ -46,7 +47,8 @@ void Hydro::HllMHD() {
   real gamma = this->gamma;
   real xHConstant = this->xH;
   real gamma_m1=this->gamma-ONE_F;
-  real C2Iso = this->C2Iso;
+  real csIso = this->isoSoundSpeed;
+  HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
 
   // Define normal, tangent and bi-tanget indices
   // st and sb will be useful only when Hall is included
@@ -120,7 +122,9 @@ void Hydro::HllMHD() {
       real fluxR[NVAR];
 
       // Signal speeds
-      real cL, cR, cmax;
+      real cL, cR, cmax, c2Iso;
+
+      c2Iso = ZERO_F;
 
       // 1-- Store the primitive variables on the left, right, and averaged states
 #pragma unroll
@@ -135,7 +139,14 @@ void Hydro::HllMHD() {
 #if HAVE_ENERGY
       gpr = gamma*vL[PRS];
 #else
-      gpr = C2Iso*vL[RHO];
+      if(haveIsoCs == UserDefFunction) {
+        c2Iso = HALF_F*(csIsoArr(k,j,i)+csIsoArr(k-koffset,j-joffset,i-ioffset));
+        c2Iso = c2Iso*c2Iso;
+      } else {
+        c2Iso = csIso*csIso;
+      }
+
+      gpr = c2Iso*vL[RHO];
 #endif
 
       // -- get total field
@@ -154,7 +165,7 @@ void Hydro::HllMHD() {
 #if HAVE_ENERGY
       gpr = gamma*vR[PRS];
 #else
-      gpr = C2Iso*vR[RHO];
+      gpr = c2Iso*vR[RHO];
 #endif
 
       // -- get total field
@@ -227,8 +238,8 @@ void Hydro::HllMHD() {
       }
 
       // 3-- Compute the left and right fluxes
-      K_Flux(fluxL, vL, fluxL, C2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
-      K_Flux(fluxR, vR, fluxR, C2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
+      K_Flux(fluxL, vL, fluxL, c2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
+      K_Flux(fluxR, vR, fluxR, c2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
 
       // 4-- Compute the Hall flux
       if(haveHall) {

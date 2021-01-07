@@ -26,10 +26,12 @@ void Hydro::TvdlfHD() {
   IdefixArray4D<real> PrimR = this->PrimR;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
+  IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 
   real gamma = this->gamma;
   real gamma_m1=this->gamma-ONE_F;
-  real C2Iso = this->C2Iso;
+  real csIso = this->isoSoundSpeed;
+  HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
 
   idefix_for("TVDLF_Kernel",
              data->beg[KDIR],data->end[KDIR]+koffset,
@@ -60,21 +62,26 @@ void Hydro::TvdlfHD() {
         vRL[nv] = HALF_F*(vL[nv]+vR[nv]);
       }
 
-      // 2-- Compute the conservative variables
-      K_PrimToCons(uL, vL, gamma_m1);
-      K_PrimToCons(uR, vR, gamma_m1);
-
-      // 3-- Compute the left and right fluxes
-      K_Flux(fluxL, vL, uL, C2Iso, Xn);
-      K_Flux(fluxR, vR, uR, C2Iso, Xn);
-
-      // 4-- Get the wave speed
+      // 2-- Get the wave speed
 #if HAVE_ENERGY
       cRL = std::sqrt( (gamma_m1+ONE_F)*(vRL[PRS]/vRL[RHO]) );
 #else
-      cRL = std::sqrt(C2Iso);
+      if(haveIsoCs == UserDefFunction) {
+        cRL = HALF_F*(csIsoArr(k,j,i)+csIsoArr(k-koffset,j-joffset,i-ioffset));
+      } else {
+        cRL = csIso;
+      }
 #endif
       cmax = FMAX(FABS(vRL[Xn]+cRL),FABS(vRL[Xn]-cRL));
+
+
+      // 3-- Compute the conservative variables
+      K_PrimToCons(uL, vL, gamma_m1);
+      K_PrimToCons(uR, vR, gamma_m1);
+
+      // 4-- Compute the left and right fluxes
+      K_Flux(fluxL, vL, uL, cRL*cRL, Xn);
+      K_Flux(fluxR, vR, uR, cRL*cRL, Xn);
 
       // 5-- Compute the flux from the left and right states
 #pragma unroll

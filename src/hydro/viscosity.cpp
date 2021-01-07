@@ -130,7 +130,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
   IdefixArray1D<real> dx2 = this->hydro->data->dx[JDIR];
   IdefixArray1D<real> dx3 = this->hydro->data->dx[KDIR];
 
-  ParabolicType haveViscosity = this->haveViscosity;
+  HydroModuleStatus haveViscosity = this->haveViscosity;
 
   // Compute viscosity if needed
   if(haveViscosity == UserDefFunction && dir == IDIR) {

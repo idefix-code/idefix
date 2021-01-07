@@ -166,7 +166,11 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 | Solver         | string                  | | Type of Riemann Solver. In hydro can be any of ``tvdlf``, ``hll``, ``hllc`` and ``roe``.  |
 |                |                         | | In MHD, can be ``tvdlf``, ``hll``, ``hlld`` and ``roe``                                   |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| csiso          | float                   | Isothermal sound speed. Only used when ISOTHERMAL is defined in ``definition.hpp``          |
+| csiso          | string, float           | | Isothermal sound speed. Only used when ISOTHERMAL is defined in ``definitions.hpp``.      |
+|                |                         | | When ``constant``, the second parameter is the spatially constant sound speed.            |
+|                |                         | | When ``userdef``, the ``Hydro`` class expects a user-defined sound speed function         |
+|                |                         | | to be enrolled with   ``EnrollIsoSoundSpeed(IsoSoundSpeedFunc)``                          |
+|                |                         | | In that case, the second parameter is not used.                                           |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | gamma          | float                   | Adiabatic index when ISOTHERMAL is not defined                                              |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+

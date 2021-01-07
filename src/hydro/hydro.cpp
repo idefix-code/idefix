@@ -27,13 +27,26 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
 #endif
   }
 
+  this->haveIsoSoundSpeed = Disabled;
+
   if(input.CheckEntry("Hydro","csiso")>0) {
-    real cs = input.GetReal("Hydro","csiso",0);
-    this->C2Iso = cs*cs;
+    #if HAVE_ENERGY
+      IDEFIX_ERROR("csiso is useless without the isothermal EOS enabled in definition.h");
+    #else
+      std::string isoString = input.GetString("Hydro","csiso",0);
+      if(isoString.compare("constant") == 0) {
+        this->haveIsoSoundSpeed = Constant;
+        this->isoSoundSpeed = input.GetReal("Hydro","csiso",1);
+      } else if(isoString.compare("userdef") == 0) {
+        this->haveIsoSoundSpeed = UserDefFunction;
+      } else {
+        IDEFIX_ERROR("csiso admits only constant or userdef entries");
+      }
+    #endif
   } else {
 #if HAVE_ENERGY
     // set the isothermal soundspeed, even though it will not be used
-    this->C2Iso = 1.0;
+    this->isoSoundSpeed = -1.0;
 #else
     IDEFIX_ERROR("You are using the ISOTHERMAL approximation "
                  "but have not set csiso in the ini file.");
@@ -257,6 +270,12 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   this->emf = ElectroMotiveForce(this->data);
 #endif
 
+// Allocate sound speed array if needed
+  if(this->haveIsoSoundSpeed == UserDefFunction) {
+    this->isoSoundSpeedArray = IdefixArray3D<real>("Hydro_csIso",
+                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+  }
+
 
 // Allocate gravitational potential when needed
   if(this->haveGravPotential)
@@ -337,6 +356,19 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   idfx::popRegion();
 }
 
+void Hydro::EnrollIsoSoundSpeed(IsoSoundSpeedFunc myFunc) {
+  if(this->haveIsoSoundSpeed != UserDefFunction) {
+    IDEFIX_ERROR("Isothermal sound speed enrollment requires Hydro/csiso "
+                 " to be set to userdef in .ini file");
+  }
+  #if HAVE_ENERGY
+    IDEFIX_ERROR("Isothermal sound speed enrollment requires ISOTHERMAL to be defined in"
+                 "definitions.hpp");
+  #endif
+  this->isoSoundSpeedFunc = myFunc;
+  idfx::cout << "Hydro: User-defined isothermal sound speed has been enrolled" << std::endl;
+}
+
 void Hydro::EnrollUserDefBoundary(UserDefBoundaryFunc myFunc) {
   this->userDefBoundaryFunc = myFunc;
   this->haveUserDefBoundary = true;
@@ -406,9 +438,6 @@ real Hydro::GetGamma() {
   return(this->gamma);
 }
 
-real Hydro::GetC2iso() {
-  return(this->C2Iso);
-}
 
 void Hydro::ResetStage() {
   // Reset variables required at the beginning of each stage

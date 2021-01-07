@@ -39,8 +39,6 @@ int DataBlock::CheckNan()  {
 #endif
 
   if(nanVc+nanVs>0) {
-    // TODO(lesurg): limit the number of nans displayed here
-
     std::cout << "DataBlock:: rank " << idfx::prank << " found " << nanVc
       << " Nans in the current datablock. Details will be in corresponding process log file."
       << std::endl;
@@ -49,11 +47,14 @@ int DataBlock::CheckNan()  {
     DataBlockHost dataHost(*this);
     dataHost.SyncFromDevice();
 
-    for(int n = 0 ; n < NVAR ; n ++) {
-      for(int k = beg[KDIR] ; k < end[KDIR] ; k++) {
-        for(int j = beg[JDIR] ; j < end[JDIR] ; j++) {
-          for(int i = beg[IDIR] ; i < end[IDIR] ; i++) {
-            if(std::isnan(dataHost.Vc(n,k,j,i))) {
+    int nerrormax=10;
+
+    for(int k = beg[KDIR] ; k < end[KDIR] ; k++) {
+      for(int j = beg[JDIR] ; j < end[JDIR] ; j++) {
+        for(int i = beg[IDIR] ; i < end[IDIR] ; i++) {
+          for(int n = 0 ; n < NVAR ; n ++) {
+            if(std::isnan(dataHost.Vc(n,k,j,i)) && nerrormax>0) {
+              nerrormax--;
               idfx::cout << "rank " << idfx::prank << ": Nan found  in variable "
                 << this->hydro.VcName[n] << std::endl;
 
@@ -70,11 +71,12 @@ int DataBlock::CheckNan()  {
     }
 
 #if MHD == YES
-    for(int n = 0 ; n < DIMENSIONS ; n ++) {
-      for(int k = beg[KDIR] ; k < end[KDIR]+KOFFSET ; k++) {
-        for(int j = beg[JDIR] ; j < end[JDIR]+JOFFSET ; j++) {
-          for(int i = beg[IDIR] ; i < end[IDIR]+IOFFSET ; i++) {
-            if(std::isnan(dataHost.Vs(n,k,j,i))) {
+    for(int k = beg[KDIR] ; k < end[KDIR]+KOFFSET ; k++) {
+      for(int j = beg[JDIR] ; j < end[JDIR]+JOFFSET ; j++) {
+        for(int i = beg[IDIR] ; i < end[IDIR]+IOFFSET ; i++) {
+          for(int n = 0 ; n < DIMENSIONS ; n ++) {
+            if(std::isnan(dataHost.Vs(n,k,j,i)) && nerrormax>0) {
+              nerrormax--;
               idfx::cout << "rank " << idfx::prank << ": Nan found  in variable "
                 << this->hydro.VsName[n] << std::endl;
               idfx::cout << "      global (i,j,k) = (" << i-beg[IDIR]+gbeg[IDIR]-nghost[IDIR]
@@ -89,8 +91,11 @@ int DataBlock::CheckNan()  {
       }
     }
 #endif
+    if(nerrormax<=0) {
+      idfx::cout << "... " << std::endl << "*** More Nans have been found in current dataBlock. "
+        << "Only showing the first 10." << std::endl;
+    }
   }
-
   idfx::popRegion();
   return(nanVc+nanVs);
 }

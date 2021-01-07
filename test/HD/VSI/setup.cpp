@@ -59,7 +59,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 
                         Vc(RHO,k,j,i) = Vc(RHO,k,j,ighost);
                         if(Vc(VX1,k,j,ighost)>=ZERO_F) Vc(VX1,k,j,i) = - Vc(VX1,k,j,2*ighost-i);
-			                   else Vc(VX1,k,j,i) = Vc(VX1,k,j,ighost);
+                               else Vc(VX1,k,j,i) = Vc(VX1,k,j,ighost);
                         Vc(VX2,k,j,i) = Vc(VX2,k,j,ighost);
                         Vc(VX3,k,j,i) = R*Omega;
                     });

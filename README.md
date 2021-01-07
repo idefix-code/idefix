@@ -1,6 +1,20 @@
 The latest documentation is available
 [here](https://discs.gricad-pages.univ-grenoble-alpes.fr/idefix/index.html).
 
+<!-- toc -->
+
+- [Download:](#download)
+- [Installation:](#installation)
+- [Compile an example:](#compile-an-example)
+- [Running](#running)
+  * [serial (gpu/cpu), openMP (cpu)](#serial-gpucpu-openmp-cpu)
+  * [With MPI (cpu)](#with-mpi-cpu)
+  * [With MPI (gpu)](#with-mpi-gpu)
+- [Profiling](#profiling)
+- [Debugging](#debugging)
+- [Running tests](#running-tests)
+
+<!-- tocstop -->
 
 Download:
 ---------

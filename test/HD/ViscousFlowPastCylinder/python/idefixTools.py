@@ -224,7 +224,6 @@ def readVTKPolar(filename):
         if len(s)<2:         # leave if end of file
             break
         slist=s.split()
-        print(slist)
         datatype=str(slist[0],'utf-8')
         varname=str(slist[1],'utf-8')
         if datatype == "SCALARS":

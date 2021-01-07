@@ -536,7 +536,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
 
         #if GEOMETRY == SPHERICAL
           real tan_1 = 1.0/TAN(x2(j));
-          real s_1 = 1.0/TAN(x2(k));
+          real s_1 = 1.0/SIN(x2(j));
 
 
           real vx1i = 0.5*(Vc(VX1,k-1,j,i)+Vc(VX1,k,j,i));

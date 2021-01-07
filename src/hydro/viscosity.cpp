@@ -443,6 +443,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
           #if DIMENSIONS == 3
             tau_yz += s_1/x1(i)*dVyk;
           #endif
+          tau_yz *= eta1;
 
           // Compute cell-centered divV & sources terms
           tan_1 = 1.0/TAN(x2(j));

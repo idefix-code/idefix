@@ -13,6 +13,7 @@ The latest documentation is available
 - [Profiling](#profiling)
 - [Debugging](#debugging)
 - [Running tests](#running-tests)
+- [Contributing](#contributing)
 
 <!-- tocstop -->
 
@@ -119,3 +120,26 @@ The test suite itself is then run with
 ```shell
 bash test/checks.sh
 ```
+
+Contributing
+-------------------
+Idefix is developed with the help of the [pre-commit](https://pre-commit.com) framework.
+We use [cpplint](https://en.wikipedia.org/wiki/Cpplint) to validate code style, mostly
+following the Google standards for C++, and several pre-commit hooks to automatically fix
+some coding bad practices.
+
+It is recommended (though not mandatory) to install pre-commit by running the following
+script from the top level of the repo
+```shell
+python3 -m pip install pre-commit
+pre-commit install
+```
+
+Then, as one checks in their contribution with `git commit`, pre-commit hooks may perform
+changes in situ. One then needs to re-add and enter the `git commit` command again for the
+commit to be validated.
+Note that an important hook that does _not_ perform auto-fixes is `cpplint`, so contributors
+need to accomodate for this one by hand.
+
+> Note that if for any reason you do not wish, or are unable to install pre-commit in your
+> environment, formatting errors will be caught by our CI after you open a merge-request.

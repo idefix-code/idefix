@@ -1,9 +1,10 @@
-// ***********************************************************************************************
+// ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr
+// Copyright(C) 2020 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
-// ***********************************************************************************************
+// ***********************************************************************************
+
 // Most of these macros are identical to the one defined in the Pluto code (c) A. Mignone & col.
 
 #ifndef MACROS_HPP_

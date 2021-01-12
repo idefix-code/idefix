@@ -1,4 +1,4 @@
-/// ***********************************************************************************
+// ***********************************************************************************
 // Idefix MHD astrophysical code
 // Copyright(C) 2020 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
 // and other code contributors

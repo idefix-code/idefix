@@ -1,9 +1,9 @@
-// ***********************************************************************************************
+// ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr
+// Copyright(C) 2020 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
-// ***********************************************************************************************
+// ***********************************************************************************
 
 #ifndef HYDRO_MHDSOLVERS_HLLDMHD_HPP_
 #define HYDRO_MHDSOLVERS_HLLDMHD_HPP_

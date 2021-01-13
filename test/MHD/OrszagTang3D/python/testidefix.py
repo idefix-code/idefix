@@ -18,7 +18,7 @@ U=idfx.readVTKCart('data.0001.ref.vtk')
 error=np.sqrt(np.mean((V.data['PRS']-U.data['PRS'])**2/V.data['PRS']**2,axis=(0,1,2)))
 
 print("Error=%e"%error)
-if error<1e-6:
+if error<3e-3:
     print("SUCCESS!")
     sys.exit(0)
 else:

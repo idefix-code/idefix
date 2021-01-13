@@ -295,10 +295,10 @@ void Hydro::CalcCornerEMF(real t) {
         eyAtomic(k,j  ,i+1) += HALF_F*(DEY_DXP(k-1,j,i) + DEY_DXP(k,j,i));
         eyAtomic(k,j  ,i  ) -= HALF_F*(DEY_DXM(k-1,j,i) + DEY_DXM(k,j,i));
       } else {
-        exAtomic(k,j,i) += DEX_DYP(ku,j,i);
-        exAtomic(k,j,i) -= DEX_DYM(ku,j,i);
-        eyAtomic(k,j,i) += DEY_DXP(ku,j,i);
-        eyAtomic(k,j,i) -= DEY_DXM(ku,j,i);
+        exAtomic(k,j+1,i  ) += DEX_DYP(ku,j,i);
+        exAtomic(k,j  ,i  ) -= DEX_DYM(ku,j,i);
+        eyAtomic(k,j  ,i+1) += DEY_DXP(ku,j,i);
+        eyAtomic(k,j  ,i  ) -= DEY_DXM(ku,j,i);
       }
     #endif // DIMENSIONS
     });

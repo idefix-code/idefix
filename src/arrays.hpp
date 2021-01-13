@@ -27,7 +27,10 @@ template <typename T> using IdefixHostArray3D =
 template <typename T> using IdefixHostArray4D =
                             Kokkos::View<T****, Kokkos::LayoutRight, Kokkos::HostSpace>;
 
-
+// Atomic arrays
+template <typename T> using IdefixAtomicArray3D =
+                            Kokkos::View<T***, Layout, Device,
+                                         Kokkos::MemoryTraits<Kokkos::Atomic>>;
 /*
 template <typename T> using IdefixHostArray1D = Kokkos::View<T*, Layout, Host>;
 template <typename T> using IdefixHostArray2D = Kokkos::View<T**, Layout, Host>;

@@ -173,9 +173,12 @@ void Hydro::CalcCornerEMF(real t) {
   #endif // EMF_AVERAGE
 
   #if EMF_AVERAGE == UCT_CONTACT
+
+
   IdefixArray3D<int> svx = this->emf.svx;
   IdefixArray3D<int> svy = this->emf.svy;
   IdefixArray3D<int> svz = this->emf.svz;
+
 
   idefix_for("EMF_ArithmeticAverage",
              data->beg[KDIR],data->end[KDIR]+KOFFSET,
@@ -193,7 +196,20 @@ void Hydro::CalcCornerEMF(real t) {
     #else
       ez(k,j,i) = w * (TWO_F*ezi(k,j,i) + ezj(k,j,i) + ezj(k,j,i-1));
     #endif
+    });
 
+  // We define atomic references to ex,ey, ez because the loop "EMF_Integrate to corner"
+  // Is not incrementing only e(k,j,i) but also its neighbour. Hence race conditions
+  // Could occur in this loop.
+
+  IdefixAtomicArray3D<real> exAtomic = this->emf.ex;
+  IdefixAtomicArray3D<real> eyAtomic = this->emf.ey;
+  IdefixAtomicArray3D<real> ezAtomic = this->emf.ez;
+  idefix_for("EMF_Integrate to Corner",
+             data->beg[KDIR]-KOFFSET,data->end[KDIR]+KOFFSET,
+             data->beg[JDIR]-JOFFSET,data->end[JDIR]+JOFFSET,
+             data->beg[IDIR]-IOFFSET,data->end[IDIR]+IOFFSET,
+    KOKKOS_LAMBDA (int k, int j, int i) {
       //CT_EMF_IntegrateToCorner (data, emf, grid);
       int iu, ju, ku;
       D_EXPAND( int sx;  ,
@@ -209,38 +225,64 @@ void Hydro::CalcCornerEMF(real t) {
                 ku = sz > 0 ? k-1:k;  )
 
       // Span X - Faces:    dEz/dy, dEy/dz
+      // Reminder:
+      //   - Ez(k,j,i) is centered on  (i    ,j    ,k)
+      //   - svx(k,j,i) is centered on (i-1/2,j    ,k)
+      //   - ezj(k,j,i) is centered on (i    ,j-1/2,k)
+      //   - ezi(k,j,i) is centered on (i-1/2,j    ,k)
+      //   - ez(k,j,i) is centered on  (i-1/2,j-1/2,k)
+
+#define DEX_DYP(k,j,i)    (exj(k,j+1,i) - Ex1(k,j,i))
+#define DEX_DZP(k,j,i)    (exk(k+1,j,i) - Ex1(k,j,i))
+
+#define DEY_DXP(k,j,i)    (eyi(k,j,i+1) - Ex2(k,j,i))
+#define DEY_DZP(k,j,i)    (eyk(k+1,j,i) - Ex2(k,j,i))
+
+#define DEZ_DXP(k,j,i)    (ezi(k,j,i+1) - Ex3(k,j,i))
+#define DEZ_DYP(k,j,i)    (ezj(k,j+1,i) - Ex3(k,j,i))
+
+#define DEX_DYM(k,j,i)    (Ex1(k,j,i) - exj(k,j,i))
+#define DEX_DZM(k,j,i)    (Ex1(k,j,i) - exk(k,j,i))
+
+#define DEY_DXM(k,j,i)    (Ex2(k,j,i) - eyi(k,j,i))
+#define DEY_DZM(k,j,i)    (Ex2(k,j,i) - eyk(k,j,i))
+
+#define DEZ_DXM(k,j,i)    (Ex3(k,j,i) - ezi(k,j,i))
+#define DEZ_DYM(k,j,i)    (Ex3(k,j,i) - ezj(k,j,i))
+
 
       if (sx == 0) {
-        ez(k,j,i) += HALF_F*(ezj(k,j,i-1) - Ex3(k,j-1,i-1) + ezj(k,j,i) - Ex3(k,j-1,i));
-        ez(k,j,i) -= HALF_F*(Ex3(k,j,i-1) - ezj(k,j,i-1)   + Ex3(k,j,i) - ezj(k,j,i));
+        ezAtomic(k,j+1,i) += HALF_F*(DEZ_DYP(k,j,i-1) + DEZ_DYP(k,j,i));
+        ezAtomic(k,j  ,i) -= HALF_F*(DEZ_DYM(k,j,i-1) + DEZ_DYM(k,j,i));
+
     #if DIMENSIONS == 3
-        ey(k,j,i) += HALF_F*(eyk(k,j,i-1) - Ex2(k-1,j,i-1) + eyk(k,j,i) - Ex2(k-1,j,i));
-        ey(k,j,i) -= HALF_F*(Ex2(k,j,i-1) - eyk(k,j,i-1)   + Ex2(k,j,i) - eyk(k,j,i));
+        eyAtomic(k+1,j,i) += HALF_F*(DEY_DZP(k,j,i-1) + DEY_DZP(k,j,i));
+        eyAtomic(k  ,j,i) -= HALF_F*(DEY_DZM(k,j,i-1) + DEY_DZM(k,j,i));
     #endif
       } else {
-        ez(k,j,i) += ezj(k,j,iu) - Ex3(k,j-1,iu);
-        ez(k,j,i) -= Ex3(k,j,iu) - ezj(k,j,iu);
+        ezAtomic(k,j+1,i) += DEZ_DYP(k,j,iu);
+        ezAtomic(k,j,  i) -= DEZ_DYM(k,j,iu);
     #if DIMENSIONS == 3
-        ey(k,j,i) += eyk(k,j,iu) - Ex2(k-1,j,iu);
-        ey(k,j,i) -= Ex2(k,j,iu) - eyk(k,j,iu);
+        eyAtomic(k+1,j,i) += DEY_DZP(k,j,iu);
+        eyAtomic(k  ,j,i) -= DEY_DZM(k,j,iu);
     #endif
       }
 
       // Span Y - Faces:    dEz/dx, dEx/dz
 
       if (sy == 0) {
-        ez(k,j,i) += HALF_F*(ezi(k,j-1,i) - Ex3(k,j-1,i-1) + ezi(k,j,i) - Ex3(k,j,i-1));
-        ez(k,j,i) -= HALF_F*(Ex3(k,j-1,i) - ezi(k,j-1,i)   + Ex3(k,j,i) - ezi(k,j,i));
+        ezAtomic(k,j,i+1) += HALF_F*(DEZ_DXP(k,j-1,i) + DEZ_DXP(k,j,i));
+        ezAtomic(k,j,i  ) -= HALF_F*(DEZ_DXM(k,j-1,i) + DEZ_DXM(k,j,i));
     #if DIMENSIONS == 3
-        ex(k,j,i) += HALF_F*(exk(k,j-1,i) - Ex1(k-1,j-1,i) + exk(k,j,i) - Ex1(k-1,j,i));
-        ex(k,j,i) -= HALF_F*(Ex1(k,j-1,i) - exk(k,j-1,i)   + Ex1(k,j,i) - exk(k,j,i));
+        exAtomic(k+1,j,i) += HALF_F*(DEX_DZP(k,j-1,i) + DEX_DZP(k,j,i));
+        exAtomic(k  ,j,i) -= HALF_F*(DEX_DZM(k,j-1,i) + DEX_DZM(k,j,i));
     #endif
       } else {
-        ez(k,j,i) += ezi(k,ju,i) - Ex3(k,ju,i-1);
-        ez(k,j,i) -= Ex3(k,ju,i) - ezi(k,ju,i);
+        ezAtomic(k,j,i+1) += DEZ_DXP(k,ju,i);
+        ezAtomic(k,j,i  ) -= DEZ_DXM(k,ju,i);
     #if DIMENSIONS == 3
-        ex(k,j,i) += exk(k,ju,i) - Ex1(k-1,ju,i);
-        ex(k,j,i) -= Ex1(k,ju,i) - exk(k,ju,i);
+        exAtomic(k+1,j,i) += DEX_DZP(k,ju,i);
+        exAtomic(k  ,j,i) -= DEX_DZM(k,ju,i);
     #endif
       }
 
@@ -248,23 +290,45 @@ void Hydro::CalcCornerEMF(real t) {
 
     #if DIMENSIONS == 3
       if (sz == 0) {
-        ex(k,j,i) += HALF_F*(exj(k-1,j,i) - Ex1(k-1,j-1,i) + exj(k,j,i) - Ex1(k,j-1,i));
-        ex(k,j,i) -= HALF_F*(Ex1(k-1,j,i) - exj(k-1,j,i)   + Ex1(k,j,i) - exj(k,j,i));
-        ey(k,j,i) += HALF_F*(eyi(k-1,j,i) - Ex2(k-1,j,i-1) + eyi(k,j,i) - Ex2(k,j,i-1));
-        ey(k,j,i) -= HALF_F*(Ex2(k-1,j,i) - eyi(k-1,j,i)   + Ex2(k,j,i) - eyi(k,j,i));
+        exAtomic(k,j+1,i  ) += HALF_F*(DEX_DYP(k-1,j,i) + DEX_DYP(k,j,i));
+        exAtomic(k,j  ,i  ) -= HALF_F*(DEX_DYM(k-1,j,i) + DEX_DYM(k,j,i));
+        eyAtomic(k,j  ,i+1) += HALF_F*(DEY_DXP(k-1,j,i) + DEY_DXP(k,j,i));
+        eyAtomic(k,j  ,i  ) -= HALF_F*(DEY_DXM(k-1,j,i) + DEY_DXM(k,j,i));
       } else {
-        ex(k,j,i) += exj(ku,j,i) - Ex1(ku,j-1,i);
-        ex(k,j,i) -= Ex1(ku,j,i) - exj(ku,j,i);
-        ey(k,j,i) += eyi(ku,j,i) - Ex2(ku,j,i-1);
-        ey(k,j,i) -= Ex2(ku,j,i) - eyi(ku,j,i);
+        exAtomic(k,j,i) += DEX_DYP(ku,j,i);
+        exAtomic(k,j,i) -= DEX_DYM(ku,j,i);
+        eyAtomic(k,j,i) += DEY_DXP(ku,j,i);
+        eyAtomic(k,j,i) -= DEY_DXM(ku,j,i);
       }
+    #endif // DIMENSIONS
+    });
 
+    idefix_for("EMF_Renormalize",
+             data->beg[KDIR],data->end[KDIR]+KOFFSET,
+             data->beg[JDIR],data->end[JDIR]+JOFFSET,
+             data->beg[IDIR],data->end[IDIR]+IOFFSET,
+    KOKKOS_LAMBDA (int k, int j, int i) {
+    #if DIMENSIONS ==  3
       ex(k,j,i) *= ONE_FOURTH_F;
       ey(k,j,i) *= ONE_FOURTH_F;
     #endif
       ez(k,j,i) *= ONE_FOURTH_F;
     }
   );
+
+  #undef DEX_DYP
+  #undef DEX_DZP
+  #undef DEY_DXP
+  #undef DEY_DZP
+  #undef DEZ_DXP
+  #undef DEZ_DYP
+  #undef DEX_DYM
+  #undef DEX_DZM
+  #undef DEY_DXM
+  #undef DEY_DZM
+  #undef DEZ_DXM
+  #undef DEZ_DYM
+
   #endif // EMF_AVERAGE
 
   if(haveEmfBoundary)

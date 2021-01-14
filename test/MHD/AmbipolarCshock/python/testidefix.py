@@ -8,9 +8,12 @@ Created on Tue Sep  8 09:10:06 2020
 import numpy as np
 from scipy.integrate import ode
 import matplotlib.pyplot as plt
-import idefixTools as idfx
-import argparse
+import os
 import sys
+TESTDIR_PATH = os.path.join(os.getenv("IDEFIX_DIR"), "test")
+sys.path.append(TESTDIR_PATH)
+from idefix_testing.framework import readVTKCart
+import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-noplot",
@@ -39,7 +42,7 @@ def f(x,D):
     return(diff)
 
 # load solution
-V=idfx.readVTKCart('../data.0001.vtk')
+V=readVTKCart('../data.0001.vtk')
 
 DSim=V.data['RHO'].flatten()
 if(V.y.size>V.x.size):

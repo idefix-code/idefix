@@ -6,9 +6,12 @@ Created on Thu Mar  5 11:29:41 2020
 @author: glesur
 """
 
-import idefixTools as idfx
-import numpy as np
+import os
 import sys
+TESTDIR_PATH = os.path.join(os.getenv("IDEFIX_DIR"), "test")
+sys.path.append(TESTDIR_PATH)
+from idefix_testing.framework import readVTKSpherical
+import numpy as np
 import argparse
 import matplotlib.pyplot as plt
 
@@ -22,7 +25,7 @@ parser.add_argument("-noplot",
 args=parser.parse_args()
 
 
-V=idfx.readVTKSpherical('../data.0001.vtk')
+V=readVTKSpherical('../data.0001.vtk')
 
 
 iref=32

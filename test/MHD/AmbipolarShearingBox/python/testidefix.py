@@ -7,7 +7,11 @@ Created on Wed Sep  9 15:31:57 2020
 """
 import numpy as np
 import matplotlib.pyplot as plt
-import idefixTools as idfx
+import os
+import sys
+TESTDIR_PATH = os.path.join(os.getenv("IDEFIX_DIR"), "test")
+sys.path.append(TESTDIR_PATH)
+from idefix_testing.framework import readVTKCart
 
 rep='../'
 nend=1000
@@ -20,7 +24,7 @@ Bx=np.zeros(nend)
 
 t=dt*np.arange(0,nend)
 for n in range(nend):
-    V=idfx.readVTKCart(rep+'/data.'+'%0*d'%(4,n)+'.vtk')
+    V=readVTKCart(rep+'/data.'+'%0*d'%(4,n)+'.vtk')
     Bx[n]=np.sqrt(np.mean(np.mean(V.data['BX1']**2,axis=2),axis=0))
 
 plt.figure()

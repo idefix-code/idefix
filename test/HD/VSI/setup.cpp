@@ -141,7 +141,7 @@ void Setup::InitFlow(DataBlock &data) {
                 d.Vc(RHO,k,j,i) = 1.0/(R*sqrt(R))*exp(1.0/(cs2)*(1/r-1/R));
                 d.Vc(VX1,k,j,i) = 0.0;
                 d.Vc(VX2,k,j,i) = 1e-1*(0.5-randm());
-                d.Vc(VX3,k,j,i) = Vk*sqrt(R/r-2.5*cs2);
+                d.Vc(VX3,k,j,i) = Vk*sqrt(R/r-2.5*epsilon*epsilon);
 
             }
         }

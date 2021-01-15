@@ -9,9 +9,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import sys
-TESTDIR_PATH = os.path.join(os.getenv("IDEFIX_DIR"), "test")
-sys.path.append(TESTDIR_PATH)
-from idefix_testing.framework import readVTKCart
+sys.path.append(os.getenv("IDEFIX_DIR"))
+from idefix_pytools.vtk_io import readVTKCart
 
 rep='../'
 nend=1000

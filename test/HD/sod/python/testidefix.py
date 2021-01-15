@@ -8,10 +8,9 @@ Created on Thu Mar  5 11:29:41 2020
 
 import os
 import sys
-TESTDIR_PATH = os.path.join(os.getenv("IDEFIX_DIR"), "test")
-sys.path.append(TESTDIR_PATH)
-from idefix_testing.framework import readVTKCart
-from idefix_testing import sod # todo: better repo orga
+sys.path.append(os.getenv("IDEFIX_DIR"))
+from idefix_pytools.vtk_io import readVTKCart
+from idefix_pytools import sod
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt

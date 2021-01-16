@@ -12,10 +12,12 @@ Created on Thu Sep  3 17:09:32 2020
 
 @author: lesurg
 """
-import idefixTools as idfx
+import os
+import sys
+sys.path.append(os.getenv("IDEFIX_DIR"))
+from idefix_pytools.vtk_io import readVTKCart
 import numpy as np
 import argparse
-import sys
 import matplotlib.pyplot as plt
 from scipy.signal import argrelextrema
 
@@ -41,7 +43,7 @@ k=2.0*np.pi
 n=0
 dt=0.01
 
-V=idfx.readVTKCart(rep+'/data.'+'%0*d'%(4,n)+'.vtk')
+V=readVTKCart(rep+'/data.'+'%0*d'%(4,n)+'.vtk')
 nx=V.x.size*V.y.size*V.z.size
 nx=V.x.size
 
@@ -59,7 +61,7 @@ Vz=np.zeros((nend,nx))
 
 t=dt*np.arange(0,nend)
 for n in range(nend):
-    V=idfx.readVTKCart(rep+'/data.'+'%0*d'%(4,n)+'.vtk')
+    V=readVTKCart(rep+'/data.'+'%0*d'%(4,n)+'.vtk')
 
 
     Bx[n,:]=V.data['BX1'][:,0,0]

@@ -6,9 +6,11 @@ Created on Thu Mar  5 11:29:41 2020
 @author: glesur
 """
 
-import idefixTools as idfx
-import numpy as np
+import os
 import sys
+sys.path.append(os.getenv("IDEFIX_DIR"))
+from idefix_pytools.vtk_io import readVTKCart
+import numpy as np
 import argparse
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
@@ -22,8 +24,8 @@ parser.add_argument("-noplot",
 
 args=parser.parse_args()
 
-V=idfx.readVTKCart('../data.0001.vtk')
-U=idfx.readVTKCart('data.ref.vtk')
+V=readVTKCart('../data.0001.vtk')
+U=readVTKCart('data.ref.vtk')
 
 solinterp=interp1d(U.x,U.data['rho'][:,0,0])
 

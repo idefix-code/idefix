@@ -19,8 +19,8 @@ class Grid {
   real xbeg[3];           // Beginning of grid
   real xend[3];           // End of grid
 
-  int np_tot[3];          // total number of grid points
-  int np_int[3];          // internal number of grid points
+  int np_tot[3];          // total number of grid points (including ghosts)
+  int np_int[3];          // internal number of grid points (excluding ghosts)
 
   int nghost[3];          // number of ghost cells
   BoundaryType lbound[3];          // Boundary condition to the left

@@ -35,7 +35,7 @@ of Contract DE-NA0003525 with National Technology & Engineering Solutions of San
    :caption: Contents:
 
    quickstart
-   configuration
+   reference
 
 
 

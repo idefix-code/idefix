@@ -113,7 +113,7 @@ before using them in loops, to keep compatibility with Cuda.
   of the arrays and variables you intend to use before calling ``idefix_loop``. This ensures that
   these variables will be properly captured by device lambdas.
 
-
+.. _classes:
 
 Useful classes
 ==============
@@ -184,7 +184,44 @@ The ``DataBlock`` class
 
 ``DataBlock`` contains all of the data structures that belongs to that particular process (i.e. if MPI is enabled, it contains data
 specific to this subprocess, in contrast to ``Grid``). In particular, the DataBlocks have the local grid coordinates, stored
-in arrays having the same name as ``Grid``.
+in arrays having the same name as ``Grid``. ``DataBlock`` also contains instances of the physical modules. Currently,
+it only contains an instance of the ``Hydro`` class, but future physical modules will follow the same path.
+
+The ``Hydro`` class
+---------------------
+The ``Hydro`` class (and its sub-classes) contains all of the fields and methods specific to (magneto) hydrodynamics. While
+interested users may want to read in details the implementation of this class, we provide below a list of the most important
+members
+
+.. code-block:: c++
+
+  IdefixArray4D<real> Vc;      // Main cell-centered primitive variables index
+  IdefixArray4D<real> Vs;      // Main face-centered varariables
+  IdefixArray4D<real> Uc;      // Main cell-centered conservative variables
+
+  // Enroll user-defined gravitational potential
+  void EnrollGravPotential(GravPotentialFunc);
+
+  // Enroll user-defined boundary conditions
+  void EnrollUserDefBoundary(UserDefBoundaryFunc);
+
+  // Enroll user-defined ohmic, ambipolar and Hall diffusivities
+  void EnrollOhmicDiffusivity(DiffusivityFunc);
+  void EnrollAmbipolarDiffusivity(DiffusivityFunc);
+  void EnrollHallDiffusivity(DiffusivityFunc);
+
+  // Enroll user-defined isothermal sound speed
+  void EnrollIsoSoundSpeed(IsoSoundSpeedFunc);
+
+
+The first two IdefixArrays are the ones storing the primitive variable fields. These arrays
+are 4D, the first dimension being the field number. *Idefix* defines aliases for these numbers,
+so that one can call ``Vc(VX1,k,j,i)`` in place of ``Vc(1,k,j,i)`` to get the first velocity component.
+These aliases are defined in ``idefix.hpp``
+
+Because the code uses contrained transport, the field defined on cell faces is stored in the ``Vs``
+array. Just like for ``Vc``, there are aliases, with "s" suffixes defined to simplify the adressing
+of the magnetic field components, as ``Vs(BX2s,k,j,i)``.
 
 
 Debugging and profiling

@@ -9,18 +9,28 @@ The source code ``setup.cpp`` contains the code specific to physical setup at ha
   - Define setup-specific outputs
 
 Most of these initialisations relies on the class ``Setup`` which has to be implemented in your ``setup.cpp``. At this stage it is useful
-to have in mind some of the classes defined in *Idefix* to which you can have access to.
+to have in mind some of the classes defined in *Idefix* to which you can have access to, which are documented in :ref:`classes`.
 
-Data structures and execution space in *Idefix*
-===============================================
+The ``Setup`` class
+--------------------
+The ``Setup`` class is declared as follows:
 
+.. code-block:: c++
 
+  class Setup {
+    public:
+      Setup();
+      Setup(Input &, Grid &, DataBlock &);
+      void InitFlow(DataBlock &);
+      void MakeAnalysis(DataBlock&);
+    };
 
-Some useful classes of *Idefix*
-===================================
+As it can be seen this class consist of constructor and two methods: ``InitFlow`` and ``MakeAnalysis`` which will handle
+the initial condition and the setup-specific outputs mentionned above.
 
-*Idefix* being written in c++, it defines a full set of classes can be called from the setup
-
+Let us start with the constructors. The default constructor ``Setup()`` is not used by *Idefix*. The code only use the constructor `Setup(Input &, Grid &, DataBlock &)`.
+This constructor is called on the code startup and allows the user to load and set setup-specific parameters. The parameters are three objects
+which have already been initialised when ``Setup`` is called: ``Input``, ``Grid`` and ``DataBlock`` (see :ref:`classes`).
 
 
 

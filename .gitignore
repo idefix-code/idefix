@@ -1,4 +1,8 @@
-doc/*
+doc/build/*
+doc/source/_build/*
+doc/source/_static/*
+doc/source/_public/*
+
 
 # compiled files
 **/__pycache__

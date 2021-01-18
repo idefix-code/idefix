@@ -25,10 +25,12 @@ class Input {
   void PrintParameters();
 
   // Accessor to input parameters
-  std::string GetString(std::string, std::string, int);
-  real GetReal(std::string, std::string, int);
-  int GetInt(std::string, std::string, int);
-  int CheckEntry(std::string, std::string);
+  // the parameters are always: BlockName, EntryName, ParameterNumber (starting from 0)
+  std::string GetString(std::string, std::string, int); // Read a string from the input file
+  real GetReal(std::string, std::string, int);          // Read a real number from the input file
+  int GetInt(std::string, std::string, int);            // Read an integer from the input file
+  int CheckEntry(std::string, std::string);             // Check that a block/entry is present
+                                                        // in the input file
 
   Input();
   void PrintLogo();

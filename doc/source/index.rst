@@ -31,7 +31,7 @@ of Contract DE-NA0003525 with National Technology & Engineering Solutions of San
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
    quickstart

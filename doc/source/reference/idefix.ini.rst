@@ -9,7 +9,7 @@ allows for comments, which should start with ``#``.
 
 .. tip::
     Note that you can add arbitray sections and entries in the input file freely. *Idefix* will automatically read and store them on startup. They are then accessible in the code using the
-    ``Input::GetReal(..)``, ``Input::GetInt(...)`` and ``Input::GetString(..)`` methods defined in the ``Input`` class.
+    ``Input::GetReal(..)``, ``Input::GetInt(...)`` and ``Input::GetString(..)`` methods defined in the ``Input`` class (see :ref:`inputClass`)
 
 The ``Grid`` section
 --------------------
@@ -79,7 +79,7 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 |                |                         | | When ``constant``, the second parameter is the spatially constant sound speed.            |
 |                |                         | | When ``userdef``, the ``Hydro`` class expects a user-defined sound speed function         |
 |                |                         | | to be enrolled with   ``EnrollIsoSoundSpeed(IsoSoundSpeedFunc)``                          |
-|                |                         | | In that case, the second parameter is not used.                                           |
+|                |                         | | (see :ref:`functionEnrollment`). In this case, the second parameter is not used.          |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | gamma          | float                   | Adiabatic index when ISOTHERMAL is not defined                                              |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
@@ -87,30 +87,32 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 |                |                         | | When ``constant``, the second parameter is the  Ohmic diffusion coefficient.              |
 |                |                         | | When ``userdef``, the ``Hydro`` class expects a user-defined diffusivity function         |
 |                |                         | | to be enrolled with   ``Hydro::EnrollOhmicDiffusivity(DiffusivityFunc)``                  |
-|                |                         | | In that case, the second parameter is not used.                                           |
+|                |                         | | (see :ref:`functionEnrollment`). In this case, the second parameter is not used.          |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | Ambipolar      | string, float           | | Switches on ambipolar diffusion. String can be  either ``constant`` or ``userdef``.       |
 |                |                         | | When ``constant``, the second parameter is the ambipolar diffusion coefficient.           |
 |                |                         | | When ``userdef``, the ``Hydro`` class expects a user-defined diffusivity function         |
 |                |                         | | to be enrolled with   ``Hydro::EnrollAmbipolarDiffusivity(DiffusivityFunc)``              |
-|                |                         | | In that case, the second parameter is not used.                                           |
+|                |                         | | (see :ref:`functionEnrollment`). In this case, the second parameter is not used.          |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | Hall           | string, float           | | Switches on Hall effect. String can be  either ``constant`` or ``userdef``.               |
 |                |                         | | When ``constant``, the second parameter is the  Hall diffusion coefficient.               |
 |                |                         | | When ``userdef``, the ``Hydro`` class expects a user-defined diffusivity function         |
 |                |                         | | to be enrolled with   ``Hydro::EnrollHallDiffusivity(DiffusivityFunc)``                   |
-|                |                         | | In that case, the second parameter is not used.                                           |
+|                |                         | | (see :ref:`functionEnrollment`). In this case, the second parameter is not used.          |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | Viscosity      | string, float, float    | | Switches on viscous diffusion. String can be either ``constant`` or ``userdef``           |
 |                |                         | | When ``constant``, the second parameter is the flow viscosity and the third               |
 |                |                         | | parameter is the second (or compressive) viscosity (which is optionnal).                  |
 |                |                         | | When ``userdef``, the ``Hydro.Viscosity`` class expects a user-defined viscosity function |
 |                |                         | | to be enrolled with   ``Hydro.Viscosity::EnrollViscousDiffusivity(DiffusivityFunc)``      |
-|                |                         | | In that case, the second and third parameters are not used.                               |
+|                |                         | | (see :ref:`functionEnrollment`). In this case, the second and third parameters            |
+|                |                         | | are not used.                                                                             |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | GravPotential  | string                  | | Switches on an external gravitational potential. Only ``userdef`` is allowed.             |
 |                |                         | | When ``userdef is set, the ``Hydro`` class expects  a user-defined potential function     |
 |                |                         | | to be enrolled with  ``Hydro::EnrollGravPotential(GravPotentialFunc)``                    |
+|                |                         | | (see :ref:`functionEnrollment`)                                                           |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | Rotation       | float,float,float       | | Add rotation with rhe rotation vector components given as parameters.                     |
 |                |                         | | Note that this entry only adds Coriolis force.                                            |
@@ -150,7 +152,7 @@ and ``X1-end``, ``X2-end``, ``X3-end`` for the right boundaries. Each boundary c
 | shearingbox    | Shearing-box boudary conditions.                                                                                 |
 +----------------+------------------------------------------------------------------------------------------------------------------+
 | userdef        | | User-defined boundary conditions. The boundary condition function should be enrolled in the setup constructor  |
-|                | | (see setup.cpp)                                                                                                |
+|                | | (see :ref:`userdefBoundaries`)                                                                                 |
 +----------------+------------------------------------------------------------------------------------------------------------------+
 
 .. warning::

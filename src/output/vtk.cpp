@@ -8,7 +8,7 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
-#include "outputVtk.hpp"
+#include "vtk.hpp"
 #include "gitversion.hpp"
 #include "../idefix.hpp"
 

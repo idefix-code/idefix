@@ -5,7 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#include "outputDump.hpp"
+#include "dump.hpp"
 #include "gitversion.hpp"
 
 // Max size of array name
@@ -13,7 +13,7 @@
 #define  FILENAMESIZE   256
 #define  HEADERSIZE 128
 
-OutputDump::OutputDump(Input &input, DataBlock &data) {
+Dump::Dump(Input &input, DataBlock &data) {
   // Init the output period
   if(input.CheckEntry("Output","dmp")>0) {
     this->tperiod=input.GetReal("Output","dmp",0);
@@ -83,7 +83,7 @@ OutputDump::OutputDump(Input &input, DataBlock &data) {
   #endif
 }
 
-void OutputDump::WriteString(IdfxFileHandler fileHdl, char *str, int size) {
+void Dump::WriteString(IdfxFileHandler fileHdl, char *str, int size) {
   #ifdef WITH_MPI
     MPI_Status status;
     MPI_SAFE_CALL(MPI_File_set_view(fileHdl, this->offset,
@@ -98,7 +98,7 @@ void OutputDump::WriteString(IdfxFileHandler fileHdl, char *str, int size) {
 }
 
 
-void OutputDump::WriteSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
+void Dump::WriteSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
                              DataType type, char* name, void* data ) {
   int ntot = 1;   // Number of elements to be written
   int size;
@@ -168,7 +168,7 @@ void OutputDump::WriteSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
   #endif
 }
 
-void OutputDump::WriteDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gdim,
+void Dump::WriteDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gdim,
                                   char* name, IdfxDataDescriptor &descriptor, real* data ) {
     int64_t ntot = 1;   // Number of elements to be written
 
@@ -243,7 +243,7 @@ void OutputDump::WriteDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, i
   #endif
 }
 
-void OutputDump::ReadNextFieldProperties(IdfxFileHandler fileHdl, int &ndim, int *dim,
+void Dump::ReadNextFieldProperties(IdfxFileHandler fileHdl, int &ndim, int *dim,
                                          DataType &type, std::string &name) {
   char fieldName[NAMESIZE];
   int64_t ntot=1;
@@ -300,7 +300,7 @@ void OutputDump::ReadNextFieldProperties(IdfxFileHandler fileHdl, int &ndim, int
   #endif
 }
 
-void OutputDump::ReadSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
+void Dump::ReadSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
                             DataType type, void* data) {
   int size;
   int64_t ntot=1;
@@ -334,7 +334,7 @@ void OutputDump::ReadSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
   #endif
 }
 
-void OutputDump::ReadDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gdim,
+void Dump::ReadDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gdim,
                                  IdfxDataDescriptor &descriptor, void* data) {
   int size;
   int64_t ntot=1;
@@ -365,7 +365,7 @@ void OutputDump::ReadDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, in
   #endif
 }
 
-int OutputDump::Read(Grid& grid, DataBlock &data, OutputVTK& ovtk, int readNumber ) {
+int Dump::Read(Grid& grid, DataBlock &data, OutputVTK& ovtk, int readNumber ) {
   char filename[FILENAMESIZE];
   int nx[3];
   int nxglob[3];
@@ -375,9 +375,9 @@ int OutputDump::Read(Grid& grid, DataBlock &data, OutputVTK& ovtk, int readNumbe
   int ndim;
   IdfxFileHandler fileHdl;
 
-  idfx::pushRegion("OutputDump::Read");
+  idfx::pushRegion("Dump::Read");
 
-  idfx::cout << "OutputDump::Reading restart file n " << readNumber << "..." << std::flush;
+  idfx::cout << "Dump::Reading restart file n " << readNumber << "..." << std::flush;
 
   // Reset timer
   timer.reset();
@@ -531,7 +531,7 @@ int OutputDump::Read(Grid& grid, DataBlock &data, OutputVTK& ovtk, int readNumbe
   return(0);
 }
 
-int OutputDump::CheckForWrite(Grid& grid, DataBlock &data, OutputVTK& ovtk) {
+int Dump::CheckForWrite(Grid& grid, DataBlock &data, OutputVTK& ovtk) {
   // Do we need an output?
   if(data.t<this->tnext) return(0);
   if(this->tperiod < 0) return(0);  // negative tperiod means dump outputs are disabled
@@ -539,7 +539,7 @@ int OutputDump::CheckForWrite(Grid& grid, DataBlock &data, OutputVTK& ovtk) {
   return(this->Write(grid, data, ovtk));
 }
 
-int OutputDump::Write( Grid& grid, DataBlock &data, OutputVTK& ovtk) {
+int Dump::Write( Grid& grid, DataBlock &data, OutputVTK& ovtk) {
   char filename[FILENAMESIZE];
   char fieldName[NAMESIZE+1]; // +1 is just in case
   int nx[3];
@@ -551,7 +551,7 @@ int OutputDump::Write( Grid& grid, DataBlock &data, OutputVTK& ovtk) {
   #endif
   IdfxFileHandler fileHdl;
 
-  idfx::cout << "OutputDump::Write file n " << dumpFileNumber << "..." << std::flush;
+  idfx::cout << "Dump::Write file n " << dumpFileNumber << "..." << std::flush;
 
   // Reset timer
   timer.reset();

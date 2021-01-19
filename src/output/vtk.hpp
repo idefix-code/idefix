@@ -5,23 +5,22 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef OUTPUT_OUTPUTVTK_HPP_
-#define OUTPUT_OUTPUTVTK_HPP_
+#ifndef OUTPUT_VTK_HPP_
+#define OUTPUT_VTK_HPP_
 #include <string>
 #include "../idefix.hpp"
 
 
-class OutputVTK {
-  friend class OutputDump;
+class Vtk {
+  friend class Dump;
 
  public:
-  OutputVTK(Input &, DataBlock &);           // Create Output Object
+  Vtk(Input &, DataBlock &);           // Create Vtk Object
   int Write(DataBlock &);     // Create a VTK from the current DataBlock
   int CheckForWrite(DataBlock &);
 
  private:
   int vtkFileNumber;
-  real tperiod, tnext;
 
   // dimensions
   int64_t nx1,nx2,nx3;
@@ -55,4 +54,4 @@ class OutputVTK {
   void WriteHeaderFloat(float* , int64_t, IdfxFileHandler);
 };
 
-#endif // OUTPUT_OUTPUTVTK_HPP_
+#endif // OUTPUT_VTK_HPP_

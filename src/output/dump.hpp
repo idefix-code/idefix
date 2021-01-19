@@ -5,8 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef OUTPUT_OUTPUTDUMP_HPP_
-#define OUTPUT_OUTPUTDUMP_HPP_
+#ifndef OUTPUT_DUMP_HPP_
+#define OUTPUT_DUMP_HPP_
 #include <string>
 #include "../idefix.hpp"
 
@@ -21,11 +21,11 @@ enum DataType {DoubleType, SingleType, IntegerType};
 #endif
 
 // Forward class declaration
-class OutputVTK;
+class VTK;
 
-class OutputDump {
+class Dump {
  public:
-  OutputDump(Input &, DataBlock &);               // Create Output Object
+  Dump(Input &, DataBlock &);               // Create Output Object
   // Create a Dump file from the current state of the code
   int Write(Grid&, DataBlock &, OutputVTK&);
   // Create a Dump file from the current state of the code
@@ -61,4 +61,4 @@ class OutputDump {
   void ReadDistributed(IdfxFileHandler, int, int*, int*, IdfxDataDescriptor&, void*);
 };
 
-#endif // OUTPUT_OUTPUTDUMP_HPP_
+#endif // OUTPUT_DUMP_HPP_

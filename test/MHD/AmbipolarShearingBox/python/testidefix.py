@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import os
 import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
-from idefix_pytools.vtk_io import readVTKCart
+from pytools.vtk_io import readVTKCart
 
 rep='../'
 nend=1000

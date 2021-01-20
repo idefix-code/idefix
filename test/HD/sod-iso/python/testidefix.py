@@ -9,8 +9,8 @@ Created on Thu Mar  5 11:29:41 2020
 import os
 import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
-from idefix_pytools.vtk_io import readVTKCart
-from idefix_pytools import sod
+from pytools.vtk_io import readVTKCart
+from pytools import sod
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt

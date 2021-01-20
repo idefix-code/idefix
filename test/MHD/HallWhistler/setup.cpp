@@ -1,5 +1,9 @@
+#include <iostream>
+#include <fstream>
+
 #include "idefix.hpp"
 #include "setup.hpp"
+
 
 /*********************************************/
 /**
@@ -10,6 +14,7 @@ generators on different architectures.
 /*********************************************/
 
 int mode;
+#define  FILENAME    "timevol.dat"
 
 // Default constructor
 Setup::Setup() {}
@@ -18,6 +23,13 @@ Setup::Setup() {}
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data) {
     mode = input.GetInt("Setup","mode",0);
+    if(!input.restartRequested) {
+      // Initialise the output file
+      std::ofstream f;
+      f.open(FILENAME,std::ios::trunc);
+      f << "t\t\t by" << std::endl;
+      f.close();
+    }
 }
 
 // This routine initialize the flow
@@ -94,5 +106,14 @@ void Setup::InitFlow(DataBlock &data) {
 
 // Analyse data to produce an output
 void Setup::MakeAnalysis(DataBlock & data) {
+  DataBlockHost d(data);
+  if(idfx::prank == 0) {
+    real by = d.Vc(BX2,data.beg[KDIR],data.beg[JDIR],data.beg[IDIR]);
+    std::ofstream f;
+    f.open(FILENAME,std::ios::app);
+    f.precision(10);
+    f << std::scientific << data.t << "\t" << by << std::endl;
+    f.close();
+  }
 
 }

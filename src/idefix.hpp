@@ -230,8 +230,9 @@ enum BoundarySide { left, right};
 #include "dataBlockHost.hpp"
 #include "timeIntegrator.hpp"
 #include "setup.hpp"
-#include "outputVtk.hpp"
-#include "outputDump.hpp"
+#include "vtk.hpp"
+#include "dump.hpp"
+#include "output.hpp"
 
 
 

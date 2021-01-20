@@ -17,10 +17,9 @@ class Vtk {
  public:
   Vtk(Input &, DataBlock &);           // Create Vtk Object
   int Write(DataBlock &);     // Create a VTK from the current DataBlock
-  int CheckForWrite(DataBlock &);
 
  private:
-  int vtkFileNumber;
+  int vtkFileNumber = 0;
 
   // dimensions
   int64_t nx1,nx2,nx3;

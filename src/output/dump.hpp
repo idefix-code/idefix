@@ -21,23 +21,21 @@ enum DataType {DoubleType, SingleType, IntegerType};
 #endif
 
 // Forward class declaration
-class VTK;
+class Vtk;
+class Output;
 
 class Dump {
  public:
-  Dump(Input &, DataBlock &);               // Create Output Object
+  Dump(Input &, DataBlock &);               // Create Dump Object
   // Create a Dump file from the current state of the code
-  int Write(Grid&, DataBlock &, OutputVTK&);
-  // Create a Dump file from the current state of the code
-  int CheckForWrite(Grid&, DataBlock &, OutputVTK&);
+  int Write(DataBlock &, Output&);
   // Read and load a dump file as current state of the code
-  int Read(Grid&, DataBlock &, OutputVTK&, int);
+  int Read(DataBlock &, Output&, int);
 
  private:
   int dumpFileNumber;
   int geometry{GEOMETRY};
   int periodicity[3];
-  real tperiod, tnext;
 
   real *scrch;                            // Scratch array in host space
 

@@ -15,13 +15,7 @@
 
 Dump::Dump(Input &input, DataBlock &data) {
   // Init the output period
-  if(input.CheckEntry("Output","dmp")>0) {
-    this->tperiod=input.GetReal("Output","dmp",0);
-    this->tnext = data.t;
-  } else {
-    this->tperiod = -1.0; // Disable dump outputs altogether
-    this->tnext = 0;
-  }
+
 
   for (int dir=0; dir<3; dir++) {
     this->periodicity[dir] = (data.mygrid->lbound[dir] == periodic);
@@ -365,7 +359,7 @@ void Dump::ReadDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gdi
   #endif
 }
 
-int Dump::Read(Grid& grid, DataBlock &data, OutputVTK& ovtk, int readNumber ) {
+int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
   char filename[FILENAMESIZE];
   int nx[3];
   int nxglob[3];
@@ -409,7 +403,7 @@ int Dump::Read(Grid& grid, DataBlock &data, OutputVTK& ovtk, int readNumber ) {
   for(int dir=0 ; dir < 3; dir++) {
     ReadNextFieldProperties(fileHdl, ndim, nx, type, fieldName);
     if(ndim>1) IDEFIX_ERROR("Wrong coordinate array dimensions while reading restart dump");
-    if(nx[0] != grid.np_int[dir]) {
+    if(nx[0] != data->grid.np_int[dir]) {
       idfx::cout << "dir " << dir << ", restart has " << nx[0] << " points " << std::endl;
       IDEFIX_ERROR("Domain size from the restart dump is different from the current one");
     }
@@ -497,13 +491,15 @@ int Dump::Read(Grid& grid, DataBlock &data, OutputVTK& ovtk, int readNumber ) {
     } else if(fieldName.compare("dt") == 0) {
       ReadSerial(fileHdl, ndim, nxglob, type, &data.dt);
     } else if(fieldName.compare("vtkFileNumber")==0) {
-      ReadSerial(fileHdl, ndim, nxglob, type, &ovtk.vtkFileNumber);
-    } else if(fieldName.compare("vtktnext")==0) {
-      ReadSerial(fileHdl, ndim, nxglob, type, &ovtk.tnext);
+      ReadSerial(fileHdl, ndim, nxglob, type, &output.vtk.vtkFileNumber);
+    } else if(fieldName.compare("vtktLast")==0) {
+      ReadSerial(fileHdl, ndim, nxglob, type, &output.vtkLast);
     } else if(fieldName.compare("dumpFileNumber")==0) {
       ReadSerial(fileHdl, ndim, nxglob, type, &this->dumpFileNumber);
-    } else if(fieldName.compare("dumptnext")==0) {
-      ReadSerial(fileHdl, ndim, nxglob, type, &this->tnext);
+    } else if(fieldName.compare("dumpLast")==0) {
+      ReadSerial(fileHdl, ndim, nxglob, type, &output.dumpLast);
+    } else if(fieldName.compare("analysisLast")==0) {
+      ReadSerial(fileHdl, ndim, nxglob, type, &output.analysisLast);
     } else if(fieldName.compare("geometry")==0) {
       ReadSerial(fileHdl, ndim, nxglob, type, &this->geometry);
     } else if(fieldName.compare("periodicity")==0) {
@@ -531,19 +527,13 @@ int Dump::Read(Grid& grid, DataBlock &data, OutputVTK& ovtk, int readNumber ) {
   return(0);
 }
 
-int Dump::CheckForWrite(Grid& grid, DataBlock &data, OutputVTK& ovtk) {
-  // Do we need an output?
-  if(data.t<this->tnext) return(0);
-  if(this->tperiod < 0) return(0);  // negative tperiod means dump outputs are disabled
-  this->tnext+= this->tperiod;
-  return(this->Write(grid, data, ovtk));
-}
 
-int Dump::Write( Grid& grid, DataBlock &data, OutputVTK& ovtk) {
+int Dump::Write(DataBlock &data, Output& output) {
   char filename[FILENAMESIZE];
   char fieldName[NAMESIZE+1]; // +1 is just in case
   int nx[3];
   int nxtot[3];
+
   #ifdef USE_DOUBLE
   const DataType realType = DoubleType;
   #else
@@ -571,7 +561,7 @@ int Dump::Write( Grid& grid, DataBlock &data, OutputVTK& ovtk) {
 #endif
   // File is open
   // First thing we need are coordinates: init a host mirror and sync it
-  GridHost gridHost(grid);
+  GridHost gridHost(*data.mygrid);
   gridHost.SyncFromDevice();
 
   char header[HEADERSIZE];
@@ -651,13 +641,15 @@ int Dump::Write( Grid& grid, DataBlock &data, OutputVTK& ovtk) {
   std::snprintf(fieldName,NAMESIZE, "dt");
   WriteSerial(fileHdl, 1, nx, realType, fieldName, &data.dt);
   std::snprintf(fieldName,NAMESIZE, "vtkFileNumber");
-  WriteSerial(fileHdl, 1, nx, IntegerType, fieldName, &ovtk.vtkFileNumber);
-  std::snprintf(fieldName,NAMESIZE, "vtktnext");
-  WriteSerial(fileHdl, 1, nx, realType, fieldName, &ovtk.tnext);
+  WriteSerial(fileHdl, 1, nx, IntegerType, fieldName, &output.vtk.vtkFileNumber);
+  std::snprintf(fieldName,NAMESIZE, "vtkLast");
+  WriteSerial(fileHdl, 1, nx, realType, fieldName, &output.vtkLast);
   std::snprintf(fieldName,NAMESIZE, "dumpFileNumber");
   WriteSerial(fileHdl, 1, nx, IntegerType, fieldName, &this->dumpFileNumber);
-  std::snprintf(fieldName,NAMESIZE, "dumptnext");
-  WriteSerial(fileHdl, 1, nx, realType, fieldName, &this->tnext);
+  std::snprintf(fieldName,NAMESIZE, "dumpLast");
+  WriteSerial(fileHdl, 1, nx, realType, fieldName, &output.dumpLast);
+  std::snprintf(fieldName,NAMESIZE, "analysisLast");
+  WriteSerial(fileHdl, 1, nx, realType, fieldName, &output.analysisLast);
   std::snprintf(fieldName,NAMESIZE, "geometry");
   WriteSerial(fileHdl, 1, nx, IntegerType, fieldName, &this->geometry);
 

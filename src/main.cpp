@@ -94,23 +94,21 @@ int main( int argc, char* argv[] ) {
     Setup mysetup(input,grid,data);
 
     idfx::cout << "Main::Onit Output Routines." << std::endl;
-    OutputVTK outVTK(input, data);
-    OutputDump outDMP(input, data);
+    Output output(input, data, mysetup);
 
     // Apply initial conditions
 
     // Are we restarting?
     if(input.CheckEntry("CommandLine","restart") > 0) {
       idfx::cout << "Main::Restarting from dump file"  << std::endl;
-      outDMP.Read(grid,data,outVTK,input.GetInt("CommandLine","restart",0));
+      output.RestartFromDump(data,input.GetInt("CommandLine","restart",0));
       data.hydro.SetBoundary(data.t);
-      outVTK.CheckForWrite(data);
+      output.CheckForWrites(data);
     } else {
       idfx::cout << "Main::Creating initial conditions." << std::endl;
       mysetup.InitFlow(data);
       data.hydro.SetBoundary(data.t);
-      outDMP.CheckForWrite(grid, data, outVTK);
-      outVTK.CheckForWrite(data);
+      output.CheckForWrites(data);
     }
 
     idfx::cout << "Main::Cycling Time Integrator..." << std::endl;
@@ -122,11 +120,10 @@ int main( int argc, char* argv[] ) {
     while(data.t < tstop) {
       if(tstop-data.t < data.dt) data.dt = tstop-data.t;
       Tint.Cycle(data);
-      outDMP.CheckForWrite(grid, data, outVTK);
-      outVTK.CheckForWrite(data);
+      output.CheckForWrites(data);
       if(abortRequested) {
         idfx::cout << "Main:: Saving current state and aborting calculation" << std::endl;
-        outDMP.Write(grid, data, outVTK);
+        output.ForceWrite(data);
         break;
       }
     }

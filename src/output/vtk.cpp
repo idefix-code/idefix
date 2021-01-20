@@ -43,7 +43,7 @@
 
 
 
-void OutputVTK::WriteHeaderString(const char* header, IdfxFileHandler fvtk) {
+void Vtk::WriteHeaderString(const char* header, IdfxFileHandler fvtk) {
 #ifdef WITH_MPI
   MPI_Status status;
   MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_BYTE,
@@ -57,7 +57,7 @@ void OutputVTK::WriteHeaderString(const char* header, IdfxFileHandler fvtk) {
 #endif
 }
 
-void OutputVTK::WriteHeaderFloat(float* buffer, int64_t nelem, IdfxFileHandler fvtk) {
+void Vtk::WriteHeaderFloat(float* buffer, int64_t nelem, IdfxFileHandler fvtk) {
 #ifdef WITH_MPI
   MPI_Status status;
   MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_BYTE, MPI_CHAR,
@@ -72,11 +72,7 @@ void OutputVTK::WriteHeaderFloat(float* buffer, int64_t nelem, IdfxFileHandler f
 }
 
 /* Main constructor */
-OutputVTK::OutputVTK(Input &input, DataBlock &datain) {
-  // Init the output period
-  this->tperiod=input.GetReal("Output","vtk",0);
-  this->tnext = datain.t;
-
+Vtk::Vtk(Input &input, DataBlock &datain) {
   // Initialize the output structure
   // Create a local datablock as an image of gridin
   DataBlockHost data(datain);
@@ -105,9 +101,6 @@ OutputVTK::OutputVTK(Input &input, DataBlock &datain) {
 
   // Temporary storage on host for 3D arrays
   this->vect3D = new float[nx1loc*nx2loc*nx3loc];
-
-  // Essentially does nothing
-  this->vtkFileNumber = 0;
 
   // Test endianness
   int tmp1 = 1;
@@ -157,7 +150,7 @@ OutputVTK::OutputVTK(Input &input, DataBlock &datain) {
 #endif
 }
 
-int OutputVTK::CheckForWrite(DataBlock &datain) {
+int Vtk::CheckForWrite(DataBlock &datain) {
   // Do we need an output?
   if(datain.t < this->tnext) return(0);
 
@@ -165,13 +158,13 @@ int OutputVTK::CheckForWrite(DataBlock &datain) {
   return(this->Write(datain));
 }
 
-int OutputVTK::Write(DataBlock &datain) {
-  idfx::pushRegion("OutputVTK::Write");
+int Vtk::Write(DataBlock &datain) {
+  idfx::pushRegion("Vtk::Write");
 
   IdfxFileHandler fileHdl;
   std::string filename;
 
-  idfx::cout << "OutputVTK::Write file n " << vtkFileNumber << "..." << std::flush;
+  idfx::cout << "Vtk::Write file n " << vtkFileNumber << "..." << std::flush;
 
   timer.reset();
 
@@ -312,7 +305,7 @@ int OutputVTK::Write(DataBlock &datain) {
 
 
 /* ********************************************************************* */
-void OutputVTK::WriteHeader(IdfxFileHandler fvtk) {
+void Vtk::WriteHeader(IdfxFileHandler fvtk) {
 /*!
 * Write VTK header in parallel or serial mode.
 *
@@ -450,15 +443,10 @@ void OutputVTK::WriteHeader(IdfxFileHandler fvtk) {
 
 
 /* ********************************************************************* */
-void OutputVTK::WriteScalar(IdfxFileHandler fvtk, float* Vin,  std::string &var_name) {
+void Vtk::WriteScalar(IdfxFileHandler fvtk, float* Vin,  std::string &var_name) {
 /*!
 * Write VTK scalar field.
 *
-* \param [in]   fvtk       pointer to file (handle)
-* \param [in]   V          pointer to 3D data array
-* \param [in] unit     the corresponding cgs unit (if specified, 1 otherwise)
-* \param [in]   var_name   the variable name appearing in the VTK file
-* \param [in]   grid       pointer to an array of Grid structures
 *********************************************************************** */
 
   int i, j, k;
@@ -486,7 +474,7 @@ void OutputVTK::WriteScalar(IdfxFileHandler fvtk, float* Vin,  std::string &var_
 @param in_number floating point number to be converted in big endian */
 /* *************************************************************************** */
 
-float OutputVTK::BigEndian(float in_number) {
+float Vtk::BigEndian(float in_number) {
   if (shouldSwapEndian) {
     unsigned char *bytes = (unsigned char*) &in_number;
     unsigned char tmp = bytes[0];

@@ -12,20 +12,30 @@
 
 
 class Output {
- public:
-  Output(Input &, DataBlock &);           // Create Vtk Object
-  int CheckForWrites(DataBlock &);        // Check if outputs are needed at this stage
-  int RestartFromDump(DataBlock &, int);  // Restart from a dump file.
-  int ForceWrite(DataBlock &);            // Force write outputs (needed during an abort)
+  friend class Dump;    // Allow dump to have R/W access to private variables
 
+ public:
+  Output(Input &, DataBlock &, Setup &);           // Create Output Object
+  int CheckForWrites(DataBlock &);        // Check if outputs are needed at this stage
+  void RestartFromDump(DataBlock &, int);  // Restart from a dump file.
+  void ForceWrite(DataBlock &);            // Force write outputs (needed during an abort)
+
+ private:
   Vtk vtk;          // local instance of Vtk class
   Dump dump;        // local instance of Dump class
- private:
-  real vtkPeriod;   // periodicity of vtk outputs
-  real vtkLast;
+  Setup *mySetup;   // pointer to the current setup
 
-  real dumpPeriod;
-  real dumpLast;
+  bool vtkEnabled = false;
+  real vtkPeriod = 0.0;   // periodicity of vtk outputs
+  real vtkLast = 0.0;
+
+  bool dumpEnabled = false;
+  real dumpPeriod = 0.0;
+  real dumpLast = 0.0;
+
+  bool analysisEnabled = false;
+  real analysisPeriod = 0.0;
+  real analysisLast = 0.0;
 }
 
 

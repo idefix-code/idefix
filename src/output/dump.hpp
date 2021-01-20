@@ -28,7 +28,7 @@ class Output;
 
 class Dump {
  public:
-  Dump(Input &, DataBlock &);               // Create Dump Object
+  void Init(Input &, DataBlock &);               // Create Dump Object
   // Create a Dump file from the current state of the code
   int Write(DataBlock &, Output&);
   // Read and load a dump file as current state of the code

@@ -16,7 +16,7 @@
 #define  FILENAMESIZE   256
 #define  HEADERSIZE 128
 
-Dump::Dump(Input &input, DataBlock &data) {
+void Dump::Init(Input &input, DataBlock &data) {
   // Init the output period
 
 
@@ -406,7 +406,7 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
   for(int dir=0 ; dir < 3; dir++) {
     ReadNextFieldProperties(fileHdl, ndim, nx, type, fieldName);
     if(ndim>1) IDEFIX_ERROR("Wrong coordinate array dimensions while reading restart dump");
-    if(nx[0] != data.grid->np_int[dir]) {
+    if(nx[0] != data.mygrid->np_int[dir]) {
       idfx::cout << "dir " << dir << ", restart has " << nx[0] << " points " << std::endl;
       IDEFIX_ERROR("Domain size from the restart dump is different from the current one");
     }
@@ -595,7 +595,7 @@ int Dump::Write(DataBlock &data, Output& output) {
     // Load the active domain in the scratch space
     for(int i = 0; i < 3 ; i++) {
       nx[i] = dataHost.np_int[i];
-      nxtot[i] = grid.np_int[i];
+      nxtot[i] = gridHost.np_int[i];
     }
 
     for(int k = 0; k < nx[KDIR]; k++) {
@@ -617,11 +617,11 @@ int Dump::Write(DataBlock &data, Output& output) {
       // Load the active domain in the scratch space
       for(int i = 0; i < 3 ; i++) {
         nx[i] = dataHost.np_int[i];
-        nxtot[i] = grid.np_int[i];
+        nxtot[i] = gridHost.np_int[i];
       }
       // If it is the last datablock of the dimension, increase the size by one to get the last
       //active face of the staggered mesh.
-      if(grid.xproc[nv] == grid.nproc[nv] - 1  ) nx[nv]++;
+      if(data.mygrid->xproc[nv] == data.mygrid->nproc[nv] - 1  ) nx[nv]++;
       nxtot[nv]++;
 
       for(int k = 0; k < nx[KDIR]; k++) {

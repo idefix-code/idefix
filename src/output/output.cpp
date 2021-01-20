@@ -6,8 +6,7 @@
 // ***********************************************************************************
 
 #include "output.hpp"
-#include "dataBlockHost.hpp"
-#include "gridHost.hpp"
+
 
 Output::Output(Input &input, DataBlock &data, Setup &setup) {
   idfx::pushRegion("Output::Output");
@@ -28,7 +27,7 @@ Output::Output(Input &input, DataBlock &data, Setup &setup) {
     this->dumpLast = data.t - this->dumpPeriod; // dump something in the next CheckForWrite()
     this->dumpEnabled = true;
   }
-  this->dump = Dump(input,data);  // Always initialised since it is required on restarts
+  this->dump.Init(input,data);  // Always initialised since it is required on restarts
 
   // initialise analysis outputs
   if(input.CheckEntry("Output","analysis")>0) {
@@ -77,7 +76,7 @@ int Output::CheckForWrites(DataBlock &data) {
   return(nfiles);
 }
 
-void RestartFromDump(DataBlock &data, int readNumber) {
+void Output::RestartFromDump(DataBlock &data, int readNumber) {
   idfx::pushRegion("Output::RestartFromDump");
 
   this->dump.Read(data, *this, readNumber);
@@ -85,7 +84,7 @@ void RestartFromDump(DataBlock &data, int readNumber) {
   idfx::popRegion();
 }
 
-void ForceWrite(DataBlock &data) {
+void Output::ForceWrite(DataBlock &data) {
   idfx::pushRegion("Output::ForceWrite");
 
   this->dump.Write(data,*this);

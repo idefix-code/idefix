@@ -22,7 +22,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <csignal>
 
 #include <Kokkos_Core.hpp>
 
@@ -37,12 +36,6 @@
 #include "output.hpp"
 
 
-bool abortRequested;
-
-void signalHandler(int signum) {
-  idfx::cout << std::endl << "Main:: Caught interrupt " << signum << std::endl;
-  abortRequested=true;
-}
 
 
 int main( int argc, char* argv[] ) {
@@ -67,11 +60,6 @@ int main( int argc, char* argv[] ) {
 
   {
     idfx::initialize();
-
-    //signal(SIGINT, signalHandler);
-    //signal(SIGTERM, signalHandler);
-    signal(SIGUSR2, signalHandler);
-    abortRequested=false;
 
     Input input = Input(argc, argv);
     input.PrintLogo();
@@ -102,15 +90,15 @@ int main( int argc, char* argv[] ) {
     idfx::cout << "Main::Init Setup." << std::endl;
     Setup mysetup(input,grid,data);
 
-    idfx::cout << "Main::Onit Output Routines." << std::endl;
+    idfx::cout << "Main::Init Output Routines." << std::endl;
     Output output(input, data, mysetup);
 
     // Apply initial conditions
 
     // Are we restarting?
-    if(input.CheckEntry("CommandLine","restart") > 0) {
-      idfx::cout << "Main::Restarting from dump file"  << std::endl;
-      output.RestartFromDump(data,input.GetInt("CommandLine","restart",0));
+    if(input.restartRequested) {
+      idfx::cout << "Main::Restarting from dump file."  << std::endl;
+      output.RestartFromDump(data,input.restartFileNumber);
       data.hydro.SetBoundary(data.t);
       output.CheckForWrites(data);
     } else {
@@ -130,7 +118,7 @@ int main( int argc, char* argv[] ) {
       if(tstop-data.t < data.dt) data.dt = tstop-data.t;
       Tint.Cycle(data);
       output.CheckForWrites(data);
-      if(abortRequested) {
+      if(input.abortRequested) {
         idfx::cout << "Main:: Saving current state and aborting calculation" << std::endl;
         output.ForceWrite(data);
         break;
@@ -141,7 +129,7 @@ int main( int argc, char* argv[] ) {
                             / grid.np_int[KDIR] / Tint.getNcycles();
 
     idfx::cout << "Main::Reached t=" << data.t << std::endl;
-    idfx::cout << "Main::Completed in " << timer.seconds() << "seconds and " << Tint.getNcycles()
+    idfx::cout << "Main::Completed in " << timer.seconds() << " seconds and " << Tint.getNcycles()
                << " cycles. Perfs are " << 1/tintegration << " cell updates/second." << std::endl;
 
     idfx::cout << "Main::Job's done" << std::endl;

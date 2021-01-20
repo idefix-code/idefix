@@ -7,9 +7,14 @@
 
 #include <fstream>
 #include <string>
+#include <csignal>
+
 #include "idefix.hpp"
 #include "input.hpp"
 #include "gitversion.hpp"
+
+// Flag will be set is a signal has been received
+bool Input::abortRequested = false;
 
 Input::Input() {
 }
@@ -29,6 +34,10 @@ Input::Input(int argc, char* argv[] ) {
   std::size_t firstChar, lastChar;
   bool haveBlock = false;
   std::stringstream msg;
+
+  // Tel the system we want to catch the SIGUSR2 signals
+  signal(SIGINT, signalHandler);
+  abortRequested = false;
 
   // Default input file name
   this->inputFileName = std::string("idefix.ini");
@@ -106,6 +115,8 @@ void Input::ParseCommandLine(int argc, char **argv) {
     if(std::string(argv[i]) == "-restart") {
       if((++i) >= argc) IDEFIX_ERROR("You must specify -restart n where n is the dump file number");
       inputParameters["CommandLine"]["restart"].push_back(std::string(argv[i]));
+      this->restartRequested = true;
+      this->restartFileNumber = std::stoi(argv[i]);
     }
     if(std::string(argv[i]) == "-i") {
       // Loop on dimensions
@@ -149,6 +160,12 @@ void Input::PrintParameters() {
              << std::endl;
   idfx::cout << "-----------------------------------------------------------------------------"
              << std::endl;
+}
+
+// This routine is called whenever a specific OS signal is caught
+void Input::signalHandler(int signum) {
+  idfx::cout << std::endl << "Input:: Caught interrupt " << signum << std::endl;
+  abortRequested=true;
 }
 
 // Get a string in a block, parameter, position of the file

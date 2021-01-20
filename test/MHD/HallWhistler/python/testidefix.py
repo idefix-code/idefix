@@ -81,7 +81,7 @@ f_wnum=f[imax]
 error=np.fabs(f_w-f_wnum)/f_w
 print("Theoretical whistler frequency=%g, numerical=%g, error=%g"%(f_w,f_wnum,error))
 
-if(error<0.05):
+if(error<0.06):
     print("SUCCESS")
     sys.exit(0)
 else:

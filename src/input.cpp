@@ -13,7 +13,7 @@
 #include "input.hpp"
 #include "gitversion.hpp"
 
-// Flag will be set is a signal has been received
+// Flag will be set if a signal has been received
 bool Input::abortRequested = false;
 
 Input::Input() {
@@ -35,9 +35,8 @@ Input::Input(int argc, char* argv[] ) {
   bool haveBlock = false;
   std::stringstream msg;
 
-  // Tel the system we want to catch the SIGUSR2 signals
-  signal(SIGINT, signalHandler);
-  abortRequested = false;
+  // Tell the system we want to catch the SIGUSR2 signals
+  signal(SIGUSR2, signalHandler);
 
   // Default input file name
   this->inputFileName = std::string("idefix.ini");

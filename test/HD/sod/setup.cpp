@@ -15,7 +15,7 @@ Setup::Setup() {}
 
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
-Setup::Setup(Input &input, Grid &grid, DataBlock &data) {
+Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
 
 }
 
@@ -47,6 +47,6 @@ void Setup::InitFlow(DataBlock &data) {
 }
 
 // Analyse data to produce an output
-void Setup::MakeAnalysis(DataBlock & data) {
+void MakeAnalysis(DataBlock & data) {
 
 }

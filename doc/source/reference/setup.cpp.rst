@@ -112,7 +112,7 @@ constructor which reads a parameter from the .ini file and enroll the user-defin
   }
 
   // Setup constructor
-  Setup::Setup(Input &input, Grid &grid, DataBlock &data) {
+  Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     // Read some parameter from the ini file
     Mass = input.GetReal("Setup","mass",0);
 

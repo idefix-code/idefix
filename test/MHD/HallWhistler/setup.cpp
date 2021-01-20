@@ -16,12 +16,29 @@ generators on different architectures.
 int mode;
 #define  FILENAME    "timevol.dat"
 
+
+// Analyse data to produce an output
+void Analysis(DataBlock & data) {
+  DataBlockHost d(data);
+  if(idfx::prank == 0) {
+    real by = d.Vc(BX2,data.beg[KDIR],data.beg[JDIR],data.beg[IDIR]);
+    std::ofstream f;
+    f.open(FILENAME,std::ios::app);
+    f.precision(10);
+    f << std::scientific << data.t << "\t" << by << std::endl;
+    f.close();
+  }
+
+}
+
+
 // Default constructor
 Setup::Setup() {}
 
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
-Setup::Setup(Input &input, Grid &grid, DataBlock &data) {
+Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
+    output.EnrollAnalysis(&Analysis);
     mode = input.GetInt("Setup","mode",0);
     if(!input.restartRequested) {
       // Initialise the output file
@@ -102,18 +119,4 @@ void Setup::InitFlow(DataBlock &data) {
 
     // Send it all, if needed
     d.SyncToDevice();
-}
-
-// Analyse data to produce an output
-void Setup::MakeAnalysis(DataBlock & data) {
-  DataBlockHost d(data);
-  if(idfx::prank == 0) {
-    real by = d.Vc(BX2,data.beg[KDIR],data.beg[JDIR],data.beg[IDIR]);
-    std::ofstream f;
-    f.open(FILENAME,std::ios::app);
-    f.precision(10);
-    f << std::scientific << data.t << "\t" << by << std::endl;
-    f.close();
-  }
-
 }

@@ -87,11 +87,11 @@ int main( int argc, char* argv[] ) {
     idfx::cout << "Main::Init Time Integrator." << std::endl;
     TimeIntegrator Tint(input,data);
 
-    idfx::cout << "Main::Init Setup." << std::endl;
-    Setup mysetup(input,grid,data);
-
     idfx::cout << "Main::Init Output Routines." << std::endl;
-    Output output(input, data, mysetup);
+    Output output(input, data);
+
+    idfx::cout << "Main::Init Setup." << std::endl;
+    Setup mysetup(input, grid, data, output);
 
     // Apply initial conditions
 

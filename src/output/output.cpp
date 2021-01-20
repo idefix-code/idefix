@@ -8,7 +8,7 @@
 #include "output.hpp"
 
 
-Output::Output(Input &input, DataBlock &data, Setup &setup) {
+Output::Output(Input &input, DataBlock &data) {
   idfx::pushRegion("Output::Output");
   // initialise the output objects for each format
 
@@ -35,7 +35,6 @@ Output::Output(Input &input, DataBlock &data, Setup &setup) {
     this->analysisLast = data.t - this->analysisPeriod; //dump something in the next CheckForWrite()
     this->analysisEnabled = true;
   }
-  this->mySetup = &setup;
 
   idfx::popRegion();
 }
@@ -65,8 +64,12 @@ int Output::CheckForWrites(DataBlock &data) {
   // Do we need an analysis ?
   if(this->analysisEnabled) {
     if(data.t >= this->analysisLast + this->analysisPeriod) {
+      if(!this->haveAnalysisFunc) {
+        IDEFIX_ERROR("Cannot perform a user-defined analysis without "
+                     "enrollment of your analysis function");
+      }
       this->analysisLast += this->analysisPeriod;
-      mySetup->MakeAnalysis(data);
+      analysisFunc(data);
       nfiles++;
     }
   }
@@ -88,6 +91,18 @@ void Output::ForceWrite(DataBlock &data) {
   idfx::pushRegion("Output::ForceWrite");
 
   this->dump.Write(data,*this);
+
+  idfx::popRegion();
+}
+
+void Output::EnrollAnalysis(AnalysisFunc myFunc) {
+  idfx::pushRegion("Output::EnrollAnalysis");
+  if(!analysisEnabled) {
+    IDEFIX_ERROR("You are enrolling an analysis function "
+                  "but analysis are not enabled in the input file");
+  }
+  this->analysisFunc = myFunc;
+  this->haveAnalysisFunc = true;
 
   idfx::popRegion();
 }

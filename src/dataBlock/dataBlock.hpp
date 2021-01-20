@@ -11,6 +11,12 @@
 #include <vector>
 #include <string>
 #include "idefix.hpp"
+#include "grid.hpp"
+#include "gridHost.hpp"
+#include "hydro.hpp"
+#ifdef WITH_MPI
+#include "mpi.hpp"
+#endif
 
 //TODO(lesurg) What is this standing for?
 #define BOUNDARY_

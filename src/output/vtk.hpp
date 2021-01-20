@@ -8,14 +8,17 @@
 #ifndef OUTPUT_VTK_HPP_
 #define OUTPUT_VTK_HPP_
 #include <string>
-#include "../idefix.hpp"
+#include "idefix.hpp"
+#include "input.hpp"
+#include "dataBlock.hpp"
+
 
 
 class Vtk {
   friend class Dump;
 
  public:
-  Vtk(Input &, DataBlock &);           // Create Vtk Object
+  void Init(Input &, DataBlock &);   // init VTK object
   int Write(DataBlock &);     // Create a VTK from the current DataBlock
 
  private:

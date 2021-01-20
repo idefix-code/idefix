@@ -7,6 +7,9 @@
 
 #include "dump.hpp"
 #include "gitversion.hpp"
+#include "dataBlockHost.hpp"
+#include "gridHost.hpp"
+#include "output.hpp"
 
 // Max size of array name
 #define  NAMESIZE     16
@@ -403,7 +406,7 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
   for(int dir=0 ; dir < 3; dir++) {
     ReadNextFieldProperties(fileHdl, ndim, nx, type, fieldName);
     if(ndim>1) IDEFIX_ERROR("Wrong coordinate array dimensions while reading restart dump");
-    if(nx[0] != data->grid.np_int[dir]) {
+    if(nx[0] != data.grid->np_int[dir]) {
       idfx::cout << "dir " << dir << ", restart has " << nx[0] << " points " << std::endl;
       IDEFIX_ERROR("Domain size from the restart dump is different from the current one");
     }

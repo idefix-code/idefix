@@ -5,8 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#include "../idefix.hpp"
 #include "hydro.hpp"
+#include "dataBlock.hpp"
 
 
 // Build a left and right extrapolation of the primitive variables along direction dir

@@ -10,7 +10,12 @@
 
 #include <string>
 #include <vector>
-#include "../idefix.hpp"
+#include "idefix.hpp"
+
+#include "grid.hpp"
+#include "hydro_defs.hpp"
+#include "electroMotiveForce.hpp"
+#include "viscosity.hpp"
 
 // forward class declaration
 class DataBlock;

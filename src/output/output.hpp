@@ -8,8 +8,12 @@
 #ifndef OUTPUT_OUTPUT_HPP_
 #define OUTPUT_OUTPUT_HPP_
 #include <string>
-#include "../idefix.hpp"
-
+#include "idefix.hpp"
+#include "input.hpp"
+#include "dataBlock.hpp"
+#include "setup.hpp"
+#include "vtk.hpp"
+#include "dump.hpp"
 
 class Output {
   friend class Dump;    // Allow dump to have R/W access to private variables
@@ -36,7 +40,7 @@ class Output {
   bool analysisEnabled = false;
   real analysisPeriod = 0.0;
   real analysisLast = 0.0;
-}
+};
 
 
 #endif // OUTPUT_OUTPUT_HPP_

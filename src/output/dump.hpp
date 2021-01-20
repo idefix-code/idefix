@@ -8,7 +8,9 @@
 #ifndef OUTPUT_DUMP_HPP_
 #define OUTPUT_DUMP_HPP_
 #include <string>
-#include "../idefix.hpp"
+#include "idefix.hpp"
+#include "input.hpp"
+#include "dataBlock.hpp"
 
 
 enum DataType {DoubleType, SingleType, IntegerType};
@@ -21,7 +23,7 @@ enum DataType {DoubleType, SingleType, IntegerType};
 #endif
 
 // Forward class declaration
-class Vtk;
+//class Vtk;
 class Output;
 
 class Dump {

@@ -8,6 +8,8 @@
 #ifndef GRID_HPP_
 #define GRID_HPP_
 #include "idefix.hpp"
+#include "input.hpp"
+
 
 class Grid {
  public:

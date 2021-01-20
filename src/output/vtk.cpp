@@ -10,7 +10,9 @@
 #include <iomanip>
 #include "vtk.hpp"
 #include "gitversion.hpp"
-#include "../idefix.hpp"
+#include "idefix.hpp"
+#include "dataBlockHost.hpp"
+#include "gridHost.hpp"
 
 #define VTK_RECTILINEAR_GRID    14
 #define VTK_STRUCTURED_GRID     35
@@ -71,8 +73,8 @@ void Vtk::WriteHeaderFloat(float* buffer, int64_t nelem, IdfxFileHandler fvtk) {
 #endif
 }
 
-/* Main constructor */
-Vtk::Vtk(Input &input, DataBlock &datain) {
+/*init the object */
+void Vtk::Init(Input &input, DataBlock &datain) {
   // Initialize the output structure
   // Create a local datablock as an image of gridin
   DataBlockHost data(datain);
@@ -150,13 +152,6 @@ Vtk::Vtk(Input &input, DataBlock &datain) {
 #endif
 }
 
-int Vtk::CheckForWrite(DataBlock &datain) {
-  // Do we need an output?
-  if(datain.t < this->tnext) return(0);
-
-  this->tnext+= this->tperiod;
-  return(this->Write(datain));
-}
 
 int Vtk::Write(DataBlock &datain) {
   idfx::pushRegion("Vtk::Write");

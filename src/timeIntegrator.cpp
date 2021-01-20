@@ -8,6 +8,8 @@
 #include <cstdio>
 #include "idefix.hpp"
 #include "timeIntegrator.hpp"
+#include "input.hpp"
+
 
 TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
   idfx::pushRegion("TimeIntegrator::TimeIntegrator(Input...)");

@@ -5,8 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#include "../idefix.hpp"
 #include "hydro.hpp"
+#include "dataBlock.hpp"
 
 
 // Compute the right handside in direction dir from conservative equation, with timestep dt

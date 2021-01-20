@@ -8,10 +8,15 @@
 #ifndef HYDRO_VISCOSITY_HPP_
 #define HYDRO_VISCOSITY_HPP_
 
-#include "../idefix.hpp"
+#include "idefix.hpp"
+#include "input.hpp"
+#include "grid.hpp"
+#include "hydro_defs.hpp"
+
 
 // Forward class hydro declaration
 class Hydro;
+class DataBlock;
 
 using ViscousDiffusivityFunc = void (*) (DataBlock &, const real t,
                                          IdefixArray3D<real> &, IdefixArray3D<real> &);

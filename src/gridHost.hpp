@@ -9,6 +9,8 @@
 #define GRIDHOST_HPP_
 
 #include "idefix.hpp"
+#include "grid.hpp"
+#include "input.hpp"
 
 
 class GridHost {

@@ -9,6 +9,7 @@
 #define DATABLOCK_DATABLOCKHOST_HPP_
 
 #include "idefix.hpp"
+#include "dataBlock.hpp"
 
 class DataBlockHost {
  public:

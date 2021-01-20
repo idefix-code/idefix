@@ -6,6 +6,8 @@
 // ***********************************************************************************
 
 #include "output.hpp"
+#include "dataBlockHost.hpp"
+#include "gridHost.hpp"
 
 Output::Output(Input &input, DataBlock &data, Setup &setup) {
   idfx::pushRegion("Output::Output");
@@ -16,8 +18,9 @@ Output::Output(Input &input, DataBlock &data, Setup &setup) {
     this->vtkPeriod = input.GetReal("Output","vtk",0);
     this->vtkLast = data.t - this->vtkPeriod; // write something in the next CheckForWrite()
     this->vtkEnabled = true;
+    this->vtk.Init(input,data);
   }
-  this->vtk = Vtk(input,data);
+
 
   // intialise dump outputs
   if(input.CheckEntry("Output","dmp")>0) {
@@ -25,7 +28,7 @@ Output::Output(Input &input, DataBlock &data, Setup &setup) {
     this->dumpLast = data.t - this->dumpPeriod; // dump something in the next CheckForWrite()
     this->dumpEnabled = true;
   }
-  this->dump = Dump(input,data);
+  this->dump = Dump(input,data);  // Always initialised since it is required on restarts
 
   // initialise analysis outputs
   if(input.CheckEntry("Output","analysis")>0) {

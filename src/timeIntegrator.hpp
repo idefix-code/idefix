@@ -9,12 +9,11 @@
 #define TIMEINTEGRATOR_HPP_
 
 #include "idefix.hpp"
+#include "dataBlock.hpp"
 
 
 
 class TimeIntegrator {
-  friend class OutputDump;
-
  public:
   int64_t getNcycles();   // Get current number of cycles
 

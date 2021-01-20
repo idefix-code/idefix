@@ -27,6 +27,15 @@
 #include <Kokkos_Core.hpp>
 
 #include "idefix.hpp"
+#include "input.hpp"
+#include "grid.hpp"
+#include "gridHost.hpp"
+#include "hydro.hpp"
+#include "dataBlock.hpp"
+#include "timeIntegrator.hpp"
+#include "setup.hpp"
+#include "output.hpp"
+
 
 bool abortRequested;
 

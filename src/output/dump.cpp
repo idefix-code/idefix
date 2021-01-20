@@ -495,7 +495,7 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
       ReadSerial(fileHdl, ndim, nxglob, type, &data.dt);
     } else if(fieldName.compare("vtkFileNumber")==0) {
       ReadSerial(fileHdl, ndim, nxglob, type, &output.vtk.vtkFileNumber);
-    } else if(fieldName.compare("vtktLast")==0) {
+    } else if(fieldName.compare("vtkLast")==0) {
       ReadSerial(fileHdl, ndim, nxglob, type, &output.vtkLast);
     } else if(fieldName.compare("dumpFileNumber")==0) {
       ReadSerial(fileHdl, ndim, nxglob, type, &this->dumpFileNumber);

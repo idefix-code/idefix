@@ -15,9 +15,11 @@ Output::Output(Input &input, DataBlock &data) {
   // Initialise vtk outputs
   if(input.CheckEntry("Output","vtk")>0) {
     this->vtkPeriod = input.GetReal("Output","vtk",0);
-    this->vtkLast = data.t - this->vtkPeriod; // write something in the next CheckForWrite()
-    this->vtkEnabled = true;
-    this->vtk.Init(input,data);
+    if(this->vtkPeriod>=0.0) {  // backward compatibility (negative value means no file)
+      this->vtkLast = data.t - this->vtkPeriod; // write something in the next CheckForWrite()
+      this->vtkEnabled = true;
+      this->vtk.Init(input,data);
+    }
   }
 
 
@@ -26,6 +28,8 @@ Output::Output(Input &input, DataBlock &data) {
     this->dumpPeriod = input.GetReal("Output","dmp",0);
     this->dumpLast = data.t - this->dumpPeriod; // dump something in the next CheckForWrite()
     this->dumpEnabled = true;
+    // Backwards compatibility: negative period means no dump
+    if(this->dumpPeriod<0.0) this->dumpEnabled = false;
   }
   this->dump.Init(input,data);  // Always initialised since it is required on restarts
 

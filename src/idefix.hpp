@@ -210,30 +210,11 @@ using IdfxFileHandler = FILE*;
 enum BoundaryType { internal, periodic, reflective, outflow, shearingbox, userdef};
 enum BoundarySide { left, right};
 
-
+// Commonly used classes and functions
 #include "global.hpp"
 #include "error.hpp"
 #include "macros.hpp"
 #include "loop.hpp"
 #include "arrays.hpp"
-#include "input.hpp"
-#include "grid.hpp"
-#include "gridHost.hpp"
-#include "hydro_defs.hpp"
-#include "electroMotiveForce.hpp"
-#include "viscosity.hpp"
-#include "hydro.hpp"
-#ifdef WITH_MPI
-#include "mpi.hpp"
-#endif
-#include "dataBlock.hpp"
-#include "dataBlockHost.hpp"
-#include "timeIntegrator.hpp"
-#include "setup.hpp"
-#include "outputVtk.hpp"
-#include "outputDump.hpp"
-
-
-
 
 #endif  //  IDEFIX_HPP_

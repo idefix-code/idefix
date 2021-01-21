@@ -5,23 +5,25 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef OUTPUT_OUTPUTVTK_HPP_
-#define OUTPUT_OUTPUTVTK_HPP_
+#ifndef OUTPUT_VTK_HPP_
+#define OUTPUT_VTK_HPP_
 #include <string>
-#include "../idefix.hpp"
+#include "idefix.hpp"
+#include "input.hpp"
+#include "dataBlock.hpp"
 
+// Forward class declaration
+class Output;
 
-class OutputVTK {
-  friend class OutputDump;
+class Vtk {
+  friend class Dump;
 
  public:
-  OutputVTK(Input &, DataBlock &);           // Create Output Object
-  int Write(DataBlock &);     // Create a VTK from the current DataBlock
-  int CheckForWrite(DataBlock &);
+  void Init(Input &, DataBlock &);   // init VTK object
+  int Write(DataBlock &, Output &);     // Create a VTK from the current DataBlock
 
  private:
-  int vtkFileNumber;
-  real tperiod, tnext;
+  int vtkFileNumber = 0;
 
   // dimensions
   int64_t nx1,nx2,nx3;
@@ -49,10 +51,10 @@ class OutputVTK {
 #endif
 
   void WriteHeader(IdfxFileHandler);
-  void WriteScalar(IdfxFileHandler, float*,  std::string &);
+  void WriteScalar(IdfxFileHandler, float*,  const std::string &);
   float BigEndian(float);
   void WriteHeaderString(const char* , IdfxFileHandler );
   void WriteHeaderFloat(float* , int64_t, IdfxFileHandler);
 };
 
-#endif // OUTPUT_OUTPUTVTK_HPP_
+#endif // OUTPUT_VTK_HPP_

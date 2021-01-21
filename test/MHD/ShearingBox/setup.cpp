@@ -28,7 +28,7 @@ real randm(void) {
 }
 
 // Default constructor
-Setup::Setup() {}
+
 
 // UserStep, here only gravity (vertical and radial)
 void UserStep(DataBlock &data, const real t, const real dt) {
@@ -57,7 +57,7 @@ void UserStep(DataBlock &data, const real t, const real dt) {
 
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
-Setup::Setup(Input &input, Grid &grid, DataBlock &data) {
+Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     gammaIdeal=data.hydro.GetGamma();
 
     // Get rotation rate along vertical axis
@@ -113,7 +113,7 @@ void Setup::InitFlow(DataBlock &data) {
 
 // Analyse data to produce an output
 
-void Setup::MakeAnalysis(DataBlock & data) {
+void MakeAnalysis(DataBlock & data) {
 
 }
 

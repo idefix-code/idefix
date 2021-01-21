@@ -11,7 +11,7 @@ allows for comments, which should start with ``#``.
     Note that you can add arbitray sections and entries in the input file freely. *Idefix* will automatically read and store them on startup. They are then accessible in the code using the
     ``Input::GetReal(..)``, ``Input::GetInt(...)`` and ``Input::GetString(..)`` methods defined in the ``Input`` class (see :ref:`inputClass`)
 
-The ``Grid`` section
+``Grid`` section
 --------------------
 The grid section defines the grid total dimension. It consists of 3 entries ``X1-grid``, ``X2-grid`` and ``X3-grid``. Each entry defines the repartition of the grid point in the corresponding direction (the grid is always rectilinear).
 Each entry defines a series of grid blocks, which can have various spacing. The definition of the grid points is as follows
@@ -38,7 +38,7 @@ The grid spacing can be one of the following:
 .. tip::
   Note that the stretched block requires at least one uniform block on one of it side to define the reference spacing :math:`\Delta x_0`
 
-The ``TimeIntegrator`` section
+``TimeIntegrator`` section
 ------------------------------
 
 This section is used by *Idefix* time integrator class to define the time integrator method and related variables. The entries of this section are as followed
@@ -64,7 +64,7 @@ This section is used by *Idefix* time integrator class to define the time integr
     condition can only be evaluated after the first timestep.
 
 
-The ``Hydro`` section
+``Hydro`` section
 ---------------------
 
 This section is used by the hydrodynamics class of *Idefix*. It defines the hydrodynamic parameters, and allows one to add some physics. The parameters are as followed:
@@ -132,7 +132,7 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
     the arithmetic Emf reconstruction scheme has been shown to work systematically with Hall, and is therefore
     strongly recommended for production runs.
 
-The ``Boundary`` section
+``Boundary`` section
 ------------------------
 
 This section describes the boundary conditions used by the code. There are 6 entries
@@ -157,3 +157,35 @@ and ``X1-end``, ``X2-end``, ``X3-end`` for the right boundaries. Each boundary c
 
 .. warning::
     As of version 0.5, *Idefix* shearing-box assumes axisymmetry, i.e. NX2=1.
+
+
+.. _outputSection:
+
+``Output`` section
+----------------------
+
+This section describes the outputs *Idefix* produces. For more details about each output type, have a look at :ref:`output`.
+
++----------------+-------------------------+--------------------------------------------------------------------------------------------------+
+|  Entry name    | Parameter type          | Comment                                                                                          |
++================+=========================+==================================================================================================+
+| log            | integer                 | | Frequency of log outputs, in code steps (default 100).                                         |
++----------------+-------------------------+--------------------------------------------------------------------------------------------------+
+| dmp            | float                   | | Frequency of dump outputs, in code units. If negative, periodic dump outputs are disabled.     |
++----------------+-------------------------+--------------------------------------------------------------------------------------------------+
+| vtk            | float                   | | Frequency of vtk outputs, in code units. If negative, periodic vtk outputs are disabled.       |
++----------------+-------------------------+--------------------------------------------------------------------------------------------------+
+| analysis       | float                   | | Frequency of analysis outputs, in code units. If negative, periodic analysis outputs are       |
+|                |                         | | disabled. When this entry is set, *Idefix* expects a user-defined analysis function to be      |
+|                |                         | | enrolled with  ``Output::EnrollAnalysis(AnalysisFunc)`` (see :ref:`functionEnrollment`).       |
++----------------+-------------------------+--------------------------------------------------------------------------------------------------+
+| uservar        | string series           | | List the name of the user-defined variables the user wants to define.                          |
+|                |                         | | When this list is present in the input file, *Idefix* expects a user-defined                   |
+|                |                         | | function to be enrolled with ``Output::EnrollUserDefVariables(UserDefVariablesFunc)``          |
+|                |                         | | (see :ref:`functionEnrollment`). The user-defined variables defined by this function           |
+|                |                         | | are then written as new variables in vtk  outputs.                                             |
++----------------+-------------------------+--------------------------------------------------------------------------------------------------+
+
+.. note::
+    Even if dumps are not mentionned in your input file (and are therefore disabled), dump files are still produced when *Idefix* captures a signal
+    (see :ref:`signalHandling`).

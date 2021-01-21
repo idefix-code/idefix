@@ -5,23 +5,20 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#include "outputDump.hpp"
+#include "dump.hpp"
 #include "gitversion.hpp"
+#include "dataBlockHost.hpp"
+#include "gridHost.hpp"
+#include "output.hpp"
 
 // Max size of array name
 #define  NAMESIZE     16
 #define  FILENAMESIZE   256
 #define  HEADERSIZE 128
 
-OutputDump::OutputDump(Input &input, DataBlock &data) {
+void Dump::Init(Input &input, DataBlock &data) {
   // Init the output period
-  if(input.CheckEntry("Output","dmp")>0) {
-    this->tperiod=input.GetReal("Output","dmp",0);
-    this->tnext = data.t;
-  } else {
-    this->tperiod = -1.0; // Disable dump outputs altogether
-    this->tnext = 0;
-  }
+
 
   for (int dir=0; dir<3; dir++) {
     this->periodicity[dir] = (data.mygrid->lbound[dir] == periodic);
@@ -83,7 +80,7 @@ OutputDump::OutputDump(Input &input, DataBlock &data) {
   #endif
 }
 
-void OutputDump::WriteString(IdfxFileHandler fileHdl, char *str, int size) {
+void Dump::WriteString(IdfxFileHandler fileHdl, char *str, int size) {
   #ifdef WITH_MPI
     MPI_Status status;
     MPI_SAFE_CALL(MPI_File_set_view(fileHdl, this->offset,
@@ -98,7 +95,7 @@ void OutputDump::WriteString(IdfxFileHandler fileHdl, char *str, int size) {
 }
 
 
-void OutputDump::WriteSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
+void Dump::WriteSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
                              DataType type, char* name, void* data ) {
   int ntot = 1;   // Number of elements to be written
   int size;
@@ -168,7 +165,7 @@ void OutputDump::WriteSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
   #endif
 }
 
-void OutputDump::WriteDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gdim,
+void Dump::WriteDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gdim,
                                   char* name, IdfxDataDescriptor &descriptor, real* data ) {
     int64_t ntot = 1;   // Number of elements to be written
 
@@ -243,7 +240,7 @@ void OutputDump::WriteDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, i
   #endif
 }
 
-void OutputDump::ReadNextFieldProperties(IdfxFileHandler fileHdl, int &ndim, int *dim,
+void Dump::ReadNextFieldProperties(IdfxFileHandler fileHdl, int &ndim, int *dim,
                                          DataType &type, std::string &name) {
   char fieldName[NAMESIZE];
   int64_t ntot=1;
@@ -300,7 +297,7 @@ void OutputDump::ReadNextFieldProperties(IdfxFileHandler fileHdl, int &ndim, int
   #endif
 }
 
-void OutputDump::ReadSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
+void Dump::ReadSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
                             DataType type, void* data) {
   int size;
   int64_t ntot=1;
@@ -334,7 +331,7 @@ void OutputDump::ReadSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
   #endif
 }
 
-void OutputDump::ReadDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gdim,
+void Dump::ReadDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gdim,
                                  IdfxDataDescriptor &descriptor, void* data) {
   int size;
   int64_t ntot=1;
@@ -365,7 +362,7 @@ void OutputDump::ReadDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, in
   #endif
 }
 
-int OutputDump::Read(Grid& grid, DataBlock &data, OutputVTK& ovtk, int readNumber ) {
+int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
   char filename[FILENAMESIZE];
   int nx[3];
   int nxglob[3];
@@ -375,9 +372,9 @@ int OutputDump::Read(Grid& grid, DataBlock &data, OutputVTK& ovtk, int readNumbe
   int ndim;
   IdfxFileHandler fileHdl;
 
-  idfx::pushRegion("OutputDump::Read");
+  idfx::pushRegion("Dump::Read");
 
-  idfx::cout << "OutputDump::Reading restart file n " << readNumber << "..." << std::flush;
+  idfx::cout << "Dump::Reading restart file n " << readNumber << "..." << std::flush;
 
   // Reset timer
   timer.reset();
@@ -409,7 +406,7 @@ int OutputDump::Read(Grid& grid, DataBlock &data, OutputVTK& ovtk, int readNumbe
   for(int dir=0 ; dir < 3; dir++) {
     ReadNextFieldProperties(fileHdl, ndim, nx, type, fieldName);
     if(ndim>1) IDEFIX_ERROR("Wrong coordinate array dimensions while reading restart dump");
-    if(nx[0] != grid.np_int[dir]) {
+    if(nx[0] != data.mygrid->np_int[dir]) {
       idfx::cout << "dir " << dir << ", restart has " << nx[0] << " points " << std::endl;
       IDEFIX_ERROR("Domain size from the restart dump is different from the current one");
     }
@@ -497,13 +494,15 @@ int OutputDump::Read(Grid& grid, DataBlock &data, OutputVTK& ovtk, int readNumbe
     } else if(fieldName.compare("dt") == 0) {
       ReadSerial(fileHdl, ndim, nxglob, type, &data.dt);
     } else if(fieldName.compare("vtkFileNumber")==0) {
-      ReadSerial(fileHdl, ndim, nxglob, type, &ovtk.vtkFileNumber);
-    } else if(fieldName.compare("vtktnext")==0) {
-      ReadSerial(fileHdl, ndim, nxglob, type, &ovtk.tnext);
+      ReadSerial(fileHdl, ndim, nxglob, type, &output.vtk.vtkFileNumber);
+    } else if(fieldName.compare("vtkLast")==0) {
+      ReadSerial(fileHdl, ndim, nxglob, type, &output.vtkLast);
     } else if(fieldName.compare("dumpFileNumber")==0) {
       ReadSerial(fileHdl, ndim, nxglob, type, &this->dumpFileNumber);
-    } else if(fieldName.compare("dumptnext")==0) {
-      ReadSerial(fileHdl, ndim, nxglob, type, &this->tnext);
+    } else if(fieldName.compare("dumpLast")==0) {
+      ReadSerial(fileHdl, ndim, nxglob, type, &output.dumpLast);
+    } else if(fieldName.compare("analysisLast")==0) {
+      ReadSerial(fileHdl, ndim, nxglob, type, &output.analysisLast);
     } else if(fieldName.compare("geometry")==0) {
       ReadSerial(fileHdl, ndim, nxglob, type, &this->geometry);
     } else if(fieldName.compare("periodicity")==0) {
@@ -531,19 +530,13 @@ int OutputDump::Read(Grid& grid, DataBlock &data, OutputVTK& ovtk, int readNumbe
   return(0);
 }
 
-int OutputDump::CheckForWrite(Grid& grid, DataBlock &data, OutputVTK& ovtk) {
-  // Do we need an output?
-  if(data.t<this->tnext) return(0);
-  if(this->tperiod < 0) return(0);  // negative tperiod means dump outputs are disabled
-  this->tnext+= this->tperiod;
-  return(this->Write(grid, data, ovtk));
-}
 
-int OutputDump::Write( Grid& grid, DataBlock &data, OutputVTK& ovtk) {
+int Dump::Write(DataBlock &data, Output& output) {
   char filename[FILENAMESIZE];
   char fieldName[NAMESIZE+1]; // +1 is just in case
   int nx[3];
   int nxtot[3];
+
   #ifdef USE_DOUBLE
   const DataType realType = DoubleType;
   #else
@@ -551,7 +544,7 @@ int OutputDump::Write( Grid& grid, DataBlock &data, OutputVTK& ovtk) {
   #endif
   IdfxFileHandler fileHdl;
 
-  idfx::cout << "OutputDump::Write file n " << dumpFileNumber << "..." << std::flush;
+  idfx::cout << "Dump::Write file n " << dumpFileNumber << "..." << std::flush;
 
   // Reset timer
   timer.reset();
@@ -571,7 +564,7 @@ int OutputDump::Write( Grid& grid, DataBlock &data, OutputVTK& ovtk) {
 #endif
   // File is open
   // First thing we need are coordinates: init a host mirror and sync it
-  GridHost gridHost(grid);
+  GridHost gridHost(*data.mygrid);
   gridHost.SyncFromDevice();
 
   char header[HEADERSIZE];
@@ -602,7 +595,7 @@ int OutputDump::Write( Grid& grid, DataBlock &data, OutputVTK& ovtk) {
     // Load the active domain in the scratch space
     for(int i = 0; i < 3 ; i++) {
       nx[i] = dataHost.np_int[i];
-      nxtot[i] = grid.np_int[i];
+      nxtot[i] = gridHost.np_int[i];
     }
 
     for(int k = 0; k < nx[KDIR]; k++) {
@@ -624,11 +617,11 @@ int OutputDump::Write( Grid& grid, DataBlock &data, OutputVTK& ovtk) {
       // Load the active domain in the scratch space
       for(int i = 0; i < 3 ; i++) {
         nx[i] = dataHost.np_int[i];
-        nxtot[i] = grid.np_int[i];
+        nxtot[i] = gridHost.np_int[i];
       }
       // If it is the last datablock of the dimension, increase the size by one to get the last
       //active face of the staggered mesh.
-      if(grid.xproc[nv] == grid.nproc[nv] - 1  ) nx[nv]++;
+      if(data.mygrid->xproc[nv] == data.mygrid->nproc[nv] - 1  ) nx[nv]++;
       nxtot[nv]++;
 
       for(int k = 0; k < nx[KDIR]; k++) {
@@ -651,13 +644,15 @@ int OutputDump::Write( Grid& grid, DataBlock &data, OutputVTK& ovtk) {
   std::snprintf(fieldName,NAMESIZE, "dt");
   WriteSerial(fileHdl, 1, nx, realType, fieldName, &data.dt);
   std::snprintf(fieldName,NAMESIZE, "vtkFileNumber");
-  WriteSerial(fileHdl, 1, nx, IntegerType, fieldName, &ovtk.vtkFileNumber);
-  std::snprintf(fieldName,NAMESIZE, "vtktnext");
-  WriteSerial(fileHdl, 1, nx, realType, fieldName, &ovtk.tnext);
+  WriteSerial(fileHdl, 1, nx, IntegerType, fieldName, &output.vtk.vtkFileNumber);
+  std::snprintf(fieldName,NAMESIZE, "vtkLast");
+  WriteSerial(fileHdl, 1, nx, realType, fieldName, &output.vtkLast);
   std::snprintf(fieldName,NAMESIZE, "dumpFileNumber");
   WriteSerial(fileHdl, 1, nx, IntegerType, fieldName, &this->dumpFileNumber);
-  std::snprintf(fieldName,NAMESIZE, "dumptnext");
-  WriteSerial(fileHdl, 1, nx, realType, fieldName, &this->tnext);
+  std::snprintf(fieldName,NAMESIZE, "dumpLast");
+  WriteSerial(fileHdl, 1, nx, realType, fieldName, &output.dumpLast);
+  std::snprintf(fieldName,NAMESIZE, "analysisLast");
+  WriteSerial(fileHdl, 1, nx, realType, fieldName, &output.analysisLast);
   std::snprintf(fieldName,NAMESIZE, "geometry");
   WriteSerial(fileHdl, 1, nx, IntegerType, fieldName, &this->geometry);
 

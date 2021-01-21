@@ -5,7 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#include "../idefix.hpp"
+#include "dataBlock.hpp"
+#include "dataBlockHost.hpp"
 
 // Check if current datablock has nans
 

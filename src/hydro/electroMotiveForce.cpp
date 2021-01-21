@@ -5,9 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#include "../idefix.hpp"
 #include "electroMotiveForce.hpp"
-
+#include "dataBlock.hpp"
 // Initialisation of electromotive force object
 ElectroMotiveForce::ElectroMotiveForce() {
   // Do nothing

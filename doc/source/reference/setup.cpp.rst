@@ -21,37 +21,34 @@ The ``Setup`` class is declared as follows:
 
   class Setup {
     public:
-      Setup();
-      Setup(Input &, Grid &, DataBlock &);
+      Setup(Input &, Grid &, DataBlock &, Output &);
       void InitFlow(DataBlock &);
-      void MakeAnalysis(DataBlock&);
     };
 
-As it can be seen, this class consist of constructor and two methods: ``InitFlow`` and ``MakeAnalysis`` which will handle
-the initial condition and the setup-specific outputs mentionned above.
+As it can be seen, this class consist of a constructor and one mandatory method: ``InitFlow``, which will handle
+the initial condition.
 
 The ``Setup`` constructor
 -------------------------
-Let us start with the constructors. The default constructor ``Setup()`` is not used by *Idefix*.
-The code only uses the constructor `Setup(Input &, Grid &, DataBlock &)`.
-This constructor is called on the code startup and allows the user to load and set setup-specific parameters. The parameters are three objects
-which have already been initialised when ``Setup`` is called: ``Input``, ``Grid`` and ``DataBlock`` (see :ref:`classes`).
+Let us start with the constructor `Setup(Input &, Grid &, DataBlock &, Output &)`.
+This constructor is called on the code startup and allows the user to load and set setup-specific parameters. The parameters are four objects
+which have already been initialised when ``Setup`` is called: ``Input``, ``Grid``, ``DataBlock`` and ``Output`` (see :ref:`classes`).
 
-A typical constructor will first load the setup parameters calling accessors from the ``Input`` object (see :ref:`inputClass`). Then,
-if there are some user-defined functions (for instance a user-defined potential or boundary condition),
-the constructor should also *enroll* these functions before returning.
+A typical constructor first loads the setup parameters calling accessors from the ``Input`` object (see :ref:`inputClass`). Then,
+if there are some user-defined functions (for instance a user-defined potential, boundary condition or output),
+the constructor also *enrolls* these functions before returning.
 
 .. _functionEnrollment:
 
 Function enrollment
 *******************
 
-The enrollment of user functions is required in *Idefix* whenever a physical parameter is set to "userdef" in
-the input file. This can be seen as a way to link the user
-setup to the main code trunk. Function enrollment is achieved by calling one of the ``EnrollXXX`` function
-of the physics class associated to it.
+The enrollment of user functions is required in *Idefix* whenever a parameter is set to "userdef" in
+the input file, and for user-defined outputs. This can be seen as a way to link the user
+setup to the main code at runtime, and avoid the need to pre-define tens of empty functions. Function enrollment
+is achieved by calling one of the ``EnrollXXX`` function of the class associated to it.
 
-The ``Hydro`` class provide the following list of enrollment functions (declared in hydro.hpp):
+For instance, the ``Hydro`` class provide the following list of enrollment functions (declared in hydro.hpp):
 
 .. code-block:: c++
 
@@ -112,7 +109,7 @@ constructor which reads a parameter from the .ini file and enroll the user-defin
   }
 
   // Setup constructor
-  Setup::Setup(Input &input, Grid &grid, DataBlock &data) {
+  Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     // Read some parameter from the ini file
     Mass = input.GetReal("Setup","mass",0);
 

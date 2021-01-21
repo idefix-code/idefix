@@ -22,18 +22,20 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <csignal>
 
 #include <Kokkos_Core.hpp>
 
 #include "idefix.hpp"
+#include "input.hpp"
+#include "grid.hpp"
+#include "gridHost.hpp"
+#include "hydro.hpp"
+#include "dataBlock.hpp"
+#include "timeIntegrator.hpp"
+#include "setup.hpp"
+#include "output.hpp"
 
-bool abortRequested;
 
-void signalHandler(int signum) {
-  idfx::cout << std::endl << "Main:: Caught interrupt " << signum << std::endl;
-  abortRequested=true;
-}
 
 
 int main( int argc, char* argv[] ) {
@@ -58,11 +60,6 @@ int main( int argc, char* argv[] ) {
 
   {
     idfx::initialize();
-
-    //signal(SIGINT, signalHandler);
-    //signal(SIGTERM, signalHandler);
-    signal(SIGUSR2, signalHandler);
-    abortRequested=false;
 
     Input input = Input(argc, argv);
     input.PrintLogo();
@@ -90,27 +87,25 @@ int main( int argc, char* argv[] ) {
     idfx::cout << "Main::Init Time Integrator." << std::endl;
     TimeIntegrator Tint(input,data);
 
-    idfx::cout << "Main::Init Setup." << std::endl;
-    Setup mysetup(input,grid,data);
+    idfx::cout << "Main::Init Output Routines." << std::endl;
+    Output output(input, data);
 
-    idfx::cout << "Main::Onit Output Routines." << std::endl;
-    OutputVTK outVTK(input, data);
-    OutputDump outDMP(input, data);
+    idfx::cout << "Main::Init Setup." << std::endl;
+    Setup mysetup(input, grid, data, output);
 
     // Apply initial conditions
 
     // Are we restarting?
-    if(input.CheckEntry("CommandLine","restart") > 0) {
-      idfx::cout << "Main::Restarting from dump file"  << std::endl;
-      outDMP.Read(grid,data,outVTK,input.GetInt("CommandLine","restart",0));
+    if(input.restartRequested) {
+      idfx::cout << "Main::Restarting from dump file."  << std::endl;
+      output.RestartFromDump(data,input.restartFileNumber);
       data.hydro.SetBoundary(data.t);
-      outVTK.CheckForWrite(data);
+      output.CheckForWrites(data);
     } else {
       idfx::cout << "Main::Creating initial conditions." << std::endl;
       mysetup.InitFlow(data);
       data.hydro.SetBoundary(data.t);
-      outDMP.CheckForWrite(grid, data, outVTK);
-      outVTK.CheckForWrite(data);
+      output.CheckForWrites(data);
     }
 
     idfx::cout << "Main::Cycling Time Integrator..." << std::endl;
@@ -122,11 +117,10 @@ int main( int argc, char* argv[] ) {
     while(data.t < tstop) {
       if(tstop-data.t < data.dt) data.dt = tstop-data.t;
       Tint.Cycle(data);
-      outDMP.CheckForWrite(grid, data, outVTK);
-      outVTK.CheckForWrite(data);
-      if(abortRequested) {
+      output.CheckForWrites(data);
+      if(input.abortRequested) {
         idfx::cout << "Main:: Saving current state and aborting calculation" << std::endl;
-        outDMP.Write(grid, data, outVTK);
+        output.ForceWrite(data);
         break;
       }
     }
@@ -135,7 +129,7 @@ int main( int argc, char* argv[] ) {
                             / grid.np_int[KDIR] / Tint.getNcycles();
 
     idfx::cout << "Main::Reached t=" << data.t << std::endl;
-    idfx::cout << "Main::Completed in " << timer.seconds() << "seconds and " << Tint.getNcycles()
+    idfx::cout << "Main::Completed in " << timer.seconds() << " seconds and " << Tint.getNcycles()
                << " cycles. Perfs are " << 1/tintegration << " cell updates/second." << std::endl;
 
     idfx::cout << "Main::Job's done" << std::endl;

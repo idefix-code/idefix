@@ -147,7 +147,7 @@ def readVTKPolar(filename):
 
     s=fid.readline()    # BINARY
     s=fid.readline()    # DATASET RECTILINEAR_GRID
-    print(s)
+
     slist=s.split()
     grid_type=str(slist[1],'utf-8')
     if(grid_type != "STRUCTURED_GRID"):

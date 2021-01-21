@@ -6,7 +6,7 @@
 // ***********************************************************************************
 
 #pragma once
-#include "../idefix.hpp"
+#include "idefix.hpp"
 
 
 // Local Kokkos Inlined functions

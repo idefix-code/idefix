@@ -28,14 +28,4 @@ Usually, one starts a new project by copying an example from the test suite of i
    reference/setup.cpp
    reference/idefix.ini
    reference/commandline
-
-
-
-
-
-
-
-
-
-Migrating from PLUTO
-====================
+   reference/outputs

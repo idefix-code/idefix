@@ -5,10 +5,12 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef OUTPUT_OUTPUTDUMP_HPP_
-#define OUTPUT_OUTPUTDUMP_HPP_
+#ifndef OUTPUT_DUMP_HPP_
+#define OUTPUT_DUMP_HPP_
 #include <string>
-#include "../idefix.hpp"
+#include "idefix.hpp"
+#include "input.hpp"
+#include "dataBlock.hpp"
 
 
 enum DataType {DoubleType, SingleType, IntegerType};
@@ -21,23 +23,21 @@ enum DataType {DoubleType, SingleType, IntegerType};
 #endif
 
 // Forward class declaration
-class OutputVTK;
+//class Vtk;
+class Output;
 
-class OutputDump {
+class Dump {
  public:
-  OutputDump(Input &, DataBlock &);               // Create Output Object
+  void Init(Input &, DataBlock &);               // Create Dump Object
   // Create a Dump file from the current state of the code
-  int Write(Grid&, DataBlock &, OutputVTK&);
-  // Create a Dump file from the current state of the code
-  int CheckForWrite(Grid&, DataBlock &, OutputVTK&);
+  int Write(DataBlock &, Output&);
   // Read and load a dump file as current state of the code
-  int Read(Grid&, DataBlock &, OutputVTK&, int);
+  int Read(DataBlock &, Output&, int);
 
  private:
   int dumpFileNumber;
   int geometry{GEOMETRY};
   int periodicity[3];
-  real tperiod, tnext;
 
   real *scrch;                            // Scratch array in host space
 
@@ -61,4 +61,4 @@ class OutputDump {
   void ReadDistributed(IdfxFileHandler, int, int*, int*, IdfxDataDescriptor&, void*);
 };
 
-#endif // OUTPUT_OUTPUTDUMP_HPP_
+#endif // OUTPUT_DUMP_HPP_

@@ -8,9 +8,12 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
-#include "outputVtk.hpp"
+#include "vtk.hpp"
 #include "gitversion.hpp"
-#include "../idefix.hpp"
+#include "idefix.hpp"
+#include "dataBlockHost.hpp"
+#include "gridHost.hpp"
+#include "output.hpp"
 
 #define VTK_RECTILINEAR_GRID    14
 #define VTK_STRUCTURED_GRID     35
@@ -43,7 +46,7 @@
 
 
 
-void OutputVTK::WriteHeaderString(const char* header, IdfxFileHandler fvtk) {
+void Vtk::WriteHeaderString(const char* header, IdfxFileHandler fvtk) {
 #ifdef WITH_MPI
   MPI_Status status;
   MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_BYTE,
@@ -57,7 +60,7 @@ void OutputVTK::WriteHeaderString(const char* header, IdfxFileHandler fvtk) {
 #endif
 }
 
-void OutputVTK::WriteHeaderFloat(float* buffer, int64_t nelem, IdfxFileHandler fvtk) {
+void Vtk::WriteHeaderFloat(float* buffer, int64_t nelem, IdfxFileHandler fvtk) {
 #ifdef WITH_MPI
   MPI_Status status;
   MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_BYTE, MPI_CHAR,
@@ -71,12 +74,8 @@ void OutputVTK::WriteHeaderFloat(float* buffer, int64_t nelem, IdfxFileHandler f
 #endif
 }
 
-/* Main constructor */
-OutputVTK::OutputVTK(Input &input, DataBlock &datain) {
-  // Init the output period
-  this->tperiod=input.GetReal("Output","vtk",0);
-  this->tnext = datain.t;
-
+/*init the object */
+void Vtk::Init(Input &input, DataBlock &datain) {
   // Initialize the output structure
   // Create a local datablock as an image of gridin
   DataBlockHost data(datain);
@@ -105,9 +104,6 @@ OutputVTK::OutputVTK(Input &input, DataBlock &datain) {
 
   // Temporary storage on host for 3D arrays
   this->vect3D = new float[nx1loc*nx2loc*nx3loc];
-
-  // Essentially does nothing
-  this->vtkFileNumber = 0;
 
   // Test endianness
   int tmp1 = 1;
@@ -157,21 +153,14 @@ OutputVTK::OutputVTK(Input &input, DataBlock &datain) {
 #endif
 }
 
-int OutputVTK::CheckForWrite(DataBlock &datain) {
-  // Do we need an output?
-  if(datain.t < this->tnext) return(0);
 
-  this->tnext+= this->tperiod;
-  return(this->Write(datain));
-}
-
-int OutputVTK::Write(DataBlock &datain) {
-  idfx::pushRegion("OutputVTK::Write");
+int Vtk::Write(DataBlock &datain, Output &output) {
+  idfx::pushRegion("Vtk::Write");
 
   IdfxFileHandler fileHdl;
   std::string filename;
 
-  idfx::cout << "OutputVTK::Write file n " << vtkFileNumber << "..." << std::flush;
+  idfx::cout << "Vtk::Write file n " << vtkFileNumber << "..." << std::flush;
 
   timer.reset();
 
@@ -209,91 +198,22 @@ int OutputVTK::Write(DataBlock &datain) {
     WriteScalar(fileHdl, vect3D, datain.hydro.VcName[nv]);
   }
 
-#if MHD == YES
-  #ifdef WRITE_STAGGERED_FIELD
-  for(int nv = 0 ; nv < DIMENSIONS ; nv++) {
-    for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++ ) {
-      for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++ ) {
-        for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
-          vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc + (k-data.beg[KDIR])*nx1loc*nx2loc]
-              = BigEndian(static_cast<float>(data.Vs(nv,k,j,i)));
-        }
-      }
-    }
-    WriteScalar(fileHdl, vect3D, datain.hydro.VsName[nv]);
-  }
-  #endif // WRITE_STAGGERED_FIELD
-
-  #ifdef WRITE_CURRENT
-  if(data.haveCurrent) {
-    for(int nv = 0 ; nv < 3 ; nv++) {
+  // Write user-defined variables (when required by output)
+  if(output.userDefVariablesEnabled) {
+    // Walk the map and make an output for each key of the map
+    // (and we thank c++11 for its cute way of doing this)
+    for(auto const &variable : output.userDefVariables) {
       for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++ ) {
         for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++ ) {
           for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
             vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc + (k-data.beg[KDIR])*nx1loc*nx2loc]
-                = BigEndian(static_cast<float>(data.J(nv,k,j,i)));
+                = BigEndian(static_cast<float>(variable.second(k,j,i)));
           }
         }
       }
-      std::string varname = "JX"+std::to_string(nv+1);
-      WriteScalar(fileHdl, vect3D, varname);
+      WriteScalar(fileHdl, vect3D, variable.first);
     }
   }
-  #endif // WRITE_CURRENT
-
-  #ifdef WRITE_EMF
-  {
-    for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++ ) {
-      for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++ ) {
-        for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
-          vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc + (k-data.beg[KDIR])*nx1loc*nx2loc]
-              = BigEndian(static_cast<float>(data.Ex3(k,j,i)));
-        }
-      }
-    }
-    std::string varname = "EX3";
-    WriteScalar(fileHdl, vect3D, varname);
-    #if DIMENSIONS == 3
-    for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++ ) {
-      for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++ ) {
-        for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
-          vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc + (k-data.beg[KDIR])*nx1loc*nx2loc]
-              = BigEndian(static_cast<float>(data.Ex1(k,j,i)));
-        }
-      }
-    }
-    varname = "EX1";
-    WriteScalar(fileHdl, vect3D, varname);
-
-    for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++ ) {
-      for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++ ) {
-        for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
-          vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc + (k-data.beg[KDIR])*nx1loc*nx2loc]
-              = BigEndian(static_cast<float>(data.Ex2(k,j,i)));
-        }
-      }
-    }
-    varname = "EX2";
-    WriteScalar(fileHdl, vect3D, varname);
-    #endif // DIMENSIONS
-  }
-  #endif // WRITE_EMF
-#endif// MHD
-
-#ifdef WRITE_DT
-  {
-    for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++ ) {
-      for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++ ) {
-        for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
-          vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc + (k-data.beg[KDIR])*nx1loc*nx2loc]
-              = BigEndian(static_cast<float>(1/data.InvDt(k,j,i)));
-        }
-      }
-    }
-    std::string varname = "Dt";
-    WriteScalar(fileHdl, vect3D, varname);
-  }
-#endif
 
 #ifdef WITH_MPI
   MPI_SAFE_CALL(MPI_File_close(&fileHdl));
@@ -312,7 +232,7 @@ int OutputVTK::Write(DataBlock &datain) {
 
 
 /* ********************************************************************* */
-void OutputVTK::WriteHeader(IdfxFileHandler fvtk) {
+void Vtk::WriteHeader(IdfxFileHandler fvtk) {
 /*!
 * Write VTK header in parallel or serial mode.
 *
@@ -450,15 +370,10 @@ void OutputVTK::WriteHeader(IdfxFileHandler fvtk) {
 
 
 /* ********************************************************************* */
-void OutputVTK::WriteScalar(IdfxFileHandler fvtk, float* Vin,  std::string &var_name) {
+void Vtk::WriteScalar(IdfxFileHandler fvtk, float* Vin,  const std::string &var_name) {
 /*!
 * Write VTK scalar field.
 *
-* \param [in]   fvtk       pointer to file (handle)
-* \param [in]   V          pointer to 3D data array
-* \param [in] unit     the corresponding cgs unit (if specified, 1 otherwise)
-* \param [in]   var_name   the variable name appearing in the VTK file
-* \param [in]   grid       pointer to an array of Grid structures
 *********************************************************************** */
 
   int i, j, k;
@@ -486,7 +401,7 @@ void OutputVTK::WriteScalar(IdfxFileHandler fvtk, float* Vin,  std::string &var_
 @param in_number floating point number to be converted in big endian */
 /* *************************************************************************** */
 
-float OutputVTK::BigEndian(float in_number) {
+float Vtk::BigEndian(float in_number) {
   if (shouldSwapEndian) {
     unsigned char *bytes = (unsigned char*) &in_number;
     unsigned char tmp = bytes[0];

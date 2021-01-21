@@ -9,6 +9,7 @@
 
 #include "../idefix.hpp"
 #include "hydro.hpp"
+#include "dataBlock.hpp"
 
 
 void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {

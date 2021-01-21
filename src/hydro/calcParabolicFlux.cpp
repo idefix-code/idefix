@@ -5,8 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#include "../idefix.hpp"
 #include "hydro.hpp"
+#include "dataBlock.hpp"
 
 // Compute parabolic fluxes
 void Hydro::CalcParabolicFlux(int dir, const real t) {

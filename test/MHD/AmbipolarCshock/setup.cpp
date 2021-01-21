@@ -12,7 +12,7 @@ generators on different architectures.
 static real cs;
 
 // Default constructor
-Setup::Setup() {}
+
 
 void AmbipolarFunction(DataBlock &data, real t, IdefixArray3D<real> &xAin ) {
     IdefixArray3D<real> xA = xAin;
@@ -80,7 +80,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
-Setup::Setup(Input &input, Grid &grid, DataBlock &data) {
+Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
     data.hydro.EnrollAmbipolarDiffusivity(&AmbipolarFunction);
     cs=input.GetReal("Hydro","csiso",1);
@@ -136,6 +136,6 @@ void Setup::InitFlow(DataBlock &data) {
 }
 
 // Analyse data to produce an output
-void Setup::MakeAnalysis(DataBlock & data) {
+void MakeAnalysis(DataBlock & data) {
 
 }

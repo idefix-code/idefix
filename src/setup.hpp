@@ -9,14 +9,20 @@
 #define SETUP_HPP_
 
 #include "idefix.hpp"
+#include "input.hpp"
+#include "grid.hpp"
+#include "dataBlock.hpp"
+#include "output.hpp"
+
+// These two will likely be used in the code, so we include them here
+#include "gridHost.hpp"
+#include "dataBlockHost.hpp"
 
 class Setup {
  public:
-  Setup();
-  Setup(Input &, Grid &, DataBlock &);
+  Setup(Input &, Grid &, DataBlock &, Output&);
 
   void InitFlow(DataBlock &);
-  void MakeAnalysis(DataBlock&);
 };
 
 #endif // SETUP_HPP_

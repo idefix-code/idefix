@@ -8,7 +8,7 @@
 #ifndef HYDRO_SOLVERSMHD_HPP_
 #define HYDRO_SOLVERSMHD_HPP_
 
-#include "../idefix.hpp"
+#include "idefix.hpp"
 
 // Local Kokkos Inline functions
 

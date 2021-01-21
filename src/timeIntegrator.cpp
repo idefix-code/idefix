@@ -36,8 +36,6 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
 
   if(input.CheckEntry("Output","log")>0) {
     this->cyclePeriod=input.GetInt("Output","log",0);
-  } else {
-    this->cyclePeriod = 100; // Default log every 100 loops
   }
 
   if(nstages==2) {

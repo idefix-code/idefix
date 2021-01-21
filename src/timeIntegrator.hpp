@@ -35,7 +35,7 @@ class TimeIntegrator {
   int64_t ncycles;        // # of cycles
   double lastLog;         // # time for the last log
   double lastMpiLog;      // # time for the last MPI log
-  int64_t cyclePeriod;    // # of cycles between two logs
+  int64_t cyclePeriod = 100;    // # of cycles between two logs
   Kokkos::Timer timer;    // Internal timer of the integrator
 };
 

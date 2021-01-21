@@ -74,7 +74,7 @@ void Hall(DataBlock& data, const real t, IdefixArray3D<real> &xH) {
   });
 }
 // Default constructor
-Setup::Setup() {}
+
 
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on

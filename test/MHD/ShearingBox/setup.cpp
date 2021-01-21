@@ -28,7 +28,7 @@ real randm(void) {
 }
 
 // Default constructor
-Setup::Setup() {}
+
 
 // UserStep, here only gravity (vertical and radial)
 void UserStep(DataBlock &data, const real t, const real dt) {

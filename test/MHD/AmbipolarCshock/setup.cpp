@@ -12,7 +12,7 @@ generators on different architectures.
 static real cs;
 
 // Default constructor
-Setup::Setup() {}
+
 
 void AmbipolarFunction(DataBlock &data, real t, IdefixArray3D<real> &xAin ) {
     IdefixArray3D<real> xA = xAin;

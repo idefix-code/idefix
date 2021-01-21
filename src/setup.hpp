@@ -20,7 +20,6 @@
 
 class Setup {
  public:
-  Setup();
   Setup(Input &, Grid &, DataBlock &, Output&);
 
   void InitFlow(DataBlock &);

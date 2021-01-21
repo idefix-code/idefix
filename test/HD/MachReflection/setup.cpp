@@ -71,7 +71,7 @@ void UserdefBoundary(DataBlock & data, int dir, BoundarySide side, const real t)
 }
 
 // Default constructor
-Setup::Setup() {}
+
 
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on

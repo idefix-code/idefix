@@ -54,7 +54,7 @@ void Potential(DataBlock& data, const real t, IdefixArray1D<real>& x1, IdefixArr
 }
 
 // Default constructor
-Setup::Setup() {}
+
 
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on

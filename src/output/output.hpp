@@ -8,6 +8,7 @@
 #ifndef OUTPUT_OUTPUT_HPP_
 #define OUTPUT_OUTPUT_HPP_
 #include <string>
+#include <map>
 #include "idefix.hpp"
 #include "input.hpp"
 #include "dataBlock.hpp"
@@ -17,11 +18,13 @@
 
 using AnalysisFunc = void (*) (DataBlock &);
 
-using UserDefVariableFunc = void (*) (std::string &, DataBlock &, IdefixHostArray3D<real> &);
+using UserDefVariablesContainer = std::map<std::string,IdefixHostArray3D<real>>;
+using UserDefVariablesFunc = void (*) (DataBlock &, UserDefVariablesContainer &);
+
 
 class Output {
   friend class Dump;    // Allow dump to have R/W access to private variables
-
+  friend class Vtk;     // Allow VTK to have access to user-defined variables
  public:
   Output(Input &, DataBlock &);           // Create Output Object
   int CheckForWrites(DataBlock &);        // Check if outputs are needed at this stage
@@ -29,7 +32,7 @@ class Output {
   void ForceWrite(DataBlock &);            // Force write outputs (needed during an abort)
 
   void EnrollAnalysis(AnalysisFunc);
-  void EnrollUserDefVariable(UserDefVariableFunc);
+  void EnrollUserDefVariables(UserDefVariablesFunc);
 
  private:
   Vtk vtk;          // local instance of Vtk class
@@ -50,8 +53,10 @@ class Output {
   bool haveAnalysisFunc = false;
   AnalysisFunc analysisFunc;
 
+  bool userDefVariablesEnabled = false;
   bool haveUserDefVariablesFunc = false;
-  UserDefVariableFunc userDefVariableFunc;
+  UserDefVariablesFunc userDefVariablesFunc;
+  UserDefVariablesContainer userDefVariables;
 };
 
 

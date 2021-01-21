@@ -12,14 +12,15 @@
 #include "input.hpp"
 #include "dataBlock.hpp"
 
-
+// Forward class declaration
+class Output;
 
 class Vtk {
   friend class Dump;
 
  public:
   void Init(Input &, DataBlock &);   // init VTK object
-  int Write(DataBlock &);     // Create a VTK from the current DataBlock
+  int Write(DataBlock &, Output &);     // Create a VTK from the current DataBlock
 
  private:
   int vtkFileNumber = 0;
@@ -50,7 +51,7 @@ class Vtk {
 #endif
 
   void WriteHeader(IdfxFileHandler);
-  void WriteScalar(IdfxFileHandler, float*,  std::string &);
+  void WriteScalar(IdfxFileHandler, float*,  const std::string &);
   float BigEndian(float);
   void WriteHeaderString(const char* , IdfxFileHandler );
   void WriteHeaderFloat(float* , int64_t, IdfxFileHandler);

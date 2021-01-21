@@ -48,13 +48,17 @@ void pushRegion(const std::string& kName) {
   for(int i=0; i < regionIndent ; i++) {
     cout << "-";
   }
-  cout << "> " << kName << std::endl;
+  cout << "> " << kName << "..." << std::endl;
 #endif
 }
 
 void popRegion() {
   Kokkos::Profiling::popRegion();
 #ifdef DEBUG
+  for(int i=0; i < regionIndent ; i++) {
+    cout << "-";
+  }
+  cout << "> ...returned" << std::endl;
   regionIndent = regionIndent-4;
 #endif
 }

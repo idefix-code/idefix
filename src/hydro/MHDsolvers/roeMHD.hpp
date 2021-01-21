@@ -163,8 +163,9 @@ void Hydro::RoeMHD() {
       // --- Compute the square of the sound speed
       real a, a2, a2L, a2R;
       #if HAVE_ENERGY
-        // a2L = gamma * vL[PRS] / vL[RHO];
-        // a2R = gamma * vR[PRS] / vR[RHO];
+        // These are actually not used, but are initialised to avoid warnings
+        a2L = ONE_F;
+        a2R = ONE_F;
       #else
         if(haveIsoCs == UserDefFunction) {
           a2L = HALF_F*(csIsoArr(k,j,i)+csIsoArr(k-koffset,j-joffset,i-ioffset));

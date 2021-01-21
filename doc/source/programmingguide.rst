@@ -249,7 +249,7 @@ when one has to deal with input/outputs, debugging and initialisation.
 
 The ``DataBlockHost`` should always be constructed with a ``DataBlock`` in argument. This ensures
 that the ``DataBlockHost`` knows where its parent ``DataBlock`` is located. When created, a ``DataBlockHost``
-fills the following arrays with data from its parent ``DataBlock``:
+fills the following arrays (essentially grid information) with data from its parent ``DataBlock``:
 
 .. code-block:: c++
 
@@ -262,7 +262,7 @@ fills the following arrays with data from its parent ``DataBlock``:
   IdefixArray3D<real>::HostMirror A[3];   // cell right interface area
 
 
-Note however that the hydro array are not automatically synchronized when ``DataBlockHost`` is
+Note however that the physics arrays are not automatically synchronized when ``DataBlockHost`` is
 created, that is:
 
 .. code-block:: c++
@@ -277,7 +277,7 @@ created, that is:
   IdefixArray3D<real>::HostMirror Ex2;    // x2 electric field
   IdefixArray3D<real>::HostMirror Ex3;    // x3 electric field
 
-need to be synchronized. These IdefixArrays are all defined as ``HostMirror``, implying that they are accessible
+need to be synchronized *manually*. These IdefixArrays are all defined as ``HostMirror``, implying that they are accessible
 from the host only. If modifications are performed on the arrays of the
 parent ``DataBlock``, one can call ``DataBlockHost::SyncFromDevice()`` to refresh the host arrays,
 and inversely one can call ``DataBlockHost::SyncToDevice()`` to send data from ``DataBlockHost``

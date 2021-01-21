@@ -47,8 +47,11 @@ We provide below an example of a setup using both analysis outputs and uservar o
 
   // Analyse data to produce an ascii output
   void Analysis(DataBlock & data) {
-    // Copy data on Host
+    // Mirror data on Host
     DataBlockHost d(data);
+
+    // Sync it
+    d.SyncFromDevice();
 
     // Get the field at some specific location
     real by = d.Vc(BX2,0,0,0);
@@ -63,8 +66,11 @@ We provide below an example of a setup using both analysis outputs and uservar o
 
   // Compute user variables which will be written in vtk files
   void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
-    // Copy data on Host
+    // Mirror data on Host
     DataBlockHost d(data);
+
+    // Sync it
+    d.SyncFromDevice();
 
     // Make references to the user-defined arrays (variables is a container of IdefixHostArray3D)
     // Note that the labels should match the variable names in the input file

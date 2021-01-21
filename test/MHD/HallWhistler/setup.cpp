@@ -20,6 +20,8 @@ int mode;
 // Analyse data to produce an output
 void Analysis(DataBlock & data) {
   DataBlockHost d(data);
+  d.SyncFromDevice();
+
   if(idfx::prank == 0) {
     real by = d.Vc(BX2,data.beg[KDIR],data.beg[JDIR],data.beg[IDIR]);
     std::ofstream f;

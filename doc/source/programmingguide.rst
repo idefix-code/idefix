@@ -261,6 +261,12 @@ fills the following arrays with data from its parent ``DataBlock``:
   IdefixArray3D<real>::HostMirror dV;     // cell volume
   IdefixArray3D<real>::HostMirror A[3];   // cell right interface area
 
+
+Note however that the hydro array are not automatically synchronized when ``DataBlockHost`` is
+created, that is:
+
+.. code-block:: c++
+
   IdefixArray4D<real>::HostMirror Vc;     // Main cell-centered primitive variables index
   IdefixArray4D<real>::HostMirror Vs;     // Main face-centered primitive variables index
   IdefixArray4D<real>::HostMirror J;      // Current (only when haveCurrent is enabled)
@@ -271,9 +277,8 @@ fills the following arrays with data from its parent ``DataBlock``:
   IdefixArray3D<real>::HostMirror Ex2;    // x2 electric field
   IdefixArray3D<real>::HostMirror Ex3;    // x3 electric field
 
-Note that these IdefixArrays are all defined as ``HostMirror``, implying that they are accessible
-from the host only. When constructed, all of the arrays of the ``DataBlockHost`` are filled with
-the data of its parent ``DataBlock``. If modifications are later performed on the arrays of the
+need to be synchronized. These IdefixArrays are all defined as ``HostMirror``, implying that they are accessible
+from the host only. If modifications are performed on the arrays of the
 parent ``DataBlock``, one can call ``DataBlockHost::SyncFromDevice()`` to refresh the host arrays,
 and inversely one can call ``DataBlockHost::SyncToDevice()`` to send data from ``DataBlockHost``
 to the parent ``DataBlock``.

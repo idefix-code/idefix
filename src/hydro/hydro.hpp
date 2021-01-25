@@ -132,7 +132,7 @@ class Hydro {
 
   // Whether or not we have to treat the axis
   bool haveAxis;
-  Axis axis;
+  Axis myAxis;
 
 
  private:

@@ -7,9 +7,10 @@
 
 #include "axis.hpp"
 #include "hydro.hpp"
+#include "dataBlock.hpp"
 
 
-void Init(Grid &grid, Hydro *h) {
+void Axis::Init(Grid &grid, Hydro *h) {
   this->hydro = h;
   // Do we have a full circle?
   // Check that we have a fraction of 2PI:
@@ -19,14 +20,14 @@ void Init(Grid &grid, Hydro *h) {
     IDEFIX_ERROR("The grid extent in X3 should be an integer fraction of 2Pi");
   }
 
-  idfx::cout << "Hydro::Axis: Axis regularisation enabled ";
+  idfx::cout << "Axis:: Axis regularisation enabled ";
 
-  if(fabs((grid.xend[JDIR] - grid.xbeg[IDIR] -2.0*M_PI)) < 1e-10) {
+  if(fabs((grid.xend[KDIR] - grid.xbeg[KDIR] -2.0*M_PI)) < 1e-10) {
     this->isTwoPi = true;
-    idfx::cout << "with full azimuthal extension"
+    idfx::cout << "with full (2pi) azimuthal extension";
   } else {
     this->isTwoPi = false;
-    idfx::cout << "with partial azimuthal extension"
+    idfx::cout << "with partial (<2pi) azimuthal extension";
   }
 
   // Check where the axis is lying.
@@ -40,9 +41,9 @@ void Init(Grid &grid, Hydro *h) {
 }
 
 // Average the Emf component along the axis
-void SymmetrizeEx1() {
+void Axis::SymmetrizeEx1() {
 }
 
 // enforce the boundary conditions on the ghost zone accross the axis
-void EnforceAxisBoundary(int side) {
+void Axis::EnforceAxisBoundary(int side) {
 }

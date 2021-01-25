@@ -234,7 +234,9 @@ void Hydro::SetBoundary(real t) {
 #endif
         }
         break;
-
+      case axis:
+        this->myAxis.EnforceAxisBoundary(left);
+        break;
       case userdef:
         if(this->haveUserDefBoundary)
           this->userDefBoundaryFunc(*data, dir, left, t);
@@ -422,6 +424,9 @@ void Hydro::SetBoundary(real t) {
           }
 #endif
         }
+        break;
+      case axis:
+        this->myAxis.EnforceAxisBoundary(right);
         break;
       case userdef:
         if(this->haveUserDefBoundary)

@@ -211,7 +211,7 @@ void GridHost::MakeGrid(Input &input) {
           rboundString="shearingbox";
           break;
         case axis:
-          lboundString="axis";
+          rboundString="axis";
           break;
         case userdef:
           rboundString="userdef";

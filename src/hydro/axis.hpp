@@ -26,6 +26,6 @@ class Axis {
 
   IdefixArray1D<real> Ex1Avg;
   Hydro *hydro;
-}
+};
 
 #endif // HYDRO_AXIS_HPP_

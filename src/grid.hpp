@@ -28,6 +28,8 @@ class Grid {
   BoundaryType lbound[3];          // Boundary condition to the left
   BoundaryType rbound[3];          // Boundary condition to the right
 
+  bool haveAxis=false;    // Do we require a special treatment of the axis in spherical coords?
+
   // MPI data
   int nproc[3];           // Total number of procs in each direction
   int xproc[3];           // Coordinates of current proc in the array of procs

@@ -30,6 +30,7 @@ class GridHost {
   BoundaryType lbound[3];                  // Boundary condition to the left
   BoundaryType rbound[3];                  // Boundary condition to the right
 
+  bool haveAxis=false;    // Do we require a special treatment of the axis in spherical coords?
 
   // Constructor
   explicit GridHost(Grid&);

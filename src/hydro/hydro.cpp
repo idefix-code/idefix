@@ -237,6 +237,10 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   }
 #endif // MHD
 
+  // Do we have to take care of the axis?
+  if(data->haveAxis) {
+    this->axis.Init(grid, *this);
+  }
 /////////////////////////////////////////
 //  ALLOCATION SECION ///////////////////
 /////////////////////////////////////////

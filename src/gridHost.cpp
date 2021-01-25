@@ -31,6 +31,8 @@ GridHost::GridHost(Grid &grid) {
     xend[dir] = grid.xend[dir];
   }
 
+  this->haveAxis = grid.haveAxis;
+
   // Create mirrors on host
   for(int dir = 0 ; dir < 3 ; dir++) {
     x[dir] = Kokkos::create_mirror_view(grid.x[dir]);
@@ -183,6 +185,9 @@ void GridHost::MakeGrid(Input &input) {
         case shearingbox:
           lboundString="shearingbox";
           break;
+        case axis:
+          lboundString="axis";
+          break;
         case userdef:
           lboundString="userdef";
           break;
@@ -205,6 +210,9 @@ void GridHost::MakeGrid(Input &input) {
         case shearingbox:
           rboundString="shearingbox";
           break;
+        case axis:
+          lboundString="axis";
+          break;
         case userdef:
           rboundString="userdef";
           break;
@@ -225,6 +233,22 @@ void GridHost::MakeGrid(Input &input) {
       }
     }
   }
+
+  // Check that axis treatment is compatible with the domain
+if(haveAxis) {
+  #if GEOMETRY != SPHERICAL
+    IDEFIX_ERROR("Axis boundaries only compatible with Spherical boundary conditions");
+  #endif
+  #if DIMENSIONS < 2
+    IDEFIX_ERROR("Axis Boundaries requires at least two dimenions");
+  #endif
+  if((fabs(xbeg[JDIR])>1e-10) && (lbound[JDIR] == axis)) {
+    IDEFIX_ERROR("Axis Boundaries requires your X2 domain to start at exactly x2=0.0");
+  }
+  if((fabs(xend[JDIR]-M_PI)>1e-10) && (rbound[JDIR] == axis )) {
+    IDEFIX_ERROR("Axis Boundaries requires your X2 domain to end at exactly x2=Pi");
+  }
+}
 
   idfx::popRegion();
 }

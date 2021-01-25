@@ -10,9 +10,11 @@
 
 #include "idefix.hpp"
 #include "grid.hpp"
+#include "electroMotiveForce.hpp"
 
 // Forward class hydro declaration
 class Hydro;
+class DataBlock;
 
 class Axis {
  public:
@@ -26,6 +28,10 @@ class Axis {
 
   IdefixArray1D<real> Ex1Avg;
   Hydro *hydro;
+  DataBlock *data;
+  ElectroMotiveForce *emf;
+
+  void SymmetrizeEx1Side(int);
 };
 
 #endif // HYDRO_AXIS_HPP_

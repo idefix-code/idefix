@@ -39,6 +39,10 @@ void Hydro::EvolveMagField(real t, real dt) {
 
   bool haveAxis = this->haveAxis;
 
+  if(haveAxis) {
+    this->myAxis.SymmetrizeEx1();
+  }
+
   idefix_for("EvolvMagField",
              data->beg[KDIR],data->end[KDIR]+KOFFSET,
              data->beg[JDIR],data->end[JDIR]+JOFFSET,
@@ -93,6 +97,9 @@ void Hydro::EvolveMagField(real t, real dt) {
                        + dt*dx2(j)/(x1m(i)*dV2*dx3(k)) * (Ex2(k+1,j,i) - Ex2(k,j,i) ) );
 
   #if DIMENSIONS >= 2
+      // If we include the axis, we symmetrize Ex on the axis. However, Ax2=0 on the axis
+      // so rhs_x2 might become singular. We therefore enforce Ax2=1 on the axis, knowing
+      // that the contribution to rhs_y of this term will be zero because Ex1(k+1)-Ex1(k)=0
       if(haveAxis) {
         if(FABS(Ax2m)<1e-12) Ax2m = ONE_F;
       }

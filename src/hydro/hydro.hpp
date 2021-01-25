@@ -126,12 +126,12 @@ class Hydro {
 
 
   // Whether or not we have viscosity
-  bool haveViscosity;
+  bool haveViscosity = false;
   // Viscosity object
   Viscosity viscosity;
 
   // Whether or not we have to treat the axis
-  bool haveAxis;
+  bool haveAxis = false;
   Axis myAxis;
 
 

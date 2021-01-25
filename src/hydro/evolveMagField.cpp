@@ -37,6 +37,8 @@ void Hydro::EvolveMagField(real t, real dt) {
   IdefixArray1D<real> dx2=data->dx[JDIR];
   IdefixArray1D<real> dx3=data->dx[KDIR];
 
+  bool haveAxis = this->haveAxis;
+
   idefix_for("EvolvMagField",
              data->beg[KDIR],data->end[KDIR]+KOFFSET,
              data->beg[JDIR],data->end[JDIR]+JOFFSET,
@@ -91,6 +93,9 @@ void Hydro::EvolveMagField(real t, real dt) {
                        + dt*dx2(j)/(x1m(i)*dV2*dx3(k)) * (Ex2(k+1,j,i) - Ex2(k,j,i) ) );
 
   #if DIMENSIONS >= 2
+      if(haveAxis) {
+        if(FABS(Ax2m)<1e-12) Ax2m = ONE_F;
+      }
       rhsx2 =  D_EXPAND( dt/(x1(i)*dx1(i)) * (x1m(i+1)*Ex3(k,j,i+1) - x1m(i)*Ex3(k,j,i) )  ,
                                                                                            ,
                         - dt/(x1(i)*Ax2m*dx3(k)) * (Ex1(k+1,j,i) - Ex1(k,j,i) )            );
@@ -101,6 +106,9 @@ void Hydro::EvolveMagField(real t, real dt) {
   #endif
 #endif // GEOMETRY
 
+      if(rhsx1!=rhsx1) IDEFIX_ERROR("RHSX1");
+      if(rhsx2!=rhsx2) IDEFIX_ERROR("RHSX2");
+      if(rhsx3!=rhsx3) IDEFIX_ERROR("RHSX3");
 
       Vs(BX1s,k,j,i) = Vs(BX1s,k,j,i) + rhsx1;
 

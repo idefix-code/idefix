@@ -169,14 +169,17 @@ This section describes the outputs *Idefix* produces. For more details about eac
 +----------------+-------------------------+--------------------------------------------------------------------------------------------------+
 |  Entry name    | Parameter type          | Comment                                                                                          |
 +================+=========================+==================================================================================================+
-| log            | integer                 | | Frequency of log outputs, in code steps (default 100).                                         |
+| log            | integer                 | | Time interval between log outputs, in code steps (default 100).                                |
 +----------------+-------------------------+--------------------------------------------------------------------------------------------------+
-| dmp            | float                   | | Frequency of dump outputs, in code units. If negative, periodic dump outputs are disabled.     |
+| dmp            | float                   | | Time interval between dump outputs, in code units.                                             |
+|                |                         | | If negative, periodic dump outputs are disabled.                                               |
 +----------------+-------------------------+--------------------------------------------------------------------------------------------------+
-| vtk            | float                   | | Frequency of vtk outputs, in code units. If negative, periodic vtk outputs are disabled.       |
+| vtk            | float                   | | Time interval between vtk outputs, in code units.                                              |
+|                |                         | | If negative, periodic vtk outputs are disabled.                                                |
 +----------------+-------------------------+--------------------------------------------------------------------------------------------------+
-| analysis       | float                   | | Frequency of analysis outputs, in code units. If negative, periodic analysis outputs are       |
-|                |                         | | disabled. When this entry is set, *Idefix* expects a user-defined analysis function to be      |
+| analysis       | float                   | | Time interval between analysis outputs, in code units.                                         |
+|                |                         | | If negative, periodic analysis outputs are disabled.                                           |
+|                |                         | | When this entry is set, *Idefix* expects a user-defined analysis function to be                |
 |                |                         | | enrolled with  ``Output::EnrollAnalysis(AnalysisFunc)`` (see :ref:`functionEnrollment`).       |
 +----------------+-------------------------+--------------------------------------------------------------------------------------------------+
 | uservar        | string series           | | List the name of the user-defined variables the user wants to define.                          |

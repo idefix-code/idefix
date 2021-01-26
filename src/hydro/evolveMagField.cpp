@@ -113,10 +113,6 @@ void Hydro::EvolveMagField(real t, real dt) {
   #endif
 #endif // GEOMETRY
 
-      if(rhsx1!=rhsx1) IDEFIX_ERROR("RHSX1");
-      if(rhsx2!=rhsx2) IDEFIX_ERROR("RHSX2");
-      if(rhsx3!=rhsx3) IDEFIX_ERROR("RHSX3");
-
       Vs(BX1s,k,j,i) = Vs(BX1s,k,j,i) + rhsx1;
 
 #if DIMENSIONS >= 2

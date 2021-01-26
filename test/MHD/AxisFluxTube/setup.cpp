@@ -7,10 +7,49 @@ real Rtorus;
 real Ztorus;
 real Rin;
 
+void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
+  // Mirror data on Host
+  DataBlockHost d(data);
+
+  // Sync it
+  d.SyncFromDevice();
+
+  // Make references to the user-defined arrays (variables is a container of IdefixHostArray3D)
+  // Note that the labels should match the variable names in the input file
+  IdefixHostArray3D<real> divB  = variables["divB"];
+  IdefixHostArray3D<real> Er  = variables["Er"];
+  IdefixHostArray4D<real> Vs = d.Vs;
+  IdefixHostArray3D<real> Ax1 = d.A[IDIR];
+  IdefixHostArray3D<real> Ax2 = d.A[JDIR];
+  IdefixHostArray3D<real> Ax3 = d.A[KDIR];
+  IdefixHostArray3D<real> dV = d.dV;
+
+  for(int k = d.beg[KDIR]; k < d.end[KDIR] ; k++) {
+    for(int j = d.beg[JDIR]; j < d.end[JDIR] ; j++) {
+      for(int i = d.beg[IDIR]; i < d.end[IDIR] ; i++) {
+
+        divB(k,j,i) = ((Ax1(k,j,i+1)*Vs(BX1s,k,j,i+1)-Ax1(k,j,i)*Vs(BX1s,k,j,i)) +
+                      (Ax2(k,j+1,i)*Vs(BX2s,k,j+1,i)-Ax2(k,j,i)*Vs(BX2s,k,j,i)) +
+                      (Ax3(k+1,j,i)*Vs(BX3s,k+1,j,i)-Ax3(k,j,i)*Vs(BX3s,k,j,i)))
+                      / dV(k,j,i);
+
+        Er(k,j,i) = d.Ex1(k,j+1,i);
+      }
+    }
+  }
+}
+
+void Analysis(DataBlock & data) {
+  // Mirror data on Host
+  data.hydro.SetBoundary(data.t);
+  data.DumpToFile("analysis");
+}
 
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
+  output.EnrollUserDefVariables(&ComputeUserVars);
+  output.EnrollAnalysis(&Analysis);
   Rtorus = input.GetReal("Setup","Rtorus",0);
   Ztorus = input.GetReal("Setup","Ztorus",0);
   Rin = input.GetReal("Setup","Rin",0);
@@ -68,9 +107,4 @@ void Setup::InitFlow(DataBlock &data) {
 
     // Send it all, if needed
     d.SyncToDevice();
-}
-
-// Analyse data to produce an output
-void MakeAnalysis(DataBlock & data) {
-
 }

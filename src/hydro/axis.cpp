@@ -37,6 +37,37 @@ void Axis::Init(Grid &grid, Hydro *h) {
   if(hydro->data->lbound[JDIR] == axis) axisLeft = true;
   if(hydro->data->rbound[JDIR] == axis) axisRight = true;
 
+  // Init the symmetry array (used to flip the signs of arrays accross the axis)
+  symmetryVc = IdefixArray1D<int>("Axis:SymmetryVc",NVAR);
+  IdefixArray1D<int>::HostMirror symmetryVcHost = Kokkos::create_mirror_view(symmetryVc);
+  // Init the array
+  for (int nv = 0; nv < NVAR; nv++) {
+    symmetryVcHost(nv) = 1;
+    if (nv == VX2)
+      symmetryVcHost(nv) = -1;
+    if (nv == VX3)
+      symmetryVcHost(nv) = -1;
+    if (nv == BX2)
+      symmetryVcHost(nv) = -1;
+    if (nv == BX3)
+      symmetryVcHost(nv) = -1;
+  }
+  Kokkos::deep_copy(symmetryVc, symmetryVcHost);
+
+#if MHD == YES
+  symmetryVs = IdefixArray1D<int>("Axis:SymmetryVs",DIMENSIONS);
+  IdefixArray1D<int>::HostMirror symmetryVsHost = Kokkos::create_mirror_view(symmetryVs);
+  // Init the array
+  for(int nv = 0; nv < DIMENSIONS; nv++) {
+    symmetryVsHost(nv) = 1;
+    if (nv == BX2s)
+      symmetryVsHost(nv) = -1;
+    if (nv == BX3s)
+      symmetryVsHost(nv) = -1;
+  }
+  Kokkos::deep_copy(symmetryVs, symmetryVsHost);
+#endif
+
   #if MHD == YES
   this->Ex1Avg = IdefixArray1D<real>("Axis:Ex1Avg",hydro->data->np_tot[IDIR]);
   #endif
@@ -59,7 +90,7 @@ void Axis::SymmetrizeEx1Side(int jref) {
 
   int ncells=data->mygrid->np_int[KDIR];
 
-  idefix_for("Ex1_Store",data->beg[KDIR],data->end[KDIR],0,data->np_tot[IDIR],
+  idefix_for("Ex1_Store",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
   KOKKOS_LAMBDA(int k,int i) {
     Ex1(k,jref,i) = Ex1Avg(i)/((real) ncells);
   });
@@ -83,6 +114,76 @@ void Axis::SymmetrizeEx1() {
 // enforce the boundary conditions on the ghost zone accross the axis
 void Axis::EnforceAxisBoundary(int side) {
   idfx::pushRegion("Axis::EnforceAxisBoundary");
+
+  IdefixArray4D<real> Vc = hydro->Vc;
+  IdefixArray1D<int> sVc = this->symmetryVc;
+
+  int ibeg = 0;
+  int iend = data->np_tot[IDIR];
+  int jref, jbeg,jend;
+  int offset;
+  if(side == left) {
+    jref = data->beg[JDIR];
+    jbeg = 0;
+    jend = data->beg[JDIR];
+    offset = -1;
+  }
+  if(side == right) {
+    jref = data->end[JDIR]-1;
+    jbeg = data->end[JDIR];
+    jend = data->np_tot[JDIR];
+    offset = 1;
+  }
+
+  int kbeg = 0;
+  int kend = data->np_tot[KDIR];
+  int np_int_k = data->mygrid->np_int[KDIR];
+  int nghost_k = data->mygrid->nghost[KDIR];
+
+  idefix_for("BoundaryEndOutflow",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+          KOKKOS_LAMBDA (int n, int k, int j, int i) {
+            int kcomp = nghost_k + (( k - nghost_k + np_int_k/2) % np_int_k);
+
+            Vc(n,k,j,i) = sVc(n)*(n, kcomp, 2*jref-j+offset,i);
+          });
+
+#if MHD == YES
+  IdefixArray4D<real> Vs = hydro->Vs;
+  IdefixArray1D<int> sVs = this->symmetryVs;
+
+  for(int component=0; component<DIMENSIONS; component++) {
+    int ieb,jeb,keb;
+    if(component == IDIR)
+      ieb=iend+1;
+    else
+      ieb=iend;
+    if(component == JDIR)
+      jeb=jend+1;
+    else
+      jeb=jend;
+    if(component == KDIR)
+      keb=kend+1;
+    else
+      keb=kend;
+    if(component != JDIR) { // skip normal component
+      idefix_for("BoundaryEndOutflowVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
+        KOKKOS_LAMBDA (int k, int j, int i) {
+          int kcomp = nghost_k + (( k - nghost_k + np_int_k/2) % np_int_k);
+          Vs(component,k,j,i) = sVs(component)*Vs(component,kcomp, 2*jref-j+offset,i);
+        }
+      );
+    }
+  }
+  // Set BX2s on the axis to zero, that's a very bad trick...
+  if(side==right) jref++;
+  idefix_for("BoundaryEndOutflowVs",kbeg,kend,ibeg,iend,
+        KOKKOS_LAMBDA (int k, int i) {
+          Vs(BX2s,k,jref,i) = HALF_F*(Vs(BX2s,k,jref-1,i)+Vs(BX2s,k,jref+1,i));
+        }
+      );
+
+#endif
+
 
   idfx::popRegion();
 }

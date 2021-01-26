@@ -27,6 +27,10 @@ class Axis {
   bool axisLeft = false;
 
   IdefixArray1D<real> Ex1Avg;
+  IdefixArray1D<int> symmetryVc;
+  IdefixArray1D<int> symmetryVs;
+
+
   Hydro *hydro;
   DataBlock *data;
   ElectroMotiveForce *emf;

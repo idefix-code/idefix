@@ -528,16 +528,19 @@ void Hydro::ReconstructNormalField(int dir) {
     idefix_for("ReconstructBX2s",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
       KOKKOS_LAMBDA (int k, int i) {
         for(int j = nstart ; j>=0 ; j-- ) {
+          // NB: FABS is required in cases where we go through the axis, where Ax3 can get reversed
           Vs(BX2s,k,j,i) = 1.0 / Ax2(k,j,i) * ( Ax2(k,j+1,i)*Vs(BX2s,k,j+1,i)
                       +(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
                                                                                                  ,
-                             + Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) )));
+                             + FABS(Ax3(k+1,j,i)) * Vs(BX3s,k+1,j,i) - FABS(Ax3(k,j,i))
+                                                                              * Vs(BX3s,k,j,i) )));
         }
         for(int j = nend ; j<nx2 ; j++ ) {
           Vs(BX2s,k,j+1,i) = 1.0 / Ax2(k,j+1,i) * ( Ax2(k,j,i)*Vs(BX2s,k,j,i)
                       -(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
                                                                                                  ,
-                             + Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) )));
+                             + FABS(Ax3(k+1,j,i)) * Vs(BX3s,k+1,j,i) - FABS(Ax3(k,j,i))
+                                                                      * Vs(BX3s,k,j,i) )));
         }
       }
     );

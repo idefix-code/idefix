@@ -98,7 +98,7 @@ void Setup::InitFlow(DataBlock &data) {
                 if(bphi<0.0) bphi = 0.0;
                 d.Vs(BX1s,k,j,i) = 0.0;
                 d.Vs(BX2s,k,j,i) = 0.0;
-                d.Vs(BX3s,k,j,i) = 1.0e-8*bphi;
+                d.Vs(BX3s,k,j,i) = 1.0e-20*bphi;
 
 
             }

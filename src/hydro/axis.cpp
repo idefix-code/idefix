@@ -27,10 +27,16 @@ void Axis::Init(Grid &grid, Hydro *h) {
 
   if(fabs((grid.xend[KDIR] - grid.xbeg[KDIR] -2.0*M_PI)) < 1e-10) {
     this->isTwoPi = true;
-    idfx::cout << "with full (2pi) azimuthal extension";
+    idfx::cout << "with full (2pi) azimuthal extension" << std::endl;;
+    #ifdef WITH_MPI
+      // Check that there is no domain decomposition in phi
+      if(data->mygrid->nproc[KDIR]>1) {
+        IDEFIX_ERROR("Axis boundaries are not compatible with MPI domain decomposition in X3");
+      }
+    #endif
   } else {
     this->isTwoPi = false;
-    idfx::cout << "with partial (<2pi) azimuthal extension";
+    idfx::cout << "with partial (<2pi) azimuthal extension" << std::endl;
   }
 
   // Check where the axis is lying.
@@ -71,30 +77,39 @@ void Axis::Init(Grid &grid, Hydro *h) {
   #if MHD == YES
   this->Ex1Avg = IdefixArray1D<real>("Axis:Ex1Avg",hydro->data->np_tot[IDIR]);
   #endif
-  idfx::cout << std::endl;
 }
 
 void Axis::SymmetrizeEx1Side(int jref) {
   IdefixArray3D<real> Ex1 = emf->ex;
   IdefixAtomicArray1D<real> Ex1Avg = this->Ex1Avg;
 
-  idefix_for("Ex1_ini",0,data->np_tot[IDIR],
-      KOKKOS_LAMBDA(int i) {
-        Ex1Avg(i) = ZERO_F;
+  if(isTwoPi) {
+    idefix_for("Ex1_ini",0,data->np_tot[IDIR],
+        KOKKOS_LAMBDA(int i) {
+          Ex1Avg(i) = ZERO_F;
+        });
+
+    idefix_for("Ex1_Symmetrize",data->beg[KDIR],data->end[KDIR],0,data->np_tot[IDIR],
+      KOKKOS_LAMBDA(int k,int i) {
+        Ex1Avg(i) += Ex1(k,jref,i);
       });
 
-  idefix_for("Ex1_Symmetrize",data->beg[KDIR],data->end[KDIR],0,data->np_tot[IDIR],
+    int ncells=data->mygrid->np_int[KDIR];
+
+    idefix_for("Ex1_Store",0,data->np_tot[KDIR]+KOFFSET,0,data->np_tot[IDIR],
     KOKKOS_LAMBDA(int k,int i) {
-      Ex1Avg(i) += Ex1(k,jref,i);
+      Ex1(k,jref,i) = Ex1Avg(i)/((real) ncells);
     });
-
-  int ncells=data->mygrid->np_int[KDIR];
-
-  idefix_for("Ex1_Store",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
-  KOKKOS_LAMBDA(int k,int i) {
-    Ex1(k,jref,i) = Ex1Avg(i)/((real) ncells);
-  });
+  } else {
+    // if we're not doing full two pi, the flow is symmetric with respect to the axis, and the axis
+    // EMF is simply zero
+    idefix_for("Ex1_Store",0,data->np_tot[KDIR]+KOFFSET,0,data->np_tot[IDIR],
+    KOKKOS_LAMBDA(int k,int i) {
+      Ex1(k,jref,i) = ZERO_F;
+    });
+  }
 }
+
 // Average the Emf component along the axis
 void Axis::SymmetrizeEx1() {
   idfx::pushRegion("Axis::SymmetrizeEx1");
@@ -140,49 +155,115 @@ void Axis::EnforceAxisBoundary(int side) {
   int np_int_k = data->mygrid->np_int[KDIR];
   int nghost_k = data->mygrid->nghost[KDIR];
 
-  idefix_for("BoundaryEndOutflow",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
-          KOKKOS_LAMBDA (int n, int k, int j, int i) {
-            int kcomp = nghost_k + (( k - nghost_k + np_int_k/2) % np_int_k);
+  if(isTwoPi) {
+    idefix_for("BoundaryEndOutflow",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+            KOKKOS_LAMBDA (int n, int k, int j, int i) {
+              int kcomp = nghost_k + (( k - nghost_k + np_int_k/2) % np_int_k);
 
-            Vc(n,k,j,i) = sVc(n)*(n, kcomp, 2*jref-j+offset,i);
-          });
+              Vc(n,k,j,i) = sVc(n)*Vc(n, kcomp, 2*jref-j+offset,i);
+            });
+  } else {
+    idefix_for("BoundaryEndOutflow",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+            KOKKOS_LAMBDA (int n, int k, int j, int i) {
+              // kcomp = k by construction since we're doing a fraction of twopi
 
-#if MHD == YES
-  IdefixArray4D<real> Vs = hydro->Vs;
-  IdefixArray1D<int> sVs = this->symmetryVs;
-
-  for(int component=0; component<DIMENSIONS; component++) {
-    int ieb,jeb,keb;
-    if(component == IDIR)
-      ieb=iend+1;
-    else
-      ieb=iend;
-    if(component == JDIR)
-      jeb=jend+1;
-    else
-      jeb=jend;
-    if(component == KDIR)
-      keb=kend+1;
-    else
-      keb=kend;
-    if(component != JDIR) { // skip normal component
-      idefix_for("BoundaryEndOutflowVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
-        KOKKOS_LAMBDA (int k, int j, int i) {
-          int kcomp = nghost_k + (( k - nghost_k + np_int_k/2) % np_int_k);
-          Vs(component,k,j,i) = sVs(component)*Vs(component,kcomp, 2*jref-j+offset,i);
-        }
-      );
-    }
+              Vc(n,k,j,i) = sVc(n)*Vc(n, k, 2*jref-j+offset,i);
+            });
   }
-  // Set BX2s on the axis to zero, that's a very bad trick...
-  if(side==right) jref++;
-  idefix_for("BoundaryEndOutflowVs",kbeg,kend,ibeg,iend,
+
+  #if MHD == YES
+    IdefixArray4D<real> Vs = hydro->Vs;
+    IdefixArray1D<int> sVs = this->symmetryVs;
+
+    for(int component=0; component<DIMENSIONS; component++) {
+      int ieb,jeb,keb;
+      if(component == IDIR)
+        ieb=iend+1;
+      else
+        ieb=iend;
+      if(component == JDIR)
+        jeb=jend+1;
+      else
+        jeb=jend;
+      if(component == KDIR)
+        keb=kend+1;
+      else
+        keb=kend;
+      if(component != JDIR) { // skip normal component
+        if(isTwoPi) {
+          idefix_for("BoundaryEndOutflowVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
+            KOKKOS_LAMBDA (int k, int j, int i) {
+              int kcomp = nghost_k + (( k - nghost_k + np_int_k/2) % np_int_k);
+              Vs(component,k,j,i) = sVs(component)*Vs(component,kcomp, 2*jref-j+offset,i);
+            }
+          );
+        } else {
+          idefix_for("BoundaryEndOutflowVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
+            KOKKOS_LAMBDA (int k, int j, int i) {
+              Vs(component,k,j,i) = sVs(component)*Vs(component,k, 2*jref-j+offset,i);
+            }
+          );
+        }
+      }
+    }
+    // Set BX2s on the axis to the average of the two agacent cells
+    // This is required since Bx2s on the axis is not evolved since
+    // there is no circulation around it
+    if(side==right) jref++;
+    if(isTwoPi) {
+      idefix_for("BoundaryEndOutflowVs",kbeg,kend,ibeg,iend,
+            KOKKOS_LAMBDA (int k, int i) {
+              Vs(BX2s,k,jref,i) = HALF_F*(Vs(BX2s,k,jref-1,i)+Vs(BX2s,k,jref+1,i));
+            }
+          );
+    } else {
+      idefix_for("BoundaryEndOutflowVs",kbeg,kend,ibeg,iend,
+            KOKKOS_LAMBDA (int k, int i) {
+              Vs(BX2s,k,jref,i) = ZERO_F;
+            }
+          );
+    }
+  #endif
+
+
+  idfx::popRegion();
+}
+
+// Reconstruct Bx2s taking care of the sides where an axis is lying
+void Axis::ReconstructBx2s() {
+  idfx::pushRegion("Axis::EnforceAxisBoundary");
+  IdefixArray4D<real> Vs = hydro->Vs;
+  IdefixArray3D<real> Ax1=data->A[IDIR];
+  IdefixArray3D<real> Ax2=data->A[JDIR];
+  IdefixArray3D<real> Ax3=data->A[KDIR];
+  int nstart = data->beg[JDIR]-1;
+  int nend = data->end[JDIR];
+  int signLeft = 1;
+  int signRight = 1;
+  if(axisLeft) signLeft = -1;
+  if(axisRight) signRight = -1;
+
+  // This loop is a copy of ReconstructNormalField, with the proper sign when we cross the axis
+  idefix_for("Axis::ReconstructBX2s",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
         KOKKOS_LAMBDA (int k, int i) {
-          Vs(BX2s,k,jref,i) = HALF_F*(Vs(BX2s,k,jref-1,i)+Vs(BX2s,k,jref+1,i));
+          for(int j = nstart ; j>=0 ; j-- ) {
+            Vs(BX2s,k,j,i) = 1.0 / Ax2(k,j,i) * ( Ax2(k,j+1,i)*Vs(BX2s,k,j+1,i)
+                        +(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
+                                                                                                  ,
+                              + signLeft*( Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i)
+                                                              - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))));
+          }
+          for(int j = nend ; j<data->np_tot[JDIR] ; j++ ) {
+            Vs(BX2s,k,j+1,i) = 1.0 / Ax2(k,j+1,i) * ( Ax2(k,j,i)*Vs(BX2s,k,j,i)
+                        -(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
+                                                                                                  ,
+                              + signRight*( Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i)
+                                                               - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))));
+          }
         }
       );
 
-#endif
+
 
 
   idfx::popRegion();

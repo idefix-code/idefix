@@ -21,6 +21,8 @@ class Axis {
   void Init(Grid &, Hydro *);  // Initialisation
   void SymmetrizeEx1();                 // Symmetrize Emf component Ex1
   void EnforceAxisBoundary(int side);   // Enforce the boundary conditions (along X2)
+  void ReconstructBx2s();
+
  private:
   bool isTwoPi = false;
   bool axisRight = false;

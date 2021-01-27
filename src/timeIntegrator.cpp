@@ -78,10 +78,21 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     lastMpiLog = idfx::mpiTimer;
 #endif
     lastLog = timer.seconds();
-    // missing first log entry
-    // Timeintegrator:      t     |    Cycle    |      dt     |  cell updates/s  | % MPI overhead"
-    // the last column is optional (#ifdef WITH_MPI)
+
+
     int col_width{16};
+    if (ncycles == 0) {
+      idfx::cout << "TimeIntegrator: ";
+      idfx::cout << std::setw(col_width) << "time";
+      idfx::cout << " | " << std::setw(col_width) << "cycle";
+      idfx::cout << " | " << std::setw(col_width) << "time step";
+      idfx::cout << " | " << std::setw(col_width) << "cell updates/s";
+#ifdef WITH_MP
+      idfx::cout << " | " << std::setw(col_width) << "MPI overhead (%)";
+#endif
+      idfx::cout << std::endl;
+    }
+
     idfx::cout << "TimeIntegrator: ";
     idfx::cout << std::setw(col_width) << data.t;
     idfx::cout << " | " << std::setw(col_width) << ncycles;
@@ -90,6 +101,11 @@ void TimeIntegrator::Cycle(DataBlock &data) {
       idfx::cout << " | " << std::setw(col_width) << 1 / rawperf;
 #ifdef WITH_MP
       idfx::cout << " | " << std::setw(col_width) << mpiOverhead;
+#endif
+    } else {
+      idfx::cout << " | " << std::setw(col_width) << "NaN";
+#ifdef WITH_MP
+      idfx::cout << " | " << std::setw(col_width) << "NaN";
 #endif
     }
     idfx::cout << std::endl;

@@ -24,7 +24,7 @@ void Axis::Init(Grid &grid, Hydro *h) {
   }
 
   #if GEOMETRY != SPHERICAL
-    IDEFIX_ERROR("Axis boundary conditions are only designed to handle spherical geometry")
+    IDEFIX_ERROR("Axis boundary conditions are only designed to handle spherical geometry");
   #endif
   idfx::cout << "Axis:: Axis regularisation enabled ";
 

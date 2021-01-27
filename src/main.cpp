@@ -18,6 +18,7 @@
 
 #include <sys/time.h>
 
+#include <stdlib.h>
 #include <limits>
 #include <cstdio>
 #include <cstdlib>
@@ -125,14 +126,55 @@ int main( int argc, char* argv[] ) {
       }
     }
 
+    int n_days{0}, n_hours{0}, n_minutes{0}, n_seconds{0};
+    div_t divres;
+    divres = div(timer.seconds(), 86400);
+    n_days = divres.quot;
+    divres = div(divres.rem, 3600);
+    n_hours = divres.quot;
+    divres = div(divres.rem, 60);
+    n_minutes = divres.quot;
+    n_seconds = divres.rem;
+
     double tintegration = timer.seconds() / grid.np_int[IDIR] / grid.np_int[JDIR]
                             / grid.np_int[KDIR] / Tint.getNcycles();
 
-    idfx::cout << "Main::Reached t=" << data.t << std::endl;
-    idfx::cout << "Main::Completed in " << timer.seconds() << " seconds and " << Tint.getNcycles()
-               << " cycles. Perfs are " << 1/tintegration << " cell updates/second." << std::endl;
-
-    idfx::cout << "Main::Job's done" << std::endl;
+    idfx::cout << "Main: Reached t=" << data.t << std::endl;
+    idfx::cout << "Main: Completed in ";
+    if (n_days > 0) {
+      idfx::cout << n_days << " day";
+      if (n_days != 1) {
+        idfx::cout << "s";
+      }
+      idfx::cout << " ";
+    }
+    if (n_hours > 0) {
+      idfx::cout << n_hours << " hour";
+      if (n_hours != 1) {
+        idfx::cout << "s";
+      }
+      idfx::cout << " ";
+    }
+    if (n_minutes > 0) {
+      idfx::cout << n_minutes << " minute";
+      if (n_minutes != 1) {
+        idfx::cout << "s";
+      }
+      idfx::cout << " ";
+    }
+    idfx::cout << n_seconds << " second";
+    if (n_seconds != 1) {
+      idfx::cout << "s";
+    }
+    idfx::cout << " ";
+    idfx::cout << "and " << Tint.getNcycles() << " cycle";
+    if (Tint.getNcycles() != 1) {
+      idfx::cout << "s";
+    }
+    idfx::cout << std::endl;
+    idfx::cout << "Main: ";
+    idfx::cout << "Perfs are " << 1/tintegration << " cell updates/second" << std::endl;
+    idfx::cout << "Main: Job's done" << std::endl;
   }
 
   Kokkos::finalize();

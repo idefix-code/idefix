@@ -19,11 +19,11 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
 
   if(input.CheckEntry("Hydro","gamma")>0) {
     this->gamma = input.GetReal("Hydro","gamma",0);
-    idfx::cout << "Hydro:: adiabatic EOS with gamma=" << this->gamma <<std::endl;
+    idfx::cout << "Hydro: adiabatic EOS with gamma=" << this->gamma <<std::endl;
   } else {
     this->gamma = 5.0/3.0;
 #if HAVE_ENERGY
-    idfx::cout << "Hydro:: Warning! no gamma has been set in the input file, assuming gamma=5/3."
+    idfx::cout << "Hydro: Warning! no gamma has been set in the input file, assuming gamma=5/3."
                << std::endl;
 #endif
   }

@@ -18,7 +18,7 @@ Grid::Grid() {
 Grid::Grid(Input &input) {
   idfx::pushRegion("Grid::Grid(Input)");
 
-  idfx::cout << "Grid::Grid allocating Grid." << std::endl;
+  idfx::cout << "Grid::Grid: allocating Grid." << std::endl;
 
   // Get grid size from input file, block [Grid]
   int npoints[3];
@@ -170,7 +170,7 @@ Grid::Grid(Input &input) {
   MPI_Cart_coords(CartComm, idfx::prank, 3, xproc);
 
   MPI_Barrier(MPI_COMM_WORLD);
-  idfx::cout << "Grid::Grid Current MPI proc coordinates (";
+  idfx::cout << "Grid::Grid: Current MPI proc coordinates (";
 
   for(int dir = 0; dir < 3; dir++) {
     idfx::cout << xproc[dir];
@@ -221,7 +221,7 @@ void Grid::makeDomainDecomposition() {
     nleft=nleft/2;
   }
 
-  idfx::cout << "Grid::makeDomainDecomposition grid is (";
+  idfx::cout << "Grid::makeDomainDecomposition: grid is (";
   for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
     idfx::cout << " " << nproc[dir] << " ";
   }

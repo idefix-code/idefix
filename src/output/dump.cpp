@@ -374,7 +374,7 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
 
   idfx::pushRegion("Dump::Read");
 
-  idfx::cout << "Dump::Reading restart file n " << readNumber << "..." << std::flush;
+  idfx::cout << "Dump: Reading restart file n " << readNumber << "..." << std::flush;
 
   // Reset timer
   timer.reset();
@@ -544,7 +544,7 @@ int Dump::Write(DataBlock &data, Output& output) {
   #endif
   IdfxFileHandler fileHdl;
 
-  idfx::cout << "Dump::Write file n " << dumpFileNumber << "..." << std::flush;
+  idfx::cout << "Dump: Write file n " << dumpFileNumber << "..." << std::flush;
 
   // Reset timer
   timer.reset();

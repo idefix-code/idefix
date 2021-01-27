@@ -163,7 +163,7 @@ void Input::PrintParameters() {
 
 // This routine is called whenever a specific OS signal is caught
 void Input::signalHandler(int signum) {
-  idfx::cout << std::endl << "Input:: Caught interrupt " << signum << std::endl;
+  idfx::cout << std::endl << "Input: Caught interrupt " << signum << std::endl;
   abortRequested=true;
 }
 

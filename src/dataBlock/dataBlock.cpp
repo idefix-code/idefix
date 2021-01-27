@@ -61,7 +61,7 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
   }
 
   if(idfx::psize>1) {
-    idfx::cout << "DataBlock::initFromGrid local size is " << std::endl;
+    idfx::cout << "DataBlock::InitFromGrid: local size is " << std::endl;
 
     for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
       idfx::cout << "\t Direction X" << (dir+1) << ": " << xbeg[dir] << "...." << np_int[dir]

@@ -67,10 +67,10 @@ int main( int argc, char* argv[] ) {
     input.PrintParameters();
 
     if(haveSlurm)
-      idfx::cout << "Main:: detected you were runnning on a SLURM scheduler with CUDA. "
+      idfx::cout << "Main: detected you were runnning on a SLURM scheduler with CUDA. "
                     "Kokkos has been initialised accordingly." << std::endl;
 
-    idfx::cout << "Main::Init Grid." << std::endl;
+    idfx::cout << "Main: Init Grid." << std::endl;
     // Allocate the grid on device
     Grid grid(input);
     // Allocate the grid image on host
@@ -81,35 +81,35 @@ int main( int argc, char* argv[] ) {
     gridHost.SyncToDevice();
 
     // Make a datablock
-    idfx::cout << "Main::Init DataBlock." << std::endl;
+    idfx::cout << "Main: Init DataBlock." << std::endl;
     DataBlock data;
     data.InitFromGrid(grid, input);
 
-    idfx::cout << "Main::Init Time Integrator." << std::endl;
+    idfx::cout << "Main: Init Time Integrator." << std::endl;
     TimeIntegrator Tint(input,data);
 
-    idfx::cout << "Main::Init Output Routines." << std::endl;
+    idfx::cout << "Main: Init Output Routines." << std::endl;
     Output output(input, data);
 
-    idfx::cout << "Main::Init Setup." << std::endl;
+    idfx::cout << "Main: Init Setup." << std::endl;
     Setup mysetup(input, grid, data, output);
 
     // Apply initial conditions
 
     // Are we restarting?
     if(input.restartRequested) {
-      idfx::cout << "Main::Restarting from dump file."  << std::endl;
+      idfx::cout << "Main: Restarting from dump file."  << std::endl;
       output.RestartFromDump(data,input.restartFileNumber);
       data.hydro.SetBoundary(data.t);
       output.CheckForWrites(data);
     } else {
-      idfx::cout << "Main::Creating initial conditions." << std::endl;
+      idfx::cout << "Main: Creating initial conditions." << std::endl;
       mysetup.InitFlow(data);
       data.hydro.SetBoundary(data.t);
       output.CheckForWrites(data);
     }
 
-    idfx::cout << "Main::Cycling Time Integrator..." << std::endl;
+    idfx::cout << "Main: Cycling Time Integrator..." << std::endl;
 
     Kokkos::Timer timer;
 
@@ -120,7 +120,7 @@ int main( int argc, char* argv[] ) {
       Tint.Cycle(data);
       output.CheckForWrites(data);
       if(input.abortRequested) {
-        idfx::cout << "Main:: Saving current state and aborting calculation" << std::endl;
+        idfx::cout << "Main: Saving current state and aborting calculation" << std::endl;
         output.ForceWrite(data);
         break;
       }

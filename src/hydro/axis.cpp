@@ -26,7 +26,7 @@ void Axis::Init(Grid &grid, Hydro *h) {
   #if GEOMETRY != SPHERICAL
     IDEFIX_ERROR("Axis boundary conditions are only designed to handle spherical geometry");
   #endif
-  idfx::cout << "Axis:: Axis regularisation enabled ";
+  idfx::cout << "Axis: Axis regularisation enabled ";
 
   if(fabs((grid.xend[KDIR] - grid.xbeg[KDIR] -2.0*M_PI)) < 1e-10) {
     this->isTwoPi = true;

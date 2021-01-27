@@ -40,8 +40,11 @@ int DataBlock::CheckNan()  {
 #endif
 
   if(nanVc+nanVs>0) {
-    std::cout << "DataBlock:: rank " << idfx::prank << " found " << nanVc
-      << " Nans in the current datablock. Details will be in corresponding process log file."
+    std::cout << "DataBlock:: rank " << idfx::prank << " found " << nanVc << " Nans in Vc"
+    #if MHD == YES
+      << " and " << nanVs << " Nans in Vs"
+    #endif
+      << " in the current datablock. Details will be in corresponding process log file."
       << std::endl;
 
     // We need to make copies to find exactly where the thing is wrong

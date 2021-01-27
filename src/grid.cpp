@@ -55,6 +55,12 @@ Grid::Grid(Input &input) {
       lbound[dir] = internal;
     } else if(boundary.compare("shearingbox") == 0) {
       lbound[dir] = shearingbox;
+    } else if(boundary.compare("axis") == 0) {
+      if(dir!= JDIR) {
+        IDEFIX_ERROR("Axis Boundaries are only applicable to X2");
+      }
+      lbound[dir] = axis;
+      haveAxis = true;
     } else if(boundary.compare("userdef") == 0) {
       lbound[dir] = userdef;
     } else {
@@ -75,6 +81,12 @@ Grid::Grid(Input &input) {
       rbound[dir] = internal;
     } else if(boundary.compare("shearingbox") == 0) {
       rbound[dir] = shearingbox;
+    } else if(boundary.compare("axis") == 0) {
+      if(dir!= JDIR) {
+        IDEFIX_ERROR("Axis Boundaries are only applicable to X2");
+      }
+      rbound[dir] = axis;
+      haveAxis = true;
     } else if(boundary.compare("userdef") == 0) {
       rbound[dir] = userdef;
     } else {

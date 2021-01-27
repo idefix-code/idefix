@@ -149,9 +149,6 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   // Parabolic term
   haveParabolicTerms = false;
 
-  // Viscosity
-  haveViscosity = false;
-
   // Nonideal MHD
   haveResistivity = Disabled;
   haveHall = Disabled;
@@ -237,6 +234,11 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   }
 #endif // MHD
 
+  // Do we have to take care of the axis?
+  if(data->haveAxis) {
+    this->myAxis.Init(grid, this);
+    this->haveAxis = true;
+  }
 /////////////////////////////////////////
 //  ALLOCATION SECION ///////////////////
 /////////////////////////////////////////

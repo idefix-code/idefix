@@ -151,12 +151,17 @@ and ``X1-end``, ``X2-end``, ``X3-end`` for the right boundaries. Each boundary c
 +----------------+------------------------------------------------------------------------------------------------------------------+
 | shearingbox    | Shearing-box boudary conditions.                                                                                 |
 +----------------+------------------------------------------------------------------------------------------------------------------+
+| axis           | | Axis Boundary conditions. Useful if one wants to include the axis in spherical geometry in the computational   |
+|                | | domain. This condition explicitely requires X2 to go from 0 to :math:`\pi` but can be used for domains         |
+|                | | extending over a fraction of a full circle in X3 (i.e :math:`2\pi/n` where :math:`n` is an integer). When the  |
+|                | | X3 domain spans :math:`2\pi`, this boundary condition is inompatible with MPI domain decomposition along X3.   |
++----------------+------------------------------------------------------------------------------------------------------------------+
 | userdef        | | User-defined boundary conditions. The boundary condition function should be enrolled in the setup constructor  |
 |                | | (see :ref:`userdefBoundaries`)                                                                                 |
 +----------------+------------------------------------------------------------------------------------------------------------------+
 
 .. warning::
-    As of version 0.5, *Idefix* shearing-box assumes axisymmetry, i.e. NX2=1.
+    As of version 0.6, *Idefix* shearing-box assumes axisymmetry, i.e. NX2=1.
 
 
 .. _outputSection:

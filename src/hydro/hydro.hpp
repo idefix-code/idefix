@@ -16,6 +16,7 @@
 #include "hydro_defs.hpp"
 #include "electroMotiveForce.hpp"
 #include "viscosity.hpp"
+#include "axis.hpp"
 
 // forward class declaration
 class DataBlock;
@@ -125,12 +126,18 @@ class Hydro {
 
 
   // Whether or not we have viscosity
-  bool haveViscosity;
+  bool haveViscosity = false;
   // Viscosity object
   Viscosity viscosity;
 
+  // Whether or not we have to treat the axis
+  bool haveAxis = false;
+  Axis myAxis;
+
+
  private:
   friend class Viscosity;
+  friend class Axis;
 
   // Isothermal EOS parameters
   real isoSoundSpeed;

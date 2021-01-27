@@ -33,15 +33,19 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
     np_tot[dir] = np_int[dir]+2*nghost[dir];
 
     // Boundary conditions
-    if (grid.xproc[dir]==0)
+    if (grid.xproc[dir]==0) {
       lbound[dir] = grid.lbound[dir];
-    else
+      if(lbound[dir]==axis) this->haveAxis = true;
+    } else {
       lbound[dir] = internal;
+    }
 
-    if (grid.xproc[dir] == grid.nproc[dir]-1)
+    if (grid.xproc[dir] == grid.nproc[dir]-1) {
       rbound[dir] = grid.rbound[dir];
-    else
+      if(rbound[dir]==axis) this->haveAxis = true;
+    } else {
       rbound[dir] = internal;
+    }
 
     beg[dir] = grid.nghost[dir];
     end[dir] = grid.nghost[dir]+np_int[dir];

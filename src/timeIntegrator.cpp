@@ -87,8 +87,11 @@ void TimeIntegrator::Cycle(DataBlock &data) {
       idfx::cout << " | " << std::setw(col_width) << "cycle";
       idfx::cout << " | " << std::setw(col_width) << "time step";
       idfx::cout << " | " << std::setw(col_width) << "cell updates/s";
-#ifdef WITH_MP
+#ifdef WITH_MPI
       idfx::cout << " | " << std::setw(col_width) << "MPI overhead (%)";
+#endif
+#if MHD == YES
+      idfx::cout << " | " << std::setw(col_width) << "div B";
 #endif
       idfx::cout << std::endl;
     }
@@ -99,25 +102,26 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     idfx::cout << " | " << std::setw(col_width) << data.dt;
     if(ncycles>=cyclePeriod) {
       idfx::cout << " | " << std::setw(col_width) << 1 / rawperf;
-#ifdef WITH_MP
+#ifdef WITH_MPI
       idfx::cout << " | " << std::setw(col_width) << mpiOverhead;
 #endif
     } else {
       idfx::cout << " | " << std::setw(col_width) << "NaN";
-#ifdef WITH_MP
+#if WITH_MPI
       idfx::cout << " | " << std::setw(col_width) << "NaN";
 #endif
     }
-    idfx::cout << std::endl;
+
 
 #if MHD == YES
     // Check divB
     real divB =  data.hydro.CheckDivB();
-    idfx::cout << "\t maxdivB=" << divB << std::endl;
+    idfx::cout << " | " << std::setw(col_width) << divB;
     if(divB>1e-10) {
       IDEFIX_ERROR("TimeIntegrator::Cycle divB>1e-10, check your calculation");
     }
-    #endif
+#endif
+    idfx::cout << std::endl;
   }
 
     // Apply Boundary conditions

@@ -49,7 +49,7 @@ class DataBlock {
   BoundaryType lbound[3];      // Boundary condition to the left
   BoundaryType rbound[3];      // Boundary condition to the right
 
-  bool haveAxis;               // This DataBlock contains points on the axis and a special treatment
+  bool haveAxis = false;       // This DataBlock contains points on the axis and a special treatment
                                // has been required for these.
 
   int beg[3];                  // Begining of internal indices

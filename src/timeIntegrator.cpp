@@ -6,6 +6,7 @@
 // ***********************************************************************************
 
 #include <cstdio>
+#include <iomanip>
 #include "idefix.hpp"
 #include "timeIntegrator.hpp"
 #include "input.hpp"
@@ -78,15 +79,36 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 #endif
     lastLog = timer.seconds();
 
-    idfx::cout << "TimeIntegrator: t=" << data.t << " Cycle " << ncycles << " dt=" << data.dt
-               << std::endl;
-    if(ncycles>=cyclePeriod) {
-      idfx::cout << "\t " << 1/rawperf << " cell updates/second";
-#ifdef WITH_MPI
-      idfx::cout << " ; " << mpiOverhead << "% MPI overhead";
+
+    int col_width{16};
+    if (ncycles == 0) {
+      idfx::cout << "TimeIntegrator: ";
+      idfx::cout << std::setw(col_width) << "time";
+      idfx::cout << " | " << std::setw(col_width) << "cycle";
+      idfx::cout << " | " << std::setw(col_width) << "time step";
+      idfx::cout << " | " << std::setw(col_width) << "cell updates/s";
+#ifdef WITH_MP
+      idfx::cout << " | " << std::setw(col_width) << "MPI overhead (%)";
 #endif
       idfx::cout << std::endl;
     }
+
+    idfx::cout << "TimeIntegrator: ";
+    idfx::cout << std::setw(col_width) << data.t;
+    idfx::cout << " | " << std::setw(col_width) << ncycles;
+    idfx::cout << " | " << std::setw(col_width) << data.dt;
+    if(ncycles>=cyclePeriod) {
+      idfx::cout << " | " << std::setw(col_width) << 1 / rawperf;
+#ifdef WITH_MP
+      idfx::cout << " | " << std::setw(col_width) << mpiOverhead;
+#endif
+    } else {
+      idfx::cout << " | " << std::setw(col_width) << "NaN";
+#ifdef WITH_MP
+      idfx::cout << " | " << std::setw(col_width) << "NaN";
+#endif
+    }
+    idfx::cout << std::endl;
 
 #if MHD == YES
     // Check divB

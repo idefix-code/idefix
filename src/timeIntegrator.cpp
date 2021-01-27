@@ -24,7 +24,7 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
     cflMaxVar=input.GetReal("TimeIntegrator","CFL_max_var",0);
   } else {
     cflMaxVar=1.1;
-    idfx::cout << "TimeIntegrator:: No CFL_max_var defined. Using 1.1 by default." << std::endl;
+    idfx::cout << "TimeIntegrator: No CFL_max_var defined. Using 1.1 by default." << std::endl;
   }
 
 

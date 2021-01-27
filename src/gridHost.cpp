@@ -52,7 +52,7 @@ void GridHost::MakeGrid(Input &input) {
   // Create the grid
 
   // Get grid parameters from input file, block [Grid]
-  idfx::cout << "GridHost::MakeGrid" << std::endl;
+  idfx::cout << "GridHost::MakeGrid: " << std::endl;
   for(int dir = 0 ; dir < 3 ; dir++) {
     std::string label = std::string("X")+std::to_string(dir+1)+std::string("-grid");
     int numPatch = input.GetInt("Grid",label,0);

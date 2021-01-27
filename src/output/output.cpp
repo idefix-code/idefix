@@ -145,6 +145,6 @@ void Output::EnrollUserDefVariables(UserDefVariablesFunc myFunc) {
   }
   userDefVariablesFunc = myFunc;
   haveUserDefVariablesFunc = true;
-  idfx::cout << "Output:: User-defined variables for outputs have been enrolled" << std::endl;
+  idfx::cout << "Output: User-defined variables for outputs have been enrolled" << std::endl;
   idfx::popRegion();
 }

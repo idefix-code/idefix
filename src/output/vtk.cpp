@@ -160,7 +160,7 @@ int Vtk::Write(DataBlock &datain, Output &output) {
   IdfxFileHandler fileHdl;
   std::string filename;
 
-  idfx::cout << "Vtk::Write file n " << vtkFileNumber << "..." << std::flush;
+  idfx::cout << "Vtk: Write file n " << vtkFileNumber << "..." << std::flush;
 
   timer.reset();
 

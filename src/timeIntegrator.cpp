@@ -78,15 +78,14 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 #endif
     lastLog = timer.seconds();
 
-    idfx::cout << "TimeIntegrator: t=" << data.t << " Cycle " << ncycles << " dt=" << data.dt
-               << std::endl;
+    idfx::cout << "TimeIntegrator: t=" << data.t << " Cycle " << ncycles << " dt=" << data.dt;
     if(ncycles>=cyclePeriod) {
       idfx::cout << "\t " << 1/rawperf << " cell updates/second";
 #ifdef WITH_MPI
       idfx::cout << " ; " << mpiOverhead << "% MPI overhead";
 #endif
-      idfx::cout << std::endl;
     }
+    idfx::cout << std::endl;
 
 #if MHD == YES
     // Check divB

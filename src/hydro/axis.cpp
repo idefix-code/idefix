@@ -206,23 +206,6 @@ void Axis::EnforceAxisBoundary(int side) {
         }
       }
     }
-    // Set BX2s on the axis to the average of the two agacent cells
-    // This is required since Bx2s on the axis is not evolved since
-    // there is no circulation around it
-    if(side==right) jref++;
-    if(isTwoPi) {
-      idefix_for("BoundaryEndOutflowVs",kbeg,kend,ibeg,iend,
-            KOKKOS_LAMBDA (int k, int i) {
-              Vs(BX2s,k,jref,i) = HALF_F*(Vs(BX2s,k,jref-1,i)+Vs(BX2s,k,jref+1,i));
-            }
-          );
-    } else {
-      idefix_for("BoundaryEndOutflowVs",kbeg,kend,ibeg,iend,
-            KOKKOS_LAMBDA (int k, int i) {
-              Vs(BX2s,k,jref,i) = ZERO_F;
-            }
-          );
-    }
   #endif
 
 
@@ -263,6 +246,37 @@ void Axis::ReconstructBx2s() {
         }
       );
 
+  // Set BX2s on the axis to the average of the two agacent cells
+  // This is required since Bx2s on the axis is not evolved since
+  // there is no circulation around it
+    bool left = axisLeft;
+    bool right = axisRight;
+
+    int jright = data->end[JDIR];
+    int jleft = data->beg[JDIR];
+    if(isTwoPi) {
+      idefix_for("Axis:BoundaryAvg",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
+            KOKKOS_LAMBDA (int k, int i) {
+              if(left) {
+                Vs(BX2s,k,jleft,i) = HALF_F*(Vs(BX2s,k,jleft-1,i)+Vs(BX2s,k,jleft+1,i));
+              }
+              if(right) {
+                Vs(BX2s,k,jright,i) = HALF_F*(Vs(BX2s,k,jright-1,i)+Vs(BX2s,k,jright+1,i));
+              }
+            }
+          );
+    } else {
+      idefix_for("Axis:BoundaryAvg",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
+            KOKKOS_LAMBDA (int k, int i) {
+              if(left) {
+                Vs(BX2s,k,jleft,i) = ZERO_F;
+              }
+              if(right) {
+                Vs(BX2s,k,jright,i) = ZERO_F;
+              }
+            }
+          );
+    }
 
 
 

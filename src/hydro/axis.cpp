@@ -23,6 +23,8 @@ void Axis::Init(Grid &grid, Hydro *h) {
     IDEFIX_ERROR("The grid extent in X3 should be an integer fraction of 2Pi");
   }
 
+  #if GEOMETRY != SPHERICAL
+    IDEFIX_ERROR("Axis boundary conditions are only designed to handle")
   idfx::cout << "Axis:: Axis regularisation enabled ";
 
   if(fabs((grid.xend[KDIR] - grid.xbeg[KDIR] -2.0*M_PI)) < 1e-10) {
@@ -80,6 +82,7 @@ void Axis::Init(Grid &grid, Hydro *h) {
 }
 
 void Axis::SymmetrizeEx1Side(int jref) {
+#if DIMENSIONS == 3
   IdefixArray3D<real> Ex1 = emf->ex;
   IdefixAtomicArray1D<real> Ex1Avg = this->Ex1Avg;
 
@@ -108,6 +111,7 @@ void Axis::SymmetrizeEx1Side(int jref) {
       Ex1(k,jref,i) = ZERO_F;
     });
   }
+#endif
 }
 
 // Average the Emf component along the axis
@@ -129,7 +133,6 @@ void Axis::SymmetrizeEx1() {
 // enforce the boundary conditions on the ghost zone accross the axis
 void Axis::EnforceAxisBoundary(int side) {
   idfx::pushRegion("Axis::EnforceAxisBoundary");
-
   IdefixArray4D<real> Vc = hydro->Vc;
   IdefixArray1D<int> sVc = this->symmetryVc;
 
@@ -226,6 +229,7 @@ void Axis::ReconstructBx2s() {
   if(axisLeft) signLeft = -1;
   if(axisRight) signRight = -1;
 
+#if DIMENSIONS >= 2
   // This loop is a copy of ReconstructNormalField, with the proper sign when we cross the axis
   idefix_for("Axis::ReconstructBX2s",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
         KOKKOS_LAMBDA (int k, int i) {
@@ -277,7 +281,7 @@ void Axis::ReconstructBx2s() {
             }
           );
     }
-
+#endif
 
 
   idfx::popRegion();

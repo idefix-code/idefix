@@ -49,7 +49,7 @@ void Analysis(DataBlock & data) {
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   output.EnrollUserDefVariables(&ComputeUserVars);
-  output.EnrollAnalysis(&Analysis);
+  //output.EnrollAnalysis(&Analysis);
   Rtorus = input.GetReal("Setup","Rtorus",0);
   Ztorus = input.GetReal("Setup","Ztorus",0);
   Rin = input.GetReal("Setup","Rin",0);

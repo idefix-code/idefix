@@ -6,6 +6,7 @@
 // ***********************************************************************************
 
 #include <cstdio>
+#include <iomanip>
 #include "idefix.hpp"
 #include "timeIntegrator.hpp"
 #include "input.hpp"
@@ -77,12 +78,18 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     lastMpiLog = idfx::mpiTimer;
 #endif
     lastLog = timer.seconds();
-
-    idfx::cout << "TimeIntegrator: t=" << data.t << " Cycle " << ncycles << " dt=" << data.dt;
+    // missing first log entry
+    // Timeintegrator:      t     |    Cycle    |      dt     |  cell updates/s  | % MPI overhead"
+    // the last column is optional (#ifdef WITH_MPI)
+    int col_width{16};
+    idfx::cout << "TimeIntegrator: ";
+    idfx::cout << std::setw(col_width) << data.t;
+    idfx::cout << " | " << std::setw(col_width) << ncycles;
+    idfx::cout << " | " << std::setw(col_width) << data.dt;
     if(ncycles>=cyclePeriod) {
-      idfx::cout << "\t " << 1/rawperf << " cell updates/second";
-#ifdef WITH_MPI
-      idfx::cout << " ; " << mpiOverhead << "% MPI overhead";
+      idfx::cout << " | " << std::setw(col_width) << 1 / rawperf;
+#ifdef WITH_MP
+      idfx::cout << " | " << std::setw(col_width) << mpiOverhead;
 #endif
     }
     idfx::cout << std::endl;

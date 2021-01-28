@@ -26,8 +26,8 @@ of two sub-systems: a host and a device. The host is traditionnaly the CPU, and 
 of inputs and outputs, initialisation and allocation, MPI data exchanges. The device is usually an
 accelerator (e.g. a GPU) and is actually performing the computation (or most of it).
 
-Note that while *Idefix* assumes there is a host and a device, they can be the same
-physical machine (think of the code running only on your laptop CPU).
+Note that while *Idefix* assumes there is a host and a device, they can be the same processing unit
+ (think of the code running only on your laptop CPU).
 In this case, Kokkos performs several optimisations,
 so that everything effectively runs on the host smoothly.
 
@@ -52,7 +52,7 @@ It should be noted that these
 arrays are not just a contiguous memory zone as one would expect from a C array. Instead, they
 are C++ objects, with several properties. In particular, pointer arithmetic, which is a common
 (bad) practice on C arrays, is not allowed on ``IdefixArray``. Allocation is performed as an instantiation
-of the ``IdefixArraynD`` class. For instance, the following code block will allocate
+of the ``IdefixArraynD`` class with the array name and size in parameter. For instance, the following code block will allocate
 myOldArray and perform a shallow copy of ``myOldArray``.
 
 .. code-block:: c++
@@ -60,13 +60,13 @@ myOldArray and perform a shallow copy of ``myOldArray``.
   int arraySizeX1 = 10;  // 1st dimension of the arrays
   int arraySizeX2 = 10;  // 2nd dimension of the arrays
   // allocation
-  IdefixArray2D<real> myOldrArray = IdefixArray2D<real>("ArrayName", arraySizeX1, arraySizeX2);
+  IdefixArray2D<real> myOldrArray("ArrayName", arraySizeX1, arraySizeX2);
   // Shallow copy of myOldArray to myNewArray
   IdefixArray2D<real> myNewArray = myOldArray;
 
 No data is copied,
 ``myNewArray`` is merely a new reference to the same memory block on the device. Similarly,
-accessing an element of an ``IdefixArraynD`` should always done be with the accessor ``(...)``. In
+accessing an element of an ``IdefixArraynD`` should always be done with the accessor ``(...)``. In
 the example above, one should use for instance ``myNewArray(1,2)`` (note the round brackets).
 
 It is possible to copy data to/from the host/device manually using ``Kokkos::deep_copy`` (see examples
@@ -82,7 +82,7 @@ Execution space and loops
 =========================
 Just like with arrays, code can be executed on the host or on the device. Unless otherwise mentionned, code
 is by default executed on the host. Since the device is supposed to be performing the computation itself
-and because it is usually performed using loops, *Idefix* provides z special way to handle
+and because it is usually coded using loops, *Idefix* provides a special way to handle
 loops which are to be executed on the device, with the function ``idefix_for``.
 
 ``idefix_for`` is just a way to write a for loop, with some caveats. Depending on the kind of device
@@ -94,7 +94,7 @@ A typical loop on three indices looks like
 .. code-block:: c++
 
   // Allocate an Idefix Array
-  IdefixArray3D myArray<real> = IdefixArray3D<real>("MyArray", nx1, nx2, nx3);
+  IdefixArray3D<real> myArray("MyArray", nx1, nx2, nx3);
 
   idefix_for("LoopName",
              kbeg,kend,
@@ -307,4 +307,28 @@ magnetic potential. See :ref:`setupInitflow`.
 Debugging and profiling
 =======================
 
-TBA
+The easiest way to trigger debugging in ``Idefix`` is to add ``#define DEBUG`` in your ``definitions.hpp`` and
+recompile the code. This forces the code to log each time a function is called or returned (this is achieved
+thanks to the ``idfx::pushRegion("std::string)`` and ``idfx::popRegion()`` which are found at the beginning and
+end of each function). In other words, ``#define DEBUG`` logs the entire stack trace to simplify debugging.
+
+It is also possible to use `Kokkos-tools <https://github.com/kokkos/kokkos-tools>`_ to debug and profile the code.
+For instance, on the fly profiling, can be enabled with the Kokkos ``space-time-stack`` module. To use it, simply clone
+``Kokkos-tools`` to the directory of your choice (say ``$KOKKOS_TOOLS``), then ``cd`` to 
+``$KOKKOS_TOOLS/src/tools/space-time-stack`` and compile the module with ``make``.
+
+Once the profiling module is compiled, you can use it by setting the environement variable ``KOKKOS_PROFILE_LIBRARY``.
+For instance, in bash:
+
+.. code-block::
+
+  export KOKKOS_PROFILE_LIBRARY=$KOKKOS_TOOLS/src/tools/space-time-stack/kp_space_time_stack.so
+
+Once this environement variable is set, *Idefix* automatically logs profiling informations when it ends (recompilation of *Idefix*
+is not needed). 
+
+.. tip::
+  ``Kokkos-tools`` by default assumes your code is using MPI. If one wants to perform profiling in serial, one should diable MPI before
+    compling the ``space-time-stack`` module. This is done by editing the makefile in ``$KOKKOS_TOOLS/src/tools/space-time-stack``
+    changing the compiler ``CXX`` to a valid serial compiler, and adding ``-DUSE_MPI=0`` to ``CFLAGS``. 
+

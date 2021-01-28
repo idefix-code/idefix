@@ -225,6 +225,8 @@ void Axis::ReconstructBx2s() {
   IdefixArray3D<real> Ax3=data->A[KDIR];
   int nstart = data->beg[JDIR]-1;
   int nend = data->end[JDIR];
+  int ntot = data->np_tot[JDIR];
+
   int signLeft = 1;
   int signRight = 1;
   if(axisLeft) signLeft = -1;
@@ -241,7 +243,7 @@ void Axis::ReconstructBx2s() {
                               + signLeft*( Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i)
                                                               - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))));
           }
-          for(int j = nend ; j<data->np_tot[JDIR] ; j++ ) {
+          for(int j = nend ; j<ntot ; j++ ) {
             Vs(BX2s,k,j+1,i) = 1.0 / Ax2(k,j+1,i) * ( Ax2(k,j,i)*Vs(BX2s,k,j,i)
                         -(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
                                                                                                   ,

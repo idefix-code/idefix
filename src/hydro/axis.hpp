@@ -20,8 +20,10 @@ class Axis {
  public:
   void Init(Grid &, Hydro *);  // Initialisation
   void SymmetrizeEx1();                 // Symmetrize Emf component Ex1
+  void SymmetrizeEx1Side(int);         // Symmetrize on a specific side (internal method)
   void EnforceAxisBoundary(int side);   // Enforce the boundary conditions (along X2)
   void ReconstructBx2s();
+
 
  private:
   bool isTwoPi = false;
@@ -36,8 +38,6 @@ class Axis {
   Hydro *hydro;
   DataBlock *data;
   ElectroMotiveForce *emf;
-
-  void SymmetrizeEx1Side(int);
 };
 
 #endif // HYDRO_AXIS_HPP_

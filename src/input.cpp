@@ -5,9 +5,16 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include <dirent.h>
+
 #include <fstream>
 #include <string>
 #include <csignal>
+#include <algorithm>
+#include <cstring>
+#include <iostream>
+#include <vector>
+#include <memory>
 
 #include "idefix.hpp"
 #include "input.hpp"
@@ -112,10 +119,32 @@ void Input::ParseCommandLine(int argc, char **argv) {
       }
     }
     if(std::string(argv[i]) == "-restart") {
-      if((++i) >= argc) IDEFIX_ERROR("You must specify -restart n where n is the dump file number");
-      inputParameters["CommandLine"]["restart"].push_back(std::string(argv[i]));
+      std::string sirestart{};
+      if((i+1) >= argc) {
+        // implicitly restart from the latest existing dumpfile
+        // implementation detail: we look for the existing dumpfile with the highest
+        // number, not necessarilly the latest timestamp !
+
+        // note that this implementation for an automatic value only works
+        // if -restart is the last argument ...
+        const std::vector<std::string> files = Input::getDirectoryFiles();
+        int ifile{-1};
+        int irestart{-1};
+
+        for (const auto& file : files) {
+          if (Input::getFileExtension(file).compare("dmp") != 0) continue;
+          // parse the dumpfile number from filename "dump.????.dmp"
+          ifile = std::stoi(file.substr(5, 4));
+          irestart = std::max(irestart, ifile);
+        }
+        sirestart = std::to_string(irestart);
+        if (irestart < 0) IDEFIX_ERROR("Cannot restart: no dumpfile found.");
+      } else {
+        sirestart = std::string(argv[++i]);
+      }
+      inputParameters["CommandLine"]["restart"].push_back(sirestart);
       this->restartRequested = true;
-      this->restartFileNumber = std::stoi(argv[i]);
+      this->restartFileNumber = std::stoi(sirestart);
     }
     if(std::string(argv[i]) == "-i") {
       // Loop on dimensions
@@ -165,6 +194,32 @@ void Input::PrintParameters() {
 void Input::signalHandler(int signum) {
   idfx::cout << std::endl << "Input: Caught interrupt " << signum << std::endl;
   abortRequested=true;
+}
+
+std::vector<std::string> Input::getDirectoryFiles() {
+  // List files in the current directory
+  // adapted from
+  // http://www.codebind.com/cpp-tutorial/cpp-program-list-files-directory-windows-linux/
+  const std::string& dir = std::string(".");
+  std::vector<std::string> files;
+  std::shared_ptr<DIR> directory_ptr(opendir(dir.c_str()), [](DIR* dir){ dir && closedir(dir); });
+  struct dirent *dirent_ptr;
+  if (!directory_ptr) {
+    idfx::cout << "Error opening : " << std::strerror(errno) << dir << std::endl;
+    return files;
+  }
+
+  while ((dirent_ptr = readdir(directory_ptr.get())) != nullptr) {
+    files.push_back(std::string(dirent_ptr->d_name));
+  }
+  return files;
+}
+
+
+std::string Input::getFileExtension(const std::string file_name) {
+  int position = file_name.find_last_of(".");
+  std::string ext = file_name.substr(position+1);
+  return ext;
 }
 
 // Get a string in a block, parameter, position of the file

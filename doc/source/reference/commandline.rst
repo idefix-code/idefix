@@ -12,8 +12,8 @@ Several options can be provided at command line when running the code. These are
 | -dec n1 n2 n3      | | Specify the MPI domain decomposition. Idefix will decompose the domain with n1 MPI processes in X1,                   |
 |                    | | n2 MPI processes in X2 and n3 processes in X3. Note the number of arguments to -dec should be equal to ``DIMENSIONS``.|
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+
-| -restart           | | specify the number of the dump file *Idefix* should restart from. When used, does not use the initial                 |
-|                    | | conditions from ``Setup::InitFlow()``                                                                                 |
+| -restart n         | | Restart from the ``n``^th dump file. By default, ``n`` matches the highest value from existing dump files.            |
+|                    | | When used, the initial conditions from ``Setup::InitFlow()`` are ignored.                                             |
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+
 | -i                 |   specify the name of the input file to be used (default ``idefix.ini``)                                                |
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+

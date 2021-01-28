@@ -90,7 +90,7 @@ mpirun -np 8 ./idefix -dec 1 2 4
 The same rules for cpu domain decomposition applies for gpus. In addition, one should manually specify how many GPU devices one wants to use **per node**. Example, in a run with 2 nodes, 4 gpu per node, one would launch idefix with
 
 ```shell
-mpirun -np 8 ./idefix -dec 1 2 4 --kokkos-ndevices=4
+mpirun -np 8 ./idefix -dec 1 2 4 --kokkos-num-devices=4
 ```
 
 Profiling

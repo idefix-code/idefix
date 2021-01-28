@@ -27,8 +27,7 @@ of inputs and outputs, initialisation and allocation, MPI data exchanges. The de
 accelerator (e.g. a GPU) and is actually performing the computation (or most of it).
 
 Note that while *Idefix* assumes there is a host and a device, they can be the same processing unit
- (think of the code running only on your laptop CPU).
-In this case, Kokkos performs several optimisations,
+(think of the code running only on your laptop CPU). In this case, Kokkos performs several optimisations,
 so that everything effectively runs on the host smoothly.
 
 By construction, the host doesn't have direct access to the device memory and vice-versa. This means
@@ -126,6 +125,11 @@ in C++11.
   of the arrays and variables you intend to use before calling ``idefix_loop``. This ensures that
   these variables will be properly captured by device lambdas. It is the most common reason for
   GPU specific segmentation faults.
+
+.. warning::
+  Generally, methods that contains calls to ``idefix_loop()`` always be declared as
+  ``public``. This is due to a limitation of the ``nvcc`` compiler which cannot perform
+  lambda captures from private methods.
 
 .. _classes:
 
@@ -309,12 +313,12 @@ Debugging and profiling
 
 The easiest way to trigger debugging in ``Idefix`` is to add ``#define DEBUG`` in your ``definitions.hpp`` and
 recompile the code. This forces the code to log each time a function is called or returned (this is achieved
-thanks to the ``idfx::pushRegion("std::string)`` and ``idfx::popRegion()`` which are found at the beginning and
+thanks to the ``idfx::pushRegion(std::string)`` and ``idfx::popRegion()`` which are found at the beginning and
 end of each function). In other words, ``#define DEBUG`` logs the entire stack trace to simplify debugging.
 
 It is also possible to use `Kokkos-tools <https://github.com/kokkos/kokkos-tools>`_ to debug and profile the code.
 For instance, on the fly profiling, can be enabled with the Kokkos ``space-time-stack`` module. To use it, simply clone
-``Kokkos-tools`` to the directory of your choice (say ``$KOKKOS_TOOLS``), then ``cd`` to 
+``Kokkos-tools`` to the directory of your choice (say ``$KOKKOS_TOOLS``), then ``cd`` to
 ``$KOKKOS_TOOLS/src/tools/space-time-stack`` and compile the module with ``make``.
 
 Once the profiling module is compiled, you can use it by setting the environement variable ``KOKKOS_PROFILE_LIBRARY``.
@@ -325,10 +329,9 @@ For instance, in bash:
   export KOKKOS_PROFILE_LIBRARY=$KOKKOS_TOOLS/src/tools/space-time-stack/kp_space_time_stack.so
 
 Once this environement variable is set, *Idefix* automatically logs profiling informations when it ends (recompilation of *Idefix*
-is not needed). 
+is not needed).
 
 .. tip::
   ``Kokkos-tools`` by default assumes your code is using MPI. If one wants to perform profiling in serial, one should diable MPI before
     compling the ``space-time-stack`` module. This is done by editing the makefile in ``$KOKKOS_TOOLS/src/tools/space-time-stack``
-    changing the compiler ``CXX`` to a valid serial compiler, and adding ``-DUSE_MPI=0`` to ``CFLAGS``. 
-
+    changing the compiler ``CXX`` to a valid serial compiler, and adding ``-DUSE_MPI=0`` to ``CFLAGS``.

@@ -21,13 +21,13 @@ impact on the quality of the solution and is therefore not recommended.
 Host and device
 ===============
 
-*Idefix* relies on the Kokkos framework, and therefore assume that system it's running is made
+*Idefix* relies on the `Kokkos <https://kokkos.org/>`_ framework, and therefore assumes that system it's running is made
 of two sub-systems: a host and a device. The host is traditionnaly the CPU, and is taking care
 of inputs and outputs, initialisation and allocation, MPI data exchanges. The device is usually an
 accelerator (e.g. a GPU) and is actually performing the computation (or most of it).
 
-Note that while *Idefix* assumes there is a host and a device, the device can be the host (think
-of the code running only on your laptop CPU). In this case, Kokkos performs several optimisations,
+Note that while *Idefix* assumes there is a host and a device, they can be the same processing unit
+(think of the code running only on your laptop CPU). In this case, Kokkos performs several optimisations,
 so that everything effectively runs on the host smoothly.
 
 By construction, the host doesn't have direct access to the device memory and vice-versa. This means
@@ -37,32 +37,35 @@ This is a very common mistake, so keep this in mind when coding in *Idefix*.
 Arrays
 ======
 The fact that most of the computations are performed on the device implies that specific
-allocations on the device need to be performed. To simplify the programmer's life, array allocations
+allocations on the device need to be performed. To make things easier on the programmer's side, array allocations
 should always use one of the ``IdefixArraynD`` where *n* is between 1 and 4. These arrays are
 an alias for ``Kokkos::View`` which are fine-tuned for idefix, and are templated by the datatype,
 which for most applications should be ``real``.
 
-By definition, an IdefixArray is always allocated on the device, and is therefore not accessible
+By definition, an ``IdefixArray`` is always allocated on the device, and is therefore not accessible
 from the host. To define an array on the host, one use instead ``IdefixHostArraynD``.
 Note that ``IdefixHostArraynD`` can be defined as mirrors of an ``IdefixArraynD``, to simplify data
 transfer.
 
 It should be noted that these
-arrays are not just a contiguous memory zone as one would expect from a C array. Instead, these
-arrays are C++ objects, with several properties. In particular, pointer arithmetic, which is a common
+arrays are not just a contiguous memory zone as one would expect from a C array. Instead, they
+are C++ objects, with several properties. In particular, pointer arithmetic, which is a common
 (bad) practice on C arrays, is not allowed on ``IdefixArray``. Allocation is performed as an instantiation
-of the ``IdefixArraynD`` class. For instance, the following code block
+of the ``IdefixArraynD`` class with the array name and size in parameter. For instance, the following code block will allocate
+myOldArray and perform a shallow copy of ``myOldArray``.
 
 .. code-block:: c++
 
-  int arraySizeX1 = 10;   // 1st dimension of the arrays
-  int arraySizeX2 = 10;   // 2nd dimension of the arrays.
-  IdefixArray2D<real> myOldrArray = IdefixArray2D<real>("ArrayName", arraySizeX1, arraySizeX2);  // allocation
-  IdefixArray2D<real> myNewArray = myOldArray;     // Shallow copy of myOldArray to myNewArray
+  int arraySizeX1 = 10;  // 1st dimension of the arrays
+  int arraySizeX2 = 10;  // 2nd dimension of the arrays
+  // allocation
+  IdefixArray2D<real> myOldrArray("ArrayName", arraySizeX1, arraySizeX2);
+  // Shallow copy of myOldArray to myNewArray
+  IdefixArray2D<real> myNewArray = myOldArray;
 
-will allocate myOldArray and perform a shallow copy of ``myOldArray``. No data is copied,
+No data is copied,
 ``myNewArray`` is merely a new reference to the same memory block on the device. Similarly,
-accessing an element of an ``IdefixArraynD`` should always be with the accessor ``(...)``. In
+accessing an element of an ``IdefixArraynD`` should always be done with the accessor ``(...)``. In
 the example above, one should use for instance ``myNewArray(1,2)`` (note the round brackets).
 
 It is possible to copy data to/from the host/device manually using ``Kokkos::deep_copy`` (see examples
@@ -76,9 +79,9 @@ which should be sufficient for most uses through the classes ``DataBlockHost`` a
 
 Execution space and loops
 =========================
-Just like arrays, code can be executed on the host or on the device. Unless otherwise mentionned, code
+Just like with arrays, code can be executed on the host or on the device. Unless otherwise mentionned, code
 is by default executed on the host. Since the device is supposed to be performing the computation itself
-and since this computation is usually performed using loops, *Idefix* provides z special way to handle
+and because it is usually coded using loops, *Idefix* provides a special way to handle
 loops which are to be executed on the device, with the function ``idefix_for``.
 
 ``idefix_for`` is just a way to write a for loop, with some caveats. Depending on the kind of device
@@ -90,7 +93,7 @@ A typical loop on three indices looks like
 .. code-block:: c++
 
   // Allocate an Idefix Array
-  IdefixArray3D myArray<real> = IdefixArray3D<real>("MyArray", nx1, nx2, nx3);
+  IdefixArray3D<real> myArray("MyArray", nx1, nx2, nx3);
 
   idefix_for("LoopName",
              kbeg,kend,
@@ -104,7 +107,7 @@ This loop will be executed on the device, and will perform a loop on indices i,j
 ibeg to iend for i, etc. Note that as expected, we access the data stored in an ``IdefixArray``
 inside an ``idefix_for``, i.e. code which is executed on the device.
 
-The string "LoopName" should be descriptive of the loop (i.e. avoid "loop1", "loop2"...).
+The string ``"LoopName"`` should be descriptive of the loop (i.e. avoid "loop1", "loop2"...).
 It is used when profiling or debugging the code and it names the execution kernels.
 
 Note finally that the last argument of ``idefix_for`` relies on the ``KOKKOS_LAMBDA`` construct,
@@ -123,6 +126,11 @@ in C++11.
   these variables will be properly captured by device lambdas. It is the most common reason for
   GPU specific segmentation faults.
 
+.. warning::
+  Generally, methods that contains calls to ``idefix_loop()`` always be declared as
+  ``public``. This is due to a limitation of the ``nvcc`` compiler which cannot perform
+  lambda captures from private methods.
+
 .. _classes:
 
 Useful classes
@@ -133,23 +141,34 @@ Useful classes
 The ``Input`` class
 -------------------
 
-``Input`` is a class which holds all of the information regarding command line and input file data. It provides accessors such as
+``Input`` is a class which holds all of the information regarding command line and input file data.
+It provides accessors such as
 
 .. code-block:: c++
 
   // Accessor to input parameters
-  // the parameters are always: BlockName, EntryName, ParameterNumber (starting from 0)
-  std::string GetString(std::string, std::string, int); // Read a string from the input file
-  real GetReal(std::string, std::string, int);          // Read a real number from the input file
-  int GetInt(std::string, std::string, int);            // Read an integer from the input file
-  int CheckEntry(std::string, std::string);             // Check that a block/entry is present in the
-                                                        // input file
+  // the arguments are always: BlockName, EntryName, ParameterNumber (starting from 0)
+
+  // Read a string
+  std::string GetString(std::string, std::string, int);
+
+  // Read a real number
+  real GetReal(std::string, std::string, int);
+
+  // Read an integer
+  int GetInt(std::string, std::string, int);
+
+  // Check that a block/entry is present
+  int CheckEntry(std::string, std::string);
+
 
 Note that ``Input`` doesn't really read the input file each time an accessor is called. Internally,
 ``Input`` reads everything when constructed in a C++ container with all the data coming from the command line and the input file.
 Hence there is no read overhead when one calls one of these accessor.
 
-For instance, considering a .ini file::
+For instance, considering a ``.ini`` file::
+
+.. code-block::
 
   [MyBlock]
   myentry   1.0    0.0
@@ -162,7 +181,7 @@ instance of ``Input`` is allocated in ``myInput``:
   real firstParameter = myInput.GetReal("MyBlock","myentry",0)  // firstParameter=1.0
   real secondParameter = myInput.GetReal("MyBlock","myentry",1)  // secondParameter=0.0
 
-If a parameter is not found, *Idefix* will print an error and exit. One can use the ``CheckEntry``
+If a parameter is not found, *Idefix* will log an error and exit. One can use the ``CheckEntry``
 method to check if a parameter is set in the ini file before trying to access it.
 
 .. tip::
@@ -180,23 +199,23 @@ by the grid are:
 
 .. code-block:: c++
 
-  IdefixArray1D<real> x[3];    // geometrical central points
-  IdefixArray1D<real> xr[3];   // cell right interface
-  IdefixArray1D<real> xl[3];   // cell left interface
-  IdefixArray1D<real> dx[3];   // cell width
+  IdefixArray1D<real> x[3];   // geometrical central points
+  IdefixArray1D<real> xr[3];  // cell right interface
+  IdefixArray1D<real> xl[3];  // cell left interface
+  IdefixArray1D<real> dx[3];  // cell width
 
-  real xbeg[3];           // Beginning of grid
-  real xend[3];           // End of grid
+  real xbeg[3];  // Beginning of grid
+  real xend[3];  // End of grid
 
-  int np_tot[3];          // total number of grid points (including ghosts)
-  int np_int[3];          // internal number of grid points (excluding ghosts)
+  int np_tot[3];  // total number of grid points (including ghosts)
+  int np_int[3];  // internal number of grid points (excluding ghosts)
 
 .. _datablockClass:
 
 ``DataBlock`` class
 -----------------------
 
-``DataBlock`` contains all of the data structures that belongs to that particular process (i.e. if MPI is enabled, it contains data
+``DataBlock`` contains all of the data structures that belong to that particular process (i.e. if MPI is enabled, it contains data
 specific to this subprocess, in contrast to ``Grid``). In particular, the DataBlocks have the local grid coordinates, stored
 in arrays having the same name as ``Grid``. ``DataBlock`` also contains instances of the physical modules. Currently,
 it only contains an instance of the ``Hydro`` class, but future physical modules will follow the same path.
@@ -291,3 +310,29 @@ magnetic potential. See :ref:`setupInitflow`.
 
 Debugging and profiling
 =======================
+
+The easiest way to trigger debugging in ``Idefix`` is to add ``#define DEBUG`` in your ``definitions.hpp`` and
+recompile the code. This forces the code to log each time a function is called or returned (this is achieved
+thanks to the ``idfx::pushRegion(std::string)`` and ``idfx::popRegion()`` which are found at the beginning and
+end of each function). In other words, ``#define DEBUG`` logs the entire stack trace to simplify debugging.
+
+It is also possible to use `Kokkos-tools <https://github.com/kokkos/kokkos-tools>`_ to debug and profile the code.
+For instance, on the fly profiling, can be enabled with the Kokkos ``space-time-stack`` module. To use it, simply clone
+``Kokkos-tools`` to the directory of your choice (say ``$KOKKOS_TOOLS``), then ``cd`` to
+``$KOKKOS_TOOLS/src/tools/space-time-stack`` and compile the module with ``make``.
+
+Once the profiling module is compiled, you can use it by setting the environement variable ``KOKKOS_PROFILE_LIBRARY``.
+For instance, in bash:
+
+.. code-block:: bash
+
+  export KOKKOS_PROFILE_LIBRARY=$KOKKOS_TOOLS/src/tools/space-time-stack/kp_space_time_stack.so
+
+Once this environement variable is set, *Idefix* automatically logs profiling informations when it ends (recompilation of *Idefix*
+is not needed).
+
+.. tip::
+
+  By default, ``Kokkos-tools`` assumes the user code is using MPI. If one wants to perform profiling in serial, one should disable MPI before
+  compling the ``space-time-stack`` module. This is done by editing the makefile in ``$KOKKOS_TOOLS/src/tools/space-time-stack``
+  changing the compiler ``CXX`` to a valid serial compiler, and adding ``-DUSE_MPI=0`` to ``CFLAGS``.

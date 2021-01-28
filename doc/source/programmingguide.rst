@@ -324,7 +324,7 @@ For instance, on the fly profiling, can be enabled with the Kokkos ``space-time-
 Once the profiling module is compiled, you can use it by setting the environement variable ``KOKKOS_PROFILE_LIBRARY``.
 For instance, in bash:
 
-.. code-block::
+.. code-block:: bash
 
   export KOKKOS_PROFILE_LIBRARY=$KOKKOS_TOOLS/src/tools/space-time-stack/kp_space_time_stack.so
 
@@ -332,6 +332,7 @@ Once this environement variable is set, *Idefix* automatically logs profiling in
 is not needed).
 
 .. tip::
-  ``Kokkos-tools`` by default assumes your code is using MPI. If one wants to perform profiling in serial, one should diable MPI before
-    compling the ``space-time-stack`` module. This is done by editing the makefile in ``$KOKKOS_TOOLS/src/tools/space-time-stack``
-    changing the compiler ``CXX`` to a valid serial compiler, and adding ``-DUSE_MPI=0`` to ``CFLAGS``.
+
+  By default, ``Kokkos-tools`` assumes the user code is using MPI. If one wants to perform profiling in serial, one should disable MPI before
+  compling the ``space-time-stack`` module. This is done by editing the makefile in ``$KOKKOS_TOOLS/src/tools/space-time-stack``
+  changing the compiler ``CXX`` to a valid serial compiler, and adding ``-DUSE_MPI=0`` to ``CFLAGS``.

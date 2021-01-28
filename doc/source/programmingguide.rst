@@ -309,26 +309,26 @@ Debugging and profiling
 
 The easiest way to trigger debugging in ``Idefix`` is to add ``#define DEBUG`` in your ``definitions.hpp`` and
 recompile the code. This forces the code to log each time a function is called or returned (this is achieved
-thanks to the ``idfx::pushRegion("std::string)`` and ``idfx::popRegion()`` which are found at the beginning and
+thanks to the ``idfx::pushRegion(std::string)`` and ``idfx::popRegion()`` which are found at the beginning and
 end of each function). In other words, ``#define DEBUG`` logs the entire stack trace to simplify debugging.
 
 It is also possible to use `Kokkos-tools <https://github.com/kokkos/kokkos-tools>`_ to debug and profile the code.
 For instance, on the fly profiling, can be enabled with the Kokkos ``space-time-stack`` module. To use it, simply clone
-``Kokkos-tools`` to the directory of your choice (say ``$KOKKOS_TOOLS``), then ``cd`` to 
+``Kokkos-tools`` to the directory of your choice (say ``$KOKKOS_TOOLS``), then ``cd`` to
 ``$KOKKOS_TOOLS/src/tools/space-time-stack`` and compile the module with ``make``.
 
 Once the profiling module is compiled, you can use it by setting the environement variable ``KOKKOS_PROFILE_LIBRARY``.
 For instance, in bash:
 
-.. code-block::
+.. code-block:: bash
 
   export KOKKOS_PROFILE_LIBRARY=$KOKKOS_TOOLS/src/tools/space-time-stack/kp_space_time_stack.so
 
 Once this environement variable is set, *Idefix* automatically logs profiling informations when it ends (recompilation of *Idefix*
-is not needed). 
+is not needed).
 
 .. tip::
-  ``Kokkos-tools`` by default assumes your code is using MPI. If one wants to perform profiling in serial, one should diable MPI before
-    compling the ``space-time-stack`` module. This is done by editing the makefile in ``$KOKKOS_TOOLS/src/tools/space-time-stack``
-    changing the compiler ``CXX`` to a valid serial compiler, and adding ``-DUSE_MPI=0`` to ``CFLAGS``. 
 
+  By default, ``Kokkos-tools`` assumes the user code is using MPI. If one wants to perform profiling in serial, one should disable MPI before
+  compling the ``space-time-stack`` module. This is done by editing the makefile in ``$KOKKOS_TOOLS/src/tools/space-time-stack``
+  changing the compiler ``CXX`` to a valid serial compiler, and adding ``-DUSE_MPI=0`` to ``CFLAGS``.

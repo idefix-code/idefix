@@ -380,7 +380,7 @@ void Mpi::ExchangeX1() {
   // order on the two domains, these might slowly diverge on both sides because
   // of round off error. The following loop average the two values on the faces,
   // When applicable, to eliminate this divergence between the domains
-  /*
+
   idefix_for("StoreBufferX1BX1s",kbeg,kend,jbeg,jend,ibeg,ibeg+1,
     KOKKOS_LAMBDA (int k, int j, int i) {
       if(lbound == internal || lbound == periodic) {
@@ -395,7 +395,7 @@ void Mpi::ExchangeX1() {
       }
     }
   );
-*/
+
   #if DIMENSIONS >= 2
   VsIndex = mapNVars*nx*ny*nz + ny*nz;
 

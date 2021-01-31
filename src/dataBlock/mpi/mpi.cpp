@@ -67,7 +67,7 @@ void Mpi::InitFromDataBlock(DataBlock *datain) {
 
 #if MHD == YES
   // BX1s
-  bufferSizeX1 += data->nghost[IDIR] * data->np_int[JDIR] * data->np_int[KDIR];
+  bufferSizeX1 += data->np_int[JDIR] * data->np_int[KDIR];
 
   #if DIMENSIONS>=2
   bufferSizeX1 += data->nghost[IDIR] * (data->np_int[JDIR]+1) * data->np_int[KDIR];
@@ -90,7 +90,7 @@ void Mpi::InitFromDataBlock(DataBlock *datain) {
   // BX1s
   bufferSizeX2 += (data->np_tot[IDIR]+1) * data->nghost[JDIR] * data->np_int[KDIR];
   // BX2s
-  bufferSizeX2 += data->np_tot[IDIR] * data->nghost[JDIR] * data->np_int[KDIR];
+  bufferSizeX2 += data->np_tot[IDIR] * data->np_int[KDIR];
     #if DIMENSIONS==3
   bufferSizeX2 += data->np_tot[IDIR] * data->nghost[JDIR] * (data->np_int[KDIR]+1);
     #endif  // DIMENSIONS
@@ -112,7 +112,7 @@ void Mpi::InitFromDataBlock(DataBlock *datain) {
   // BX2s
   bufferSizeX3 += data->np_tot[IDIR] * (data->np_tot[JDIR]+1) * data->nghost[KDIR];
   // BX3s (not needed because reconstructed)
-  bufferSizeX3 += data->np_tot[IDIR] * data->np_tot[JDIR] * data->nghost[KDIR];
+  bufferSizeX3 += data->np_tot[IDIR] * data->np_tot[JDIR];
   #endif  // MHD
 
   BufferRecvX3[faceLeft ] = IdefixArray1D<real>("BufferRecvX3Left", bufferSizeX3);
@@ -231,6 +231,9 @@ void Mpi::ExchangeX1() {
   int VsIndex;
 #endif
 
+  BoundaryType lbound = data->lbound[IDIR];
+  BoundaryType rbound = data->rbound[IDIR];
+
   // If MPI Persistent, start receiving even before the buffers are filled
 #ifdef MPI_PERSISTENT
   MPI_Status sendStatus[2];
@@ -263,15 +266,15 @@ void Mpi::ExchangeX1() {
 
   VsIndex = mapNVars*nx*ny*nz;
 
-  idefix_for("LoadBufferX1BX1s",kbeg,kend,jbeg,jend,ibeg,iend,
+  idefix_for("LoadBufferX1BX1s",kbeg,kend,jbeg,jend,ibeg,ibeg+1,
     KOKKOS_LAMBDA (int k, int j, int i) {
-      BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) = Vs(BX1s,k,j,i+nx+1);
-      BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) = Vs(BX1s,k,j,i+offset-nx);
+      BufferLeft(i + (j-jbeg) + (k-kbeg)*ny + VsIndex ) = Vs(BX1s,k,j,i+nx);
+      BufferRight(i + (j-jbeg) + (k-kbeg)*ny + VsIndex ) = Vs(BX1s,k,j,i+offset);
     }
   );
 
   #if DIMENSIONS >= 2
-  VsIndex = (mapNVars+1)*nx*ny*nz;
+  VsIndex = mapNVars*nx*ny*nz + ny*nz;
 
   idefix_for("LoadBufferX1BX2s",kbeg,kend,jbeg,jend+1,ibeg,iend,
     KOKKOS_LAMBDA (int k, int j, int i) {
@@ -283,7 +286,7 @@ void Mpi::ExchangeX1() {
   #endif
 
   #if DIMENSIONS == 3
-  VsIndex = (mapNVars+1)*nx*ny*nz + nx*(ny+1)*nz;
+  VsIndex = mapNVars*nx*ny*nz + ny*nz + nx*(ny+1)*nz;
 
   idefix_for("LoadBufferX1BX3s",kbeg,kend+1,jbeg,jend,ibeg,iend,
     KOKKOS_LAMBDA (int k, int j, int i) {
@@ -371,15 +374,30 @@ void Mpi::ExchangeX1() {
 
   VsIndex = mapNVars*nx*ny*nz;
 
-  idefix_for("StoreBufferX1BX1s",kbeg,kend,jbeg,jend,ibeg,iend,
+  // This is not strictly required since BX1s on the neighboring domain faces
+  // Should be equal by construction, since they are evolved with the same EMFs
+  // HOWEVER, because the arithmetic operation are not performed in the same
+  // order on the two domains, these might slowly diverge on both sides because
+  // of round off error. The following loop average the two values on the faces,
+  // When applicable, to eliminate this divergence between the domains
+  /*
+  idefix_for("StoreBufferX1BX1s",kbeg,kend,jbeg,jend,ibeg,ibeg+1,
     KOKKOS_LAMBDA (int k, int j, int i) {
-      Vs(BX1s,k,j,i) = BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
-      Vs(BX1s,k,j,i+offset+1) = BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
+      if(lbound == internal || lbound == periodic) {
+        Vs(BX1s,k,j,i+nx) = HALF_F*(
+                              BufferLeft(i + (j-jbeg) + (k-kbeg)*ny + VsIndex )
+                            + Vs(BX1s,k,j,i+nx));
+      }
+      if(rbound == internal || rbound == periodic) {
+        Vs(BX1s,k,j,i+offset) = HALF_F*(
+                              BufferRight(i + (j-jbeg) + (k-kbeg)*ny + VsIndex )
+                            + Vs(BX1s,k,j,i+offset));
+      }
     }
   );
-
+*/
   #if DIMENSIONS >= 2
-  VsIndex = (mapNVars+1)*nx*ny*nz;
+  VsIndex = mapNVars*nx*ny*nz + ny*nz;
 
   idefix_for("StoreBufferX1BX2s",kbeg,kend,jbeg,jend+1,ibeg,iend,
     KOKKOS_LAMBDA (int k, int j, int i) {
@@ -390,7 +408,7 @@ void Mpi::ExchangeX1() {
   #endif
 
   #if DIMENSIONS == 3
-  VsIndex = (mapNVars+1)*nx*ny*nz + nx*(ny+1)*nz;
+  VsIndex = mapNVars*nx*ny*nz + ny*nz + nx*(ny+1)*nz;
 
   idefix_for("StoreBufferX1BX3s",kbeg,kend+1,jbeg,jend,ibeg,iend,
     KOKKOS_LAMBDA ( int k, int j, int i) {
@@ -434,6 +452,8 @@ void Mpi::ExchangeX2() {
   int VsIndex;
 #endif
 
+  BoundaryType lbound = data->lbound[JDIR];
+  BoundaryType rbound = data->rbound[JDIR];
 // If MPI Persistent, start receiving even before the buffers are filled
 #ifdef MPI_PERSISTENT
   MPI_Status sendStatus[2];
@@ -476,17 +496,17 @@ void Mpi::ExchangeX2() {
   #if DIMENSIONS >= 2
   VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz;
 
-  idefix_for("LoadBufferX2BX2s",kbeg,kend,jbeg,jend,ibeg,iend,
+  idefix_for("LoadBufferX2BX2s",kbeg,kend,jbeg,jbeg+1,ibeg,iend,
     KOKKOS_LAMBDA (int k, int j, int i) {
-      BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) = Vs(BX2s,k,j+ny+1,i);
-      BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) = Vs(BX2s,k,j+offset-ny,i);
+      BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx + VsIndex ) = Vs(BX2s,k,j+ny,i);
+      BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx + VsIndex ) = Vs(BX2s,k,j+offset,i);
     }
   );
 
   #endif
 
   #if DIMENSIONS == 3
-  VsIndex = (mapNVars+1)*nx*ny*nz + (nx+1)*ny*nz;
+  VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz + nx*nz;
 
   idefix_for("LoadBufferX2BX3s",kbeg,kend+1,jbeg,jend,ibeg,iend,
     KOKKOS_LAMBDA (int k, int j, int i) {
@@ -583,16 +603,24 @@ void Mpi::ExchangeX2() {
   #if DIMENSIONS >= 2
   VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz;
 
-  idefix_for("StoreBufferX2BX2s",kbeg,kend,jbeg,jend,ibeg,iend,
+  idefix_for("StoreBufferX2BX2s",kbeg,kend,jbeg,jbeg+1,ibeg,iend,
     KOKKOS_LAMBDA (int k, int j, int i) {
-      Vs(BX2s,k,j,i) = BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
-      Vs(BX2s,k,j+offset+1,i) = BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
+      if(lbound == internal || lbound == periodic) {
+        Vs(BX2s,k,j+ny,i) = HALF_F*(
+                              BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx + VsIndex )
+                            + Vs(BX2s,k,j+ny,i));
+      }
+      if(rbound == internal || rbound == periodic) {
+        Vs(BX2s,k,j+offset,i) = HALF_F*(
+                              BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx + VsIndex )
+                            + Vs(BX2s,k,j+offset,i));
+      }
     }
   );
   #endif
 
   #if DIMENSIONS == 3
-  VsIndex = (mapNVars+1)*nx*ny*nz + (nx+1)*ny*nz;
+  VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz + nx*nz;
 
   idefix_for("StoreBufferX2BX3s",kbeg,kend+1,jbeg,jend,ibeg,iend,
     KOKKOS_LAMBDA ( int k, int j, int i) {
@@ -636,6 +664,9 @@ void Mpi::ExchangeX3() {
   IdefixArray4D<real> Vs=data->hydro.Vs;
   int VsIndex;
 #endif
+
+  BoundaryType lbound = data->lbound[KDIR];
+  BoundaryType rbound = data->rbound[KDIR];
 
   // If MPI Persistent, start receiving even before the buffers are filled
 #ifdef MPI_PERSISTENT
@@ -691,10 +722,10 @@ void Mpi::ExchangeX3() {
   #if DIMENSIONS == 3
   VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz + nx*(ny+1)*nz;
 
-  idefix_for("LoadBufferX3BX3s",kbeg,kend,jbeg,jend,ibeg,iend,
+  idefix_for("LoadBufferX3BX3s",kbeg,kbeg+1,jbeg,jend,ibeg,iend,
     KOKKOS_LAMBDA (int k, int j, int i) {
-      BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) = Vs(BX3s,k+nz+1,j,i);
-      BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) = Vs(BX3s,k+offset-nz,j,i);
+      BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) = Vs(BX3s,k+nz,j,i);
+      BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) = Vs(BX3s,k+offset,j,i);
     }
   );
   #endif
@@ -795,10 +826,18 @@ void Mpi::ExchangeX3() {
   #if DIMENSIONS == 3
   VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz + nx*(ny+1)*nz;
 
-  idefix_for("StoreBufferX3BX3s",kbeg,kend,jbeg,jend,ibeg,iend,
+  idefix_for("StoreBufferX3BX3s",kbeg,kbeg+1,jbeg,jend,ibeg,iend,
     KOKKOS_LAMBDA ( int k, int j, int i) {
-      Vs(BX3s,k,j,i) = BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
-      Vs(BX3s,k+offset+1,j,i) = BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
+      if(lbound == internal || lbound == periodic) {
+        Vs(BX3s,k+nz,j,i) = HALF_F*(
+                              BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex )
+                            + Vs(BX3s,k+nz,j,i));
+      }
+      if(rbound == internal || rbound == periodic) {
+        Vs(BX3s,k+offset,j,i) = HALF_F*(
+                                    BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex )
+                                  + Vs(BX3s,k+offset,j,i));
+      }
     }
   );
   #endif

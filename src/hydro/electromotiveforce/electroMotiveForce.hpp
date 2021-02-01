@@ -61,6 +61,7 @@ class ElectroMotiveForce {
  private:
   DataBlock *data;
 
+#ifdef WITH_MPI
   enum {faceRight, faceLeft};
 
   // Buffers for MPI calls
@@ -84,6 +85,7 @@ class ElectroMotiveForce {
   MPI_Request recvRequestX1[2];
   MPI_Request recvRequestX2[2];
   MPI_Request recvRequestX3[2];
+#endif
 };
 
 #endif // HYDRO_ELECTROMOTIVEFORCE_ELECTROMOTIVEFORCE_HPP_

@@ -136,6 +136,7 @@ class Hydro {
 
 
  private:
+  friend class ElectroMotiveForce;
   friend class Viscosity;
   friend class Axis;
 

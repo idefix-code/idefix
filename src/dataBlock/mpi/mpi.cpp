@@ -21,18 +21,51 @@ void Mpi::InitFromDataBlock(DataBlock *datain) {
   this->data = datain;
   this->mygrid = datain->mygrid;
   this->timer.reset();
+  ////////////////////////////////////////////////////////////////////////////
+  // Init variable mappers
+  // The variable mapper allows associates on number to a variable number in Vc
+  // This is required since we skip some of the variables in Vc
+  #if MHD == YES
+  mapNVars = NVAR - DIMENSIONS; // We don't send magnetic field components which are in Vs
+  #else
+  mapNVars = NVAR;
+  #endif
 
+  mapVars = IdefixArray1D<int>("mapVars",mapNVars);
+
+  // Create a host mirror
+  IdefixArray1D<int>::HostMirror mapVarsHost = Kokkos::create_mirror_view(mapVars);
+  // Init the host mirror
+  int ntarget = 0;
+  for(int n = 0 ; n < mapNVars ; n++) {
+    mapVarsHost(n) = ntarget;
+    ntarget++;
+    #if MHD == YES
+      // Skip centered field components if they are also defined in Vs
+      #if DIMENSIONS >= 1
+        if(ntarget==BX1) ntarget++;
+      #endif
+      #if DIMENSIONS >= 2
+        if(ntarget==BX2) ntarget++;
+      #endif
+      #if DIMENSIONS == 3
+        if(ntarget==BX3) ntarget++;
+      #endif
+    #endif
+  }
+  // Synchronize the mapVars
+  Kokkos::deep_copy(mapVars,mapVarsHost);
+
+  /////////////////////////////////////////////////////////////////////////////
   // Init exchange datasets
   bufferSizeX1 = 0;
   bufferSizeX2 = 0;
   bufferSizeX3 = 0;
 
   // Number of cells in X1 boundary condition:
-  bufferSizeX1 = data->nghost[IDIR] * data->np_int[JDIR] * data->np_int[KDIR] * NVAR;
+  bufferSizeX1 = data->nghost[IDIR] * data->np_int[JDIR] * data->np_int[KDIR] * mapNVars;
 
 #if MHD == YES
-  // BX1s
-  bufferSizeX1 += data->nghost[IDIR] * data->np_int[JDIR] * data->np_int[KDIR];
 
   #if DIMENSIONS>=2
   bufferSizeX1 += data->nghost[IDIR] * (data->np_int[JDIR]+1) * data->np_int[KDIR];
@@ -50,15 +83,13 @@ void Mpi::InitFromDataBlock(DataBlock *datain) {
 
   // Number of cells in X2 boundary condition (only required when problem >2D):
 #if DIMENSIONS >= 2
-  bufferSizeX2 = data->np_tot[IDIR] * data->nghost[JDIR] * data->np_int[KDIR] * NVAR;
+  bufferSizeX2 = data->np_tot[IDIR] * data->nghost[JDIR] * data->np_int[KDIR] * mapNVars;
   #if MHD == YES
   // BX1s
   bufferSizeX2 += (data->np_tot[IDIR]+1) * data->nghost[JDIR] * data->np_int[KDIR];
-  // BX2s
-  bufferSizeX2 += data->np_tot[IDIR] * data->nghost[JDIR] * data->np_int[KDIR];
-    #if DIMENSIONS==3
+  #if DIMENSIONS==3
   bufferSizeX2 += data->np_tot[IDIR] * data->nghost[JDIR] * (data->np_int[KDIR]+1);
-    #endif  // DIMENSIONS
+  #endif  // DIMENSIONS
   #endif  // MHD
 
   BufferRecvX2[faceLeft ] = IdefixArray1D<real>("BufferRecvX2Left", bufferSizeX2);
@@ -69,15 +100,13 @@ void Mpi::InitFromDataBlock(DataBlock *datain) {
 #endif
 // Number of cells in X3 boundary condition (only required when problem is 3D):
 #if DIMENSIONS ==3
-  bufferSizeX3 = data->np_tot[IDIR] * data->np_tot[JDIR] * data->nghost[KDIR] * NVAR;
+  bufferSizeX3 = data->np_tot[IDIR] * data->np_tot[JDIR] * data->nghost[KDIR] * mapNVars;
 
   #if MHD == YES
   // BX1s
   bufferSizeX3 += (data->np_tot[IDIR]+1) * data->np_tot[JDIR] * data->nghost[KDIR];
   // BX2s
   bufferSizeX3 += data->np_tot[IDIR] * (data->np_tot[JDIR]+1) * data->nghost[KDIR];
-  // BX3s (not needed because reconstructed)
-  bufferSizeX3 += data->np_tot[IDIR] * data->np_tot[JDIR] * data->nghost[KDIR];
   #endif  // MHD
 
   BufferRecvX3[faceLeft ] = IdefixArray1D<real>("BufferRecvX3Left", bufferSizeX3);
@@ -190,6 +219,7 @@ void Mpi::ExchangeX1() {
   IdefixArray1D<real> BufferLeft=BufferSendX1[faceLeft];
   IdefixArray1D<real> BufferRight=BufferSendX1[faceRight];
   IdefixArray4D<real> Vc=data->hydro.Vc;
+  IdefixArray1D<int> map = this->mapVars;
 #if MHD==YES
   IdefixArray4D<real> Vs=data->hydro.Vs;
   int VsIndex;
@@ -215,27 +245,18 @@ void Mpi::ExchangeX1() {
   kend   = data->end[KDIR];
   nz     = kend - kbeg;
 
-  idefix_for("LoadBufferX1Vc",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+  idefix_for("LoadBufferX1Vc",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
     KOKKOS_LAMBDA (int n, int k, int j, int i) {
-      BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ) = Vc(n,k,j,i+nx);
-      BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ) = Vc(n,k,j,i+offset-nx);
+      BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ) = Vc(map(n),k,j,i+nx);
+      BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ) = Vc(map(n),k,j,i+offset-nx);
     }
   );
 
 #if MHD==YES
   // Load face-centered field in the buffer
 
-  VsIndex = NVAR*nx*ny*nz;
-
-  idefix_for("LoadBufferX1BX1s",kbeg,kend,jbeg,jend,ibeg,iend,
-    KOKKOS_LAMBDA (int k, int j, int i) {
-      BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) = Vs(BX1s,k,j,i+nx+1);
-      BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) = Vs(BX1s,k,j,i+offset-nx);
-    }
-  );
-
   #if DIMENSIONS >= 2
-  VsIndex = (NVAR+1)*nx*ny*nz;
+  VsIndex = mapNVars*nx*ny*nz;
 
   idefix_for("LoadBufferX1BX2s",kbeg,kend,jbeg,jend+1,ibeg,iend,
     KOKKOS_LAMBDA (int k, int j, int i) {
@@ -247,7 +268,7 @@ void Mpi::ExchangeX1() {
   #endif
 
   #if DIMENSIONS == 3
-  VsIndex = (NVAR+1)*nx*ny*nz + nx*(ny+1)*nz;
+  VsIndex = mapNVars*nx*ny*nz + nx*(ny+1)*nz;
 
   idefix_for("LoadBufferX1BX3s",kbeg,kend+1,jbeg,jend,ibeg,iend,
     KOKKOS_LAMBDA (int k, int j, int i) {
@@ -323,27 +344,16 @@ void Mpi::ExchangeX1() {
   BufferRight=BufferRecvX1[faceRight];
 
   // We fill the ghost zones
-  idefix_for("StoreBufferX1Vc",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+  idefix_for("StoreBufferX1Vc",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
     KOKKOS_LAMBDA (int n, int k, int j, int i) {
-      Vc(n,k,j,i) = BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz );
-      Vc(n,k,j,i+offset) = BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz );
+      Vc(map(n),k,j,i) = BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz );
+      Vc(map(n),k,j,i+offset) = BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz );
     }
   );
 
 #if MHD==YES
-  // Load face-centered field in the buffer
-
-  VsIndex = NVAR*nx*ny*nz;
-
-  idefix_for("StoreBufferX1BX1s",kbeg,kend,jbeg,jend,ibeg,iend,
-    KOKKOS_LAMBDA (int k, int j, int i) {
-      Vs(BX1s,k,j,i) = BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
-      Vs(BX1s,k,j,i+offset+1) = BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
-    }
-  );
-
   #if DIMENSIONS >= 2
-  VsIndex = (NVAR+1)*nx*ny*nz;
+  VsIndex = mapNVars*nx*ny*nz;
 
   idefix_for("StoreBufferX1BX2s",kbeg,kend,jbeg,jend+1,ibeg,iend,
     KOKKOS_LAMBDA (int k, int j, int i) {
@@ -354,7 +364,7 @@ void Mpi::ExchangeX1() {
   #endif
 
   #if DIMENSIONS == 3
-  VsIndex = (NVAR+1)*nx*ny*nz + nx*(ny+1)*nz;
+  VsIndex = mapNVars*nx*ny*nz + nx*(ny+1)*nz;
 
   idefix_for("StoreBufferX1BX3s",kbeg,kend+1,jbeg,jend,ibeg,iend,
     KOKKOS_LAMBDA ( int k, int j, int i) {
@@ -392,7 +402,7 @@ void Mpi::ExchangeX2() {
   IdefixArray1D<real> BufferLeft=BufferSendX2[faceLeft];
   IdefixArray1D<real> BufferRight=BufferSendX2[faceRight];
   IdefixArray4D<real> Vc=data->hydro.Vc;
-
+  IdefixArray1D<int> map = this->mapVars;
 #if MHD==YES
   IdefixArray4D<real> Vs=data->hydro.Vs;
   int VsIndex;
@@ -418,17 +428,17 @@ void Mpi::ExchangeX2() {
   kend   = data->end[KDIR];
   nz     = kend - kbeg;
 
-  idefix_for("LoadBufferX2Vc",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+  idefix_for("LoadBufferX2Vc",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
     KOKKOS_LAMBDA (int n, int k, int j, int i) {
-      BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ) = Vc(n,k,j+ny,i);
-      BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ) = Vc(n,k,j+offset-ny,i);
+      BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ) = Vc(map(n),k,j+ny,i);
+      BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ) = Vc(map(n),k,j+offset-ny,i);
     }
   );
 
 #if MHD==YES
   // Load face-centered field in the buffer
 
-  VsIndex = NVAR*nx*ny*nz;
+  VsIndex = mapNVars*nx*ny*nz;
 
   idefix_for("LoadBufferX2BX1s",kbeg,kend,jbeg,jend,ibeg,iend+1,
     KOKKOS_LAMBDA (int k, int j, int i) {
@@ -437,20 +447,9 @@ void Mpi::ExchangeX2() {
     }
   );
 
-  #if DIMENSIONS >= 2
-  VsIndex = NVAR*nx*ny*nz + (nx+1)*ny*nz;
-
-  idefix_for("LoadBufferX2BX2s",kbeg,kend,jbeg,jend,ibeg,iend,
-    KOKKOS_LAMBDA (int k, int j, int i) {
-      BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) = Vs(BX2s,k,j+ny+1,i);
-      BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) = Vs(BX2s,k,j+offset-ny,i);
-    }
-  );
-
-  #endif
 
   #if DIMENSIONS == 3
-  VsIndex = (NVAR+1)*nx*ny*nz + (nx+1)*ny*nz;
+  VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz;
 
   idefix_for("LoadBufferX2BX3s",kbeg,kend+1,jbeg,jend,ibeg,iend,
     KOKKOS_LAMBDA (int k, int j, int i) {
@@ -525,17 +524,17 @@ void Mpi::ExchangeX2() {
 
   // We fill the ghost zones
 
-  idefix_for("StoreBufferX2Vc",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+  idefix_for("StoreBufferX2Vc",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
     KOKKOS_LAMBDA (int n, int k, int j, int i) {
-      Vc(n,k,j,i) = BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz );
-      Vc(n,k,j+offset,i) = BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz );
+      Vc(map(n),k,j,i) = BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz );
+      Vc(map(n),k,j+offset,i) = BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz );
     }
   );
 
 #if MHD==YES
   // Load face-centered field in the buffer
 
-  VsIndex = NVAR*nx*ny*nz;
+  VsIndex = mapNVars*nx*ny*nz;
 
   idefix_for("StoreBufferX2BX1s",kbeg,kend,jbeg,jend,ibeg,iend+1,
     KOKKOS_LAMBDA (int k, int j, int i) {
@@ -544,19 +543,8 @@ void Mpi::ExchangeX2() {
     }
   );
 
-  #if DIMENSIONS >= 2
-  VsIndex = NVAR*nx*ny*nz + (nx+1)*ny*nz;
-
-  idefix_for("StoreBufferX2BX2s",kbeg,kend,jbeg,jend,ibeg,iend,
-    KOKKOS_LAMBDA (int k, int j, int i) {
-      Vs(BX2s,k,j,i) = BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
-      Vs(BX2s,k,j+offset+1,i) = BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
-    }
-  );
-  #endif
-
   #if DIMENSIONS == 3
-  VsIndex = (NVAR+1)*nx*ny*nz + (nx+1)*ny*nz;
+  VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz;
 
   idefix_for("StoreBufferX2BX3s",kbeg,kend+1,jbeg,jend,ibeg,iend,
     KOKKOS_LAMBDA ( int k, int j, int i) {
@@ -595,7 +583,7 @@ void Mpi::ExchangeX3() {
   IdefixArray1D<real> BufferLeft=BufferSendX3[faceLeft];
   IdefixArray1D<real> BufferRight=BufferSendX3[faceRight];
   IdefixArray4D<real> Vc=data->hydro.Vc;
-
+  IdefixArray1D<int> map = this->mapVars;
 #if MHD==YES
   IdefixArray4D<real> Vs=data->hydro.Vs;
   int VsIndex;
@@ -621,17 +609,18 @@ void Mpi::ExchangeX3() {
   offset = data->end[KDIR];     // Distance between beginning of left and right ghosts
   nz     = data->nghost[KDIR];
 
-  idefix_for("LoadBufferX3Vc",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+  idefix_for("LoadBufferX3Vc",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
       KOKKOS_LAMBDA (int n, int k, int j, int i) {
-        BufferLeft((i-ibeg) + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ) = Vc(n,k+nz,j,i);
-        BufferRight((i-ibeg) + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ) = Vc(n,k+offset-nz,j,i);
+        int nt = map(n);
+        BufferLeft((i-ibeg) + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ) = Vc(nt,k+nz,j,i);
+        BufferRight((i-ibeg) + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ) = Vc(nt,k+offset-nz,j,i);
       }
   );
 
 #if MHD==YES
   // Load face-centered field in the buffer
 
-  VsIndex = NVAR*nx*ny*nz;
+  VsIndex = mapNVars*nx*ny*nz;
 
   idefix_for("LoadBufferX3BX1s",kbeg,kend,jbeg,jend,ibeg,iend+1,
     KOKKOS_LAMBDA (int k, int j, int i) {
@@ -641,7 +630,7 @@ void Mpi::ExchangeX3() {
   );
 
   #if DIMENSIONS >= 2
-  VsIndex = NVAR*nx*ny*nz + (nx+1)*ny*nz;
+  VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz;
 
   idefix_for("LoadBufferX3BX2s",kbeg,kend,jbeg,jend+1,ibeg,iend,
     KOKKOS_LAMBDA (int k, int j, int i) {
@@ -651,16 +640,6 @@ void Mpi::ExchangeX3() {
   );
   #endif
 
-  #if DIMENSIONS == 3
-  VsIndex = NVAR*nx*ny*nz + (nx+1)*ny*nz + nx*(ny+1)*nz;
-
-  idefix_for("LoadBufferX3BX3s",kbeg,kend,jbeg,jend,ibeg,iend,
-    KOKKOS_LAMBDA (int k, int j, int i) {
-      BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) = Vs(BX3s,k+nz+1,j,i);
-      BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) = Vs(BX3s,k+offset-nz,j,i);
-    }
-  );
-  #endif
 #endif
 
   // Send to the right
@@ -725,17 +704,17 @@ void Mpi::ExchangeX3() {
   BufferRight=BufferRecvX3[faceRight];
 
   // We fill the ghost zones
-  idefix_for("StoreBufferX3Vc",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+  idefix_for("StoreBufferX3Vc",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
     KOKKOS_LAMBDA (int n, int k, int j, int i) {
-      Vc(n,k,j,i) = BufferLeft((i-ibeg) + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz );
-      Vc(n,k+offset,j,i) = BufferRight((i-ibeg) + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz );
+      Vc(map(n),k,j,i) = BufferLeft((i-ibeg) + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz );
+      Vc(map(n),k+offset,j,i) = BufferRight((i-ibeg) + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz );
     }
   );
 
 #if MHD==YES
   // Load face-centered field in the buffer
 
-  VsIndex = NVAR*nx*ny*nz;
+  VsIndex = mapNVars*nx*ny*nz;
 
   idefix_for("StoreBufferX3BX1s",kbeg,kend,jbeg,jend,ibeg,iend+1,
     KOKKOS_LAMBDA (int k, int j, int i) {
@@ -745,23 +724,12 @@ void Mpi::ExchangeX3() {
   );
 
   #if DIMENSIONS >= 2
-  VsIndex = NVAR*nx*ny*nz + (nx+1)*ny*nz;
+  VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz;
 
   idefix_for("StoreBufferX3BX2s",kbeg,kend,jbeg,jend+1,ibeg,iend,
     KOKKOS_LAMBDA (int k, int j, int i) {
       Vs(BX2s,k,j,i) = BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*(ny+1) + VsIndex );
       Vs(BX2s,k+offset,j,i) = BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*(ny+1) + VsIndex );
-    }
-  );
-  #endif
-
-  #if DIMENSIONS == 3
-  VsIndex = NVAR*nx*ny*nz + (nx+1)*ny*nz + nx*(ny+1)*nz;
-
-  idefix_for("StoreBufferX3BX3s",kbeg,kend,jbeg,jend,ibeg,iend,
-    KOKKOS_LAMBDA ( int k, int j, int i) {
-      Vs(BX3s,k,j,i) = BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
-      Vs(BX3s,k+offset+1,j,i) = BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
     }
   );
   #endif

@@ -270,7 +270,7 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
 
   Vs0 = IdefixArray4D<real>("Hydro_Vs0", DIMENSIONS,
               data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
-  this->emf = ElectroMotiveForce(this->data);
+  this->emf.Init(this);
 #endif
 
 // Allocate sound speed array if needed

@@ -39,6 +39,9 @@ class Mpi {
   IdefixArray1D<real> BufferRecvX2[2];
   IdefixArray1D<real> BufferRecvX3[2];
 
+  IdefixArray1D<int>  mapVars;
+  int mapNVars = 0;
+
   int bufferSizeX1;
   int bufferSizeX2;
   int bufferSizeX3;

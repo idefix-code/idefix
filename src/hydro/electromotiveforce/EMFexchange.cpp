@@ -21,6 +21,9 @@ void ElectroMotiveForce::ExchangeAll() {
 void ElectroMotiveForce::ExchangeX1() {
   idfx::pushRegion("Emf::ExchangeX1");
 
+  // init MPI Timer
+  idfx::mpiTimer -= timer.seconds();
+
   // Load  the buffers with data
   int ileft,iright,jbeg,jend,kbeg,kend;
   int ny,nz;
@@ -108,7 +111,8 @@ void ElectroMotiveForce::ExchangeX1() {
     });
   #endif
 
-
+  // Stop MPI Timer
+  idfx::mpiTimer += timer.seconds();
 
   idfx::popRegion();
 }
@@ -117,6 +121,8 @@ void ElectroMotiveForce::ExchangeX1() {
 void ElectroMotiveForce::ExchangeX2() {
   idfx::pushRegion("Emf::ExchangeX2");
 
+    // init MPI Timer
+  idfx::mpiTimer -= timer.seconds();
   // Load  the buffers with data
   int jleft,jright,ibeg,iend,kbeg,kend;
   int nx,nz;
@@ -202,12 +208,18 @@ void ElectroMotiveForce::ExchangeX2() {
     });
   #endif
 
+    // Stop MPI Timer
+  idfx::mpiTimer += timer.seconds();
+
   idfx::popRegion();
 }
 
 // Exchange EMFs in X3
 void ElectroMotiveForce::ExchangeX3() {
   idfx::pushRegion("Emf::ExchangeX3");
+
+  // init MPI Timer
+  idfx::mpiTimer -= timer.seconds();
 
   // Load  the buffers with data
   int kleft,kright,ibeg,iend,jbeg,kend;
@@ -292,6 +304,9 @@ void ElectroMotiveForce::ExchangeX3() {
                         BufferRight( (i-ibeg) + (j-jbeg)*(nx+1) + Vsindex ) + ey(kright,j,i) );
       }
     });
+
+  // Stop MPI Timer
+  idfx::mpiTimer += timer.seconds();
 
   idfx::popRegion();
 }

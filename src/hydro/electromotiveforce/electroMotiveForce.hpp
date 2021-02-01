@@ -85,6 +85,8 @@ class ElectroMotiveForce {
   MPI_Request recvRequestX1[2];
   MPI_Request recvRequestX2[2];
   MPI_Request recvRequestX3[2];
+
+  Kokkos::Timer timer;    // Internal MPI timer
 #endif
 };
 

@@ -69,8 +69,8 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
   //if(timer.seconds()-lastLog >= 1.0) {
   if(ncycles%cyclePeriod==0) {
-    double rawperf = (timer.seconds()-lastLog)/(data.mygrid->np_int[IDIR]*data.mygrid->np_int[JDIR]
-                      *data.mygrid->np_int[KDIR]*cyclePeriod);
+    double rawperf = (timer.seconds()-lastLog)/data.mygrid->np_int[IDIR]/data.mygrid->np_int[JDIR]
+                      /data.mygrid->np_int[KDIR]/cyclePeriod;
 #ifdef WITH_MPI
     // measure the time spent in the MPI calls
     double mpiOverhead = (idfx::mpiTimer-lastMpiLog)

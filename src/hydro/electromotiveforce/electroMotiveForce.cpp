@@ -57,6 +57,9 @@ void ElectroMotiveForce::Init(Hydro *hydro) {
 
   // MPI initialisation
   #ifdef WITH_MPI
+
+  // init timer
+  this->timer.reset();
   /////////////////////////////////////////////////////////////////////////////
   // Init exchange datasets
   bufferSizeX1 = 0;

@@ -182,22 +182,24 @@ void ElectroMotiveForce::Init(Hydro *hydro) {
 
 // Destructor (clean up persistent communication channels)
 ElectroMotiveForce::~ElectroMotiveForce() {
-  #ifdef WITH_MPI
-  // Properly clean up the mess
-  idfx::cout << "Emf: Cleaning up MPI persistent communication channels" << std::endl;
-  for(int i=0 ; i< 2; i++) {
-    MPI_Request_free( &sendRequestX1[i]);
-    MPI_Request_free( &recvRequestX1[i]);
+  #if MHD == YES
+    #ifdef WITH_MPI
+    // Properly clean up the mess
+    idfx::cout << "Emf: Cleaning up MPI persistent communication channels" << std::endl;
+    for(int i=0 ; i< 2; i++) {
+      MPI_Request_free( &sendRequestX1[i]);
+      MPI_Request_free( &recvRequestX1[i]);
 
-  #if DIMENSIONS >= 2
-    MPI_Request_free( &sendRequestX2[i]);
-    MPI_Request_free( &recvRequestX2[i]);
-  #endif
+    #if DIMENSIONS >= 2
+      MPI_Request_free( &sendRequestX2[i]);
+      MPI_Request_free( &recvRequestX2[i]);
+    #endif
 
-  #if DIMENSIONS == 3
-    MPI_Request_free( &sendRequestX3[i]);
-    MPI_Request_free( &recvRequestX3[i]);
-  #endif
-  }
+    #if DIMENSIONS == 3
+      MPI_Request_free( &sendRequestX3[i]);
+      MPI_Request_free( &recvRequestX3[i]);
+    #endif
+    }
+    #endif
   #endif
 }

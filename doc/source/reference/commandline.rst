@@ -38,3 +38,13 @@ By default, *Idefix* is designed to capture the ``SIGUSR2`` UNIX signal sent by 
 its current integration step, dumps a restart file and ends. This signal handling is therefore useful to tell *Idefix* that its allocated time for the current
 job is ending, and it is therefore time to stop the integration. Many modern jobs schedulers, such as OAR and SLURM, allow users to send UNIX signals
 before killing the jobs. Read the documentation of your job scheduler for more information.
+
+If you are not using a scheduler, it is possible to interupt *Idefix* by directly sending it a ``SIGUSR2`` UNIX
+signal with the ``kill`` command. For instance:
+
+.. code-block:: bash
+
+  kill -s SIGUSR2  123456
+
+where 123456 is *Idefix* pid (obtainable with ``ps -a``). When runnning with MPI, the pid used in the ``kill`` command should be that of the
+MPI launcher (e.g. ``mpirun``) so that each child process gets the signal.

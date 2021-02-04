@@ -330,22 +330,44 @@ void Hydro::HllMHD() {
 
       // 5-- Compute the flux from the left and right states
       if (SL > 0) {
+        Flux(RHO,k,j,i) = fluxL[RHO];
+        EXPAND( Flux(MX1,k,j,i) = fluxL[MX1];  ,
+                Flux(MX2,k,j,i) = fluxL[MX2];  ,
+                Flux(MX3,k,j,i) = fluxL[MX3];  )
+      } else if (SR < 0) {
+        Flux(RHO,k,j,i) = fluxR[RHO];
+        EXPAND( Flux(MX1,k,j,i) = fluxR[MX1];  ,
+                Flux(MX2,k,j,i) = fluxR[MX2];  ,
+                Flux(MX3,k,j,i) = fluxR[MX3];  )
+      } else {
+        Flux(RHO,k,j,i) = (SL*SR*uR[RHO] - SL*SR*uL[RHO] + SR*fluxL[RHO] - SL*fluxR[RHO])
+                          / (SR - SL);
+        EXPAND( Flux(MX1,k,j,i) = (SL*SR*uR[MX1] - SL*SR*uL[MX1] + SR*fluxL[MX1] - SL*fluxR[MX1])
+                                  / (SR - SL);  ,
+                Flux(MX2,k,j,i) = (SL*SR*uR[MX2] - SL*SR*uL[MX2] + SR*fluxL[MX2] - SL*fluxR[MX2])
+                                  / (SR - SL);  ,
+                Flux(MX3,k,j,i) = (SL*SR*uR[MX3] - SL*SR*uL[MX3] + SR*fluxL[MX3] - SL*fluxR[MX3])
+                                  / (SR - SL);  )
+      }
+
+      if (SLb > 0) {
 #pragma unroll
-        for (int nv = 0 ; nv < NFLX; nv++) {
+        for (int nv = BX1 ; nv < NFLX; nv++) {
           Flux(nv,k,j,i) = fluxL[nv];
         }
-      } else if (SR < 0) {
+      } else if (SRb < 0) {
 #pragma unroll
-        for (int nv = 0 ; nv < NFLX; nv++) {
+        for (int nv = BX1 ; nv < NFLX; nv++) {
           Flux(nv,k,j,i) = fluxR[nv];
         }
       } else {
 #pragma unroll
-        for(int nv = 0 ; nv < NFLX; nv++) {
-          Flux(nv,k,j,i) = SL*SR*uR[nv] - SL*SR*uL[nv] + SR*fluxL[nv] - SL*fluxR[nv];
-          Flux(nv,k,j,i) *= (1.0 / (SR - SL));
+        for(int nv = BX1 ; nv < NFLX; nv++) {
+          Flux(nv,k,j,i) = SLb*SRb*uR[nv] - SLb*SRb*uL[nv] + SRb*fluxL[nv] - SLb*fluxR[nv];
+          Flux(nv,k,j,i) *= (1.0 / (SRb - SLb));
         }
       }
+
 
       //6-- Compute maximum wave speed for this sweep
       cMax(k,j,i) = cmax;

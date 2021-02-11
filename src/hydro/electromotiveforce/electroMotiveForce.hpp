@@ -33,6 +33,25 @@ class ElectroMotiveForce {
   IdefixArray3D<int>      svy;
   IdefixArray3D<int>      svz;
 
+  // Signal velocities
+  IdefixArray3D<real> SxL;
+  IdefixArray3D<real> SxR;
+  IdefixArray3D<real> SyL;
+  IdefixArray3D<real> SyR;
+  IdefixArray3D<real> SzL;
+  IdefixArray3D<real> SzR;
+
+  // Staggered magnetic field and velocity slopes
+  IdefixArray3D<real> dbx_dy, dby_dx;
+
+  IdefixArray3D<real> dbz_dx, dbz_dy;
+  IdefixArray3D<real> dbx_dz, dby_dz;
+
+  IdefixArray3D<real> dvx_dx, dvx_dy;
+  IdefixArray3D<real> dvy_dx, dvy_dy;
+  IdefixArray3D<real> dvx_dz, dvy_dz;
+  IdefixArray3D<real> dvz_dx, dvz_dy, dvz_dz;
+
   IdefixArray3D<real>     Ex1;
   IdefixArray3D<real>     Ex2;
   IdefixArray3D<real>     Ex3;

@@ -29,6 +29,7 @@ enum Solver {TVDLF=1, HLL, HLLC, ROE};
 #define ARITHMETIC   1
 #define UCT0         2
 #define UCT_CONTACT  3
+#define UCT_HLL      4
 
 // Default EMF_AVERAGE value
 #ifndef EMF_AVERAGE

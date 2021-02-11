@@ -18,11 +18,12 @@
 //          Vc(i-1)           PrimL(i)  PrimR(i)       Vc(i)
 
 void Hydro::ExtrapolatePrimVar(int dir) {
+  idfx::pushRegion("Hydro::ExtrapolatePrimVar");
+
   int ioffset,joffset,koffset;
   int iextend, jextend,kextend;
   int BXn;
-
-  idfx::pushRegion("Hydro::ExtrapolatePrimVar");
+  IdefixArray3D<real> dvx, dvy, dvz;
   // Offset is in the direction of integration
   ioffset=joffset=koffset=0;
 
@@ -36,6 +37,13 @@ void Hydro::ExtrapolatePrimVar(int dir) {
     D_EXPAND(               ,
               jextend = 1;  ,
               kextend = 1;  )
+#if EMF_AVERAGE == UCT_HLL
+    dvx = this->emf.dvx_dx;
+    dvy = this->emf.dvy_dx;
+  #if DIMENSIONS == 3
+    dvz = this->emf.dvz_dx;
+  #endif
+#endif
   }
   if(dir==JDIR) {
     joffset=1;
@@ -43,6 +51,13 @@ void Hydro::ExtrapolatePrimVar(int dir) {
     D_EXPAND( iextend = 1;  ,
                             ,
               kextend = 1;  )
+#if EMF_AVERAGE == UCT_HLL
+    dvx = this->emf.dvx_dy;
+    dvy = this->emf.dvy_dy;
+  #if DIMENSIONS == 3
+    dvz = this->emf.dvz_dy;
+  #endif
+#endif
   }
   if(dir==KDIR) {
     koffset=1;
@@ -50,6 +65,13 @@ void Hydro::ExtrapolatePrimVar(int dir) {
     D_EXPAND( iextend = 1;  ,
               jextend = 1;  ,
                             )
+#if EMF_AVERAGE == UCT_HLL
+  #if DIMENSIONS == 3
+    dvx = this->emf.dvx_dz;
+    dvy = this->emf.dvy_dz;
+    dvz = this->emf.dvz_dz;
+  #endif
+#endif
   }
 
   IdefixArray4D<real> Vc = this->Vc;
@@ -93,6 +115,16 @@ void Hydro::ExtrapolatePrimVar(int dir) {
 
         PrimL(n,k+koffset,j+joffset,i+ioffset) = Vc(n,k,j,i) + HALF_F*dv;
         PrimR(n,k,j,i) = Vc(n,k,j,i) - HALF_F*dv;
+  #if EMF_AVERAGE == UCT_HLL
+        if (n == VX1)
+          dvx(k,j,i) = dv;
+        if (n == VX2)
+          dvy(k,j,i) = dv;
+    #if DIMENSIONS == 3
+        if (n == VX3)
+          dvz(k,j,i) = dv;
+    #endif
+  #endif // EMF_AVERAGE
       }
   });
 #else

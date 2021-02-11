@@ -61,7 +61,12 @@ void Hydro::RoeMHD() {
   IdefixArray3D<real> Eb;
   IdefixArray3D<real> Et;
 
+#if EMF_AVERAGE == UCT_CONTACT
   IdefixArray3D<int> SV;
+#elif EMF_AVERAGE == UCT_HLL
+  IdefixArray3D<real> SL;
+  IdefixArray3D<real> SR;
+#endif
 
   real gamma = this->gamma;
   real gamma_m1=this->gamma-ONE_F;
@@ -87,7 +92,12 @@ void Hydro::RoeMHD() {
 
       Et = this->emf.ezi;
       Eb = this->emf.eyi;
+#if EMF_AVERAGE == UCT_CONTACT
       SV = this->emf.svx;
+#elif EMF_AVERAGE == UCT_HLL
+      SL = this->emf.SxL;
+      SR = this->emf.SxR;
+#endif
 
       D_EXPAND( st = -ONE_F;  ,
                               ,
@@ -101,7 +111,12 @@ void Hydro::RoeMHD() {
 
       Et = this->emf.ezj;
       Eb = this->emf.exj;
+#if EMF_AVERAGE == UCT_CONTACT
       SV = this->emf.svy;
+#elif EMF_AVERAGE == UCT_HLL
+      SL = this->emf.SyL;
+      SR = this->emf.SyR;
+#endif
 
       D_EXPAND( st = +ONE_F;  ,
                               ,
@@ -115,7 +130,12 @@ void Hydro::RoeMHD() {
 
       Et = this->emf.eyk;
       Eb = this->emf.exk;
+#if EMF_AVERAGE == UCT_CONTACT
       SV = this->emf.svz;
+#elif EMF_AVERAGE == UCT_HLL
+      SL = this->emf.SzL;
+      SR = this->emf.SzR;
+#endif
 
       D_EXPAND( st = -ONE_F;  ,
                               ,
@@ -538,14 +558,18 @@ void Hydro::RoeMHD() {
 
       // 6g. Compute maximum signal velocity
 
-      real cmax = fabs (u) + cf;
+      real cmax = std::fabs(u) + cf;
+
+      // 6h. Save max and min Riemann fan speeds for EMF computation.
+      sl = lambda[KFASTM];
+      sr = lambda[KFASTP];
 
 #pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
           alambda[nv] = fabs(lambda[nv]);
       }
 
-      // 6h. Entropy Fix
+      // 6i. Entropy Fix
 
       if (alambda[KFASTM] < 0.5*delta) {
         alambda[KFASTM] = lambda[KFASTM]*lambda[KFASTM]/delta + 0.25*delta;
@@ -562,7 +586,7 @@ void Hydro::RoeMHD() {
       }
 #endif
 
-      // 6i. Compute Roe numerical flux
+      // 6j. Compute Roe numerical flux
 #pragma unroll
       for(int nv1 = 0 ; nv1 < NFLX; nv1++) {
         scrh = 0.0;
@@ -573,7 +597,7 @@ void Hydro::RoeMHD() {
         Flux(nv1,k,j,i) = 0.5*(fluxL[nv1] + fluxR[nv1] - scrh);
       }
 
-      //6-- Compute maximum wave speed for this sweep
+      // save maximum wave speed for this sweep
       cMax(k,j,i) = cmax;
 
       // 7-- Store the flux in the emf components
@@ -587,6 +611,10 @@ void Hydro::RoeMHD() {
       if (Flux(RHO,k,j,i) < -eps_UCT_CONTACT) s = -1;
 
       SV(k,j,i) = s;
+
+#elif EMF_AVERAGE == UCT_HLL
+      SL(k,j,i) = std::fmax(ZERO_F, -sl);
+      SR(k,j,i) = std::fmax(ZERO_F,  sr);
 #endif
   });
 

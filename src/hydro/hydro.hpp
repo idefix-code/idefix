@@ -39,6 +39,7 @@ class Hydro {
   void ReconstructNormalField(int);
   void EvolveMagField(real, real);
   void CalcCornerEMF(real );
+  void calcRiemannEmf();
   void CalcNonidealEMF(real );
   void SetBoundary(real);
   real GetGamma();

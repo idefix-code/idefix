@@ -42,7 +42,12 @@ void Hydro::HllMHD() {
   IdefixArray3D<real> Eb;
   IdefixArray3D<real> Et;
 
+#if EMF_AVERAGE == UCT_CONTACT
   IdefixArray3D<int> SV;
+#elif EMF_AVERAGE == UCT_HLL
+  IdefixArray3D<real> SL;
+  IdefixArray3D<real> SR;
+#endif
 
   real gamma = this->gamma;
   real xHConstant = this->xH;
@@ -65,11 +70,16 @@ void Hydro::HllMHD() {
 
       Et = this->emf.ezi;
       Eb = this->emf.eyi;
+#if EMF_AVERAGE == UCT_CONTACT
       SV = this->emf.svx;
+#elif EMF_AVERAGE == UCT_HLL
+      SL = this->emf.SxL;
+      SR = this->emf.SxR;
+#endif
 
-      D_EXPAND( st = -1.0;  ,
+      D_EXPAND( st = -ONE_F;  ,
                             ,
-                sb = +1.0;  )
+                sb = +ONE_F;  )
       break;
     case(JDIR):
       joffset=1;
@@ -79,11 +89,16 @@ void Hydro::HllMHD() {
 
       Et = this->emf.ezj;
       Eb = this->emf.exj;
+#if EMF_AVERAGE == UCT_CONTACT
       SV = this->emf.svy;
+#elif EMF_AVERAGE == UCT_HLL
+      SL = this->emf.SyL;
+      SR = this->emf.SyR;
+#endif
 
-      D_EXPAND( st = +1.0;  ,
-                            ,
-                sb = -1.0;  )
+      D_EXPAND( st = +ONE_F;  ,
+                              ,
+                sb = -ONE_F;  )
       break;
     case(KDIR):
       koffset=1;
@@ -93,11 +108,16 @@ void Hydro::HllMHD() {
 
       Et = this->emf.eyk;
       Eb = this->emf.exk;
+#if EMF_AVERAGE == UCT_CONTACT
       SV = this->emf.svz;
+#elif EMF_AVERAGE == UCT_HLL
+      SL = this->emf.SzL;
+      SR = this->emf.SzR;
+#endif
 
-      D_EXPAND( st = -1.0;  ,
-                            ,
-                sb = +1.0;  )
+      D_EXPAND( st = -ONE_F;  ,
+                              ,
+                sb = +ONE_F;  )
       break;
     default:
       IDEFIX_ERROR("Wrong direction");
@@ -159,7 +179,7 @@ void Hydro::HllMHD() {
       Bmag2  = b1*b1 + Btmag2;
 
       cL = gpr - Bmag2;
-      cL = gpr + Bmag2 + std::sqrt(cL*cL + 4.0*gpr*Btmag2);
+      cL = gpr + Bmag2 + std::sqrt(cL*cL + FOUR_F*gpr*Btmag2);
       cL = std::sqrt(HALF_F*cL/vL[RHO]);
 
 #if HAVE_ENERGY
@@ -178,7 +198,7 @@ void Hydro::HllMHD() {
       Bmag2  = b1*b1 + Btmag2;
 
       cR = gpr - Bmag2;
-      cR = gpr + Bmag2 + std::sqrt(cR*cR + 4.0*gpr*Btmag2);
+      cR = gpr + Bmag2 + std::sqrt(cR*cR + FOUR_F*gpr*Btmag2);
       cR = std::sqrt(HALF_F*cR/vR[RHO]);
 
       // 4.1
@@ -188,12 +208,12 @@ void Hydro::HllMHD() {
       real cminR = vR[Xn] - cR;
       real cmaxR = vR[Xn] + cR;
 
-      real SL = FMIN(cminL, cminR);
-      real SR = FMAX(cmaxL, cmaxR);
+      real sl = FMIN(cminL, cminR);
+      real sr = FMAX(cmaxL, cmaxR);
 
       // Signal speeds specific to B (different from the other ones when Hall is enabled)
-      real SLb = SL;
-      real SRb = SR;
+      real SLb = sl;
+      real SRb = sr;
       // if Hall is enabled, add whistler speed to the fan
       if(haveHall) {
         // Compute xHall
@@ -329,25 +349,25 @@ void Hydro::HllMHD() {
       }
 
       // 5-- Compute the flux from the left and right states
-      if (SL > 0) {
+      if (sl > 0) {
         Flux(RHO,k,j,i) = fluxL[RHO];
         EXPAND( Flux(MX1,k,j,i) = fluxL[MX1];  ,
                 Flux(MX2,k,j,i) = fluxL[MX2];  ,
                 Flux(MX3,k,j,i) = fluxL[MX3];  )
-      } else if (SR < 0) {
+      } else if (sr < 0) {
         Flux(RHO,k,j,i) = fluxR[RHO];
         EXPAND( Flux(MX1,k,j,i) = fluxR[MX1];  ,
                 Flux(MX2,k,j,i) = fluxR[MX2];  ,
                 Flux(MX3,k,j,i) = fluxR[MX3];  )
       } else {
-        Flux(RHO,k,j,i) = (SL*SR*uR[RHO] - SL*SR*uL[RHO] + SR*fluxL[RHO] - SL*fluxR[RHO])
-                          / (SR - SL);
-        EXPAND( Flux(MX1,k,j,i) = (SL*SR*uR[MX1] - SL*SR*uL[MX1] + SR*fluxL[MX1] - SL*fluxR[MX1])
-                                  / (SR - SL);  ,
-                Flux(MX2,k,j,i) = (SL*SR*uR[MX2] - SL*SR*uL[MX2] + SR*fluxL[MX2] - SL*fluxR[MX2])
-                                  / (SR - SL);  ,
-                Flux(MX3,k,j,i) = (SL*SR*uR[MX3] - SL*SR*uL[MX3] + SR*fluxL[MX3] - SL*fluxR[MX3])
-                                  / (SR - SL);  )
+        Flux(RHO,k,j,i) = (sl*sr*uR[RHO] - sl*sr*uL[RHO] + sr*fluxL[RHO] - sl*fluxR[RHO])
+                          / (sr - sl);
+        EXPAND( Flux(MX1,k,j,i) = (sl*sr*uR[MX1] - sl*sr*uL[MX1] + sr*fluxL[MX1] - sl*fluxR[MX1])
+                                  / (sr - sl);  ,
+                Flux(MX2,k,j,i) = (sl*sr*uR[MX2] - sl*sr*uL[MX2] + sr*fluxL[MX2] - sl*fluxR[MX2])
+                                  / (sr - sl);  ,
+                Flux(MX3,k,j,i) = (sl*sr*uR[MX3] - sl*sr*uL[MX3] + sr*fluxL[MX3] - sl*fluxR[MX3])
+                                  / (sr - sl);  )
       }
 
       if (SLb > 0) {
@@ -383,6 +403,9 @@ void Hydro::HllMHD() {
       if (Flux(RHO,k,j,i) < -eps_UCT_CONTACT) s = -1;
 
       SV(k,j,i) = s;
+#elif EMF_AVERAGE == UCT_HLL
+      SL(k,j,i) = std::fmax(ZERO_F, -SLb);
+      SR(k,j,i) = std::fmax(ZERO_F,  SRb);
 #endif
   });
 

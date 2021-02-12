@@ -17,8 +17,7 @@ ElectroMotiveForce::ElectroMotiveForce() {
 void ElectroMotiveForce::Init(Hydro *hydro) {
   idfx::pushRegion("ElectroMotiveForce::Init");
 
-  #if MHD == YES
-
+#if MHD == YES
   this->data = hydro->data;
   D_EXPAND( ez = IdefixArray3D<real>("EMF_ez",
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
@@ -42,13 +41,15 @@ void ElectroMotiveForce::Init(Hydro *hydro) {
             eyk = IdefixArray3D<real>("EMF_eyi",
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]); )
 
-  EXPAND(   svx = IdefixArray3D<int>("EMF_svx",
+  #if EMF_AVERAGE == UCT_CONTACT
+  D_EXPAND( svx = IdefixArray3D<int>("EMF_svx",
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
             svy = IdefixArray3D<int>("EMF_svy",
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
             svz = IdefixArray3D<int>("EMF_svz",
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  )
 
+  #elif EMF_AVERAGE == UCT_HLL
   D_EXPAND( SxL = IdefixArray3D<real>("EMF_SxL",
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
             SxR = IdefixArray3D<real>("EMF_SxR",
@@ -102,6 +103,7 @@ void ElectroMotiveForce::Init(Hydro *hydro) {
   dbz_dy = IdefixArray3D<real>("EMF_dbz_dy",
                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   #endif // DIMENSIONS
+#endif // EMF_AVERAGE
 
   Ex1 = IdefixArray3D<real>("EMF_Ex1", data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   Ex2 = IdefixArray3D<real>("EMF_Ex2", data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);

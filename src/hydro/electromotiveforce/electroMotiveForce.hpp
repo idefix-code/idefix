@@ -29,10 +29,12 @@ class ElectroMotiveForce {
   IdefixArray3D<real>     ey;
   IdefixArray3D<real>     ez;
 
+#if EMF_AVERAGE == UCT_CONTACT
   IdefixArray3D<int>      svx;
   IdefixArray3D<int>      svy;
   IdefixArray3D<int>      svz;
 
+#elif EMF_AVERAGE == UCT_HLL
   // Signal velocities
   IdefixArray3D<real> SxL;
   IdefixArray3D<real> SxR;
@@ -43,14 +45,18 @@ class ElectroMotiveForce {
 
   // Staggered magnetic field and velocity slopes
   IdefixArray3D<real> dbx_dy, dby_dx;
-
+  #if DIMENSIONS == 3
   IdefixArray3D<real> dbz_dx, dbz_dy;
   IdefixArray3D<real> dbx_dz, dby_dz;
+  #endif
 
   IdefixArray3D<real> dvx_dx, dvx_dy;
   IdefixArray3D<real> dvy_dx, dvy_dy;
+  #if DIMENSIONS == 3
   IdefixArray3D<real> dvx_dz, dvy_dz;
   IdefixArray3D<real> dvz_dx, dvz_dy, dvz_dz;
+  #endif
+#endif
 
   IdefixArray3D<real>     Ex1;
   IdefixArray3D<real>     Ex2;

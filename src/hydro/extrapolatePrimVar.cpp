@@ -24,6 +24,7 @@ void Hydro::ExtrapolatePrimVar(int dir) {
   int iextend, jextend,kextend;
   int BXn;
   IdefixArray3D<real> dvx, dvy, dvz;
+
   // Offset is in the direction of integration
   ioffset=joffset=koffset=0;
 
@@ -115,6 +116,7 @@ void Hydro::ExtrapolatePrimVar(int dir) {
 
         PrimL(n,k+koffset,j+joffset,i+ioffset) = Vc(n,k,j,i) + HALF_F*dv;
         PrimR(n,k,j,i) = Vc(n,k,j,i) - HALF_F*dv;
+
   #if EMF_AVERAGE == UCT_HLL
         if (n == VX1)
           dvx(k,j,i) = dv;

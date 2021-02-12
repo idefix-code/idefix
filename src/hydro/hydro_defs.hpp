@@ -25,16 +25,6 @@ enum Solver {TVDLF=1, HLL, HLLD, ROE};
 enum Solver {TVDLF=1, HLL, HLLC, ROE};
 #endif
 
-/*---- EMFs -----*/
-#define ARITHMETIC   1
-#define UCT0         2
-#define UCT_CONTACT  3
-#define UCT_HLL      4
-
-// Default EMF_AVERAGE value
-#ifndef EMF_AVERAGE
-  #define EMF_AVERAGE     UCT_CONTACT
-#endif
 
 // Parabolic terms can have different status
 enum HydroModuleStatus {Disabled, Constant, UserDefFunction };

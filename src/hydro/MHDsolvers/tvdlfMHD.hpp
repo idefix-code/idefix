@@ -34,7 +34,12 @@ void Hydro::TvdlfMHD() {
   IdefixArray3D<real> Eb;
   IdefixArray3D<real> Et;
 
+#if EMF_AVERAGE == UCT_CONTACT
   IdefixArray3D<int> SV;
+#elif EMF_AVERAGE == UCT_HLL
+  IdefixArray3D<real> SL;
+  IdefixArray3D<real> SR;
+#endif
 
   real gamma = this->gamma;
   real gamma_m1=gamma-ONE_F;
@@ -56,11 +61,16 @@ void Hydro::TvdlfMHD() {
 
       Et = this->emf.ezi;
       Eb = this->emf.eyi;
+#if EMF_AVERAGE == UCT_CONTACT
       SV = this->emf.svx;
+#elif EMF_AVERAGE == UCT_HLL
+      SL = this->emf.SxL;
+      SR = this->emf.SxR;
+#endif
 
-      D_EXPAND( st = -1.0;  ,
+      D_EXPAND( st = -ONE_F;  ,
                             ,
-                sb = +1.0;  )
+                sb = +ONE_F;  )
       break;
     case(JDIR):
       joffset=1;
@@ -70,11 +80,16 @@ void Hydro::TvdlfMHD() {
 
       Et = this->emf.ezj;
       Eb = this->emf.exj;
+#if EMF_AVERAGE == UCT_CONTACT
       SV = this->emf.svy;
+#elif EMF_AVERAGE == UCT_HLL
+      SL = this->emf.SyL;
+      SR = this->emf.SyR;
+#endif
 
-      D_EXPAND( st = +1.0;  ,
+      D_EXPAND( st = +ONE_F;  ,
                             ,
-                sb = -1.0;  )
+                sb = -ONE_F;  )
       break;
     case(KDIR):
       koffset=1;
@@ -84,11 +99,16 @@ void Hydro::TvdlfMHD() {
 
       Et = this->emf.eyk;
       Eb = this->emf.exk;
+#if EMF_AVERAGE == UCT_CONTACT
       SV = this->emf.svz;
+#elif EMF_AVERAGE == UCT_HLL
+      SL = this->emf.SzL;
+      SR = this->emf.SzR;
+#endif
 
-      D_EXPAND( st = -1.0;  ,
+      D_EXPAND( st = -ONE_F;  ,
                             ,
-                sb = +1.0;  )
+                sb = +ONE_F;  )
       break;
     default:
       IDEFIX_ERROR("Wrong direction");
@@ -148,7 +168,11 @@ void Hydro::TvdlfMHD() {
       cRL = cRL + B2 + std::sqrt(cRL*cRL + FOUR_F*gpr*Bt2);
       cRL = std::sqrt(HALF_F * cRL/v[RHO]);
 
-      cmax = FMAX(FABS(v[Xn]+cRL),FABS(v[Xn]-cRL));
+      cmax = std::fmax(std::fabs(v[Xn]+cRL),FABS(v[Xn]-cRL));
+
+      real sl, sr;
+      sl = -cmax;
+      sr = cmax;
 
 
       // 2-- Compute the conservative variables
@@ -180,6 +204,10 @@ void Hydro::TvdlfMHD() {
       if (Flux(RHO,k,j,i) < -eps_UCT_CONTACT) s = -1;
 
       SV(k,j,i) = s;
+
+#elif EMF_AVERAGE == UCT_HLL
+      SL(k,j,i) = std::fmax(ZERO_F, -sl);
+      SR(k,j,i) = std::fmax(ZERO_F,  sr);
 #endif
   });
 

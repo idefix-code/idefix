@@ -205,8 +205,8 @@ void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
       }
 
       if(dir==KDIR) {
-        Jx1 = AVERAGE_4D_X(J, IDIR, k, j, ip1);
-        Jx2 = AVERAGE_4D_Y(J, JDIR, k, jp1, i);
+        Jx1 = AVERAGE_4D_Y(J, IDIR, k, jp1, i);
+        Jx2 = AVERAGE_4D_X(J, JDIR, k, j, ip1);
         Jx3 = AVERAGE_4D_XYZ(J, KDIR, k, jp1, ip1);
 
         Bx1 = HALF_F*( Vc(BX1,k-1,j,i) + Vc(BX1,k,j,i));

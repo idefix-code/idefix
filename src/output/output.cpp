@@ -128,8 +128,9 @@ void Output::ForceWrite(DataBlock &data) {
 void Output::EnrollAnalysis(AnalysisFunc myFunc) {
   idfx::pushRegion("Output::EnrollAnalysis");
   if(!analysisEnabled) {
-    IDEFIX_ERROR("You are enrolling an analysis function "
-                  "but analysis are not enabled in the input file");
+    IDEFIX_WARNING("You are enrolling an analysis function "
+                  "but analysis are not enabled in the input file,"
+                  "so no analysis will be performed");
   }
   analysisFunc = myFunc;
   haveAnalysisFunc = true;

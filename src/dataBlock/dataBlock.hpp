@@ -76,7 +76,7 @@ class DataBlock {
   void MakeGeometry();
 
   // Dump current datablock to a file for inspection
-  void DumpToFile(std::string filebase);
+  void DumpToFile(std::string);
 
   // Return the number of cells who have Nans
   int CheckNan();
@@ -88,6 +88,9 @@ class DataBlock {
   void ResetStage();
 
   DataBlock();
+
+ private:
+  void WriteVariable(FILE* , int , int *, char *, void*);
 };
 
 #endif // DATABLOCK_DATABLOCK_HPP_

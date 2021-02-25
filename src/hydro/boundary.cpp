@@ -23,6 +23,11 @@ void Hydro::SetBoundary(real t) {
   jghost = data->nghost[JDIR];
   kghost = data->nghost[KDIR];
 
+  int nxi = data->np_int[IDIR];
+  int nxj = data->np_int[JDIR];
+  int nxk = data->np_int[KDIR];
+
+
   real sbLx = this->sbLx;
   real sbS  = this->sbS;
 
@@ -69,7 +74,22 @@ void Hydro::SetBoundary(real t) {
         if(data->mygrid->nproc[dir] > 1) break; // Periodicity already enforced by MPI calls
         idefix_for("BoundaryBegPeriodic",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
           KOKKOS_LAMBDA (int n, int k, int j, int i) {
-            Vc(n,k,j,i) = Vc(n,k+koffset,j+joffset,i+ioffset);
+            int iref, jref, kref;
+            // This hack takes care of cases where we have more ghost zones than active zones
+            if(dir==IDIR)
+              iref = ighost + nxi - 1 - (ighost-i-1)%nxi;
+            else
+              iref = i;
+            if(dir==JDIR)
+              jref = jghost + nxj - 1 - (jghost-j-1)%nxj;
+            else
+              jref = j;
+            if(dir==KDIR)
+              kref = kghost + nxk - 1 - (kghost-k-1)%nxk;
+            else
+              kref = k;
+
+            Vc(n,k,j,i) = Vc(n,kref,jref,iref);
           }
         );
 #if MHD == YES
@@ -91,7 +111,20 @@ void Hydro::SetBoundary(real t) {
             // skip normal component
             idefix_for("BoundaryBegShearingBoxVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
               KOKKOS_LAMBDA (int k, int j, int i) {
-                Vs(component,k,j,i) = Vs(component,k+koffset,j+joffset,i+ioffset);
+                int iref, jref, kref;
+                if(dir==IDIR)
+                  iref = ighost + nxi - 1 - (ighost-i-1)%nxi;
+                else
+                  iref = i;
+                if(dir==JDIR)
+                  jref = jghost + nxj - 1 - (jghost-j-1)%nxj;
+                else
+                  jref = j;
+                if(dir==KDIR)
+                  kref = kghost + nxk - 1 - (kghost-k-1)%nxk;
+                else
+                  kref = k;
+                Vs(component,k,j,i) = Vs(component,kref,jref,iref);
               }
             );
           }
@@ -266,7 +299,21 @@ void Hydro::SetBoundary(real t) {
         if(data->mygrid->nproc[dir] > 1) break; // Periodicity already enforced by MPI calls
         idefix_for("BoundaryEndPeriodic",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
           KOKKOS_LAMBDA (int n, int k, int j, int i) {
-            Vc(n,k,j,i) = Vc(n,k-koffset,j-joffset,i-ioffset);
+            int iref, jref, kref;
+            // This hack takes care of cases where we have more ghost zones than active zones
+            if(dir==IDIR)
+              iref = ighost + (i-(ighost+nxi))%nxi;
+            else
+              iref = i;
+            if(dir==JDIR)
+              jref = jghost + (j-(jghost+nxj))%nxj;
+            else
+              jref = j;
+            if(dir==KDIR)
+              kref = kghost + (k-(kghost+nxk))%nxk;
+            else
+              kref = k;
+            Vc(n,k,j,i) = Vc(n,kref,jref,iref);
           }
         );
 
@@ -288,7 +335,20 @@ void Hydro::SetBoundary(real t) {
           if(component != dir) { // skip normal component
             idefix_for("BoundaryEndPeriodicVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
               KOKKOS_LAMBDA (int k, int j, int i) {
-                Vs(component,k,j,i) = Vs(component,k-koffset,j-joffset,i-ioffset);
+                int iref, jref, kref;
+                if(dir==IDIR)
+                  iref = ighost + (i-(ighost+nxi))%nxi;
+                else
+                  iref = i;
+                if(dir==JDIR)
+                  jref = jghost + (j-(jghost+nxj))%nxj;
+                else
+                  jref = j;
+                if(dir==KDIR)
+                  kref = kghost + (k-(kghost+nxk))%nxk;
+                else
+                  kref = k;
+                Vs(component,k,j,i) = Vs(component,kref,jref,iref);
               }
             );
           }
@@ -507,7 +567,7 @@ void Hydro::ReconstructNormalField(int dir) {
         for(int i = nstart ; i>=0 ; i-- ) {
           Vs(BX1s,k,j,i) = 1.0 / Ax1(k,j,i) * ( Ax1(k,j,i+1)*Vs(BX1s,k,j,i+1)
                           +(D_EXPAND( ZERO_F                                                 ,
-                            + Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i)  ,
+                            + Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i) ,
                             + Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i)  )));
         }
 

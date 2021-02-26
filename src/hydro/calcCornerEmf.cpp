@@ -331,8 +331,7 @@ void Hydro::CalcCornerEMF(real t) {
 
   #endif // EMF_AVERAGE
 
-  if(haveEmfBoundary)
-    emfBoundaryFunc(*data, t);
+
 
 #endif // MHD
 

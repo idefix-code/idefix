@@ -36,6 +36,7 @@ void DataBlock::EvolveStage() {
   // Compute the field evolution according to CT
   hydro.CalcCornerEMF(this->t);
   if(hydro.haveResistivity || hydro.haveAmbipolar) hydro.CalcNonidealEMF(this->t);
+  hydro.emf.EnforceEMFBoundary();
   hydro.EvolveMagField(this->t, this->dt);
   hydro.ReconstructVcField(hydro.Uc);
 #endif

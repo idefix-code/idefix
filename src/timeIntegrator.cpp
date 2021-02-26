@@ -26,6 +26,7 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
     this->fixedDt = input.GetReal("TimeIntegrator","fixed_dt",0);
     idfx::cout << "TimeIntegrator: Using fixed dt time stepping. Ignoring CFL and first_dt."
                << std::endl;
+    data.dt=fixedDt;
   }
 
   if(!haveFixedDt) {

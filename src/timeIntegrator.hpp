@@ -30,6 +30,9 @@ class TimeIntegrator {
   real w0[2];
   real wc[2];
 
+  bool haveFixedDt = false;
+  real fixedDt;
+
   real cfl;   // CFL number
   real cflMaxVar; // Max CFL variation number
   int64_t ncycles;        // # of cycles

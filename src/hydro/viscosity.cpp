@@ -278,8 +278,21 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
                   viscSrc(KDIR,k,j,i) = ZERO_F;          )
         #endif // GEOMETRY == POLAR
         #if GEOMETRY == SPHERICAL
-          real tan_1 = 1.0/TAN(x2(j));
-          real s_1 = 1.0/SIN(x2(j));
+          real tan_1 = TAN(x2(j));
+          real s_1 = SIN(x2(j));
+
+          // Trick to ensure that the axis does not lead to Nans
+          if(FABS(tan_1) < SMALL_NUMBER) {
+            tan_1 = ZERO_F;
+          } else {
+            tan_1 = ONE_F/tan_1;
+          }
+
+          if(FABS(s_1) < SMALL_NUMBER) {
+            s_1 = ZERO_F;
+          } else {
+            s_1 = ONE_F/s_1;
+          }
 
           real vx1i = 0.5*(Vc(VX1,k,j,i-1)+Vc(VX1,k,j,i));
           #if COMPONENTS >= 2
@@ -416,12 +429,22 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
         #endif
 
         #if GEOMETRY == SPHERICAL
-          real tan_1 = 1.0/TAN(x2l(j));
+          real tan_1 = TAN(x2l(j));
+          real s_1 = SIN(x2l(j));
 
           // Trick to ensure that the axis does not lead to Nans
-          if(FABS(TAN(x2l(j))) < 1e-12 ) tan_1 = ZERO_F;
+          if(FABS(tan_1) < SMALL_NUMBER) {
+            tan_1 = ZERO_F;
+          } else {
+            tan_1 = ONE_F/tan_1;
+          }
 
-          real s_1 = 1.0/SIN(x2l(j));
+          if(FABS(s_1) < SMALL_NUMBER) {
+            s_1 = ZERO_F;
+          } else {
+            s_1 = ONE_F/s_1;
+          }
+
 
           real vx1i = 0.5*(Vc(VX1,k,j-1,i)+Vc(VX1,k,j,i));
           real vx2i = 0.5*(Vc(VX2,k,j-1,i)+Vc(VX2,k,j,i));
@@ -446,8 +469,21 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
           tau_yz *= eta1;
 
           // Compute cell-centered divV & sources terms
-          tan_1 = 1.0/TAN(x2(j));
-          s_1 = 1.0/SIN(x2(j));
+          tan_1 = TAN(x2(j));
+          s_1 = SIN(x2(j));
+
+          // Trick to ensure that the axis does not lead to Nans
+          if(FABS(tan_1) < SMALL_NUMBER) {
+            tan_1 = ZERO_F;
+          } else {
+            tan_1 = ONE_F/tan_1;
+          }
+
+          if(FABS(s_1) < SMALL_NUMBER) {
+            s_1 = ZERO_F;
+          } else {
+            s_1 = ONE_F/s_1;
+          }
 
           divV = D_EXPAND( 0.5*(Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i-1))/dx1(i) + 2.0*Vc(VX1,k,j,i)/x1(i),
                            +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i)
@@ -536,8 +572,21 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
         #endif // GEOMETRY == POLAR
 
         #if GEOMETRY == SPHERICAL
-          real tan_1 = 1.0/TAN(x2(j));
-          real s_1 = 1.0/SIN(x2(j));
+          real tan_1 = TAN(x2(j));
+          real s_1 = SIN(x2(j));
+
+          // Trick to ensure that the axis does not lead to Nans
+          if(FABS(tan_1) < SMALL_NUMBER) {
+            tan_1 = ZERO_F;
+          } else {
+            tan_1 = ONE_F/tan_1;
+          }
+
+          if(FABS(s_1) < SMALL_NUMBER) {
+            s_1 = ZERO_F;
+          } else {
+            s_1 = ONE_F/s_1;
+          }
 
 
           real vx1i = 0.5*(Vc(VX1,k-1,j,i)+Vc(VX1,k,j,i));

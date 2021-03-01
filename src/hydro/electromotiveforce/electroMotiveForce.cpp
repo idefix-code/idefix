@@ -18,6 +18,17 @@ void ElectroMotiveForce::Init(Hydro *hydro) {
   idfx::pushRegion("ElectroMotiveForce::Init");
 
 #if MHD == YES
+  #if EMF_AVERAGE == UCT_CONTACT
+    idfx::cout << "ElectroMotiveForce: Using UCT_CONTACT averaging scheme." << std::endl;
+  #elif EMF_AVERAGE == UCT0
+    idfx::cout << "ElectroMotiveForce: Using UCT0 averaging scheme." << std::endl;
+  #elif EMF_AVERAGE == ARITHMETIC
+    idfx::cout << "ElectroMotiveForce: Using ARITHMETIC averaging scheme." << std::endl;
+  #elif EMF_AVERAGE == UCT_HLL
+    idfx::cout << "ElectroMotiveForce: Using 2D-HLL averaging scheme." << std::endl;
+  #else
+    IDEFIX_ERROR("Unknown EMF averaging scheme in definitions.hpp");
+  #endif
   this->data = hydro->data;
   D_EXPAND( ez = IdefixArray3D<real>("EMF_ez",
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,

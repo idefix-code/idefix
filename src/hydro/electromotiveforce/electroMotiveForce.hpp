@@ -69,6 +69,9 @@ class ElectroMotiveForce {
   // Init from Hydro class
   void Init(Hydro *);
 
+  // Enforce boundary conditions on the EMFs.
+  void EnforceEMFBoundary();
+
 #ifdef WITH_MPI
   // Exchange surface EMFs to remove interprocess round off errors
   void ExchangeAll();

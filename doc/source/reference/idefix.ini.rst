@@ -53,7 +53,10 @@ This section is used by *Idefix* time integrator class to define the time integr
 +----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
 | tstop          | float              | time when the code stops                                                                                  |
 +----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
-| first_dt       | float              | first timestep used by the integrator                                                                     |
+| first_dt       | float              | first timestep used by the integrator. If not set, Idefix use by default 1e-10 (very conservative)        |
++----------------+--------------------+-----------------------------------------------------------------------------------------------------------+                                                                    |
+| fixed_dt       | float              | | when set, *Idefix* uses a fixed time step instead of the dt computed from the CFL condition.            |
+|                |                    | | In this case, the CFL parameters and ``first_dt`` are ignored.                                          |
 +----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
 | nstages        | integer            | | number of stages of the integrator. Can be  either 1, 2 or 3. 1=First order Euler method,               |
 |                |                    | | 2, 3 = second and third order  TVD Runge-Kutta                                                          |
@@ -154,7 +157,7 @@ and ``X1-end``, ``X2-end``, ``X3-end`` for the right boundaries. Each boundary c
 | axis           | | Axis Boundary conditions. Useful if one wants to include the axis in spherical geometry in the computational   |
 |                | | domain. This condition explicitely requires X2 to go from 0 to :math:`\pi` but can be used for domains         |
 |                | | extending over a fraction of a full circle in X3 (i.e :math:`2\pi/n` where :math:`n` is an integer). When the  |
-|                | | X3 domain spans :math:`2\pi`, this boundary condition is inompatible with MPI domain decomposition along X3.   |
+|                | | X3 domain spans :math:`2\pi`, this boundary condition is incompatible with MPI domain decomposition along X3.  |
 +----------------+------------------------------------------------------------------------------------------------------------------+
 | userdef        | | User-defined boundary conditions. The boundary condition function should be enrolled in the setup constructor  |
 |                | | (see :ref:`userdefBoundaries`)                                                                                 |

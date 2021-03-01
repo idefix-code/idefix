@@ -39,16 +39,6 @@ void Hydro::EvolveMagField(real t, real dt) {
 
   bool haveAxis = this->haveAxis;
 
-  if(haveAxis) {
-    this->myAxis.SymmetrizeEx1();
-  }
-
-  #ifdef WITH_MPI
-    // This average the EMFs at the domain surface with immediate neighbours
-    // to ensure the EMFs exactly match
-    emf.ExchangeAll();
-  #endif
-
   idefix_for("EvolvMagField",
              data->beg[KDIR],data->end[KDIR]+KOFFSET,
              data->beg[JDIR],data->end[JDIR]+JOFFSET,

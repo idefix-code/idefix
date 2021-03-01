@@ -20,20 +20,37 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
   this->lastMpiLog=idfx::mpiTimer;
 
   nstages=input.GetInt("TimeIntegrator","nstages",0);
-  if(input.CheckEntry("TimeIntegrator","CFL_max_var")>0) {
-    cflMaxVar=input.GetReal("TimeIntegrator","CFL_max_var",0);
-  } else {
-    cflMaxVar=1.1;
-    idfx::cout << "TimeIntegrator: No CFL_max_var defined. Using 1.1 by default." << std::endl;
+
+  if(input.CheckEntry("TimeIntegrator","fixed_dt")>0) {
+    this->haveFixedDt = true;
+    this->fixedDt = input.GetReal("TimeIntegrator","fixed_dt",0);
+    idfx::cout << "TimeIntegrator: Using fixed dt time stepping. Ignoring CFL and first_dt."
+               << std::endl;
+    data.dt=fixedDt;
   }
 
+  if(!haveFixedDt) {
+    cfl=input.GetReal("TimeIntegrator","CFL",0);
 
-  data.dt=input.GetReal("TimeIntegrator","first_dt",0);
+    if(input.CheckEntry("TimeIntegrator","CFL_max_var")>0) {
+      cflMaxVar=input.GetReal("TimeIntegrator","CFL_max_var",0);
+    } else {
+      cflMaxVar=1.1;
+      idfx::cout << "TimeIntegrator: No CFL_max_var defined. Using 1.1 by default." << std::endl;
+    }
+
+    if(input.CheckEntry("TimeIntegrator","first_dt")>0) {
+      data.dt=input.GetReal("TimeIntegrator","first_dt",0);
+    } else {
+      data.dt=1e-10;
+      idfx::cout << "TimeIntegrator: No first_dt provided. Using dt=1e-10."
+                << "This is probably not optimal" << std::endl;
+    }
+  }
+
   data.t=0.0;
-
-
   ncycles=0;
-  cfl=input.GetReal("TimeIntegrator","CFL",0);
+
 
   if(input.CheckEntry("Output","log")>0) {
     this->cyclePeriod=input.GetInt("Output","log",0);
@@ -106,9 +123,9 @@ void TimeIntegrator::Cycle(DataBlock &data) {
       idfx::cout << " | " << std::setw(col_width) << mpiOverhead;
 #endif
     } else {
-      idfx::cout << " | " << std::setw(col_width) << "NaN";
+      idfx::cout << " | " << std::setw(col_width) << "N/A";
 #if WITH_MPI
-      idfx::cout << " | " << std::setw(col_width) << "NaN";
+      idfx::cout << " | " << std::setw(col_width) << "N/A";
 #endif
     }
 
@@ -153,21 +170,23 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
     // Compute next time_step during first stage
     if(stage==0) {
-      Kokkos::parallel_reduce("Timestep_reduction",
-              Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
-              ({0,0,0},{data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]}),
-        KOKKOS_LAMBDA (int k, int j, int i, real &dtmin) {
-          dtmin=FMIN(ONE_F/InvDt(k,j,i),dtmin);
-      }, Kokkos::Min<real>(newdt) );
+      if(!haveFixedDt) {
+        Kokkos::parallel_reduce("Timestep_reduction",
+            Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
+            ({0,0,0},{data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]}),
+            KOKKOS_LAMBDA (int k, int j, int i, real &dtmin) {
+                dtmin=FMIN(ONE_F/InvDt(k,j,i),dtmin);
+            }, Kokkos::Min<real>(newdt) );
 
-      Kokkos::fence();
+        Kokkos::fence();
 
-      newdt=newdt*cfl;
-#ifdef WITH_MPI
-      if(idfx::psize>1) {
-        MPI_SAFE_CALL(MPI_Allreduce(MPI_IN_PLACE, &newdt, 1, realMPI, MPI_MIN, MPI_COMM_WORLD));
+        newdt=newdt*cfl;
+  #ifdef WITH_MPI
+        if(idfx::psize>1) {
+          MPI_SAFE_CALL(MPI_Allreduce(MPI_IN_PLACE, &newdt, 1, realMPI, MPI_MIN, MPI_COMM_WORLD));
+        }
+  #endif
       }
-#endif
     }
 
     // Is this not the first stage?
@@ -203,22 +222,27 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   data.t=data.t+data.dt;
 
   // Next time step
-  if(newdt>cflMaxVar*data.dt) {
-    data.dt=cflMaxVar*data.dt;
-  } else {
-    if(ncycles==0 && newdt < 0.5*data.dt) {
+  if(!haveFixedDt) {
+    if(newdt>cflMaxVar*data.dt) {
+      data.dt=cflMaxVar*data.dt;
+    } else {
+      if(ncycles==0 && newdt < 0.5*data.dt) {
+        std::stringstream msg;
+        msg << "Your guessed first_dt is too large. My next dt=" << newdt << std::endl;
+        msg << "Try to reduce first_dt in the ini file.";
+        IDEFIX_ERROR(msg);
+      }
+      data.dt=newdt;
+    }
+    if(data.dt < 1e-15) {
       std::stringstream msg;
-      msg << "Your guessed first_dt is too large. My next dt=" << newdt << std::endl;
-      msg << "Try to reduce first_dt in the ini file.";
+      msg << "dt = " << data.dt << " is too small.";
       IDEFIX_ERROR(msg);
     }
-    data.dt=newdt;
+  } else {
+    data.dt = fixedDt;
   }
-  if(data.dt < 1e-15) {
-    std::stringstream msg;
-    msg << "dt = " << data.dt << " is too small.";
-    IDEFIX_ERROR(msg);
-  }
+
 
   ncycles++;
 

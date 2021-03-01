@@ -331,7 +331,9 @@ void Hydro::CalcCornerEMF(real t) {
 
   #endif // EMF_AVERAGE
 
-
+  #if EMF_AVERAGE == UCT_HLL
+    calcRiemannEmf();
+  #endif
 
 #endif // MHD
 

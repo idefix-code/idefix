@@ -87,7 +87,8 @@ void Viscosity::Init(Input &input, Grid &grid, Hydro *hydroin) {
     IdefixArray1D<real> th = hydro->data->x[JDIR];
     idefix_for("ViscousInitGeometry",1,hydro->data->np_tot[JDIR],
       KOKKOS_LAMBDA(int j) {
-        real scrch = 1.0-cos(th(j))-(1.0-cos(th(j-1))) * (th(j-1) > 0.0 ? 1.0:-1.0);
+        real scrch =  FABS((1.0-cos(th(j)))*(sin(th(j)) >= 0.0 ? 1.0:-1.0)
+                     -(1.0-cos(th(j-1))) * (sin(th(j-1)) > 0.0 ? 1.0:-1.0));
         dmu(j) = 1.0/scrch;
       });
   #endif

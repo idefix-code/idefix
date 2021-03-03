@@ -27,6 +27,7 @@
 #include <Kokkos_Core.hpp>
 
 #include "idefix.hpp"
+#include "profiler.hpp"
 #include "input.hpp"
 #include "grid.hpp"
 #include "gridHost.hpp"
@@ -174,6 +175,8 @@ int main( int argc, char* argv[] ) {
     idfx::cout << std::endl;
     idfx::cout << "Main: ";
     idfx::cout << "Perfs are " << 1/tintegration << " cell updates/second" << std::endl;
+    // Show profiler output
+    idfx::prof.Show();
     idfx::cout << "Main: Job's done" << std::endl;
   }
 

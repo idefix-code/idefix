@@ -9,7 +9,7 @@
 #include <sstream>
 #include "idefix.hpp"
 #include "global.hpp"
-#include "profiling.hpp"
+#include "profiler.hpp"
 
 namespace idfx {
 
@@ -39,6 +39,7 @@ int initialize() {
 #endif
   cout.init(prank);
   mpiTimer = 0.0;
+  prof.Init();
   return(0);
 }   // Initialisation routine for idefix
 

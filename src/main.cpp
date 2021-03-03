@@ -27,7 +27,7 @@
 #include <Kokkos_Core.hpp>
 
 #include "idefix.hpp"
-#include "profiling.hpp"
+#include "profiler.hpp"
 #include "input.hpp"
 #include "grid.hpp"
 #include "gridHost.hpp"

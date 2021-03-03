@@ -5,10 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef PROFILING_HPP_
-#define PROFILING_HPP_
-
-#include <mutex>
+#ifndef PROFILER_HPP_
+#define PROFILER_HPP_
 
 namespace idfx {
 
@@ -25,8 +23,8 @@ class Profiler {
   int64_t spaceMax[16];
   char spaceName[16][64];
   std::mutex m;
-  };
+};
 
-}
+}// namespace idfx
 
-#endif // PROFILING_HPP_
+#endif // PROFILER_HPP_

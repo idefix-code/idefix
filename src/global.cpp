@@ -9,6 +9,7 @@
 #include <sstream>
 #include "idefix.hpp"
 #include "global.hpp"
+#include "profiling.hpp"
 
 namespace idfx {
 
@@ -18,6 +19,7 @@ int psize;
 double mpiTimer;
 
 IdefixOstream cout;
+Profiler prof;
 
 #ifdef DEBUG
 static int regionIndent = 0;

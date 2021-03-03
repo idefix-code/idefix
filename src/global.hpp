@@ -12,10 +12,12 @@
 namespace idfx {
 int initialize();   // Initialisation routine for idefix
 class IdefixOstream;
+class Profiler;
 
 extern int prank;     // parallel rank
 extern int psize;
 extern IdefixOstream cout;  // custom cout for idefix
+extern Profiler prof;     // profiler (for memory usage)
 extern double mpiTimer;   // Measure MPI perfs as you go
 
 void pushRegion(const std::string&);

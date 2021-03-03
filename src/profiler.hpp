@@ -8,6 +8,8 @@
 #ifndef PROFILER_HPP_
 #define PROFILER_HPP_
 
+#include <mutex>  // NOLINT [build/c++11]
+
 namespace idfx {
 
 struct SpaceHandle {

@@ -5,7 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-
+#include <mutex>    // NOLINT [build/c++11]
 #include "idefix.hpp"
 #include "profiler.hpp"
 

@@ -146,6 +146,12 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
     }
   }
 
+  // Do we use fargo?
+  if(input.CheckEntry("Hydro","Fargo")>=0) {
+    this->haveFargo = true;
+    this->fargo.Init(input,grid, this);
+  }
+
   // Parabolic term
   haveParabolicTerms = false;
 
@@ -160,10 +166,7 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
 
   this->needCurrent = false;
 
-  if(input.CheckEntry("Hydro","Fargo")>=0) {
-    this->haveFargo = true;
-    this->fargo.Init(input,grid, this);
-  }
+
   // Check whether viscosity is enabled, if so, construct a viscosity object
   if(input.CheckEntry("Hydro","Viscosity")>=0) {
     this->haveParabolicTerms = true;

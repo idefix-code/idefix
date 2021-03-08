@@ -9,21 +9,21 @@
 #include "dataBlock.hpp"
 
 // Compute Corner EMFs from the one stored in the Riemann step
-void Hydro::CalcCornerEMF(real t) {
-  idfx::pushRegion("Hydro::CalcCornerEMF");
+void ElectroMotiveForce::CalcCornerEMF(real t) {
+  idfx::pushRegion("ElectroMotiveForce::CalcCornerEMF");
 
   // Corned EMFs
-  IdefixArray3D<real> ex = this->emf.ex;
-  IdefixArray3D<real> ey = this->emf.ey;
-  IdefixArray3D<real> ez = this->emf.ez;
+  IdefixArray3D<real> ex = this->ex;
+  IdefixArray3D<real> ey = this->ey;
+  IdefixArray3D<real> ez = this->ez;
 
   // Face-centered EMFs
-  IdefixArray3D<real> exj = this->emf.exj;
-  IdefixArray3D<real> exk = this->emf.exk;
-  IdefixArray3D<real> eyi = this->emf.eyi;
-  IdefixArray3D<real> eyk = this->emf.eyk;
-  IdefixArray3D<real> ezi = this->emf.ezi;
-  IdefixArray3D<real> ezj = this->emf.ezj;
+  IdefixArray3D<real> exj = this->exj;
+  IdefixArray3D<real> exk = this->exk;
+  IdefixArray3D<real> eyi = this->eyi;
+  IdefixArray3D<real> eyk = this->eyk;
+  IdefixArray3D<real> ezi = this->ezi;
+  IdefixArray3D<real> ezj = this->ezj;
 
 #if MHD == YES && DIMENSIONS >= 2
 
@@ -50,17 +50,17 @@ void Hydro::CalcCornerEMF(real t) {
 
   #if EMF_AVERAGE == UCT_CONTACT || EMF_AVERAGE == UCT0
   // 0. Compute cell-centered emf.
-  IdefixArray4D<real> Vc = this->Vc;
+  IdefixArray4D<real> Vc = hydro->Vc;
 
-  IdefixArray3D<real> Ex1 = this->emf.Ex1;
-  IdefixArray3D<real> Ex2 = this->emf.Ex2;
-  IdefixArray3D<real> Ex3 = this->emf.Ex3;
+  IdefixArray3D<real> Ex1 = this->Ex1;
+  IdefixArray3D<real> Ex2 = this->Ex2;
+  IdefixArray3D<real> Ex3 = this->Ex3;
 
   // Required by Hall effect
-  IdefixArray4D<real> J = this->J;
-  real xHConstant = this->xH;
-  HydroModuleStatus haveHall = this->haveHall;
-  IdefixArray3D<real> xHallArr = this->xHall;
+  IdefixArray4D<real> J = hydro->J;
+  real xHConstant = hydro->xH;
+  HydroModuleStatus haveHall = hydro->haveHall;
+  IdefixArray3D<real> xHallArr = hydro->xHall;
 
   idefix_for("CalcCenterEMF",
              0,data->np_tot[KDIR],
@@ -175,9 +175,9 @@ void Hydro::CalcCornerEMF(real t) {
   #if EMF_AVERAGE == UCT_CONTACT
 
 
-  IdefixArray3D<int> svx = this->emf.svx;
-  IdefixArray3D<int> svy = this->emf.svy;
-  IdefixArray3D<int> svz = this->emf.svz;
+  IdefixArray3D<int> svx = this->svx;
+  IdefixArray3D<int> svy = this->svy;
+  IdefixArray3D<int> svz = this->svz;
 
 
   idefix_for("EMF_ArithmeticAverage",
@@ -202,9 +202,9 @@ void Hydro::CalcCornerEMF(real t) {
   // Is not incrementing only e(k,j,i) but also its neighbour. Hence race conditions
   // Could occur in this loop.
 
-  IdefixAtomicArray3D<real> exAtomic = this->emf.ex;
-  IdefixAtomicArray3D<real> eyAtomic = this->emf.ey;
-  IdefixAtomicArray3D<real> ezAtomic = this->emf.ez;
+  IdefixAtomicArray3D<real> exAtomic = this->ex;
+  IdefixAtomicArray3D<real> eyAtomic = this->ey;
+  IdefixAtomicArray3D<real> ezAtomic = this->ez;
   idefix_for("EMF_Integrate to Corner",
              data->beg[KDIR]-KOFFSET,data->end[KDIR]+KOFFSET,
              data->beg[JDIR]-JOFFSET,data->end[JDIR]+JOFFSET,

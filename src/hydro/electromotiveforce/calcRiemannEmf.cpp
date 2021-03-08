@@ -21,46 +21,46 @@ KOKKOS_INLINE_FUNCTION real MC_LIM2 (const real dp, const real dm) {
 
 
 void Hydro::calcRiemannEmf() {
-  idfx::pushRegion("Hydro::calcRiemannEmf");
+  idfx::pushRegion("ElectroMotiveForce::calcRiemannEmf");
 
 #if EMF_AVERAGE == UCT_HLL
 
-  IdefixArray3D<real> dvx_dx = this->emf.dvx_dx;
-  IdefixArray3D<real> dvy_dx = this->emf.dvy_dx;
-  IdefixArray3D<real> dvx_dy = this->emf.dvx_dy;
-  IdefixArray3D<real> dvy_dy = this->emf.dvy_dy;
+  IdefixArray3D<real> dvx_dx = this->dvx_dx;
+  IdefixArray3D<real> dvy_dx = this->dvy_dx;
+  IdefixArray3D<real> dvx_dy = this->dvx_dy;
+  IdefixArray3D<real> dvy_dy = this->dvy_dy;
   #if DIMENSIONS == 3
-  IdefixArray3D<real> dvx_dz = this->emf.dvx_dz;
-  IdefixArray3D<real> dvy_dz = this->emf.dvy_dz;
-  IdefixArray3D<real> dvz_dz = this->emf.dvz_dz;
-  IdefixArray3D<real> dvz_dx = this->emf.dvz_dx;
-  IdefixArray3D<real> dvz_dy = this->emf.dvz_dy;
+  IdefixArray3D<real> dvx_dz = this->dvx_dz;
+  IdefixArray3D<real> dvy_dz = this->dvy_dz;
+  IdefixArray3D<real> dvz_dz = this->dvz_dz;
+  IdefixArray3D<real> dvz_dx = this->dvz_dx;
+  IdefixArray3D<real> dvz_dy = this->dvz_dy;
   #endif
 
-  IdefixArray3D<real> dbx_dy = this->emf.dbx_dy;
-  IdefixArray3D<real> dby_dx = this->emf.dby_dx;
+  IdefixArray3D<real> dbx_dy = this->dbx_dy;
+  IdefixArray3D<real> dby_dx = this->dby_dx;
   #if DIMENSIONS == 3
-  IdefixArray3D<real> dbz_dx = this->emf.dbz_dx;
-  IdefixArray3D<real> dbz_dy = this->emf.dbz_dy;
-  IdefixArray3D<real> dbx_dz = this->emf.dbx_dz;
-  IdefixArray3D<real> dby_dz = this->emf.dby_dz;
+  IdefixArray3D<real> dbz_dx = this->dbz_dx;
+  IdefixArray3D<real> dbz_dy = this->dbz_dy;
+  IdefixArray3D<real> dbx_dz = this->dbx_dz;
+  IdefixArray3D<real> dby_dz = this->dby_dz;
   #endif
 
-  IdefixArray3D<real> SxR = this->emf.SxR;
-  IdefixArray3D<real> SxL = this->emf.SxL;
-  IdefixArray3D<real> SyR = this->emf.SyR;
-  IdefixArray3D<real> SyL = this->emf.SyL;
-  IdefixArray3D<real> SzR = this->emf.SzR;
-  IdefixArray3D<real> SzL = this->emf.SzL;
+  IdefixArray3D<real> SxR = this->SxR;
+  IdefixArray3D<real> SxL = this->SxL;
+  IdefixArray3D<real> SyR = this->SyR;
+  IdefixArray3D<real> SyL = this->SyL;
+  IdefixArray3D<real> SzR = this->SzR;
+  IdefixArray3D<real> SzL = this->SzL;
 
   // Corned EMFs
-  IdefixArray3D<real> ex = this->emf.ex;
-  IdefixArray3D<real> ey = this->emf.ey;
-  IdefixArray3D<real> ez = this->emf.ez;
+  IdefixArray3D<real> ex = this->ex;
+  IdefixArray3D<real> ey = this->ey;
+  IdefixArray3D<real> ez = this->ez;
 
   // Field
-  IdefixArray4D<real> Vs = this->Vs;
-  IdefixArray4D<real> Vc = this->Vc;
+  IdefixArray4D<real> Vs = hydro->Vs;
+  IdefixArray4D<real> Vc = hydro->Vc;
 
   idefix_for("CalcSlopesEMF",
              KOFFSET,data->np_tot[KDIR]-KOFFSET,

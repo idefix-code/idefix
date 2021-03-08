@@ -20,7 +20,7 @@ KOKKOS_INLINE_FUNCTION real MC_LIM2 (const real dp, const real dm) {
 }
 
 
-void Hydro::calcRiemannEmf() {
+void ElectroMotiveForce::calcRiemannEmf() {
   idfx::pushRegion("ElectroMotiveForce::calcRiemannEmf");
 
 #if EMF_AVERAGE == UCT_HLL

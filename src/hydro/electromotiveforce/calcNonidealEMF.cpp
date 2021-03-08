@@ -9,27 +9,27 @@
 #include "dataBlock.hpp"
 
 // Compute Corner EMFs from nonideal MHD
-void Hydro::CalcNonidealEMF(real t) {
-  idfx::pushRegion("Hydro::CalcNonidealEMF");
+void ElectroMotiveForce::CalcNonidealEMF(real t) {
+  idfx::pushRegion("ElectroMotiveForce::CalcNonidealEMF");
 
   // Corned EMFs
-  IdefixArray3D<real> ex = this->emf.ex;
-  IdefixArray3D<real> ey = this->emf.ey;
-  IdefixArray3D<real> ez = this->emf.ez;
-  IdefixArray4D<real> J = this->J;
-  IdefixArray4D<real> Vs = this->Vs;
-  IdefixArray4D<real> Vc = this->Vc;
+  IdefixArray3D<real> ex = this->ex;
+  IdefixArray3D<real> ey = this->ey;
+  IdefixArray3D<real> ez = this->ez;
+  IdefixArray4D<real> J = hydro->J;
+  IdefixArray4D<real> Vs = hydro->Vs;
+  IdefixArray4D<real> Vc = hydro->Vc;
 
   // These arrays have been previously computed in calcParabolicFlux
-  IdefixArray3D<real> etaArr = this->etaOhmic;
-  IdefixArray3D<real> xAmbiArr = this->xAmbipolar;
+  IdefixArray3D<real> etaArr = hydro->etaOhmic;
+  IdefixArray3D<real> xAmbiArr = hydro->xAmbipolar;
 
   // these two are required to ensure that the type is captured by KOKKOS_LAMBDA
-  HydroModuleStatus haveResistivity = this->haveResistivity;
-  HydroModuleStatus haveAmbipolar = this->haveAmbipolar;
+  HydroModuleStatus haveResistivity = hydro->haveResistivity;
+  HydroModuleStatus haveAmbipolar = hydro->haveAmbipolar;
 
-  real etaConstant = this->etaO;
-  real xAConstant = this->xA;
+  real etaConstant = hydro->etaO;
+  real xAConstant = hydro->xA;
 
 
 #if MHD == YES

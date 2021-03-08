@@ -69,9 +69,12 @@ class ElectroMotiveForce {
   // Init from Hydro class
   void Init(Hydro *);
 
+  void EvolveMagField(real, real);
+  void CalcCornerEMF(real );
+  void calcRiemannEmf();
   // Enforce boundary conditions on the EMFs.
   void EnforceEMFBoundary();
-
+  void CalcNonidealEMF(real );
 #ifdef WITH_MPI
   // Exchange surface EMFs to remove interprocess round off errors
   void ExchangeAll();
@@ -88,6 +91,7 @@ class ElectroMotiveForce {
 
  private:
   DataBlock *data;
+  Hydro *hydro;
 
 #ifdef WITH_MPI
   enum {faceRight, faceLeft};

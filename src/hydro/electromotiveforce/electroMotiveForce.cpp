@@ -30,6 +30,8 @@ void ElectroMotiveForce::Init(Hydro *hydro) {
     IDEFIX_ERROR("Unknown EMF averaging scheme in definitions.hpp");
   #endif
   this->data = hydro->data;
+  this->hydro = hydro;
+
   D_EXPAND( ez = IdefixArray3D<real>("EMF_ez",
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
                                                                                             ,

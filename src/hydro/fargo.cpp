@@ -80,7 +80,8 @@ void Fargo::ShiftSolution(const real t, const real dt) {
     sbeg = data->beg[KDIR];
     send = data->end[KDIR];
   else
-    Lphi = 1.0;   // Does nothing, but initialize this.
+  #else
+    Lphi = 1.0;   // Do nothing, but initialize this.
   #endif
 
   idefix_for("Fargo:ShiftVc",

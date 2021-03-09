@@ -79,7 +79,6 @@ void Fargo::ShiftSolution(const real t, const real dt) {
     Lphi = data->mygrid->xend[KDIR] - data->mygrid->xbeg[KDIR];
     sbeg = data->beg[KDIR];
     send = data->end[KDIR];
-  else
   #else
     Lphi = 1.0;   // Do nothing, but initialize this.
   #endif

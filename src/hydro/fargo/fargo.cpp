@@ -66,7 +66,8 @@ void Fargo::ShiftSolution(const real t, const real dt) {
   #elif GEOMETRY == SPHERICAL
     Lphi = data->mygrid->xend[KDIR] - data->mygrid->xstart[KDIR];
   else
-    Lphi = 1.0;   // Does nothing, but initialize this.
+  #else
+    Lphi = 1.0;   // Do nothing, but initialize this.
   #endif
 
   idefix_for("Fargo:ShiftVc",

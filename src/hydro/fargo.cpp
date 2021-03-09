@@ -12,7 +12,7 @@
 #include "dataBlock.hpp"
 #include "fargo.hpp"
 
-Fargo::Init(Input &input, Grid &grid, Hydro *hydro) {
+void Fargo::Init(Input &input, Grid &grid, Hydro *hydro) {
   idfx::pushRegion("Fargo::Init");
   // Todo(lesurg): should work on the shearing box version of this.
   this->hydro = hydro;
@@ -72,11 +72,11 @@ void Fargo::ShiftSolution(const real t, const real dt) {
   real Lphi;
   int sbeg, send;
   #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
-    Lphi = data->mygrid->xend[JDIR] - data->mygrid->xstart[JDIR];
+    Lphi = data->mygrid->xend[JDIR] - data->mygrid->xbeg[JDIR];
     sbeg = data->beg[JDIR];
     send = data->end[JDIR];
   #elif GEOMETRY == SPHERICAL
-    Lphi = data->mygrid->xend[KDIR] - data->mygrid->xstart[KDIR];
+    Lphi = data->mygrid->xend[KDIR] - data->mygrid->xbeg[KDIR];
     sbeg = data->beg[KDIR];
     send = data->end[KDIR];
   else
@@ -106,13 +106,13 @@ void Fargo::ShiftSolution(const real t, const real dt) {
                  s = k;
                 #endif
                 // compute shifted indices, taking into account the fact that we're periodic
-                sp1 = sbeg + (s+1-sbeg)%(send-sbeg)
-                sm1 = sbeg + (s-1-sbeg)%(send-sbeg)
+                sp1 = sbeg + (s+1-sbeg)%(send-sbeg);
+                sm1 = sbeg + (s-1-sbeg)%(send-sbeg);
                 // Compute the offset in phi, modulo the full domain size
                 real dL = std::fmod(w*dt, Lphi);
 
                 // Translate this into # of cells
-                int m = static_cast<int> std::floor(dL/dphi+HALF_F);
+                int m = static_cast<int> (std::floor(dL/dphi+HALF_F));
 
                 // get the remainding shift
                 real eps = dL/dphi - m;

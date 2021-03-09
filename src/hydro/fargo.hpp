@@ -15,10 +15,10 @@ class Hydro;
 class DataBlock;
 
 using FargoVelocityFunc = void (*) (DataBlock &, const real t, IdefixArray2D<real> &);
-enum FargoType {none, userdef, shearingbox};
 
 class Fargo {
  public:
+  enum FargoType {none, userdef, shearingbox};
   void Init(Input &, Grid &, Hydro *);  // Initialisation
   void ShiftSolution(const real t, const real dt);  // Effectively shift the solution
   void EnrollVelocity(FargoVelocityFunc);

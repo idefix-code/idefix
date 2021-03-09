@@ -5,8 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef HYDRO_FARGO_FARGO_HPP_
-#define HYDRO_FARGO_FARGO_HPP_
+#ifndef HYDRO_FARGO_HPP_
+#define HYDRO_FARGO_HPP_
 
 #include "idefix.hpp"
 
@@ -33,4 +33,4 @@ class Fargo {
   FargoVelocityFunc fargoVelocityFunc{NULL};  // The user-defined fargo velocity function
 };
 
-#endif // HYDRO_FARGO_FARGO_HPP_
+#endif // HYDRO_FARGO_HPP_

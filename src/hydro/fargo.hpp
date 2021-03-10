@@ -25,6 +25,7 @@ class Fargo {
   void AddVelocity(const real);
   void EnrollVelocity(FargoVelocityFunc);
  private:
+  friend class Hydro;
   DataBlock *data;
   Hydro *hydro;
   FargoType type{none};                 // By default, Fargo is disabled

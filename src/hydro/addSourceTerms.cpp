@@ -16,6 +16,7 @@ void Hydro::AddSourceTerms(real t, real dt) {
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray1D<real> x1 = data->x[IDIR];
   IdefixArray1D<real> x2 = data->x[JDIR];
+  IdefixArray2D<real> fargoVelocity = this->fargo.meanVelocity;
 #ifdef ISOTHERMAL
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 #endif
@@ -35,6 +36,9 @@ void Hydro::AddSourceTerms(real t, real dt) {
 
   bool haveRotation = this->haveRotation;
 
+  // Fargo
+  bool haveFargo  = this->haveFargo;
+
   if(haveUserSourceTerm) userSourceTerm(*data, t, dt);
 
   idefix_for("AddSourceTerms",
@@ -42,7 +46,6 @@ void Hydro::AddSourceTerms(real t, real dt) {
              data->beg[JDIR],data->end[JDIR],
              data->beg[IDIR],data->end[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
-#if GEOMETRY == CARTESIAN
       if(haveRotation) {
   #if COMPONENTS == 3
         Uc(MX1,k,j,i) += TWO_F * dt * Vc(RHO,k,j,i) * (OmegaX3 * Vc(VX2,k,j,i)
@@ -57,8 +60,16 @@ void Hydro::AddSourceTerms(real t, real dt) {
         Uc(MX2,k,j,i) += TWO_F * dt * Vc(RHO,k,j,i) * ( - OmegaX3 * Vc(VX1,k,j,i) );
   #endif
       }
-
-#elif GEOMETRY == CYLINDRICAL
+      // fetch fargo velocity when required
+      real fargoV = ZERO_F;
+      if(haveFargo) {
+        #if GEOMETRY == POLAR || GEOMETRY == CARTESIAN
+          fargoV = fargoVelocity(k,i);
+        #elif GEOMETRY == SPHERICAL
+          fargoV = fargoVelocity(j,i);
+        #endif
+      }
+#if GEOMETRY == CYLINDRICAL
   #if COMPONENTS == 3
       real vphi,Sm;
       vphi = Vc(iVPHI,k,j,i);
@@ -89,7 +100,7 @@ void Hydro::AddSourceTerms(real t, real dt) {
 
 #elif GEOMETRY == POLAR
       real vphi,Sm;
-      vphi = Vc(iVPHI,k,j,i);
+      vphi = Vc(iVPHI,k,j,i) + fargoV;
       if(haveRotation) vphi += OmegaX3*x1(i);
       Sm = Vc(RHO,k,j,i) * vphi*vphi;     // Centrifugal
       // Pressure (because we're including pressure in the flux,
@@ -117,7 +128,7 @@ void Hydro::AddSourceTerms(real t, real dt) {
 
 #elif GEOMETRY == SPHERICAL
       real vphi,Sm,ct;
-      vphi = SELECT(ZERO_F, ZERO_F, Vc(iVPHI,k,j,i));
+      vphi = SELECT(ZERO_F, ZERO_F, Vc(iVPHI,k,j,i))+fargoV;
       if(haveRotation) vphi += OmegaX3*x1(i)*s(j);
       // Centrifugal
       Sm = Vc(RHO,k,j,i) * (EXPAND( ZERO_F, + Vc(VX2,k,j,i)*Vc(VX2,k,j,i), + vphi*vphi));

@@ -224,7 +224,8 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output)// : m_pl
   data.hydro.EnrollGravPotential(&Potential);
   data.hydro.EnrollIsoSoundSpeed(&MySoundSpeed);
   data.hydro.viscosity.EnrollViscousDiffusivity(&MyViscosity);
-  data.hydro.fargo.EnrollVelocity(&FargoVelocity);
+  if(data.hydro.haveFargo)
+    data.hydro.fargo.EnrollVelocity(&FargoVelocity);
   // Enroll the analysis function
   output.EnrollAnalysis(&Analysis);
   sigma0Glob = input.GetReal("Setup","sigma0",0);

@@ -93,20 +93,26 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
       // Add Fargo velocity to the fluxes
       if(haveFargo) {
         real fargoV = ZERO_F;
-        #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
+        #if (GEOMETRY == CARTESIAN || GEOMETRY == POLAR) && DIMENSIONS >=2
           if( dir == IDIR) fargoV = HALF_F*(fargoVelocity(k,i-1)+fargoVelocity(k,i));
           if( dir == KDIR) fargoV = HALF_F*(fargoVelocity(k-1,i)+fargoVelocity(k,i));
-        #elif GEOMETRY == SPHERICAL
+          const int fargoDir = JDIR;
+        #elif GEOMETRY == SPHERICAL && DIMENSIONS == 3
           if( dir == IDIR) fargoV = HALF_F*(fargoVelocity(j,i-1)+fargoVelocity(j,i));
           if( dir == JDIR) fargoV = HALF_F*(fargoVelocity(j-1,i)+fargoVelocity(j,i));
+          const int fargoDir = KDIR;
+        #else
+          const int fargoDir = 0;
         #endif
         // Should do nothing along fargo direction, automatically satisfied
         // since in that case fargoV=0
+
         #if HAVE_ENERGY
-          Flux(ENG,k,j,i) += fargoV * (HALF_F*fargoV*Flux(RHO,k,j,i) + Flux(iMPHI,k,j,i));
+          Flux(ENG,k,j,i) += fargoV * (HALF_F*fargoV*Flux(RHO,k,j,i) + Flux(MX1+fargoDir,k,j,i));
         #endif
-        Flux(iMPHI,k,j,i) += fargoV * Flux(RHO,k,j,i);
+        Flux(MX1+fargoDir,k,j,i) += fargoV * Flux(RHO,k,j,i);
       } // have Fargo
+
 #if HAVE_ENERGY
       if(needPotential)
         Flux(ENG, k, j, i) += Flux(RHO, k, j, i) * phiP(k,j,i);  // Potential at the cell face
@@ -237,16 +243,19 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
       if(haveFargo) {
         // fetch fargo velocity when required
         real fargoV = ZERO_F;
-        #if GEOMETRY == POLAR || GEOMETRY == CARTESIAN
+        #if (GEOMETRY == POLAR || GEOMETRY == CARTESIAN) && DIMENSIONS >=2
           if(dir==IDIR || dir == KDIR) fargoV = fargoVelocity(k,i);
-        #elif GEOMETRY == SPHERICAL
+          const int fargoDir = JDIR;
+        #elif GEOMETRY == SPHERICAL && DIMENSIONS ==3
           if(dir==IDIR || dir == JDIR) fargoV = fargoVelocity(j,i);
+          const int fargoDir = KDIR;
+        #else
+          const int fargoDir = 0;
         #endif
-        #ifdef iMPHI
-          rhs[iMPHI] -= fargoV*rhs[RHO];
-          #if HAVE_ENERGY
-            rhs[ENG] -= fargoV * ( HALF_F*fargoV*rhs[RHO] + rhs[iMPHI])
-          #endif
+        // NB: MX1+fargoDir = iMPHI
+        rhs[MX1+fargoDir] -= fargoV*rhs[RHO];
+        #if HAVE_ENERGY
+          rhs[ENG] -= fargoV * ( HALF_F*fargoV*rhs[RHO] + rhs[MX1+fargoDir]);
         #endif
       }
 

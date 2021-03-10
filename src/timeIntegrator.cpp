@@ -145,8 +145,12 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     // TODO(lesurg): Make a general boundary condition call in datablock
   data.hydro.SetBoundary(data.t);
 
+  // Remove Fargo velocity so that the integrator works on the residual
+  if(data.hydro.haveFargo) data.hydro.fargo.SubstractVelocity(data.t);
+
   // Convert current state into conservative variable and save it
   data.hydro.ConvertPrimToCons();
+
 
 
   // Store initial stage for multi-stage time integrators
@@ -181,6 +185,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
         Kokkos::fence();
 
         newdt=newdt*cfl;
+
   #ifdef WITH_MPI
         if(idfx::psize>1) {
           MPI_SAFE_CALL(MPI_Allreduce(MPI_IN_PLACE, &newdt, 1, realMPI, MPI_MIN, MPI_COMM_WORLD));
@@ -208,15 +213,30 @@ void TimeIntegrator::Cycle(DataBlock &data) {
       });
 #endif
     }
+
+    // Shift solution according to fargo if this is our last stage
+    if(data.hydro.haveFargo && stage==nstages-1) {
+      data.hydro.fargo.ShiftSolution(data.t,data.dt);
+    }
+
+    // Back to using Vc
     data.hydro.ConvertConsToPrim();
 
     // Check if this is our last stage
     if(stage<nstages-1) {
       // No: Apply boundary conditions & Recompute conservative variables
+      // Add back fargo velocity so that boundary conditions are applied on the total V
+      if(data.hydro.haveFargo) data.hydro.fargo.AddVelocity(data.t);
       data.hydro.SetBoundary(data.t);
+      // And substract it back for next stage
+      if(data.hydro.haveFargo) data.hydro.fargo.SubstractVelocity(data.t);
       data.hydro.ConvertPrimToCons();
     }
   }
+
+
+  // Add back Fargo velocity so that updated Vc stores the total Velocity
+  if(data.hydro.haveFargo) data.hydro.fargo.AddVelocity(data.t);
 
   // Update current time
   data.t=data.t+data.dt;

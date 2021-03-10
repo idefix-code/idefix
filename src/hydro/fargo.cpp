@@ -41,6 +41,7 @@ void Fargo::Init(Input &input, Grid &grid, Hydro *hydro) {
   this->scratch = IdefixArray4D<real>("FargoScratchSpace",NVAR,data->np_tot[KDIR]
                                                               ,data->np_tot[JDIR]
                                                               ,data->np_tot[IDIR]);
+  idfx::cout << "Fargo: Enabled with user-defined velocity function" << std::endl;
   idfx::popRegion();
 }
 
@@ -53,13 +54,65 @@ void Fargo::EnrollVelocity(FargoVelocityFunc myFunc) {
   idfx::cout << "Fargo: User-defined velocity function has been enrolled." << std::endl;
 }
 
+// This function fetches Fargo velocity when required
+void Fargo::GetFargoVelocity(real t) {
+  idfx::pushRegion("Fargo::GetFargoVelocity");
+  if(velocityHasBeenComputed == false) {
+    if(fargoVelocityFunc== NULL) {
+      IDEFIX_ERROR("No Fargo velocity function has been defined");
+    }
+    fargoVelocityFunc(*data, meanVelocity);
+    velocityHasBeenComputed = true;
+  }
+
+  idfx::popRegion();
+}
+
+void Fargo::AddVelocity(const real t) {
+  idfx::pushRegion("Fargo::AddVelocity");
+  GetFargoVelocity(t);
+  IdefixArray4D<real> Vc = hydro->Vc;
+  IdefixArray2D<real> meanV = this->meanVelocity;
+  idefix_for("FargoAddVelocity",
+              0,data->np_tot[KDIR],
+              0,data->np_tot[JDIR],
+              0,data->np_tot[IDIR],
+              KOKKOS_LAMBDA(int k, int j, int i) {
+                #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
+                  Vc(VX2,k,j,i) += meanV(k,i);
+                #elif GEOMETRY == SPHERICAL
+                  Vc(VX3,k,j,i) += meanV(j,i);
+                #endif
+              });
+
+  idfx::popRegion();
+}
+
+void Fargo::SubstractVelocity(const real t) {
+  idfx::pushRegion("Fargo::AddVelocity");
+
+  GetFargoVelocity(t);
+  IdefixArray4D<real> Vc = hydro->Vc;
+  IdefixArray2D<real> meanV = this->meanVelocity;
+  idefix_for("FargoAddVelocity",
+              0,data->np_tot[KDIR],
+              0,data->np_tot[JDIR],
+              0,data->np_tot[IDIR],
+              KOKKOS_LAMBDA(int k, int j, int i) {
+                #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
+                  Vc(VX2,k,j,i) -= meanV(k,i);
+                #elif GEOMETRY == SPHERICAL
+                  Vc(VX3,k,j,i) -= meanV(j,i);
+                #endif
+              });
+  idfx::popRegion();
+}
+
+
 void Fargo::ShiftSolution(const real t, const real dt) {
   idfx::pushRegion("Fargo::ShiftSolution");
   // Refresh the fargo velocity function
-  if(fargoVelocityFunc== NULL) {
-    IDEFIX_ERROR("No Fargo velocity function has been defined");
-  }
-  fargoVelocityFunc(*data, t, meanVelocity);
+  GetFargoVelocity(t);
 
   IdefixArray4D<real> Uc = hydro->Uc;
   IdefixArray4D<real> scrh = this->scratch;
@@ -121,15 +174,15 @@ void Fargo::ShiftSolution(const real t, const real dt) {
 
                 if(eps>=ZERO_F) {
                   #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
-                   scrh(n,k,starget,i) = Uc(n,k,s,i)*(1-eps) + eps*Uc(n,k,sp1,i);
+                   scrh(n,k,starget,i) = Uc(n,k,s,i)*(1-eps) + eps*Uc(n,k,sm1,i);
                   #elif GEOMETRY == SPHERICAL
-                   scrh(n,starget,j,i) = Uc(n,s,j,i)*(1-eps) + eps*Uc(n,sp1,j,i);
+                   scrh(n,starget,j,i) = Uc(n,s,j,i)*(1-eps) + eps*Uc(n,sm1,j,i);
                   #endif
                 } else {
                   #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
-                   scrh(n,k,starget,i) = Uc(n,k,s,i)*(1+eps) - eps*Uc(n,k,sm1,i);
+                   scrh(n,k,starget,i) = Uc(n,k,s,i)*(1+eps) - eps*Uc(n,k,sp1,i);
                   #elif GEOMETRY == SPHERICAL
-                   scrh(n,starget,j,i) = Uc(n,s,j,i)*(1+eps) - eps*Uc(n,sm1,j,i);
+                   scrh(n,starget,j,i) = Uc(n,s,j,i)*(1+eps) - eps*Uc(n,sp1,j,i);
                   #endif
                 }
               });

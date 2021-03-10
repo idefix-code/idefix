@@ -14,13 +14,15 @@
 class Hydro;
 class DataBlock;
 
-using FargoVelocityFunc = void (*) (DataBlock &, const real t, IdefixArray2D<real> &);
+using FargoVelocityFunc = void (*) (DataBlock &, IdefixArray2D<real> &);
 
 class Fargo {
  public:
   enum FargoType {none, userdef, shearingbox};
   void Init(Input &, Grid &, Hydro *);  // Initialisation
   void ShiftSolution(const real t, const real dt);  // Effectively shift the solution
+  void SubstractVelocity(const real);
+  void AddVelocity(const real);
   void EnrollVelocity(FargoVelocityFunc);
  private:
   DataBlock *data;
@@ -30,6 +32,8 @@ class Fargo {
   IdefixArray2D<real> meanVelocity;
   IdefixArray4D<real> scratch;
 
+  bool velocityHasBeenComputed{false};
+  void GetFargoVelocity(real);
   FargoVelocityFunc fargoVelocityFunc{NULL};  // The user-defined fargo velocity function
 };
 

@@ -214,15 +214,16 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 #endif
       // Tentatively high order fargo
       //if(data.hydro.haveFargo) data.hydro.fargo.ShiftSolution(data.t,wcs*data.dt);
-    } else {
+    } //else {
       //if(data.hydro.haveFargo) data.hydro.fargo.ShiftSolution(data.t,data.dt);
-    }
+    //}
 
     // Shift solution according to fargo if this is our last stage
 
     if(data.hydro.haveFargo && stage==nstages-1) {
       data.hydro.fargo.ShiftSolution(data.t,data.dt);
     }
+
 
     // Back to using Vc
     data.hydro.ConvertConsToPrim();

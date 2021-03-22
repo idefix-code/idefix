@@ -50,18 +50,18 @@ def readVTKCart(filename):
     s=fid.readline()    # X_COORDINATES NX float
 
     x=np.fromfile(fid,dt,V.nx)
-    s=fid.readline()    # Extra line feed added by pluto
+    s=fid.readline()    # Extra line feed added by idefix
 
 
     s=fid.readline()    # X_COORDINATES NX float
 
     y=np.fromfile(fid,dt,V.ny)
-    s=fid.readline()    # Extra line feed added by pluto
+    s=fid.readline()    # Extra line feed added by idefix
 
     s=fid.readline()    # X_COORDINATES NX float
 
     z=np.fromfile(fid,dt,V.nz)
-    s=fid.readline()    # Extra line feed added by pluto
+    s=fid.readline()    # Extra line feed added by idefix
 
 
 
@@ -194,7 +194,7 @@ def readVTKPolar(filename):
     slist=s.split()
     data_type=str(slist[0],'utf-8')
     if(data_type != "CELL_DATA"):
-        print("ERROR: this routine expect CELL DATA as produced by PLUTO.")
+        print("ERROR: this routine expect CELL DATA as produced by idefix.")
         fid.close()
         return 0
     s=fid.readline()    # Line feed
@@ -311,11 +311,11 @@ def readVTKSpherical(filename):
 
     if(is2d):
         r=np.sqrt(xcart[:,0,0]**2+ycart[:,0,0]**2)
-        phi=np.unwrap(np.arctan2(zcart[0,0,:],xcart[0,0,:]))
+        phi=np.unwrap(np.arctan2(zcart[0,V.ny//2,:],xcart[0,V.ny//2,:]))
         theta=np.arccos(ycart[0,:,0]/np.sqrt(xcart[0,:,0]**2+ycart[0,:,0]**2))
     else:
         r=np.sqrt(xcart[:,0,0]**2+ycart[:,0,0]**2+zcart[:,0,0]**2)
-        phi=np.unwrap(np.arctan2(ycart[0,0,:],xcart[0,0,:]))
+        phi=np.unwrap(np.arctan2(ycart[V.nz//2,V.ny//2,:],xcart[V.nz//2,V.ny//2,:]))
         theta=np.arccos(zcart[0,:,0]/np.sqrt(xcart[0,:,0]**2+ycart[0,:,0]**2+zcart[0,:,0]**2))
 
 
@@ -323,7 +323,7 @@ def readVTKSpherical(filename):
     slist=s.split()
     data_type=str(slist[0],'utf-8')
     if(data_type != "CELL_DATA"):
-        print("ERROR: this routine expect CELL DATA as produced by PLUTO.")
+        print("ERROR: this routine expect CELL DATA as produced by IDEFIX.")
         fid.close()
         return 0
     s=fid.readline()    # Line feed
@@ -341,7 +341,7 @@ def readVTKSpherical(filename):
         V.y=theta
     if V.nz>1:
         V.nz=V.nz-1
-        V.phi=(0.5*(phi[1:]+phi[:-1])+np.pi)%(2.0*np.pi)-np.pi
+        V.phi=(0.5*(phi[1:]+phi[:-1]))
     else:
         V.phi=phi
 

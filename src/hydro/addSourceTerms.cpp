@@ -21,7 +21,8 @@ void Hydro::AddSourceTerms(real t, real dt) {
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 #endif
 #if GEOMETRY == SPHERICAL
-  IdefixArray1D<real> s  = data->s;
+  IdefixArray1D<real> sinx2  = data->sinx2;
+  IdefixArray1D<real> tanx2  = data->tanx2;
   IdefixArray1D<real> rt = data->rt;
 #endif
 
@@ -129,7 +130,7 @@ void Hydro::AddSourceTerms(real t, real dt) {
 #elif GEOMETRY == SPHERICAL
       real vphi,Sm,ct;
       vphi = SELECT(ZERO_F, ZERO_F, Vc(iVPHI,k,j,i))+fargoV;
-      if(haveRotation) vphi += OmegaX3*x1(i)*s(j);
+      if(haveRotation) vphi += OmegaX3*x1(i)*FABS(sinx2(j));
       // Centrifugal
       Sm = Vc(RHO,k,j,i) * (EXPAND( ZERO_F, + Vc(VX2,k,j,i)*Vc(VX2,k,j,i), + vphi*vphi));
       // Pressure curvature
@@ -157,7 +158,7 @@ void Hydro::AddSourceTerms(real t, real dt) {
   #endif
       Uc(MX1,k,j,i) += dt*Sm/x1(i);
 
-      ct = 1.0/TAN(x2(j));
+      ct = 1.0/tanx2(j);
        // Centrifugal
       Sm = Vc(RHO,k,j,i) * (EXPAND( ZERO_F, - Vc(iVTH,k,j,i)*Vc(iVR,k,j,i), + ct*vphi*vphi));
       // Pressure curvature

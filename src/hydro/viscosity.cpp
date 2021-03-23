@@ -131,6 +131,14 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
   IdefixArray1D<real> dx2 = this->hydro->data->dx[JDIR];
   IdefixArray1D<real> dx3 = this->hydro->data->dx[KDIR];
 
+  #if GEOMETRY == SPHERICAL
+  IdefixArray1D<real> sinx2 = this->hydro->data->sinx2;
+  IdefixArray1D<real> tanx2 = this->hydro->data->tanx2;
+  IdefixArray1D<real> sinx2m = this->hydro->data->sinx2m;
+  IdefixArray1D<real> tanx2m = this->hydro->data->tanx2m;
+  #endif
+
+
   HydroModuleStatus haveViscosity = this->haveViscosity;
 
   // Compute viscosity if needed
@@ -142,6 +150,11 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
     }
   }
 
+  // Add fargo velocity if using fargo
+
+  if(this->hydro->haveFargo) {
+    this->hydro->fargo.AddVelocity(t);
+  }
   int ibeg, iend, jbeg, jend, kbeg, kend;
   ibeg = this->hydro->data->beg[IDIR];
   iend = this->hydro->data->end[IDIR];
@@ -150,41 +163,38 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
   kbeg = this->hydro->data->beg[KDIR];
   kend = this->hydro->data->end[KDIR];
 
-  // Determine the offset along which we do the extrapolation
-  if(dir==IDIR) iend++;
-  if(dir==JDIR) jend++;
-  if(dir==KDIR) kend++;
 
   real eta1Constant = this->eta1;
   real eta2Constant = this->eta2;
 
-  idefix_for("ViscousFlux",kbeg, kend, jbeg, jend, ibeg, iend,
-    KOKKOS_LAMBDA (int k, int j, int i) {
-      real tau_xx, tau_xy, tau_xz;
-      real tau_yy, tau_yz;
-      real tau_zz;
+  ///////////////////////////////////////////
+  // IDIR sweep                            //
+  ///////////////////////////////////////////
+  if(dir==IDIR) {
+    iend++;
+    idefix_for("ViscousFluxIDIR",kbeg, kend, jbeg, jend, ibeg, iend,
+      KOKKOS_LAMBDA (int k, int j, int i) {
+        real tau_xx, tau_xy, tau_xz;
+        real tau_yy, tau_yz;
+        real tau_zz;
 
-      real dVxi, dVxj, dVxk;
-      real dVyi, dVyj, dVyk;
-      real dVzi, dVzj, dVzk;
+        real dVxi, dVxj, dVxk;
+        real dVyi, dVyj, dVyk;
+        real dVzi, dVzj, dVzk;
 
-      real divV;
+        real divV;
 
-      tau_xx = tau_xy = tau_xz = ZERO_F;
-      tau_yy = tau_yz = ZERO_F;
-      tau_zz = ZERO_F;
+        tau_xx = tau_xy = tau_xz = ZERO_F;
+        tau_yy = tau_yz = ZERO_F;
+        tau_zz = ZERO_F;
 
-      dVxi = dVxj = dVxk = ZERO_F;
-      dVyi = dVyj = dVyk = ZERO_F;
-      dVzi = dVzj = dVzk = ZERO_F;
+        dVxi = dVxj = dVxk = ZERO_F;
+        dVyi = dVyj = dVyk = ZERO_F;
+        dVzi = dVzj = dVzk = ZERO_F;
 
-      real eta1, eta2;
-      real etaC1, etaC2;
+        real eta1, eta2;
+        real etaC1, etaC2;
 
-      ///////////////////////////////////////////
-      // IDIR sweep                            //
-      ///////////////////////////////////////////
-      if(dir == IDIR) {
         if(haveViscosity == UserDefFunction) {
           etaC1 = eta1Arr(k,j ,i);
           eta1 = HALF_F*(eta1Arr(k,j,i-1)+eta1Arr(k,j,i));
@@ -196,13 +206,13 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
         }
 
         EXPAND(  dVxi = D_DX_I(Vc,VX1)/dx1(i); ,
-                 dVyi = D_DX_I(Vc,VX2)/dx1(i); ,
-                 dVzi = D_DX_I(Vc,VX3)/dx1(i); )
+                  dVyi = D_DX_I(Vc,VX2)/dx1(i); ,
+                  dVzi = D_DX_I(Vc,VX3)/dx1(i); )
 
         #if DIMENSIONS >= 2
           EXPAND(  dVxj = D_DY_I(Vc,VX1)/dx2(j); ,
-                   dVyj = D_DY_I(Vc,VX2)/dx2(j); ,
-                   dVzj = D_DY_I(Vc,VX3)/dx2(j); )
+                    dVyj = D_DY_I(Vc,VX2)/dx2(j); ,
+                    dVzj = D_DY_I(Vc,VX3)/dx2(j); )
           #if DIMENSIONS == 3
             dVxk = D_DZ_I(Vc,VX1)/dx3(k);
             dVyk = D_DZ_I(Vc,VX2)/dx3(k);
@@ -227,16 +237,16 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
           tau_xx = 2.0*eta1*drrVr + (eta2 - (2.0/3.0)*eta1)*divV;
           tau_xy = eta1*(dVxj + dVyi);
           SELECT(  ,
-                   ,
-                 tau_xz = eta1*0.5*(x1(i)+x1(i-1))/dx1(i)
+                    ,
+                  tau_xz = eta1*0.5*(x1(i)+x1(i-1))/dx1(i)
                           *(Vc(VX3,k,j,i)/x1(i) - Vc(VX3,k,j,i-1)/x1(i-1)); )
 
           tau_xz = eta1*(dVxk + dVzi);
 
           // compute tau_zz at cell center
           divV = D_EXPAND(  0.5*(Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i-1))/dx1(i) + Vc(VX1,k,j,i)/x1(i),
-                           +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)                      ,
-                                                                                                 );
+                            +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)                      ,
+                                                                                                  );
           tau_zz = 2.0*etaC1*Vc(VX1,k,j,i)/x1(i) + (etaC2 - (2.0/3.0)*etaC1)*divV;
 
           EXPAND( viscSrc(IDIR,k,j,i) =  -tau_zz/x1(i);  ,
@@ -264,8 +274,8 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
 
           // compute tau_yy at cell center
           divV = D_EXPAND(  0.5*(Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i-1))/dx1(i) + Vc(VX1,k,j,i)/x1(i),
-                           +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i)                ,
-                           +0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3(k)                      );
+                            +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i)                ,
+                            +0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3(k)                      );
 
           #if DIMENSIONS == 1
             tau_yy = 2.0*etaC1*( Vc(VX1,k,j,i)/x1(i)) + (etaC2 - (2.0/3.0)*etaC1)*divV;
@@ -279,8 +289,8 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
                   viscSrc(KDIR,k,j,i) = ZERO_F;          )
         #endif // GEOMETRY == POLAR
         #if GEOMETRY == SPHERICAL
-          real tan_1 = TAN(x2(j));
-          real s_1 = SIN(x2(j));
+          real tan_1 = tanx2(j);
+          real s_1 = sinx2(j);
 
           // Trick to ensure that the axis does not lead to Nans
           if(FABS(tan_1) < SMALL_NUMBER) {
@@ -320,9 +330,9 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
           // Compute tau_yy and tau_zz at cell center
 
           divV = D_EXPAND( 0.5*(Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i-1))/dx1(i) + 2.0*Vc(VX1,k,j,i)/x1(i),
-                           +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i)
-                           +Vc(VX2,k,j,i)/x1(i)*tan_1                                        ,
-                           +0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3(k)/x1(i)*s_1 );
+                            +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i)
+                            +Vc(VX2,k,j,i)/x1(i)*tan_1                                        ,
+                            +0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3(k)/x1(i)*s_1 );
 
           tau_yy = Vc(VX1,k,j,i)/x1(i);
           #if DIMENSIONS >= 2
@@ -357,270 +367,321 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
         #endif
 
         dMax(k,j,i) += (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k,j,i-1)));
+      });
+
+  } else if(dir==JDIR) {
+    ///////////////////////////////////////////
+    // JDIR sweep                            //
+    ///////////////////////////////////////////
+
+    jend++;
+    idefix_for("ViscousFluxJDIR",kbeg, kend, jbeg, jend, ibeg, iend,
+    KOKKOS_LAMBDA (int k, int j, int i) {
+      real tau_xx, tau_xy, tau_xz;
+      real tau_yy, tau_yz;
+      real tau_zz;
+
+      real dVxi, dVxj, dVxk;
+      real dVyi, dVyj, dVyk;
+      real dVzi, dVzj, dVzk;
+
+      real divV;
+
+      tau_xx = tau_xy = tau_xz = ZERO_F;
+      tau_yy = tau_yz = ZERO_F;
+      tau_zz = ZERO_F;
+
+      dVxi = dVxj = dVxk = ZERO_F;
+      dVyi = dVyj = dVyk = ZERO_F;
+      dVzi = dVzj = dVzk = ZERO_F;
+
+      real eta1, eta2;
+      real etaC1, etaC2;
+
+      if(haveViscosity == UserDefFunction) {
+        etaC1 = eta1Arr(k,j,i);
+        eta1 = HALF_F*(eta1Arr(k,j-1,i)+eta1Arr(k,j,i));
+        etaC2 = eta2Arr(k,j,i);
+        eta2 = HALF_F*(eta2Arr(k,j-1,i)+eta2Arr(k,j,i));
+      } else {
+        etaC1 = eta1 = eta1Constant;
+        etaC2 = eta2 = eta2Constant;
       }
 
-      ///////////////////////////////////////////
-      // JDIR sweep                            //
-      ///////////////////////////////////////////
+      EXPAND(  dVxi = D_DX_J(Vc,VX1)/dx1(i); ,
+                dVyi = D_DX_J(Vc,VX2)/dx1(i); ,
+                dVzi = D_DX_J(Vc,VX3)/dx1(i); )
 
-      if(dir == JDIR) {
-        if(haveViscosity == UserDefFunction) {
-          etaC1 = eta1Arr(k,j,i);
-          eta1 = HALF_F*(eta1Arr(k,j-1,i)+eta1Arr(k,j,i));
-          etaC2 = eta2Arr(k,j,i);
-          eta2 = HALF_F*(eta2Arr(k,j-1,i)+eta2Arr(k,j,i));
-        } else {
-          etaC1 = eta1 = eta1Constant;
-          etaC2 = eta2 = eta2Constant;
-        }
+      EXPAND(  dVxj = D_DY_J(Vc,VX1)/dx2(j); ,
+                dVyj = D_DY_J(Vc,VX2)/dx2(j); ,
+                dVzj = D_DY_J(Vc,VX3)/dx2(j); )
 
-        EXPAND(  dVxi = D_DX_J(Vc,VX1)/dx1(i); ,
-                 dVyi = D_DX_J(Vc,VX2)/dx1(i); ,
-                 dVzi = D_DX_J(Vc,VX3)/dx1(i); )
+      #if DIMENSIONS == 3
+        dVxk = D_DZ_J(Vc,VX1)/dx3(k);
+        dVyk = D_DZ_J(Vc,VX2)/dx3(k);
+        dVzk = D_DZ_J(Vc,VX3)/dx3(k);
+      #endif
 
-        EXPAND(  dVxj = D_DY_J(Vc,VX1)/dx2(j); ,
-                 dVyj = D_DY_J(Vc,VX2)/dx2(j); ,
-                 dVzj = D_DY_J(Vc,VX3)/dx2(j); )
+      #if GEOMETRY == CARTESIAN
+        divV = D_EXPAND(dVxi, + dVyj, + dVzk);
 
+        tau_xy = eta1*(dVxj+dVyi);
+        tau_yy = 2.0*eta1*dVyj + (eta2 - (2.0/3.0)*eta1)*divV;
+        tau_yz = eta1*(dVzj + dVyk);
+      #endif // GEOMETRY == CARTESIAN
+
+      #if GEOMETRY == CYLINDRICAL
+        real vx1i = 0.5*(Vc(VX1,k,j-1,i)+Vc(VX1,k,j,i));
+
+        divV = D_EXPAND(vx1i/x1(i) + dVxi, + dVyj, 0.0);
+
+        tau_xy = eta1*(dVxj+dVyi);
+        tau_yy = 2.0*eta1*dVyj + (eta2 - (2.0/3.0)*eta1)*divV;
         #if DIMENSIONS == 3
-          dVxk = D_DZ_J(Vc,VX1)/dx3(k);
-          dVyk = D_DZ_J(Vc,VX2)/dx3(k);
-          dVzk = D_DZ_J(Vc,VX3)/dx3(k);
+        tau_yz = eta1*(dVyk);
         #endif
 
-        #if GEOMETRY == CARTESIAN
-          divV = D_EXPAND(dVxi, + dVyj, + dVzk);
+        // no source term
+        EXPAND( viscSrc(IDIR,k,j,i) = ZERO_F;  ,
+                viscSrc(JDIR,k,j,i) = ZERO_F;  ,
+                viscSrc(KDIR,k,j,i) = ZERO_F;  )
+      #endif // GEOMETRY == CYLINDRICAL
 
-          tau_xy = eta1*(dVxj+dVyi);
-          tau_yy = 2.0*eta1*dVyj + (eta2 - (2.0/3.0)*eta1)*divV;
-          tau_yz = eta1*(dVzj + dVyk);
-        #endif // GEOMETRY == CARTESIAN
+      #if GEOMETRY == POLAR
+        real vx1i = 0.5*(Vc(VX1,k,j-1,i)+Vc(VX1,k,j,i));
+        real vx2i = 0.5*(Vc(VX2,k,j-1,i)+Vc(VX2,k,j,i));
 
-        #if GEOMETRY == CYLINDRICAL
-          real vx1i = 0.5*(Vc(VX1,k,j-1,i)+Vc(VX1,k,j,i));
+        divV = D_EXPAND(vx1i/x1(i) + dVxi, + dVyj/x1(i), + dVzk);
 
-          divV = D_EXPAND(vx1i/x1(i) + dVxi, + dVyj, 0.0);
+        tau_xy = eta1*(dVxj/x1(i)+dVyi - vx2i/x1(i));
+        tau_yy = 2.0*eta1*(dVyj/x1(i) + vx1i/x1(i)) + (eta2 - (2.0/3.0)*eta1)*divV;
+        tau_yz = eta1*(dVzj/x1(i) + dVyk);
 
-          tau_xy = eta1*(dVxj+dVyi);
-          tau_yy = 2.0*eta1*dVyj + (eta2 - (2.0/3.0)*eta1)*divV;
-          #if DIMENSIONS == 3
-          tau_yz = eta1*(dVyk);
-          #endif
+        // no source term
+        EXPAND( viscSrc(IDIR,k,j,i) = ZERO_F;  ,
+                viscSrc(JDIR,k,j,i) = ZERO_F;  ,
+                viscSrc(KDIR,k,j,i) = ZERO_F;  )
+      #endif
 
-          // no source term
-          EXPAND( viscSrc(IDIR,k,j,i) = ZERO_F;  ,
-                  viscSrc(JDIR,k,j,i) = ZERO_F;  ,
-                  viscSrc(KDIR,k,j,i) = ZERO_F;  )
-        #endif // GEOMETRY == CYLINDRICAL
+      #if GEOMETRY == SPHERICAL
+        real tan_1 = tanx2m(j);
+        real s_1 = sinx2m(j);
 
-        #if GEOMETRY == POLAR
-          real vx1i = 0.5*(Vc(VX1,k,j-1,i)+Vc(VX1,k,j,i));
-          real vx2i = 0.5*(Vc(VX2,k,j-1,i)+Vc(VX2,k,j,i));
-
-          divV = D_EXPAND(vx1i/x1(i) + dVxi, + dVyj/x1(i), + dVzk);
-
-          tau_xy = eta1*(dVxj/x1(i)+dVyi - vx2i/x1(i));
-          tau_yy = 2.0*eta1*(dVyj/x1(i) + vx1i/x1(i)) + (eta2 - (2.0/3.0)*eta1)*divV;
-          tau_yz = eta1*(dVzj/x1(i) + dVyk);
-
-          // no source term
-          EXPAND( viscSrc(IDIR,k,j,i) = ZERO_F;  ,
-                  viscSrc(JDIR,k,j,i) = ZERO_F;  ,
-                  viscSrc(KDIR,k,j,i) = ZERO_F;  )
-        #endif
-
-        #if GEOMETRY == SPHERICAL
-          real tan_1 = TAN(x2l(j));
-          real s_1 = SIN(x2l(j));
-
-          // Trick to ensure that the axis does not lead to Nans
-          if(FABS(tan_1) < SMALL_NUMBER) {
-            tan_1 = ZERO_F;
-          } else {
-            tan_1 = ONE_F/tan_1;
-          }
-
-          if(FABS(s_1) < SMALL_NUMBER) {
-            s_1 = ZERO_F;
-          } else {
-            s_1 = ONE_F/s_1;
-          }
-
-
-          real vx1i = 0.5*(Vc(VX1,k,j-1,i)+Vc(VX1,k,j,i));
-          real vx2i = 0.5*(Vc(VX2,k,j-1,i)+Vc(VX2,k,j,i));
-
-          divV = D_EXPAND( 2.0*vx1i/x1(i) + dVxi,
-                          +(SIN(x2(j))*Vc(VX2,k,j,i) - FABS(SIN(x2(j-1)))*Vc(VX2,k,j-1,i))/x1(i)
-                           *one_dmu(j) ,
-                          + dVzk/x1(i)*s_1 );
-
-          // tau_xy is initially cell centered since it is involved in the source term
-          tau_xy = etaC1*( 0.5*(Vc(VX1,k,j+1,i)-Vc(VX1,k,j-1,i))/x1(i)/dx2(j)
-                              - Vc(VX2,k,j,i)/x1(i));
-          tau_yy = 2.0*eta1*(dVyj/x1(i) + vx1i/x1(i)) + (eta2 - (2.0/3.0)*eta1)*divV;
-
-          tau_yz = dVzj/x1(i);
-          #if COMPONENTS == 3
-            tau_yz += -tan_1/x1(i)*0.5*(Vc(VX3,k,j-1,i)+Vc(VX3,k,j,i));
-          #endif
-          #if DIMENSIONS == 3
-            tau_yz += s_1/x1(i)*dVyk;
-          #endif
-          tau_yz *= eta1;
-
-          // Compute cell-centered divV & sources terms
-          tan_1 = TAN(x2(j));
-          s_1 = SIN(x2(j));
-
-          // Trick to ensure that the axis does not lead to Nans
-          if(FABS(tan_1) < SMALL_NUMBER) {
-            tan_1 = ZERO_F;
-          } else {
-            tan_1 = ONE_F/tan_1;
-          }
-
-          if(FABS(s_1) < SMALL_NUMBER) {
-            s_1 = ZERO_F;
-          } else {
-            s_1 = ONE_F/s_1;
-          }
-
-          divV = D_EXPAND( 0.5*(Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i-1))/dx1(i) + 2.0*Vc(VX1,k,j,i)/x1(i),
-                           +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i)
-                           +Vc(VX2,k,j,i)/x1(i)*tan_1                                              ,
-                           +0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3(k)/x1(i)*s_1 );
-
-          tau_zz = Vc(VX1,k,j,i)/x1(i);
-          #if COMPONENTS >= 2
-            tau_zz += Vc(VX2,k,j,i)/x1(i)*tan_1;
-          #endif
-          #if DIMENSIONS == 3
-            tau_zz += 0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3(k)/x1(i)*s_1;
-          #endif
-          tau_zz = 2*eta1*tau_zz + (eta2-2.0/3.0*eta1)*divV;
-
-          EXPAND( viscSrc(IDIR,k,j,i) = ZERO_F;  ,
-                  viscSrc(JDIR,k,j,i) = (tau_xy - tau_zz*tan_1)/x1(i);  ,
-                  viscSrc(KDIR,k,j,i) = ZERO_F;  )
-
-
-          // New tau_xy, this time face-centered
-          tau_xy = eta1*(dVxj/x1(i)+dVyi - vx2i/x1(i));
-
-
-        #endif
-        // Update flux with the stress tensor
-        EXPAND( Flux(MX1, k, j, i) -= tau_xy; ,
-                Flux(MX2, k, j, i) -= tau_yy; ,
-                Flux(MX3, k, j, i) -= tau_yz; )
-
-        #if HAVE_ENERGY
-          Flux(ENG, k, j, i) -= EXPAND(   0.5*(Vc(VX1,k,j,i) + Vc(VX1,k,j-1,i))*tau_xy  ,
-                                        + 0.5*(Vc(VX2,k,j,i) + Vc(VX2,k,j-1,i))*tau_yy  ,
-                                        + 0.5*(Vc(VX3,k,j,i) + Vc(VX3,k,j-1,i))*tau_yz);
-        #endif
-
-        dMax(k,j,i) += (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k,j-1,i)));
-      }
-
-      ///////////////////////////////////////////
-      // KDIR sweep                            //
-      ///////////////////////////////////////////
-
-      if(dir == KDIR) {
-        if(haveViscosity == UserDefFunction) {
-          etaC1 = eta1Arr(k,j,i);
-          eta1 = HALF_F*(eta1Arr(k-1,j,i)+eta1Arr(k,j,i));
-          etaC2 = eta2Arr(k,j,i);
-          eta2 = HALF_F*(eta2Arr(k-1,j,i)+eta2Arr(k,j,i));
+        // Trick to ensure that the axis does not lead to Nans
+        if(FABS(tan_1) < SMALL_NUMBER) {
+          tan_1 = ZERO_F;
         } else {
-          etaC1 = eta1 = eta1Constant;
-          etaC2 = eta2 = eta2Constant;
+          tan_1 = ONE_F/tan_1;
         }
 
-        dVxi = D_DX_K(Vc,VX1)/dx1(i);
-        dVyi = D_DX_K(Vc,VX2)/dx1(i);
-        dVzi = D_DX_K(Vc,VX3)/dx1(i);
-        dVxj = D_DY_K(Vc,VX1)/dx2(j);
-        dVyj = D_DY_K(Vc,VX2)/dx2(j);
-        dVzj = D_DY_K(Vc,VX3)/dx2(j);
-        dVxk = D_DZ_K(Vc,VX1)/dx3(k);
-        dVyk = D_DZ_K(Vc,VX2)/dx3(k);
-        dVzk = D_DZ_K(Vc,VX3)/dx3(k);
-
-        #if GEOMETRY == CARTESIAN
-          divV = dVxi + dVyj + dVzk;
-
-          tau_xz = eta1*(dVxk+dVzi);
-          tau_yz = eta1*(dVyk+dVzj);
-          tau_zz = 2.0*eta1*dVzk + (eta2 - (2.0/3.0)*eta1)*divV;
-        #endif // GEOMETRY == CARTESIAN
-
-        #if GEOMETRY == POLAR
-          real vx1i = 0.5*(Vc(VX1,k-1,j,i)+Vc(VX1,k,j,i));
-
-          divV = vx1i/x1(i) + dVxi + dVyj/x1(i) + dVzk;
-
-          tau_xz = eta1*(dVxk+dVzi);
-          tau_yz = eta1*(dVyk+dVzj);
-          tau_zz = 2.0*eta1*dVzk + (eta2 - (2.0/3.0)*eta1)*divV;
-
-          viscSrc(IDIR,k,j,i) = ZERO_F;
-          viscSrc(JDIR,k,j,i) = ZERO_F;
-          viscSrc(KDIR,k,j,i) = ZERO_F;
-
-        #endif // GEOMETRY == POLAR
-
-        #if GEOMETRY == SPHERICAL
-          real tan_1 = TAN(x2(j));
-          real s_1 = SIN(x2(j));
-
-          // Trick to ensure that the axis does not lead to Nans
-          if(FABS(tan_1) < SMALL_NUMBER) {
-            tan_1 = ZERO_F;
-          } else {
-            tan_1 = ONE_F/tan_1;
-          }
-
-          if(FABS(s_1) < SMALL_NUMBER) {
-            s_1 = ZERO_F;
-          } else {
-            s_1 = ONE_F/s_1;
-          }
+        if(FABS(s_1) < SMALL_NUMBER) {
+          s_1 = ZERO_F;
+        } else {
+          s_1 = ONE_F/s_1;
+        }
 
 
-          real vx1i = 0.5*(Vc(VX1,k-1,j,i)+Vc(VX1,k,j,i));
-          real vx2i = 0.5*(Vc(VX2,k-1,j,i)+Vc(VX2,k,j,i));
-          real vx3i = 0.5*(Vc(VX3,k-1,j,i)+Vc(VX3,k,j,i));
+        real vx1i = 0.5*(Vc(VX1,k,j-1,i)+Vc(VX1,k,j,i));
+        real vx2i = 0.5*(Vc(VX2,k,j-1,i)+Vc(VX2,k,j,i));
 
-          divV = 2.0*vx1i/x1(i) + dVxi + dVyj/x1(i) + tan_1*vx2i/x1(i) + dVzk/x1(i)*s_1;
+        divV = D_EXPAND( 2.0*vx1i/x1(i) + dVxi,
+                        + (sinx2(j)*Vc(VX2,k,j,i) - FABS(sinx2(j-1))*Vc(VX2,k,j-1,i))/x1(i)
+                          *one_dmu(j) ,
+                        + dVzk/x1(i)*s_1 );
 
-          tau_xz = eta1*(dVxk*s_1/x1(i) + dVzi - vx3i/x1(i));
-          tau_yz = eta1*(dVyk*s_1/x1(i) + dVzj/x1(i) - vx3i*tan_1/x1(i));
-          tau_zz = 2.0*eta1*( dVzk*s_1/x1(i) + vx1i/x1(i) + vx2i*tan_1/x1(i))
-                    + (eta2 - (2.0/3.0)*eta1)*divV;
+        // tau_xy is initially cell centered since it is involved in the source term
+        tau_xy = etaC1*( 0.5*(Vc(VX1,k,j+1,i)-Vc(VX1,k,j-1,i))/x1(i)/dx2(j)
+                            - Vc(VX2,k,j,i)/x1(i));
+        tau_yy = 2.0*eta1*(dVyj/x1(i) + vx1i/x1(i)) + (eta2 - (2.0/3.0)*eta1)*divV;
 
-          viscSrc(IDIR,k,j,i) = ZERO_F;
-          viscSrc(JDIR,k,j,i) = ZERO_F;
-          viscSrc(KDIR,k,j,i) = ZERO_F;
-
-        #endif //GEOMETRY == SPHERICAL
-
-        // Update flux with the stress tensor
-        EXPAND( Flux(MX1, k, j, i) -= tau_xz; ,
-                Flux(MX2, k, j, i) -= tau_yz; ,
-                Flux(MX3, k, j, i) -= tau_zz; )
-
-        #if HAVE_ENERGY
-          Flux(ENG, k, j, i) -= EXPAND(   0.5*(Vc(VX1,k,j,i) + Vc(VX1,k-1,j,i))*tau_xz  ,
-                                        + 0.5*(Vc(VX2,k,j,i) + Vc(VX2,k-1,j,i))*tau_yz  ,
-                                        + 0.5*(Vc(VX3,k,j,i) + Vc(VX3,k-1,j,i))*tau_zz);
+        tau_yz = dVzj/x1(i);
+        #if COMPONENTS == 3
+          tau_yz += -tan_1/x1(i)*0.5*(Vc(VX3,k,j-1,i)+Vc(VX3,k,j,i));
         #endif
+        #if DIMENSIONS == 3
+          tau_yz += s_1/x1(i)*dVyk;
+        #endif
+        tau_yz *= eta1;
 
-        dMax(k,j,i) += (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k-1,j,i)));
-      }
+        // Compute cell-centered divV & sources terms
+        tan_1 = tanx2(j);
+        s_1 = sinx2(j);
+
+        // Trick to ensure that the axis does not lead to Nans
+        if(FABS(tan_1) < SMALL_NUMBER) {
+          tan_1 = ZERO_F;
+        } else {
+          tan_1 = ONE_F/tan_1;
+        }
+
+        if(FABS(s_1) < SMALL_NUMBER) {
+          s_1 = ZERO_F;
+        } else {
+          s_1 = ONE_F/s_1;
+        }
+
+        divV = D_EXPAND( 0.5*(Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i-1))/dx1(i) + 2.0*Vc(VX1,k,j,i)/x1(i),
+                          +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i)
+                          +Vc(VX2,k,j,i)/x1(i)*tan_1                                              ,
+                          +0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3(k)/x1(i)*s_1 );
+
+        tau_zz = Vc(VX1,k,j,i)/x1(i);
+        #if COMPONENTS >= 2
+          tau_zz += Vc(VX2,k,j,i)/x1(i)*tan_1;
+        #endif
+        #if DIMENSIONS == 3
+          tau_zz += 0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3(k)/x1(i)*s_1;
+        #endif
+        tau_zz = 2*eta1*tau_zz + (eta2-2.0/3.0*eta1)*divV;
+
+        EXPAND( viscSrc(IDIR,k,j,i) = ZERO_F;  ,
+                viscSrc(JDIR,k,j,i) = (tau_xy - tau_zz*tan_1)/x1(i);  ,
+                viscSrc(KDIR,k,j,i) = ZERO_F;  )
+
+
+        // New tau_xy, this time face-centered
+        tau_xy = eta1*(dVxj/x1(i)+dVyi - vx2i/x1(i));
+
+
+      #endif
+      // Update flux with the stress tensor
+      EXPAND( Flux(MX1, k, j, i) -= tau_xy; ,
+              Flux(MX2, k, j, i) -= tau_yy; ,
+              Flux(MX3, k, j, i) -= tau_yz; )
+
+      #if HAVE_ENERGY
+        Flux(ENG, k, j, i) -= EXPAND(   0.5*(Vc(VX1,k,j,i) + Vc(VX1,k,j-1,i))*tau_xy  ,
+                                      + 0.5*(Vc(VX2,k,j,i) + Vc(VX2,k,j-1,i))*tau_yy  ,
+                                      + 0.5*(Vc(VX3,k,j,i) + Vc(VX3,k,j-1,i))*tau_yz);
+      #endif
+
+      dMax(k,j,i) += (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k,j-1,i)));
     });
 
+  } else if(dir==KDIR) {
+    kend++;
+
+    ///////////////////////////////////////////
+    // KDIR sweep                            //
+    ///////////////////////////////////////////
+    idefix_for("ViscousFluxKDIR",kbeg, kend, jbeg, jend, ibeg, iend,
+    KOKKOS_LAMBDA (int k, int j, int i) {
+      real tau_xx, tau_xy, tau_xz;
+      real tau_yy, tau_yz;
+      real tau_zz;
+
+      real dVxi, dVxj, dVxk;
+      real dVyi, dVyj, dVyk;
+      real dVzi, dVzj, dVzk;
+
+      real divV;
+
+      tau_xx = tau_xy = tau_xz = ZERO_F;
+      tau_yy = tau_yz = ZERO_F;
+      tau_zz = ZERO_F;
+
+      dVxi = dVxj = dVxk = ZERO_F;
+      dVyi = dVyj = dVyk = ZERO_F;
+      dVzi = dVzj = dVzk = ZERO_F;
+
+      real eta1, eta2;
+      real etaC1, etaC2;
+
+      if(haveViscosity == UserDefFunction) {
+        etaC1 = eta1Arr(k,j,i);
+        eta1 = HALF_F*(eta1Arr(k-1,j,i)+eta1Arr(k,j,i));
+        etaC2 = eta2Arr(k,j,i);
+        eta2 = HALF_F*(eta2Arr(k-1,j,i)+eta2Arr(k,j,i));
+      } else {
+        etaC1 = eta1 = eta1Constant;
+        etaC2 = eta2 = eta2Constant;
+      }
+
+      dVxi = D_DX_K(Vc,VX1)/dx1(i);
+      dVyi = D_DX_K(Vc,VX2)/dx1(i);
+      dVzi = D_DX_K(Vc,VX3)/dx1(i);
+      dVxj = D_DY_K(Vc,VX1)/dx2(j);
+      dVyj = D_DY_K(Vc,VX2)/dx2(j);
+      dVzj = D_DY_K(Vc,VX3)/dx2(j);
+      dVxk = D_DZ_K(Vc,VX1)/dx3(k);
+      dVyk = D_DZ_K(Vc,VX2)/dx3(k);
+      dVzk = D_DZ_K(Vc,VX3)/dx3(k);
+
+      #if GEOMETRY == CARTESIAN
+        divV = dVxi + dVyj + dVzk;
+
+        tau_xz = eta1*(dVxk+dVzi);
+        tau_yz = eta1*(dVyk+dVzj);
+        tau_zz = 2.0*eta1*dVzk + (eta2 - (2.0/3.0)*eta1)*divV;
+      #endif // GEOMETRY == CARTESIAN
+
+      #if GEOMETRY == POLAR
+        real vx1i = 0.5*(Vc(VX1,k-1,j,i)+Vc(VX1,k,j,i));
+
+        divV = vx1i/x1(i) + dVxi + dVyj/x1(i) + dVzk;
+
+        tau_xz = eta1*(dVxk+dVzi);
+        tau_yz = eta1*(dVyk+dVzj);
+        tau_zz = 2.0*eta1*dVzk + (eta2 - (2.0/3.0)*eta1)*divV;
+
+        viscSrc(IDIR,k,j,i) = ZERO_F;
+        viscSrc(JDIR,k,j,i) = ZERO_F;
+        viscSrc(KDIR,k,j,i) = ZERO_F;
+
+      #endif // GEOMETRY == POLAR
+
+      #if GEOMETRY == SPHERICAL
+        real tan_1 = tanx2(j);
+        real s_1 = sinx2(j);
+
+        // Trick to ensure that the axis does not lead to Nans
+        if(FABS(tan_1) < SMALL_NUMBER) {
+          tan_1 = ZERO_F;
+        } else {
+          tan_1 = ONE_F/tan_1;
+        }
+
+        if(FABS(s_1) < SMALL_NUMBER) {
+          s_1 = ZERO_F;
+        } else {
+          s_1 = ONE_F/s_1;
+        }
+
+
+        real vx1i = 0.5*(Vc(VX1,k-1,j,i)+Vc(VX1,k,j,i));
+        real vx2i = 0.5*(Vc(VX2,k-1,j,i)+Vc(VX2,k,j,i));
+        real vx3i = 0.5*(Vc(VX3,k-1,j,i)+Vc(VX3,k,j,i));
+
+        divV = 2.0*vx1i/x1(i) + dVxi + dVyj/x1(i) + tan_1*vx2i/x1(i) + dVzk/x1(i)*s_1;
+
+        tau_xz = eta1*(dVxk*s_1/x1(i) + dVzi - vx3i/x1(i));
+        tau_yz = eta1*(dVyk*s_1/x1(i) + dVzj/x1(i) - vx3i*tan_1/x1(i));
+        tau_zz = 2.0*eta1*( dVzk*s_1/x1(i) + vx1i/x1(i) + vx2i*tan_1/x1(i))
+                  + (eta2 - (2.0/3.0)*eta1)*divV;
+
+        viscSrc(IDIR,k,j,i) = ZERO_F;
+        viscSrc(JDIR,k,j,i) = ZERO_F;
+        viscSrc(KDIR,k,j,i) = ZERO_F;
+
+      #endif //GEOMETRY == SPHERICAL
+
+      // Update flux with the stress tensor
+      EXPAND( Flux(MX1, k, j, i) -= tau_xz; ,
+              Flux(MX2, k, j, i) -= tau_yz; ,
+              Flux(MX3, k, j, i) -= tau_zz; )
+
+      #if HAVE_ENERGY
+        Flux(ENG, k, j, i) -= EXPAND(   0.5*(Vc(VX1,k,j,i) + Vc(VX1,k-1,j,i))*tau_xz  ,
+                                      + 0.5*(Vc(VX2,k,j,i) + Vc(VX2,k-1,j,i))*tau_yz  ,
+                                      + 0.5*(Vc(VX3,k,j,i) + Vc(VX3,k-1,j,i))*tau_zz);
+      #endif
+
+      dMax(k,j,i) += (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k-1,j,i)));
+    });
+  }
+  // Remove back Fargo velocity
+  if(this->hydro->haveFargo) {
+    this->hydro->fargo.SubstractVelocity(t);
+  }
   idfx::popRegion();
 }

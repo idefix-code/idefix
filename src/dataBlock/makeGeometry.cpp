@@ -27,8 +27,10 @@ void DataBlock::MakeGeometry() {
   IdefixArray1D<real> x2m = this->xl[JDIR];
   IdefixArray1D<real> x3m = this->xl[KDIR];
   IdefixArray1D<real> rt  = this->rt;
-  IdefixArray1D<real> sm  = this->sm;
-  IdefixArray1D<real> s   = this->s;
+  IdefixArray1D<real> sinx2m  = this->sinx2m;
+  IdefixArray1D<real> tanx2m  = this->tanx2m;
+  IdefixArray1D<real> sinx2   = this->sinx2;
+  IdefixArray1D<real> tanx2   = this->tanx2;
   IdefixArray1D<real> dmu = this->dmu;
 
   idefix_for("Volumes",0,this->np_tot[KDIR],0,this->np_tot[JDIR],0,this->np_tot[IDIR],
@@ -85,8 +87,10 @@ void DataBlock::MakeGeometry() {
       real xL = x2m(j);
       real xR = x2p(j);
       x2gc(j)  = (sin(xR) - sin(xL)+ xL*cos(xL) - xR*cos(xR)) / (cos(xL)-cos(xR));
-      sm(j) = FABS(sin(xL));
-      s(j) = FABS(sin(x2(j)));
+      sinx2m(j) = sin(xL);
+      tanx2m(j) = tan(xL);
+      sinx2(j) = sin(x2(j));
+      tanx2(j) = tan(x2(j));
       dmu(j) = FABS(cos(xL)-cos(xR));
 #endif
     }

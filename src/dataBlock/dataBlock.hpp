@@ -30,9 +30,12 @@ class DataBlock {
   IdefixArray1D<real> dx[3];   // cell width
   IdefixArray1D<real> xgc[3];  // cell geometrical cell center
   IdefixArray1D<real> rt;      // In spherical coordinates, gives \tilde{r}
-  IdefixArray1D<real> sm;      // In spherical coordinates,
-                               // gives fabs(sin(th)) at a j-1/2 interface
-  IdefixArray1D<real> s;       // In spherical coordinates, gives fabs(sin(th))at the cell center
+  IdefixArray1D<real> sinx2m;      // In spherical coordinates,
+                               // gives sin(th) at a j-1/2 interface
+  IdefixArray1D<real> tanx2m;      // In spherical coordinates,
+                               // gives tan(th) at a j-1/2 interface
+  IdefixArray1D<real> sinx2;   // In spherical coordinates, gives sin(th) at the cell center
+  IdefixArray1D<real> tanx2;   // In spherical coordinates, gives tan(th) at the cell center
   IdefixArray1D<real> dmu;     // In spherical coordinates,
                                // gives the \theta volume = fabs(cos(th_m) - cos(th_p))
 

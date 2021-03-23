@@ -20,10 +20,11 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
   IdefixArray3D<real> dV   = data->dV;
   IdefixArray1D<real> x1m  = data->xl[IDIR];
   IdefixArray1D<real> x1   = data->x[IDIR];
-  IdefixArray1D<real> sm   = data->sm;
+
   IdefixArray1D<real> rt   = data->rt;
   IdefixArray1D<real> dmu  = data->dmu;
-  IdefixArray1D<real> s    = data->s;
+  IdefixArray1D<real> sinx2m   = data->sinx2m;
+  IdefixArray1D<real> sinx2 = data->sinx2;
   IdefixArray1D<real> dx   = data->dx[dir];
   IdefixArray1D<real> dx2  = data->dx[JDIR];
   IdefixArray3D<real> invDt = this->InvDt;
@@ -155,7 +156,7 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
   #endif // MHD
       } else if(dir==JDIR) {
   #if COMPONENTS == 3
-        Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(sm(j));
+        Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(sinx2m(j));
     #if MHD == YES
         Flux(iBPHI,k,j,i) = Flux(iBPHI,k,j,i)  / Ax;
     #endif // MHD
@@ -197,7 +198,7 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
   #endif
       } else if(dir==JDIR) {
   #if (GEOMETRY == SPHERICAL) && (COMPONENTS == 3)
-        rhs[iMPHI] /= FABS(s(j));
+        rhs[iMPHI] /= FABS(sinx2(j));
     #if MHD == YES
         rhs[iBPHI] = -dt / (rt(i)*dx(j)) * (Flux(iBPHI, k, j+1, i) - Flux(iBPHI, k, j, i));
     #endif // MHD

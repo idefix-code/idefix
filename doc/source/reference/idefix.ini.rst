@@ -54,7 +54,7 @@ This section is used by *Idefix* time integrator class to define the time integr
 | tstop          | float              | time when the code stops                                                                                  |
 +----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
 | first_dt       | float              | first timestep used by the integrator. If not set, Idefix use by default 1e-10 (very conservative)        |
-+----------------+--------------------+-----------------------------------------------------------------------------------------------------------+                                                                    |
++----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
 | fixed_dt       | float              | | when set, *Idefix* uses a fixed time step instead of the dt computed from the CFL condition.            |
 |                |                    | | In this case, the CFL parameters and ``first_dt`` are ignored.                                          |
 +----------------+--------------------+-----------------------------------------------------------------------------------------------------------+

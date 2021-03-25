@@ -376,7 +376,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
         dphi = dx2(j);
         s = j;
       #elif GEOMETRY == SPHERICAL
-        w = 0.5*(meanV(j-1,i)+meanV(j,i))/(x1m(i)*sinx2m(j)));
+        w = 0.5*(meanV(j-1,i)+meanV(j,i))/(x1m(i)*sinx2m(j));
         dphi = dx3(k);
         s = k;
       #endif
@@ -496,7 +496,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
   #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
     Vs(BX3s,k,j,i) +=  (ex(k,j+1,i) - ex(k,j,i) ) / dx2(j);
   #elif GEOMETRY == SPHERICAL
-    real A1p = x1p(i)*x1p(i);
+    real A1p = x1m(i+1)*x1m(i+1);
     real A1m = x1m(i)*x1m(i);
     real A2m = FABS(sinx2m(j));
     real A2p = FABS(sinx2m(j+1));

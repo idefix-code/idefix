@@ -121,6 +121,8 @@ void Fargo::ShiftSolution(const real t, const real dt) {
   IdefixArray1D<real> x2 = data->x[JDIR];
   IdefixArray1D<real> dx2 = data->dx[JDIR];
   IdefixArray1D<real> dx3 = data->dx[KDIR];
+  IdefixArray1D<real> sinx2 = data->sinx2;
+  IdefixArray1D<real> sinx2m = data->sinx2m;
 
   real Lphi;
   int sbeg, send;
@@ -153,7 +155,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
                  dphi = dx2(j);
                  s = j;
                 #elif GEOMETRY == SPHERICAL
-                 w = meanV(j,i)/(x1(i)*SIN(x2(j)));
+                 w = meanV(j,i)/(x1(i)*sinx2(j));
                  dphi = dx3(k);
                  s = k;
                 #endif
@@ -246,6 +248,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
   IdefixArray1D<real> dx1 = data->dx[IDIR];
 
 
+
   #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
     IdefixArray3D<real> ek = ez;
   #elif GEOMETRY == SPHERICAL
@@ -268,7 +271,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
         dphi = dx2(j);
         s = j;
       #elif GEOMETRY == SPHERICAL
-        w = 0.5*(meanV(j,i-1)+meanV(j,i))/(x1m(i)*SIN(x2(j)));
+        w = 0.5*(meanV(j,i-1)+meanV(j,i))/(x1m(i)*sinx2(j));
         dphi = dx3(k);
         s = k;
       #endif
@@ -352,6 +355,112 @@ void Fargo::ShiftSolution(const real t, const real dt) {
 
       ek(k,j,i) *= dphi;
     });
+
+#if DIMENSIONS == 3
+  // In spherical coordinates, ei will actually be -ex
+  IdefixArray3D<real> ei = ex;
+
+  idefix_for("Fargo:ComputeEi",
+    data->beg[KDIR],data->end[KDIR]+KOFFSET,
+    data->beg[JDIR],data->end[JDIR]+JOFFSET,
+    data->beg[IDIR],data->end[IDIR]+IOFFSET,
+    KOKKOS_LAMBDA(int k, int j, int i) {
+      real w,dphi;
+      int s;
+      #if GEOMETRY == CARTESIAN
+        w = 0.5*(meanV(k,i)+meanV(k-1,i));
+        dphi = dx2(j);
+        s = j;
+      #elif GEOMETRY == POLAR
+        w = 0.5*(meanV(k-1,i)+meanV(k,i))/x1(i);
+        dphi = dx2(j);
+        s = j;
+      #elif GEOMETRY == SPHERICAL
+        w = 0.5*(meanV(j-1,i)+meanV(j,i))/(x1m(i)*sinx2m(j)));
+        dphi = dx3(k);
+        s = k;
+      #endif
+
+      // Compute the offset in phi, modulo the full domain size
+      real dL = std::fmod(w*dt, Lphi);
+
+      // Translate this into # of cells
+      int m = static_cast<int> (std::floor(dL/dphi+HALF_F));
+
+      // get the remainding shift
+      real eps = dL/dphi - m;
+
+      // origin index before the shift
+      // Note the trick to get a positive module i%%n = (i%n + n)%n;
+      int n = send-sbeg;
+
+      // so is the "origin" index
+      int so = sbeg + ((s-m-sbeg)%n+n)%n;
+
+      // compute shifted indices, taking into account the fact that we're periodic
+      int sop1 = sbeg + (so+1-sbeg)%(send-sbeg);
+      int som1 = sbeg + (so-1-sbeg)%(send-sbeg);
+      int som2 = sbeg + (so-2-sbeg)%(send-sbeg);
+
+      // Compute EMF due to the shift via second order reconstruction
+      real dqm, dqp, dq;
+
+      #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
+        if(eps>=ZERO_F) {
+          // Compute extrapolated ek
+          dqm = Vs(BX3s,k,som1,i) - Vs(BX3s,k,som2,i);
+          dqp = Vs(BX3s,k,so,i) - Vs(BX3s,k,som1,i);
+          dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+          ei(k,s,i) = eps*(Vs(BX3s,k,som1,i) + 0.5*dq*(1.0-eps));
+        } else {
+          dqm = Vs(BX3s,k,so,i) - Vs(BX3s,k,som1,i);
+          dqp = Vs(BX3s,k,sop1,i) - Vs(BX3s,k,so,i);
+          dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+          ei(k,s,i) = eps*(Vs(BX3s,k,so,i) - 0.5*dq*(1.0+eps));
+        }
+        if(m>0) {
+          for(int ss = s-m ; ss < s ; ss++) {
+            int sc = sbeg + ((ss-sbeg)%n+n)%n;
+            ei(k,s,i) += Vs(BX3s,k,sc,i);
+          }
+        } else {
+          for(int ss = s ; ss < s-m ; ss++) {
+            int sc = sbeg + ((ss-sbeg)%n+n)%n;
+            ei(k,s,i) -= Vs(BX3s,k,sc,i);
+          }
+        }
+
+
+      #elif GEOMETRY == SPHERICAL
+      if(eps>=ZERO_F) {
+        // Compute extrapolated ek
+        dqm = Vs(BX2s,som1,j,i) - Vs(BX2s,som2,j,i);
+        dqp = Vs(BX2s,so,j,i) - Vs(BX2s,som1,j,i);
+        dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+        ei(s,j,i) = eps*(Vs(BX2s,som1,j,i) + 0.5*dq*(1.0-eps));
+      } else {
+        dqm = Vs(BX2s,so,j,i) - Vs(BX2s,som1,j,i);
+        dqp = Vs(BX2s,sop1,j,i) - Vs(BX2s,so,j,i);
+        dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+        ei(s,j,i) = eps*(Vs(BX2s,so,j,i) - 0.5*dq*(1.0+eps));
+      }
+      if(m>0) {
+        for(int ss = s-m ; ss < s ; ss++) {
+          int sc = sbeg + ((ss-sbeg)%n+n)%n;
+          ei(s,j,i) += Vs(BX2s,sc,j,i);
+        }
+      } else {
+        for(int ss = s ; ss < s-m ; ss++) {
+          int sc = sbeg + ((ss-sbeg)%n+n)%n;
+          ei(s,j,i) -= Vs(BX2s,sc,j,i);
+        }
+      }
+
+      #endif  // GEOMETRY
+
+      ei(k,j,i) *= dphi;
+    });
+#endif
 
   // Update field components according to the computed EMFS
 

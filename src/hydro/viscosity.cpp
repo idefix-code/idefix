@@ -150,11 +150,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
     }
   }
 
-  // Add fargo velocity if using fargo
 
-  if(this->hydro->haveFargo) {
-    this->hydro->fargo.AddVelocity(t);
-  }
   int ibeg, iend, jbeg, jend, kbeg, kend;
   ibeg = this->hydro->data->beg[IDIR];
   iend = this->hydro->data->end[IDIR];
@@ -679,9 +675,6 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
       dMax(k,j,i) += (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k-1,j,i)));
     });
   }
-  // Remove back Fargo velocity
-  if(this->hydro->haveFargo) {
-    this->hydro->fargo.SubstractVelocity(t);
-  }
+
   idfx::popRegion();
 }

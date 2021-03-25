@@ -28,7 +28,16 @@ void Hydro::CalcParabolicFlux(int dir, const real t) {
   }
 
   if(this->haveViscosity) {
+      // Add fargo velocity if using fargo
+    if(this->haveFargo) {
+      fargo.AddVelocity(t);
+    }
     this->viscosity.AddViscousFlux(dir,t);
+
+    // Remove back Fargo velocity
+    if(hydro->haveFargo) {
+      fargo.SubstractVelocity(t);
+    }
   }
 
   idfx::popRegion();

@@ -35,7 +35,7 @@ void Hydro::CalcParabolicFlux(int dir, const real t) {
     this->viscosity.AddViscousFlux(dir,t);
 
     // Remove back Fargo velocity
-    if(hydro->haveFargo) {
+    if(this->haveFargo) {
       fargo.SubstractVelocity(t);
     }
   }

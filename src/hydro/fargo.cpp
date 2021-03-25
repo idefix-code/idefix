@@ -237,31 +237,25 @@ void Fargo::ShiftSolution(const real t, const real dt) {
   Kokkos::deep_copy(Uc,scrh);
 
 #if MHD == YES
-  IdefixArray3D<real> Vs = hydro->Vs;
+  IdefixArray4D<real> Vs = hydro->Vs;
   IdefixArray3D<real> ex = hydro->emf.Ex1;
   IdefixArray3D<real> ey = hydro->emf.Ex2;
   IdefixArray3D<real> ez = hydro->emf.Ex3;
   IdefixArray1D<real> x1m = data->xl[IDIR];
   IdefixArray1D<real> x2m = data->xl[JDIR];
-
-
-  int ioffset{0};
-  int joffset{0};
-  int koffset{0};
+  IdefixArray1D<real> dx1 = data->dx[IDIR];
 
 
   #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
     IdefixArray3D<real> ek = ez;
-    ioffset = IOFFSET;
   #elif GEOMETRY == SPHERICAL
     IdefixArray3D<real> ek = ey;
-    koffset = KOFFSET;
   #endif
 
   idefix_for("Fargo:ComputeEk",
-    data->beg[KDIR],data->end[KDIR]+koffset,
-    data->beg[JDIR],data->end[JDIR]+joffset,
-    data->beg[IDIR],data->end[IDIR]+ioffset,
+    data->beg[KDIR],data->end[KDIR]+KOFFSET,
+    data->beg[JDIR],data->end[JDIR]+JOFFSET,
+    data->beg[IDIR],data->end[IDIR]+IOFFSET,
     KOKKOS_LAMBDA(int k, int j, int i) {
       real w,dphi;
       int s;
@@ -309,12 +303,12 @@ void Fargo::ShiftSolution(const real t, const real dt) {
           dqm = Vs(BX1s,k,som1,i) - Vs(BX1s,k,som2,i);
           dqp = Vs(BX1s,k,so,i) - Vs(BX1s,k,som1,i);
           dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-          ek(k,s,i) = Vs(BX1s,k,som1,i) + 0.5*dq*(1.0-eps);
+          ek(k,s,i) = eps*(Vs(BX1s,k,som1,i) + 0.5*dq*(1.0-eps));
         } else {
           dqm = Vs(BX1s,k,so,i) - Vs(BX1s,k,som1,i);
           dqp = Vs(BX1s,k,sop1,i) - Vs(BX1s,k,so,i);
           dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-          ek(k,s,i) = Vs(BX1s,k,so,i) - 0.5*dq*(1.0+eps);
+          ek(k,s,i) = eps*(Vs(BX1s,k,so,i) - 0.5*dq*(1.0+eps));
         }
         if(m>0) {
           for(int ss = s-m ; ss < s ; ss++) {
@@ -335,12 +329,12 @@ void Fargo::ShiftSolution(const real t, const real dt) {
         dqm = Vs(BX1s,som1,j,i) - Vs(BX1s,som2,j,i);
         dqp = Vs(BX1s,so,j,i) - Vs(BX1s,som1,j,i);
         dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-        ek(s,j,i) = Vs(BX1s,som1,j,i) + 0.5*dq*(1.0-eps);
+        ek(s,j,i) = eps*(Vs(BX1s,som1,j,i) + 0.5*dq*(1.0-eps));
       } else {
         dqm = Vs(BX1s,so,j,i) - Vs(BX1s,som1,j,i);
         dqp = Vs(BX1s,sop1,j,i) - Vs(BX1s,so,j,i);
         dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-        ek(s,j,i) = Vs(BX1s,so,j,i) - 0.5*dq*(1.0+eps);
+        ek(s,j,i) = eps*(Vs(BX1s,so,j,i) - 0.5*dq*(1.0+eps));
       }
       if(m>0) {
         for(int ss = s-m ; ss < s ; ss++) {

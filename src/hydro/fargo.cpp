@@ -245,6 +245,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
   IdefixArray3D<real> ez = hydro->emf.Ex3;
   IdefixArray1D<real> x1m = data->xl[IDIR];
   IdefixArray1D<real> x2m = data->xl[JDIR];
+  IdefixArray1D<real> dmu = data->dmu;
   IdefixArray1D<real> dx1 = data->dx[IDIR];
 
 
@@ -271,7 +272,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
         dphi = dx2(j);
         s = j;
       #elif GEOMETRY == SPHERICAL
-        w = 0.5*(meanV(j,i-1)+meanV(j,i))/(x1m(i)*sinx2(j));
+        w = 0.5*(meanV(j,i-1)/x1(i-1)+meanV(j,i)/x1(i))/sinx2(j);
         dphi = dx3(k);
         s = k;
       #endif
@@ -357,7 +358,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
     });
 
 #if DIMENSIONS == 3
-  // In spherical coordinates, ei will actually be -ex
+  // In cartesian and polar coordinates, ei is actually -Ex
   IdefixArray3D<real> ei = ex;
 
   idefix_for("Fargo:ComputeEi",
@@ -376,7 +377,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
         dphi = dx2(j);
         s = j;
       #elif GEOMETRY == SPHERICAL
-        w = 0.5*(meanV(j-1,i)+meanV(j,i))/(x1m(i)*sinx2m(j));
+        w = 0.5*(meanV(j-1,i)/sinx2(j-1)+meanV(j,i)/sinx2(j))/(x1(i));
         dphi = dx3(k);
         s = k;
       #endif
@@ -481,27 +482,27 @@ void Fargo::ShiftSolution(const real t, const real dt) {
 #if GEOMETRY == CARTESIAN
       Vs(BX2s,k,j,i) += D_EXPAND(    0.0                          ,
                             + (ez(k,j,i+1) - ez(k,j,i)) / dx1(i)  ,
-                            - (ex(k+1,j,i) - ex(k,j,i)) / dx3(k)  );
+                            + (ex(k+1,j,i) - ex(k,j,i)) / dx3(k)  );
 #elif GEOMETRY == POLAR
       Vs(BX2s,k,j,i) += D_EXPAND(    0.0                                          ,
                             + (x1m(i+1) * ez(k,j,i+1) - x1m(i)*ez(k,j,i)) / dx1(i)  ,
-                            - x1(i) *  (ex(k+1,j,i) - ex(k,j,i)) / dx3(k)  );
+                            + x1(i) *  (ex(k+1,j,i) - ex(k,j,i)) / dx3(k)  );
 #elif GEOMETRY == SPHERICAL
     #if DIMENSIONS == 3
-      Vs(BX2s,k,j,i) += (ex(k+1,j,i) - ex(k,j,i)) / dx3(k);
+      Vs(BX2s,k,j,i) += - (ex(k+1,j,i) - ex(k,j,i)) / dx3(k);
     #endif
 #endif // GEOMETRY
 
 #if DIMENSIONS == 3
   #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
-    Vs(BX3s,k,j,i) +=  (ex(k,j+1,i) - ex(k,j,i) ) / dx2(j);
+    Vs(BX3s,k,j,i) -=  (ex(k,j+1,i) - ex(k,j,i) ) / dx2(j);
   #elif GEOMETRY == SPHERICAL
     real A1p = x1m(i+1)*x1m(i+1);
     real A1m = x1m(i)*x1m(i);
     real A2m = FABS(sinx2m(j));
     real A2p = FABS(sinx2m(j+1));
-    Vs(BX3s,k,j,i) += sinx2(j) * (A1p * ez(k,j,i+1) - A1m * ez(k,j,i))/(x1(i)*dx1(i))
-                      - (A2p * ex(k,j+1,i) - A2m * ex(k,j,i))/dx2(j);
+    Vs(BX3s,k,j,i) += dmu(j)/dx2(j) * (A1p * ey(k,j,i+1) - A1m * ey(k,j,i))/(x1(i)*dx1(i))
+                      + (A2p * ex(k,j+1,i) - A2m * ex(k,j,i))/dx2(j);
   #endif
 #endif// DIMENSIONS
   });

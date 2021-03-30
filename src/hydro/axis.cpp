@@ -15,14 +15,6 @@ void Axis::Init(Grid &grid, Hydro *h) {
   this->data = this->hydro->data;
   this->emf = & this->hydro->emf;
 
-  // Do we have a full circle?
-  // Check that we have a fraction of 2PI:
-  double should_be_integer = 2.0*M_PI/fabs(grid.xend[KDIR] - grid.xbeg[KDIR]);
-
-  if(fabs(should_be_integer - round(should_be_integer))>1e-10) {
-    IDEFIX_ERROR("The grid extent in X3 should be an integer fraction of 2Pi");
-  }
-
   #if GEOMETRY != SPHERICAL
     IDEFIX_ERROR("Axis boundary conditions are only designed to handle spherical geometry");
   #endif

@@ -47,8 +47,8 @@ void Ambipolar(DataBlock& data, real t, IdefixArray3D<real> &xAin) {
                 real R=FMAX(FABS(x1(i)*sin(x2(j))),ONE_F);
                 real Omega=pow(R,-1.5);
 
-                real q = z/(Hideal*R*epsilon);
-                real Am = AmMid * exp(q*q*q*q);
+                real zh = z/(R*epsilon);  // z in units of disc scale height h=R*epsilon
+                real Am = AmMid / ( 0.5*(1-tanh((fabs(zh)-Hideal)/0.5)));
 
                 real B2 = Vc(BX1,k,j,i)*Vc(BX1,k,j,i)+Vc(BX2,k,j,i)*Vc(BX2,k,j,i)+Vc(BX3,k,j,i)*Vc(BX3,k,j,i);
                 real eta = B2/(Omega*Am*Vc(RHO,k,j,i));
@@ -68,7 +68,7 @@ void Resistivity(DataBlock& data, real t, IdefixArray3D<real> &etain) {
 
   idefix_for("Resistivity",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
               KOKKOS_LAMBDA (int k, int j, int i) {
-                    eta(k,j,i) = x1(i) < 1.2 ? epsilon*epsilon : ZERO_F;
+                    eta(k,j,i) = x1(i) < 1.2 ? (1.2-x1(i))/0.2*epsilon*epsilon : ZERO_F;
               });
 
 }
@@ -121,36 +121,7 @@ void MySourceTerm(DataBlock &data, const real t, const real dtin) {
 
 }
 
-void EmfBoundary(DataBlock& data, const real t) {
-    IdefixArray3D<real> Ex1 = data.hydro.emf.ex;
-    IdefixArray3D<real> Ex2 = data.hydro.emf.ey;
-    IdefixArray3D<real> Ex3 = data.hydro.emf.ez;
-    if(data.lbound[IDIR] == userdef) {
 
-        int ighost = data.nghost[IDIR];
-
-        idefix_for("EMFBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,ighost+1,
-                    KOKKOS_LAMBDA (int k, int j, int i) {
-            Ex3(k,j,i) = ZERO_F;
-        });
-    }
-    if(data.lbound[JDIR] == userdef) {
-        int jghost = data.nghost[JDIR];
-        //printf("I'mbeing called\n");
-        idefix_for("EMFBoundary",0,data.np_tot[KDIR],0,data.np_tot[IDIR],
-                    KOKKOS_LAMBDA (int k, int i) {
-            Ex3(k,jghost,i) = ZERO_F;
-        });
-    }
-    if(data.rbound[JDIR] == userdef) {
-        int jghost = data.end[JDIR];
-        //printf("I'mbeing called\n");
-        idefix_for("EMFBoundary",0,data.np_tot[KDIR],0,data.np_tot[IDIR],
-                    KOKKOS_LAMBDA (int k, int i) {
-            Ex3(k,jghost,i) = ZERO_F;
-        });
-    }
-}
 
 void InternalBoundary(DataBlock& data, const real t) {
   IdefixArray4D<real> Vc = data.hydro.Vc;
@@ -250,6 +221,42 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 
 }
 
+void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
+
+  // Use Invdt as scratch array
+  IdefixArray3D<real> scrh = data.hydro.InvDt;
+
+  // Ask for a computation of xA ambipolar in this scratch array
+  Ambipolar(data, data.t, scrh);
+
+  // Mirror data on Host
+  DataBlockHost d(data);
+
+  // Sync it
+  d.SyncFromDevice();
+
+  // Make references to the user-defined arrays (variables is a container of IdefixHostArray3D)
+  // Note that the labels should match the variable names in the input file
+  IdefixHostArray3D<real> Am  = variables["Am"];
+
+  IdefixHostArray1D<real> x1=d.x[IDIR];
+  IdefixHostArray1D<real> x2=d.x[JDIR];
+  IdefixHostArray4D<real> Vc=d.Vc;
+  IdefixHostArray3D<real> scrhHost=d.InvDt;
+
+  for(int k = d.beg[KDIR]; k < d.end[KDIR] ; k++) {
+    for(int j = d.beg[JDIR]; j < d.end[JDIR] ; j++) {
+      for(int i = d.beg[IDIR]; i < d.end[IDIR] ; i++) {
+        real z=x1(i)*cos(x2(j));
+        real R=FMAX(FABS(x1(i)*sin(x2(j))),ONE_F);
+        real Omega=pow(R,-1.5);
+        Am(k,j,i) = 1.0/(Omega*scrhHost(k,j,i)*Vc(RHO,k,j,i));
+      }
+    }
+  }
+}
+
+
 void Potential(DataBlock& data, const real t, IdefixArray1D<real>& x1, IdefixArray1D<real>& x2, IdefixArray1D<real>& x3, IdefixArray3D<real>& phi) {
 
     idefix_for("Potential",0,data.np_tot[KDIR], 0, data.np_tot[JDIR], 0, data.np_tot[IDIR],
@@ -270,10 +277,11 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
     data.hydro.EnrollGravPotential(&Potential);
     data.hydro.EnrollAmbipolarDiffusivity(&Ambipolar);
-    //data.hydro.EnrollOhmicDiffusivity(&Resistivity);
+    data.hydro.EnrollOhmicDiffusivity(&Resistivity);
     data.hydro.EnrollUserSourceTerm(&MySourceTerm);
     data.hydro.EnrollInternalBoundary(&InternalBoundary);
-    data.hydro.EnrollEmfBoundary(&EmfBoundary);
+    //data.hydro.EnrollEmfBoundary(&EmfBoundary);
+    output.EnrollUserDefVariables(&ComputeUserVars);
     gammaGlob=data.hydro.GetGamma();
     epsilonGlob = input.GetReal("Setup","epsilon",0);
     epsilonTopGlob = input.GetReal("Setup","epsilonTop",0);

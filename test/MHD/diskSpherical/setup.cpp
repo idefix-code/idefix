@@ -71,10 +71,11 @@ void MySourceTerm(DataBlock &data, const real t, const real dtin) {
 
 void FargoVelocity(DataBlock &data, IdefixArray2D<real> &Vphi) {
   IdefixArray1D<real> x1 = data.x[IDIR];
+    IdefixArray1D<real> x2 = data.x[JDIR];
 
-  idefix_for("FargoVphi",0,data.np_tot[KDIR], 0, data.np_tot[IDIR],
-      KOKKOS_LAMBDA (int k, int i) {
-      Vphi(k,i) = 1.0/sqrt(x1(i));
+  idefix_for("FargoVphi",0,data.np_tot[JDIR], 0, data.np_tot[IDIR],
+      KOKKOS_LAMBDA (int j, int i) {
+      Vphi(j,i) = 1.0/sqrt(x1(i)*sin(x2(j)));
   });
 }
 
@@ -242,6 +243,18 @@ void Potential(DataBlock& data, const real t, IdefixArray1D<real>& x1, IdefixArr
 
 // Default constructor
 
+void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
+
+  // Make references to the user-defined arrays (variables is a container of IdefixHostArray3D)
+  // Note that the labels should match the variable names in the input file
+  IdefixHostArray3D<real> Er  = variables["Er"];
+  IdefixHostArray3D<real> Eth = variables["Eth"];
+  
+    Kokkos::deep_copy(Er,data.hydro.emf.Ex1);
+    Kokkos::deep_copy(Eth,data.hydro.emf.Ex2);
+
+
+}
 
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
@@ -253,6 +266,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   data.hydro.EnrollInternalBoundary(&InternalBoundary);
   if(data.hydro.haveFargo)
     data.hydro.fargo.EnrollVelocity(&FargoVelocity);
+  output.EnrollUserDefVariables(&ComputeUserVars);
   //hydro.EnrollEmfBoundary(&EmfBoundary);
   gammaGlob=data.hydro.GetGamma();
   epsilonGlob = input.GetReal("Setup","epsilon",0);
@@ -301,8 +315,11 @@ void Setup::InitFlow(DataBlock &data) {
 
                 real B0 = sqrt(2*cs2/(R*sqrt(R))/sqrt(beta));
 
-                d.Vs(BX3s,k,j,i) = B0*cos(R/epsilon)*fmax(1-(z*z)/(4*R*R*epsilon*epsilon),ZERO_F);
-                d.Vs(BX3s,k,j,i) *= fmax(tanh(10*(R-1.5)),ZERO_F);
+                r=d.xl[IDIR](i);
+                th=d.xl[JDIR](j);
+                R=r*sin(th);
+                z=r*cos(th);
+                
                 A(IDIR,k,j,i) = 0.0;
                 A(JDIR,k,j,i) = 0.0;
                 A(KDIR,k,j,i) = B0*epsilon*cos(R/epsilon)*fmax(1-(z*z)/(4*R*R*epsilon*epsilon),ZERO_F);

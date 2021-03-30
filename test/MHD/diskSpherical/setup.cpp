@@ -249,7 +249,7 @@ void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
   // Note that the labels should match the variable names in the input file
   IdefixHostArray3D<real> Er  = variables["Er"];
   IdefixHostArray3D<real> Eth = variables["Eth"];
-  
+
     Kokkos::deep_copy(Er,data.hydro.emf.Ex1);
     Kokkos::deep_copy(Eth,data.hydro.emf.Ex2);
 
@@ -319,7 +319,7 @@ void Setup::InitFlow(DataBlock &data) {
                 th=d.xl[JDIR](j);
                 R=r*sin(th);
                 z=r*cos(th);
-                
+
                 A(IDIR,k,j,i) = 0.0;
                 A(JDIR,k,j,i) = 0.0;
                 A(KDIR,k,j,i) = B0*epsilon*cos(R/epsilon)*fmax(1-(z*z)/(4*R*R*epsilon*epsilon),ZERO_F);

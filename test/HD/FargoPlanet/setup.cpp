@@ -77,63 +77,37 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
             ighost = data.beg[IDIR];
             ibeg = 0;
             iend = data.beg[IDIR];
-            //return;
+            idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],ibeg,iend,
+                        KOKKOS_LAMBDA (int k, int j, int i) {
+                            real R=x1(i);
+                            real z=x3(k);
+                            real Vk = 1.0/sqrt(R);
+                            real cs2=(h0*Vk)*(h0*Vk);
+
+                            Vc(RHO,k,j,i) = Vc(RHO,k,j,2*ighost - i +1);
+                            Vc(VX1,k,j,i) = - Vc(VX1,k,j,2*ighost - i +1);
+                            Vc(VX2,k,j,i) = Vk;
+                            Vc(VX3,k,j,i) = Vc(VX3,k,j,2*ighost - i +1);
+                        });
         }
         else if(side==right) {
             ighost = data.end[IDIR]-1;
             ibeg=data.end[IDIR];
             iend=data.np_tot[IDIR];
+            idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],ibeg,iend,
+                        KOKKOS_LAMBDA (int k, int j, int i) {
+                            real R=x1(i);
+                            real z=x3(k);
+                            real Vk = 1.0/sqrt(R);
+                            real cs2=(h0*Vk)*(h0*Vk);
+
+                            Vc(RHO,k,j,i) = Vc(RHO,k,j,ighost);
+                            Vc(VX1,k,j,i) = Vc(VX1,k,j,ighost);
+                            Vc(VX2,k,j,i) = Vk;
+                            Vc(VX3,k,j,i) = Vc(VX3,k,j,ighost);
+                        });
         }
-
-
-        idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],ibeg,iend,
-                    KOKKOS_LAMBDA (int k, int j, int i) {
-                        real R=x1(i);
-                        real z=x3(k);
-                        real Vk = 1.0/sqrt(R);
-                        real cs2=(h0*Vk)*(h0*Vk);
-
-                        Vc(RHO,k,j,i) = sigma0/sqrt(2.0*M_PI)/(h0*R)*pow(R,-sigmaSlope) * exp(1.0/(cs2) * (1.0/sqrt(R*R+z*z)-1.0/R)) ;
-                        Vc(VX1,k,j,i) = Vc(VX1,k,j,ighost);
-                        Vc(VX2,k,j,i) = Vk*sqrt(R/sqrt(R*R + z*z)-(2.0+sigmaSlope)*h0*h0);
-                        Vc(VX3,k,j,i) = Vc(VX3,k,j,ighost);
-                    });
     }
-
-    if( dir==KDIR) {
-        IdefixArray4D<real> Vc = data.hydro.Vc;
-        int kghost;
-        int kbeg,kend;
-        if(side == left) {
-            kghost = data.beg[KDIR];
-            kbeg = 0;
-            kend = data.beg[KDIR];
-            //return;
-        }
-        else if(side==right) {
-            kghost = data.end[KDIR]-1;
-            kbeg=data.end[KDIR];
-            kend=data.np_tot[KDIR];
-        }
-
-
-        idefix_for("UserDefBoundary",kbeg,kend,0,data.np_tot[KDIR],0,data.np_tot[IDIR],
-                    KOKKOS_LAMBDA (int k, int j, int i) {
-                      real R=x1(i);
-                      real z=x3(k);
-                      real Vk = 1.0/sqrt(R);
-                      real cs2=(h0*Vk)*(h0*Vk);
-
-                      Vc(RHO,k,j,i) = Vc(RHO,kghost,j,i) ;
-                      // Vc(RHO,k,j,i) = sigma0/sqrt(2.0*M_PI)/(h0*R)*pow(R,-sigmaSlope) * exp(1.0/(cs2) * (1.0/sqrt(R*R+z*z)-1.0/R)) ;
-                      Vc(VX1,k,j,i) = Vc(VX1,kghost,j,i);
-                      Vc(VX3,k,j,i) = ZERO_F;
-                      Vc(VX2,k,j,i) = Vc(VX2,kghost,j,i);
-                      // Vc(VX2,k,j,i) = Vk*sqrt(R/sqrt(R*R + z*z)-(1+sigmaSlope)*h0*h0);
-
-                    });
-    }
-
 }
 
 void Potential(DataBlock& data, const real t, IdefixArray1D<real>& x1, IdefixArray1D<real>& x2, IdefixArray1D<real>& x3, IdefixArray3D<real>& phi) {
@@ -181,39 +155,6 @@ void FargoVelocity(DataBlock &data, IdefixArray2D<real> &Vphi) {
 }
 
 
-
-// Analyse data to produce an ascii output
-void Analysis(DataBlock & data) {
-  // Mirror data on Host
-  DataBlockHost d(data);
-
-  // Sync it
-  d.SyncFromDevice();
-
-  // Get the minmax of the density field
-  real minrho{INT_MAX};
-  real maxrho{INT_MIN};
-  for(int k = 0; k < d.np_tot[KDIR] ; k++) {
-      for(int j = 0; j < d.np_tot[JDIR] ; j++) {
-          for(int i = 0; i < d.np_tot[IDIR] ; i++) {
-              if(d.Vc(RHO,k,j,i) < minrho) {
-                  minrho = d.Vc(RHO,k,j,i);
-              }
-              if(d.Vc(RHO,k,j,i) > maxrho) {
-                  maxrho = d.Vc(RHO,k,j,i);
-              }
-          }
-      }
-  }
-
-  // Write the data in ascii to our file
-  std::ofstream f;
-  f.open("dataminmax.csv",std::ios::app);
-  f.precision(10);
-  f << std::scientific << minrho << "," << maxrho << std::endl;
-  f.close();
-}
-
 // Default constructor
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
@@ -226,8 +167,6 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output)// : m_pl
   data.hydro.viscosity.EnrollViscousDiffusivity(&MyViscosity);
   if(data.hydro.haveFargo)
     data.hydro.fargo.EnrollVelocity(&FargoVelocity);
-  // Enroll the analysis function
-  output.EnrollAnalysis(&Analysis);
   sigma0Glob = input.GetReal("Setup","sigma0",0);
   sigmaSlopeGlob = input.GetReal("Setup","sigmaSlope",0);
   h0Glob = input.GetReal("Setup","h0",0);

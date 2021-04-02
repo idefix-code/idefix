@@ -476,7 +476,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
       Vs(BX1s,k,j,i) += -  (ez(k,j+1,i) - ez(k,j,i) ) / dx2(j);
 
 #elif GEOMETRY == SPHERICAL
-      Vs(BX1s,k,j,i) += -  (ey(k+1,j,i) - ey(k,j,i) ) / dx3(k);
+      Vs(BX1s,k,j,i) += -  dx2(j)/dmu(j)*(ey(k+1,j,i) - ey(k,j,i) ) / dx3(k);
 #endif
 
 #if GEOMETRY == CARTESIAN
@@ -501,7 +501,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
     real A1m = x1m(i)*x1m(i);
     real A2m = FABS(sinx2m(j));
     real A2p = FABS(sinx2m(j+1));
-    Vs(BX3s,k,j,i) += dmu(j)/dx2(j) * (A1p * ey(k,j,i+1) - A1m * ey(k,j,i))/(x1(i)*dx1(i))
+    Vs(BX3s,k,j,i) += sinx2(j) * (A1p * ey(k,j,i+1) - A1m * ey(k,j,i))/(x1(i)*dx1(i))
                       + (A2p * ex(k,j+1,i) - A2m * ex(k,j,i))/dx2(j);
   #endif
 #endif// DIMENSIONS

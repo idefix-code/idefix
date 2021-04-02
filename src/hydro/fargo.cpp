@@ -476,7 +476,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
       Vs(BX1s,k,j,i) += -  (ez(k,j+1,i) - ez(k,j,i) ) / dx2(j);
 
 #elif GEOMETRY == SPHERICAL
-      Vs(BX1s,k,j,i) += -  dx2(j)/dmu(j)*(ey(k+1,j,i) - ey(k,j,i) ) / dx3(k);
+      Vs(BX1s,k,j,i) += -  sinx2(j)*dx2(j)/dmu(j)*(ey(k+1,j,i) - ey(k,j,i) ) / dx3(k);
 #endif
 
 #if GEOMETRY == CARTESIAN

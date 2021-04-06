@@ -1,171 +1,260 @@
+#!/usr/bin/env python3
+
 import argparse
+from collections import defaultdict
 import os
 import re
-
-parser = argparse.ArgumentParser()
-parser.add_argument("-mhd",
-                    default=False,
-                    help="enable MHD",
-                    action="store_true")
-parser.add_argument("-gpu",
-                    default=False,
-                    help="Enable KOKKOS+CUDA",
-                    action="store_true")
-
-parser.add_argument("-cxx",
-                    help="Override default compiler")
-
-cpuarch = ["HSW"
-          ,"BDW"
-          ,"SKX"
-          ,"EPYC"]
-
-gpuarch = ["Kepler30"
-          ,"Maxwell50"
-          ,"Pascal60"
-          ,"Pascal61"
-          ,"Volta70"
-          ,"Volta72"
-          ,"Turing75"]
-
-parser.add_argument("-arch",
-                    nargs='+',
-                    choices = cpuarch + gpuarch,
-                     help="Target Kokkos architecture")
-
-parser.add_argument("-openmp",
-                    help="enable OpenMP parallelism",
-                    action="store_true")
-
-parser.add_argument("-mpi",
-                    help="enable MPI parallelism",
-                    action="store_true")
-
-args=parser.parse_args()
-
-idefixDir = os.getenv("IDEFIX_DIR")
-if idefixDir is None:
-    print("Environment variable IDEFIX_DIR is not set")
-    print("Please export IDEFIX_DIR=/path/to/idefix")
-    exit()
-
-iMakefile = idefixDir+"/Makefile.in"
-oMakefile = "Makefile"
-
-# List of objects
-makefileOptions = {}
-makefileOptions['extraIncludeDir']=""
-makefileOptions['extraVpath']=""
-makefileOptions['extraHeaders']=""
-makefileOptions['extraObj']=""
-makefileOptions['extraLine']=""
-makefileOptions['cxxflags']=""
-makefileOptions['ldflags']=""
+import sys
 
 
-# extract cpu & gpu architectures from args.arch
-cpu=""
-gpu=""
+# CPU_ARCHS and GPU_ARCHS are alphabetically ordered
+CPU_ARCHS = frozenset(
+    (
+        "BDW",
+        "EPYC",
+        "HSW",
+        "SKX",
+    ),
+)
 
-if args.arch is not None:
-    for archItem in args.arch:
-        if archItem in cpuarch:
-            cpu = archItem
-        if archItem in gpuarch:
-            gpu = archItem
+GPU_ARCHS = frozenset(
+    (
+        "Kepler30",
+        "Maxwell50",
+        "Pascal60",
+        "Pascal61",
+        "Turing75",
+        "Volta70",
+        "Volta72",
+    ),
+)
 
-if cpu == "":
-    cpu="BDW"
+KNOWN_ARCHS = {"CPU": CPU_ARCHS, "GPU": GPU_ARCHS}
+DEFAULT_ARCHS = {"CPU": "BDW", "GPU": "Pascal60"}
 
-if gpu == "":
-    gpu="Pascal60"
 
-if args.gpu:
-    makefileOptions['cxx'] = '${KOKKOS_PATH}/bin/nvcc_wrapper'
-    makefileOptions['extraLine'] += '\nKOKKOS_CUDA_OPTIONS = "enable_lambda"'
-    makefileOptions['kokkosDevices'] = '"Cuda"'
-    makefileOptions['kokkosArch'] = cpu+","+gpu
-    makefileOptions['cxxflags'] = "-O3 "
+def _add_parser_args(parser):
+    parser.add_argument(
+        "directory", nargs="?", default=os.getcwd(), help="target directory",
+    )
 
-    # Enforce backend compiler for nvcc
-    if args.cxx:
-        makefileOptions['extraLine'] += '\nexport NVCC_WRAPPER_DEFAULT_COMPILER = '+args.cxx
-    elif(args.mpi):
-        makefileOptions['extraLine'] += '\nexport NVCC_WRAPPER_DEFAULT_COMPILER = mpicxx'
-else:
-    if args.cxx:
-        makefileOptions['cxx'] = args.cxx
+    parser.add_argument("-mhd", action="store_true", help="enable MHD")
+    parser.add_argument(
+        "-gpu",
+        dest="use_gpu",
+        action="store_true",
+        help="enable KOKKOS+CUDA",
+    )
+
+    parser.add_argument("-cxx", help="override default compiler")
+
+    parser.add_argument(
+        "-arch",
+        nargs="+",
+        dest="archs",
+        default=[DEFAULT_ARCHS["CPU"], DEFAULT_ARCHS["GPU"]],
+        choices=CPU_ARCHS.union(GPU_ARCHS),
+        help="target Kokkos architecture (accepts up to one CPU and up to one GPU archs)",
+    )
+    parser.add_argument(
+        "-openmp",
+        help="enable OpenMP parallelism (not available with -gpu)",
+        action="store_true",
+    )
+    parser.add_argument("-mpi", action="store_true", help="enable MPI parallelism")
+
+
+def parse_archs(requested_archs):
+    # parse architectures:
+    # at most 2 can be specified by the user, but only one for each arch type (CPU, GPU)
+    if len(requested_archs) > 2:
+        raise ValueError(
+            "Error: received more than two architectures ({}).".format(
+                ", ".join(requested_archs),
+            ),
+        )
+    selected_archs = DEFAULT_ARCHS.copy()
+
+    for arch_type, archs in KNOWN_ARCHS.items():
+        vals = list(archs.intersection(set(requested_archs)))
+        if not vals:
+            continue
+        if len(vals) > 1:
+            raise ValueError(
+                "Error: received more than one {} arch ({}).".format(
+                    arch_type, ", ".join(vals),
+                ),
+            )
+
+        selected_archs[arch_type] = vals[0]
+    return selected_archs
+
+
+def _get_makefile_options(
+    archs,
+    use_gpu,
+    cxx,
+    openmp,
+    mpi,
+    mhd,
+):
+    # using a default dict to allow setting key value pairs as
+    # >>> options[key] += value
+
+    options = defaultdict(str)
+    options["cxxflags"] = "-O3"
+
+    if use_gpu:
+        options["extraLine"] = '\nKOKKOS_CUDA_OPTIONS = "enable_lambda"'
+        options["cxx"] = "${KOKKOS_PATH}/bin/nvcc_wrapper"
+        options["kokkosDevices"] = '"Cuda"'
+        options["kokkosArch"] = "{CPU},{GPU}".format(**archs)
+
+        # Enforce backend compiler for nvcc
+        nvcc = "\nexport NVCC_WRAPPER_DEFAULT_COMPILER = {}"
+        if cxx:
+            options["extraLine"] += nvcc.format(cxx)
+        elif mpi:
+            options["extraLine"] += nvcc.format("mpicxx")
     else:
-        if(args.mpi):
-            makefileOptions['cxx'] = "mpicxx"
+        if cxx:
+            options["cxx"] = cxx
+        elif mpi:
+            options["cxx"] = "mpicxx"
         else:
-            makefileOptions['cxx'] = "g++"
+            options["cxx"] = "g++"
 
+        options["kokkosArch"] = archs["CPU"]
+        options["kokkosDevices"] = '"OpenMP"' if openmp else '"Serial"'
 
-    makefileOptions['kokkosArch'] = cpu
-    makefileOptions['cxxflags'] = "-O3"
-    if args.openmp:
-         makefileOptions['kokkosDevices'] = '"OpenMP"'
+    if mpi:
+        options["extraIncludeDir"] += " -I$(SRC)/dataBlock/mpi"
+        options["extraVpath"] += ":$(SRC)/dataBlock/mpi"
+        options["extraHeaders"] += " mpi.hpp"
+        options["extraObj"] += " mpi.o"
+        options["cxxflags"] += " -DWITH_MPI"
+
+    if mhd:
+        options["extraIncludeDir"] += " -I$(SRC)/hydro/MHDsolvers"
+        options["extraVpath"] += ":$(SRC)/hydro/MHDsolvers"
+        options["extraHeaders"] += " solversMHD.hpp"
+        options["cxxflags"] += " -DMHD=YES"
     else:
-        makefileOptions['kokkosDevices'] = '"Serial"'
+        options["extraIncludeDir"] += " -I$(SRC)/hydro/HDsolvers"
+        options["extraVpath"] += ":$(SRC)/hydro/HDsolvers"
+        options["extraHeaders"] += " solversHD.hpp"
+        options["cxxflags"] += " -DMHD=NO"
 
-if args.mpi:
-    makefileOptions['extraIncludeDir'] += " -I$(SRC)/dataBlock/mpi"
-    makefileOptions['extraVpath'] += ":$(SRC)/dataBlock/mpi"
-    makefileOptions['extraHeaders'] += " mpi.hpp"
-    makefileOptions['extraObj'] += " mpi.o"
-    makefileOptions['cxxflags'] += " -DWITH_MPI"
-
-if args.mhd:
-    makefileOptions['extraIncludeDir'] += " -I$(SRC)/hydro/MHDsolvers"
-    makefileOptions['extraVpath'] += ":$(SRC)/hydro/MHDsolvers"
-    makefileOptions['extraHeaders'] += " solversMHD.hpp"
-    makefileOptions['extraObj'] += ""
-    makefileOptions['cxxflags'] += " -DMHD=YES"
-else:
-    makefileOptions['extraIncludeDir'] += " -I$(SRC)/hydro/HDsolvers"
-    makefileOptions['extraVpath'] += ":$(SRC)/hydro/HDsolvers"
-    makefileOptions['extraHeaders'] += " solversHD.hpp"
-    makefileOptions['extraObj'] += ""
-    makefileOptions['cxxflags'] += " -DMHD=NO"
+    return options
 
 
+def _write_makefile(
+    directory,
+    options,
+):
+    with open(os.path.join(os.environ["IDEFIX_DIR"], "Makefile.in")) as fh:
+        data = fh.read()
+
+    # apply subsitutions
+    for key, val in options.items():
+        data = data.replace(r"@{}@".format(key), val)
+
+    # cleanup unused place holders
+    data = re.sub(r"@.+@", "", data)
+
+    with open(os.path.join(directory, "Makefile"), "w") as fh:
+        fh.write(data)
 
 
-# Makefile substitution
-with open(iMakefile, 'r') as file:
-    makefile = file.read()
+def _get_report(
+    archs,
+    use_gpu,
+    openmp,
+    mpi,
+    mhd,
+    makefile_options,
+):
+    def status(name, flag):
+        prefix = "en" if flag else "dis"
+        return "{}: {}abled".format(name, prefix)
 
-for key, val in makefileOptions.items():
-    makefile = re.sub(r'@{0}@'.format(key), val, makefile)
+    report_lines = []
+    report_lines += [
+        "-----------------------------------------------------------",
+        "Idefix succesfully configured with the following options:",
+        "",
+        status("MHD", mhd),
+        "Compiler: {}".format(makefile_options["cxx"]),
+        status("MPI", mpi),
+    ]
 
-with open(oMakefile,'w') as file:
-    file.write(makefile)
+    selected_archs = parse_archs(archs)
+    arch_type = "GPU" if use_gpu else "CPU"
+    report_lines += [
+        "Execution target: {}".format(arch_type),
+        "Target architecture: {}".format(selected_archs[arch_type]),
+    ]
+    if arch_type == "CPU":
+        report_lines.append(status("OpenMP", openmp))
 
-# print information
-print("-----------------------------------------------------------")
-print("Idefix succesfully configured with the following options:")
-print("")
-if(args.mhd):
-    print("MHD: enabled")
-else:
-    print("MHD: disabled")
+    report_lines += [
+        "Cflags: {}".format(makefile_options["cxxflags"]),
+        "-----------------------------------------------------------",
+    ]
 
-print("Compiler: "+makefileOptions['cxx'])
-if args.mpi:
-    print("MPI: enabled")
-else:
-    print("MPI: disabled")
-if args.gpu:
-    print("Execution target: GPU")
-    print("Target architecture: "+gpu)
-else:
-    print("Execution target: CPU")
-    print("Target architecture: "+cpu)
-    if args.openmp:
-        print("OpenMP parallelism: enabled")
-    else:
-        print("OpenMP parallelism: disabled")
-print("Compiler: "+makefileOptions['cxx'])
-print("Cflags: "+makefileOptions['cxxflags'])
-print("-----------------------------------------------------------")
+    return "\n".join(report_lines)
+
+
+def main(argv=None):
+
+    if "IDEFIX_DIR" not in os.environ:
+        print(
+            "Error: IDEFIX_DIR environment variable is not defined.",
+            file=sys.stderr,
+        )
+        return 1
+
+    parser = argparse.ArgumentParser("setup")
+    _add_parser_args(parser)
+
+    args = parser.parse_args(argv)
+
+    try:
+        selected_archs = parse_archs(args.archs)
+    except ValueError as err:
+        print(err, file=sys.stderr)
+        return 1
+
+    if args.openmp and args.use_gpu:
+        print("Warning: with -gpu, -openmp flag is ignored.", file=sys.stderr)
+        args.openmp = False
+
+    makefile_options = _get_makefile_options(
+        archs=selected_archs,
+        use_gpu=args.use_gpu,
+        cxx=args.cxx,
+        openmp=args.openmp,
+        mpi=args.mpi,
+        mhd=args.mhd,
+    )
+    try:
+        _write_makefile(args.directory, makefile_options)
+    except OSError:
+        filename = os.path.join(args.directory, "Makefile")
+        print("Error: could not write to {}".format(filename), file=sys.stderr)
+        return 1
+
+    report = _get_report(
+        archs=args.archs,
+        use_gpu=args.use_gpu,
+        openmp=args.openmp,
+        mpi=args.mpi,
+        mhd=args.mhd,
+        makefile_options=makefile_options,
+    )
+    print(report)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

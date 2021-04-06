@@ -100,7 +100,7 @@ void Hydro::CalcCurrent() {
 
 #elif GEOMETRY == SPHERICAL
       real s = FABS(sinx2(j));
-      real sm = FABS(sinx2m(j));
+      real sm = 0.5*(FABS(sinx2(j))+FABS(sinx2(j-1)));
 
       D_EXPAND(d12 /= rm(i);   d13 /= rm(i);   ,
               d21 /= rm(i);   d23 /= r(i)*sm;  ,

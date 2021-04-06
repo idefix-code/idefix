@@ -315,7 +315,7 @@ def readVTKSpherical(filename):
         theta=np.arccos(ycart[0,:,0]/np.sqrt(xcart[0,:,0]**2+ycart[0,:,0]**2))
     else:
         r=np.sqrt(xcart[:,0,0]**2+ycart[:,0,0]**2+zcart[:,0,0]**2)
-        phi=np.unwrap(np.arctan2(ycart[V.nz//2,V.ny//2,:],xcart[V.nz//2,V.ny//2,:]))
+        phi=np.unwrap(np.arctan2(ycart[V.nx//2,V.ny//2,:],xcart[V.nx//2,V.ny//2,:]))
         theta=np.arccos(zcart[0,:,0]/np.sqrt(xcart[0,:,0]**2+ycart[0,:,0]**2+zcart[0,:,0]**2))
 
 

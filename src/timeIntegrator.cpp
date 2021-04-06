@@ -56,6 +56,10 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
     this->cyclePeriod=input.GetInt("Output","log",0);
   }
 
+  if(input.CheckEntry("TimeIntegrator","max_runtime")>0) {
+    this->maxRunTime = 3600*input.GetReal("TimeIntegrator","max_runtime",0);
+  }
+
   if(nstages==2) {
     wc[0] = 0.5;
     w0[0] = 0.5;
@@ -253,4 +257,24 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
 int64_t TimeIntegrator::getNcycles() {
   return(ncycles);
+}
+
+// Check whether our maximumruntime has been reached. Reduce the results on all of the cores
+// to make sure they stop simultaneously even if running time are not perfectly in sync
+bool TimeIntegrator::CheckForMaxRuntime() {
+  double runtime = timer.seconds();
+  bool runtimeReached{false};
+#ifdef WITH_MPI
+  int runtimeValue = 0;
+  if(runtime >= this->maxRuntime) runtimeValue = 1;
+  MPI_Allreduce(MPI_IN_PLACE, &runtimeValue, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+  runtimeReached = runtimeValue > 0;
+#else
+  runtimeReached = runtime >= this->maxRuntime;
+#endif
+  if(runtimeReached) {
+    idfx::cout << "TimeIntegrator::CheckForMaxRuntime: Maximum runtime reached."
+               << std::endl;
+  }
+  return(runtimeReached);
 }

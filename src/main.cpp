@@ -120,7 +120,7 @@ int main( int argc, char* argv[] ) {
       if(tstop-data.t < data.dt) data.dt = tstop-data.t;
       Tint.Cycle(data);
       output.CheckForWrites(data);
-      if(input.abortRequested) {
+      if(input.CheckForAbort() || Tint.CheckForMaxRuntime() ) {
         idfx::cout << "Main: Saving current state and aborting calculation" << std::endl;
         output.ForceWrite(data);
         break;

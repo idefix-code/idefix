@@ -196,6 +196,25 @@ void Input::signalHandler(int signum) {
   abortRequested=true;
 }
 
+bool Input::CheckForAbort() {
+  // Check whether an abort has been requesested
+  // When MPI is present, we abort whenever one process got the signal
+#ifdef WITH_MPI
+  int abortValue{0};
+  bool returnValue{false};
+  if(abortRequested) abortValue = 1;
+
+  MPI_Allreduce(MPI_IN_PLACE, &abortValue, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+  returnValue = abortValue > 0;
+  if(returnValue) idfx::cout << "Input::CheckForAbort: abort has been requested." << std::endl;
+
+  return(returnValue);
+#else
+  if(abortRequested) idfx::cout << "Input::CheckForAbort: abort has been requested." << std::endl;
+  return(abortRequested);
+#endif
+}
+
 std::vector<std::string> Input::getDirectoryFiles() {
   // List files in the current directory
   // adapted from

@@ -46,5 +46,5 @@ signal with the ``kill`` command. For instance:
 
   kill -s SIGUSR2  123456
 
-where 123456 is *Idefix* pid (obtainable with ``ps -a``). When runnning with MPI, the pid used in the ``kill`` command should be that of the
-MPI launcher (e.g. ``mpirun``) so that each child process gets the signal.
+where 123456 is *Idefix* pid (obtainable with ``ps -a``). When runnning with MPI, the pid used in the ``kill`` command can be any *Idefix* process, as *Idefix*
+automatically broadcast the abort signal to all of its running processes.

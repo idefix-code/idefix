@@ -31,6 +31,7 @@ class Input {
   int GetInt(std::string, std::string, int);            // Read an integer from the input file
   int CheckEntry(std::string, std::string);             // Check that a block/entry is present
                                                         // in the input file
+  bool CheckForAbort();                                 // have we been asked for an abort?
 
   Input();
   void PrintLogo();
@@ -38,6 +39,7 @@ class Input {
   // Should we restart, and if so, from which file?
   bool restartRequested = false;
   int  restartFileNumber;
+
 
   // Did we receive an abort signal (USR2) from the system?
   static bool abortRequested;

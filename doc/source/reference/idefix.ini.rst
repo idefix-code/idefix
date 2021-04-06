@@ -58,6 +58,9 @@ This section is used by *Idefix* time integrator class to define the time integr
 | fixed_dt       | float              | | when set, *Idefix* uses a fixed time step instead of the dt computed from the CFL condition.            |
 |                |                    | | In this case, the CFL parameters and ``first_dt`` are ignored.                                          |
 +----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
+| max_runtime    | float              | | when set, *Idefix* aborts the calculation when it has run for `max_runtime` hours (wall clock time).    |
+|                |                    | | In this case, a restart dump is automatically written when the code stops.                              |
++----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
 | nstages        | integer            | | number of stages of the integrator. Can be  either 1, 2 or 3. 1=First order Euler method,               |
 |                |                    | | 2, 3 = second and third order  TVD Runge-Kutta                                                          |
 +----------------+--------------------+-----------------------------------------------------------------------------------------------------------+

@@ -58,6 +58,15 @@ void MyViscosity(DataBlock &data, const real t, IdefixArray3D<real> &eta1, Idefi
 
 }
 
+void FargoVelocity(DataBlock &data, IdefixArray2D<real> &Vphi) {
+  IdefixArray1D<real> x1 = data.x[IDIR];
+
+  idefix_for("FargoVphi",0,data.np_tot[KDIR], 0, data.np_tot[IDIR],
+      KOKKOS_LAMBDA (int k, int i) {
+      Vphi(k,i) = 1.0/sqrt(x1(i));
+  });
+}
+
 // User-defined boundaries
 void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
   IdefixArray4D<real> Vc = data.hydro.Vc;
@@ -150,6 +159,8 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   data.hydro.EnrollGravPotential(&Potential);
   data.hydro.EnrollIsoSoundSpeed(&MySoundSpeed);
   data.hydro.viscosity.EnrollViscousDiffusivity(&MyViscosity);
+  if(data.hydro.haveFargo)
+    data.hydro.fargo.EnrollVelocity(&FargoVelocity);
   epsilonGlob = input.GetReal("Setup","epsilon",0);
   alphaGlob = input.GetReal("Setup","alpha",0);
   idfx::cout << "alpha= " << alphaGlob << std::endl;

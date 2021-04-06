@@ -27,6 +27,14 @@ lint:
     - pre-commit install
     - pre-commit run --all-files
 
+configure script tests:
+  extends: .before_script_template
+  stage: checks
+  image: ubuntu:latest
+  script:
+    - python3 -m pip install pytest
+    - pytest -vv test/test_configure.py
+
 integration tests:
   extends: .before_script_template
   stage: checks

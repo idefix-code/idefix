@@ -57,7 +57,7 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
   }
 
   if(input.CheckEntry("TimeIntegrator","max_runtime")>0) {
-    this->maxRunTime = 3600*input.GetReal("TimeIntegrator","max_runtime",0);
+    this->maxRuntime = 3600*input.GetReal("TimeIntegrator","max_runtime",0);
   }
 
   if(nstages==2) {
@@ -276,7 +276,7 @@ bool TimeIntegrator::CheckForMaxRuntime() {
   runtimeReached = runtime >= this->maxRuntime;
 #endif
   if(runtimeReached) {
-    idfx::cout << "TimeIntegrator::CheckForMaxRuntime: Maximum runtime reached."
+    idfx::cout << "TimeIntegrator:CheckForMaxRuntime: Maximum runtime reached."
                << std::endl;
   }
   return(runtimeReached);

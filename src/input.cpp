@@ -202,10 +202,10 @@ bool Input::CheckForAbort() {
 #ifdef WITH_MPI
   int abortValue{0};
   bool returnValue{false};
-  if(abordRequested) abortValue = 1;
+  if(abortRequested) abortValue = 1;
 
   MPI_Allreduce(MPI_IN_PLACE, &abortValue, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
-  if(abortValue > 0) returnValue = true;
+  returnValue = abortValue > 0;
   if(returnValue) idfx::cout << "Input::CheckForAbort: abort has been requested." << std::endl;
 
   return(returnValue);

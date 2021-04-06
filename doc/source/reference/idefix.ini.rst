@@ -125,6 +125,13 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 |                |                         | | Note that this is not sufficient to fully define a shearing box: boundary conditions      |
 |                |                         | | are also required.                                                                        |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| Fargo          | string                  | | Enable orbital advection (Fargp-like) module to speed up integration when a strong        |
+|                |                         | | azimuthal motion is present (as in a thin disk).  The only possible parameter allowed     |
+|                |                         | | for `Fargo` is `userdef`. When this is set, the fargo module expects a user-defined       |
+|                |                         | | velocity function to be enrolled via Hydro.Fargo::EnrollVelocity(FargoVelocityFunc        |
+|                |                         | | (see :ref:`functionEnrollment`) . Examples are provided in `test/HD/FargoPlanet`          |
+|                |                         | | and `test/MHD/FargoMHDSpherical`                                                          |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
 
 
 

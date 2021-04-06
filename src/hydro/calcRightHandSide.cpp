@@ -20,16 +20,19 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
   IdefixArray3D<real> dV   = data->dV;
   IdefixArray1D<real> x1m  = data->xl[IDIR];
   IdefixArray1D<real> x1   = data->x[IDIR];
-  IdefixArray1D<real> sm   = data->sm;
+
   IdefixArray1D<real> rt   = data->rt;
   IdefixArray1D<real> dmu  = data->dmu;
-  IdefixArray1D<real> s    = data->s;
+  IdefixArray1D<real> sinx2m   = data->sinx2m;
+  IdefixArray1D<real> sinx2 = data->sinx2;
   IdefixArray1D<real> dx   = data->dx[dir];
   IdefixArray1D<real> dx2  = data->dx[JDIR];
   IdefixArray3D<real> invDt = this->InvDt;
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> dMax = this->dMax;
   IdefixArray4D<real> viscSrc = this->viscosity.viscSrc;
+  IdefixArray2D<real> fargoVelocity = this->fargo.meanVelocity;
+
 
   // Gravitational potential
   IdefixArray3D<real> phiP = this->phiP;
@@ -40,6 +43,9 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
 
   // Viscosity
   bool haveViscosity = this->haveViscosity;
+
+  // Fargo
+  bool haveFargo  = this->haveFargo;
 
   if(needPotential) {
     IdefixArray1D<real> x1,x2,x3;
@@ -66,6 +72,10 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
     gravPotentialFunc(*data, t, x1, x2, x3, phiP);
   }
 
+  if(haveFargo) {
+    fargo.GetFargoVelocity(t);
+  }
+
 
   int ioffset,joffset,koffset;
   ioffset=joffset=koffset=0;
@@ -81,6 +91,29 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
              data->beg[IDIR],data->end[IDIR]+ioffset,
     KOKKOS_LAMBDA (int k, int j, int i) {
       // TODO(lesurg): Should add gravitational potential here and Fargo source terms when needed
+      // Add Fargo velocity to the fluxes
+      if(haveFargo) {
+        real fargoV = ZERO_F;
+        #if (GEOMETRY == CARTESIAN || GEOMETRY == POLAR) && DIMENSIONS >=2
+          if( dir == IDIR) fargoV = HALF_F*(fargoVelocity(k,i-1)+fargoVelocity(k,i));
+          if( dir == KDIR) fargoV = HALF_F*(fargoVelocity(k-1,i)+fargoVelocity(k,i));
+          const int fargoDir = JDIR;
+        #elif GEOMETRY == SPHERICAL && DIMENSIONS == 3
+          if( dir == IDIR) fargoV = HALF_F*(fargoVelocity(j,i-1)+fargoVelocity(j,i));
+          if( dir == JDIR) fargoV = HALF_F*(fargoVelocity(j-1,i)+fargoVelocity(j,i));
+          const int fargoDir = KDIR;
+        #else
+          const int fargoDir = 0;
+        #endif
+        // Should do nothing along fargo direction, automatically satisfied
+        // since in that case fargoV=0
+
+        #if HAVE_ENERGY
+          Flux(ENG,k,j,i) += fargoV * (HALF_F*fargoV*Flux(RHO,k,j,i) + Flux(MX1+fargoDir,k,j,i));
+        #endif
+        Flux(MX1+fargoDir,k,j,i) += fargoV * Flux(RHO,k,j,i);
+      } // have Fargo
+
 #if HAVE_ENERGY
       if(needPotential)
         Flux(ENG, k, j, i) += Flux(RHO, k, j, i) * phiP(k,j,i);  // Potential at the cell face
@@ -95,10 +128,6 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
 
       for(int nv = 0 ; nv < NVAR ; nv++) {
         Flux(nv,k,j,i) = Flux(nv,k,j,i) * Ax;
-        /*if(Flux(nv,k,j,i)!=Flux(nv,k,j,i)) {
-          printf("Shit Flux at dir=%d var=%d (%d,%d)\n",dir,nv,i,j);
-          exit(1);
-        }*/
       }
 
 
@@ -127,7 +156,7 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
   #endif // MHD
       } else if(dir==JDIR) {
   #if COMPONENTS == 3
-        Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(sm(j));
+        Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(sinx2m(j));
     #if MHD == YES
         Flux(iBPHI,k,j,i) = Flux(iBPHI,k,j,i)  / Ax;
     #endif // MHD
@@ -169,7 +198,7 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
   #endif
       } else if(dir==JDIR) {
   #if (GEOMETRY == SPHERICAL) && (COMPONENTS == 3)
-        rhs[iMPHI] /= FABS(s(j));
+        rhs[iMPHI] /= FABS(sinx2(j));
     #if MHD == YES
         rhs[iBPHI] = -dt / (rt(i)*dx(j)) * (Flux(iBPHI, k, j+1, i) - Flux(iBPHI, k, j, i));
     #endif // MHD
@@ -210,6 +239,26 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
                                                    dMax(k,j,i)) / (dl*dl);
       }
 
+      // Fargo terms to enfore conservation (actually substract back what was added in
+      // Totalflux loop)
+      if(haveFargo) {
+        // fetch fargo velocity when required
+        real fargoV = ZERO_F;
+        #if (GEOMETRY == POLAR || GEOMETRY == CARTESIAN) && DIMENSIONS >=2
+          if(dir==IDIR || dir == KDIR) fargoV = fargoVelocity(k,i);
+          const int fargoDir = JDIR;
+        #elif GEOMETRY == SPHERICAL && DIMENSIONS ==3
+          if(dir==IDIR || dir == JDIR) fargoV = fargoVelocity(j,i);
+          const int fargoDir = KDIR;
+        #else
+          const int fargoDir = 0;
+        #endif
+        // NB: MX1+fargoDir = iMPHI
+        rhs[MX1+fargoDir] -= fargoV*rhs[RHO];
+        #if HAVE_ENERGY
+          rhs[ENG] -= fargoV * ( HALF_F*fargoV*rhs[RHO] + rhs[MX1+fargoDir]);
+        #endif
+      }
 
       // Potential terms
       if(needPotential) {
@@ -237,6 +286,8 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
         rhs[ENG] -=  HALF_F * (phiP(k+koffset,j+joffset,i+ioffset) + phiP(k,j,i)) * rhs[RHO];
 #endif
       }
+
+
 
       // Evolve the field components
 #pragma unroll

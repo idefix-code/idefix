@@ -85,8 +85,10 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
 
 #if GEOMETRY == SPHERICAL
   rt = IdefixArray1D<real>("DataBlock_rt",np_tot[IDIR]);
-  sm = IdefixArray1D<real>("DataBlock_sm",np_tot[JDIR]);
-  s = IdefixArray1D<real>("DataBlock_s",np_tot[JDIR]);
+  sinx2m = IdefixArray1D<real>("DataBlock_sinx2m",np_tot[JDIR]);
+  tanx2m = IdefixArray1D<real>("DataBlock_tanx2m",np_tot[JDIR]);
+  sinx2 = IdefixArray1D<real>("DataBlock_sinx2",np_tot[JDIR]);
+  tanx2 = IdefixArray1D<real>("DataBlock_tanx2",np_tot[JDIR]);
   dmu = IdefixArray1D<real>("DataBlock_dmu",np_tot[JDIR]);
 #endif
 

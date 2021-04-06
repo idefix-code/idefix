@@ -23,6 +23,11 @@ void Hydro::CalcCurrent() {
   IdefixArray1D<real> rm = data->xl[IDIR];
   IdefixArray1D<real> th = data->x[JDIR];
 
+  #if GEOMETRY == SPHERICAL
+  IdefixArray1D<real> sinx2 = data->sinx2;
+  IdefixArray1D<real> sinx2m = data->sinx2m;
+  #endif
+
   idefix_for("CalcCurrent",
              KOFFSET,data->np_tot[KDIR],
              JOFFSET,data->np_tot[JDIR],
@@ -94,8 +99,9 @@ void Hydro::CalcCurrent() {
   #endif
 
 #elif GEOMETRY == SPHERICAL
-      real s = FABS(SIN(th(j)));
-      real sm = HALF_F*( FABS(SIN(th(j))) + FABS(SIN(th(j-1))));
+      real s = FABS(sinx2(j));
+      real sm = FABS(sinx2m(j));
+
       D_EXPAND(d12 /= rm(i);   d13 /= rm(i);   ,
               d21 /= rm(i);   d23 /= r(i)*sm;  ,
               d32 /= r(i)*sm; d31 /= rm(i)*s;  )
@@ -108,8 +114,8 @@ void Hydro::CalcCurrent() {
       a13Bx3_000 = Bx3_000 * r(i);
       a13Bx3_m00 = Bx3_m00 * r(i-1);
     #if DIMENSIONS >= 2
-      a23Bx3_000 = Bx3_000 * FABS(SIN(th(j)));
-      a23Bx3_0m0 = Bx3_0m0 * FABS(SIN(th(j-1)));
+      a23Bx3_000 = Bx3_000 * s;
+      a23Bx3_0m0 = Bx3_0m0 * FABS(sinx2(j-1));
     #endif
   #endif // COMPONENTS
 

@@ -37,6 +37,11 @@ void ElectroMotiveForce::EvolveMagField(real t, real dt) {
   IdefixArray1D<real> dx2=data->dx[JDIR];
   IdefixArray1D<real> dx3=data->dx[KDIR];
 
+  #if GEOMETRY == SPHERICAL
+  IdefixArray1D<real> dmu=data->dmu;
+  IdefixArray1D<real> sinx2m=data->sinx2m;
+  #endif
+
   bool haveAxis = hydro->haveAxis;
 
   idefix_for("EvolvMagField",
@@ -84,9 +89,9 @@ void ElectroMotiveForce::EvolveMagField(real t, real dt) {
   #endif
 
 #elif GEOMETRY == SPHERICAL
-      real dV2  = FABS(cos(x2m(j)) - cos(x2p(j)));
-      real Ax2p = FABS(sin(x2p(j)));
-      real Ax2m = FABS(sin(x2m(j)));
+      real dV2  = dmu(j);
+      real Ax2p = FABS(sinx2m(j+1));
+      real Ax2m = FABS(sinx2m(j));
 
       rhsx1 = D_EXPAND( ZERO_F                                                        ,
                        - dt/(x1m(i)*dV2) * ( Ax2p*Ex3(k,j+1,i) - Ax2m*Ex3(k,j,i) )    ,

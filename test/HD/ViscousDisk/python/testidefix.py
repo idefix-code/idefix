@@ -83,7 +83,7 @@ if(not args.noplot):
     plt.xlabel('R')
     plt.ylabel('Radial forces in the midplane')
 
-
+    plt.show()
 #plt.figure()
 #plt.plot(V.r,rhomid,V.r,R**(-1.5))
 

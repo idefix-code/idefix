@@ -1,7 +1,7 @@
 #!/bin/bash
 
-rep_HD_list="sod-iso sod MachReflection ViscousFlowPastCylinder ViscousDisk"
-rep_MHD_list="sod-iso sod AxisFluxTube AmbipolarCshock HallWhistler OrszagTang OrszagTang3D OrszagTang3D-HLL OrszagTang3D-UCT0 OrszagTang3D-ARITHMETIC"
+rep_HD_list="sod-iso sod MachReflection ViscousFlowPastCylinder ViscousDisk FargoPlanet"
+rep_MHD_list="sod-iso sod AxisFluxTube AmbipolarCshock HallWhistler FargoMHDSpherical OrszagTang OrszagTang3D OrszagTang3D-HLL OrszagTang3D-UCT0 OrszagTang3D-ARITHMETIC"
 
 # refer to the parent dir of this file, wherever this is called from
 # a python equivalent is e.g.

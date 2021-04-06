@@ -17,6 +17,7 @@
 #include "electroMotiveForce.hpp"
 #include "viscosity.hpp"
 #include "axis.hpp"
+#include "fargo.hpp"
 
 // forward class declaration
 class DataBlock;
@@ -37,10 +38,8 @@ class Hydro {
   void AddSourceTerms(real, real );
   void ReconstructVcField(IdefixArray4D<real> &);
   void ReconstructNormalField(int);
-  void EvolveMagField(real, real);
-  void CalcCornerEMF(real );
-  void calcRiemannEmf();
-  void CalcNonidealEMF(real );
+
+
   void SetBoundary(real);
   real GetGamma();
   real CheckDivB();
@@ -135,10 +134,15 @@ class Hydro {
   bool haveAxis = false;
   Axis myAxis;
 
+  // Do we use fargo-like scheme ? (orbital advection)
+  bool haveFargo = false;
+  Fargo fargo;
+
 
  private:
   friend class ElectroMotiveForce;
   friend class Viscosity;
+  friend class Fargo;
   friend class Axis;
 
   // Isothermal EOS parameters

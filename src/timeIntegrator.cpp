@@ -262,6 +262,9 @@ int64_t TimeIntegrator::getNcycles() {
 // Check whether our maximumruntime has been reached. Reduce the results on all of the cores
 // to make sure they stop simultaneously even if running time are not perfectly in sync
 bool TimeIntegrator::CheckForMaxRuntime() {
+  // if maxRuntime is negative, this function is disabled (default)
+  if(this->maxRuntime < 0) return(false);
+
   double runtime = timer.seconds();
   bool runtimeReached{false};
 #ifdef WITH_MPI

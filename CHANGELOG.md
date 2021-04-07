@@ -4,17 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-- Runge-Kutta Legendre scheme to speed up the integration of parabolic terms
-- Dust as a pressureless fluid
-- High order reconstruction
-
 ## [0.7.0] - 2021-04-07
 ### Added
 - New orbital advection scheme (aka Fargo) available in 2D and 3D HD/MHD. This implementation fixes the bug found in Pluto 4.4.
 - New axis boundary condition allowing one to look at 3D problems up to the spherical axis. This option can also be used for axisymmetric problems or 3D problem with phi ranging on a fraction of 2pi.
 - New 2D HLL Riemann solver for MHD evolution based on Londrillo & Del Zanna. Activated using ```#define EMF_AVERAGE  UCT_HLL```
-- New python tools to read idefix restart dump in ```pytools/idfx_io.py```
+- New python tools to read idefix debug dumps (not enabled by default) in ```pytools/idfx_io.py```
 - New option to use a fixed time step during the computation. Use ```fixed_dt``` in your ini file.
 - New regression tests on all of the possible EMF reconstruction schemes.
 - New optional ```max_runtime``` parameter to stop the code when a given runtime is reached. This can be useful in situations where signaling is not available.
@@ -33,3 +28,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added a changelog
 
 ### Removed
+- nothing

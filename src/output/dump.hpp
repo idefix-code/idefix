@@ -27,6 +27,7 @@ enum DataType {DoubleType, SingleType, IntegerType};
 class Output;
 
 class Dump {
+  friend class DumpImage; // Allow dumpimag to have access to dump API
  public:
   void Init(Input &, DataBlock &);               // Create Dump Object
   // Create a Dump file from the current state of the code

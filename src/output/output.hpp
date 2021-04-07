@@ -25,6 +25,7 @@ using UserDefVariablesFunc = void (*) (DataBlock &, UserDefVariablesContainer &)
 class Output {
   friend class Dump;    // Allow dump to have R/W access to private variables
   friend class Vtk;     // Allow VTK to have access to user-defined variables
+  friend class DumpImage; // Allow dumpimag to have access to dump API
  public:
   Output(Input &, DataBlock &);           // Create Output Object
   int CheckForWrites(DataBlock &);        // Check if outputs are needed at this stage

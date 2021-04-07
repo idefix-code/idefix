@@ -77,12 +77,12 @@ def parse_archs(requested_archs):
     selected_archs = DEFAULT_ARCHS.copy()
 
     for arch_type, archs in KNOWN_ARCHS.items():
-        vals = list(archs.intersection(set(requested_archs)))
+        vals = sorted(list(archs.intersection(set(requested_archs))))
         if not vals:
             continue
         if len(vals) > 1:
             raise ValueError(
-                "Error: received more than one {} arch ({}).".format(
+                "Error: received more than one {} architecture ({}).".format(
                     arch_type, ", ".join(vals),
                 ),
             )

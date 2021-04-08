@@ -20,7 +20,7 @@ import sphinx.ext.mathjax
 # -- Project information -----------------------------------------------------
 
 project = 'Idefix'
-copyright = '2020, Geoffroy Lesur'
+copyright = '2020-2021, Geoffroy Lesur et al.'
 author = 'Geoffroy Lesur'
 
 # The full version, including alpha/beta/rc tags

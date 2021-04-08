@@ -14,17 +14,35 @@ allows for comments, which should start with ``#``.
 ``Grid`` section
 --------------------
 The grid section defines the grid total dimension. It consists of 3 entries ``X1-grid``, ``X2-grid`` and ``X3-grid``. Each entry defines the repartition of the grid point in the corresponding direction (the grid is always rectilinear).
-Each entry defines a series of grid blocks, which can have various spacing. The definition of the grid points is as follows
+Each entry defines a series of grid blocks which are concatenated along the direction. Each block in a direction can have a different spacing rule (uniform, log or stretched). The definition of the Grid entries is as follows
 
-+-------------+-------------+---------------------+--------------------------+---------------------------------+---------------------------------+----------------------------------------------+-----+---------------------+
-|             | Entry name  |   number of blocks  |  begining of first block | number of points in first block | grid spacing in first block     | end of first block/beginning of second block | ... | end of nth block    |
-+=============+=============+=====================+==========================+=================================+=================================+==============================================+=====+=====================+
-|             | X1/2/3-Grid |  integer number >= 1| floating point           | integer                         | can be u, l, s                  |  floating point                              | ... | floating point      |
-+-------------+-------------+---------------------+--------------------------+---------------------------------+---------------------------------+----------------------------------------------+-----+---------------------+
-| Example     | X1-Grid     |  1                  |  0.0                     | 64                              |  u                              | 1.0                                          |     |                     |
-+-------------+-------------+---------------------+--------------------------+---------------------------------+---------------------------------+----------------------------------------------+-----+---------------------+
++----------------------------+-------------------------+------------------------------+
+|                            |  Allowed value          |    Example                   |
++============================+=========================+==============================+
+| Entry name                 | X1/2/3-Grid             | X1-Grid                      |
++----------------------------+-------------------------+------------------------------+
+| # of grid blocks           | integer >= 1            | 1                            |
++----------------------------+-------------------------+------------------------------+
+| start of 1st block         | floating point          | 0.0                          |
++----------------------------+-------------------------+------------------------------+
+| # of points in 1st block   | integet >= 1            | 64                           |
++----------------------------+-------------------------+------------------------------+
+| spacing in first block     | "u", "l", "s+", "s-"    | u                            |
++----------------------------+-------------------------+------------------------------+
+| | end of 1st block         | floating point          | 1.0                          |
+| | /start of 2nd block      |                         |                              |
++----------------------------+-------------------------+------------------------------+
+| ...repeat for each block...| ...                     | ...                          |
++----------------------------+-------------------------+------------------------------+
 
 In the example above, we define in ``X1`` direction a uniform grid (``u``) of 64 points starting at ``X1=0.0`` and ending at ``X1=1.0``.
+This would be written in the input file as:
+
+.. code-block::
+
+  [Grid]
+  X1-Grid        1     0.0   64     u     1.0
+
 
 The grid spacing can be one of the following:
 

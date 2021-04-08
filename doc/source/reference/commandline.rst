@@ -1,6 +1,8 @@
 Command line & Signal handling
 ==============================
 
+.. _commandLine:
+
 Command line options
 --------------------
 

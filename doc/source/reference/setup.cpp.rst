@@ -126,7 +126,7 @@ If one (or several) boundaries are set to ``userdef`` in the input file, the use
 enroll a user-defined boundary function in the ``Setup`` constructor as for the other user-def functions  (see :ref:`functionEnrollment`).
 Note that even if several boundaries are ``userdef`` in the input file, only one user-defined function
 is required. When *Idefix* calls the user defined boundary function, it sets the direction of the boundary (``dir=IDIR``, ``JDIR``,
-or ``KDIR``) and the side of the bondary (``side=left`` or ``size=right``). A typical user-defined
+or ``KDIR``) and the side of the bondary (``side=left`` or ``side=right``). A typical user-defined
 boundary condition function looks like this:
 
 .. code-block:: c++

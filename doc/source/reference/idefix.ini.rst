@@ -84,7 +84,7 @@ This section is used by *Idefix* time integrator class to define the time integr
 +----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
 
 .. note::
-    The ``first_dt`` is necessary since wave speeds are evaluated when Riemann problems are solved, hence the CFL
+    The ``first_dt`` is recommended since wave speeds are evaluated when Riemann problems are solved, hence the CFL
     condition can only be evaluated after the first timestep.
 
 
@@ -227,4 +227,4 @@ This section describes the outputs *Idefix* produces. For more details about eac
 
 .. note::
     Even if dumps are not mentionned in your input file (and are therefore disabled), dump files are still produced when *Idefix* captures a signal
-    (see :ref:`signalHandling`).
+    (see :ref:`signalHandling`) or when ``max_runtime`` is set and reached.

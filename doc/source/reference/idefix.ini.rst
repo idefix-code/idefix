@@ -3,7 +3,7 @@ Problem input file ``idefix.ini``
 
 The problem input file is by default named ``idefix.ini``. It is possible to start idefix with an other input file using the `-i` command line option.
 
-The problem input file is read when *Idefix* starts. It is splitted into several sections, each section name corresponding to a C++ class in Idefix structure. Inside each section, each line defines an entry, which can have as many parameters as one wishes
+The problem input file is read when *Idefix* starts. It is split into several sections, each section name corresponding to a C++ class in Idefix structure. Inside each section, each line defines an entry, which can have as many parameters as one wishes
 (note that it requires at least one parameter). The input file
 allows for comments, which should start with ``#``.
 
@@ -13,7 +13,7 @@ allows for comments, which should start with ``#``.
 
 ``Grid`` section
 --------------------
-The grid section defines the grid total dimension. It consists of 3 entries ``X1-grid``, ``X2-grid`` and ``X3-grid``. Each entry defines the repartition of the grid point in the corresponding direction (the grid is always rectilinear).
+The grid section defines the grid total dimension. It consists of 3 entries ``X1-grid``, ``X2-grid`` and ``X3-grid``. Each entry defines the repartition of the grid points in the corresponding direction (the grid is always rectilinear).
 Each entry defines a series of grid blocks which are concatenated along the direction. Each block in a direction can have a different spacing rule (uniform, log or stretched). The definition of the Grid entries is as follows
 
 +----------------------------+-------------------------+------------------------------+

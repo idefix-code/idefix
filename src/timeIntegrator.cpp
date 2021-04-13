@@ -248,6 +248,11 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   // Add back Fargo velocity so that updated Vc stores the total Velocity
   if(data.hydro.haveFargo) data.hydro.fargo.AddVelocity(data.t);
 
+
+  // Runge-Kutta-Legendre cycle
+  data.rkl.Cycle();
+
+
   // Update current time
   data.t=data.t+data.dt;
 

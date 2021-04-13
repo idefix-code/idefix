@@ -65,6 +65,10 @@ using Layout = Kokkos::LayoutRight;
 #define UCT_CONTACT  3
 #define UCT_HLL      4
 
+// Runge-Kutta-Legendre switch
+#define RKL   YES
+
+
 // Basic configuration
 #include "definitions.hpp"
 #include "real_types.hpp"
@@ -206,6 +210,14 @@ using Layout = Kokkos::LayoutRight;
 
 #define NVAR    (NFLX)
 
+
+// Runge-Kutta-Legendre switches
+#ifndef VISCOSITY
+  #define VISCOSITY           NO
+#endif
+
+// activate RKL pass if VISCOSITY==RKL
+#define RKL_ENABLED (VISCOSITY)
 
 
 // File handler depends on the type of I/O we use

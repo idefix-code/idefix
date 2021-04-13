@@ -249,8 +249,10 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   if(data.hydro.haveFargo) data.hydro.fargo.AddVelocity(data.t);
 
 
+#if RKL_ENABLED != NO
   // Runge-Kutta-Legendre cycle
   data.rkl.Cycle();
+#endif
 
 
   // Update current time

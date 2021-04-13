@@ -76,8 +76,10 @@ class DataBlock {
   // The Hydro object attached to this datablock
   Hydro hydro;
 
+#if RKL_ENABLED != NO
   // The RKL object attached to this datablock
   RKLegendre rkl;
+#endif
 
   // init from a Grid object
   void InitFromGrid(Grid &, Input &);

@@ -7,6 +7,7 @@
 
 #include <cmath>
 #include "rkl.hpp"
+#include "rkl_defs.hpp"
 #include "dataBlock.hpp"
 
 

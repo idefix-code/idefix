@@ -8,7 +8,7 @@
 #ifndef RKL_RKL_DEFS_HPP_
 #define RKL_RKL_DEFS_HPP_
 
-#ifdef RKL_ENABLED
+#ifdef RKL_ENABLED == YES
   #ifndef RKL_ORDER
     #define RKL_ORDER       2
   #endif

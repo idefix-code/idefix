@@ -123,7 +123,7 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
   // Initialize the hydro object attached to this datablock
   this->hydro.Init(input, grid, this);
 
-#if RKL_ENABLED != NO
+#if RKL_ENABLED == YES
   // Initialize the RKL object
   rkl.Init(this);
 #endif

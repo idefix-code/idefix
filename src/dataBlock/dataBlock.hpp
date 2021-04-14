@@ -76,7 +76,7 @@ class DataBlock {
   // The Hydro object attached to this datablock
   Hydro hydro;
 
-#if RKL_ENABLED != NO
+#if RKL_ENABLED == YES
   // The RKL object attached to this datablock
   RKLegendre rkl;
 #endif

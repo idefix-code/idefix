@@ -22,8 +22,10 @@ void DataBlock::EvolveStage() {
     // Step 2: compute the intercell flux with our Riemann solver, store the resulting InvDt
     hydro.CalcRiemannFlux(dir, this->t);
 
+#if RKL_ENABLED != NO
     // Step 2.5: compute intercell parabolic flux when needed
     if(hydro.haveParabolicTerms) hydro.CalcParabolicFlux(dir, this->t);
+#endif
 
     // Step 3: compute the resulting evolution of the conserved variables, stored in Uc
     hydro.CalcRightHandSide(dir, this->t, this->dt);

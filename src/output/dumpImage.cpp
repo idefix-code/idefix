@@ -32,7 +32,7 @@ DumpImage::DumpImage(std::string filename, Output &output) {
                               MPI_INFO_NULL, &fileHdl));
   dump.offset = 0;
 #else
-  fileHdl = fopen(filename,"rb");
+  fileHdl = fopen(filename.c_str(),"rb");
 #endif
 
   // skip the header

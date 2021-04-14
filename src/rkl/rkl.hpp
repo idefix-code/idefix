@@ -17,9 +17,17 @@ class RKLegendre {
  public:
   RKLegendre();
   void Init(DataBlock *);
-  void Cycle();
-  void EvolveStage();
-  void CalcParabolicRHS();
+  void Cycle(real);
+  void ResetStage();
+  void EvolveStage(real);
+  void CalcParabolicRHS(int, real);
+  void ComputeInvDt();
+
+  IdefixArray4D<real> dU;      // variation of main cell-centered conservative variables
+  IdefixArray4D<real> dU0;      // dU of the first stage
+  IdefixArray4D<real> Uc1;      // Uc of the previous stage, Uc1 = Uc(stage-1)
+
+  real invDt, cfl_par, rmax_par;
 
  private:
   DataBlock *data;

@@ -124,6 +124,8 @@ class Hydro {
   IdefixArray4D<real> Vs0;
   IdefixArray3D<real> InvDt;
 
+  IdefixArray4D<real> FluxRiemann;
+  IdefixArray3D<real> dMax;    // Maximum diffusion speed
 
   // Whether or not we have viscosity
   bool haveViscosity = false;
@@ -196,12 +198,10 @@ class Hydro {
   DiffusivityFunc hallDiffusivityFunc;
 
   IdefixArray3D<real> cMax;    // Maximum propagation speed
-  IdefixArray3D<real> dMax;    // Maximum diffusion speed
 
   // Value extrapolated on faces
   IdefixArray4D<real> PrimL;
   IdefixArray4D<real> PrimR;
-  IdefixArray4D<real> FluxRiemann;
 
   // Gravitational potential
   IdefixArray3D<real> phiP;

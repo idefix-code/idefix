@@ -251,7 +251,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
 #if RKL_ENABLED == YES
   // Runge-Kutta-Legendre cycle
-  data.rkl.Cycle();
+  data.rkl.Cycle(data.t);
 #endif
 
 

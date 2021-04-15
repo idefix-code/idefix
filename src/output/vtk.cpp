@@ -66,8 +66,11 @@ void Vtk::WriteHeaderFloat(float* buffer, int64_t nelem, IdfxFileHandler fvtk) {
   MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_BYTE, MPI_CHAR,
                                   "native", MPI_INFO_NULL ));
   if(idfx::prank==0) {
+    std::cout << "prank " << idfx::prank << " is writing ...";
     MPI_SAFE_CALL(MPI_File_write(fvtk, buffer, nelem, MPI_FLOAT, &status));
+    std::cout << "and is done " << std::endl;
   }
+  MPI_Barrier(MPI_COMM_WORLD);
   offset=offset+nelem*sizeof(float);
 #else
   fwrite(buffer, sizeof(float), nelem, fvtk);

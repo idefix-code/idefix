@@ -234,10 +234,12 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
       invDt(k,j,i) = invDt(k,j,i) + HALF_F*(cMax(k+koffset,j+joffset,i+ioffset)
                     + cMax(k,j,i)) / dl;
 
+#if RKL_ENABLED == NO
       if(haveParabolicTerms) {
         invDt(k,j,i) = invDt(k,j,i) + TWO_F * FMAX(dMax(k+koffset,j+joffset,i+ioffset),
                                                    dMax(k,j,i)) / (dl*dl);
       }
+#endif
 
       // Fargo terms to enfore conservation (actually substract back what was added in
       // Totalflux loop)

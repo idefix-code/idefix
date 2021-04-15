@@ -40,9 +40,143 @@ void RKLegendre::Init(DataBlock *datain) {
 void RKLegendre::Cycle() {
   idfx::pushRegion("RKLegendre::Cycle");
 
+  IdefixArray4D<real> dU = this->dU;
+  IdefixArray4D<real> dU0 = this->dU0;
+  IdefixArray4D<real> Uc = data->hydro.Uc;
+  IdefixArray4D<real> Uc0 = data->hydro.Uc0;
+  IdefixArray4D<real> Uc1 = this->Uc1;
   real time = data->t;
+  real dt_hyp = data->dt;
 
+  // first RKL stage
+  stage = 1;
+
+  // Apply Boundary conditions
+  data->hydro.SetBoundary(time);
+
+  // Convert current state into conservative variable
+  data->hydro.ConvertPrimToCons();
+
+  Kokkos::deep_copy(Uc0,Uc);
+
+  // evolve RKL stage
   EvolveStage(time);
+
+  Kokkos::deep_copy(dU0,dU);
+
+  // Compute number of RKL steps
+  real scrh, nrkl;
+#if RKL_ORDER == 1
+  scrh  = dt_hyp/dt;
+  // Solution of quadratic Eq.
+  // 2*dt_hyp/dt_exp = s^2 + s
+  nrkl = FOUR_F*scrh / (ONE_F + std::sqrt(ONE_F + TWO_F*FOUR_F*scrh));
+#elif RKL_ORDER == 2
+  scrh  = dt_hyp/dt;
+  // Solution of quadratic Eq.
+  // 4*dt_hyp/dt_exp = s^2 + s - 2
+  nrkl = FOUR_F*(ONE_F + TWO_F*scrh)
+          / (ONE_F + sqrt(THREE_F*THREE_F + FOUR_F*FOUR_F*scrh));
+#else
+  //#error Invalid RKL_ORDER
+#endif
+  int rklstages = 1 + floor(nrkl);
+
+  // Compute coefficients
+  real w1, mu_tilde_j;
+#if RKL_ORDER == 1
+  w1 = TWO_F/(rklstages*rklstages + rklstages);
+  mu_tilde_j = w1;
+#elif RKL_ORDER == 2
+  real b_j, b_jm1, b_jm2, a_jm1;
+  w1 = FOUR_F/(rklstages*rklstages + rklstages - TWO_F);
+  mu_tilde_j = w1/THREE_F;
+
+  b_j = b_jm1 = b_jm2 = ONE_F/THREE_F;
+  a_jm1 = ONE_F - b_jm1;
+#endif
+
+#if RKL_ORDER == 1
+  time = data->t + HALF_F*dt_hyp*(stage*stage+stage)*w1;
+#elif RKL_ORDER == 2
+  time = data->t + ONE_FOURTH_F*dt_hyp*(stage*stage+stage-2)*w1;
+#endif
+
+  idefix_for("RKL_Cycle_Kernel",
+             data->beg[KDIR],data->end[KDIR],
+             data->beg[JDIR],data->end[JDIR],
+             data->beg[IDIR],data->end[IDIR],
+    KOKKOS_LAMBDA (int k, int j, int i) {
+      for(int nv = 0 ; nv < NVAR; nv++) {
+        Uc1(nv,k,j,i) = Uc(nv,k,j,i);
+      }
+
+      for(int nv = 0 ; nv < NVAR; nv++) {
+        Uc(nv,k,j,i) = Uc1(nv,k,j,i) + mu_tilde_j*dt_hyp*dU0(nv,k,j,i);
+      }
+    }
+  );
+
+  // Convert current state into primitive variable
+  data->hydro.ConvertConsToPrim();
+
+  real mu_j, nu_j, gamma_j;
+  // subStages loop
+  for(stage=2; stage <= rklstages ; stage++) {
+    //idfx::cout << "RKL: looping stages" << std::endl;
+    // compute RKL coefficients
+#if RKL_ORDER == 1
+    mu_j       = (TWO_F*stage -ONE_F)/stage;
+    mu_tilde_j = w1*mu_j;
+    nu_j       = -(stage -ONE_F)/stage;
+#elif RKL_ORDER == 2
+    mu_j       = (TWO_F*stage -ONE_F)/stage * b_j/b_jm1;
+    mu_tilde_j = w1*mu_j;
+    gamma_j    = -a_jm1*mu_tilde_j;
+    nu_j       = -(stage -ONE_F)*b_j/(stage*b_jm2);
+
+    b_jm2 = b_jm1;
+    b_jm1 = b_j;
+    a_jm1 = ONE_F - b_jm1;
+    b_j   = HALF_F*(stage*stage+THREE_F*stage)/(stage*stage+THREE_F*stage+TWO_F);
+#endif
+
+    // Apply Boundary conditions
+    data->hydro.SetBoundary(time);
+
+    // evolve RKL stage
+    EvolveStage(time);
+
+    // update Uc
+    idefix_for("RKL_Cycle_Kernel",
+             data->beg[KDIR],data->end[KDIR],
+             data->beg[JDIR],data->end[JDIR],
+             data->beg[IDIR],data->end[IDIR],
+      KOKKOS_LAMBDA (int k, int j, int i) {
+        for(int nv = 0 ; nv < COMPONENTS; nv++) {
+          real Y                  = mu_j*Uc(MX1+nv,k,j,i) + nu_j*Uc1(MX1+nv,k,j,i);
+          Uc1(MX1+nv,k,j,i) = Uc(MX1+nv,k,j,i);
+#if RKL_ORDER == 1
+          Uc(MX1+nv,k,j,i) = Y + dt_hyp*mu_tilde_j*dU(MX1+nv,k,j,i);
+#elif RKL_ORDER == 2
+          Uc(MX1+nv,k,j,i) = Y + (ONE_F - mu_j - nu_j)*Uc0(MX1+nv,k,j,i)
+                                + dt_hyp*mu_tilde_j*dU(MX1+nv,k,j,i)
+                                + gamma_j*dt_hyp*dU0(MX1+nv,k,j,i);
+#endif
+        }
+      }
+    );
+
+    // Convert current state into primitive variable
+    data->hydro.ConvertConsToPrim();
+
+    // increment time
+#if RKL_ORDER == 1
+    time = data->t + HALF_F*dt_hyp*(stage*stage+stage)*w1;
+#elif RKL_ORDER == 2
+    time = data->t + ONE_FOURTH_F*dt_hyp*(stage*stage+stage-2)*w1;
+#endif
+  }
 
   idfx::popRegion();
 }

@@ -251,12 +251,17 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
 #if RKL_ENABLED == YES
   // Runge-Kutta-Legendre cycle
-  data.rkl.Cycle(data.t);
+  data.rkl.Cycle();
 #endif
 
 
   // Update current time
   data.t=data.t+data.dt;
+
+#if RKL_ENABLED == YES
+  // update next time step
+  newdt *= std::fmin(ONE_F, data.rkl.rmax_par/(newdt/data.rkl.dt));
+#endif
 
   // Next time step
   if(!haveFixedDt) {

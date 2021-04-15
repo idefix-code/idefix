@@ -30,17 +30,19 @@ void RKLegendre::Init(DataBlock *datain) {
   Uc1 = IdefixArray4D<real>("RKL_Uc1", NVAR,
                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
-  cfl_par = 0.5;    //(no need for dimension since the dt definition in idefix is different)
+  cfl_par = HALF_F;    //(no need for dimension since the dt definition in idefix is different)
   rmax_par = 100.0;
 
   idfx::popRegion();
 }
 
 
-void RKLegendre::Cycle(real t) {
+void RKLegendre::Cycle() {
   idfx::pushRegion("RKLegendre::Cycle");
 
-  EvolveStage(t);
+  real time = data->t;
+
+  EvolveStage(time);
 
   idfx::popRegion();
 }
@@ -72,18 +74,18 @@ void RKLegendre::ResetStage() {
     }
   );
 
-  this->invDt = ZERO_F;
+  this->dt = ZERO_F;
 
   idfx::popRegion();
 }
 
 
-void RKLegendre::ComputeInvDt() {
+void RKLegendre::ComputeDt() {
   idfx::pushRegion("RKLegendre::ComputeInvDt");
 
   IdefixArray3D<real> invDt = data->hydro.InvDt;
 
-  real newinvdt;
+  real newinvdt = ZERO_F;
   Kokkos::parallel_reduce("Timestep_reduction",
     Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
     ({data->beg[KDIR],data->beg[JDIR],data->beg[IDIR]},
@@ -94,9 +96,16 @@ void RKLegendre::ComputeInvDt() {
     Kokkos::Max<real>(newinvdt)
   );
 
-    this->invDt = newinvdt;
+  #ifdef WITH_MPI
+        if(idfx::psize>1) {
+          MPI_SAFE_CALL(MPI_Allreduce(MPI_IN_PLACE, &newinvdt, 1, realMPI, MPI_MAX, MPI_COMM_WORLD));
+        }
+  #endif
 
-    idfx::popRegion();
+  dt = ONE_F/newinvdt;
+  dt = (cfl_par*dt)/TWO_F; // parabolic time step
+
+  idfx::popRegion();
 }
 
 
@@ -114,7 +123,7 @@ void RKLegendre::EvolveStage(real t) {
   }
 
   if (stage == 1) {
-    ComputeInvDt();
+    ComputeDt();
   }
 
   idfx::popRegion();

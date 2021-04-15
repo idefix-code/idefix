@@ -62,6 +62,8 @@ void RKLegendre::Cycle() {
   // evolve RKL stage
   EvolveStage(time);
 
+  ComputeDt();
+
   Kokkos::deep_copy(dU0,dU);
 
   // Compute number of RKL steps
@@ -208,8 +210,6 @@ void RKLegendre::ResetStage() {
     }
   );
 
-  this->dt = ZERO_F;
-
   idfx::popRegion();
 }
 
@@ -230,11 +230,11 @@ void RKLegendre::ComputeDt() {
     Kokkos::Max<real>(newinvdt)
   );
 
-  #ifdef WITH_MPI
-        if(idfx::psize>1) {
-          MPI_SAFE_CALL(MPI_Allreduce(MPI_IN_PLACE, &newinvdt, 1, realMPI, MPI_MAX, MPI_COMM_WORLD));
-        }
-  #endif
+#ifdef WITH_MPI
+  if(idfx::psize>1) {
+    MPI_SAFE_CALL(MPI_Allreduce(MPI_IN_PLACE, &newinvdt, 1, realMPI, MPI_MAX, MPI_COMM_WORLD));
+  }
+#endif
 
   dt = ONE_F/newinvdt;
   dt = (cfl_par*dt)/TWO_F; // parabolic time step
@@ -254,10 +254,6 @@ void RKLegendre::EvolveStage(real t) {
 
     // Calc Right Hand Side
     CalcParabolicRHS(dir, t);
-  }
-
-  if (stage == 1) {
-    ComputeDt();
   }
 
   idfx::popRegion();

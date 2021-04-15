@@ -260,7 +260,8 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
 #if RKL_ENABLED == YES
   // update next time step
-  newdt *= std::fmin(ONE_F, data.rkl.rmax_par/(newdt/data.rkl.dt));
+  real tt = newdt/data.rkl.dt;
+  newdt *= std::fmin(ONE_F, data.rkl.rmax_par/(tt));
 #endif
 
   // Next time step

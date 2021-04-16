@@ -74,6 +74,22 @@ void Vtk::WriteHeaderFloat(float* buffer, int64_t nelem, IdfxFileHandler fvtk) {
 #endif
 }
 
+void Vtk::WriteHeaderNodes(IdfxFileHandler fvtk) {
+  int64_t size = node_coord.extent(0) *
+             node_coord.extent(1) *
+             node_coord.extent(2) *
+             node_coord.extent(3);
+
+#ifdef WITH_MPI
+  MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_FLOAT, this->nodeView,
+                                  "native", MPI_INFO_NULL));
+  MPI_SAFE_CALL(MPI_File_write_all(fvtk, node_coord.data(), size, MPI_FLOAT, MPI_STATUS_IGNORE));
+  this->offset += sizeof(float)*(nx1+IOFFSET)*(nx2+JOFFSET)*(nx3+KOFFSET)*3;
+#else
+  fwrite(node_coord.data(),sizeof(float),size,fvtk);
+#endif
+}
+
 /*init the object */
 void Vtk::Init(Input &input, DataBlock &datain) {
   // Initialize the output structure
@@ -131,7 +147,85 @@ void Vtk::Init(Input &input, DataBlock &datain) {
   }
 #if VTK_FORMAT == VTK_STRUCTURED_GRID   // VTK_FORMAT
   /* -- Allocate memory for node_coord which is later used -- */
-  node_coord = new float[(nx1+IOFFSET)*3];
+
+  // initialize node array dimensions
+  int nodestart[4];
+  int nodesize[4];
+  int nodesubsize[4];
+
+  for(int dir = 0; dir < 3 ; dir++) {
+    nodesize[2-dir] = datain.mygrid->np_int[dir];
+    nodestart[2-dir] = datain.gbeg[dir]-datain.nghost[dir];
+    nodesubsize[2-dir] = datain.np_int[dir];
+  }
+
+  // In the 4th dimension, we always have the 3 components
+  nodesize[3] = 3;
+  nodestart[3] = 0;
+  nodesubsize[3] = 3;
+
+  // Since we use cell-defined vtk variables,
+  // we add one cell in each direction when we're looking at the last
+  // sub-domain in each direction
+  nodesize[2] += IOFFSET;
+  nodesize[1] += JOFFSET;
+  nodesize[0] += KOFFSET;
+
+  if(datain.mygrid->xproc[0] == datain.mygrid->nproc[0]-1) nodesubsize[2] += IOFFSET;
+  if(datain.mygrid->xproc[1] == datain.mygrid->nproc[1]-1) nodesubsize[1] += JOFFSET;
+  if(datain.mygrid->xproc[2] == datain.mygrid->nproc[2]-1) nodesubsize[0] += KOFFSET;
+
+  // Build an MPI view if needed
+  #ifdef WITH_MPI
+    MPI_SAFE_CALL(MPI_Type_create_subarray(4, nodesize, nodesubsize, nodestart,
+                                          MPI_ORDER_C, MPI_FLOAT, &this->nodeView));
+    MPI_SAFE_CALL(MPI_Type_commit(&this->nodeView));
+  #endif
+
+  // Allocate a node view on the host
+  node_coord = IdefixHostArray4D<float>("VtkNodeCoord",nodesubsize[0],
+                                                       nodesubsize[1],
+                                                       nodesubsize[2],
+                                                       nodesubsize[3]);
+
+  // fill the node_coord array
+  float x1 = 0.0;
+  float x2 = 0.0;
+  float x3 = 0.0;
+  for (int32_t k = 0; k < nodesubsize[0]; k++) {
+    for (int32_t j = 0; j < nodesubsize[1]; j++) {
+      for (int32_t i = 0; i < nodesubsize[2]; i++) {
+        // BigEndian allows us to get back to little endian when needed
+        D_EXPAND( x1 = data.xl[IDIR](i + grid.nghost[IDIR] );  ,
+                  x2 = data.xl[JDIR](j + grid.nghost[JDIR]);  ,
+                  x3 = data.xl[KDIR](k + grid.nghost[KDIR]);  )
+
+  #if (GEOMETRY == CARTESIAN) || (GEOMETRY == CYLINDRICAL)
+        node_coord(k,j,i,0) = BigEndian(x1);
+        node_coord(k,j,i,1) = BigEndian(x2);
+        node_coord(k,j,i,2) = BigEndian(x3);
+
+  #elif GEOMETRY == POLAR
+        node_coord(k,j,i,0) = BigEndian(x1 * cos(x2));
+        node_coord(k,j,i,1) = BigEndian(x1 * sin(x2));
+        node_coord(k,j,i,2) = BigEndian(x3);
+
+  #elif GEOMETRY == SPHERICAL
+    #if DIMENSIONS == 2
+        node_coord(k,j,i,0) = BigEndian(x1 * sin(x2));
+        node_coord(k,j,i,1) = BigEndian(x1 * cos(x2));
+        node_coord(k,j,i,2) = BigEndian(0.0);
+
+    #elif DIMENSIONS == 3
+        node_coord(k,j,i,0) = BigEndian(x1 * sin(x2) * cos(x3));
+        node_coord(k,j,i,1) = BigEndian(x1 * sin(x2) * sin(x3));
+        node_coord(k,j,i,2) = BigEndian(x1 * cos(x2));
+    #endif // DIMENSIONS
+  #endif // GEOMETRY
+      }
+    }
+  }
+
 #endif
 
   // Creat MPI view when using MPI I/O
@@ -316,42 +410,7 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk) {
 
   /* -- Write structured grid information -- */
 
-  x1 = x2 = x3 = 0.0;
-  for (int32_t k = 0; k < nx3 + KOFFSET; k++) {
-    for (int32_t j = 0; j < nx2 + JOFFSET; j++) {
-      for (int32_t i = 0; i < nx1 + IOFFSET; i++) {
-        // BigEndian allows us to get back to little endian when needed
-        D_EXPAND( x1 = BigEndian(xnode[i]);  ,
-                  x2 = BigEndian(ynode[j]);  ,
-                  x3 = BigEndian(znode[k]);  )
-
-  #if (GEOMETRY == CARTESIAN) || (GEOMETRY == CYLINDRICAL)
-        node_coord[3*i+IDIR] = BigEndian(x1);
-        node_coord[3*i+JDIR] = BigEndian(x2);
-        node_coord[3*i+KDIR] = BigEndian(x3);
-
-  #elif GEOMETRY == POLAR
-        node_coord[3*i+IDIR] = BigEndian(x1 * cos(x2));
-        node_coord[3*i+JDIR] = BigEndian(x1 * sin(x2));
-        node_coord[3*i+KDIR] = BigEndian(x3);
-
-  #elif GEOMETRY == SPHERICAL
-    #if DIMENSIONS == 2
-        node_coord[3*i+IDIR] = BigEndian(x1 * sin(x2));
-        node_coord[3*i+JDIR] = BigEndian(x1 * cos(x2));
-        node_coord[3*i+KDIR] = BigEndian(0.0);
-
-    #elif DIMENSIONS == 3
-        node_coord[3*i+IDIR] = BigEndian(x1 * sin(x2) * cos(x3));
-        node_coord[3*i+JDIR] = BigEndian(x1 * sin(x2) * sin(x3));
-        node_coord[3*i+KDIR] = BigEndian(x1 * cos(x2));
-    #endif // DIMENSIONS
-  #endif // GEOMETRY
-      }
-
-      WriteHeaderFloat(node_coord, 3 * (nx1 + IOFFSET),fvtk);
-    }
-  }
+  WriteHeaderNodes(fvtk);
 
 #endif // VTK_FORMAT
 

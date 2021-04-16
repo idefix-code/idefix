@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+### Upcoming
+- Improved VTK write speeds on non-cartesian geometries
+- New `DumpImage` class to load and use the data of dump files without restarting
+
 ## [0.7.0] - 2021-04-07
 ### Added
 - New orbital advection scheme (aka Fargo) available in 2D and 3D HD/MHD. This implementation fixes the bug found in Pluto 4.4.

@@ -104,7 +104,7 @@ void RKLegendre::Cycle() {
   time = data->t + ONE_FOURTH_F*dt_hyp*(stage*stage+stage-2)*w1;
 #endif
 
-  idefix_for("RKL_Cycle_Kernel",
+  idefix_for("RKL_Cycle_InitUc1",
              data->beg[KDIR],data->end[KDIR],
              data->beg[JDIR],data->end[JDIR],
              data->beg[IDIR],data->end[IDIR],
@@ -150,7 +150,7 @@ void RKLegendre::Cycle() {
     EvolveStage(time);
 
     // update Uc
-    idefix_for("RKL_Cycle_Kernel",
+    idefix_for("RKL_Cycle_UpdateUc",
              data->beg[KDIR],data->end[KDIR],
              data->beg[JDIR],data->end[JDIR],
              data->beg[IDIR],data->end[IDIR],
@@ -215,15 +215,14 @@ void RKLegendre::ResetStage() {
 
 
 void RKLegendre::ComputeDt() {
-  idfx::pushRegion("RKLegendre::ComputeInvDt");
+  idfx::pushRegion("RKLegendre::ComputeDt");
 
   IdefixArray3D<real> invDt = data->hydro.InvDt;
 
   real newinvdt = ZERO_F;
-  Kokkos::parallel_reduce("Timestep_reduction",
+  Kokkos::parallel_reduce("RKL_Timestep_reduction",
     Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
-    ({data->beg[KDIR],data->beg[JDIR],data->beg[IDIR]},
-    {data->end[KDIR],data->end[JDIR],data->end[IDIR]}),
+    ({0,0,0},{data->end[KDIR],data->end[JDIR],data->end[IDIR]}),
     KOKKOS_LAMBDA (int k, int j, int i, real &invdt) {
       invdt = std::fmax(invDt(k,j,i), invdt);
     },
@@ -328,7 +327,8 @@ void RKLegendre::CalcParabolicRHS(int dir, real t) {
     }
   );
 
-
+  int stage = this->stage;
+  
   idefix_for("CalcRightHandSide",
              data->beg[KDIR],data->end[KDIR],
              data->beg[JDIR],data->end[JDIR],

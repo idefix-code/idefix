@@ -24,50 +24,50 @@
 class DataBlock {
  public:
   // Local grid information
-  IdefixArray1D<real> x[3];    // geometrical central points
-  IdefixArray1D<real> xr[3];   // cell right interface
-  IdefixArray1D<real> xl[3];   // cell left interface
-  IdefixArray1D<real> dx[3];   // cell width
-  IdefixArray1D<real> xgc[3];  // cell geometrical cell center
-  IdefixArray1D<real> rt;      // In spherical coordinates, gives \tilde{r}
-  IdefixArray1D<real> sinx2m;      // In spherical coordinates,
-                               // gives sin(th) at a j-1/2 interface
-  IdefixArray1D<real> tanx2m;      // In spherical coordinates,
-                               // gives tan(th) at a j-1/2 interface
-  IdefixArray1D<real> sinx2;   // In spherical coordinates, gives sin(th) at the cell center
-  IdefixArray1D<real> tanx2;   // In spherical coordinates, gives tan(th) at the cell center
-  IdefixArray1D<real> dmu;     // In spherical coordinates,
-                               // gives the \theta volume = fabs(cos(th_m) - cos(th_p))
+  IdefixArray1D<real> x[3];    ///< geometrical central points
+  IdefixArray1D<real> xr[3];   ///< cell right interface
+  IdefixArray1D<real> xl[3];   ///< cell left interface
+  IdefixArray1D<real> dx[3];   ///< cell width
+  IdefixArray1D<real> xgc[3];  ///< cell geometrical cell center
+  IdefixArray1D<real> rt;      ///< In spherical coordinates, gives \tilde{r}
+  IdefixArray1D<real> sinx2m;  ///< In spherical coordinates,
+                               ///< gives sin(th) at a j-1/2 interface
+  IdefixArray1D<real> tanx2m;  ///< In spherical coordinates,
+                               ///< gives tan(th) at a j-1/2 interface
+  IdefixArray1D<real> sinx2;   ///< In spherical coordinates, gives sin(th) at the cell center
+  IdefixArray1D<real> tanx2;   ///< In spherical coordinates, gives tan(th) at the cell center
+  IdefixArray1D<real> dmu;     ///< In spherical coordinates,
+                               ///< gives the \theta volume = fabs(cos(th_m) - cos(th_p))
 
-  real xbeg[3];                // Beginning of datablocl
-  real xend[3];                // End of datablock
+  real xbeg[3];                ///< Beginning of active domain in datablock
+  real xend[3];                ///< End of active domain in datablock
 
-  IdefixArray3D<real> dV;      // cell volume
-  IdefixArray3D<real> A[3];    // cell right interface area
+  IdefixArray3D<real> dV;      ///< cell volume
+  IdefixArray3D<real> A[3];    ///< cell right interface area
 
-  int np_tot[3];               // total number of grid points
-  int np_int[3];               // internal number of grid points
+  int np_tot[3];               ///< total number of grid points in datablock
+  int np_int[3];               ///< active number of grid points in datablock (excl. ghost cells)
 
-  int nghost[3];               // number of ghost cells
-  BoundaryType lbound[3];      // Boundary condition to the left
-  BoundaryType rbound[3];      // Boundary condition to the right
+  int nghost[3];               ///< number of ghost cells at each boundary
+  BoundaryType lbound[3];      ///< Boundary condition to the left
+  BoundaryType rbound[3];      ///< Boundary condition to the right
 
-  bool haveAxis = false;       // This DataBlock contains points on the axis and a special treatment
-                               // has been required for these.
+  bool haveAxis = false;       ///< DataBlock contains points on the axis and a special treatment
+                               ///< has been required for these.
 
-  int beg[3];                  // Begining of internal indices
-  int end[3];                  // End of internal indices
+  int beg[3];                  ///< First local index of the active domain
+  int end[3];                  ///< Last local index of the active domain+1
 
-  int gbeg[3];                 // Begining of local block in the grid (internal)
-  int gend[3];                 // End of local block in the grid (internal)
+  int gbeg[3];                 ///< First global index of the active domain of this datablock
+  int gend[3];                 ///< Last global index of the active domain of this datablock
 
-  real dt;                     // Current timestep
-  real t;                      // Current time
+  real dt;                     ///< Current timestep
+  real t;                      ///< Current time
 
-  Grid *mygrid;
+  Grid *mygrid;                ///< Parent grid object
 
   #ifdef WITH_MPI
-  Mpi mpi;                     // Mpi object when WITH_MPI is set
+  Mpi mpi;                     ///< Mpi object when WITH_MPI is set
   #endif
 
   // The Hydro object attached to this datablock

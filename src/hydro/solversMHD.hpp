@@ -10,8 +10,21 @@
 
 #include "idefix.hpp"
 
-// Local Kokkos Inline functions
 
+/********************************************************************************************
+ * @fn void K_Flux(real F[], real V[], real U[], real Cs2Iso,
+ *                                  const int Xn, const int Xt, const int Xb,
+ *                                  const int BXn, const int BXt, const int BXb)
+ * @param F[]   Array of flux variables (output)
+ * @param V[]   Array of primitive variabless (input)
+ * @param U[]   Array of conservative variables (input)
+ * @param cs2Iso Isothermal sound speed (only used when ISOTHERMAL is defined)
+ * @param Xn    Index of the normal velocity component
+ * @param Xt    Index of the tangential velocity component
+ * @param Xb    Indefx of the second tangential velocity component
+ * 
+ *  This routine computes the MHD out of V and U variables and stores it in F
+ ********************************************************************************************/
 KOKKOS_INLINE_FUNCTION void K_Flux(real F[], real V[], real U[], real Cs2Iso,
                                    ARG_EXPAND(const int Xn, const int Xt, const int Xb),
                                    ARG_EXPAND(const int BXn, const int BXt, const int BXb)) {

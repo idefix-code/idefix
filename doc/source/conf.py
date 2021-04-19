@@ -16,6 +16,7 @@
 
 import sphinx_rtd_theme
 import sphinx.ext.mathjax
+import textwrap
 
 # -- Project information -----------------------------------------------------
 
@@ -24,7 +25,7 @@ copyright = '2020-2021, Geoffroy Lesur et al.'
 author = 'Geoffroy Lesur'
 
 # The full version, including alpha/beta/rc tags
-release = '0.1'
+release = '0.7'
 
 
 # -- General configuration ---------------------------------------------------
@@ -34,7 +35,11 @@ release = '0.1'
 # ones.
 extensions = [
     "sphinx_rtd_theme",
+    "breathe",
+    "exhale"
 ]
+
+cpp_id_attributes=["KOKKOS_INLINE_FUNCTION","KOKKOS_RESTRICT"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -59,3 +64,37 @@ html_static_path = ['_static']
 
 def setup(app):
     app.add_css_file('my_theme.css')
+
+##############
+# Breathe/Exhale options
+
+# Setup the breathe extension
+breathe_projects = {
+    "My Project": "./xml"
+}
+breathe_default_project = "My Project"
+
+# Setup the exhale extension
+exhale_args = {
+    # These arguments are required
+    "containmentFolder":     "./api",
+    "rootFileName":          "library_root.rst",
+    "rootFileTitle":         "Idefix API",
+    "doxygenStripFromPath":  "..",
+    # Suggested optional arguments
+    "createTreeView":        False,
+    # TIP: if using the sphinx-bootstrap-theme, you need
+    # "treeViewIsBootstrap": True,
+    "doxygenStripFromPath": "../../src",
+    "exhaleExecutesDoxygen": True,
+    "exhaleDoxygenStdin":    textwrap.dedent('''
+            INPUT = ../../src
+            EXCLUDE = ../../src/kokkos
+            ''')
+}
+
+# Tell sphinx what the primary language being documented is.
+primary_domain = 'cpp'
+
+# Tell sphinx what the pygments highlight language should be.
+highlight_language = 'cpp'

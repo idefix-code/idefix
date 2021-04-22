@@ -70,25 +70,17 @@ class DataBlock {
   Mpi mpi;                     ///< Mpi object when WITH_MPI is set
   #endif
 
-  // The Hydro object attached to this datablock
-  Hydro hydro;
+  Hydro hydro;                  ///< The Hydro object attached to this datablock
 
-  // init from a Grid object
-  void InitFromGrid(Grid &, Input &);
+  void InitFromGrid(Grid &, Input &); ///< init from a Grid object
+  void MakeGeometry();                ///< Compute geometrical terms
+  void DumpToFile(std::string);   ///< Dump current datablock to a file for inspection
+  int CheckNan();                 ///< Return the number of cells which have Nans
 
-  void MakeGeometry();
+  void EvolveStage();             ///< Evolve this DataBlock by dt
 
-  // Dump current datablock to a file for inspection
-  void DumpToFile(std::string);
 
-  // Return the number of cells who have Nans
-  int CheckNan();
-
-  // Evolve this DataBlock by dt
-  void EvolveStage();
-
-  // Reset the variables needed at each major integration Stage
-  void ResetStage();
+  void ResetStage();              ///< Reset the variables needed at each major integration Stage
 
   DataBlock();
 

@@ -8,7 +8,11 @@
 #include "../idefix.hpp"
 #include "dataBlock.hpp"
 
-// Compute the geometrical terms for the grid
+/**
+ * Compute the geometrical terms for the grid.
+ * This function computes all of the geometrical terms
+ * (cell volumes, faces surfaces, trigonometric functions)
+*/
 void DataBlock::MakeGeometry() {
   idfx::pushRegion("DataBlock::MakeGeometry()");
 

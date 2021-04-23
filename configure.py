@@ -15,6 +15,7 @@ CPU_ARCHS = frozenset(
         "EPYC",
         "HSW",
         "SKX",
+        "WSM",
     ),
 )
 

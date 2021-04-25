@@ -23,19 +23,23 @@ void Hydro::CalcParabolicFlux(int dir, const real t) {
       }
   );
 
-  if(this->haveResistivity || this->haveAmbipolar) {
-    this->AddNonIdealMHDFlux(dir,t);
+  if( (resistivityStatus.isExplicit  && (! data->rklCycle))
+    || (resistivityStatus.isRKL  && ( data->rklCycle))
+    || (ambipolarStatus.isExplicit  && (! data->rklCycle))
+    || (ambipolarStatus.isRKL  && ( data->rklCycle)) ) {
+      this->AddNonIdealMHDFlux(dir,t);
   }
 
-  if(this->haveViscosity) {
+  if( (viscosityStatus.isExplicit && (!data->rklCycle))
+    || (viscosityStatus.isRKL && data->rklCycle))  {
       // Add fargo velocity if using fargo
-    if(this->haveFargo) {
+    if(haveFargo && viscosityStatus.isExplicit) {
       fargo.AddVelocity(t);
     }
     this->viscosity.AddViscousFlux(dir,t);
 
     // Remove back Fargo velocity
-    if(this->haveFargo) {
+    if(haveFargo && viscosityStatus.isExplicit) {
       fargo.SubstractVelocity(t);
     }
   }

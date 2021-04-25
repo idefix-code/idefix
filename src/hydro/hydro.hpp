@@ -57,10 +57,10 @@ class Hydro {
   bool needCurrent{false};
 
   // Whether gravitational potential is computed
-  bool haveGravPotential;
+  bool haveGravPotential{false};
 
   // Nonideal MHD effects coefficients
-  ParabolicModuleStatus resistivitySatus, ambipolarStatus, hallStatus;
+  ParabolicModuleStatus resistivityStatus, ambipolarStatus, hallStatus;
 
   // Whether or not we have viscosity
   ParabolicModuleStatus viscosityStatus;

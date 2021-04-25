@@ -25,8 +25,8 @@ void ElectroMotiveForce::CalcNonidealEMF(real t) {
   IdefixArray3D<real> xAmbiArr = hydro->xAmbipolar;
 
   // these two are required to ensure that the type is captured by KOKKOS_LAMBDA
-  HydroModuleStatus haveResistivity = hydro->haveResistivity;
-  HydroModuleStatus haveAmbipolar = hydro->haveAmbipolar;
+  HydroModuleStatus haveResistivity = hydro->resistivityStatus.status;
+  HydroModuleStatus haveAmbipolar = hydro->ambipolarStatus.status;
 
   real etaConstant = hydro->etaO;
   real xAConstant = hydro->xA;

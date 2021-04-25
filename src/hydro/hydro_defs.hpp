@@ -30,7 +30,7 @@ enum HydroModuleStatus {Disabled, Constant, UserDefFunction };
 
 // Structure to describe the status of parabolic modules
 struct ParabolicModuleStatus {
-  HydroModuleStatus status{disabled};
+  HydroModuleStatus status{Disabled};
   bool isExplicit{true};
   bool isRKL{false};
 };

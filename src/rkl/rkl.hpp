@@ -9,14 +9,14 @@
 #define RKL_RKL_HPP_
 
 #include "idefix.hpp"
+#include "input.hpp"
+#include "dataBlock.hpp"
 
-// forward class declaration
-class DataBlock;
 
 class RKLegendre {
  public:
   RKLegendre();
-  void Init(DataBlock *);
+  void Init(Input &, DataBlock &);
   void Cycle();
   void ResetStage();
   void EvolveStage(real);
@@ -27,7 +27,7 @@ class RKLegendre {
   IdefixArray4D<real> dU0;      // dU of the first stage
   IdefixArray4D<real> Uc1;      // Uc of the previous stage, Uc1 = Uc(stage-1)
 
-  real dt, cfl_par, rmax_par;
+  real dt, cfl_rkl, rmax_par;
 
  private:
   DataBlock *data;

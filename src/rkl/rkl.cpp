@@ -8,8 +8,13 @@
 #include <cmath>
 
 #include "rkl.hpp"
-#include "rkl_defs.hpp"
 #include "dataBlock.hpp"
+#include "hydro.hpp"
+
+
+#ifndef RKL_ORDER
+  #define RKL_ORDER       2
+#endif
 
 
 RKLegendre::RKLegendre() {
@@ -17,11 +22,12 @@ RKLegendre::RKLegendre() {
 }
 
 
-void RKLegendre::Init(DataBlock *datain) {
+void RKLegendre::Init(Input &input, DataBlock &datain) {
   idfx::pushRegion("RKLegendre::Init");
 
+  idfx::cout << "RKLegendre: init" << std::endl;
   // Save the datablock to which we are attached from now on
-  this->data = datain;
+  this->data = &datain;
 
   dU = IdefixArray4D<real>("RKL_dU", NVAR,
                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
@@ -30,7 +36,12 @@ void RKLegendre::Init(DataBlock *datain) {
   Uc1 = IdefixArray4D<real>("RKL_Uc1", NVAR,
                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
-  cfl_par = HALF_F;    //(no need for dimension since the dt definition in idefix is different)
+  if(input.CheckEntry("RKL","cfl")>0) {
+    cfl_rkl = input.GetReal("RKL","cfl",0);
+  } else {
+    idfx::cout << "RKLegendre: no RKL cfl given. Using 0.5 by default." << std::endl;
+    cfl_rkl = 0.5;
+  }
   rmax_par = 100.0;
 
   idfx::popRegion();
@@ -47,6 +58,9 @@ void RKLegendre::Cycle() {
   IdefixArray4D<real> Uc1 = this->Uc1;
   real time = data->t;
   real dt_hyp = data->dt;
+
+  // Tell the datablock that we're performing the RKL cycle
+  data->rklCycle = true;
 
   // first RKL stage
   stage = 1;
@@ -180,6 +194,8 @@ void RKLegendre::Cycle() {
 #endif
   }
 
+  // Tell the datablock that we're done
+  data->rklCycle = false;
   idfx::popRegion();
 }
 
@@ -236,7 +252,7 @@ void RKLegendre::ComputeDt() {
 #endif
 
   dt = ONE_F/newinvdt;
-  dt = (cfl_par*dt)/TWO_F; // parabolic time step
+  dt = (cfl_rkl*dt)/TWO_F; // parabolic time step
 
   idfx::popRegion();
 }
@@ -278,6 +294,7 @@ void RKLegendre::CalcParabolicRHS(int dir, real t) {
   IdefixArray4D<real> viscSrc = data->hydro.viscosity.viscSrc;
   IdefixArray4D<real> dU = this->dU;
 
+  bool haveViscosity = data->hydro.viscosityStatus.isRKL;
 
   int ioffset,joffset,koffset;
   ioffset=joffset=koffset=0;
@@ -328,13 +345,12 @@ void RKLegendre::CalcParabolicRHS(int dir, real t) {
   );
 
   int stage = this->stage;
-  
+
   idefix_for("CalcRightHandSide",
              data->beg[KDIR],data->end[KDIR],
              data->beg[JDIR],data->end[JDIR],
              data->beg[IDIR],data->end[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
-
       real rhs[COMPONENTS];
 
 #pragma unroll
@@ -342,7 +358,7 @@ void RKLegendre::CalcParabolicRHS(int dir, real t) {
         rhs[nv] = -  ( Flux(nv + VX1, k+koffset, j+joffset, i+ioffset)
                      - Flux(nv + VX1, k, j, i))/dV(k,j,i);
         // Viscosity source terms
-        rhs[nv] += viscSrc(nv,k,j,i);
+        if(haveViscosity) rhs[nv] += viscSrc(nv,k,j,i);
       }
 
 #if GEOMETRY != CARTESIAN

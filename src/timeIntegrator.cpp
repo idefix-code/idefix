@@ -71,6 +71,12 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
     w0[1] = 1.0/3.0;
   }
 
+  // Init the RKL scheme if it's needed
+  if(data.hydro.haveRKLParabolicTerms) {
+    rkl.Init(input,data);
+    haveRKL = true;
+  }
+
   idfx::popRegion();
 }
 
@@ -249,20 +255,19 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   if(data.hydro.haveFargo) data.hydro.fargo.AddVelocity(data.t);
 
 
-#if RKL_ENABLED == YES
-  // Runge-Kutta-Legendre cycle
-  data.rkl.Cycle();
-#endif
-
+  if(haveRKL) {
+    // Runge-Kutta-Legendre cycle
+    rkl.Cycle();
+  }
 
   // Update current time
   data.t=data.t+data.dt;
 
-#if RKL_ENABLED == YES
-  // update next time step
-  real tt = newdt/data.rkl.dt;
-  newdt *= std::fmin(ONE_F, data.rkl.rmax_par/(tt));
-#endif
+  if(haveRKL) {
+    // update next time step
+    real tt = newdt/rkl.dt;
+    newdt *= std::fmin(ONE_F, rkl.rmax_par/(tt));
+  }
 
   // Next time step
   if(!haveFixedDt) {

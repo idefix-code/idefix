@@ -1,11 +1,13 @@
-import sys
+# this can be run from the top level of the repo with
+# python3 -m pytest test/test_configure.py
+# see https://docs.pytest.org/en/stable/usage.html#cmdline
 import os
 from pathlib import Path
 import pytest
-IDEFIX_DIR = str(Path(__file__).parents[1])
-sys.path.append(IDEFIX_DIR)
+
 from configure import main  # noqa: E402
-sys.path.pop()
+
+IDEFIX_DIR = str(Path(__file__).parents[1])
 
 
 @pytest.fixture()

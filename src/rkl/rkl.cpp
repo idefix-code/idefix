@@ -13,7 +13,7 @@
 
 
 #ifndef RKL_ORDER
-  #define RKL_ORDER       1
+  #define RKL_ORDER       2
 #endif
 
 
@@ -25,7 +25,7 @@ RKLegendre::RKLegendre() {
 void RKLegendre::Init(Input &input, DataBlock &datain) {
   idfx::pushRegion("RKLegendre::Init");
 
-  idfx::cout << "RKLegendre: init" << std::endl;
+  idfx::cout << "RKLegendre: enabled." << std::endl;
   // Save the datablock to which we are attached from now on
   this->data = &datain;
 

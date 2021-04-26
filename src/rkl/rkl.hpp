@@ -27,12 +27,16 @@ class RKLegendre {
   IdefixArray4D<real> dU;      // variation of main cell-centered conservative variables
   IdefixArray4D<real> dU0;      // dU of the first stage
   IdefixArray4D<real> Uc1;      // Uc of the previous stage, Uc1 = Uc(stage-1)
+  IdefixArray1D<int> varList;  // List of variables which should be evolved
+  int nvarRKL{0};               // # of active variables
 
   real dt, cfl_rkl, rmax_par;
 
  private:
   DataBlock *data;
   int stage;
+  void AddVariable(int, IdefixArray1D<int>::HostMirror & );
+  void Copy(IdefixArray4D<real>&, IdefixArray4D<real>&);
 };
 
 #endif // RKL_RKL_HPP_

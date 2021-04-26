@@ -15,10 +15,41 @@
 #ifndef RKL_ORDER
   #define RKL_ORDER       2
 #endif
-
+#define NVAR_MAX         10
 
 RKLegendre::RKLegendre() {
   // do nothing!
+}
+
+void RKLegendre::AddVariable(int var, IdefixArray1D<int>::HostMirror &varListHost ) {
+  bool haveit{false};
+
+  // Check whether we have this variable in the list
+  for(int i = 0 ; i < nvarRKL ; i++) {
+    if(varListHost(i) == var) haveit=true;
+  }
+
+  // We don't have it, then add it to the list
+  if(!haveit) {
+    if(nvarRKL >= NVAR_MAX) IDEFIX_ERROR("RKL: cannot compute that many variables");
+    varListHost(nvarRKL) = var;
+    nvarRKL++;
+  }
+}
+
+// Copy just the variables required by the RK scheme
+void RKLegendre::Copy(IdefixArray4D<real> &out, IdefixArray4D<real> &in) {
+  IdefixArray1D<int> vars = this->varList;
+
+  idefix_for("RKL_Copy",
+             0, nvarRKL,
+             0, data->np_tot[KDIR],
+             0, data->np_tot[JDIR],
+             0, data->np_tot[IDIR],
+             KOKKOS_LAMBDA(int n, int k, int j, int i) {
+               const int var = vars(n);
+               out(var,k,j,i) = in(var,k,j,i);
+             });
 }
 
 
@@ -44,6 +75,25 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
   }
   rmax_par = 100.0;
 
+  // Make a list of variables
+  varList = IdefixArray1D<int>("RKL_VarList",NVAR_MAX);
+  IdefixArray1D<int>::HostMirror varListHost = Kokkos::create_mirror_view(varList);
+
+  // Create a list of variables
+  // Viscosity
+  if(data->hydro.viscosityStatus.isRKL) {
+    EXPAND( AddVariable(MX1, varListHost);   ,
+            AddVariable(MX2, varListHost);   ,
+            AddVariable(MX3, varListHost);   )
+
+    #if HAVE_ENERGY
+      AddVariable(ENG, varListHost);
+    #endif
+  }
+
+  // Copy the list on the device
+  Kokkos::deep_copy(varList,varListHost);
+
   idfx::popRegion();
 }
 
@@ -56,6 +106,7 @@ void RKLegendre::Cycle() {
   IdefixArray4D<real> Uc = data->hydro.Uc;
   IdefixArray4D<real> Uc0 = data->hydro.Uc0;
   IdefixArray4D<real> Uc1 = this->Uc1;
+  IdefixArray1D<int> varList = this->varList;
   real time = data->t;
   real dt_hyp = data->dt;
 
@@ -71,14 +122,15 @@ void RKLegendre::Cycle() {
   // Convert current state into conservative variable
   data->hydro.ConvertPrimToCons();
 
-  Kokkos::deep_copy(Uc0,Uc);
+  // Store the result in Uc0
+  Copy(Uc0,Uc);
 
   // evolve RKL stage
   EvolveStage(time);
 
   ComputeDt();
 
-  Kokkos::deep_copy(dU0,dU);
+  Copy(dU0,dU);
 
   // Compute number of RKL steps
   real scrh, nrkl;
@@ -119,17 +171,14 @@ void RKLegendre::Cycle() {
 #endif
 
   idefix_for("RKL_Cycle_InitUc1",
+             0, nvarRKL,
              data->beg[KDIR],data->end[KDIR],
              data->beg[JDIR],data->end[JDIR],
              data->beg[IDIR],data->end[IDIR],
-    KOKKOS_LAMBDA (int k, int j, int i) {
-      for(int nv = 0 ; nv < NVAR; nv++) {
-        Uc1(nv,k,j,i) = Uc(nv,k,j,i);
-      }
-
-      for(int nv = 0 ; nv < NVAR; nv++) {
-        Uc(nv,k,j,i) = Uc1(nv,k,j,i) + mu_tilde_j*dt_hyp*dU0(nv,k,j,i);
-      }
+    KOKKOS_LAMBDA (int n, int k, int j, int i) {
+      int nv = varList(n);
+      Uc1(nv,k,j,i) = Uc(nv,k,j,i);
+      Uc(nv,k,j,i) = Uc1(nv,k,j,i) + mu_tilde_j*dt_hyp*dU0(nv,k,j,i);
     }
   );
 
@@ -165,23 +214,22 @@ void RKLegendre::Cycle() {
 
     // update Uc
     idefix_for("RKL_Cycle_UpdateUc",
+             0, nvarRKL,
              data->beg[KDIR],data->end[KDIR],
              data->beg[JDIR],data->end[JDIR],
              data->beg[IDIR],data->end[IDIR],
-      KOKKOS_LAMBDA (int k, int j, int i) {
-        for(int nv = 0 ; nv < COMPONENTS; nv++) {
-          real Y                  = mu_j*Uc(MX1+nv,k,j,i) + nu_j*Uc1(MX1+nv,k,j,i);
-          Uc1(MX1+nv,k,j,i) = Uc(MX1+nv,k,j,i);
+      KOKKOS_LAMBDA (int n, int k, int j, int i) {
+        const int nv = varList(n);
+        real Y = mu_j*Uc(nv,k,j,i) + nu_j*Uc1(nv,k,j,i);
+        Uc1(nv,k,j,i) = Uc(nv,k,j,i);
 #if RKL_ORDER == 1
-          Uc(MX1+nv,k,j,i) = Y + dt_hyp*mu_tilde_j*dU(MX1+nv,k,j,i);
+        Uc(nv,k,j,i) = Y + dt_hyp*mu_tilde_j*dU(nv,k,j,i);
 #elif RKL_ORDER == 2
-          Uc(MX1+nv,k,j,i) = Y + (1.0 - mu_j - nu_j)*Uc0(MX1+nv,k,j,i)
-                                + dt_hyp*mu_tilde_j*dU(MX1+nv,k,j,i)
-                                + gamma_j*dt_hyp*dU0(MX1+nv,k,j,i);
+        Uc(nv,k,j,i) = Y + (1.0 - mu_j - nu_j)*Uc0(nv,k,j,i)
+                                + dt_hyp*mu_tilde_j*dU(nv,k,j,i)
+                                + gamma_j*dt_hyp*dU0(nv,k,j,i);
 #endif
-        }
-      }
-    );
+        });
 
     // Convert current state into primitive variable
     data->hydro.ConvertConsToPrim();
@@ -306,6 +354,7 @@ void RKLegendre::CalcParabolicRHS(int dir, real t) {
   IdefixArray3D<real> dMax = data->hydro.dMax;
   IdefixArray4D<real> viscSrc = data->hydro.viscosity.viscSrc;
   IdefixArray4D<real> dU = this->dU;
+  IdefixArray1D<int> varList = this->varList;
 
   bool haveViscosity = data->hydro.viscosityStatus.isRKL;
 
@@ -318,10 +367,11 @@ void RKLegendre::CalcParabolicRHS(int dir, real t) {
 
 
   idefix_for("CalcTotalFlux",
+             0, this->nvarRKL,
              data->beg[KDIR],data->end[KDIR]+koffset,
              data->beg[JDIR],data->end[JDIR]+joffset,
              data->beg[IDIR],data->end[IDIR]+ioffset,
-    KOKKOS_LAMBDA (int k, int j, int i) {
+    KOKKOS_LAMBDA (int n, int k, int j, int i) {
       real Ax = A(k,j,i);
 
 #if GEOMETRY != CARTESIAN
@@ -329,26 +379,25 @@ void RKLegendre::CalcParabolicRHS(int dir, real t) {
         Ax=SMALL_NUMBER;    // Essentially to avoid singularity around poles
 #endif
 
-      for(int nv = 0 ; nv < COMPONENTS ; nv++) {
-        Flux(nv+VX1,k,j,i) = Flux(nv+VX1,k,j,i) * Ax;
-      }
+      const int nv = varList(n);
 
+      Flux(nv,k,j,i) = Flux(nv,k,j,i) * Ax;
 
       // Curvature terms
 #if    (GEOMETRY == POLAR       && COMPONENTS >= 2) \
     || (GEOMETRY == CYLINDRICAL && COMPONENTS == 3)
-      if(dir==IDIR) {
-        // Conserve angular momentum, hence flux is R*Bphi
+      if(dir==IDIR && nv==iMPHI) {
+        // Conserve angular momentum, hence flux is R*Vphi
         Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(x1m(i));
       }
 #endif // GEOMETRY==POLAR OR CYLINDRICAL
 
 #if GEOMETRY == SPHERICAL
-      if(dir==IDIR) {
+      if(dir==IDIR && nv==iMPHI) {
   #if COMPONENTS == 3
         Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(x1m(i));
   #endif // COMPONENTS == 3
-      } else if(dir==JDIR) {
+      } else if(dir==JDIR && nv==iMPHI) {
   #if COMPONENTS == 3
         Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(sm(j));
   #endif // COMPONENTS = 3
@@ -357,66 +406,69 @@ void RKLegendre::CalcParabolicRHS(int dir, real t) {
     }
   );
 
-  int stage = this->stage;
 
   idefix_for("CalcRightHandSide",
+             0, this->nvarRKL,
              data->beg[KDIR],data->end[KDIR],
              data->beg[JDIR],data->end[JDIR],
              data->beg[IDIR],data->end[IDIR],
-    KOKKOS_LAMBDA (int k, int j, int i) {
-      real rhs[COMPONENTS];
+    KOKKOS_LAMBDA (int n, int k, int j, int i) {
+      real rhs;
 
-#pragma unroll
-      for(int nv = 0 ; nv < COMPONENTS ; nv++) {
-        rhs[nv] = -  ( Flux(nv + VX1, k+koffset, j+joffset, i+ioffset)
-                     - Flux(nv + VX1, k, j, i))/dV(k,j,i);
-        // Viscosity source terms
-        if(haveViscosity) rhs[nv] += viscSrc(nv,k,j,i);
+      const int nv = varList(n);
+
+      rhs = -  ( Flux(nv, k+koffset, j+joffset, i+ioffset)
+                     - Flux(nv, k, j, i))/dV(k,j,i);
+
+      // Viscosity source terms
+      if( haveViscosity && (nv-VX1 < COMPONENTS) && (nv-VX1>=0)) {
+        rhs += viscSrc(nv-VX1,k,j,i);
       }
 
 #if GEOMETRY != CARTESIAN
-      if(dir==IDIR) {
   #ifdef iMPHI
-        rhs[iMPHI-1] = rhs[iMPHI-1] / x1(i);
-  #endif
-
-      } else if(dir==JDIR) {
-  #if (GEOMETRY == SPHERICAL) && (COMPONENTS == 3)
-        rhs[iMPHI-1] /= FABS(s(j));
-  #endif // GEOMETRY
+      if((dir==IDIR) && (nv == iMPHI)) {
+        rhs /= x1(i);
       }
+    #if (GEOMETRY == SPHERICAL) && (COMPONENTS == 3)
+      if((dir==JDIR) && (nv == iMPHI)) {
+        rhs /= FABS(s(j));
+      }
+    #endif // GEOMETRY
       // Nothing for KDIR
-
+  #endif  // iMPHI
 #endif // GEOMETRY != CARTESIAN
 
       // store the field components
-#pragma unroll
-      for(int nv = 0 ; nv < COMPONENTS ; nv++) {
-        dU(nv + VX1,k,j,i) += rhs[nv];
-      }
+      dU(nv,k,j,i) += rhs;
+    });
 
+  // Compute hyperbolic timestep only if we're in the first stage of the RKL loop
+  if(stage==1) {
+    idefix_for("CalcDt",
+             data->beg[KDIR],data->end[KDIR],
+             data->beg[JDIR],data->end[JDIR],
+             data->beg[IDIR],data->end[IDIR],
+             KOKKOS_LAMBDA (int k, int j, int i) {
+               // Compute dt from max signal speed
+                const int ig = ioffset*i + joffset*j + koffset*k;
+                real dl = dx(ig);
+                #if GEOMETRY == POLAR
+                  if(dir==JDIR)
+                    dl = dl*x1(i);
 
-      if (stage == 1) {
-        // Compute dt from max signal speed
-        const int ig = ioffset*i + joffset*j + koffset*k;
-        real dl = dx(ig);
-#if GEOMETRY == POLAR
-        if(dir==JDIR)
-          dl = dl*x1(i);
+                #elif GEOMETRY == SPHERICAL
+                  if(dir==JDIR)
+                    dl = dl*rt(i);
+                  else
+                    if(dir==KDIR)
+                      dl = dl*rt(i)*dmu(j)/dx2(j);
+                 #endif
 
-#elif GEOMETRY == SPHERICAL
-        if(dir==JDIR)
-          dl = dl*rt(i);
-        else
-          if(dir==KDIR)
-            dl = dl*rt(i)*dmu(j)/dx2(j);
-#endif
-
-        invDt(k,j,i) += 0.5 * std::fmax(dMax(k+koffset,j+joffset,i+ioffset),
-                                                dMax(k,j,i)) / (dl*dl);
-      }
-    }
-  );
+                invDt(k,j,i) += 0.5 * std::fmax(dMax(k+koffset,j+joffset,i+ioffset),
+                                                        dMax(k,j,i)) / (dl*dl);
+      });
+  }
 
   idfx::popRegion();
 }

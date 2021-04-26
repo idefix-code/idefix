@@ -5,6 +5,7 @@
 #define     GEOMETRY        POLAR
 // Order of the scheme. 1=donnor cell, 2= linear reconstruction
 #define     ORDER           2
+//#define     DEBUG
 
 //#define     VISCOSITY       RKL
 //#define     RKL_ORDER       2

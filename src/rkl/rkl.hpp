@@ -19,6 +19,7 @@ class RKLegendre {
   void Init(Input &, DataBlock &);
   void Cycle();
   void ResetStage();
+  void ResetFlux();
   void EvolveStage(real);
   void CalcParabolicRHS(int, real);
   void ComputeDt();

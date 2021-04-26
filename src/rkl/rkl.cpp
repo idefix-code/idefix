@@ -13,7 +13,7 @@
 
 
 #ifndef RKL_ORDER
-  #define RKL_ORDER       2
+  #define RKL_ORDER       1
 #endif
 
 
@@ -86,13 +86,13 @@ void RKLegendre::Cycle() {
   scrh  = dt_hyp/dt;
   // Solution of quadratic Eq.
   // 2*dt_hyp/dt_exp = s^2 + s
-  nrkl = FOUR_F*scrh / (ONE_F + std::sqrt(ONE_F + TWO_F*FOUR_F*scrh));
+  nrkl = 4.0*scrh / (1.0 + std::sqrt(1.0 + 2.0*4.0*scrh));
 #elif RKL_ORDER == 2
   scrh  = dt_hyp/dt;
   // Solution of quadratic Eq.
   // 4*dt_hyp/dt_exp = s^2 + s - 2
-  nrkl = FOUR_F*(ONE_F + TWO_F*scrh)
-          / (ONE_F + sqrt(THREE_F*THREE_F + FOUR_F*FOUR_F*scrh));
+  nrkl = 4.0*(1.0 + 2.0*scrh)
+          / (1.0 + sqrt(3.0*3.0 + 4.0*4.0*scrh));
 #else
   //#error Invalid RKL_ORDER
 #endif
@@ -101,21 +101,21 @@ void RKLegendre::Cycle() {
   // Compute coefficients
   real w1, mu_tilde_j;
 #if RKL_ORDER == 1
-  w1 = TWO_F/(rklstages*rklstages + rklstages);
+  w1 = 2.0/(rklstages*rklstages + rklstages);
   mu_tilde_j = w1;
 #elif RKL_ORDER == 2
   real b_j, b_jm1, b_jm2, a_jm1;
-  w1 = FOUR_F/(rklstages*rklstages + rklstages - TWO_F);
-  mu_tilde_j = w1/THREE_F;
+  w1 = 4.0/(rklstages*rklstages + rklstages - 2.0);
+  mu_tilde_j = w1/3.0;
 
-  b_j = b_jm1 = b_jm2 = ONE_F/THREE_F;
-  a_jm1 = ONE_F - b_jm1;
+  b_j = b_jm1 = b_jm2 = 1.0/3.0;
+  a_jm1 = 1.0 - b_jm1;
 #endif
 
 #if RKL_ORDER == 1
-  time = data->t + HALF_F*dt_hyp*(stage*stage+stage)*w1;
+  time = data->t + 0.5*dt_hyp*(stage*stage+stage)*w1;
 #elif RKL_ORDER == 2
-  time = data->t + ONE_FOURTH_F*dt_hyp*(stage*stage+stage-2)*w1;
+  time = data->t + 0.25*dt_hyp*(stage*stage+stage-2)*w1;
 #endif
 
   idefix_for("RKL_Cycle_InitUc1",
@@ -142,19 +142,19 @@ void RKLegendre::Cycle() {
     //idfx::cout << "RKL: looping stages" << std::endl;
     // compute RKL coefficients
 #if RKL_ORDER == 1
-    mu_j       = (TWO_F*stage -ONE_F)/stage;
+    mu_j       = (2.0*stage -1.0)/stage;
     mu_tilde_j = w1*mu_j;
-    nu_j       = -(stage -ONE_F)/stage;
+    nu_j       = -(stage -1.0)/stage;
 #elif RKL_ORDER == 2
-    mu_j       = (TWO_F*stage -ONE_F)/stage * b_j/b_jm1;
+    mu_j       = (2.0*stage -1.0)/stage * b_j/b_jm1;
     mu_tilde_j = w1*mu_j;
     gamma_j    = -a_jm1*mu_tilde_j;
-    nu_j       = -(stage -ONE_F)*b_j/(stage*b_jm2);
+    nu_j       = -(stage -1.0)*b_j/(stage*b_jm2);
 
     b_jm2 = b_jm1;
     b_jm1 = b_j;
-    a_jm1 = ONE_F - b_jm1;
-    b_j   = HALF_F*(stage*stage+THREE_F*stage)/(stage*stage+THREE_F*stage+TWO_F);
+    a_jm1 = 1.0 - b_jm1;
+    b_j   = 0.5*(stage*stage+3.0*stage)/(stage*stage+3.0*stage+2.0);
 #endif
 
     // Apply Boundary conditions
@@ -175,7 +175,7 @@ void RKLegendre::Cycle() {
 #if RKL_ORDER == 1
           Uc(MX1+nv,k,j,i) = Y + dt_hyp*mu_tilde_j*dU(MX1+nv,k,j,i);
 #elif RKL_ORDER == 2
-          Uc(MX1+nv,k,j,i) = Y + (ONE_F - mu_j - nu_j)*Uc0(MX1+nv,k,j,i)
+          Uc(MX1+nv,k,j,i) = Y + (1.0 - mu_j - nu_j)*Uc0(MX1+nv,k,j,i)
                                 + dt_hyp*mu_tilde_j*dU(MX1+nv,k,j,i)
                                 + gamma_j*dt_hyp*dU0(MX1+nv,k,j,i);
 #endif
@@ -188,9 +188,9 @@ void RKLegendre::Cycle() {
 
     // increment time
 #if RKL_ORDER == 1
-    time = data->t + HALF_F*dt_hyp*(stage*stage+stage)*w1;
+    time = data->t + 0.5*dt_hyp*(stage*stage+stage)*w1;
 #elif RKL_ORDER == 2
-    time = data->t + ONE_FOURTH_F*dt_hyp*(stage*stage+stage-2)*w1;
+    time = data->t + 0.25*dt_hyp*(stage*stage+stage-2)*w1;
 #endif
   }
 
@@ -199,6 +199,19 @@ void RKLegendre::Cycle() {
   idfx::popRegion();
 }
 
+
+void RKLegendre::ResetFlux() {
+  IdefixArray4D<real> Flux = data->hydro.FluxRiemann;
+  idefix_for("InitRKLStage_dU_Flux",
+             0,NVAR,
+             0,data->np_tot[KDIR],
+             0,data->np_tot[JDIR],
+             0,data->np_tot[IDIR],
+    KOKKOS_LAMBDA (int nv, int k, int j, int i) {
+      Flux(nv,k,j,i) = ZERO_F;
+    }
+  );
+}
 
 void RKLegendre::ResetStage() {
   idfx::pushRegion("RKLegendre::ResetStage");
@@ -212,7 +225,6 @@ void RKLegendre::ResetStage() {
              0,data->np_tot[IDIR],
     KOKKOS_LAMBDA (int nv, int k, int j, int i) {
       dU(nv,k,j,i) = ZERO_F;
-      Flux(nv,k,j,i) = ZERO_F;
     }
   );
 
@@ -251,8 +263,8 @@ void RKLegendre::ComputeDt() {
   }
 #endif
 
-  dt = ONE_F/newinvdt;
-  dt = (cfl_rkl*dt)/TWO_F; // parabolic time step
+  dt = 1.0/newinvdt;
+  dt = (cfl_rkl*dt)/2.0; // parabolic time step
 
   idfx::popRegion();
 }
@@ -264,6 +276,7 @@ void RKLegendre::EvolveStage(real t) {
   ResetStage();
 
   for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
+    ResetFlux();
     // CalcParabolicFlux
     data->hydro.CalcParabolicFlux(dir, t);
 
@@ -399,7 +412,7 @@ void RKLegendre::CalcParabolicRHS(int dir, real t) {
             dl = dl*rt(i)*dmu(j)/dx2(j);
 #endif
 
-        invDt(k,j,i) += HALF_F * std::fmax(dMax(k+koffset,j+joffset,i+ioffset),
+        invDt(k,j,i) += 0.5 * std::fmax(dMax(k+koffset,j+joffset,i+ioffset),
                                                 dMax(k,j,i)) / (dl*dl);
       }
     }

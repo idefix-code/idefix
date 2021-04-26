@@ -151,6 +151,12 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     idfx::cout << std::endl;
   }
 
+
+  if(haveRKL && (ncycles%2)==1) {
+    // Runge-Kutta-Legendre cycle
+    rkl.Cycle();
+  }
+
     // Apply Boundary conditions
     // TODO(lesurg): Make a general boundary condition call in datablock
   data.hydro.SetBoundary(data.t);
@@ -255,7 +261,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   if(data.hydro.haveFargo) data.hydro.fargo.AddVelocity(data.t);
 
 
-  if(haveRKL) {
+  if(haveRKL && (ncycles%2)==0) {
     // Runge-Kutta-Legendre cycle
     rkl.Cycle();
   }

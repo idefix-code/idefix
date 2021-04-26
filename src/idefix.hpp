@@ -211,15 +211,6 @@ using Layout = Kokkos::LayoutRight;
 #define NVAR    (NFLX)
 
 
-// Runge-Kutta-Legendre switches
-#ifndef VISCOSITY
-  #define VISCOSITY           NO
-#endif
-
-// activate RKL pass if VISCOSITY==RKL
-#define RKL_ENABLED (VISCOSITY)
-
-
 // File handler depends on the type of I/O we use
 #ifdef WITH_MPI
 using IdfxFileHandler = MPI_File;

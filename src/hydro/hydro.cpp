@@ -173,7 +173,6 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
         resistivityStatus.isExplicit = true;
         needExplicitCurrent = true;
       } else if(opType.compare("rkl") == 0 ) {
-        IDEFIX_ERROR("RKL with Resistivity is not yet implemented");
         haveRKLParabolicTerms = true;
         resistivityStatus.isRKL = true;
         needRKLCurrent = true;
@@ -203,7 +202,6 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
         ambipolarStatus.isExplicit = true;
         needExplicitCurrent = true;
       } else if(opType.compare("rkl") == 0 ) {
-        IDEFIX_ERROR("RKL with Ambipolar diffusion is not yet implemented");
         haveRKLParabolicTerms = true;
         ambipolarStatus.isRKL = true;
         needRKLCurrent = true;

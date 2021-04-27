@@ -69,7 +69,7 @@ class ElectroMotiveForce {
   // Init from Hydro class
   void Init(Hydro *);
 
-  void EvolveMagField(real, real, IdefixArray4D<real>&) ;
+  void EvolveMagField(real, real, IdefixArray4D<real>&);
   void CalcCornerEMF(real );
   void calcRiemannEmf();
   // Enforce boundary conditions on the EMFs.

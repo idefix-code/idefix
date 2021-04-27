@@ -135,13 +135,21 @@ void ElectroMotiveForce::CalcNonidealEMF(real t) {
   #if DIMENSIONS >= 2
         Bx2 = AVERAGE_4D_X(Vs, BX2s, k, j, i);
   #else
+    #if COMPONENTS >= 2
         Bx2 = AVERAGE_4D_XY(Vc, BX2, k, j, i);
+    #else
+        Bx2 = 0.0;
+    #endif
   #endif
 
   #if DIMENSIONS == 3
         Bx3 = AVERAGE_4D_XYZ(Vs, BX3s, k+1, j, i);
   #else
+      #if COMPONENTS == 3
         Bx3 = AVERAGE_4D_XY(Vc, BX3, k, j, i);
+      #else
+        Bx3 = 0.0;
+      #endif
   #endif
 
         // Jx3 is already defined above

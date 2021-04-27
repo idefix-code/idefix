@@ -54,7 +54,8 @@ class Hydro {
 
   // Current
   bool haveCurrent{false};
-  bool needCurrent{false};
+  bool needExplicitCurrent{false};
+  bool needRKLCurrent{false};
 
   // Whether gravitational potential is computed
   bool haveGravPotential{false};

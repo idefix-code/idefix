@@ -164,17 +164,19 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
      input.CheckEntry("Hydro","ambipolar")>=0 ||
      input.CheckEntry("Hydro","hall")>=0 ) {
     //
-    this->needCurrent = true;
+    this->haveCurrent = true;
 
     if(input.CheckEntry("Hydro","resistivity")>=0) {
       std::string opType = input.GetString("Hydro","resistivity",0);
       if(opType.compare("explicit") == 0 ) {
         haveExplicitParabolicTerms = true;
         resistivityStatus.isExplicit = true;
+        needExplicitCurrent = true;
       } else if(opType.compare("rkl") == 0 ) {
         IDEFIX_ERROR("RKL with Resistivity is not yet implemented");
         haveRKLParabolicTerms = true;
         resistivityStatus.isRKL = true;
+        needRKLCurrent = true;
       } else {
         std::stringstream msg;
         msg  << "Unknown integration type for resistivity: " << opType;
@@ -187,7 +189,6 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
       } else if(input.GetString("Hydro","resistivity",1).compare("userdef") == 0) {
         idfx::cout << "Hydro: Enabling Ohmic resistivity with user-defined diffusivity function."
                    << std::endl;
-        this->haveParabolicTerms = true;
         resistivityStatus.status = UserDefFunction;
       } else {
         IDEFIX_ERROR("Unknown resistivity definition in idefix.ini. "
@@ -199,26 +200,27 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
       std::string opType = input.GetString("Hydro","ambipolar",0);
       if(opType.compare("explicit") == 0 ) {
         haveExplicitParabolicTerms = true;
-        ambipolarSatus.isExplicit = true;
+        ambipolarStatus.isExplicit = true;
+        needExplicitCurrent = true;
       } else if(opType.compare("rkl") == 0 ) {
         IDEFIX_ERROR("RKL with Ambipolar diffusion is not yet implemented");
         haveRKLParabolicTerms = true;
         ambipolarStatus.isRKL = true;
+        needRKLCurrent = true;
       } else {
-        std::stringstream msg  << "Unknown integration type for ambipolar: " << opType;
+        std::stringstream msg;
+        msg  << "Unknown integration type for ambipolar: " << opType;
         IDEFIX_ERROR(msg);
       }
       if(input.GetString("Hydro","ambipolar",1).compare("constant") == 0) {
         idfx::cout << "Hydro: Enabling ambipolar diffusion with constant diffusivity."
                    << std::endl;
         this->xA = input.GetReal("Hydro","ambipolar",2);
-        this->haveParabolicTerms = true;
-        this->haveAmbipolar = Constant;
+        ambipolarStatus.status = Constant;
       } else if(input.GetString("Hydro","ambipolar",1).compare("userdef") == 0) {
         idfx::cout << "Hydro: Enabling ambipolar diffusion with user-defined diffusivity function."
                    << std::endl;
-        this->haveParabolicTerms = true;
-        this->haveAmbipolar = UserDefFunction;
+        ambipolarStatus.status = UserDefFunction;
       } else {
         IDEFIX_ERROR("Unknown ambipolar definition in idefix.ini. "
                      "Can only be constant or userdef.");
@@ -236,11 +238,12 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   #endif
       std::string opType = input.GetString("Hydro","hall",0);
       if(opType.compare("explicit") == 0 ) {
-        hallSatus.isExplicit = true;
+        hallStatus.isExplicit = true;
       } else if(opType.compare("rkl") == 0 ) {
         IDEFIX_ERROR("RKL inegration is incompatible with Hall");
       } else {
-        std::stringstream msg  << "Unknown integration type for hall: " << opType;
+        std::stringstream msg;
+        msg  << "Unknown integration type for hall: " << opType;
         IDEFIX_ERROR(msg);
       }
       if(input.GetString("Hydro","hall",1).compare("constant") == 0) {
@@ -309,9 +312,8 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
     phiP = IdefixArray3D<real>("Hydro_PhiP",
                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
-  if(this->needCurrent) {
+  if(this->haveCurrent) {
     // Allocate current (when hydro needs it)
-    this->haveCurrent = true;
     J = IdefixArray4D<real>("Hydro_J", 3,
                             data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   }

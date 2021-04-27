@@ -170,7 +170,7 @@ void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
                 Bx3 = HALF_F*( Vc(BX3,k,j-1,i) + Vc(BX3,k,j,i));  )
 
         if(haveResistivity) {
-          if(haveResistivity == UserDefFunction)
+          if(resistivity == UserDefFunction)
             eta = AVERAGE_3D_Y(etaArr,k,j,i);
 
 
@@ -188,7 +188,7 @@ void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
 
 
         if(haveAmbipolar) {
-          if(haveAmbipolar == UserDefFunction)
+          if(ambipolar == UserDefFunction)
             xA = AVERAGE_3D_Y(xAmbiArr,k,j,i);
 
           real BdotB = EXPAND( Bx1*Bx1, +Bx2*Bx2, +Bx3*Bx3);
@@ -226,7 +226,7 @@ void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
 
 
         if(haveResistivity) {
-          if(haveResistivity == UserDefFunction)
+          if(resistivity == UserDefFunction)
             eta = AVERAGE_3D_Z(etaArr,k,j,i);
 
           Flux(BX1,k,j,i) += -eta * Jx2;
@@ -239,7 +239,7 @@ void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
         }
 
         if(haveAmbipolar) {
-          if(haveAmbipolar == UserDefFunction)
+          if(ambipolar == UserDefFunction)
             xA = AVERAGE_3D_Z(xAmbiArr,k,j,i);
 
           real BdotB = Bx1*Bx1 + Bx2*Bx2 + Bx3*Bx3;

@@ -114,16 +114,22 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
 
   if(haveVs) {
     dB = IdefixArray4D<real>("RKL_dB", DIMENSIONS,
-                      data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
+                      data->np_tot[KDIR]+KOFFSET,
+                      data->np_tot[JDIR]+JOFFSET,
+                      data->np_tot[IDIR]+IOFFSET);
     dB0 = IdefixArray4D<real>("RKL_dB0", DIMENSIONS,
-                      data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
+                      data->np_tot[KDIR]+KOFFSET,
+                      data->np_tot[JDIR]+JOFFSET,
+                      data->np_tot[IDIR]+IOFFSET);
     Vs0 = IdefixArray4D<real>("RKL_Vs0", DIMENSIONS,
-                      data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
+                      data->np_tot[KDIR]+KOFFSET,
+                      data->np_tot[JDIR]+JOFFSET,
+                      data->np_tot[IDIR]+IOFFSET);
     Vs1 = IdefixArray4D<real>("RKL_Vs1", DIMENSIONS,
-                      data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
-    
+                      data->np_tot[KDIR]+KOFFSET,
+                      data->np_tot[JDIR]+JOFFSET,
+                      data->np_tot[IDIR]+IOFFSET);
   }
-  
 
   idfx::popRegion();
 }
@@ -137,7 +143,7 @@ void RKLegendre::Cycle() {
   IdefixArray4D<real> Uc = data->hydro.Uc;
   IdefixArray4D<real> Uc0 = data->hydro.Uc0;
   IdefixArray4D<real> Uc1 = this->Uc1;
-  
+
   IdefixArray4D<real> dB = this->dB;
   IdefixArray4D<real> dB0 = this->dB0;
   IdefixArray4D<real> Vs = data->hydro.Vs;
@@ -282,7 +288,7 @@ void RKLegendre::Cycle() {
                                 + gamma_j*dt_hyp*dU0(nv,k,j,i);
 #endif
         });
-    
+
     if(haveVs) {
       // update Vs
       idefix_for("RKL_Cycle_UpdateVs",
@@ -291,7 +297,6 @@ void RKLegendre::Cycle() {
               data->beg[JDIR],data->end[JDIR]+JOFFSET,
               data->beg[IDIR],data->end[IDIR]+IOFFSET,
         KOKKOS_LAMBDA (int n, int k, int j, int i) {
-
           real Y = mu_j*Vs(n,k,j,i) + nu_j*Vs1(n,k,j,i);
           Vs1(n,k,j,i) = Vs(n,k,j,i);
   #if RKL_ORDER == 1
@@ -377,9 +382,7 @@ void RKLegendre::ResetStage() {
                   ex(k,j,i) = 0.0;
                   ey(k,j,i) = 0.0;    )
       });
-
   }
-
   idfx::popRegion();
 }
 
@@ -417,7 +420,7 @@ void RKLegendre::EvolveStage(real t) {
 
   ResetStage();
 
-  if(haveVs) data->hydro.CalcCurrent();
+  if(haveVs && data->hydro.needRKLCurrent) data->hydro.CalcCurrent();
 
   for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
     ResetFlux();
@@ -432,7 +435,6 @@ void RKLegendre::EvolveStage(real t) {
     data->hydro.emf.EnforceEMFBoundary();
     real dt=1.0;
     data->hydro.emf.EvolveMagField(t, dt, this->dB);
-
   }
   idfx::popRegion();
 }

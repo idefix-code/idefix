@@ -12,7 +12,7 @@
 void DataBlock::EvolveStage() {
   idfx::pushRegion("DataBlock::EvolveStage");
   // Compute current when needed
-  if(hydro.needCurrent) hydro.CalcCurrent();
+  if(hydro.needExplicitCurrent) hydro.CalcCurrent();
 
   // Loop on all of the directions
   for(int dir = 0 ; dir < DIMENSIONS ; dir++) {

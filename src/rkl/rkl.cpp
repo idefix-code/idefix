@@ -121,10 +121,6 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
                       data->np_tot[KDIR]+KOFFSET,
                       data->np_tot[JDIR]+JOFFSET,
                       data->np_tot[IDIR]+IOFFSET);
-    Vs0 = IdefixArray4D<real>("RKL_Vs0", DIMENSIONS,
-                      data->np_tot[KDIR]+KOFFSET,
-                      data->np_tot[JDIR]+JOFFSET,
-                      data->np_tot[IDIR]+IOFFSET);
     Vs1 = IdefixArray4D<real>("RKL_Vs1", DIMENSIONS,
                       data->np_tot[KDIR]+KOFFSET,
                       data->np_tot[JDIR]+JOFFSET,
@@ -147,7 +143,7 @@ void RKLegendre::Cycle() {
   IdefixArray4D<real> dB = this->dB;
   IdefixArray4D<real> dB0 = this->dB0;
   IdefixArray4D<real> Vs = data->hydro.Vs;
-  IdefixArray4D<real> Vs0 = this->Vs0;
+  IdefixArray4D<real> Vs0 = data->hydro.Vs0;
   IdefixArray4D<real> Vs1 = this->Vs1;
 
   IdefixArray1D<int> varList = this->varList;

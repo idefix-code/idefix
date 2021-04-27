@@ -121,7 +121,7 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
 
   // Gravitational potential
   if(input.CheckEntry("Hydro","gravPotential")>=0) {
-    std::string potentialString = input.GetString("Hydro","GravPotential",0);
+    std::string potentialString = input.GetString("Hydro","gravPotential",0);
     if(potentialString.compare("userdef") == 0) {
       this->haveGravPotential = true;
       idfx::cout << "Hydro:: Enabling user-defined gravitational potential" << std::endl;
@@ -229,14 +229,14 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
       // Check consistency
       if(mySolver != HLL )
         IDEFIX_ERROR("Hall effect is only compatible with HLL Riemann solver.");
-
-  #if EMF_AVERAGE != ARITHMETIC
-      IDEFIX_ERROR("the Hall effect module is demonstrated stable only when using "
-                   "EMF_AVERAGE=ARITHMETIC");
-  #endif
+      #if EMF_AVERAGE != ARITHMETIC
+        IDEFIX_ERROR("the Hall effect module is demonstrated stable only when using "
+                    "EMF_AVERAGE=ARITHMETIC");
+      #endif
       std::string opType = input.GetString("Hydro","hall",0);
       if(opType.compare("explicit") == 0 ) {
         hallStatus.isExplicit = true;
+        needExplicitCurrent = true;
       } else if(opType.compare("rkl") == 0 ) {
         IDEFIX_ERROR("RKL inegration is incompatible with Hall");
       } else {

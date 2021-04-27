@@ -30,7 +30,6 @@ class RKLegendre {
 
   IdefixArray4D<real> dB;      // Variation of cell-centered magnetic variables
   IdefixArray4D<real> dB0;     // dB of the first stage
-  IdefixArray4D<real> Vs0;     // Vs of first stage
   IdefixArray4D<real> Vs1;     // Vs of previous stage
 
   IdefixArray1D<int> varList;  // List of variables which should be evolved

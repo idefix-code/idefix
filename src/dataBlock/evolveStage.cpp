@@ -38,7 +38,7 @@ void DataBlock::EvolveStage() {
   if(hydro.resistivityStatus.isExplicit || hydro.ambipolarStatus.isExplicit)
     hydro.emf.CalcNonidealEMF(this->t);
   hydro.emf.EnforceEMFBoundary();
-  hydro.emf.EvolveMagField(this->t, this->dt);
+  hydro.emf.EvolveMagField(this->t, this->dt, hydro.Vs);
   hydro.ReconstructVcField(hydro.Uc);
 #endif
 

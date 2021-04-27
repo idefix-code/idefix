@@ -2,6 +2,7 @@
 #define     DIMENSIONS      1
 #define     ISOTHERMAL
 
+#define     DEBUG
 
 #define     GEOMETRY        CARTESIAN
 // Order of the scheme. 1=donnor cell, 2= linear reconstruction

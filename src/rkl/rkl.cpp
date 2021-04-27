@@ -60,12 +60,6 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
   // Save the datablock to which we are attached from now on
   this->data = &datain;
 
-  dU = IdefixArray4D<real>("RKL_dU", NVAR,
-                           data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  dU0 = IdefixArray4D<real>("RKL_dU0", NVAR,
-                           data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  Uc1 = IdefixArray4D<real>("RKL_Uc1", NVAR,
-                           data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
   if(input.CheckEntry("RKL","cfl")>0) {
     cfl_rkl = input.GetReal("RKL","cfl",0);
@@ -90,9 +84,46 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
       AddVariable(ENG, varListHost);
     #endif
   }
+  // Ambipolar diffusion
+  if(data->hydro.ambipolarStatus.isRKL) {
+    #if COMPONENTS == 3 && DIMENSIONS < 3
+      AddVariable(BX3, varListHost);
+    #endif
+    #if COMPONENTS >= 2 && DIMENSIONS < 2
+      AddVariable(BX2, varListHost);
+    #endif
+    #if HAVE_ENERGY
+      AddVariable(ENG, varListHost);
+    #endif
+    haveVs = true;
+  }
+
 
   // Copy the list on the device
   Kokkos::deep_copy(varList,varListHost);
+
+
+  // Variable allocation
+
+  dU = IdefixArray4D<real>("RKL_dU", NVAR,
+                           data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+  dU0 = IdefixArray4D<real>("RKL_dU0", NVAR,
+                           data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+  Uc1 = IdefixArray4D<real>("RKL_Uc1", NVAR,
+                           data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+
+  if(haveVs) {
+    dB = IdefixArray4D<real>("RKL_dB", DIMENSIONS,
+                      data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
+    dB0 = IdefixArray4D<real>("RKL_dB0", DIMENSIONS,
+                      data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
+    Vs0 = IdefixArray4D<real>("RKL_Vs0", DIMENSIONS,
+                      data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
+    Vs1 = IdefixArray4D<real>("RKL_Vs1", DIMENSIONS,
+                      data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
+    
+  }
+  
 
   idfx::popRegion();
 }
@@ -106,6 +137,13 @@ void RKLegendre::Cycle() {
   IdefixArray4D<real> Uc = data->hydro.Uc;
   IdefixArray4D<real> Uc0 = data->hydro.Uc0;
   IdefixArray4D<real> Uc1 = this->Uc1;
+  
+  IdefixArray4D<real> dB = this->dB;
+  IdefixArray4D<real> dB0 = this->dB0;
+  IdefixArray4D<real> Vs = data->hydro.Vs;
+  IdefixArray4D<real> Vs0 = this->Vs0;
+  IdefixArray4D<real> Vs1 = this->Vs1;
+
   IdefixArray1D<int> varList = this->varList;
   real time = data->t;
   real dt_hyp = data->dt;
@@ -124,6 +162,7 @@ void RKLegendre::Cycle() {
 
   // Store the result in Uc0
   Copy(Uc0,Uc);
+  if(haveVs) Kokkos::deep_copy(Vs0,Vs);
 
   // evolve RKL stage
   EvolveStage(time);
@@ -131,6 +170,7 @@ void RKLegendre::Cycle() {
   ComputeDt();
 
   Copy(dU0,dU);
+  if(haveVs) Kokkos::deep_copy(dB0,dB);
 
   // Compute number of RKL steps
   real scrh, nrkl;
@@ -181,6 +221,18 @@ void RKLegendre::Cycle() {
       Uc(nv,k,j,i) = Uc1(nv,k,j,i) + mu_tilde_j*dt_hyp*dU0(nv,k,j,i);
     }
   );
+  if(haveVs) {
+    idefix_for("RKL_Cycle_InitVs1",
+             0, DIMENSIONS,
+             data->beg[KDIR],data->end[KDIR]+KOFFSET,
+             data->beg[JDIR],data->end[JDIR]+JOFFSET,
+             data->beg[IDIR],data->end[IDIR]+IOFFSET,
+    KOKKOS_LAMBDA (int n, int k, int j, int i) {
+      Vs1(n,k,j,i) = Vs(n,k,j,i);
+      Vs(n,k,j,i) = Vs1(n,k,j,i) + mu_tilde_j*dt_hyp*dB0(n,k,j,i);
+    }
+  );
+  }
 
   // Convert current state into primitive variable
   data->hydro.ConvertConsToPrim();
@@ -230,7 +282,27 @@ void RKLegendre::Cycle() {
                                 + gamma_j*dt_hyp*dU0(nv,k,j,i);
 #endif
         });
+    
+    if(haveVs) {
+      // update Vs
+      idefix_for("RKL_Cycle_UpdateVs",
+              0, DIMENSIONS,
+              data->beg[KDIR],data->end[KDIR]+KOFFSET,
+              data->beg[JDIR],data->end[JDIR]+JOFFSET,
+              data->beg[IDIR],data->end[IDIR]+IOFFSET,
+        KOKKOS_LAMBDA (int n, int k, int j, int i) {
 
+          real Y = mu_j*Vs(n,k,j,i) + nu_j*Vs1(n,k,j,i);
+          Vs1(n,k,j,i) = Vs(n,k,j,i);
+  #if RKL_ORDER == 1
+          Vs(n,k,j,i) = Y + dt_hyp*mu_tilde_j*dB(n,k,j,i);
+  #elif RKL_ORDER == 2
+          Vs(n,k,j,i) = Y + (1.0 - mu_j - nu_j)*Vs0(n,k,j,i)
+                                  + dt_hyp*mu_tilde_j*dB(n,k,j,i)
+                                  + gamma_j*dt_hyp*dB0(n,k,j,i);
+  #endif
+          });
+    }
     // Convert current state into primitive variable
     data->hydro.ConvertConsToPrim();
 
@@ -266,6 +338,11 @@ void RKLegendre::ResetStage() {
 
   IdefixArray4D<real> dU = this->dU;
   IdefixArray4D<real> Flux = data->hydro.FluxRiemann;
+  IdefixArray4D<real> dB = this->dB;
+  IdefixArray3D<real> ex = data->hydro.emf.ex;
+  IdefixArray3D<real> ey = data->hydro.emf.ey;
+  IdefixArray3D<real> ez = data->hydro.emf.ez;
+
   idefix_for("InitRKLStage_dU_Flux",
              0,NVAR,
              0,data->np_tot[KDIR],
@@ -285,6 +362,23 @@ void RKLegendre::ResetStage() {
       invDt(k,j,i) = ZERO_F;
     }
   );
+
+  if(haveVs) {
+    idefix_for("InitRKLStage_dB_Flux",
+              0,data->np_tot[KDIR]+KOFFSET,
+              0,data->np_tot[JDIR]+JOFFSET,
+              0,data->np_tot[IDIR]+IOFFSET,
+      KOKKOS_LAMBDA (int k, int j, int i) {
+        for(int n=0; n < DIMENSIONS; n++) {
+          dB(n,k,j,i) = ZERO_F;
+        }
+        D_EXPAND( ez(k,j,i) = 0.0;    ,
+                                      ,
+                  ex(k,j,i) = 0.0;
+                  ey(k,j,i) = 0.0;    )
+      });
+
+  }
 
   idfx::popRegion();
 }
@@ -323,6 +417,8 @@ void RKLegendre::EvolveStage(real t) {
 
   ResetStage();
 
+  if(haveVs) data->hydro.CalcCurrent();
+
   for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
     ResetFlux();
     // CalcParabolicFlux
@@ -331,7 +427,13 @@ void RKLegendre::EvolveStage(real t) {
     // Calc Right Hand Side
     CalcParabolicRHS(dir, t);
   }
+  if(haveVs) {
+    data->hydro.emf.CalcNonidealEMF(t);
+    data->hydro.emf.EnforceEMFBoundary();
+    real dt=1.0;
+    data->hydro.emf.EvolveMagField(t, dt, this->dB);
 
+  }
   idfx::popRegion();
 }
 

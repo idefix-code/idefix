@@ -27,6 +27,12 @@ class RKLegendre {
   IdefixArray4D<real> dU;      // variation of main cell-centered conservative variables
   IdefixArray4D<real> dU0;      // dU of the first stage
   IdefixArray4D<real> Uc1;      // Uc of the previous stage, Uc1 = Uc(stage-1)
+
+  IdefixArray4D<real> dB;      // Variation of cell-centered magnetic variables
+  IdefixArray4D<real> dB0;     // dB of the first stage
+  IdefixArray4D<real> Vs0;     // Vs of first stage
+  IdefixArray4D<real> Vs1;     // Vs of previous stage
+
   IdefixArray1D<int> varList;  // List of variables which should be evolved
   int nvarRKL{0};               // # of active variables
 
@@ -35,6 +41,7 @@ class RKLegendre {
  private:
   DataBlock *data;
   int stage;
+  bool haveVs{false};           // Whether we have (and need to compute) cell-centered variables
   void AddVariable(int, IdefixArray1D<int>::HostMirror & );
   void Copy(IdefixArray4D<real>&, IdefixArray4D<real>&);
 };

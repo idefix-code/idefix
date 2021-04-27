@@ -5,7 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-// These shortcuts are largely inspired from K-Athena 
+// These shortcuts are largely inspired from K-Athena
 // https://gitlab.com/pgrete/kathena
 // by P. Grete.
 

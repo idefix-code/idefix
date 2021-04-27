@@ -92,13 +92,11 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   if(rotation>=0 ) {
     this->haveSourceTerms = true;
     this->haveRotation = true;
-    if(rotation != 3) IDEFIX_ERROR("Rotation needs a 3 components vector in idefix.ini");
-    this->OmegaX1 = input.GetReal("Hydro","Rotation",0);
-    this->OmegaX2 = input.GetReal("Hydro","Rotation",1);
-    this->OmegaX3 = input.GetReal("Hydro","Rotation",2);
+    if(rotation >1 ) IDEFIX_ERROR("Rotation needs a a single rotation velocity (Omega_Z) \
+                                   in idefix.ini");
+    this->OmegaZ = input.GetReal("Hydro","rotation",0);
 
-    idfx::cout << "Hydro: Rotation enabled with Omega=(" << this->OmegaX1 << ", "
-               << this->OmegaX2 << ", " << this->OmegaX3 << ")" << std::endl;
+    idfx::cout << "Hydro: Rotation enabled with Omega=" << this->OmegaZ << std::endl;
   }
 
   // Check whether we have shearing box
@@ -116,7 +114,7 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
     this->sbLx = grid.xend[IDIR] - grid.xbeg[IDIR];
 
     idfx::cout << "Hydro: ShearingBox enabled with Shear rate= " << this->sbS
-               << "and Lx= " << sbLx << std::endl;
+               << " and Lx= " << sbLx << std::endl;
   }
 
   // Gravitational potential

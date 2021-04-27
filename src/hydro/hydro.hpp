@@ -166,7 +166,7 @@ class Hydro {
 
   // Rotation vector
   bool haveRotation{false};
-  real OmegaX1, OmegaX2, OmegaX3;
+  real OmegaZ;
 
   bool haveShearingBox{false};
   // Shear rate for shearing box problems

@@ -34,7 +34,7 @@ void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
     haveAmbipolar = ambipolarStatus.isRKL;
   } else {
     haveResistivity = resistivityStatus.isExplicit;
-    haveAmbipolar = resistivityStatus.isExplicit;
+    haveAmbipolar = ambipolarStatus.isExplicit;
   }
 
   real etaConstant = this->etaO;

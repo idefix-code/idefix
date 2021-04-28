@@ -37,7 +37,7 @@ class RKLegendre {
   int nvarRKL{0};               // # of active variables
 
   real dt, cfl_rkl, rmax_par;
-  int stage;
+  int stage{0};
 
  private:
   DataBlock *data;

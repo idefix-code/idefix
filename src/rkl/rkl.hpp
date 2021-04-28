@@ -23,6 +23,7 @@ class RKLegendre {
   void EvolveStage(real);
   void CalcParabolicRHS(int, real);
   void ComputeDt();
+  void Copy(IdefixArray4D<real>&, IdefixArray4D<real>&);
 
   IdefixArray4D<real> dU;      // variation of main cell-centered conservative variables
   IdefixArray4D<real> dU0;      // dU of the first stage
@@ -42,7 +43,6 @@ class RKLegendre {
   int stage;
   bool haveVs{false};           // Whether we have (and need to compute) cell-centered variables
   void AddVariable(int, IdefixArray1D<int>::HostMirror & );
-  void Copy(IdefixArray4D<real>&, IdefixArray4D<real>&);
 };
 
 #endif // RKL_RKL_HPP_

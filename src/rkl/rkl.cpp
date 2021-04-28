@@ -232,8 +232,8 @@ void RKLegendre::Cycle() {
     KOKKOS_LAMBDA (int n, int k, int j, int i) {
       Vs1(n,k,j,i) = Vs(n,k,j,i);
       Vs(n,k,j,i) = Vs1(n,k,j,i) + mu_tilde_j*dt_hyp*dB0(n,k,j,i);
-    }
-  );
+    });
+    data->hydro.ReconstructVcField(Uc);
   }
 
   // Convert current state into primitive variable
@@ -303,6 +303,7 @@ void RKLegendre::Cycle() {
                                   + gamma_j*dt_hyp*dB0(n,k,j,i);
   #endif
           });
+      data->hydro.ReconstructVcField(Uc);
     }
     // Convert current state into primitive variable
     data->hydro.ConvertConsToPrim();

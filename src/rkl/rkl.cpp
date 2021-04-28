@@ -175,18 +175,17 @@ void RKLegendre::Cycle() {
   if(haveVs) Kokkos::deep_copy(dB0,dB);
 
   // Compute number of RKL steps
-  real scrh, nrkl;
+  real nrkl;
+  real scrh =  dt_hyp/dt;
 #if RKL_ORDER == 1
-  scrh  = dt_hyp/dt;
   // Solution of quadratic Eq.
   // 2*dt_hyp/dt_exp = s^2 + s
-  nrkl = 4.0*scrh / (1.0 + std::sqrt(1.0 + 2.0*4.0*scrh));
+  nrkl = 4.0*scrh / (1.0 + std::sqrt(1.0 + 8.0*scrh));
 #elif RKL_ORDER == 2
-  scrh  = dt_hyp/dt;
   // Solution of quadratic Eq.
   // 4*dt_hyp/dt_exp = s^2 + s - 2
   nrkl = 4.0*(1.0 + 2.0*scrh)
-          / (1.0 + sqrt(3.0*3.0 + 4.0*4.0*scrh));
+          / (1.0 + sqrt(9.0 + 16.0*scrh));
 #else
   //#error Invalid RKL_ORDER
 #endif
@@ -324,7 +323,7 @@ void RKLegendre::Cycle() {
 
 void RKLegendre::ResetFlux() {
   IdefixArray4D<real> Flux = data->hydro.FluxRiemann;
-  idefix_for("InitRKLStage_dU_Flux",
+  idefix_for("RKL_ResetFlux",
              0,NVAR,
              0,data->np_tot[KDIR],
              0,data->np_tot[JDIR],
@@ -345,7 +344,7 @@ void RKLegendre::ResetStage() {
   IdefixArray3D<real> ey = data->hydro.emf.ey;
   IdefixArray3D<real> ez = data->hydro.emf.ez;
 
-  idefix_for("InitRKLStage_dU_Flux",
+  idefix_for("RKL_ResetdU",
              0,NVAR,
              0,data->np_tot[KDIR],
              0,data->np_tot[JDIR],
@@ -356,7 +355,7 @@ void RKLegendre::ResetStage() {
   );
 
   IdefixArray3D<real> invDt = data->hydro.InvDt;
-  idefix_for("InitRKLStage_invDt",
+  idefix_for("RKL_ResetInvDt",
              0,data->np_tot[KDIR],
              0,data->np_tot[JDIR],
              0,data->np_tot[IDIR],
@@ -366,7 +365,7 @@ void RKLegendre::ResetStage() {
   );
 
   if(haveVs) {
-    idefix_for("InitRKLStage_dB_Flux",
+    idefix_for("RKL_InitdB",
               0,data->np_tot[KDIR]+KOFFSET,
               0,data->np_tot[JDIR]+JOFFSET,
               0,data->np_tot[IDIR]+IOFFSET,

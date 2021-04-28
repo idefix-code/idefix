@@ -544,6 +544,8 @@ int Dump::Write(DataBlock &data, Output& output) {
   #endif
   IdfxFileHandler fileHdl;
 
+  idfx::pushRegion("Dump::Write");
+
   idfx::cout << "Dump: Write file n " << dumpFileNumber << "..." << std::flush;
 
   // Reset timer

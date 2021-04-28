@@ -120,6 +120,9 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 #if MHD == YES
       idfx::cout << " | " << std::setw(col_width) << "div B";
 #endif
+      if(haveRKL) {
+        idfx::cout << " | " << std::setw(col_width) << "RKL stages";
+      }
       idfx::cout << std::endl;
     }
 
@@ -148,6 +151,9 @@ void TimeIntegrator::Cycle(DataBlock &data) {
       IDEFIX_ERROR("TimeIntegrator::Cycle divB>1e-10, check your calculation");
     }
 #endif
+    if(haveRKL) {
+      idfx::cout << " | " << std::setw(col_width) << rkl.stage;
+    }
     idfx::cout << std::endl;
   }
 

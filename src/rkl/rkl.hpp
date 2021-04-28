@@ -37,10 +37,11 @@ class RKLegendre {
   int nvarRKL{0};               // # of active variables
 
   real dt, cfl_rkl, rmax_par;
+  int stage;
 
  private:
   DataBlock *data;
-  int stage;
+
   bool haveVs{false};           // Whether we have (and need to compute) cell-centered variables
   void AddVariable(int, IdefixArray1D<int>::HostMirror & );
 };

@@ -352,6 +352,7 @@ void RKLegendre::ResetStage() {
   IdefixArray3D<real> invDt = data->hydro.InvDt;
   int stage = this->stage;
   int nvar = this->nvarRKL;
+  bool haveVs=this->haveVs;
 
   idefix_for("RKL_ResetStage",
              0,data->np_tot[KDIR],
@@ -365,13 +366,15 @@ void RKLegendre::ResetStage() {
       if(stage == 1)
         invDt(k,j,i) = ZERO_F;
 
-      for(int n=0; n < DIMENSIONS; n++) {
-        dB(n,k,j,i) = ZERO_F;
+      if(haveVs) {
+        for(int n=0; n < DIMENSIONS; n++) {
+          dB(n,k,j,i) = ZERO_F;
+        }
+        D_EXPAND( ez(k,j,i) = 0.0;    ,
+                                      ,
+                  ex(k,j,i) = 0.0;
+                  ey(k,j,i) = 0.0;    )
       }
-      D_EXPAND( ez(k,j,i) = 0.0;    ,
-                                    ,
-                ex(k,j,i) = 0.0;
-                ey(k,j,i) = 0.0;    )
     });
 
   idfx::popRegion();

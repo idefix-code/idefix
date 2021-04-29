@@ -166,7 +166,7 @@ Note that ``Input`` doesn't really read the input file each time an accessor is 
 ``Input`` reads everything when constructed in a C++ container with all the data coming from the command line and the input file.
 Hence there is no read overhead when one calls one of these accessor.
 
-For instance, considering a ``.ini`` file::
+For instance, considering a ``.ini`` file:
 
 .. code-block::
 
@@ -306,7 +306,50 @@ Finally, ``DataBlockHost`` provides a useful method ``DataBlockHost::MakeVsFromA
 which can be used to initialise the face-centered magnetic field stored in ``DataBlockHost::Vs`` from a user-defined
 magnetic potential. See :ref:`setupInitflow`.
 
+.. _dumpImageClass:
 
+``DumpImage`` class
+-------------------
+
+This class loads a restart dump in host memory and makes it available to the user. It is particularly
+useful when one wants to initialise the flow from a previous simulation using a different
+resolution/dimension/physics, as in such cases, *Idefix* is unable to automatically restart with the
+simple ``-restart`` command line option.
+
+The ``DumpImage`` class definition is
+
+.. code-block:: c++
+
+  class DumpImage {
+  public:
+    DumpImage(std::string, Output &);   // constructor with dump filename and output object as parameters
+
+    int np_int[3];               // number of points in each direction
+    int geometry;                // geometry of the dump
+    real time;                   // time at which the dump was created
+    IdefixArray1D<real> x[3];    // geometrical central points
+    IdefixArray1D<real> xr[3];   // cell right interface
+    IdefixArray1D<real> xl[3];   // cell left interface
+
+    std::map<std::string,IdefixHostArray3D<real>> arrays;  // 3D arrays stored in the dump
+  };
+
+
+Typically, a ``DumpImage`` object is constructed invoking the ``DumpImage(filename, output)`` constructor,
+which essentially opens, allocate and load the dump file in memory (when running with MPI, each processor
+have access to the full domain covered by the dump, so try to avoid loading very large dumps!).
+The user can then have access to the dump content using the variable members of the object
+(eg ``DumpImage::arrays['variable'](k,j,i)``). Do not forget to delete the object once you have
+finished working with it. An example is provided in :ref:`setupInitDump`.
+
+.. warning::
+  ``DumpImage`` should *not* be used to restart *idefix* in the same run
+  (use the ``-restart`` option in :ref:`commandLine` for this)
+
+.. note::
+  Note that the naming conven in ``DumpImage::arrays`` combine the original array and variable name.
+  It is generically written ``XX-YYY`` where ``XX`` is the array name in the ``dataBlock`` (e.g.
+  ``Vc`` or ``Vs``) and ``YYY`` is the variable name (e.g. ``VX2`` or ``BX3s``).
 
 Debugging and profiling
 =======================

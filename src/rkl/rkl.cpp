@@ -323,16 +323,20 @@ void RKLegendre::Cycle() {
 
 
 void RKLegendre::ResetFlux() {
+  idfx::pushRegion("RKLegendre::ResetFlux");
   IdefixArray4D<real> Flux = data->hydro.FluxRiemann;
+  IdefixArray1D<int> vars = this->varList;
   idefix_for("RKL_ResetFlux",
-             0,NVAR,
+             0,nvarRKL,
              0,data->np_tot[KDIR],
              0,data->np_tot[JDIR],
              0,data->np_tot[IDIR],
-    KOKKOS_LAMBDA (int nv, int k, int j, int i) {
+    KOKKOS_LAMBDA (int n, int k, int j, int i) {
+      const int nv = vars(n);
       Flux(nv,k,j,i) = ZERO_F;
     }
   );
+  idfx::popRegion();
 }
 
 void RKLegendre::ResetStage() {
@@ -344,42 +348,32 @@ void RKLegendre::ResetStage() {
   IdefixArray3D<real> ex = data->hydro.emf.ex;
   IdefixArray3D<real> ey = data->hydro.emf.ey;
   IdefixArray3D<real> ez = data->hydro.emf.ez;
-
-  idefix_for("RKL_ResetdU",
-             0,NVAR,
-             0,data->np_tot[KDIR],
-             0,data->np_tot[JDIR],
-             0,data->np_tot[IDIR],
-    KOKKOS_LAMBDA (int nv, int k, int j, int i) {
-      dU(nv,k,j,i) = ZERO_F;
-    }
-  );
-
+  IdefixArray1D<int> vars = this->varList;
   IdefixArray3D<real> invDt = data->hydro.InvDt;
-  idefix_for("RKL_ResetInvDt",
+  int stage = this->stage;
+  int nvar = this->nvarRKL;
+
+  idefix_for("RKL_ResetStage",
              0,data->np_tot[KDIR],
              0,data->np_tot[JDIR],
              0,data->np_tot[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
-      invDt(k,j,i) = ZERO_F;
-    }
-  );
+      for(int n = 0 ; n < nvar ; n++) {
+        const int nv = vars(n);
+        dU(nv,k,j,i) = ZERO_F;
+      }
+      if(stage == 1)
+        invDt(k,j,i) = ZERO_F;
 
-  if(haveVs) {
-    idefix_for("RKL_InitdB",
-              0,data->np_tot[KDIR],
-              0,data->np_tot[JDIR],
-              0,data->np_tot[IDIR],
-      KOKKOS_LAMBDA (int k, int j, int i) {
-        for(int n=0; n < DIMENSIONS; n++) {
-          dB(n,k,j,i) = ZERO_F;
-        }
-        D_EXPAND( ez(k,j,i) = 0.0;    ,
-                                      ,
-                  ex(k,j,i) = 0.0;
-                  ey(k,j,i) = 0.0;    )
-      });
-  }
+      for(int n=0; n < DIMENSIONS; n++) {
+        dB(n,k,j,i) = ZERO_F;
+      }
+      D_EXPAND( ez(k,j,i) = 0.0;    ,
+                                    ,
+                ex(k,j,i) = 0.0;
+                ey(k,j,i) = 0.0;    )
+    });
+
   idfx::popRegion();
 }
 

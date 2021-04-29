@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - deprecate the `-gpu` option in `configure.py`. The GPU mode is now automatically activated if a GPU architecture is requested.
+- add support for persistent options for `configure.py`, specifically for `-arch` and `-cxx`, in a user-defined `idefix.cfg` file.
 
 ## [0.7.2] - 2021-05-11
 ### Changed

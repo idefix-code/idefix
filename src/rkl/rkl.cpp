@@ -367,9 +367,9 @@ void RKLegendre::ResetStage() {
 
   if(haveVs) {
     idefix_for("RKL_InitdB",
-              0,data->np_tot[KDIR]+KOFFSET,
-              0,data->np_tot[JDIR]+JOFFSET,
-              0,data->np_tot[IDIR]+IOFFSET,
+              0,data->np_tot[KDIR],
+              0,data->np_tot[JDIR],
+              0,data->np_tot[IDIR],
       KOKKOS_LAMBDA (int k, int j, int i) {
         for(int n=0; n < DIMENSIONS; n++) {
           dB(n,k,j,i) = ZERO_F;

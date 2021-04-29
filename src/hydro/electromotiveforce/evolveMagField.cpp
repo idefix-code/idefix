@@ -9,7 +9,7 @@
 #include "dataBlock.hpp"
 
 // Evolve the magnetic field in Vs according to Constranied transport
-void ElectroMotiveForce::EvolveMagField(real t, real dt) {
+void ElectroMotiveForce::EvolveMagField(real t, real dt, IdefixArray4D<real> &Vsin) {
   idfx::pushRegion("ElectroMotiveForce::EvolveMagField");
 
   // Corned EMFs
@@ -18,7 +18,7 @@ void ElectroMotiveForce::EvolveMagField(real t, real dt) {
   IdefixArray3D<real> Ex3 = this->ez;
 
   // Field
-  IdefixArray4D<real> Vs = hydro->Vs;
+  IdefixArray4D<real> Vs = Vsin;
 
   // Coordinates
   IdefixArray1D<real> x1=data->x[IDIR];

@@ -71,6 +71,12 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
     w0[1] = 1.0/3.0;
   }
 
+  // Init the RKL scheme if it's needed
+  if(data.hydro.haveRKLParabolicTerms) {
+    rkl.Init(input,data);
+    haveRKL = true;
+  }
+
   idfx::popRegion();
 }
 
@@ -114,6 +120,9 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 #if MHD == YES
       idfx::cout << " | " << std::setw(col_width) << "div B";
 #endif
+      if(haveRKL) {
+        idfx::cout << " | " << std::setw(col_width) << "RKL stages";
+      }
       idfx::cout << std::endl;
     }
 
@@ -142,7 +151,15 @@ void TimeIntegrator::Cycle(DataBlock &data) {
       IDEFIX_ERROR("TimeIntegrator::Cycle divB>1e-10, check your calculation");
     }
 #endif
+    if(haveRKL) {
+      idfx::cout << " | " << std::setw(col_width) << rkl.stage;
+    }
     idfx::cout << std::endl;
+  }
+
+
+  if(haveRKL && (ncycles%2)==1) {    // Runge-Kutta-Legendre cycle
+    rkl.Cycle();
   }
 
     // Apply Boundary conditions
@@ -248,8 +265,19 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   // Add back Fargo velocity so that updated Vc stores the total Velocity
   if(data.hydro.haveFargo) data.hydro.fargo.AddVelocity(data.t);
 
+
+  if(haveRKL && (ncycles%2)==0) {    // Runge-Kutta-Legendre cycle
+    rkl.Cycle();
+  }
+
   // Update current time
   data.t=data.t+data.dt;
+
+  if(haveRKL) {
+    // update next time step
+    real tt = newdt/rkl.dt;
+    newdt *= std::fmin(ONE_F, rkl.rmax_par/(tt));
+  }
 
   // Next time step
   if(!haveFixedDt) {

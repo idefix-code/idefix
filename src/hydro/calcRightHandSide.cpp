@@ -39,10 +39,10 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
   bool needPotential = this->haveGravPotential;
 
   // parabolic terms
-  bool haveParabolicTerms = this->haveParabolicTerms;
+  bool haveParabolicTerms = this->haveExplicitParabolicTerms;
 
   // Viscosity
-  bool haveViscosity = this->haveViscosity;
+  bool haveViscosity = this->viscosityStatus.isExplicit;
 
   // Fargo
   bool haveFargo  = this->haveFargo;

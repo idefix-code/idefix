@@ -46,20 +46,36 @@ class Hydro {
   void ResetStage();
 
   // Source terms
-  bool haveSourceTerms;
+  bool haveSourceTerms{false};
 
   // Parabolic terms
-  bool haveParabolicTerms;
+  bool haveExplicitParabolicTerms{false};
+  bool haveRKLParabolicTerms{false};
 
   // Current
-  bool haveCurrent;
-  bool needCurrent;
+  bool haveCurrent{false};
+  bool needExplicitCurrent{false};
+  bool needRKLCurrent{false};
 
   // Whether gravitational potential is computed
-  bool haveGravPotential;
+  bool haveGravPotential{false};
 
   // Nonideal MHD effects coefficients
-  HydroModuleStatus haveResistivity, haveAmbipolar, haveHall;
+  ParabolicModuleStatus resistivityStatus, ambipolarStatus, hallStatus;
+
+  // Whether or not we have viscosity
+  ParabolicModuleStatus viscosityStatus;
+
+  // Viscosity object
+  Viscosity viscosity;
+
+  // Whether or not we have to treat the axis
+  bool haveAxis{false};
+  Axis myAxis;
+
+  // Do we use fargo-like scheme ? (orbital advection)
+  bool haveFargo{false};
+  Fargo fargo;
 
   // Enroll user-defined boundary conditions
   void EnrollUserDefBoundary(UserDefBoundaryFunc);
@@ -124,19 +140,9 @@ class Hydro {
   IdefixArray4D<real> Vs0;
   IdefixArray3D<real> InvDt;
 
+  IdefixArray4D<real> FluxRiemann;
+  IdefixArray3D<real> dMax;    // Maximum diffusion speed
 
-  // Whether or not we have viscosity
-  bool haveViscosity = false;
-  // Viscosity object
-  Viscosity viscosity;
-
-  // Whether or not we have to treat the axis
-  bool haveAxis = false;
-  Axis myAxis;
-
-  // Do we use fargo-like scheme ? (orbital advection)
-  bool haveFargo = false;
-  Fargo fargo;
 
 
  private:
@@ -147,9 +153,9 @@ class Hydro {
 
   // Isothermal EOS parameters
   real isoSoundSpeed;
-  HydroModuleStatus haveIsoSoundSpeed;
+  HydroModuleStatus haveIsoSoundSpeed{Disabled};
   IdefixArray3D<real> isoSoundSpeedArray;
-  IsoSoundSpeedFunc isoSoundSpeedFunc;
+  IsoSoundSpeedFunc isoSoundSpeedFunc{NULL};
 
   // Adiabatic EOS parameters
   real gamma;
@@ -159,10 +165,10 @@ class Hydro {
   DataBlock *data;
 
   // Rotation vector
-  bool haveRotation;
-  real OmegaX1, OmegaX2, OmegaX3;
+  bool haveRotation{false};
+  real OmegaZ;
 
-  bool haveShearingBox;
+  bool haveShearingBox{false};
   // Shear rate for shearing box problems
   real sbS;
   // Box width for shearing box problems
@@ -170,38 +176,36 @@ class Hydro {
 
 
   // User defined Boundary conditions
-  UserDefBoundaryFunc userDefBoundaryFunc;
-  bool haveUserDefBoundary;
+  UserDefBoundaryFunc userDefBoundaryFunc{NULL};
+  bool haveUserDefBoundary{false};
 
   // Internal boundary function
-  bool haveInternalBoundary;
-  InternalBoundaryFunc internalBoundaryFunc;
+  bool haveInternalBoundary{false};
+  InternalBoundaryFunc internalBoundaryFunc{NULL};
 
   // Emf boundary conditions
-  bool haveEmfBoundary;
-  EmfBoundaryFunc emfBoundaryFunc;
+  bool haveEmfBoundary{false};
+  EmfBoundaryFunc emfBoundaryFunc{NULL};
 
   // User defined gravitational potential
-  GravPotentialFunc gravPotentialFunc;
+  GravPotentialFunc gravPotentialFunc{NULL};
 
   // User defined source term
-  SrcTermFunc userSourceTerm;
-  bool haveUserSourceTerm;
+  SrcTermFunc userSourceTerm{NULL};
+  bool haveUserSourceTerm{false};
 
   real etaO, xH, xA;  // Ohmic resistivity, Hall, ambipolar (when constant)
 
   // Ohmic, Hall and ambipolar diffusivity (when function-defined)
-  DiffusivityFunc ohmicDiffusivityFunc;
-  DiffusivityFunc ambipolarDiffusivityFunc;
-  DiffusivityFunc hallDiffusivityFunc;
+  DiffusivityFunc ohmicDiffusivityFunc{NULL};
+  DiffusivityFunc ambipolarDiffusivityFunc{NULL};
+  DiffusivityFunc hallDiffusivityFunc{NULL};
 
   IdefixArray3D<real> cMax;    // Maximum propagation speed
-  IdefixArray3D<real> dMax;    // Maximum diffusion speed
 
   // Value extrapolated on faces
   IdefixArray4D<real> PrimL;
   IdefixArray4D<real> PrimR;
-  IdefixArray4D<real> FluxRiemann;
 
   // Gravitational potential
   IdefixArray3D<real> phiP;

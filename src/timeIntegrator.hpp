@@ -10,6 +10,7 @@
 
 #include "idefix.hpp"
 #include "dataBlock.hpp"
+#include "rkl.hpp"
 
 
 
@@ -28,6 +29,10 @@ class TimeIntegrator {
 
 
  private:
+  // The RKL object attached to this datablock
+  RKLegendre rkl;
+  bool haveRKL{false};
+
   int nstages;
   // Weights of time integrator
   real w0[2];

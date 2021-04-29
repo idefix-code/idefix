@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Upcoming
 - Improved VTK write speeds on non-cartesian geometries
 - New `DumpImage` class to load and use the data of dump files without restarting
+- New Runge-Kutta-Legendre scheme to speed up parabolic term computation. Compatible with Viscosity, Ambipolar & Ohmic diffusions
 
 ## [0.7.0] - 2021-04-07
 ### Added

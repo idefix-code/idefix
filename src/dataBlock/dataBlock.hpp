@@ -14,6 +14,8 @@
 #include "grid.hpp"
 #include "gridHost.hpp"
 #include "hydro.hpp"
+
+
 #ifdef WITH_MPI
 #include "mpi.hpp"
 #endif
@@ -72,6 +74,9 @@ class DataBlock {
 
   // The Hydro object attached to this datablock
   Hydro hydro;
+
+  // Set to true when we're inside a RKL call
+  bool rklCycle{false};
 
   // init from a Grid object
   void InitFromGrid(Grid &, Input &);

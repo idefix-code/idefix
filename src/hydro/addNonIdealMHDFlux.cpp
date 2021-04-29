@@ -23,9 +23,19 @@ void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
   IdefixArray3D<real> xAmbiArr = this->xAmbipolar;
 
   // these two are required to ensure that the type is captured by KOKKOS_LAMBDA
-  HydroModuleStatus haveResistivity = this->haveResistivity;
-  HydroModuleStatus haveAmbipolar   = this->haveAmbipolar;
+  HydroModuleStatus resistivity = resistivityStatus.status;
+  HydroModuleStatus ambipolar   = ambipolarStatus.status;
 
+  bool haveResistivity{false};
+  bool haveAmbipolar{false};
+
+  if(data->rklCycle) {
+    haveResistivity = resistivityStatus.isRKL;
+    haveAmbipolar = ambipolarStatus.isRKL;
+  } else {
+    haveResistivity = resistivityStatus.isExplicit;
+    haveAmbipolar = ambipolarStatus.isExplicit;
+  }
 
   real etaConstant = this->etaO;
   real xAConstant  = this->xA;
@@ -47,14 +57,14 @@ void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
   }
 
   // Load the diffusivity array when required
-  if(haveResistivity == UserDefFunction && dir == IDIR) {
+  if(resistivity == UserDefFunction && dir == IDIR) {
     if(ohmicDiffusivityFunc)
       ohmicDiffusivityFunc(*data, t, etaArr);
     else
       IDEFIX_ERROR("No user-defined Ohmic diffusivity function has been enrolled");
   }
 
-  if(haveAmbipolar == UserDefFunction && dir == IDIR) {
+  if(ambipolar == UserDefFunction && dir == IDIR) {
     if(ambipolarDiffusivityFunc)
       ambipolarDiffusivityFunc(*data, t, xAmbiArr);
     else
@@ -89,10 +99,10 @@ void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
 
       Jx1=Jx2=Jx3=ZERO_F;
 
-      if(haveResistivity == Constant)
+      if(resistivity == Constant)
         eta = etaConstant;
 
-      if(haveAmbipolar == Constant)
+      if(ambipolar == Constant)
         xA = xAConstant;
 
       if(dir==IDIR) {
@@ -104,11 +114,10 @@ void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
         EXPAND( Bx1 = Vs(BX1s,k,j,i);                             ,
                 Bx2 = HALF_F*( Vc(BX2,k,j,i-1) + Vc(BX2,k,j,i));  ,
                 Bx3 = HALF_F*( Vc(BX3,k,j,i-1) + Vc(BX3,k,j,i));  )
-
-        if(haveResistivity == UserDefFunction)
-          eta = AVERAGE_3D_X(etaArr,k,j,i);
-
         if(haveResistivity) {
+          if(resistivity == UserDefFunction)
+            eta = AVERAGE_3D_X(etaArr,k,j,i);
+
           EXPAND(                                  ,
                   Flux(BX2,k,j,i) += - eta * Jx3;  ,
                   Flux(BX3,k,j,i) +=   eta * Jx2;  )
@@ -122,10 +131,10 @@ void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
           dMax(k,j,i) += eta;
         }
 
-        if(haveAmbipolar == UserDefFunction)
-          xA = AVERAGE_3D_X(xAmbiArr,k,j,i);
-
         if(haveAmbipolar) {
+          if(ambipolar == UserDefFunction)
+            xA = AVERAGE_3D_X(xAmbiArr,k,j,i);
+
           real BdotB = EXPAND( Bx1*Bx1, +Bx2*Bx2, +Bx3*Bx3);
 
           real Fx2 = -xA * BdotB * Jx3;
@@ -160,10 +169,11 @@ void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
                 Bx2 = Vs(BX2s,k,j,i);                             ,
                 Bx3 = HALF_F*( Vc(BX3,k,j-1,i) + Vc(BX3,k,j,i));  )
 
-        if(haveResistivity == UserDefFunction)
-          eta = AVERAGE_3D_Y(etaArr,k,j,i);
-
         if(haveResistivity) {
+          if(resistivity == UserDefFunction)
+            eta = AVERAGE_3D_Y(etaArr,k,j,i);
+
+
           EXPAND( Flux(BX1,k,j,i) += eta * Jx3;   ,
                                                   ,
                   Flux(BX3,k,j,i) += - eta * Jx1; )
@@ -176,10 +186,11 @@ void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
           dMax(k,j,i) += eta;
         }
 
-        if(haveAmbipolar == UserDefFunction)
-          xA = AVERAGE_3D_Y(xAmbiArr,k,j,i);
 
         if(haveAmbipolar) {
+          if(ambipolar == UserDefFunction)
+            xA = AVERAGE_3D_Y(xAmbiArr,k,j,i);
+
           real BdotB = EXPAND( Bx1*Bx1, +Bx2*Bx2, +Bx3*Bx3);
 
           real Fx1 = xA * BdotB * Jx3;
@@ -213,10 +224,11 @@ void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
         Bx2 = HALF_F*( Vc(BX2,k-1,j,i) + Vc(BX2,k,j,i));
         Bx3 = Vs(BX3s,k,j,i);
 
-        if(haveResistivity == UserDefFunction)
-          eta = AVERAGE_3D_Z(etaArr,k,j,i);
 
         if(haveResistivity) {
+          if(resistivity == UserDefFunction)
+            eta = AVERAGE_3D_Z(etaArr,k,j,i);
+
           Flux(BX1,k,j,i) += -eta * Jx2;
           Flux(BX2,k,j,i) += eta * Jx1;
 
@@ -226,10 +238,10 @@ void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
           dMax(k,j,i) += eta;
         }
 
-        if(haveAmbipolar == UserDefFunction)
-          xA = AVERAGE_3D_Z(xAmbiArr,k,j,i);
-
         if(haveAmbipolar) {
+          if(ambipolar == UserDefFunction)
+            xA = AVERAGE_3D_Z(xAmbiArr,k,j,i);
+
           real BdotB = Bx1*Bx1 + Bx2*Bx2 + Bx3*Bx3;
 
           real Fx1 = -xA * BdotB * Jx2;

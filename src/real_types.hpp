@@ -44,8 +44,9 @@ using real = float;
 #define ZERO_F (0.0)
 #define HALF_F (0.5)
 #define ONE_FOURTH_F (0.25)
-#define ONE_F  (1.0)
-#define TWO_F  (2.0)
+#define ONE_F   (1.0)
+#define TWO_F   (2.0)
+#define THREE_F (3.0)
 #define FOUR_F  (4.0)
 
 #else
@@ -64,6 +65,7 @@ using real = float;
 #define ONE_FOURTH_F (0.25f)
 #define ONE_F  (1.0f)
 #define TWO_F  (2.0f)
+#define THREE_F (3.0f)
 #define FOUR_F  (4.0f)
 #endif // USE_DOUBLE
 

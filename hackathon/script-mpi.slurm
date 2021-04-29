@@ -19,10 +19,14 @@ module purge
 module load cuda/10.2
 module load gcc/8.3.1
 module load openmpi/4.0.5-cuda
-
+module load python/3.8.2
 # echo des commandes lancees
 set -x
-#export KOKKOS_PROFILE_LIBRARY=~/src/kokkos-tools/kp_space_time_stack.so
+export KOKKOS_PROFILE_LIBRARY=~/src/kokkos-tools/kp_space_time_stack_mpi.so
 
 # execution du code
 srun ./idefix -dec 2 1 2  --kokkos-num-devices=4
+
+cd check
+python ./testidefix.py
+

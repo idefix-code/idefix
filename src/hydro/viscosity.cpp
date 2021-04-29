@@ -311,13 +311,13 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
 
           tau_xx = 2.0*eta1*dVxi + (eta2 - (2.0/3.0)*eta1)*divV;
 
-          tau_xy = dVxj + dVyi/x1l(i);
+          tau_xy = dVxj/x1l(i) + dVyi;
           #if COMPONENTS >= 2
           tau_xy += - vx2i/x1l(i);
           #endif
           tau_xy *= eta1;
 
-          tau_xz = dVxk + dVzi*s_1/x1l(i);
+          tau_xz = dVxk*s_1/x1l(i) + dVzi;
           #if COMPONENTS == 3
             tau_xz += - 0.5*(Vc(VX3,k,j,i-1)+Vc(VX3,k,j,i))/x1l(i);
           #endif

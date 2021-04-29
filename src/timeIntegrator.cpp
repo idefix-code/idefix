@@ -158,7 +158,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   }
 
 
-  if(haveRKL && (ncycles%2)==1) {
+  if(haveRKL) {
     // Runge-Kutta-Legendre cycle
     rkl.Cycle();
   }
@@ -267,7 +267,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   if(data.hydro.haveFargo) data.hydro.fargo.AddVelocity(data.t);
 
 
-  if(haveRKL && (ncycles%2)==0) {
+  if(haveRKL) {
     // Runge-Kutta-Legendre cycle
     rkl.Cycle();
   }

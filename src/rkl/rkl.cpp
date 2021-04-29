@@ -148,7 +148,9 @@ void RKLegendre::Cycle() {
 
   IdefixArray1D<int> varList = this->varList;
   real time = data->t;
-  real dt_hyp = data->dt;
+
+  // We do half step before the hyperbolic step, and half after it
+  real dt_hyp = data->dt / 2;
 
   // Tell the datablock that we're performing the RKL cycle
   data->rklCycle = true;

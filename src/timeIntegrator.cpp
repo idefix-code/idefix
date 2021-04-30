@@ -81,6 +81,69 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
 }
 
 
+void TimeIntegrator::ShowLog(DataBlock &data) {
+  double rawperf = (timer.seconds()-lastLog)/data.mygrid->np_int[IDIR]/data.mygrid->np_int[JDIR]
+                      /data.mygrid->np_int[KDIR]/cyclePeriod;
+#ifdef WITH_MPI
+  // measure the time spent in the MPI calls
+  double mpiOverhead = (idfx::mpiTimer-lastMpiLog)
+                          / (timer.seconds()-lastLog-idfx::mpiTimer+lastMpiLog)*100.0;
+  lastMpiLog = idfx::mpiTimer;
+#endif
+  lastLog = timer.seconds();
+
+
+  int col_width{16};
+  if (ncycles == 0) {
+    idfx::cout << "TimeIntegrator: ";
+    idfx::cout << std::setw(col_width) << "time";
+    idfx::cout << " | " << std::setw(col_width) << "cycle";
+    idfx::cout << " | " << std::setw(col_width) << "time step";
+    idfx::cout << " | " << std::setw(col_width) << "cell updates/s";
+#ifdef WITH_MPI
+    idfx::cout << " | " << std::setw(col_width) << "MPI overhead (%)";
+#endif
+#if MHD == YES
+    idfx::cout << " | " << std::setw(col_width) << "div B";
+#endif
+    if(haveRKL) {
+      idfx::cout << " | " << std::setw(col_width) << "RKL stages";
+    }
+    idfx::cout << std::endl;
+  }
+
+  idfx::cout << "TimeIntegrator: ";
+  idfx::cout << std::setw(col_width) << data.t;
+  idfx::cout << " | " << std::setw(col_width) << ncycles;
+  idfx::cout << " | " << std::setw(col_width) << data.dt;
+  if(ncycles>=cyclePeriod) {
+    idfx::cout << " | " << std::setw(col_width) << 1 / rawperf;
+#ifdef WITH_MPI
+    idfx::cout << " | " << std::setw(col_width) << mpiOverhead;
+#endif
+  } else {
+    idfx::cout << " | " << std::setw(col_width) << "N/A";
+#if WITH_MPI
+    idfx::cout << " | " << std::setw(col_width) << "N/A";
+#endif
+  }
+
+
+#if MHD == YES
+  // Check divB
+  real divB =  data.hydro.CheckDivB();
+  idfx::cout << " | " << std::setw(col_width) << divB;
+  if(divB>1e-10) {
+    IDEFIX_ERROR("TimeIntegrator::Cycle divB>1e-10, check your calculation");
+  }
+#endif
+  if(haveRKL) {
+    idfx::cout << " | " << std::setw(col_width) << rkl.stage;
+  }
+  idfx::cout << std::endl;
+}
+
+
 // Compute one full cycle of the time Integrator
 void TimeIntegrator::Cycle(DataBlock &data) {
   // Do one cycle
@@ -95,68 +158,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   idfx::pushRegion("TimeIntegrator::Cycle");
 
   //if(timer.seconds()-lastLog >= 1.0) {
-  if(ncycles%cyclePeriod==0) {
-    double rawperf = (timer.seconds()-lastLog)/data.mygrid->np_int[IDIR]/data.mygrid->np_int[JDIR]
-                      /data.mygrid->np_int[KDIR]/cyclePeriod;
-#ifdef WITH_MPI
-    // measure the time spent in the MPI calls
-    double mpiOverhead = (idfx::mpiTimer-lastMpiLog)
-                            / (timer.seconds()-lastLog-idfx::mpiTimer+lastMpiLog)*100;
-    lastMpiLog = idfx::mpiTimer;
-#endif
-    lastLog = timer.seconds();
-
-
-    int col_width{16};
-    if (ncycles == 0) {
-      idfx::cout << "TimeIntegrator: ";
-      idfx::cout << std::setw(col_width) << "time";
-      idfx::cout << " | " << std::setw(col_width) << "cycle";
-      idfx::cout << " | " << std::setw(col_width) << "time step";
-      idfx::cout << " | " << std::setw(col_width) << "cell updates/s";
-#ifdef WITH_MPI
-      idfx::cout << " | " << std::setw(col_width) << "MPI overhead (%)";
-#endif
-#if MHD == YES
-      idfx::cout << " | " << std::setw(col_width) << "div B";
-#endif
-      if(haveRKL) {
-        idfx::cout << " | " << std::setw(col_width) << "RKL stages";
-      }
-      idfx::cout << std::endl;
-    }
-
-    idfx::cout << "TimeIntegrator: ";
-    idfx::cout << std::setw(col_width) << data.t;
-    idfx::cout << " | " << std::setw(col_width) << ncycles;
-    idfx::cout << " | " << std::setw(col_width) << data.dt;
-    if(ncycles>=cyclePeriod) {
-      idfx::cout << " | " << std::setw(col_width) << 1 / rawperf;
-#ifdef WITH_MPI
-      idfx::cout << " | " << std::setw(col_width) << mpiOverhead;
-#endif
-    } else {
-      idfx::cout << " | " << std::setw(col_width) << "N/A";
-#if WITH_MPI
-      idfx::cout << " | " << std::setw(col_width) << "N/A";
-#endif
-    }
-
-
-#if MHD == YES
-    // Check divB
-    real divB =  data.hydro.CheckDivB();
-    idfx::cout << " | " << std::setw(col_width) << divB;
-    if(divB>1e-10) {
-      IDEFIX_ERROR("TimeIntegrator::Cycle divB>1e-10, check your calculation");
-    }
-#endif
-    if(haveRKL) {
-      idfx::cout << " | " << std::setw(col_width) << rkl.stage;
-    }
-    idfx::cout << std::endl;
-  }
-
+  if(ncycles%cyclePeriod==0) ShowLog(data);
 
   if(haveRKL && (ncycles%2)==1) {    // Runge-Kutta-Legendre cycle
     rkl.Cycle();

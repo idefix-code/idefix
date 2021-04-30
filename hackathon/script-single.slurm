@@ -21,7 +21,7 @@ module load python/3.8.2
 
 # echo des commandes lancees
 set -x
-export KOKKOS_PROFILE_LIBRARY=~/src/kokkos-tools/kp_space_time_stack.so
+#export KOKKOS_PROFILE_LIBRARY=~/src/kokkos-tools/kp_space_time_stack.so
 
 # execution du code
 ./idefix

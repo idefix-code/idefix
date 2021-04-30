@@ -81,27 +81,13 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
 }
 
 
-// Compute one full cycle of the time Integrator
-void TimeIntegrator::Cycle(DataBlock &data) {
-  // Do one cycle
-  IdefixArray4D<real> Uc = data.hydro.Uc;
-  IdefixArray4D<real> Vs = data.hydro.Vs;
-  IdefixArray4D<real> Uc0 = data.hydro.Uc0;
-  IdefixArray4D<real> Vs0 = data.hydro.Vs0;
-  IdefixArray3D<real> InvDt = data.hydro.InvDt;
-
-  real newdt;
-
-  idfx::pushRegion("TimeIntegrator::Cycle");
-
-  //if(timer.seconds()-lastLog >= 1.0) {
-  if(ncycles%cyclePeriod==0) {
-    double rawperf = (timer.seconds()-lastLog)/data.mygrid->np_int[IDIR]/data.mygrid->np_int[JDIR]
+void TimeIntegrator::ShowLog() {
+  double rawperf = (timer.seconds()-lastLog)/data.mygrid->np_int[IDIR]/data.mygrid->np_int[JDIR]
                       /data.mygrid->np_int[KDIR]/cyclePeriod;
 #ifdef WITH_MPI
     // measure the time spent in the MPI calls
     double mpiOverhead = (idfx::mpiTimer-lastMpiLog)
-                            / (timer.seconds()-lastLog-idfx::mpiTimer+lastMpiLog)*100;
+                            / (timer.seconds()-lastLog-idfx::mpiTimer+lastMpiLog)*100.0;
     lastMpiLog = idfx::mpiTimer;
 #endif
     lastLog = timer.seconds();
@@ -156,7 +142,24 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     }
     idfx::cout << std::endl;
   }
+}
 
+
+// Compute one full cycle of the time Integrator
+void TimeIntegrator::Cycle(DataBlock &data) {
+  // Do one cycle
+  IdefixArray4D<real> Uc = data.hydro.Uc;
+  IdefixArray4D<real> Vs = data.hydro.Vs;
+  IdefixArray4D<real> Uc0 = data.hydro.Uc0;
+  IdefixArray4D<real> Vs0 = data.hydro.Vs0;
+  IdefixArray3D<real> InvDt = data.hydro.InvDt;
+
+  real newdt;
+
+  idfx::pushRegion("TimeIntegrator::Cycle");
+
+  //if(timer.seconds()-lastLog >= 1.0) {
+  if(ncycles%cyclePeriod==0) ShowLog();
 
   if(haveRKL && (ncycles%2)==1) {    // Runge-Kutta-Legendre cycle
     rkl.Cycle();

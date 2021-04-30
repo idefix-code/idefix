@@ -27,6 +27,8 @@ class TimeIntegrator {
   // check whether we have reached the maximum runtime
   bool CheckForMaxRuntime();
 
+  void ShowLog();    //<  Display progress log
+
 
  private:
   // The RKL object attached to this datablock

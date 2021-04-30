@@ -1,0 +1,765 @@
+                                  .:HMMMMHn:.  ..:n..
+                                .H*'``     `'%HM'''''!x.
+         :x                    x*`           .(MH:    `#h.
+        x.`M                   M>        :nMMMMMMMh.     `n.
+         *kXk..                XL  nnx:.XMMMMMMMMMMML   .. 4X.
+          )MMMMMx              'M   `^?M*MMMMMMMMMMMM:HMMMHHMM.
+          MMMMMMMX              ?k    'X ..'*MMMMMMM.#MMMMMMMMMx
+         XMMMMMMMX               4:    M:MhHxxHHHx`MMx`MMMMMMMMM>
+         XM!`   ?M                `x   4MM'`''``HHhMMX  'MMMMMMMM
+         4M      M                 `:   *>     `` .('MX   '*MMMM'
+          MX     `X.nnx..                        ..XMx`     'M*X
+           ?h.    ''```^'*!Hx.     :Mf     xHMh  M**MMM      4L`
+            `*Mx           `'*n.x. 4M>   :M` `` 'M    `       %
+             '%                ``*MHMX   X>      !
+            :!                    `#MM>  X>      `   :x
+           :M                        ?M  `X     .  ..'M
+           XX                       .!*X  `x   XM( MMx`h
+          'M>::                        `M: `+  MMX XMM `:
+          'M> M                         'X    'MMX ?MMk.Xx..
+          'M> ?L                     ...:!     MMX.H**'MMMM*h
+           M>  #L                  :!'`MM.    . X*`.xHMMMMMnMk.
+           `!   #h.      :L           XM'*hxHMM*MhHMMMMMMMMMM'#h
+           +     XMh:    4!      x   :f   MM'   `*MMMMMMMMMM%  `X
+           M     Mf``tHhxHM      M>  4k xxX'      `#MMMMMMMf    `M .>
+          :f     M   `MMMMM:     M>   M!MMM:         '*MMf'     'MH*
+          !     Xf   'MMMMMX     `X   X>'h.`          :P*Mx.   .d*~..
+        :M      X     4MMMMM>     !   X~ `Mh.      .nHL..M#'%nnMhH!'`
+       XM      d>     'X`'**h     'h  M   ^'MMHH+*'`  ''''   `'**'
+    %nxM>      *x+x.:. XL.. `k     `::X
+:nMMHMMM:.  X>  Mn`*MMMMMHM: `:     ?MMn.
+    `'**MML M>  'MMhMMMMMMMM  #      `M:^*x
+         ^*MMttnnMMMMMMMMMMMH>.        M:.4X
+                        `MMMM>X   (   .MMM:MM!   .
+                          `'''4x.dX  +^ `''MMMMHM?L..
+                                ``'           `'`'`'`
+
+
+
+       This is Idefix v0.7.1-67-g309828a
+         Compiled for GPU (nvidia-CUDA) 
+-----------------------------------------------------------------------------
+Input Parameters using input file idefix.ini:
+-----------------------------------------------------------------------------
+[Boundary]
+	X1-beg		userdef
+	X1-end		userdef
+	X2-beg		periodic
+	X2-end		periodic
+	X3-beg		outflow
+	X3-end		outflow
+[CommandLine]
+	dec		4	1	2
+[Grid]
+	X1-grid		2	0.3	512	u	1.9	128	s-	6.0
+	X2-grid		1	-0.05	32	u	0.05
+	X3-grid		3	-6.0	64	s+	-0.4	256	u	0.4	64	s-	6.0
+[Hydro]
+	ambipolar		rkl	userdef
+	gamma		1.05
+	gravPotential		userdef
+	resistivity		rkl	userdef
+	solver		hlld
+[Output]
+	dmp		50.0
+	log		100
+	vtk		0.1
+[Setup]
+	Am		1.0
+	Hideal		6.0
+	beta		10000
+	dampingZone		1.1
+	densityFloor		1.0e-12
+	h0		0.05
+	h0Top		0.3
+	sigma0		0.125
+	sigmaSlope		0.5
+	tauDamp		0.1
+[TimeIntegrator]
+	CFL		0.8
+	CFL_max_var		1.1
+	first_dt		1.e-6
+	nstages		2
+	tstop		0.1
+-----------------------------------------------------------------------------
+-----------------------------------------------------------------------------
+Main: detected you were runnning on a SLURM scheduler with CUDA. Kokkos has been initialised accordingly.
+Main: Init Grid.
+Grid::Grid: allocating Grid.
+Grid::Grid: Current MPI proc coordinates (0, 0, 0)
+GridHost::MakeGrid: 
+	 Direction X1: userdef	0.3....640....6	userdef
+	 Direction X2: periodic	-0.05....32....0.05	periodic
+	 Direction X3: outflow	-6....384....6	outflow
+Main: Init DataBlock.
+DataBlock::InitFromGrid: local size is 
+	 Direction X1: 0.3....160....0.8
+	 Direction X2: -0.05....32....0.05
+	 Direction X3: -6....192....0
+Hydro: adiabatic EOS with gamma=1.05
+Hydro:: Enabling user-defined gravitational potential
+Hydro: Enabling Ohmic resistivity with user-defined diffusivity function.
+Hydro: Enabling ambipolar diffusion with user-defined diffusivity function.
+ElectroMotiveForce: Using UCT_CONTACT averaging scheme.
+Main: Init Time Integrator.
+RKLegendre: enabled.
+RKLegendre: no RKL cfl given. Using 0.5 by default.
+Main: Init Output Routines.
+Main: Init Setup.
+Hydro: User-defined boundary condition has been enrolled
+Hydro: User-defined gravitational potential has been enrolled
+Hydro: User-defined ambipolar diffusivity has been enrolled
+Hydro: User-defined ohmic diffusivity has been enrolled
+Hydro: User-defined source term has been enrolled
+Hydro: User-defined internal boundary condition has been enrolled
+Main: Creating initial conditions.
+Dump: Write file n 0...done in 1.34307 s.
+Vtk: Write file n 0...done in 0.873583 s.
+Main: Cycling Time Integrator...
+TimeIntegrator:             time |            cycle |        time step |   cell updates/s | MPI overhead (%) |            div B |       RKL stages
+TimeIntegrator:                0 |                0 |            1e-06 |              N/A |              N/A |      8.19832e-17 |                0
+TimeIntegrator:       0.00905692 |              100 |      0.000159786 |      2.67398e+08 |          18.3694 |       6.2298e-14 |                6
+TimeIntegrator:        0.0248664 |              200 |      0.000156199 |      2.28888e+08 |          19.1886 |      1.64871e-13 |                6
+TimeIntegrator:        0.0404268 |              300 |      0.000155357 |      2.29076e+08 |          19.0859 |       2.4545e-13 |                6
+TimeIntegrator:        0.0559571 |              400 |       0.00015522 |       2.2908e+08 |          19.1174 |      3.09698e-13 |                6
+TimeIntegrator:        0.0714964 |              500 |      0.000155688 |      2.29036e+08 |          19.1811 |      3.23133e-13 |                6
+TimeIntegrator:        0.0871453 |              600 |      0.000157299 |      2.29055e+08 |          19.1854 |      3.12231e-13 |                6
+Vtk: Write file n 1...done in 0.881204 s.
+Main: Reached t=0.1
+Main: Completed in 23 seconds and 682 cycles
+Main: Perfs are 2.25353e+08 cell updates/second
+Profiler: maximum memory usage for Cuda memory space: 1029.58 MB.
+Profiler: maximum memory usage for Host memory space: 305.073 MB.
+Main: Job's done
+Emf: Cleaning up MPI persistent communication channels
+Mpi:: Cleaning up MPI persistent communication channels
+
+BEGIN KOKKOS PROFILING REPORT:
+TOTAL TIME: 26.9703 seconds
+TOP-DOWN TIME TREE:
+<average time> <percent of total time> <percent time in Kokkos> <percent MPI imbalance> <remainder> <kernels per second> <number of calls> <name> [type]
+=================== 
+|-> 2.29e+01 sec 85.0% 81.8% 0.1% 0.4% 1.32e+04 682 TimeIntegrator::Cycle [region]
+|   |-> 1.34e+01 sec 49.8% 78.5% 0.1% 0.8% 1.59e+04 682 RKLegendre::Cycle [region]
+|   |   |-> 7.87e+00 sec 29.2% 82.4% 3.4% 1.2% 1.28e+04 3280 RKLegendre::EvolveStage [region]
+|   |   |   |-> 2.75e+00 sec 10.2% 93.2% 1.3% 2.5% 9.55e+03 9840 Hydro::CalcParabolicFlux [region]
+|   |   |   |   |-> 2.34e+00 sec 8.7% 94.9% 0.9% 5.1% 7.02e+03 9840 Hydro::addNonIdealMHDFlux [region]
+|   |   |   |   |   |-> 1.84e+00 sec 6.8% 100.0% 0.4% ------ 9840 CalcParabolicFlux [for]
+|   |   |   |   |   |-> 2.56e-01 sec 1.0% 100.0% 1.5% ------ 3280 Ambipolar [for]
+|   |   |   |   |   |-> 1.19e-01 sec 0.4% 100.0% 2.3% ------ 3280 Resistivity [for]
+|   |   |   |   |-> 3.44e-01 sec 1.3% 100.0% 1.9% ------ 9840 HydroParabolicResetStage [for]
+|   |   |   |-> 1.21e+00 sec 4.5% 97.2% 0.4% 2.8% 2.72e+03 3280 ElectroMotiveForce::CalcNonidealEMF [region]
+|   |   |   |   |-> 1.17e+00 sec 4.4% 100.0% 0.2% ------ 3280 CalcNIEMF [for]
+|   |   |   |-> 1.13e+00 sec 4.2% 88.3% 2.9% 11.7% 1.92e+04 9840 RKLegendre::CalcParabolicRHS [region]
+|   |   |   |   |-> 5.09e-01 sec 1.9% 100.0% 1.6% ------ 9840 CalcRightHandSide [for]
+|   |   |   |   |-> 4.07e-01 sec 1.5% 100.0% 2.2% ------ 9840 CalcTotalFlux [for]
+|   |   |   |   |-> 8.33e-02 sec 0.3% 100.0% 2.0% ------ 2046 CalcDt [for]
+|   |   |   |-> 1.12e+00 sec 4.2% 29.8% 26.5% 3.2% 2.63e+04 3280 Emf::EnforceEMFBoundary [region]
+|   |   |   |   |-> 6.79e-01 sec 2.5% 22.7% 52.7% 77.3% 1.93e+04 3280 Emf::ExchangeX1 [region]
+|   |   |   |   |   |-> 4.13e-02 sec 0.2% 100.0% 7.9% ------ 3280 LoadBufferX1Emfz [for]
+|   |   |   |   |   |-> 3.92e-02 sec 0.1% 100.0% 6.3% ------ 3280 LoadBufferX1Emfy [for]
+|   |   |   |   |   |-> 3.81e-02 sec 0.1% 100.0% 13.2% ------ 3280 StoreBufferX1Emfz [for]
+|   |   |   |   |   |-> 3.57e-02 sec 0.1% 100.0% 11.2% ------ 3280 StoreBufferX1Emfy [for]
+|   |   |   |   |-> 3.62e-01 sec 1.3% 37.7% 32.8% 62.3% 3.62e+04 3280 Emf::ExchangeX3 [region]
+|   |   |   |   |   |-> 3.55e-02 sec 0.1% 100.0% 7.5% ------ 3280 LoadBufferX3Emfx [for]
+|   |   |   |   |   |-> 3.43e-02 sec 0.1% 100.0% 8.1% ------ 3280 StoreBufferX3Emfx [for]
+|   |   |   |   |   |-> 3.39e-02 sec 0.1% 100.0% 6.6% ------ 3280 LoadBufferX3Emfy [for]
+|   |   |   |   |   |-> 3.29e-02 sec 0.1% 100.0% 9.2% ------ 3280 StoreBufferX3Emfy [for]
+|   |   |   |   |-> 4.35e-02 sec 0.2% 100.0% 4.6% ------ 3280 BoundaryEMFPeriodic [for]
+|   |   |   |-> 4.33e-01 sec 1.6% 91.1% 1.3% 8.9% 7.57e+03 3280 ElectroMotiveForce::EvolveMagField [region]
+|   |   |   |   |-> 3.94e-01 sec 1.5% 100.0% 0.8% ------ 3280 EvolvMagField [for]
+|   |   |   |-> 4.03e-01 sec 1.5% 92.8% 1.3% 7.2% 8.14e+03 3280 RKLegendre::ResetStage [region]
+|   |   |   |   |-> 3.74e-01 sec 1.4% 100.0% 0.8% ------ 3280 RKL_ResetStage [for]
+|   |   |   |-> 4.00e-01 sec 1.5% 87.2% 2.8% 12.8% 2.46e+04 9840 RKLegendre::ResetFlux [region]
+|   |   |   |   |-> 3.49e-01 sec 1.3% 100.0% 2.0% ------ 9840 RKL_ResetFlux [for]
+|   |   |   |-> 3.29e-01 sec 1.2% 90.0% 1.5% 10.0% 9.96e+03 3280 Hydro::CalcCurrent [region]
+|   |   |       |-> 2.97e-01 sec 1.1% 100.0% 0.8% ------ 3280 CalcCurrent [for]
+|   |   |-> 3.09e+00 sec 11.5% 58.0% 5.1% 7.7% 3.08e+04 3280 Hydro::SetBoundary [region]
+|   |   |   |-> 1.11e+00 sec 4.1% 32.7% 27.1% 67.3% 1.77e+04 3280 Mpi::ExchangeX1 [region]
+|   |   |   |   |-> 1.20e-01 sec 0.4% 100.0% 6.7% ------ 3280 StoreBufferX1Vc [for]
+|   |   |   |   |-> 6.57e-02 sec 0.2% 100.0% 6.3% ------ 3280 LoadBufferX1Vc [for]
+|   |   |   |   |-> 5.00e-02 sec 0.2% 100.0% 19.2% ------ 3280 StoreBufferX1BX2s [for]
+|   |   |   |   |-> 4.45e-02 sec 0.2% 100.0% 16.0% ------ 3280 StoreBufferX1BX3s [for]
+|   |   |   |   |-> 4.15e-02 sec 0.2% 100.0% 4.9% ------ 3280 LoadBufferX1BX2s [for]
+|   |   |   |   |-> 4.14e-02 sec 0.2% 100.0% 6.8% ------ 3280 LoadBufferX1BX3s [for]
+|   |   |   |-> 5.06e-01 sec 1.9% 45.8% 14.5% 54.2% 3.89e+04 3280 Mpi::ExchangeX3 [region]
+|   |   |   |   |-> 4.38e-02 sec 0.2% 100.0% 8.2% ------ 3280 LoadBufferX3Vc [for]
+|   |   |   |   |-> 4.21e-02 sec 0.2% 100.0% 9.8% ------ 3280 StoreBufferX3Vc [for]
+|   |   |   |   |-> 3.74e-02 sec 0.1% 100.0% 7.2% ------ 3280 LoadBufferX3BX1s [for]
+|   |   |   |   |-> 3.66e-02 sec 0.1% 100.0% 8.8% ------ 3280 LoadBufferX3BX2s [for]
+|   |   |   |   |-> 3.64e-02 sec 0.1% 100.0% 6.2% ------ 3280 StoreBufferX3BX1s [for]
+|   |   |   |   |-> 3.56e-02 sec 0.1% 100.0% 6.3% ------ 3280 StoreBufferX3BX2s [for]
+|   |   |   |-> 2.96e-01 sec 1.1% 75.7% 6.6% 24.3% 3.33e+04 9840 Hydro::ReconstructNormalField [region]
+|   |   |   |   |-> 9.03e-02 sec 0.3% 100.0% 4.6% ------ 3280 ReconstructBX1s [for]
+|   |   |   |   |-> 8.01e-02 sec 0.3% 100.0% 4.4% ------ 3280 ReconstructBX2s [for]
+|   |   |   |   |-> 5.36e-02 sec 0.2% 100.0% 6.3% ------ 3280 ReconstructBX3s [for]
+|   |   |   |-> 2.78e-01 sec 1.0% 93.4% 1.6% 6.6% 1.18e+04 3280 Hydro::ReconstructVcField [region]
+|   |   |   |   |-> 2.60e-01 sec 1.0% 100.0% 0.9% ------ 3280 ReconstructVcMagField [for]
+|   |   |   |-> 2.21e-01 sec 0.8% 100.0% 7.6% ------ 3280 InternalBoundary [for]
+|   |   |   |-> 7.99e-02 sec 0.3% 100.0% 105.2% ------ 9840 UserDefBoundary [for]
+|   |   |   |-> 7.85e-02 sec 0.3% 100.0% 7.3% ------ 6560 BoundaryEndPeriodicVs [for]
+|   |   |   |-> 7.85e-02 sec 0.3% 100.0% 7.6% ------ 6560 BoundaryBegShearingBoxVs [for]
+|   |   |   |-> 7.68e-02 sec 0.3% 100.0% 4.2% ------ 3280 BoundaryBegPeriodic [for]
+|   |   |   |-> 7.62e-02 sec 0.3% 100.0% 4.5% ------ 3280 BoundaryEndPeriodic [for]
+|   |   |   |-> 3.13e-02 sec 0.1% 100.0% 114.6% ------ 6560 BoundaryBegOutflowVs [for]
+|   |   |-> 6.56e-01 sec 2.4% 97.0% 0.5% 3.0% 5.00e+03 3280 Hydro::ConvertConsToPrim [region]
+|   |   |   |-> 6.36e-01 sec 2.4% 100.0% 0.4% ------ 3280 ConsToPrim [for]
+|   |   |-> 5.99e-01 sec 2.2% 100.0% 0.3% ------ 2598 RKL_Cycle_UpdateVs [for]
+|   |   |-> 2.82e-01 sec 1.0% 93.4% 1.7% 6.6% 1.16e+04 3280 Hydro::ReconstructVcField [region]
+|   |   |   |-> 2.63e-01 sec 1.0% 100.0% 1.1% ------ 3280 ReconstructVcMagField [for]
+|   |   |-> 2.12e-01 sec 0.8% 100.0% 1.2% ------ 2598 RKL_Cycle_UpdateUc [for]
+|   |   |-> 1.35e-01 sec 0.5% 96.9% 0.7% 3.1% 5.05e+03 682 Hydro::ConvertPrimToCons [region]
+|   |   |   |-> 1.31e-01 sec 0.5% 100.0% 0.5% ------ 682 ConvertPrimToCons [for]
+|   |   |-> 1.31e-01 sec 0.5% 67.9% 37.8% 32.1% 5.20e+03 682 RKLegendre::ComputeDt [region]
+|   |   |   |-> 8.91e-02 sec 0.3% 100.0% 0.8% ------ 682 RKL_Timestep_reduction [reduce]
+|   |   |-> 1.02e-01 sec 0.4% 100.0% 0.6% ------ 682 RKL_Cycle_InitVs1 [for]
+|   |   |-> 6.09e-02 sec 0.2% 100.0% 1.2% ------ 682 "Hydro_Vs0"="Hydro_Vs" [copy]
+|   |   |-> 6.06e-02 sec 0.2% 100.0% 1.4% ------ 682 "RKL_dB0"="RKL_dB" [copy]
+|   |   |-> 5.06e-02 sec 0.2% 100.0% 3.0% ------ 1364 RKL_Copy [for]
+|   |   |-> 3.77e-02 sec 0.1% 100.0% 1.5% ------ 682 RKL_Cycle_InitUc1 [for]
+|   |-> 6.96e+00 sec 25.8% 90.8% 1.2% 0.6% 6.27e+03 1364 DataBlock::EvolveStage [region]
+|   |   |-> 2.13e+00 sec 7.9% 95.9% 0.8% 4.1% 5.76e+03 4092 Hydro::CalcRightHandSide [region]
+|   |   |   |-> 9.86e-01 sec 3.7% 100.0% 0.5% ------ 4092 CalcRightHandSide [for]
+|   |   |   |-> 9.11e-01 sec 3.4% 100.0% 0.3% ------ 4092 CalcTotalFlux [for]
+|   |   |   |-> 1.48e-01 sec 0.6% 100.0% 2.3% ------ 4092 Potential [for]
+|   |   |-> 1.58e+00 sec 5.9% 96.7% 0.6% 0.9% 2.59e+03 4092 Hydro::CalcRiemannFlux [region]
+|   |   |   |-> 1.57e+00 sec 5.8% 97.6% 0.6% 2.4% 2.61e+03 4092 Hydro::HLLD_MHD [region]
+|   |   |       |-> 1.53e+00 sec 5.7% 100.0% 0.4% ------ 4092 CalcRiemannFlux [for]
+|   |   |-> 1.38e+00 sec 5.1% 97.8% 0.4% 2.2% 2.98e+03 4092 Hydro::ExtrapolatePrimVar [region]
+|   |   |   |-> 1.34e+00 sec 5.0% 100.0% 0.2% ------ 4092 ExtrapolatePrimVar [for]
+|   |   |-> 8.10e-01 sec 3.0% 94.5% 1.0% 5.5% 6.74e+03 1364 ElectroMotiveForce::CalcCornerEMF [region]
+|   |   |   |-> 3.67e-01 sec 1.4% 100.0% 1.3% ------ 1364 EMF_Integrate to Corner [for]
+|   |   |   |-> 1.51e-01 sec 0.6% 100.0% 0.7% ------ 1364 EMF_ArithmeticAverage [for]
+|   |   |   |-> 1.48e-01 sec 0.5% 100.0% 0.8% ------ 1364 CalcCenterEMF [for]
+|   |   |   |-> 9.93e-02 sec 0.4% 100.0% 1.5% ------ 1364 EMF_Renormalize [for]
+|   |   |-> 4.78e-01 sec 1.8% 29.3% 19.7% 3.2% 2.57e+04 1364 Emf::EnforceEMFBoundary [region]
+|   |   |   |-> 2.83e-01 sec 1.1% 23.0% 46.3% 77.0% 1.93e+04 1364 Emf::ExchangeX1 [region]
+|   |   |   |-> 1.62e-01 sec 0.6% 35.2% 39.1% 64.8% 3.36e+04 1364 Emf::ExchangeX3 [region]
+|   |   |-> 2.40e-01 sec 0.9% 92.4% 3.7% 7.6% 1.14e+04 1364 Hydro::AddSourceTerms [region]
+|   |   |   |-> 1.29e-01 sec 0.5% 100.0% 0.8% ------ 1364 AddSourceTerms [for]
+|   |   |   |-> 9.28e-02 sec 0.3% 100.0% 9.8% ------ 1364 MySourceTerm [for]
+|   |   |-> 1.80e-01 sec 0.7% 90.8% 1.1% 9.2% 7.59e+03 1364 ElectroMotiveForce::EvolveMagField [region]
+|   |   |   |-> 1.63e-01 sec 0.6% 100.0% 0.6% ------ 1364 EvolvMagField [for]
+|   |   |-> 1.17e-01 sec 0.4% 93.3% 1.8% 6.7% 1.16e+04 1364 Hydro::ReconstructVcField [region]
+|   |       |-> 1.10e-01 sec 0.4% 100.0% 1.3% ------ 1364 ReconstructVcMagField [for]
+|   |-> 1.28e+00 sec 4.7% 58.9% 6.5% 7.8% 3.10e+04 1364 Hydro::SetBoundary [region]
+|   |   |-> 4.45e-01 sec 1.7% 34.2% 30.4% 65.8% 1.84e+04 1364 Mpi::ExchangeX1 [region]
+|   |   |   |-> 4.94e-02 sec 0.2% 100.0% 6.5% ------ 1364 StoreBufferX1Vc [for]
+|   |   |   |-> 2.77e-02 sec 0.1% 100.0% 7.0% ------ 1364 LoadBufferX1Vc [for]
+|   |   |-> 2.13e-01 sec 0.8% 45.4% 22.2% 54.6% 3.84e+04 1364 Mpi::ExchangeX3 [region]
+|   |   |-> 1.24e-01 sec 0.5% 75.6% 6.1% 24.4% 3.30e+04 4092 Hydro::ReconstructNormalField [region]
+|   |   |   |-> 3.80e-02 sec 0.1% 100.0% 8.5% ------ 1364 ReconstructBX1s [for]
+|   |   |   |-> 3.34e-02 sec 0.1% 100.0% 4.1% ------ 1364 ReconstructBX2s [for]
+|   |   |-> 1.16e-01 sec 0.4% 93.4% 1.7% 6.6% 1.18e+04 1364 Hydro::ReconstructVcField [region]
+|   |   |   |-> 1.08e-01 sec 0.4% 100.0% 1.0% ------ 1364 ReconstructVcMagField [for]
+|   |   |-> 9.45e-02 sec 0.4% 100.0% 8.3% ------ 1364 InternalBoundary [for]
+|   |   |-> 3.37e-02 sec 0.1% 100.0% 111.3% ------ 4092 UserDefBoundary [for]
+|   |   |-> 3.27e-02 sec 0.1% 100.0% 7.8% ------ 2728 BoundaryBegShearingBoxVs [for]
+|   |   |-> 3.27e-02 sec 0.1% 100.0% 7.2% ------ 2728 BoundaryEndPeriodicVs [for]
+|   |   |-> 3.21e-02 sec 0.1% 100.0% 3.8% ------ 1364 BoundaryBegPeriodic [for]
+|   |   |-> 3.18e-02 sec 0.1% 100.0% 4.4% ------ 1364 BoundaryEndPeriodic [for]
+|   |-> 2.71e-01 sec 1.0% 96.9% 0.6% 3.1% 5.03e+03 1364 Hydro::ConvertConsToPrim [region]
+|   |   |-> 2.63e-01 sec 1.0% 100.0% 0.4% ------ 1364 ConsToPrim [for]
+|   |-> 2.70e-01 sec 1.0% 96.9% 0.7% 3.1% 5.05e+03 1364 Hydro::ConvertPrimToCons [region]
+|   |   |-> 2.62e-01 sec 1.0% 100.0% 0.4% ------ 1364 ConvertPrimToCons [for]
+|   |-> 2.66e-01 sec 1.0% 100.0% 0.4% ------ 1364 Cycle-update [for]
+|   |-> 1.37e-01 sec 0.5% 100.0% 0.5% ------ 682 "Hydro_Uc0"="Hydro_Uc" [copy]
+|   |-> 1.01e-01 sec 0.4% 100.0% 0.8% ------ 682 Timestep_reduction [reduce]
+|   |-> 5.98e-02 sec 0.2% 100.0% 0.9% ------ 682 "Hydro_Vs0"="Hydro_Vs" [copy]
+|   |-> 2.86e-02 sec 0.1% 86.9% 3.3% 13.1% 2.39e+04 682 Hydro::ResetStage [region]
+|-> 3.11e+00 sec 11.5% 10.5% 0.4% 0.1% 5.41e+01 683 Output::CheckForWrites [region]
+|   |-> 1.75e+00 sec 6.5% 12.4% 0.0% 87.5% 5.47e+01 2 Vtk::Write [region]
+|   |   |-> 1.22e-01 sec 0.5% 98.9% 1.4% 1.1% 6.53e+02 2 DataBlockHost::DataBlockHost(DataBlock) [region]
+|   |   |   |-> 3.45e-02 sec 0.1% 100.0% 1.1% ------ 2 Kokkos::View::initialization [Hydro_Uc_mirror] [for]
+|   |   |   |-> 3.27e-02 sec 0.1% 100.0% 1.6% ------ 2 Kokkos::View::initialization [Hydro_Vc_mirror] [for]
+|   |   |-> 9.70e-02 sec 0.4% 99.8% 1.0% 0.2% 1.65e+02 2 DataBlockHost::SyncFromDevice() [region]
+|   |       |-> 2.94e-02 sec 0.1% 100.0% 1.0% ------ 2 "Hydro_Uc_mirror"="Hydro_Uc" [copy]
+|   |       |-> 2.94e-02 sec 0.1% 100.0% 1.0% ------ 2 "Hydro_Vc_mirror"="Hydro_Vc" [copy]
+|   |-> 1.35e+00 sec 5.0% 8.1% 0.9% 91.8% 5.34e+01 1 Dump::Write [region]
+|       |-> 6.11e-02 sec 0.2% 98.9% 1.5% 1.1% 6.54e+02 1 DataBlockHost::DataBlockHost(DataBlock) [region]
+|       |-> 4.84e-02 sec 0.2% 99.7% 0.8% 0.3% 1.65e+02 1 DataBlockHost::SyncFromDevice() [region]
+|-> 1.56e-01 sec 0.6% 83.3% 1.5% 15.8% 4.67e+02 1 Output::Output [region]
+|   |-> 7.92e-02 sec 0.3% 98.9% 2.4% 1.1% 5.05e+02 1 DataBlockHost::DataBlockHost(DataBlock) [region]
+|   |-> 4.85e-02 sec 0.2% 99.7% 1.0% 0.3% 1.65e+02 1 DataBlockHost::SyncFromDevice() [region]
+|-> 6.24e-02 sec 0.2% 98.9% 2.0% 1.1% 6.41e+02 1 DataBlockHost::DataBlockHost(DataBlock) [region]
+|-> 5.22e-02 sec 0.2% 99.7% 1.1% 0.3% 1.53e+02 1 DataBlockHost::SyncToDevice() [region]
+|-> 3.54e-02 sec 0.1% 11.2% 7.8% 20.1% 3.11e+03 1 DataBlock::InitFromGrid [region]
+
+BOTTOM-UP TIME TREE:
+<average time> <percent of total time> <percent time in Kokkos> <percent MPI imbalance> <number of calls> <name> [type]
+=================== 
+|-> 1.84e+00 sec 6.8% 100.0% 0.4% ------ 9840 CalcParabolicFlux [for]
+|   |-> 1.84e+00 sec 6.8% 100.0% 0.4% 0.0% 0.00e+00 9840 Hydro::addNonIdealMHDFlux [region]
+|       |-> 1.84e+00 sec 6.8% 100.0% 0.4% 0.0% 0.00e+00 9840 Hydro::CalcParabolicFlux [region]
+|           |-> 1.84e+00 sec 6.8% 100.0% 0.4% 0.0% 0.00e+00 9840 RKLegendre::EvolveStage [region]
+|               |-> 1.84e+00 sec 6.8% 100.0% 0.4% 0.0% 0.00e+00 9840 RKLegendre::Cycle [region]
+|                   |-> 1.84e+00 sec 6.8% 100.0% 0.4% 0.0% 0.00e+00 9840 TimeIntegrator::Cycle [region]
+|-> 1.54e+00 sec 5.7% 0.0% 0.2% 0.0% 0.00e+00 2 Vtk::Write [region]
+|   |-> 1.54e+00 sec 5.7% 0.0% 0.2% 0.0% 0.00e+00 2 Output::CheckForWrites [region]
+|-> 1.53e+00 sec 5.7% 100.0% 0.4% ------ 4092 CalcRiemannFlux [for]
+|   |-> 1.53e+00 sec 5.7% 100.0% 0.4% 0.0% 0.00e+00 4092 Hydro::HLLD_MHD [region]
+|       |-> 1.53e+00 sec 5.7% 100.0% 0.4% 0.0% 0.00e+00 4092 Hydro::CalcRiemannFlux [region]
+|           |-> 1.53e+00 sec 5.7% 100.0% 0.4% 0.0% 0.00e+00 4092 DataBlock::EvolveStage [region]
+|               |-> 1.53e+00 sec 5.7% 100.0% 0.4% 0.0% 0.00e+00 4092 TimeIntegrator::Cycle [region]
+|-> 1.49e+00 sec 5.5% 100.0% 0.9% ------ 13932 CalcRightHandSide [for]
+|   |-> 9.86e-01 sec 3.7% 100.0% 0.5% 0.0% 0.00e+00 4092 Hydro::CalcRightHandSide [region]
+|   |   |-> 9.86e-01 sec 3.7% 100.0% 0.5% 0.0% 0.00e+00 4092 DataBlock::EvolveStage [region]
+|   |       |-> 9.86e-01 sec 3.7% 100.0% 0.5% 0.0% 0.00e+00 4092 TimeIntegrator::Cycle [region]
+|   |-> 5.09e-01 sec 1.9% 100.0% 1.6% 0.0% 0.00e+00 9840 RKLegendre::CalcParabolicRHS [region]
+|       |-> 5.09e-01 sec 1.9% 100.0% 1.6% 0.0% 0.00e+00 9840 RKLegendre::EvolveStage [region]
+|           |-> 5.09e-01 sec 1.9% 100.0% 1.6% 0.0% 0.00e+00 9840 RKLegendre::Cycle [region]
+|               |-> 5.09e-01 sec 1.9% 100.0% 1.6% 0.0% 0.00e+00 9840 TimeIntegrator::Cycle [region]
+|-> 1.34e+00 sec 5.0% 100.0% 0.2% ------ 4092 ExtrapolatePrimVar [for]
+|   |-> 1.34e+00 sec 5.0% 100.0% 0.2% 0.0% 0.00e+00 4092 Hydro::ExtrapolatePrimVar [region]
+|       |-> 1.34e+00 sec 5.0% 100.0% 0.2% 0.0% 0.00e+00 4092 DataBlock::EvolveStage [region]
+|           |-> 1.34e+00 sec 5.0% 100.0% 0.2% 0.0% 0.00e+00 4092 TimeIntegrator::Cycle [region]
+|-> 1.32e+00 sec 4.9% 100.0% 0.9% ------ 13932 CalcTotalFlux [for]
+|   |-> 9.11e-01 sec 3.4% 100.0% 0.3% 0.0% 0.00e+00 4092 Hydro::CalcRightHandSide [region]
+|   |   |-> 9.11e-01 sec 3.4% 100.0% 0.3% 0.0% 0.00e+00 4092 DataBlock::EvolveStage [region]
+|   |       |-> 9.11e-01 sec 3.4% 100.0% 0.3% 0.0% 0.00e+00 4092 TimeIntegrator::Cycle [region]
+|   |-> 4.07e-01 sec 1.5% 100.0% 2.2% 0.0% 0.00e+00 9840 RKLegendre::CalcParabolicRHS [region]
+|       |-> 4.07e-01 sec 1.5% 100.0% 2.2% 0.0% 0.00e+00 9840 RKLegendre::EvolveStage [region]
+|           |-> 4.07e-01 sec 1.5% 100.0% 2.2% 0.0% 0.00e+00 9840 RKLegendre::Cycle [region]
+|               |-> 4.07e-01 sec 1.5% 100.0% 2.2% 0.0% 0.00e+00 9840 TimeIntegrator::Cycle [region]
+|-> 1.24e+00 sec 4.6% 0.0% 1.1% 0.0% 0.00e+00 1 Dump::Write [region]
+|   |-> 1.24e+00 sec 4.6% 0.0% 1.1% 0.0% 0.00e+00 1 Output::CheckForWrites [region]
+|-> 1.17e+00 sec 4.4% 100.0% 0.2% ------ 3280 CalcNIEMF [for]
+|   |-> 1.17e+00 sec 4.4% 100.0% 0.2% 0.0% 0.00e+00 3280 ElectroMotiveForce::CalcNonidealEMF [region]
+|       |-> 1.17e+00 sec 4.4% 100.0% 0.2% 0.0% 0.00e+00 3280 RKLegendre::EvolveStage [region]
+|           |-> 1.17e+00 sec 4.4% 100.0% 0.2% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|               |-> 1.17e+00 sec 4.4% 100.0% 0.2% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 1.05e+00 sec 3.9% 0.0% 41.9% 0.0% 0.00e+00 4645 Mpi::ExchangeX1 [region]
+|   |-> 1.05e+00 sec 3.9% 0.0% 41.9% 0.0% 0.00e+00 4645 Hydro::SetBoundary [region]
+|       |-> 7.47e-01 sec 2.8% 0.0% 40.4% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|       |   |-> 7.47e-01 sec 2.8% 0.0% 40.4% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|       |-> 2.93e-01 sec 1.1% 0.0% 46.3% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 8.99e-01 sec 3.3% 100.0% 0.4% ------ 4644 ConsToPrim [for]
+|   |-> 8.99e-01 sec 3.3% 100.0% 0.4% 0.0% 0.00e+00 4644 Hydro::ConvertConsToPrim [region]
+|       |-> 6.36e-01 sec 2.4% 100.0% 0.4% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|       |   |-> 6.36e-01 sec 2.4% 100.0% 0.4% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|       |-> 2.63e-01 sec 1.0% 100.0% 0.4% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 7.43e-01 sec 2.8% 0.0% 67.0% 0.0% 0.00e+00 4644 Emf::ExchangeX1 [region]
+|   |-> 7.43e-01 sec 2.8% 0.0% 67.0% 0.0% 0.00e+00 4644 Emf::EnforceEMFBoundary [region]
+|       |-> 5.25e-01 sec 2.0% 0.0% 69.4% 0.0% 0.00e+00 3280 RKLegendre::EvolveStage [region]
+|       |   |-> 5.25e-01 sec 2.0% 0.0% 69.4% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|       |       |-> 5.25e-01 sec 2.0% 0.0% 69.4% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|       |-> 2.18e-01 sec 0.8% 0.0% 61.1% 0.0% 0.00e+00 1364 DataBlock::EvolveStage [region]
+|           |-> 2.18e-01 sec 0.8% 0.0% 61.1% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 7.41e-01 sec 2.8% 100.0% 1.0% ------ 9289 ReconstructVcMagField [for]
+|   |-> 7.41e-01 sec 2.8% 100.0% 1.0% 0.0% 0.00e+00 9289 Hydro::ReconstructVcField [region]
+|       |-> 3.68e-01 sec 1.4% 100.0% 0.9% 0.0% 0.00e+00 4645 Hydro::SetBoundary [region]
+|       |   |-> 2.60e-01 sec 1.0% 100.0% 0.9% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|       |   |   |-> 2.60e-01 sec 1.0% 100.0% 0.9% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|       |   |-> 1.08e-01 sec 0.4% 100.0% 1.0% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|       |-> 2.63e-01 sec 1.0% 100.0% 1.1% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|       |   |-> 2.63e-01 sec 1.0% 100.0% 1.1% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|       |-> 1.10e-01 sec 0.4% 100.0% 1.3% 0.0% 0.00e+00 1364 DataBlock::EvolveStage [region]
+|           |-> 1.10e-01 sec 0.4% 100.0% 1.3% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 5.99e-01 sec 2.2% 100.0% 0.3% ------ 2598 RKL_Cycle_UpdateVs [for]
+|   |-> 5.99e-01 sec 2.2% 100.0% 0.3% 0.0% 0.00e+00 2598 RKLegendre::Cycle [region]
+|       |-> 5.99e-01 sec 2.2% 100.0% 0.3% 0.0% 0.00e+00 2598 TimeIntegrator::Cycle [region]
+|-> 5.58e-01 sec 2.1% 100.0% 0.7% ------ 4644 EvolvMagField [for]
+|   |-> 5.58e-01 sec 2.1% 100.0% 0.7% 0.0% 0.00e+00 4644 ElectroMotiveForce::EvolveMagField [region]
+|       |-> 3.94e-01 sec 1.5% 100.0% 0.8% 0.0% 0.00e+00 3280 RKLegendre::EvolveStage [region]
+|       |   |-> 3.94e-01 sec 1.5% 100.0% 0.8% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|       |       |-> 3.94e-01 sec 1.5% 100.0% 0.8% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|       |-> 1.63e-01 sec 0.6% 100.0% 0.6% 0.0% 0.00e+00 1364 DataBlock::EvolveStage [region]
+|           |-> 1.63e-01 sec 0.6% 100.0% 0.6% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 3.93e-01 sec 1.5% 0.0% 22.4% 0.0% 0.00e+00 4645 Mpi::ExchangeX3 [region]
+|   |-> 3.93e-01 sec 1.5% 0.0% 22.4% 0.0% 0.00e+00 4645 Hydro::SetBoundary [region]
+|       |-> 2.75e-01 sec 1.0% 0.0% 27.0% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|       |   |-> 2.75e-01 sec 1.0% 0.0% 27.0% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|       |-> 1.16e-01 sec 0.4% 0.0% 40.5% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 3.92e-01 sec 1.5% 100.0% 0.5% ------ 2046 ConvertPrimToCons [for]
+|   |-> 3.92e-01 sec 1.5% 100.0% 0.5% 0.0% 0.00e+00 2046 Hydro::ConvertPrimToCons [region]
+|       |-> 2.62e-01 sec 1.0% 100.0% 0.4% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|       |-> 1.31e-01 sec 0.5% 100.0% 0.5% 0.0% 0.00e+00 682 RKLegendre::Cycle [region]
+|           |-> 1.31e-01 sec 0.5% 100.0% 0.5% 0.0% 0.00e+00 682 TimeIntegrator::Cycle [region]
+|-> 3.74e-01 sec 1.4% 100.0% 0.8% ------ 3280 RKL_ResetStage [for]
+|   |-> 3.74e-01 sec 1.4% 100.0% 0.8% 0.0% 0.00e+00 3280 RKLegendre::ResetStage [region]
+|       |-> 3.74e-01 sec 1.4% 100.0% 0.8% 0.0% 0.00e+00 3280 RKLegendre::EvolveStage [region]
+|           |-> 3.74e-01 sec 1.4% 100.0% 0.8% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|               |-> 3.74e-01 sec 1.4% 100.0% 0.8% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 3.67e-01 sec 1.4% 100.0% 1.3% ------ 1364 EMF_Integrate to Corner [for]
+|   |-> 3.67e-01 sec 1.4% 100.0% 1.3% 0.0% 0.00e+00 1364 ElectroMotiveForce::CalcCornerEMF [region]
+|       |-> 3.67e-01 sec 1.4% 100.0% 1.3% 0.0% 0.00e+00 1364 DataBlock::EvolveStage [region]
+|           |-> 3.67e-01 sec 1.4% 100.0% 1.3% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 3.49e-01 sec 1.3% 100.0% 2.0% ------ 9840 RKL_ResetFlux [for]
+|   |-> 3.49e-01 sec 1.3% 100.0% 2.0% 0.0% 0.00e+00 9840 RKLegendre::ResetFlux [region]
+|       |-> 3.49e-01 sec 1.3% 100.0% 2.0% 0.0% 0.00e+00 9840 RKLegendre::EvolveStage [region]
+|           |-> 3.49e-01 sec 1.3% 100.0% 2.0% 0.0% 0.00e+00 9840 RKLegendre::Cycle [region]
+|               |-> 3.49e-01 sec 1.3% 100.0% 2.0% 0.0% 0.00e+00 9840 TimeIntegrator::Cycle [region]
+|-> 3.44e-01 sec 1.3% 100.0% 1.9% ------ 9840 HydroParabolicResetStage [for]
+|   |-> 3.44e-01 sec 1.3% 100.0% 1.9% 0.0% 0.00e+00 9840 Hydro::CalcParabolicFlux [region]
+|       |-> 3.44e-01 sec 1.3% 100.0% 1.9% 0.0% 0.00e+00 9840 RKLegendre::EvolveStage [region]
+|           |-> 3.44e-01 sec 1.3% 100.0% 1.9% 0.0% 0.00e+00 9840 RKLegendre::Cycle [region]
+|               |-> 3.44e-01 sec 1.3% 100.0% 1.9% 0.0% 0.00e+00 9840 TimeIntegrator::Cycle [region]
+|-> 3.31e-01 sec 1.2% 0.0% 55.3% 0.0% 0.00e+00 4644 Emf::ExchangeX3 [region]
+|   |-> 3.31e-01 sec 1.2% 0.0% 55.3% 0.0% 0.00e+00 4644 Emf::EnforceEMFBoundary [region]
+|       |-> 2.26e-01 sec 0.8% 0.0% 53.1% 0.0% 0.00e+00 3280 RKLegendre::EvolveStage [region]
+|       |   |-> 2.26e-01 sec 0.8% 0.0% 53.1% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|       |       |-> 2.26e-01 sec 0.8% 0.0% 53.1% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|       |-> 1.05e-01 sec 0.4% 0.0% 60.7% 0.0% 0.00e+00 1364 DataBlock::EvolveStage [region]
+|           |-> 1.05e-01 sec 0.4% 0.0% 60.7% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 3.16e-01 sec 1.2% 100.0% 7.6% ------ 4645 InternalBoundary [for]
+|   |-> 3.16e-01 sec 1.2% 100.0% 7.6% 0.0% 0.00e+00 4645 Hydro::SetBoundary [region]
+|       |-> 2.21e-01 sec 0.8% 100.0% 7.6% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|       |   |-> 2.21e-01 sec 0.8% 100.0% 7.6% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|       |-> 9.45e-02 sec 0.4% 100.0% 8.3% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 2.97e-01 sec 1.1% 100.0% 0.8% ------ 3280 CalcCurrent [for]
+|   |-> 2.97e-01 sec 1.1% 100.0% 0.8% 0.0% 0.00e+00 3280 Hydro::CalcCurrent [region]
+|       |-> 2.97e-01 sec 1.1% 100.0% 0.8% 0.0% 0.00e+00 3280 RKLegendre::EvolveStage [region]
+|           |-> 2.97e-01 sec 1.1% 100.0% 0.8% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|               |-> 2.97e-01 sec 1.1% 100.0% 0.8% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 2.66e-01 sec 1.0% 100.0% 0.4% ------ 1364 Cycle-update [for]
+|   |-> 2.66e-01 sec 1.0% 100.0% 0.4% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 2.65e-01 sec 1.0% 0.0% 12.5% -0.0% 0.00e+00 4645 Hydro::SetBoundary [region]
+|   |-> 1.87e-01 sec 0.7% 0.0% 11.7% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|   |   |-> 1.87e-01 sec 0.7% 0.0% 11.7% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|   |-> 7.85e-02 sec 0.3% 0.0% 14.4% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 2.56e-01 sec 1.0% 100.0% 1.5% ------ 3280 Ambipolar [for]
+|   |-> 2.56e-01 sec 1.0% 100.0% 1.5% 0.0% 0.00e+00 3280 Hydro::addNonIdealMHDFlux [region]
+|       |-> 2.56e-01 sec 1.0% 100.0% 1.5% 0.0% 0.00e+00 3280 Hydro::CalcParabolicFlux [region]
+|           |-> 2.56e-01 sec 1.0% 100.0% 1.5% 0.0% 0.00e+00 3280 RKLegendre::EvolveStage [region]
+|               |-> 2.56e-01 sec 1.0% 100.0% 1.5% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|                   |-> 2.56e-01 sec 1.0% 100.0% 1.5% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 2.12e-01 sec 0.8% 100.0% 1.2% ------ 2598 RKL_Cycle_UpdateUc [for]
+|   |-> 2.12e-01 sec 0.8% 100.0% 1.2% 0.0% 0.00e+00 2598 RKLegendre::Cycle [region]
+|       |-> 2.12e-01 sec 0.8% 100.0% 1.2% 0.0% 0.00e+00 2598 TimeIntegrator::Cycle [region]
+|-> 1.69e-01 sec 0.6% 100.0% 6.1% ------ 4645 StoreBufferX1Vc [for]
+|   |-> 1.69e-01 sec 0.6% 100.0% 6.1% 0.0% 0.00e+00 4645 Mpi::ExchangeX1 [region]
+|       |-> 1.69e-01 sec 0.6% 100.0% 6.1% -0.0% 0.00e+00 4645 Hydro::SetBoundary [region]
+|           |-> 1.20e-01 sec 0.4% 100.0% 6.7% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |   |-> 1.20e-01 sec 0.4% 100.0% 6.7% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|           |-> 4.94e-02 sec 0.2% 100.0% 6.5% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 1.51e-01 sec 0.6% 100.0% 0.7% ------ 1364 EMF_ArithmeticAverage [for]
+|   |-> 1.51e-01 sec 0.6% 100.0% 0.7% 0.0% 0.00e+00 1364 ElectroMotiveForce::CalcCornerEMF [region]
+|       |-> 1.51e-01 sec 0.6% 100.0% 0.7% 0.0% 0.00e+00 1364 DataBlock::EvolveStage [region]
+|           |-> 1.51e-01 sec 0.6% 100.0% 0.7% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 1.48e-01 sec 0.6% 100.0% 2.3% ------ 4092 Potential [for]
+|   |-> 1.48e-01 sec 0.6% 100.0% 2.3% 0.0% 0.00e+00 4092 Hydro::CalcRightHandSide [region]
+|       |-> 1.48e-01 sec 0.6% 100.0% 2.3% 0.0% 0.00e+00 4092 DataBlock::EvolveStage [region]
+|           |-> 1.48e-01 sec 0.6% 100.0% 2.3% 0.0% 0.00e+00 4092 TimeIntegrator::Cycle [region]
+|-> 1.48e-01 sec 0.5% 100.0% 0.8% ------ 1364 CalcCenterEMF [for]
+|   |-> 1.48e-01 sec 0.5% 100.0% 0.8% 0.0% 0.00e+00 1364 ElectroMotiveForce::CalcCornerEMF [region]
+|       |-> 1.48e-01 sec 0.5% 100.0% 0.8% 0.0% 0.00e+00 1364 DataBlock::EvolveStage [region]
+|           |-> 1.48e-01 sec 0.5% 100.0% 0.8% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 1.37e-01 sec 0.5% 100.0% 0.5% ------ 682 "Hydro_Uc0"="Hydro_Uc" [copy]
+|   |-> 1.37e-01 sec 0.5% 100.0% 0.5% 0.0% 0.00e+00 682 TimeIntegrator::Cycle [region]
+|-> 1.33e-01 sec 0.5% 0.0% 10.1% 0.0% 0.00e+00 9840 RKLegendre::CalcParabolicRHS [region]
+|   |-> 1.33e-01 sec 0.5% 0.0% 10.1% 0.0% 0.00e+00 9840 RKLegendre::EvolveStage [region]
+|       |-> 1.33e-01 sec 0.5% 0.0% 10.1% 0.0% 0.00e+00 9840 RKLegendre::Cycle [region]
+|           |-> 1.33e-01 sec 0.5% 0.0% 10.1% 0.0% 0.00e+00 9840 TimeIntegrator::Cycle [region]
+|-> 1.29e-01 sec 0.5% 100.0% 0.8% ------ 1364 AddSourceTerms [for]
+|   |-> 1.29e-01 sec 0.5% 100.0% 0.8% 0.0% 0.00e+00 1364 Hydro::AddSourceTerms [region]
+|       |-> 1.29e-01 sec 0.5% 100.0% 0.8% 0.0% 0.00e+00 1364 DataBlock::EvolveStage [region]
+|           |-> 1.29e-01 sec 0.5% 100.0% 0.8% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 1.28e-01 sec 0.5% 100.0% 4.3% ------ 4645 ReconstructBX1s [for]
+|   |-> 1.28e-01 sec 0.5% 100.0% 4.3% 0.0% 0.00e+00 4645 Hydro::ReconstructNormalField [region]
+|       |-> 1.28e-01 sec 0.5% 100.0% 4.3% 0.0% 0.00e+00 4645 Hydro::SetBoundary [region]
+|           |-> 9.03e-02 sec 0.3% 100.0% 4.6% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |   |-> 9.03e-02 sec 0.3% 100.0% 4.6% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|           |-> 3.80e-02 sec 0.1% 100.0% 8.5% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 1.21e-01 sec 0.4% 100.0% 1.0% ------ 1364 "Hydro_Vs0"="Hydro_Vs" [copy]
+|   |-> 6.09e-02 sec 0.2% 100.0% 1.2% 0.0% 0.00e+00 682 RKLegendre::Cycle [region]
+|   |   |-> 6.09e-02 sec 0.2% 100.0% 1.2% 0.0% 0.00e+00 682 TimeIntegrator::Cycle [region]
+|   |-> 5.98e-02 sec 0.2% 100.0% 0.9% 0.0% 0.00e+00 682 TimeIntegrator::Cycle [region]
+|-> 1.20e-01 sec 0.4% 0.0% 7.9% 0.0% 0.00e+00 9840 Hydro::addNonIdealMHDFlux [region]
+|   |-> 1.20e-01 sec 0.4% 0.0% 7.9% 0.0% 0.00e+00 9840 Hydro::CalcParabolicFlux [region]
+|       |-> 1.20e-01 sec 0.4% 0.0% 7.9% 0.0% 0.00e+00 9840 RKLegendre::EvolveStage [region]
+|           |-> 1.20e-01 sec 0.4% 0.0% 7.9% 0.0% 0.00e+00 9840 RKLegendre::Cycle [region]
+|               |-> 1.20e-01 sec 0.4% 0.0% 7.9% 0.0% 0.00e+00 9840 TimeIntegrator::Cycle [region]
+|-> 1.19e-01 sec 0.4% 100.0% 2.3% ------ 3280 Resistivity [for]
+|   |-> 1.19e-01 sec 0.4% 100.0% 2.3% 0.0% 0.00e+00 3280 Hydro::addNonIdealMHDFlux [region]
+|       |-> 1.19e-01 sec 0.4% 100.0% 2.3% 0.0% 0.00e+00 3280 Hydro::CalcParabolicFlux [region]
+|           |-> 1.19e-01 sec 0.4% 100.0% 2.3% 0.0% 0.00e+00 3280 RKLegendre::EvolveStage [region]
+|               |-> 1.19e-01 sec 0.4% 100.0% 2.3% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|                   |-> 1.19e-01 sec 0.4% 100.0% 2.3% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 1.14e-01 sec 0.4% 100.0% 107.0% ------ 13935 UserDefBoundary [for]
+|   |-> 1.14e-01 sec 0.4% 100.0% 107.0% 0.0% 0.00e+00 13935 Hydro::SetBoundary [region]
+|       |-> 7.99e-02 sec 0.3% 100.0% 105.2% 0.0% 0.00e+00 9840 RKLegendre::Cycle [region]
+|       |   |-> 7.99e-02 sec 0.3% 100.0% 105.2% 0.0% 0.00e+00 9840 TimeIntegrator::Cycle [region]
+|       |-> 3.37e-02 sec 0.1% 100.0% 111.3% 0.0% 0.00e+00 4092 TimeIntegrator::Cycle [region]
+|-> 1.13e-01 sec 0.4% 100.0% 4.3% ------ 4645 ReconstructBX2s [for]
+|   |-> 1.13e-01 sec 0.4% 100.0% 4.3% 0.0% 0.00e+00 4645 Hydro::ReconstructNormalField [region]
+|       |-> 1.13e-01 sec 0.4% 100.0% 4.3% 0.0% 0.00e+00 4645 Hydro::SetBoundary [region]
+|           |-> 8.01e-02 sec 0.3% 100.0% 4.4% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |   |-> 8.01e-02 sec 0.3% 100.0% 4.4% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|           |-> 3.34e-02 sec 0.1% 100.0% 4.1% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 1.12e-01 sec 0.4% 0.0% 9.5% 0.0% 0.00e+00 682 RKLegendre::Cycle [region]
+|   |-> 1.12e-01 sec 0.4% 0.0% 9.5% 0.0% 0.00e+00 682 TimeIntegrator::Cycle [region]
+|-> 1.11e-01 sec 0.4% 100.0% 7.2% ------ 9290 BoundaryEndPeriodicVs [for]
+|   |-> 1.11e-01 sec 0.4% 100.0% 7.2% -0.0% 0.00e+00 9290 Hydro::SetBoundary [region]
+|       |-> 7.85e-02 sec 0.3% 100.0% 7.3% 0.0% 0.00e+00 6560 RKLegendre::Cycle [region]
+|       |   |-> 7.85e-02 sec 0.3% 100.0% 7.3% 0.0% 0.00e+00 6560 TimeIntegrator::Cycle [region]
+|       |-> 3.27e-02 sec 0.1% 100.0% 7.2% 0.0% 0.00e+00 2728 TimeIntegrator::Cycle [region]
+|-> 1.11e-01 sec 0.4% 100.0% 7.6% ------ 9290 BoundaryBegShearingBoxVs [for]
+|   |-> 1.11e-01 sec 0.4% 100.0% 7.6% 0.0% 0.00e+00 9290 Hydro::SetBoundary [region]
+|       |-> 7.85e-02 sec 0.3% 100.0% 7.6% 0.0% 0.00e+00 6560 RKLegendre::Cycle [region]
+|       |   |-> 7.85e-02 sec 0.3% 100.0% 7.6% 0.0% 0.00e+00 6560 TimeIntegrator::Cycle [region]
+|       |-> 3.27e-02 sec 0.1% 100.0% 7.8% 0.0% 0.00e+00 2728 TimeIntegrator::Cycle [region]
+|-> 1.09e-01 sec 0.4% 100.0% 4.1% ------ 4645 BoundaryBegPeriodic [for]
+|   |-> 1.09e-01 sec 0.4% 100.0% 4.1% 0.0% 0.00e+00 4645 Hydro::SetBoundary [region]
+|       |-> 7.68e-02 sec 0.3% 100.0% 4.2% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|       |   |-> 7.68e-02 sec 0.3% 100.0% 4.2% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|       |-> 3.21e-02 sec 0.1% 100.0% 3.8% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 1.08e-01 sec 0.4% 100.0% 4.5% ------ 4645 BoundaryEndPeriodic [for]
+|   |-> 1.08e-01 sec 0.4% 100.0% 4.5% 0.0% 0.00e+00 4645 Hydro::SetBoundary [region]
+|       |-> 7.62e-02 sec 0.3% 100.0% 4.5% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|       |   |-> 7.62e-02 sec 0.3% 100.0% 4.5% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|       |-> 3.18e-02 sec 0.1% 100.0% 4.4% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 1.02e-01 sec 0.4% 0.0% 12.2% 0.0% 0.00e+00 13935 Hydro::ReconstructNormalField [region]
+|   |-> 1.02e-01 sec 0.4% 0.0% 12.2% 0.0% 0.00e+00 13935 Hydro::SetBoundary [region]
+|       |-> 7.20e-02 sec 0.3% 0.0% 12.3% 0.0% 0.00e+00 9840 RKLegendre::Cycle [region]
+|       |   |-> 7.20e-02 sec 0.3% 0.0% 12.3% 0.0% 0.00e+00 9840 TimeIntegrator::Cycle [region]
+|       |-> 3.03e-02 sec 0.1% 0.0% 11.6% 0.0% 0.00e+00 4092 TimeIntegrator::Cycle [region]
+|-> 1.02e-01 sec 0.4% 100.0% 0.6% ------ 682 RKL_Cycle_InitVs1 [for]
+|   |-> 1.02e-01 sec 0.4% 100.0% 0.6% 0.0% 0.00e+00 682 RKLegendre::Cycle [region]
+|       |-> 1.02e-01 sec 0.4% 100.0% 0.6% 0.0% 0.00e+00 682 TimeIntegrator::Cycle [region]
+|-> 1.01e-01 sec 0.4% 100.0% 0.8% ------ 682 Timestep_reduction [reduce]
+|   |-> 1.01e-01 sec 0.4% 100.0% 0.8% 0.0% 0.00e+00 682 TimeIntegrator::Cycle [region]
+|-> 9.99e-02 sec 0.4% 0.0% 55.7% 0.0% 0.00e+00 682 TimeIntegrator::Cycle [region]
+|-> 9.93e-02 sec 0.4% 100.0% 1.5% ------ 1364 EMF_Renormalize [for]
+|   |-> 9.93e-02 sec 0.4% 100.0% 1.5% 0.0% 0.00e+00 1364 ElectroMotiveForce::CalcCornerEMF [region]
+|       |-> 9.93e-02 sec 0.4% 100.0% 1.5% 0.0% 0.00e+00 1364 DataBlock::EvolveStage [region]
+|           |-> 9.93e-02 sec 0.4% 100.0% 1.5% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 9.58e-02 sec 0.4% 0.0% 5.9% 0.0% 0.00e+00 3280 RKLegendre::EvolveStage [region]
+|   |-> 9.58e-02 sec 0.4% 0.0% 5.9% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|       |-> 9.58e-02 sec 0.4% 0.0% 5.9% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 9.34e-02 sec 0.3% 100.0% 6.5% ------ 4645 LoadBufferX1Vc [for]
+|   |-> 9.34e-02 sec 0.3% 100.0% 6.5% 0.0% 0.00e+00 4645 Mpi::ExchangeX1 [region]
+|       |-> 9.34e-02 sec 0.3% 100.0% 6.5% 0.0% 0.00e+00 4645 Hydro::SetBoundary [region]
+|           |-> 6.57e-02 sec 0.2% 100.0% 6.3% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |   |-> 6.57e-02 sec 0.2% 100.0% 6.3% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|           |-> 2.77e-02 sec 0.1% 100.0% 7.0% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 9.28e-02 sec 0.3% 100.0% 9.8% ------ 1364 MySourceTerm [for]
+|   |-> 9.28e-02 sec 0.3% 100.0% 9.8% 0.0% 0.00e+00 1364 Hydro::AddSourceTerms [region]
+|       |-> 9.28e-02 sec 0.3% 100.0% 9.8% 0.0% 0.00e+00 1364 DataBlock::EvolveStage [region]
+|           |-> 9.28e-02 sec 0.3% 100.0% 9.8% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 8.91e-02 sec 0.3% 100.0% 0.8% ------ 682 RKL_Timestep_reduction [reduce]
+|   |-> 8.91e-02 sec 0.3% 100.0% 0.8% 0.0% 0.00e+00 682 RKLegendre::ComputeDt [region]
+|       |-> 8.91e-02 sec 0.3% 100.0% 0.8% 0.0% 0.00e+00 682 RKLegendre::Cycle [region]
+|           |-> 8.91e-02 sec 0.3% 100.0% 0.8% 0.0% 0.00e+00 682 TimeIntegrator::Cycle [region]
+|-> 8.72e-02 sec 0.3% 0.0% 7.8% 0.0% 0.00e+00 4092 Hydro::CalcRightHandSide [region]
+|   |-> 8.72e-02 sec 0.3% 0.0% 7.8% 0.0% 0.00e+00 4092 DataBlock::EvolveStage [region]
+|       |-> 8.72e-02 sec 0.3% 0.0% 7.8% 0.0% 0.00e+00 4092 TimeIntegrator::Cycle [region]
+|-> 8.61e-02 sec 0.3% 100.0% 1.5% ------ 5 Kokkos::View::initialization [Hydro_Uc_mirror] [for]
+|   |-> 8.61e-02 sec 0.3% 100.0% 1.5% 0.0% 0.00e+00 5 DataBlockHost::DataBlockHost(DataBlock) [region]
+|       |-> 3.45e-02 sec 0.1% 100.0% 1.1% 0.0% 0.00e+00 2 Vtk::Write [region]
+|       |   |-> 3.45e-02 sec 0.1% 100.0% 1.1% 0.0% 0.00e+00 2 Output::CheckForWrites [region]
+|-> 8.33e-02 sec 0.3% 100.0% 2.0% ------ 2046 CalcDt [for]
+|   |-> 8.33e-02 sec 0.3% 100.0% 2.0% 0.0% 0.00e+00 2046 RKLegendre::CalcParabolicRHS [region]
+|       |-> 8.33e-02 sec 0.3% 100.0% 2.0% 0.0% 0.00e+00 2046 RKLegendre::EvolveStage [region]
+|           |-> 8.33e-02 sec 0.3% 100.0% 2.0% 0.0% 0.00e+00 2046 RKLegendre::Cycle [region]
+|               |-> 8.33e-02 sec 0.3% 100.0% 2.0% 0.0% 0.00e+00 2046 TimeIntegrator::Cycle [region]
+|-> 8.18e-02 sec 0.3% 100.0% 1.8% ------ 5 Kokkos::View::initialization [Hydro_Vc_mirror] [for]
+|   |-> 8.18e-02 sec 0.3% 100.0% 1.8% 0.0% 0.00e+00 5 DataBlockHost::DataBlockHost(DataBlock) [region]
+|       |-> 3.27e-02 sec 0.1% 100.0% 1.6% 0.0% 0.00e+00 2 Vtk::Write [region]
+|       |   |-> 3.27e-02 sec 0.1% 100.0% 1.6% 0.0% 0.00e+00 2 Output::CheckForWrites [region]
+|-> 7.60e-02 sec 0.3% 100.0% 6.2% ------ 4645 ReconstructBX3s [for]
+|   |-> 7.60e-02 sec 0.3% 100.0% 6.2% 0.0% 0.00e+00 4645 Hydro::ReconstructNormalField [region]
+|       |-> 7.60e-02 sec 0.3% 100.0% 6.2% 0.0% 0.00e+00 4645 Hydro::SetBoundary [region]
+|           |-> 5.36e-02 sec 0.2% 100.0% 6.3% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |   |-> 5.36e-02 sec 0.2% 100.0% 6.3% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 7.13e-02 sec 0.3% 100.0% 17.8% ------ 4645 StoreBufferX1BX2s [for]
+|   |-> 7.13e-02 sec 0.3% 100.0% 17.8% 0.0% 0.00e+00 4645 Mpi::ExchangeX1 [region]
+|       |-> 7.13e-02 sec 0.3% 100.0% 17.8% 0.0% 0.00e+00 4645 Hydro::SetBoundary [region]
+|           |-> 5.00e-02 sec 0.2% 100.0% 19.2% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |   |-> 5.00e-02 sec 0.2% 100.0% 19.2% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 6.73e-02 sec 0.3% 0.0% 8.5% 0.0% 0.00e+00 9840 Hydro::CalcParabolicFlux [region]
+|   |-> 6.73e-02 sec 0.3% 0.0% 8.5% 0.0% 0.00e+00 9840 RKLegendre::EvolveStage [region]
+|       |-> 6.73e-02 sec 0.3% 0.0% 8.5% 0.0% 0.00e+00 9840 RKLegendre::Cycle [region]
+|           |-> 6.73e-02 sec 0.3% 0.0% 8.5% 0.0% 0.00e+00 9840 TimeIntegrator::Cycle [region]
+|-> 6.34e-02 sec 0.2% 100.0% 16.4% ------ 4645 StoreBufferX1BX3s [for]
+|   |-> 6.34e-02 sec 0.2% 100.0% 16.4% 0.0% 0.00e+00 4645 Mpi::ExchangeX1 [region]
+|       |-> 6.34e-02 sec 0.2% 100.0% 16.4% 0.0% 0.00e+00 4645 Hydro::SetBoundary [region]
+|           |-> 4.45e-02 sec 0.2% 100.0% 16.0% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |   |-> 4.45e-02 sec 0.2% 100.0% 16.0% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 6.21e-02 sec 0.2% 100.0% 8.1% ------ 4645 LoadBufferX3Vc [for]
+|   |-> 6.21e-02 sec 0.2% 100.0% 8.1% 0.0% 0.00e+00 4645 Mpi::ExchangeX3 [region]
+|       |-> 6.21e-02 sec 0.2% 100.0% 8.1% 0.0% 0.00e+00 4645 Hydro::SetBoundary [region]
+|           |-> 4.38e-02 sec 0.2% 100.0% 8.2% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |   |-> 4.38e-02 sec 0.2% 100.0% 8.2% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 6.16e-02 sec 0.2% 100.0% 4.5% ------ 4644 BoundaryEMFPeriodic [for]
+|   |-> 6.16e-02 sec 0.2% 100.0% 4.5% -0.0% 0.00e+00 4644 Emf::EnforceEMFBoundary [region]
+|       |-> 4.35e-02 sec 0.2% 100.0% 4.6% 0.0% 0.00e+00 3280 RKLegendre::EvolveStage [region]
+|       |   |-> 4.35e-02 sec 0.2% 100.0% 4.6% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|       |       |-> 4.35e-02 sec 0.2% 100.0% 4.6% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 6.06e-02 sec 0.2% 100.0% 1.4% ------ 682 "RKL_dB0"="RKL_dB" [copy]
+|   |-> 6.06e-02 sec 0.2% 100.0% 1.4% 0.0% 0.00e+00 682 RKLegendre::Cycle [region]
+|       |-> 6.06e-02 sec 0.2% 100.0% 1.4% 0.0% 0.00e+00 682 TimeIntegrator::Cycle [region]
+|-> 5.97e-02 sec 0.2% 100.0% 9.8% ------ 4645 StoreBufferX3Vc [for]
+|   |-> 5.97e-02 sec 0.2% 100.0% 9.8% 0.0% 0.00e+00 4645 Mpi::ExchangeX3 [region]
+|       |-> 5.97e-02 sec 0.2% 100.0% 9.8% 0.0% 0.00e+00 4645 Hydro::SetBoundary [region]
+|           |-> 4.21e-02 sec 0.2% 100.0% 9.8% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |   |-> 4.21e-02 sec 0.2% 100.0% 9.8% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 5.90e-02 sec 0.2% 100.0% 4.9% ------ 4645 LoadBufferX1BX2s [for]
+|   |-> 5.90e-02 sec 0.2% 100.0% 4.9% 0.0% 0.00e+00 4645 Mpi::ExchangeX1 [region]
+|       |-> 5.90e-02 sec 0.2% 100.0% 4.9% -0.0% 0.00e+00 4645 Hydro::SetBoundary [region]
+|           |-> 4.15e-02 sec 0.2% 100.0% 4.9% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |   |-> 4.15e-02 sec 0.2% 100.0% 4.9% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 5.88e-02 sec 0.2% 100.0% 0.7% ------ 4 "Hydro_Vc_mirror"="Hydro_Vc" [copy]
+|   |-> 5.88e-02 sec 0.2% 100.0% 0.7% 0.0% 0.00e+00 4 DataBlockHost::SyncFromDevice() [region]
+|       |-> 2.94e-02 sec 0.1% 100.0% 1.0% 0.0% 0.00e+00 2 Vtk::Write [region]
+|       |   |-> 2.94e-02 sec 0.1% 100.0% 1.0% 0.0% 0.00e+00 2 Output::CheckForWrites [region]
+|-> 5.88e-02 sec 0.2% 100.0% 0.7% ------ 4 "Hydro_Uc_mirror"="Hydro_Uc" [copy]
+|   |-> 5.88e-02 sec 0.2% 100.0% 0.7% 0.0% 0.00e+00 4 DataBlockHost::SyncFromDevice() [region]
+|       |-> 2.94e-02 sec 0.1% 100.0% 1.0% 0.0% 0.00e+00 2 Vtk::Write [region]
+|       |   |-> 2.94e-02 sec 0.1% 100.0% 1.0% 0.0% 0.00e+00 2 Output::CheckForWrites [region]
+|-> 5.88e-02 sec 0.2% 100.0% 6.5% ------ 4645 LoadBufferX1BX3s [for]
+|   |-> 5.88e-02 sec 0.2% 100.0% 6.5% 0.0% 0.00e+00 4645 Mpi::ExchangeX1 [region]
+|       |-> 5.88e-02 sec 0.2% 100.0% 6.5% -0.0% 0.00e+00 4645 Hydro::SetBoundary [region]
+|           |-> 4.14e-02 sec 0.2% 100.0% 6.8% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |   |-> 4.14e-02 sec 0.2% 100.0% 6.8% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 5.84e-02 sec 0.2% 100.0% 8.0% ------ 4644 LoadBufferX1Emfz [for]
+|   |-> 5.84e-02 sec 0.2% 100.0% 8.0% 0.0% 0.00e+00 4644 Emf::ExchangeX1 [region]
+|       |-> 5.84e-02 sec 0.2% 100.0% 8.0% 0.0% 0.00e+00 4644 Emf::EnforceEMFBoundary [region]
+|           |-> 4.13e-02 sec 0.2% 100.0% 7.9% 0.0% 0.00e+00 3280 RKLegendre::EvolveStage [region]
+|           |   |-> 4.13e-02 sec 0.2% 100.0% 7.9% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |       |-> 4.13e-02 sec 0.2% 100.0% 7.9% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 5.53e-02 sec 0.2% 100.0% 6.4% ------ 4644 LoadBufferX1Emfy [for]
+|   |-> 5.53e-02 sec 0.2% 100.0% 6.4% 0.0% 0.00e+00 4644 Emf::ExchangeX1 [region]
+|       |-> 5.53e-02 sec 0.2% 100.0% 6.4% 0.0% 0.00e+00 4644 Emf::EnforceEMFBoundary [region]
+|           |-> 3.92e-02 sec 0.1% 100.0% 6.3% 0.0% 0.00e+00 3280 RKLegendre::EvolveStage [region]
+|           |   |-> 3.92e-02 sec 0.1% 100.0% 6.3% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |       |-> 3.92e-02 sec 0.1% 100.0% 6.3% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 5.52e-02 sec 0.2% 0.0% 6.3% 0.0% 0.00e+00 4644 ElectroMotiveForce::EvolveMagField [region]
+|   |-> 3.87e-02 sec 0.1% 0.0% 6.4% 0.0% 0.00e+00 3280 RKLegendre::EvolveStage [region]
+|   |   |-> 3.87e-02 sec 0.1% 0.0% 6.4% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|   |       |-> 3.87e-02 sec 0.1% 0.0% 6.4% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 5.49e-02 sec 0.2% 100.0% 13.5% ------ 4644 StoreBufferX1Emfz [for]
+|   |-> 5.49e-02 sec 0.2% 100.0% 13.5% 0.0% 0.00e+00 4644 Emf::ExchangeX1 [region]
+|       |-> 5.49e-02 sec 0.2% 100.0% 13.5% 0.0% 0.00e+00 4644 Emf::EnforceEMFBoundary [region]
+|           |-> 3.81e-02 sec 0.1% 100.0% 13.2% 0.0% 0.00e+00 3280 RKLegendre::EvolveStage [region]
+|           |   |-> 3.81e-02 sec 0.1% 100.0% 13.2% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |       |-> 3.81e-02 sec 0.1% 100.0% 13.2% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 5.31e-02 sec 0.2% 100.0% 7.3% ------ 4645 LoadBufferX3BX1s [for]
+|   |-> 5.31e-02 sec 0.2% 100.0% 7.3% 0.0% 0.00e+00 4645 Mpi::ExchangeX3 [region]
+|       |-> 5.31e-02 sec 0.2% 100.0% 7.3% 0.0% 0.00e+00 4645 Hydro::SetBoundary [region]
+|           |-> 3.74e-02 sec 0.1% 100.0% 7.2% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |   |-> 3.74e-02 sec 0.1% 100.0% 7.2% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 5.25e-02 sec 0.2% 0.0% 10.4% 0.0% 0.00e+00 9289 Hydro::ReconstructVcField [region]
+|-> 5.19e-02 sec 0.2% 100.0% 8.8% ------ 4645 LoadBufferX3BX2s [for]
+|   |-> 5.19e-02 sec 0.2% 100.0% 8.8% 0.0% 0.00e+00 4645 Mpi::ExchangeX3 [region]
+|       |-> 5.19e-02 sec 0.2% 100.0% 8.8% 0.0% 0.00e+00 4645 Hydro::SetBoundary [region]
+|           |-> 3.66e-02 sec 0.1% 100.0% 8.8% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |   |-> 3.66e-02 sec 0.1% 100.0% 8.8% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 5.15e-02 sec 0.2% 100.0% 6.3% ------ 4645 StoreBufferX3BX1s [for]
+|   |-> 5.15e-02 sec 0.2% 100.0% 6.3% 0.0% 0.00e+00 4645 Mpi::ExchangeX3 [region]
+|       |-> 5.15e-02 sec 0.2% 100.0% 6.3% 0.0% 0.00e+00 4645 Hydro::SetBoundary [region]
+|           |-> 3.64e-02 sec 0.1% 100.0% 6.2% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |   |-> 3.64e-02 sec 0.1% 100.0% 6.2% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 5.12e-02 sec 0.2% 0.0% 8.2% 0.0% 0.00e+00 9840 RKLegendre::ResetFlux [region]
+|   |-> 5.12e-02 sec 0.2% 0.0% 8.2% 0.0% 0.00e+00 9840 RKLegendre::EvolveStage [region]
+|       |-> 5.12e-02 sec 0.2% 0.0% 8.2% 0.0% 0.00e+00 9840 RKLegendre::Cycle [region]
+|           |-> 5.12e-02 sec 0.2% 0.0% 8.2% 0.0% 0.00e+00 9840 TimeIntegrator::Cycle [region]
+|-> 5.10e-02 sec 0.2% 0.0% 5.5% 0.0% 0.00e+00 4644 Emf::EnforceEMFBoundary [region]
+|   |-> 3.59e-02 sec 0.1% 0.0% 5.6% 0.0% 0.00e+00 3280 RKLegendre::EvolveStage [region]
+|   |   |-> 3.59e-02 sec 0.1% 0.0% 5.6% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|   |       |-> 3.59e-02 sec 0.1% 0.0% 5.6% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 5.06e-02 sec 0.2% 100.0% 3.0% ------ 1364 RKL_Copy [for]
+|   |-> 5.06e-02 sec 0.2% 100.0% 3.0% 0.0% 0.00e+00 1364 RKLegendre::Cycle [region]
+|       |-> 5.06e-02 sec 0.2% 100.0% 3.0% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 5.06e-02 sec 0.2% 100.0% 9.9% ------ 4644 StoreBufferX1Emfy [for]
+|   |-> 5.06e-02 sec 0.2% 100.0% 9.9% 0.0% 0.00e+00 4644 Emf::ExchangeX1 [region]
+|       |-> 5.06e-02 sec 0.2% 100.0% 9.9% 0.0% 0.00e+00 4644 Emf::EnforceEMFBoundary [region]
+|           |-> 3.57e-02 sec 0.1% 100.0% 11.2% 0.0% 0.00e+00 3280 RKLegendre::EvolveStage [region]
+|           |   |-> 3.57e-02 sec 0.1% 100.0% 11.2% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |       |-> 3.57e-02 sec 0.1% 100.0% 11.2% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 5.05e-02 sec 0.2% 100.0% 6.3% ------ 4645 StoreBufferX3BX2s [for]
+|   |-> 5.05e-02 sec 0.2% 100.0% 6.3% 0.0% 0.00e+00 4645 Mpi::ExchangeX3 [region]
+|       |-> 5.05e-02 sec 0.2% 100.0% 6.3% -0.0% 0.00e+00 4645 Hydro::SetBoundary [region]
+|           |-> 3.56e-02 sec 0.1% 100.0% 6.3% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |   |-> 3.56e-02 sec 0.1% 100.0% 6.3% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 5.02e-02 sec 0.2% 100.0% 8.3% ------ 4644 LoadBufferX3Emfx [for]
+|   |-> 5.02e-02 sec 0.2% 100.0% 8.3% 0.0% 0.00e+00 4644 Emf::ExchangeX3 [region]
+|       |-> 5.02e-02 sec 0.2% 100.0% 8.3% 0.0% 0.00e+00 4644 Emf::EnforceEMFBoundary [region]
+|           |-> 3.55e-02 sec 0.1% 100.0% 7.5% 0.0% 0.00e+00 3280 RKLegendre::EvolveStage [region]
+|           |   |-> 3.55e-02 sec 0.1% 100.0% 7.5% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |       |-> 3.55e-02 sec 0.1% 100.0% 7.5% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 4.86e-02 sec 0.2% 100.0% 8.6% ------ 4644 StoreBufferX3Emfx [for]
+|   |-> 4.86e-02 sec 0.2% 100.0% 8.6% 0.0% 0.00e+00 4644 Emf::ExchangeX3 [region]
+|       |-> 4.86e-02 sec 0.2% 100.0% 8.6% -0.0% 0.00e+00 4644 Emf::EnforceEMFBoundary [region]
+|           |-> 3.43e-02 sec 0.1% 100.0% 8.1% 0.0% 0.00e+00 3280 RKLegendre::EvolveStage [region]
+|           |   |-> 3.43e-02 sec 0.1% 100.0% 8.1% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |       |-> 3.43e-02 sec 0.1% 100.0% 8.1% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 4.82e-02 sec 0.2% 100.0% 6.2% ------ 4644 LoadBufferX3Emfy [for]
+|   |-> 4.82e-02 sec 0.2% 100.0% 6.2% 0.0% 0.00e+00 4644 Emf::ExchangeX3 [region]
+|       |-> 4.82e-02 sec 0.2% 100.0% 6.2% 0.0% 0.00e+00 4644 Emf::EnforceEMFBoundary [region]
+|           |-> 3.39e-02 sec 0.1% 100.0% 6.6% 0.0% 0.00e+00 3280 RKLegendre::EvolveStage [region]
+|           |   |-> 3.39e-02 sec 0.1% 100.0% 6.6% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |       |-> 3.39e-02 sec 0.1% 100.0% 6.6% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 4.66e-02 sec 0.2% 100.0% 9.2% ------ 4644 StoreBufferX3Emfy [for]
+|   |-> 4.66e-02 sec 0.2% 100.0% 9.2% 0.0% 0.00e+00 4644 Emf::ExchangeX3 [region]
+|       |-> 4.66e-02 sec 0.2% 100.0% 9.2% 0.0% 0.00e+00 4644 Emf::EnforceEMFBoundary [region]
+|           |-> 3.29e-02 sec 0.1% 100.0% 9.2% 0.0% 0.00e+00 3280 RKLegendre::EvolveStage [region]
+|           |   |-> 3.29e-02 sec 0.1% 100.0% 9.2% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |       |-> 3.29e-02 sec 0.1% 100.0% 9.2% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 4.49e-02 sec 0.2% 0.0% 7.5% 0.0% 0.00e+00 1364 ElectroMotiveForce::CalcCornerEMF [region]
+|   |-> 4.49e-02 sec 0.2% 0.0% 7.5% 0.0% 0.00e+00 1364 DataBlock::EvolveStage [region]
+|       |-> 4.49e-02 sec 0.2% 0.0% 7.5% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 4.43e-02 sec 0.2% 100.0% 114.7% ------ 9290 BoundaryBegOutflowVs [for]
+|   |-> 4.43e-02 sec 0.2% 100.0% 114.7% 0.0% 0.00e+00 9290 Hydro::SetBoundary [region]
+|       |-> 3.13e-02 sec 0.1% 100.0% 114.6% 0.0% 0.00e+00 6560 RKLegendre::Cycle [region]
+|       |   |-> 3.13e-02 sec 0.1% 100.0% 114.6% 0.0% 0.00e+00 6560 TimeIntegrator::Cycle [region]
+|-> 4.21e-02 sec 0.2% 0.0% 118.5% 0.0% 0.00e+00 682 RKLegendre::ComputeDt [region]
+|   |-> 4.21e-02 sec 0.2% 0.0% 118.5% 0.0% 0.00e+00 682 RKLegendre::Cycle [region]
+|       |-> 4.21e-02 sec 0.2% 0.0% 118.5% 0.0% 0.00e+00 682 TimeIntegrator::Cycle [region]
+|-> 4.11e-02 sec 0.2% 0.0% 7.5% 0.0% 0.00e+00 1364 DataBlock::EvolveStage [region]
+|   |-> 4.11e-02 sec 0.2% 0.0% 7.5% 0.0% 0.00e+00 1364 TimeIntegrator::Cycle [region]
+|-> 3.83e-02 sec 0.1% 0.0% 9.7% 0.0% 0.00e+00 4092 Hydro::HLLD_MHD [region]
+|   |-> 3.83e-02 sec 0.1% 0.0% 9.7% 0.0% 0.00e+00 4092 Hydro::CalcRiemannFlux [region]
+|       |-> 3.83e-02 sec 0.1% 0.0% 9.7% 0.0% 0.00e+00 4092 DataBlock::EvolveStage [region]
+|           |-> 3.83e-02 sec 0.1% 0.0% 9.7% 0.0% 0.00e+00 4092 TimeIntegrator::Cycle [region]
+|-> 3.77e-02 sec 0.1% 100.0% 1.5% ------ 682 RKL_Cycle_InitUc1 [for]
+|   |-> 3.77e-02 sec 0.1% 100.0% 1.5% 0.0% 0.00e+00 682 RKLegendre::Cycle [region]
+|       |-> 3.77e-02 sec 0.1% 100.0% 1.5% 0.0% 0.00e+00 682 TimeIntegrator::Cycle [region]
+|-> 3.33e-02 sec 0.1% 0.0% 6.8% 0.0% 0.00e+00 3280 ElectroMotiveForce::CalcNonidealEMF [region]
+|   |-> 3.33e-02 sec 0.1% 0.0% 6.8% 0.0% 0.00e+00 3280 RKLegendre::EvolveStage [region]
+|       |-> 3.33e-02 sec 0.1% 0.0% 6.8% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |-> 3.33e-02 sec 0.1% 0.0% 6.8% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 3.28e-02 sec 0.1% 0.0% 7.3% 0.0% 0.00e+00 3280 Hydro::CalcCurrent [region]
+|   |-> 3.28e-02 sec 0.1% 0.0% 7.3% 0.0% 0.00e+00 3280 RKLegendre::EvolveStage [region]
+|       |-> 3.28e-02 sec 0.1% 0.0% 7.3% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |-> 3.28e-02 sec 0.1% 0.0% 7.3% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 3.05e-02 sec 0.1% 0.0% 10.1% 0.0% 0.00e+00 4092 Hydro::ExtrapolatePrimVar [region]
+|   |-> 3.05e-02 sec 0.1% 0.0% 10.1% 0.0% 0.00e+00 4092 DataBlock::EvolveStage [region]
+|       |-> 3.05e-02 sec 0.1% 0.0% 10.1% 0.0% 0.00e+00 4092 TimeIntegrator::Cycle [region]
+|-> 3.04e-02 sec 0.1% 100.0% 2.6% ------ 15 "DataBlock_A_mirror"="DataBlock_A" [copy]
+|   |-> 3.04e-02 sec 0.1% 100.0% 2.6% 0.0% 0.00e+00 15 DataBlockHost::DataBlockHost(DataBlock) [region]
+|-> 2.98e-02 sec 0.1% 100.0% 112.0% ------ 4645 BoundaryBegOutflow [for]
+|   |-> 2.98e-02 sec 0.1% 100.0% 112.0% 0.0% 0.00e+00 4645 Hydro::SetBoundary [region]
+|-> 2.88e-02 sec 0.1% 0.0% 7.8% 0.0% 0.00e+00 3280 RKLegendre::ResetStage [region]
+|   |-> 2.88e-02 sec 0.1% 0.0% 7.8% 0.0% 0.00e+00 3280 RKLegendre::EvolveStage [region]
+|       |-> 2.88e-02 sec 0.1% 0.0% 7.8% 0.0% 0.00e+00 3280 RKLegendre::Cycle [region]
+|           |-> 2.88e-02 sec 0.1% 0.0% 7.8% 0.0% 0.00e+00 3280 TimeIntegrator::Cycle [region]
+|-> 2.85e-02 sec 0.1% 0.0% 6.3% 0.0% 0.00e+00 4644 Hydro::ConvertConsToPrim [region]
+
+KOKKOS HOST SPACE:
+=================== 
+MAX MEMORY ALLOCATED: 0.0 kB
+MPI RANK WITH MAX MEMORY: 0
+ALLOCATIONS AT TIME OF HIGH WATER MARK:
+
+KOKKOS CUDA SPACE:
+=================== 
+MAX MEMORY ALLOCATED: 0.0 kB
+MPI RANK WITH MAX MEMORY: 0
+ALLOCATIONS AT TIME OF HIGH WATER MARK:
+
+Host process high water mark memory consumption: 642128 kB
+  Max: 642128, Min: 590792, Ave: 597712 kB
+
+END KOKKOS PROFILING REPORT.
+Checking results consistency
+nx=641, ny=33, nz=385
+nx=641, ny=33, nz=385
+Error on RHO=0.000000e+00
+Error on VX1=1.050106e-16
+Error on VX2=0.000000e+00
+Error on VX3=9.765018e-15
+Error on BX1=5.787246e-18
+Error on BX2=1.029553e-17
+Error on BX3=0.000000e+00
+Error on PRS=0.000000e+00
+SUCCESS!

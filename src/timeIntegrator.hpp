@@ -27,7 +27,7 @@ class TimeIntegrator {
   // check whether we have reached the maximum runtime
   bool CheckForMaxRuntime();
 
-  void ShowLog();    //<  Display progress log
+  void ShowLog(DataBlock &);    //<  Display progress log
 
 
  private:

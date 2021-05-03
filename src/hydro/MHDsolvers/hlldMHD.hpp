@@ -22,9 +22,8 @@ void Hydro::HlldMHD() {
   ioffset=joffset=koffset=0;
   // extension in perp to the direction of integration, as required by CT.
   iextend=jextend=kextend=0;
-
-  IdefixArray4D<real> PrimL = this->PrimL;
-  IdefixArray4D<real> PrimR = this->PrimR;
+  IdefixArray4D<real> Vc = this->Vc;
+  IdefixArray4D<real> Vs = this->Vs;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
@@ -138,8 +137,25 @@ void Hydro::HlldMHD() {
       // 1-- Store the primitive variables on the left, right, and averaged states
 #pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
-        vL[nv] = PrimL(nv,k,j,i);
-        vR[nv] = PrimR(nv,k,j,i);
+        if(nv==BXn) {
+          vR[nv] = vL[nv] = Vs(DIR,k,j,i);
+        } else {
+          real dvm = Vc(nv,k-koffset,j-joffset,i-ioffset)
+                    -Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset);
+          real dvp = Vc(nv,k,j,i)-Vc(nv,k-koffset,j-joffset,i-ioffset);
+          // Van Leer limiter
+          real dv = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
+
+          vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + HALF_F*dv;
+
+          dvm = dvp;
+          dvp = Vc(nv,k+koffset,j+joffset,i+ioffset) - Vc(nv,k,j,i);
+
+          // Van Leer limiter
+          dv = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
+
+          vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
+        }
       }
 
       // 2-- Get the wave speed

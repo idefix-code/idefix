@@ -1,5 +1,6 @@
 #!/bin/bash
-#SBATCH --job-name=idefix_Gaylor     # nom du job
+#SBATCH -A tzn@gpu
+#SBATCH --job-name=idefixMPI     # nom du job
 #SBATCH --nodes=1                   # nombre de noeuds
 #SBATCH --ntasks-per-node=4         # nombre de tache MPI par noeud  (=nb de GPU)
 #SBATCH --gres=gpu:4                # nombre de GPU par noeud

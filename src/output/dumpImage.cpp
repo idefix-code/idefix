@@ -84,7 +84,7 @@ DumpImage::DumpImage(std::string filename, Output &output) {
       }
       double *scrch = new double[size];
       dump.ReadSerial(fileHdl,ndim, nx, type, scrch);
-      delete scrch;
+      delete[] scrch;
     }
   }
   // Close file

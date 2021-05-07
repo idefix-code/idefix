@@ -7,9 +7,7 @@ KOKKOS_PATH = ${IDEFIX_DIR}/src/kokkos
 KOKKOS_DEVICES = @kokkosDevices@
 KOKKOS_ARCH = @kokkosArch@
 
-# include local rules which are not hosted on git
-# Can Makefile.local can redefine the make rules
--include Makefile.local
+
 
 EXE = "idefix"
 
@@ -20,6 +18,10 @@ OBJ += addSourceTerms.o addNonIdealMHDFlux.o boundary.o calcCornerEmf.o calcRiem
 OBJ += electroMotiveForce.o EMFexchange.o enforceEMFBoundary.o makeGeometry.o dumpToFile.o checkNan.o evolveStage.o viscosity.o axis.o fargo.o rkl.o
 OBJ += vtk.o dump.o output.o dumpImage.o
 OBJ += @extraObj@
+
+# include local rules which are not hosted on git
+# Can Makefile.local can redefine the make rules
+-include Makefile.local
 
 #VPATH="src/"
 

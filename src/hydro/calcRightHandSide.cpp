@@ -47,6 +47,10 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
   // Fargo
   bool haveFargo  = this->haveFargo;
 
+  //Rotation
+  bool haveRotation = this->haveRotation;
+  real Omega = this->OmegaZ;
+
   if(needPotential) {
     IdefixArray1D<real> x1,x2,x3;
 
@@ -92,26 +96,60 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
     KOKKOS_LAMBDA (int k, int j, int i) {
       // TODO(lesurg): Should add gravitational potential here and Fargo source terms when needed
       // Add Fargo velocity to the fluxes
-      if(haveFargo) {
-        real fargoV = ZERO_F;
+      if(haveFargo || haveRotation) {
+        // Set mean advection direction
         #if (GEOMETRY == CARTESIAN || GEOMETRY == POLAR) && DIMENSIONS >=2
-          if( dir == IDIR) fargoV = HALF_F*(fargoVelocity(k,i-1)+fargoVelocity(k,i));
-          if( dir == KDIR) fargoV = HALF_F*(fargoVelocity(k-1,i)+fargoVelocity(k,i));
-          const int fargoDir = JDIR;
+          const int meanDir = JDIR
         #elif GEOMETRY == SPHERICAL && DIMENSIONS == 3
-          if( dir == IDIR) fargoV = HALF_F*(fargoVelocity(j,i-1)+fargoVelocity(j,i));
-          if( dir == JDIR) fargoV = HALF_F*(fargoVelocity(j-1,i)+fargoVelocity(j,i));
-          const int fargoDir = KDIR;
+          const int meanDir = KDIR;
         #else
-          const int fargoDir = 0;
+          const int meanDir = 0;
         #endif
-        // Should do nothing along fargo direction, automatically satisfied
-        // since in that case fargoV=0
+
+        // set mean advection velocity
+        real meanV = ZERO_F;
+        if(dir == IDIR) {
+          #if (GEOMETRY == CARTESIAN || GEOMETRY == POLAR) && DIMENSIONS >=2
+          if(haveFargo) {
+            meanV = HALF_F*(fargoVelocity(k,i-1)+fargoVelocity(k,i));
+          }
+          #if GEOMETRY != CARTESIAN
+          if(haveRotation) {
+            meanV += x1m(i)*Omega;
+          }
+          #endif
+          #elif GEOMETRY == SPHERICAL && DIMENSIONS == 3
+          if(haveFargo) {
+            meanV = HALF_F*(fargoVelocity(j,i-1)+fargoVelocity(j,i));
+          }
+          if(haveRotation) {
+            meanV += x1m(i)*sinx2(j)*Omega;
+          }
+          #endif// GEOMETRY
+
+        }
+        #if GEOMETRY == SPHERICAL && DIMENSIONS == 3
+          if((dir == JDIR)) {
+            if(haveFargo) {
+              meanV = HALF_F*(fargoVelocity(j-1,i)+fargoVelocity(j,i));
+            }
+            if(haveRotation) {
+              meanV += x1(i)*sinx2m(j)*Omega;
+            }
+          }
+        #elif (GEOMETRY == CARTESIAN || GEOMETRY == POLAR) && DIMENSIONS >=2
+          if((dir == KDIR) && haveFargo) {
+            meanV = HALF_F*(fargoVelocity(k-1,i)+fargoVelocity(k,i));
+          }
+        #endif // GEOMETRY
+
+        // Should do nothing along meanV direction, automatically satisfied
+        // since in that case meanV=0
 
         #if HAVE_ENERGY
-          Flux(ENG,k,j,i) += fargoV * (HALF_F*fargoV*Flux(RHO,k,j,i) + Flux(MX1+fargoDir,k,j,i));
+          Flux(ENG,k,j,i) += meanV * (HALF_F*meanV*Flux(RHO,k,j,i) + Flux(MX1+meanDir,k,j,i));
         #endif
-        Flux(MX1+fargoDir,k,j,i) += fargoV * Flux(RHO,k,j,i);
+        Flux(MX1+meanDir,k,j,i) += meanV * Flux(RHO,k,j,i);
       } // have Fargo
 
 #if HAVE_ENERGY
@@ -241,22 +279,30 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
 
       // Fargo terms to enfore conservation (actually substract back what was added in
       // Totalflux loop)
-      if(haveFargo) {
+      if(haveFargo || haveRotation) {
         // fetch fargo velocity when required
-        real fargoV = ZERO_F;
+        real meanV = ZERO_F;
         #if (GEOMETRY == POLAR || GEOMETRY == CARTESIAN) && DIMENSIONS >=2
-          if(dir==IDIR || dir == KDIR) fargoV = fargoVelocity(k,i);
-          const int fargoDir = JDIR;
+          if(dir==IDIR || dir == KDIR) meanV = fargoVelocity(k,i);
+          #if GEOMETRY != CARTESIAN
+            if((dir==IDIR) && haveRotation) {
+              meanV += Omega*x1(i);
+            }
+          #endif
+          const int meanDir = JDIR;
         #elif GEOMETRY == SPHERICAL && DIMENSIONS ==3
-          if(dir==IDIR || dir == JDIR) fargoV = fargoVelocity(j,i);
-          const int fargoDir = KDIR;
+          if(dir==IDIR || dir == JDIR) meanV = fargoVelocity(j,i);
+          if(haveRotation) {
+            meanV += Omega*x1(i)*sinx2(j);
+          }
+          const int meanDir = KDIR;
         #else
-          const int fargoDir = 0;
+          const int meanDir = 0;
         #endif
-        // NB: MX1+fargoDir = iMPHI
-        rhs[MX1+fargoDir] -= fargoV*rhs[RHO];
+        // NB: MX1+meanDir = iMPHI
+        rhs[MX1+meanDir] -= meanV*rhs[RHO];
         #if HAVE_ENERGY
-          rhs[ENG] -= fargoV * ( HALF_F*fargoV*rhs[RHO] + rhs[MX1+fargoDir]);
+          rhs[ENG] -= meanV * ( HALF_F*meanV*rhs[RHO] + rhs[MX1+meanDir]);
         #endif
       }
 

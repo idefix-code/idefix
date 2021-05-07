@@ -45,10 +45,14 @@ void Hydro::AddSourceTerms(real t, real dt) {
              data->beg[JDIR],data->end[JDIR],
              data->beg[IDIR],data->end[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
-      if(haveRotation) {
-        Uc(MX1,k,j,i) +=   TWO_F * dt * Vc(RHO,k,j,i) * OmegaZ * Vc(VX2,k,j,i);
-        Uc(MX2,k,j,i) += - TWO_F * dt * Vc(RHO,k,j,i) * OmegaZ * Vc(VX1,k,j,i);
-      }
+      #if GEOMETRY == CARTESIAN
+        // Manually add Coriolis force in cartesian geometry. Otherwise
+        // Coriolis is treated as a modification to the fluxes
+        if(haveRotation) {
+          Uc(MX1,k,j,i) +=   TWO_F * dt * Vc(RHO,k,j,i) * OmegaZ * Vc(VX2,k,j,i);
+          Uc(MX2,k,j,i) += - TWO_F * dt * Vc(RHO,k,j,i) * OmegaZ * Vc(VX1,k,j,i);
+        }
+      #endif
       // fetch fargo velocity when required
       real fargoV = ZERO_F;
       if(haveFargo) {

@@ -77,6 +77,16 @@ class Hydro {
   bool haveFargo{false};
   Fargo fargo;
 
+  // Rotation vector
+  bool haveRotation{false};
+  real OmegaZ;
+
+  bool haveShearingBox{false};
+  // Shear rate for shearing box problems
+  real sbS;
+  // Box width for shearing box problems
+  real sbLx;
+
   // Enroll user-defined boundary conditions
   void EnrollUserDefBoundary(UserDefBoundaryFunc);
   void EnrollInternalBoundary(InternalBoundaryFunc);
@@ -164,15 +174,7 @@ class Hydro {
 
   DataBlock *data;
 
-  // Rotation vector
-  bool haveRotation{false};
-  real OmegaZ;
 
-  bool haveShearingBox{false};
-  // Shear rate for shearing box problems
-  real sbS;
-  // Box width for shearing box problems
-  real sbLx;
 
 
   // User defined Boundary conditions

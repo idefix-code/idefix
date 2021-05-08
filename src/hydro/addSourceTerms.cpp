@@ -26,7 +26,6 @@ void Hydro::AddSourceTerms(real t, real dt) {
   IdefixArray1D<real> rt = data->rt;
 #endif
 
-  real OmegaZ = this->OmegaZ;
 
 #ifdef ISOTHERMAL
   real csIso = this->isoSoundSpeed;
@@ -34,6 +33,7 @@ void Hydro::AddSourceTerms(real t, real dt) {
 #endif
 
   bool haveRotation = this->haveRotation;
+  real OmegaZ = this->OmegaZ;
 
   // Fargo
   bool haveFargo  = this->haveFargo;

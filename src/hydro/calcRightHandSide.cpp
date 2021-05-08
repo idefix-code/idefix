@@ -110,23 +110,22 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
         real meanV = ZERO_F;
         if(dir == IDIR) {
           #if (GEOMETRY == CARTESIAN || GEOMETRY == POLAR) && DIMENSIONS >=2
-          if(haveFargo) {
-            meanV = HALF_F*(fargoVelocity(k,i-1)+fargoVelocity(k,i));
-          }
-          #if GEOMETRY != CARTESIAN
-          if(haveRotation) {
-            meanV += x1m(i)*Omega;
-          }
-          #endif
+            if(haveFargo) {
+              meanV = HALF_F*(fargoVelocity(k,i-1)+fargoVelocity(k,i));
+            }
+            #if GEOMETRY != CARTESIAN
+            if(haveRotation) {
+              meanV += x1m(i)*Omega;
+            }
+            #endif
           #elif GEOMETRY == SPHERICAL && DIMENSIONS == 3
-          if(haveFargo) {
-            meanV = HALF_F*(fargoVelocity(j,i-1)+fargoVelocity(j,i));
-          }
-          if(haveRotation) {
-            meanV += x1m(i)*sinx2(j)*Omega;
-          }
+            if(haveFargo) {
+              meanV = HALF_F*(fargoVelocity(j,i-1)+fargoVelocity(j,i));
+            }
+            if(haveRotation) {
+              meanV += x1m(i)*sinx2(j)*Omega;
+            }
           #endif// GEOMETRY
-
         }
         #if GEOMETRY == SPHERICAL && DIMENSIONS == 3
           if((dir == JDIR)) {
@@ -283,7 +282,7 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
         // fetch fargo velocity when required
         real meanV = ZERO_F;
         #if (GEOMETRY == POLAR || GEOMETRY == CARTESIAN) && DIMENSIONS >=2
-          if(dir==IDIR || dir == KDIR) meanV = fargoVelocity(k,i);
+          if((dir==IDIR || dir == KDIR) && haveFargo) meanV = fargoVelocity(k,i);
           #if GEOMETRY != CARTESIAN
             if((dir==IDIR) && haveRotation) {
               meanV += Omega*x1(i);
@@ -291,8 +290,8 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
           #endif
           const int meanDir = JDIR;
         #elif GEOMETRY == SPHERICAL && DIMENSIONS ==3
-          if(dir==IDIR || dir == JDIR) meanV = fargoVelocity(j,i);
-          if(haveRotation) {
+          if((dir==IDIR || dir == JDIR) && haveFargo) meanV = fargoVelocity(j,i);
+          if((dir==IDIR || dir == JDIR) && haveRotation) {
             meanV += Omega*x1(i)*sinx2(j);
           }
           const int meanDir = KDIR;

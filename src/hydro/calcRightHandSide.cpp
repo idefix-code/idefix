@@ -99,7 +99,7 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
       if(haveFargo || haveRotation) {
         // Set mean advection direction
         #if (GEOMETRY == CARTESIAN || GEOMETRY == POLAR) && DIMENSIONS >=2
-          const int meanDir = JDIR
+          const int meanDir = JDIR;
         #elif GEOMETRY == SPHERICAL && DIMENSIONS == 3
           const int meanDir = KDIR;
         #else

@@ -169,10 +169,13 @@ void DataBlockHost::MakeVsFromAmag(IdefixHostArray4D<real> &Ain) {
                                    - 1/(x1m(i)*sin(x2(j))*dx3(k)) * (Ain(JDIR,k+1,j,i)
                                    - Ain(JDIR,k,j,i) )                                   );
 
+        real Ax2m = fabs(sin(x2m(j)));
+        // Regularisation along the axis
+        if(FABS(Ax2m)<1e-12) Ax2m = ONE_F;
         Vs(BX2s,k,j,i) = D_EXPAND( - 1/(x1(i)*dx1(i)) * (x1m(i+1)*Ain(KDIR,k,j,i+1)
                                    - x1m(i)*Ain(KDIR,k,j,i) )                           ,
                                                                                         ,
-                                   + 1/(x1m(i)*sin(x2(j))*dx3(k)) * (Ain(IDIR,k+1,j,i)
+                                   + 1/(x1m(i)*Ax2m*dx3(k)) * (Ain(IDIR,k+1,j,i)
                                    - Ain(IDIR,k,j,i) )                                  );
 
     #if DIMENSIONS == 3

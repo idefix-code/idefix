@@ -5,6 +5,10 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+// These shortcuts are largely inspired from K-Athena
+// https://gitlab.com/pgrete/kathena
+// by P. Grete.
+
 #ifndef LOOP_HPP_
 #define LOOP_HPP_
 

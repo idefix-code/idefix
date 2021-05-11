@@ -90,7 +90,7 @@ if(not args.noplot):
 
 
 print("Error=%e"%error)
-if error<4e-2:
+if error<1.1e-2:
     print("SUCCESS!")
     sys.exit(0)
 else:

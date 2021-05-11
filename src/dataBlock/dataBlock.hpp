@@ -14,6 +14,8 @@
 #include "grid.hpp"
 #include "gridHost.hpp"
 #include "hydro.hpp"
+
+
 #ifdef WITH_MPI
 #include "mpi.hpp"
 #endif
@@ -76,6 +78,8 @@ class DataBlock {
   void MakeGeometry();                ///< Compute geometrical terms
   void DumpToFile(std::string);   ///< Dump current datablock to a file for inspection
   int CheckNan();                 ///< Return the number of cells which have Nans
+
+  bool rklCycle{false};           ///<  // Set to true when we're inside a RKL call
 
   void EvolveStage();             ///< Evolve this DataBlock by dt
 

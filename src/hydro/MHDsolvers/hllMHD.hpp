@@ -29,7 +29,7 @@ void Hydro::HllMHD() {
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 
-  HydroModuleStatus haveHall = this->haveHall;
+  HydroModuleStatus haveHall = this->hallStatus.status;
   IdefixArray4D<real> J = this->J;
   IdefixArray3D<real> xHallArr = this->xHall;
   IdefixArray1D<real> dx = data->dx[DIR];

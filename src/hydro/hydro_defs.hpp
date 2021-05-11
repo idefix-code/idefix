@@ -25,9 +25,16 @@ enum Solver {TVDLF=1, HLL, HLLD, ROE};
 enum Solver {TVDLF=1, HLL, HLLC, ROE};
 #endif
 
-
 // Parabolic terms can have different status
 enum HydroModuleStatus {Disabled, Constant, UserDefFunction };
+
+// Structure to describe the status of parabolic modules
+struct ParabolicModuleStatus {
+  HydroModuleStatus status{Disabled};
+  bool isExplicit{false};
+  bool isRKL{false};
+};
+
 
 using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side,
                                       const real t);

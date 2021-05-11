@@ -26,9 +26,6 @@ void Hydro::AddSourceTerms(real t, real dt) {
   IdefixArray1D<real> rt = data->rt;
 #endif
 
-  real OmegaX1 = this->OmegaX1;
-  real OmegaX2 = this->OmegaX2;
-  real OmegaX3 = this->OmegaX3;
 
 #ifdef ISOTHERMAL
   real csIso = this->isoSoundSpeed;
@@ -36,6 +33,7 @@ void Hydro::AddSourceTerms(real t, real dt) {
 #endif
 
   bool haveRotation = this->haveRotation;
+  real OmegaZ = this->OmegaZ;
 
   // Fargo
   bool haveFargo  = this->haveFargo;
@@ -47,20 +45,14 @@ void Hydro::AddSourceTerms(real t, real dt) {
              data->beg[JDIR],data->end[JDIR],
              data->beg[IDIR],data->end[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
-      if(haveRotation) {
-  #if COMPONENTS == 3
-        Uc(MX1,k,j,i) += TWO_F * dt * Vc(RHO,k,j,i) * (OmegaX3 * Vc(VX2,k,j,i)
-                        - OmegaX2 * Vc(VX3,k,j,i));
-        Uc(MX2,k,j,i) += TWO_F * dt * Vc(RHO,k,j,i) * (OmegaX1 * Vc(VX3,k,j,i)
-                        - OmegaX3 * Vc(VX1,k,j,i));
-        Uc(MX3,k,j,i) += TWO_F * dt * Vc(RHO,k,j,i) * (OmegaX2 * Vc(VX1,k,j,i)
-                        - OmegaX1 * Vc(VX2,k,j,i));
-  #endif
-  #if COMPONENTS == 2
-        Uc(MX1,k,j,i) += TWO_F * dt * Vc(RHO,k,j,i) * (   OmegaX3 * Vc(VX2,k,j,i) );
-        Uc(MX2,k,j,i) += TWO_F * dt * Vc(RHO,k,j,i) * ( - OmegaX3 * Vc(VX1,k,j,i) );
-  #endif
-      }
+      #if GEOMETRY == CARTESIAN
+        // Manually add Coriolis force in cartesian geometry. Otherwise
+        // Coriolis is treated as a modification to the fluxes
+        if(haveRotation) {
+          Uc(MX1,k,j,i) +=   TWO_F * dt * Vc(RHO,k,j,i) * OmegaZ * Vc(VX2,k,j,i);
+          Uc(MX2,k,j,i) += - TWO_F * dt * Vc(RHO,k,j,i) * OmegaZ * Vc(VX1,k,j,i);
+        }
+      #endif
       // fetch fargo velocity when required
       real fargoV = ZERO_F;
       if(haveFargo) {
@@ -74,7 +66,7 @@ void Hydro::AddSourceTerms(real t, real dt) {
   #if COMPONENTS == 3
       real vphi,Sm;
       vphi = Vc(iVPHI,k,j,i);
-      if(haveRotation) vphi += OmegaX3*x1(i);
+      if(haveRotation) vphi += OmegaZ*x1(i);
       Sm = Vc(RHO,k,j,i) * vphi*vphi; // Centrifugal
       // Presure (because pressure is included in the flux, additional source terms arise)
     #ifdef ISOTHERMAL
@@ -102,7 +94,7 @@ void Hydro::AddSourceTerms(real t, real dt) {
 #elif GEOMETRY == POLAR
       real vphi,Sm;
       vphi = Vc(iVPHI,k,j,i) + fargoV;
-      if(haveRotation) vphi += OmegaX3*x1(i);
+      if(haveRotation) vphi += OmegaZ*x1(i);
       Sm = Vc(RHO,k,j,i) * vphi*vphi;     // Centrifugal
       // Pressure (because we're including pressure in the flux,
       // we need that to get the radial pressure gradient)
@@ -130,7 +122,7 @@ void Hydro::AddSourceTerms(real t, real dt) {
 #elif GEOMETRY == SPHERICAL
       real vphi,Sm,ct;
       vphi = SELECT(ZERO_F, ZERO_F, Vc(iVPHI,k,j,i))+fargoV;
-      if(haveRotation) vphi += OmegaX3*x1(i)*FABS(sinx2(j));
+      if(haveRotation) vphi += OmegaZ*x1(i)*FABS(sinx2(j));
       // Centrifugal
       Sm = Vc(RHO,k,j,i) * (EXPAND( ZERO_F, + Vc(VX2,k,j,i)*Vc(VX2,k,j,i), + vphi*vphi));
       // Pressure curvature

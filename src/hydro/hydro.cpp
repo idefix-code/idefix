@@ -28,8 +28,6 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
 #endif
   }
 
-  this->haveIsoSoundSpeed = Disabled;
-
   if(input.CheckEntry("Hydro","csiso")>0) {
     #if HAVE_ENERGY
       IDEFIX_ERROR("csiso is useless without the isothermal EOS enabled in definition.h");
@@ -55,7 +53,7 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   }
 
   // read Solver from input file
-  std::string solverString = input.GetString("Hydro","Solver",0);
+  std::string solverString = input.GetString("Hydro","solver",0);
 
   if (solverString.compare("tvdlf") == 0) {
     mySolver = TVDLF;
@@ -80,10 +78,6 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
     IDEFIX_ERROR(msg);
   }
 
-  // No userdefBoundary by default
-  this->haveUserDefBoundary = false;
-  this->haveInternalBoundary = false;
-  this->haveEmfBoundary = false;
 
   // Source terms (always activated when non-cartesian geometry because of curvature source terms)
 #if GEOMETRY == CARTESIAN
@@ -91,27 +85,22 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
 #else
   this->haveSourceTerms = true;
 #endif
-  this->haveUserSourceTerm = false;
 
   // Check whether we have rotation
-  int rotation = input.CheckEntry("Hydro","Rotation");
+  int rotation = input.CheckEntry("Hydro","rotation");
 
   if(rotation>=0 ) {
     this->haveSourceTerms = true;
     this->haveRotation = true;
-    if(rotation != 3) IDEFIX_ERROR("Rotation needs a 3 components vector in idefix.ini");
-    this->OmegaX1 = input.GetReal("Hydro","Rotation",0);
-    this->OmegaX2 = input.GetReal("Hydro","Rotation",1);
-    this->OmegaX3 = input.GetReal("Hydro","Rotation",2);
+    if(rotation >1 ) IDEFIX_ERROR("Rotation needs a a single rotation velocity (Omega_Z) \
+                                   in idefix.ini");
+    this->OmegaZ = input.GetReal("Hydro","rotation",0);
 
-    idfx::cout << "Hydro: Rotation enabled with Omega=(" << this->OmegaX1 << ", "
-               << this->OmegaX2 << ", " << this->OmegaX3 << ")" << std::endl;
-  } else {
-    this->haveRotation = false;
+    idfx::cout << "Hydro: Rotation enabled with Omega=" << this->OmegaZ << std::endl;
   }
 
   // Check whether we have shearing box
-  int shearingbox = input.CheckEntry("Hydro","ShearingBox");
+  int shearingbox = input.CheckEntry("Hydro","shearingBox");
 
   if(shearingbox>=0 ) {
     this->haveShearingBox = true;
@@ -120,23 +109,17 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
       IDEFIX_ERROR("Shearing box needs a scalar value for the shear rate in idefix.ini");
     }
 
-    this->sbS = input.GetReal("Hydro","ShearingBox",0);
+    this->sbS = input.GetReal("Hydro","shearingBox",0);
     // Get box size
     this->sbLx = grid.xend[IDIR] - grid.xbeg[IDIR];
 
     idfx::cout << "Hydro: ShearingBox enabled with Shear rate= " << this->sbS
-               << "and Lx= " << sbLx << std::endl;
-  } else {
-    this->haveShearingBox = false;
+               << " and Lx= " << sbLx << std::endl;
   }
 
   // Gravitational potential
-  this->haveGravPotential = false;
-  this->gravPotentialFunc = nullptr;
-  int gravPotential = input.CheckEntry("Hydro","GravPotential");
-
-  if(gravPotential>=0) {
-    std::string potentialString = input.GetString("Hydro","GravPotential",0);
+  if(input.CheckEntry("Hydro","gravPotential")>=0) {
+    std::string potentialString = input.GetString("Hydro","gravPotential",0);
     if(potentialString.compare("userdef") == 0) {
       this->haveGravPotential = true;
       idfx::cout << "Hydro:: Enabling user-defined gravitational potential" << std::endl;
@@ -147,93 +130,126 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   }
 
   // Do we use fargo?
-  if(input.CheckEntry("Hydro","Fargo")>=0) {
+  if(input.CheckEntry("Hydro","fargo")>=0) {
     this->haveFargo = true;
     this->fargo.Init(input,grid, this);
   }
 
-  // Parabolic term
-  haveParabolicTerms = false;
-
-  // Nonideal MHD
-  haveResistivity = Disabled;
-  haveHall = Disabled;
-  haveAmbipolar = Disabled;
-
-  ohmicDiffusivityFunc = NULL;
-  ambipolarDiffusivityFunc = NULL;
-  hallDiffusivityFunc = NULL;
-
-  this->needCurrent = false;
+  ///////////////////////
+  // Parabolic terms
+  ///////////////////////
 
 
   // Check whether viscosity is enabled, if so, construct a viscosity object
-  if(input.CheckEntry("Hydro","Viscosity")>=0) {
-    this->haveParabolicTerms = true;
-    this->haveViscosity = true;
+  if(input.CheckEntry("Hydro","viscosity")>=0) {
+    std::string opType = input.GetString("Hydro","viscosity",0);
+    if(opType.compare("explicit") == 0 ) {
+      haveExplicitParabolicTerms = true;
+      viscosityStatus.isExplicit = true;
+    } else if(opType.compare("rkl") == 0 ) {
+      haveRKLParabolicTerms = true;
+      viscosityStatus.isRKL = true;
+    } else {
+      std::stringstream msg;
+      msg  << "Unknown integration type for viscosity: " << opType;
+      IDEFIX_ERROR(msg);
+    }
     this->viscosity.Init(input, grid, this);
   }
 
 #if MHD == YES
-  if(input.CheckEntry("Hydro","Resistivity")>=0 ||
-     input.CheckEntry("Hydro","Ambipolar")>=0 ||
-     input.CheckEntry("Hydro","Hall")>=0 ) {
+  if(input.CheckEntry("Hydro","resistivity")>=0 ||
+     input.CheckEntry("Hydro","ambipolar")>=0 ||
+     input.CheckEntry("Hydro","hall")>=0 ) {
     //
-    this->needCurrent = true;
+    this->haveCurrent = true;
 
-    if(input.CheckEntry("Hydro","Resistivity")>=0) {
-      if(input.GetString("Hydro","Resistivity",0).compare("constant") == 0) {
+    if(input.CheckEntry("Hydro","resistivity")>=0) {
+      std::string opType = input.GetString("Hydro","resistivity",0);
+      if(opType.compare("explicit") == 0 ) {
+        haveExplicitParabolicTerms = true;
+        resistivityStatus.isExplicit = true;
+        needExplicitCurrent = true;
+      } else if(opType.compare("rkl") == 0 ) {
+        haveRKLParabolicTerms = true;
+        resistivityStatus.isRKL = true;
+        needRKLCurrent = true;
+      } else {
+        std::stringstream msg;
+        msg  << "Unknown integration type for resistivity: " << opType;
+        IDEFIX_ERROR(msg);
+      }
+      if(input.GetString("Hydro","resistivity",1).compare("constant") == 0) {
         idfx::cout << "Hydro: Enabling Ohmic resistivity with constant diffusivity." << std::endl;
-        this->etaO = input.GetReal("Hydro","Resistivity",1);
-        this->haveParabolicTerms = true;
-        this->haveResistivity = Constant;
-      } else if(input.GetString("Hydro","Resistivity",0).compare("userdef") == 0) {
+        this->etaO = input.GetReal("Hydro","resistivity",2);
+        resistivityStatus.status = Constant;
+      } else if(input.GetString("Hydro","resistivity",1).compare("userdef") == 0) {
         idfx::cout << "Hydro: Enabling Ohmic resistivity with user-defined diffusivity function."
                    << std::endl;
-        this->haveParabolicTerms = true;
-        this->haveResistivity = UserDefFunction;
+        resistivityStatus.status = UserDefFunction;
       } else {
         IDEFIX_ERROR("Unknown resistivity definition in idefix.ini. "
                      "Can only be constant or userdef.");
       }
     }
 
-    if(input.CheckEntry("Hydro","Ambipolar")>=0) {
-      if(input.GetString("Hydro","Ambipolar",0).compare("constant") == 0) {
+    if(input.CheckEntry("Hydro","ambipolar")>=0) {
+      std::string opType = input.GetString("Hydro","ambipolar",0);
+      if(opType.compare("explicit") == 0 ) {
+        haveExplicitParabolicTerms = true;
+        ambipolarStatus.isExplicit = true;
+        needExplicitCurrent = true;
+      } else if(opType.compare("rkl") == 0 ) {
+        haveRKLParabolicTerms = true;
+        ambipolarStatus.isRKL = true;
+        needRKLCurrent = true;
+      } else {
+        std::stringstream msg;
+        msg  << "Unknown integration type for ambipolar: " << opType;
+        IDEFIX_ERROR(msg);
+      }
+      if(input.GetString("Hydro","ambipolar",1).compare("constant") == 0) {
         idfx::cout << "Hydro: Enabling ambipolar diffusion with constant diffusivity."
                    << std::endl;
-        this->xA = input.GetReal("Hydro","Ambipolar",1);
-        this->haveParabolicTerms = true;
-        this->haveAmbipolar = Constant;
-      } else if(input.GetString("Hydro","Ambipolar",0).compare("userdef") == 0) {
+        this->xA = input.GetReal("Hydro","ambipolar",2);
+        ambipolarStatus.status = Constant;
+      } else if(input.GetString("Hydro","ambipolar",1).compare("userdef") == 0) {
         idfx::cout << "Hydro: Enabling ambipolar diffusion with user-defined diffusivity function."
                    << std::endl;
-        this->haveParabolicTerms = true;
-        this->haveAmbipolar = UserDefFunction;
+        ambipolarStatus.status = UserDefFunction;
       } else {
         IDEFIX_ERROR("Unknown ambipolar definition in idefix.ini. "
                      "Can only be constant or userdef.");
       }
     }
 
-    if(input.CheckEntry("Hydro","Hall")>=0) {
+    if(input.CheckEntry("Hydro","hall")>=0) {
       // Check consistency
       if(mySolver != HLL )
         IDEFIX_ERROR("Hall effect is only compatible with HLL Riemann solver.");
-
-  #if EMF_AVERAGE != ARITHMETIC
-      IDEFIX_ERROR("the Hall effect module is demonstrated stable only when using "
-                   "EMF_AVERAGE=ARITHMETIC");
-  #endif
-
-      if(input.GetString("Hydro","Hall",0).compare("constant") == 0) {
+      #if EMF_AVERAGE != ARITHMETIC
+        IDEFIX_ERROR("the Hall effect module is demonstrated stable only when using "
+                    "EMF_AVERAGE=ARITHMETIC");
+      #endif
+      std::string opType = input.GetString("Hydro","hall",0);
+      if(opType.compare("explicit") == 0 ) {
+        hallStatus.isExplicit = true;
+        needExplicitCurrent = true;
+      } else if(opType.compare("rkl") == 0 ) {
+        IDEFIX_ERROR("RKL inegration is incompatible with Hall");
+      } else {
+        std::stringstream msg;
+        msg  << "Unknown integration type for hall: " << opType;
+        IDEFIX_ERROR(msg);
+      }
+      if(input.GetString("Hydro","hall",1).compare("constant") == 0) {
         idfx::cout << "Hydro: Enabling Hall effect with constant diffusivity." << std::endl;
-        this->xH = input.GetReal("Hydro","Hall",1);
-        this->haveHall = Constant;
-      } else if(input.GetString("Hydro","Hall",0).compare("userdef") == 0) {
+        this->xH = input.GetReal("Hydro","hall",2);
+        hallStatus.status = Constant;
+      } else if(input.GetString("Hydro","hall",1).compare("userdef") == 0) {
         idfx::cout << "Hydro: Enabling Hall effect with user-defined diffusivity function."
                    << std::endl;
-        this->haveHall = UserDefFunction;
+        hallStatus.status = UserDefFunction;
       } else {
         IDEFIX_ERROR("Unknown Hall definition in idefix.ini. Can only be constant or userdef.");
       }
@@ -292,23 +308,20 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
     phiP = IdefixArray3D<real>("Hydro_PhiP",
                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
-  if(this->needCurrent) {
+  if(this->haveCurrent) {
     // Allocate current (when hydro needs it)
-    this->haveCurrent = true;
     J = IdefixArray4D<real>("Hydro_J", 3,
                             data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  } else {
-    this->haveCurrent = false;
   }
 
   // Allocate nonideal MHD effects array when a user-defined function is used
-  if(this->haveResistivity ==  UserDefFunction)
+  if(this->resistivityStatus.status ==  UserDefFunction)
     etaOhmic = IdefixArray3D<real>("Hydro_etaOhmic",
                                     data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  if(this->haveAmbipolar == UserDefFunction)
+  if(this->ambipolarStatus.status == UserDefFunction)
     xAmbipolar = IdefixArray3D<real>("Hydro_xAmbipolar",
                                      data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  if(this->haveHall == UserDefFunction)
+  if(this->hallStatus.status == UserDefFunction)
     xHall = IdefixArray3D<real>("Hydro_xHall",
                                   data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
@@ -414,7 +427,7 @@ void Hydro::EnrollUserSourceTerm(SrcTermFunc myFunc) {
 }
 
 void Hydro::EnrollOhmicDiffusivity(DiffusivityFunc myFunc) {
-  if(this->haveResistivity < UserDefFunction) {
+  if(this->resistivityStatus.status < UserDefFunction) {
     IDEFIX_ERROR("Ohmic diffusivity enrollment requires Hydro/Resistivity "
                  "to be set to userdef in .ini file");
   }
@@ -423,7 +436,7 @@ void Hydro::EnrollOhmicDiffusivity(DiffusivityFunc myFunc) {
 }
 
 void Hydro::EnrollAmbipolarDiffusivity(DiffusivityFunc myFunc) {
-  if(this->haveAmbipolar < UserDefFunction) {
+  if(this->ambipolarStatus.status < UserDefFunction) {
     IDEFIX_ERROR("Ambipolar diffusivity enrollment requires Hydro/Ambipolar "
                  "to be set to userdef in .ini file");
   }
@@ -432,7 +445,7 @@ void Hydro::EnrollAmbipolarDiffusivity(DiffusivityFunc myFunc) {
 }
 
 void Hydro::EnrollHallDiffusivity(DiffusivityFunc myFunc) {
-  if(this->haveHall < UserDefFunction) {
+  if(this->hallStatus.status < UserDefFunction) {
     IDEFIX_ERROR("Hall diffusivity enrollment requires Hydro/Hall "
                  "to be set to userdef in .ini file");
   }

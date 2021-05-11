@@ -18,7 +18,7 @@
 void Hydro::CalcRiemannFlux(int dir, const real t) {
   idfx::pushRegion("Hydro::CalcRiemannFlux");
 
-  if(this->haveHall == UserDefFunction && dir == IDIR) {
+  if(this->hallStatus.status == UserDefFunction && dir == IDIR) {
     if(this->hallDiffusivityFunc)
       hallDiffusivityFunc(*data, t, this->xHall);
     else

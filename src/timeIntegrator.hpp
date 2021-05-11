@@ -10,6 +10,7 @@
 
 #include "idefix.hpp"
 #include "dataBlock.hpp"
+#include "rkl.hpp"
 
 
 
@@ -26,8 +27,14 @@ class TimeIntegrator {
   // check whether we have reached the maximum runtime
   bool CheckForMaxRuntime();
 
+  void ShowLog(DataBlock &);    //<  Display progress log
+
 
  private:
+  // The RKL object attached to this datablock
+  RKLegendre rkl;
+  bool haveRKL{false};
+
   int nstages;
   // Weights of time integrator
   real w0[2];

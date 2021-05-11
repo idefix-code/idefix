@@ -96,10 +96,10 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 |  Entry name    | Parameter type          | Comment                                                                                     |
 +================+=========================+=============================================================================================+
-| Solver         | string                  | | Type of Riemann Solver. In hydro can be any of ``tvdlf``, ``hll``, ``hllc`` and ``roe``.  |
+| solver         | string                  | | Type of Riemann Solver. In hydro can be any of ``tvdlf``, ``hll``, ``hllc`` and ``roe``.  |
 |                |                         | | In MHD, can be ``tvdlf``, ``hll``, ``hlld`` and ``roe``                                   |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| csiso          | string, float           | | Isothermal sound speed. Only used when ISOTHERMAL is defined in ``definitions.hpp``.      |
+| csiso          | string, (float)         | | Isothermal sound speed. Only used when ISOTHERMAL is defined in ``definitions.hpp``.      |
 |                |                         | | When ``constant``, the second parameter is the spatially constant sound speed.            |
 |                |                         | | When ``userdef``, the ``Hydro`` class expects a user-defined sound speed function         |
 |                |                         | | to be enrolled with   ``EnrollIsoSoundSpeed(IsoSoundSpeedFunc)``                          |
@@ -107,46 +107,59 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | gamma          | float                   | Adiabatic index when ISOTHERMAL is not defined                                              |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| Resistivity    | string, float           | | Switches on Ohmic diffusion. String can be  either ``constant`` or ``userdef``.           |
+| resistivity    | string, string, (float) | | Switches on Ohmic diffusion.                                                              |
+|                |                         | | The first parameter can be ``explicit`` or ``rkl``. When ``explicit``, diffusion is       |
+|                |                         | | integrated in the main integration loop with the usual cfl restriction.  If ``rkl``,      |
+|                |                         | | diffusion  is integrated using the Runge-Kutta Legendre scheme.                           |
+|                |                         | | The second String can be  either ``constant`` or ``userdef``.                             |
 |                |                         | | When ``constant``, the second parameter is the  Ohmic diffusion coefficient.              |
 |                |                         | | When ``userdef``, the ``Hydro`` class expects a user-defined diffusivity function         |
 |                |                         | | to be enrolled with   ``Hydro::EnrollOhmicDiffusivity(DiffusivityFunc)``                  |
-|                |                         | | (see :ref:`functionEnrollment`). In this case, the second parameter is not used.          |
+|                |                         | | (see :ref:`functionEnrollment`). In this case, the third  parameter is not used.          |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| Ambipolar      | string, float           | | Switches on ambipolar diffusion. String can be  either ``constant`` or ``userdef``.       |
+| ambipolar      | string, string, (float) | | Switches on ambipolar diffusion.                                                          |
+|                |                         | | The first parameter can be ``explicit`` or ``rkl``. When ``explicit``, diffusion is       |
+|                |                         | | integrated in the main integration loop with the usual cfl restriction.  If ``rkl``,      |
+|                |                         | | diffusion  is integrated using the Runge-Kutta Legendre scheme.                           |
+|                |                         | | The second String can be  either ``constant`` or ``userdef``.                             |
 |                |                         | | When ``constant``, the second parameter is the ambipolar diffusion coefficient.           |
 |                |                         | | When ``userdef``, the ``Hydro`` class expects a user-defined diffusivity function         |
 |                |                         | | to be enrolled with   ``Hydro::EnrollAmbipolarDiffusivity(DiffusivityFunc)``              |
-|                |                         | | (see :ref:`functionEnrollment`). In this case, the second parameter is not used.          |
+|                |                         | | (see :ref:`functionEnrollment`). In this case, the third parameter is not used.           |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| Hall           | string, float           | | Switches on Hall effect. String can be  either ``constant`` or ``userdef``.               |
-|                |                         | | When ``constant``, the second parameter is the  Hall diffusion coefficient.               |
+| hall           | string, string, (float) | | Switches on Hall effect.                                                                  |
+|                |                         | | The first parameter can only be ``explicit``.                                             |
+|                |                         | | The second String can be  either ``constant`` or ``userdef``.                             |
+|                |                         | | When ``constant``, the third parameter is the  Hall diffusion coefficient.                |
 |                |                         | | When ``userdef``, the ``Hydro`` class expects a user-defined diffusivity function         |
 |                |                         | | to be enrolled with   ``Hydro::EnrollHallDiffusivity(DiffusivityFunc)``                   |
-|                |                         | | (see :ref:`functionEnrollment`). In this case, the second parameter is not used.          |
+|                |                         | | (see :ref:`functionEnrollment`). In this case, the third parameter is not used.           |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| Viscosity      | string, float, float    | | Switches on viscous diffusion. String can be either ``constant`` or ``userdef``           |
-|                |                         | | When ``constant``, the second parameter is the flow viscosity and the third               |
+| viscosity      | string, string,         | | Switches on viscous diffusion.                                                            |
+|                | float, (float)          | | The first parameter can be ``explicit`` or ``rkl``. When ``explicit``, diffusion is       |
+|                |                         | | integrated in the main integration loop with the usual cfl restriction.  If ``rkl``,      |
+|                |                         | | diffusion  is integrated using the Runge-Kutta Legendre scheme.                           |
+|                |                         | | When ``constant``, the third parameter is the flow viscosity and the fourth               |
 |                |                         | | parameter is the second (or compressive) viscosity (which is optionnal).                  |
 |                |                         | | When ``userdef``, the ``Hydro.Viscosity`` class expects a user-defined viscosity function |
 |                |                         | | to be enrolled with   ``Hydro.Viscosity::EnrollViscousDiffusivity(DiffusivityFunc)``      |
-|                |                         | | (see :ref:`functionEnrollment`). In this case, the second and third parameters            |
+|                |                         | | (see :ref:`functionEnrollment`). In this case, the third and fourth parameters            |
 |                |                         | | are not used.                                                                             |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| GravPotential  | string                  | | Switches on an external gravitational potential. Only ``userdef`` is allowed.             |
+| gravPotential  | string                  | | Switches on an external gravitational potential. Only ``userdef`` is allowed.             |
 |                |                         | | When ``userdef is set, the ``Hydro`` class expects  a user-defined potential function     |
 |                |                         | | to be enrolled with  ``Hydro::EnrollGravPotential(GravPotentialFunc)``                    |
 |                |                         | | (see :ref:`functionEnrollment`)                                                           |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| Rotation       | float,float,float       | | Add rotation with rhe rotation vector components given as parameters.                     |
-|                |                         | | Note that this entry only adds Coriolis force.                                            |
+| rotation       | float                   | | Add rotation with the z rotation speed given as parameter.                                |
+|                |                         | | Note that this entry only adds Coriolis force in Cartesian geometry.                      |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| ShearingBox    | float                   | | Enable shearing box source terms.  The entry parameter corresponds to the shear rate      |
+| shearingBox    | float                   | | Enable shearing box source terms.  The entry parameter corresponds to the shear rate      |
 |                |                         | | :math:`dv_{x2}/d x_1`.                                                                    |
 |                |                         | | Note that this is not sufficient to fully define a shearing box: boundary conditions      |
 |                |                         | | are also required.                                                                        |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| Fargo          | string                  | | Enable orbital advection (Fargp-like) module to speed up integration when a strong        |
+| fargo          | string                  | | Enable orbital advection (Fargp-like) module to speed up integration when a strong        |
 |                |                         | | azimuthal motion is present (as in a thin disk).  The only possible parameter allowed     |
 |                |                         | | for `Fargo` is `userdef`. When this is set, the fargo module expects a user-defined       |
 |                |                         | | velocity function to be enrolled via Hydro.Fargo::EnrollVelocity(FargoVelocityFunc        |

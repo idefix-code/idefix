@@ -36,8 +36,11 @@ release = '0.7'
 extensions = [
     "sphinx_rtd_theme",
     "breathe",
-    "exhale"
-]
+    "exhale",
+    "m2r2"
+    ]
+
+source_suffix = [".rst", ".md"]
 
 cpp_id_attributes=["KOKKOS_INLINE_FUNCTION","KOKKOS_RESTRICT"]
 

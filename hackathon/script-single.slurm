@@ -16,7 +16,7 @@ module purge
 
 # chargement des modules
 
-module load cuda/10.2
+module load cuda/11.2
 module load gcc/8.3.1
 module load python/3.8.2
 

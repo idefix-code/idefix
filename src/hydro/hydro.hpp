@@ -41,6 +41,7 @@ class Hydro {
 
 
   void SetBoundary(real);
+  void EnforceBoundaryDir(real, int);
   real GetGamma();
   real CheckDivB();
   void ResetStage();

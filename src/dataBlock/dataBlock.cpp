@@ -130,8 +130,43 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
 
   // Init MPI stack when needed
 #ifdef WITH_MPI
-  mpi.InitFromDataBlock(this);
-#endif
+  ////////////////////////////////////////////////////////////////////////////
+  // Init variable mappers
+  // The variable mapper list all of the variable which are exchanged in MPI boundary calls
+  // This is required since we skip some of the variables in Vc to limit the amount of data
+  // being exchanged
+  #if MHD == YES
+  int mapNVars = NVAR - DIMENSIONS; // We will not send magnetic field components which are in Vs
+  #else
+  int mapNVars = NVAR;
+  #endif
+
+  IdefixArray1D<int> mapVars("mapVars",mapNVars);
+
+  // Create a host mirror
+  IdefixArray1D<int>::HostMirror mapVarsHost = Kokkos::create_mirror_view(mapVars);
+  // Init the list of variables we will exchange in MPI routines
+  int ntarget = 0;
+  for(int n = 0 ; n < mapNVars ; n++) {
+    mapVarsHost(n) = ntarget;
+    ntarget++;
+    #if MHD == YES
+      // Skip centered field components if they are also defined in Vs
+      #if DIMENSIONS >= 1
+        if(ntarget==BX1) ntarget++;
+      #endif
+      #if DIMENSIONS >= 2
+        if(ntarget==BX2) ntarget++;
+      #endif
+      #if DIMENSIONS == 3
+        if(ntarget==BX3) ntarget++;
+      #endif
+    #endif
+  }
+  // Synchronize the mapVars
+  Kokkos::deep_copy(mapVars,mapVarsHost);
+  mpi.Init(this, mapVars, mapNVars, true);
+#endif // MPI
   idfx::popRegion();
 }
 

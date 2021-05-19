@@ -21,7 +21,7 @@ class Mpi {
   void ExchangeX3();
 
   // Init from dataBlock
-  void InitFromDataBlock(DataBlock *);
+  void Init(DataBlock *, IdefixArray1D<int>&, int, bool);
 
   // Destructor
   ~Mpi();
@@ -40,11 +40,13 @@ class Mpi {
   IdefixArray1D<real> BufferRecvX3[2];
 
   IdefixArray1D<int>  mapVars;
-  int mapNVars = 0;
+  int mapNVars{0};
 
   int bufferSizeX1;
   int bufferSizeX2;
   int bufferSizeX3;
+
+  bool haveVs{false};
 
   // Requests for MPI persistent communications
   MPI_Request sendRequestX1[2];

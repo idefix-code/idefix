@@ -1,6 +1,6 @@
 #!/bin/bash
 
-rep_HD_2D_mpi_list="MachReflection"
+rep_HD_2D_mpi_list="MachReflection ViscousFlowPastCylinder"
 rep_MHD_2D_mpi_list="OrszagTang"
 rep_MHD_3D_mpi_list="OrszagTang3D"
 

@@ -8,8 +8,17 @@
 #include "hydro.hpp"
 #include "dataBlock.hpp"
 
-// Set Boundary conditions
 void Hydro::SetBoundary(real t) {
+  // set internal boundary conditions
+  if(haveInternalBoundary) internalBoundaryFunc(*data, t);
+  for(int dir=0 ; dir < DIMENSIONS ; dir++ ) {
+    SetBoundaryDir(t, dir);
+  }
+}
+
+
+// Set Boundary conditions
+void Hydro::SetBoundaryDir(real t, int dir, bool withMPI=true) {
   idfx::pushRegion("Hydro::SetBoundary");
 
   IdefixArray4D<real> Vc = this->Vc;
@@ -31,8 +40,7 @@ void Hydro::SetBoundary(real t) {
   real sbLx = this->sbLx;
   real sbS  = this->sbS;
 
-  // X1 boundary conditions
-  if(haveInternalBoundary) internalBoundaryFunc(*data, t);
+
 
   for(int dir=0 ; dir < DIMENSIONS ; dir++ ) {
     // MPI Exchange data when needed

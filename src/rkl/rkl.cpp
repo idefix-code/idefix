@@ -106,7 +106,6 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
     haveVs = true;
   }
 
-
   // Copy the list on the device
   Kokkos::deep_copy(varList,varListHost);
 
@@ -169,8 +168,8 @@ void RKLegendre::Cycle() {
   // first RKL stage
   stage = 1;
 
-  // Apply Boundary conditions
-  this->SetBoundary(time);
+  // Apply Boundary conditions on the full set of variables
+  data->hydro.SetBoundary(time);
 
   // Convert current state into conservative variable
   data->hydro.ConvertPrimToCons();

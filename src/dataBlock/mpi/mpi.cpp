@@ -180,6 +180,12 @@ Mpi::~Mpi() {
   #endif
   }
 
+  idfx::cout << "Mpi:: spent " << myTimer << " seconds on MPI Exchange calls" << std::endl;
+  idfx::cout << "Mpi:: measured throughput is " << bytesSentOrReceived/myTimer/1024.0/1024.0 << " MB/s" << std::endl;
+  idfx::cout << "Mpi:: message sizes were " << std::endl;
+  idfx::cout << "      X1: " << bufferSizeX1*sizeof(real)/1024.0/1024.0 << "MB" << std::endl;
+  idfx::cout << "      X2: " << bufferSizeX2*sizeof(real)/1024.0/1024.0 << "MB" << std::endl;
+  idfx::cout << "      X3: " << bufferSizeX3*sizeof(real)/1024.0/1024.0 << "MB" << std::endl;
 #endif
 }
 
@@ -202,12 +208,14 @@ void Mpi::ExchangeX1() {
 #endif
 
   // If MPI Persistent, start receiving even before the buffers are filled
+  myTimer -= MPI_Wtime();
 #ifdef MPI_PERSISTENT
   MPI_Status sendStatus[2];
   MPI_Status recvStatus[2];
 
   MPI_SAFE_CALL(MPI_Startall(2, recvRequestX1));
 #endif
+  myTimer += MPI_Wtime();
 
   // Coordinates of the ghost region which needs to be transfered
   ibeg   = 0;
@@ -259,7 +267,7 @@ void Mpi::ExchangeX1() {
 
   // Wait for completion before sending out everything
   Kokkos::fence();
-
+  myTimer -= MPI_Wtime();
 #ifdef MPI_PERSISTENT
   MPI_SAFE_CALL(MPI_Startall(2, sendRequestX1));
   // Wait for buffers to be received
@@ -315,7 +323,7 @@ void Mpi::ExchangeX1() {
                 mygrid->CartComm, &status));
   #endif
 #endif
-
+  myTimer += MPI_Wtime();
   // Unpack
   BufferLeft=BufferRecvX1[faceLeft];
   BufferRight=BufferRecvX1[faceRight];
@@ -354,6 +362,7 @@ void Mpi::ExchangeX1() {
   }
 #endif
 
+myTimer -= MPI_Wtime();
 #ifdef MPI_NON_BLOCKING
   // Wait for the sends if they have not yet completed
   MPI_Waitall(2, sendRequest, sendStatus);
@@ -362,6 +371,8 @@ void Mpi::ExchangeX1() {
 #ifdef MPI_PERSISTENT
   MPI_Waitall(2, sendRequestX1, sendStatus);
 #endif
+  myTimer += MPI_Wtime();
+  bytesSentOrReceived += 4*bufferSizeX1*sizeof(real);
 
   // Stop MPI Timer
   idfx::mpiTimer += timer.seconds();
@@ -388,12 +399,14 @@ void Mpi::ExchangeX2() {
 #endif
 
 // If MPI Persistent, start receiving even before the buffers are filled
+  myTimer -= MPI_Wtime();
 #ifdef MPI_PERSISTENT
   MPI_Status sendStatus[2];
   MPI_Status recvStatus[2];
 
   MPI_SAFE_CALL(MPI_Startall(2, recvRequestX2));
 #endif
+  myTimer += MPI_Wtime();
 
   // Coordinates of the ghost region which needs to be transfered
   ibeg   = 0;
@@ -444,6 +457,7 @@ void Mpi::ExchangeX2() {
   // Send to the right
   Kokkos::fence();
 
+  myTimer -= MPI_Wtime();
 #ifdef MPI_PERSISTENT
   MPI_SAFE_CALL(MPI_Startall(2, sendRequestX2));
   MPI_Waitall(2,recvRequestX2,recvStatus);
@@ -497,7 +511,7 @@ void Mpi::ExchangeX2() {
                 mygrid->CartComm, &status));
   #endif
 #endif
-
+  myTimer += MPI_Wtime();
   // Unpack
   BufferLeft=BufferRecvX2[faceLeft];
   BufferRight=BufferRecvX2[faceRight];
@@ -536,6 +550,7 @@ void Mpi::ExchangeX2() {
   }
 #endif
 
+  myTimer -= MPI_Wtime();
 #ifdef MPI_NON_BLOCKING
   // Wait for the sends if they have not yet completed
   MPI_Waitall(2, sendRequest, sendStatus);
@@ -544,6 +559,8 @@ void Mpi::ExchangeX2() {
 #ifdef MPI_PERSISTENT
   MPI_Waitall(2, sendRequestX2, sendStatus);
 #endif
+  myTimer += MPI_Wtime();
+  bytesSentOrReceived += 4*bufferSizeX2*sizeof(real);
 
   // Stop MPI Timer
   idfx::mpiTimer += timer.seconds();
@@ -571,13 +588,14 @@ void Mpi::ExchangeX3() {
 #endif
 
   // If MPI Persistent, start receiving even before the buffers are filled
+  myTimer -= MPI_Wtime();
 #ifdef MPI_PERSISTENT
   MPI_Status sendStatus[2];
   MPI_Status recvStatus[2];
 
   MPI_SAFE_CALL(MPI_Startall(2, recvRequestX3));
 #endif
-
+  myTimer += MPI_Wtime();
   // Coordinates of the ghost region which needs to be transfered
   ibeg   = 0;
   iend   = data->np_tot[IDIR];
@@ -626,6 +644,7 @@ void Mpi::ExchangeX3() {
   // Send to the right
   Kokkos::fence();
 
+  myTimer -= MPI_Wtime();
 #ifdef MPI_PERSISTENT
   MPI_SAFE_CALL(MPI_Startall(2, sendRequestX3));
   MPI_Waitall(2,recvRequestX3,recvStatus);
@@ -679,7 +698,7 @@ void Mpi::ExchangeX3() {
                 mygrid->CartComm, &status));
   #endif
 #endif
-
+  myTimer += MPI_Wtime();
   // Unpack
   BufferLeft=BufferRecvX3[faceLeft];
   BufferRight=BufferRecvX3[faceRight];
@@ -717,6 +736,7 @@ void Mpi::ExchangeX3() {
   }
 #endif
 
+  myTimer -= MPI_Wtime();
 #ifdef MPI_NON_BLOCKING
   // Wait for the sends if they have not yet completed
   MPI_Waitall(2, sendRequest, sendStatus);
@@ -725,7 +745,8 @@ void Mpi::ExchangeX3() {
 #ifdef MPI_PERSISTENT
   MPI_Waitall(2, sendRequestX3, sendStatus);
 #endif
-
+  myTimer += MPI_Wtime();
+  bytesSentOrReceived += 4*bufferSizeX2*sizeof(real);
   // Stop MPI Timer
   idfx::mpiTimer += timer.seconds();
 

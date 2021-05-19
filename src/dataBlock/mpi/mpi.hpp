@@ -20,8 +20,8 @@ class Mpi {
   void ExchangeX2();
   void ExchangeX3();
 
-  // Init from dataBlock
-  void Init(DataBlock *, IdefixArray1D<int>&, int, bool);
+  // constructor from datablock
+  Mpi(DataBlock *, IdefixArray1D<int>&, int, bool);
 
   // Destructor
   ~Mpi();

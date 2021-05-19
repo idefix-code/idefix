@@ -17,7 +17,7 @@ void Mpi::ExchangeAll() {
   IDEFIX_ERROR("Not Implemented");
 }
 
-void Mpi::Init(DataBlock *datain, IdefixArray1D<int> &inputMap, int inputMapN, bool inputHaveVs) {
+Mpi::Mpi(DataBlock *datain, IdefixArray1D<int> &inputMap, int inputMapN, bool inputHaveVs) {
   this->data = datain;
   this->mygrid = datain->mygrid;
   this->timer.reset();

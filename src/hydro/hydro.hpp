@@ -151,6 +151,7 @@ class Hydro {
   friend class Viscosity;
   friend class Fargo;
   friend class Axis;
+  friend class RKLegendre;
 
   // Isothermal EOS parameters
   real isoSoundSpeed;

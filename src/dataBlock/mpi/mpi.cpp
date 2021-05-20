@@ -12,6 +12,9 @@
 //#define MPI_NON_BLOCKING
 #define MPI_PERSISTENT
 
+// init the number of instances
+int Mpi::nInstances = 0;
+
 // MPI Routines exchange
 void Mpi::ExchangeAll() {
   IDEFIX_ERROR("Not Implemented");
@@ -22,6 +25,9 @@ Mpi::Mpi(DataBlock *datain, IdefixArray1D<int> &inputMap, int inputMapN, bool in
   this->mygrid = datain->mygrid;
   this->timer.reset();
   
+  // increase the number of instances
+  nInstances++;
+  thisInstance=nInstances;
 
   this->mapVars = inputMap;
   this->mapNVars = inputMapN;
@@ -99,62 +105,62 @@ Mpi::Mpi(DataBlock *datain, IdefixArray1D<int> &inputMap, int inputMapN, bool in
   // We receive from procRecv, and we send to procSend
   MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,0,1,&procRecv,&procSend ));
 
-  MPI_SAFE_CALL(MPI_Send_init(BufferSendX1[faceRight].data(), bufferSizeX1, realMPI, procSend, 100,
-                mygrid->CartComm, &sendRequestX1[faceRight]));
+  MPI_SAFE_CALL(MPI_Send_init(BufferSendX1[faceRight].data(), bufferSizeX1, realMPI, procSend,
+                thisInstance*1000, mygrid->CartComm, &sendRequestX1[faceRight]));
 
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX1[faceLeft].data(), bufferSizeX1, realMPI, procRecv, 100,
-                mygrid->CartComm, &recvRequestX1[faceLeft]));
+  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX1[faceLeft].data(), bufferSizeX1, realMPI, procRecv,
+                thisInstance*1000, mygrid->CartComm, &recvRequestX1[faceLeft]));
 
   // Send to the left
   // We receive from procRecv, and we send to procSend
   MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,0,-1,&procRecv,&procSend ));
 
-  MPI_SAFE_CALL(MPI_Send_init(BufferSendX1[faceLeft].data(), bufferSizeX1, realMPI, procSend, 101,
-                mygrid->CartComm, &sendRequestX1[faceLeft]));
+  MPI_SAFE_CALL(MPI_Send_init(BufferSendX1[faceLeft].data(), bufferSizeX1, realMPI, procSend,
+                thisInstance*1000+1,mygrid->CartComm, &sendRequestX1[faceLeft]));
 
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX1[faceRight].data(), bufferSizeX1, realMPI, procRecv, 101,
-                mygrid->CartComm, &recvRequestX1[faceRight]));
+  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX1[faceRight].data(), bufferSizeX1, realMPI, procRecv,
+                thisInstance*1000+1,mygrid->CartComm, &recvRequestX1[faceRight]));
 
   #if DIMENSIONS >= 2
   // We receive from procRecv, and we send to procSend
   MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,1,1,&procRecv,&procSend ));
 
-  MPI_SAFE_CALL(MPI_Send_init(BufferSendX2[faceRight].data(), bufferSizeX2, realMPI, procSend, 200,
-                mygrid->CartComm, &sendRequestX2[faceRight]));
+  MPI_SAFE_CALL(MPI_Send_init(BufferSendX2[faceRight].data(), bufferSizeX2, realMPI, procSend,
+                thisInstance*1000+10, mygrid->CartComm, &sendRequestX2[faceRight]));
 
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX2[faceLeft].data(), bufferSizeX2, realMPI, procRecv, 200,
-                mygrid->CartComm, &recvRequestX2[faceLeft]));
+  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX2[faceLeft].data(), bufferSizeX2, realMPI, procRecv, 
+                thisInstance*1000+10, mygrid->CartComm, &recvRequestX2[faceLeft]));
 
   // Send to the left
   // We receive from procRecv, and we send to procSend
   MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,1,-1,&procRecv,&procSend ));
 
-  MPI_SAFE_CALL(MPI_Send_init(BufferSendX2[faceLeft].data(), bufferSizeX2, realMPI, procSend, 201,
-                mygrid->CartComm, &sendRequestX2[faceLeft]));
+  MPI_SAFE_CALL(MPI_Send_init(BufferSendX2[faceLeft].data(), bufferSizeX2, realMPI, procSend,
+                thisInstance*1000+11, mygrid->CartComm, &sendRequestX2[faceLeft]));
 
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX2[faceRight].data(), bufferSizeX2, realMPI, procRecv, 201,
-                mygrid->CartComm, &recvRequestX2[faceRight]));
+  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX2[faceRight].data(), bufferSizeX2, realMPI, procRecv,
+                thisInstance*1000+11, mygrid->CartComm, &recvRequestX2[faceRight]));
   #endif
 
   #if DIMENSIONS == 3
   // We receive from procRecv, and we send to procSend
   MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,2,1,&procRecv,&procSend ));
 
-  MPI_SAFE_CALL(MPI_Send_init(BufferSendX3[faceRight].data(), bufferSizeX3, realMPI, procSend, 300,
-                mygrid->CartComm, &sendRequestX3[faceRight]));
+  MPI_SAFE_CALL(MPI_Send_init(BufferSendX3[faceRight].data(), bufferSizeX3, realMPI, procSend,
+                thisInstance*1000+20, mygrid->CartComm, &sendRequestX3[faceRight]));
 
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX3[faceLeft].data(), bufferSizeX3, realMPI, procRecv, 300,
-                mygrid->CartComm, &recvRequestX3[faceLeft]));
+  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX3[faceLeft].data(), bufferSizeX3, realMPI, procRecv,
+                thisInstance*1000+20, mygrid->CartComm, &recvRequestX3[faceLeft]));
 
   // Send to the left
   // We receive from procRecv, and we send to procSend
   MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,2,-1,&procRecv,&procSend ));
 
-  MPI_SAFE_CALL(MPI_Send_init(BufferSendX3[faceLeft].data(), bufferSizeX3, realMPI, procSend, 301,
-                mygrid->CartComm, &sendRequestX3[faceLeft]));
+  MPI_SAFE_CALL(MPI_Send_init(BufferSendX3[faceLeft].data(), bufferSizeX3, realMPI, procSend,
+                thisInstance*1000+21, mygrid->CartComm, &sendRequestX3[faceLeft]));
 
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX3[faceRight].data(), bufferSizeX3, realMPI, procRecv, 301,
-                mygrid->CartComm, &recvRequestX3[faceRight]));
+  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX3[faceRight].data(), bufferSizeX3, realMPI, procRecv,
+                thisInstance*1000+21, mygrid->CartComm, &recvRequestX3[faceRight]));
   #endif
 
 #endif
@@ -164,7 +170,7 @@ Mpi::Mpi(DataBlock *datain, IdefixArray1D<int> &inputMap, int inputMapN, bool in
 Mpi::~Mpi() {
   // Properly clean up the mess
 #ifdef MPI_PERSISTENT
-  idfx::cout << "Mpi:: Cleaning up MPI persistent communication channels" << std::endl;
+  idfx::cout << "Mpi(" << thisInstance << "): Cleaning up MPI persistent communication channels" << std::endl;
   for(int i=0 ; i< 2; i++) {
     MPI_Request_free( &sendRequestX1[i]);
     MPI_Request_free( &recvRequestX1[i]);
@@ -180,12 +186,12 @@ Mpi::~Mpi() {
   #endif
   }
 
-  idfx::cout << "Mpi:: spent " << myTimer << " seconds on MPI Exchange calls" << std::endl;
-  idfx::cout << "Mpi:: measured throughput is " << bytesSentOrReceived/myTimer/1024.0/1024.0 << " MB/s" << std::endl;
-  idfx::cout << "Mpi:: message sizes were " << std::endl;
-  idfx::cout << "      X1: " << bufferSizeX1*sizeof(real)/1024.0/1024.0 << "MB" << std::endl;
-  idfx::cout << "      X2: " << bufferSizeX2*sizeof(real)/1024.0/1024.0 << "MB" << std::endl;
-  idfx::cout << "      X3: " << bufferSizeX3*sizeof(real)/1024.0/1024.0 << "MB" << std::endl;
+  idfx::cout << "Mpi(" << thisInstance << "): spent " << myTimer << " seconds on MPI Exchange calls" << std::endl;
+  idfx::cout << "Mpi(" << thisInstance << "): measured throughput is " << bytesSentOrReceived/myTimer/1024.0/1024.0 << " MB/s" << std::endl;
+  idfx::cout << "Mpi(" << thisInstance << "): message sizes were " << std::endl;
+  idfx::cout << "        X1: " << bufferSizeX1*sizeof(real)/1024.0/1024.0 << "MB" << std::endl;
+  idfx::cout << "        X2: " << bufferSizeX2*sizeof(real)/1024.0/1024.0 << "MB" << std::endl;
+  idfx::cout << "        X3: " << bufferSizeX3*sizeof(real)/1024.0/1024.0 << "MB" << std::endl;
 #endif
 }
 

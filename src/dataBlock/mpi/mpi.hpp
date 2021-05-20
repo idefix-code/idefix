@@ -27,6 +27,9 @@ class Mpi {
   ~Mpi();
 
  private:
+  static int nInstances;     // total number of mpi instances in the code
+  int thisInstance;          // unique number of the current instance
+  
   DataBlock *data;
 
   enum {faceRight, faceLeft};

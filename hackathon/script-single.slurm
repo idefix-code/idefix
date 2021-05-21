@@ -1,4 +1,5 @@
 #!/bin/bash
+#SBATCH -A tzn@gpu
 #SBATCH --job-name=idefix_Hack     # nom du job
 #SBATCH --ntasks=1                  # nombre de tache MPI par noeud  (=nb de GPU)
 #SBATCH --gres=gpu:1                # nombre de GPU par noeud
@@ -15,7 +16,7 @@ module purge
 
 # chargement des modules
 
-module load cuda/10.2
+module load cuda/11.2
 module load gcc/8.3.1
 module load python/3.8.2
 

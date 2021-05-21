@@ -1,5 +1,6 @@
 #!/bin/bash
-#SBATCH --job-name=idefix_Gaylor     # nom du job
+#SBATCH -A tzn@gpu
+#SBATCH --job-name=idefixMPI     # nom du job
 #SBATCH --nodes=1                   # nombre de noeuds
 #SBATCH --ntasks-per-node=4         # nombre de tache MPI par noeud  (=nb de GPU)
 #SBATCH --gres=gpu:4                # nombre de GPU par noeud
@@ -16,9 +17,9 @@ module purge
 
 # chargement des modules
 
-module load cuda/10.2
+module load cuda/11.2
 module load gcc/8.3.1
-module load openmpi/4.0.5-cuda
+module load openmpi/4.1.1-cuda
 module load python/3.8.2
 # echo des commandes lancees
 set -x

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New `DumpImage` class to load and use the data of dump files without restarting
 - New Runge-Kutta-Legendre scheme to speed up parabolic term computation. Compatible with Viscosity, Ambipolar & Ohmic diffusions.
 - rotation now works as it should in polar & spherical coordinates (in this case, it includes both Coriolis and cetrifugal acceleration)
+- deprecate the `-gpu` option in `configure.py`. The GPU mode is now automatically activated if a GPU architecture is requested.
 
 ## [0.7.2] - 2021-05-11
 ### Changed

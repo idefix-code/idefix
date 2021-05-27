@@ -41,6 +41,7 @@ class Hydro {
 
 
   void SetBoundary(real);
+  void EnforceBoundaryDir(real, int);
   real GetGamma();
   real CheckDivB();
   void ResetStage();
@@ -150,6 +151,7 @@ class Hydro {
   friend class Viscosity;
   friend class Fargo;
   friend class Axis;
+  friend class RKLegendre;
 
   // Isothermal EOS parameters
   real isoSoundSpeed;

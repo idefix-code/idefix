@@ -11,11 +11,15 @@
 #include "idefix.hpp"
 #include "input.hpp"
 #include "dataBlock.hpp"
+#ifdef WITH_MPI
+#include "mpi.hpp"
+#endif
 
 
 class RKLegendre {
  public:
   RKLegendre();
+  ~RKLegendre();
   void Init(Input &, DataBlock &);
   void Cycle();
   void ResetStage();
@@ -40,7 +44,13 @@ class RKLegendre {
   int stage{0};
 
  private:
+  void SetBoundary(real);        // Enforce boundary conditions on the variables solved by RKL
+
   DataBlock *data;
+
+#ifdef WITH_MPI
+  Mpi *mpi{NULL};                      // RKL-specific MPI layer
+#endif
 
   bool haveVs{false};           // Whether we have (and need to compute) cell-centered variables
   void AddVariable(int, IdefixArray1D<int>::HostMirror & );

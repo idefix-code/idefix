@@ -8,9 +8,44 @@
 #include "hydro.hpp"
 #include "dataBlock.hpp"
 
-// Set Boundary conditions
 void Hydro::SetBoundary(real t) {
-  idfx::pushRegion("Hydro::SetBoundary");
+  // set internal boundary conditions
+  if(haveInternalBoundary) internalBoundaryFunc(*data, t);
+  for(int dir=0 ; dir < DIMENSIONS ; dir++ ) {
+      // MPI Exchange data when needed
+    #ifdef WITH_MPI
+    if(data->mygrid->nproc[dir]>1) {
+      switch(dir) {
+        case 0:
+          data->mpi->ExchangeX1();
+          break;
+        case 1:
+          data->mpi->ExchangeX2();
+          break;
+        case 2:
+          data->mpi->ExchangeX3();
+          break;
+      }
+    }
+    #endif
+    EnforceBoundaryDir(t, dir);
+    #if MHD == YES
+      // Reconstruct the normal field component when using CT
+      ReconstructNormalField(dir);
+    #endif
+  } // Loop on dimension ends
+
+#if MHD == YES
+  // Remake the cell-centered field.
+  ReconstructVcField(this->Vc);
+#endif
+
+}
+
+
+// Enforce boundary conditions by writing into ghost zones
+void Hydro::EnforceBoundaryDir(real t, int dir) {
+  idfx::pushRegion("Hydro::EnforceBoundaryDir");
 
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Vs = this->Vs;
@@ -31,67 +66,195 @@ void Hydro::SetBoundary(real t) {
   real sbLx = this->sbLx;
   real sbS  = this->sbS;
 
-  // X1 boundary conditions
-  if(haveInternalBoundary) internalBoundaryFunc(*data, t);
+  ioffset = (dir == IDIR) ? data->np_int[IDIR] : 0;
+  joffset = (dir == JDIR) ? data->np_int[JDIR] : 0;
+  koffset = (dir == KDIR) ? data->np_int[KDIR] : 0;
 
-  for(int dir=0 ; dir < DIMENSIONS ; dir++ ) {
-    // MPI Exchange data when needed
-#ifdef WITH_MPI
-    if(data->mygrid->nproc[dir]>1) {
-      switch(dir) {
-        case 0:
-          data->mpi.ExchangeX1();
-          break;
-        case 1:
-          data->mpi.ExchangeX2();
-          break;
-        case 2:
-          data->mpi.ExchangeX3();
-          break;
+
+  // left boundary
+  ibeg=0;
+  iend= (dir == IDIR) ? ighost : data->np_tot[IDIR];
+  jbeg=0;
+  jend= (dir == JDIR) ? jghost : data->np_tot[JDIR];
+  kbeg=0;
+  kend= (dir == KDIR) ? kghost : data->np_tot[KDIR];
+
+  switch(data->lbound[dir]) {
+    case internal:
+      // internal is used for MPI-enforced boundary conditions. Nothing to be done here.
+      break;
+
+    case periodic:
+      if(data->mygrid->nproc[dir] > 1) break; // Periodicity already enforced by MPI calls
+      idefix_for("BoundaryBegPeriodic",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+        KOKKOS_LAMBDA (int n, int k, int j, int i) {
+          int iref, jref, kref;
+          // This hack takes care of cases where we have more ghost zones than active zones
+          if(dir==IDIR)
+            iref = ighost + nxi - 1 - (ighost-i-1)%nxi;
+          else
+            iref = i;
+          if(dir==JDIR)
+            jref = jghost + nxj - 1 - (jghost-j-1)%nxj;
+          else
+            jref = j;
+          if(dir==KDIR)
+            kref = kghost + nxk - 1 - (kghost-k-1)%nxk;
+          else
+            kref = k;
+
+          Vc(n,k,j,i) = Vc(n,kref,jref,iref);
+        }
+      );
+#if MHD == YES
+      for(int component=0; component<DIMENSIONS; component++) {
+        int ieb,jeb,keb;
+        if(component == IDIR)
+          ieb=iend+1;
+        else
+          ieb=iend;
+        if(component == JDIR)
+          jeb=jend+1;
+        else
+          jeb=jend;
+        if(component == KDIR)
+          keb=kend+1;
+        else
+          keb=kend;
+        if(component != dir) {
+          // skip normal component
+          idefix_for("BoundaryBegShearingBoxVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
+            KOKKOS_LAMBDA (int k, int j, int i) {
+              int iref, jref, kref;
+              if(dir==IDIR)
+                iref = ighost + nxi - 1 - (ighost-i-1)%nxi;
+              else
+                iref = i;
+              if(dir==JDIR)
+                jref = jghost + nxj - 1 - (jghost-j-1)%nxj;
+              else
+                jref = j;
+              if(dir==KDIR)
+                kref = kghost + nxk - 1 - (kghost-k-1)%nxk;
+              else
+                kref = k;
+              Vs(component,k,j,i) = Vs(component,kref,jref,iref);
+            }
+          );
+        }
       }
-    }
 #endif
+      break;
 
-    ioffset = (dir == IDIR) ? data->np_int[IDIR] : 0;
-    joffset = (dir == JDIR) ? data->np_int[JDIR] : 0;
-    koffset = (dir == KDIR) ? data->np_int[KDIR] : 0;
+    case reflective:
+      idefix_for("BoundaryBegReflective",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+        KOKKOS_LAMBDA (int n, int k, int j, int i) {
+          int iref= (dir==IDIR) ? ighost : i;
+          int jref= (dir==JDIR) ? jghost : j;
+          int kref= (dir==KDIR) ? kghost : k;
 
-
-    // left boundary
-    ibeg=0;
-    iend= (dir == IDIR) ? ighost : data->np_tot[IDIR];
-    jbeg=0;
-    jend= (dir == JDIR) ? jghost : data->np_tot[JDIR];
-    kbeg=0;
-    kend= (dir == KDIR) ? kghost : data->np_tot[KDIR];
-
-    switch(data->lbound[dir]) {
-      case internal:
-        // internal is used for MPI-enforced boundary conditions. Nothing to be done here.
-        break;
-
-      case periodic:
-        if(data->mygrid->nproc[dir] > 1) break; // Periodicity already enforced by MPI calls
-        idefix_for("BoundaryBegPeriodic",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
-          KOKKOS_LAMBDA (int n, int k, int j, int i) {
-            int iref, jref, kref;
-            // This hack takes care of cases where we have more ghost zones than active zones
-            if(dir==IDIR)
-              iref = ighost + nxi - 1 - (ighost-i-1)%nxi;
-            else
-              iref = i;
-            if(dir==JDIR)
-              jref = jghost + nxj - 1 - (jghost-j-1)%nxj;
-            else
-              jref = j;
-            if(dir==KDIR)
-              kref = kghost + nxk - 1 - (kghost-k-1)%nxk;
-            else
-              kref = k;
-
+          if( n==VX1+dir)
+            Vc(n,k,j,i) = ZERO_F;
+          else
             Vc(n,k,j,i) = Vc(n,kref,jref,iref);
+        }
+      );
+
+#if MHD == YES
+      for(int component=0; component<DIMENSIONS; component++) {
+        int ieb,jeb,keb;
+        if(component == IDIR)
+          ieb=iend+1;
+        else
+          ieb=iend;
+        if(component == JDIR)
+          jeb=jend+1;
+        else
+          jeb=jend;
+        if(component == KDIR)
+          keb=kend+1;
+        else
+          keb=kend;
+        if(component != dir) { // skip normal component
+          idefix_for("BoundaryBegOutflowVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
+            KOKKOS_LAMBDA (int k, int j, int i) {
+              int iref= (dir==IDIR) ? ighost : i;
+              int jref= (dir==JDIR) ? jghost : j;
+              int kref= (dir==KDIR) ? kghost : k;
+
+              // Don't touch the normal component !
+              Vs(component,k,j,i) = Vs(component,kref,jref,iref);
+            }
+          );
+        }
+      }
+#endif
+      break;
+
+    case outflow:
+      idefix_for("BoundaryBegOutflow",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+        KOKKOS_LAMBDA (int n, int k, int j, int i) {
+          int iref= (dir==IDIR) ? ighost : i;
+          int jref= (dir==JDIR) ? jghost : j;
+          int kref= (dir==KDIR) ? kghost : k;
+
+          if( (n==VX1+dir) && (Vc(n,kref,jref,iref) >= ZERO_F))
+            Vc(n,k,j,i) = ZERO_F;
+          else
+            Vc(n,k,j,i) = Vc(n,kref,jref,iref);
+        }
+      );
+
+#if MHD == YES
+      for(int component=0; component<DIMENSIONS; component++) {
+        int ieb,jeb,keb;
+        if(component == IDIR)
+          ieb=iend+1;
+        else
+          ieb=iend;
+        if(component == JDIR)
+          jeb=jend+1;
+        else
+          jeb=jend;
+        if(component == KDIR)
+          keb=kend+1;
+        else
+          keb=kend;
+        if(component != dir) { // skip normal component
+          idefix_for("BoundaryBegOutflowVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
+            KOKKOS_LAMBDA (int k, int j, int i) {
+              int iref= (dir==IDIR) ? ighost : i;
+              int jref= (dir==JDIR) ? jghost : j;
+              int kref= (dir==KDIR) ? kghost : k;
+
+              // Don't touch the normal component !
+              Vs(component,k,j,i) = Vs(component,kref,jref,iref);
+            }
+          );
+        }
+      }
+#endif
+      break;
+
+    case shearingbox:
+      if(data->mygrid->nproc[dir] > 1) {
+        // if shearing box enabled, the MPI call has already enforced strict periodicicty,
+        // so we just need to enforce the offset
+        real voffset=-sbLx*sbS;
+
+        idefix_for("BoundaryBegShearingBox",kbeg,kend,jbeg,jend,ibeg,iend,
+          KOKKOS_LAMBDA (int k, int j, int i) {
+            Vc(VX2,k,j,i) = Vc(VX2,k,j,i) + voffset;
           }
         );
+      } else {
+        idefix_for("BoundaryBegShearingBox",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+          KOKKOS_LAMBDA (int n, int k, int j, int i) {
+            real voffset= (n == VX2) ? - sbLx * sbS : ZERO_F;
+            Vc(n,k,j,i) = Vc(n,k+koffset,j+joffset,i+ioffset) + voffset;
+          }
+        );
+
 #if MHD == YES
         for(int component=0; component<DIMENSIONS; component++) {
           int ieb,jeb,keb;
@@ -107,408 +270,250 @@ void Hydro::SetBoundary(real t) {
             keb=kend+1;
           else
             keb=kend;
-          if(component != dir) {
-            // skip normal component
+          if(component != dir) { // skip normal component
             idefix_for("BoundaryBegShearingBoxVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
               KOKKOS_LAMBDA (int k, int j, int i) {
-                int iref, jref, kref;
-                if(dir==IDIR)
-                  iref = ighost + nxi - 1 - (ighost-i-1)%nxi;
-                else
-                  iref = i;
-                if(dir==JDIR)
-                  jref = jghost + nxj - 1 - (jghost-j-1)%nxj;
-                else
-                  jref = j;
-                if(dir==KDIR)
-                  kref = kghost + nxk - 1 - (kghost-k-1)%nxk;
-                else
-                  kref = k;
-                Vs(component,k,j,i) = Vs(component,kref,jref,iref);
+                Vs(component,k,j,i) = Vs(component,k+koffset,j+joffset,i+ioffset);
               }
             );
           }
         }
 #endif
-        break;
+      }
+      break;
+    case axis:
+      this->myAxis.EnforceAxisBoundary(left);
+      break;
+    case userdef:
+      if(this->haveUserDefBoundary)
+        this->userDefBoundaryFunc(*data, dir, left, t);
+      else
+        IDEFIX_ERROR("No function has been enrolled to define your own boundary conditions");
+      break;
 
-      case reflective:
-        idefix_for("BoundaryBegReflective",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
-          KOKKOS_LAMBDA (int n, int k, int j, int i) {
-            int iref= (dir==IDIR) ? ighost : i;
-            int jref= (dir==JDIR) ? jghost : j;
-            int kref= (dir==KDIR) ? kghost : k;
+    default:
+      std::stringstream msg ("Boundary condition type is not yet implemented");
+      IDEFIX_ERROR(msg);
+  }
 
-            if( n==VX1+dir)
-              Vc(n,k,j,i) = ZERO_F;
-            else
-              Vc(n,k,j,i) = Vc(n,kref,jref,iref);
-          }
-        );
+  // right boundary
+  ibeg= (dir == IDIR) ? ioffset + ighost : 0;
+  iend = data->np_tot[IDIR];
+  jbeg= (dir == JDIR) ? joffset + jghost : 0;
+  jend = data->np_tot[JDIR];
+  kbeg= (dir == KDIR) ? koffset + kghost : 0;
+  kend = data->np_tot[KDIR];
+
+  switch(data->rbound[dir]) {
+    case internal:
+      // internal is used for MPI-enforced boundary conditions. Nothing to be done here.
+      break;
+
+    case periodic:
+      if(data->mygrid->nproc[dir] > 1) break; // Periodicity already enforced by MPI calls
+      idefix_for("BoundaryEndPeriodic",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+        KOKKOS_LAMBDA (int n, int k, int j, int i) {
+          int iref, jref, kref;
+          // This hack takes care of cases where we have more ghost zones than active zones
+          if(dir==IDIR)
+            iref = ighost + (i-(ighost+nxi))%nxi;
+          else
+            iref = i;
+          if(dir==JDIR)
+            jref = jghost + (j-(jghost+nxj))%nxj;
+          else
+            jref = j;
+          if(dir==KDIR)
+            kref = kghost + (k-(kghost+nxk))%nxk;
+          else
+            kref = k;
+          Vc(n,k,j,i) = Vc(n,kref,jref,iref);
+        }
+      );
 
 #if MHD == YES
-        for(int component=0; component<DIMENSIONS; component++) {
-          int ieb,jeb,keb;
-          if(component == IDIR)
-            ieb=iend+1;
-          else
-            ieb=iend;
-          if(component == JDIR)
-            jeb=jend+1;
-          else
-            jeb=jend;
-          if(component == KDIR)
-            keb=kend+1;
-          else
-            keb=kend;
-          if(component != dir) { // skip normal component
-            idefix_for("BoundaryBegOutflowVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
-              KOKKOS_LAMBDA (int k, int j, int i) {
-                int iref= (dir==IDIR) ? ighost : i;
-                int jref= (dir==JDIR) ? jghost : j;
-                int kref= (dir==KDIR) ? kghost : k;
-
-                // Don't touch the normal component !
-                Vs(component,k,j,i) = Vs(component,kref,jref,iref);
-              }
-            );
-          }
-        }
-#endif
-        break;
-
-      case outflow:
-        idefix_for("BoundaryBegOutflow",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
-          KOKKOS_LAMBDA (int n, int k, int j, int i) {
-            int iref= (dir==IDIR) ? ighost : i;
-            int jref= (dir==JDIR) ? jghost : j;
-            int kref= (dir==KDIR) ? kghost : k;
-
-            if( (n==VX1+dir) && (Vc(n,kref,jref,iref) >= ZERO_F))
-              Vc(n,k,j,i) = ZERO_F;
-            else
-              Vc(n,k,j,i) = Vc(n,kref,jref,iref);
-          }
-        );
-
-#if MHD == YES
-        for(int component=0; component<DIMENSIONS; component++) {
-          int ieb,jeb,keb;
-          if(component == IDIR)
-            ieb=iend+1;
-          else
-            ieb=iend;
-          if(component == JDIR)
-            jeb=jend+1;
-          else
-            jeb=jend;
-          if(component == KDIR)
-            keb=kend+1;
-          else
-            keb=kend;
-          if(component != dir) { // skip normal component
-            idefix_for("BoundaryBegOutflowVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
-              KOKKOS_LAMBDA (int k, int j, int i) {
-                int iref= (dir==IDIR) ? ighost : i;
-                int jref= (dir==JDIR) ? jghost : j;
-                int kref= (dir==KDIR) ? kghost : k;
-
-                // Don't touch the normal component !
-                Vs(component,k,j,i) = Vs(component,kref,jref,iref);
-              }
-            );
-          }
-        }
-#endif
-        break;
-
-      case shearingbox:
-        if(data->mygrid->nproc[dir] > 1) {
-          // if shearing box enabled, the MPI call has already enforced strict periodicicty,
-          // so we just need to enforce the offset
-          real voffset=-sbLx*sbS;
-
-          idefix_for("BoundaryBegShearingBox",kbeg,kend,jbeg,jend,ibeg,iend,
-            KOKKOS_LAMBDA (int k, int j, int i) {
-              Vc(VX2,k,j,i) = Vc(VX2,k,j,i) + voffset;
-            }
-          );
-        } else {
-          idefix_for("BoundaryBegShearingBox",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
-            KOKKOS_LAMBDA (int n, int k, int j, int i) {
-              real voffset= (n == VX2) ? - sbLx * sbS : ZERO_F;
-              Vc(n,k,j,i) = Vc(n,k+koffset,j+joffset,i+ioffset) + voffset;
-            }
-          );
-
-#if MHD == YES
-          for(int component=0; component<DIMENSIONS; component++) {
-            int ieb,jeb,keb;
-            if(component == IDIR)
-              ieb=iend+1;
-            else
-              ieb=iend;
-            if(component == JDIR)
-              jeb=jend+1;
-            else
-              jeb=jend;
-            if(component == KDIR)
-              keb=kend+1;
-            else
-              keb=kend;
-            if(component != dir) { // skip normal component
-              idefix_for("BoundaryBegShearingBoxVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
-                KOKKOS_LAMBDA (int k, int j, int i) {
-                  Vs(component,k,j,i) = Vs(component,k+koffset,j+joffset,i+ioffset);
-                }
-              );
-            }
-          }
-#endif
-        }
-        break;
-      case axis:
-        this->myAxis.EnforceAxisBoundary(left);
-        break;
-      case userdef:
-        if(this->haveUserDefBoundary)
-          this->userDefBoundaryFunc(*data, dir, left, t);
+      for(int component=0; component<DIMENSIONS; component++) {
+        int ieb,jeb,keb;
+        if(component == IDIR)
+          ieb=iend+1;
         else
-          IDEFIX_ERROR("No function has been enrolled to define your own boundary conditions");
-        break;
+          ieb=iend;
+        if(component == JDIR)
+          jeb=jend+1;
+        else
+          jeb=jend;
+        if(component == KDIR)
+          keb=kend+1;
+        else
+          keb=kend;
+        if(component != dir) { // skip normal component
+          idefix_for("BoundaryEndPeriodicVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
+            KOKKOS_LAMBDA (int k, int j, int i) {
+              int iref, jref, kref;
+              if(dir==IDIR)
+                iref = ighost + (i-(ighost+nxi))%nxi;
+              else
+                iref = i;
+              if(dir==JDIR)
+                jref = jghost + (j-(jghost+nxj))%nxj;
+              else
+                jref = j;
+              if(dir==KDIR)
+                kref = kghost + (k-(kghost+nxk))%nxk;
+              else
+                kref = k;
+              Vs(component,k,j,i) = Vs(component,kref,jref,iref);
+            }
+          );
+        }
+      }
+#endif
+      break;
+    case reflective:
+      idefix_for("BoundaryEndReflective",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+        KOKKOS_LAMBDA (int n, int k, int j, int i) {
+          int iref= (dir==IDIR) ? ighost + ioffset - 1 : i;
+          int jref= (dir==JDIR) ? jghost + joffset - 1 : j;
+          int kref= (dir==KDIR) ? kghost + koffset - 1 : k;
 
-      default:
-        std::stringstream msg ("Boundary condition type is not yet implemented");
-        IDEFIX_ERROR(msg);
-    }
-
-    // right boundary
-    ibeg= (dir == IDIR) ? ioffset + ighost : 0;
-    iend = data->np_tot[IDIR];
-    jbeg= (dir == JDIR) ? joffset + jghost : 0;
-    jend = data->np_tot[JDIR];
-    kbeg= (dir == KDIR) ? koffset + kghost : 0;
-    kend = data->np_tot[KDIR];
-
-    switch(data->rbound[dir]) {
-      case internal:
-        // internal is used for MPI-enforced boundary conditions. Nothing to be done here.
-        break;
-
-      case periodic:
-        if(data->mygrid->nproc[dir] > 1) break; // Periodicity already enforced by MPI calls
-        idefix_for("BoundaryEndPeriodic",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
-          KOKKOS_LAMBDA (int n, int k, int j, int i) {
-            int iref, jref, kref;
-            // This hack takes care of cases where we have more ghost zones than active zones
-            if(dir==IDIR)
-              iref = ighost + (i-(ighost+nxi))%nxi;
-            else
-              iref = i;
-            if(dir==JDIR)
-              jref = jghost + (j-(jghost+nxj))%nxj;
-            else
-              jref = j;
-            if(dir==KDIR)
-              kref = kghost + (k-(kghost+nxk))%nxk;
-            else
-              kref = k;
+          if( n==VX1+dir)
+            Vc(n,k,j,i) = ZERO_F;
+          else
             Vc(n,k,j,i) = Vc(n,kref,jref,iref);
-          }
-        );
+        }
+      );
 
 #if MHD == YES
-        for(int component=0; component<DIMENSIONS; component++) {
-          int ieb,jeb,keb;
-          if(component == IDIR)
-            ieb=iend+1;
-          else
-            ieb=iend;
-          if(component == JDIR)
-            jeb=jend+1;
-          else
-            jeb=jend;
-          if(component == KDIR)
-            keb=kend+1;
-          else
-            keb=kend;
-          if(component != dir) { // skip normal component
-            idefix_for("BoundaryEndPeriodicVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
-              KOKKOS_LAMBDA (int k, int j, int i) {
-                int iref, jref, kref;
-                if(dir==IDIR)
-                  iref = ighost + (i-(ighost+nxi))%nxi;
-                else
-                  iref = i;
-                if(dir==JDIR)
-                  jref = jghost + (j-(jghost+nxj))%nxj;
-                else
-                  jref = j;
-                if(dir==KDIR)
-                  kref = kghost + (k-(kghost+nxk))%nxk;
-                else
-                  kref = k;
-                Vs(component,k,j,i) = Vs(component,kref,jref,iref);
-              }
-            );
-          }
-        }
-#endif
-        break;
-      case reflective:
-        idefix_for("BoundaryEndReflective",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
-          KOKKOS_LAMBDA (int n, int k, int j, int i) {
-            int iref= (dir==IDIR) ? ighost + ioffset - 1 : i;
-            int jref= (dir==JDIR) ? jghost + joffset - 1 : j;
-            int kref= (dir==KDIR) ? kghost + koffset - 1 : k;
-
-            if( n==VX1+dir)
-              Vc(n,k,j,i) = ZERO_F;
-            else
-              Vc(n,k,j,i) = Vc(n,kref,jref,iref);
-          }
-        );
-
-#if MHD == YES
-        for(int component=0; component<DIMENSIONS; component++) {
-          int ieb,jeb,keb;
-          if(component == IDIR)
-            ieb=iend+1;
-          else
-            ieb=iend;
-          if(component == JDIR)
-            jeb=jend+1;
-          else
-            jeb=jend;
-          if(component == KDIR)
-            keb=kend+1;
-          else
-            keb=kend;
-          if(component != dir) { // skip normal component
-            idefix_for("BoundaryEndReflectiveVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
-              KOKKOS_LAMBDA (int k, int j, int i) {
-                int iref= (dir==IDIR) ? ighost + ioffset - 1 : i;
-                int jref= (dir==JDIR) ? jghost + joffset - 1 : j;
-                int kref= (dir==KDIR) ? kghost + koffset - 1 : k;
-                Vs(component,k,j,i) = Vs(component,kref,jref,iref);
-              }
-            );
-          }
-        }
-#endif
-        break;
-      case outflow:
-        idefix_for("BoundaryEndOutflow",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
-          KOKKOS_LAMBDA (int n, int k, int j, int i) {
-            int iref= (dir==IDIR) ? ighost + ioffset - 1 : i;
-            int jref= (dir==JDIR) ? jghost + joffset - 1 : j;
-            int kref= (dir==KDIR) ? kghost + koffset - 1 : k;
-
-            if( (n==VX1+dir) && (Vc(n,kref,jref,iref) <= ZERO_F))
-              Vc(n,k,j,i) = ZERO_F;
-            else
-              Vc(n,k,j,i) = Vc(n,kref,jref,iref);
-          }
-        );
-
-#if MHD == YES
-        for(int component=0; component<DIMENSIONS; component++) {
-          int ieb,jeb,keb;
-          if(component == IDIR)
-            ieb=iend+1;
-          else
-            ieb=iend;
-          if(component == JDIR)
-            jeb=jend+1;
-          else
-            jeb=jend;
-          if(component == KDIR)
-            keb=kend+1;
-          else
-            keb=kend;
-          if(component != dir) { // skip normal component
-            idefix_for("BoundaryEndOutflowVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
-              KOKKOS_LAMBDA (int k, int j, int i) {
-                int iref= (dir==IDIR) ? ighost + ioffset - 1 : i;
-                int jref= (dir==JDIR) ? jghost + joffset - 1 : j;
-                int kref= (dir==KDIR) ? kghost + koffset - 1 : k;
-                Vs(component,k,j,i) = Vs(component,kref,jref,iref);
-              }
-            );
-          }
-        }
-#endif
-        break;
-
-      case shearingbox:
-        if(data->mygrid->nproc[dir] > 1) {
-          // if shearing box enabled, the MPI call has already enforced strict periodicicty,
-          // so we just need to enforce the offset
-          real voffset=sbLx*sbS;
-
-          idefix_for("BoundaryEndShearingBox",kbeg,kend,jbeg,jend,ibeg,iend,
-            KOKKOS_LAMBDA (int k, int j, int i) {
-              Vc(VX2,k,j,i) = Vc(VX2,k,j,i) + voffset;
-            }
-          );
-        } else {
-          idefix_for("BoundaryEndShearingBox",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
-            KOKKOS_LAMBDA (int n, int k, int j, int i) {
-              real voffset= (n == VX2) ? + sbLx * sbS : ZERO_F;
-              Vc(n,k,j,i) = Vc(n,k-koffset,j-joffset,i-ioffset) + voffset;
-            }
-          );
-
-#if MHD == YES
-          for(int component=0; component<DIMENSIONS; component++) {
-            int ieb,jeb,keb;
-            if(component == IDIR)
-              ieb=iend+1;
-            else
-              ieb=iend;
-            if(component == JDIR)
-              jeb=jend+1;
-            else
-              jeb=jend;
-            if(component == KDIR)
-              keb=kend+1;
-            else
-              keb=kend;
-            if(component != dir) { // skip normal component
-              idefix_for("BoundaryEndShearingBoxVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
-                KOKKOS_LAMBDA (int k, int j, int i) {
-                  Vs(component,k,j,i) = Vs(component,k-koffset,j-joffset,i-ioffset);
-                }
-              );
-            }
-          }
-#endif
-        }
-        break;
-      case axis:
-        this->myAxis.EnforceAxisBoundary(right);
-        break;
-      case userdef:
-        if(this->haveUserDefBoundary)
-          this->userDefBoundaryFunc(*data, dir, right, t);
+      for(int component=0; component<DIMENSIONS; component++) {
+        int ieb,jeb,keb;
+        if(component == IDIR)
+          ieb=iend+1;
         else
-          IDEFIX_ERROR("No function has been enrolled to define your own boundary conditions");
-        break;
-      default:
-        std::stringstream msg("Boundary condition type is not yet implemented");
-        IDEFIX_ERROR(msg);
-    }
+          ieb=iend;
+        if(component == JDIR)
+          jeb=jend+1;
+        else
+          jeb=jend;
+        if(component == KDIR)
+          keb=kend+1;
+        else
+          keb=kend;
+        if(component != dir) { // skip normal component
+          idefix_for("BoundaryEndReflectiveVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
+            KOKKOS_LAMBDA (int k, int j, int i) {
+              int iref= (dir==IDIR) ? ighost + ioffset - 1 : i;
+              int jref= (dir==JDIR) ? jghost + joffset - 1 : j;
+              int kref= (dir==KDIR) ? kghost + koffset - 1 : k;
+              Vs(component,k,j,i) = Vs(component,kref,jref,iref);
+            }
+          );
+        }
+      }
+#endif
+      break;
+    case outflow:
+      idefix_for("BoundaryEndOutflow",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+        KOKKOS_LAMBDA (int n, int k, int j, int i) {
+          int iref= (dir==IDIR) ? ighost + ioffset - 1 : i;
+          int jref= (dir==JDIR) ? jghost + joffset - 1 : j;
+          int kref= (dir==KDIR) ? kghost + koffset - 1 : k;
+
+          if( (n==VX1+dir) && (Vc(n,kref,jref,iref) <= ZERO_F))
+            Vc(n,k,j,i) = ZERO_F;
+          else
+            Vc(n,k,j,i) = Vc(n,kref,jref,iref);
+        }
+      );
 
 #if MHD == YES
-    // Reconstruct the normal field component when using CT
-    ReconstructNormalField(dir);
+      for(int component=0; component<DIMENSIONS; component++) {
+        int ieb,jeb,keb;
+        if(component == IDIR)
+          ieb=iend+1;
+        else
+          ieb=iend;
+        if(component == JDIR)
+          jeb=jend+1;
+        else
+          jeb=jend;
+        if(component == KDIR)
+          keb=kend+1;
+        else
+          keb=kend;
+        if(component != dir) { // skip normal component
+          idefix_for("BoundaryEndOutflowVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
+            KOKKOS_LAMBDA (int k, int j, int i) {
+              int iref= (dir==IDIR) ? ighost + ioffset - 1 : i;
+              int jref= (dir==JDIR) ? jghost + joffset - 1 : j;
+              int kref= (dir==KDIR) ? kghost + koffset - 1 : k;
+              Vs(component,k,j,i) = Vs(component,kref,jref,iref);
+            }
+          );
+        }
+      }
 #endif
-  }   // Loop on dimension ends
+      break;
+
+    case shearingbox:
+      if(data->mygrid->nproc[dir] > 1) {
+        // if shearing box enabled, the MPI call has already enforced strict periodicicty,
+        // so we just need to enforce the offset
+        real voffset=sbLx*sbS;
+
+        idefix_for("BoundaryEndShearingBox",kbeg,kend,jbeg,jend,ibeg,iend,
+          KOKKOS_LAMBDA (int k, int j, int i) {
+            Vc(VX2,k,j,i) = Vc(VX2,k,j,i) + voffset;
+          }
+        );
+      } else {
+        idefix_for("BoundaryEndShearingBox",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+          KOKKOS_LAMBDA (int n, int k, int j, int i) {
+            real voffset= (n == VX2) ? + sbLx * sbS : ZERO_F;
+            Vc(n,k,j,i) = Vc(n,k-koffset,j-joffset,i-ioffset) + voffset;
+          }
+        );
 
 #if MHD == YES
-  // Remake the cell-centered field.
-  ReconstructVcField(this->Vc);
+        for(int component=0; component<DIMENSIONS; component++) {
+          int ieb,jeb,keb;
+          if(component == IDIR)
+            ieb=iend+1;
+          else
+            ieb=iend;
+          if(component == JDIR)
+            jeb=jend+1;
+          else
+            jeb=jend;
+          if(component == KDIR)
+            keb=kend+1;
+          else
+            keb=kend;
+          if(component != dir) { // skip normal component
+            idefix_for("BoundaryEndShearingBoxVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
+              KOKKOS_LAMBDA (int k, int j, int i) {
+                Vs(component,k,j,i) = Vs(component,k-koffset,j-joffset,i-ioffset);
+              }
+            );
+          }
+        }
 #endif
+      }
+      break;
+    case axis:
+      this->myAxis.EnforceAxisBoundary(right);
+      break;
+    case userdef:
+      if(this->haveUserDefBoundary)
+        this->userDefBoundaryFunc(*data, dir, right, t);
+      else
+        IDEFIX_ERROR("No function has been enrolled to define your own boundary conditions");
+      break;
+    default:
+      std::stringstream msg("Boundary condition type is not yet implemented");
+      IDEFIX_ERROR(msg);
+  }
+
+
 
   idfx::popRegion();
 }

@@ -25,10 +25,6 @@ Profiler prof;
 static int regionIndent = 0;
 #endif
 
-#ifdef WITH_MPI
-extern MPI_Comm CartComm;
-#endif
-
 int initialize() {
 #ifdef WITH_MPI
   MPI_Comm_size(MPI_COMM_WORLD,&psize);

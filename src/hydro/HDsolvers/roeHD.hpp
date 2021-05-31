@@ -49,8 +49,7 @@ void Hydro::RoeHD() {
       IDEFIX_ERROR("Wrong direction");
   }
 
-  IdefixArray4D<real> PrimL = this->PrimL;
-  IdefixArray4D<real> PrimR = this->PrimR;
+  IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
@@ -83,7 +82,7 @@ void Hydro::RoeHD() {
       real um[NVAR];
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, vL, vR);
+      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vc, vL, vR);
 #pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
         dv[nv] = vR[nv] - vL[nv];

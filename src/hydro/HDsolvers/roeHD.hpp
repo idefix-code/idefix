@@ -9,6 +9,8 @@
 #define HYDRO_HDSOLVERS_ROEHD_HPP_
 
 #include "../idefix.hpp"
+#include "hydro.hpp"
+#include "extrapolatePrimVar.hpp"
 
 #define ROE_AVERAGE 0
 

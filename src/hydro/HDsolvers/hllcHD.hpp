@@ -9,6 +9,7 @@
 #define HYDRO_HDSOLVERS_HLLCHD_HPP_
 
 #include "../idefix.hpp"
+#include "hydro.hpp"
 #include "extrapolatePrimVar.hpp"
 
 // Compute Riemann fluxes from states using HLLC solver

@@ -9,6 +9,8 @@
 #define HYDRO_HDSOLVERS_TVDLFHD_HPP_
 
 #include "../idefix.hpp"
+#include "hydro.hpp"
+#include "extrapolatePrimVar.hpp"
 
 // Compute Riemann fluxes from states using TVDLF solver
 template<const int DIR, const int Xn, const int Xt, const int Xb>

@@ -24,8 +24,8 @@ void Hydro::TvdlfHD() {
   if(DIR==JDIR) joffset=1;
   if(DIR==KDIR) koffset=1;
 
-  IdefixArray4D<real> Vc = this->Vc;
-  IdefixArray4D<real> Vs = this->Vs;
+  IdefixArray4D<real> locVc = this->Vc;
+  IdefixArray4D<real> locVs = this->Vs;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
@@ -57,7 +57,7 @@ void Hydro::TvdlfHD() {
       real cRL, cmax;
 
       // 1-- Read primitive variables
-      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, vL, vR);
+      K_ExtrapolatePrimVar<DIR>(i, j, k, locVc, locVs, vL, vR);
 #pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
         vRL[nv] = HALF_F*(vL[nv]+vR[nv]);

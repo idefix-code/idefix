@@ -24,8 +24,8 @@ void Hydro::HllHD() {
   if(DIR==JDIR) joffset=1;
   if(DIR==KDIR) koffset=1;
 
-  IdefixArray4D<real> Vc = this->Vc;
-  IdefixArray4D<real> Vs = this->Vs;
+  IdefixArray4D<real> locVc = this->Vc;
+  IdefixArray4D<real> locVs = this->Vs;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
@@ -56,7 +56,7 @@ void Hydro::HllHD() {
       real cL, cR, cmax;
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, vL, vR);
+      K_ExtrapolatePrimVar<DIR>(i, j, k, locVc, locVs, vL, vR);
 
       // 2-- Get the wave speed
 #if HAVE_ENERGY

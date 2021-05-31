@@ -10,6 +10,7 @@
 
 #include "../idefix.hpp"
 #include "solversMHD.hpp"
+#include "extrapolatePrimVar.hpp"
 
 // Compute Riemann fluxes from states using TVDLF solver
 template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
@@ -131,10 +132,9 @@ void Hydro::TvdlfMHD() {
       real fluxR[NVAR];
 
       // Load primitive variables
+      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, vL, vR);
 #pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
-        vL[nv] = PrimL(nv,k,j,i);
-        vR[nv] = PrimR(nv,k,j,i);
         v[nv] = HALF_F*(vL[nv] + vR[nv]);
       }
 

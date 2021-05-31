@@ -29,7 +29,6 @@ class Hydro {
   void Init(Input &, Grid &, DataBlock *);
   void ConvertConsToPrim();
   void ConvertPrimToCons();
-  void ExtrapolatePrimVar(int);
   void CalcRiemannFlux(int, const real);
   void CalcParabolicFlux(int, const real);
   void AddNonIdealMHDFlux(int, const real);
@@ -121,6 +120,10 @@ class Hydro {
   template<const int DIR, const int Xn, const int Xt, const int Xb>
     void TvdlfHD();
 #endif
+  // Extrapolate function
+  template<const int DIR>
+  KOKKOS_INLINE_FUNCTION void K_ExtrapolatePrimVar
+      (int, int, int, IdefixArray4D<real>, IdefixArray4D<real>, real[], real[]);
 
   // Arrays required by the Hydro object
   IdefixArray4D<real> Vc;      // Main cell-centered primitive variables index

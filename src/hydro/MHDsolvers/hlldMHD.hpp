@@ -10,6 +10,8 @@
 
 #include "../idefix.hpp"
 #include "solversMHD.hpp"
+#include "extrapolatePrimVar.hpp"
+
 
 // Compute Riemann fluxes from states using HLLD solver
 template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
@@ -119,6 +121,8 @@ void Hydro::HlldMHD() {
       real vL[NVAR];
       real vR[NVAR];
 
+      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, vL, vR);
+
       // Conservative variables
       real uL[NVAR];
       real uR[NVAR];
@@ -132,31 +136,6 @@ void Hydro::HlldMHD() {
 
       // Init c2Isothermal (used only when isothermal approx is set)
       c2Iso = ZERO_F;
-
-
-      // 1-- Store the primitive variables on the left, right, and averaged states
-#pragma unroll
-      for(int nv = 0 ; nv < NVAR; nv++) {
-        if(nv==BXn) {
-          vR[nv] = vL[nv] = Vs(DIR,k,j,i);
-        } else {
-          real dvm = Vc(nv,k-koffset,j-joffset,i-ioffset)
-                    -Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset);
-          real dvp = Vc(nv,k,j,i)-Vc(nv,k-koffset,j-joffset,i-ioffset);
-          // Van Leer limiter
-          real dv = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
-
-          vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + HALF_F*dv;
-
-          dvm = dvp;
-          dvp = Vc(nv,k+koffset,j+joffset,i+ioffset) - Vc(nv,k,j,i);
-
-          // Van Leer limiter
-          dv = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
-
-          vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
-        }
-      }
 
       // 2-- Get the wave speed
       real gpr, b1, b2, b3, Btmag2, Bmag2;

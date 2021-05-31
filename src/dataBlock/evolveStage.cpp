@@ -16,13 +16,10 @@ void DataBlock::EvolveStage() {
 
   // Loop on all of the directions
   for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
-    // Step one: extrapolate the variables to the sides, result is stored in the physics object
-    //hydro.ExtrapolatePrimVar(dir);
-
-    // Step 2: compute the intercell flux with our Riemann solver, store the resulting InvDt
+    // Step 1: compute the intercell flux with our Riemann solver, store the resulting InvDt
     hydro.CalcRiemannFlux(dir, this->t);
 
-    // Step 2.5: compute intercell parabolic flux when needed
+    // Step 2: compute intercell parabolic flux when needed
     if(hydro.haveExplicitParabolicTerms) hydro.CalcParabolicFlux(dir, this->t);
 
     // Step 3: compute the resulting evolution of the conserved variables, stored in Uc

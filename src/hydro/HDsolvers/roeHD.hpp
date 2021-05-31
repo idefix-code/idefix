@@ -83,10 +83,9 @@ void Hydro::RoeHD() {
       real um[NVAR];
 
       // 1-- Store the primitive variables on the left, right, and averaged states
+      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, vL, vR);
 #pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
-        vL[nv] = PrimL(nv,k,j,i);
-        vR[nv] = PrimR(nv,k,j,i);
         dv[nv] = vR[nv] - vL[nv];
       }
 

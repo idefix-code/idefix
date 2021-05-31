@@ -9,6 +9,7 @@
 #define HYDRO_HDSOLVERS_HLLCHD_HPP_
 
 #include "../idefix.hpp"
+#include "extrapolatePrimVar.hpp"
 
 // Compute Riemann fluxes from states using HLLC solver
 template<const int DIR, const int Xn, const int Xt, const int Xb>
@@ -64,11 +65,7 @@ void Hydro::HllcHD() {
       real cL, cR, cmax;
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-#pragma unroll
-      for(int nv = 0 ; nv < NVAR; nv++) {
-        vL[nv] = PrimL(nv,k,j,i);
-        vR[nv] = PrimR(nv,k,j,i);
-      }
+      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, vL, vR);
 
       // 2-- Get the wave speed
 #if HAVE_ENERGY

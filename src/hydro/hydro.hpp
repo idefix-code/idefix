@@ -122,7 +122,7 @@ class Hydro {
 #endif
   // Extrapolate function
   template<const int DIR>
-  KOKKOS_INLINE_FUNCTION void K_ExtrapolatePrimVar
+  KOKKOS_FORCEINLINE_FUNCTION void K_ExtrapolatePrimVar
       (const int, const int, const int, const IdefixArray4D<real>&,
       const IdefixArray4D<real>&, real[], real[]);
 

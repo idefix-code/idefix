@@ -20,7 +20,8 @@
 
 template<const int DIR>
 KOKKOS_INLINE_FUNCTION void Hydro::K_ExtrapolatePrimVar
-      (int i, int j, int k, IdefixArray4D<real> Vc, IdefixArray4D<real> Vs, real vL[], real vR[]) {
+      (const int i, const int j, const int k, const IdefixArray4D<real> &Vc,
+      const IdefixArray4D<real> &Vs, real vL[], real vR[]) {
   // 1-- Store the primitive variables on the left, right, and averaged states
   const int ioffset = (DIR==IDIR ? 1 : 0);
   const int joffset = (DIR==JDIR ? 1 : 0);

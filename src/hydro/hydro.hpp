@@ -123,7 +123,8 @@ class Hydro {
   // Extrapolate function
   template<const int DIR>
   KOKKOS_INLINE_FUNCTION void K_ExtrapolatePrimVar
-      (int, int, int, IdefixArray4D<real>, IdefixArray4D<real>, real[], real[]);
+      (const int, const int, const int, const IdefixArray4D<real>&,
+      const IdefixArray4D<real>&, real[], real[]);
 
   // Arrays required by the Hydro object
   IdefixArray4D<real> Vc;      // Main cell-centered primitive variables index

@@ -3,7 +3,7 @@ exclude: "^(src/kokkos)"
 repos:
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.4.0
+    rev: v4.0.1
     hooks:
       - id: trailing-whitespace  # auto-fix trailing whitespaces
       - id: end-of-file-fixer  # add EOF "\n" if missing
@@ -11,6 +11,7 @@ repos:
       - id: check-merge-conflict
       - id: check-yaml
       - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
 
   - repo: https://github.com/Lucas-C/pre-commit-hooks-nodejs
     rev: v1.1.1
@@ -19,7 +20,7 @@ repos:
         files: README.md
 
   - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.1.7
+    rev: v1.1.10
     hooks:
       - id: remove-tabs  # auto-fix tab/space mixing
       - id: insert-license
@@ -43,7 +44,7 @@ repos:
         files: "configure.py"
 
   - repo: https://gitlab.com/pycqa/flake8
-    rev: '3.8.4'
+    rev: '3.9.2'
     hooks:
     - id: flake8
       additional_dependencies: [

@@ -24,8 +24,8 @@ void Hydro::HllHD() {
   if(DIR==JDIR) joffset=1;
   if(DIR==KDIR) koffset=1;
 
-  IdefixArray4D<real> locVc = this->Vc;
-  IdefixArray4D<real> locVs = this->Vs;
+  IdefixArray4D<real> Vc = this->Vc;
+  IdefixArray4D<real> Vs = this->Vs;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;

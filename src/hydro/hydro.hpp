@@ -209,10 +209,6 @@ class Hydro {
 
   IdefixArray3D<real> cMax;    // Maximum propagation speed
 
-  // Value extrapolated on faces
-  IdefixArray4D<real> PrimL;
-  IdefixArray4D<real> PrimR;
-
   // Gravitational potential
   IdefixArray3D<real> phiP;
 

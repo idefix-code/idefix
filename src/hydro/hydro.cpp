@@ -280,10 +280,6 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   dMax = IdefixArray3D<real>("Hydro_dMax",
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  PrimL =  IdefixArray4D<real>("Hydro_PrimL", NVAR,
-                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  PrimR =  IdefixArray4D<real>("Hydro_PrimR", NVAR,
-                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   FluxRiemann =  IdefixArray4D<real>("Hydro_FluxRiemann", NVAR,
                                      data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 

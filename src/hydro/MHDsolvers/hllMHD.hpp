@@ -10,6 +10,7 @@
 
 #include "../idefix.hpp"
 #include "solversMHD.hpp"
+#include "extrapolatePrimVar.hpp"
 
 // Compute Riemann fluxes from states using HLL solver
 template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
@@ -23,8 +24,8 @@ void Hydro::HllMHD() {
   // extension in perp to the direction of integration, as required by CT.
   iextend=jextend=kextend=0;
 
-  IdefixArray4D<real> PrimL = this->PrimL;
-  IdefixArray4D<real> PrimR = this->PrimR;
+  IdefixArray4D<real> Vc = this->Vc;
+  IdefixArray4D<real> Vs = this->Vs;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
@@ -147,11 +148,7 @@ void Hydro::HllMHD() {
       c2Iso = ZERO_F;
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-#pragma unroll
-      for(int nv = 0 ; nv < NVAR; nv++) {
-        vL[nv] = PrimL(nv,k,j,i);
-        vR[nv] = PrimR(nv,k,j,i);
-      }
+      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, vL, vR);
 
       // 2-- Get the wave speed
       real gpr, b1, b2, b3, Btmag2, Bmag2;

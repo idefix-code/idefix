@@ -20,13 +20,16 @@ class Mpi {
   void ExchangeX2();
   void ExchangeX3();
 
-  // Init from dataBlock
-  void InitFromDataBlock(DataBlock *);
+  // constructor from datablock
+  Mpi(DataBlock *, IdefixArray1D<int>&, int, bool);
 
   // Destructor
   ~Mpi();
 
  private:
+  static int nInstances;     // total number of mpi instances in the code
+  int thisInstance;          // unique number of the current instance
+
   DataBlock *data;
 
   enum {faceRight, faceLeft};
@@ -40,11 +43,13 @@ class Mpi {
   IdefixArray1D<real> BufferRecvX3[2];
 
   IdefixArray1D<int>  mapVars;
-  int mapNVars = 0;
+  int mapNVars{0};
 
   int bufferSizeX1;
   int bufferSizeX2;
   int bufferSizeX3;
+
+  bool haveVs{false};
 
   // Requests for MPI persistent communications
   MPI_Request sendRequestX1[2];
@@ -56,7 +61,9 @@ class Mpi {
 
   Grid *mygrid;
 
-  Kokkos::Timer timer;    // Internal MPI timer
+  // MPI throughput timer specific to this object
+  double myTimer{0};
+  int64_t bytesSentOrReceived{0};
 };
 
 #endif // DATABLOCK_MPI_MPI_HPP_

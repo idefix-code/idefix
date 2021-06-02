@@ -21,6 +21,14 @@ RKLegendre::RKLegendre() {
   // do nothing!
 }
 
+RKLegendre::~RKLegendre() {
+  #ifdef WITH_MPI
+    if(mpi != NULL) {
+      delete mpi;
+    }
+  #endif
+}
+
 void RKLegendre::AddVariable(int var, IdefixArray1D<int>::HostMirror &varListHost ) {
   bool haveit{false};
 
@@ -85,7 +93,7 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
     #endif
   }
   // Ambipolar diffusion
-  if(data->hydro.ambipolarStatus.isRKL) {
+  if(data->hydro.ambipolarStatus.isRKL || data->hydro.resistivityStatus.isRKL) {
     #if COMPONENTS == 3 && DIMENSIONS < 3
       AddVariable(BX3, varListHost);
     #endif
@@ -98,9 +106,12 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
     haveVs = true;
   }
 
-
   // Copy the list on the device
   Kokkos::deep_copy(varList,varListHost);
+
+  #ifdef WITH_MPI
+    this->mpi = new Mpi(&datain, varList, nvarRKL, haveVs);
+  #endif
 
 
   // Variable allocation
@@ -157,7 +168,7 @@ void RKLegendre::Cycle() {
   // first RKL stage
   stage = 1;
 
-  // Apply Boundary conditions
+  // Apply Boundary conditions on the full set of variables
   data->hydro.SetBoundary(time);
 
   // Convert current state into conservative variable
@@ -261,7 +272,7 @@ void RKLegendre::Cycle() {
 #endif
 
     // Apply Boundary conditions
-    data->hydro.SetBoundary(time);
+    this->SetBoundary(time);
 
     // evolve RKL stage
     EvolveStage(time);
@@ -568,5 +579,46 @@ void RKLegendre::CalcParabolicRHS(int dir, real t) {
       });
   }
 
+  idfx::popRegion();
+}
+
+void RKLegendre::SetBoundary(real t) {
+  idfx::pushRegion("RKLegendre::SetBoundary");
+  // set internal boundary conditions
+  if(data->hydro.haveInternalBoundary) data->hydro.internalBoundaryFunc(*data, t);
+  for(int dir=0 ; dir < DIMENSIONS ; dir++ ) {
+      // MPI Exchange data when needed
+      // We use the RKL instance MPI object to ensure that we only exchange the data
+      // solved by RKL
+    #ifdef WITH_MPI
+    if(data->mygrid->nproc[dir]>1) {
+      switch(dir) {
+        case 0:
+          this->mpi->ExchangeX1();
+          break;
+        case 1:
+          this->mpi->ExchangeX2();
+          break;
+        case 2:
+          this->mpi->ExchangeX3();
+          break;
+      }
+    }
+    #endif
+    data->hydro.EnforceBoundaryDir(t, dir);
+    #if MHD == YES
+      // Reconstruct the normal field component when using CT
+      if(haveVs) {
+        data->hydro.ReconstructNormalField(dir);
+      }
+    #endif
+  } // Loop on dimension ends
+
+#if MHD == YES
+  // Remake the cell-centered field.
+  if(haveVs) {
+    data->hydro.ReconstructVcField(data->hydro.Vc);
+  }
+#endif
   idfx::popRegion();
 }

@@ -118,15 +118,19 @@ void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
           if(resistivity == UserDefFunction)
             eta = AVERAGE_3D_X(etaArr,k,j,i);
 
-          EXPAND(                                  ,
-                  Flux(BX2,k,j,i) += - eta * Jx3;  ,
-                  Flux(BX3,k,j,i) +=   eta * Jx2;  )
+          // Do not update BX2 if BX2s is defined
+          #if (DIMENSIONS < 2 && COMPONENTS >= 2)
+            Flux(BX2,k,j,i) += - eta * Jx3;
+          #endif
+          #if (DIMENSIONS < 3 && COMPONENTS == 3)
+            Flux(BX3,k,j,i) +=   eta * Jx2;
+          #endif
 
-#if HAVE_ENERGY
-          Flux(ENG,k,j,i) += EXPAND( ZERO_F            ,
-                                    - Bx2 * eta * Jx3  ,
-                                    + Bx3 * eta * Jx2  );
-#endif
+          #if HAVE_ENERGY
+            Flux(ENG,k,j,i) += EXPAND( ZERO_F            ,
+                                      - Bx2 * eta * Jx3  ,
+                                      + Bx3 * eta * Jx2  );
+          #endif
 
           dMax(k,j,i) += eta;
         }
@@ -139,21 +143,23 @@ void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
 
           real Fx2 = -xA * BdotB * Jx3;
           real Fx3 = xA * BdotB * Jx2;
-#if COMPONENTS == 3
-          real JdotB = Jx1 * Bx1 + Jx2 * Bx2 + Jx3 * Bx3;
-          Fx2 += xA * JdotB * Bx3;
-          Fx3 += -xA * JdotB * Bx2;
-#endif
+          #if COMPONENTS == 3
+            real JdotB = Jx1 * Bx1 + Jx2 * Bx2 + Jx3 * Bx3;
+            Fx2 += xA * JdotB * Bx3;
+            Fx3 += -xA * JdotB * Bx2;
+          #endif
+          #if (DIMENSIONS < 2 && COMPONENTS >= 2)
+            Flux(BX2,k,j,i) += Fx2;
+          #endif
+          #if (DIMENSIONS < 3 && COMPONENTS == 3)
+            Flux(BX3,k,j,i) += Fx3;
+          #endif
 
-          EXPAND(                          ,
-                  Flux(BX2,k,j,i) += Fx2;  ,
-                  Flux(BX3,k,j,i) += Fx3;  )
-
-#if HAVE_ENERGY
-          Flux(ENG,k,j,i) += EXPAND( ZERO_F      ,
-                                    + Bx2 * Fx2  ,
-                                    + Bx3 * Fx3  );
-#endif
+          #if HAVE_ENERGY
+            Flux(ENG,k,j,i) += EXPAND( ZERO_F      ,
+                                      + Bx2 * Fx2  ,
+                                      + Bx3 * Fx3  );
+          #endif
 
           dMax(k,j,i) += xA*BdotB;
         }
@@ -173,16 +179,20 @@ void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
           if(resistivity == UserDefFunction)
             eta = AVERAGE_3D_Y(etaArr,k,j,i);
 
+          // This term is always overwritten by CT, since this sweep is performed whenver
+          // DIMENSIONS>=2
+          //#if DIMENSIONS == 1
+          //  Flux(BX1,k,j,i) += eta * Jx3;
+          //#endif
+          #if (DIMENSIONS < 3 && COMPONENTS == 3)
+            Flux(BX3,k,j,i) += - eta * Jx1;
+          #endif
 
-          EXPAND( Flux(BX1,k,j,i) += eta * Jx3;   ,
-                                                  ,
-                  Flux(BX3,k,j,i) += - eta * Jx1; )
-
-#if HAVE_ENERGY
-          Flux(ENG,k,j,i) += EXPAND( Bx1 * eta * Jx3   ,
-                                                       ,
-                                    - Bx3 * eta * Jx1  );
-#endif
+          #if HAVE_ENERGY
+            Flux(ENG,k,j,i) += EXPAND( Bx1 * eta * Jx3   ,
+                                                        ,
+                                      - Bx3 * eta * Jx1  );
+          #endif
           dMax(k,j,i) += eta;
         }
 
@@ -195,21 +205,26 @@ void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
 
           real Fx1 = xA * BdotB * Jx3;
           real Fx3 = -xA * BdotB * Jx1;
-#if COMPONENTS == 3
-          real JdotB = Jx1 * Bx1 + Jx2 * Bx2 + Jx3 * Bx3;
-          Fx1 += -xA * JdotB * Bx3;
-          Fx3 += xA * JdotB * Bx1;
-#endif
+          #if COMPONENTS == 3
+            real JdotB = Jx1 * Bx1 + Jx2 * Bx2 + Jx3 * Bx3;
+            Fx1 += -xA * JdotB * Bx3;
+            Fx3 += xA * JdotB * Bx1;
+          #endif
 
-          EXPAND( Flux(BX1,k,j,i) += Fx1;  ,
-                                           ,
-                  Flux(BX3,k,j,i) += Fx3;  )
+          // This term is always overwritten by CT, since this sweep is performed whenver
+          // DIMENSIONS>=2
+          //#if DIMENSIONS == 1
+          //  Flux(BX1,k,j,i) += Fx1;
+          //#endif
+          #if (DIMENSIONS < 3 && COMPONENTS == 3)
+            Flux(BX3,k,j,i) += Fx3;
+          #endif
 
-#if HAVE_ENERGY
-          Flux(ENG,k,j,i) += EXPAND( + Bx1 * Fx1  ,
-                                     + ZERO_F     ,
-                                     + Bx3 * Fx3  );
-#endif
+          #if HAVE_ENERGY
+            Flux(ENG,k,j,i) += EXPAND( + Bx1 * Fx1  ,
+                                      + ZERO_F     ,
+                                      + Bx3 * Fx3  );
+          #endif
 
           dMax(k,j,i) += xA*BdotB;
         }
@@ -229,12 +244,13 @@ void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
           if(resistivity == UserDefFunction)
             eta = AVERAGE_3D_Z(etaArr,k,j,i);
 
-          Flux(BX1,k,j,i) += -eta * Jx2;
-          Flux(BX2,k,j,i) += eta * Jx1;
+          // This ie never needed since this is overwritten by CT
+          //Flux(BX1,k,j,i) += -eta * Jx2;
+          //Flux(BX2,k,j,i) += eta * Jx1;
 
-#if HAVE_ENERGY
-          Flux(ENG,k,j,i) += - Bx1 * eta * Jx2 + Bx2 * eta * Jx1;
-#endif
+          #if HAVE_ENERGY
+            Flux(ENG,k,j,i) += - Bx1 * eta * Jx2 + Bx2 * eta * Jx1;
+          #endif
           dMax(k,j,i) += eta;
         }
 
@@ -246,18 +262,18 @@ void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
 
           real Fx1 = -xA * BdotB * Jx2;
           real Fx2 = xA * BdotB * Jx1;
-#if COMPONENTS == 3
-          real JdotB = Jx1 * Bx1 + Jx2 * Bx2 + Jx3 * Bx3;
-          Fx1 += xA * JdotB * Bx2;
-          Fx2 += -xA * JdotB * Bx1;
-#endif
+          #if COMPONENTS == 3
+            real JdotB = Jx1 * Bx1 + Jx2 * Bx2 + Jx3 * Bx3;
+            Fx1 += xA * JdotB * Bx2;
+            Fx2 += -xA * JdotB * Bx1;
+          #endif
+          // This is never needed since this is overwritten by CT
+          //Flux(BX1,k,j,i) += Fx1;
+          //Flux(BX2,k,j,i) += Fx2;
 
-          Flux(BX1,k,j,i) += Fx1;
-          Flux(BX2,k,j,i) += Fx2;
-
-#if HAVE_ENERGY
-          Flux(ENG,k,j,i) += Bx1 * Fx1  + Bx2 * Fx2;
-#endif
+          #if HAVE_ENERGY
+            Flux(ENG,k,j,i) += Bx1 * Fx1  + Bx2 * Fx2;
+          #endif
 
           dMax(k,j,i) += xA*BdotB;
         }

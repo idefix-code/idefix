@@ -16,7 +16,7 @@ namespace idfx {
 int prank;
 int psize;
 
-double mpiTimer;
+double mpiCallsTimer = 0.0;
 
 IdefixOstream cout;
 Profiler prof;
@@ -34,7 +34,6 @@ int initialize() {
   prank=0;
 #endif
   cout.init(prank);
-  mpiTimer = 0.0;
   prof.Init();
   return(0);
 }   // Initialisation routine for idefix

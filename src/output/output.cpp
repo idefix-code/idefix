@@ -63,15 +63,18 @@ int Output::CheckForWrites(DataBlock &data) {
   // Do we need a restart dump?
   if(dumpEnabled) {
     if(data.t >= dumpLast + dumpPeriod) {
+      elapsedTime -= timer.seconds();
       dumpLast += dumpPeriod;
       dump.Write(data,*this);
       nfiles++;
+      elapsedTime += timer.seconds();
     }
   }
 
   // Do we need a VTK output?
   if(vtkEnabled) {
     if(data.t >= vtkLast + vtkPeriod) {
+      elapsedTime -= timer.seconds();
       if(userDefVariablesEnabled) {
         if(haveUserDefVariablesFunc) {
           // Call user-def function to fill the userdefined variable arrays
@@ -86,12 +89,14 @@ int Output::CheckForWrites(DataBlock &data) {
       vtkLast += vtkPeriod;
       vtk.Write(data, *this);
       nfiles++;
+      elapsedTime += timer.seconds();
     }
   }
 
   // Do we need an analysis ?
   if(analysisEnabled) {
     if(data.t >= analysisLast + analysisPeriod) {
+      elapsedTime -= timer.seconds();
       if(!haveAnalysisFunc) {
         IDEFIX_ERROR("Cannot perform a user-defined analysis without "
                      "enrollment of your analysis function");
@@ -101,6 +106,7 @@ int Output::CheckForWrites(DataBlock &data) {
       analysisFunc(data);
       idfx::popRegion();
       nfiles++;
+      elapsedTime += timer.seconds();
     }
   }
 
@@ -148,4 +154,12 @@ void Output::EnrollUserDefVariables(UserDefVariablesFunc myFunc) {
   haveUserDefVariablesFunc = true;
   idfx::cout << "Output: User-defined variables for outputs have been enrolled" << std::endl;
   idfx::popRegion();
+}
+
+void Output::ResetTimer() {
+  elapsedTime = 0.0;
+}
+
+double Output::GetTimer() {
+  return(elapsedTime);
 }

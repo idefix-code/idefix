@@ -21,8 +21,6 @@ void ElectroMotiveForce::ExchangeAll() {
 void ElectroMotiveForce::ExchangeX1() {
   idfx::pushRegion("Emf::ExchangeX1");
 
-  // init MPI Timer
-  idfx::mpiTimer -= timer.seconds();
 
   // Load  the buffers with data
   int ileft,iright,jbeg,jend,kbeg,kend;
@@ -39,7 +37,9 @@ void ElectroMotiveForce::ExchangeX1() {
   MPI_Status sendStatus[2];
   MPI_Status recvStatus[2];
 
+  double tStart = MPI_Wtime();
   MPI_SAFE_CALL(MPI_Startall(2, recvRequestX1));
+  idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   BoundaryType lbound = data->lbound[IDIR];
   BoundaryType rbound = data->rbound[IDIR];
@@ -74,11 +74,13 @@ void ElectroMotiveForce::ExchangeX1() {
   // Wait for completion before sending out everything
   Kokkos::fence();
 
+  tStart = MPI_Wtime();
   MPI_SAFE_CALL(MPI_Startall(2, sendRequestX1));
   // Wait for buffers to be received
 
   MPI_Waitall(2,recvRequestX1,recvStatus);
   MPI_Waitall(2, sendRequestX1, sendStatus);
+  idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // Unpack
   BufferLeft=BufferRecvX1[faceLeft];
@@ -111,8 +113,6 @@ void ElectroMotiveForce::ExchangeX1() {
     });
   #endif
 
-  // Stop MPI Timer
-  idfx::mpiTimer += timer.seconds();
 
   idfx::popRegion();
 }
@@ -121,8 +121,6 @@ void ElectroMotiveForce::ExchangeX1() {
 void ElectroMotiveForce::ExchangeX2() {
   idfx::pushRegion("Emf::ExchangeX2");
 
-    // init MPI Timer
-  idfx::mpiTimer -= timer.seconds();
   // Load  the buffers with data
   int jleft,jright,ibeg,iend,kbeg,kend;
   int nx,nz;
@@ -135,9 +133,11 @@ void ElectroMotiveForce::ExchangeX2() {
 
 
   // If MPI Persistent, start receiving even before the buffers are filled
+  double tStart = MPI_Wtime();
   MPI_Status sendStatus[2];
   MPI_Status recvStatus[2];
   MPI_SAFE_CALL(MPI_Startall(2, recvRequestX2));
+  idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   BoundaryType lbound = data->lbound[JDIR];
   BoundaryType rbound = data->rbound[JDIR];
@@ -172,10 +172,12 @@ void ElectroMotiveForce::ExchangeX2() {
   // Wait for completion before sending out everything
   Kokkos::fence();
 
+  tStart = MPI_Wtime();
   MPI_SAFE_CALL(MPI_Startall(2, sendRequestX2));
   // Wait for buffers to be received
   MPI_Waitall(2,recvRequestX2,recvStatus);
   MPI_Waitall(2, sendRequestX2, sendStatus);
+  idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // Unpack
   BufferLeft=BufferRecvX2[faceLeft];
@@ -208,8 +210,6 @@ void ElectroMotiveForce::ExchangeX2() {
     });
   #endif
 
-    // Stop MPI Timer
-  idfx::mpiTimer += timer.seconds();
 
   idfx::popRegion();
 }
@@ -218,8 +218,6 @@ void ElectroMotiveForce::ExchangeX2() {
 void ElectroMotiveForce::ExchangeX3() {
   idfx::pushRegion("Emf::ExchangeX3");
 
-  // init MPI Timer
-  idfx::mpiTimer -= timer.seconds();
 
   // Load  the buffers with data
   int kleft,kright,ibeg,iend,jbeg,kend;
@@ -233,9 +231,11 @@ void ElectroMotiveForce::ExchangeX3() {
 
 
   // If MPI Persistent, start receiving even before the buffers are filled
+  double tStart = MPI_Wtime();
   MPI_Status sendStatus[2];
   MPI_Status recvStatus[2];
   MPI_SAFE_CALL(MPI_Startall(2, recvRequestX3));
+  idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   BoundaryType lbound = data->lbound[KDIR];
   BoundaryType rbound = data->rbound[KDIR];
@@ -270,10 +270,12 @@ void ElectroMotiveForce::ExchangeX3() {
   // Wait for completion before sending out everything
   Kokkos::fence();
 
+  tStart = MPI_Wtime();
   MPI_SAFE_CALL(MPI_Startall(2, sendRequestX3));
   // Wait for buffers to be received
   MPI_Waitall(2,recvRequestX3,recvStatus);
   MPI_Waitall(2, sendRequestX3, sendStatus);
+  idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // Unpack
   BufferLeft=BufferRecvX3[faceLeft];
@@ -305,8 +307,6 @@ void ElectroMotiveForce::ExchangeX3() {
       }
     });
 
-  // Stop MPI Timer
-  idfx::mpiTimer += timer.seconds();
 
   idfx::popRegion();
 }

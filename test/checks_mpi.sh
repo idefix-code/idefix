@@ -1,8 +1,8 @@
 #!/bin/bash
 
-rep_HD_2D_mpi_list="MachReflection"
+rep_HD_2D_mpi_list="MachReflection ViscousFlowPastCylinder"
 rep_MHD_2D_mpi_list="OrszagTang"
-rep_MHD_3D_mpi_list="OrszagTang3D"
+rep_MHD_3D_mpi_list="AmbipolarCshock3D OrszagTang3D"
 
 # refer to the parent dir of this file, wherever this is called from
 # a python equivalent is e.g.

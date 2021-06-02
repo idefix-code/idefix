@@ -51,13 +51,16 @@ integration tests:
     - ./checks_mpi.sh
 
 pages:
-  image: python:3.7-alpine
+  image: lesurg/idefix-documentation:latest
   stage: deploy
   script:
-  - pip install -U sphinx sphinx-rtd-theme
-  - sphinx-build -b html doc/source public
+  - dir="$CI_COMMIT_REF_SLUG"
+  - if [ "$CI_COMMIT_REF_SLUG" == "$CI_DEFAULT_BRANCH" ]; then dir=""; fi;
+  - dir="public/$dir"
+  - sphinx-build -b html doc/source $dir
   artifacts:
     paths:
     - public
-  only:
-  - master
+  #only:
+  #- master
+  #- develop

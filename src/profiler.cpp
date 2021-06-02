@@ -70,9 +70,5 @@ void idfx::Profiler::Show() {
     idfx::cout << "Profiler: maximum memory usage for " << this->spaceName[i] << " memory space: "
                <<  this->spaceMax[i]/(1024.0*1024.0) << " MB." << std::endl;
   }
-  idfx::cout << "Profiler: total time spent in MPI calls (mpi.cpp)  : "
-             << idfx::mpiCallsTimer << " s." << std::endl;
-  idfx::cout << "Profiler: total time spent in MPI calls (EMF)      : "
-             << idfx::mpiCallsTimer << " s." << std::endl;
   idfx::popRegion();
 }

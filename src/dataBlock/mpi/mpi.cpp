@@ -23,7 +23,6 @@ void Mpi::ExchangeAll() {
 Mpi::Mpi(DataBlock *datain, IdefixArray1D<int> &inputMap, int inputMapN, bool inputHaveVs) {
   this->data = datain;
   this->mygrid = datain->mygrid;
-  this->timer.reset();
 
   // increase the number of instances
   nInstances++;
@@ -170,7 +169,8 @@ Mpi::Mpi(DataBlock *datain, IdefixArray1D<int> &inputMap, int inputMapN, bool in
 Mpi::~Mpi() {
   // Properly clean up the mess
 #ifdef MPI_PERSISTENT
-  idfx::cout << "Mpi(" << thisInstance << "): Cleaning up MPI persistent communication channels" << std::endl;
+  idfx::cout << "Mpi(" << thisInstance
+             << "): Cleaning up MPI persistent communication channels" << std::endl;
   for(int i=0 ; i< 2; i++) {
     MPI_Request_free( &sendRequestX1[i]);
     MPI_Request_free( &recvRequestX1[i]);
@@ -185,14 +185,15 @@ Mpi::~Mpi() {
     MPI_Request_free( &recvRequestX3[i]);
   #endif
   }
-
-  idfx::cout << "Mpi(" << thisInstance << "): spent " << myTimer << " seconds on MPI Exchange calls" << std::endl;
-  idfx::cout << "Mpi(" << thisInstance << "): measured throughput is " << bytesSentOrReceived/myTimer/1024.0/1024.0 << " MB/s" << std::endl;
-  idfx::cout << "Mpi(" << thisInstance << "): message sizes were " << std::endl;
-  idfx::cout << "        X1: " << bufferSizeX1*sizeof(real)/1024.0/1024.0 << "MB" << std::endl;
-  idfx::cout << "        X2: " << bufferSizeX2*sizeof(real)/1024.0/1024.0 << "MB" << std::endl;
-  idfx::cout << "        X3: " << bufferSizeX3*sizeof(real)/1024.0/1024.0 << "MB" << std::endl;
 #endif
+  if(thisInstance==1) {
+    idfx::cout << "Mpi(" << thisInstance << "): measured throughput is "
+               << bytesSentOrReceived/myTimer/1024.0/1024.0 << " MB/s" << std::endl;
+    idfx::cout << "Mpi(" << thisInstance << "): message sizes were " << std::endl;
+    idfx::cout << "        X1: " << bufferSizeX1*sizeof(real)/1024.0/1024.0 << " MB" << std::endl;
+    idfx::cout << "        X2: " << bufferSizeX2*sizeof(real)/1024.0/1024.0 << " MB" << std::endl;
+    idfx::cout << "        X3: " << bufferSizeX3*sizeof(real)/1024.0/1024.0 << " MB" << std::endl;
+  }
 }
 
 void Mpi::ExchangeX1() {

@@ -86,10 +86,10 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
                       /data.mygrid->np_int[KDIR]/cyclePeriod;
 #ifdef WITH_MPI
   // measure time spent in expensive MPI calls
-  double mpiCycleTime = (idfx::mpiCallsTimer + idfx::mpiCallsTimer) - lastMpiLog;
+  double mpiCycleTime = idfx::mpiCallsTimer - lastMpiLog;
   // reduce to an normalized overhead in %
-  double mpiOverhead = 100.0 * mpiCycleTime / (timer.seconds() - lastLog - mpiCycleTime);
-  lastMpiLog += mpiCycleTime;
+  double mpiOverhead = 100.0 * mpiCycleTime / (timer.seconds() - lastLog);
+  lastMpiLog = idfx::mpiCallsTimer;
 #endif
   lastLog = timer.seconds();
 
@@ -134,8 +134,8 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
   // Check divB
   real divB =  data.hydro.CheckDivB();
   idfx::cout << " | " << std::setw(col_width) << divB;
-  if(divB>1e-10) {
-    IDEFIX_ERROR("TimeIntegrator::Cycle divB>1e-10, check your calculation");
+  if(divB>1e-6) {
+    IDEFIX_ERROR("TimeIntegrator::Cycle divB>1e-6, check your calculation");
   }
 #endif
   if(haveRKL) {

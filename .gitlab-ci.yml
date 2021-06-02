@@ -3,48 +3,30 @@ workflow:
     - if: $CI_MERGE_REQUEST_ID               # Execute jobs in merge request context
     - if: $CI_COMMIT_BRANCH == 'master'      # Execute jobs when a new commit is pushed to master branch
 
-variables:
-  OMPI_ALLOW_RUN_AS_ROOT: '1'
-  OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: '1'
-  OMPI_MCA_btl_vader_single_copy_mechanism: 'none' # https://github.com/open-mpi/ompi/issues/4948
-
-.before_script_template:
-  before_script:
-    - export DEBIAN_FRONTEND=noninteractive
-    - apt-get update -qq
-    - apt-get install -qq build-essential openmpi-bin python3 python3-pip bc git
-    - python3 -m pip install -r test/python_requirements.txt
-
 stages:
     - checks
     - deploy
 
 lint:
-  extends: .before_script_template
   stage: checks
-  image: ubuntu:latest
+  image: lesurg/idefix:latest
   script:
     - pre-commit install
     - pre-commit run --all-files
 
 configure script tests:
-  extends: .before_script_template
   stage: checks
-  image: ubuntu:latest
+  image: lesurg/idefix:latest
   script:
     - python3 -m pip install pytest
     - python3 -m pytest -vv test/test_configure.py
 
 integration tests:
-  extends: .before_script_template
   stage: checks
-  image: ubuntu:latest
+  image: lesurg/idefix:latest
   script:
     - cat /proc/cpuinfo
     - gcc --version
-
-    - git submodule init
-    - git submodule update
 
     - cd test
     - ./checks.sh

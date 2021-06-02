@@ -10,6 +10,7 @@
 
 #include "../idefix.hpp"
 #include "solversMHD.hpp"
+#include "extrapolatePrimVar.hpp"
 
 #define ROE_AVERAGE 0
 
@@ -51,8 +52,8 @@ void Hydro::RoeMHD() {
   // extension in perp to the direction of integration, as required by CT.
   iextend=jextend=kextend=0;
 
-  IdefixArray4D<real> PrimL = this->PrimL;
-  IdefixArray4D<real> PrimR = this->PrimR;
+  IdefixArray4D<real> Vc = this->Vc;
+  IdefixArray4D<real> Vs = this->Vs;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
@@ -169,10 +170,9 @@ void Hydro::RoeMHD() {
       real um[NVAR];
 
       // 1-- Store the primitive variables on the left, right, and averaged states
+      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, vL, vR);
 #pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
-        vL[nv] = PrimL(nv,k,j,i);
-        vR[nv] = PrimR(nv,k,j,i);
         dV[nv] = vR[nv] - vL[nv];
       }
 

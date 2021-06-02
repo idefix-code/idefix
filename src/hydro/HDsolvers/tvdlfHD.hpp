@@ -9,6 +9,8 @@
 #define HYDRO_HDSOLVERS_TVDLFHD_HPP_
 
 #include "../idefix.hpp"
+#include "hydro.hpp"
+#include "extrapolatePrimVar.hpp"
 
 // Compute Riemann fluxes from states using TVDLF solver
 template<const int DIR, const int Xn, const int Xt, const int Xb>
@@ -22,8 +24,8 @@ void Hydro::TvdlfHD() {
   if(DIR==JDIR) joffset=1;
   if(DIR==KDIR) koffset=1;
 
-  IdefixArray4D<real> PrimL = this->PrimL;
-  IdefixArray4D<real> PrimR = this->PrimR;
+  IdefixArray4D<real> Vc = this->Vc;
+  IdefixArray4D<real> Vs = this->Vs;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
@@ -55,10 +57,9 @@ void Hydro::TvdlfHD() {
       real cRL, cmax;
 
       // 1-- Read primitive variables
+      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, vL, vR);
 #pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
-        vL[nv] = PrimL(nv,k,j,i);
-        vR[nv] = PrimR(nv,k,j,i);
         vRL[nv] = HALF_F*(vL[nv]+vR[nv]);
       }
 

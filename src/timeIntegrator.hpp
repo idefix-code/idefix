@@ -46,8 +46,8 @@ class TimeIntegrator {
   real cfl;   // CFL number
   real cflMaxVar; // Max CFL variation number
   int64_t ncycles;        // # of cycles
-  double lastLog;         // # time for the last log
-  double lastMpiLog;      // # time for the last MPI log
+  double lastLog;         // time for the last log (s)
+  double lastMpiLog;      // time for the last MPI log (s)
   double maxRuntime{-1.0};      // Maximum runtime requested (disabled when negative)
   int64_t cyclePeriod = 100;    // # of cycles between two logs
   Kokkos::Timer timer;    // Internal timer of the integrator

@@ -29,7 +29,6 @@ class Hydro {
   void Init(Input &, Grid &, DataBlock *);
   void ConvertConsToPrim();
   void ConvertPrimToCons();
-  void ExtrapolatePrimVar(int);
   void CalcRiemannFlux(int, const real);
   void CalcParabolicFlux(int, const real);
   void AddNonIdealMHDFlux(int, const real);
@@ -41,6 +40,7 @@ class Hydro {
 
 
   void SetBoundary(real);
+  void EnforceBoundaryDir(real, int);
   real GetGamma();
   real CheckDivB();
   void ResetStage();
@@ -130,6 +130,11 @@ class Hydro {
   template<const int DIR, const int Xn, const int Xt, const int Xb>
     void TvdlfHD();
 #endif
+  // Extrapolate function
+  template<const int DIR>
+  KOKKOS_FORCEINLINE_FUNCTION void K_ExtrapolatePrimVar
+      (const int, const int, const int, const IdefixArray4D<real>&,
+      const IdefixArray4D<real>&, real[], real[]);
 
   // Arrays required by the Hydro object
   IdefixArray4D<real> Vc;      // Main cell-centered primitive variables index
@@ -160,6 +165,7 @@ class Hydro {
   friend class Viscosity;
   friend class Fargo;
   friend class Axis;
+  friend class RKLegendre;
 
   // Isothermal EOS parameters
   real isoSoundSpeed;
@@ -204,10 +210,6 @@ class Hydro {
   DiffusivityFunc hallDiffusivityFunc{NULL};
 
   IdefixArray3D<real> cMax;    // Maximum propagation speed
-
-  // Value extrapolated on faces
-  IdefixArray4D<real> PrimL;
-  IdefixArray4D<real> PrimR;
 
   // Gravitational potential
   IdefixArray3D<real> phiP;

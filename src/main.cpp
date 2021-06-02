@@ -113,6 +113,7 @@ int main( int argc, char* argv[] ) {
     idfx::cout << "Main: Cycling Time Integrator..." << std::endl;
 
     Kokkos::Timer timer;
+    output.ResetTimer();
 
     real tstop = input.GetReal("TimeIntegrator","tstop",0);
 
@@ -175,11 +176,19 @@ int main( int argc, char* argv[] ) {
     idfx::cout << std::endl;
     idfx::cout << "Main: ";
     idfx::cout << "Perfs are " << 1/tintegration << " cell updates/second" << std::endl;
+    #ifdef WITH_MPI
+      idfx::cout << "MPI overhead represents "
+                 << static_cast<int>(100.0*idfx::mpiCallsTimer/timer.seconds())
+                 << "% of total run time." << std::endl;
+    #endif
+
+    idfx::cout << "Outputs represent "
+               << static_cast<int>(100.0*output.GetTimer()/timer.seconds())
+              << "% of total run time." << std::endl;
     // Show profiler output
     idfx::prof.Show();
-    idfx::cout << "Main: Job's done" << std::endl;
   }
-
+  idfx::cout << "Main: Job's done" << std::endl;
   Kokkos::finalize();
 
 #ifdef WITH_MPI

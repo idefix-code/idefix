@@ -39,7 +39,6 @@ void Hydro::SetBoundary(real t) {
   // Remake the cell-centered field.
   ReconstructVcField(this->Vc);
 #endif
-
 }
 
 

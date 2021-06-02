@@ -29,7 +29,7 @@ class Mpi {
  private:
   static int nInstances;     // total number of mpi instances in the code
   int thisInstance;          // unique number of the current instance
-  
+
   DataBlock *data;
 
   enum {faceRight, faceLeft};
@@ -63,7 +63,7 @@ class Mpi {
 
   // MPI throughput timer specific to this object
   double myTimer{0};
-  long int bytesSentOrReceived{0};
+  int64_t bytesSentOrReceived{0};
 };
 
 #endif // DATABLOCK_MPI_MPI_HPP_

@@ -22,7 +22,7 @@
  * @param Xn    Index of the normal velocity component
  * @param Xt    Index of the tangential velocity component
  * @param Xb    Indefx of the second tangential velocity component
- * 
+ *
  *  This routine computes the MHD out of V and U variables and stores it in F
  ********************************************************************************************/
 KOKKOS_INLINE_FUNCTION void K_Flux(real F[], real V[], real U[], real Cs2Iso,

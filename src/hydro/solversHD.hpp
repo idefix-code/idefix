@@ -20,7 +20,7 @@
  * @param U[]   Array of conservative variables (input)
  * @param cs2Iso Isothermal sound speed (only used when ISOTHERMAL is defined)
  * @param Xn    Index of the normal velocity component
- * 
+ *
  *  This routine computes the MHD out of V and U variables and stores it in F
  ********************************************************************************************/
 KOKKOS_INLINE_FUNCTION void K_Flux(real *KOKKOS_RESTRICT F, const real *KOKKOS_RESTRICT V,

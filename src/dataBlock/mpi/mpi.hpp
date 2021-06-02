@@ -61,8 +61,6 @@ class Mpi {
 
   Grid *mygrid;
 
-  Kokkos::Timer timer;    // Internal MPI timer
-
   // MPI throughput timer specific to this object
   double myTimer{0};
   long int bytesSentOrReceived{0};

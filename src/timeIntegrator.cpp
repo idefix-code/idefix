@@ -17,7 +17,7 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
 
   this->timer.reset();
   this->lastLog=timer.seconds();
-  this->lastMpiLog=idfx::mpiTimer;
+  this->lastMpiLog=idfx::mpiCallsTimer + idfx::mpiCallsTimer;
 
   nstages=input.GetInt("TimeIntegrator","nstages",0);
 
@@ -85,10 +85,11 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
   double rawperf = (timer.seconds()-lastLog)/data.mygrid->np_int[IDIR]/data.mygrid->np_int[JDIR]
                       /data.mygrid->np_int[KDIR]/cyclePeriod;
 #ifdef WITH_MPI
-  // measure the time spent in the MPI calls
-  double mpiOverhead = (idfx::mpiTimer-lastMpiLog)
-                          / (timer.seconds()-lastLog-idfx::mpiTimer+lastMpiLog)*100.0;
-  lastMpiLog = idfx::mpiTimer;
+  // measure time spent in expensive MPI calls
+  double mpiCycleTime = (idfx::mpiCallsTimer + idfx::mpiCallsTimer) - lastMpiLog;
+  // reduce to an normalized overhead in %
+  double mpiOverhead = 100.0 * mpiCycleTime / (timer.seconds() - lastLog - mpiCycleTime);
+  lastMpiLog += mpiCycleTime;
 #endif
   lastLog = timer.seconds();
 
@@ -99,7 +100,7 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
     idfx::cout << std::setw(col_width) << "time";
     idfx::cout << " | " << std::setw(col_width) << "cycle";
     idfx::cout << " | " << std::setw(col_width) << "time step";
-    idfx::cout << " | " << std::setw(col_width) << "cell updates/s";
+    idfx::cout << " | " << std::setw(col_width) << "cell (updates/s)";
 #ifdef WITH_MPI
     idfx::cout << " | " << std::setw(col_width) << "MPI overhead (%)";
 #endif

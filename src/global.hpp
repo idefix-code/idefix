@@ -18,7 +18,7 @@ extern int prank;     // parallel rank
 extern int psize;
 extern IdefixOstream cout;  // custom cout for idefix
 extern Profiler prof;     // profiler (for memory usage)
-extern double mpiTimer;   // Measure MPI perfs as you go
+extern double mpiCallsTimer;  // time significant MPI calls
 
 void pushRegion(const std::string&);
 void popRegion();

@@ -24,7 +24,7 @@ Mpi::Mpi(DataBlock *datain, IdefixArray1D<int> &inputMap, int inputMapN, bool in
   this->data = datain;
   this->mygrid = datain->mygrid;
   this->timer.reset();
-  
+
   // increase the number of instances
   nInstances++;
   thisInstance=nInstances;
@@ -128,7 +128,7 @@ Mpi::Mpi(DataBlock *datain, IdefixArray1D<int> &inputMap, int inputMapN, bool in
   MPI_SAFE_CALL(MPI_Send_init(BufferSendX2[faceRight].data(), bufferSizeX2, realMPI, procSend,
                 thisInstance*1000+10, mygrid->CartComm, &sendRequestX2[faceRight]));
 
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX2[faceLeft].data(), bufferSizeX2, realMPI, procRecv, 
+  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX2[faceLeft].data(), bufferSizeX2, realMPI, procRecv,
                 thisInstance*1000+10, mygrid->CartComm, &recvRequestX2[faceLeft]));
 
   // Send to the left
@@ -198,9 +198,6 @@ Mpi::~Mpi() {
 void Mpi::ExchangeX1() {
   idfx::pushRegion("Mpi::ExchangeX1");
 
-  // init MPI Timer
-  idfx::mpiTimer -= timer.seconds();
-
   // Load  the buffers with data
   int ibeg,iend,jbeg,jend,kbeg,kend,offset;
   int nx,ny,nz;
@@ -216,10 +213,12 @@ void Mpi::ExchangeX1() {
   // If MPI Persistent, start receiving even before the buffers are filled
   myTimer -= MPI_Wtime();
 #ifdef MPI_PERSISTENT
+  double tStart = MPI_Wtime();
   MPI_Status sendStatus[2];
   MPI_Status recvStatus[2];
 
   MPI_SAFE_CALL(MPI_Startall(2, recvRequestX1));
+  idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 #endif
   myTimer += MPI_Wtime();
 
@@ -275,9 +274,11 @@ void Mpi::ExchangeX1() {
   Kokkos::fence();
   myTimer -= MPI_Wtime();
 #ifdef MPI_PERSISTENT
+  tStart = MPI_Wtime();
   MPI_SAFE_CALL(MPI_Startall(2, sendRequestX1));
   // Wait for buffers to be received
   MPI_Waitall(2,recvRequestX1,recvStatus);
+  idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
 #else
   int procSend, procRecv;
@@ -324,6 +325,7 @@ void Mpi::ExchangeX1() {
   // We receive from procRecv, and we send to procSend
   MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,0,-1,&procRecv,&procSend ));
 
+  tStart = MPI_Wtime();
   MPI_SAFE_CALL(MPI_Sendrecv(BufferSendX1[faceLeft].data(), bufferSizeX1, realMPI, procSend, 101,
                 BufferRecvX1[faceRight].data(), bufferSizeX1, realMPI, procRecv, 101,
                 mygrid->CartComm, &status));
@@ -380,9 +382,6 @@ myTimer -= MPI_Wtime();
   myTimer += MPI_Wtime();
   bytesSentOrReceived += 4*bufferSizeX1*sizeof(real);
 
-  // Stop MPI Timer
-  idfx::mpiTimer += timer.seconds();
-
   idfx::popRegion();
 }
 
@@ -390,8 +389,6 @@ myTimer -= MPI_Wtime();
 void Mpi::ExchangeX2() {
   idfx::pushRegion("Mpi::ExchangeX2");
 
-  // init MPI Timer
-  idfx::mpiTimer -= timer.seconds();
   // Load  the buffers with data
   int ibeg,iend,jbeg,jend,kbeg,kend,offset;
   int nx,ny,nz;
@@ -410,7 +407,9 @@ void Mpi::ExchangeX2() {
   MPI_Status sendStatus[2];
   MPI_Status recvStatus[2];
 
+  double tStart = MPI_Wtime();
   MPI_SAFE_CALL(MPI_Startall(2, recvRequestX2));
+  idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 #endif
   myTimer += MPI_Wtime();
 
@@ -465,8 +464,10 @@ void Mpi::ExchangeX2() {
 
   myTimer -= MPI_Wtime();
 #ifdef MPI_PERSISTENT
+  tStart = MPI_Wtime();
   MPI_SAFE_CALL(MPI_Startall(2, sendRequestX2));
   MPI_Waitall(2,recvRequestX2,recvStatus);
+  idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
 #else
   int procSend, procRecv;
@@ -508,10 +509,12 @@ void Mpi::ExchangeX2() {
                 BufferRecvX2[faceLeft].data(), bufferSizeX2, realMPI, procRecv, 200,
                 mygrid->CartComm, &status));
 
+
   // Send to the left
   // We receive from procRecv, and we send to procSend
   MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,1,-1,&procRecv,&procSend ));
 
+  tStart = MPI_Wtime():
   MPI_SAFE_CALL(MPI_Sendrecv(BufferSendX2[faceLeft].data(), bufferSizeX2, realMPI, procSend, 201,
                 BufferRecvX2[faceRight].data(), bufferSizeX2, realMPI, procRecv, 201,
                 mygrid->CartComm, &status));
@@ -568,9 +571,6 @@ void Mpi::ExchangeX2() {
   myTimer += MPI_Wtime();
   bytesSentOrReceived += 4*bufferSizeX2*sizeof(real);
 
-  // Stop MPI Timer
-  idfx::mpiTimer += timer.seconds();
-
   idfx::popRegion();
 }
 
@@ -578,8 +578,6 @@ void Mpi::ExchangeX2() {
 void Mpi::ExchangeX3() {
   idfx::pushRegion("Mpi::ExchangeX3");
 
-  // init MPI Timer
-  idfx::mpiTimer -= timer.seconds();
 
   // Load  the buffers with data
   int ibeg,iend,jbeg,jend,kbeg,kend,offset;
@@ -599,7 +597,9 @@ void Mpi::ExchangeX3() {
   MPI_Status sendStatus[2];
   MPI_Status recvStatus[2];
 
+  double tStart = MPI_Wtime();
   MPI_SAFE_CALL(MPI_Startall(2, recvRequestX3));
+  idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 #endif
   myTimer += MPI_Wtime();
   // Coordinates of the ghost region which needs to be transfered
@@ -652,8 +652,10 @@ void Mpi::ExchangeX3() {
 
   myTimer -= MPI_Wtime();
 #ifdef MPI_PERSISTENT
+  tStart = MPI_Wtime();
   MPI_SAFE_CALL(MPI_Startall(2, sendRequestX3));
   MPI_Waitall(2,recvRequestX3,recvStatus);
+  idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
 #else
   int procSend, procRecv;
@@ -699,6 +701,7 @@ void Mpi::ExchangeX3() {
   // We receive from procRecv, and we send to procSend
   MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,2,-1,&procRecv,&procSend ));
 
+  tStart = MPI_Wtime();
   MPI_SAFE_CALL(MPI_Sendrecv(BufferSendX3[faceLeft].data(), bufferSizeX3, realMPI, procSend, 301,
                 BufferRecvX3[faceRight].data(), bufferSizeX3, realMPI, procRecv, 301,
                 mygrid->CartComm, &status));
@@ -753,8 +756,6 @@ void Mpi::ExchangeX3() {
 #endif
   myTimer += MPI_Wtime();
   bytesSentOrReceived += 4*bufferSizeX2*sizeof(real);
-  // Stop MPI Timer
-  idfx::mpiTimer += timer.seconds();
 
   idfx::popRegion();
 }

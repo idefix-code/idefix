@@ -32,17 +32,22 @@ integration tests:
     - ./checks.sh
     - ./checks_mpi.sh
 
+cache:
+  # Required to keep artifacts from old builds, e.g. from master
+  paths:
+    - public
+
 pages:
   image: lesurg/idefix-documentation:latest
   stage: deploy
   script:
-  - dir="$CI_COMMIT_REF_SLUG"
-  - if [ "$CI_COMMIT_REF_SLUG" == "$CI_DEFAULT_BRANCH" ]; then dir=""; fi;
-  - dir="public/$dir"
-  - sphinx-build -b html doc/source $dir
+    - dir="$CI_COMMIT_REF_SLUG"
+    - dir="public/$dir"
+    - rm -rf $dir
+    - sphinx-build -b html doc/source $dir
   artifacts:
     paths:
-    - public
-  #only:
-  #- master
-  #- develop
+      - public
+  only:
+  - master
+  - develop

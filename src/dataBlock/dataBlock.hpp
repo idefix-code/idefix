@@ -90,6 +90,10 @@ class DataBlock {
 
  private:
   void WriteVariable(FILE* , int , int *, char *, void*);
+
+  template<int dir>
+  void LoopDir();                 ///< // recursive loop on dimensions
+
 };
 
 #endif // DATABLOCK_DATABLOCK_HPP_

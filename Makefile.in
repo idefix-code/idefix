@@ -4,6 +4,7 @@ INCLUDE_DIRS = -I, -I. -I$(SRC) -I$(SRC)/hydro -I$(SRC)/hydro/electromotiveforce
 VPATH 		 = ./:$(SRC):$(SRC)/hydro:$(SRC)/hydro/electromotiveforce:$(SRC)/rkl:$(SRC)/dataBlock:$(SRC)/output@extraVpath@
 
 KOKKOS_PATH = ${IDEFIX_DIR}/src/kokkos
+KOKKOS_CXX_STANDARD = "c++17"
 KOKKOS_DEVICES = @kokkosDevices@
 KOKKOS_ARCH = @kokkosArch@
 
@@ -14,7 +15,7 @@ EXE = "idefix"
 HEADERS = definitions.hpp error.hpp profiler.hpp arrays.hpp grid.hpp setup.hpp gridHost.hpp idefix.hpp dataBlock.hpp dataBlockHost.hpp global.hpp input.hpp kokkos_types.h loop.hpp real_types.hpp timeIntegrator.hpp output.hpp vtk.hpp dump.hpp hydro.hpp viscosity.hpp fargo.hpp rkl.hpp dumpImage.hpp
 HEADERS += @extraHeaders@
 OBJ = grid.o gridHost.o input.o main.o dataBlock.o global.o profiler.o dataBlockHost.o setup.o timeIntegrator.o hydro.o error.o
-OBJ += addSourceTerms.o addNonIdealMHDFlux.o boundary.o calcCornerEmf.o calcRiemannEmf.o calcNonidealEMF.o calcRiemannFlux.o calcParabolicFlux.o calcCurrent.o calcRightHandSide.o checkDivB.o convertConsToPrim.o convertPrimToCons.o evolveMagField.o
+OBJ += addSourceTerms.o boundary.o calcCornerEmf.o calcRiemannEmf.o calcNonidealEMF.o calcCurrent.o checkDivB.o convertConsToPrim.o convertPrimToCons.o evolveMagField.o
 OBJ += electroMotiveForce.o EMFexchange.o enforceEMFBoundary.o makeGeometry.o dumpToFile.o checkNan.o evolveStage.o viscosity.o axis.o fargo.o rkl.o
 OBJ += vtk.o dump.o output.o dumpImage.o
 OBJ += @extraObj@

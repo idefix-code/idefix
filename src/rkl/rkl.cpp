@@ -408,6 +408,22 @@ void RKLegendre::ComputeDt() {
   idfx::popRegion();
 }
 
+template<int dir> void RKLegendre::LoopDir(real t) {
+
+    ResetFlux();
+    idfx::cout << "dir=" << dir<<std::endl;
+    // CalcParabolicFlux
+    data->hydro.CalcParabolicFlux<dir>(t);
+
+    // Calc Right Hand Side
+    CalcParabolicRHS<dir>(t);
+
+    // Recursive: do next dimension
+    if constexpr (dir+1 < DIMENSIONS) {
+      LoopDir<dir+1>(t);
+    }
+}
+
 
 void RKLegendre::EvolveStage(real t) {
   idfx::pushRegion("RKLegendre::EvolveStage");
@@ -416,14 +432,9 @@ void RKLegendre::EvolveStage(real t) {
 
   if(haveVs && data->hydro.needRKLCurrent) data->hydro.CalcCurrent();
 
-  for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
-    ResetFlux();
-    // CalcParabolicFlux
-    data->hydro.CalcParabolicFlux(dir, t);
+  // Loop on dimensions for the parabolic fluxes and RHS, starting from IDIR
+  LoopDir<IDIR>(t);
 
-    // Calc Right Hand Side
-    CalcParabolicRHS(dir, t);
-  }
   if(haveVs) {
     data->hydro.emf.CalcNonidealEMF(t);
     data->hydro.emf.EnforceEMFBoundary();
@@ -433,8 +444,8 @@ void RKLegendre::EvolveStage(real t) {
   idfx::popRegion();
 }
 
-
-void RKLegendre::CalcParabolicRHS(int dir, real t) {
+template <int dir>
+void RKLegendre::CalcParabolicRHS(real t) {
   idfx::pushRegion("RKLegendre::CalcParabolicRHS");
 
   IdefixArray4D<real> Flux = data->hydro.FluxRiemann;
@@ -511,6 +522,9 @@ void RKLegendre::CalcParabolicRHS(int dir, real t) {
              data->beg[JDIR],data->end[JDIR],
              data->beg[IDIR],data->end[IDIR],
     KOKKOS_LAMBDA (int n, int k, int j, int i) {
+      constexpr const int ioffset = (dir==IDIR) ? 1 : 0;
+      constexpr const int joffset = (dir==JDIR) ? 1 : 0;
+      constexpr const int koffset = (dir==KDIR) ? 1 : 0;
       real rhs;
 
       const int nv = varList(n);
@@ -548,18 +562,21 @@ void RKLegendre::CalcParabolicRHS(int dir, real t) {
              data->beg[JDIR],data->end[JDIR],
              data->beg[IDIR],data->end[IDIR],
              KOKKOS_LAMBDA (int k, int j, int i) {
+                constexpr const int ioffset = (dir==IDIR) ? 1 : 0;
+                constexpr const int joffset = (dir==JDIR) ? 1 : 0;
+                constexpr const int koffset = (dir==KDIR) ? 1 : 0;
                // Compute dt from max signal speed
                 const int ig = ioffset*i + joffset*j + koffset*k;
                 real dl = dx(ig);
                 #if GEOMETRY == POLAR
-                  if(dir==JDIR)
+                  if constexpr (dir==JDIR)
                     dl = dl*x1(i);
 
                 #elif GEOMETRY == SPHERICAL
-                  if(dir==JDIR)
+                  if constexpr (dir==JDIR)
                     dl = dl*rt(i);
                   else
-                    if(dir==KDIR)
+                    if constexpr (dir==KDIR)
                       dl = dl*rt(i)*dmu(j)/dx2(j);
                  #endif
 

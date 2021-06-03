@@ -9,7 +9,8 @@
 #include "dataBlock.hpp"
 
 // Compute parabolic fluxes
-void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
+template <int dir>
+void Hydro::AddNonIdealMHDFlux(const real t) {
   idfx::pushRegion("Hydro::addNonIdealMHDFlux");
 
   int ioffset,joffset,koffset;

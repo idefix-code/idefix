@@ -13,8 +13,7 @@
 #include "extrapolatePrimVar.hpp"
 
 // Compute Riemann fluxes from states using TVDLF solver
-template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
-                        ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
+template<const int DIR>
 void Hydro::TvdlfMHD() {
   idfx::pushRegion("Hydro::TVDLF_MHD");
 
@@ -120,6 +119,14 @@ void Hydro::TvdlfMHD() {
              data->beg[JDIR]-jextend,data->end[JDIR]+joffset+jextend,
              data->beg[IDIR]-iextend,data->end[IDIR]+ioffset+iextend,
     KOKKOS_LAMBDA (int k, int j, int i) {
+      // Init the directions (should be in the kernel for proper optimisation by the compilers)
+      EXPAND( const int Xn = DIR+MX1;                    ,
+              const int Xt = (DIR == IDIR ? MX2 : MX1);  ,
+              const int Xb = (DIR == KDIR ? MX2 : MX3);  )
+
+      EXPAND( const int BXn = DIR+BX1;                    ,
+              const int BXt = (DIR == IDIR ? BX2 : BX1);  ,
+              const int BXb = (DIR == KDIR ? BX2 : BX3);   )
       // Primitive variables
       real vL[NVAR];
       real vR[NVAR];

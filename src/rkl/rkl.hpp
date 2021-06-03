@@ -23,7 +23,7 @@ class RKLegendre {
   void ResetStage();
   void ResetFlux();
   void EvolveStage(real);
-  void CalcParabolicRHS(int, real);
+  template <int> void CalcParabolicRHS(real);
   void ComputeDt();
   void Copy(IdefixArray4D<real>&, IdefixArray4D<real>&);
 
@@ -52,6 +52,9 @@ class RKLegendre {
 
   bool haveVs{false};           // Whether we have (and need to compute) cell-centered variables
   void AddVariable(int, IdefixArray1D<int>::HostMirror & );
+
+ private:
+  template<int> void LoopDir(real);   // Dimensional loop
 };
 
 #endif // RKL_RKL_HPP_

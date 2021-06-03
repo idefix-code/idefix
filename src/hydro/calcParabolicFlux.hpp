@@ -7,9 +7,11 @@
 
 #include "hydro.hpp"
 #include "dataBlock.hpp"
+#include "addNonIdealMHDFlux.hpp"
 
 // Compute parabolic fluxes
-void Hydro::CalcParabolicFlux(int dir, const real t) {
+template <int dir>
+void Hydro::CalcParabolicFlux(const real t) {
   idfx::pushRegion("Hydro::CalcParabolicFlux");
 
   IdefixArray3D<real> dMax = this->dMax;
@@ -27,7 +29,7 @@ void Hydro::CalcParabolicFlux(int dir, const real t) {
     || (resistivityStatus.isRKL  && ( data->rklCycle))
     || (ambipolarStatus.isExplicit  && (! data->rklCycle))
     || (ambipolarStatus.isRKL  && ( data->rklCycle)) ) {
-      this->AddNonIdealMHDFlux(dir,t);
+      this->AddNonIdealMHDFlux<dir>(t);
   }
 
   if( (viscosityStatus.isExplicit && (!data->rklCycle))

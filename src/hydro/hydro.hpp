@@ -29,10 +29,10 @@ class Hydro {
   void Init(Input &, Grid &, DataBlock *);
   void ConvertConsToPrim();
   void ConvertPrimToCons();
-  void CalcRiemannFlux(int, const real);
-  void CalcParabolicFlux(int, const real);
-  void AddNonIdealMHDFlux(int, const real);
-  void CalcRightHandSide(int, real, real );
+  template <int> void CalcRiemannFlux(const real);
+  template <int> void CalcParabolicFlux(const real);
+  template <int> void AddNonIdealMHDFlux(const real);
+  template <int> void CalcRightHandSide(real, real );
   void CalcCurrent();
   void AddSourceTerms(real, real );
   void ReconstructVcField(IdefixArray4D<real> &);
@@ -108,26 +108,22 @@ class Hydro {
 
   // Riemann Solvers
 #if MHD == YES
-  template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
-         ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
+  template<int>
     void HlldMHD();
-  template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
-         ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
+  template<int>
     void HllMHD();
-  template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
-         ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
+  template<int>
     void RoeMHD();
-  template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
-                        ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
+  template<int>
     void TvdlfMHD();
 #else
-  template<const int DIR, const int Xn, const int Xt, const int Xb>
+  template<int>
     void HllcHD();
-  template<const int DIR, const int Xn, const int Xt, const int Xb>
+  template<int>
     void HllHD();
-  template<const int DIR, const int Xn, const int Xt, const int Xb>
+  template<int>
     void RoeHD();
-  template<const int DIR, const int Xn, const int Xt, const int Xb>
+  template<int>
     void TvdlfHD();
 #endif
   // Extrapolate function

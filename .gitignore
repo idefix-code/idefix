@@ -23,6 +23,8 @@ test/**/*.dmp
 test/**/*.tmp
 test/**/Makefile
 test/**/KokkosCore*
+test/**/*.csv
+test/**/*.pyc
 
 # machine specific cache and hidden files
 .*

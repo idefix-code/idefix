@@ -163,8 +163,6 @@ def readVTKPolar(filename):
     V.ny=int(slist[2])
     V.nz=int(slist[3])
 
-    print("nx=%d, ny=%d, nz=%d"%(V.nx,V.ny,V.nz))
-
     s=fid.readline()    # POINTS NXNYNZ float
     slist=s.split()
     npoints=int(slist[1])

@@ -315,15 +315,15 @@ void Hydro::CalcRightHandSide(real t, real dt) {
 
       // Potential terms
       if(needPotential) {
-        if constexpr (dir==IDIR) {
+        if (dir==IDIR) {
           // Gravitational force in direction i
           rhs[MX1] -= dt/dl * Vc(RHO,k,j,i) * (phiP(k,j,i+1) - phiP(k,j,i));
         }
-        if constexpr (dir==JDIR) {
+        if (dir==JDIR) {
           // Gravitational force in direction j
           rhs[MX2] -= dt/dl * Vc(RHO,k,j,i) * (phiP(k,j+1,i) - phiP(k,j,i));
         }
-        if constexpr (dir==KDIR) {
+        if (dir==KDIR) {
           // Gravitational force in direction k
           rhs[MX3] -= dt/dl * Vc(RHO,k,j,i) * (phiP(k+1,j,i) - phiP(k,j,i));
         }

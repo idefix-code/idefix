@@ -4,7 +4,7 @@ INCLUDE_DIRS = -I, -I. -I$(SRC) -I$(SRC)/hydro -I$(SRC)/hydro/electromotiveforce
 VPATH 		 = ./:$(SRC):$(SRC)/hydro:$(SRC)/hydro/electromotiveforce:$(SRC)/rkl:$(SRC)/dataBlock:$(SRC)/output@extraVpath@
 
 KOKKOS_PATH = ${IDEFIX_DIR}/src/kokkos
-KOKKOS_CXX_STANDARD = "c++17"
+KOKKOS_CXX_STANDARD = "c++14"
 KOKKOS_DEVICES = @kokkosDevices@
 KOKKOS_ARCH = @kokkosArch@
 

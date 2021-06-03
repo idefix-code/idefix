@@ -421,7 +421,7 @@ template<int dir> void RKLegendre::LoopDir(real t) {
     LoopDir<dir+1>(t);
 }
 
-template<> void RKLegendre::LoopDir<DIMENSIONS(real t) {
+template<> void RKLegendre::LoopDir<DIMENSIONS>(real t) {
   // Do nothing
 }
 

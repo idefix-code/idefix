@@ -14,8 +14,8 @@
 
 
 // Compute Riemann fluxes from states using HLLD solver
-template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
-         ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
+template<const int DIR, ARG_EXPAND(const int qXn, const int qXt, const int qXb),
+         ARG_EXPAND(const int qBXn, const int qBXt, const int qBXb)>
 void Hydro::HlldMHD() {
   idfx::pushRegion("Hydro::HLLD_MHD");
 
@@ -117,6 +117,14 @@ void Hydro::HlldMHD() {
              data->beg[JDIR]-jextend,data->end[JDIR]+joffset+jextend,
              data->beg[IDIR]-iextend,data->end[IDIR]+ioffset+iextend,
     KOKKOS_LAMBDA (int k, int j, int i) {
+      // Init the directions
+      const int Xn = DIR+MX1;
+      const int Xt = (DIR == IDIR ? MX2 : MX1);
+      const int Xb = (DIR == KDIR ? MX2 : MX3);
+      const int BXn = DIR+BX1;
+      const int BXt = (DIR == IDIR ? BX2 : BX1);
+      const int BXb = (DIR == KDIR ? BX2 : BX3);
+
       // Primitive variables
       real vL[NVAR];
       real vR[NVAR];

@@ -12,7 +12,6 @@
 #include "calcRiemannFlux.hpp"
 
 template<int dir> void DataBlock::LoopDir() {
-
     // Step 2: compute the intercell flux with our Riemann solver, store the resulting InvDt
     hydro.CalcRiemannFlux<dir>(this->t);
 

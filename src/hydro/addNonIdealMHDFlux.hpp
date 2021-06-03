@@ -5,6 +5,9 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#ifndef HYDRO_ADDNONIDEALMHDFLUX_HPP_
+#define HYDRO_ADDNONIDEALMHDFLUX_HPP_
+
 #include "hydro.hpp"
 #include "dataBlock.hpp"
 
@@ -284,3 +287,5 @@ void Hydro::AddNonIdealMHDFlux(const real t) {
 
   idfx::popRegion();
 }
+
+#endif // HYDRO_ADDNONIDEALMHDFLUX_HPP_

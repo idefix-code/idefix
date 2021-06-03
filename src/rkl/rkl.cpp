@@ -409,7 +409,6 @@ void RKLegendre::ComputeDt() {
 }
 
 template<int dir> void RKLegendre::LoopDir(real t) {
-
     ResetFlux();
 
     // CalcParabolicFlux

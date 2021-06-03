@@ -4,6 +4,8 @@
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
+#ifndef HYDRO_CALCPARABOLICFLUX_HPP_
+#define HYDRO_CALCPARABOLICFLUX_HPP_
 
 #include "hydro.hpp"
 #include "dataBlock.hpp"
@@ -48,3 +50,5 @@ void Hydro::CalcParabolicFlux(const real t) {
 
   idfx::popRegion();
 }
+
+#endif //HYDRO_CALCPARABOLICFLUX_HPP_

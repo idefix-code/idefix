@@ -5,6 +5,9 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#ifndef HYDRO_CALCRIGHTHANDSIDE_HPP_
+#define HYDRO_CALCRIGHTHANDSIDE_HPP_
+
 #include "hydro.hpp"
 #include "dataBlock.hpp"
 
@@ -354,3 +357,4 @@ void Hydro::CalcRightHandSide(real t, real dt) {
 
   idfx::popRegion();
 }
+#endif // HYDRO_CALCRIGHTHANDSIDE_HPP_

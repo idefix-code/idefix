@@ -418,11 +418,12 @@ template<int dir> void RKLegendre::LoopDir(real t) {
     CalcParabolicRHS<dir>(t);
 
     // Recursive: do next dimension
-    if constexpr (dir+1 < DIMENSIONS) {
-      LoopDir<dir+1>(t);
-    }
+    LoopDir<dir+1>(t);
 }
 
+template<> void RKLegendre::LoopDir<DIMENSIONS>(real t) {
+  // Do nothing
+}
 
 void RKLegendre::EvolveStage(real t) {
   idfx::pushRegion("RKLegendre::EvolveStage");
@@ -568,14 +569,14 @@ void RKLegendre::CalcParabolicRHS(real t) {
                 const int ig = ioffset*i + joffset*j + koffset*k;
                 real dl = dx(ig);
                 #if GEOMETRY == POLAR
-                  if constexpr (dir==JDIR)
+                  if (dir==JDIR)
                     dl = dl*x1(i);
 
                 #elif GEOMETRY == SPHERICAL
-                  if constexpr (dir==JDIR)
+                  if (dir==JDIR)
                     dl = dl*rt(i);
                   else
-                    if constexpr (dir==KDIR)
+                    if (dir==KDIR)
                       dl = dl*rt(i)*dmu(j)/dx2(j);
                  #endif
 

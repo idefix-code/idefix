@@ -22,8 +22,11 @@ template<int dir> void DataBlock::LoopDir() {
     hydro.CalcRightHandSide<dir>(this->t, this->dt);
 
     // Recursive: do next dimension
-    if constexpr (dir+1 < DIMENSIONS)
       LoopDir<dir+1>();
+}
+
+template<> void DataBlock::LoopDir<DIMENSIONS>() {
+  // Do nothing
 }
 
 

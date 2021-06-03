@@ -35,7 +35,6 @@ class Fargo {
 
   bool velocityHasBeenComputed{false};
   void GetFargoVelocity(real);
-  void checkAzimuth();
   FargoVelocityFunc fargoVelocityFunc{NULL};  // The user-defined fargo velocity function
 };
 

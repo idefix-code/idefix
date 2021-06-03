@@ -108,29 +108,8 @@ void Fargo::SubstractVelocity(const real t) {
   idfx::popRegion();
 }
 
-void Fargo::checkAzimuth() {
-  for(int n = 0 ; n < NVAR ; n++) {
-      int i = data->beg[IDIR];
-      double diff=0;
-      int jref=-1;
-      for(int j = data->beg[JDIR] ; j < data->end[JDIR] ; j++) {
-        int jp1 = data->beg[JDIR] + (j-data->beg[JDIR]+1)%(data->np_int[JDIR]);
-        double q = std::fabs(hydro->Uc(n,0,j,i) - hydro->Uc(n,0,jp1,i));
-        if(q>diff) {
-          diff=q;
-          jref=j;
-        }
-      }
-      idfx::cout << "var[" << n << "] at j=" << jref-data->beg[JDIR] << " got diff=" << diff << std::endl;
-  }
-}
-
 void Fargo::ShiftSolution(const real t, const real dt) {
   idfx::pushRegion("Fargo::ShiftSolution");
-
-  idfx::cout << "******************************************************" << std::endl;
-  idfx::cout << "BEFORE:" << std::endl;
-  checkAzimuth();
 
   // Refresh the fargo velocity function
   GetFargoVelocity(t);
@@ -534,10 +513,5 @@ void Fargo::ShiftSolution(const real t, const real dt) {
 
 #endif // MHD
 
-  idfx::cout << "AFTER:" << std::endl;
-  checkAzimuth();
-  idfx::cout << "******************************************************" << std::endl;
-
-  IDEFIX_ERROR("BOUH");
   idfx::popRegion();
 }

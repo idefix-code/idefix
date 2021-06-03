@@ -25,8 +25,6 @@
 
 class DataBlock {
  public:
-  // Destructor
-  ~DataBlock();
   // Local grid information
   IdefixArray1D<real> x[3];    ///< geometrical central points
   IdefixArray1D<real> xr[3];   ///< cell right interface
@@ -71,7 +69,7 @@ class DataBlock {
   Grid *mygrid;                ///< Parent grid object
 
   #ifdef WITH_MPI
-  Mpi *mpi{NULL};                     ///< Mpi object when WITH_MPI is set
+  Mpi mpi;                     ///< Mpi object when WITH_MPI is set
   #endif
 
   Hydro hydro;                  ///< The Hydro object attached to this datablock

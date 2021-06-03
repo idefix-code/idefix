@@ -20,8 +20,8 @@ class Mpi {
   void ExchangeX2();
   void ExchangeX3();
 
-  // constructor from datablock
-  Mpi(DataBlock *, IdefixArray1D<int>&, int, bool);
+  // Init from datablock
+  void Init(DataBlock *, IdefixArray1D<int>&, int, bool);
 
   // Destructor
   ~Mpi();
@@ -29,6 +29,7 @@ class Mpi {
  private:
   static int nInstances;     // total number of mpi instances in the code
   int thisInstance;          // unique number of the current instance
+  bool isInitialized{false};
 
   DataBlock *data;
 

@@ -5,12 +5,16 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#ifndef HYDRO_CALCRIGHTHANDSIDE_HPP_
+#define HYDRO_CALCRIGHTHANDSIDE_HPP_
+
 #include "hydro.hpp"
 #include "dataBlock.hpp"
 
 
 // Compute the right handside in direction dir from conservative equation, with timestep dt
-void Hydro::CalcRightHandSide(int dir, real t, real dt) {
+template<int dir>
+void Hydro::CalcRightHandSide(real t, real dt) {
   idfx::pushRegion("Hydro::CalcRightHandSide");
 
   IdefixArray4D<real> Uc   = this->Uc;
@@ -209,6 +213,10 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
              data->beg[JDIR],data->end[JDIR],
              data->beg[IDIR],data->end[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
+      constexpr const int ioffset = (dir==IDIR) ? 1 : 0;
+      constexpr const int joffset = (dir==JDIR) ? 1 : 0;
+      constexpr const int koffset = (dir==KDIR) ? 1 : 0;
+
       //
       real dtdV=dt / dV(k,j,i);
       real rhs[NVAR];
@@ -307,23 +315,17 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
 
       // Potential terms
       if(needPotential) {
-        switch(dir) {
-          case IDIR:
-            // Gravitational force in direction i
-            rhs[MX1] -= dt/dl * Vc(RHO,k,j,i) * (phiP(k,j,i+1) - phiP(k,j,i));
-            break;
-#if DIMENSIONS >=2
-          case JDIR:
-            // Gravitational force in direction j
-            rhs[MX2] -= dt/dl * Vc(RHO,k,j,i) * (phiP(k,j+1,i) - phiP(k,j,i));
-            break;
-#endif
-#if DIMENSIONS == 3
-          case KDIR:
-            // Gravitational force in direction k
-            rhs[MX3] -= dt/dl * Vc(RHO,k,j,i) * (phiP(k+1,j,i) - phiP(k,j,i));
-            break;
-#endif
+        if constexpr (dir==IDIR) {
+          // Gravitational force in direction i
+          rhs[MX1] -= dt/dl * Vc(RHO,k,j,i) * (phiP(k,j,i+1) - phiP(k,j,i));
+        }
+        if constexpr (dir==JDIR) {
+          // Gravitational force in direction j
+          rhs[MX2] -= dt/dl * Vc(RHO,k,j,i) * (phiP(k,j+1,i) - phiP(k,j,i));
+        }
+        if constexpr (dir==KDIR) {
+          // Gravitational force in direction k
+          rhs[MX3] -= dt/dl * Vc(RHO,k,j,i) * (phiP(k+1,j,i) - phiP(k,j,i));
         }
 
 #if HAVE_ENERGY
@@ -355,3 +357,4 @@ void Hydro::CalcRightHandSide(int dir, real t, real dt) {
 
   idfx::popRegion();
 }
+#endif // HYDRO_CALCRIGHTHANDSIDE_HPP_

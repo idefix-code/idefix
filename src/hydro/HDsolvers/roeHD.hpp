@@ -28,7 +28,7 @@
 #endif
 
 // Compute Riemann fluxes from states using ROE solver
-template<const int DIR, const int Xn, const int Xt, const int Xb>
+template<const int DIR>
 void Hydro::RoeHD() {
   idfx::pushRegion("Hydro::ROE_Solver");
 
@@ -67,6 +67,10 @@ void Hydro::RoeHD() {
              data->beg[JDIR],data->end[JDIR]+joffset,
              data->beg[IDIR],data->end[IDIR]+ioffset,
     KOKKOS_LAMBDA (int k, int j, int i) {
+      // Init the directions (should be in the kernel for proper optimisation by the compilers)
+      EXPAND( const int Xn = DIR+MX1;                    ,
+              const int Xt = (DIR == IDIR ? MX2 : MX1);  ,
+              const int Xb = (DIR == KDIR ? MX2 : MX3);  )
       // Primitive variables
       real vL[NVAR];
       real vR[NVAR];

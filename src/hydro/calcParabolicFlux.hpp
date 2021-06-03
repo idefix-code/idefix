@@ -4,12 +4,16 @@
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
+#ifndef HYDRO_CALCPARABOLICFLUX_HPP_
+#define HYDRO_CALCPARABOLICFLUX_HPP_
 
 #include "hydro.hpp"
 #include "dataBlock.hpp"
+#include "addNonIdealMHDFlux.hpp"
 
 // Compute parabolic fluxes
-void Hydro::CalcParabolicFlux(int dir, const real t) {
+template <int dir>
+void Hydro::CalcParabolicFlux(const real t) {
   idfx::pushRegion("Hydro::CalcParabolicFlux");
 
   IdefixArray3D<real> dMax = this->dMax;
@@ -27,7 +31,7 @@ void Hydro::CalcParabolicFlux(int dir, const real t) {
     || (resistivityStatus.isRKL  && ( data->rklCycle))
     || (ambipolarStatus.isExplicit  && (! data->rklCycle))
     || (ambipolarStatus.isRKL  && ( data->rklCycle)) ) {
-      this->AddNonIdealMHDFlux(dir,t);
+      this->AddNonIdealMHDFlux<dir>(t);
   }
 
   if( (viscosityStatus.isExplicit && (!data->rklCycle))
@@ -46,3 +50,5 @@ void Hydro::CalcParabolicFlux(int dir, const real t) {
 
   idfx::popRegion();
 }
+
+#endif //HYDRO_CALCPARABOLICFLUX_HPP_

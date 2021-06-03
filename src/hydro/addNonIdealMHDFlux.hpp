@@ -5,11 +5,15 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#ifndef HYDRO_ADDNONIDEALMHDFLUX_HPP_
+#define HYDRO_ADDNONIDEALMHDFLUX_HPP_
+
 #include "hydro.hpp"
 #include "dataBlock.hpp"
 
 // Compute parabolic fluxes
-void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
+template <int dir>
+void Hydro::AddNonIdealMHDFlux(const real t) {
   idfx::pushRegion("Hydro::addNonIdealMHDFlux");
 
   int ioffset,joffset,koffset;
@@ -283,3 +287,5 @@ void Hydro::AddNonIdealMHDFlux(int dir, const real t) {
 
   idfx::popRegion();
 }
+
+#endif // HYDRO_ADDNONIDEALMHDFLUX_HPP_

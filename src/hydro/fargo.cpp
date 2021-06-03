@@ -108,9 +108,9 @@ void Fargo::SubstractVelocity(const real t) {
   idfx::popRegion();
 }
 
-
 void Fargo::ShiftSolution(const real t, const real dt) {
   idfx::pushRegion("Fargo::ShiftSolution");
+
   // Refresh the fargo velocity function
   GetFargoVelocity(t);
 
@@ -160,10 +160,11 @@ void Fargo::ShiftSolution(const real t, const real dt) {
                  s = k;
                 #endif
                 // compute shifted indices, taking into account the fact that we're periodic
-                sp1 = sbeg + (s+1-sbeg)%(send-sbeg);
-                sp2 = sbeg + (s+2-sbeg)%(send-sbeg);
-                sm1 = sbeg + (s-1-sbeg)%(send-sbeg);
-                sm2 = sbeg + (s-2-sbeg)%(send-sbeg);
+                int ds = send-sbeg;
+                sp1 = sbeg + ((s+1-sbeg)%ds+ds)%ds;
+                sp2 = sbeg + ((s+2-sbeg)%ds+ds)%ds;
+                sm1 = sbeg + ((s-1-sbeg)%ds+ds)%ds;
+                sm2 = sbeg + ((s-2-sbeg)%ds+ds)%ds;
                 // Compute the offset in phi, modulo the full domain size
                 real dL = std::fmod(w*dt, Lphi);
 
@@ -294,9 +295,9 @@ void Fargo::ShiftSolution(const real t, const real dt) {
       int so = sbeg + ((s-m-sbeg)%n+n)%n;
 
       // compute shifted indices, taking into account the fact that we're periodic
-      int sop1 = sbeg + (so+1-sbeg)%(send-sbeg);
-      int som1 = sbeg + (so-1-sbeg)%(send-sbeg);
-      int som2 = sbeg + (so-2-sbeg)%(send-sbeg);
+      int sop1 = sbeg + ((so+1-sbeg)%n+n)%n;
+      int som1 = sbeg + ((so-1-sbeg)%n+n)%n;
+      int som2 = sbeg + ((so-2-sbeg)%n+n)%n;
 
       // Compute EMF due to the shift via second order reconstruction
       real dqm, dqp, dq;

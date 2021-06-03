@@ -18,8 +18,6 @@
 
 class RKLegendre {
  public:
-  RKLegendre();
-  ~RKLegendre();
   void Init(Input &, DataBlock &);
   void Cycle();
   void ResetStage();
@@ -49,7 +47,7 @@ class RKLegendre {
   DataBlock *data;
 
 #ifdef WITH_MPI
-  Mpi *mpi{NULL};                      // RKL-specific MPI layer
+  Mpi mpi;                      // RKL-specific MPI layer
 #endif
 
   bool haveVs{false};           // Whether we have (and need to compute) cell-centered variables

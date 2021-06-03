@@ -165,19 +165,11 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
   }
   // Synchronize the mapVars
   Kokkos::deep_copy(mapVars,mapVarsHost);
-  this->mpi = new Mpi(this, mapVars, mapNVars, true);
+  mpi.Init(this, mapVars, mapNVars, true);
 #endif // MPI
   idfx::popRegion();
 }
 
 void DataBlock::ResetStage() {
   this->hydro.ResetStage();
-}
-
-DataBlock::~DataBlock() {
-  #ifdef WITH_MPI
-    if(mpi != NULL) {
-      delete mpi;
-    }
-  #endif
 }

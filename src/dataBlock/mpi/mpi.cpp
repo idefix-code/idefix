@@ -20,7 +20,7 @@ void Mpi::ExchangeAll() {
   IDEFIX_ERROR("Not Implemented");
 }
 
-Mpi::Mpi(DataBlock *datain, IdefixArray1D<int> &inputMap, int inputMapN, bool inputHaveVs) {
+void Mpi::Init(DataBlock *datain, IdefixArray1D<int> &inputMap, int inputMapN, bool inputHaveVs) {
   this->data = datain;
   this->mygrid = datain->mygrid;
 
@@ -162,37 +162,43 @@ Mpi::Mpi(DataBlock *datain, IdefixArray1D<int> &inputMap, int inputMapN, bool in
                 thisInstance*1000+21, mygrid->CartComm, &recvRequestX3[faceRight]));
   #endif
 
-#endif
+#endif // MPI_Persistent
+
+  // say this instance is initialized.
+  isInitialized = true;
 }
 
 // Destructor (clean up persistent communication channels)
 Mpi::~Mpi() {
-  // Properly clean up the mess
-#ifdef MPI_PERSISTENT
-  idfx::cout << "Mpi(" << thisInstance
-             << "): Cleaning up MPI persistent communication channels" << std::endl;
-  for(int i=0 ; i< 2; i++) {
-    MPI_Request_free( &sendRequestX1[i]);
-    MPI_Request_free( &recvRequestX1[i]);
+  if(isInitialized) {
+    // Properly clean up the mess
+    #ifdef MPI_PERSISTENT
+      idfx::cout << "Mpi(" << thisInstance
+                << "): Cleaning up MPI persistent communication channels" << std::endl;
+      for(int i=0 ; i< 2; i++) {
+        MPI_Request_free( &sendRequestX1[i]);
+        MPI_Request_free( &recvRequestX1[i]);
 
-  #if DIMENSIONS >= 2
-    MPI_Request_free( &sendRequestX2[i]);
-    MPI_Request_free( &recvRequestX2[i]);
-  #endif
+      #if DIMENSIONS >= 2
+        MPI_Request_free( &sendRequestX2[i]);
+        MPI_Request_free( &recvRequestX2[i]);
+      #endif
 
-  #if DIMENSIONS == 3
-    MPI_Request_free( &sendRequestX3[i]);
-    MPI_Request_free( &recvRequestX3[i]);
-  #endif
-  }
-#endif
-  if(thisInstance==1) {
-    idfx::cout << "Mpi(" << thisInstance << "): measured throughput is "
-               << bytesSentOrReceived/myTimer/1024.0/1024.0 << " MB/s" << std::endl;
-    idfx::cout << "Mpi(" << thisInstance << "): message sizes were " << std::endl;
-    idfx::cout << "        X1: " << bufferSizeX1*sizeof(real)/1024.0/1024.0 << " MB" << std::endl;
-    idfx::cout << "        X2: " << bufferSizeX2*sizeof(real)/1024.0/1024.0 << " MB" << std::endl;
-    idfx::cout << "        X3: " << bufferSizeX3*sizeof(real)/1024.0/1024.0 << " MB" << std::endl;
+      #if DIMENSIONS == 3
+        MPI_Request_free( &sendRequestX3[i]);
+        MPI_Request_free( &recvRequestX3[i]);
+      #endif
+      }
+    #endif
+    if(thisInstance==1) {
+      idfx::cout << "Mpi(" << thisInstance << "): measured throughput is "
+                << bytesSentOrReceived/myTimer/1024.0/1024.0 << " MB/s" << std::endl;
+      idfx::cout << "Mpi(" << thisInstance << "): message sizes were " << std::endl;
+      idfx::cout << "        X1: " << bufferSizeX1*sizeof(real)/1024.0/1024.0 << " MB" << std::endl;
+      idfx::cout << "        X2: " << bufferSizeX2*sizeof(real)/1024.0/1024.0 << " MB" << std::endl;
+      idfx::cout << "        X3: " << bufferSizeX3*sizeof(real)/1024.0/1024.0 << " MB" << std::endl;
+    }
+    isInitialized = false;
   }
 }
 

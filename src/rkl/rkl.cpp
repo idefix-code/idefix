@@ -17,17 +17,6 @@
 #endif
 #define NVAR_MAX         10
 
-RKLegendre::RKLegendre() {
-  // do nothing!
-}
-
-RKLegendre::~RKLegendre() {
-  #ifdef WITH_MPI
-    if(mpi != NULL) {
-      delete mpi;
-    }
-  #endif
-}
 
 void RKLegendre::AddVariable(int var, IdefixArray1D<int>::HostMirror &varListHost ) {
   bool haveit{false};
@@ -110,7 +99,7 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
   Kokkos::deep_copy(varList,varListHost);
 
   #ifdef WITH_MPI
-    this->mpi = new Mpi(&datain, varList, nvarRKL, haveVs);
+    mpi.Init(&datain, varList, nvarRKL, haveVs);
   #endif
 
 
@@ -594,13 +583,13 @@ void RKLegendre::SetBoundary(real t) {
     if(data->mygrid->nproc[dir]>1) {
       switch(dir) {
         case 0:
-          this->mpi->ExchangeX1();
+          this->mpi.ExchangeX1();
           break;
         case 1:
-          this->mpi->ExchangeX2();
+          this->mpi.ExchangeX2();
           break;
         case 2:
-          this->mpi->ExchangeX3();
+          this->mpi.ExchangeX3();
           break;
       }
     }

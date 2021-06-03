@@ -43,6 +43,7 @@ void Hydro::CalcRiemannFlux(const real t) {
       break;
     case HLLD:
       HlldMHD<dir>();
+      break;
     case ROE:
       RoeMHD<dir>();
       break;
@@ -55,6 +56,7 @@ void Hydro::CalcRiemannFlux(const real t) {
       break;
     case HLLC:
       HllcHD<dir>();
+      break;
     case ROE:
       RoeHD<dir>();
       break;

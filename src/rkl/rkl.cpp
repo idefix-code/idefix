@@ -411,7 +411,7 @@ void RKLegendre::ComputeDt() {
 template<int dir> void RKLegendre::LoopDir(real t) {
 
     ResetFlux();
-    idfx::cout << "dir=" << dir<<std::endl;
+
     // CalcParabolicFlux
     data->hydro.CalcParabolicFlux<dir>(t);
 

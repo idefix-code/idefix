@@ -33,7 +33,7 @@ SED = @sed-command@
 LINK = ${CXX}
 LINKFLAGS = @ldflags@
 
-DEPFLAGS = -MD
+DEPFLAGS = -M
 
 LIB =
 
@@ -56,9 +56,12 @@ clean: kokkos-clean
 
 # Compilation rules
 
-%.o:%.cpp $(KOKKOS_CPP_DEPENDS)
-	$(CXX) $(KOKKOS_CPPFLAGS) $(DEPFLAGS) $(KOKKOS_CXXFLAGS) $(CXXFLAGS) $(EXTRA_INC) $(INCLUDE_DIRS) -c $<
-	$(SED) '/KokkosCore_Config/d' $(@:.o=.d)
+%.o:%.cpp %.d $(KOKKOS_CPP_DEPENDS)
+	$(CXX) $(KOKKOS_CPPFLAGS) $(KOKKOS_CXXFLAGS) $(CXXFLAGS) $(EXTRA_INC) $(INCLUDE_DIRS) -c $<
+
+%.d:%.cpp
+	$(CXX) $(KOKKOS_CPPFLAGS) $(DEPFLAGS) $(KOKKOS_CXXFLAGS) $(CXXFLAGS) $(EXTRA_INC) $(INCLUDE_DIRS) -c $< >$@
+	$(SED) '/KokkosCore_Config/d' $(@)
 
 # specific dependence for input.o
 input.o: gitversion.hpp

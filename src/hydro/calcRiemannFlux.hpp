@@ -12,9 +12,15 @@
 #include "dataBlock.hpp"
 
 #if MHD == YES
-#include "solversMHD.hpp"
+#include "hlldMHD.hpp"
+#include "hllMHD.hpp"
+#include "roeMHD.hpp"
+#include "tvdlfMHD.hpp"
 #else
-#include "solversHD.hpp"
+#include "hllcHD.hpp"
+#include "hllHD.hpp"
+#include "tvdlfHD.hpp"
+#include "roeHD.hpp"
 #endif
 
 // Compute Riemann fluxes from states

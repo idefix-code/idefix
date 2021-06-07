@@ -11,6 +11,8 @@
 #include "../idefix.hpp"
 #include "solversMHD.hpp"
 #include "extrapolatePrimVar.hpp"
+#include "fluxMHD.hpp"
+#include "convertConsToPrimMHD.hpp"
 
 #define ROE_AVERAGE 0
 

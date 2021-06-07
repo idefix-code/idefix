@@ -9,6 +9,7 @@
 #define HYDRO_FLUXMHD_HPP_
 
 #include "idefix.hpp"
+#include "hydro.hpp"
 
 /********************************************************************************************
  * @fn void K_Flux(real F[], real V[], real U[], real Cs2Iso,
@@ -24,7 +25,7 @@
  *
  *  This routine computes the MHD out of V and U variables and stores it in F
  ********************************************************************************************/
-KOKKOS_INLINE_FUNCTION void K_Flux(real F[], real V[], real U[], real Cs2Iso,
+KOKKOS_INLINE_FUNCTION void Hydro::K_Flux(real F[], real V[], real U[], real Cs2Iso,
                                    ARG_EXPAND(const int Xn, const int Xt, const int Xb),
                                    ARG_EXPAND(const int BXn, const int BXt, const int BXb)) {
   F[RHO] = U[Xn];

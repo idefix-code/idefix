@@ -9,10 +9,12 @@
 #define HYDRO_CONVERTCONSTOPRIMHD_HPP_
 
 #include "idefix.hpp"
+#include "hydro.hpp"
 
-
-KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real *KOKKOS_RESTRICT Vc, const real *KOKKOS_RESTRICT Uc,
-                                         real gamma_m1) {
+KOKKOS_INLINE_FUNCTION void Hydro::K_ConsToPrim(
+                                  real *KOKKOS_RESTRICT Vc,
+                                  const real *KOKKOS_RESTRICT Uc,
+                                  real gamma_m1) {
   Vc[RHO] = Uc[RHO];
 
   EXPAND( Vc[VX1] = Uc[MX1]/Uc[RHO];  ,
@@ -29,8 +31,9 @@ KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real *KOKKOS_RESTRICT Vc, const real *K
 #endif  // Have_energy
 }
 
-KOKKOS_INLINE_FUNCTION void K_PrimToCons(real *KOKKOS_RESTRICT Uc, const real *KOKKOS_RESTRICT Vc,
-                                         real gamma_m1) {
+KOKKOS_INLINE_FUNCTION void Hydro::K_PrimToCons(real *KOKKOS_RESTRICT Uc,
+                                    const real *KOKKOS_RESTRICT Vc,
+                                    real gamma_m1) {
   Uc[RHO] = Vc[RHO];
 
   EXPAND( Uc[MX1] = Vc[VX1]*Vc[RHO];  ,

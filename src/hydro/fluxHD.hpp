@@ -8,6 +8,7 @@
 #ifndef HYDRO_FLUXHD_HPP_
 #define HYDRO_FLUXHD_HPP_
 #include "idefix.hpp"
+#include "hydro.hpp"
 
 
 // Local Kokkos Inlined functions
@@ -24,7 +25,7 @@
  *
  *  This routine computes the MHD out of V and U variables and stores it in F
  ********************************************************************************************/
-KOKKOS_INLINE_FUNCTION void K_Flux(real *KOKKOS_RESTRICT F, const real *KOKKOS_RESTRICT V,
+KOKKOS_INLINE_FUNCTION void Hydro::K_Flux(real *KOKKOS_RESTRICT F, const real *KOKKOS_RESTRICT V,
                                    const real *KOKKOS_RESTRICT U, real Cs2Iso, const int Xn) {
   F[RHO] = U[Xn];
 

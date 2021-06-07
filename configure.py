@@ -139,12 +139,10 @@ def _get_makefile_options(
     if mhd:
         options["extraIncludeDir"] += " -I$(SRC)/hydro/MHDsolvers"
         options["extraVpath"] += ":$(SRC)/hydro/MHDsolvers"
-        options["extraHeaders"] += " solversMHD.hpp"
         options["cxxflags"] += " -DMHD=YES"
     else:
         options["extraIncludeDir"] += " -I$(SRC)/hydro/HDsolvers"
         options["extraVpath"] += ":$(SRC)/hydro/HDsolvers"
-        options["extraHeaders"] += " solversHD.hpp"
         options["cxxflags"] += " -DMHD=NO"
 
     return options

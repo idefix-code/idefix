@@ -6,6 +6,7 @@ from collections import defaultdict
 import os
 import re
 import sys
+import platform
 
 
 # CPU_ARCHS and GPU_ARCHS are alphabetically ordered
@@ -104,6 +105,17 @@ def parse_archs(requested_archs):
     return selected_archs
 
 
+def _get_sed():
+    # Build a sed command which is compatible with the current platofm (BSD and GNU diverge on that)
+    sed = ""
+    if platform.system() == 'Darwin':
+        sed = "sed -i '' "
+    else:
+        sed = "sed -i"
+
+    return sed
+
+
 def _get_makefile_options(
     archs,
     use_gpu,
@@ -111,12 +123,14 @@ def _get_makefile_options(
     openmp,
     mpi,
     mhd,
+    sed,
 ):
     # using a default dict to allow setting key value pairs as
     # >>> options[key] += value
 
     options = defaultdict(str)
     options["cxxflags"] = "-O3"
+    options["sed-command"] = sed
 
     if use_gpu:
         options["extraLine"] = '\nKOKKOS_CUDA_OPTIONS = "enable_lambda"'
@@ -144,19 +158,16 @@ def _get_makefile_options(
     if mpi:
         options["extraIncludeDir"] += " -I$(SRC)/dataBlock/mpi"
         options["extraVpath"] += ":$(SRC)/dataBlock/mpi"
-        options["extraHeaders"] += " mpi.hpp"
         options["extraObj"] += " mpi.o"
         options["cxxflags"] += " -DWITH_MPI"
 
     if mhd:
         options["extraIncludeDir"] += " -I$(SRC)/hydro/MHDsolvers"
         options["extraVpath"] += ":$(SRC)/hydro/MHDsolvers"
-        options["extraHeaders"] += " solversMHD.hpp"
         options["cxxflags"] += " -DMHD=YES"
     else:
         options["extraIncludeDir"] += " -I$(SRC)/hydro/HDsolvers"
         options["extraVpath"] += ":$(SRC)/hydro/HDsolvers"
-        options["extraHeaders"] += " solversHD.hpp"
         options["cxxflags"] += " -DMHD=NO"
 
     return options
@@ -252,6 +263,8 @@ def main(argv=None):
         print("Warning: with a GPU arch, -openmp flag is ignored.", file=sys.stderr)
         args.openmp = False
 
+    mysed = _get_sed()
+
     makefile_options = _get_makefile_options(
         archs=selected_archs,
         use_gpu=use_gpu,
@@ -259,6 +272,7 @@ def main(argv=None):
         openmp=args.openmp,
         mpi=args.mpi,
         mhd=args.mhd,
+        sed=mysed,
     )
     try:
         _write_makefile(args.directory, makefile_options)

@@ -11,6 +11,8 @@
 #include "../idefix.hpp"
 #include "hydro.hpp"
 #include "extrapolatePrimVar.hpp"
+#include "fluxHD.hpp"
+#include "convertConsToPrimHD.hpp"
 
 #define ROE_AVERAGE 0
 

@@ -9,8 +9,9 @@
 #define HYDRO_MHDSOLVERS_HLLMHD_HPP_
 
 #include "../idefix.hpp"
-#include "solversMHD.hpp"
 #include "extrapolatePrimVar.hpp"
+#include "fluxMHD.hpp"
+#include "convertConsToPrimMHD.hpp"
 
 // Compute Riemann fluxes from states using HLL solver
 template<const int DIR>

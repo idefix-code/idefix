@@ -11,6 +11,8 @@
 #include "../idefix.hpp"
 #include "hydro.hpp"
 #include "extrapolatePrimVar.hpp"
+#include "fluxHD.hpp"
+#include "convertConsToPrimHD.hpp"
 
 // Compute Riemann fluxes from states using HLLC solver
 template<const int DIR>

@@ -55,7 +55,7 @@ Configure the code:
 python3 $IDEFIX_DIR/configure.py
 ```
 
-Several options can be enabled (complete list can be accessed with the help `-h` option). For instance: `-mhd` (enable MHD, required in MHD tests), `-mpi` (enable mpi), `-openmp` (enable openmp parallelisation) `-gpu` (use gpu in place of cpu), etc...
+Several options can be enabled (complete list can be accessed with the help `-h` option). For instance: `-mhd` (enable MHD, required in MHD tests), `-mpi` (enable mpi), `-openmp` (enable openmp parallelisation), etc...
 
 One can then compile the code:
 

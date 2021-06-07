@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 import pytest
 
-from configure import main  # noqa: E402
+from configure import main, GPU_ARCHS, CPU_ARCHS  # noqa: E402
 
 IDEFIX_DIR = str(Path(__file__).parents[1])
 
@@ -76,5 +76,45 @@ def test_main_default_success(capsys, monkeypatch):
 
     out, err = capsys.readouterr()
     assert "Idefix succesfully configured" in out
+    assert "Execution target: CPU" in out
     assert err == ""
+    assert Path("Makefile").is_file()
+
+
+@pytest.mark.parametrize("arch", GPU_ARCHS)
+@pytest.mark.usefixtures("in_tmp_dir")
+def test_main_auto_gpu_mode_solo(arch, capsys, monkeypatch):
+    monkeypatch.setenv("IDEFIX_DIR", IDEFIX_DIR)
+    ret = main(["-arch", arch])
+    assert ret == 0
+
+    out, err = capsys.readouterr()
+    assert "Execution target: GPU" in out
+    assert err == ""
+    assert Path("Makefile").is_file()
+
+
+@pytest.mark.parametrize("arch", CPU_ARCHS)
+@pytest.mark.usefixtures("in_tmp_dir")
+def test_main_auto_cpu_mode_solo(arch, capsys, monkeypatch):
+    monkeypatch.setenv("IDEFIX_DIR", IDEFIX_DIR)
+    ret = main(["-arch", arch])
+    assert ret == 0
+
+    out, err = capsys.readouterr()
+    assert "Execution target: CPU" in out
+    assert err == ""
+    assert Path("Makefile").is_file()
+
+
+@pytest.mark.usefixtures("in_tmp_dir")
+def test_main_gpu_flag_deprecation(capsys, monkeypatch):
+    from configure import _GPU_FLAG_DEPRECATION_MESSAGE
+    monkeypatch.setenv("IDEFIX_DIR", IDEFIX_DIR)
+    ret = main(["-arch", "Volta70", "-gpu"])
+    assert ret == 0
+
+    out, err = capsys.readouterr()
+    assert "Execution target: GPU" in out
+    assert err == "Warning: %s\n" % _GPU_FLAG_DEPRECATION_MESSAGE
     assert Path("Makefile").is_file()

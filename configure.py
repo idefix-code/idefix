@@ -132,7 +132,6 @@ def _get_makefile_options(
     if mpi:
         options["extraIncludeDir"] += " -I$(SRC)/dataBlock/mpi"
         options["extraVpath"] += ":$(SRC)/dataBlock/mpi"
-        options["extraHeaders"] += " mpi.hpp"
         options["extraObj"] += " mpi.o"
         options["cxxflags"] += " -DWITH_MPI"
 

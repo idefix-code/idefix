@@ -8,12 +8,8 @@ KOKKOS_CXX_STANDARD = "c++14"
 KOKKOS_DEVICES = @kokkosDevices@
 KOKKOS_ARCH = @kokkosArch@
 
-
-
 EXE = "idefix"
 
-HEADERS = definitions.hpp error.hpp profiler.hpp arrays.hpp grid.hpp setup.hpp gridHost.hpp idefix.hpp dataBlock.hpp dataBlockHost.hpp global.hpp input.hpp kokkos_types.h loop.hpp real_types.hpp timeIntegrator.hpp output.hpp vtk.hpp dump.hpp hydro.hpp viscosity.hpp fargo.hpp rkl.hpp dumpImage.hpp
-HEADERS += @extraHeaders@
 OBJ = grid.o gridHost.o input.o main.o dataBlock.o global.o profiler.o dataBlockHost.o setup.o timeIntegrator.o hydro.o error.o
 OBJ += addSourceTerms.o boundary.o calcCornerEmf.o calcRiemannEmf.o calcNonidealEMF.o calcCurrent.o checkDivB.o convertConsToPrim.o evolveMagField.o
 OBJ += electroMotiveForce.o EMFexchange.o enforceEMFBoundary.o makeGeometry.o dumpToFile.o checkNan.o evolveStage.o viscosity.o axis.o fargo.o rkl.o
@@ -62,6 +58,9 @@ clean: kokkos-clean
 %.o:%.cpp $(KOKKOS_CPP_DEPENDS)
 	$(CXX) $(KOKKOS_CPPFLAGS) $(DEPFLAGS) $(KOKKOS_CXXFLAGS) $(CXXFLAGS) $(EXTRA_INC) $(INCLUDE_DIRS) -c $<
 	sed -i '' '/KokkosCore_Config/d' $(@:.o=.d)
+
+# specific dependence for input.o
+input.o: gitversion.hpp
 
 # in order to have access to current git version
 $(SRC)/gitversion.hpp: $(GIT_DEPENDENCE)

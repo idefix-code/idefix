@@ -58,7 +58,7 @@ clean: kokkos-clean
 
 %.o:%.cpp $(KOKKOS_CPP_DEPENDS)
 	$(CXX) $(KOKKOS_CPPFLAGS) $(DEPFLAGS) $(KOKKOS_CXXFLAGS) $(CXXFLAGS) $(EXTRA_INC) $(INCLUDE_DIRS) -c $<
-	sed -i '' '/KokkosCore_Config/d' $(@:.o=.d)
+	$(SED) '/KokkosCore_Config/d' $(@:.o=.d)
 
 # specific dependence for input.o
 input.o: gitversion.hpp

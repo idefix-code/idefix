@@ -26,6 +26,7 @@ default: build
 
 CXX = @cxx@
 CXXFLAGS = @cxxflags@
+SED = @sed-command@
 
 @extraLine@
 

@@ -142,6 +142,7 @@ void Input::ParseCommandLine(int argc, char **argv) {
         for (const auto& file : files) {
           if (Input::getFileExtension(file).compare("dmp") != 0) continue;
           // parse the dumpfile number from filename "dump.????.dmp"
+          if(file.substr(0,5) != "dump.") continue;
           try {
             ifile = std::stoi(file.substr(5, 4));
           } catch (...) {

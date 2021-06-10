@@ -120,13 +120,21 @@ void Input::ParseCommandLine(int argc, char **argv) {
     }
     if(std::string(argv[i]) == "-restart") {
       std::string sirestart{};
-      if((i+1) >= argc) {
+      bool explicitDump = true;     // by default, assume a restart dump # was given
+      // Check whether -restart was given with a number or not
+
+      // -restart was the very last parameter
+      if((i+1)>= argc) explicitDump = false;
+
+      // next argiment is another parameter (does not start with a number)
+      if(std::isdigit(argv[i+1][0]) == 0) explicitDump = false;
+
+      if(explicitDump) {
+        sirestart = std::string(argv[++i]);
+      } else {
         // implicitly restart from the latest existing dumpfile
         // implementation detail: we look for the existing dumpfile with the highest
         // number, not necessarilly the latest timestamp !
-
-        // note that this implementation for an automatic value only works
-        // if -restart is the last argument ...
         const std::vector<std::string> files = Input::getDirectoryFiles();
         int ifile{-1};
         int irestart{-1};
@@ -134,13 +142,17 @@ void Input::ParseCommandLine(int argc, char **argv) {
         for (const auto& file : files) {
           if (Input::getFileExtension(file).compare("dmp") != 0) continue;
           // parse the dumpfile number from filename "dump.????.dmp"
-          ifile = std::stoi(file.substr(5, 4));
+          if(file.substr(0,5) != "dump.") continue;
+          try {
+            ifile = std::stoi(file.substr(5, 4));
+          } catch (...) {
+            // woops, pattern doesn't match!
+            ifile = -1;
+          }
           irestart = std::max(irestart, ifile);
         }
         sirestart = std::to_string(irestart);
         if (irestart < 0) IDEFIX_ERROR("Cannot restart: no dumpfile found.");
-      } else {
-        sirestart = std::string(argv[++i]);
       }
       inputParameters["CommandLine"]["restart"].push_back(sirestart);
       this->restartRequested = true;

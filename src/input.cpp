@@ -120,6 +120,10 @@ void Input::ParseCommandLine(int argc, char **argv) {
     }
     if(std::string(argv[i]) == "-restart") {
       std::string sirestart{};
+      bool explicitDump = true;     // by default, assume a restart dump # was given
+      // Check whether -restart was given with a number or not
+      if((i+1)>= argc)) explicitDump = false;     // -restart was the very last parameter
+
       if((i+1) >= argc) {
         // implicitly restart from the latest existing dumpfile
         // implementation detail: we look for the existing dumpfile with the highest

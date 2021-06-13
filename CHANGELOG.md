@@ -4,14 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2021-06-13
+### Added
+- New `DumpImage` class to load and use the data of dump files without restarting
+- New Runge-Kutta-Legendre scheme to speed up parabolic term computation. Compatible with Viscosity, Ambipolar & Ohmic diffusions.
 
-## Upcoming
+### Changed
 - Optimisation: merge ExtrapolatePrimVar and Riemann solves
 - Optimisation: Limit array accesses in nonIdeal MHD flux computations
 - Optimisation: Improved VTK write speeds on non-cartesian geometries
-- New `DumpImage` class to load and use the data of dump files without restarting
-- New Runge-Kutta-Legendre scheme to speed up parabolic term computation. Compatible with Viscosity, Ambipolar & Ohmic diffusions.
-- rotation now works as it should in polar & spherical coordinates (in this case, it includes both Coriolis and cetrifugal acceleration)
+- rotation now works as it should in polar & spherical coordinates (in this case, it includes both Coriolis and centrifugal acceleration)
+- fix a bug in fargo which broke axisymmetric symmetry in some circumstances
+
+### Removed
 - deprecate the `-gpu` option in `configure.py`. The GPU mode is now automatically activated if a GPU architecture is requested.
 
 ## [0.7.2] - 2021-05-11

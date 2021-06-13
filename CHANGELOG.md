@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optimisation: Improved VTK write speeds on non-cartesian geometries
 - rotation now works as it should in polar & spherical coordinates (in this case, it includes both Coriolis and centrifugal acceleration)
 - fix a bug in fargo which broke axisymmetric symmetry in some circumstances
+- fix a bug when -restart was used without any number (use by default latest restart dump file)
+- properly check dependency (uses -M option of the compiler). This generates a series of dependency files (.d) during compilation
+- documentation includes on the fly doxygen generated API.
 
 ### Removed
 - deprecate the `-gpu` option in `configure.py`. The GPU mode is now automatically activated if a GPU architecture is requested.

@@ -25,12 +25,14 @@ using UserDefVariablesFunc = void (*) (DataBlock &, UserDefVariablesContainer &)
 class Output {
   friend class Dump;    // Allow dump to have R/W access to private variables
   friend class Vtk;     // Allow VTK to have access to user-defined variables
+  friend class DumpImage; // Allow dumpimag to have access to dump API
  public:
   Output(Input &, DataBlock &);           // Create Output Object
   int CheckForWrites(DataBlock &);        // Check if outputs are needed at this stage
   void RestartFromDump(DataBlock &, int);  // Restart from a dump file.
   void ForceWrite(DataBlock &);            // Force write outputs (needed during an abort)
-
+  void ResetTimer();                      // Reset internal timer
+  double GetTimer();
   void EnrollAnalysis(AnalysisFunc);
   void EnrollUserDefVariables(UserDefVariablesFunc);
 
@@ -57,6 +59,9 @@ class Output {
   bool haveUserDefVariablesFunc = false;
   UserDefVariablesFunc userDefVariablesFunc;
   UserDefVariablesContainer userDefVariables;
+
+  Kokkos::Timer timer;
+  double elapsedTime{0.0};
 };
 
 

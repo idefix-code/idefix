@@ -9,6 +9,10 @@
 #define HYDRO_HDSOLVERS_ROEHD_HPP_
 
 #include "../idefix.hpp"
+#include "hydro.hpp"
+#include "extrapolatePrimVar.hpp"
+#include "fluxHD.hpp"
+#include "convertConsToPrimHD.hpp"
 
 #define ROE_AVERAGE 0
 
@@ -26,7 +30,7 @@
 #endif
 
 // Compute Riemann fluxes from states using ROE solver
-template<const int DIR, const int Xn, const int Xt, const int Xb>
+template<const int DIR>
 void Hydro::RoeHD() {
   idfx::pushRegion("Hydro::ROE_Solver");
 
@@ -49,8 +53,8 @@ void Hydro::RoeHD() {
       IDEFIX_ERROR("Wrong direction");
   }
 
-  IdefixArray4D<real> PrimL = this->PrimL;
-  IdefixArray4D<real> PrimR = this->PrimR;
+  IdefixArray4D<real> Vc = this->Vc;
+  IdefixArray4D<real> Vs = this->Vs;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
@@ -65,6 +69,10 @@ void Hydro::RoeHD() {
              data->beg[JDIR],data->end[JDIR]+joffset,
              data->beg[IDIR],data->end[IDIR]+ioffset,
     KOKKOS_LAMBDA (int k, int j, int i) {
+      // Init the directions (should be in the kernel for proper optimisation by the compilers)
+      EXPAND( const int Xn = DIR+MX1;                    ,
+              const int Xt = (DIR == IDIR ? MX2 : MX1);  ,
+              const int Xb = (DIR == KDIR ? MX2 : MX3);  )
       // Primitive variables
       real vL[NVAR];
       real vR[NVAR];
@@ -83,10 +91,9 @@ void Hydro::RoeHD() {
       real um[NVAR];
 
       // 1-- Store the primitive variables on the left, right, and averaged states
+      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, vL, vR);
 #pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
-        vL[nv] = PrimL(nv,k,j,i);
-        vR[nv] = PrimR(nv,k,j,i);
         dv[nv] = vR[nv] - vL[nv];
       }
 

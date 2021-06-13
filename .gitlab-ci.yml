@@ -3,53 +3,51 @@ workflow:
     - if: $CI_MERGE_REQUEST_ID               # Execute jobs in merge request context
     - if: $CI_COMMIT_BRANCH == 'master'      # Execute jobs when a new commit is pushed to master branch
 
-variables:
-  OMPI_ALLOW_RUN_AS_ROOT: '1'
-  OMPI_ALLOW_RUN_AS_ROOT_CONFIRM: '1'
-  OMPI_MCA_btl_vader_single_copy_mechanism: 'none' # https://github.com/open-mpi/ompi/issues/4948
-
-.before_script_template:
-  before_script:
-    - export DEBIAN_FRONTEND=noninteractive
-    - apt-get update -qq
-    - apt-get install -qq build-essential openmpi-bin python3 python3-pip bc git
-    - python3 -m pip install -r test/python_requirements.txt
-
 stages:
     - checks
     - deploy
 
 lint:
-  extends: .before_script_template
   stage: checks
-  image: ubuntu:latest
+  image: lesurg/idefix:latest
   script:
     - pre-commit install
     - pre-commit run --all-files
 
-integration tests:
-  extends: .before_script_template
+configure script tests:
   stage: checks
-  image: ubuntu:latest
+  image: lesurg/idefix:latest
+  script:
+    - python3 -m pip install pytest
+    - python3 -m pytest -vv test/test_configure.py
+
+integration tests:
+  stage: checks
+  image: lesurg/idefix:latest
   script:
     - cat /proc/cpuinfo
     - gcc --version
-
-    - git submodule init
-    - git submodule update
 
     - cd test
     - ./checks.sh
     - ./checks_mpi.sh
 
+cache:
+  # Required to keep artifacts from old builds, e.g. from master
+  paths:
+    - public
+
 pages:
-  image: python:3.7-alpine
+  image: lesurg/idefix-documentation:latest
   stage: deploy
   script:
-  - pip install -U sphinx sphinx-rtd-theme
-  - sphinx-build -b html doc/source public
+    - dir="$CI_COMMIT_REF_SLUG"
+    - dir="public/$dir"
+    - rm -rf $dir
+    - sphinx-build -b html doc/source $dir
   artifacts:
     paths:
-    - public
+      - public
   only:
   - master
+  - develop

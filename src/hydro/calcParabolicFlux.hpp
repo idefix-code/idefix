@@ -4,12 +4,16 @@
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
+#ifndef HYDRO_CALCPARABOLICFLUX_HPP_
+#define HYDRO_CALCPARABOLICFLUX_HPP_
 
 #include "hydro.hpp"
 #include "dataBlock.hpp"
+#include "addNonIdealMHDFlux.hpp"
 
 // Compute parabolic fluxes
-void Hydro::CalcParabolicFlux(int dir, const real t) {
+template <int dir>
+void Hydro::CalcParabolicFlux(const real t) {
   idfx::pushRegion("Hydro::CalcParabolicFlux");
 
   IdefixArray3D<real> dMax = this->dMax;
@@ -23,22 +27,28 @@ void Hydro::CalcParabolicFlux(int dir, const real t) {
       }
   );
 
-  if(this->haveResistivity || this->haveAmbipolar) {
-    this->AddNonIdealMHDFlux(dir,t);
+  if( (resistivityStatus.isExplicit  && (! data->rklCycle))
+    || (resistivityStatus.isRKL  && ( data->rklCycle))
+    || (ambipolarStatus.isExplicit  && (! data->rklCycle))
+    || (ambipolarStatus.isRKL  && ( data->rklCycle)) ) {
+      this->AddNonIdealMHDFlux<dir>(t);
   }
 
-  if(this->haveViscosity) {
+  if( (viscosityStatus.isExplicit && (!data->rklCycle))
+    || (viscosityStatus.isRKL && data->rklCycle))  {
       // Add fargo velocity if using fargo
-    if(this->haveFargo) {
+    if(haveFargo && viscosityStatus.isExplicit) {
       fargo.AddVelocity(t);
     }
     this->viscosity.AddViscousFlux(dir,t);
 
     // Remove back Fargo velocity
-    if(this->haveFargo) {
+    if(haveFargo && viscosityStatus.isExplicit) {
       fargo.SubstractVelocity(t);
     }
   }
 
   idfx::popRegion();
 }
+
+#endif //HYDRO_CALCPARABOLICFLUX_HPP_

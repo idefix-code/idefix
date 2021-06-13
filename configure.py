@@ -6,6 +6,7 @@ from collections import defaultdict
 import os
 import re
 import sys
+import platform
 
 
 # CPU_ARCHS and GPU_ARCHS are alphabetically ordered
@@ -15,6 +16,7 @@ CPU_ARCHS = frozenset(
         "EPYC",
         "HSW",
         "SKX",
+        "WSM",
     ),
 )
 
@@ -33,6 +35,11 @@ GPU_ARCHS = frozenset(
 KNOWN_ARCHS = {"CPU": CPU_ARCHS, "GPU": GPU_ARCHS}
 DEFAULT_ARCHS = {"CPU": "BDW", "GPU": "Pascal60"}
 
+_GPU_FLAG_DEPRECATION_MESSAGE = (
+    "The -gpu flag is deprecated. Using it will raise an error in a future release. "
+    "Please explicitly request a GPU architecture via the -arch argument."
+)
+
 
 def _add_parser_args(parser):
     parser.add_argument(
@@ -40,11 +47,11 @@ def _add_parser_args(parser):
     )
 
     parser.add_argument("-mhd", action="store_true", help="enable MHD")
+
     parser.add_argument(
         "-gpu",
-        dest="use_gpu",
         action="store_true",
-        help="enable KOKKOS+CUDA",
+        help=_GPU_FLAG_DEPRECATION_MESSAGE,
     )
 
     parser.add_argument("-cxx", help="override default compiler")
@@ -53,21 +60,28 @@ def _add_parser_args(parser):
         "-arch",
         nargs="+",
         dest="archs",
-        default=[DEFAULT_ARCHS["CPU"], DEFAULT_ARCHS["GPU"]],
         choices=CPU_ARCHS.union(GPU_ARCHS),
         help="target Kokkos architecture (accepts up to one CPU and up to one GPU archs)",
     )
     parser.add_argument(
         "-openmp",
-        help="enable OpenMP parallelism (not available with -gpu)",
+        help="enable OpenMP parallelism (not available with GPU architectures)",
         action="store_true",
     )
     parser.add_argument("-mpi", action="store_true", help="enable MPI parallelism")
 
 
+def is_gpu_requested(requested_archs):
+    if requested_archs is None:
+        return False
+    return any((a in GPU_ARCHS for a in requested_archs))
+
+
 def parse_archs(requested_archs):
     # parse architectures:
     # at most 2 can be specified by the user, but only one for each arch type (CPU, GPU)
+    if requested_archs is None:
+        return DEFAULT_ARCHS
     if len(requested_archs) > 2:
         raise ValueError(
             "Error: received more than two architectures ({}).".format(
@@ -77,18 +91,29 @@ def parse_archs(requested_archs):
     selected_archs = DEFAULT_ARCHS.copy()
 
     for arch_type, archs in KNOWN_ARCHS.items():
-        vals = list(archs.intersection(set(requested_archs)))
+        vals = sorted(list(archs.intersection(set(requested_archs))))
         if not vals:
             continue
         if len(vals) > 1:
             raise ValueError(
-                "Error: received more than one {} arch ({}).".format(
+                "Error: received more than one {} architecture ({}).".format(
                     arch_type, ", ".join(vals),
                 ),
             )
 
         selected_archs[arch_type] = vals[0]
     return selected_archs
+
+
+def _get_sed():
+    # Build a sed command which is compatible with the current platofm (BSD and GNU diverge on that)
+    sed = ""
+    if platform.system() == 'Darwin':
+        sed = "sed -i '' "
+    else:
+        sed = "sed -i"
+
+    return sed
 
 
 def _get_makefile_options(
@@ -98,12 +123,14 @@ def _get_makefile_options(
     openmp,
     mpi,
     mhd,
+    sed,
 ):
     # using a default dict to allow setting key value pairs as
     # >>> options[key] += value
 
     options = defaultdict(str)
     options["cxxflags"] = "-O3"
+    options["sed-command"] = sed
 
     if use_gpu:
         options["extraLine"] = '\nKOKKOS_CUDA_OPTIONS = "enable_lambda"'
@@ -131,19 +158,16 @@ def _get_makefile_options(
     if mpi:
         options["extraIncludeDir"] += " -I$(SRC)/dataBlock/mpi"
         options["extraVpath"] += ":$(SRC)/dataBlock/mpi"
-        options["extraHeaders"] += " mpi.hpp"
         options["extraObj"] += " mpi.o"
         options["cxxflags"] += " -DWITH_MPI"
 
     if mhd:
         options["extraIncludeDir"] += " -I$(SRC)/hydro/MHDsolvers"
         options["extraVpath"] += ":$(SRC)/hydro/MHDsolvers"
-        options["extraHeaders"] += " solversMHD.hpp"
         options["cxxflags"] += " -DMHD=YES"
     else:
         options["extraIncludeDir"] += " -I$(SRC)/hydro/HDsolvers"
         options["extraVpath"] += ":$(SRC)/hydro/HDsolvers"
-        options["extraHeaders"] += " solversHD.hpp"
         options["cxxflags"] += " -DMHD=NO"
 
     return options
@@ -169,7 +193,6 @@ def _write_makefile(
 
 def _get_report(
     archs,
-    use_gpu,
     openmp,
     mpi,
     mhd,
@@ -190,7 +213,7 @@ def _get_report(
     ]
 
     selected_archs = parse_archs(archs)
-    arch_type = "GPU" if use_gpu else "CPU"
+    arch_type = "GPU" if is_gpu_requested(archs) else "CPU"
     report_lines += [
         "Execution target: {}".format(arch_type),
         "Target architecture: {}".format(selected_archs[arch_type]),
@@ -226,17 +249,30 @@ def main(argv=None):
         print(err, file=sys.stderr)
         return 1
 
-    if args.openmp and args.use_gpu:
-        print("Warning: with -gpu, -openmp flag is ignored.", file=sys.stderr)
+    use_gpu = is_gpu_requested(args.archs)
+    if args.gpu:
+        print("Warning: " + _GPU_FLAG_DEPRECATION_MESSAGE, file=sys.stderr)
+        if not use_gpu:
+            print(
+                "Warning: -gpu flag was received, but no GPU architecture was specified. "
+                "Defaulting to %s" % selected_archs["GPU"],
+                file=sys.stderr,
+            )
+
+    if args.openmp and use_gpu:
+        print("Warning: with a GPU arch, -openmp flag is ignored.", file=sys.stderr)
         args.openmp = False
+
+    mysed = _get_sed()
 
     makefile_options = _get_makefile_options(
         archs=selected_archs,
-        use_gpu=args.use_gpu,
+        use_gpu=use_gpu,
         cxx=args.cxx,
         openmp=args.openmp,
         mpi=args.mpi,
         mhd=args.mhd,
+        sed=mysed,
     )
     try:
         _write_makefile(args.directory, makefile_options)
@@ -247,7 +283,6 @@ def main(argv=None):
 
     report = _get_report(
         archs=args.archs,
-        use_gpu=args.use_gpu,
         openmp=args.openmp,
         mpi=args.mpi,
         mhd=args.mhd,

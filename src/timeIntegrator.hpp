@@ -10,6 +10,7 @@
 
 #include "idefix.hpp"
 #include "dataBlock.hpp"
+#include "rkl.hpp"
 
 
 
@@ -26,8 +27,14 @@ class TimeIntegrator {
   // check whether we have reached the maximum runtime
   bool CheckForMaxRuntime();
 
+  void ShowLog(DataBlock &);    //<  Display progress log
+
 
  private:
+  // The RKL object attached to this datablock
+  RKLegendre rkl;
+  bool haveRKL{false};
+
   int nstages;
   // Weights of time integrator
   real w0[2];
@@ -39,8 +46,8 @@ class TimeIntegrator {
   real cfl;   // CFL number
   real cflMaxVar; // Max CFL variation number
   int64_t ncycles;        // # of cycles
-  double lastLog;         // # time for the last log
-  double lastMpiLog;      // # time for the last MPI log
+  double lastLog;         // time for the last log (s)
+  double lastMpiLog;      // time for the last MPI log (s)
   double maxRuntime{-1.0};      // Maximum runtime requested (disabled when negative)
   int64_t cyclePeriod = 100;    // # of cycles between two logs
   Kokkos::Timer timer;    // Internal timer of the integrator

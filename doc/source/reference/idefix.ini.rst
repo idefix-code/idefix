@@ -3,7 +3,7 @@ Problem input file ``idefix.ini``
 
 The problem input file is by default named ``idefix.ini``. It is possible to start idefix with an other input file using the `-i` command line option.
 
-The problem input file is read when *Idefix* starts. It is splitted into several sections, each section name corresponding to a C++ class in Idefix structure. Inside each section, each line defines an entry, which can have as many parameters as one wishes
+The problem input file is read when *Idefix* starts. It is split into several sections, each section name corresponding to a C++ class in Idefix structure. Inside each section, each line defines an entry, which can have as many parameters as one wishes
 (note that it requires at least one parameter). The input file
 allows for comments, which should start with ``#``.
 
@@ -13,18 +13,36 @@ allows for comments, which should start with ``#``.
 
 ``Grid`` section
 --------------------
-The grid section defines the grid total dimension. It consists of 3 entries ``X1-grid``, ``X2-grid`` and ``X3-grid``. Each entry defines the repartition of the grid point in the corresponding direction (the grid is always rectilinear).
-Each entry defines a series of grid blocks, which can have various spacing. The definition of the grid points is as follows
+The grid section defines the grid total dimension. It consists of 3 entries ``X1-grid``, ``X2-grid`` and ``X3-grid``. Each entry defines the repartition of the grid points in the corresponding direction (the grid is always rectilinear).
+Each entry defines a series of grid blocks which are concatenated along the direction. Each block in a direction can have a different spacing rule (uniform, log or stretched). The definition of the Grid entries is as follows
 
-+-------------+-------------+---------------------+--------------------------+---------------------------------+---------------------------------+----------------------------------------------+-----+---------------------+
-|             | Entry name  |   number of blocks  |  begining of first block | number of points in first block | grid spacing in first block     | end of first block/beginning of second block | ... | end of nth block    |
-+=============+=============+=====================+==========================+=================================+=================================+==============================================+=====+=====================+
-|             | X1/2/3-Grid |  integer number >= 1| floating point           | integer                         | can be u, l, s                  |  floating point                              | ... | floating point      |
-+-------------+-------------+---------------------+--------------------------+---------------------------------+---------------------------------+----------------------------------------------+-----+---------------------+
-| Example     | X1-Grid     |  1                  |  0.0                     | 64                              |  u                              | 1.0                                          |     |                     |
-+-------------+-------------+---------------------+--------------------------+---------------------------------+---------------------------------+----------------------------------------------+-----+---------------------+
++----------------------------+-------------------------+------------------------------+
+|                            |  Allowed value          |    Example                   |
++============================+=========================+==============================+
+| Entry name                 | X1/2/3-Grid             | X1-Grid                      |
++----------------------------+-------------------------+------------------------------+
+| # of grid blocks           | integer >= 1            | 1                            |
++----------------------------+-------------------------+------------------------------+
+| start of 1st block         | floating point          | 0.0                          |
++----------------------------+-------------------------+------------------------------+
+| # of points in 1st block   | integet >= 1            | 64                           |
++----------------------------+-------------------------+------------------------------+
+| spacing in first block     | "u", "l", "s+", "s-"    | u                            |
++----------------------------+-------------------------+------------------------------+
+| | end of 1st block         | floating point          | 1.0                          |
+| | /start of 2nd block      |                         |                              |
++----------------------------+-------------------------+------------------------------+
+| ...repeat for each block...| ...                     | ...                          |
++----------------------------+-------------------------+------------------------------+
 
 In the example above, we define in ``X1`` direction a uniform grid (``u``) of 64 points starting at ``X1=0.0`` and ending at ``X1=1.0``.
+This would be written in the input file as:
+
+.. code-block::
+
+  [Grid]
+  X1-Grid        1     0.0   64     u     1.0
+
 
 The grid spacing can be one of the following:
 
@@ -66,7 +84,7 @@ This section is used by *Idefix* time integrator class to define the time integr
 +----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
 
 .. note::
-    The ``first_dt`` is necessary since wave speeds are evaluated when Riemann problems are solved, hence the CFL
+    The ``first_dt`` is recommended since wave speeds are evaluated when Riemann problems are solved, hence the CFL
     condition can only be evaluated after the first timestep.
 
 
@@ -78,10 +96,10 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 |  Entry name    | Parameter type          | Comment                                                                                     |
 +================+=========================+=============================================================================================+
-| Solver         | string                  | | Type of Riemann Solver. In hydro can be any of ``tvdlf``, ``hll``, ``hllc`` and ``roe``.  |
+| solver         | string                  | | Type of Riemann Solver. In hydro can be any of ``tvdlf``, ``hll``, ``hllc`` and ``roe``.  |
 |                |                         | | In MHD, can be ``tvdlf``, ``hll``, ``hlld`` and ``roe``                                   |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| csiso          | string, float           | | Isothermal sound speed. Only used when ISOTHERMAL is defined in ``definitions.hpp``.      |
+| csiso          | string, (float)         | | Isothermal sound speed. Only used when ISOTHERMAL is defined in ``definitions.hpp``.      |
 |                |                         | | When ``constant``, the second parameter is the spatially constant sound speed.            |
 |                |                         | | When ``userdef``, the ``Hydro`` class expects a user-defined sound speed function         |
 |                |                         | | to be enrolled with   ``EnrollIsoSoundSpeed(IsoSoundSpeedFunc)``                          |
@@ -89,46 +107,59 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | gamma          | float                   | Adiabatic index when ISOTHERMAL is not defined                                              |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| Resistivity    | string, float           | | Switches on Ohmic diffusion. String can be  either ``constant`` or ``userdef``.           |
+| resistivity    | string, string, (float) | | Switches on Ohmic diffusion.                                                              |
+|                |                         | | The first parameter can be ``explicit`` or ``rkl``. When ``explicit``, diffusion is       |
+|                |                         | | integrated in the main integration loop with the usual cfl restriction.  If ``rkl``,      |
+|                |                         | | diffusion  is integrated using the Runge-Kutta Legendre scheme.                           |
+|                |                         | | The second String can be  either ``constant`` or ``userdef``.                             |
 |                |                         | | When ``constant``, the second parameter is the  Ohmic diffusion coefficient.              |
 |                |                         | | When ``userdef``, the ``Hydro`` class expects a user-defined diffusivity function         |
 |                |                         | | to be enrolled with   ``Hydro::EnrollOhmicDiffusivity(DiffusivityFunc)``                  |
-|                |                         | | (see :ref:`functionEnrollment`). In this case, the second parameter is not used.          |
+|                |                         | | (see :ref:`functionEnrollment`). In this case, the third  parameter is not used.          |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| Ambipolar      | string, float           | | Switches on ambipolar diffusion. String can be  either ``constant`` or ``userdef``.       |
+| ambipolar      | string, string, (float) | | Switches on ambipolar diffusion.                                                          |
+|                |                         | | The first parameter can be ``explicit`` or ``rkl``. When ``explicit``, diffusion is       |
+|                |                         | | integrated in the main integration loop with the usual cfl restriction.  If ``rkl``,      |
+|                |                         | | diffusion  is integrated using the Runge-Kutta Legendre scheme.                           |
+|                |                         | | The second String can be  either ``constant`` or ``userdef``.                             |
 |                |                         | | When ``constant``, the second parameter is the ambipolar diffusion coefficient.           |
 |                |                         | | When ``userdef``, the ``Hydro`` class expects a user-defined diffusivity function         |
 |                |                         | | to be enrolled with   ``Hydro::EnrollAmbipolarDiffusivity(DiffusivityFunc)``              |
-|                |                         | | (see :ref:`functionEnrollment`). In this case, the second parameter is not used.          |
+|                |                         | | (see :ref:`functionEnrollment`). In this case, the third parameter is not used.           |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| Hall           | string, float           | | Switches on Hall effect. String can be  either ``constant`` or ``userdef``.               |
-|                |                         | | When ``constant``, the second parameter is the  Hall diffusion coefficient.               |
+| hall           | string, string, (float) | | Switches on Hall effect.                                                                  |
+|                |                         | | The first parameter can only be ``explicit``.                                             |
+|                |                         | | The second String can be  either ``constant`` or ``userdef``.                             |
+|                |                         | | When ``constant``, the third parameter is the  Hall diffusion coefficient.                |
 |                |                         | | When ``userdef``, the ``Hydro`` class expects a user-defined diffusivity function         |
 |                |                         | | to be enrolled with   ``Hydro::EnrollHallDiffusivity(DiffusivityFunc)``                   |
-|                |                         | | (see :ref:`functionEnrollment`). In this case, the second parameter is not used.          |
+|                |                         | | (see :ref:`functionEnrollment`). In this case, the third parameter is not used.           |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| Viscosity      | string, float, float    | | Switches on viscous diffusion. String can be either ``constant`` or ``userdef``           |
-|                |                         | | When ``constant``, the second parameter is the flow viscosity and the third               |
+| viscosity      | string, string,         | | Switches on viscous diffusion.                                                            |
+|                | float, (float)          | | The first parameter can be ``explicit`` or ``rkl``. When ``explicit``, diffusion is       |
+|                |                         | | integrated in the main integration loop with the usual cfl restriction.  If ``rkl``,      |
+|                |                         | | diffusion  is integrated using the Runge-Kutta Legendre scheme.                           |
+|                |                         | | When ``constant``, the third parameter is the flow viscosity and the fourth               |
 |                |                         | | parameter is the second (or compressive) viscosity (which is optionnal).                  |
 |                |                         | | When ``userdef``, the ``Hydro.Viscosity`` class expects a user-defined viscosity function |
 |                |                         | | to be enrolled with   ``Hydro.Viscosity::EnrollViscousDiffusivity(DiffusivityFunc)``      |
-|                |                         | | (see :ref:`functionEnrollment`). In this case, the second and third parameters            |
+|                |                         | | (see :ref:`functionEnrollment`). In this case, the third and fourth parameters            |
 |                |                         | | are not used.                                                                             |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| GravPotential  | string                  | | Switches on an external gravitational potential. Only ``userdef`` is allowed.             |
+| gravPotential  | string                  | | Switches on an external gravitational potential. Only ``userdef`` is allowed.             |
 |                |                         | | When ``userdef is set, the ``Hydro`` class expects  a user-defined potential function     |
 |                |                         | | to be enrolled with  ``Hydro::EnrollGravPotential(GravPotentialFunc)``                    |
 |                |                         | | (see :ref:`functionEnrollment`)                                                           |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| Rotation       | float,float,float       | | Add rotation with rhe rotation vector components given as parameters.                     |
-|                |                         | | Note that this entry only adds Coriolis force.                                            |
+| rotation       | float                   | | Add rotation with the z rotation speed given as parameter.                                |
+|                |                         | | Note that this entry only adds Coriolis force in Cartesian geometry.                      |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| ShearingBox    | float                   | | Enable shearing box source terms.  The entry parameter corresponds to the shear rate      |
+| shearingBox    | float                   | | Enable shearing box source terms.  The entry parameter corresponds to the shear rate      |
 |                |                         | | :math:`dv_{x2}/d x_1`.                                                                    |
 |                |                         | | Note that this is not sufficient to fully define a shearing box: boundary conditions      |
 |                |                         | | are also required.                                                                        |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| Fargo          | string                  | | Enable orbital advection (Fargp-like) module to speed up integration when a strong        |
+| fargo          | string                  | | Enable orbital advection (Fargp-like) module to speed up integration when a strong        |
 |                |                         | | azimuthal motion is present (as in a thin disk).  The only possible parameter allowed     |
 |                |                         | | for `Fargo` is `userdef`. When this is set, the fargo module expects a user-defined       |
 |                |                         | | velocity function to be enrolled via Hydro.Fargo::EnrollVelocity(FargoVelocityFunc        |
@@ -209,4 +240,4 @@ This section describes the outputs *Idefix* produces. For more details about eac
 
 .. note::
     Even if dumps are not mentionned in your input file (and are therefore disabled), dump files are still produced when *Idefix* captures a signal
-    (see :ref:`signalHandling`).
+    (see :ref:`signalHandling`) or when ``max_runtime`` is set and reached.

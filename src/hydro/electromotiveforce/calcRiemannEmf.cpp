@@ -81,6 +81,37 @@ void ElectroMotiveForce::calcRiemannEmf() {
       dbz_dy(k,j,i) = MC_LIM2(Vs(BX3s,k,j+1,i) - Vs(BX3s,k,j,i),
                               Vs(BX3s,k,j,i)   - Vs(BX3s,k,j-1,i));
     #endif
+
+    dvx_dx(k,j,i) = MC_LIM2(Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i),
+                            Vc(VX1,k,j,i)   - Vc(VX1,k,j,i-1));
+    #if DIMENSIONS >= 2
+      dvx_dy(k,j,i) = MC_LIM2(Vc(VX1,k,j+1,i) - Vc(VX1,k,j,i),
+                              Vc(VX1,k,j,i)   - Vc(VX1,k,j-1,i));
+    #endif
+    #if COMPONENTS >= 2
+      dvy_dx(k,j,i) = MC_LIM2(Vc(VX2,k,j,i+1) - Vc(VX2,k,j,i),
+                              Vc(VX2,k,j,i)   - Vc(VX2,k,j,i-1));
+      #if DIMENSIONS >= 2
+      dvy_dy(k,j,i) = MC_LIM2(Vc(VX2,k,j+1,i) - Vc(VX2,k,j,i),
+                              Vc(VX2,k,j,i)   - Vc(VX2,k,j-1,i));
+      #endif
+    #endif // COMPONENTS
+    #if COMPONENTS == 3
+      dvz_dx(k,j,i) = MC_LIM2(Vc(VX3,k,j,i+1) - Vc(VX3,k,j,i),
+                              Vc(VX3,k,j,i)   - Vc(VX3,k,j,i-1));
+      #if DIMENSIONS >= 2
+      dvz_dy(k,j,i) = MC_LIM2(Vc(VX3,k,j+1,i) - Vc(VX3,k,j,i),
+                              Vc(VX3,k,j,i)   - Vc(VX3,k,j-1,i));
+      #endif
+    #endif // COMPONENTS
+    #if DIMENSIONS == 3
+      dvx_dz(k,j,i) = MC_LIM2(Vc(VX1,k+1,j,i) - Vc(VX1,k,j,i),
+                            Vc(VX1,k,j,i)   - Vc(VX1,k-1,j,i));
+      dvy_dz(k,j,i) = MC_LIM2(Vc(VX2,k+1,j,i) - Vc(VX2,k,j,i),
+                            Vc(VX2,k,j,i)   - Vc(VX2,k-1,j,i));
+      dvz_dz(k,j,i) = MC_LIM2(Vc(VX3,k+1,j,i) - Vc(VX3,k,j,i),
+                            Vc(VX3,k,j,i)   - Vc(VX3,k-1,j,i));
+    #endif
     }
   );
 

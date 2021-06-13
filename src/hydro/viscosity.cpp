@@ -45,14 +45,14 @@ void Viscosity::Init(Input &input, Grid &grid, Hydro *hydroin) {
   // Save the parent hydro object
   this->hydro = hydroin;
 
-  if(input.CheckEntry("Hydro","Viscosity")>=0) {
-    if(input.GetString("Hydro","Viscosity",0).compare("constant") == 0) {
-        this->eta1 = input.GetReal("Hydro","Viscosity",1);
+  if(input.CheckEntry("Hydro","viscosity")>=0) {
+    if(input.GetString("Hydro","viscosity",1).compare("constant") == 0) {
+        this->eta1 = input.GetReal("Hydro","viscosity",2);
         idfx::cout << "Viscosity: Enabling constant viscosity function with eta1="
                    << this->eta1 << " ."<< std::endl;
         // second viscosity?
-        if(input.CheckEntry("Hydro","Viscosity")>2) {
-          this->eta2 = input.GetReal("Hydro","Viscosity",2);
+        if(input.CheckEntry("Hydro","viscosity")>3) {
+          this->eta2 = input.GetReal("Hydro","viscosity",3);
           idfx::cout << "Viscosity: eta2="
                    << this->eta2 << " ."<< std::endl;
         } else {
@@ -60,7 +60,7 @@ void Viscosity::Init(Input &input, Grid &grid, Hydro *hydroin) {
           idfx::cout << "Viscosity: Second viscosity not provided. Assuming it is 0." << std::endl;
         }
         this->haveViscosity = Constant;
-      } else if(input.GetString("Hydro","Viscosity",0).compare("userdef") == 0) {
+      } else if(input.GetString("Hydro","viscosity",1).compare("userdef") == 0) {
         idfx::cout << "Viscosity: Enabling user-defined viscosity function."
                    << std::endl;
         this->haveViscosity = UserDefFunction;
@@ -76,7 +76,7 @@ void Viscosity::Init(Input &input, Grid &grid, Hydro *hydroin) {
                      "Can only be constant or userdef.");
       }
   } else {
-    IDEFIX_ERROR("I cannot create a Viscosity object without Viscosity defined"
+    IDEFIX_ERROR("I cannot create a Viscosity object without viscosity defined"
                    "in the .ini file");
   }
 

@@ -25,8 +25,19 @@ void ElectroMotiveForce::CalcNonidealEMF(real t) {
   IdefixArray3D<real> xAmbiArr = hydro->xAmbipolar;
 
   // these two are required to ensure that the type is captured by KOKKOS_LAMBDA
-  HydroModuleStatus haveResistivity = hydro->haveResistivity;
-  HydroModuleStatus haveAmbipolar = hydro->haveAmbipolar;
+  HydroModuleStatus resistivity = hydro->resistivityStatus.status;
+  HydroModuleStatus ambipolar = hydro->ambipolarStatus.status;
+
+  bool haveResistivity{false};
+  bool haveAmbipolar{false};
+
+  if(data->rklCycle) {
+    haveResistivity = hydro->resistivityStatus.isRKL;
+    haveAmbipolar = hydro->ambipolarStatus.isRKL;
+  } else {
+    haveResistivity = hydro->resistivityStatus.isExplicit;
+    haveAmbipolar = hydro->ambipolarStatus.isExplicit;
+  }
 
   real etaConstant = hydro->etaO;
   real xAConstant = hydro->xA;
@@ -43,9 +54,9 @@ void ElectroMotiveForce::CalcNonidealEMF(real t) {
       real eta, xA;
       // CT_EMF_ArithmeticAverage (emf, 0.25);
 
-      if(haveResistivity == Constant)
+      if(resistivity == Constant)
         eta = etaConstant;
-      if(haveAmbipolar == Constant)
+      if(ambipolar == Constant)
         xA = xAConstant;
 
   #if DIMENSIONS == 3
@@ -55,15 +66,15 @@ void ElectroMotiveForce::CalcNonidealEMF(real t) {
       Jx1 = J(IDIR,k,j,i);
 
       // Ohmic resistivity
-      if(haveResistivity == UserDefFunction)
-        eta = AVERAGE_3D_YZ(etaArr,k,j,i);
-      if(haveResistivity)
+
+      if(haveResistivity) {
+        if(resistivity == UserDefFunction) eta = AVERAGE_3D_YZ(etaArr,k,j,i);
         ex(k,j,i) += eta * Jx1;
+      }
 
       // Ambipolar diffusion
-      if(haveAmbipolar == UserDefFunction)
-        xA = AVERAGE_3D_YZ(xAmbiArr,k,j,i);
       if(haveAmbipolar) {
+        if(ambipolar == UserDefFunction) xA = AVERAGE_3D_YZ(xAmbiArr,k,j,i);
         Bx1 = AVERAGE_4D_XYZ(Vs, BX1s, k,j,i+1);
         Bx2 = AVERAGE_4D_Z(Vs, BX2s, k, j, i);
         Bx3 = AVERAGE_4D_Y(Vs, BX3s, k, j, i);
@@ -84,15 +95,14 @@ void ElectroMotiveForce::CalcNonidealEMF(real t) {
       Jx2 = J(JDIR,k,j,i);
 
       // Ohmic resistivity
-      if(haveResistivity == UserDefFunction)
-        eta = AVERAGE_3D_XZ(etaArr,k,j,i);
-      if(haveResistivity)
+      if(haveResistivity) {
+        if(resistivity == UserDefFunction) eta = AVERAGE_3D_XZ(etaArr,k,j,i);
         ey(k,j,i) += eta * Jx2;
+      }
 
       // Ambipolar diffusion
-      if(haveAmbipolar == UserDefFunction)
-        xA = AVERAGE_3D_XZ(xAmbiArr,k,j,i);
       if(haveAmbipolar) {
+        if(ambipolar == UserDefFunction) xA = AVERAGE_3D_XZ(xAmbiArr,k,j,i);
         Bx1 = AVERAGE_4D_Z(Vs, BX1s, k, j, i);
         Bx2 = AVERAGE_4D_XYZ(Vs, BX2s, k, j+1, i);
         Bx3 = AVERAGE_4D_X(Vs, BX3s, k, j, i);
@@ -113,26 +123,33 @@ void ElectroMotiveForce::CalcNonidealEMF(real t) {
       Jx3 = J(KDIR,k,j,i);
 
       // Ohmic resistivity
-      if(haveResistivity == UserDefFunction)
-        eta = AVERAGE_3D_XY(etaArr,k,j,i);
-      if(haveResistivity)
+      if(haveResistivity) {
+        if(resistivity == UserDefFunction) eta = AVERAGE_3D_XY(etaArr,k,j,i);
         ez(k,j,i) += eta * Jx3;
+      }
 
       // Ambipolar diffusion
-      if(haveAmbipolar == UserDefFunction)
-        xA = AVERAGE_3D_XY(xAmbiArr,k,j,i);
       if(haveAmbipolar) {
+        if(ambipolar == UserDefFunction) xA = AVERAGE_3D_XY(xAmbiArr,k,j,i);
         Bx1 = AVERAGE_4D_Y(Vs, BX1s, k, j, i);
   #if DIMENSIONS >= 2
         Bx2 = AVERAGE_4D_X(Vs, BX2s, k, j, i);
   #else
+    #if COMPONENTS >= 2
         Bx2 = AVERAGE_4D_XY(Vc, BX2, k, j, i);
+    #else
+        Bx2 = 0.0;
+    #endif
   #endif
 
   #if DIMENSIONS == 3
         Bx3 = AVERAGE_4D_XYZ(Vs, BX3s, k+1, j, i);
   #else
+      #if COMPONENTS == 3
         Bx3 = AVERAGE_4D_XY(Vc, BX3, k, j, i);
+      #else
+        Bx3 = 0.0;
+      #endif
   #endif
 
         // Jx3 is already defined above

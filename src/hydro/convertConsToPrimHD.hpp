@@ -5,31 +5,16 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#pragma once
+#ifndef HYDRO_CONVERTCONSTOPRIMHD_HPP_
+#define HYDRO_CONVERTCONSTOPRIMHD_HPP_
+
 #include "idefix.hpp"
+#include "hydro.hpp"
 
-
-// Local Kokkos Inlined functions
-
-KOKKOS_INLINE_FUNCTION void K_Flux(real *KOKKOS_RESTRICT F, const real *KOKKOS_RESTRICT V,
-                                   const real *KOKKOS_RESTRICT U, real Cs2Iso, const int Xn) {
-  F[RHO] = U[Xn];
-
-  EXPAND( F[MX1] = U[MX1]*V[Xn];  ,
-          F[MX2] = U[MX2]*V[Xn];  ,
-          F[MX3] = U[MX3]*V[Xn];  )
-
-#if HAVE_ENERGY
-  F[ENG]  = (U[ENG] + V[PRS])*V[Xn];
-  F[Xn]  += V[PRS];
-#else
-  // Add back pressure in the flux
-  F[Xn]  += Cs2Iso * V[RHO];
-#endif
-}
-
-KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real *KOKKOS_RESTRICT Vc, const real *KOKKOS_RESTRICT Uc,
-                                         real gamma_m1) {
+KOKKOS_INLINE_FUNCTION void Hydro::K_ConsToPrim(
+                                  real *KOKKOS_RESTRICT Vc,
+                                  const real *KOKKOS_RESTRICT Uc,
+                                  real gamma_m1) {
   Vc[RHO] = Uc[RHO];
 
   EXPAND( Vc[VX1] = Uc[MX1]/Uc[RHO];  ,
@@ -46,8 +31,9 @@ KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real *KOKKOS_RESTRICT Vc, const real *K
 #endif  // Have_energy
 }
 
-KOKKOS_INLINE_FUNCTION void K_PrimToCons(real *KOKKOS_RESTRICT Uc, const real *KOKKOS_RESTRICT Vc,
-                                         real gamma_m1) {
+KOKKOS_INLINE_FUNCTION void Hydro::K_PrimToCons(real *KOKKOS_RESTRICT Uc,
+                                    const real *KOKKOS_RESTRICT Vc,
+                                    real gamma_m1) {
   Uc[RHO] = Vc[RHO];
 
   EXPAND( Uc[MX1] = Vc[VX1]*Vc[RHO];  ,
@@ -63,7 +49,4 @@ KOKKOS_INLINE_FUNCTION void K_PrimToCons(real *KOKKOS_RESTRICT Uc, const real *K
 #endif  // Have_energy
 }
 
-#include "HDsolvers/tvdlfHD.hpp"
-#include "HDsolvers/hllHD.hpp"
-#include "HDsolvers/hllcHD.hpp"
-#include "HDsolvers/roeHD.hpp"
+#endif // HYDRO_CONVERTCONSTOPRIMHD_HPP_

@@ -33,7 +33,9 @@ class Vtk {
   int64_t ngx1,ngx2,ngx3;
 
   // Coordinates needed by VTK outputs
-  float *node_coord, *xnode, *ynode, *znode, *Vwrite;
+  float *xnode, *ynode, *znode, *Vwrite;
+
+  IdefixHostArray4D<float> node_coord;
 
   // Array designed to store the temporary vector array
   float *vect3D;
@@ -48,6 +50,7 @@ class Vtk {
 #ifdef WITH_MPI
   MPI_Offset offset;
   MPI_Datatype view;
+  MPI_Datatype nodeView;
 #endif
 
   void WriteHeader(IdfxFileHandler);
@@ -55,6 +58,7 @@ class Vtk {
   float BigEndian(float);
   void WriteHeaderString(const char* , IdfxFileHandler );
   void WriteHeaderFloat(float* , int64_t, IdfxFileHandler);
+  void WriteHeaderNodes(IdfxFileHandler);
 };
 
 #endif // OUTPUT_VTK_HPP_

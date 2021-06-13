@@ -9,11 +9,12 @@
 #define HYDRO_MHDSOLVERS_TVDLFMHD_HPP_
 
 #include "../idefix.hpp"
-#include "solversMHD.hpp"
+#include "extrapolatePrimVar.hpp"
+#include "fluxMHD.hpp"
+#include "convertConsToPrimMHD.hpp"
 
 // Compute Riemann fluxes from states using TVDLF solver
-template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
-                        ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
+template<const int DIR>
 void Hydro::TvdlfMHD() {
   idfx::pushRegion("Hydro::TVDLF_MHD");
 
@@ -24,8 +25,8 @@ void Hydro::TvdlfMHD() {
   // extension in perp to the direction of integration, as required by CT.
   iextend=jextend=kextend=0;
 
-  IdefixArray4D<real> PrimL = this->PrimL;
-  IdefixArray4D<real> PrimR = this->PrimR;
+  IdefixArray4D<real> Vc = this->Vc;
+  IdefixArray4D<real> Vs = this->Vs;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
@@ -119,6 +120,14 @@ void Hydro::TvdlfMHD() {
              data->beg[JDIR]-jextend,data->end[JDIR]+joffset+jextend,
              data->beg[IDIR]-iextend,data->end[IDIR]+ioffset+iextend,
     KOKKOS_LAMBDA (int k, int j, int i) {
+      // Init the directions (should be in the kernel for proper optimisation by the compilers)
+      EXPAND( const int Xn = DIR+MX1;                    ,
+              const int Xt = (DIR == IDIR ? MX2 : MX1);  ,
+              const int Xb = (DIR == KDIR ? MX2 : MX3);  )
+
+      EXPAND( const int BXn = DIR+BX1;                    ,
+              const int BXt = (DIR == IDIR ? BX2 : BX1);  ,
+              const int BXb = (DIR == KDIR ? BX2 : BX3);   )
       // Primitive variables
       real vL[NVAR];
       real vR[NVAR];
@@ -131,10 +140,9 @@ void Hydro::TvdlfMHD() {
       real fluxR[NVAR];
 
       // Load primitive variables
+      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, vL, vR);
 #pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
-        vL[nv] = PrimL(nv,k,j,i);
-        vR[nv] = PrimR(nv,k,j,i);
         v[nv] = HALF_F*(vL[nv] + vR[nv]);
       }
 

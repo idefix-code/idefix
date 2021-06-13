@@ -8,8 +8,6 @@ many options to adapt the generated makefile to the architecture on which one wa
     Display the help message and exit
 ``-mhd``
     Enable MHD in the code
-``-gpu``
-    Enable GPU target architecture (otherwise default target is cpu).
 ``-arch=xxx``
     Compile for a specific CPU or GPU target. These corresponds to Kokkos target, so user can report to Kokkos documentation to get an up-to-date list of targets. At the time of writing, valid options are
      + Intel CPUs:    KNC, KNL, SNB, HSW, BDW, SKX
@@ -22,7 +20,7 @@ many options to adapt the generated makefile to the architecture on which one wa
     Enable OpenMP parallelisation on supported compilers (not available on GPUs for obvious reasons).
 
 ``-mpi``
-    Enable MPI (message passing interface) when available. Note that this option can be used in conjonction with -gpu to run idefix simultaneously on several GPUs. This feature requires a CUDA-aware installation of MPI, such as OpenMPI.
+    Enable MPI (message passing interface) when available. Note that this option is supported with CPU and GPU architectures as well, though GPUs require a CUDA-aware installation of MPI, such as OpenMPI.
 
   .. tip::
     Note that when a source file in the ``makefile`` directory has the same filename as one of the original source file of your *Idefix* distribution, then

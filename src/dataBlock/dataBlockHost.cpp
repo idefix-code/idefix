@@ -36,6 +36,8 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
     xend[dir] = data->xend[dir];
     beg[dir] = data->beg[dir];
     end[dir] = data->end[dir];
+    gbeg[dir] = data->gbeg[dir];
+    gend[dir] = data->gend[dir];
 
     // TO BE COMPLETED...
   }

@@ -9,7 +9,9 @@
 #define HYDRO_MHDSOLVERS_ROEMHD_HPP_
 
 #include "../idefix.hpp"
-#include "solversMHD.hpp"
+#include "extrapolatePrimVar.hpp"
+#include "fluxMHD.hpp"
+#include "convertConsToPrimMHD.hpp"
 
 #define ROE_AVERAGE 0
 
@@ -39,8 +41,7 @@
 #define DSIGN(x) ( (x) >= 0.0 ? (1.0) : (-1.0))
 
 // Compute Riemann fluxes from states using ROE solver
-template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
-         ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
+template<const int DIR>
 void Hydro::RoeMHD() {
   idfx::pushRegion("Hydro::ROE_MHD");
 
@@ -51,8 +52,8 @@ void Hydro::RoeMHD() {
   // extension in perp to the direction of integration, as required by CT.
   iextend=jextend=kextend=0;
 
-  IdefixArray4D<real> PrimL = this->PrimL;
-  IdefixArray4D<real> PrimR = this->PrimR;
+  IdefixArray4D<real> Vc = this->Vc;
+  IdefixArray4D<real> Vs = this->Vs;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
@@ -150,6 +151,15 @@ void Hydro::RoeMHD() {
              data->beg[JDIR]-jextend,data->end[JDIR]+joffset+jextend,
              data->beg[IDIR]-iextend,data->end[IDIR]+ioffset+iextend,
     KOKKOS_LAMBDA (int k, int j, int i) {
+      // Init the directions (should be in the kernel for proper optimisation by the compilers)
+      EXPAND( const int Xn = DIR+MX1;                    ,
+              const int Xt = (DIR == IDIR ? MX2 : MX1);  ,
+              const int Xb = (DIR == KDIR ? MX2 : MX3);  )
+
+      EXPAND( const int BXn = DIR+BX1;                    ,
+              const int BXt = (DIR == IDIR ? BX2 : BX1);  ,
+              const int BXb = (DIR == KDIR ? BX2 : BX3);   )
+
       // Primitive variables
       real vL[NVAR];
       real vR[NVAR];
@@ -169,10 +179,9 @@ void Hydro::RoeMHD() {
       real um[NVAR];
 
       // 1-- Store the primitive variables on the left, right, and averaged states
+      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, vL, vR);
 #pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
-        vL[nv] = PrimL(nv,k,j,i);
-        vR[nv] = PrimR(nv,k,j,i);
         dV[nv] = vR[nv] - vL[nv];
       }
 

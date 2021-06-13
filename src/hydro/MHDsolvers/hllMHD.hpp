@@ -9,11 +9,12 @@
 #define HYDRO_MHDSOLVERS_HLLMHD_HPP_
 
 #include "../idefix.hpp"
-#include "solversMHD.hpp"
+#include "extrapolatePrimVar.hpp"
+#include "fluxMHD.hpp"
+#include "convertConsToPrimMHD.hpp"
 
 // Compute Riemann fluxes from states using HLL solver
-template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
-         ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
+template<const int DIR>
 void Hydro::HllMHD() {
   idfx::pushRegion("Hydro::HLL_MHD");
 
@@ -23,13 +24,13 @@ void Hydro::HllMHD() {
   // extension in perp to the direction of integration, as required by CT.
   iextend=jextend=kextend=0;
 
-  IdefixArray4D<real> PrimL = this->PrimL;
-  IdefixArray4D<real> PrimR = this->PrimR;
+  IdefixArray4D<real> Vc = this->Vc;
+  IdefixArray4D<real> Vs = this->Vs;
   IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 
-  HydroModuleStatus haveHall = this->haveHall;
+  HydroModuleStatus haveHall = this->hallStatus.status;
   IdefixArray4D<real> J = this->J;
   IdefixArray3D<real> xHallArr = this->xHall;
   IdefixArray1D<real> dx = data->dx[DIR];
@@ -129,6 +130,15 @@ void Hydro::HllMHD() {
              data->beg[JDIR]-jextend,data->end[JDIR]+joffset+jextend,
              data->beg[IDIR]-iextend,data->end[IDIR]+ioffset+iextend,
     KOKKOS_LAMBDA (int k, int j, int i) {
+      // Init the directions (should be in the kernel for proper optimisation by the compilers)
+      EXPAND( const int Xn = DIR+MX1;                    ,
+              const int Xt = (DIR == IDIR ? MX2 : MX1);  ,
+              const int Xb = (DIR == KDIR ? MX2 : MX3);  )
+
+      EXPAND( const int BXn = DIR+BX1;                    ,
+              const int BXt = (DIR == IDIR ? BX2 : BX1);  ,
+              const int BXb = (DIR == KDIR ? BX2 : BX3);   )
+
       // Primitive variables
       real vL[NVAR];
       real vR[NVAR];
@@ -147,11 +157,7 @@ void Hydro::HllMHD() {
       c2Iso = ZERO_F;
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-#pragma unroll
-      for(int nv = 0 ; nv < NVAR; nv++) {
-        vL[nv] = PrimL(nv,k,j,i);
-        vR[nv] = PrimR(nv,k,j,i);
-      }
+      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, vL, vR);
 
       // 2-- Get the wave speed
       real gpr, b1, b2, b3, Btmag2, Bmag2;

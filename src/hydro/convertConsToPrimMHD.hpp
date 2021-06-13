@@ -5,48 +5,14 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef HYDRO_SOLVERSMHD_HPP_
-#define HYDRO_SOLVERSMHD_HPP_
+#ifndef HYDRO_CONVERTCONSTOPRIMMHD_HPP_
+#define HYDRO_CONVERTCONSTOPRIMMHD_HPP_
 
 #include "idefix.hpp"
+#include "hydro.hpp"
 
-// Local Kokkos Inline functions
 
-KOKKOS_INLINE_FUNCTION void K_Flux(real F[], real V[], real U[], real Cs2Iso,
-                                   ARG_EXPAND(const int Xn, const int Xt, const int Xb),
-                                   ARG_EXPAND(const int BXn, const int BXt, const int BXb)) {
-  F[RHO] = U[Xn];
-  EXPAND( F[MX1] = U[MX1]*V[Xn] - V[BXn]*V[BX1]; ,
-          F[MX2] = U[MX2]*V[Xn] - V[BXn]*V[BX2]; ,
-          F[MX3] = U[MX3]*V[Xn] - V[BXn]*V[BX3];)
-
-  EXPAND(F[BXn] = ZERO_F;                             ,
-          F[BXt] = V[Xn]*V[BXt] - V[BXn]*V[Xt];   ,
-          F[BXb] = V[Xn]*V[BXb] - V[BXn]*V[Xb]; )
-
-  real Bmag2 = EXPAND(V[BX1]*V[BX1] , + V[BX2]*V[BX2], + V[BX3]*V[BX3]);
-
-#if HAVE_ENERGY
-  real ptot  = V[PRS] + HALF_F*Bmag2;
-
-#elif defined(ISOTHERMAL)
-  real ptot  = Cs2Iso * V[RHO] + HALF_F*Bmag2;
-
-#else
-  #error "K_Flux not defined for this EOS!"
-#endif
-
-#if HAVE_ENERGY
-  F[ENG]   = (U[ENG] + ptot)*V[Xn] - V[BXn] * (EXPAND( V[VX1]*V[BX1]   ,
-                                                      + V[VX2]*V[BX2]  ,
-                                                      + V[VX3]*V[BX3]  ));
-#endif
-
-  // Add back pressure in the flux (not included in original PLUTO implementation)
-  F[Xn]   += ptot;
-}
-
-KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[], real gamma_m1) {
+KOKKOS_INLINE_FUNCTION void Hydro::K_ConsToPrim(real Vc[], real Uc[], real gamma_m1) {
   Vc[RHO] = Uc[RHO];
 
   EXPAND( Vc[VX1] = Uc[MX1]/Uc[RHO];  ,
@@ -84,7 +50,7 @@ KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[], real gamma_m1) {
 #endif  // Have_energy
 }
 
-KOKKOS_INLINE_FUNCTION void K_PrimToCons(real Uc[], real Vc[], real gamma_m1) {
+KOKKOS_INLINE_FUNCTION void Hydro::K_PrimToCons(real Uc[], real Vc[], real gamma_m1) {
   Uc[RHO] = Vc[RHO];
 
   EXPAND( Uc[MX1] = Vc[VX1]*Vc[RHO];  ,
@@ -108,9 +74,7 @@ KOKKOS_INLINE_FUNCTION void K_PrimToCons(real Uc[], real Vc[], real gamma_m1) {
 #endif  // Have_energy
 }
 
-#include "MHDsolvers/tvdlfMHD.hpp"
-#include "MHDsolvers/hllMHD.hpp"
-#include "MHDsolvers/hlldMHD.hpp"
-#include "MHDsolvers/roeMHD.hpp"
 
-#endif // HYDRO_SOLVERSMHD_HPP_
+
+
+#endif // HYDRO_CONVERTCONSTOPRIMMHD_HPP_

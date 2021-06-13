@@ -126,7 +126,7 @@ If one (or several) boundaries are set to ``userdef`` in the input file, the use
 enroll a user-defined boundary function in the ``Setup`` constructor as for the other user-def functions  (see :ref:`functionEnrollment`).
 Note that even if several boundaries are ``userdef`` in the input file, only one user-defined function
 is required. When *Idefix* calls the user defined boundary function, it sets the direction of the boundary (``dir=IDIR``, ``JDIR``,
-or ``KDIR``) and the side of the bondary (``side=left`` or ``size=right``). A typical user-defined
+or ``KDIR``) and the side of the bondary (``side=left`` or ``side=right``). A typical user-defined
 boundary condition function looks like this:
 
 .. code-block:: c++
@@ -160,6 +160,9 @@ boundary condition function looks like this:
 
 ``Setup::InitFlow`` method
 --------------------------
+
+Basics of the Initflow method
+*****************************
 
 ``InitFlow`` is a method of the ``Setup`` class and is called by *Idefix* after the ``Setup`` constructor.
 Its role is to define the initial conditions for the flow, initializing the ``Vc`` (and ``Vs`` in MHD)
@@ -206,6 +209,8 @@ C loop on the host, as in the example below.
   Do not forget to sync your DataBlockHost to its parent DataBlock using the
   ``DataBlockHost::SyncToDevice()`` method!
 
+Initialising the magnetic field
+*******************************
 
 When MHD is used, the face-centered magnetic field stored in ``Vs`` should be initialised with a divergence-free
 field *at machine precision*. This might not always be straightforward for some complex field geometry,
@@ -249,13 +254,83 @@ can be automatically derived using ``DataBlockHost::MakeVsFromAmag`` as in the e
     dataHost.SyncToDevice();
   }
 
+.. _setupInitDump:
+
+Initialising from a restart dump
+********************************
+
+In some cases, it can be useful to initialise the flow from a dump taken from a previous
+simulation. While one can simply use the ``-restart`` option on the commandline to resume
+a simulation (see :ref:`commandLine`), there are some situation when one needs to create
+a new initial condition by extrapolating or extanding a restart dump (such as in a resolution
+test or a dimension change). In this case, one should use the ``DumpImage`` class which provides
+all the tools needed to read a restart dump (see also :ref:`dumpImageClass`).
+
+One typically first construct an instance of ``DumpImage`` in the ``Setup`` constructor, and then
+use this instance to initialise the flow in ``Setup::InitFlow``. The procedure is examplified below,
+assuming we want to create a dump from ``mydump.dmp``:
+
+.. code-block:: c++
+
+  DumpImage *image;       // Global pointer to our DumpImage
+
+  // Setup constructor
+  Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
+    image = new DumpImage("mydump.dmp",output);   // load the dump file and store it in a DumpImage
+  }
+
+  // Flow initialisation, read directly from the DumpImage
+  void Setup::InitFlow(DataBlock &data) {
+
+    // Create a host copy
+    DataBlockHost d(data);
+
+    for(int k = d.beg[KDIR]; k < d.end[KDIR] ; k++) {
+      for(int j = d.beg[JDIR]; j < d.end[JDIR] ; j++) {
+        for(int i = d.beg[IDIR]; i < d.end[IDIR] ; i++) {
+
+          // Note that the restart dump array only contains the full (global) active domain
+          // (i.e. it excludes the boundaries, but it is not decomposed accross MPI procs)
+          int iglob=i-2*d.beg[IDIR]+d.gbeg[IDIR];
+          int jglob=j-2*d.beg[JDIR]+d.gbeg[JDIR];
+          int kglob=k-2*d.beg[KDIR]+d.gbeg[KDIR];
+
+          d.Vc(RHO,k,j,i) = image->arrays["Vc-RHO"](kglob,jglob,iglob);
+          d.Vc(PRS,k,j,i) = image->arrays["Vc-PRS"](kglob,jglob,iglob);
+          d.Vc(VX1,k,j,i) = image->arrays["Vc-VX1"](kglob,jglob,iglob);
+  }}}
+
+    // For magnetic variable, we should fill the entire active domain, hence an additional
+    // point in the field direction
+    for(int k = d.beg[KDIR]; k < d.end[KDIR] ; k++) {
+      for(int j = d.beg[JDIR]; j < d.end[JDIR] ; j++) {
+          for(int i = d.beg[IDIR]; i < d.end[IDIR]+IOFFSET ; i++) {
+            int iglob=i-2*d.beg[IDIR]+d.gbeg[IDIR];
+            int jglob=j-2*d.beg[JDIR]+d.gbeg[JDIR];
+            int kglob=k-2*d.beg[KDIR]+d.gbeg[KDIR];
+            d.Vs(BX1s,k,j,i) = image->arrays["Vs-BX1s"](kglob,jglob,iglob);
+    }}}
+
+    // And so on for the other components
+    // ..
 
 
+    delete image;   // don't forget to free the memory allocated for dumpImage!
+
+    // Send our datablock to the device
+    d.SyncToDevice();
+  }
 
 
+.. note::
+
+  Note that the naming convention in ``DumpImage::arrays`` combines the original array and variable names.
+  It is generically written ``XX-YYY`` where ``XX`` is the array name in the ``dataBlock`` (e.g.
+  ``Vc`` or ``Vs``) and ``YYY`` is the variable name (e.g. ``VX2`` or ``BX3s``).
 
 
 User-defined analysis
 ---------------------
 
-Coming soon
+User-defined analysis and outputs can be coded in the ``setup.cpp`` file. Follow the
+guidelines in :ref:`output`.

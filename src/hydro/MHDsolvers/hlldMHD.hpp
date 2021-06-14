@@ -29,6 +29,9 @@ void Hydro::HlldMHD() {
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 
+  // Required for high order interpolations
+  IdefixArray1D<real> dx = this->data->dx[DIR];
+
   // References to required emf components
   IdefixArray3D<real> Eb;
   IdefixArray3D<real> Et;
@@ -129,7 +132,7 @@ void Hydro::HlldMHD() {
       real vL[NVAR];
       real vR[NVAR];
 
-      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, vL, vR);
+      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, dx, vL, vR);
 
       // Conservative variables
       real uL[NVAR];

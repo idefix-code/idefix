@@ -32,6 +32,9 @@ void Hydro::TvdlfHD() {
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 
+  // Required for high order interpolations
+  IdefixArray1D<real> dx = this->data->dx[DIR];
+
   real gamma = this->gamma;
   real gamma_m1=this->gamma-ONE_F;
   real csIso = this->isoSoundSpeed;
@@ -63,7 +66,7 @@ void Hydro::TvdlfHD() {
       real cRL, cmax;
 
       // 1-- Read primitive variables
-      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, vL, vR);
+      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, dx, vL, vR);
 #pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
         vRL[nv] = HALF_F*(vL[nv]+vR[nv]);

@@ -157,7 +157,7 @@ void Hydro::HllMHD() {
       c2Iso = ZERO_F;
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, vL, vR);
+      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, dx, vL, vR);
 
       // 2-- Get the wave speed
       real gpr, b1, b2, b3, Btmag2, Bmag2;

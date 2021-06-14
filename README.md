@@ -1,15 +1,9 @@
-Full documentation
-------------------
-
-The latest documentation is available online following these links
-- [Master branch documentation](https://discs.gricad-pages.univ-grenoble-alpes.fr/idefix/master/index.html).
-- [Develop branch documentation](https://discs.gricad-pages.univ-grenoble-alpes.fr/idefix/develop/index.html).
-
 
 <!-- toc -->
 Table of contents
 -----------------
 
+- [Documentation:](#documentation)
 - [Download:](#download)
 - [Installation:](#installation)
 - [Compile an example:](#compile-an-example)
@@ -23,6 +17,14 @@ Table of contents
 - [Contributing](#contributing)
 
 <!-- tocstop -->
+
+Full documentation
+------------------
+
+The latest documentation is available online following these links
+- [Master branch documentation](https://discs.gricad-pages.univ-grenoble-alpes.fr/idefix/master/index.html).
+- [Develop branch documentation](https://discs.gricad-pages.univ-grenoble-alpes.fr/idefix/develop/index.html).
+
 
 Download:
 ---------

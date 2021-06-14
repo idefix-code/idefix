@@ -1,5 +1,9 @@
-The latest documentation is available
-[here](https://discs.gricad-pages.univ-grenoble-alpes.fr/idefix/index.html).
+Full documentation
+------------------
+
+The latest documentation is available online following these links
+- [Master branch documentation](https://discs.gricad-pages.univ-grenoble-alpes.fr/idefix/master/index.html).
+- [Develop branch documentation](https://discs.gricad-pages.univ-grenoble-alpes.fr/idefix/develop/index.html).
 
 <!-- toc -->
 

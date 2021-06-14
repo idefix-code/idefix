@@ -5,7 +5,10 @@ The latest documentation is available online following these links
 - [Master branch documentation](https://discs.gricad-pages.univ-grenoble-alpes.fr/idefix/master/index.html).
 - [Develop branch documentation](https://discs.gricad-pages.univ-grenoble-alpes.fr/idefix/develop/index.html).
 
+
 <!-- toc -->
+Table of contents
+-----------------
 
 - [Download:](#download)
 - [Installation:](#installation)

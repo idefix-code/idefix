@@ -1,9 +1,8 @@
 
-<!-- toc -->
-Table of contents
------------------
 
-- [Documentation:](#documentation)
+<!-- toc -->
+
+- [Full documentation](#full-documentation)
 - [Download:](#download)
 - [Installation:](#installation)
 - [Compile an example:](#compile-an-example)

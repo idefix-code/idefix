@@ -592,9 +592,9 @@ void HydroBoundary::EnrollInternalBoundary(InternalBoundaryFunc myFunc) {
 
 void HydroBoundary::EnforcePeriodic(int dir, BoundarySide side ) {
   IdefixArray4D<real> Vc = hydro->Vc;
-  const int nxi = data->np_int[IDIR];
-  const int nxj = data->np_int[JDIR];
-  const int nxk = data->np_int[KDIR];
+  int nxi = data->np_int[IDIR];
+  int nxj = data->np_int[JDIR];
+  int nxk = data->np_int[KDIR];
 
   const int ighost = data->nghost[IDIR];
   const int jghost = data->nghost[JDIR];
@@ -623,7 +623,9 @@ void HydroBoundary::EnforcePeriodic(int dir, BoundarySide side ) {
   #if MHD==YES
     IdefixArray4D<real> Vs = hydro->Vs;
     if(dir==JDIR || dir==KDIR) {
-      const int nxi = data->np_int[IDIR]+1;
+      nxi = data->np_int[IDIR]+1;
+      nxj = data->np_int[JDIR];
+      nxk = data->np_int[KDIR];
       BoundaryForX1s("BoundaryPeriodicX1s",dir,side,
       KOKKOS_LAMBDA (int k, int j, int i) {
         int iref, jref, kref;
@@ -646,7 +648,9 @@ void HydroBoundary::EnforcePeriodic(int dir, BoundarySide side ) {
     }
     #if COMPONENTS >=2
       if(dir==IDIR || dir==KDIR) {
-        const int nxj = data->np_int[JDIR]+1;
+        nxi = data->np_int[IDIR];
+        nxj = data->np_int[JDIR]+1;
+        nxk = data->np_int[KDIR];
         BoundaryForX2s("BoundaryPeriodicX2s",dir,side,
         KOKKOS_LAMBDA (int k, int j, int i) {
           int iref, jref, kref;
@@ -669,7 +673,9 @@ void HydroBoundary::EnforcePeriodic(int dir, BoundarySide side ) {
       }
     #endif
     #if COMPONENTS == 3
-      const int nxk = data->np_int[JDIR]+1;
+      nxi = data->np_int[IDIR];
+      nxj = data->np_int[JDIR];
+      nxk = data->np_int[KDIR]+1;
       if(dir==IDIR || dir==JDIR) {
         BoundaryForX3s("BoundaryPeriodicX3s",dir,side,
         KOKKOS_LAMBDA (int k, int j, int i) {
@@ -688,7 +694,7 @@ void HydroBoundary::EnforcePeriodic(int dir, BoundarySide side ) {
             else
               kref = k;
 
-            Vs(BX2s,k,j,i) = Vs(BX2s,kref,jref,iref);
+            Vs(BX3s,k,j,i) = Vs(BX3s,kref,jref,iref);
         });
       }
     #endif

@@ -70,7 +70,11 @@ using Layout = Kokkos::LayoutRight;
 
 
 // Basic configuration
-#include "definitions.hpp"
+#ifndef DEFINITIONS_FILE
+  #include "definitions.hpp"
+#else
+  #include DEFINITIONS_FILE
+#endif
 #include "real_types.hpp"
 
 // Default EMF_AVERAGE value

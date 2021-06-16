@@ -16,11 +16,15 @@ many options to adapt the generated makefile to the architecture on which one wa
      + IBM:      BGQ, Power7, Power8, Power9
      + AMD-GPUS: Vega900, Vega906
      + AMD-CPUS: AMDAVX, Zen, Zen2
+``-cxx=xxx``
+    compile the code with the ``xxx`` C++ compiler.
 ``-openmp``
     Enable OpenMP parallelisation on supported compilers (not available on GPUs for obvious reasons).
 
 ``-mpi``
     Enable MPI (message passing interface) when available. Note that this option is supported with CPU and GPU architectures as well, though GPUs require a CUDA-aware installation of MPI, such as OpenMPI.
+``-defs=filename``
+    Specify a particular ``filename`` to be used in place of the default ``definitions.hpp``
 
   .. tip::
     Note that when a source file in the ``makefile`` directory has the same filename as one of the original source file of your *Idefix* distribution, then

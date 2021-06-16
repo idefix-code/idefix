@@ -69,6 +69,7 @@ def _add_parser_args(parser):
         action="store_true",
     )
     parser.add_argument("-mpi", action="store_true", help="enable MPI parallelism")
+    parser.add_argument("-defs", help="specify a custom name for definitions.hpp")
 
 
 def is_gpu_requested(requested_archs):
@@ -124,6 +125,7 @@ def _get_makefile_options(
     mpi,
     mhd,
     sed,
+    defs,
 ):
     # using a default dict to allow setting key value pairs as
     # >>> options[key] += value
@@ -169,6 +171,9 @@ def _get_makefile_options(
         options["extraIncludeDir"] += " -I$(SRC)/hydro/HDsolvers"
         options["extraVpath"] += ":$(SRC)/hydro/HDsolvers"
         options["cxxflags"] += " -DMHD=NO"
+
+    if defs:
+        options["cxxflags"] += " -DDEFINITIONS_FILE=\'\"" + defs + "\"\'"
 
     return options
 
@@ -273,6 +278,7 @@ def main(argv=None):
         mpi=args.mpi,
         mhd=args.mhd,
         sed=mysed,
+        defs=args.defs,
     )
     try:
         _write_makefile(args.directory, makefile_options)

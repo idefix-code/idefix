@@ -17,7 +17,7 @@ V=readVTKCart('../data.0001.vtk')
 U=readVTKCart('data.0001.ref.vtk')
 
 # Compute the error on PRS
-error=np.sqrt(np.mean((V.data['PRS']-U.data['PRS'])**2/V.data['PRS']**2,axis=(0,1,2)))
+error=np.mean(np.abs(V.data['PRS']-U.data['PRS']),axis=(0,1,2))
 
 print("Error=%e"%error)
 if error<3e-3:

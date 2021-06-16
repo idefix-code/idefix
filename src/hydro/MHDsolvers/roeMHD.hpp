@@ -58,6 +58,9 @@ void Hydro::RoeMHD() {
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 
+  // Required for high order interpolations
+  IdefixArray1D<real> dx = this->data->dx[DIR];
+
   // References to required emf components
   IdefixArray3D<real> Eb;
   IdefixArray3D<real> Et;
@@ -179,7 +182,7 @@ void Hydro::RoeMHD() {
       real um[NVAR];
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, vL, vR);
+      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, dx, vL, vR);
 #pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
         dV[nv] = vR[nv] - vL[nv];

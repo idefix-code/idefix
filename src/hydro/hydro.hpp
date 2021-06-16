@@ -130,7 +130,7 @@ class Hydro {
   template<const int DIR>
   KOKKOS_FORCEINLINE_FUNCTION void K_ExtrapolatePrimVar
       (const int, const int, const int, const IdefixArray4D<real>&,
-      const IdefixArray4D<real>&, real[], real[]);
+      const IdefixArray4D<real>&, const IdefixArray1D<real>&, real[], real[]);
 
   // Flux functions and converter functions
   #if MHD == YES

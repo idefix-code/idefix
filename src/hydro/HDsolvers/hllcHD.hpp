@@ -42,6 +42,9 @@ void Hydro::HllcHD() {
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 
+  // Required for high order interpolations
+  IdefixArray1D<real> dx = this->data->dx[DIR];
+
   real gamma = this->gamma;
   real gamma_m1 = this->gamma - ONE_F;
   real csIso = this->isoSoundSpeed;
@@ -73,7 +76,7 @@ void Hydro::HllcHD() {
       real cL, cR, cmax;
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, vL, vR);
+      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, dx, vL, vR);
 
       // 2-- Get the wave speed
 #if HAVE_ENERGY

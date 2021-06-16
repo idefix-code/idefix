@@ -48,31 +48,31 @@ class HydroBoundary {
 
   // specific for loops on ghost cells
   template <typename Function>
-  void boundary_for(const std::string &,
+  void BoundaryFor(const std::string &,
                             const int &,
                             const BoundarySide &,
                             Function );
 
   template <typename Function>
-  void boundary_for_all(const std::string &,
+  void BoundaryForAll(const std::string &,
                             const int &,
                             const BoundarySide &,
                             Function );
 
   template <typename Function>
-  void boundary_for_X1s(const std::string &,
+  void BoundaryForX1s(const std::string &,
                             const int &,
                             const BoundarySide &,
                             Function );
 
   template <typename Function>
-  void boundary_for_X2s(const std::string &,
+  void BoundaryForX2s(const std::string &,
                             const int &,
                             const BoundarySide &,
                             Function );
 
   template <typename Function>
-  void boundary_for_X3s(const std::string &,
+  void BoundaryForX3s(const std::string &,
                             const int &,
                             const BoundarySide &,
                             Function );

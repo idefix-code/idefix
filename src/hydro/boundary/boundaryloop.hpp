@@ -13,7 +13,7 @@
 #include "idefix.hpp"
 
 template <typename Function>
-inline void HydroBoundary::boundary_for_all(
+inline void HydroBoundary::BoundaryForAll(
   const std::string & name,
   const int &dir,
   const BoundarySide &side,
@@ -38,7 +38,7 @@ inline void HydroBoundary::boundary_for_all(
 }
 
 template <typename Function>
-inline void HydroBoundary::boundary_for(
+inline void HydroBoundary::BoundaryFor(
   const std::string & name,
   const int &dir,
   const BoundarySide &side,
@@ -61,11 +61,11 @@ inline void HydroBoundary::boundary_for(
 
 
 
-    idefix_for(name, 0, NVAR, kbeg, kend, jbeg, jend, ibeg, iend, function);
+    idefix_for(name, kbeg, kend, jbeg, jend, ibeg, iend, function);
 }
 
 template <typename Function>
-inline void HydroBoundary::boundary_for_X1s(
+inline void HydroBoundary::BoundaryForX1s(
   const std::string & name,
   const int &dir,
   const BoundarySide &side,
@@ -90,7 +90,7 @@ inline void HydroBoundary::boundary_for_X1s(
 }
 
 template <typename Function>
-inline void HydroBoundary::boundary_for_X2s(
+inline void HydroBoundary::BoundaryForX2s(
   const std::string & name,
   const int &dir,
   const BoundarySide &side,
@@ -115,7 +115,7 @@ inline void HydroBoundary::boundary_for_X2s(
 }
 
 template <typename Function>
-inline void HydroBoundary::boundary_for_X3s(
+inline void HydroBoundary::BoundaryForX3s(
   const std::string & name,
   const int &dir,
   const BoundarySide &side,

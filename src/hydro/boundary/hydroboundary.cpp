@@ -8,6 +8,7 @@
 #include "hydroboundary.hpp"
 #include "hydro.hpp"
 #include "dataBlock.hpp"
+#include "boundaryloop.hpp"
 
 
 void HydroBoundary::Init(Input & input, Grid &grid, Hydro* hydro) {
@@ -137,64 +138,7 @@ void HydroBoundary::EnforceBoundaryDir(real t, int dir) {
 
     case periodic:
       if(data->mygrid->nproc[dir] > 1) break; // Periodicity already enforced by MPI calls
-      idefix_for("BoundaryBegPeriodic",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
-        KOKKOS_LAMBDA (int n, int k, int j, int i) {
-          int iref, jref, kref;
-          // This hack takes care of cases where we have more ghost zones than active zones
-          if(dir==IDIR)
-            iref = ighost + nxi - 1 - (ighost-i-1)%nxi;
-          else
-            iref = i;
-          if(dir==JDIR)
-            jref = jghost + nxj - 1 - (jghost-j-1)%nxj;
-          else
-            jref = j;
-          if(dir==KDIR)
-            kref = kghost + nxk - 1 - (kghost-k-1)%nxk;
-          else
-            kref = k;
-
-          Vc(n,k,j,i) = Vc(n,kref,jref,iref);
-        }
-      );
-#if MHD == YES
-      for(int component=0; component<DIMENSIONS; component++) {
-        int ieb,jeb,keb;
-        if(component == IDIR)
-          ieb=iend+1;
-        else
-          ieb=iend;
-        if(component == JDIR)
-          jeb=jend+1;
-        else
-          jeb=jend;
-        if(component == KDIR)
-          keb=kend+1;
-        else
-          keb=kend;
-        if(component != dir) {
-          // skip normal component
-          idefix_for("BoundaryBegShearingBoxVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
-            KOKKOS_LAMBDA (int k, int j, int i) {
-              int iref, jref, kref;
-              if(dir==IDIR)
-                iref = ighost + nxi - 1 - (ighost-i-1)%nxi;
-              else
-                iref = i;
-              if(dir==JDIR)
-                jref = jghost + nxj - 1 - (jghost-j-1)%nxj;
-              else
-                jref = j;
-              if(dir==KDIR)
-                kref = kghost + nxk - 1 - (kghost-k-1)%nxk;
-              else
-                kref = k;
-              Vs(component,k,j,i) = Vs(component,kref,jref,iref);
-            }
-          );
-        }
-      }
-#endif
+      EnforcePeriodic(dir,left);
       break;
 
     case reflective:
@@ -362,63 +306,7 @@ void HydroBoundary::EnforceBoundaryDir(real t, int dir) {
 
     case periodic:
       if(data->mygrid->nproc[dir] > 1) break; // Periodicity already enforced by MPI calls
-      idefix_for("BoundaryEndPeriodic",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
-        KOKKOS_LAMBDA (int n, int k, int j, int i) {
-          int iref, jref, kref;
-          // This hack takes care of cases where we have more ghost zones than active zones
-          if(dir==IDIR)
-            iref = ighost + (i-(ighost+nxi))%nxi;
-          else
-            iref = i;
-          if(dir==JDIR)
-            jref = jghost + (j-(jghost+nxj))%nxj;
-          else
-            jref = j;
-          if(dir==KDIR)
-            kref = kghost + (k-(kghost+nxk))%nxk;
-          else
-            kref = k;
-          Vc(n,k,j,i) = Vc(n,kref,jref,iref);
-        }
-      );
-
-#if MHD == YES
-      for(int component=0; component<DIMENSIONS; component++) {
-        int ieb,jeb,keb;
-        if(component == IDIR)
-          ieb=iend+1;
-        else
-          ieb=iend;
-        if(component == JDIR)
-          jeb=jend+1;
-        else
-          jeb=jend;
-        if(component == KDIR)
-          keb=kend+1;
-        else
-          keb=kend;
-        if(component != dir) { // skip normal component
-          idefix_for("BoundaryEndPeriodicVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
-            KOKKOS_LAMBDA (int k, int j, int i) {
-              int iref, jref, kref;
-              if(dir==IDIR)
-                iref = ighost + (i-(ighost+nxi))%nxi;
-              else
-                iref = i;
-              if(dir==JDIR)
-                jref = jghost + (j-(jghost+nxj))%nxj;
-              else
-                jref = j;
-              if(dir==KDIR)
-                kref = kghost + (k-(kghost+nxk))%nxk;
-              else
-                kref = k;
-              Vs(component,k,j,i) = Vs(component,kref,jref,iref);
-            }
-          );
-        }
-      }
-#endif
+      EnforcePeriodic(dir,right);
       break;
     case reflective:
       idefix_for("BoundaryEndReflective",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
@@ -700,4 +588,106 @@ void HydroBoundary::EnrollInternalBoundary(InternalBoundaryFunc myFunc) {
   this->internalBoundaryFunc = myFunc;
   this->haveInternalBoundary = true;
   idfx::cout << "Hydro: User-defined internal boundary condition has been enrolled" << std::endl;
+}
+
+void HydroBoundary::EnforcePeriodic(int dir, BoundarySide side ) {
+  IdefixArray4D<real> Vc = hydro->Vc;
+  const int nxi = data->np_int[IDIR];
+  const int nxj = data->np_int[JDIR];
+  const int nxk = data->np_int[KDIR];
+
+  const int ighost = data->nghost[IDIR];
+  const int jghost = data->nghost[JDIR];
+  const int kghost = data->nghost[KDIR];
+
+  boundary_for_all("BoundaryPeriodic", dir, side,
+        KOKKOS_LAMBDA (int n, int k, int j, int i) {
+          int iref, jref, kref;
+          // This hack takes care of cases where we have more ghost zones than active zones
+          if(dir==IDIR)
+            iref = ighost + (i+ighost*(nxi-1))%nxi;
+          else
+            iref = i;
+          if(dir==JDIR)
+            jref = jghost + (j+jghost*(nxj-1))%nxj;
+          else
+            jref = j;
+          if(dir==KDIR)
+            kref = kghost + (k+kghost*(nxk-1))%nxk;
+          else
+            kref = k;
+
+          Vc(n,k,j,i) = Vc(n,kref,jref,iref);
+        });
+
+  #if MHD==YES
+    IdefixArray4D<real> Vs = hydro->Vs;
+    if(dir==JDIR || dir==KDIR) {
+      const int nxi = data->np_int[IDIR]+1;
+      boundary_for_X1s("BoundaryPeriodicX1s",dir,side) {
+        int iref, jref, kref;
+          // This hack takes care of cases where we have more ghost zones than active zones
+          if(dir==IDIR)
+            iref = ighost + (i+ighost*(nxi-1))%nxi;
+          else
+            iref = i;
+          if(dir==JDIR)
+            jref = jghost + (j+jghost*(nxj-1))%nxj;
+          else
+            jref = j;
+          if(dir==KDIR)
+            kref = kghost + (k+kghost*(nxk-1))%nxk;
+          else
+            kref = k;
+
+          Vs(BX1s,k,j,i) = Vs(BX1s,kref,jref,iref);
+      });
+    }
+    #if COMPONENTS >=2
+      if(dir==IDIR || dir==KDIR) {
+        const int nxj = data->np_int[JDIR]+1;
+        boundary_for_X2s("BoundaryPeriodicX2s",dir,side) {
+          int iref, jref, kref;
+            // This hack takes care of cases where we have more ghost zones than active zones
+            if(dir==IDIR)
+              iref = ighost + (i+ighost*(nxi-1))%nxi;
+            else
+              iref = i;
+            if(dir==JDIR)
+              jref = jghost + (j+jghost*(nxj-1))%nxj;
+            else
+              jref = j;
+            if(dir==KDIR)
+              kref = kghost + (k+kghost*(nxk-1))%nxk;
+            else
+              kref = k;
+
+            Vs(BX2s,k,j,i) = Vs(BX2s,kref,jref,iref);
+        });
+      }
+    #endif
+    #if COMPONENTS == 3
+      const int nxk = data->np_int[JDIR]+1;
+      if(dir==IDIR || dir==JDIR) {
+        boundary_for_X2s("BoundaryPeriodicX2s",dir,side) {
+          int iref, jref, kref;
+            // This hack takes care of cases where we have more ghost zones than active zones
+            if(dir==IDIR)
+              iref = ighost + (i+ighost*(nxi-1))%nxi;
+            else
+              iref = i;
+            if(dir==JDIR)
+              jref = jghost + (j+jghost*(nxj-1))%nxj;
+            else
+              jref = j;
+            if(dir==KDIR)
+              kref = kghost + (k+kghost*(nxk-1))%nxk;
+            else
+              kref = k;
+
+            Vs(BX2s,k,j,i) = Vs(BX2s,kref,jref,iref);
+        });
+      }
+    #endif
+  #endif// MHD
 }

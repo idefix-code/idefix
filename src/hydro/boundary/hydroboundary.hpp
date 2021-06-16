@@ -32,6 +32,8 @@ class HydroBoundary {
   void EnrollUserDefBoundary(UserDefBoundaryFunc);
   void EnrollInternalBoundary(InternalBoundaryFunc);
 
+  void EnforcePeriodic(int, BoundarySide ); // Enforce periodic BC in direction and side
+
   #ifdef WITH_MPI
   Mpi mpi;                     ///< Mpi object when WITH_MPI is set
   #endif
@@ -43,6 +45,37 @@ class HydroBoundary {
   // Internal boundary function
   bool haveInternalBoundary{false};
   InternalBoundaryFunc internalBoundaryFunc{NULL};
+
+  // specific for loops on ghost cells
+  template <typename Function>
+  void boundary_for(const std::string &,
+                            const int &,
+                            const BoundarySide &,
+                            Function );
+
+  template <typename Function>
+  void boundary_for_all(const std::string &,
+                            const int &,
+                            const BoundarySide &,
+                            Function );
+
+  template <typename Function>
+  void boundary_for_X1s(const std::string &,
+                            const int &,
+                            const BoundarySide &,
+                            Function );
+
+  template <typename Function>
+  void boundary_for_X2s(const std::string &,
+                            const int &,
+                            const BoundarySide &,
+                            Function );
+
+  template <typename Function>
+  void boundary_for_X3s(const std::string &,
+                            const int &,
+                            const BoundarySide &,
+                            Function );
 
  private:
   Hydro *hydro;    // pointer to parent hydro object

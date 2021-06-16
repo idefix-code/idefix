@@ -1,7 +1,7 @@
 #!/bin/bash
 
 rep_HD_list="sod-iso sod MachReflection ViscousFlowPastCylinder ViscousDisk FargoPlanet"
-rep_MHD_list="sod-iso sod AxisFluxTube AmbipolarCshock HallWhistler FargoMHDSpherical OrszagTang OrszagTang3D OrszagTang3D-HLL OrszagTang3D-UCT0 OrszagTang3D-ARITHMETIC"
+rep_MHD_list="sod-iso sod AxisFluxTube AmbipolarCshock HallWhistler FargoMHDSpherical OrszagTang OrszagTang3D"
 
 # refer to the parent dir of this file, wherever this is called from
 # a python equivalent is e.g.
@@ -40,28 +40,31 @@ for rep in $rep_HD_list; do
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "***********************************************"
-    python3 $IDEFIX_DIR/configure.py $options
-    echo "***********************************************"
-    echo "Making  $rep"
-    echo "***********************************************"
-    make clean; make -j 4
+    def_files=$(ls definitions*.hpp)
+    for def in $def_files; do
+        python3 $IDEFIX_DIR/configure.py $options -defs=$def
+        echo "***********************************************"
+        echo "Making  $rep with $def"
+        echo "***********************************************"
+        make clean; make -j 4
 
-    ini_files=$(ls *.ini)
-    for ini in $ini_files; do
-        echo "***********************************************"
-        echo "Running  $rep with $ini"
-        echo "***********************************************"
-        ./idefix -i $ini
+        ini_files=$(ls *.ini)
+        for ini in $ini_files; do
+            echo "***********************************************"
+            echo "Running  $rep with $ini"
+            echo "***********************************************"
+            ./idefix -i $ini
 
-        cd python
-        echo "***********************************************"
-        echo "Testing  $rep with $ini"
-        echo "***********************************************"
-        python3 testidefix.py -noplot
-        cd ..
+            cd python
+            echo "***********************************************"
+            echo "Testing  $rep with $ini and $def"
+            echo "***********************************************"
+            python3 testidefix.py -noplot
+            cd ..
+        done
+        make clean
+        rm -f *.vtk *.dbl
     done
-    make clean
-    rm -f *.vtk *.dbl
 done
 
 # MHD tests
@@ -70,26 +73,28 @@ for rep in $rep_MHD_list; do
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "***********************************************"
-    python3 $IDEFIX_DIR/configure.py -mhd $options
-    echo "***********************************************"
-    echo "Making  $rep"
-    echo "***********************************************"
-    make clean; make -j 4
+    def_files=$(ls definitions*.hpp)
+    for def in $def_files; do
+        python3 $IDEFIX_DIR/configure.py -mhd $options -defs=$def
+        echo "***********************************************"
+        echo "Making  $rep with $def"
+        echo "***********************************************"
+        make clean; make -j 4
 
-    ini_files=$(ls *.ini)
-    for ini in $ini_files; do
-        echo "***********************************************"
-        echo "Running  $rep with $ini"
-        echo "***********************************************"
-        ./idefix -i $ini
+        ini_files=$(ls *.ini)
+        for ini in $ini_files; do
+            echo "***********************************************"
+            echo "Running  $rep with $ini"
+            echo "***********************************************"
+            ./idefix -i $ini
 
-        cd python
-        echo "***********************************************"
-        echo "Testing  $rep with $ini"
-        echo "***********************************************"
-        python3 testidefix.py -noplot
-        cd ..
+            cd python
+            echo "***********************************************"
+            echo "Testing  $rep with $ini and $def"
+            echo "***********************************************"
+            python3 testidefix.py -noplot
+            cd ..
+        done
     done
-
     cd $TEST_DIR
 done

@@ -52,7 +52,7 @@ void HydroBoundary::Init(Input & input, Grid &grid, Hydro* hydro) {
   }
   // Synchronize the mapVars
   Kokkos::deep_copy(mapVars,mapVarsHost);
-  mpi.Init(this, mapVars, mapNVars, true);
+  mpi.Init(this->data, mapVars, mapNVars, true);
 #endif // MPI
   idfx::popRegion();
 }
@@ -624,7 +624,8 @@ void HydroBoundary::EnforcePeriodic(int dir, BoundarySide side ) {
     IdefixArray4D<real> Vs = hydro->Vs;
     if(dir==JDIR || dir==KDIR) {
       const int nxi = data->np_int[IDIR]+1;
-      boundary_for_X1s("BoundaryPeriodicX1s",dir,side) {
+      boundary_for_X1s("BoundaryPeriodicX1s",dir,side,
+      KOKKOS_LAMBDA (int k, int j, int i) {
         int iref, jref, kref;
           // This hack takes care of cases where we have more ghost zones than active zones
           if(dir==IDIR)
@@ -646,7 +647,8 @@ void HydroBoundary::EnforcePeriodic(int dir, BoundarySide side ) {
     #if COMPONENTS >=2
       if(dir==IDIR || dir==KDIR) {
         const int nxj = data->np_int[JDIR]+1;
-        boundary_for_X2s("BoundaryPeriodicX2s",dir,side) {
+        boundary_for_X2s("BoundaryPeriodicX2s",dir,side,
+        KOKKOS_LAMBDA (int k, int j, int i) {
           int iref, jref, kref;
             // This hack takes care of cases where we have more ghost zones than active zones
             if(dir==IDIR)
@@ -669,7 +671,8 @@ void HydroBoundary::EnforcePeriodic(int dir, BoundarySide side ) {
     #if COMPONENTS == 3
       const int nxk = data->np_int[JDIR]+1;
       if(dir==IDIR || dir==JDIR) {
-        boundary_for_X2s("BoundaryPeriodicX2s",dir,side) {
+        boundary_for_X3s("BoundaryPeriodicX3s",dir,side,
+        KOKKOS_LAMBDA (int k, int j, int i) {
           int iref, jref, kref;
             // This hack takes care of cases where we have more ghost zones than active zones
             if(dir==IDIR)

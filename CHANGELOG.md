@@ -6,8 +6,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Upcoming
 - 3rd order reconstruction scheme (following Cada \& Torrilhon 2009). Can be enabled in definitions.hpp
-
-## Upcoming ##
 - New `-defs` option to `configure.py` to chose a specific definitions file in place of the default.
 
 ## [0.8.0] - 2021-06-13

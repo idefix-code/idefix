@@ -17,6 +17,9 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   // Save the datablock to which we are attached from now on
   this->data = datain;
 
+  // Initialise boundary conditions
+  boundary.Init(input, grid, this);
+
   if(input.CheckEntry("Hydro","gamma")>0) {
     this->gamma = input.GetReal("Hydro","gamma",0);
     idfx::cout << "Hydro: adiabatic EOS with gamma=" << this->gamma <<std::endl;
@@ -389,15 +392,13 @@ void Hydro::EnrollIsoSoundSpeed(IsoSoundSpeedFunc myFunc) {
 }
 
 void Hydro::EnrollUserDefBoundary(UserDefBoundaryFunc myFunc) {
-  this->userDefBoundaryFunc = myFunc;
-  this->haveUserDefBoundary = true;
-  idfx::cout << "Hydro: User-defined boundary condition has been enrolled" << std::endl;
+  // This is a proxy for userdef enrollment
+  boundary.EnrollUserDefBoundary(myFunc);
 }
 
 void Hydro::EnrollInternalBoundary(InternalBoundaryFunc myFunc) {
-  this->internalBoundaryFunc = myFunc;
-  this->haveInternalBoundary = true;
-  idfx::cout << "Hydro: User-defined internal boundary condition has been enrolled" << std::endl;
+  // This is a proxy for userdef enrollment
+  boundary.EnrollInternalBoundary(myFunc);
 }
 
 void Hydro::EnrollEmfBoundary(EmfBoundaryFunc myFunc) {

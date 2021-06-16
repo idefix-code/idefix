@@ -509,7 +509,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
   });
 
   // Rebuild the cell-centered field components
-  this->hydro->ReconstructVcField(Uc);
+  this->hydro->boundary.ReconstructVcField(Uc);
 
 #endif // MHD
 

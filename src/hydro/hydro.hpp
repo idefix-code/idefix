@@ -18,6 +18,7 @@
 #include "viscosity.hpp"
 #include "axis.hpp"
 #include "fargo.hpp"
+#include "hydroboundary.hpp"
 
 // forward class declaration
 class DataBlock;
@@ -35,15 +36,13 @@ class Hydro {
   template <int> void CalcRightHandSide(real, real );
   void CalcCurrent();
   void AddSourceTerms(real, real );
-  void ReconstructVcField(IdefixArray4D<real> &);
-  void ReconstructNormalField(int);
 
-
-  void SetBoundary(real);
-  void EnforceBoundaryDir(real, int);
   real GetGamma();
   real CheckDivB();
   void ResetStage();
+
+  // Our boundary conditions
+  HydroBoundary boundary;
 
   // Source terms
   bool haveSourceTerms{false};
@@ -86,6 +85,7 @@ class Hydro {
   real sbS;
   // Box width for shearing box problems
   real sbLx;
+
 
   // Enroll user-defined boundary conditions
   void EnrollUserDefBoundary(UserDefBoundaryFunc);
@@ -180,6 +180,7 @@ class Hydro {
   friend class Fargo;
   friend class Axis;
   friend class RKLegendre;
+  friend class HydroBoundary;
 
   // Isothermal EOS parameters
   real isoSoundSpeed;
@@ -193,17 +194,6 @@ class Hydro {
   Solver mySolver;
 
   DataBlock *data;
-
-
-
-
-  // User defined Boundary conditions
-  UserDefBoundaryFunc userDefBoundaryFunc{NULL};
-  bool haveUserDefBoundary{false};
-
-  // Internal boundary function
-  bool haveInternalBoundary{false};
-  InternalBoundaryFunc internalBoundaryFunc{NULL};
 
   // Emf boundary conditions
   bool haveEmfBoundary{false};

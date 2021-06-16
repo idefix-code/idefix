@@ -15,11 +15,6 @@
 #include "gridHost.hpp"
 #include "hydro.hpp"
 
-
-#ifdef WITH_MPI
-#include "mpi.hpp"
-#endif
-
 //TODO(lesurg) What is this standing for?
 #define BOUNDARY_
 
@@ -68,10 +63,6 @@ class DataBlock {
 
   Grid *mygrid;                ///< Parent grid object
 
-  #ifdef WITH_MPI
-  Mpi mpi;                     ///< Mpi object when WITH_MPI is set
-  #endif
-
   Hydro hydro;                  ///< The Hydro object attached to this datablock
 
   void InitFromGrid(Grid &, Input &); ///< init from a Grid object
@@ -82,6 +73,7 @@ class DataBlock {
   bool rklCycle{false};           ///<  // Set to true when we're inside a RKL call
 
   void EvolveStage();             ///< Evolve this DataBlock by dt
+  void SetBoundaries();       ///< Enforce boundary conditions to this datablock
 
 
   void ResetStage();              ///< Reset the variables needed at each major integration Stage

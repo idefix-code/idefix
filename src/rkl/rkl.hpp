@@ -42,7 +42,7 @@ class RKLegendre {
   int stage{0};
 
  private:
-  void SetBoundary(real);        // Enforce boundary conditions on the variables solved by RKL
+  void SetBoundaries(real);        // Enforce boundary conditions on the variables solved by RKL
 
   DataBlock *data;
 

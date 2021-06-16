@@ -5,10 +5,61 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include "hydroboundary.hpp"
 #include "hydro.hpp"
 #include "dataBlock.hpp"
 
-void Hydro::SetBoundary(real t) {
+
+void HydroBoundary::Init(Input & input, Grid &grid, Hydro* hydro) {
+  idfx::pushRegion("HydroBoundary::Init");
+  this->hydro = hydro;
+  this->data = hydro->data;
+  // Init MPI stack when needed
+#ifdef WITH_MPI
+  ////////////////////////////////////////////////////////////////////////////
+  // Init variable mappers
+  // The variable mapper list all of the variable which are exchanged in MPI boundary calls
+  // This is required since we skip some of the variables in Vc to limit the amount of data
+  // being exchanged
+  #if MHD == YES
+  int mapNVars = NVAR - DIMENSIONS; // We will not send magnetic field components which are in Vs
+  #else
+  int mapNVars = NVAR;
+  #endif
+
+  IdefixArray1D<int> mapVars("mapVars",mapNVars);
+
+  // Create a host mirror
+  IdefixArray1D<int>::HostMirror mapVarsHost = Kokkos::create_mirror_view(mapVars);
+  // Init the list of variables we will exchange in MPI routines
+  int ntarget = 0;
+  for(int n = 0 ; n < mapNVars ; n++) {
+    mapVarsHost(n) = ntarget;
+    ntarget++;
+    #if MHD == YES
+      // Skip centered field components if they are also defined in Vs
+      #if DIMENSIONS >= 1
+        if(ntarget==BX1) ntarget++;
+      #endif
+      #if DIMENSIONS >= 2
+        if(ntarget==BX2) ntarget++;
+      #endif
+      #if DIMENSIONS == 3
+        if(ntarget==BX3) ntarget++;
+      #endif
+    #endif
+  }
+  // Synchronize the mapVars
+  Kokkos::deep_copy(mapVars,mapVarsHost);
+  mpi.Init(this, mapVars, mapNVars, true);
+#endif // MPI
+  idfx::popRegion();
+}
+
+
+
+void HydroBoundary::SetBoundaries(real t) {
+  idfx::pushRegion("HydroBoundary::SetBoundaries");
   // set internal boundary conditions
   if(haveInternalBoundary) internalBoundaryFunc(*data, t);
   for(int dir=0 ; dir < DIMENSIONS ; dir++ ) {
@@ -17,13 +68,13 @@ void Hydro::SetBoundary(real t) {
     if(data->mygrid->nproc[dir]>1) {
       switch(dir) {
         case 0:
-          data->mpi.ExchangeX1();
+          mpi.ExchangeX1();
           break;
         case 1:
-          data->mpi.ExchangeX2();
+          mpi.ExchangeX2();
           break;
         case 2:
-          data->mpi.ExchangeX3();
+          mpi.ExchangeX3();
           break;
       }
     }
@@ -37,17 +88,18 @@ void Hydro::SetBoundary(real t) {
 
 #if MHD == YES
   // Remake the cell-centered field.
-  ReconstructVcField(this->Vc);
+  ReconstructVcField(hydro->Vc);
 #endif
+  idfx::popRegion();
 }
 
 
 // Enforce boundary conditions by writing into ghost zones
-void Hydro::EnforceBoundaryDir(real t, int dir) {
+void HydroBoundary::EnforceBoundaryDir(real t, int dir) {
   idfx::pushRegion("Hydro::EnforceBoundaryDir");
 
-  IdefixArray4D<real> Vc = this->Vc;
-  IdefixArray4D<real> Vs = this->Vs;
+  IdefixArray4D<real> Vc = hydro->Vc;
+  IdefixArray4D<real> Vs = hydro->Vs;
 
   int ibeg,iend,jbeg,jend,kbeg,kend;
   int ioffset,joffset,koffset;
@@ -62,8 +114,8 @@ void Hydro::EnforceBoundaryDir(real t, int dir) {
   int nxk = data->np_int[KDIR];
 
 
-  real sbLx = this->sbLx;
-  real sbS  = this->sbS;
+  real sbLx = hydro->sbLx;
+  real sbS  = hydro->sbS;
 
   ioffset = (dir == IDIR) ? data->np_int[IDIR] : 0;
   joffset = (dir == JDIR) ? data->np_int[JDIR] : 0;
@@ -281,7 +333,7 @@ void Hydro::EnforceBoundaryDir(real t, int dir) {
       }
       break;
     case axis:
-      this->myAxis.EnforceAxisBoundary(left);
+      hydro->myAxis.EnforceAxisBoundary(left);
       break;
     case userdef:
       if(this->haveUserDefBoundary)
@@ -499,7 +551,7 @@ void Hydro::EnforceBoundaryDir(real t, int dir) {
       }
       break;
     case axis:
-      this->myAxis.EnforceAxisBoundary(right);
+      hydro->myAxis.EnforceAxisBoundary(right);
       break;
     case userdef:
       if(this->haveUserDefBoundary)
@@ -518,10 +570,10 @@ void Hydro::EnforceBoundaryDir(real t, int dir) {
 }
 
 
-void Hydro::ReconstructVcField(IdefixArray4D<real> &Vc) {
+void HydroBoundary::ReconstructVcField(IdefixArray4D<real> &Vc) {
   idfx::pushRegion("Hydro::ReconstructVcField");
 
-  IdefixArray4D<real> Vs=this->Vs;
+  IdefixArray4D<real> Vs=hydro->Vs;
 
   // Reconstruct cell average field when using CT
   idefix_for("ReconstructVcMagField",0,data->np_tot[KDIR],0,data->np_tot[JDIR],0,data->np_tot[IDIR],
@@ -536,12 +588,11 @@ void Hydro::ReconstructVcField(IdefixArray4D<real> &Vc) {
 }
 
 
-void Hydro::ReconstructNormalField(int dir) {
+void HydroBoundary::ReconstructNormalField(int dir) {
   idfx::pushRegion("Hydro::ReconstructNormalField");
 
   // Reconstruct the field
-  IdefixArray4D<real> Vc = this->Vc;
-  IdefixArray4D<real> Vs = this->Vs;
+  IdefixArray4D<real> Vs = hydro->Vs;
   // Coordinates
   IdefixArray1D<real> x1=data->x[IDIR];
   IdefixArray1D<real> x2=data->x[JDIR];
@@ -589,7 +640,7 @@ void Hydro::ReconstructNormalField(int dir) {
   if(dir==JDIR) {
     nstart = data->beg[JDIR]-1;
     nend = data->end[JDIR];
-    if(!haveAxis) {
+    if(!hydro->haveAxis) {
       idefix_for("ReconstructBX2s",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
         KOKKOS_LAMBDA (int k, int i) {
           for(int j = nstart ; j>=0 ; j-- ) {
@@ -608,7 +659,7 @@ void Hydro::ReconstructNormalField(int dir) {
       );
     } else {
       // We have an axis, ask myAxis to do that job for us
-      myAxis.ReconstructBx2s();
+      hydro->myAxis.ReconstructBx2s();
     }
   }
 #endif
@@ -636,4 +687,17 @@ void Hydro::ReconstructNormalField(int dir) {
 #endif
 
   idfx::popRegion();
+}
+
+
+void HydroBoundary::EnrollUserDefBoundary(UserDefBoundaryFunc myFunc) {
+  this->userDefBoundaryFunc = myFunc;
+  this->haveUserDefBoundary = true;
+  idfx::cout << "Hydro: User-defined boundary condition has been enrolled" << std::endl;
+}
+
+void HydroBoundary::EnrollInternalBoundary(InternalBoundaryFunc myFunc) {
+  this->internalBoundaryFunc = myFunc;
+  this->haveInternalBoundary = true;
+  idfx::cout << "Hydro: User-defined internal boundary condition has been enrolled" << std::endl;
 }

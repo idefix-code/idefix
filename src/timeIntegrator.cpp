@@ -166,8 +166,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   }
 
     // Apply Boundary conditions
-    // TODO(lesurg): Make a general boundary condition call in datablock
-  data.hydro.SetBoundary(data.t);
+  data.SetBoundaries();
 
   // Remove Fargo velocity so that the integrator works on the residual
   if(data.hydro.haveFargo) data.hydro.fargo.SubstractVelocity(data.t);
@@ -257,7 +256,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
       // No: Apply boundary conditions & Recompute conservative variables
       // Add back fargo velocity so that boundary conditions are applied on the total V
       if(data.hydro.haveFargo) data.hydro.fargo.AddVelocity(data.t);
-      data.hydro.SetBoundary(data.t);
+      data.SetBoundaries();
       // And substract it back for next stage
       if(data.hydro.haveFargo) data.hydro.fargo.SubstractVelocity(data.t);
       data.hydro.ConvertPrimToCons();

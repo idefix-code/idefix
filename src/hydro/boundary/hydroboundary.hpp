@@ -32,9 +32,10 @@ class HydroBoundary {
   void EnrollUserDefBoundary(UserDefBoundaryFunc);
   void EnrollInternalBoundary(InternalBoundaryFunc);
 
-  void EnforcePeriodic(int, BoundarySide ); // Enforce periodic BC in direction and side
-  void EnforceReflective(int, BoundarySide ); // Enforce reflective BC in direction and side
-  void EnforceOutflow(int, BoundarySide ); // Enforce outflow BC in direction and side
+  void EnforcePeriodic(int, BoundarySide ); ///< Enforce periodic BC in direction and side
+  void EnforceReflective(int, BoundarySide ); ///< Enforce reflective BC in direction and side
+  void EnforceOutflow(int, BoundarySide ); ///< Enforce outflow BC in direction and side
+  void EnforceShearingBox(real, int, BoundarySide ); ///< Enforce Shearing box BCs
 
   #ifdef WITH_MPI
   Mpi mpi;                     ///< Mpi object when WITH_MPI is set
@@ -78,6 +79,7 @@ class HydroBoundary {
                             const int &,
                             const BoundarySide &,
                             Function );
+  IdefixArray4D<real> sBArray;    ///< Array use by shearingbox boundary conditions
 
  private:
   Hydro *hydro;    // pointer to parent hydro object

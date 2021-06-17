@@ -55,17 +55,23 @@ void UserStep(DataBlock &data, const real t, const real dt) {
 }
 
 
+void Analysis(DataBlock &data) {
+  data.SetBoundaries();
+  data.DumpToFile("check");
+}
+
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     gammaIdeal=data.hydro.GetGamma();
 
     // Get rotation rate along vertical axis
-    omega=input.GetReal("Hydro","Rotation",2);
-    shear=input.GetReal("Hydro","ShearingBox",0);
+    omega=input.GetReal("Hydro","rotation",0);
+    shear=input.GetReal("Hydro","shearingBox",0);
 
     // Add our userstep to the timeintegrator
     data.hydro.EnrollUserSourceTerm(UserStep);
+    output.EnrollAnalysis(&Analysis);
 }
 
 // This routine initialize the flow
@@ -96,11 +102,11 @@ void Setup::InitFlow(DataBlock &data) {
                 d.Vc(PRS,k,j,i) = d.Vc(RHO,k,j,i)/cs2*gammaIdeal;
                 d.Vc(VX1,k,j,i) = 0.1*(randm()-0.5);
                 d.Vc(VX2,k,j,i) = shear*x;
-                d.Vc(VX3,k,j,i) = 0.1*(randm()-0.5);
+                d.Vc(VX3,k,j,i) = 0.1*(randm()-0.5)+1.0e-8*cos(2.0*M_PI*y);
 
                 d.Vs(BX1s,k,j,i) = 0;
                 d.Vs(BX2s,k,j,i) = 0;
-                d.Vs(BX3s,k,j,i) = B0;
+                d.Vs(BX3s,k,j,i) = B0+0*1e-8*cos(2*M_PI*y);
 
             }
         }

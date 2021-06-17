@@ -15,6 +15,14 @@ void HydroBoundary::Init(Input & input, Grid &grid, Hydro* hydro) {
   idfx::pushRegion("HydroBoundary::Init");
   this->hydro = hydro;
   this->data = hydro->data;
+
+  // This should be required only when shearing box is on
+  sBArray = IdefixArray4D<real>("ShearingBoxArray",
+                                NVAR,
+                                data->np_tot[KDIR]+1,
+                                data->np_tot[JDIR]+1,
+                                data->nghost[IDIR]);
+
   // Init MPI stack when needed
 #ifdef WITH_MPI
   ////////////////////////////////////////////////////////////////////////////
@@ -150,49 +158,7 @@ void HydroBoundary::EnforceBoundaryDir(real t, int dir) {
       break;
 
     case shearingbox:
-      if(data->mygrid->nproc[dir] > 1) {
-        // if shearing box enabled, the MPI call has already enforced strict periodicicty,
-        // so we just need to enforce the offset
-        real voffset=-sbLx*sbS;
-
-        idefix_for("BoundaryBegShearingBox",kbeg,kend,jbeg,jend,ibeg,iend,
-          KOKKOS_LAMBDA (int k, int j, int i) {
-            Vc(VX2,k,j,i) = Vc(VX2,k,j,i) + voffset;
-          }
-        );
-      } else {
-        idefix_for("BoundaryBegShearingBox",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
-          KOKKOS_LAMBDA (int n, int k, int j, int i) {
-            real voffset= (n == VX2) ? - sbLx * sbS : ZERO_F;
-            Vc(n,k,j,i) = Vc(n,k+koffset,j+joffset,i+ioffset) + voffset;
-          }
-        );
-
-#if MHD == YES
-        for(int component=0; component<DIMENSIONS; component++) {
-          int ieb,jeb,keb;
-          if(component == IDIR)
-            ieb=iend+1;
-          else
-            ieb=iend;
-          if(component == JDIR)
-            jeb=jend+1;
-          else
-            jeb=jend;
-          if(component == KDIR)
-            keb=kend+1;
-          else
-            keb=kend;
-          if(component != dir) { // skip normal component
-            idefix_for("BoundaryBegShearingBoxVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
-              KOKKOS_LAMBDA (int k, int j, int i) {
-                Vs(component,k,j,i) = Vs(component,k+koffset,j+joffset,i+ioffset);
-              }
-            );
-          }
-        }
-#endif
-      }
+      EnforceShearingBox(t,dir,left);
       break;
     case axis:
       hydro->myAxis.EnforceAxisBoundary(left);
@@ -232,51 +198,8 @@ void HydroBoundary::EnforceBoundaryDir(real t, int dir) {
     case outflow:
       EnforceOutflow(dir,right);
       break;
-
     case shearingbox:
-      if(data->mygrid->nproc[dir] > 1) {
-        // if shearing box enabled, the MPI call has already enforced strict periodicicty,
-        // so we just need to enforce the offset
-        real voffset=sbLx*sbS;
-
-        idefix_for("BoundaryEndShearingBox",kbeg,kend,jbeg,jend,ibeg,iend,
-          KOKKOS_LAMBDA (int k, int j, int i) {
-            Vc(VX2,k,j,i) = Vc(VX2,k,j,i) + voffset;
-          }
-        );
-      } else {
-        idefix_for("BoundaryEndShearingBox",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
-          KOKKOS_LAMBDA (int n, int k, int j, int i) {
-            real voffset= (n == VX2) ? + sbLx * sbS : ZERO_F;
-            Vc(n,k,j,i) = Vc(n,k-koffset,j-joffset,i-ioffset) + voffset;
-          }
-        );
-
-#if MHD == YES
-        for(int component=0; component<DIMENSIONS; component++) {
-          int ieb,jeb,keb;
-          if(component == IDIR)
-            ieb=iend+1;
-          else
-            ieb=iend;
-          if(component == JDIR)
-            jeb=jend+1;
-          else
-            jeb=jend;
-          if(component == KDIR)
-            keb=kend+1;
-          else
-            keb=kend;
-          if(component != dir) { // skip normal component
-            idefix_for("BoundaryEndShearingBoxVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
-              KOKKOS_LAMBDA (int k, int j, int i) {
-                Vs(component,k,j,i) = Vs(component,k-koffset,j-joffset,i-ioffset);
-              }
-            );
-          }
-        }
-#endif
-      }
+      EnforceShearingBox(t,dir,right);
       break;
     case axis:
       hydro->myAxis.EnforceAxisBoundary(right);
@@ -673,4 +596,161 @@ void HydroBoundary::EnforceOutflow(int dir, BoundarySide side ) {
       }
     #endif
   #endif// MHD
+}
+
+void HydroBoundary::EnforceShearingBox(real t, int dir, BoundarySide side) {
+  if(dir != IDIR)
+    IDEFIX_ERROR("Shearing box boundaries can only be applied along the X1 direction");
+  if(data->mygrid->nproc[JDIR]>1)
+    IDEFIX_ERROR("Shearing box is not yet compatible with domain decomposition in X2");
+
+  // First thing is to enforce periodicity (already performed by MPI)
+  if(data->mygrid->nproc[dir] == 1) EnforcePeriodic(dir, side);
+
+  IdefixArray4D<real> scrh = sBArray;
+  IdefixArray4D<real> Vc = hydro->Vc;
+
+  const int nxi = data->np_int[IDIR];
+  const int nxj = data->np_int[JDIR];
+  const int nxk = data->np_int[KDIR];
+
+  const int ighost = data->nghost[IDIR];
+  const int jghost = data->nghost[JDIR];
+  const int kghost = data->nghost[KDIR];
+
+  // Where does the boundary starts along x1?
+  const int istart = side*(ighost+nxi);
+
+  // Shear rate
+  const real S  = hydro->sbS;
+
+  // Box size
+  const real Lx = data->mygrid->xend[IDIR] - data->mygrid->xbeg[IDIR];
+  const real Ly = data->mygrid->xend[JDIR] - data->mygrid->xbeg[JDIR];
+
+  // total number of cells in y (active domain)
+  const int ny = data->mygrid->np_int[JDIR];
+  const real dy = Ly/ny;
+
+  // Compute offset in y modulo the box size
+  const int sign=2*side-1;
+  const real sbVelocity = sign*S*Lx;
+  real dL = std::fmod(sbVelocity*t,Ly);
+
+  // translate this into # of cells
+  const int m = static_cast<int> (std::floor(dL/dy+HALF_F));
+
+  // remainding shift
+  const real eps = dL / dy - m;
+
+
+  // New we need to perform the shift
+  BoundaryForAll("BoundaryShearingBox", dir, side,
+        KOKKOS_LAMBDA ( int n, int k, int j, int i) {
+          // jorigin
+          const int jo = jghost + ((j-m-jghost)%nxj+nxj)%nxj;
+          const int jop2 = jghost + ((jo+2-jghost)%nxj+nxj)%nxj;
+          const int jop1 = jghost + ((jo+1-jghost)%nxj+nxj)%nxj;
+          const int jom1 = jghost + ((jo-1-jghost)%nxj+nxj)%nxj;
+          const int jom2 = jghost + ((jo-2-jghost)%nxj+nxj)%nxj;
+
+          // Define Left and right fluxes
+          // Fluxes are defined from slop-limited interpolation
+          // Using Van-leer slope limiter (consistently with the main advection scheme)
+          real Fl,Fr;
+          real dqm, dqp, dq;
+
+          if(eps>=ZERO_F) {
+            // Compute Fl
+            dqm = Vc(n,k,jom1,i) - Vc(n,k,jom2,i);
+            dqp = Vc(n,k,jo,i) - Vc(n,k,jom1,i);
+            dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+
+            Fl = Vc(n,k,jom1,i) + 0.5*dq*(1.0-eps);
+            //Compute Fr
+            dqm=dqp;
+            dqp = Vc(n,k,jop1,i) - Vc(n,k,jo,i);
+            dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+
+            Fr = Vc(n,k,jo,i) + 0.5*dq*(1.0-eps);
+          } else {
+            //Compute Fl
+            dqm = Vc(n,k,jo,i) - Vc(n,k,jom1,i);
+            dqp = Vc(n,k,jop1,i) - Vc(n,k,jo,i);
+            dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+
+            Fl = Vc(n,k,jo,i) - 0.5*dq*(1.0+eps);
+            // Compute Fr
+            dqm=dqp;
+            dqp = Vc(n,k,jop2,i) - Vc(n,k,jop1,i);
+            dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+
+            Fr = Vc(n,k,jop1,i) - 0.5*dq*(1.0+eps);
+          }
+          scrh(n,k,j,i-istart) = Vc(n,k,jo,i) - eps*(Fr - Fl);
+        });
+  // Copy scrach back to our boundary
+  BoundaryForAll("BoundaryShearingBoxCopy", dir, side,
+        KOKKOS_LAMBDA ( int n, int k, int j, int i) {
+          Vc(n,k,j,i) = scrh(n,k,j,i-istart);
+          if(n==VX2) Vc(n,k,j,i) += sbVelocity;
+        });
+
+  // Magnetised version of the same thing
+  #if MHD==YES
+    IdefixArray4D<real> Vs = hydro->Vs;
+    #if COMPONENTS >= 2
+      for(int component = BX2s ; component < COMPONENTS ; component++) {
+        BoundaryFor("BoundaryShearingBoxBXs", dir, side,
+        KOKKOS_LAMBDA (int k, int j, int i) {
+          // jorigin
+          const int jo = jghost + ((j-m-jghost)%nxj+nxj)%nxj;
+          const int jop2 = jghost + ((jo+2-jghost)%nxj+nxj)%nxj;
+          const int jop1 = jghost + ((jo+1-jghost)%nxj+nxj)%nxj;
+          const int jom1 = jghost + ((jo-1-jghost)%nxj+nxj)%nxj;
+          const int jom2 = jghost + ((jo-2-jghost)%nxj+nxj)%nxj;
+
+          // Define Left and right fluxes
+          // Fluxes are defined from slop-limited interpolation
+          // Using Van-leer slope limiter (consistently with the main advection scheme)
+          real Fl,Fr;
+          real dqm, dqp, dq;
+
+          if(eps>=ZERO_F) {
+            // Compute Fl
+            dqm = Vs(component,k,jom1,i) - Vs(component,k,jom2,i);
+            dqp = Vs(component,k,jo,i) - Vs(component,k,jom1,i);
+            dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+
+            Fl = Vs(component,k,jom1,i) + 0.5*dq*(1.0-eps);
+            //Compute Fr
+            dqm=dqp;
+            dqp = Vs(component,k,jop1,i) - Vs(component,k,jo,i);
+            dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+
+            Fr = Vs(component,k,jo,i) + 0.5*dq*(1.0-eps);
+          } else {
+            //Compute Fl
+            dqm = Vs(component,k,jo,i) - Vs(component,k,jom1,i);
+            dqp = Vs(component,k,jop1,i) - Vs(component,k,jo,i);
+            dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+
+            Fl = Vs(component,k,jo,i) - 0.5*dq*(1.0+eps);
+            // Compute Fr
+            dqm=dqp;
+            dqp = Vs(component,k,jop2,i) - Vs(component,k,jop1,i);
+            dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+
+            Fr = Vs(component,k,jop1,i) - 0.5*dq*(1.0+eps);
+          }
+          scrh(0,k,j,i-istart) = Vs(component,k,jo,i) - eps*(Fr - Fl);
+        });
+        // Copy scratch back to our boundary
+        BoundaryFor("BoundaryShearingBoxCopyBXs", dir, side,
+              KOKKOS_LAMBDA ( int k, int j, int i) {
+                Vs(component,k,j,i) = scrh(0,k,j,i-istart);
+              });
+      }// loop on components
+    #endif// COMPONENTS
+  #endif // MHD
 }

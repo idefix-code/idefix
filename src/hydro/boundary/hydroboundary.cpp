@@ -142,93 +142,11 @@ void HydroBoundary::EnforceBoundaryDir(real t, int dir) {
       break;
 
     case reflective:
-      idefix_for("BoundaryBegReflective",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
-        KOKKOS_LAMBDA (int n, int k, int j, int i) {
-          int iref= (dir==IDIR) ? ighost : i;
-          int jref= (dir==JDIR) ? jghost : j;
-          int kref= (dir==KDIR) ? kghost : k;
-
-          if( n==VX1+dir)
-            Vc(n,k,j,i) = ZERO_F;
-          else
-            Vc(n,k,j,i) = Vc(n,kref,jref,iref);
-        }
-      );
-
-#if MHD == YES
-      for(int component=0; component<DIMENSIONS; component++) {
-        int ieb,jeb,keb;
-        if(component == IDIR)
-          ieb=iend+1;
-        else
-          ieb=iend;
-        if(component == JDIR)
-          jeb=jend+1;
-        else
-          jeb=jend;
-        if(component == KDIR)
-          keb=kend+1;
-        else
-          keb=kend;
-        if(component != dir) { // skip normal component
-          idefix_for("BoundaryBegOutflowVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
-            KOKKOS_LAMBDA (int k, int j, int i) {
-              int iref= (dir==IDIR) ? ighost : i;
-              int jref= (dir==JDIR) ? jghost : j;
-              int kref= (dir==KDIR) ? kghost : k;
-
-              // Don't touch the normal component !
-              Vs(component,k,j,i) = Vs(component,kref,jref,iref);
-            }
-          );
-        }
-      }
-#endif
+      EnforceReflective(dir,left);
       break;
 
     case outflow:
-      idefix_for("BoundaryBegOutflow",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
-        KOKKOS_LAMBDA (int n, int k, int j, int i) {
-          int iref= (dir==IDIR) ? ighost : i;
-          int jref= (dir==JDIR) ? jghost : j;
-          int kref= (dir==KDIR) ? kghost : k;
-
-          if( (n==VX1+dir) && (Vc(n,kref,jref,iref) >= ZERO_F))
-            Vc(n,k,j,i) = ZERO_F;
-          else
-            Vc(n,k,j,i) = Vc(n,kref,jref,iref);
-        }
-      );
-
-#if MHD == YES
-      for(int component=0; component<DIMENSIONS; component++) {
-        int ieb,jeb,keb;
-        if(component == IDIR)
-          ieb=iend+1;
-        else
-          ieb=iend;
-        if(component == JDIR)
-          jeb=jend+1;
-        else
-          jeb=jend;
-        if(component == KDIR)
-          keb=kend+1;
-        else
-          keb=kend;
-        if(component != dir) { // skip normal component
-          idefix_for("BoundaryBegOutflowVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
-            KOKKOS_LAMBDA (int k, int j, int i) {
-              int iref= (dir==IDIR) ? ighost : i;
-              int jref= (dir==JDIR) ? jghost : j;
-              int kref= (dir==KDIR) ? kghost : k;
-
-              // Don't touch the normal component !
-              Vs(component,k,j,i) = Vs(component,kref,jref,iref);
-            }
-          );
-        }
-      }
-#endif
+      EnforceOutflow(dir,left);
       break;
 
     case shearingbox:
@@ -309,88 +227,10 @@ void HydroBoundary::EnforceBoundaryDir(real t, int dir) {
       EnforcePeriodic(dir,right);
       break;
     case reflective:
-      idefix_for("BoundaryEndReflective",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
-        KOKKOS_LAMBDA (int n, int k, int j, int i) {
-          int iref= (dir==IDIR) ? ighost + ioffset - 1 : i;
-          int jref= (dir==JDIR) ? jghost + joffset - 1 : j;
-          int kref= (dir==KDIR) ? kghost + koffset - 1 : k;
-
-          if( n==VX1+dir)
-            Vc(n,k,j,i) = ZERO_F;
-          else
-            Vc(n,k,j,i) = Vc(n,kref,jref,iref);
-        }
-      );
-
-#if MHD == YES
-      for(int component=0; component<DIMENSIONS; component++) {
-        int ieb,jeb,keb;
-        if(component == IDIR)
-          ieb=iend+1;
-        else
-          ieb=iend;
-        if(component == JDIR)
-          jeb=jend+1;
-        else
-          jeb=jend;
-        if(component == KDIR)
-          keb=kend+1;
-        else
-          keb=kend;
-        if(component != dir) { // skip normal component
-          idefix_for("BoundaryEndReflectiveVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
-            KOKKOS_LAMBDA (int k, int j, int i) {
-              int iref= (dir==IDIR) ? ighost + ioffset - 1 : i;
-              int jref= (dir==JDIR) ? jghost + joffset - 1 : j;
-              int kref= (dir==KDIR) ? kghost + koffset - 1 : k;
-              Vs(component,k,j,i) = Vs(component,kref,jref,iref);
-            }
-          );
-        }
-      }
-#endif
+      EnforceReflective(dir,right);
       break;
     case outflow:
-      idefix_for("BoundaryEndOutflow",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
-        KOKKOS_LAMBDA (int n, int k, int j, int i) {
-          int iref= (dir==IDIR) ? ighost + ioffset - 1 : i;
-          int jref= (dir==JDIR) ? jghost + joffset - 1 : j;
-          int kref= (dir==KDIR) ? kghost + koffset - 1 : k;
-
-          if( (n==VX1+dir) && (Vc(n,kref,jref,iref) <= ZERO_F))
-            Vc(n,k,j,i) = ZERO_F;
-          else
-            Vc(n,k,j,i) = Vc(n,kref,jref,iref);
-        }
-      );
-
-#if MHD == YES
-      for(int component=0; component<DIMENSIONS; component++) {
-        int ieb,jeb,keb;
-        if(component == IDIR)
-          ieb=iend+1;
-        else
-          ieb=iend;
-        if(component == JDIR)
-          jeb=jend+1;
-        else
-          jeb=jend;
-        if(component == KDIR)
-          keb=kend+1;
-        else
-          keb=kend;
-        if(component != dir) { // skip normal component
-          idefix_for("BoundaryEndOutflowVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
-            KOKKOS_LAMBDA (int k, int j, int i) {
-              int iref= (dir==IDIR) ? ighost + ioffset - 1 : i;
-              int jref= (dir==JDIR) ? jghost + joffset - 1 : j;
-              int kref= (dir==KDIR) ? kghost + koffset - 1 : k;
-              Vs(component,k,j,i) = Vs(component,kref,jref,iref);
-            }
-          );
-        }
-      }
-#endif
+      EnforceOutflow(dir,right);
       break;
 
     case shearingbox:
@@ -696,6 +536,140 @@ void HydroBoundary::EnforcePeriodic(int dir, BoundarySide side ) {
 
             Vs(BX3s,k,j,i) = Vs(BX3s,kref,jref,iref);
         });
+      }
+    #endif
+  #endif// MHD
+}
+
+
+void HydroBoundary::EnforceReflective(int dir, BoundarySide side ) {
+  IdefixArray4D<real> Vc = hydro->Vc;
+  const int nxi = data->np_int[IDIR];
+  const int nxj = data->np_int[JDIR];
+  const int nxk = data->np_int[KDIR];
+
+  const int ighost = data->nghost[IDIR];
+  const int jghost = data->nghost[JDIR];
+  const int kghost = data->nghost[KDIR];
+
+  BoundaryForAll("BoundaryReflective", dir, side,
+        KOKKOS_LAMBDA (int n, int k, int j, int i) {
+          // ref= 2*ibound -i -1
+          // with ibound = nghost on the left and ibount = nghost + nx -1 on the right
+          const int iref = (dir==IDIR) ? 2*(ighost + side*(nxi-1)) - i - 1 : i;
+          const int jref = (dir==JDIR) ? 2*(jghost + side*(nxj-1)) - j - 1 : j;
+          const int kref = (dir==KDIR) ? 2*(kghost + side*(nxk-1)) - k - 1 : k;
+
+          const int sign = (n == VX1+dir) ? -1.0 : 1.0;
+
+          Vc(n,k,j,i) = sign * Vc(n,kref,jref,iref);
+        });
+
+  #if MHD==YES
+    IdefixArray4D<real> Vs = hydro->Vs;
+    if(dir==JDIR || dir==KDIR) {
+      BoundaryForX1s("BoundaryReflectiveX1s",dir,side,
+        KOKKOS_LAMBDA (int k, int j, int i) {
+          // ref= 2*ibound -i -1
+          // with ibound = nghost on the left and ibount = nghost + nx -1 on the right
+          //const int iref = (dir==IDIR) ? 2*(ighost + side*(nxi-1)) - i - 1 : i;
+          const int jref = (dir==JDIR) ? 2*(jghost + side*(nxj-1)) - j - 1 : j;
+          const int kref = (dir==KDIR) ? 2*(kghost + side*(nxk-1)) - k - 1 : k;
+
+          Vs(BX1s,k,j,i) = -Vs(BX1s,kref,jref,i);
+        });
+    }
+    #if COMPONENTS >=2
+      if(dir==IDIR || dir==KDIR) {
+        BoundaryForX2s("BoundaryReflectiveX2s",dir,side,
+          KOKKOS_LAMBDA (int k, int j, int i) {
+            const int iref = (dir==IDIR) ? 2*(ighost + side*(nxi-1)) - i - 1 : i;
+            //const int jref = (dir==JDIR) ? 2*(jghost + side*(nxj-1)) - j - 1 : j;
+            const int kref = (dir==KDIR) ? 2*(kghost + side*(nxk-1)) - k - 1 : k;
+
+              Vs(BX2s,k,j,i) = -Vs(BX2s,kref,j,iref);
+          });
+      }
+    #endif
+    #if COMPONENTS == 3
+      if(dir==IDIR || dir==JDIR) {
+        BoundaryForX3s("BoundaryReflectiveX3s",dir,side,
+          KOKKOS_LAMBDA (int k, int j, int i) {
+            const int iref = (dir==IDIR) ? 2*(ighost + side*(nxi-1)) - i - 1 : i;
+            const int jref = (dir==JDIR) ? 2*(jghost + side*(nxj-1)) - j - 1 : j;
+            //const int kref = (dir==KDIR) ? 2*(kghost + side*(nxk-1)) - k - 1 : k;
+
+            Vs(BX3s,k,j,i) = -Vs(BX3s,k,jref,iref);
+          });
+      }
+    #endif
+  #endif// MHD
+}
+
+void HydroBoundary::EnforceOutflow(int dir, BoundarySide side ) {
+  IdefixArray4D<real> Vc = hydro->Vc;
+  const int nxi = data->np_int[IDIR];
+  const int nxj = data->np_int[JDIR];
+  const int nxk = data->np_int[KDIR];
+
+  const int ighost = data->nghost[IDIR];
+  const int jghost = data->nghost[JDIR];
+  const int kghost = data->nghost[KDIR];
+
+  BoundaryForAll("BoundaryOutflow", dir, side,
+        KOKKOS_LAMBDA (int n, int k, int j, int i) {
+          // ref= ibound
+          // with ibound = nghost on the left and ibound = nghost + nx -1 on the right
+          const int iref = (dir==IDIR) ? ighost + side*(nxi-1) : i;
+          const int jref = (dir==JDIR) ? jghost + side*(nxj-1) : j;
+          const int kref = (dir==KDIR) ? kghost + side*(nxk-1) : k;
+
+          // should it go inwards or outwards?
+          // side = 1 on the left and =-1 on the right
+          const int sign = 1-2*side;
+
+          if( (n== VX1+dir) && (side*Vc(n,kref,jref,iref) >= ZERO_F) ) {
+            Vc(n,k,j,i) = ZERO_F;
+          } else {
+            Vc(n,k,j,i) = Vc(n,kref,jref,iref);
+          }
+        });
+
+  #if MHD==YES
+    IdefixArray4D<real> Vs = hydro->Vs;
+    if(dir==JDIR || dir==KDIR) {
+      BoundaryForX1s("BoundaryOutflowX1s",dir,side,
+        KOKKOS_LAMBDA (int k, int j, int i) {
+          // with ibound = nghost on the left and ibount = nghost + nx -1 on the right
+          //const int iref = (dir==IDIR) ? ighost + side*(nxi-1) : i;
+          const int jref = (dir==JDIR) ? jghost + side*(nxj-1) : j;
+          const int kref = (dir==KDIR) ? kghost + side*(nxk-1) : k;
+
+          Vs(BX1s,k,j,i) = Vs(BX1s,kref,jref,i);
+        });
+    }
+    #if COMPONENTS >=2
+      if(dir==IDIR || dir==KDIR) {
+        BoundaryForX2s("BoundaryOutflowX2s",dir,side,
+          KOKKOS_LAMBDA (int k, int j, int i) {
+            const int iref = (dir==IDIR) ? ighost + side*(nxi-1) : i;
+            //const int jref = (dir==JDIR) ? jghost + side*(nxj-1) : j;
+            const int kref = (dir==KDIR) ? kghost + side*(nxk-1) : k;
+
+            Vs(BX2s,k,j,i) = Vs(BX2s,kref,j,iref);
+          });
+      }
+    #endif
+    #if COMPONENTS == 3
+      if(dir==IDIR || dir==JDIR) {
+        BoundaryForX3s("BoundaryOutflowX3s",dir,side,
+          KOKKOS_LAMBDA (int k, int j, int i) {
+            const int iref = (dir==IDIR) ? ighost + side*(nxi-1) : i;
+            const int jref = (dir==JDIR) ? jghost + side*(nxj-1) : j;
+            //const int kref = (dir==KDIR) ? kghost + side*(nxk-1) : k;
+
+            Vs(BX3s,k,j,i) = Vs(BX3s,k,jref,iref);
+          });
       }
     #endif
   #endif// MHD

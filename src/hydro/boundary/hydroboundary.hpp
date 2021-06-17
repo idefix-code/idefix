@@ -33,6 +33,8 @@ class HydroBoundary {
   void EnrollInternalBoundary(InternalBoundaryFunc);
 
   void EnforcePeriodic(int, BoundarySide ); // Enforce periodic BC in direction and side
+  void EnforceReflective(int, BoundarySide ); // Enforce reflective BC in direction and side
+  void EnforceOutflow(int, BoundarySide ); // Enforce outflow BC in direction and side
 
   #ifdef WITH_MPI
   Mpi mpi;                     ///< Mpi object when WITH_MPI is set

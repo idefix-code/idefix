@@ -379,3 +379,13 @@ is not needed).
   By default, ``Kokkos-tools`` assumes the user code is using MPI. If one wants to perform profiling in serial, one should disable MPI before
   compling the ``space-time-stack`` module. This is done by editing the makefile in ``$KOKKOS_TOOLS/profiling/space-time-stack``
   changing the compiler ``CXX`` to a valid serial compiler, and adding ``-DUSE_MPI=0`` to ``CFLAGS``.
+
+Minimal skeleton
+================
+
+Becomes it is sometimes useful to do experiments with a very simple code without the burden of the full initialisation,
+experiment with ``Idefix`` basic structures (idefix_for, idefix arrays)
+can be done using a minimal skeleton, located in ``$IDEFIX_DIR/test/skeleton``. The file ``main.cpp`` can be filled with any experimental
+code. It should then be configured using the ``configure.py`` script and compiled using ``make``, just like the main ``idefix`` executable (and using the same
+options, including targets as the main code). In the example provided, the skeleton performs a simple sum on an idefix array and compares it
+to the same reduction on the host.

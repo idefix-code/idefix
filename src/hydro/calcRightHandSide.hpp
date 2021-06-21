@@ -362,7 +362,7 @@ void Hydro::CalcRightHandSide(real t, real dt) {
                     rhs[MX2] += dt * Vc(RHO,k,j,i) * bodyForce(JDIR,k,j,i);   ,
                     rhs[MX3] += dt * Vc(RHO,k,j,i) * bodyForce(KDIR,k,j,i);    )
 
-          rhs[ENG] += dt * (EXPAND( ZERO_F,                                                   ,
+          rhs[ENG] += dt * (EXPAND( ZERO_F                                                    ,
                                     +  Vc(RHO,k,j,i) * Vc(VX2,k,j,i) * bodyForce(JDIR,k,j,i)  ,
                                     +  Vc(RHO,k,j,i) * Vc(VX3,k,j,i) * bodyForce(KDIR,k,j,i) ));
         #endif

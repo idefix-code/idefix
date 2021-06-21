@@ -59,6 +59,9 @@ class Hydro {
   // Whether gravitational potential is computed
   bool haveGravPotential{false};
 
+  // Whether a body force is present
+  bool haveBodyForce{false};
+
   // Nonideal MHD effects coefficients
   ParabolicModuleStatus resistivityStatus, ambipolarStatus, hallStatus;
 
@@ -94,6 +97,9 @@ class Hydro {
 
   // Enroll user-defined gravitational potential
   void EnrollGravPotential(GravPotentialFunc);
+
+  // Enroll user-defined body force
+  void EnrollBodyForce(BodyForceFunc);
 
   // Add some user source terms
   void EnrollUserSourceTerm(SrcTermFunc);
@@ -217,6 +223,10 @@ class Hydro {
 
   // Gravitational potential
   IdefixArray3D<real> phiP;
+
+  // Body force
+  IdefixArray4D<real> bodyForceVector;
+  BodyForceFunc bodyForceFunc{NULL};
 
   // Nonideal effect diffusion coefficient (only allocated when needed)
   IdefixArray3D<real> etaOhmic;

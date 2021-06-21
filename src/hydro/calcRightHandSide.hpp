@@ -42,6 +42,10 @@ void Hydro::CalcRightHandSide(real t, real dt) {
   IdefixArray3D<real> phiP = this->phiP;
   bool needPotential = this->haveGravPotential;
 
+  // BodyForce
+  IdefixArray4D<real> bodyForce = this->bodyForceVector;
+  bool needBodyForce = this->haveBodyForce;
+
   // parabolic terms
   bool haveParabolicTerms = this->haveExplicitParabolicTerms;
 
@@ -78,6 +82,17 @@ void Hydro::CalcRightHandSide(real t, real dt) {
                    "but no user-defined potential has been enrolled.");
 
     gravPotentialFunc(*data, t, x1, x2, x3, phiP);
+  }
+
+  if(needBodyForce) {
+    // Only compute body forces when doing the first step
+    if(dir==IDIR) {
+      if(this->bodyForceFunc == nullptr)
+        IDEFIX_ERROR("Body force is enabled, "
+                    "but no user-defined body force has been enrolled.");
+
+      bodyForceFunc(*data, t, bodyForce);
+    }
   }
 
   if(haveFargo) {
@@ -328,12 +343,36 @@ void Hydro::CalcRightHandSide(real t, real dt) {
           rhs[MX3] -= dt/dl * Vc(RHO,k,j,i) * (phiP(k+1,j,i) - phiP(k,j,i));
         }
 
-#if HAVE_ENERGY
-        // We conserve total energy without potential
-        rhs[ENG] -=  HALF_F * (phiP(k+koffset,j+joffset,i+ioffset) + phiP(k,j,i)) * rhs[RHO];
-#endif
+        #if HAVE_ENERGY
+          // We conserve total energy without potential
+          rhs[ENG] -=  HALF_F * (phiP(k+koffset,j+joffset,i+ioffset) + phiP(k,j,i)) * rhs[RHO];
+        #endif
       }
 
+      // Body force
+      if(needBodyForce) {
+        rhs[MX1+dir] += dt * Vc(RHO,k,j,i) * bodyForce(dir,k,j,i);
+        #if HAVE_ENERGY
+          rhs[ENG] += dt * Vc(RHO,k,j,i) * Vc(VX1+dir,k,j,i) * bodyForce(dir,k,j,i);
+        #endif
+
+        // Particular cases if we do not sweep all of the components
+        #if DIMENSIONS == 1 && COMPONENTS > 1
+          EXPAND(                                                           ,
+                    rhs[MX2] += dt * Vc(RHO,k,j,i) * bodyForce(JDIR,k,j,i);   ,
+                    rhs[MX3] += dt * Vc(RHO,k,j,i) * bodyForce(KDIR,k,j,i);    )
+
+          rhs[ENG] += dt * (EXPAND( ZERO_F,                                                   ,
+                                    +  Vc(RHO,k,j,i) * Vc(VX2,k,j,i) * bodyForce(JDIR,k,j,i)  ,
+                                    +  Vc(RHO,k,j,i) * Vc(VX3,k,j,i) * bodyForce(KDIR,k,j,i) ));
+        #endif
+        #if DIMENSIONS == 2 && COMPONENTS == 3
+          rhs[MX3] += dt * Vc(RHO,k,j,i) * bodyForce(KDIR,k,j,i);    )
+          #if HAVE_ENERGY
+            rhs[ENG] += dt * Vc(RHO,k,j,i) * Vc(VX3,k,j,i) * bodyForce(KDIR,k,j,i) ));
+          #endif
+        #endif
+      }
 
 
       // Evolve the field components

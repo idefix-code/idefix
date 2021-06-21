@@ -132,6 +132,18 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
     }
   }
 
+  // Body Force
+  if(input.CheckEntry("Hydro","bodyForce")>=0) {
+    std::string potentialString = input.GetString("Hydro","bodyForce",0);
+    if(potentialString.compare("userdef") == 0) {
+      this->haveBodyForce = true;
+      idfx::cout << "Hydro:: Enabling user-defined body force" << std::endl;
+    } else {
+      IDEFIX_ERROR("Unknown type of body force in idefix.ini. "
+                   "Only userdef is implemented");
+    }
+  }
+
   // Do we use fargo?
   if(input.CheckEntry("Hydro","fargo")>=0) {
     this->haveFargo = true;
@@ -258,18 +270,18 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
       }
     }
   }
-#endif // MHD
+  #endif // MHD
 
   // Do we have to take care of the axis?
   if(data->haveAxis) {
     this->myAxis.Init(grid, this);
     this->haveAxis = true;
   }
-/////////////////////////////////////////
-//  ALLOCATION SECION ///////////////////
-/////////////////////////////////////////
+  /////////////////////////////////////////
+  //  ALLOCATION SECION ///////////////////
+  /////////////////////////////////////////
 
-// We now allocate the fields required by the hydro solver
+  // We now allocate the fields required by the hydro solver
   Vc = IdefixArray4D<real>("Hydro_Vc", NVAR,
                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   Uc = IdefixArray4D<real>("Hydro_Uc", NVAR,
@@ -286,26 +298,31 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   FluxRiemann =  IdefixArray4D<real>("Hydro_FluxRiemann", NVAR,
                                      data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
-#if MHD == YES
-  Vs = IdefixArray4D<real>("Hydro_Vs", DIMENSIONS,
-              data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
+  #if MHD == YES
+    Vs = IdefixArray4D<real>("Hydro_Vs", DIMENSIONS,
+                data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
 
-  Vs0 = IdefixArray4D<real>("Hydro_Vs0", DIMENSIONS,
-              data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
-  this->emf.Init(this);
-#endif
+    Vs0 = IdefixArray4D<real>("Hydro_Vs0", DIMENSIONS,
+                data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
+    this->emf.Init(this);
+  #endif
 
-// Allocate sound speed array if needed
+  // Allocate sound speed array if needed
   if(this->haveIsoSoundSpeed == UserDefFunction) {
     this->isoSoundSpeedArray = IdefixArray3D<real>("Hydro_csIso",
-                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   }
 
 
-// Allocate gravitational potential when needed
+  // Allocate gravitational potential when needed
   if(this->haveGravPotential)
     phiP = IdefixArray3D<real>("Hydro_PhiP",
-                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+
+  // Allocate body force array
+  if(this->haveBodyForce)
+    bodyForceVector = IdefixArray4D<real>("Hydro_bodyForce", COMPONENTS,
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
   if(this->haveCurrent) {
     // Allocate current (when hydro needs it)
@@ -414,6 +431,16 @@ void Hydro::EnrollGravPotential(GravPotentialFunc myFunc) {
   }
   this->gravPotentialFunc = myFunc;
   idfx::cout << "Hydro: User-defined gravitational potential has been enrolled" << std::endl;
+}
+
+void Hydro::EnrollBodyForce(BodyForceFunc myFunc) {
+  if(!this->haveBodyForce) {
+    IDEFIX_ERROR("In order to enroll your body force, "
+                 "you need to enable it first in the .ini file "
+                 "with the bodyForce entry in [Hydro].");
+  }
+  this->bodyForceFunc = myFunc;
+  idfx::cout << "Hydro: User-defined body force function has been enrolled" << std::endl;
 }
 
 void Hydro::EnrollUserSourceTerm(SrcTermFunc myFunc) {

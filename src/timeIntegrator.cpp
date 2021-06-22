@@ -156,6 +156,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
   real newdt;
 
+
   idfx::pushRegion("TimeIntegrator::Cycle");
 
   //if(timer.seconds()-lastLog >= 1.0) {
@@ -174,8 +175,6 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   // Convert current state into conservative variable and save it
   data.hydro.ConvertPrimToCons();
 
-
-
   // Store initial stage for multi-stage time integrators
   if(nstages>1) {
     Kokkos::deep_copy(Uc0,Uc);
@@ -184,12 +183,18 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 #endif
   }
 
+  // save t at the begining of the cycle
+  const real t0 = data.t;
+
   // Reinit datablock for a new stage
   data.ResetStage();
 
   for(int stage=0; stage < nstages ; stage++) {
     // Update Uc & Vs
     data.EvolveStage();
+
+    // evolve dt accordingly
+    data.t += data.dt;
 
     // Look for Nans every now and then (this actually cost a lot of time on GPUs
     // because streams are divergent)
@@ -219,6 +224,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
     // Is this not the first stage?
     if(stage>0) {
+      // do the partial evolution required by the multi-step
       real wcs=wc[stage-1];
       real w0s=w0[stage-1];
 
@@ -235,6 +241,9 @@ void TimeIntegrator::Cycle(DataBlock &data) {
           Vs(n,k,j,i) = wcs*Vs(n,k,j,i) + w0s*Vs0(n,k,j,i);
       });
 #endif
+      // update t
+      data.t = wcs*data.t + w0s*t0;
+
       // Tentatively high order fargo
       //if(data.hydro.haveFargo) data.hydro.fargo.ShiftSolution(data.t,wcs*data.dt);
     } //else {
@@ -244,7 +253,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     // Shift solution according to fargo if this is our last stage
 
     if(data.hydro.haveFargo && stage==nstages-1) {
-      data.hydro.fargo.ShiftSolution(data.t,data.dt);
+      data.hydro.fargo.ShiftSolution(t0,data.dt);
     }
 
 
@@ -272,8 +281,8 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     rkl.Cycle();
   }
 
-  // Update current time
-  data.t=data.t+data.dt;
+  // Update current time (should have already been done, but this gets rid of roundoff errors)
+  data.t=t0+data.dt;
 
   if(haveRKL) {
     // update next time step

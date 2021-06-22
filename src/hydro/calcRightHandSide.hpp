@@ -58,6 +58,10 @@ void Hydro::CalcRightHandSide(real t, real dt) {
   //Rotation
   bool haveRotation = this->haveRotation;
   real Omega = this->OmegaZ;
+  // disable rotation in cartesian geometry, as Coriolis is then treated as a source term
+  #if GEOMETRY == CARTESIAN
+    haveRotation = false;
+  #endif
 
   if(needPotential) {
     IdefixArray1D<real> x1,x2,x3;

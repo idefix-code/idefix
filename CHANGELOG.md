@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 3rd order reconstruction scheme (following Cada \& Torrilhon 2009). Can be enabled in definitions.hpp
 - New `-defs` option to `configure.py` to chose a specific definitions file in place of the default.
 
+## [0.8.1] - 2021-06-24
+### Changed
+- Fixed a bug in the hydro HLL solver which used the wrong sound speed for flux computations.
+
 ## [0.8.0] - 2021-06-13
 ### Added
 - New `DumpImage` class to load and use the data of dump files without restarting

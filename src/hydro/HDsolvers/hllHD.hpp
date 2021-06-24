@@ -95,8 +95,8 @@ void Hydro::HllHD() {
       K_PrimToCons(uR, vR, gamma_m1);
 
       // 3-- Compute the left and right fluxes
-      K_Flux(fluxL, vL, uL, cL, Xn);
-      K_Flux(fluxR, vR, uR, cR, Xn);
+      K_Flux(fluxL, vL, uL, cL*cL, Xn);
+      K_Flux(fluxR, vR, uR, cR*cR, Xn);
 
       // 5-- Compute the flux from the left and right states
       if (SL > 0) {

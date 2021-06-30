@@ -55,7 +55,7 @@ void Hydro::AddSourceTerms(real t, real dt) {
         if(haveRotation) {
           Uc(MX1,k,j,i) +=   TWO_F * dt * Vc(RHO,k,j,i) * OmegaZ * Vc(VX2,k,j,i);
           Uc(MX2,k,j,i) += - TWO_F * dt * Vc(RHO,k,j,i) * OmegaZ * Vc(VX1,k,j,i);
-          if(fargoType == shearingbox) {
+          if(fargoType == Fargo::shearingbox) {
             Uc(MX1,k,j,i) +=   TWO_F * dt * Vc(RHO,k,j,i) * OmegaZ * sbS * x1(i);
           }
         }

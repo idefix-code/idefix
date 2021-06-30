@@ -50,7 +50,7 @@ y=solve_ivp(rhs, [0,30], [1, 0, 0, 0, 0, 0], args=(1, 1.5, 0, 0, 0, 2.0*np.pi, 8
 # read timevar file
 
 
-rep = "/Users/lesurg/test/idefix/shearingBoxHydro"
+rep = "../"
 
 
 fid=open(rep+"/timevol64.dat","r")

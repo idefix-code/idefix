@@ -17,22 +17,22 @@ void Fargo::Init(Input &input, Grid &grid, Hydro *hydro) {
   // Todo(lesurg): should work on the shearing box version of this.
   this->hydro = hydro;
   this->data = hydro->data;
-  if(input.CheckEntry("Hydro","fargo")==0) {
+  if(input.CheckEntry("Hydro","fargo")>=0) {
     std::string opType = input.GetString("Hydro","fargo",0);
-    if(opType.compare("userdef")) {
+    if(opType.compare("userdef")==0) {
       this->type=userdef;
-    } else if(opType.compare("shearingbox")) {
+    } else if(opType.compare("shearingbox")==0) {
       this->type=shearingbox;
       #if GEOMETRY != CARTESIAN
         IDEFIX_ERROR("Fargo+shearingbox only compatible with cartesian geometry");
       #endif
     } else {
-      IDEFIX_ERROR("Unknown fargo option in the input file."
+      IDEFIX_ERROR("Unknown fargo option in the input file. "
       "Only userdef and shearingbox are allowed");
     }
   } else {
-    IDEFIX_ERROR("Fargo should be enabled in the input file with either userdef"
-                  "or shearing box velocity field");
+    IDEFIX_ERROR("Fargo should be enabled in the input file with either userdef "
+                  "or shearingbox options");
   }
 
   #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
@@ -58,7 +58,13 @@ void Fargo::Init(Input &input, Grid &grid, Hydro *hydro) {
   this->scratch = IdefixArray4D<real>("FargoScratchSpace",NVAR,data->np_tot[KDIR]
                                                               ,data->np_tot[JDIR]
                                                               ,data->np_tot[IDIR]);
-  idfx::cout << "Fargo: Enabled with user-defined velocity function" << std::endl;
+  if(type==userdef) {
+    idfx::cout << "Fargo: Enabled with user-defined velocity function" << std::endl;
+  } else if(type==shearingbox) {
+    idfx::cout << "Fargo: Enabled with shearing-box velocity function" << std::endl;
+  } else {
+    IDEFIX_ERROR("Something went wrong during Fargo initialisation");
+  }
   idfx::popRegion();
 }
 
@@ -106,7 +112,7 @@ void Fargo::AddVelocity(const real t) {
                 #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
                   if(fargoType == userdef) {
                     Vc(VX2,k,j,i) += meanV(k,i);
-                  } else if(fargoType == shearingBox) {
+                  } else if(fargoType == shearingbox) {
                     Vc(VX2,k,j,i) += sbS*x1(i);
                   }
                 #elif GEOMETRY == SPHERICAL
@@ -136,7 +142,7 @@ void Fargo::SubstractVelocity(const real t) {
                 #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
                   if(fargoType == userdef) {
                     Vc(VX2,k,j,i) -= meanV(k,i);
-                  } else if(fargoType == shearingBox) {
+                  } else if(fargoType == shearingbox) {
                     Vc(VX2,k,j,i) -= sbS*x1(i);
                   }
                 #elif GEOMETRY == SPHERICAL
@@ -192,7 +198,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
                 #if GEOMETRY == CARTESIAN
                  if(fargoType==userdef) {
                   w = meanV(k,i);
-                 } else if(fargoType==shearingBox) {
+                 } else if(fargoType==shearingbox) {
                   w = sbS*x1(i);
                  }
                  dphi = dx2(j);
@@ -314,7 +320,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
       #if GEOMETRY == CARTESIAN
         if(fargoType==userdef) {
          w = 0.5*(meanV(k,i-1)+meanV(k,i));
-        } else if(fargoType==shearingBox) {
+        } else if(fargoType==shearingbox) {
          w = sbS*x1m(i);
         }
         dphi = dx2(j);
@@ -423,7 +429,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
       #if GEOMETRY == CARTESIAN
         if(fargoType==userdef) {
          w = 0.5*(meanV(k,i)+meanV(k-1,i));
-        } else if(fargoType==shearingBox) {
+        } else if(fargoType==shearingbox) {
          w = sbS*x1(i);
         }
 

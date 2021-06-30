@@ -54,6 +54,7 @@ void Hydro::CalcRightHandSide(real t, real dt) {
 
   // Fargo
   bool haveFargo  = this->haveFargo;
+  Fargo::FargoType fargoType = this->fargo.type;
 
   //Rotation
   bool haveRotation = this->haveRotation;
@@ -62,6 +63,11 @@ void Hydro::CalcRightHandSide(real t, real dt) {
   #if GEOMETRY == CARTESIAN
     haveRotation = false;
   #endif
+
+  // shearingBox
+  bool haveShearingBox = this->haveShearingBox;
+  real sbS = this->sbS;
+
 
   if(needPotential) {
     IdefixArray1D<real> x1,x2,x3;
@@ -99,7 +105,7 @@ void Hydro::CalcRightHandSide(real t, real dt) {
     }
   }
 
-  if(haveFargo) {
+  if(haveFargo && fargoType == Fargo::userdef) {
     fargo.GetFargoVelocity(t);
   }
 
@@ -134,7 +140,11 @@ void Hydro::CalcRightHandSide(real t, real dt) {
         if(dir == IDIR) {
           #if (GEOMETRY == CARTESIAN || GEOMETRY == POLAR) && DIMENSIONS >=2
             if(haveFargo) {
-              meanV = HALF_F*(fargoVelocity(k,i-1)+fargoVelocity(k,i));
+              if(fargoType==Fargo::userdef) {
+                meanV = HALF_F*(fargoVelocity(k,i-1)+fargoVelocity(k,i));
+              } else if(fargoType==Fargo::shearingbox) {
+                meanV = sbS * x1m(i);
+              }
             }
             #if GEOMETRY != CARTESIAN
             if(haveRotation) {
@@ -161,7 +171,11 @@ void Hydro::CalcRightHandSide(real t, real dt) {
           }
         #elif (GEOMETRY == CARTESIAN || GEOMETRY == POLAR) && DIMENSIONS >=2
           if((dir == KDIR) && haveFargo) {
-            meanV = HALF_F*(fargoVelocity(k-1,i)+fargoVelocity(k,i));
+            if(fargoType==Fargo::userdef) {
+              meanV = HALF_F*(fargoVelocity(k-1,i)+fargoVelocity(k,i));
+            } else if (fargoType==Fargo::shearingbox) {
+              meanV = sbS*x1(i);
+            }
           }
         #endif // GEOMETRY
 
@@ -309,7 +323,13 @@ void Hydro::CalcRightHandSide(real t, real dt) {
         // fetch fargo velocity when required
         real meanV = ZERO_F;
         #if (GEOMETRY == POLAR || GEOMETRY == CARTESIAN) && DIMENSIONS >=2
-          if((dir==IDIR || dir == KDIR) && haveFargo) meanV = fargoVelocity(k,i);
+          if((dir==IDIR || dir == KDIR) && haveFargo) {
+            if(fargoType==Fargo::userdef) {
+              meanV = fargoVelocity(k,i);
+            } else if(fargoType==Fargo::shearingbox) {
+              meanV = sbS * x1(i);
+            }
+          }
           #if GEOMETRY != CARTESIAN
             if((dir==IDIR) && haveRotation) {
               meanV += Omega*x1(i);

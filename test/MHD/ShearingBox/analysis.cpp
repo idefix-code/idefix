@@ -2,6 +2,7 @@
 #include "idefix.hpp"
 #include <iostream>
 #include <fstream>
+#include <iomanip>
 
 Analysis::Analysis(Input &input, Grid &grid, DataBlock &data, Output &output, std::string filename) {
       this->d = new DataBlockHost(data);

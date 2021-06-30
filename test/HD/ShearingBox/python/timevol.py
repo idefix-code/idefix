@@ -50,7 +50,7 @@ y=solve_ivp(rhs, [0,30], [1, 0, 0, 0, 0, 0], args=(1, 1.5, 0, 0, 0, 2.0*np.pi, 8
 # read timevar file
 
 
-rep = "/Users/lesurg/test/idefix/shearingBoxHydro"
+rep = "../"
 
 
 fid=open(rep+"/timevol64.dat","r")
@@ -77,7 +77,7 @@ plt.rc('font', size=16)
 
 v0=V['vx'][0]
  # Enerrgy plots
-plt.close('all')
+#plt.close('all')
 plt.figure(1)
 plt.plot(V["t"],V['vx']/v0,'r-',label=r'$u_{R}$')
 plt.plot(V["t"],y.sol(V["t"])[0,:],'r--')

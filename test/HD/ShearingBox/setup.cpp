@@ -74,7 +74,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   // Add our userstep to the timeintegrator
   data.hydro.EnrollBodyForce(BodyForce);
 
-  analysis = new Analysis(input, grid, data, output,std::string("timevol")+std::to_string(grid.np_int[IDIR])+std::string(".dat"));
+  analysis = new Analysis(input, grid, data, output,std::string("timevol.dat"));
   output.EnrollAnalysis(&AnalysisFunction);
   // Reset analysis if required
   if(!input.restartRequested) {

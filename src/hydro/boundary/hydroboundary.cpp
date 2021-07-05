@@ -73,8 +73,12 @@ void HydroBoundary::EnrollFluxBoundary(UserDefBoundaryFunc myFunc) {
 
 void HydroBoundary::EnforceFluxBoundaries(int dir) {
   if(haveFluxBoundary) {
-    fluxBoundaryFunc(*data, dir, left, data->t);
-    fluxBoundaryFunc(*data, dir, right, data->t);
+    if(data->lbound[dir] != internal) {
+      fluxBoundaryFunc(*data, dir, left, data->t);
+    }
+    if(data->rbound[dir] != internal) {
+      fluxBoundaryFunc(*data, dir, right, data->t);
+    }
   } else {
     IDEFIX_ERROR("Cannot enforce flux boundary conditions without enrolling a specific function");
   }

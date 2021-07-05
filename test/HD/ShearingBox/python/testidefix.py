@@ -84,7 +84,6 @@ for name in varnames:
 
 # velocity normalisation
 v0=V['vx'][0]
-
 # compute L2 error norm
 error=np.sqrt((V['vx']/v0-y.sol(V["t"])[0,:])**2 + (V['vy']/v0-y.sol(V["t"])[1,:])**2+ + (V['vz']/v0-y.sol(V["t"])[2,:])**2)
 

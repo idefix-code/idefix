@@ -240,6 +240,8 @@ void Hydro::CalcRightHandSide(real t, real dt) {
     }
   );
 
+  // If user has requested specific flux functions for the boundaries, here they come
+  if(boundary.haveFluxBoundary) boundary.EnforceFluxBoundaries(dir);
 
   idefix_for("CalcRightHandSide",
              data->beg[KDIR],data->end[KDIR],

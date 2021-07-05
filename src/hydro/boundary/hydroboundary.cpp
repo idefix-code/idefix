@@ -65,7 +65,20 @@ void HydroBoundary::Init(Input & input, Grid &grid, Hydro* hydro) {
   idfx::popRegion();
 }
 
+void HydroBoundary::EnrollFluxBoundary(UserDefBoundaryFunc myFunc) {
+  this->haveFluxBoundary = true;
+  this->fluxBoundaryFunc = myFunc;
+  idfx::cout << "HydroBoundary: User-defined flux boundary has been enrolled" << std::endl;
+}
 
+void HydroBoundary::EnforceFluxBoundaries(int dir) {
+  if(haveFluxBoundary) {
+    fluxBoundaryFunc(*data, dir, left, data->t);
+    fluxBoundaryFunc(*data, dir, right, data->t);
+  } else {
+    IDEFIX_ERROR("Cannot enforce flux boundary conditions without enrolling a specific function");
+  }
+}
 
 void HydroBoundary::SetBoundaries(real t) {
   idfx::pushRegion("HydroBoundary::SetBoundaries");

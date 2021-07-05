@@ -29,8 +29,11 @@ class HydroBoundary {
   void ReconstructVcField(IdefixArray4D<real> &);  ///< reconstruct cell-centered magnetic field
   void ReconstructNormalField(int dir);           ///< reconstruct normal field using divB=0
 
+  void EnforceFluxBoundaries(int dir);        ///< Apply boundary condition conditions to the fluxes
+
   void EnrollUserDefBoundary(UserDefBoundaryFunc);
   void EnrollInternalBoundary(InternalBoundaryFunc);
+  void EnrollFluxBoundary(UserDefBoundaryFunc);
 
   void EnforcePeriodic(int, BoundarySide ); ///< Enforce periodic BC in direction and side
   void EnforceReflective(int, BoundarySide ); ///< Enforce reflective BC in direction and side
@@ -48,6 +51,10 @@ class HydroBoundary {
   // Internal boundary function
   bool haveInternalBoundary{false};
   InternalBoundaryFunc internalBoundaryFunc{NULL};
+
+  // Flux boundary function
+  bool haveFluxBoundary{false};
+  UserDefBoundaryFunc fluxBoundaryFunc{NULL};
 
   // specific for loops on ghost cells
   template <typename Function>

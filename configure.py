@@ -29,6 +29,8 @@ GPU_ARCHS = frozenset(
         "Turing75",
         "Volta70",
         "Volta72",
+        "Ampere80",
+        "Ampere86"
     ),
 )
 

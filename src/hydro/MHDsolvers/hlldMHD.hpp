@@ -633,11 +633,8 @@ void Hydro::HlldMHD() {
       real aL = std::fmin(ZERO_F, sl);
       scrh = ONE_F/(aR - aL);
 
-      pnt_flux[BXt] = -(aR*vL[Xt] - aL*vR[Xt])*scrh;
-      pnt_flux[BXb] = -(aR*vL[Xb] - aL*vR[Xb])*scrh;
-
-      dff_flux[BXt] = ZERO_F;
-      dff_flux[BXb] = ZERO_F;
+      Et(k,j,i) = -(aR*vL[Xt] - aL*vR[Xt])*scrh;
+      Eb(k,j,i) = -(aR*vL[Xb] - aL*vR[Xb])*scrh;
 #endif // EMF_AVERAGE == UCT_HLLD
   });
 

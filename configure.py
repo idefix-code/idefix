@@ -30,7 +30,7 @@ GPU_ARCHS = frozenset(
         "Volta70",
         "Volta72",
         "Ampere80",
-        "Ampere86"
+        "Ampere86",
     ),
 )
 

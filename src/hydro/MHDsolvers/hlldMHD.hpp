@@ -565,6 +565,80 @@ void Hydro::HlldMHD() {
       SL(k,j,i) = std::fmax(ZERO_F, -sl);
       SR(k,j,i) = std::fmax(ZERO_F,  sr);
 #endif
+
+#if EMF_AVERAGE == UCT_HLLD
+      real Bn = Vs(BXn,k,j,i);
+
+      real chiL, chiR, nuLR, nuL, nuR;
+      real eps = 1.e-12*(std::fabs(sl) + std::fabs(sr));
+      real duL  = sl - vL[Xn];
+      real duR  = sr - vR[Xn];
+
+  #if HAVE_ENERGY
+      // Recompute speeds
+      real sqrL, sqrR, usLRHO, usRRHO;
+
+      real scrh  = ONE_F/(duR*uR[RHO] - duL*uL[RHO]);
+      real Sc = (duR*uR[Xn] - duL*uL[Xn] - prsR + prsL)*scrh;
+
+      usLRHO = uL[RHO]*duL/(sl - Sc);
+      usRRHO = uR[RHO]*duR/(sr - Sc);
+
+      sqrL = std::sqrt(usLRHO);
+      sqrR = std::sqrt(usRRHO);
+
+      SaL = Sc - std::fabs(Bn)/sqrL;
+      SaR = Sc + std::fabs(Bn)/sqrR;
+
+      if (usLRHO < ZERO_F || usRRHO < ZERO_F) {
+        /* ERROR */
+      }
+
+      chiL  = (vL[Xn] - Sc)*(sl - Sc)/(SaL + sl - TWO_F*Sc);
+      chiR  = (vR[Xn] - Sc)*(sr - Sc)/(SaR + sr - TWO_F*Sc);
+  #else
+      scrh    = ONE_F/(sr - sl);
+      real rho_h   = (uR[RHO]*duR - uL[RHO]*duL)*scrh;
+      Sc = HALF_F*(SaL + SaR);
+      // Recompute speeds
+      real sqrho_h = std::sqrt(rho_h);
+      SaL = Sc - std::fabs(Bn)/sqrho_h;
+      SaR = Sc + std::fabs(Bn)/sqrho_h;
+
+      chiL  = (vL[Xn] - Sc)*(sl - Sc)/(SaL + sl - TWO_F*Sc);
+      chiR  = (vR[Xn] - Sc)*(sr - Sc)/(SaR + sr - TWO_F*Sc);
+  #endif // HAVE_ENERGY
+
+      nuL  = (SaL + sl)/(std::fabs(SaL) + std::fabs(sl));
+      nuR  = (SaR + sr)/(std::fabs(SaR) + std::fabs(sr));
+      nuLR = (SaL + SaR)/(std::fabs(SaL) + std::fabs(SaR));
+
+      if ( std::fabs(SaR - SaL) > 1.e-9*std::fabs(sr-sl)) {
+        dL =   HALF_F*(chiL*nuL - chiL*nuLR)
+                     + HALF_F*(std::fabs(SaL) - nuLR*SaL);
+
+        dR =   HALF_F*(chiR*nuR - chiR*nuLR)
+                     + HALF_F*(std::fabs(SaR) - nuLR*SaR);
+        aL = HALF_F*(ONE_F + nuLR);
+        aR = HALF_F*(ONE_F - nuLR);
+      } else {   // HLLC, degenerate limit Bx -> 0
+        dL = HALF_F*chiL*nuL + HALF_F*std::fabs(SaL);
+        dR = HALF_F*chiR*nuR + HALF_F*std::fabs(SaR);
+
+        aL = HALF_F;
+        aR = HALF_F;
+      }
+
+      real aR = std::fmax(ZERO_F, sr);
+      real aL = std::fmin(ZERO_F, sl);
+      scrh = ONE_F/(aR - aL);
+
+      pnt_flux[BXt] = -(aR*vL[Xt] - aL*vR[Xt])*scrh;
+      pnt_flux[BXb] = -(aR*vL[Xb] - aL*vR[Xb])*scrh;
+
+      dff_flux[BXt] = ZERO_F;
+      dff_flux[BXb] = ZERO_F;
+#endif // EMF_AVERAGE == UCT_HLLD
   });
 
   idfx::popRegion();

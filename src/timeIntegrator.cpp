@@ -188,6 +188,10 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   // Reinit datablock for a new stage
   data.ResetStage();
 
+#ifdef WITH_MPI
+  MPI_Request dtReduce;
+#endif
+
   for(int stage=0; stage < nstages ; stage++) {
     // Update Uc & Vs
     data.EvolveStage();
@@ -212,7 +216,8 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
   #ifdef WITH_MPI
         if(idfx::psize>1) {
-          MPI_SAFE_CALL(MPI_Allreduce(MPI_IN_PLACE, &newdt, 1, realMPI, MPI_MIN, MPI_COMM_WORLD));
+          MPI_SAFE_CALL(MPI_Iallreduce(MPI_IN_PLACE, &newdt, 1, realMPI, MPI_MIN, MPI_COMM_WORLD,
+                                       &dtReduce));
         }
   #endif
       }
@@ -268,6 +273,12 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   // Add back Fargo velocity so that updated Vc stores the total Velocity
   if(data.hydro.haveFargo) data.hydro.fargo.AddVelocity(data.t);
 
+  // Wait for hydro/newDt MPI reduction
+#ifdef WITH_MPI
+  if(idfx::psize>1) {
+    MPI_SAFE_CALL(MPI_Wait(&dtReduce, MPI_STATUS_IGNORE));
+  }
+#endif
 
   if(haveRKL && (ncycles%2)==0) {    // Runge-Kutta-Legendre cycle
     rkl.Cycle();

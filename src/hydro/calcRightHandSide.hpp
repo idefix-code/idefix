@@ -396,7 +396,7 @@ void Hydro::CalcRightHandSide(real t, real dt) {
         #if DIMENSIONS == 2 && COMPONENTS == 3
           rhs[MX3] += dt * Vc(RHO,k,j,i) * bodyForce(KDIR,k,j,i);
           #if HAVE_ENERGY
-            rhs[ENG] += dt * Vc(RHO,k,j,i) * Vc(VX3,k,j,i) * bodyForce(KDIR,k,j,i) );
+            rhs[ENG] += dt * Vc(RHO,k,j,i) * Vc(VX3,k,j,i) * bodyForce(KDIR,k,j,i);
           #endif
         #endif
       }

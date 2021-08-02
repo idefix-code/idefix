@@ -64,7 +64,8 @@ using Layout = Kokkos::LayoutRight;
 #define UCT0         2
 #define UCT_CONTACT  3
 #define UCT_HLL      4
-#define UCT_HLLD     5
+#define UCT_HLL2     5
+#define UCT_HLLD     6
 
 // Runge-Kutta-Legendre switch
 #define RKL   YES

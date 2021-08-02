@@ -29,6 +29,20 @@ class ElectroMotiveForce {
   IdefixArray3D<real>     ey;
   IdefixArray3D<real>     ez;
 
+  IdefixArray3D<real> axL;
+  IdefixArray3D<real> axR;
+  IdefixArray3D<real> ayL;
+  IdefixArray3D<real> ayR;
+  IdefixArray3D<real> azL;
+  IdefixArray3D<real> azR;
+
+  IdefixArray3D<real> dxL;
+  IdefixArray3D<real> dxR;
+  IdefixArray3D<real> dyL;
+  IdefixArray3D<real> dyR;
+  IdefixArray3D<real> dzL;
+  IdefixArray3D<real> dzR;
+
 #if EMF_AVERAGE == UCT_CONTACT
   IdefixArray3D<int>      svx;
   IdefixArray3D<int>      svy;

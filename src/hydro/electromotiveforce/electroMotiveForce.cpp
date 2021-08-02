@@ -122,6 +122,36 @@ void ElectroMotiveForce::Init(Hydro *hydro) {
   Ex2 = IdefixArray3D<real>("EMF_Ex2", data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   Ex3 = IdefixArray3D<real>("EMF_Ex3", data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
+  D_EXPAND( axL = IdefixArray3D<real>("EMF_axL",
+                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+            axR = IdefixArray3D<real>("EMF_axR",
+                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
+
+            ayL = IdefixArray3D<real>("EMF_ayL",
+                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+            ayR = IdefixArray3D<real>("EMF_ayR",
+                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
+
+            azL = IdefixArray3D<real>("EMF_azL",
+                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+            azR = IdefixArray3D<real>("EMF_azR",
+                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  )
+
+  D_EXPAND( dxL = IdefixArray3D<real>("EMF_dxL",
+                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+            dxR = IdefixArray3D<real>("EMF_dxR",
+                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
+
+            dyL = IdefixArray3D<real>("EMF_dyL",
+                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+            dyR = IdefixArray3D<real>("EMF_dyR",
+                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
+
+            dzL = IdefixArray3D<real>("EMF_dzL",
+                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+            dzR = IdefixArray3D<real>("EMF_dzR",
+                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  )
+
   Grid *mygrid = data->mygrid;
 
   // MPI initialisation

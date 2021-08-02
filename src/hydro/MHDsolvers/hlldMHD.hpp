@@ -36,6 +36,11 @@ void Hydro::HlldMHD() {
   IdefixArray3D<real> Eb;
   IdefixArray3D<real> Et;
 
+  IdefixArray3D<real> aL;
+  IdefixArray3D<real> aR;
+  IdefixArray3D<real> dL;
+  IdefixArray3D<real> dR;
+
 #if EMF_AVERAGE == UCT_CONTACT
   IdefixArray3D<int> SV;
 #elif EMF_AVERAGE == UCT_HLL
@@ -71,6 +76,11 @@ void Hydro::HlldMHD() {
       SL = this->emf.SxL;
       SR = this->emf.SxR;
 #endif
+      aL = this->emf.axL;
+      aR = this->emf.axR;
+
+      dL = this->emf.dxL;
+      dR = this->emf.dxR;
 
       break;
     case(JDIR):
@@ -90,6 +100,11 @@ void Hydro::HlldMHD() {
       SL = this->emf.SyL;
       SR = this->emf.SyR;
 #endif
+      aL = this->emf.ayL;
+      aR = this->emf.ayR;
+
+      dL = this->emf.dyL;
+      dR = this->emf.dyR;
 
       break;
     case(KDIR):
@@ -108,6 +123,11 @@ void Hydro::HlldMHD() {
       SL = this->emf.SzL;
       SR = this->emf.SzR;
 #endif
+      aL = this->emf.azL;
+      aR = this->emf.azR;
+
+      dL = this->emf.dzL;
+      dR = this->emf.dzR;
 
       break;
     default:
@@ -224,11 +244,19 @@ void Hydro::HlldMHD() {
       real ptR, ptL;
 
 #if HAVE_ENERGY
-      ptL  = vL[PRS] + 0.5* ( EXPAND(vL[BX1]*vL[BX1] , + vL[BX2]*vL[BX2], + vL[BX3]*vL[BX3]) );
-      ptR  = vR[PRS] + 0.5* ( EXPAND(vR[BX1]*vR[BX1] , + vR[BX2]*vR[BX2], + vR[BX3]*vR[BX3]) );
+      ptL  = vL[PRS] + HALF_F* ( EXPAND(vL[BX1]*vL[BX1]     ,
+                                        + vL[BX2]*vL[BX2]   ,
+                                        + vL[BX3]*vL[BX3])  );
+      ptR  = vR[PRS] + HALF_F* ( EXPAND(vR[BX1]*vR[BX1]     ,
+                                        + vR[BX2]*vR[BX2]   ,
+                                        + vR[BX3]*vR[BX3])  );
 #else
-      ptL  = c2Iso*vL[RHO] + 0.5* (EXPAND(vL[BX1]*vL[BX1], + vL[BX2]*vL[BX2], + vL[BX3]*vL[BX3]));
-      ptR  = c2Iso*vR[RHO] + 0.5* (EXPAND(vR[BX1]*vR[BX1], + vR[BX2]*vR[BX2], + vR[BX3]*vR[BX3]));
+      ptL  = c2Iso*vL[RHO] + HALF_F* (EXPAND(vL[BX1]*vL[BX1]     ,
+                                             + vL[BX2]*vL[BX2]   ,
+                                             + vL[BX3]*vL[BX3])  );
+      ptR  = c2Iso*vR[RHO] + HALF_F* (EXPAND(vR[BX1]*vR[BX1]     ,
+                                             + vR[BX2]*vR[BX2]   ,
+                                             + vR[BX3]*vR[BX3])  );
 #endif
 
       // 5-- Compute the flux from the left and right states
@@ -254,14 +282,14 @@ void Hydro::HlldMHD() {
         int revert_to_hllc;
 
         // 3c. Compute U*(L), U^*(R)
-        scrh = 1.0/(sr - sl);
+        scrh = ONE_F/(sr - sl);
         Bx1  = Bx = (sr*vR[BXn] - sl*vL[BXn])*scrh;
-        sBx  = (Bx > 0.0 ? 1.0 : -1.0);
+        sBx  = (Bx > 0.0 ? ONE_F : -ONE_F);
 
         duL  = sl - vL[Xn];
         duR  = sr - vR[Xn];
 
-        scrh = 1.0/(duR*uR[RHO] - duL*uL[RHO]);
+        scrh = ONE_F/(duR*uR[RHO] - duL*uL[RHO]);
         SM   = (duR*uR[Xn] - duL*uL[Xn] - ptR + ptL)*scrh;
 
         pts  = duR*uR[RHO]*ptL - duL*uL[RHO]*ptR +
@@ -295,7 +323,7 @@ void Hydro::HlldMHD() {
         if ( (S1R - sr) > -1.e-4*(sr - SM) ) revert_to_hllc = 1;
 
         if (revert_to_hllc) {
-          scrh = 1.0/(sr - sl);
+          scrh = ONE_F/(sr - sl);
 #pragma unroll
           for(int nv = 0 ; nv < NVAR; nv++) {
             Uhll[nv]  = sr*uR[nv] - sl*uL[nv] + fluxL[nv] - fluxR[nv];
@@ -432,7 +460,7 @@ void Hydro::HlldMHD() {
         real rho, sqrho;
         int revert_to_hll;
 
-        scrh = 1.0/(sr - sl);
+        scrh = ONE_F/(sr - sl);
         duL = sl - vL[Xn];
         duR = sr - vR[Xn];
 
@@ -462,7 +490,7 @@ void Hydro::HlldMHD() {
         if ( (S1R - sr) > -1.e-4*(sr - sl) ) revert_to_hll = 1;
 
         if (revert_to_hll) {
-          scrh = 1.0/(sr - sl);
+          scrh = ONE_F/(sr - sl);
 #pragma unroll
           for(int nv = 0 ; nv < NVAR; nv++) {
             Flux(nv,k,j,i) = sl*sr*(uR[nv] - uL[nv])
@@ -479,8 +507,8 @@ void Hydro::HlldMHD() {
                   Compute U*
           --------------------------- */
 
-          scrhL = 1.0/((sl - S1L)*(sl - S1R));
-          scrhR = 1.0/((sr - S1L)*(sr - S1R));
+          scrhL = ONE_F/((sl - S1L)*(sl - S1R));
+          scrhR = ONE_F/((sr - S1L)*(sr - S1R));
 
           EXPAND(                                                      ;  ,
                   usL[Xt] = rho*vL[Xt] - Bx*uL[BXt]*(SM - vL[Xn])*scrhL;
@@ -519,18 +547,18 @@ void Hydro::HlldMHD() {
                   Compute U** = Uc
             --------------------------- */
 
-            sBx = (Bx > 0.0 ? 1.0 : -1.0);
+            sBx = (Bx > 0.0 ? ONE_F : -ONE_F);
 
             EXPAND(                                               ,
-                    usc[Xt] = 0.5*(usR[Xt] + usL[Xt]
+                    usc[Xt] = HALF_F*(usR[Xt] + usL[Xt]
                              + (usR[BXt] - usL[BXt])*sBx*sqrho);  ,
-                    usc[Xb] = 0.5*(   usR[Xb] + usL[Xb]
+                    usc[Xb] = HALF_F*(   usR[Xb] + usL[Xb]
                              + (usR[BXb] - usL[BXb])*sBx*sqrho);  )
 
             EXPAND(                                              ,
-                    usc[BXt] = 0.5*(   usR[BXt] + usL[BXt]
+                    usc[BXt] = HALF_F*(   usR[BXt] + usL[BXt]
                               + (usR[Xt] - usL[Xt])*sBx/sqrho);  ,
-                    usc[BXb] = 0.5*(   usR[BXb] + usL[BXb]
+                    usc[BXb] = HALF_F*(   usR[BXb] + usL[BXb]
                               + (usR[Xb] - usL[Xb])*sBx/sqrho);  )
 
             EXPAND(                                             ,
@@ -564,78 +592,97 @@ void Hydro::HlldMHD() {
 #elif EMF_AVERAGE == UCT_HLL
       SL(k,j,i) = std::fmax(ZERO_F, -sl);
       SR(k,j,i) = std::fmax(ZERO_F,  sr);
-#endif
 
-#if EMF_AVERAGE == UCT_HLLD
-      real Bn = Vs(BXn,k,j,i);
+#elif EMF_AVERAGE == UCT_HLL2
+    real ar = std::fmax(ZERO_F, sr);
+    real al = std::fmin(ZERO_F, sl);
+    real scrh = ONE_F/(ar - al);
+    Et(k,j,i) = -(ar*vL[Xt] - al*vR[Xt])*scrh;
+    Eb(k,j,i) = -(ar*vL[Xb] - al*vR[Xb])*scrh;
 
-      real chiL, chiR, nuLR, nuL, nuR;
-      real eps = 1.e-12*(std::fabs(sl) + std::fabs(sr));
-      real duL  = sl - vL[Xn];
-      real duR  = sr - vR[Xn];
+    aL(k,j,i) =  ar*scrh;
+    aR(k,j,i) = -al*scrh;
+    dR(k,j,i) = -al*ar*scrh;
+    dL(k,j,i) =  dR(k,j,i);
+
+#elif EMF_AVERAGE == UCT_HLLD
+    real Bn = (sr*vR[BXn] - sl*vL[BXn])/(sr - sl);
+
+    int switch_to_hll = 0;
+    real chiL, chiR, nuLR, nuL, nuR;
+    real SaL, SaR, Sc;
+    real eps = 1.e-12*(fabs(sl) + fabs(sr));
+    real duL  = sl - vL[Xn];
+    real duR  = sr - vR[Xn];
 
   #if HAVE_ENERGY
-      // Recompute speeds
-      real sqrL, sqrR, usLRHO, usRRHO;
+    // Recompute speeds
+    real sqrL, sqrR, usLRHO, usRRHO;
 
-      real scrh  = ONE_F/(duR*uR[RHO] - duL*uL[RHO]);
-      real Sc = (duR*uR[Xn] - duL*uL[Xn] - prsR + prsL)*scrh;
+    real scrh  = ONE_F/(duR*uR[RHO] - duL*uL[RHO]);
+    Sc = (duR*uR[Xn] - duL*uL[Xn] - ptR + ptL)*scrh;
 
-      usLRHO = uL[RHO]*duL/(sl - Sc);
-      usRRHO = uR[RHO]*duR/(sr - Sc);
+    usLRHO = uL[RHO]*duL/(sl - Sc);
+    usRRHO = uR[RHO]*duR/(sr - Sc);
 
-      sqrL = std::sqrt(usLRHO);
-      sqrR = std::sqrt(usRRHO);
+    sqrL = sqrt(usLRHO);
+    sqrR = sqrt(usRRHO);
 
-      SaL = Sc - std::fabs(Bn)/sqrL;
-      SaR = Sc + std::fabs(Bn)/sqrR;
+    SaL = Sc - fabs(Bn)/sqrL;
+    SaR = Sc + fabs(Bn)/sqrR;
 
-      if (usLRHO < ZERO_F || usRRHO < ZERO_F) {
-        /* ERROR */
-      }
-
-      chiL  = (vL[Xn] - Sc)*(sl - Sc)/(SaL + sl - TWO_F*Sc);
-      chiR  = (vR[Xn] - Sc)*(sr - Sc)/(SaR + sr - TWO_F*Sc);
+    chiL  = (vL[Xn] - Sc)*(sl - Sc)/(SaL + sl - TWO_F*Sc);
+    chiR  = (vR[Xn] - Sc)*(sr - Sc)/(SaR + sr - TWO_F*Sc);
   #else
-      scrh    = ONE_F/(sr - sl);
-      real rho_h   = (uR[RHO]*duR - uL[RHO]*duL)*scrh;
-      Sc = HALF_F*(SaL + SaR);
-      // Recompute speeds
-      real sqrho_h = std::sqrt(rho_h);
-      SaL = Sc - std::fabs(Bn)/sqrho_h;
-      SaR = Sc + std::fabs(Bn)/sqrho_h;
+    scrh    = ONE_F/(sr - sl);
+    real rho_h   = (uR[RHO]*duR - uL[RHO]*duL)*scrh;
+    Sc = HALF_F*(SaL + SaR);
+    // Recompute speeds
+    real sqrho_h = sqrt(rho_h);
+    SaL = Sc - fabs(Bn)/sqrho_h;
+    SaR = Sc + fabs(Bn)/sqrho_h;
 
-      chiL  = (vL[Xn] - Sc)*(sl - Sc)/(SaL + sl - TWO_F*Sc);
-      chiR  = (vR[Xn] - Sc)*(sr - Sc)/(SaR + sr - TWO_F*Sc);
-  #endif // HAVE_ENERGY
+    chiL  = (vL[Xn] - Sc)*(sl - Sc)/(SaL + sl - TWO_F*Sc);
+    chiR  = (vR[Xn] - Sc)*(sr - Sc)/(SaR + sr - TWO_F*Sc);
+  #endif
 
-      nuL  = (SaL + sl)/(std::fabs(SaL) + std::fabs(sl));
-      nuR  = (SaR + sr)/(std::fabs(SaR) + std::fabs(sr));
-      nuLR = (SaL + SaR)/(std::fabs(SaL) + std::fabs(SaR));
+    nuL  = (SaL + sl)/(fabs(SaL) + fabs(sl));
+    nuR  = (SaR + sr)/(fabs(SaR) + fabs(sr));
+    nuLR = (SaL + SaR)/(fabs(SaL) + fabs(SaR));
 
-      if ( std::fabs(SaR - SaL) > 1.e-9*std::fabs(sr-sl)) {
-        dL =   HALF_F*(chiL*nuL - chiL*nuLR)
-                     + HALF_F*(std::fabs(SaL) - nuLR*SaL);
+    if (fabs(SaR - SaL) > 1.e-9*fabs(sr-sl)) {
+      dL(k,j,i) =   HALF_F*(chiL*nuL - chiL*nuLR)
+                     + HALF_F*(fabs(SaL) - nuLR*SaL);
 
-        dR =   HALF_F*(chiR*nuR - chiR*nuLR)
-                     + HALF_F*(std::fabs(SaR) - nuLR*SaR);
-        aL = HALF_F*(ONE_F + nuLR);
-        aR = HALF_F*(ONE_F - nuLR);
-      } else {   // HLLC, degenerate limit Bx -> 0
-        dL = HALF_F*chiL*nuL + HALF_F*std::fabs(SaL);
-        dR = HALF_F*chiR*nuR + HALF_F*std::fabs(SaR);
+      dR(k,j,i) =   HALF_F*(chiR*nuR - chiR*nuLR)
+                     + HALF_F*(fabs(SaR) - nuLR*SaR);
+      aL(k,j,i) = HALF_F*(ONE_F + nuLR);
+      aR(k,j,i) = HALF_F*(ONE_F - nuLR);
 
-        aL = HALF_F;
-        aR = HALF_F;
-      }
+    } else {   // HLLC, degenerate limit Bx -> 0
+      dL(k,j,i) = HALF_F*chiL*nuL + HALF_F*fabs(SaL);
+      dR(k,j,i) = HALF_F*chiR*nuR + HALF_F*fabs(SaR);
 
-      real aR = std::fmax(ZERO_F, sr);
-      real aL = std::fmin(ZERO_F, sl);
-      scrh = ONE_F/(aR - aL);
+      aL(k,j,i) = HALF_F;
+      aR(k,j,i) = HALF_F;
+    }
 
-      Et(k,j,i) = -(aR*vL[Xt] - aL*vR[Xt])*scrh;
-      Eb(k,j,i) = -(aR*vL[Xb] - aL*vR[Xb])*scrh;
-#endif // EMF_AVERAGE == UCT_HLLD
+    real ar = std::fmax(ZERO_F, sr);
+    real al = std::fmin(ZERO_F, sl);
+    scrh = ONE_F/(ar - al);
+
+    // HLL diffusion coefficients
+    if (switch_to_hll) {
+      aL(k,j,i) =  ar*scrh;
+      aR(k,j,i) = -al*scrh;
+      dR(k,j,i) = -al*ar*scrh;
+      dL(k,j,i) =  dR(k,j,i);
+    }
+
+    // LF diffusion coefficients
+    Et(k,j,i) = -(ar*vL[Xt] - al*vR[Xt])*scrh;
+    Eb(k,j,i) = -(ar*vL[Xb] - al*vR[Xb])*scrh;
+#endif
   });
 
   idfx::popRegion();

@@ -295,6 +295,10 @@ void ElectroMotiveForce::CalcCornerEMF(real t) {
     calcRiemannEmf();
   #endif
 
+  #if EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL2
+    calcRiemann2DEmf();
+  #endif
+
 #endif // MHD
 
   idfx::popRegion();

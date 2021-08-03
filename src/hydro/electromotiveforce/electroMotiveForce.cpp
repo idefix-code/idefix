@@ -24,8 +24,10 @@ void ElectroMotiveForce::Init(Hydro *hydro) {
     idfx::cout << "ElectroMotiveForce: Using UCT0 averaging scheme." << std::endl;
   #elif EMF_AVERAGE == ARITHMETIC
     idfx::cout << "ElectroMotiveForce: Using ARITHMETIC averaging scheme." << std::endl;
-  #elif EMF_AVERAGE == UCT_HLL
+  #elif EMF_AVERAGE == UCT_HLL || EMF_AVERAGE == UCT_HLL2
     idfx::cout << "ElectroMotiveForce: Using 2D-HLL averaging scheme." << std::endl;
+  #elif EMF_AVERAGE == UCT_HLLD
+    idfx::cout << "ElectroMotiveForce: Using 2D-HLLD averaging scheme." << std::endl;
   #else
     IDEFIX_ERROR("Unknown EMF averaging scheme in definitions.hpp");
   #endif

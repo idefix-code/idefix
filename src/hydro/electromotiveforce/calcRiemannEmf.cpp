@@ -18,7 +18,11 @@ KOKKOS_INLINE_FUNCTION real MC_LIM2 (const real dp, const real dm) {
   scrh = TWO_F*(std::fabs(dp) < std::fabs(dm) ? dp:dm);
   return (std::fabs(dc) < std::fabs(scrh) ? dc:scrh);
 }
+/*
+KOKKOS_INLINE_FUNCTION real LIMITER (const real dp, real dm) {
 
+}
+*/
 
 void ElectroMotiveForce::calcRiemannEmf() {
   idfx::pushRegion("ElectroMotiveForce::calcRiemannEmf");
@@ -207,6 +211,75 @@ void ElectroMotiveForce::calcRiemannEmf() {
 #else
 
 #endif  // EMF_AVERAGE
+
+  idfx::popRegion();
+}
+
+void ElectroMotiveForce::calcRiemann2DEmf() {
+  idfx::pushRegion("ElectroMotiveForce::calcRiemann2DEmf");
+
+  // Corned EMFs
+  IdefixArray3D<real> ex = this->ex;
+  IdefixArray3D<real> ey = this->ey;
+  IdefixArray3D<real> ez = this->ez;
+
+  // Face-centered EMFs
+  IdefixArray3D<real> exj = this->exj;
+  IdefixArray3D<real> exk = this->exk;
+  IdefixArray3D<real> eyi = this->eyi;
+  IdefixArray3D<real> eyk = this->eyk;
+  IdefixArray3D<real> ezi = this->ezi;
+  IdefixArray3D<real> ezj = this->ezj;
+
+  IdefixArray3D<real> axL = this->axL;
+  IdefixArray3D<real> axR = this->axR;
+  IdefixArray3D<real> ayL = this->ayL;
+  IdefixArray3D<real> ayR = this->ayR;
+  IdefixArray3D<real> azL = this->azL;
+  IdefixArray3D<real> azR = this->azR;
+
+  IdefixArray3D<real> dxL = this->dxL;
+  IdefixArray3D<real> dxR = this->dxR;
+  IdefixArray3D<real> dyL = this->dyL;
+  IdefixArray3D<real> dyR = this->dyR;
+  IdefixArray3D<real> dzL = this->dzL;
+  IdefixArray3D<real> dzR = this->dzR;
+
+  idefix_for("CalcCenterEMF",
+             0,data->np_tot[KDIR],
+             0,data->np_tot[JDIR],
+             0,data->np_tot[IDIR],
+    KOKKOS_LAMBDA (int k, int j, int i) {
+      real phi, vL, vR, bL, bR;
+      real aL, aR, dL, dR;
+
+      aL = HALF_F*(axL(k,j,i) + axL(k,j+1,i));
+      aR = HALF_F*(axR(k,j,i) + axR(k,j+1,i));
+      dL = HALF_F*(dxL(k,j,i) + dxL(k,j+1,i));
+      dR = HALF_F*(dxR(k,j,i) + dxR(k,j+1,i));
+
+      /*bL = ;
+      bR = ;
+      vL = ;
+      vR = ;
+
+      phi = dR*bR - dL*bL;
+      ez(k,j,i) = (aL*vL*bL + aR*vR*bR) + phi;
+
+      aL = HALF_F*(axL(k,j,i) + axL(k+1,j,i));
+      aR = HALF_F*(axR(k,j,i) + axR(k+1,j,i));
+      dL = HALF_F*(dxL(k,j,i) + dxL(k+1,j,i));
+      dR = HALF_F*(dxR(k,j,i) + dxR(k+1,j,i));
+
+      bL = ;
+      bR = ;
+      vL = ;
+      vR = ;*/
+
+      phi = dR*bR - dL*bL;
+      ey(k,j,i) = (aL*vL*bL + aR*vR*bR) - phi;
+    }
+  );
 
   idfx::popRegion();
 }

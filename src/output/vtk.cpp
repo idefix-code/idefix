@@ -26,25 +26,8 @@
   #endif
 #endif
 
-// Whether or not we wand the staggered field in vtk outputs
-#define WRITE_STAGGERED_FIELD
-
-// Wheter or not we want the electrical current in vtk outputs
-// (this is only defined if hydro requires it)
-#define WRITE_CURRENT
-
-// Whether of not we want to write EMFs
-#define WRITE_EMF
-
-// Whether or not we want to write the cfl dt
-#define WRITE_DT
-/* ---------------------------------------------------------
-    The following macros are specific to this file only
-    and are used to ease up serial/parallel implementation
-    for writing strings and real arrays
-   --------------------------------------------------------- */
-
-
+// Whether of not we write the time in the VTK file
+#define WRITE_TIME
 
 void Vtk::WriteHeaderString(const char* header, IdfxFileHandler fvtk) {
 #ifdef WITH_MPI
@@ -277,7 +260,7 @@ int Vtk::Write(DataBlock &datain, Output &output) {
   fileHdl = fopen(filename.c_str(),"wb");
 #endif
 
-  WriteHeader(fileHdl);
+  WriteHeader(fileHdl, datain.t);
 
   // Write field one by one
   for(int nv = 0 ; nv < NVAR ; nv++) {
@@ -326,7 +309,7 @@ int Vtk::Write(DataBlock &datain, Output &output) {
 
 
 /* ********************************************************************* */
-void Vtk::WriteHeader(IdfxFileHandler fvtk) {
+void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
 /*!
 * Write VTK header in parallel or serial mode.
 *
@@ -367,6 +350,23 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk) {
 #elif VTK_FORMAT == VTK_STRUCTURED_GRID
   ssheader << "DATASET STRUCTURED_GRID" << std::endl;
 #endif
+  #ifdef WRITE_TIME
+    ssheader << "FIELD FieldData 1" << std::endl;
+    ssheader << "TIME 1 1 float" << std::endl;
+    // Flush the ascii header
+    header = ssheader.str();
+    WriteHeaderString(header.c_str(), fvtk);
+    // reset the string stream
+    ssheader.str(std::string());
+
+    // convert time to single precision big endian
+    float timeBE = BigEndian(static_cast<float>(time));
+
+    WriteHeaderFloat(&timeBE, 1, fvtk);
+    // Done, add cariage return for next ascii write
+    ssheader << std::endl;
+  #endif
+
 
 
   ssheader << "DIMENSIONS " << nx1 + IOFFSET << " " << nx2 + JOFFSET << " " << nx3 + KOFFSET

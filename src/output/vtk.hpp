@@ -53,7 +53,7 @@ class Vtk {
   MPI_Datatype nodeView;
 #endif
 
-  void WriteHeader(IdfxFileHandler);
+  void WriteHeader(IdfxFileHandler, real);
   void WriteScalar(IdfxFileHandler, float*,  const std::string &);
   float BigEndian(float);
   void WriteHeaderString(const char* , IdfxFileHandler );

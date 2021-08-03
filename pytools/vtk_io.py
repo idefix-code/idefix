@@ -40,7 +40,25 @@ def readVTKCart(filename):
         fid.close()
         return 0
 
-    s=fid.readline()    # DIMENSIONS NX NY NZ
+    s=fid.readline()    # DIMENSIONS NX NY NZ or FIELD
+    slist=s.split()
+    entry=str(slist[0],'utf-8')
+    if(entry == "FIELD"):
+      s=fid.readline()
+      slist=s.split()
+      entry=str(slist[0],'utf-8')
+      if(entry != "TIME"):
+        print("ERROR: unknown field information")
+        print(entry)
+        fid.close()
+        return 0
+      V.t=np.fromfile(fid,dt,1)
+
+      # read next line
+      s=fid.readline() # extra linefeed
+      s=fid.readline() #DIMENSIONS...
+
+
     slist=s.split()
     #s=fid.readline()    # Extre line feed
     V.nx=int(slist[1])

@@ -122,7 +122,25 @@ void ElectroMotiveForce::SymmetrizeEMFShearingBox() {
     // todo: exchange sbEyR and sbEyL when domain-decomposed along y
     #ifdef WITH_MPI
       if(data->mygrid->nproc[IDIR]>1) {
-        idfx::cout << "not implemented" << std::endl;
+        int procLeft, procRight;
+        const int size = data->np_tot[KDIR]*data->np_tot[JDIR];
+        MPI_Status status;
+
+        MPI_SAFE_CALL(MPI_Cart_shift(data->mygrid->CartComm,0,1,&procLeft,&procRight));
+        if(data->lbound[IDIR]==shearingbox) {
+          // We send to our left (which, by periodicity, is the right end of the domain)
+          // our value of sbEyL and get
+          MPI_Sendrecv(sbEyL.data(), size, realMPI, procLeft, 2001,
+                       sbEyR.data(), size, realMPI, procLeft, 2002,
+                       data->mygrid->CartComm, &status );
+        }
+        if(data->rbound[IDIR]==shearingbox) {
+          // We send to our right (which, by periodicity, is the left end (=beginning)
+          // of the domain) our value of sbEyR and get sbEyL
+          MPI_Sendrecv(sbEyR.data(), size, realMPI, procRight, 2002,
+                       sbEyL.data(), size, realMPI, procRight, 2001,
+                       data->mygrid->CartComm, &status );
+        }
       }
     #endif
     // Extrapolate on the left

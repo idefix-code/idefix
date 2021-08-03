@@ -68,4 +68,9 @@ plt.plot(V["t"],V['Bz'],label=r'$Bz$')
 plt.legend()
 plt.xlabel('t')
 
+plt.figure(5)
+plt.plot(V["t"],V['Bz']-V['Bz'][0])
+plt.xlabel('t')
+plt.ylabel(r'$\delta B_z$')
+
 plt.show()

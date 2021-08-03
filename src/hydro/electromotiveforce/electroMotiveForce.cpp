@@ -32,6 +32,13 @@ void ElectroMotiveForce::Init(Hydro *hydro) {
   this->data = hydro->data;
   this->hydro = hydro;
 
+  // Allocate shearing box arrays
+  if(hydro->haveShearingBox == true) {
+    sbEyL = IdefixArray2D<real>("EMF_sbEyL", data->np_tot[KDIR], data->np_tot[JDIR]);
+    sbEyR = IdefixArray2D<real>("EMF_sbEyR", data->np_tot[KDIR], data->np_tot[JDIR]);
+    sbEyRL = IdefixArray2D<real>("EMF_sbEyRL", data->np_tot[KDIR], data->np_tot[JDIR]);
+  }
+
   D_EXPAND( ez = IdefixArray3D<real>("EMF_ez",
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
                                                                                             ,
@@ -183,6 +190,9 @@ void ElectroMotiveForce::Init(Hydro *hydro) {
   // X1-dir exchanges
   // We receive from procRecv, and we send to procSend
   MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,0,1,&procRecv,&procSend ));
+  // Avoid the exchange when shearing box is enabled (so that EMFs don't get averaged)
+  if(data->rbound[IDIR] == shearingbox ) procSend = MPI_PROC_NULL;
+  if(data->lbound[IDIR] == shearingbox ) procRecv = MPI_PROC_NULL;
 
   MPI_SAFE_CALL(MPI_Send_init(BufferSendX1[faceRight].data(), bufferSizeX1, realMPI, procSend, 100,
                 mygrid->CartComm, &sendRequestX1[faceRight]));
@@ -193,6 +203,9 @@ void ElectroMotiveForce::Init(Hydro *hydro) {
   // Send to the left
   // We receive from procRecv, and we send to procSend
   MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,0,-1,&procRecv,&procSend ));
+  // Avoid the exchange when shearing box is enabled (so that EMFs don't get averaged)
+  if(data->lbound[IDIR] == shearingbox ) procSend = MPI_PROC_NULL;
+  if(data->rbound[IDIR] == shearingbox ) procRecv = MPI_PROC_NULL;
 
   MPI_SAFE_CALL(MPI_Send_init(BufferSendX1[faceLeft].data(), bufferSizeX1, realMPI, procSend, 101,
                 mygrid->CartComm, &sendRequestX1[faceLeft]));

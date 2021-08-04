@@ -43,17 +43,18 @@ void Vtk::WriteHeaderString(const char* header, IdfxFileHandler fvtk) {
 #endif
 }
 
-void Vtk::WriteHeaderFloat(float* buffer, int64_t nelem, IdfxFileHandler fvtk) {
+template <typename T>
+void Vtk::WriteHeaderBinary(T* buffer, int64_t nelem, IdfxFileHandler fvtk) {
 #ifdef WITH_MPI
   MPI_Status status;
   MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_BYTE, MPI_CHAR,
                                   "native", MPI_INFO_NULL ));
   if(idfx::prank==0) {
-    MPI_SAFE_CALL(MPI_File_write(fvtk, buffer, nelem, MPI_FLOAT, &status));
+    MPI_SAFE_CALL(MPI_File_write(fvtk, buffer, nelem*sizeof(T), MPI_CHAR, &status));
   }
-  offset=offset+nelem*sizeof(float);
+  offset=offset+nelem*sizeof(T);
 #else
-  fwrite(buffer, sizeof(float), nelem, fvtk);
+  fwrite(buffer, sizeof(T), nelem, fvtk);
 #endif
 }
 
@@ -350,8 +351,36 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
 #elif VTK_FORMAT == VTK_STRUCTURED_GRID
   ssheader << "DATASET STRUCTURED_GRID" << std::endl;
 #endif
+  // One field for the geometry
+  int nfields = 1;
   #ifdef WRITE_TIME
-    ssheader << "FIELD FieldData 1" << std::endl;
+    nfields ++;
+  #endif
+
+  // Write grid geometry in the VTK file
+  ssheader << "FIELD FieldData " << nfields << std::endl;
+  ssheader << "GEOMETRY 1 1 int" << std::endl;
+  int32_t geometry = 0;
+  #if GEOMETRY == POLAR
+    geometry = 1;
+  #elif GEOMETRY == SPHERICAL
+    geometry = 2;
+  #endif
+
+  // Flush the ascii header
+  header = ssheader.str();
+  WriteHeaderString(header.c_str(), fvtk);
+  // reset the string stream
+  ssheader.str(std::string());
+
+  // convert time to single precision big endian
+  int32_t geoBig = BigEndian(geometry);
+
+  WriteHeaderBinary(&geoBig, 1, fvtk);
+  // Done, add cariage return for next ascii write
+  ssheader << std::endl;
+
+  #ifdef WRITE_TIME
     ssheader << "TIME 1 1 float" << std::endl;
     // Flush the ascii header
     header = ssheader.str();
@@ -362,7 +391,7 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
     // convert time to single precision big endian
     float timeBE = BigEndian(static_cast<float>(time));
 
-    WriteHeaderFloat(&timeBE, 1, fvtk);
+    WriteHeaderBinary(&timeBE, 1, fvtk);
     // Done, add cariage return for next ascii write
     ssheader << std::endl;
   #endif
@@ -384,19 +413,19 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
   header = coordx.str();
   WriteHeaderString(header.c_str(), fvtk);
 
-  WriteHeaderFloat(xnode, nx1 + IOFFSET, fvtk);
+  WriteHeaderBinary(xnode, nx1 + IOFFSET, fvtk);
 
   coordy << std::endl << "Y_COORDINATES " << nx2 + JOFFSET << " float" << std::endl;
   header = coordy.str();
   WriteHeaderString(header.c_str(), fvtk);
 
-  WriteHeaderFloat(ynode, nx2 + JOFFSET, fvtk);
+  WriteHeaderBinary(ynode, nx2 + JOFFSET, fvtk);
 
   coordz << std::endl << "Z_COORDINATES " << nx3 + KOFFSET << " float" << std::endl;
   header = coordz.str();
   WriteHeaderString(header.c_str(), fvtk);
 
-  WriteHeaderFloat(znode, nx3 + KOFFSET, fvtk);
+  WriteHeaderBinary(znode, nx3 + KOFFSET, fvtk);
 
 #elif VTK_FORMAT == VTK_STRUCTURED_GRID
 
@@ -460,7 +489,8 @@ void Vtk::WriteScalar(IdfxFileHandler fvtk, float* Vin,  const std::string &var_
 @param in_number floating point number to be converted in big endian */
 /* *************************************************************************** */
 
-float Vtk::BigEndian(float in_number) {
+template <typename T>
+T Vtk::BigEndian(T in_number) {
   if (shouldSwapEndian) {
     unsigned char *bytes = (unsigned char*) &in_number;
     unsigned char tmp = bytes[0];

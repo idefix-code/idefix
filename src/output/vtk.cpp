@@ -118,16 +118,16 @@ void Vtk::Init(Input &input, DataBlock &datain) {
   this->znode = new float[nx3+KOFFSET];
 
   for (int32_t i = 0; i < nx1 + IOFFSET; i++) {
-    xnode[i] = BigEndian(grid.xl[IDIR](i + grid.nghost[IDIR]));
+    xnode[i] = BigEndian(static_cast<float>(grid.xl[IDIR](i + grid.nghost[IDIR])));
   }
   for (int32_t j = 0; j < nx2 + JOFFSET; j++)    {
-    ynode[j] = BigEndian(grid.xl[JDIR](j + grid.nghost[JDIR]));
+    ynode[j] = BigEndian(static_cast<float>(grid.xl[JDIR](j + grid.nghost[JDIR])));
   }
   for (int32_t k = 0; k < nx3 + KOFFSET; k++) {
     if(DIMENSIONS==2)
-      znode[k] = BigEndian(0.0);
+      znode[k] = BigEndian(static_cast<float>(0.0));
     else
-      znode[k] = BigEndian(grid.xl[KDIR](k + grid.nghost[KDIR]));
+      znode[k] = BigEndian(static_cast<float>(grid.xl[KDIR](k + grid.nghost[KDIR])));
   }
 #if VTK_FORMAT == VTK_STRUCTURED_GRID   // VTK_FORMAT
   /* -- Allocate memory for node_coord which is later used -- */

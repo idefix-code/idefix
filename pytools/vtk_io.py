@@ -68,7 +68,7 @@ def readVTK(filename, geometry="unknown"):
             thisgeometry="spherical"
           else:
             raise NameError("Unknown geometry in the VTK file")
-          print("found geometry "+thisgeometry)
+
           if(V.geometry != "unknown"):
             # We already have a proposed geometry, check that what is read from the file matches
             if thisgeometry != V.geometry:
@@ -95,8 +95,8 @@ def readVTK(filename, geometry="unknown"):
     if(V.geometry=="cartesian"):
       # CARTESIAN geometry
       s=fid.readline()    # X_COORDINATES NX float
-
       x=np.fromfile(fid,dt,V.nx)
+
       s=fid.readline()    # Extra line feed added by idefix
 
 

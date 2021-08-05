@@ -24,18 +24,10 @@ def readVTK(filename, geometry="unknown"):
     V.data={}
 
     # initialize geometry
-    if geometry=="unknown":
-      V.geometry = "unknown"
-    elif geometry=="cartesian":
-      V.geometry = "cartesian"
-    elif geometry=="polar":
-      V.geometry = "polar"
-    elif geometry =="spherical":
-      V.geometry = "spherical"
-    else:
-      raise NameError("unknown geometry "+geometry)
+    if geometry not in ("unknown", "cartesian", "polar", "spherical"):
+      raise ValueError("Received unknown geometry: '{}'.".format(geometry))
+    V.geometry = geometry
 
-    #print("Hello")
     # datatype we read
     dt=np.dtype(">f")   # Big endian single precision floats
     dint=np.dtype(">i4")   # Big endian integer
@@ -67,15 +59,15 @@ def readVTK(filename, geometry="unknown"):
           elif g == 2:
             thisgeometry="spherical"
           else:
-            raise NameError("Unknown geometry in the VTK file")
+            raise ValueError("Unknown value for GEOMETRY flag ('{}') was found in the VTK file.".format(g))
 
           if(V.geometry != "unknown"):
             # We already have a proposed geometry, check that what is read from the file matches
             if thisgeometry != V.geometry:
-              raise NameError("you required a geometry different from that stored in the VTK file")
+              raise ValueError("geometry argument ('{}') is inconsistent with GEOMETRY flag from the VTK file ('{}')".format(V.geometry, thisgeometry))
           V.geometry=thisgeometry
         else:
-          raise NameError("unknwon field " +entry)
+          raise ValueError("Received unknown field: '{}'.".format(entry))
 
         s=fid.readline() # extra linefeed
 
@@ -84,7 +76,10 @@ def readVTK(filename, geometry="unknown"):
       s=fid.readline() #DIMENSIONS...
 
     if(V.geometry == "unknown"):
-      raise NameError("undetermined geometry. Try to set the geometry argument explicitely")
+      raise RuntimeError(
+        "Geometry couldn't be determined from data. "
+        "Try to set the geometry keyword argument explicitely."
+      )
 
     slist=s.split() # DIMENSIONS....
     #s=fid.readline()    # Extre line feed
@@ -141,8 +136,9 @@ def readVTK(filename, geometry="unknown"):
           V.y=y
           V.z=z
 
-      if V.nx*V.ny*V.nz != npoints:
-          raise NameError("Grid size incompatible with number of points in the data set")
+      grid_size = V.nx*V.ny*V.nz
+      if grid_size != npoints:
+          raise RuntimeError("Grid size ({}) is incompatible with number of points in the dataset ({})".format(grid_size, npoints))
     else:
       # POLAR or SPHERICAL coordinates
       if(V.nz==1):
@@ -158,8 +154,9 @@ def readVTK(filename, geometry="unknown"):
 
       V.points=points
 
-      if V.nx*V.ny*V.nz != npoints:
-        raise NameError("Grid size incompatible with number of points in the data set")
+      grid_size = V.nx*V.ny*V.nz
+      if grid_size != npoints:
+          raise RuntimeError("Grid size ({}) is incompatible with number of points in the dataset ({})".format(grid_size, npoints))
 
       x1d=points[::3]
       y1d=points[1::3]
@@ -260,8 +257,7 @@ def readVTK(filename, geometry="unknown"):
             V.data[varname+'_Z']=np.transpose(Q[2::3].reshape(V.nz,V.ny,V.nx))
 
         else:
-            print("ERROR: Unknown datatype %s" % datatype)
-            break;
+            raise RuntimeError("Unknown datatype '{}'".format(datatype))
 
         fid.readline()  #extra line feed
     fid.close()

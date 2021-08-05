@@ -43,7 +43,7 @@ class Viscosity {
   Hydro *hydro; // My parent hydro object
 
   // type of viscosity function
-  HydroModuleStatus haveViscosity;
+  HydroModuleStatus haveViscosity{Disabled};
   ViscousDiffusivityFunc viscousDiffusivityFunc;
 
   // constant diffusion coefficient (when needed)

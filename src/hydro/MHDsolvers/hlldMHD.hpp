@@ -680,9 +680,16 @@ void Hydro::HlldMHD() {
     }
 
     // LF diffusion coefficients
-    EXPAND(                                                   ,
-            Et(k,j,i) = -(ar*vL[Xt] - al*vR[Xt])*scrh;        ,
-            Eb(k,j,i) = -(ar*vL[Xb] - al*vR[Xb])*scrh;         );
+    if(0) {
+      real lambda = std::fmax(sr,sl);
+      aL(k,j,i) = HALF_F;
+      aR(k,j,i) = HALF_F;
+      dR(k,j,i) = HALF_F*lambda;
+      dL(k,j,i) = HALF_F*lambda;;
+    }
+    EXPAND( Et(k,j,i) = -st*(ar*vL[Xt] - al*vR[Xt])*scrh;           ,
+                                                               ,
+            Eb(k,j,i) = -sb*(ar*vL[Xb] - al*vR[Xb])*scrh;         );
 #endif
   });
 

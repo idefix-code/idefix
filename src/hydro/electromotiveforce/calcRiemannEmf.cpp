@@ -248,28 +248,34 @@ void ElectroMotiveForce::calcRiemann2DEmf() {
   IdefixArray4D<real> Vs = hydro->Vs;
 
   idefix_for("CalcCenterEMF",
-             KOFFSET,data->np_tot[KDIR]-KOFFSET,
-             JOFFSET,data->np_tot[JDIR]-JOFFSET,
-             IOFFSET,data->np_tot[IDIR]-IOFFSET,
+             2*KOFFSET,data->np_tot[KDIR]-2*KOFFSET,
+             2*JOFFSET,data->np_tot[JDIR]-2*JOFFSET,
+             2*IOFFSET,data->np_tot[IDIR]-2*IOFFSET,
     KOKKOS_LAMBDA (int k, int j, int i) {
       real phi, vL, vR, dv, bL, bR, db;
       real aL, aR, dL, dR;
 
       // IDIR
 #if DIMENSIONS >= 2
-      aL = HALF_F*(axL(k,j,i) + axL(k,j+1,i));
-      aR = HALF_F*(axR(k,j,i) + axR(k,j+1,i));
-      dL = HALF_F*(dxL(k,j,i) + dxL(k,j+1,i));
-      dR = HALF_F*(dxR(k,j,i) + dxR(k,j+1,i));
+      aL = HALF_F*(axL(k,j-1,i) + axL(k,j,i));
+      aR = HALF_F*(axR(k,j-1,i) + axR(k,j,i));
+      dL = HALF_F*(dxL(k,j-1,i) + dxL(k,j,i));
+      dR = HALF_F*(dxR(k,j-1,i) + dxR(k,j,i));
+
+      db = MC_LIM2(Vs(BX2s,k,j,i) - Vs(BX2s,k,j,i-1),
+                   Vs(BX2s,k,j,i-1)   - Vs(BX2s,k,j,i-2));
+      bL = Vs(BX2s,k,j,i-1) + HALF_F*db;
 
       db = MC_LIM2(Vs(BX2s,k,j,i+1) - Vs(BX2s,k,j,i),
                    Vs(BX2s,k,j,i)   - Vs(BX2s,k,j,i-1));
-      bL = Vs(BX2s,k,j,i) + HALF_F*db;
       bR = Vs(BX2s,k,j,i) - HALF_F*db;
+
+      dv = MC_LIM2(ezj(k,j,i) - ezj(k,j,i-1),
+                   ezj(k,j,i-1)   - ezj(k,j,i-2));
+      vL = ezj(k,j,i-1) + HALF_F*dv;
 
       dv = MC_LIM2(ezj(k,j,i+1) - ezj(k,j,i),
                    ezj(k,j,i)   - ezj(k,j,i-1));
-      vL = ezj(k,j,i) + HALF_F*dv;
       vR = ezj(k,j,i) - HALF_F*dv;
 
       phi = dR*bR - dL*bL;
@@ -277,10 +283,10 @@ void ElectroMotiveForce::calcRiemann2DEmf() {
 #endif
 
 #if DIMENSIONS == 3
-      aL = HALF_F*(axL(k,j,i) + axL(k+1,j,i));
-      aR = HALF_F*(axR(k,j,i) + axR(k+1,j,i));
-      dL = HALF_F*(dxL(k,j,i) + dxL(k+1,j,i));
-      dR = HALF_F*(dxR(k,j,i) + dxR(k+1,j,i));
+      aL = HALF_F*(axL(k-1,j,i) + axL(k,j,i));
+      aR = HALF_F*(axR(k-1,j,i) + axR(k,j,i));
+      dL = HALF_F*(dxL(k-1,j,i) + dxL(k,j,i));
+      dR = HALF_F*(dxR(k-1,j,i) + dxR(k,j,i));
 
       db = MC_LIM2(Vs(BX3s,k,j,i+1) - Vs(BX3s,k,j,i),
                    Vs(BX3s,k,j,i)   - Vs(BX3s,k,j,i-1));
@@ -299,10 +305,10 @@ void ElectroMotiveForce::calcRiemann2DEmf() {
       // JDIR
 #if DIMENSIONS >= 2
   #if DIMENSIONS == 3
-      aL = HALF_F*(ayL(k,j,i) + ayL(k+1,j,i));
-      aR = HALF_F*(ayR(k,j,i) + ayR(k+1,j,i));
-      dL = HALF_F*(dyL(k,j,i) + dyL(k+1,j,i));
-      dR = HALF_F*(dyR(k,j,i) + dyR(k+1,j,i));
+      aL = HALF_F*(ayL(k-1,j,i) + ayL(k,j,i));
+      aR = HALF_F*(ayR(k-1,j,i) + ayR(k,j,i));
+      dL = HALF_F*(dyL(k-1,j,i) + dyL(k,j,i));
+      dR = HALF_F*(dyR(k-1,j,i) + dyR(k,j,i));
 
       db = MC_LIM2(Vs(BX3s,k,j+1,i) - Vs(BX3s,k,j,i),
                    Vs(BX3s,k,j,i)   - Vs(BX3s,k,j-1,i));
@@ -318,19 +324,25 @@ void ElectroMotiveForce::calcRiemann2DEmf() {
       ex(k,j,i) = (aL*vL*bL + aR*vR*bR) + phi;
   #endif
 
-      aL = HALF_F*(ayL(k,j,i) + ayL(k,j,i+1));
-      aR = HALF_F*(ayR(k,j,i) + ayR(k,j,i+1));
-      dL = HALF_F*(dyL(k,j,i) + dyL(k,j,i+1));
-      dR = HALF_F*(dyR(k,j,i) + dyR(k,j,i+1));
+      aL = HALF_F*(ayL(k,j,i-1) + ayL(k,j,i));
+      aR = HALF_F*(ayR(k,j,i-1) + ayR(k,j,i));
+      dL = HALF_F*(dyL(k,j,i-1) + dyL(k,j,i));
+      dR = HALF_F*(dyR(k,j,i-1) + dyR(k,j,i));
+
+      db = MC_LIM2(Vs(BX1s,k,j,i) - Vs(BX1s,k,j-1,i),
+                   Vs(BX1s,k,j-1,i)  - Vs(BX1s,k,j-2,i));
+      bL = Vs(BX1s,k,j-1,i) + HALF_F*db;
 
       db = MC_LIM2(Vs(BX1s,k,j+1,i) - Vs(BX1s,k,j,i),
                    Vs(BX1s,k,j,i)   - Vs(BX1s,k,j-1,i));
-      bL = Vs(BX1s,k,j,i) + HALF_F*db;
       bR = Vs(BX1s,k,j,i) - HALF_F*db;
+
+      dv = MC_LIM2(ezi(k,j,i) - ezi(k,j-1,i),
+                   ezi(k,j-1,i)   - ezi(k,j-2,i));
+      vL = ezi(k,j-1,i) + HALF_F*dv;
 
       dv = MC_LIM2(ezi(k,j+1,i) - ezi(k,j,i),
                    ezi(k,j,i)   - ezi(k,j-1,i));
-      vL = ezi(k,j,i) + HALF_F*dv;
       vR = ezi(k,j,i) - HALF_F*dv;
 
       phi = dR*bR - dL*bL;
@@ -339,10 +351,10 @@ void ElectroMotiveForce::calcRiemann2DEmf() {
 
       // KDIR
 #if DIMENSIONS == 3
-      aL = HALF_F*(azL(k,j,i) + azL(k,j,i+1));
-      aR = HALF_F*(azR(k,j,i) + azR(k,j,i+1));
-      dL = HALF_F*(dzL(k,j,i) + dzL(k,j,i+1));
-      dR = HALF_F*(dzR(k,j,i) + dzR(k,j,i+1));
+      aL = HALF_F*(azL(k,j,i-1) + azL(k,j,i));
+      aR = HALF_F*(azR(k,j,i-1) + azR(k,j,i));
+      dL = HALF_F*(dzL(k,j,i-1) + dzL(k,j,i));
+      dR = HALF_F*(dzR(k,j,i-1) + dzR(k,j,i));
 
       db = MC_LIM2(Vs(BX1s,k+1,j,i) - Vs(BX1s,k,j,i),
                    Vs(BX1s,k,j,i)   - Vs(BX1s,k-1,j,i));
@@ -358,10 +370,10 @@ void ElectroMotiveForce::calcRiemann2DEmf() {
       ey(k,j,i) += (aL*vL*bL + aR*vR*bR) + phi;
 
   #if DIMENSIONS >= 2
-      aL = HALF_F*(azL(k,j,i) + azL(k,j+1,i));
-      aR = HALF_F*(azR(k,j,i) + azR(k,j+1,i));
-      dL = HALF_F*(dzL(k,j,i) + dzL(k,j+1,i));
-      dR = HALF_F*(dzR(k,j,i) + dzR(k,j+1,i));
+      aL = HALF_F*(azL(k,j-1,i) + azL(k,j,i));
+      aR = HALF_F*(azR(k,j-1,i) + azR(k,j,i));
+      dL = HALF_F*(dzL(k,j-1,i) + dzL(k,j,i));
+      dR = HALF_F*(dzR(k,j-1,i) + dzR(k,j,i));
 
       db = MC_LIM2(Vs(BX2s,k+1,j,i) - Vs(BX2s,k,j,i),
                    Vs(BX2s,k,j,i)   - Vs(BX2s,k-1,j,i));

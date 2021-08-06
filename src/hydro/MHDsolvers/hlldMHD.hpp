@@ -680,8 +680,9 @@ void Hydro::HlldMHD() {
     }
 
     // LF diffusion coefficients
-    Et(k,j,i) = -(ar*vL[Xt] - al*vR[Xt])*scrh;
-    Eb(k,j,i) = -(ar*vL[Xb] - al*vR[Xb])*scrh;
+    EXPAND(                                                   ,
+            Et(k,j,i) = -(ar*vL[Xt] - al*vR[Xt])*scrh;        ,
+            Eb(k,j,i) = -(ar*vL[Xb] - al*vR[Xb])*scrh;         );
 #endif
   });
 

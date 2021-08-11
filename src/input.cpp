@@ -124,10 +124,12 @@ void Input::ParseCommandLine(int argc, char **argv) {
       // Check whether -restart was given with a number or not
 
       // -restart was the very last parameter
-      if((i+1)>= argc) explicitDump = false;
-
-      // next argiment is another parameter (does not start with a number)
-      if(std::isdigit(argv[i+1][0]) == 0) explicitDump = false;
+      if((i+1)>= argc) {
+        explicitDump = false;
+      } else if(std::isdigit(argv[i+1][0]) == 0) {
+        // next argiment is another parameter (does not start with a number)
+        explicitDump = false;
+      }
 
       if(explicitDump) {
         sirestart = std::string(argv[++i]);
@@ -152,11 +154,18 @@ void Input::ParseCommandLine(int argc, char **argv) {
           irestart = std::max(irestart, ifile);
         }
         sirestart = std::to_string(irestart);
-        if (irestart < 0) IDEFIX_ERROR("Cannot restart: no dumpfile found.");
+        if(irestart==-1) {
+          IDEFIX_WARNING("cannot find a valid restart dump file in current directory");
+        }
       }
-      inputParameters["CommandLine"]["restart"].push_back(sirestart);
-      this->restartRequested = true;
-      this->restartFileNumber = std::stoi(sirestart);
+      int restartn = std::stoi(sirestart);
+      if(restartn>=0) {
+        inputParameters["CommandLine"]["restart"].push_back(sirestart);
+        this->restartRequested = true;
+        this->restartFileNumber = restartn;
+      } else {
+        IDEFIX_WARNING("Invalid -restart option, I will ignore it.");
+      }
     }
     if(std::string(argv[i]) == "-i") {
       // Loop on dimensions

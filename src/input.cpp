@@ -217,9 +217,24 @@ void Input::signalHandler(int signum) {
   abortRequested=true;
 }
 
+void Input::CheckForStopFile() {
+  // Check whether a file "stop" has been created in directory. If so, raise the abort flag
+  std::string filename = std::string("stop");
+  if(idfx::prank==0) {
+    std::ifstream f(filename);
+    if(f.good()) {
+      // File exists, delete it and raise the flag
+      std::remove(filename.c_str());
+      abortRequested = true;
+      idfx::cout << std::endl << "Input: Caught stop file command" << std::endl;
+    }
+  }
+}
+
 bool Input::CheckForAbort() {
   // Check whether an abort has been requesested
   // When MPI is present, we abort whenever one process got the signal
+  CheckForStopFile();
 #ifdef WITH_MPI
   int abortValue{0};
   bool returnValue{false};
@@ -227,11 +242,11 @@ bool Input::CheckForAbort() {
 
   MPI_Allreduce(MPI_IN_PLACE, &abortValue, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
   returnValue = abortValue > 0;
-  if(returnValue) idfx::cout << "Input::CheckForAbort: abort has been requested." << std::endl;
+  if(returnValue) idfx::cout << "Input: CheckForAbort: abort has been requested." << std::endl;
 
   return(returnValue);
 #else
-  if(abortRequested) idfx::cout << "Input::CheckForAbort: abort has been requested." << std::endl;
+  if(abortRequested) idfx::cout << "Input: CheckForAbort: abort has been requested." << std::endl;
   return(abortRequested);
 #endif
 }

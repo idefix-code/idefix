@@ -248,31 +248,34 @@ void ElectroMotiveForce::calcRiemann2DEmf() {
   IdefixArray4D<real> Vs = hydro->Vs;
 
   idefix_for("CalcCenterEMF",
-             2*KOFFSET,data->np_tot[KDIR]-2*KOFFSET,
-             2*JOFFSET,data->np_tot[JDIR]-2*JOFFSET,
-             2*IOFFSET,data->np_tot[IDIR]-2*IOFFSET,
+             data->beg[KDIR],data->end[KDIR]+KOFFSET,
+             data->beg[JDIR],data->end[JDIR]+JOFFSET,
+             data->beg[IDIR],data->end[IDIR]+IOFFSET,
     KOKKOS_LAMBDA (int k, int j, int i) {
       real phi, vL, vR, dv, bL, bR, db;
       real aL, aR, dL, dR;
 
+      int im = i-1, jm = j-1, km = k-1;
+
       // IDIR
 #if DIMENSIONS >= 2
-      aL = HALF_F*(axL(k,j-1,i) + axL(k,j,i));
-      aR = HALF_F*(axR(k,j-1,i) + axR(k,j,i));
-      dL = HALF_F*(dxL(k,j-1,i) + dxL(k,j,i));
-      dR = HALF_F*(dxR(k,j-1,i) + dxR(k,j,i));
+      // EMF: Z component at (i-1/2, j-1/2, k)
+      aL = HALF_F*(axL(k,jm,i) + axL(k,jm+1,i));
+      aR = HALF_F*(axR(k,jm,i) + axR(k,jm+1,i));
+      dL = HALF_F*(dxL(k,jm,i) + dxL(k,jm+1,i));
+      dR = HALF_F*(dxR(k,jm,i) + dxR(k,jm+1,i));
 
-      db = MC_LIM2(Vs(BX2s,k,j,i) - Vs(BX2s,k,j,i-1),
-                   Vs(BX2s,k,j,i-1)   - Vs(BX2s,k,j,i-2));
-      bL = Vs(BX2s,k,j,i-1) + HALF_F*db;
+      db = MC_LIM2(Vs(BX2s,k,j,im+1) - Vs(BX2s,k,j,im),
+                   Vs(BX2s,k,j,im)   - Vs(BX2s,k,j,im-1));
+      bL = Vs(BX2s,k,j,im) + HALF_F*db;
 
       db = MC_LIM2(Vs(BX2s,k,j,i+1) - Vs(BX2s,k,j,i),
                    Vs(BX2s,k,j,i)   - Vs(BX2s,k,j,i-1));
       bR = Vs(BX2s,k,j,i) - HALF_F*db;
 
-      dv = MC_LIM2(ezj(k,j,i) - ezj(k,j,i-1),
-                   ezj(k,j,i-1)   - ezj(k,j,i-2));
-      vL = ezj(k,j,i-1) + HALF_F*dv;
+      dv = MC_LIM2(ezj(k,j,im+1) - ezj(k,j,im),
+                   ezj(k,j,im)   - ezj(k,j,im-1));
+      vL = ezj(k,j,im) + HALF_F*dv;
 
       dv = MC_LIM2(ezj(k,j,i+1) - ezj(k,j,i),
                    ezj(k,j,i)   - ezj(k,j,i-1));
@@ -324,22 +327,23 @@ void ElectroMotiveForce::calcRiemann2DEmf() {
       ex(k,j,i) = (aL*vL*bL + aR*vR*bR) + phi;
   #endif
 
-      aL = HALF_F*(ayL(k,j,i-1) + ayL(k,j,i));
-      aR = HALF_F*(ayR(k,j,i-1) + ayR(k,j,i));
-      dL = HALF_F*(dyL(k,j,i-1) + dyL(k,j,i));
-      dR = HALF_F*(dyR(k,j,i-1) + dyR(k,j,i));
+      // EMF: Z component at (i-1/2, j-1/2, k)
+      aL = HALF_F*(ayL(k,j,im) + ayL(k,j,im+1));
+      aR = HALF_F*(ayR(k,j,im) + ayR(k,j,im+1));
+      dL = HALF_F*(dyL(k,j,im) + dyL(k,j,im+1));
+      dR = HALF_F*(dyR(k,j,im) + dyR(k,j,im+1));
 
-      db = MC_LIM2(Vs(BX1s,k,j,i) - Vs(BX1s,k,j-1,i),
-                   Vs(BX1s,k,j-1,i)  - Vs(BX1s,k,j-2,i));
-      bL = Vs(BX1s,k,j-1,i) + HALF_F*db;
+      db = MC_LIM2(Vs(BX1s,k,jm+1,i) - Vs(BX1s,k,jm,i),
+                   Vs(BX1s,k,jm,i)   - Vs(BX1s,k,jm-1,i));
+      bL = Vs(BX1s,k,jm,i) + HALF_F*db;
 
       db = MC_LIM2(Vs(BX1s,k,j+1,i) - Vs(BX1s,k,j,i),
                    Vs(BX1s,k,j,i)   - Vs(BX1s,k,j-1,i));
       bR = Vs(BX1s,k,j,i) - HALF_F*db;
 
-      dv = MC_LIM2(ezi(k,j,i) - ezi(k,j-1,i),
-                   ezi(k,j-1,i)   - ezi(k,j-2,i));
-      vL = ezi(k,j-1,i) + HALF_F*dv;
+      dv = MC_LIM2(ezi(k,jm+1,i) - ezi(k,jm,i),
+                   ezi(k,jm,i)   - ezi(k,jm-1,i));
+      vL = ezi(k,jm,i) + HALF_F*dv;
 
       dv = MC_LIM2(ezi(k,j+1,i) - ezi(k,j,i),
                    ezi(k,j,i)   - ezi(k,j-1,i));

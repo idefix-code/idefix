@@ -685,7 +685,7 @@ void Hydro::HlldMHD() {
       aL(k,j,i) = HALF_F;
       aR(k,j,i) = HALF_F;
       dR(k,j,i) = HALF_F*lambda;
-      dL(k,j,i) = HALF_F*lambda;;
+      dL(k,j,i) = HALF_F*lambda;
     }
     EXPAND( Et(k,j,i) = -st*(ar*vL[Xt] - al*vR[Xt])*scrh;           ,
                                                                ,

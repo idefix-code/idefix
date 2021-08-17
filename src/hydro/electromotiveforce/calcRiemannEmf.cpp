@@ -286,19 +286,26 @@ void ElectroMotiveForce::calcRiemann2DEmf() {
 #endif
 
 #if DIMENSIONS == 3
-      aL = HALF_F*(axL(k-1,j,i) + axL(k,j,i));
-      aR = HALF_F*(axR(k-1,j,i) + axR(k,j,i));
-      dL = HALF_F*(dxL(k-1,j,i) + dxL(k,j,i));
-      dR = HALF_F*(dxR(k-1,j,i) + dxR(k,j,i));
+      // EMF: Y component at (i-1/2, j, k-1/2)
+      aL = HALF_F*(axL(km,j,i) + axL(km+1,j,i));
+      aR = HALF_F*(axR(km,j,i) + axR(km+1,j,i));
+      dL = HALF_F*(dxL(km,j,i) + dxL(km+1,j,i));
+      dR = HALF_F*(dxR(km,j,i) + dxR(km+1,j,i));
+
+      db = MC_LIM2(Vs(BX3s,k,j,im+1) - Vs(BX3s,k,j,im),
+                   Vs(BX3s,k,j,im)   - Vs(BX3s,k,j,im-1));
+      bL = Vs(BX3s,k,j,im) + HALF_F*db;
 
       db = MC_LIM2(Vs(BX3s,k,j,i+1) - Vs(BX3s,k,j,i),
                    Vs(BX3s,k,j,i)   - Vs(BX3s,k,j,i-1));
-      bL = Vs(BX3s,k,j,i) + HALF_F*db;
       bR = Vs(BX3s,k,j,i) - HALF_F*db;
+
+      dv = MC_LIM2(eyk(k,j,im+1) - eyk(k,j,im),
+                   eyk(k,j,im)   - eyk(k,j,im-1));
+      vL = eyk(k,j,im) + HALF_F*dv;
 
       dv = MC_LIM2(eyk(k,j,i+1) - eyk(k,j,i),
                    eyk(k,j,i)   - eyk(k,j,i-1));
-      vL = eyk(k,j,i) + HALF_F*dv;
       vR = eyk(k,j,i) - HALF_F*dv;
 
       phi = dR*bR - dL*bL;
@@ -308,19 +315,26 @@ void ElectroMotiveForce::calcRiemann2DEmf() {
       // JDIR
 #if DIMENSIONS >= 2
   #if DIMENSIONS == 3
-      aL = HALF_F*(ayL(k-1,j,i) + ayL(k,j,i));
-      aR = HALF_F*(ayR(k-1,j,i) + ayR(k,j,i));
-      dL = HALF_F*(dyL(k-1,j,i) + dyL(k,j,i));
-      dR = HALF_F*(dyR(k-1,j,i) + dyR(k,j,i));
+      // EMF: X component at (i, j-1/2, k-1/2)
+      aL = HALF_F*(ayL(km,j,i) + ayL(km+1,j,i));
+      aR = HALF_F*(ayR(km,j,i) + ayR(km+1,j,i));
+      dL = HALF_F*(dyL(km,j,i) + dyL(km+1,j,i));
+      dR = HALF_F*(dyR(km,j,i) + dyR(km+1,j,i));
+
+      db = MC_LIM2(Vs(BX3s,k,jm+1,i) - Vs(BX3s,k,jm,i),
+                   Vs(BX3s,k,jm,i)   - Vs(BX3s,k,jm-1,i));
+      bL = Vs(BX3s,k,jm,i) + HALF_F*db;
 
       db = MC_LIM2(Vs(BX3s,k,j+1,i) - Vs(BX3s,k,j,i),
                    Vs(BX3s,k,j,i)   - Vs(BX3s,k,j-1,i));
-      bL = Vs(BX3s,k,j,i) + HALF_F*db;
       bR = Vs(BX3s,k,j,i) - HALF_F*db;
+
+      dv = MC_LIM2(exk(k,jm+1,i) - exk(k,jm,i),
+                   exk(k,jm,i)   - exk(k,jm-1,i));
+      vL = exk(k,jm,i) + HALF_F*dv;
 
       dv = MC_LIM2(exk(k,j+1,i) - exk(k,j,i),
                    exk(k,j,i)   - exk(k,j-1,i));
-      vL = exk(k,j,i) + HALF_F*dv;
       vR = exk(k,j,i) - HALF_F*dv;
 
       phi = dR*bR - dL*bL;
@@ -355,43 +369,55 @@ void ElectroMotiveForce::calcRiemann2DEmf() {
 
       // KDIR
 #if DIMENSIONS == 3
-      aL = HALF_F*(azL(k,j,i-1) + azL(k,j,i));
-      aR = HALF_F*(azR(k,j,i-1) + azR(k,j,i));
-      dL = HALF_F*(dzL(k,j,i-1) + dzL(k,j,i));
-      dR = HALF_F*(dzR(k,j,i-1) + dzR(k,j,i));
+      // EMF: Y component at (i-1/2, j, k-1/2)
+      aL = HALF_F*(azL(k,j,im) + azL(k,j,im+1));
+      aR = HALF_F*(azR(k,j,im) + azR(k,j,im+1));
+      dL = HALF_F*(dzL(k,j,im) + dzL(k,j,im+1));
+      dR = HALF_F*(dzR(k,j,im) + dzR(k,j,im+1));
+
+      db = MC_LIM2(Vs(BX1s,km+1,j,i) - Vs(BX1s,km,j,i),
+                   Vs(BX1s,km,j,i)   - Vs(BX1s,km-1,j,i));
+      bL = Vs(BX1s,km,j,i) + HALF_F*db;
 
       db = MC_LIM2(Vs(BX1s,k+1,j,i) - Vs(BX1s,k,j,i),
                    Vs(BX1s,k,j,i)   - Vs(BX1s,k-1,j,i));
-      bL = Vs(BX1s,k,j,i) + HALF_F*db;
       bR = Vs(BX1s,k,j,i) - HALF_F*db;
+
+      dv = MC_LIM2(eyi(km+1,j,i) - eyi(km,j,i),
+                   eyi(km,j,i)   - eyi(km-1,j,i));
+      vL = eyi(km,j,i) + HALF_F*dv;
 
       dv = MC_LIM2(eyi(k+1,j,i) - eyi(k,j,i),
                    eyi(k,j,i)   - eyi(k-1,j,i));
-      vL = eyi(k,j,i) + HALF_F*dv;
       vR = eyi(k,j,i) - HALF_F*dv;
 
       phi = dR*bR - dL*bL;
       ey(k,j,i) += (aL*vL*bL + aR*vR*bR) + phi;
 
-  #if DIMENSIONS >= 2
-      aL = HALF_F*(azL(k,j-1,i) + azL(k,j,i));
-      aR = HALF_F*(azR(k,j-1,i) + azR(k,j,i));
-      dL = HALF_F*(dzL(k,j-1,i) + dzL(k,j,i));
-      dR = HALF_F*(dzR(k,j-1,i) + dzR(k,j,i));
+      // EMF: X component at (i, j-1/2, k-1/2)
+      aL = HALF_F*(azL(k,jm,i) + azL(k,jm+1,i));
+      aR = HALF_F*(azR(k,jm,i) + azR(k,jm+1,i));
+      dL = HALF_F*(dzL(k,jm,i) + dzL(k,jm+1,i));
+      dR = HALF_F*(dzR(k,jm,i) + dzR(k,jm+1,i));
+
+      db = MC_LIM2(Vs(BX2s,km+1,j,i) - Vs(BX2s,km,j,i),
+                   Vs(BX2s,km,j,i)   - Vs(BX2s,km-1,j,i));
+      bL = Vs(BX2s,km,j,i) + HALF_F*db;
 
       db = MC_LIM2(Vs(BX2s,k+1,j,i) - Vs(BX2s,k,j,i),
                    Vs(BX2s,k,j,i)   - Vs(BX2s,k-1,j,i));
-      bL = Vs(BX2s,k,j,i) + HALF_F*db;
       bR = Vs(BX2s,k,j,i) - HALF_F*db;
+
+      dv = MC_LIM2(exj(km+1,j,i) - exj(km,j,i),
+                   exj(km,j,i)   - exj(km-1,j,i));
+      vL = exj(km,j,i) + HALF_F*dv;
 
       dv = MC_LIM2(exj(k+1,j,i) - exj(k,j,i),
                    exj(k,j,i)   - exj(k-1,j,i));
-      vL = exj(k,j,i) + HALF_F*dv;
       vR = exj(k,j,i) - HALF_F*dv;
 
       phi = dR*bR - dL*bL;
       ex(k,j,i) += (aL*vL*bL + aR*vR*bR) - phi;
-  #endif
 #endif
     }
   );

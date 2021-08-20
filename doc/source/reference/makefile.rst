@@ -17,10 +17,9 @@ many options to adapt the generated makefile to the architecture on which one wa
      + AMD-GPUS: Vega900, Vega906
      + AMD-CPUS: AMDAVX, Zen, Zen2
 ``-cxx=xxx``
-    compile the code with the ``xxx`` C++ compiler.
+    compile the code with the ``xxx`` C++ compiler. This option is ignored in GPU mode.
 ``-openmp``
     Enable OpenMP parallelisation on supported compilers (not available on GPUs for obvious reasons).
-
 ``-mpi``
     Enable MPI (message passing interface) when available. Note that this option is supported with CPU and GPU architectures as well, though GPUs require a CUDA-aware installation of MPI, such as OpenMPI.
 ``-defs=filename``
@@ -30,3 +29,29 @@ many options to adapt the generated makefile to the architecture on which one wa
     Note that when a source file in the ``makefile`` directory has the same filename as one of the original source file of your *Idefix* distribution, then
     ``make`` will compile the former in place of the original source file. This allows one to easily test a modification of your *Idefix* distribution
     by copying the original file and making your modification in your workdir.
+
+
+Persistent configuration options
+================================
+
+System architecture (``-arch``) and custom compiler (``-cxx``) options can be
+saved to a ``idefix.cfg`` file. Such a file can be stored locally, i.e. in the
+directory of the physics problem, or globally in ``$HOME/.config/``[#]_ (or
+``C:\Users\%USERNAME%\AppData`` on Windows). If both files exist, the global one is
+ignored.
+
+Here's an example ``idefix.cfg`` configuration file
+
+.. code-block::
+
+    [compilation]
+    GPU = Volta70
+    CPU = HSW
+    CXX = icx
+
+None of the parameters, or the configuration file itself, are mandatory.
+Command line arguments take priority over options stored in ``idefix.cfg``.
+
+.. [#] On POSIX systems, we follow `the XDG specification
+<https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html>`_,
+and use ``$XDG_CONFIG_HOME``. On Windows, we use ``%APPDATA%`` instead.

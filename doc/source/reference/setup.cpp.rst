@@ -136,15 +136,26 @@ A typical user-defined boundary condition function looks like this:
 
   void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
     IdefixArray4D<real> Vc = data.hydro.Vc;
+    IdefixArray4D<real> Vs = data.hydro.Vs;
     if(dir==IDIR) {
       data.hydro.boundary.BoundaryFor("UserDefBoundary", dir, side,
-                  KOKKOS_LAMBDA (int k, int j, int i) {
-
-                    Vc(RHO,k,j,i) = 1.0;
-                    Vc(VX1,k,j,i) = 0.0;
-                    Vc(VX2,k,j,i) = 0.0;
-                    Vc(VX3,k,j,i) = 0.0;
-                  });
+        KOKKOS_LAMBDA (int k, int j, int i) {
+          Vc(RHO,k,j,i) = 1.0;
+          Vc(VX1,k,j,i) = 0.0;
+          Vc(VX2,k,j,i) = 0.0;
+          Vc(VX3,k,j,i) = 0.0;
+        });
+      // For magnetic field (defined on cell sides), we need specific wrapper functions
+      // Note that we don't need to initialise the field component parallel to dir, as it is
+      // automatically reconstructed from the solenoidal condition and the tangential components
+      data.hydro.boundary.BoundaryForX2s("UserDefBoundaryBX2s", dir, side,
+        KOKKOS_LAMBDA (int k, int j, int i) {
+          Vs(BX2s,k,j,i) = 0.0;
+        });
+      data.hydro.boundary.BoundaryForX3s("UserDefBoundaryBX3s", dir, side,
+        KOKKOS_LAMBDA (int k, int j, int i) {
+          Vs(BX3s,k,j,i) = 0.0;
+        });
     }
   }
 

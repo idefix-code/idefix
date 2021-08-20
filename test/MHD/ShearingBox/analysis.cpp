@@ -120,6 +120,9 @@ void Analysis::ResetAnalysis() {
     file << std::setw(col_width) << "vx";
     file << std::setw(col_width) << "vy";
     file << std::setw(col_width) << "vz";
+    file << std::setw(col_width) << "bx";
+    file << std::setw(col_width) << "by";
+    file << std::setw(col_width) << "bz";
     file << std::endl;
     file.close();
   }
@@ -153,9 +156,12 @@ void Analysis::PerformAnalysis(DataBlock &data) {
   fields[1] = VX3;
   WriteField(Average(2, fields));
 
-  WriteField(ShwaveAmplitude(VX1, 0, 1, 4, data.t) );
-  WriteField(ShwaveAmplitude(VX2, 0, 1, 4, data.t) );
-  WriteField(ShwaveAmplitude(VX3, 0, 1, 4, data.t) );
+  WriteField(ShwaveAmplitude(VX1, 0, 1, 2, data.t) );
+  WriteField(ShwaveAmplitude(VX2, 0, 1, 2, data.t) );
+  WriteField(ShwaveAmplitude(VX3, 0, 1, 2, data.t) );
+  WriteField(ShwaveAmplitude(BX1, 0, 1, 2, data.t) );
+  WriteField(ShwaveAmplitude(BX2, 0, 1, 2, data.t) );
+  WriteField(ShwaveAmplitude(BX3, 0, 1, 2, data.t) );
 
 
   if(idfx::prank==0) {

@@ -57,7 +57,7 @@ args=parser.parse_args()
 
 
 #initial condition: vr=1, rest is 0, mode initial is nx=0, ny=1, nz=5)
-y=solve_ivp(rhs, [0,30], [1, 0, 0, 0, 0, 0], args=(1, 1.5, 0.02, 0.1, 0, 2.0*np.pi, 8*np.pi), dense_output=True)
+y=solve_ivp(rhs, [0,30], [1, 0, 0, 0, 0, 0], args=(1, 1.5, 0.02, 0.05, 0, 2.0*np.pi, 4*np.pi), dense_output=True)
 
 
 # read timevol file
@@ -114,9 +114,10 @@ if(not args.noplot):
   plt.ioff()
   plt.show()
 
-print("Error=",error[-1])
+err=np.mean(error)
+print("Error=",err)
 
-if(error[-1]<0.08):
+if(err<0.03):
   print("SUCCESS")
   sys.exit(0)
 else:

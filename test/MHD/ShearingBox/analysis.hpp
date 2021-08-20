@@ -17,9 +17,15 @@ class Analysis {
   Analysis(Input&, Grid&, DataBlock& , Output&, std::string);
   void ResetAnalysis();
   void PerformAnalysis(DataBlock &);
+
  private:
   double Average(const int, int[]);
   void WriteField(double);
+    double ShwaveAmplitude(const int,
+                         const int,
+                         const int,
+                         const int,
+                         const real);
   DataBlockHost *d;
   Grid *grid;
 

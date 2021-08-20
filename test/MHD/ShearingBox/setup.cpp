@@ -5,6 +5,9 @@
 static real gammaIdeal;
 static real omega;
 static real shear;
+static real B0y;
+static real B0z;
+
 Analysis *analysis;
 
 
@@ -70,6 +73,8 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   // Get rotation rate along vertical axis
   omega=input.GetReal("Hydro","rotation",0);
   shear=input.GetReal("Hydro","shearingBox",0);
+  B0y = input.GetReal("Setup","B0y",0);
+  B0z = input.GetReal("Setup","B0z",0);
 
   // Add our userstep to the timeintegrator
   data.hydro.EnrollBodyForce(BodyForce);
@@ -91,7 +96,6 @@ void Setup::InitFlow(DataBlock &data) {
     DataBlockHost d(data);
     real x,y,z;
 
-    real B0 = 0.02;
     real cs2 = gammaIdeal*omega*omega;
 
 
@@ -108,13 +112,12 @@ void Setup::InitFlow(DataBlock &data) {
                 d.Vc(RHO,k,j,i) = 1.0;
 #endif
                 d.Vc(PRS,k,j,i) = d.Vc(RHO,k,j,i)/cs2*gammaIdeal;
-                d.Vc(VX1,k,j,i) = 0.1*(randm()-0.5);
+                d.Vc(VX1,k,j,i) = 1e-5*sin(2.0*M_PI*(y+4*z));
                 d.Vc(VX2,k,j,i) = shear*x;
-                d.Vc(VX3,k,j,i) = 0.1*(randm()-0.5)+1.0e-8*cos(2.0*M_PI*y);
-
-                d.Vs(BX1s,k,j,i) = 0;
-                d.Vs(BX2s,k,j,i) = 0;
-                d.Vs(BX3s,k,j,i) = B0+0*1e-8*cos(2*M_PI*y);
+                d.Vc(VX3,k,j,i) = 0.0;
+                d.Vs(BX1s,k,j,i) = 0.0;
+                d.Vs(BX2s,k,j,i) = B0y;
+                d.Vs(BX3s,k,j,i) = B0z;
 
             }
         }

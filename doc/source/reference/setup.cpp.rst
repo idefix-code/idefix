@@ -126,24 +126,18 @@ If one (or several) boundaries are set to ``userdef`` in the input file, the use
 enroll a user-defined boundary function in the ``Setup`` constructor as for the other user-def functions  (see :ref:`functionEnrollment`).
 Note that even if several boundaries are ``userdef`` in the input file, only one user-defined function
 is required. When *Idefix* calls the user defined boundary function, it sets the direction of the boundary (``dir=IDIR``, ``JDIR``,
-or ``KDIR``) and the side of the bondary (``side=left`` or ``side=right``). A typical user-defined
-boundary condition function looks like this:
+or ``KDIR``) and the side of the bondary (``side=left`` or ``side=right``). If conveninent, one can use
+the ``BoundaryFor`` wrapper functions in ``boundaryloop.hpp`` to automatically loop on the boundary specified by ``dir`` and ``side``.
+A typical user-defined boundary condition function looks like this:
 
 .. code-block:: c++
+
+  #include "boundaryloop.hpp"
 
   void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
     IdefixArray4D<real> Vc = data.hydro.Vc;
     if(dir==IDIR) {
-      int ibeg,iend;
-      if(side == left) {
-        ibeg = 0;
-        iend = data.beg[IDIR];
-      }
-      else if(side==right) {
-        ibeg=data.end[IDIR];
-        iend=data.np_tot[IDIR];
-      }
-      idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],ibeg,iend,
+      data.hydro.boundary.BoundaryFor("UserDefBoundary", dir, side,
                   KOKKOS_LAMBDA (int k, int j, int i) {
 
                     Vc(RHO,k,j,i) = 1.0;

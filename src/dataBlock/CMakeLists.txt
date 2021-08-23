@@ -1,10 +1,10 @@
 set(idefix_source_file ${idefix_source_file}
-  dataBlock/checkNan.cpp
-  dataBlock/dataBlock.cpp
-  dataBlock/dataBlock.hpp
-  dataBlock/dataBlockHost.cpp
-  dataBlock/dataBlockHost.hpp
-  dataBlock/dumpToFile.cpp
-  dataBlock/evolveStage.cpp
-  dataBlock/makeGeometry.cpp
+  src/dataBlock/checkNan.cpp
+  src/dataBlock/dataBlock.cpp
+  src/dataBlock/dataBlock.hpp
+  src/dataBlock/dataBlockHost.cpp
+  src/dataBlock/dataBlockHost.hpp
+  src/dataBlock/dumpToFile.cpp
+  src/dataBlock/evolveStage.cpp
+  src/dataBlock/makeGeometry.cpp
   PARENT_SCOPE)

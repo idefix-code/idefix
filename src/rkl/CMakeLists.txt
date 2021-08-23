@@ -1,4 +1,4 @@
 set(idefix_source_file ${idefix_source_file}
-  rkl/rkl.cpp
-  rkl/rkl.hpp
+  src/rkl/rkl.cpp
+  src/rkl/rkl.hpp
   PARENT_SCOPE)

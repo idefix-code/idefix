@@ -597,8 +597,10 @@ void Hydro::HlldMHD() {
     real ar = std::fmax(ZERO_F, sr);
     real al = std::fmin(ZERO_F, sl);
     real scrh = ONE_F/(ar - al);
-    Et(k,j,i) = -(ar*vL[Xt] - al*vR[Xt])*scrh;
-    Eb(k,j,i) = -(ar*vL[Xb] - al*vR[Xb])*scrh;
+
+    EXPAND( Et(k,j,i) = -st*(ar*vL[Xt] - al*vR[Xt])*scrh;  ,
+                                                           ,
+            Eb(k,j,i) = -sb*(ar*vL[Xb] - al*vR[Xb])*scrh;  );
 
     aL(k,j,i) =  ar*scrh;
     aR(k,j,i) = -al*scrh;
@@ -608,7 +610,6 @@ void Hydro::HlldMHD() {
 #elif EMF_AVERAGE == UCT_HLLD
     real Bn = (sr*vR[BXn] - sl*vL[BXn])/(sr - sl);
 
-    int switch_to_hll = 0;
     real chiL, chiR, nuLR, nuL, nuR;
     real SaL, SaR, Sc;
     real eps = 1.e-12*(fabs(sl) + fabs(sr));
@@ -672,7 +673,7 @@ void Hydro::HlldMHD() {
     scrh = ONE_F/(ar - al);
 
     // HLL diffusion coefficients
-    if (switch_to_hll) {
+    if (revert_to_hll) {
       aL(k,j,i) =  ar*scrh;
       aR(k,j,i) = -al*scrh;
       dR(k,j,i) = -al*ar*scrh;
@@ -687,9 +688,10 @@ void Hydro::HlldMHD() {
       dR(k,j,i) = HALF_F*lambda;
       dL(k,j,i) = HALF_F*lambda;
     }
-    EXPAND( Et(k,j,i) = -st*(ar*vL[Xt] - al*vR[Xt])*scrh;           ,
-                                                               ,
-            Eb(k,j,i) = -sb*(ar*vL[Xb] - al*vR[Xb])*scrh;         );
+
+    EXPAND( Et(k,j,i) = -st*(ar*vL[Xt] - al*vR[Xt])*scrh;  ,
+                                                           ,
+            Eb(k,j,i) = -sb*(ar*vL[Xb] - al*vR[Xb])*scrh;  );
 #endif
   });
 

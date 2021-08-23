@@ -18,11 +18,6 @@ KOKKOS_INLINE_FUNCTION real MC_LIM2 (const real dp, const real dm) {
   scrh = TWO_F*(std::fabs(dp) < std::fabs(dm) ? dp:dm);
   return (std::fabs(dc) < std::fabs(scrh) ? dc:scrh);
 }
-/*
-KOKKOS_INLINE_FUNCTION real LIMITER (const real dp, real dm) {
-
-}
-*/
 
 void ElectroMotiveForce::calcRiemannEmf() {
   idfx::pushRegion("ElectroMotiveForce::calcRiemannEmf");

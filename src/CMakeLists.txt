@@ -1,7 +1,7 @@
 set (CMAKE_CXX_STANDARD 14)
 
-option(MHD "enable MHD" OFF)
-option(MPI "enable Message Passing Interface parallelisation" OFF)
+option(Idefix_MHD "enable MHD" OFF)
+option(Idefix_MPI "enable Message Passing Interface parallelisation" OFF)
 
 set(idefix_source_file
   arrays.hpp
@@ -28,17 +28,17 @@ set(idefix_source_file
   )
 
 add_subdirectory(kokkos)
-add_subdirectory(dataBlock)
 add_subdirectory(hydro)
+add_subdirectory(dataBlock)
 add_subdirectory(output)
 add_subdirectory(rkl)
 add_subdirectory("${PROJECT_BINARY_DIR}" "${PROJECT_BINARY_DIR}/local")
 
 add_executable(idefix ${idefix_source_file})
-if(MHD)
-  target_compile_options(idefix PRIVATE -DMHD=YES)
+if(Idefix_MHD)
+  add_compile_definitions(MHD=YES)
 else()
-  target_compile_options(idefix PRIVATE -DMHD=NO)
+  add_compile_definitions(MHD=NO)
 endif()
 
 target_include_directories(idefix PUBLIC
@@ -51,6 +51,7 @@ target_include_directories(idefix PUBLIC
                            hydro/boundary
                            hydro/electromotiveforce
                            hydro/HDsolvers
+                           hydro/MHDsolvers
                            output/
                            rkl/
                            ./)

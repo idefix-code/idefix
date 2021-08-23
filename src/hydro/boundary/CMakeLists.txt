@@ -4,7 +4,7 @@ set(idefix_source_file ${idefix_source_file}
   hydro/boundary/hydroboundary.hpp
   PARENT_SCOPE)
 
-if(MPI)
+if(Idefix_MPI)
   set(idefix_source_file ${idefix_source_file}
     hydro/boundary/mpi.cpp
     hydro/boundary/mpi.hpp

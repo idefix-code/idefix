@@ -1,6 +1,7 @@
 add_subdirectory(boundary)
 add_subdirectory(electromotiveforce)
-if(MHD)
+if(Idefix_MHD)
+  message("having MHD")
   add_subdirectory(MHDsolvers)
 else()
   add_subdirectory(HDsolvers)

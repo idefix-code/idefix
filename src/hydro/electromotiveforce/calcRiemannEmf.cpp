@@ -219,15 +219,19 @@ void ElectroMotiveForce::calcRiemann2DEmf() {
   idfx::pushRegion("ElectroMotiveForce::calcRiemann2DEmf");
 
   // Corned EMFs
+  IdefixArray3D<real> ez = this->ez;
+#if DIMENSIONS == 3
   IdefixArray3D<real> ex = this->ex;
   IdefixArray3D<real> ey = this->ey;
-  IdefixArray3D<real> ez = this->ez;
 
   // Face-centered EMFs
   IdefixArray3D<real> exj = this->exj;
   IdefixArray3D<real> exk = this->exk;
   IdefixArray3D<real> eyi = this->eyi;
   IdefixArray3D<real> eyk = this->eyk;
+#endif
+
+  // Face-centered EMFs
   IdefixArray3D<real> ezi = this->ezi;
   IdefixArray3D<real> ezj = this->ezj;
 
@@ -235,15 +239,19 @@ void ElectroMotiveForce::calcRiemann2DEmf() {
   IdefixArray3D<real> axR = this->axR;
   IdefixArray3D<real> ayL = this->ayL;
   IdefixArray3D<real> ayR = this->ayR;
+#if DIMENSIONS == 3
   IdefixArray3D<real> azL = this->azL;
   IdefixArray3D<real> azR = this->azR;
+#endif
 
   IdefixArray3D<real> dxL = this->dxL;
   IdefixArray3D<real> dxR = this->dxR;
   IdefixArray3D<real> dyL = this->dyL;
   IdefixArray3D<real> dyR = this->dyR;
+#if DIMENSIONS == 3
   IdefixArray3D<real> dzL = this->dzL;
   IdefixArray3D<real> dzR = this->dzR;
+#endif
 
   IdefixArray4D<real> Vs = hydro->Vs;
 

@@ -75,13 +75,13 @@ void Hydro::HlldMHD() {
 #elif EMF_AVERAGE == UCT_HLL
       SL = this->emf.SxL;
       SR = this->emf.SxR;
-#endif
+#elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL2
       aL = this->emf.axL;
       aR = this->emf.axR;
 
       dL = this->emf.dxL;
       dR = this->emf.dxR;
-
+#endif
       break;
     case(JDIR):
       joffset=1;
@@ -99,13 +99,13 @@ void Hydro::HlldMHD() {
 #elif EMF_AVERAGE == UCT_HLL
       SL = this->emf.SyL;
       SR = this->emf.SyR;
-#endif
+#elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL2
       aL = this->emf.ayL;
       aR = this->emf.ayR;
 
       dL = this->emf.dyL;
       dR = this->emf.dyR;
-
+#endif
       break;
     case(KDIR):
       koffset=1;
@@ -122,13 +122,13 @@ void Hydro::HlldMHD() {
 #elif EMF_AVERAGE == UCT_HLL
       SL = this->emf.SzL;
       SR = this->emf.SzR;
-#endif
+#elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL2
       aL = this->emf.azL;
       aR = this->emf.azR;
 
       dL = this->emf.dzL;
       dR = this->emf.dzR;
-
+#endif
       break;
     default:
       IDEFIX_ERROR("Wrong direction");
@@ -242,6 +242,7 @@ void Hydro::HlldMHD() {
       K_Flux(fluxR, vR, fluxR, c2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
 
       real ptR, ptL;
+      int revert_to_hll = 0, revert_to_hllc = 0;
 
 #if HAVE_ENERGY
       ptL  = vL[PRS] + HALF_F* ( EXPAND(vL[BX1]*vL[BX1]     ,
@@ -279,7 +280,6 @@ void Hydro::HlldMHD() {
 #if HAVE_ENERGY
         real Uhll[NVAR];
         real vs, pts, sqrL, sqrR, vsL, vsR, wsL, wsR;
-        int revert_to_hllc;
 
         // 3c. Compute U*(L), U^*(R)
         scrh = ONE_F/(sr - sl);
@@ -316,8 +316,6 @@ void Hydro::HlldMHD() {
         Miyoshi & Kusano (2005), the only change involves a
         re-definition of By* and Bz* in terms of By(HLL), Bz(HLL).
         ----------------------------------------------------------------- */
-
-        revert_to_hllc = 0;
 
         if ( (S1L - sl) <  1.e-4*(SM - sl) ) revert_to_hllc = 1;
         if ( (S1R - sr) > -1.e-4*(sr - SM) ) revert_to_hllc = 1;
@@ -458,7 +456,6 @@ void Hydro::HlldMHD() {
 #else
         real usc[NVAR];
         real rho, sqrho;
-        int revert_to_hll;
 
         scrh = ONE_F/(sr - sl);
         duL = sl - vL[Xn];
@@ -483,8 +480,6 @@ void Hydro::HlldMHD() {
             Prevent degeneracies when S1L -> sl or
             S1R -> sr. Revert to HLL if necessary.
         --------------------------------------------- */
-
-        revert_to_hll = 0;
 
         if ( (S1L - sl) <  1.e-4*(sr - sl) ) revert_to_hll = 1;
         if ( (S1R - sr) > -1.e-4*(sr - sl) ) revert_to_hll = 1;

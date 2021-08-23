@@ -29,20 +29,6 @@ class ElectroMotiveForce {
   IdefixArray3D<real>     ey;
   IdefixArray3D<real>     ez;
 
-  IdefixArray3D<real> axL;
-  IdefixArray3D<real> axR;
-  IdefixArray3D<real> ayL;
-  IdefixArray3D<real> ayR;
-  IdefixArray3D<real> azL;
-  IdefixArray3D<real> azR;
-
-  IdefixArray3D<real> dxL;
-  IdefixArray3D<real> dxR;
-  IdefixArray3D<real> dyL;
-  IdefixArray3D<real> dyR;
-  IdefixArray3D<real> dzL;
-  IdefixArray3D<real> dzR;
-
 #if EMF_AVERAGE == UCT_CONTACT
   IdefixArray3D<int>      svx;
   IdefixArray3D<int>      svy;
@@ -70,6 +56,22 @@ class ElectroMotiveForce {
   IdefixArray3D<real> dvx_dz, dvy_dz;
   IdefixArray3D<real> dvz_dx, dvz_dy, dvz_dz;
   #endif
+#elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL2
+  IdefixArray3D<real> axL;
+  IdefixArray3D<real> axR;
+  IdefixArray3D<real> ayL;
+  IdefixArray3D<real> ayR;
+  #if DIMENSIONS == 3
+  IdefixArray3D<real> azL;
+  IdefixArray3D<real> azR;
+
+  IdefixArray3D<real> dzL;
+  IdefixArray3D<real> dzR;
+  #endif
+  IdefixArray3D<real> dxL;
+  IdefixArray3D<real> dxR;
+  IdefixArray3D<real> dyL;
+  IdefixArray3D<real> dyR;
 #endif
 
   IdefixArray3D<real>     Ex1;

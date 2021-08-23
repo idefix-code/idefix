@@ -57,102 +57,104 @@ void ElectroMotiveForce::Init(Hydro *hydro) {
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]); )
 
   #if EMF_AVERAGE == UCT_CONTACT
-  D_EXPAND( svx = IdefixArray3D<int>("EMF_svx",
-                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
-            svy = IdefixArray3D<int>("EMF_svy",
-                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
-            svz = IdefixArray3D<int>("EMF_svz",
-                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  )
+    D_EXPAND( svx = IdefixArray3D<int>("EMF_svx",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
+              svy = IdefixArray3D<int>("EMF_svy",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
+              svz = IdefixArray3D<int>("EMF_svz",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  )
 
   #elif EMF_AVERAGE == UCT_HLL
-  D_EXPAND( SxL = IdefixArray3D<real>("EMF_SxL",
-                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-            SxR = IdefixArray3D<real>("EMF_SxR",
-                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
+    D_EXPAND( SxL = IdefixArray3D<real>("EMF_SxL",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+              SxR = IdefixArray3D<real>("EMF_SxR",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
 
-            SyL = IdefixArray3D<real>("EMF_SyL",
-                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-            SyR = IdefixArray3D<real>("EMF_SyR",
-                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
+              SyL = IdefixArray3D<real>("EMF_SyL",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+              SyR = IdefixArray3D<real>("EMF_SyR",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
 
-            SzL = IdefixArray3D<real>("EMF_SzL",
-                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-            SzR = IdefixArray3D<real>("EMF_SzR",
-                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  )
+              SzL = IdefixArray3D<real>("EMF_SzL",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+              SzR = IdefixArray3D<real>("EMF_SzR",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  )
 
-  dvx_dx = IdefixArray3D<real>("EMF_dvx_dx",
-                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  dvx_dy = IdefixArray3D<real>("EMF_dvx_dy",
-                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+    dvx_dx = IdefixArray3D<real>("EMF_dvx_dx",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+    dvx_dy = IdefixArray3D<real>("EMF_dvx_dy",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
-  dvy_dx = IdefixArray3D<real>("EMF_dvy_dx",
-                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  dvy_dy = IdefixArray3D<real>("EMF_dvy_dy",
-                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+    dvy_dx = IdefixArray3D<real>("EMF_dvy_dx",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+    dvy_dy = IdefixArray3D<real>("EMF_dvy_dy",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
-  #if DIMENSIONS == 3
-  dvx_dz = IdefixArray3D<real>("EMF_dvx_dz",
-                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  dvy_dz = IdefixArray3D<real>("EMF_dvy_dz",
-                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+    #if DIMENSIONS == 3
+    dvx_dz = IdefixArray3D<real>("EMF_dvx_dz",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+    dvy_dz = IdefixArray3D<real>("EMF_dvy_dz",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
-  dvz_dx = IdefixArray3D<real>("EMF_dvz_dx",
-                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  dvz_dy = IdefixArray3D<real>("EMF_dvz_dy",
-                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  dvz_dz = IdefixArray3D<real>("EMF_dvz_dz",
-                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  #endif
+    dvz_dx = IdefixArray3D<real>("EMF_dvz_dx",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+    dvz_dy = IdefixArray3D<real>("EMF_dvz_dy",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+    dvz_dz = IdefixArray3D<real>("EMF_dvz_dz",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+    #endif
 
-  dbx_dy = IdefixArray3D<real>("EMF_dbx_dy",
-                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  dby_dx = IdefixArray3D<real>("EMF_dby_dx",
-                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  #if DIMENSIONS == 3
-  dbx_dz = IdefixArray3D<real>("EMF_dbx_dz",
-                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  dby_dz = IdefixArray3D<real>("EMF_dby_dz",
-                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  dbz_dx = IdefixArray3D<real>("EMF_dbz_dx",
-                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  dbz_dy = IdefixArray3D<real>("EMF_dbz_dy",
-                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  #endif // DIMENSIONS
-#endif // EMF_AVERAGE
+    dbx_dy = IdefixArray3D<real>("EMF_dbx_dy",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+    dby_dx = IdefixArray3D<real>("EMF_dby_dx",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+    #if DIMENSIONS == 3
+    dbx_dz = IdefixArray3D<real>("EMF_dbx_dz",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+    dby_dz = IdefixArray3D<real>("EMF_dby_dz",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+    dbz_dx = IdefixArray3D<real>("EMF_dbz_dx",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+    dbz_dy = IdefixArray3D<real>("EMF_dbz_dy",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+    #endif // DIMENSIONS
+
+  #elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL2
+    D_EXPAND( axL = IdefixArray3D<real>("EMF_axL",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+              axR = IdefixArray3D<real>("EMF_axR",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
+
+              ayL = IdefixArray3D<real>("EMF_ayL",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+              ayR = IdefixArray3D<real>("EMF_ayR",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
+
+              azL = IdefixArray3D<real>("EMF_azL",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+              azR = IdefixArray3D<real>("EMF_azR",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  )
+
+    D_EXPAND( dxL = IdefixArray3D<real>("EMF_dxL",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+              dxR = IdefixArray3D<real>("EMF_dxR",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
+
+              dyL = IdefixArray3D<real>("EMF_dyL",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+              dyR = IdefixArray3D<real>("EMF_dyR",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
+
+              dzL = IdefixArray3D<real>("EMF_dzL",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+              dzR = IdefixArray3D<real>("EMF_dzR",
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  )
+  #endif // EMF_AVERAGE
 
   Ex1 = IdefixArray3D<real>("EMF_Ex1", data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   Ex2 = IdefixArray3D<real>("EMF_Ex2", data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   Ex3 = IdefixArray3D<real>("EMF_Ex3", data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
-  D_EXPAND( axL = IdefixArray3D<real>("EMF_axL",
-                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-            axR = IdefixArray3D<real>("EMF_axR",
-                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
-
-            ayL = IdefixArray3D<real>("EMF_ayL",
-                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-            ayR = IdefixArray3D<real>("EMF_ayR",
-                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
-
-            azL = IdefixArray3D<real>("EMF_azL",
-                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-            azR = IdefixArray3D<real>("EMF_azR",
-                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  )
-
-  D_EXPAND( dxL = IdefixArray3D<real>("EMF_dxL",
-                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-            dxR = IdefixArray3D<real>("EMF_dxR",
-                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
-
-            dyL = IdefixArray3D<real>("EMF_dyL",
-                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-            dyR = IdefixArray3D<real>("EMF_dyR",
-                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
-
-            dzL = IdefixArray3D<real>("EMF_dzL",
-                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-            dzR = IdefixArray3D<real>("EMF_dzR",
-                              data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  )
 
   Grid *mygrid = data->mygrid;
 
@@ -276,7 +278,7 @@ void ElectroMotiveForce::Init(Hydro *hydro) {
 
 #endif  // WITH_MPI
 
-  #endif // MHD==YES
+#endif // MHD==YES
   idfx::popRegion();
 }
 

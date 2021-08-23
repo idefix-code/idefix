@@ -213,6 +213,8 @@ void ElectroMotiveForce::calcRiemannEmf() {
 void ElectroMotiveForce::calcRiemann2DEmf() {
   idfx::pushRegion("ElectroMotiveForce::calcRiemann2DEmf");
 
+#if EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL2
+
   // Corned EMFs
   IdefixArray3D<real> ez = this->ez;
 #if DIMENSIONS == 3
@@ -424,6 +426,7 @@ void ElectroMotiveForce::calcRiemann2DEmf() {
 #endif
     }
   );
+#endif // EMF_AVERAGE
 
   idfx::popRegion();
 }

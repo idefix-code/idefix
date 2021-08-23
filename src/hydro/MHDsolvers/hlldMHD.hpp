@@ -36,16 +36,16 @@ void Hydro::HlldMHD() {
   IdefixArray3D<real> Eb;
   IdefixArray3D<real> Et;
 
-  IdefixArray3D<real> aL;
-  IdefixArray3D<real> aR;
-  IdefixArray3D<real> dL;
-  IdefixArray3D<real> dR;
-
 #if EMF_AVERAGE == UCT_CONTACT
   IdefixArray3D<int> SV;
 #elif EMF_AVERAGE == UCT_HLL
   IdefixArray3D<real> SL;
   IdefixArray3D<real> SR;
+#elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL2
+  IdefixArray3D<real> aL;
+  IdefixArray3D<real> aR;
+  IdefixArray3D<real> dL;
+  IdefixArray3D<real> dR;
 #endif
 
   real gamma = this->gamma;

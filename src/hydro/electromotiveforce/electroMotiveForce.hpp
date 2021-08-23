@@ -62,6 +62,11 @@ class ElectroMotiveForce {
   IdefixArray3D<real>     Ex2;
   IdefixArray3D<real>     Ex3;
 
+  // Helper arrays for shearing box
+  IdefixArray2D<real>     sbEyL;
+  IdefixArray2D<real>     sbEyR;
+  IdefixArray2D<real>     sbEyRL;
+
   // Range of existence
   int  ibeg, jbeg, kbeg;
   int  iend, jend, kend;
@@ -75,6 +80,15 @@ class ElectroMotiveForce {
   // Enforce boundary conditions on the EMFs.
   void EnforceEMFBoundary();
   void CalcNonidealEMF(real );
+
+  // Specific routines to symmetrize EMFs with shearing box BCs
+  void SymmetrizeEMFShearingBox();
+  void ExtrapolateEMFShearingBox(BoundarySide,
+                            IdefixArray2D<real>,
+                            IdefixArray2D<real>);
+
+
+
 #ifdef WITH_MPI
   // Exchange surface EMFs to remove interprocess round off errors
   void ExchangeAll();

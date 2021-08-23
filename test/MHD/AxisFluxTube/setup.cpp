@@ -41,7 +41,7 @@ void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
 
 void Analysis(DataBlock & data) {
   // Mirror data on Host
-  data.hydro.SetBoundary(data.t);
+  data.hydro.boundary.SetBoundaries(data.t);
   data.DumpToFile("analysis");
 }
 

@@ -77,6 +77,10 @@ using Layout = Kokkos::LayoutRight;
 #endif
 #include "real_types.hpp"
 
+#if GEOMETRY == CYLINDRICAL && DIMENSIONS == 3
+  #error CYLINDRICAL should only be used with DIMENSIONS <= 2. Use POLAR for 3D problems.
+#endif
+
 // Default EMF_AVERAGE value
 #ifndef EMF_AVERAGE
   #define EMF_AVERAGE     UCT_CONTACT

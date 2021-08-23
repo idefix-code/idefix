@@ -85,7 +85,171 @@ void ElectroMotiveForce::EnforceEMFBoundary() {
           });
       }
     }
+    if(data->lbound[dir] == shearingbox || data->rbound[dir] == shearingbox) {
+      SymmetrizeEMFShearingBox();
+    }
   }
 #endif // MHD==YES
   idfx::popRegion();
+}
+
+void ElectroMotiveForce::SymmetrizeEMFShearingBox() {
+  idfx::pushRegion("Emf::EnforceEMFBoundary");
+  #if MHD == YES
+
+    IdefixArray2D<real> sbEyL = this->sbEyL;
+    IdefixArray2D<real> sbEyR = this->sbEyR;
+    IdefixArray2D<real> sbEyRL = this->sbEyRL;
+
+    IdefixArray3D<real> ey = this->ey;
+
+    // Store emf components on the left and right
+    if(data->lbound[IDIR]==shearingbox) {
+      int i = data->beg[IDIR];
+      idefix_for("StoreEyL", 0, data->np_tot[KDIR], 0, data->np_tot[JDIR],
+                            KOKKOS_LAMBDA(int k,int j) {
+                              sbEyL(k,j) = ey(k,j,i);
+                            });
+    }
+    if(data->rbound[IDIR]==shearingbox) {
+      int i = data->end[IDIR];
+      idefix_for("StoreEyL", 0, data->np_tot[KDIR], 0, data->np_tot[JDIR],
+                            KOKKOS_LAMBDA(int k, int j) {
+                              sbEyR(k,j) = ey(k,j,i);
+                            });
+    }
+
+    // todo: exchange sbEyR and sbEyL when domain-decomposed along y
+    #ifdef WITH_MPI
+      if(data->mygrid->nproc[IDIR]>1) {
+        int procLeft, procRight;
+        const int size = data->np_tot[KDIR]*data->np_tot[JDIR];
+        MPI_Status status;
+
+        MPI_SAFE_CALL(MPI_Cart_shift(data->mygrid->CartComm,0,1,&procLeft,&procRight));
+        if(data->lbound[IDIR]==shearingbox) {
+          // We send to our left (which, by periodicity, is the right end of the domain)
+          // our value of sbEyL and get
+          MPI_Sendrecv(sbEyL.data(), size, realMPI, procLeft, 2001,
+                       sbEyR.data(), size, realMPI, procLeft, 2002,
+                       data->mygrid->CartComm, &status );
+        }
+        if(data->rbound[IDIR]==shearingbox) {
+          // We send to our right (which, by periodicity, is the left end (=beginning)
+          // of the domain) our value of sbEyR and get sbEyL
+          MPI_Sendrecv(sbEyR.data(), size, realMPI, procRight, 2002,
+                       sbEyL.data(), size, realMPI, procRight, 2001,
+                       data->mygrid->CartComm, &status );
+        }
+      }
+    #endif
+    // Extrapolate on the left
+    if(data->lbound[IDIR]==shearingbox) {
+      int i = data->beg[IDIR];
+      ExtrapolateEMFShearingBox(left, sbEyR, sbEyRL);
+
+      idefix_for("ReplaceEyLeft", 0, data->np_tot[KDIR], 0, data->np_tot[JDIR],
+                              KOKKOS_LAMBDA(int k,int j) {
+                                ey(k,j,i) = 0.5*(sbEyL(k,j)+sbEyRL(k,j));
+                              });
+    }
+
+    // Extrapolate on the right
+    if(data->rbound[IDIR]==shearingbox) {
+      int i = data->end[IDIR];
+      ExtrapolateEMFShearingBox(right, sbEyL, sbEyRL);
+
+      idefix_for("ReplaceEyRight", 0, data->np_tot[KDIR], 0, data->np_tot[JDIR],
+                              KOKKOS_LAMBDA(int k,int j) {
+                                ey(k,j,i) = 0.5*(sbEyR(k,j)+sbEyRL(k,j));
+                              });
+    }
+
+  #endif
+  idfx::popRegion();
+}
+
+
+void ElectroMotiveForce::ExtrapolateEMFShearingBox(BoundarySide side,
+                                                   IdefixArray2D<real> Ein,
+                                                   IdefixArray2D<real> Eout) {
+  const int nxi = data->np_int[IDIR];
+  const int nxj = data->np_int[JDIR];
+  const int nxk = data->np_int[KDIR];
+
+  const int ighost = data->nghost[IDIR];
+  const int jghost = data->nghost[JDIR];
+  const int kghost = data->nghost[KDIR];
+
+  // Where does the boundary starts along x1?
+  const int istart = side*(ighost+nxi);
+
+  // Shear rate
+  const real S  = hydro->sbS;
+
+  // Box size
+  const real Lx = data->mygrid->xend[IDIR] - data->mygrid->xbeg[IDIR];
+  const real Ly = data->mygrid->xend[JDIR] - data->mygrid->xbeg[JDIR];
+
+  // total number of cells in y (active domain)
+  const int ny = data->mygrid->np_int[JDIR];
+  const real dy = Ly/ny;
+
+  // Compute offset in y modulo the box size
+  const int sign=2*side-1;
+  const real sbVelocity = sign*S*Lx;
+  real dL = std::fmod(sbVelocity*data->t,Ly);
+
+  // translate this into # of cells
+  const int m = static_cast<int> (std::floor(dL/dy+HALF_F));
+
+  // remainding shift
+  const real eps = dL / dy - m;
+
+  // New we need to perform the shift
+  idefix_for("BoundaryShearingBoxEMF", 0, data->np_tot[KDIR],
+                                       0, data->np_tot[JDIR],
+        KOKKOS_LAMBDA (int k, int j) {
+          // jorigin
+          const int jo = jghost + ((j-m-jghost)%nxj+nxj)%nxj;
+          const int jop2 = jghost + ((jo+2-jghost)%nxj+nxj)%nxj;
+          const int jop1 = jghost + ((jo+1-jghost)%nxj+nxj)%nxj;
+          const int jom1 = jghost + ((jo-1-jghost)%nxj+nxj)%nxj;
+          const int jom2 = jghost + ((jo-2-jghost)%nxj+nxj)%nxj;
+
+          // Define Left and right fluxes
+          // Fluxes are defined from slop-limited interpolation
+          // Using Van-leer slope limiter (consistently with the main advection scheme)
+          real Fl,Fr;
+          real dqm, dqp, dq;
+
+          if(eps>=ZERO_F) {
+            // Compute Fl
+            dqm = Ein(k,jom1) - Ein(k,jom2);
+            dqp = Ein(k,jo) - Ein(k,jom1);
+            dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+
+            Fl = Ein(k,jom1) + 0.5*dq*(1.0-eps);
+            //Compute Fr
+            dqm=dqp;
+            dqp = Ein(k,jop1) - Ein(k,jo);
+            dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+
+            Fr = Ein(k,jo) + 0.5*dq*(1.0-eps);
+          } else {
+            //Compute Fl
+            dqm = Ein(k,jo) - Ein(k,jom1);
+            dqp = Ein(k,jop1) - Ein(k,jo);
+            dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+
+            Fl = Ein(k,jo) - 0.5*dq*(1.0+eps);
+            // Compute Fr
+            dqm=dqp;
+            dqp = Ein(k,jop2) - Ein(k,jop1);
+            dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+
+            Fr = Ein(k,jop1) - 0.5*dq*(1.0+eps);
+          }
+          Eout(k,j) = Ein(k,jo) - eps*(Fr - Fl);
+        });
 }

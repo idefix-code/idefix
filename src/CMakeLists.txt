@@ -1,5 +1,4 @@
 
-add_subdirectory(kokkos)
 add_subdirectory(hydro)
 add_subdirectory(dataBlock)
 add_subdirectory(output)

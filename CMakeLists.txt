@@ -7,7 +7,15 @@ option(Idefix_MPI "enable Message Passing Interface parallelisation" OFF)
 set(idefix_source_file
   ${PROJECT_BINARY_DIR}/setup.cpp)
 
+
+add_subdirectory(src/kokkos)
 add_subdirectory(src)
+
+
+if(Kokkos_ENABLE_CUDA)
+  set(Kokkos_ENABLE_CUDA_LAMBDA ON CACHE BOOL "Idefix requires lambdas on Cuda" FORCE)
+endif()
+
 
 add_executable(idefix ${idefix_source_file})
 if(Idefix_MHD)

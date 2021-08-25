@@ -19,10 +19,17 @@ endif()
 
 add_executable(idefix ${idefix_source_file})
 if(Idefix_MHD)
-  add_compile_definitions(MHD=YES)
+  add_compile_definitions("MHD=YES")
 else()
-  add_compile_definitions(MHD=NO)
+  add_compile_definitions("MHD=NO")
 endif()
+
+if(Idefix_MPI)
+  add_compile_definitions("WITH_MPI")
+  find_package(MPI REQUIRED)
+  target_link_libraries(idefix MPI::MPI_CXX)
+endif()
+
 
 target_include_directories(idefix PUBLIC
                            "${PROJECT_BINARY_DIR}"

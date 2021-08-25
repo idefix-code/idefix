@@ -4,6 +4,7 @@ set (CMAKE_CXX_STANDARD 14)
 project (idefix)
 option(Idefix_MHD "enable MHD" OFF)
 option(Idefix_MPI "enable Message Passing Interface parallelisation" OFF)
+set(Idefix_DEFS "definitions.hpp" CACHE STRING "Problem definition header file")
 set(idefix_source_file
   ${PROJECT_BINARY_DIR}/setup.cpp)
 
@@ -11,13 +12,19 @@ set(idefix_source_file
 add_subdirectory(src/kokkos)
 add_subdirectory(src)
 
+# If a CMakeLists.txt is in the problem dir (for problem-specific source files)
+# then read it
+if(EXISTS ${PROJECT_BINARY_DIR}/CMakeLists.txt)
+  add_subdirectory(${PROJECT_BINARY_DIR})
+endif()
 
 if(Kokkos_ENABLE_CUDA)
   set(Kokkos_ENABLE_CUDA_LAMBDA ON CACHE BOOL "Idefix requires lambdas on Cuda" FORCE)
 endif()
 
-
 add_executable(idefix ${idefix_source_file})
+
+
 if(Idefix_MHD)
   add_compile_definitions("MHD=YES")
 else()
@@ -28,6 +35,10 @@ if(Idefix_MPI)
   add_compile_definitions("WITH_MPI")
   find_package(MPI REQUIRED)
   target_link_libraries(idefix MPI::MPI_CXX)
+endif()
+
+if(NOT ${Idefix_DEFS} STREQUAL "definitions.hpp")
+  add_compile_definitions("DEFINITIONS_FILE=\"${Idefix_DEFS}\"")
 endif()
 
 

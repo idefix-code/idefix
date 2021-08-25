@@ -68,8 +68,6 @@ class ElectroMotiveForce {
   IdefixArray2D<real>     sbEyRL;
 
   // Range of existence
-  int  ibeg, jbeg, kbeg;
-  int  iend, jend, kend;
 
   // Init from Hydro class
   void Init(Hydro *);

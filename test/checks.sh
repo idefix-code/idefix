@@ -42,7 +42,7 @@ for rep in $rep_HD_list; do
     echo "***********************************************"
     def_files=$(ls definitions*.hpp)
     for def in $def_files; do
-        python3 $IDEFIX_DIR/configure.py $options -defs=$def || { echo "!!!! HD $rep failed during configuration"; exit 1; }
+        cmake $IDEFIX_DIR $options -DIdefix_DEFS=$def || { echo "!!!! HD $rep failed during configuration"; exit 1; }
         echo "***********************************************"
         echo "Making  $rep with $def"
         echo "***********************************************"
@@ -75,7 +75,7 @@ for rep in $rep_MHD_list; do
     echo "***********************************************"
     def_files=$(ls definitions*.hpp)
     for def in $def_files; do
-        python3 $IDEFIX_DIR/configure.py -mhd $options -defs=$def || { echo "!!!! MHD $rep failed during configuration"; exit 1; }
+        cmake $IDEFIX_DIR $options -DIdefix_DEFS=$def -DIdefix_MHD=ON|| { echo "!!!! MHD $rep failed during configuration"; exit 1; }
         echo "***********************************************"
         echo "Making  $rep with $def"
         echo "***********************************************"

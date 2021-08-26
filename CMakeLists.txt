@@ -9,6 +9,10 @@ set(idefix_source_file
   ${PROJECT_BINARY_DIR}/setup.cpp)
 
 
+# load git revision tools
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+include(GetGitRevisionDescription)
+
 add_subdirectory(src/kokkos)
 add_subdirectory(src)
 
@@ -40,6 +44,11 @@ if(Idefix_MPI)
   target_link_libraries(idefix MPI::MPI_CXX)
 endif()
 message(STATUS "    MPI: ${Idefix_MPI}")
+
+#update gitversion.hpp if possible
+git_describe(GIT_SHA1)
+write_file(${CMAKE_SOURCE_DIR}/src/gitversion.hpp "#define GITVERSION \"${GIT_SHA1}\"")
+message(STATUS "    Version: ${GIT_SHA1}")
 
 if(NOT ${Idefix_DEFS} STREQUAL "definitions.hpp")
   add_compile_definitions("DEFINITIONS_FILE=\"${Idefix_DEFS}\"")

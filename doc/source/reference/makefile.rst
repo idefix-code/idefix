@@ -1,5 +1,68 @@
-The makefile
-=====================
+Code configuration
+==================
+Configuring with cmake
+----------------------
+
+`Cmake <https://cmake.org>`_ is a tool to control code generation on diverse platforms. It is the default tool used to configure *Idefix*. *Idefix* (and Kokkos)
+requires ``cmake`` version >= 3.16. It is also recommended to use the graphical frontend ``ccmake`` to configure *Idefix*, as it allows one to have a rapid
+overview of all of the configuration options and switch them according to the target architecture.
+
+To configure *Idefix* with ``Cmake``, just launch ``cmake $IDEFIX_DIR`` with the desired options in the problem directory (that is a directory containing at least ``definitions.hpp``, ``setup.cpp`` and ``idefix.ini``).
+Alternatively, you can replace ``cmake`` by ``ccmake`` to get a more user-friendly graphical interface).
+
+Several options can be enabled from the command line (or are accessible with ``ccmake`` GUI):
+
+``-LH``
+    List all of the available configure options and exit
+
+``-D Idefix_MHD=ON``
+    Enable MHD in the code (default disabled)
+
+``-D Idefix_ENABLE_MPI=ON``
+    Enable MPI parallelisation. Requires an MPI library. When used in conjonction with CUDA (Nvidia GPUs), a CUDA-aware MPI library is required by *Idefix*.
+
+``-D Idefix_DEFS=foo.hpp``
+    Specify a particular filename to be used in place of the default problem file ``definitions.hpp``
+
+``-D Kokkos_ENABLE_OPENMP=ON``
+    Enable OpenMP parallelisation on supported compilers. Note that this can be enabled simultaneously with MPI, resulting in a hybrid MPI+OpenMP compilation.
+
+``-D Kokkos_ENABLE_CUDA=ON``
+    Enable Nvidia Cuda (for GPU targets). When enabled, ``cmake`` will attempt to auto-detect the target GPU architecture. If this fails, one needs to specify
+    the target architecture adding ``-DKokkos_ARCH_{..}=ON`` (see below).
+
+``-D Kokkos_ARCH_{...}=ON``
+    Enable architecture-specific optimisation. A complete list can be obtained with the ``-LH`` option. Note that several host and target architecture can be enabled
+    simulatenously (e.g for a CPU and a GPU). For instance:
+      + Intel CPUs: BDW (Broadwell), HSW (Haswell), KNL (Knights Landing Xeon phi), SKX (Skylake Xeon with AVX512), SNB (Sandy/Ivy bridge), WSM (Westmere) ...
+      + NVIDIA GPUs: PASCAL60, PASCAL61, VOLTA70, VOLTA72, AMPERE80, AMPERE86, ...
+      + IBM CPUs: POWER7, POWER8, POWER9, BOOL (Blue gene Q)
+      + ARM CPUs: ARMV80, ARMV81, ARMV8_THUNDERX, ARMV8_THUNDERX2, A64FX...
+      + AMD CPUs: AMDAVX, ZEN, ZEN2, ZEN3...
+      + AMD GPUs: VEGA906, VEGA908...
+
+
+
+``-D CMAKE_CXX_COMPILER=foo``
+    Request a specific ``foo`` compiler for the compilation and link. Alternatively, it is also possible to export the ``CXX`` environement variable with a valid compiler name
+    before calling ``cmake``.
+
+.. tip::
+
+    Note that ``cmake`` keeps a cache of the previous configuration performed in a particular problem directory. To reset the configuration and start from scratch,
+    delete the file `CMakeCache.txt`.
+
+
+Using GNU makefile and python configuration script (deprecated)
+---------------------------------------------------------------
+.. warning::
+
+  Using the ``configure.py`` is deprecated and will be removed in a future version of *Idefix*. In particular, new target architectures
+  will *not* be added to ``configure.py``. Use the ``cmake`` procedure instead.
+
+
+The configure script
+++++++++++++++++++++
 
 Because the code can be configured for many architectures, it relies on a Python configuration script ``$IDEFIX_DIR/configure.py`` to generate the makefile needed. This script accepts
 many options to adapt the generated makefile to the architecture on which one wants to run. A complete list of options can be obtained by running ``$IDEFIX_DIR/configure.py -h``. These options are:
@@ -32,7 +95,7 @@ many options to adapt the generated makefile to the architecture on which one wa
 
 
 Persistent configuration options
-================================
+++++++++++++++++++++++++++++++++
 
 System architecture (``-arch``) and custom compiler (``-cxx``) options can be
 saved to a ``idefix.cfg`` file. Such a file can be stored locally, i.e. in the

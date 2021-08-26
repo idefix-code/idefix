@@ -57,13 +57,13 @@ for exmaple :
 cd test/HD/sod
 ```
 
-Configure the code:
+Configure the code launching cmake (version >= 3.16) in the example directory:
 
 ```shell
-python3 $IDEFIX_DIR/configure.py
+cmake $IDEFIX_DIR
 ```
 
-Several options can be enabled (complete list can be accessed with the help `-h` option). For instance: `-mhd` (enable MHD, required in MHD tests), `-mpi` (enable mpi), `-openmp` (enable openmp parallelisation), etc...
+Several options can be enabled from the command line (a complete list is available with ``cmake $IDEFIX_DIR -LH``). For instance: `-DIdefix_MHD=ON` (enable MHD, required in MHD tests), `-DIdefix_MPI=ON` (enable mpi), `-DKokkos_ENABLE_OPENMP=ON` (enable openmp parallelisation), etc... For more complex target architectures, it is recommended to use cmake GUI launching ``ccmake $IDEFIX_DIR`` in place of ``cmake`` and then switching on the required options.
 
 One can then compile the code:
 

@@ -12,10 +12,12 @@ set(idefix_source_file
 add_subdirectory(src/kokkos)
 add_subdirectory(src)
 
+message(STATUS "Idefix Configuration")
 # If a CMakeLists.txt is in the problem dir (for problem-specific source files)
 # then read it
 if(EXISTS ${PROJECT_BINARY_DIR}/CMakeLists.txt)
   add_subdirectory(${PROJECT_BINARY_DIR})
+  message(STATUS "Including problem-specific source files in '${PROJECT_BINARY_DIR}'")
 endif()
 
 if(Kokkos_ENABLE_CUDA)
@@ -30,16 +32,19 @@ if(Idefix_MHD)
 else()
   add_compile_definitions("MHD=NO")
 endif()
+message(STATUS "    MHD: ${Idefix_MHD}")
 
 if(Idefix_MPI)
   add_compile_definitions("WITH_MPI")
   find_package(MPI REQUIRED)
   target_link_libraries(idefix MPI::MPI_CXX)
 endif()
+message(STATUS "    MPI: ${Idefix_MPI}")
 
 if(NOT ${Idefix_DEFS} STREQUAL "definitions.hpp")
   add_compile_definitions("DEFINITIONS_FILE=\"${Idefix_DEFS}\"")
 endif()
+message(STATUS "    Problem definitions: '${Idefix_DEFS}'")
 
 
 target_include_directories(idefix PUBLIC

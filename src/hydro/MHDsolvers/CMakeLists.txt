@@ -1,4 +1,3 @@
-message("holy shit")
 set(idefix_source_file ${idefix_source_file}
   src/hydro/MHDsolvers/hlldMHD.hpp
   src/hydro/MHDsolvers/hllMHD.hpp

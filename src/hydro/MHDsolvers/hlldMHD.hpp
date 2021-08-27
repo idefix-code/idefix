@@ -83,6 +83,7 @@ void Hydro::HlldMHD() {
       dR = this->emf.dxR;
 #endif
       break;
+#if DIMENSIONS >= 2
     case(JDIR):
       joffset=1;
       D_EXPAND(
@@ -94,19 +95,21 @@ void Hydro::HlldMHD() {
 
       Et = this->emf.ezj;
       Eb = this->emf.exj;
-#if EMF_AVERAGE == UCT_CONTACT
+  #if EMF_AVERAGE == UCT_CONTACT
       SV = this->emf.svy;
-#elif EMF_AVERAGE == UCT_HLL
+  #elif EMF_AVERAGE == UCT_HLL
       SL = this->emf.SyL;
       SR = this->emf.SyR;
-#elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL2
+  #elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL2
       aL = this->emf.ayL;
       aR = this->emf.ayR;
 
       dL = this->emf.dyL;
       dR = this->emf.dyR;
-#endif
+  #endif
       break;
+#endif
+#if DIMENSIONS == 3
     case(KDIR):
       koffset=1;
       D_EXPAND(
@@ -117,19 +120,20 @@ void Hydro::HlldMHD() {
 
       Et = this->emf.eyk;
       Eb = this->emf.exk;
-#if EMF_AVERAGE == UCT_CONTACT
+  #if EMF_AVERAGE == UCT_CONTACT
       SV = this->emf.svz;
-#elif EMF_AVERAGE == UCT_HLL
+  #elif EMF_AVERAGE == UCT_HLL
       SL = this->emf.SzL;
       SR = this->emf.SzR;
-#elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL2
+  #elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL2
       aL = this->emf.azL;
       aR = this->emf.azR;
 
       dL = this->emf.dzL;
       dR = this->emf.dzR;
-#endif
+  #endif
       break;
+#endif
     default:
       IDEFIX_ERROR("Wrong direction");
   }

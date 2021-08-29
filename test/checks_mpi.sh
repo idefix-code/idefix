@@ -41,7 +41,7 @@ for rep in $rep_HD_2D_mpi_list; do
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "***********************************************"
-    python3 $IDEFIX_DIR/configure.py -mpi $options
+    cmake $IDEFIX_DIR -DIdefix_MPI=ON $options
     echo "***********************************************"
     echo "Making  $rep"
     echo "***********************************************"
@@ -71,7 +71,7 @@ for rep in $rep_MHD_2D_mpi_list; do
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "***********************************************"
-    python3 $IDEFIX_DIR/configure.py -mhd -mpi $options
+    cmake $IDEFIX_DIR -DIdefix_MHD=ON -DIdefix_MPI=ON $options
     echo "***********************************************"
     echo "Making  $rep"
     echo "***********************************************"
@@ -101,7 +101,7 @@ for rep in $rep_MHD_3D_mpi_list; do
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "***********************************************"
-    python3 $IDEFIX_DIR/configure.py -mhd -mpi $options
+    cmake $IDEFIX_DIR -DIdefix_MHD=ON -DIdefix_MPI=ON $options
     echo "***********************************************"
     echo "Making  $rep"
     echo "***********************************************"

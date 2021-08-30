@@ -73,4 +73,3 @@ message(STATUS "    MHD: ${Idefix_MHD}")
 message(STATUS "    MPI: ${Idefix_MPI}")
 message(STATUS "    Version: ${GIT_SHA1}")
 message(STATUS "    Problem definitions: '${Idefix_DEFS}'")
-

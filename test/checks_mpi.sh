@@ -41,6 +41,7 @@ for rep in $rep_HD_2D_mpi_list; do
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "***********************************************"
+    rm -f CMakeCache.txt
     cmake $IDEFIX_DIR -DIdefix_MPI=ON $options
     echo "***********************************************"
     echo "Making  $rep"
@@ -71,6 +72,7 @@ for rep in $rep_MHD_2D_mpi_list; do
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "***********************************************"
+    rm -f CMakeCache.txt
     cmake $IDEFIX_DIR -DIdefix_MHD=ON -DIdefix_MPI=ON $options
     echo "***********************************************"
     echo "Making  $rep"
@@ -101,6 +103,7 @@ for rep in $rep_MHD_3D_mpi_list; do
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "***********************************************"
+    rm -f CMakeCache.txt
     cmake $IDEFIX_DIR -DIdefix_MHD=ON -DIdefix_MPI=ON $options
     echo "***********************************************"
     echo "Making  $rep"
@@ -124,3 +127,19 @@ for rep in $rep_MHD_3D_mpi_list; do
 
     cd $TEST_DIR
 done
+
+# Test restart functions with OT3D which have generated a dump during the first pass
+rep=OrszagTang3D
+cd $TEST_DIR/MHD/$rep
+# remove generated vtk from previous run
+rm *.vtk
+echo "***********************************************"
+echo "Running  $rep with restart dump # 1"
+echo "***********************************************"
+mpirun -np 8 ./idefix -restart 1 -dec 2 2 2 || { echo "!!!! MHD $rep failed running restart dump validation"; exit 1; }
+cd python
+echo "***********************************************"
+echo "Testing  $rep with restart dump # 1"
+echo "***********************************************"
+python3 testidefix.py -noplot || { echo "!!!! MHD $rep failed checking restart dump validation"; exit 1; }
+cd ..

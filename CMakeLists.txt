@@ -13,6 +13,11 @@ set(idefix_source_file
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 include(GetGitRevisionDescription)
 
+#Idefix requires Cuda Lambdas (experimental)
+if(Kokkos_ENABLE_CUDA)
+  set(Kokkos_ENABLE_CUDA_LAMBDA ON CACHE BOOL "Idefix requires lambdas on Cuda" FORCE)
+endif()
+
 add_subdirectory(src/kokkos)
 add_subdirectory(src)
 
@@ -23,9 +28,7 @@ if(EXISTS ${PROJECT_BINARY_DIR}/CMakeLists.txt)
   message(STATUS "Including problem-specific source files in '${PROJECT_BINARY_DIR}'")
 endif()
 
-if(Kokkos_ENABLE_CUDA)
-  set(Kokkos_ENABLE_CUDA_LAMBDA ON CACHE BOOL "Idefix requires lambdas on Cuda" FORCE)
-endif()
+
 
 add_executable(idefix ${idefix_source_file})
 

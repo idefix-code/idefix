@@ -5,6 +5,9 @@ project (idefix)
 option(Idefix_MHD "enable MHD" OFF)
 option(Idefix_MPI "enable Message Passing Interface parallelisation" OFF)
 set(Idefix_DEFS "definitions.hpp" CACHE STRING "Problem definition header file")
+
+# the variable idefix_source file contains the list of source files. Additional source files
+# should be happenned to this list
 set(idefix_source_file
   ${PROJECT_BINARY_DIR}/setup.cpp)
 
@@ -18,8 +21,8 @@ if(Kokkos_ENABLE_CUDA)
   set(Kokkos_ENABLE_CUDA_LAMBDA ON CACHE BOOL "Idefix requires lambdas on Cuda" FORCE)
 endif()
 
-add_subdirectory(src/kokkos)
-add_subdirectory(src)
+add_subdirectory(src/kokkos build/kokkos)
+add_subdirectory(src build)
 
 # If a CMakeLists.txt is in the problem dir (for problem-specific source files)
 # then read it

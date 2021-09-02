@@ -1,10 +1,10 @@
 set(idefix_source_file ${idefix_source_file}
-  src/hydro/electromotiveforce/calcCornerEmf.cpp
-  src/hydro/electromotiveforce/calcNonidealEMF.cpp
-  src/hydro/electromotiveforce/calcRiemannEmf.cpp
-  src/hydro/electromotiveforce/electroMotiveForce.cpp
-  src/hydro/electromotiveforce/electroMotiveForce.hpp
-  src/hydro/electromotiveforce/EMFexchange.cpp
-  src/hydro/electromotiveforce/enforceEMFBoundary.cpp
-  src/hydro/electromotiveforce/evolveMagField.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/calcCornerEmf.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/calcNonidealEMF.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/calcRiemannEmf.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/electroMotiveForce.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/electroMotiveForce.hpp
+  ${CMAKE_CURRENT_LIST_DIR}/EMFexchange.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/enforceEMFBoundary.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/evolveMagField.cpp
   PARENT_SCOPE)

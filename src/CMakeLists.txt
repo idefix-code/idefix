@@ -5,27 +5,27 @@ add_subdirectory(output)
 add_subdirectory(rkl)
 
 set(idefix_source_file ${idefix_source_file}
-  src/arrays.hpp
-  src/error.cpp
-  src/error.hpp
-  src/global.cpp
-  src/global.hpp
-  src/grid.cpp
-  src/grid.hpp
-  src/gridHost.hpp
-  src/gridHost.cpp
-  src/idefix.hpp
-  src/input.cpp
-  src/input.hpp
-  src/loop.hpp
-  src/macros.hpp
-  src/main.cpp
-  src/profiler.cpp
-  src/profiler.hpp
-  src/real_types.hpp
-  src/setup.hpp
-  src/timeIntegrator.hpp
-  src/timeIntegrator.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/arrays.hpp
+  ${CMAKE_CURRENT_LIST_DIR}/error.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/error.hpp
+  ${CMAKE_CURRENT_LIST_DIR}/global.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/global.hpp
+  ${CMAKE_CURRENT_LIST_DIR}/grid.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/grid.hpp
+  ${CMAKE_CURRENT_LIST_DIR}/gridHost.hpp
+  ${CMAKE_CURRENT_LIST_DIR}/gridHost.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/idefix.hpp
+  ${CMAKE_CURRENT_LIST_DIR}/input.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/input.hpp
+  ${CMAKE_CURRENT_LIST_DIR}/loop.hpp
+  ${CMAKE_CURRENT_LIST_DIR}/macros.hpp
+  ${CMAKE_CURRENT_LIST_DIR}/main.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/profiler.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/profiler.hpp
+  ${CMAKE_CURRENT_LIST_DIR}/real_types.hpp
+  ${CMAKE_CURRENT_LIST_DIR}/setup.hpp
+  ${CMAKE_CURRENT_LIST_DIR}/timeIntegrator.hpp
+  ${CMAKE_CURRENT_LIST_DIR}/timeIntegrator.cpp
   PARENT_SCOPE
   )
 

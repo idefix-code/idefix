@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.16)
 set(CMAKE_BUILD_TYPE Release)
 set (CMAKE_CXX_STANDARD 14)
-project (idefix)
+
+project (idefix VERSION 1.0.0)
 option(Idefix_MHD "enable MHD" OFF)
 option(Idefix_MPI "enable Message Passing Interface parallelisation" OFF)
 set(Idefix_DEFS "definitions.hpp" CACHE STRING "Problem definition header file")
@@ -47,6 +48,7 @@ if(Idefix_MPI)
   find_package(MPI REQUIRED)
   target_link_libraries(idefix MPI::MPI_CXX)
 endif()
+
 
 #update gitversion.hpp if possible
 git_describe(GIT_SHA1)

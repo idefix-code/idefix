@@ -7,11 +7,6 @@ option(Idefix_MHD "enable MHD" OFF)
 option(Idefix_MPI "enable Message Passing Interface parallelisation" OFF)
 set(Idefix_DEFS "definitions.hpp" CACHE STRING "Problem definition header file")
 
-# the variable idefix_source file contains the list of source files. Additional source files
-# should be happenned to this list
-set(idefix_source_file
-  ${PROJECT_BINARY_DIR}/setup.cpp)
-
 
 # load git revision tools
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
@@ -22,6 +17,12 @@ if(Kokkos_ENABLE_CUDA)
   set(Kokkos_ENABLE_CUDA_LAMBDA ON CACHE BOOL "Idefix requires lambdas on Cuda" FORCE)
 endif()
 
+#create target binary "idefix"
+add_executable(idefix ${PROJECT_BINARY_DIR}/setup.cpp)
+
+# sub directories should be called after add_executable
+# because the binary target "idefix" should be defined
+# before adding source files via "target_sources"
 add_subdirectory(src/kokkos build/kokkos)
 add_subdirectory(src build)
 
@@ -31,10 +32,6 @@ if(EXISTS ${PROJECT_BINARY_DIR}/CMakeLists.txt)
   add_subdirectory(${PROJECT_BINARY_DIR})
   message(STATUS "Including problem-specific source files in '${PROJECT_BINARY_DIR}'")
 endif()
-
-
-
-add_executable(idefix ${idefix_source_file})
 
 
 if(Idefix_MHD)

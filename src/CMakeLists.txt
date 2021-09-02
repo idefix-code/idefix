@@ -4,29 +4,28 @@ add_subdirectory(dataBlock)
 add_subdirectory(output)
 add_subdirectory(rkl)
 
-set(idefix_source_file ${idefix_source_file}
-  ${CMAKE_CURRENT_LIST_DIR}/arrays.hpp
-  ${CMAKE_CURRENT_LIST_DIR}/error.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/error.hpp
-  ${CMAKE_CURRENT_LIST_DIR}/global.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/global.hpp
-  ${CMAKE_CURRENT_LIST_DIR}/grid.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/grid.hpp
-  ${CMAKE_CURRENT_LIST_DIR}/gridHost.hpp
-  ${CMAKE_CURRENT_LIST_DIR}/gridHost.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/idefix.hpp
-  ${CMAKE_CURRENT_LIST_DIR}/input.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/input.hpp
-  ${CMAKE_CURRENT_LIST_DIR}/loop.hpp
-  ${CMAKE_CURRENT_LIST_DIR}/macros.hpp
-  ${CMAKE_CURRENT_LIST_DIR}/main.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/profiler.cpp
-  ${CMAKE_CURRENT_LIST_DIR}/profiler.hpp
-  ${CMAKE_CURRENT_LIST_DIR}/real_types.hpp
-  ${CMAKE_CURRENT_LIST_DIR}/setup.hpp
-  ${CMAKE_CURRENT_LIST_DIR}/timeIntegrator.hpp
-  ${CMAKE_CURRENT_LIST_DIR}/timeIntegrator.cpp
-  PARENT_SCOPE
+target_sources(idefix
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/arrays.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/error.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/error.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/global.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/global.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/grid.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/grid.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/gridHost.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/gridHost.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/idefix.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/input.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/input.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/loop.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/macros.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/main.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/profiler.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/profiler.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/real_types.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/setup.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/timeIntegrator.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/timeIntegrator.cpp
   )
 
 

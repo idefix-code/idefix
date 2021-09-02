@@ -124,37 +124,7 @@ void HydroBoundary::SetBoundaries(real t) {
 void HydroBoundary::EnforceBoundaryDir(real t, int dir) {
   idfx::pushRegion("Hydro::EnforceBoundaryDir");
 
-  IdefixArray4D<real> Vc = hydro->Vc;
-  IdefixArray4D<real> Vs = hydro->Vs;
-
-  int ibeg,iend,jbeg,jend,kbeg,kend;
-  int ioffset,joffset,koffset;
-  int ighost,jghost,kghost;
-
-  ighost = data->nghost[IDIR];
-  jghost = data->nghost[JDIR];
-  kghost = data->nghost[KDIR];
-
-  int nxi = data->np_int[IDIR];
-  int nxj = data->np_int[JDIR];
-  int nxk = data->np_int[KDIR];
-
-
-  real sbLx = hydro->sbLx;
-  real sbS  = hydro->sbS;
-
-  ioffset = (dir == IDIR) ? data->np_int[IDIR] : 0;
-  joffset = (dir == JDIR) ? data->np_int[JDIR] : 0;
-  koffset = (dir == KDIR) ? data->np_int[KDIR] : 0;
-
-
   // left boundary
-  ibeg=0;
-  iend= (dir == IDIR) ? ighost : data->np_tot[IDIR];
-  jbeg=0;
-  jend= (dir == JDIR) ? jghost : data->np_tot[JDIR];
-  kbeg=0;
-  kend= (dir == KDIR) ? kghost : data->np_tot[KDIR];
 
   switch(data->lbound[dir]) {
     case internal:
@@ -193,12 +163,6 @@ void HydroBoundary::EnforceBoundaryDir(real t, int dir) {
   }
 
   // right boundary
-  ibeg= (dir == IDIR) ? ioffset + ighost : 0;
-  iend = data->np_tot[IDIR];
-  jbeg= (dir == JDIR) ? joffset + jghost : 0;
-  jend = data->np_tot[JDIR];
-  kbeg= (dir == KDIR) ? koffset + kghost : 0;
-  kend = data->np_tot[KDIR];
 
   switch(data->rbound[dir]) {
     case internal:
@@ -231,8 +195,6 @@ void HydroBoundary::EnforceBoundaryDir(real t, int dir) {
       std::stringstream msg("Boundary condition type is not yet implemented");
       IDEFIX_ERROR(msg);
   }
-
-
 
   idfx::popRegion();
 }

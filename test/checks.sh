@@ -40,9 +40,11 @@ for rep in $rep_HD_list; do
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "***********************************************"
+    rm -f CMakeCache.txt
     def_files=$(ls definitions*.hpp)
     for def in $def_files; do
-        python3 $IDEFIX_DIR/configure.py $options -defs=$def || { echo "!!!! HD $rep failed during configuration"; exit 1; }
+
+        cmake $IDEFIX_DIR $options -DIdefix_DEFS=$def || { echo "!!!! HD $rep failed during configuration"; exit 1; }
         echo "***********************************************"
         echo "Making  $rep with $def"
         echo "***********************************************"
@@ -73,9 +75,10 @@ for rep in $rep_MHD_list; do
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "***********************************************"
+    rm -f CMakeCache.txt
     def_files=$(ls definitions*.hpp)
     for def in $def_files; do
-        python3 $IDEFIX_DIR/configure.py -mhd $options -defs=$def || { echo "!!!! MHD $rep failed during configuration"; exit 1; }
+        cmake $IDEFIX_DIR $options -DIdefix_DEFS=$def -DIdefix_MHD=ON|| { echo "!!!! MHD $rep failed during configuration"; exit 1; }
         echo "***********************************************"
         echo "Making  $rep with $def"
         echo "***********************************************"
@@ -98,3 +101,19 @@ for rep in $rep_MHD_list; do
     done
     cd $TEST_DIR
 done
+
+# Test restart functions with OT3D which have generated a dump during the first pass
+rep=OrszagTang3D
+cd $TEST_DIR/MHD/$rep
+# remove generated vtk from previous run
+rm *.vtk
+echo "***********************************************"
+echo "Running  $rep with restart dump # 1"
+echo "***********************************************"
+./idefix -restart 1 || { echo "!!!! MHD $rep failed running restart dump validation"; exit 1; }
+cd python
+echo "***********************************************"
+echo "Testing  $rep with restart dump # 1"
+echo "***********************************************"
+python3 testidefix.py -noplot || { echo "!!!! MHD $rep failed checking restart dump validation"; exit 1; }
+cd ..

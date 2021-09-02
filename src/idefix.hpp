@@ -10,7 +10,7 @@
 #include <fstream>
 #include <iostream>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_DualView.hpp>
+// #include <Kokkos_DualView.hpp> // do we still need this?
 #ifdef WITH_MPI
 #include <mpi.h>
 #endif

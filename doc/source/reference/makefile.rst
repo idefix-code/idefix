@@ -7,7 +7,7 @@ Configuring with cmake
 requires ``cmake`` version >= 3.16. It is also recommended to use the graphical frontend ``ccmake`` to configure *Idefix*, as it allows one to have a rapid
 overview of all of the configuration options and switch them according to the target architecture.
 
-To configure *Idefix* with ``Cmake``, just launch ``cmake $IDEFIX_DIR`` with the desired options in the problem directory (that is a directory containing at least ``definitions.hpp``, ``setup.cpp`` and ``idefix.ini``).
+To configure *Idefix* with ``Cmake``, simply launch ``cmake $IDEFIX_DIR`` with the desired options **in a problem directory** (that is a directory containing at least ``definitions.hpp`` and ``setup.cpp``).
 Alternatively, you can replace ``cmake`` by ``ccmake`` to get a more user-friendly graphical interface).
 
 Several options can be enabled from the command line (or are accessible with ``ccmake`` GUI):
@@ -51,6 +51,10 @@ Several options can be enabled from the command line (or are accessible with ``c
 
     Note that ``cmake`` keeps a cache of the previous configuration performed in a particular problem directory. To reset the configuration and start from scratch,
     delete the file `CMakeCache.txt`.
+
+.. warning::
+
+    *Idefix* ``cmake`` configuration expects the build directory to be a problem directory (that is a directory containing at least ``definitions.hpp`` and ``setup.cpp``). Launching ``cmake`` from a problem directory ensures that ``cmake`` will use that directory as its build directory. Note that it is also possible to use the ``-B`` option to explictely tell ``cmake`` a path to a build=*Idefix* problem directory.
 
 
 Using GNU makefile and python configuration script (deprecated)

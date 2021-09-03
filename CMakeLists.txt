@@ -29,7 +29,7 @@ add_subdirectory(src build)
 # If a CMakeLists.txt is in the problem dir (for problem-specific source files)
 # then read it
 if(EXISTS ${PROJECT_BINARY_DIR}/CMakeLists.txt)
-  add_subdirectory(${PROJECT_BINARY_DIR})
+  add_subdirectory(${PROJECT_BINARY_DIR} build/setup)
   message(STATUS "Including problem-specific source files in '${PROJECT_BINARY_DIR}'")
 endif()
 

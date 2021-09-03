@@ -17,13 +17,15 @@ if(Kokkos_ENABLE_CUDA)
   set(Kokkos_ENABLE_CUDA_LAMBDA ON CACHE BOOL "Idefix requires lambdas on Cuda" FORCE)
 endif()
 
-#create target binary "idefix"
-add_executable(idefix ${PROJECT_BINARY_DIR}/setup.cpp)
+# Add kokkos CMAKE files (required early since these set compiler options)
+add_subdirectory(src/kokkos build/kokkos)
+
 
 # sub directories should be called after add_executable
 # because the binary target "idefix" should be defined
 # before adding source files via "target_sources"
-add_subdirectory(src/kokkos build/kokkos)
+#create target binary "idefix"
+add_executable(idefix ${PROJECT_BINARY_DIR}/setup.cpp)
 add_subdirectory(src build)
 
 # If a CMakeLists.txt is in the problem dir (for problem-specific source files)

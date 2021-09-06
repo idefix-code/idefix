@@ -1,5 +1,6 @@
 add_subdirectory(boundary)
 add_subdirectory(electromotiveforce)
+
 if(Idefix_MHD)
   add_subdirectory(MHDsolvers)
 else()
@@ -7,27 +8,27 @@ else()
 endif()
 
 
-set(idefix_source_file ${idefix_source_file}
-  src/hydro/addNonIdealMHDFlux.hpp
-  src/hydro/addSourceTerms.cpp
-  src/hydro/axis.cpp
-  src/hydro/axis.hpp
-  src/hydro/calcCurrent.cpp
-  src/hydro/calcParabolicFlux.hpp
-  src/hydro/calcRiemannFlux.hpp
-  src/hydro/calcRightHandSide.hpp
-  src/hydro/checkDivB.cpp
-  src/hydro/convertConsToPrim.cpp
-  src/hydro/convertConsToPrimHD.hpp
-  src/hydro/convertConsToPrimMHD.hpp
-  src/hydro/extrapolatePrimVar.hpp
-  src/hydro/fargo.cpp
-  src/hydro/fargo.hpp
-  src/hydro/fluxHD.hpp
-  src/hydro/fluxMHD.hpp
-  src/hydro/hydro_defs.hpp
-  src/hydro/hydro.cpp
-  src/hydro/hydro.hpp
-  src/hydro/viscosity.hpp
-  src/hydro/viscosity.cpp
-  PARENT_SCOPE)
+target_sources(idefix
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/addNonIdealMHDFlux.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/addSourceTerms.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/axis.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/axis.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/calcCurrent.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/calcParabolicFlux.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/calcRiemannFlux.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/calcRightHandSide.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/checkDivB.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/convertConsToPrim.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/convertConsToPrimHD.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/convertConsToPrimMHD.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/extrapolatePrimVar.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/fargo.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/fargo.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/fluxHD.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/fluxMHD.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/hydro_defs.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/hydro.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/hydro.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/viscosity.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/viscosity.cpp
+  )

@@ -1,4 +1,4 @@
-set(idefix_source_file ${idefix_source_file}
-  src/rkl/rkl.cpp
-  src/rkl/rkl.hpp
-  PARENT_SCOPE)
+target_sources(idefix
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/rkl.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/rkl.hpp
+  )

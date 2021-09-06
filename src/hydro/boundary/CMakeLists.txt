@@ -1,13 +1,12 @@
-set(idefix_source_file ${idefix_source_file}
-  src/hydro/boundary/boundaryloop.hpp
-  src/hydro/boundary/hydroboundary.cpp
-  src/hydro/boundary/hydroboundary.hpp)
+target_sources(idefix
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/boundaryloop.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/hydroboundary.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/hydroboundary.hpp
+  )
 
 if(Idefix_MPI)
-  set(idefix_source_file ${idefix_source_file}
-    src/hydro/boundary/mpi.cpp
-    src/hydro/boundary/mpi.hpp
+  target_sources(idefix
+    PUBLIC ${CMAKE_CURRENT_LIST_DIR}/mpi.cpp
+    PUBLIC ${CMAKE_CURRENT_LIST_DIR}/mpi.hpp
     )
 endif()
-
-set(idefix_source_file ${idefix_source_file} PARENT_SCOPE)

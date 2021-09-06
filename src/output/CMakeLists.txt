@@ -1,10 +1,10 @@
-set(idefix_source_file ${idefix_source_file}
-  src/output/dump.cpp
-  src/output/dump.hpp
-  src/output/dumpImage.cpp
-  src/output/dumpImage.hpp
-  src/output/output.cpp
-  src/output/output.hpp
-  src/output/vtk.cpp
-  src/output/vtk.hpp
-  PARENT_SCOPE)
+target_sources(idefix
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/dump.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/dump.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/dumpImage.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/dumpImage.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/output.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/output.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/vtk.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/vtk.hpp
+  )

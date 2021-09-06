@@ -1,6 +1,6 @@
-set(idefix_source_file ${idefix_source_file}
-  src/hydro/HDsolvers/hllcHD.hpp
-  src/hydro/HDsolvers/hllHD.hpp
-  src/hydro/HDsolvers/roeHD.hpp
-  src/hydro/HDsolvers/tvdlfHD.hpp
-  PARENT_SCOPE)
+target_sources(idefix
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/hllcHD.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/hllHD.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/roeHD.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/tvdlfHD.hpp
+  )

@@ -94,6 +94,7 @@ class Hydro {
   void EnrollUserDefBoundary(UserDefBoundaryFunc);
   void EnrollInternalBoundary(InternalBoundaryFunc);
   void EnrollEmfBoundary(EmfBoundaryFunc);
+  void EnrollFluxBoundary(UserDefBoundaryFunc);
 
   // Enroll user-defined gravitational potential
   void EnrollGravPotential(GravPotentialFunc);

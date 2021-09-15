@@ -18,6 +18,7 @@
 #include "viscosity.hpp"
 #include "axis.hpp"
 #include "fargo.hpp"
+#include "hydroboundary.hpp"
 
 // forward class declaration
 class DataBlock;
@@ -35,15 +36,13 @@ class Hydro {
   template <int> void CalcRightHandSide(real, real );
   void CalcCurrent();
   void AddSourceTerms(real, real );
-  void ReconstructVcField(IdefixArray4D<real> &);
-  void ReconstructNormalField(int);
 
-
-  void SetBoundary(real);
-  void EnforceBoundaryDir(real, int);
   real GetGamma();
   real CheckDivB();
   void ResetStage();
+
+  // Our boundary conditions
+  HydroBoundary boundary;
 
   // Source terms
   bool haveSourceTerms{false};
@@ -59,6 +58,9 @@ class Hydro {
 
   // Whether gravitational potential is computed
   bool haveGravPotential{false};
+
+  // Whether a body force is present
+  bool haveBodyForce{false};
 
   // Nonideal MHD effects coefficients
   ParabolicModuleStatus resistivityStatus, ambipolarStatus, hallStatus;
@@ -87,6 +89,7 @@ class Hydro {
   // Box width for shearing box problems
   real sbLx;
 
+
   // Enroll user-defined boundary conditions
   void EnrollUserDefBoundary(UserDefBoundaryFunc);
   void EnrollInternalBoundary(InternalBoundaryFunc);
@@ -94,6 +97,9 @@ class Hydro {
 
   // Enroll user-defined gravitational potential
   void EnrollGravPotential(GravPotentialFunc);
+
+  // Enroll user-defined body force
+  void EnrollBodyForce(BodyForceFunc);
 
   // Add some user source terms
   void EnrollUserSourceTerm(SrcTermFunc);
@@ -180,6 +186,7 @@ class Hydro {
   friend class Fargo;
   friend class Axis;
   friend class RKLegendre;
+  friend class HydroBoundary;
 
   // Isothermal EOS parameters
   real isoSoundSpeed;
@@ -193,17 +200,6 @@ class Hydro {
   Solver mySolver;
 
   DataBlock *data;
-
-
-
-
-  // User defined Boundary conditions
-  UserDefBoundaryFunc userDefBoundaryFunc{NULL};
-  bool haveUserDefBoundary{false};
-
-  // Internal boundary function
-  bool haveInternalBoundary{false};
-  InternalBoundaryFunc internalBoundaryFunc{NULL};
 
   // Emf boundary conditions
   bool haveEmfBoundary{false};
@@ -227,6 +223,10 @@ class Hydro {
 
   // Gravitational potential
   IdefixArray3D<real> phiP;
+
+  // Body force
+  IdefixArray4D<real> bodyForceVector;
+  BodyForceFunc bodyForceFunc{NULL};
 
   // Nonideal effect diffusion coefficient (only allocated when needed)
   IdefixArray3D<real> etaOhmic;

@@ -101,12 +101,12 @@ int main( int argc, char* argv[] ) {
     if(input.restartRequested) {
       idfx::cout << "Main: Restarting from dump file."  << std::endl;
       output.RestartFromDump(data,input.restartFileNumber);
-      data.hydro.SetBoundary(data.t);
+      data.SetBoundaries();
       output.CheckForWrites(data);
     } else {
       idfx::cout << "Main: Creating initial conditions." << std::endl;
       mysetup.InitFlow(data);
-      data.hydro.SetBoundary(data.t);
+      data.SetBoundaries();
       output.CheckForWrites(data);
     }
 

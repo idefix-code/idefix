@@ -175,7 +175,7 @@ void DataBlockHost::MakeVsFromAmag(IdefixHostArray4D<real> &Ain) {
         Vs(BX2s,k,j,i) = D_EXPAND( - 1/(x1(i)*dx1(i)) * (x1m(i+1)*Ain(KDIR,k,j,i+1)
                                    - x1m(i)*Ain(KDIR,k,j,i) )                           ,
                                                                                         ,
-                                   + 1/(x1m(i)*Ax2m*dx3(k)) * (Ain(IDIR,k+1,j,i)
+                                   + 1/(x1(i)*Ax2m*dx3(k)) * (Ain(IDIR,k+1,j,i)
                                    - Ain(IDIR,k,j,i) )                                  );
 
     #if DIMENSIONS == 3

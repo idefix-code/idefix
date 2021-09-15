@@ -284,16 +284,30 @@ void Dump::ReadNextFieldProperties(IdfxFileHandler fileHdl, int &ndim, int *dim,
     MPI_SAFE_CALL(MPI_Bcast(dim, ndim, MPI_INT, 0, MPI_COMM_WORLD));
 
   #else
+    size_t numRead;
+
     // Read name
-    fread(fieldName, sizeof(char), NAMESIZE, fileHdl);
+    numRead = fread(fieldName, sizeof(char), NAMESIZE, fileHdl);
+    if(numRead<NAMESIZE) {
+      IDEFIX_ERROR("Error: unexpected end of dump file");
+    }
     name.assign(fieldName,strlen(fieldName));
 
     // Read datatype
-    fread(&type, sizeof(int), 1, fileHdl);
+    numRead = fread(&type, sizeof(int), 1, fileHdl);
+    if(numRead<1) {
+      IDEFIX_ERROR("Error: unexpected end of dump file");
+    }
 
     // read dimensions
-    fread(&ndim, sizeof(int), 1, fileHdl);
-    fread(dim, sizeof(int), ndim, fileHdl);
+    numRead = fread(&ndim, sizeof(int), 1, fileHdl);
+    if(numRead<1) {
+      IDEFIX_ERROR("Error: unexpected end of dump file");
+    }
+    numRead = fread(dim, sizeof(int), ndim, fileHdl);
+    if(numRead<ndim) {
+      IDEFIX_ERROR("Error: unexpected end of dump file");
+    }
   #endif
 }
 
@@ -326,8 +340,13 @@ void Dump::ReadSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
     MPI_SAFE_CALL(MPI_Bcast(data, ntot, MpiType, 0, MPI_COMM_WORLD));
 
   #else
+    size_t numRead;
+
     // Read raw data
-    fread(data,size,ntot,fileHdl);
+    numRead = fread(data,size,ntot,fileHdl);
+    if(numRead<ntot) {
+      IDEFIX_ERROR("Error: unexpected end of dump file");
+    }
   #endif
 }
 
@@ -357,8 +376,12 @@ void Dump::ReadDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gdi
 
     offset=offset+nglob*sizeof(real);
   #else
+    size_t numRead;
     // Read raw data
-    fread(data,sizeof(real),ntot,fileHdl);
+    numRead = fread(data,sizeof(real),ntot,fileHdl);
+    if(numRead<ntot) {
+      IDEFIX_ERROR("Error: unexpected end of dump file");
+    }
   #endif
 }
 

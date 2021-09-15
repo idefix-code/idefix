@@ -5,7 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#include "../../idefix.hpp"
+#include "idefix.hpp"
 #include "dataBlock.hpp"
 #include "mpi.hpp"
 

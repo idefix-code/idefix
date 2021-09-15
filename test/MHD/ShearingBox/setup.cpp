@@ -1,9 +1,15 @@
 #include "idefix.hpp"
 #include "setup.hpp"
+#include "analysis.hpp"
 
 static real gammaIdeal;
 static real omega;
 static real shear;
+static real B0y;
+static real B0z;
+
+Analysis *analysis;
+
 
 //#define STRATIFIED
 
@@ -27,45 +33,58 @@ real randm(void) {
     return((real) ((double) q/(double)m));
 }
 
-// Default constructor
+void BodyForce(DataBlock &data, const real t, IdefixArray4D<real> &force) {
+  idfx::pushRegion("BodyForce");
+  IdefixArray1D<real> x = data.x[IDIR];
+  IdefixArray1D<real> z = data.x[KDIR];
+
+  // GPUS cannot capture static variables
+  real omegaLocal=omega;
+  real shearLocal =shear;
+
+  idefix_for("BodyForce",
+              data.beg[KDIR] , data.end[KDIR],
+              data.beg[JDIR] , data.end[JDIR],
+              data.beg[IDIR] , data.end[IDIR],
+              KOKKOS_LAMBDA (int k, int j, int i) {
+
+                force(IDIR,k,j,i) = -2.0*omegaLocal*shearLocal*x(i);
+                force(JDIR,k,j,i) = ZERO_F;
+                #ifdef STRATIFIED
+                  force(KDIR,k,j,i) = - omegaLocal*omegaLocal*z(k);
+                #else
+                  force(KDIR,k,j,i) = ZERO_F;
+                #endif
+      });
 
 
-// UserStep, here only gravity (vertical and radial)
-void UserStep(DataBlock &data, const real t, const real dt) {
-    Kokkos::Profiling::pushRegion("Setup::UserStep");
-    IdefixArray4D<real> Uc = data.hydro.Uc;
-    IdefixArray4D<real> Vc = data.hydro.Vc;
-    IdefixArray1D<real> x = data.x[IDIR];
-    IdefixArray1D<real> z = data.x[KDIR];
-
-    // GPUS cannot capture static variables
-    real omegaLocal=omega;
-    real shearLocal =shear;
-
-    idefix_for("UserSourceTerms",data.beg[KDIR],data.end[KDIR],data.beg[JDIR],data.end[JDIR],data.beg[IDIR],data.end[IDIR],
-        KOKKOS_LAMBDA (int k, int j, int i) {
-#ifdef STRATIFIED
-            Uc(MX3,k,j,i) += - dt*omegaLocal*omegaLocal*z(k)*Vc(RHO,k,j,i);
-#endif
-            Uc(MX1,k,j,i) += - TWO_F*dt*omegaLocal*shearLocal*Vc(RHO,k,j,i)*x(i);
-        });
-
-    Kokkos::Profiling::popRegion();
-
+  idfx::popRegion();
 }
 
+void AnalysisFunction(DataBlock &data) {
+  analysis->PerformAnalysis(data);
+}
 
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
-    gammaIdeal=data.hydro.GetGamma();
+  gammaIdeal=data.hydro.GetGamma();
 
-    // Get rotation rate along vertical axis
-    omega=input.GetReal("Hydro","Rotation",2);
-    shear=input.GetReal("Hydro","ShearingBox",0);
+  // Get rotation rate along vertical axis
+  omega=input.GetReal("Hydro","rotation",0);
+  shear=input.GetReal("Hydro","shearingBox",0);
+  B0y = input.GetReal("Setup","B0y",0);
+  B0z = input.GetReal("Setup","B0z",0);
 
-    // Add our userstep to the timeintegrator
-    data.hydro.EnrollUserSourceTerm(UserStep);
+  // Add our userstep to the timeintegrator
+  data.hydro.EnrollBodyForce(BodyForce);
+
+  analysis = new Analysis(input, grid, data, output,std::string("timevol.dat"));
+  output.EnrollAnalysis(&AnalysisFunction);
+  // Reset analysis if required
+  if(!input.restartRequested) {
+    analysis->ResetAnalysis();
+  }
 }
 
 // This routine initialize the flow
@@ -77,7 +96,6 @@ void Setup::InitFlow(DataBlock &data) {
     DataBlockHost d(data);
     real x,y,z;
 
-    real B0 = 0.02;
     real cs2 = gammaIdeal*omega*omega;
 
 
@@ -94,13 +112,12 @@ void Setup::InitFlow(DataBlock &data) {
                 d.Vc(RHO,k,j,i) = 1.0;
 #endif
                 d.Vc(PRS,k,j,i) = d.Vc(RHO,k,j,i)/cs2*gammaIdeal;
-                d.Vc(VX1,k,j,i) = 0.1*(randm()-0.5);
+                d.Vc(VX1,k,j,i) = 1e-5*sin(2.0*M_PI*(y+2*z));
                 d.Vc(VX2,k,j,i) = shear*x;
-                d.Vc(VX3,k,j,i) = 0.1*(randm()-0.5);
-
-                d.Vs(BX1s,k,j,i) = 0;
-                d.Vs(BX2s,k,j,i) = 0;
-                d.Vs(BX3s,k,j,i) = B0;
+                d.Vc(VX3,k,j,i) = 0.0;
+                d.Vs(BX1s,k,j,i) = 0.0;
+                d.Vs(BX2s,k,j,i) = B0y;
+                d.Vs(BX3s,k,j,i) = B0z;
 
             }
         }
@@ -114,12 +131,4 @@ void Setup::InitFlow(DataBlock &data) {
 // Analyse data to produce an output
 
 void MakeAnalysis(DataBlock & data) {
-
-}
-
-
-
-// Do a specifically designed user step in the middle of the integration
-void ComputeUserStep(DataBlock &data, real t, real dt) {
-
 }

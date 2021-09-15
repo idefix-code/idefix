@@ -220,7 +220,7 @@ void ElectroMotiveForce::ExchangeX3() {
 
 
   // Load  the buffers with data
-  int kleft,kright,ibeg,iend,jbeg,kend;
+  int kleft,kright,ibeg,iend,jbeg,jend;
   int nx,ny;
   IdefixArray1D<real> BufferLeft=BufferSendX3[faceLeft];
   IdefixArray1D<real> BufferRight=BufferSendX3[faceRight];

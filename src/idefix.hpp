@@ -10,7 +10,7 @@
 #include <fstream>
 #include <iostream>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_DualView.hpp>
+// #include <Kokkos_DualView.hpp> // do we still need this?
 #ifdef WITH_MPI
 #include <mpi.h>
 #endif
@@ -77,6 +77,10 @@ using Layout = Kokkos::LayoutRight;
   #include DEFINITIONS_FILE
 #endif
 #include "real_types.hpp"
+
+#if GEOMETRY == CYLINDRICAL && DIMENSIONS == 3
+  #error CYLINDRICAL should only be used with DIMENSIONS <= 2. Use POLAR for 3D problems.
+#endif
 
 // Default EMF_AVERAGE value
 #ifndef EMF_AVERAGE

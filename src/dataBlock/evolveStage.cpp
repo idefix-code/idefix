@@ -49,7 +49,7 @@ void DataBlock::EvolveStage() {
     hydro.emf.CalcNonidealEMF(this->t);
   hydro.emf.EnforceEMFBoundary();
   hydro.emf.EvolveMagField(this->t, this->dt, hydro.Vs);
-  hydro.ReconstructVcField(hydro.Uc);
+  hydro.boundary.ReconstructVcField(hydro.Uc);
 #endif
 
   idfx::popRegion();

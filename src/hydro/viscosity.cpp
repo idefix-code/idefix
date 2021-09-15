@@ -429,7 +429,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
       #if GEOMETRY == CYLINDRICAL
         real vx1i = 0.5*(Vc(VX1,k,j-1,i)+Vc(VX1,k,j,i));
 
-        divV = D_EXPAND(vx1i/x1(i) + dVxi, + dVyj, 0.0);
+        divV = D_EXPAND(vx1i/x1(i) + dVxi, + dVyj, +0.0);
 
         tau_xy = eta1*(dVxj+dVyi);
         tau_yy = 2.0*eta1*dVyj + (eta2 - (2.0/3.0)*eta1)*divV;

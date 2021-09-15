@@ -124,10 +124,12 @@ void Input::ParseCommandLine(int argc, char **argv) {
       // Check whether -restart was given with a number or not
 
       // -restart was the very last parameter
-      if((i+1)>= argc) explicitDump = false;
-
-      // next argiment is another parameter (does not start with a number)
-      if(std::isdigit(argv[i+1][0]) == 0) explicitDump = false;
+      if((i+1)>= argc) {
+        explicitDump = false;
+      } else if(std::isdigit(argv[i+1][0]) == 0) {
+        // next argiment is another parameter (does not start with a number)
+        explicitDump = false;
+      }
 
       if(explicitDump) {
         sirestart = std::string(argv[++i]);
@@ -152,11 +154,18 @@ void Input::ParseCommandLine(int argc, char **argv) {
           irestart = std::max(irestart, ifile);
         }
         sirestart = std::to_string(irestart);
-        if (irestart < 0) IDEFIX_ERROR("Cannot restart: no dumpfile found.");
+        if(irestart==-1) {
+          IDEFIX_WARNING("cannot find a valid restart dump file in current directory");
+        }
       }
-      inputParameters["CommandLine"]["restart"].push_back(sirestart);
-      this->restartRequested = true;
-      this->restartFileNumber = std::stoi(sirestart);
+      int restartn = std::stoi(sirestart);
+      if(restartn>=0) {
+        inputParameters["CommandLine"]["restart"].push_back(sirestart);
+        this->restartRequested = true;
+        this->restartFileNumber = restartn;
+      } else {
+        IDEFIX_WARNING("Invalid -restart option, I will ignore it.");
+      }
     }
     if(std::string(argv[i]) == "-i") {
       // Loop on dimensions
@@ -208,9 +217,24 @@ void Input::signalHandler(int signum) {
   abortRequested=true;
 }
 
+void Input::CheckForStopFile() {
+  // Check whether a file "stop" has been created in directory. If so, raise the abort flag
+  std::string filename = std::string("stop");
+  if(idfx::prank==0) {
+    std::ifstream f(filename);
+    if(f.good()) {
+      // File exists, delete it and raise the flag
+      std::remove(filename.c_str());
+      abortRequested = true;
+      idfx::cout << std::endl << "Input: Caught stop file command" << std::endl;
+    }
+  }
+}
+
 bool Input::CheckForAbort() {
   // Check whether an abort has been requesested
   // When MPI is present, we abort whenever one process got the signal
+  CheckForStopFile();
 #ifdef WITH_MPI
   int abortValue{0};
   bool returnValue{false};
@@ -218,11 +242,11 @@ bool Input::CheckForAbort() {
 
   MPI_Allreduce(MPI_IN_PLACE, &abortValue, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
   returnValue = abortValue > 0;
-  if(returnValue) idfx::cout << "Input::CheckForAbort: abort has been requested." << std::endl;
+  if(returnValue) idfx::cout << "Input: CheckForAbort: abort has been requested." << std::endl;
 
   return(returnValue);
 #else
-  if(abortRequested) idfx::cout << "Input::CheckForAbort: abort has been requested." << std::endl;
+  if(abortRequested) idfx::cout << "Input: CheckForAbort: abort has been requested." << std::endl;
   return(abortRequested);
 #endif
 }

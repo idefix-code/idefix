@@ -156,6 +156,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
   real newdt;
 
+
   idfx::pushRegion("TimeIntegrator::Cycle");
 
   //if(timer.seconds()-lastLog >= 1.0) {
@@ -166,16 +167,13 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   }
 
     // Apply Boundary conditions
-    // TODO(lesurg): Make a general boundary condition call in datablock
-  data.hydro.SetBoundary(data.t);
+  data.SetBoundaries();
 
   // Remove Fargo velocity so that the integrator works on the residual
   if(data.hydro.haveFargo) data.hydro.fargo.SubstractVelocity(data.t);
 
   // Convert current state into conservative variable and save it
   data.hydro.ConvertPrimToCons();
-
-
 
   // Store initial stage for multi-stage time integrators
   if(nstages>1) {
@@ -185,12 +183,22 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 #endif
   }
 
+  // save t at the begining of the cycle
+  const real t0 = data.t;
+
   // Reinit datablock for a new stage
   data.ResetStage();
+
+#ifdef WITH_MPI
+  MPI_Request dtReduce;
+#endif
 
   for(int stage=0; stage < nstages ; stage++) {
     // Update Uc & Vs
     data.EvolveStage();
+
+    // evolve dt accordingly
+    data.t += data.dt;
 
     // Look for Nans every now and then (this actually cost a lot of time on GPUs
     // because streams are divergent)
@@ -212,7 +220,8 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
   #ifdef WITH_MPI
         if(idfx::psize>1) {
-          MPI_SAFE_CALL(MPI_Allreduce(MPI_IN_PLACE, &newdt, 1, realMPI, MPI_MIN, MPI_COMM_WORLD));
+          MPI_SAFE_CALL(MPI_Iallreduce(MPI_IN_PLACE, &newdt, 1, realMPI, MPI_MIN, MPI_COMM_WORLD,
+                                       &dtReduce));
         }
   #endif
       }
@@ -220,6 +229,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
     // Is this not the first stage?
     if(stage>0) {
+      // do the partial evolution required by the multi-step
       real wcs=wc[stage-1];
       real w0s=w0[stage-1];
 
@@ -236,6 +246,9 @@ void TimeIntegrator::Cycle(DataBlock &data) {
           Vs(n,k,j,i) = wcs*Vs(n,k,j,i) + w0s*Vs0(n,k,j,i);
       });
 #endif
+      // update t
+      data.t = wcs*data.t + w0s*t0;
+
       // Tentatively high order fargo
       //if(data.hydro.haveFargo) data.hydro.fargo.ShiftSolution(data.t,wcs*data.dt);
     } //else {
@@ -245,7 +258,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     // Shift solution according to fargo if this is our last stage
 
     if(data.hydro.haveFargo && stage==nstages-1) {
-      data.hydro.fargo.ShiftSolution(data.t,data.dt);
+      data.hydro.fargo.ShiftSolution(t0,data.dt);
     }
 
 
@@ -257,7 +270,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
       // No: Apply boundary conditions & Recompute conservative variables
       // Add back fargo velocity so that boundary conditions are applied on the total V
       if(data.hydro.haveFargo) data.hydro.fargo.AddVelocity(data.t);
-      data.hydro.SetBoundary(data.t);
+      data.SetBoundaries();
       // And substract it back for next stage
       if(data.hydro.haveFargo) data.hydro.fargo.SubstractVelocity(data.t);
       data.hydro.ConvertPrimToCons();
@@ -268,13 +281,19 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   // Add back Fargo velocity so that updated Vc stores the total Velocity
   if(data.hydro.haveFargo) data.hydro.fargo.AddVelocity(data.t);
 
+  // Wait for hydro/newDt MPI reduction
+#ifdef WITH_MPI
+  if(idfx::psize>1) {
+    MPI_SAFE_CALL(MPI_Wait(&dtReduce, MPI_STATUS_IGNORE));
+  }
+#endif
 
   if(haveRKL && (ncycles%2)==0) {    // Runge-Kutta-Legendre cycle
     rkl.Cycle();
   }
 
-  // Update current time
-  data.t=data.t+data.dt;
+  // Update current time (should have already been done, but this gets rid of roundoff errors)
+  data.t=t0+data.dt;
 
   if(haveRKL) {
     // update next time step

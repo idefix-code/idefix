@@ -32,6 +32,8 @@ class Input {
   int CheckEntry(std::string, std::string);             // Check that a block/entry is present
                                                         // in the input file
   bool CheckForAbort();                                 // have we been asked for an abort?
+  void CheckForStopFile();                              // have we been asked for an abort from
+                                                        // a stop file?
 
   Input();
   void PrintLogo();

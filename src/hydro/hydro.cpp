@@ -413,6 +413,12 @@ void Hydro::EnrollUserDefBoundary(UserDefBoundaryFunc myFunc) {
   boundary.EnrollUserDefBoundary(myFunc);
 }
 
+void Hydro::EnrollFluxBoundary(UserDefBoundaryFunc myFunc) {
+  // This is a proxy for userdef enrollment
+  boundary.EnrollFluxBoundary(myFunc);
+}
+
+
 void Hydro::EnrollInternalBoundary(InternalBoundaryFunc myFunc) {
   // This is a proxy for userdef enrollment
   boundary.EnrollInternalBoundary(myFunc);

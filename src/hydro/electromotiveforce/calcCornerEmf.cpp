@@ -291,11 +291,7 @@ void ElectroMotiveForce::CalcCornerEMF(real t) {
 
   #endif // EMF_AVERAGE
 
-  #if EMF_AVERAGE == UCT_HLL
-    calcRiemannEmf();
-  #endif
-
-  #if EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL2
+  #if EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL
     calcRiemann2DEmf();
   #endif
 

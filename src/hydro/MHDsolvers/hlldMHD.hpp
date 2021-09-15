@@ -12,6 +12,7 @@
 #include "extrapolatePrimVar.hpp"
 #include "fluxMHD.hpp"
 #include "convertConsToPrimMHD.hpp"
+#include "storeFlux.hpp"
 
 // Compute Riemann fluxes from states using HLLD solver
 template<const int DIR>
@@ -55,9 +56,7 @@ void Hydro::HlldMHD() {
 
 
   // st and sb will be useful only when Hall is included
-  D_EXPAND( real st;  ,
-                      ,
-            real sb;  )
+  real st,sb;
 
   switch(DIR) {
     case(IDIR):
@@ -577,123 +576,18 @@ void Hydro::HlldMHD() {
       cMax(k,j,i) = cmax;
 
       // 7-- Store the flux in the emf components
-      D_EXPAND( Et(k,j,i) = st*Flux(BXt,k,j,i);  ,
-                                                 ,
-                Eb(k,j,i) = sb*Flux(BXb,k,j,i);  )
-
-#if EMF_AVERAGE == UCT_CONTACT
-      int s = 0;
-      if (Flux(RHO,k,j,i) >  eps_UCT_CONTACT) s =  1;
-      if (Flux(RHO,k,j,i) < -eps_UCT_CONTACT) s = -1;
-
-      SV(k,j,i) = s;
-
-#elif EMF_AVERAGE == UCT_HLL
-      SL(k,j,i) = std::fmax(ZERO_F, -sl);
-      SR(k,j,i) = std::fmax(ZERO_F,  sr);
-
-#elif EMF_AVERAGE == UCT_HLL2
-    real ar = std::fmax(ZERO_F, sr);
-    real al = std::fmin(ZERO_F, sl);
-    real scrh = ONE_F/(ar - al);
-
-    EXPAND( Et(k,j,i) = -st*(ar*vL[Xt] - al*vR[Xt])*scrh;  ,
-                                                           ,
-            Eb(k,j,i) = -sb*(ar*vL[Xb] - al*vR[Xb])*scrh;  );
-
-    aL(k,j,i) =  ar*scrh;
-    aR(k,j,i) = -al*scrh;
-    dR(k,j,i) = -al*ar*scrh;
-    dL(k,j,i) =  dR(k,j,i);
-
-#elif EMF_AVERAGE == UCT_HLLD
-    real Bn = (sr*vR[BXn] - sl*vL[BXn])/(sr - sl);
-
-    real chiL, chiR, nuLR, nuL, nuR;
-    real SaL, SaR, Sc;
-    real eps = 1.e-12*(fabs(sl) + fabs(sr));
-    real duL  = sl - vL[Xn];
-    real duR  = sr - vR[Xn];
-
-  #if HAVE_ENERGY
-    // Recompute speeds
-    real sqrL, sqrR, usLRHO, usRRHO;
-
-    real scrh  = ONE_F/(duR*uR[RHO] - duL*uL[RHO]);
-    Sc = (duR*uR[Xn] - duL*uL[Xn] - ptR + ptL)*scrh;
-
-    usLRHO = uL[RHO]*duL/(sl - Sc);
-    usRRHO = uR[RHO]*duR/(sr - Sc);
-
-    sqrL = sqrt(usLRHO);
-    sqrR = sqrt(usRRHO);
-
-    SaL = Sc - fabs(Bn)/sqrL;
-    SaR = Sc + fabs(Bn)/sqrR;
-
-    chiL  = (vL[Xn] - Sc)*(sl - Sc)/(SaL + sl - TWO_F*Sc);
-    chiR  = (vR[Xn] - Sc)*(sr - Sc)/(SaR + sr - TWO_F*Sc);
-  #else
-    scrh    = ONE_F/(sr - sl);
-    real rho_h   = (uR[RHO]*duR - uL[RHO]*duL)*scrh;
-    Sc = HALF_F*(SaL + SaR);
-    // Recompute speeds
-    real sqrho_h = sqrt(rho_h);
-    SaL = Sc - fabs(Bn)/sqrho_h;
-    SaR = Sc + fabs(Bn)/sqrho_h;
-
-    chiL  = (vL[Xn] - Sc)*(sl - Sc)/(SaL + sl - TWO_F*Sc);
-    chiR  = (vR[Xn] - Sc)*(sr - Sc)/(SaR + sr - TWO_F*Sc);
-  #endif
-
-    nuL  = (SaL + sl)/(fabs(SaL) + fabs(sl));
-    nuR  = (SaR + sr)/(fabs(SaR) + fabs(sr));
-    nuLR = (SaL + SaR)/(fabs(SaL) + fabs(SaR));
-
-    if (fabs(SaR - SaL) > 1.e-9*fabs(sr-sl)) {
-      dL(k,j,i) =   HALF_F*(chiL*nuL - chiL*nuLR)
-                     + HALF_F*(fabs(SaL) - nuLR*SaL);
-
-      dR(k,j,i) =   HALF_F*(chiR*nuR - chiR*nuLR)
-                     + HALF_F*(fabs(SaR) - nuLR*SaR);
-      aL(k,j,i) = HALF_F*(ONE_F + nuLR);
-      aR(k,j,i) = HALF_F*(ONE_F - nuLR);
-
-    } else {   // HLLC, degenerate limit Bx -> 0
-      dL(k,j,i) = HALF_F*chiL*nuL + HALF_F*fabs(SaL);
-      dR(k,j,i) = HALF_F*chiR*nuR + HALF_F*fabs(SaR);
-
-      aL(k,j,i) = HALF_F;
-      aR(k,j,i) = HALF_F;
-    }
-
-    real ar = std::fmax(ZERO_F, sr);
-    real al = std::fmin(ZERO_F, sl);
-    scrh = ONE_F/(ar - al);
-
-    // HLL diffusion coefficients
-    if (revert_to_hll) {
-      aL(k,j,i) =  ar*scrh;
-      aR(k,j,i) = -al*scrh;
-      dR(k,j,i) = -al*ar*scrh;
-      dL(k,j,i) =  dR(k,j,i);
-    }
-
-    // LF diffusion coefficients
-    if(0) {
-      real lambda = std::fmax(sr,sl);
-      aL(k,j,i) = HALF_F;
-      aR(k,j,i) = HALF_F;
-      dR(k,j,i) = HALF_F*lambda;
-      dL(k,j,i) = HALF_F*lambda;
-    }
-
-    EXPAND( Et(k,j,i) = -st*(ar*vL[Xt] - al*vR[Xt])*scrh;  ,
-                                                           ,
-            Eb(k,j,i) = -sb*(ar*vL[Xb] - al*vR[Xb])*scrh;  );
-#endif
+      #if EMF_AVERAGE == ARITHMETIC || EMF_AVERAGE == UCT0
+        K_StoreEMF<DIR>(i,j,k,st,sb, Flux, Et, Eb);
+      #elif EMF_AVERAGE == UCT_CONTACT
+        K_StoreContact<DIR>(i,j,k,st,sb,Flux,Et,Eb,SV);
+      #elif EMF_AVERAGE == UCT_HLL
+        K_StoreHLL<DIR>(i,j,k,st,sb,sl,sr,vL,vR,Et,Eb,aL,aR,dL,dR);
+      #elif EMF_AVERAGE == UCT_HLLD
+        K_StoreHLLD<DIR>(i,j,k,st,sb,sl,sr,ptL,ptR,vL,vR,uL,uR,Et,Eb,aL,aR,dL,dR);
+      #else
+        #error "Unknown EMF_AVERAGE scheme"
+      #endif
   });
-
   idfx::popRegion();
 }
 

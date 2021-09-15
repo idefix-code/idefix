@@ -12,6 +12,7 @@
 #include "extrapolatePrimVar.hpp"
 #include "fluxMHD.hpp"
 #include "convertConsToPrimMHD.hpp"
+#include "storeFlux.hpp"
 
 #define ROE_AVERAGE 0
 
@@ -67,9 +68,11 @@ void Hydro::RoeMHD() {
 
 #if EMF_AVERAGE == UCT_CONTACT
   IdefixArray3D<int> SV;
-#elif EMF_AVERAGE == UCT_HLL
-  IdefixArray3D<real> SL;
-  IdefixArray3D<real> SR;
+#elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL2
+  IdefixArray3D<real> aL;
+  IdefixArray3D<real> aR;
+  IdefixArray3D<real> dL;
+  IdefixArray3D<real> dR;
 #endif
 
   real gamma = this->gamma;
@@ -81,70 +84,75 @@ void Hydro::RoeMHD() {
   real delta    = 1.e-6;
 
   // Define normal, tangent and bi-tanget indices
-
   // st and sb will be useful only when Hall is included
-  D_EXPAND( real st;  ,
-                      ,
-            real sb;  )
+  real st,sb;
 
   switch(DIR) {
     case(IDIR):
       ioffset = 1;
-      D_EXPAND(               ,
+      D_EXPAND(
+                st = -ONE_F;  ,
                 jextend = 1;  ,
-                kextend = 1;  )
+                kextend = 1;
+                sb = +ONE_F;  )
 
       Et = this->emf.ezi;
       Eb = this->emf.eyi;
 #if EMF_AVERAGE == UCT_CONTACT
       SV = this->emf.svx;
-#elif EMF_AVERAGE == UCT_HLL
-      SL = this->emf.SxL;
-      SR = this->emf.SxR;
-#endif
+#elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL
+      aL = this->emf.axL;
+      aR = this->emf.axR;
 
-      D_EXPAND( st = -ONE_F;  ,
-                              ,
-                sb = +ONE_F;  )
+      dL = this->emf.dxL;
+      dR = this->emf.dxR;
+#endif
       break;
+#if DIMENSIONS >= 2
     case(JDIR):
       joffset=1;
-      D_EXPAND( iextend = 1;  ,
+      D_EXPAND(
+                iextend = 1;
+                st = +ONE_F;  ,
                               ,
-                kextend = 1;  )
+                kextend = 1;
+                sb = -ONE_F;  )
 
       Et = this->emf.ezj;
       Eb = this->emf.exj;
-#if EMF_AVERAGE == UCT_CONTACT
+  #if EMF_AVERAGE == UCT_CONTACT
       SV = this->emf.svy;
-#elif EMF_AVERAGE == UCT_HLL
-      SL = this->emf.SyL;
-      SR = this->emf.SyR;
-#endif
+  #elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL
+      aL = this->emf.ayL;
+      aR = this->emf.ayR;
 
-      D_EXPAND( st = +ONE_F;  ,
-                              ,
-                sb = -ONE_F;  )
+      dL = this->emf.dyL;
+      dR = this->emf.dyR;
+  #endif
       break;
+#endif
+#if DIMENSIONS == 3
     case(KDIR):
       koffset=1;
-      D_EXPAND( iextend = 1;  ,
+      D_EXPAND(
+                iextend = 1;
+                st = -ONE_F;  ,
                 jextend = 1;  ,
-                              )
+                sb = +ONE_F;  )
 
       Et = this->emf.eyk;
       Eb = this->emf.exk;
-#if EMF_AVERAGE == UCT_CONTACT
+  #if EMF_AVERAGE == UCT_CONTACT
       SV = this->emf.svz;
-#elif EMF_AVERAGE == UCT_HLL
-      SL = this->emf.SzL;
-      SR = this->emf.SzR;
-#endif
+  #elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL
+      aL = this->emf.azL;
+      aR = this->emf.azR;
 
-      D_EXPAND( st = -ONE_F;  ,
-                              ,
-                sb = +ONE_F;  )
+      dL = this->emf.dzL;
+      dR = this->emf.dzR;
+  #endif
       break;
+#endif
     default:
       IDEFIX_ERROR("Wrong direction");
   }
@@ -273,8 +281,8 @@ void Hydro::RoeMHD() {
       pL  = vL[PRS] + HALF_F*Bmag2L;
       pR  = vR[PRS] + HALF_F*Bmag2R;
 #else
-      // pL  = a2L*vL[RHO] + HALF_F*Bmag2L;
-      // pR  = a2R*vR[RHO] + HALF_F*Bmag2R;
+      pL  = a2L*vL[RHO] + HALF_F*Bmag2L;
+      pR  = a2R*vR[RHO] + HALF_F*Bmag2R;
 #endif
 
       // 6d. Compute enthalpy and sound speed.
@@ -613,21 +621,17 @@ void Hydro::RoeMHD() {
       cMax(k,j,i) = cmax;
 
       // 7-- Store the flux in the emf components
-      D_EXPAND( Et(k,j,i) = st*Flux(BXt,k,j,i);  ,
-                                                 ,
-                Eb(k,j,i) = sb*Flux(BXb,k,j,i);  )
-
-#if EMF_AVERAGE == UCT_CONTACT
-      int s = 0;
-      if (Flux(RHO,k,j,i) >  eps_UCT_CONTACT) s =  1;
-      if (Flux(RHO,k,j,i) < -eps_UCT_CONTACT) s = -1;
-
-      SV(k,j,i) = s;
-
-#elif EMF_AVERAGE == UCT_HLL
-      SL(k,j,i) = std::fmax(ZERO_F, -sl);
-      SR(k,j,i) = std::fmax(ZERO_F,  sr);
-#endif
+      #if EMF_AVERAGE == ARITHMETIC || EMF_AVERAGE == UCT0
+        K_StoreEMF<DIR>(i,j,k,st,sb, Flux, Et, Eb);
+      #elif EMF_AVERAGE == UCT_CONTACT
+        K_StoreContact<DIR>(i,j,k,st,sb,Flux,Et,Eb,SV);
+      #elif EMF_AVERAGE == UCT_HLL
+        K_StoreHLL<DIR>(i,j,k,st,sb,sl,sr,vL,vR,Et,Eb,aL,aR,dL,dR);
+      #elif EMF_AVERAGE == UCT_HLLD
+        K_StoreHLLD<DIR>(i,j,k,st,sb,sl,sr,pL,pR,vL,vR,uL,uR,Et,Eb,aL,aR,dL,dR);
+      #else
+        #error "Unknown EMF_AVERAGE scheme"
+      #endif
   });
 
   idfx::popRegion();

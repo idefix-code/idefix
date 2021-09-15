@@ -93,7 +93,7 @@ KOKKOS_INLINE_FUNCTION void K_StoreHLLD( const int i, const int j, const int k,
 
   real Bn = (sr*vR[BXn] - sl*vL[BXn])/(sr - sl);
 
-  real chiL, chiR, nuLR, nuL, nuR;
+  real chiL, chiR, nuLR, nuL, nuR,scrh;
   real SaL, SaR, Sc;
   real eps = 1.e-12*(fabs(sl) + fabs(sr));
   real duL  = sl - vL[Xn];

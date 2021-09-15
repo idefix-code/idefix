@@ -93,7 +93,7 @@ KOKKOS_INLINE_FUNCTION void K_StoreHLLD( const int i, const int j, const int k,
 
   real Bn = (sr*vR[BXn] - sl*vL[BXn])/(sr - sl);
 
-  real chiL, chiR, nuLR, nuL, nuR,scrh;
+  real chiL, chiR, nuLR, nuL, nuR;
   real SaL, SaR, Sc;
   real eps = 1.e-12*(fabs(sl) + fabs(sr));
   real duL  = sl - vL[Xn];
@@ -121,7 +121,7 @@ KOKKOS_INLINE_FUNCTION void K_StoreHLLD( const int i, const int j, const int k,
   chiL  = (vL[Xn] - Sc)*(sl - Sc)/(SaL + sl - TWO_F*Sc);
   chiR  = (vR[Xn] - Sc)*(sr - Sc)/(SaR + sr - TWO_F*Sc);
 #else
-  scrh    = ONE_F/(sr - sl);
+  real scrh    = ONE_F/(sr - sl);
   real rho_h   = (uR[RHO]*duR - uL[RHO]*duL)*scrh;
   Sc = HALF_F*(SaL + SaR);
   // Recompute speeds

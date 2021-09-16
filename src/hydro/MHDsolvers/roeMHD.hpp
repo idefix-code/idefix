@@ -68,7 +68,7 @@ void Hydro::RoeMHD() {
 
 #if EMF_AVERAGE == UCT_CONTACT
   IdefixArray3D<int> SV;
-#elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL2
+#elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL
   IdefixArray3D<real> aL;
   IdefixArray3D<real> aR;
   IdefixArray3D<real> dL;

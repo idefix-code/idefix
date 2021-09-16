@@ -218,7 +218,7 @@ void Hydro::TvdlfMHD() {
         K_StoreEMF<DIR>(i,j,k,st,sb, Flux, Et, Eb);
       #elif EMF_AVERAGE == UCT_CONTACT
         K_StoreContact<DIR>(i,j,k,st,sb,Flux,Et,Eb,SV);
-      #elif EMF_AVERAGE == UCT_HLL2
+      #elif EMF_AVERAGE == UCT_HLL
         K_StoreHLL<DIR>(i,j,k,st,sb,sl,sr,vL,vR,Et,Eb,aL,aR,dL,dR);
       #elif EMF_AVERAGE == UCT_HLLD
         // Compute magnetic pressure

@@ -39,10 +39,7 @@ void Hydro::HlldMHD() {
 
 #if EMF_AVERAGE == UCT_CONTACT
   IdefixArray3D<int> SV;
-#elif EMF_AVERAGE == UCT_HLL
-  IdefixArray3D<real> SL;
-  IdefixArray3D<real> SR;
-#elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL2
+#elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL
   IdefixArray3D<real> aL;
   IdefixArray3D<real> aR;
   IdefixArray3D<real> dL;
@@ -71,10 +68,7 @@ void Hydro::HlldMHD() {
       Eb = this->emf.eyi;
 #if EMF_AVERAGE == UCT_CONTACT
       SV = this->emf.svx;
-#elif EMF_AVERAGE == UCT_HLL
-      SL = this->emf.SxL;
-      SR = this->emf.SxR;
-#elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL2
+#elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL
       aL = this->emf.axL;
       aR = this->emf.axR;
 
@@ -96,10 +90,7 @@ void Hydro::HlldMHD() {
       Eb = this->emf.exj;
   #if EMF_AVERAGE == UCT_CONTACT
       SV = this->emf.svy;
-  #elif EMF_AVERAGE == UCT_HLL
-      SL = this->emf.SyL;
-      SR = this->emf.SyR;
-  #elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL2
+  #elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL
       aL = this->emf.ayL;
       aR = this->emf.ayR;
 
@@ -121,10 +112,7 @@ void Hydro::HlldMHD() {
       Eb = this->emf.exk;
   #if EMF_AVERAGE == UCT_CONTACT
       SV = this->emf.svz;
-  #elif EMF_AVERAGE == UCT_HLL
-      SL = this->emf.SzL;
-      SR = this->emf.SzR;
-  #elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL2
+  #elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL
       aL = this->emf.azL;
       aR = this->emf.azR;
 

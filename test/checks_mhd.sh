@@ -85,3 +85,4 @@ echo "***********************************************"
 echo "Checking bitwise compatibility of output from restarts"
 echo "***********************************************"
 diff data.0001.vtk data.0001.old.vtk || { echo "!!!! MHD $rep failed: restart dumps do not produce exactly the same results"; exit 1; }
+echo "Success"

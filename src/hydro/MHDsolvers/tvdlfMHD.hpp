@@ -214,34 +214,18 @@ void Hydro::TvdlfMHD() {
       cMax(k,j,i) = cmax;
 
       // 7-- Store the flux in the emf components
+      
       if constexpr(EMF_AVERAGE==ElectroMotiveForce::arithmetic
                 || EMF_AVERAGE==ElectroMotiveForce::uct0) {
-        K_StoreEMF<DIR>(i,j,k,st,sb, Flux, Et, Eb);
+        K_StoreEMF<DIR>(i,j,k,st,sb,Flux,c2Iso,sl,sr,vL,vR,uL,uR,Et,Eb,SV,aL,aR,dL,dR);
       } else if constexpr(EMF_AVERAGE==ElectroMotiveForce::uct_contact) {
-        K_StoreContact<DIR>(i,j,k,st,sb,Flux,Et,Eb,SV);
+        K_StoreContact<DIR>(i,j,k,st,sb,Flux,c2Iso,sl,sr,vL,vR,uL,uR,Et,Eb,SV,aL,aR,dL,dR);
       } else if constexpr(EMF_AVERAGE==ElectroMotiveForce::uct_hll) {
-        K_StoreHLL<DIR>(i,j,k,st,sb,sl,sr,vL,vR,Et,Eb,aL,aR,dL,dR);
+        K_StoreHLL<DIR>(i,j,k,st,sb,Flux,c2Iso,sl,sr,vL,vR,uL,uR,Et,Eb,SV,aL,aR,dL,dR);
       } else if constexpr(EMF_AVERAGE==ElectroMotiveForce::uct_hlld) {
-        // Compute magnetic pressure
-        real ptR, ptL;
-
-        #if HAVE_ENERGY
-          ptL  = vL[PRS] + HALF_F* ( EXPAND(vL[BX1]*vL[BX1]     ,
-                                            + vL[BX2]*vL[BX2]   ,
-                                            + vL[BX3]*vL[BX3])  );
-          ptR  = vR[PRS] + HALF_F* ( EXPAND(vR[BX1]*vR[BX1]     ,
-                                            + vR[BX2]*vR[BX2]   ,
-                                            + vR[BX3]*vR[BX3])  );
-        #else
-          ptL  = c2Iso*vL[RHO] + HALF_F* (EXPAND(vL[BX1]*vL[BX1]     ,
-                                                + vL[BX2]*vL[BX2]   ,
-                                                + vL[BX3]*vL[BX3])  );
-          ptR  = c2Iso*vR[RHO] + HALF_F* (EXPAND(vR[BX1]*vR[BX1]     ,
-                                                + vR[BX2]*vR[BX2]   ,
-                                                + vR[BX3]*vR[BX3])  );
-        #endif
-        K_StoreHLLD<DIR>(i,j,k,st,sb,sl,sr,ptL,ptR,vL,vR,uL,uR,Et,Eb,aL,aR,dL,dR);
+        K_StoreHLLD<DIR>(i,j,k,st,sb,Flux,c2Iso,sl,sr,vL,vR,uL,uR,Et,Eb,SV,aL,aR,dL,dR);
       }
+      
   });
 
   idfx::popRegion();

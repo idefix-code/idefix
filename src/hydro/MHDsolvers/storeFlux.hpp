@@ -12,11 +12,20 @@
 #include "hydro.hpp"
 
 template <const int DIR>
-KOKKOS_INLINE_FUNCTION void K_StoreEMF( const int i, const int j, const int k,
-                                        const real st, real sb,
+KOKKOS_FORCEINLINE_FUNCTION void K_StoreEMF( const int i, const int j, const int k,
+                                        const real st, const real sb,
                                         const IdefixArray4D<real> &Flux,
+                                        const real c2Iso,
+                                        const real sl, const real sr,
+                                        real vL[], real vR[],
+                                        real uL[], real uR[],
                                         const IdefixArray3D<real> &Et,
-                                        const IdefixArray3D<real> &Eb) {
+                                        const IdefixArray3D<real> &Eb,
+                                        const IdefixArray3D<int> &SV,
+                                        const IdefixArray3D<real> &aL,
+                                        const IdefixArray3D<real> &aR,
+                                        const IdefixArray3D<real> &dL,
+                                        const IdefixArray3D<real> &dR ) {
   EXPAND( const int BXn = DIR+BX1;                    ,
         const int BXt = (DIR == IDIR ? BX2 : BX1);  ,
         const int BXb = (DIR == KDIR ? BX2 : BX3);   )
@@ -27,13 +36,21 @@ KOKKOS_INLINE_FUNCTION void K_StoreEMF( const int i, const int j, const int k,
 }
 
 template <const int DIR>
-KOKKOS_INLINE_FUNCTION void K_StoreContact( const int i, const int j, const int k,
-                                        const real st, real sb,
+KOKKOS_FORCEINLINE_FUNCTION void K_StoreContact( const int i, const int j, const int k,
+                                        const real st, const real sb,
                                         const IdefixArray4D<real> &Flux,
+                                        const real c2Iso,
+                                        const real sl, const real sr,
+                                        real vL[], real vR[],
+                                        real uL[], real uR[],
                                         const IdefixArray3D<real> &Et,
                                         const IdefixArray3D<real> &Eb,
-                                        const IdefixArray3D<int> &SV ) {
-  K_StoreEMF<DIR>(i,j,k,st,sb,Flux,Et,Eb);
+                                        const IdefixArray3D<int> &SV,
+                                        const IdefixArray3D<real> &aL,
+                                        const IdefixArray3D<real> &aR,
+                                        const IdefixArray3D<real> &dL,
+                                        const IdefixArray3D<real> &dR) {
+  K_StoreEMF<DIR>(i,j,k,st,sb,Flux,c2Iso,sl,sr,vL,vR,uL,uR,Et,Eb,SV,aL,aR,dL,dR);
   int s = 0;
   if (Flux(RHO,k,j,i) >  eps_UCT_CONTACT) s =  1;
   if (Flux(RHO,k,j,i) < -eps_UCT_CONTACT) s = -1;
@@ -42,16 +59,21 @@ KOKKOS_INLINE_FUNCTION void K_StoreContact( const int i, const int j, const int 
 }
 
 template <const int DIR>
-KOKKOS_INLINE_FUNCTION void K_StoreHLL( const int i, const int j, const int k,
+KOKKOS_FORCEINLINE_FUNCTION void K_StoreHLL( const int i, const int j, const int k,
                                         const real st, const real sb,
+                                        const IdefixArray4D<real> &Flux,
+                                        const real c2Iso,
                                         const real sl, const real sr,
-                                        const real vL[], const real vR[],
+                                        real vL[], real vR[],
+                                        real uL[], real uR[],
                                         const IdefixArray3D<real> &Et,
                                         const IdefixArray3D<real> &Eb,
+                                        const IdefixArray3D<int> &SV,
                                         const IdefixArray3D<real> &aL,
                                         const IdefixArray3D<real> &aR,
                                         const IdefixArray3D<real> &dL,
                                         const IdefixArray3D<real> &dR) {
+
   EXPAND( const int Xn = DIR+MX1;                    ,
         const int Xt = (DIR == IDIR ? MX2 : MX1);  ,
         const int Xb = (DIR == KDIR ? MX2 : MX3);  )
@@ -71,14 +93,16 @@ KOKKOS_INLINE_FUNCTION void K_StoreHLL( const int i, const int j, const int k,
 }
 
 template <const int DIR>
-KOKKOS_INLINE_FUNCTION void K_StoreHLLD( const int i, const int j, const int k,
+KOKKOS_FORCEINLINE_FUNCTION void K_StoreHLLD( const int i, const int j, const int k,
                                         const real st, const real sb,
+                                        const IdefixArray4D<real> &Flux,
+                                        const real c2Iso,
                                         const real sl, const real sr,
-                                        const real ptL, const real ptR,
-                                        const real vL[], const real vR[],
-                                        const real uL[], const real uR[],
+                                        real vL[], real vR[],
+                                        real uL[], real uR[],
                                         const IdefixArray3D<real> &Et,
                                         const IdefixArray3D<real> &Eb,
+                                        const IdefixArray3D<int> &SV,
                                         const IdefixArray3D<real> &aL,
                                         const IdefixArray3D<real> &aR,
                                         const IdefixArray3D<real> &dL,
@@ -86,6 +110,24 @@ KOKKOS_INLINE_FUNCTION void K_StoreHLLD( const int i, const int j, const int k,
   EXPAND( const int Xn = DIR+MX1;                    ,
         const int Xt = (DIR == IDIR ? MX2 : MX1);  ,
         const int Xb = (DIR == KDIR ? MX2 : MX3);  )
+  // Compute magnetic pressure
+  real ptR, ptL;
+
+  #if HAVE_ENERGY
+    ptL  = vL[PRS] + HALF_F* ( EXPAND(vL[BX1]*vL[BX1]     ,
+                                      + vL[BX2]*vL[BX2]   ,
+                                      + vL[BX3]*vL[BX3])  );
+    ptR  = vR[PRS] + HALF_F* ( EXPAND(vR[BX1]*vR[BX1]     ,
+                                      + vR[BX2]*vR[BX2]   ,
+                                      + vR[BX3]*vR[BX3])  );
+  #else
+    ptL  = c2Iso*vL[RHO] + HALF_F* (EXPAND(vL[BX1]*vL[BX1]     ,
+                                          + vL[BX2]*vL[BX2]   ,
+                                          + vL[BX3]*vL[BX3])  );
+    ptR  = c2Iso*vR[RHO] + HALF_F* (EXPAND(vR[BX1]*vR[BX1]     ,
+                                          + vR[BX2]*vR[BX2]   ,
+                                          + vR[BX3]*vR[BX3])  );
+  #endif
 
   int revert_to_hll = 0;
 

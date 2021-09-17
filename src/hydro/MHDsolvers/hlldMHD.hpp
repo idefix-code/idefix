@@ -564,16 +564,20 @@ void Hydro::HlldMHD() {
       cMax(k,j,i) = cmax;
 
       // 7-- Store the flux in the emf components
+      // WARNING: cuda constexpr implementation is buggy. We need to have the same
+      // signatures for all functions called inside a constexpr for nvcc to properly
+      // capture the required variables.
       if constexpr(EMF_AVERAGE==ElectroMotiveForce::arithmetic
                 || EMF_AVERAGE==ElectroMotiveForce::uct0) {
-        K_StoreEMF<DIR>(i,j,k,st,sb, Flux, Et, Eb);
+        K_StoreEMF<DIR>(i,j,k,st,sb,Flux,c2Iso,sl,sr,vL,vR,uL,uR,Et,Eb,SV,aL,aR,dL,dR);
       } else if constexpr(EMF_AVERAGE==ElectroMotiveForce::uct_contact) {
-        K_StoreContact<DIR>(i,j,k,st,sb,Flux,Et,Eb,SV);
+        K_StoreContact<DIR>(i,j,k,st,sb,Flux,c2Iso,sl,sr,vL,vR,uL,uR,Et,Eb,SV,aL,aR,dL,dR);
       } else if constexpr(EMF_AVERAGE==ElectroMotiveForce::uct_hll) {
-        K_StoreHLL<DIR>(i,j,k,st,sb,sl,sr,vL,vR,Et,Eb,aL,aR,dL,dR);
+        K_StoreHLL<DIR>(i,j,k,st,sb,Flux,c2Iso,sl,sr,vL,vR,uL,uR,Et,Eb,SV,aL,aR,dL,dR);
       } else if constexpr(EMF_AVERAGE==ElectroMotiveForce::uct_hlld) {
-        K_StoreHLLD<DIR>(i,j,k,st,sb,sl,sr,ptL,ptR,vL,vR,uL,uR,Et,Eb,aL,aR,dL,dR);
+        K_StoreHLLD<DIR>(i,j,k,st,sb,Flux,c2Iso,sl,sr,vL,vR,uL,uR,Et,Eb,SV,aL,aR,dL,dR);
       }
+      
   });
   idfx::popRegion();
 }

@@ -21,7 +21,7 @@ configure script tests:
     - python3 -m pip install pytest
     - python3 -m pytest -vv test/test_configure.py
 
-integration tests:
+integration tests HD:
   stage: checks
   image: lesurg/idefix:latest
   script:
@@ -29,7 +29,27 @@ integration tests:
     - gcc --version
 
     - cd test
-    - ./checks.sh
+    - ./checks_hd.sh
+    - ./checks_mpi.sh
+
+integration tests MHD:
+  stage: checks
+  image: lesurg/idefix:latest
+  script:
+    - cat /proc/cpuinfo
+    - gcc --version
+
+    - cd test
+    - ./checks_mhd.sh
+
+integration tests MPI:
+  stage: checks
+  image: lesurg/idefix:latest
+  script:
+    - cat /proc/cpuinfo
+    - gcc --version
+
+    - cd test
     - ./checks_mpi.sh
 
 cache:

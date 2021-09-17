@@ -59,16 +59,6 @@ using Layout = Kokkos::LayoutRight;
 #define     JDIR    1
 #define     KDIR    2
 
-/*---- EMFs -----*/
-#define ARITHMETIC   1
-#define UCT0         2
-#define UCT_CONTACT  3
-#define UCT_HLL      4
-#define UCT_HLLD     5
-
-// Runge-Kutta-Legendre switch
-#define RKL   YES
-
 
 // Basic configuration
 #ifndef DEFINITIONS_FILE
@@ -78,14 +68,13 @@ using Layout = Kokkos::LayoutRight;
 #endif
 #include "real_types.hpp"
 
+#ifdef EMF_AVERAGE
+#error EMF_AVERAGE is deprecated. Use hydro/emf in the input file to set the emf averaging scheme
+#endif
 #if GEOMETRY == CYLINDRICAL && DIMENSIONS == 3
   #error CYLINDRICAL should only be used with DIMENSIONS <= 2. Use POLAR for 3D problems.
 #endif
 
-// Default EMF_AVERAGE value
-#ifndef EMF_AVERAGE
-  #define EMF_AVERAGE     UCT_CONTACT
-#endif
 
 // Check whether we're isothermal. If we're not, then we need to solve an energy equation
 #ifndef HAVE_ENERGY

@@ -13,9 +13,10 @@
 #include "fluxMHD.hpp"
 #include "convertConsToPrimMHD.hpp"
 #include "storeFlux.hpp"
+#include "electroMotiveForce.hpp"
 
 // Compute Riemann fluxes from states using TVDLF solver
-template<const int DIR>
+template<const int DIR, const ElectroMotiveForce::AveragingType EMF_AVERAGE>
 void Hydro::TvdlfMHD() {
   idfx::pushRegion("Hydro::TVDLF_MHD");
 
@@ -39,14 +40,14 @@ void Hydro::TvdlfMHD() {
   IdefixArray3D<real> Eb;
   IdefixArray3D<real> Et;
 
-#if EMF_AVERAGE == UCT_CONTACT
+  // Required by UCT_Contact
   IdefixArray3D<int> SV;
-#elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL
+
+  // Required by UCT_HLLX
   IdefixArray3D<real> aL;
   IdefixArray3D<real> aR;
   IdefixArray3D<real> dL;
   IdefixArray3D<real> dR;
-#endif
 
   real gamma = this->gamma;
   real gamma_m1=gamma-ONE_F;
@@ -68,15 +69,15 @@ void Hydro::TvdlfMHD() {
 
       Et = this->emf.ezi;
       Eb = this->emf.eyi;
-#if EMF_AVERAGE == UCT_CONTACT
+
       SV = this->emf.svx;
-#elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL
+
       aL = this->emf.axL;
       aR = this->emf.axR;
 
       dL = this->emf.dxL;
       dR = this->emf.dxR;
-#endif
+
       break;
 #if DIMENSIONS >= 2
     case(JDIR):
@@ -90,15 +91,15 @@ void Hydro::TvdlfMHD() {
 
       Et = this->emf.ezj;
       Eb = this->emf.exj;
-  #if EMF_AVERAGE == UCT_CONTACT
+
       SV = this->emf.svy;
-  #elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL
+
       aL = this->emf.ayL;
       aR = this->emf.ayR;
 
       dL = this->emf.dyL;
       dR = this->emf.dyR;
-  #endif
+
       break;
 #endif
 #if DIMENSIONS == 3
@@ -112,15 +113,14 @@ void Hydro::TvdlfMHD() {
 
       Et = this->emf.eyk;
       Eb = this->emf.exk;
-  #if EMF_AVERAGE == UCT_CONTACT
+
       SV = this->emf.svz;
-  #elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL
+
       aL = this->emf.azL;
       aR = this->emf.azR;
 
       dL = this->emf.dzL;
       dR = this->emf.dzR;
-  #endif
       break;
 #endif
     default:
@@ -214,13 +214,14 @@ void Hydro::TvdlfMHD() {
       cMax(k,j,i) = cmax;
 
       // 7-- Store the flux in the emf components
-      #if EMF_AVERAGE == ARITHMETIC || EMF_AVERAGE == UCT0
+      if constexpr(EMF_AVERAGE==ElectroMotiveForce::arithmetic
+                || EMF_AVERAGE==ElectroMotiveForce::uct0) {
         K_StoreEMF<DIR>(i,j,k,st,sb, Flux, Et, Eb);
-      #elif EMF_AVERAGE == UCT_CONTACT
+      } else if constexpr(EMF_AVERAGE==ElectroMotiveForce::uct_contact) {
         K_StoreContact<DIR>(i,j,k,st,sb,Flux,Et,Eb,SV);
-      #elif EMF_AVERAGE == UCT_HLL
+      } else if constexpr(EMF_AVERAGE==ElectroMotiveForce::uct_hll) {
         K_StoreHLL<DIR>(i,j,k,st,sb,sl,sr,vL,vR,Et,Eb,aL,aR,dL,dR);
-      #elif EMF_AVERAGE == UCT_HLLD
+      } else if constexpr(EMF_AVERAGE==ElectroMotiveForce::uct_hlld) {
         // Compute magnetic pressure
         real ptR, ptL;
 
@@ -240,9 +241,7 @@ void Hydro::TvdlfMHD() {
                                                 + vR[BX3]*vR[BX3])  );
         #endif
         K_StoreHLLD<DIR>(i,j,k,st,sb,sl,sr,ptL,ptR,vL,vR,uL,uR,Et,Eb,aL,aR,dL,dR);
-      #else
-        #error "Unknown EMF_AVERAGE scheme"
-      #endif
+      }
   });
 
   idfx::popRegion();

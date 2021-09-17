@@ -9,6 +9,7 @@
 #define  HYDRO_ELECTROMOTIVEFORCE_ELECTROMOTIVEFORCE_HPP_
 
 #include "idefix.hpp"
+#include "input.hpp"
 
 // Forward declarations
 class Hydro;
@@ -16,6 +17,11 @@ class DataBlock;
 
 class ElectroMotiveForce {
  public:
+  enum AveragingType {none, arithmetic, uct0, uct_contact, uct_hll, uct_hlld};
+
+  // Type of averaging
+  AveragingType averaging{none};
+
   // Face centered emf components
   IdefixArray3D<real>     exj;
   IdefixArray3D<real>     exk;
@@ -29,12 +35,12 @@ class ElectroMotiveForce {
   IdefixArray3D<real>     ey;
   IdefixArray3D<real>     ez;
 
-#if EMF_AVERAGE == UCT_CONTACT
+// Required by uct_contact averaging
   IdefixArray3D<int>      svx;
   IdefixArray3D<int>      svy;
   IdefixArray3D<int>      svz;
 
-#elif EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL
+// required by uct_hll averaging
   IdefixArray3D<real> axL;
   IdefixArray3D<real> axR;
   IdefixArray3D<real> ayL;
@@ -50,7 +56,7 @@ class ElectroMotiveForce {
   IdefixArray3D<real> dxR;
   IdefixArray3D<real> dyL;
   IdefixArray3D<real> dyR;
-#endif
+
 
   IdefixArray3D<real>     Ex1;
   IdefixArray3D<real>     Ex2;
@@ -64,7 +70,7 @@ class ElectroMotiveForce {
   // Range of existence
 
   // Init from Hydro class
-  void Init(Hydro *);
+  void Init(Input &, Hydro *);
 
   void EvolveMagField(real, real, IdefixArray4D<real>&);
   void CalcCornerEMF(real );

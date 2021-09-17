@@ -214,7 +214,9 @@ void Hydro::TvdlfMHD() {
       cMax(k,j,i) = cmax;
 
       // 7-- Store the flux in the emf components
-      
+      // WARNING: cuda constexpr implementation is buggy. We need to have the same
+      // signatures for all functions called inside a constexpr for nvcc to properly
+      // capture the required variables.
       if constexpr(EMF_AVERAGE==ElectroMotiveForce::arithmetic
                 || EMF_AVERAGE==ElectroMotiveForce::uct0) {
         K_StoreEMF<DIR>(i,j,k,st,sb,Flux,c2Iso,sl,sr,vL,vR,uL,uR,Et,Eb,SV,aL,aR,dL,dR);

@@ -25,6 +25,11 @@ void ElectroMotiveForce::CalcCornerEMF(real t) {
   IdefixArray3D<real> ezi = this->ezi;
   IdefixArray3D<real> ezj = this->ezj;
 
+  // cell-centered EMFs
+  IdefixArray3D<real> Ex1 = this->Ex1;
+  IdefixArray3D<real> Ex2 = this->Ex2;
+  IdefixArray3D<real> Ex3 = this->Ex3;
+
 #if MHD == YES && DIMENSIONS >= 2
 
   if(averaging==arithmetic) {
@@ -53,9 +58,7 @@ void ElectroMotiveForce::CalcCornerEMF(real t) {
     // 0. Compute cell-centered emf.
     IdefixArray4D<real> Vc = hydro->Vc;
 
-    IdefixArray3D<real> Ex1 = this->Ex1;
-    IdefixArray3D<real> Ex2 = this->Ex2;
-    IdefixArray3D<real> Ex3 = this->Ex3;
+
 
     idefix_for("CalcCenterEMF",
               0,data->np_tot[KDIR],

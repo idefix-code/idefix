@@ -73,7 +73,6 @@ KOKKOS_FORCEINLINE_FUNCTION void K_StoreHLL( const int i, const int j, const int
                                         const IdefixArray3D<real> &aR,
                                         const IdefixArray3D<real> &dL,
                                         const IdefixArray3D<real> &dR) {
-
   EXPAND( const int Xn = DIR+MX1;                    ,
         const int Xt = (DIR == IDIR ? MX2 : MX1);  ,
         const int Xb = (DIR == KDIR ? MX2 : MX3);  )

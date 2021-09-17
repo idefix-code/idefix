@@ -227,7 +227,6 @@ void Hydro::TvdlfMHD() {
       } else if constexpr(EMF_AVERAGE==ElectroMotiveForce::uct_hlld) {
         K_StoreHLLD<DIR>(i,j,k,st,sb,Flux,c2Iso,sl,sr,vL,vR,uL,uR,Et,Eb,SV,aL,aR,dL,dR);
       }
-      
   });
 
   idfx::popRegion();

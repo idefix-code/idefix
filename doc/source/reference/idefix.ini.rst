@@ -99,6 +99,17 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 | solver         | string                  | | Type of Riemann Solver. In hydro can be any of ``tvdlf``, ``hll``, ``hllc`` and ``roe``.  |
 |                |                         | | In MHD, can be ``tvdlf``, ``hll``, ``hlld`` and ``roe``                                   |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| emf            | string                  | | Averaging scheme for the electromotive force (only used with MHD). The options            |
+|                |                         | | follows Gardiner & Stone JCP, 2005 (GS05).                                                |
+|                |                         | | ``arithmetic``: simple arithmetic average of the face-centered emfs (eq. 33 in GS05)      |
+|                |                         | | ``uct0``: Upwind constraint transport (UCT) with 0 wave speed (eq. 39 in GS05)            |
+|                |                         | | ``uct_contact``: UCT with contact wave upwinding (eq. 50 in GS05)                         |
+|                |                         | | ``uct_hll``: UCT with 2D Riemann solver using the HLL approximation. Follows Londrillo    |
+|                |                         | |  & del Zanna JCP (2004).                                                                  |
+|                |                         | | ``uct_hlld``: UCT with 2D Riemann solver using the HLLD approximation. Follows Londrillo  |
+|                |                         | |  & del Zanna JCP (2004).                                                                  |
+|                |                         | |  If no averaging scheme is selected in the input file, *Idefix* uses ``uct_contact``.     |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | csiso          | string, (float)         | | Isothermal sound speed. Only used when ISOTHERMAL is defined in ``definitions.hpp``.      |
 |                |                         | | When ``constant``, the second parameter is the spatially constant sound speed.            |
 |                |                         | | When ``userdef``, the ``Hydro`` class expects a user-defined sound speed function         |

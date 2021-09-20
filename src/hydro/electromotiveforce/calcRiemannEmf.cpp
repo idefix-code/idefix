@@ -21,8 +21,8 @@ KOKKOS_INLINE_FUNCTION real MC_LIM2 (const real dp, const real dm) {
 
 
 
-void ElectroMotiveForce::calcRiemann2DEmf() {
-  idfx::pushRegion("ElectroMotiveForce::calcRiemann2DEmf");
+void ElectroMotiveForce::CalcRiemannAverage() {
+  idfx::pushRegion("ElectroMotiveForce::calcRiemannAverage");
 
 #if EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL
 

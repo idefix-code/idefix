@@ -74,8 +74,14 @@ class ElectroMotiveForce {
 
   void EvolveMagField(real, real, IdefixArray4D<real>&);
   void CalcCornerEMF(real );
-  void calcRiemannEmf();
-  void calcRiemann2DEmf();
+
+  // Different flavors of EMF average schemes
+  void CalcRiemannAverage();
+  void CalcArithmeticAverage();
+  void CalcCellCenteredEMF();
+  void CalcUCT0Average();
+  void CalcContactAverage();
+
   // Enforce boundary conditions on the EMFs.
   void EnforceEMFBoundary();
   void CalcNonidealEMF(real );

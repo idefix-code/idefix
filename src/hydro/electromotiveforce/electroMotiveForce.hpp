@@ -9,6 +9,7 @@
 #define  HYDRO_ELECTROMOTIVEFORCE_ELECTROMOTIVEFORCE_HPP_
 
 #include "idefix.hpp"
+#include "input.hpp"
 
 // Forward declarations
 class Hydro;
@@ -16,6 +17,11 @@ class DataBlock;
 
 class ElectroMotiveForce {
  public:
+  enum AveragingType {none, arithmetic, uct0, uct_contact, uct_hll, uct_hlld};
+
+  // Type of averaging
+  AveragingType averaging{none};
+
   // Face centered emf components
   IdefixArray3D<real>     exj;
   IdefixArray3D<real>     exk;
@@ -29,34 +35,28 @@ class ElectroMotiveForce {
   IdefixArray3D<real>     ey;
   IdefixArray3D<real>     ez;
 
-#if EMF_AVERAGE == UCT_CONTACT
+// Required by uct_contact averaging
   IdefixArray3D<int>      svx;
   IdefixArray3D<int>      svy;
   IdefixArray3D<int>      svz;
 
-#elif EMF_AVERAGE == UCT_HLL
-  // Signal velocities
-  IdefixArray3D<real> SxL;
-  IdefixArray3D<real> SxR;
-  IdefixArray3D<real> SyL;
-  IdefixArray3D<real> SyR;
-  IdefixArray3D<real> SzL;
-  IdefixArray3D<real> SzR;
-
-  // Staggered magnetic field and velocity slopes
-  IdefixArray3D<real> dbx_dy, dby_dx;
+// required by uct_hll averaging
+  IdefixArray3D<real> axL;
+  IdefixArray3D<real> axR;
+  IdefixArray3D<real> ayL;
+  IdefixArray3D<real> ayR;
   #if DIMENSIONS == 3
-  IdefixArray3D<real> dbz_dx, dbz_dy;
-  IdefixArray3D<real> dbx_dz, dby_dz;
-  #endif
+  IdefixArray3D<real> azL;
+  IdefixArray3D<real> azR;
 
-  IdefixArray3D<real> dvx_dx, dvx_dy;
-  IdefixArray3D<real> dvy_dx, dvy_dy;
-  #if DIMENSIONS == 3
-  IdefixArray3D<real> dvx_dz, dvy_dz;
-  IdefixArray3D<real> dvz_dx, dvz_dy, dvz_dz;
+  IdefixArray3D<real> dzL;
+  IdefixArray3D<real> dzR;
   #endif
-#endif
+  IdefixArray3D<real> dxL;
+  IdefixArray3D<real> dxR;
+  IdefixArray3D<real> dyL;
+  IdefixArray3D<real> dyR;
+
 
   IdefixArray3D<real>     Ex1;
   IdefixArray3D<real>     Ex2;
@@ -70,11 +70,18 @@ class ElectroMotiveForce {
   // Range of existence
 
   // Init from Hydro class
-  void Init(Hydro *);
+  void Init(Input &, Hydro *);
 
   void EvolveMagField(real, real, IdefixArray4D<real>&);
   void CalcCornerEMF(real );
-  void calcRiemannEmf();
+
+  // Different flavors of EMF average schemes
+  void CalcRiemannAverage();
+  void CalcArithmeticAverage();
+  void CalcCellCenteredEMF();
+  void CalcUCT0Average();
+  void CalcContactAverage();
+
   // Enforce boundary conditions on the EMFs.
   void EnforceEMFBoundary();
   void CalcNonidealEMF(real );

@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Upcoming
 - code configuration with `cmake` instead of configure.py
 - 3rd order reconstruction scheme (following Cada \& Torrilhon 2009). Can be enabled in definitions.hpp
+- new EMF averaging scheme using 2D HLLD Riemann solves
+- EMF averaging scheme is now set at run time, not compile time.
 - VTK files now includes TIME and GEOMETRY fields which can be read with VTK_io python routines
 - VTK I/O python functions have been refactored: a single VTK_Read routine can now be called for all geometries
 - New 3D Shearing box boundary conditions

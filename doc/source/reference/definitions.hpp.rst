@@ -27,6 +27,3 @@ made to limit their number to a minimum. Each option is a C preprocessor directi
 
 ``ORDER``
     Spatial order of the reconstruction scheme. As of now, can be 1 (first order, donor cell reconstruction), 2 (second order, slope limited Van-leer linear reconstruction) or 3 (third order, Cada \& Torrilhon 2009)
-
-``EMF_AVERAGE``
-    Choose the type of cell corner EMF reconstruction scheme when using MHD. Can be either ``ARITHMETIC``, ``UCT0``, ``UCT_CONTACT`` or ``UCT_HLL``, following the definition of Gardiner & Stone (2005).

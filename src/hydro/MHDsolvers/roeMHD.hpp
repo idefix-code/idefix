@@ -12,6 +12,8 @@
 #include "extrapolatePrimVar.hpp"
 #include "fluxMHD.hpp"
 #include "convertConsToPrimMHD.hpp"
+#include "storeFlux.hpp"
+#include "electroMotiveForce.hpp"
 
 #define ROE_AVERAGE 0
 
@@ -41,7 +43,7 @@
 #define DSIGN(x) ( (x) >= 0.0 ? (1.0) : (-1.0))
 
 // Compute Riemann fluxes from states using ROE solver
-template<const int DIR>
+template<const int DIR, const ElectroMotiveForce::AveragingType EMF_AVERAGE>
 void Hydro::RoeMHD() {
   idfx::pushRegion("Hydro::ROE_MHD");
 
@@ -65,12 +67,14 @@ void Hydro::RoeMHD() {
   IdefixArray3D<real> Eb;
   IdefixArray3D<real> Et;
 
-#if EMF_AVERAGE == UCT_CONTACT
+  // Required by UCT_Contact
   IdefixArray3D<int> SV;
-#elif EMF_AVERAGE == UCT_HLL
-  IdefixArray3D<real> SL;
-  IdefixArray3D<real> SR;
-#endif
+
+  // Required by UCT_HLLX
+  IdefixArray3D<real> aL;
+  IdefixArray3D<real> aR;
+  IdefixArray3D<real> dL;
+  IdefixArray3D<real> dR;
 
   real gamma = this->gamma;
   real gamma_m1=this->gamma-ONE_F;
@@ -81,70 +85,74 @@ void Hydro::RoeMHD() {
   real delta    = 1.e-6;
 
   // Define normal, tangent and bi-tanget indices
-
   // st and sb will be useful only when Hall is included
-  D_EXPAND( real st;  ,
-                      ,
-            real sb;  )
+  real st,sb;
 
   switch(DIR) {
     case(IDIR):
       ioffset = 1;
-      D_EXPAND(               ,
+      D_EXPAND(
+                st = -ONE_F;  ,
                 jextend = 1;  ,
-                kextend = 1;  )
+                kextend = 1;
+                sb = +ONE_F;  )
 
       Et = this->emf.ezi;
       Eb = this->emf.eyi;
-#if EMF_AVERAGE == UCT_CONTACT
-      SV = this->emf.svx;
-#elif EMF_AVERAGE == UCT_HLL
-      SL = this->emf.SxL;
-      SR = this->emf.SxR;
-#endif
 
-      D_EXPAND( st = -ONE_F;  ,
-                              ,
-                sb = +ONE_F;  )
+      SV = this->emf.svx;
+
+      aL = this->emf.axL;
+      aR = this->emf.axR;
+
+      dL = this->emf.dxL;
+      dR = this->emf.dxR;
+
       break;
+#if DIMENSIONS >= 2
     case(JDIR):
       joffset=1;
-      D_EXPAND( iextend = 1;  ,
+      D_EXPAND(
+                iextend = 1;
+                st = +ONE_F;  ,
                               ,
-                kextend = 1;  )
+                kextend = 1;
+                sb = -ONE_F;  )
 
       Et = this->emf.ezj;
       Eb = this->emf.exj;
-#if EMF_AVERAGE == UCT_CONTACT
-      SV = this->emf.svy;
-#elif EMF_AVERAGE == UCT_HLL
-      SL = this->emf.SyL;
-      SR = this->emf.SyR;
-#endif
 
-      D_EXPAND( st = +ONE_F;  ,
-                              ,
-                sb = -ONE_F;  )
+      SV = this->emf.svy;
+
+      aL = this->emf.ayL;
+      aR = this->emf.ayR;
+
+      dL = this->emf.dyL;
+      dR = this->emf.dyR;
+
       break;
+#endif
+#if DIMENSIONS == 3
     case(KDIR):
       koffset=1;
-      D_EXPAND( iextend = 1;  ,
+      D_EXPAND(
+                iextend = 1;
+                st = -ONE_F;  ,
                 jextend = 1;  ,
-                              )
+                sb = +ONE_F;  )
 
       Et = this->emf.eyk;
       Eb = this->emf.exk;
-#if EMF_AVERAGE == UCT_CONTACT
-      SV = this->emf.svz;
-#elif EMF_AVERAGE == UCT_HLL
-      SL = this->emf.SzL;
-      SR = this->emf.SzR;
-#endif
 
-      D_EXPAND( st = -ONE_F;  ,
-                              ,
-                sb = +ONE_F;  )
+      SV = this->emf.svz;
+
+      aL = this->emf.azL;
+      aR = this->emf.azR;
+
+      dL = this->emf.dzL;
+      dR = this->emf.dzR;
       break;
+#endif
     default:
       IDEFIX_ERROR("Wrong direction");
   }
@@ -273,8 +281,8 @@ void Hydro::RoeMHD() {
       pL  = vL[PRS] + HALF_F*Bmag2L;
       pR  = vR[PRS] + HALF_F*Bmag2R;
 #else
-      // pL  = a2L*vL[RHO] + HALF_F*Bmag2L;
-      // pR  = a2R*vR[RHO] + HALF_F*Bmag2R;
+      pL  = a2L*vL[RHO] + HALF_F*Bmag2L;
+      pR  = a2R*vR[RHO] + HALF_F*Bmag2R;
 #endif
 
       // 6d. Compute enthalpy and sound speed.
@@ -613,21 +621,19 @@ void Hydro::RoeMHD() {
       cMax(k,j,i) = cmax;
 
       // 7-- Store the flux in the emf components
-      D_EXPAND( Et(k,j,i) = st*Flux(BXt,k,j,i);  ,
-                                                 ,
-                Eb(k,j,i) = sb*Flux(BXb,k,j,i);  )
-
-#if EMF_AVERAGE == UCT_CONTACT
-      int s = 0;
-      if (Flux(RHO,k,j,i) >  eps_UCT_CONTACT) s =  1;
-      if (Flux(RHO,k,j,i) < -eps_UCT_CONTACT) s = -1;
-
-      SV(k,j,i) = s;
-
-#elif EMF_AVERAGE == UCT_HLL
-      SL(k,j,i) = std::fmax(ZERO_F, -sl);
-      SR(k,j,i) = std::fmax(ZERO_F,  sr);
-#endif
+      // WARNING: cuda constexpr implementation is buggy. We need to have the same
+      // signatures for all functions called inside a constexpr for nvcc to properly
+      // capture the required variables.
+      if constexpr(EMF_AVERAGE==ElectroMotiveForce::arithmetic
+                || EMF_AVERAGE==ElectroMotiveForce::uct0) {
+        K_StoreEMF<DIR>(i,j,k,st,sb,Flux,a2L,sl,sr,vL,vR,uL,uR,Et,Eb,SV,aL,aR,dL,dR);
+      } else if constexpr(EMF_AVERAGE==ElectroMotiveForce::uct_contact) {
+        K_StoreContact<DIR>(i,j,k,st,sb,Flux,a2L,sl,sr,vL,vR,uL,uR,Et,Eb,SV,aL,aR,dL,dR);
+      } else if constexpr(EMF_AVERAGE==ElectroMotiveForce::uct_hll) {
+        K_StoreHLL<DIR>(i,j,k,st,sb,Flux,a2L,sl,sr,vL,vR,uL,uR,Et,Eb,SV,aL,aR,dL,dR);
+      } else if constexpr(EMF_AVERAGE==ElectroMotiveForce::uct_hlld) {
+        K_StoreHLLD<DIR>(i,j,k,st,sb,Flux,a2L,sl,sr,vL,vR,uL,uR,Et,Eb,SV,aL,aR,dL,dR);
+      }
   });
 
   idfx::popRegion();

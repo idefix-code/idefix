@@ -12,6 +12,9 @@ overview of all of the configuration options and switch them according to the ta
 To configure *Idefix* with ``Cmake``, simply launch ``cmake $IDEFIX_DIR`` with the desired options **in a problem directory** (that is a directory containing at least ``definitions.hpp`` and ``setup.cpp``).
 Alternatively, you can replace ``cmake`` by ``ccmake`` to get a more user-friendly graphical interface).
 
+
+.. _configurationOptions:
+
 Main configuration options
 ++++++++++++++++++++++++++
 
@@ -63,7 +66,9 @@ Several options can be enabled from the command line (or are accessible with ``c
     Launching ``cmake`` from a problem directory ensures that ``cmake`` will use that directory as its build directory. Note that it is also possible to use the ``-B``
     option to explictely tell ``cmake`` a path to a build=*Idefix* problem directory.
 
+
 .. _customSourceFiles:
+
 Add custom source files
 +++++++++++++++++++++++
 

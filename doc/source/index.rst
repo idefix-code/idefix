@@ -37,6 +37,7 @@ of Contract DE-NA0003525 with National Technology & Engineering Solutions of San
    quickstart
    reference
    programmingguide
+   faq
    changelog
 
    api/library_root

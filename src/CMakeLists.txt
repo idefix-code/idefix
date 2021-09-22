@@ -26,6 +26,8 @@ target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/setup.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/timeIntegrator.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/timeIntegrator.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/testLoops.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/testLoops.cpp
   )
 
 

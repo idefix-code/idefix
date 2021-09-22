@@ -3,12 +3,20 @@ Code configuration
 Configuring with cmake
 ----------------------
 
+Basic usage
++++++++++++
 `Cmake <https://cmake.org>`_ is a tool to control code generation on diverse platforms. It is the default tool used to configure *Idefix*. *Idefix* (and Kokkos)
 requires ``cmake`` version >= 3.16. It is also recommended to use the graphical frontend ``ccmake`` to configure *Idefix*, as it allows one to have a rapid
 overview of all of the configuration options and switch them according to the target architecture.
 
 To configure *Idefix* with ``Cmake``, simply launch ``cmake $IDEFIX_DIR`` with the desired options **in a problem directory** (that is a directory containing at least ``definitions.hpp`` and ``setup.cpp``).
 Alternatively, you can replace ``cmake`` by ``ccmake`` to get a more user-friendly graphical interface).
+
+
+.. _configurationOptions:
+
+Main configuration options
+++++++++++++++++++++++++++
 
 Several options can be enabled from the command line (or are accessible with ``ccmake`` GUI):
 
@@ -54,8 +62,30 @@ Several options can be enabled from the command line (or are accessible with ``c
 
 .. warning::
 
-    *Idefix* ``cmake`` configuration expects the build directory to be a problem directory (that is a directory containing at least ``definitions.hpp`` and ``setup.cpp``). Launching ``cmake`` from a problem directory ensures that ``cmake`` will use that directory as its build directory. Note that it is also possible to use the ``-B`` option to explictely tell ``cmake`` a path to a build=*Idefix* problem directory.
+    *Idefix* ``cmake`` configuration expects the build directory to be a problem directory (that is a directory containing at least ``definitions.hpp`` and ``setup.cpp``).
+    Launching ``cmake`` from a problem directory ensures that ``cmake`` will use that directory as its build directory. Note that it is also possible to use the ``-B``
+    option to explictely tell ``cmake`` a path to a build=*Idefix* problem directory.
 
+
+.. _customSourceFiles:
+
+Add custom source files
++++++++++++++++++++++++
+
+It is possible to add custom source files to be compiled and linked against *Idefix*. This can be useful
+if your setup requires complex functions and analysis in separate source files. To do so, add a ``CMakeLists.txt`` in your
+problem directory, which adds to the ``idefix`` target  *all* the additional source files (i.e cpp *and* hpp headers). For instance,
+say you want to add source files for an analysis, your ``CMakeLists.txt`` should look like:
+
+.. code-block::
+
+    target_sources(idefix
+        PUBLIC analysis.cpp
+        PUBLIC analysis.hpp
+    )
+
+Don't forget to delete `CMakeCache.txt` before attempting to reconfigure the code when adding a problem-specific
+``CmakeLists.txt``.
 
 Using GNU makefile and python configuration script (deprecated)
 ---------------------------------------------------------------

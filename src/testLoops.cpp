@@ -58,6 +58,9 @@ std::string LoopText(int lp) {
     case LoopPattern::TPTTRTVR:
       sout = std::string("TPTTRTVR");
       break;
+    default:
+      sout = std::string("UNKNOWN");
+      break;
   }
   return(sout);
 }

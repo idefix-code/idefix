@@ -11,6 +11,8 @@ set(Idefix_DEFS "definitions.hpp" CACHE STRING "Problem definition header file")
 # load git revision tools
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 include(GetGitRevisionDescription)
+include(ReplaceIdefixSource)
+include(AddIdefixSource)
 
 #Idefix requires Cuda Lambdas (experimental)
 if(Kokkos_ENABLE_CUDA)
@@ -31,9 +33,10 @@ add_subdirectory(src build)
 # If a CMakeLists.txt is in the problem dir (for problem-specific source files)
 # then read it
 if(EXISTS ${PROJECT_BINARY_DIR}/CMakeLists.txt)
+  message(STATUS "Including problem-specific CMakeLists in '${PROJECT_BINARY_DIR}'")
   add_subdirectory(${PROJECT_BINARY_DIR} build/setup)
-  message(STATUS "Including problem-specific source files in '${PROJECT_BINARY_DIR}'")
 endif()
+
 
 
 if(Idefix_MHD)
@@ -76,7 +79,7 @@ target_include_directories(idefix PUBLIC
 
 target_link_libraries(idefix Kokkos::kokkos)
 
-message(STATUS "Idefix Configuration")
+message(STATUS "Idefix final configuration")
 message(STATUS "    MHD: ${Idefix_MHD}")
 message(STATUS "    MPI: ${Idefix_MPI}")
 message(STATUS "    Version: ${GIT_SHA1}")

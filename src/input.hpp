@@ -39,12 +39,13 @@ class Input {
   void PrintLogo();
 
   // Should we restart, and if so, from which file?
-  bool restartRequested = false;
+  bool restartRequested{false};
   int  restartFileNumber;
-
 
   // Did we receive an abort signal (USR2) from the system?
   static bool abortRequested;
+
+  bool tuningRequested{false};        //< whether the user has asked for loop-tuning
 
  private:
   std::string inputFileName;

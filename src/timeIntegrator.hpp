@@ -29,6 +29,7 @@ class TimeIntegrator {
 
   void ShowLog(DataBlock &);    //<  Display progress log
 
+  bool isSilent{false};   // Whether the integration should proceed silently
 
  private:
   // The RKL object attached to this datablock

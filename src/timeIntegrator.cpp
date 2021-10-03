@@ -82,6 +82,7 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
 
 
 void TimeIntegrator::ShowLog(DataBlock &data) {
+  if(isSilent) return;
   double rawperf = (timer.seconds()-lastLog)/data.mygrid->np_int[IDIR]/data.mygrid->np_int[JDIR]
                       /data.mygrid->np_int[KDIR]/cyclePeriod;
 #ifdef WITH_MPI

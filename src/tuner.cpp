@@ -5,6 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include "tuner.hpp"
+#include <string>
 
 #include "idefix.hpp"
 #include "dataBlock.hpp"
@@ -12,10 +14,15 @@
 #include "timeIntegrator.hpp"
 #include "setup.hpp"
 
-void testLoopType(DataBlock &data, Setup &setup, Input &input, int numLoops, LoopPattern loopType) {
+
+
+namespace Tuner {
+double testLoopType(DataBlock &data, Setup &setup, Input &input,
+                    int numLoops, LoopPattern loopType) {
   idfx::defaultLoopPattern=loopType;
 
   TimeIntegrator tint(input,data);
+
 
   // Init the flow
   setup.InitFlow(data);
@@ -23,6 +30,7 @@ void testLoopType(DataBlock &data, Setup &setup, Input &input, int numLoops, Loo
 
   // Launch a bunch of integrations
   int nint=0;
+  tint.isSilent = true; // make the integration silent
 
   Kokkos::Timer timer;
 
@@ -34,8 +42,9 @@ void testLoopType(DataBlock &data, Setup &setup, Input &input, int numLoops, Loo
   double tintegration = timer.seconds() / data.mygrid->np_int[IDIR] / data.mygrid->np_int[JDIR]
                             / data.mygrid->np_int[KDIR] / tint.getNcycles();
 
-  idfx::cout << "Perfs are " << 1/tintegration << " cell updates/second" << std::endl;
+  //idfx::cout << "Perfs are " << 1/tintegration << " cell updates/second" << std::endl;
 
+  return(1/tintegration);
 }
 
 // Convert lp integer into text
@@ -64,25 +73,40 @@ std::string LoopText(int lp) {
   }
   return(sout);
 }
-void testLoops(DataBlock &data, Setup &setup, Input &input, int numLoops) {
+void tuneLoops(DataBlock &data, Setup &setup, Input &input, int numLoops) {
   LoopPattern oldLoop = idfx::defaultLoopPattern;
+  real perfs = 0;
+  LoopPattern bestLoop = oldLoop;
+
   // Do one dummy loop so that all is initialized
-  idfx::cout << "Initializing auto-tune" << std::endl;
+  idfx::cout << "Tuner: tuning idefix_loop... (this can take a while)" << std::endl;
   testLoopType(data,setup,input,numLoops,oldLoop);
   for(int i = 0 ; i != static_cast<int>(LoopPattern::UNDEFINED) ; i++) {
-    idfx::cout << "*************************************************" << std::endl;
-    idfx::cout << "Loop pattern " << LoopText(i) << "(" << i << ")" << std::endl;
+    //idfx::cout << "*************************************************" << std::endl;
+    //idfx::cout << "Loop pattern " << LoopText(i) << "(" << i << ")" << std::endl;
+    // Avoid SIMD for when using CUDA as this is not implemented
     #ifdef KOKKOS_ENABLE_CUDA
     if (static_cast<LoopPattern>(i) != LoopPattern::SIMDFOR) {
     #endif
-      testLoopType(data,setup,input,numLoops,static_cast<LoopPattern>(i));
+      real thisPerfs = testLoopType(data,setup,input,numLoops,static_cast<LoopPattern>(i));
     #ifdef KOKKOS_ENABLE_CUDA
     } else {
-      idfx::cout << "Not implemented in Cuda, skipping" << std::endl;
+      //idfx::cout << "Not implemented in Cuda, skipping" << std::endl;
     }
     #endif
-    idfx::cout << "*************************************************" << std::endl;
+    // Check if we have the best performances
+    if(thisPerfs > perfs) {
+      perfs=thisPerfs;
+      bestLoop = static_cast<LoopPattern>(i);
+    }
+    // idfx::cout << "*************************************************" << std::endl;
   }
-  idfx::defaultLoopPattern = oldLoop;
-}
+  idfx::cout << "Tuner: will be using " << LoopText(static_cast<int> (bestLoop))
+             << " loops." << std::endl;
 
+  idfx::defaultLoopPattern = bestLoop;
+
+  // This is needed to re-init the datablock to its initial state
+  TimeIntegrator tint(input,data);
+}
+} // namespace Tuner

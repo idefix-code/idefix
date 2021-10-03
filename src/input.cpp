@@ -117,8 +117,7 @@ void Input::ParseCommandLine(int argc, char **argv) {
         // Store this
         inputParameters["CommandLine"]["dec"].push_back(std::string(argv[i]));
       }
-    }
-    if(std::string(argv[i]) == "-restart") {
+    } else if(std::string(argv[i]) == "-restart") {
       std::string sirestart{};
       bool explicitDump = true;     // by default, assume a restart dump # was given
       // Check whether -restart was given with a number or not
@@ -166,15 +165,16 @@ void Input::ParseCommandLine(int argc, char **argv) {
       } else {
         IDEFIX_WARNING("Invalid -restart option, I will ignore it.");
       }
-    }
-    if(std::string(argv[i]) == "-i") {
+    } else if(std::string(argv[i]) == "-i") {
       // Loop on dimensions
       if((++i) >= argc) IDEFIX_ERROR(
                       "You must specify -i filename where filename is the name of the input file.");
       this->inputFileName = std::string(argv[i]);
+    } else if(std::string(argv[i]) == "-autotune") {
+      this->tuningRequested = true;
     } else {
       msg << "Unknown option " << argv[i];
-      //IDEFIX_ERROR(msg);
+      IDEFIX_ERROR(msg);
     }
   }
 }

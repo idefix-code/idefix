@@ -7,6 +7,7 @@
 
 #include "tuner.hpp"
 #include <string>
+#include <algorithm>
 
 #include "idefix.hpp"
 #include "dataBlock.hpp"
@@ -73,27 +74,36 @@ std::string LoopText(int lp) {
   }
   return(sout);
 }
-void tuneLoops(DataBlock &data, Setup &setup, Input &input, int numLoops) {
+void tuneLoops(DataBlock &data, Setup &setup, Input &input) {
   LoopPattern oldLoop = idfx::defaultLoopPattern;
   real perfs = 0;
   LoopPattern bestLoop = oldLoop;
 
   // Do one dummy loop so that all is initialized
   idfx::cout << "Tuner: tuning idefix_loop... (this can take a while)" << std::endl;
-  testLoopType(data,setup,input,numLoops,oldLoop);
+  Kokkos::Timer timer;
+  testLoopType(data,setup,input,10,oldLoop);
+
+  // evaluate the time needed to do one test and compute numloops so that each test last 5 seconds
+  // or a minimum of 10 iterations
+  int numLoops = std::max(10*static_cast<int>(5.0/timer.seconds()),10);
+
   for(int i = 0 ; i != static_cast<int>(LoopPattern::UNDEFINED) ; i++) {
+    real thisPerfs = 0;
     //idfx::cout << "*************************************************" << std::endl;
-    //idfx::cout << "Loop pattern " << LoopText(i) << "(" << i << ")" << std::endl;
+    //
     // Avoid SIMD for when using CUDA as this is not implemented
     #ifdef KOKKOS_ENABLE_CUDA
     if (static_cast<LoopPattern>(i) != LoopPattern::SIMDFOR) {
     #endif
-      real thisPerfs = testLoopType(data,setup,input,numLoops,static_cast<LoopPattern>(i));
+      thisPerfs = testLoopType(data,setup,input,numLoops,static_cast<LoopPattern>(i));
     #ifdef KOKKOS_ENABLE_CUDA
     } else {
       //idfx::cout << "Not implemented in Cuda, skipping" << std::endl;
     }
     #endif
+    idfx::cout << "Loop pattern " << LoopText(i) << "(" << i << ") gives "
+               << thisPerfs << " cells/sec" << std::endl;
     // Check if we have the best performances
     if(thisPerfs > perfs) {
       perfs=thisPerfs;

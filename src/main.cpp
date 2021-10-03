@@ -98,7 +98,7 @@ int main( int argc, char* argv[] ) {
 
     // if the user asked for auto-tune, then tune loops now
     if(input.tuningRequested) {
-      Tuner::tuneLoops(data, mysetup, input, 10);
+      Tuner::tuneLoops(data, mysetup, input);
     }
     // Apply initial conditions
 

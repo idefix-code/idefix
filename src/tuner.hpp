@@ -14,7 +14,7 @@
 #include "setup.hpp"
 
 namespace Tuner {
-void tuneLoops(DataBlock &, Setup &, Input &, int numLoops);
+void tuneLoops(DataBlock &, Setup &, Input &);
 }
 
 #endif // TUNER_HPP_

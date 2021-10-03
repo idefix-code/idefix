@@ -84,7 +84,7 @@ say you want to add source files for an analysis, your ``CMakeLists.txt`` should
 
 
 *Idefix* also allows one to replace a source file in `$IDEFIX_DIR` by your own implementation. This is useful when developping new functionnalities without touching
-the main directory of your *Idefix* repository. For instance, say one wants to replace the implementation of viscosity in `$IDEFIX_SRC/src/hydro/viscosity.cpp`, 
+the main directory of your *Idefix* repository. For instance, say one wants to replace the implementation of viscosity in `$IDEFIX_SRC/src/hydro/viscosity.cpp`,
 with a customised `myviscosity.cpp` in the problem directory, one should add a ``CMakeLists.txt`` in the problem directory reading
 
 .. code-block::

@@ -43,7 +43,7 @@
 #define DSIGN(x) ( (x) >= 0.0 ? (1.0) : (-1.0))
 
 // Compute Riemann fluxes from states using ROE solver
-template<const int DIR, const ElectroMotiveForce::AveragingType EMF_AVERAGE>
+template<const int DIR>
 void Hydro::RoeMHD() {
   idfx::pushRegion("Hydro::ROE_MHD");
 
@@ -66,6 +66,8 @@ void Hydro::RoeMHD() {
   // References to required emf components
   IdefixArray3D<real> Eb;
   IdefixArray3D<real> Et;
+
+  const ElectroMotiveForce::AveragingType emfAverage = emf.averaging;
 
   // Required by UCT_Contact
   IdefixArray3D<int> SV;
@@ -621,18 +623,15 @@ void Hydro::RoeMHD() {
       cMax(k,j,i) = cmax;
 
       // 7-- Store the flux in the emf components
-      // WARNING: cuda constexpr implementation is buggy. We need to have the same
-      // signatures for all functions called inside a constexpr for nvcc to properly
-      // capture the required variables.
-      if (EMF_AVERAGE==ElectroMotiveForce::arithmetic
-                || EMF_AVERAGE==ElectroMotiveForce::uct0) {
-        K_StoreEMF<DIR>(i,j,k,st,sb,Flux,a2L,sl,sr,vL,vR,uL,uR,Et,Eb,SV,aL,aR,dL,dR);
-      } else if (EMF_AVERAGE==ElectroMotiveForce::uct_contact) {
-        K_StoreContact<DIR>(i,j,k,st,sb,Flux,a2L,sl,sr,vL,vR,uL,uR,Et,Eb,SV,aL,aR,dL,dR);
-      } else if (EMF_AVERAGE==ElectroMotiveForce::uct_hll) {
-        K_StoreHLL<DIR>(i,j,k,st,sb,Flux,a2L,sl,sr,vL,vR,uL,uR,Et,Eb,SV,aL,aR,dL,dR);
-      } else if (EMF_AVERAGE==ElectroMotiveForce::uct_hlld) {
-        K_StoreHLLD<DIR>(i,j,k,st,sb,Flux,a2L,sl,sr,vL,vR,uL,uR,Et,Eb,SV,aL,aR,dL,dR);
+      if (emfAverage==ElectroMotiveForce::arithmetic
+                || emfAverage==ElectroMotiveForce::uct0) {
+        K_StoreEMF<DIR>(i,j,k,st,sb,Flux,Et,Eb);
+      } else if (emfAverage==ElectroMotiveForce::uct_contact) {
+        K_StoreContact<DIR>(i,j,k,st,sb,Flux,Et,Eb,SV);
+      } else if (emfAverage==ElectroMotiveForce::uct_hll) {
+        K_StoreHLL<DIR>(i,j,k,st,sb,sl,sr,vL,vR,Et,Eb,aL,aR,dL,dR);
+      } else if (emfAverage==ElectroMotiveForce::uct_hlld) {
+        K_StoreHLLD<DIR>(i,j,k,st,sb,a2L,sl,sr,vL,vR,uL,uR,Et,Eb,aL,aR,dL,dR);
       }
   });
 

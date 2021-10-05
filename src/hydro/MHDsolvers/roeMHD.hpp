@@ -624,14 +624,14 @@ void Hydro::RoeMHD() {
       // WARNING: cuda constexpr implementation is buggy. We need to have the same
       // signatures for all functions called inside a constexpr for nvcc to properly
       // capture the required variables.
-      if constexpr(EMF_AVERAGE==ElectroMotiveForce::arithmetic
+      if (EMF_AVERAGE==ElectroMotiveForce::arithmetic
                 || EMF_AVERAGE==ElectroMotiveForce::uct0) {
         K_StoreEMF<DIR>(i,j,k,st,sb,Flux,a2L,sl,sr,vL,vR,uL,uR,Et,Eb,SV,aL,aR,dL,dR);
-      } else if constexpr(EMF_AVERAGE==ElectroMotiveForce::uct_contact) {
+      } else if (EMF_AVERAGE==ElectroMotiveForce::uct_contact) {
         K_StoreContact<DIR>(i,j,k,st,sb,Flux,a2L,sl,sr,vL,vR,uL,uR,Et,Eb,SV,aL,aR,dL,dR);
-      } else if constexpr(EMF_AVERAGE==ElectroMotiveForce::uct_hll) {
+      } else if (EMF_AVERAGE==ElectroMotiveForce::uct_hll) {
         K_StoreHLL<DIR>(i,j,k,st,sb,Flux,a2L,sl,sr,vL,vR,uL,uR,Et,Eb,SV,aL,aR,dL,dR);
-      } else if constexpr(EMF_AVERAGE==ElectroMotiveForce::uct_hlld) {
+      } else if (EMF_AVERAGE==ElectroMotiveForce::uct_hlld) {
         K_StoreHLLD<DIR>(i,j,k,st,sb,Flux,a2L,sl,sr,vL,vR,uL,uR,Et,Eb,SV,aL,aR,dL,dR);
       }
   });

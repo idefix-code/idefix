@@ -12,8 +12,8 @@
 #include "hydro.hpp"
 
 KOKKOS_INLINE_FUNCTION void Hydro::K_ConsToPrim(
-                                  real *KOKKOS_RESTRICT Vc,
-                                  const real *KOKKOS_RESTRICT Uc,
+                                  real Vc[],
+                                  real Uc[],
                                   real gamma_m1) {
   Vc[RHO] = Uc[RHO];
 
@@ -28,6 +28,16 @@ KOKKOS_INLINE_FUNCTION void Hydro::K_ConsToPrim(
                                   + Uc[MX3]*Uc[MX3]  ));
 
   Vc[PRS] = gamma_m1 * (Uc[ENG] - kin);
+
+  // Check pressure positivity
+  if(Vc[PRS]<= ZERO_F) {
+  #ifdef SMALL_PRESSURE_TEMPERATURE
+    Vc[PRS] = SMALL_PRESSURE_TEMPERATURE*Vc[RHO];
+  #else
+    Vc[PRS] = SMALL_PRESSURE_FIX;
+  #endif
+    Uc[ENG] = Vc[PRS]/gamma_m1+kin;
+  }
 #endif  // Have_energy
 }
 

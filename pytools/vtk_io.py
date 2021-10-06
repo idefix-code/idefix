@@ -58,6 +58,8 @@ def readVTK(filename, geometry="unknown"):
             thisgeometry="polar"
           elif g == 2:
             thisgeometry="spherical"
+          elif g == 3:
+            thisgeometry="cylindrical"
           else:
             raise ValueError("Unknown value for GEOMETRY flag ('{}') was found in the VTK file.".format(g))
 
@@ -66,6 +68,9 @@ def readVTK(filename, geometry="unknown"):
             if thisgeometry != V.geometry:
               raise ValueError("geometry argument ('{}') is inconsistent with GEOMETRY flag from the VTK file ('{}')".format(V.geometry, thisgeometry))
           V.geometry=thisgeometry
+        elif entry == "PERIODICITY":
+          periodicity = np.fromfile(fid,dint,3).astype(bool)
+          V.periodicity = tuple(periodicity)
         else:
           raise ValueError("Received unknown field: '{}'.".format(entry))
 
@@ -87,8 +92,11 @@ def readVTK(filename, geometry="unknown"):
     V.ny=int(slist[2])
     V.nz=int(slist[3])
 
-    if(V.geometry=="cartesian"):
+    if V.geometry in ("cartesian", "cylindrical"):
       # CARTESIAN geometry
+      # NOTE: cylindrical geometry is meant to be only used in 2D
+      #       so the expected coordinates (R, z) are never curvilinear,
+      #       which means we can treat them as cartesian
       s=fid.readline()    # X_COORDINATES NX float
       x=np.fromfile(fid,dt,V.nx)
 

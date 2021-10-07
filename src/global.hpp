@@ -14,11 +14,12 @@ int initialize();   // Initialisation routine for idefix
 class IdefixOstream;
 class Profiler;
 
-extern int prank;     // parallel rank
+extern int prank;                       //< parallel rank
 extern int psize;
-extern IdefixOstream cout;  // custom cout for idefix
-extern Profiler prof;     // profiler (for memory usage)
-extern double mpiCallsTimer;  // time significant MPI calls
+extern IdefixOstream cout;              //< custom cout for idefix
+extern Profiler prof;                   //< profiler (for memory usage)
+extern double mpiCallsTimer;            //< time significant MPI calls
+extern LoopPattern defaultLoopPattern;  //< default loop patterns (for idefix_for loops)
 
 void pushRegion(const std::string&);
 void popRegion();

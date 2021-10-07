@@ -18,23 +18,8 @@
 using Device = Kokkos::DefaultExecutionSpace;
 using Layout = Kokkos::LayoutRight;
 
-// Define the kind of loop we want (see loop.hpp for details)
-//#define  INDEX_LOOP
-//#define  MDRANGE_LOOP
-//#define  SIMD_LOOP
-//#define  TP_INNERX_LOOP
-//#define  TPTTRTVR_LOOP
-
-// Hopefully a master switch which detects which loop is needed on the architecture
-
-
-#ifdef KOKKOS_ENABLE_CUDA
-#define INDEX_LOOP
-#else
-#define TP_INNERX_LOOP
-//#define SIMD_LOOP
-#endif
-
+/// Type of loops we admit in idefix (see loop.hpp for details)
+enum class LoopPattern { SIMDFOR, RANGE, MDRANGE, TPX, TPTTRTVR, UNDEFINED };
 
 #define USE_DOUBLE
 

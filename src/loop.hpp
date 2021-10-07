@@ -14,6 +14,7 @@
 
 #include <string>
 #include "idefix.hpp"
+#include "global.hpp"
 
 #define KOKKOS_VECTOR_LENGTH  8
 
@@ -29,29 +30,12 @@
 typedef Kokkos::TeamPolicy<>               team_policy;
 typedef Kokkos::TeamPolicy<>::member_type  member_type;
 
-enum class LoopPattern { SIMDFOR, RANGE, MDRANGE, TPX, TPTTRTVR, UNDEFINED };
-
-#ifdef INDEX_LOOP
-  #define DEFAULT_LOOP_PATTERN LoopPattern::RANGE
-#elif defined SIMD_LOOP
-  #define DEFAULT_LOOP_PATTERN LoopPattern::SIMDFOR
-#elif defined MDRANGE_LOOP
-  #define DEFAULT_LOOP_PATTERN LoopPattern::MDRANGE
-#elif defined TP_INNERX_LOOP
-  #define DEFAULT_LOOP_PATTERN LoopPattern::TPX
-#elif defined TPTTRTVR_LOOP
-  #define DEFAULT_LOOP_PATTERN LoopPattern::TPTTRTVR
-#else
-  #define DEFAULT_LOOP_PATTERN LoopPattern::UNDEFINED
-#endif
-
-
 // 1D default loop pattern
 template <typename Function>
 inline void idefix_for(const std::string & NAME,
                        const int & IB, const int & IE,
                        Function function) {
-  idefix_for(DEFAULT_LOOP_PATTERN,NAME,IB,IE,function);
+  idefix_for(idfx::defaultLoopPattern,NAME,IB,IE,function);
 }
 
 // 2D default loop pattern
@@ -60,7 +44,7 @@ inline void idefix_for(const std::string & NAME,
                        const int & JB, const int & JE,
                        const int & IB, const int & IE,
                        Function function) {
-  idefix_for(DEFAULT_LOOP_PATTERN,NAME,JB,JE,IB,IE,function);
+  idefix_for(idfx::defaultLoopPattern,NAME,JB,JE,IB,IE,function);
 }
 
 // 3D default loop pattern
@@ -70,7 +54,7 @@ inline void idefix_for(const std::string & NAME,
                 const int & JB, const int & JE,
                 const int & IB, const int & IE,
                 Function function) {
-  idefix_for(DEFAULT_LOOP_PATTERN,NAME,KB,KE,JB,JE,IB,IE,function);
+  idefix_for(idfx::defaultLoopPattern,NAME,KB,KE,JB,JE,IB,IE,function);
 }
 
 // 4D default loop pattern
@@ -81,7 +65,7 @@ inline void idefix_for(const std::string & NAME,
                 const int & JB, const int & JE,
                 const int & IB, const int & IE,
                 Function function) {
-  idefix_for(DEFAULT_LOOP_PATTERN,NAME,NB,NE,KB,KE,JB,JE,IB,IE,function);
+  idefix_for(idfx::defaultLoopPattern,NAME,NB,NE,KB,KE,JB,JE,IB,IE,function);
 }
 
 

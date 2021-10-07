@@ -115,22 +115,22 @@ class Hydro {
 
   // Riemann Solvers
 #if MHD == YES
-  template<const int, const ElectroMotiveForce::AveragingType>
+  template<const int>
     void HlldMHD();
-  template<const int, const ElectroMotiveForce::AveragingType>
+  template<const int>
     void HllMHD();
-  template<const int, const ElectroMotiveForce::AveragingType>
+  template<const int>
     void RoeMHD();
-  template<const int, const ElectroMotiveForce::AveragingType>
+  template<const int>
     void TvdlfMHD();
 #else
-  template<int>
+  template<const int>
     void HllcHD();
-  template<int>
+  template<const int>
     void HllHD();
-  template<int>
+  template<const int>
     void RoeHD();
-  template<int>
+  template<const int>
     void TvdlfHD();
 #endif
   // Extrapolate function

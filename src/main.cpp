@@ -36,6 +36,7 @@
 #include "timeIntegrator.hpp"
 #include "setup.hpp"
 #include "output.hpp"
+#include "tuner.hpp"
 
 
 
@@ -95,6 +96,10 @@ int main( int argc, char* argv[] ) {
     idfx::cout << "Main: Init Setup." << std::endl;
     Setup mysetup(input, grid, data, output);
 
+    // if the user asked for auto-tune, then tune loops now
+    if(input.tuningRequested) {
+      Tuner::tuneLoops(data, mysetup, input);
+    }
     // Apply initial conditions
 
     // Are we restarting?

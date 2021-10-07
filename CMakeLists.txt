@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.16)
 set(CMAKE_BUILD_TYPE Release)
-set (CMAKE_CXX_STANDARD 17)
+set (CMAKE_CXX_STANDARD 14)
 
 project (idefix VERSION 1.0.0)
 option(Idefix_MHD "enable MHD" OFF)
 option(Idefix_MPI "enable Message Passing Interface parallelisation" OFF)
+set(Idefix_CXX_FLAGS "" CACHE STRING "Additional compiler/linker flag")
 set(Idefix_DEFS "definitions.hpp" CACHE STRING "Problem definition header file")
 
 
@@ -22,6 +23,8 @@ endif()
 # Add kokkos CMAKE files (required early since these set compiler options)
 add_subdirectory(src/kokkos build/kokkos)
 
+# Add Idefix CXX Flags
+add_compile_options(${Idefix_CXX_FLAGS})
 
 # sub directories should be called after add_executable
 # because the binary target "idefix" should be defined

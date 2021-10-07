@@ -378,7 +378,7 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
   ssheader << std::endl;
 
   // write grid periodicity
-  ssheader << "PERIODICITY 1 1 int" << std::endl;
+  ssheader << "PERIODICITY 1 3 int" << std::endl;
 
   // Flush the ascii header
   header = ssheader.str();

@@ -8,6 +8,7 @@
 #ifndef OUTPUT_VTK_HPP_
 #define OUTPUT_VTK_HPP_
 #include <string>
+#include <map>
 #include "idefix.hpp"
 #include "input.hpp"
 #include "dataBlock.hpp"
@@ -23,7 +24,17 @@ class Vtk {
   int Write(DataBlock &, Output &);     // Create a VTK from the current DataBlock
 
  private:
+  // define a mapping from global geometry flags defined in idefix.hpp
+  // to the ones we write in vtk files
+  std::map<int, int> VTKGeometryFlags = {
+    {CARTESIAN, 0},
+    {POLAR, 1},
+    {SPHERICAL, 2},
+    {CYLINDRICAL, 3},
+  };
   int vtkFileNumber = 0;
+  int geometry{VTKGeometryFlags[GEOMETRY]};
+  int periodicity[3];
 
   // dimensions
   int64_t nx1,nx2,nx3;

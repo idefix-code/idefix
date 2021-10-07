@@ -90,6 +90,9 @@ void Vtk::Init(Input &input, DataBlock &datain) {
      - nx1loc,nx2loc,n3loc, which are the local dimensions of the current datablock
   */
 
+  for (int dir=0; dir<3; dir++) {
+    this->periodicity[dir] = (datain.mygrid->lbound[dir] == periodic);
+  }
   // Create the coordinate array required in VTK files
   this->nx1 = grid.np_int[IDIR];
   this->nx2 = grid.np_int[JDIR];
@@ -351,8 +354,8 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
 #elif VTK_FORMAT == VTK_STRUCTURED_GRID
   ssheader << "DATASET STRUCTURED_GRID" << std::endl;
 #endif
-  // One field for the geometry
-  int nfields = 1;
+  // One field for the geometry, another for periodicity
+  int nfields = 2;
   #ifdef WRITE_TIME
     nfields ++;
   #endif
@@ -360,12 +363,6 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
   // Write grid geometry in the VTK file
   ssheader << "FIELD FieldData " << nfields << std::endl;
   ssheader << "GEOMETRY 1 1 int" << std::endl;
-  int32_t geometry = 0;
-  #if GEOMETRY == POLAR
-    geometry = 1;
-  #elif GEOMETRY == SPHERICAL
-    geometry = 2;
-  #endif
 
   // Flush the ascii header
   header = ssheader.str();
@@ -374,9 +371,26 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
   ssheader.str(std::string());
 
   // convert time to single precision big endian
-  int32_t geoBig = BigEndian(geometry);
+  int32_t geoBig = BigEndian(this->geometry);
 
   WriteHeaderBinary(&geoBig, 1, fvtk);
+  // Done, add cariage return for next ascii write
+  ssheader << std::endl;
+
+  // write grid periodicity
+  ssheader << "PERIODICITY 1 1 int" << std::endl;
+
+  // Flush the ascii header
+  header = ssheader.str();
+  WriteHeaderString(header.c_str(), fvtk);
+  // reset the string stream
+  ssheader.str(std::string());
+
+  int32_t perBig{-1};
+  for (int dir=0; dir<3; dir++) {
+    perBig = BigEndian(this->periodicity[dir]);
+    WriteHeaderBinary(&perBig, 1, fvtk);
+  }
   // Done, add cariage return for next ascii write
   ssheader << std::endl;
 

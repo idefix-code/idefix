@@ -19,6 +19,9 @@ Several options can be provided at command line when running the code. These are
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+
 | -i                 |   specify the name of the input file to be used (default ``idefix.ini``)                                                |
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+
+| -autotune          | | try to find the best loop runrolling strategy by running a series of integration tests                                |
+|                    | | before starting the real integration loop.                                                                            |
++--------------------+-------------------------------------------------------------------------------------------------------------------------+
 
 In addition to these specific *Idefix* options, several Kokkos Options can be used on the command
 line when running *Idefix*:

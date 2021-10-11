@@ -12,25 +12,28 @@
 #include "dataBlock.hpp"
 #include "fargo.hpp"
 
-KOKKOS_INLINE_FUNCTION real FargoFlux(IdefixArray4D<real> Vin, int n, int k, int j, int i,
-                                      int so, int ds, int sbeg,
-                                      real eps) {
+KOKKOS_INLINE_FUNCTION real FargoFlux(const IdefixArray4D<real> &Vin, int n, int k, int j, int i,
+                                      int so, int ds, int sbeg, real eps) {
   // compute shifted indices, taking into account the fact that we're periodic
-  int sop1 = sbeg + ((so+1-sbeg)%ds+ds)%ds;
-  int som1 = sbeg + ((so-1-sbeg)%ds+ds)%ds;
+  int sop1 = so+1;
+  if(sop1-sbeg >= ds) sop1 = sop1-ds;
+  int som1 = so-1;
+  if(som1-sbeg< 0 ) som1 = som1+ds;
+
   int sign = (eps>=0) ? 1 : -1;
-  real F, dqm, dqp, dq;
+  real F, dqm, dqp, dq, V0;
   #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
-    dqm = Vin(n,k,so,i) - Vin(n,k,som1,i);
-    dqp = Vin(n,k,sop1,i) - Vin(n,k,so,i);
-    dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-    F = eps*(Vin(n,k,so,i) + sign*0.5*dq*(1.0-sign*eps));
+    V0 = Vin(n,k,so,i);
+    dqm = V0 - Vin(n,k,som1,i);
+    dqp = Vin(n,k,sop1,i) - V0;
+    V0 = Vin(n,k,so,i);
   #elif GEOMETRY == SPHERICAL
-    dqm = Vin(n,so,j,i) - Vin(n,som1,j,i);;
-    dqp = Vin(n,sop1,j,i) - Vin(n,so,j,i);
-    dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-    F = eps*(Vin(n,so,j,i) + sign*0.5*dq*(1.0-sign*eps);
+    V0 = Vin(n,so,j,i);
+    dqm = V0 - Vin(n,som1,j,i);
+    dqp = Vin(n,sop1,j,i) - V0;
   #endif
+    dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+    F = eps*(V0 + sign*0.5*dq*(1.0-sign*eps));
   return(F);
 }
 
@@ -258,11 +261,13 @@ void Fargo::ShiftSolution(const real t, const real dt) {
                 real Fl,Fr;
 
                 if(eps>=ZERO_F) {
-                  int som1 = sbeg + ((so-1-sbeg)%ds+ds)%ds;
+                  int som1 = so-1;
+                  if(som1-sbeg< 0 ) som1 = som1+ds;
                   Fl = FargoFlux(Uc, n, k, j, i, som1, ds, sbeg, eps);
                   Fr = FargoFlux(Uc, n, k, j, i, so, ds, sbeg, eps);
                 } else {
-                  int sop1 = sbeg + ((so+1-sbeg)%ds+ds)%ds;
+                  int sop1 = so+1;
+                  if(sop1-sbeg >= ds) sop1 = sop1-ds;
                   Fl = FargoFlux(Uc, n, k, j, i, so, ds, sbeg, eps);
                   Fr = FargoFlux(Uc, n, k, j, i, sop1, ds, sbeg, eps);
                 }
@@ -336,26 +341,13 @@ void Fargo::ShiftSolution(const real t, const real dt) {
       // so is the "origin" index
       int so = sbeg + ((s-m-sbeg)%n+n)%n;
 
-      // compute shifted indices, taking into account the fact that we're periodic
-      int sop1 = sbeg + ((so+1-sbeg)%n+n)%n;
-      int som1 = sbeg + ((so-1-sbeg)%n+n)%n;
-      int som2 = sbeg + ((so-2-sbeg)%n+n)%n;
-
-      // Compute EMF due to the shift via second order reconstruction
-      real dqm, dqp, dq;
-
       #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
         if(eps>=ZERO_F) {
-          // Compute extrapolated ek
-          dqm = Vs(BX1s,k,som1,i) - Vs(BX1s,k,som2,i);
-          dqp = Vs(BX1s,k,so,i) - Vs(BX1s,k,som1,i);
-          dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-          ek(k,s,i) = eps*(Vs(BX1s,k,som1,i) + 0.5*dq*(1.0-eps));
+          int som1 = sbeg + ((so-1-sbeg)%n+n)%n;
+          ek(k,s,i) = FargoFlux(Vs, BX1s, k, j, i, som1, n, sbeg, eps);
+
         } else {
-          dqm = Vs(BX1s,k,so,i) - Vs(BX1s,k,som1,i);
-          dqp = Vs(BX1s,k,sop1,i) - Vs(BX1s,k,so,i);
-          dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-          ek(k,s,i) = eps*(Vs(BX1s,k,so,i) - 0.5*dq*(1.0+eps));
+          ek(k,s,i) = FargoFlux(Vs, BX1s, k, j, i, so, n, sbeg, eps);
         }
         if(m>0) {
           for(int ss = s-m ; ss < s ; ss++) {
@@ -368,33 +360,24 @@ void Fargo::ShiftSolution(const real t, const real dt) {
             ek(k,s,i) -= Vs(BX1s,k,sc,i);
           }
         }
-
-
       #elif GEOMETRY == SPHERICAL
-      if(eps>=ZERO_F) {
-        // Compute extrapolated ek
-        dqm = Vs(BX1s,som1,j,i) - Vs(BX1s,som2,j,i);
-        dqp = Vs(BX1s,so,j,i) - Vs(BX1s,som1,j,i);
-        dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-        ek(s,j,i) = eps*(Vs(BX1s,som1,j,i) + 0.5*dq*(1.0-eps));
-      } else {
-        dqm = Vs(BX1s,so,j,i) - Vs(BX1s,som1,j,i);
-        dqp = Vs(BX1s,sop1,j,i) - Vs(BX1s,so,j,i);
-        dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-        ek(s,j,i) = eps*(Vs(BX1s,so,j,i) - 0.5*dq*(1.0+eps));
-      }
-      if(m>0) {
-        for(int ss = s-m ; ss < s ; ss++) {
-          int sc = sbeg + ((ss-sbeg)%n+n)%n;
-          ek(s,j,i) += Vs(BX1s,sc,j,i);
+        if(eps>=ZERO_F) {
+          int som1 = sbeg + ((so-1-sbeg)%n+n)%n;
+          ek(s,j,i) = FargoFlux(Vs, BX1s, k, j, i, som1, n, sbeg, eps);
+        } else {
+          ek(s,j,i) = FargoFlux(Vs, BX1s, k, j, i, so, n, sbeg, eps);
         }
-      } else {
-        for(int ss = s ; ss < s-m ; ss++) {
-          int sc = sbeg + ((ss-sbeg)%n+n)%n;
-          ek(s,j,i) -= Vs(BX1s,sc,j,i);
+        if(m>0) {
+          for(int ss = s-m ; ss < s ; ss++) {
+            int sc = sbeg + ((ss-sbeg)%n+n)%n;
+            ek(s,j,i) += Vs(BX1s,sc,j,i);
+          }
+        } else {
+          for(int ss = s ; ss < s-m ; ss++) {
+            int sc = sbeg + ((ss-sbeg)%n+n)%n;
+            ek(s,j,i) -= Vs(BX1s,sc,j,i);
+          }
         }
-      }
-
       #endif  // GEOMETRY
 
       ek(k,j,i) *= dphi;
@@ -456,16 +439,10 @@ void Fargo::ShiftSolution(const real t, const real dt) {
 
       #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
         if(eps>=ZERO_F) {
-          // Compute extrapolated ek
-          dqm = Vs(BX3s,k,som1,i) - Vs(BX3s,k,som2,i);
-          dqp = Vs(BX3s,k,so,i) - Vs(BX3s,k,som1,i);
-          dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-          ei(k,s,i) = eps*(Vs(BX3s,k,som1,i) + 0.5*dq*(1.0-eps));
+          int som1 = sbeg + ((so-1-sbeg)%n+n)%n;
+          ei(k,s,i) = FargoFlux(Vs, BX3s, k, j, i, som1, n, sbeg, eps);
         } else {
-          dqm = Vs(BX3s,k,so,i) - Vs(BX3s,k,som1,i);
-          dqp = Vs(BX3s,k,sop1,i) - Vs(BX3s,k,so,i);
-          dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-          ei(k,s,i) = eps*(Vs(BX3s,k,so,i) - 0.5*dq*(1.0+eps));
+          ei(k,s,i) = FargoFlux(Vs, BX3s, k, j, i, so, n, sbeg, eps);
         }
         if(m>0) {
           for(int ss = s-m ; ss < s ; ss++) {
@@ -478,20 +455,12 @@ void Fargo::ShiftSolution(const real t, const real dt) {
             ei(k,s,i) -= Vs(BX3s,k,sc,i);
           }
         }
-
-
       #elif GEOMETRY == SPHERICAL
       if(eps>=ZERO_F) {
-        // Compute extrapolated ek
-        dqm = Vs(BX2s,som1,j,i) - Vs(BX2s,som2,j,i);
-        dqp = Vs(BX2s,so,j,i) - Vs(BX2s,som1,j,i);
-        dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-        ei(s,j,i) = eps*(Vs(BX2s,som1,j,i) + 0.5*dq*(1.0-eps));
+        int som1 = sbeg + ((so-1-sbeg)%n+n)%n;
+        ei(s,j,i) = FargoFlux(Vs, BX2s, k, j, i, som1, n, sbeg, eps);
       } else {
-        dqm = Vs(BX2s,so,j,i) - Vs(BX2s,som1,j,i);
-        dqp = Vs(BX2s,sop1,j,i) - Vs(BX2s,so,j,i);
-        dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-        ei(s,j,i) = eps*(Vs(BX2s,so,j,i) - 0.5*dq*(1.0+eps));
+        ei(s,j,i) = FargoFlux(Vs, BX2s, k, j, i, so, n, sbeg, eps);
       }
       if(m>0) {
         for(int ss = s-m ; ss < s ; ss++) {

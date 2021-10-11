@@ -12,6 +12,29 @@
 #include "dataBlock.hpp"
 #include "fargo.hpp"
 
+KOKKOS_INLINE_FUNCTION real FargoFlux(IdefixArray4D<real> Vin, int n, int k, int j, int i,
+                                      int so, int ds, int sbeg,
+                                      real eps) {
+  // compute shifted indices, taking into account the fact that we're periodic
+  int sop1 = sbeg + ((so+1-sbeg)%ds+ds)%ds;
+  int som1 = sbeg + ((so-1-sbeg)%ds+ds)%ds;
+  int sign = (eps>=0) ? 1 : -1;
+  real F, dqm, dqp, dq;
+  #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
+    dqm = Vin(n,k,so,i) - Vin(n,k,som1,i);
+    dqp = Vin(n,k,sop1,i) - Vin(n,k,so,i);
+    dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+    F = eps*(Vin(n,k,so,i) + sign*0.5*dq*(1.0-sign*eps));
+  #elif GEOMETRY == SPHERICAL
+    dqm = Vin(n,so,j,i) - Vin(n,som1,j,i);;
+    dqp = Vin(n,sop1,j,i) - Vin(n,so,j,i);
+    dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+    F = eps*(Vin(n,so,j,i) + sign*0.5*dq*(1.0-sign*eps);
+  #endif
+  return(F);
+}
+
+
 void Fargo::Init(Input &input, Grid &grid, Hydro *hydro) {
   idfx::pushRegion("Fargo::Init");
   // Todo(lesurg): should work on the shearing box version of this.
@@ -194,7 +217,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
               data->beg[IDIR],data->end[IDIR],
               KOKKOS_LAMBDA(int n, int k, int j, int i) {
                 real w,dphi;
-                int s,sp1,sm1,sp2,sm2;
+                int s;
                 #if GEOMETRY == CARTESIAN
                  if(fargoType==userdef) {
                   w = meanV(k,i);
@@ -212,12 +235,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
                  dphi = dx3(k);
                  s = k;
                 #endif
-                // compute shifted indices, taking into account the fact that we're periodic
-                int ds = send-sbeg;
-                sp1 = sbeg + ((s+1-sbeg)%ds+ds)%ds;
-                sp2 = sbeg + ((s+2-sbeg)%ds+ds)%ds;
-                sm1 = sbeg + ((s-1-sbeg)%ds+ds)%ds;
-                sm2 = sbeg + ((s-2-sbeg)%ds+ds)%ds;
+
                 // Compute the offset in phi, modulo the full domain size
                 real dL = std::fmod(w*dt, Lphi);
 
@@ -227,65 +245,32 @@ void Fargo::ShiftSolution(const real t, const real dt) {
                 // get the remainding shift
                 real eps = dL/dphi - m;
 
-                // target index after the shift
-                int starget = sbeg+ (s+m-sbeg)%(send-sbeg);
+                // origin index before the shift
+                // Note the trick to get a positive module i%%n = (i%n + n)%n;
+                int ds = send-sbeg;
+
+                // so is the "origin" index
+                int so = sbeg + ((s-m-sbeg)%ds+ds)%ds;
 
                 // Define Left and right fluxes
                 // Fluxes are defined from slop-limited interpolation
                 // Using Van-leer slope limiter (consistently with the main advection scheme)
                 real Fl,Fr;
-                real dqm, dqp, dq;
+
+                if(eps>=ZERO_F) {
+                  int som1 = sbeg + ((so-1-sbeg)%ds+ds)%ds;
+                  Fl = FargoFlux(Uc, n, k, j, i, som1, ds, sbeg, eps);
+                  Fr = FargoFlux(Uc, n, k, j, i, so, ds, sbeg, eps);
+                } else {
+                  int sop1 = sbeg + ((so+1-sbeg)%ds+ds)%ds;
+                  Fl = FargoFlux(Uc, n, k, j, i, so, ds, sbeg, eps);
+                  Fr = FargoFlux(Uc, n, k, j, i, sop1, ds, sbeg, eps);
+                }
 
                 #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
-                  if(eps>=ZERO_F) {
-                    // Compute Fl
-                    dqm = Uc(n,k,sm1,i) - Uc(n,k,sm2,i);
-                    dqp = Uc(n,k,s,i) - Uc(n,k,sm1,i);
-                    dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-                    Fl = Uc(n,k,sm1,i) + 0.5*dq*(1.0-eps);
-                    //Compute Fr
-                    dqm=dqp;
-                    dqp = Uc(n,k,sp1,i) - Uc(n,k,s,i);
-                    dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-                    Fr = Uc(n,k,s,i) + 0.5*dq*(1.0-eps);
-                  } else {
-                    //Compute Fl
-                    dqm = Uc(n,k,s,i) - Uc(n,k,sm1,i);
-                    dqp = Uc(n,k,sp1,i) - Uc(n,k,s,i);
-                    dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-                    Fl = Uc(n,k,s,i) - 0.5*dq*(1.0+eps);
-                    // Compute Fr
-                    dqm=dqp;
-                    dqp = Uc(n,k,sp2,i) - Uc(n,k,sp1,i);
-                    dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-                    Fr = Uc(n,k,sp1,i) - 0.5*dq*(1.0+eps);
-                  }
-                  scrh(n,k,starget,i) = Uc(n,k,s,i) - eps*(Fr - Fl);
+                  scrh(n,k,s,i) = Uc(n,k,so,i) - (Fr - Fl);
                 #elif GEOMETRY == SPHERICAL
-                if(eps>=ZERO_F) {
-                    // Compute Fl
-                    dqm = Uc(n,sm1,j,i) - Uc(n,sm2,j,i);
-                    dqp = Uc(n,s,j,i) - Uc(n,sm1,j,i);
-                    dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-                    Fl = Uc(n,sm1,j,i) + 0.5*dq*(1.0-eps);
-                    //Compute Fr
-                    dqm=dqp;
-                    dqp = Uc(n,sp1,j,i) - Uc(n,s,j,i);
-                    dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-                    Fr = Uc(n,s,j,i) + 0.5*dq*(1.0-eps);
-                  } else {
-                    //Compute Fl
-                    dqm = Uc(n,s,j,i) - Uc(n,sm1,j,i);
-                    dqp = Uc(n,sp1,j,i) - Uc(n,s,j,i);
-                    dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-                    Fl = Uc(n,s,j,i) - 0.5*dq*(1.0+eps);
-                    // Compute Fr
-                    dqm=dqp;
-                    dqp = Uc(n,sp2,j,i) - Uc(n,sp1,j,i);
-                    dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-                    Fr = Uc(n,sp1,j,i) - 0.5*dq*(1.0+eps);
-                  }
-                  scrh(n,starget,j,i) = Uc(n,s,j,i) - eps*(Fr - Fl);
+                  scrh(n,s,j,i) = Uc(n,so,j,i) - (Fr - Fl);
                 #endif
               });
 

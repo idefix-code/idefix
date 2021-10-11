@@ -12,6 +12,73 @@
 #include "dataBlock.hpp"
 #include "fargo.hpp"
 
+#define HIGH_ORDER_FARGO
+
+#ifdef HIGH_ORDER_FARGO
+KOKKOS_INLINE_FUNCTION real FargoFlux(const IdefixArray4D<real> &Vin, int n, int k, int j, int i,
+                                      int so, int ds, int sbeg, real eps) {
+  // compute shifted indices, taking into account the fact that we're periodic
+  int sop1 = so+1;
+  if(sop1-sbeg >= ds) sop1 = sop1-ds;
+  int sop2 = sop1+1;
+  if(sop2-sbeg >= ds) sop2 = sop2-ds;
+
+  int som1 = so-1;
+  if(som1-sbeg< 0 ) som1 = som1+ds;
+  int som2 = som1-1;
+  if(som2-sbeg< 0 ) som2 = som2+ds;
+
+  int sign = (eps>=0) ? 1 : -1;
+  real dqm2,dqm1,dqp1,dqp2, q0,qm1, qp1;
+  #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
+    q0 = Vin(n,k,so,i);
+    qm1 = Vin(n,k,som1,i);
+    qp1 = Vin(n,k,sop1,i);
+    dqm2 = qm1 - Vin(n,k,som2,i);
+    dqm1 = q0 - qm1;
+    dqp1 = qp1 - q0;
+    dqp2 = Vin(n,k,sop2,i) - qp1;
+  #elif GEOMETRY == SPHERICAL
+    q0 = Vin(n,so,j,i);
+    qm1 = Vin(n,som1,j,i);
+    qp1 = Vin(n,sop1,j,i);
+    dqm2 = qm1 - Vin(n,som2,j,i);
+    dqm1 = q0 - qm1;
+    dqp1 = qp1 - q0;
+    dqp2 = Vin(n,sop2,j,i) - qp1;
+  #endif
+    // slope limited values around the reference point
+    real dqlm = (dqm2*dqm1 > ZERO_F ? TWO_F*dqm2*dqm1/(dqm2 + dqm1) : ZERO_F);
+    real dql0 = (dqm1*dqp1 > ZERO_F ? TWO_F*dqm1*dqp1/(dqm1 + dqp1) : ZERO_F);
+    real dqlp = (dqp2*dqp1 > ZERO_F ? TWO_F*dqp2*dqp1/(dqp2 + dqp1) : ZERO_F);
+
+    real dqp = 0.5 * dqp1 - (dqlp - dql0) / 6.0;
+    real dqm = -0.5 * dqm1 - (dql0 - dqlm) / 6.0;
+
+    if(dqp*dqm>0.0) {
+       dqp = dqm = 0.0;
+    } else {
+      if(FABS(dqp) >= 2.0*FABS(dqm)) dqp = -2.0*dqm;
+      if(FABS(dqm) >= 2.0*FABS(dqp)) dqm = -2.0*dqp;
+    }
+
+    real qp = q0 + dqp;
+    real qm = q0 + dqm;
+
+    real dqc = dqp - dqm;
+    real d2q = dqp + dqm;
+
+    real F;
+    if(eps > 0.0) {
+      F = eps*(qp - 0.5*eps*(dqc + d2q*(3.0 - 2.0*eps)));
+    } else {
+      F = eps*(qm - 0.5*eps*(dqc - d2q*(3.0 + 2.0*eps)));
+    }
+
+  return(F);
+}
+
+#else// HIGH_ORDER_FARGO
 KOKKOS_INLINE_FUNCTION real FargoFlux(const IdefixArray4D<real> &Vin, int n, int k, int j, int i,
                                       int so, int ds, int sbeg, real eps) {
   // compute shifted indices, taking into account the fact that we're periodic
@@ -26,7 +93,6 @@ KOKKOS_INLINE_FUNCTION real FargoFlux(const IdefixArray4D<real> &Vin, int n, int
     V0 = Vin(n,k,so,i);
     dqm = V0 - Vin(n,k,som1,i);
     dqp = Vin(n,k,sop1,i) - V0;
-    V0 = Vin(n,k,so,i);
   #elif GEOMETRY == SPHERICAL
     V0 = Vin(n,so,j,i);
     dqm = V0 - Vin(n,som1,j,i);
@@ -36,6 +102,9 @@ KOKKOS_INLINE_FUNCTION real FargoFlux(const IdefixArray4D<real> &Vin, int n, int
     F = eps*(V0 + sign*0.5*dq*(1.0-sign*eps));
   return(F);
 }
+
+#endif // HIGH_ORDER_FARGO
+
 
 
 void Fargo::Init(Input &input, Grid &grid, Hydro *hydro) {

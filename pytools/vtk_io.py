@@ -127,18 +127,26 @@ def readVTK(filename, geometry="unknown"):
           if V.nx>1:
               V.nx=V.nx-1
               V.x=0.5*(x[1:]+x[:-1])
+              # left side of the cell
+              V.xl=x
           else:
               V.x=x
+              V.xl=x
           if V.ny>1:
               V.ny=V.ny-1
               V.y=0.5*(y[1:]+y[:-1])
+              # left side of the cell
+              V.yl=y
           else:
               V.y=y
+              V.yl=y
           if V.nz>1:
               V.nz=V.nz-1
               V.z=0.5*(z[1:]+z[:-1])
+              V.zl=z
           else:
               V.z=z
+              V.zl=z
       elif(point_type == "POINT_DATA"):
           V.x=x
           V.y=y
@@ -194,18 +202,24 @@ def readVTK(filename, geometry="unknown"):
         if V.nx>1:
             V.nx=V.nx-1
             V.x=0.5*(r[1:]+r[:-1])
+            V.xl=r
         else:
             V.x=r
+            V.xl=r
         if V.ny>1:
             V.ny=V.ny-1
             V.y=(0.5*(theta[1:]+theta[:-1])+np.pi)%(2.0*np.pi)-np.pi
+            V.yl=(theta+np.pi)%(2.0*np.pi)-np.pi
         else:
             V.y=theta
+            V.yl=theta
         if V.nz>1:
             V.nz=V.nz-1
             V.z=0.5*(z[1:]+z[:-1])
+            V.zl=z
         else:
             V.z=z
+            V.zl=z
 
       # Reconstruct the spherical coordinate system
       if V.geometry == "spherical":
@@ -232,18 +246,24 @@ def readVTK(filename, geometry="unknown"):
         if V.nx>1:
             V.nx=V.nx-1
             V.r=0.5*(r[1:]+r[:-1])
+            V.rl=r
         else:
-            V.x=r
+            V.r=r
+            V.rl=r
         if V.ny>1:
             V.ny=V.ny-1
             V.theta=0.5*(theta[1:]+theta[:-1])
+            V.thetal=theta
         else:
-            V.y=theta
+            V.theta=theta
+            V.thetal=theta
         if V.nz>1:
             V.nz=V.nz-1
             V.phi=(0.5*(phi[1:]+phi[:-1]))
+            V.phil=phi
         else:
             V.phi=phi
+            V.phil=phi
 
     ## From that point, the coordinates system is known.
     while 1:

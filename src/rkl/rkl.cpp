@@ -17,17 +17,6 @@
 #endif
 #define NVAR_MAX         10
 
-RKLegendre::RKLegendre() {
-  // do nothing!
-}
-
-RKLegendre::~RKLegendre() {
-  #ifdef WITH_MPI
-    if(mpi != NULL) {
-      delete mpi;
-    }
-  #endif
-}
 
 void RKLegendre::AddVariable(int var, IdefixArray1D<int>::HostMirror &varListHost ) {
   bool haveit{false};
@@ -110,7 +99,7 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
   Kokkos::deep_copy(varList,varListHost);
 
   #ifdef WITH_MPI
-    this->mpi = new Mpi(&datain, varList, nvarRKL, haveVs);
+    mpi.Init(&datain, varList, nvarRKL, haveVs);
   #endif
 
 
@@ -169,7 +158,7 @@ void RKLegendre::Cycle() {
   stage = 1;
 
   // Apply Boundary conditions on the full set of variables
-  data->hydro.SetBoundary(time);
+  data->hydro.boundary.SetBoundaries(time);
 
   // Convert current state into conservative variable
   data->hydro.ConvertPrimToCons();
@@ -244,7 +233,7 @@ void RKLegendre::Cycle() {
       Vs1(n,k,j,i) = Vs(n,k,j,i);
       Vs(n,k,j,i) = Vs1(n,k,j,i) + mu_tilde_j*dt_hyp*dB0(n,k,j,i);
     });
-    data->hydro.ReconstructVcField(Uc);
+    data->hydro.boundary.ReconstructVcField(Uc);
   }
 
   // Convert current state into primitive variable
@@ -272,7 +261,7 @@ void RKLegendre::Cycle() {
 #endif
 
     // Apply Boundary conditions
-    this->SetBoundary(time);
+    this->SetBoundaries(time);
 
     // evolve RKL stage
     EvolveStage(time);
@@ -314,7 +303,7 @@ void RKLegendre::Cycle() {
                                   + gamma_j*dt_hyp*dB0(n,k,j,i);
   #endif
           });
-      data->hydro.ReconstructVcField(Uc);
+      data->hydro.boundary.ReconstructVcField(Uc);
     }
     // Convert current state into primitive variable
     data->hydro.ConvertConsToPrim();
@@ -419,6 +408,22 @@ void RKLegendre::ComputeDt() {
   idfx::popRegion();
 }
 
+template<int dir> void RKLegendre::LoopDir(real t) {
+    ResetFlux();
+
+    // CalcParabolicFlux
+    data->hydro.CalcParabolicFlux<dir>(t);
+
+    // Calc Right Hand Side
+    CalcParabolicRHS<dir>(t);
+
+    // Recursive: do next dimension
+    LoopDir<dir+1>(t);
+}
+
+template<> void RKLegendre::LoopDir<DIMENSIONS>(real t) {
+  // Do nothing
+}
 
 void RKLegendre::EvolveStage(real t) {
   idfx::pushRegion("RKLegendre::EvolveStage");
@@ -427,14 +432,9 @@ void RKLegendre::EvolveStage(real t) {
 
   if(haveVs && data->hydro.needRKLCurrent) data->hydro.CalcCurrent();
 
-  for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
-    ResetFlux();
-    // CalcParabolicFlux
-    data->hydro.CalcParabolicFlux(dir, t);
+  // Loop on dimensions for the parabolic fluxes and RHS, starting from IDIR
+  LoopDir<IDIR>(t);
 
-    // Calc Right Hand Side
-    CalcParabolicRHS(dir, t);
-  }
   if(haveVs) {
     data->hydro.emf.CalcNonidealEMF(t);
     data->hydro.emf.EnforceEMFBoundary();
@@ -444,8 +444,8 @@ void RKLegendre::EvolveStage(real t) {
   idfx::popRegion();
 }
 
-
-void RKLegendre::CalcParabolicRHS(int dir, real t) {
+template <int dir>
+void RKLegendre::CalcParabolicRHS(real t) {
   idfx::pushRegion("RKLegendre::CalcParabolicRHS");
 
   IdefixArray4D<real> Flux = data->hydro.FluxRiemann;
@@ -522,6 +522,9 @@ void RKLegendre::CalcParabolicRHS(int dir, real t) {
              data->beg[JDIR],data->end[JDIR],
              data->beg[IDIR],data->end[IDIR],
     KOKKOS_LAMBDA (int n, int k, int j, int i) {
+      constexpr const int ioffset = (dir==IDIR) ? 1 : 0;
+      constexpr const int joffset = (dir==JDIR) ? 1 : 0;
+      constexpr const int koffset = (dir==KDIR) ? 1 : 0;
       real rhs;
 
       const int nv = varList(n);
@@ -559,18 +562,21 @@ void RKLegendre::CalcParabolicRHS(int dir, real t) {
              data->beg[JDIR],data->end[JDIR],
              data->beg[IDIR],data->end[IDIR],
              KOKKOS_LAMBDA (int k, int j, int i) {
+                constexpr const int ioffset = (dir==IDIR) ? 1 : 0;
+                constexpr const int joffset = (dir==JDIR) ? 1 : 0;
+                constexpr const int koffset = (dir==KDIR) ? 1 : 0;
                // Compute dt from max signal speed
                 const int ig = ioffset*i + joffset*j + koffset*k;
                 real dl = dx(ig);
                 #if GEOMETRY == POLAR
-                  if(dir==JDIR)
+                  if (dir==JDIR)
                     dl = dl*x1(i);
 
                 #elif GEOMETRY == SPHERICAL
-                  if(dir==JDIR)
+                  if (dir==JDIR)
                     dl = dl*rt(i);
                   else
-                    if(dir==KDIR)
+                    if (dir==KDIR)
                       dl = dl*rt(i)*dmu(j)/dx2(j);
                  #endif
 
@@ -582,10 +588,10 @@ void RKLegendre::CalcParabolicRHS(int dir, real t) {
   idfx::popRegion();
 }
 
-void RKLegendre::SetBoundary(real t) {
-  idfx::pushRegion("RKLegendre::SetBoundary");
+void RKLegendre::SetBoundaries(real t) {
+  idfx::pushRegion("RKLegendre::SetBoundaries");
   // set internal boundary conditions
-  if(data->hydro.haveInternalBoundary) data->hydro.internalBoundaryFunc(*data, t);
+  if(data->hydro.boundary.haveInternalBoundary) data->hydro.boundary.internalBoundaryFunc(*data, t);
   for(int dir=0 ; dir < DIMENSIONS ; dir++ ) {
       // MPI Exchange data when needed
       // We use the RKL instance MPI object to ensure that we only exchange the data
@@ -594,22 +600,22 @@ void RKLegendre::SetBoundary(real t) {
     if(data->mygrid->nproc[dir]>1) {
       switch(dir) {
         case 0:
-          this->mpi->ExchangeX1();
+          this->mpi.ExchangeX1();
           break;
         case 1:
-          this->mpi->ExchangeX2();
+          this->mpi.ExchangeX2();
           break;
         case 2:
-          this->mpi->ExchangeX3();
+          this->mpi.ExchangeX3();
           break;
       }
     }
     #endif
-    data->hydro.EnforceBoundaryDir(t, dir);
+    data->hydro.boundary.EnforceBoundaryDir(t, dir);
     #if MHD == YES
       // Reconstruct the normal field component when using CT
       if(haveVs) {
-        data->hydro.ReconstructNormalField(dir);
+        data->hydro.boundary.ReconstructNormalField(dir);
       }
     #endif
   } // Loop on dimension ends
@@ -617,7 +623,7 @@ void RKLegendre::SetBoundary(real t) {
 #if MHD == YES
   // Remake the cell-centered field.
   if(haveVs) {
-    data->hydro.ReconstructVcField(data->hydro.Vc);
+    data->hydro.boundary.ReconstructVcField(data->hydro.Vc);
   }
 #endif
   idfx::popRegion();

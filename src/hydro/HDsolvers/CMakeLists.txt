@@ -1,0 +1,6 @@
+target_sources(idefix
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/hllcHD.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/hllHD.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/roeHD.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/tvdlfHD.hpp
+  )

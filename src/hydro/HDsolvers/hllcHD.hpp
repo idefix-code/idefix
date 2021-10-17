@@ -11,9 +11,11 @@
 #include "../idefix.hpp"
 #include "hydro.hpp"
 #include "extrapolatePrimVar.hpp"
+#include "fluxHD.hpp"
+#include "convertConsToPrimHD.hpp"
 
 // Compute Riemann fluxes from states using HLLC solver
-template<const int DIR, const int Xn, const int Xt, const int Xb>
+template<const int DIR>
 void Hydro::HllcHD() {
   idfx::pushRegion("Hydro::HLLC_Solver");
 
@@ -40,6 +42,9 @@ void Hydro::HllcHD() {
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 
+  // Required for high order interpolations
+  IdefixArray1D<real> dx = this->data->dx[DIR];
+
   real gamma = this->gamma;
   real gamma_m1 = this->gamma - ONE_F;
   real csIso = this->isoSoundSpeed;
@@ -50,6 +55,11 @@ void Hydro::HllcHD() {
              data->beg[JDIR],data->end[JDIR]+joffset,
              data->beg[IDIR],data->end[IDIR]+ioffset,
     KOKKOS_LAMBDA (int k, int j, int i) {
+      // Init the directions (should be in the kernel for proper optimisation by the compilers)
+      EXPAND( const int Xn = DIR+MX1;                    ,
+              const int Xt = (DIR == IDIR ? MX2 : MX1);  ,
+              const int Xb = (DIR == KDIR ? MX2 : MX3);  )
+
       // Primitive variables
       real vL[NVAR];
       real vR[NVAR];
@@ -66,7 +76,7 @@ void Hydro::HllcHD() {
       real cL, cR, cmax;
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, vL, vR);
+      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, dx, vL, vR);
 
       // 2-- Get the wave speed
 #if HAVE_ENERGY

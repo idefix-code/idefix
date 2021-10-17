@@ -9,13 +9,14 @@
 #define HYDRO_MHDSOLVERS_HLLDMHD_HPP_
 
 #include "../idefix.hpp"
-#include "solversMHD.hpp"
 #include "extrapolatePrimVar.hpp"
-
+#include "fluxMHD.hpp"
+#include "convertConsToPrimMHD.hpp"
+#include "storeFlux.hpp"
+#include "electroMotiveForce.hpp"
 
 // Compute Riemann fluxes from states using HLLD solver
-template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
-         ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
+template<const int DIR>
 void Hydro::HlldMHD() {
   idfx::pushRegion("Hydro::HLLD_MHD");
 
@@ -30,16 +31,23 @@ void Hydro::HlldMHD() {
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 
+  // Required for high order interpolations
+  IdefixArray1D<real> dx = this->data->dx[DIR];
+
   // References to required emf components
   IdefixArray3D<real> Eb;
   IdefixArray3D<real> Et;
 
-#if EMF_AVERAGE == UCT_CONTACT
+  const ElectroMotiveForce::AveragingType emfAverage = emf.averaging;
+
+  // Required by UCT_Contact
   IdefixArray3D<int> SV;
-#elif EMF_AVERAGE == UCT_HLL
-  IdefixArray3D<real> SL;
-  IdefixArray3D<real> SR;
-#endif
+
+  // Required by UCT_HLLX
+  IdefixArray3D<real> aL;
+  IdefixArray3D<real> aR;
+  IdefixArray3D<real> dL;
+  IdefixArray3D<real> dR;
 
   real gamma = this->gamma;
   real gamma_m1 = this->gamma-ONE_F;
@@ -48,9 +56,7 @@ void Hydro::HlldMHD() {
 
 
   // st and sb will be useful only when Hall is included
-  D_EXPAND( real st;  ,
-                      ,
-            real sb;  )
+  real st,sb;
 
   switch(DIR) {
     case(IDIR):
@@ -63,14 +69,17 @@ void Hydro::HlldMHD() {
 
       Et = this->emf.ezi;
       Eb = this->emf.eyi;
-#if EMF_AVERAGE == UCT_CONTACT
+
       SV = this->emf.svx;
-#elif EMF_AVERAGE == UCT_HLL
-      SL = this->emf.SxL;
-      SR = this->emf.SxR;
-#endif
+
+      aL = this->emf.axL;
+      aR = this->emf.axR;
+
+      dL = this->emf.dxL;
+      dR = this->emf.dxR;
 
       break;
+#if DIMENSIONS >= 2
     case(JDIR):
       joffset=1;
       D_EXPAND(
@@ -82,14 +91,18 @@ void Hydro::HlldMHD() {
 
       Et = this->emf.ezj;
       Eb = this->emf.exj;
-#if EMF_AVERAGE == UCT_CONTACT
+
       SV = this->emf.svy;
-#elif EMF_AVERAGE == UCT_HLL
-      SL = this->emf.SyL;
-      SR = this->emf.SyR;
-#endif
+
+      aL = this->emf.ayL;
+      aR = this->emf.ayR;
+
+      dL = this->emf.dyL;
+      dR = this->emf.dyR;
 
       break;
+#endif
+#if DIMENSIONS == 3
     case(KDIR):
       koffset=1;
       D_EXPAND(
@@ -100,14 +113,16 @@ void Hydro::HlldMHD() {
 
       Et = this->emf.eyk;
       Eb = this->emf.exk;
-#if EMF_AVERAGE == UCT_CONTACT
-      SV = this->emf.svz;
-#elif EMF_AVERAGE == UCT_HLL
-      SL = this->emf.SzL;
-      SR = this->emf.SzR;
-#endif
 
+      SV = this->emf.svz;
+
+      aL = this->emf.azL;
+      aR = this->emf.azR;
+
+      dL = this->emf.dzL;
+      dR = this->emf.dzR;
       break;
+#endif
     default:
       IDEFIX_ERROR("Wrong direction");
   }
@@ -117,11 +132,20 @@ void Hydro::HlldMHD() {
              data->beg[JDIR]-jextend,data->end[JDIR]+joffset+jextend,
              data->beg[IDIR]-iextend,data->end[IDIR]+ioffset+iextend,
     KOKKOS_LAMBDA (int k, int j, int i) {
+      // Init the directions (should be in the kernel for proper optimisation by the compilers)
+      EXPAND( const int Xn = DIR+MX1;                    ,
+              const int Xt = (DIR == IDIR ? MX2 : MX1);  ,
+              const int Xb = (DIR == KDIR ? MX2 : MX3);  )
+
+      EXPAND( const int BXn = DIR+BX1;                    ,
+              const int BXt = (DIR == IDIR ? BX2 : BX1);  ,
+              const int BXb = (DIR == KDIR ? BX2 : BX3);   )
+
       // Primitive variables
       real vL[NVAR];
       real vR[NVAR];
 
-      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, vL, vR);
+      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, dx, vL, vR);
 
       // Conservative variables
       real uL[NVAR];
@@ -211,13 +235,22 @@ void Hydro::HlldMHD() {
       K_Flux(fluxR, vR, fluxR, c2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
 
       real ptR, ptL;
+      int revert_to_hll = 0, revert_to_hllc = 0;
 
 #if HAVE_ENERGY
-      ptL  = vL[PRS] + 0.5* ( EXPAND(vL[BX1]*vL[BX1] , + vL[BX2]*vL[BX2], + vL[BX3]*vL[BX3]) );
-      ptR  = vR[PRS] + 0.5* ( EXPAND(vR[BX1]*vR[BX1] , + vR[BX2]*vR[BX2], + vR[BX3]*vR[BX3]) );
+      ptL  = vL[PRS] + HALF_F* ( EXPAND(vL[BX1]*vL[BX1]     ,
+                                        + vL[BX2]*vL[BX2]   ,
+                                        + vL[BX3]*vL[BX3])  );
+      ptR  = vR[PRS] + HALF_F* ( EXPAND(vR[BX1]*vR[BX1]     ,
+                                        + vR[BX2]*vR[BX2]   ,
+                                        + vR[BX3]*vR[BX3])  );
 #else
-      ptL  = c2Iso*vL[RHO] + 0.5* (EXPAND(vL[BX1]*vL[BX1], + vL[BX2]*vL[BX2], + vL[BX3]*vL[BX3]));
-      ptR  = c2Iso*vR[RHO] + 0.5* (EXPAND(vR[BX1]*vR[BX1], + vR[BX2]*vR[BX2], + vR[BX3]*vR[BX3]));
+      ptL  = c2Iso*vL[RHO] + HALF_F* (EXPAND(vL[BX1]*vL[BX1]     ,
+                                             + vL[BX2]*vL[BX2]   ,
+                                             + vL[BX3]*vL[BX3])  );
+      ptR  = c2Iso*vR[RHO] + HALF_F* (EXPAND(vR[BX1]*vR[BX1]     ,
+                                             + vR[BX2]*vR[BX2]   ,
+                                             + vR[BX3]*vR[BX3])  );
 #endif
 
       // 5-- Compute the flux from the left and right states
@@ -240,17 +273,16 @@ void Hydro::HlldMHD() {
 #if HAVE_ENERGY
         real Uhll[NVAR];
         real vs, pts, sqrL, sqrR, vsL, vsR, wsL, wsR;
-        int revert_to_hllc;
 
         // 3c. Compute U*(L), U^*(R)
-        scrh = 1.0/(sr - sl);
+        scrh = ONE_F/(sr - sl);
         Bx1  = Bx = (sr*vR[BXn] - sl*vL[BXn])*scrh;
-        sBx  = (Bx > 0.0 ? 1.0 : -1.0);
+        sBx  = (Bx > 0.0 ? ONE_F : -ONE_F);
 
         duL  = sl - vL[Xn];
         duR  = sr - vR[Xn];
 
-        scrh = 1.0/(duR*uR[RHO] - duL*uL[RHO]);
+        scrh = ONE_F/(duR*uR[RHO] - duL*uL[RHO]);
         SM   = (duR*uR[Xn] - duL*uL[Xn] - ptR + ptL)*scrh;
 
         pts  = duR*uR[RHO]*ptL - duL*uL[RHO]*ptR +
@@ -278,13 +310,11 @@ void Hydro::HlldMHD() {
         re-definition of By* and Bz* in terms of By(HLL), Bz(HLL).
         ----------------------------------------------------------------- */
 
-        revert_to_hllc = 0;
-
         if ( (S1L - sl) <  1.e-4*(SM - sl) ) revert_to_hllc = 1;
         if ( (S1R - sr) > -1.e-4*(sr - SM) ) revert_to_hllc = 1;
 
         if (revert_to_hllc) {
-          scrh = 1.0/(sr - sl);
+          scrh = ONE_F/(sr - sl);
 #pragma unroll
           for(int nv = 0 ; nv < NVAR; nv++) {
             Uhll[nv]  = sr*uR[nv] - sl*uL[nv] + fluxL[nv] - fluxR[nv];
@@ -419,9 +449,8 @@ void Hydro::HlldMHD() {
 #else
         real usc[NVAR];
         real rho, sqrho;
-        int revert_to_hll;
 
-        scrh = 1.0/(sr - sl);
+        scrh = ONE_F/(sr - sl);
         duL = sl - vL[Xn];
         duR = sr - vR[Xn];
 
@@ -445,13 +474,11 @@ void Hydro::HlldMHD() {
             S1R -> sr. Revert to HLL if necessary.
         --------------------------------------------- */
 
-        revert_to_hll = 0;
-
         if ( (S1L - sl) <  1.e-4*(sr - sl) ) revert_to_hll = 1;
         if ( (S1R - sr) > -1.e-4*(sr - sl) ) revert_to_hll = 1;
 
         if (revert_to_hll) {
-          scrh = 1.0/(sr - sl);
+          scrh = ONE_F/(sr - sl);
 #pragma unroll
           for(int nv = 0 ; nv < NVAR; nv++) {
             Flux(nv,k,j,i) = sl*sr*(uR[nv] - uL[nv])
@@ -468,8 +495,8 @@ void Hydro::HlldMHD() {
                   Compute U*
           --------------------------- */
 
-          scrhL = 1.0/((sl - S1L)*(sl - S1R));
-          scrhR = 1.0/((sr - S1L)*(sr - S1R));
+          scrhL = ONE_F/((sl - S1L)*(sl - S1R));
+          scrhR = ONE_F/((sr - S1L)*(sr - S1R));
 
           EXPAND(                                                      ;  ,
                   usL[Xt] = rho*vL[Xt] - Bx*uL[BXt]*(SM - vL[Xn])*scrhL;
@@ -508,18 +535,18 @@ void Hydro::HlldMHD() {
                   Compute U** = Uc
             --------------------------- */
 
-            sBx = (Bx > 0.0 ? 1.0 : -1.0);
+            sBx = (Bx > 0.0 ? ONE_F : -ONE_F);
 
             EXPAND(                                               ,
-                    usc[Xt] = 0.5*(usR[Xt] + usL[Xt]
+                    usc[Xt] = HALF_F*(usR[Xt] + usL[Xt]
                              + (usR[BXt] - usL[BXt])*sBx*sqrho);  ,
-                    usc[Xb] = 0.5*(   usR[Xb] + usL[Xb]
+                    usc[Xb] = HALF_F*(   usR[Xb] + usL[Xb]
                              + (usR[BXb] - usL[BXb])*sBx*sqrho);  )
 
             EXPAND(                                              ,
-                    usc[BXt] = 0.5*(   usR[BXt] + usL[BXt]
+                    usc[BXt] = HALF_F*(   usR[BXt] + usL[BXt]
                               + (usR[Xt] - usL[Xt])*sBx/sqrho);  ,
-                    usc[BXb] = 0.5*(   usR[BXb] + usL[BXb]
+                    usc[BXb] = HALF_F*(   usR[BXb] + usL[BXb]
                               + (usR[Xb] - usL[Xb])*sBx/sqrho);  )
 
             EXPAND(                                             ,
@@ -539,23 +566,17 @@ void Hydro::HlldMHD() {
       cMax(k,j,i) = cmax;
 
       // 7-- Store the flux in the emf components
-      D_EXPAND( Et(k,j,i) = st*Flux(BXt,k,j,i);  ,
-                                                 ,
-                Eb(k,j,i) = sb*Flux(BXb,k,j,i);  )
-
-#if EMF_AVERAGE == UCT_CONTACT
-      int s = 0;
-      if (Flux(RHO,k,j,i) >  eps_UCT_CONTACT) s =  1;
-      if (Flux(RHO,k,j,i) < -eps_UCT_CONTACT) s = -1;
-
-      SV(k,j,i) = s;
-
-#elif EMF_AVERAGE == UCT_HLL
-      SL(k,j,i) = std::fmax(ZERO_F, -sl);
-      SR(k,j,i) = std::fmax(ZERO_F,  sr);
-#endif
+      if (emfAverage==ElectroMotiveForce::arithmetic
+                || emfAverage==ElectroMotiveForce::uct0) {
+        K_StoreEMF<DIR>(i,j,k,st,sb,Flux,Et,Eb);
+      } else if (emfAverage==ElectroMotiveForce::uct_contact) {
+        K_StoreContact<DIR>(i,j,k,st,sb,Flux,Et,Eb,SV);
+      } else if (emfAverage==ElectroMotiveForce::uct_hll) {
+        K_StoreHLL<DIR>(i,j,k,st,sb,sl,sr,vL,vR,Et,Eb,aL,aR,dL,dR);
+      } else if (emfAverage==ElectroMotiveForce::uct_hlld) {
+        K_StoreHLLD<DIR>(i,j,k,st,sb,c2Iso,sl,sr,vL,vR,uL,uR,Et,Eb,aL,aR,dL,dR);
+      }
   });
-
   idfx::popRegion();
 }
 

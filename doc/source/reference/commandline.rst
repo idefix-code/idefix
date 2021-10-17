@@ -19,6 +19,9 @@ Several options can be provided at command line when running the code. These are
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+
 | -i                 |   specify the name of the input file to be used (default ``idefix.ini``)                                                |
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+
+| -autotune          | | try to find the best loop runrolling strategy by running a series of integration tests                                |
+|                    | | before starting the real integration loop.                                                                            |
++--------------------+-------------------------------------------------------------------------------------------------------------------------+
 
 In addition to these specific *Idefix* options, several Kokkos Options can be used on the command
 line when running *Idefix*:
@@ -50,3 +53,16 @@ signal with the ``kill`` command. For instance:
 
 where 123456 is *Idefix* pid (obtainable with ``ps -a``). When runnning with MPI, the pid used in the ``kill`` command can be any *Idefix* process, as *Idefix*
 automatically broadcast the abort signal to all of its running processes.
+
+Command file
+------------
+
+In cases when *Idefix* processes cannot be reached directly (as in the case when the executable runs on compute nodes on which it is not possible to connect),
+it is still possible to interupt *Idefix* by creating an empty file with a specific filename (i.e. a "command file") in the directory where *Idefix* is running (for instance
+using the command ``touch``). Currently, *Idefix* only supports the command file ``stop``. Hence
+
+.. code-block:: bash
+
+  touch stop
+
+has exactly the same effect as sending the ``SIGUSR2`` signal to *Idefix*: it triggers the creation of a restart dump and finishes.

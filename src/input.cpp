@@ -117,16 +117,25 @@ void Input::ParseCommandLine(int argc, char **argv) {
         // Store this
         inputParameters["CommandLine"]["dec"].push_back(std::string(argv[i]));
       }
-    }
-    if(std::string(argv[i]) == "-restart") {
+    } else if(std::string(argv[i]) == "-restart") {
       std::string sirestart{};
-      if((i+1) >= argc) {
+      bool explicitDump = true;     // by default, assume a restart dump # was given
+      // Check whether -restart was given with a number or not
+
+      // -restart was the very last parameter
+      if((i+1)>= argc) {
+        explicitDump = false;
+      } else if(std::isdigit(argv[i+1][0]) == 0) {
+        // next argiment is another parameter (does not start with a number)
+        explicitDump = false;
+      }
+
+      if(explicitDump) {
+        sirestart = std::string(argv[++i]);
+      } else {
         // implicitly restart from the latest existing dumpfile
         // implementation detail: we look for the existing dumpfile with the highest
         // number, not necessarilly the latest timestamp !
-
-        // note that this implementation for an automatic value only works
-        // if -restart is the last argument ...
         const std::vector<std::string> files = Input::getDirectoryFiles();
         int ifile{-1};
         int irestart{-1};
@@ -134,26 +143,38 @@ void Input::ParseCommandLine(int argc, char **argv) {
         for (const auto& file : files) {
           if (Input::getFileExtension(file).compare("dmp") != 0) continue;
           // parse the dumpfile number from filename "dump.????.dmp"
-          ifile = std::stoi(file.substr(5, 4));
+          if(file.substr(0,5) != "dump.") continue;
+          try {
+            ifile = std::stoi(file.substr(5, 4));
+          } catch (...) {
+            // woops, pattern doesn't match!
+            ifile = -1;
+          }
           irestart = std::max(irestart, ifile);
         }
         sirestart = std::to_string(irestart);
-        if (irestart < 0) IDEFIX_ERROR("Cannot restart: no dumpfile found.");
-      } else {
-        sirestart = std::string(argv[++i]);
+        if(irestart==-1) {
+          IDEFIX_WARNING("cannot find a valid restart dump file in current directory");
+        }
       }
-      inputParameters["CommandLine"]["restart"].push_back(sirestart);
-      this->restartRequested = true;
-      this->restartFileNumber = std::stoi(sirestart);
-    }
-    if(std::string(argv[i]) == "-i") {
+      int restartn = std::stoi(sirestart);
+      if(restartn>=0) {
+        inputParameters["CommandLine"]["restart"].push_back(sirestart);
+        this->restartRequested = true;
+        this->restartFileNumber = restartn;
+      } else {
+        IDEFIX_WARNING("Invalid -restart option, I will ignore it.");
+      }
+    } else if(std::string(argv[i]) == "-i") {
       // Loop on dimensions
       if((++i) >= argc) IDEFIX_ERROR(
                       "You must specify -i filename where filename is the name of the input file.");
       this->inputFileName = std::string(argv[i]);
+    } else if(std::string(argv[i]) == "-autotune") {
+      this->tuningRequested = true;
     } else {
       msg << "Unknown option " << argv[i];
-      //IDEFIX_ERROR(msg);
+      IDEFIX_ERROR(msg);
     }
   }
 }
@@ -196,9 +217,24 @@ void Input::signalHandler(int signum) {
   abortRequested=true;
 }
 
+void Input::CheckForStopFile() {
+  // Check whether a file "stop" has been created in directory. If so, raise the abort flag
+  std::string filename = std::string("stop");
+  if(idfx::prank==0) {
+    std::ifstream f(filename);
+    if(f.good()) {
+      // File exists, delete it and raise the flag
+      std::remove(filename.c_str());
+      abortRequested = true;
+      idfx::cout << std::endl << "Input: Caught stop file command" << std::endl;
+    }
+  }
+}
+
 bool Input::CheckForAbort() {
   // Check whether an abort has been requesested
   // When MPI is present, we abort whenever one process got the signal
+  CheckForStopFile();
 #ifdef WITH_MPI
   int abortValue{0};
   bool returnValue{false};
@@ -206,11 +242,11 @@ bool Input::CheckForAbort() {
 
   MPI_Allreduce(MPI_IN_PLACE, &abortValue, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
   returnValue = abortValue > 0;
-  if(returnValue) idfx::cout << "Input::CheckForAbort: abort has been requested." << std::endl;
+  if(returnValue) idfx::cout << "Input: CheckForAbort: abort has been requested." << std::endl;
 
   return(returnValue);
 #else
-  if(abortRequested) idfx::cout << "Input::CheckForAbort: abort has been requested." << std::endl;
+  if(abortRequested) idfx::cout << "Input: CheckForAbort: abort has been requested." << std::endl;
   return(abortRequested);
 #endif
 }

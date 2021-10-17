@@ -18,6 +18,7 @@
 #include "viscosity.hpp"
 #include "axis.hpp"
 #include "fargo.hpp"
+#include "hydroboundary.hpp"
 
 // forward class declaration
 class DataBlock;
@@ -29,21 +30,19 @@ class Hydro {
   void Init(Input &, Grid &, DataBlock *);
   void ConvertConsToPrim();
   void ConvertPrimToCons();
-  void CalcRiemannFlux(int, const real);
-  void CalcParabolicFlux(int, const real);
-  void AddNonIdealMHDFlux(int, const real);
-  void CalcRightHandSide(int, real, real );
+  template <int> void CalcRiemannFlux(const real);
+  template <int> void CalcParabolicFlux(const real);
+  template <int> void AddNonIdealMHDFlux(const real);
+  template <int> void CalcRightHandSide(real, real );
   void CalcCurrent();
   void AddSourceTerms(real, real );
-  void ReconstructVcField(IdefixArray4D<real> &);
-  void ReconstructNormalField(int);
 
-
-  void SetBoundary(real);
-  void EnforceBoundaryDir(real, int);
   real GetGamma();
   real CheckDivB();
   void ResetStage();
+
+  // Our boundary conditions
+  HydroBoundary boundary;
 
   // Source terms
   bool haveSourceTerms{false};
@@ -59,6 +58,9 @@ class Hydro {
 
   // Whether gravitational potential is computed
   bool haveGravPotential{false};
+
+  // Whether a body force is present
+  bool haveBodyForce{false};
 
   // Nonideal MHD effects coefficients
   ParabolicModuleStatus resistivityStatus, ambipolarStatus, hallStatus;
@@ -87,13 +89,18 @@ class Hydro {
   // Box width for shearing box problems
   real sbLx;
 
+
   // Enroll user-defined boundary conditions
   void EnrollUserDefBoundary(UserDefBoundaryFunc);
   void EnrollInternalBoundary(InternalBoundaryFunc);
   void EnrollEmfBoundary(EmfBoundaryFunc);
+  void EnrollFluxBoundary(UserDefBoundaryFunc);
 
   // Enroll user-defined gravitational potential
   void EnrollGravPotential(GravPotentialFunc);
+
+  // Enroll user-defined body force
+  void EnrollBodyForce(BodyForceFunc);
 
   // Add some user source terms
   void EnrollUserSourceTerm(SrcTermFunc);
@@ -108,33 +115,46 @@ class Hydro {
 
   // Riemann Solvers
 #if MHD == YES
-  template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
-         ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
+  template<const int>
     void HlldMHD();
-  template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
-         ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
+  template<const int>
     void HllMHD();
-  template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
-         ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
+  template<const int>
     void RoeMHD();
-  template<const int DIR, ARG_EXPAND(const int Xn, const int Xt, const int Xb),
-                        ARG_EXPAND(const int BXn, const int BXt, const int BXb)>
+  template<const int>
     void TvdlfMHD();
 #else
-  template<const int DIR, const int Xn, const int Xt, const int Xb>
+  template<const int>
     void HllcHD();
-  template<const int DIR, const int Xn, const int Xt, const int Xb>
+  template<const int>
     void HllHD();
-  template<const int DIR, const int Xn, const int Xt, const int Xb>
+  template<const int>
     void RoeHD();
-  template<const int DIR, const int Xn, const int Xt, const int Xb>
+  template<const int>
     void TvdlfHD();
 #endif
   // Extrapolate function
   template<const int DIR>
   KOKKOS_FORCEINLINE_FUNCTION void K_ExtrapolatePrimVar
       (const int, const int, const int, const IdefixArray4D<real>&,
-      const IdefixArray4D<real>&, real[], real[]);
+      const IdefixArray4D<real>&, const IdefixArray1D<real>&, real[], real[]);
+
+  // Flux functions and converter functions
+  #if MHD == YES
+  KOKKOS_INLINE_FUNCTION void K_Flux(real F[], real V[], real U[], real Cs2Iso,
+                                   ARG_EXPAND(const int Xn, const int Xt, const int Xb),
+                                   ARG_EXPAND(const int BXn, const int BXt, const int BXb));
+  KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[], real gamma_m1);
+  KOKKOS_INLINE_FUNCTION void K_PrimToCons(real Uc[], real Vc[], real gamma_m1);
+
+  #else
+
+  KOKKOS_INLINE_FUNCTION void K_Flux(real *KOKKOS_RESTRICT F, const real *KOKKOS_RESTRICT V,
+                                   const real *KOKKOS_RESTRICT U, real Cs2Iso, const int Xn);
+  KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[],real gamma_m1);
+  KOKKOS_INLINE_FUNCTION void K_PrimToCons(real *KOKKOS_RESTRICT Uc, const real *KOKKOS_RESTRICT Vc,
+                                         real gamma_m1);
+  #endif
 
   // Arrays required by the Hydro object
   IdefixArray4D<real> Vc;      // Main cell-centered primitive variables index
@@ -166,6 +186,7 @@ class Hydro {
   friend class Fargo;
   friend class Axis;
   friend class RKLegendre;
+  friend class HydroBoundary;
 
   // Isothermal EOS parameters
   real isoSoundSpeed;
@@ -179,17 +200,6 @@ class Hydro {
   Solver mySolver;
 
   DataBlock *data;
-
-
-
-
-  // User defined Boundary conditions
-  UserDefBoundaryFunc userDefBoundaryFunc{NULL};
-  bool haveUserDefBoundary{false};
-
-  // Internal boundary function
-  bool haveInternalBoundary{false};
-  InternalBoundaryFunc internalBoundaryFunc{NULL};
 
   // Emf boundary conditions
   bool haveEmfBoundary{false};
@@ -213,6 +223,10 @@ class Hydro {
 
   // Gravitational potential
   IdefixArray3D<real> phiP;
+
+  // Body force
+  IdefixArray4D<real> bodyForceVector;
+  BodyForceFunc bodyForceFunc{NULL};
 
   // Nonideal effect diffusion coefficient (only allocated when needed)
   IdefixArray3D<real> etaOhmic;

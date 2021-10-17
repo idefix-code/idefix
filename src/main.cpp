@@ -36,6 +36,7 @@
 #include "timeIntegrator.hpp"
 #include "setup.hpp"
 #include "output.hpp"
+#include "tuner.hpp"
 
 
 
@@ -95,18 +96,22 @@ int main( int argc, char* argv[] ) {
     idfx::cout << "Main: Init Setup." << std::endl;
     Setup mysetup(input, grid, data, output);
 
+    // if the user asked for auto-tune, then tune loops now
+    if(input.tuningRequested) {
+      Tuner::tuneLoops(data, mysetup, input);
+    }
     // Apply initial conditions
 
     // Are we restarting?
     if(input.restartRequested) {
       idfx::cout << "Main: Restarting from dump file."  << std::endl;
       output.RestartFromDump(data,input.restartFileNumber);
-      data.hydro.SetBoundary(data.t);
+      data.SetBoundaries();
       output.CheckForWrites(data);
     } else {
       idfx::cout << "Main: Creating initial conditions." << std::endl;
       mysetup.InitFlow(data);
-      data.hydro.SetBoundary(data.t);
+      data.SetBoundaries();
       output.CheckForWrites(data);
     }
 

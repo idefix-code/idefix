@@ -18,14 +18,12 @@
 
 class RKLegendre {
  public:
-  RKLegendre();
-  ~RKLegendre();
   void Init(Input &, DataBlock &);
   void Cycle();
   void ResetStage();
   void ResetFlux();
   void EvolveStage(real);
-  void CalcParabolicRHS(int, real);
+  template <int> void CalcParabolicRHS(real);
   void ComputeDt();
   void Copy(IdefixArray4D<real>&, IdefixArray4D<real>&);
 
@@ -44,16 +42,19 @@ class RKLegendre {
   int stage{0};
 
  private:
-  void SetBoundary(real);        // Enforce boundary conditions on the variables solved by RKL
+  void SetBoundaries(real);        // Enforce boundary conditions on the variables solved by RKL
 
   DataBlock *data;
 
 #ifdef WITH_MPI
-  Mpi *mpi{NULL};                      // RKL-specific MPI layer
+  Mpi mpi;                      // RKL-specific MPI layer
 #endif
 
   bool haveVs{false};           // Whether we have (and need to compute) cell-centered variables
   void AddVariable(int, IdefixArray1D<int>::HostMirror & );
+
+ private:
+  template<int> void LoopDir(real);   // Dimensional loop
 };
 
 #endif // RKL_RKL_HPP_

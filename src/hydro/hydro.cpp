@@ -17,6 +17,9 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   // Save the datablock to which we are attached from now on
   this->data = datain;
 
+  // Initialise boundary conditions
+  boundary.Init(input, grid, this);
+
   if(input.CheckEntry("Hydro","gamma")>0) {
     this->gamma = input.GetReal("Hydro","gamma",0);
     idfx::cout << "Hydro: adiabatic EOS with gamma=" << this->gamma <<std::endl;
@@ -125,6 +128,18 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
       idfx::cout << "Hydro:: Enabling user-defined gravitational potential" << std::endl;
     } else {
       IDEFIX_ERROR("Unknown type of gravitational potential in idefix.ini. "
+                   "Only userdef is implemented");
+    }
+  }
+
+  // Body Force
+  if(input.CheckEntry("Hydro","bodyForce")>=0) {
+    std::string potentialString = input.GetString("Hydro","bodyForce",0);
+    if(potentialString.compare("userdef") == 0) {
+      this->haveBodyForce = true;
+      idfx::cout << "Hydro:: Enabling user-defined body force" << std::endl;
+    } else {
+      IDEFIX_ERROR("Unknown type of body force in idefix.ini. "
                    "Only userdef is implemented");
     }
   }
@@ -255,18 +270,18 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
       }
     }
   }
-#endif // MHD
+  #endif // MHD
 
   // Do we have to take care of the axis?
   if(data->haveAxis) {
     this->myAxis.Init(grid, this);
     this->haveAxis = true;
   }
-/////////////////////////////////////////
-//  ALLOCATION SECION ///////////////////
-/////////////////////////////////////////
+  /////////////////////////////////////////
+  //  ALLOCATION SECION ///////////////////
+  /////////////////////////////////////////
 
-// We now allocate the fields required by the hydro solver
+  // We now allocate the fields required by the hydro solver
   Vc = IdefixArray4D<real>("Hydro_Vc", NVAR,
                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   Uc = IdefixArray4D<real>("Hydro_Uc", NVAR,
@@ -283,26 +298,31 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   FluxRiemann =  IdefixArray4D<real>("Hydro_FluxRiemann", NVAR,
                                      data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
-#if MHD == YES
-  Vs = IdefixArray4D<real>("Hydro_Vs", DIMENSIONS,
-              data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
+  #if MHD == YES
+    Vs = IdefixArray4D<real>("Hydro_Vs", DIMENSIONS,
+                data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
 
-  Vs0 = IdefixArray4D<real>("Hydro_Vs0", DIMENSIONS,
-              data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
-  this->emf.Init(this);
-#endif
+    Vs0 = IdefixArray4D<real>("Hydro_Vs0", DIMENSIONS,
+                data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
+    this->emf.Init(input, this);
+  #endif
 
-// Allocate sound speed array if needed
+  // Allocate sound speed array if needed
   if(this->haveIsoSoundSpeed == UserDefFunction) {
     this->isoSoundSpeedArray = IdefixArray3D<real>("Hydro_csIso",
-                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   }
 
 
-// Allocate gravitational potential when needed
+  // Allocate gravitational potential when needed
   if(this->haveGravPotential)
     phiP = IdefixArray3D<real>("Hydro_PhiP",
-                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+
+  // Allocate body force array
+  if(this->haveBodyForce)
+    bodyForceVector = IdefixArray4D<real>("Hydro_bodyForce", COMPONENTS,
+                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
   if(this->haveCurrent) {
     // Allocate current (when hydro needs it)
@@ -389,15 +409,19 @@ void Hydro::EnrollIsoSoundSpeed(IsoSoundSpeedFunc myFunc) {
 }
 
 void Hydro::EnrollUserDefBoundary(UserDefBoundaryFunc myFunc) {
-  this->userDefBoundaryFunc = myFunc;
-  this->haveUserDefBoundary = true;
-  idfx::cout << "Hydro: User-defined boundary condition has been enrolled" << std::endl;
+  // This is a proxy for userdef enrollment
+  boundary.EnrollUserDefBoundary(myFunc);
 }
 
+void Hydro::EnrollFluxBoundary(UserDefBoundaryFunc myFunc) {
+  // This is a proxy for userdef enrollment
+  boundary.EnrollFluxBoundary(myFunc);
+}
+
+
 void Hydro::EnrollInternalBoundary(InternalBoundaryFunc myFunc) {
-  this->internalBoundaryFunc = myFunc;
-  this->haveInternalBoundary = true;
-  idfx::cout << "Hydro: User-defined internal boundary condition has been enrolled" << std::endl;
+  // This is a proxy for userdef enrollment
+  boundary.EnrollInternalBoundary(myFunc);
 }
 
 void Hydro::EnrollEmfBoundary(EmfBoundaryFunc myFunc) {
@@ -413,6 +437,16 @@ void Hydro::EnrollGravPotential(GravPotentialFunc myFunc) {
   }
   this->gravPotentialFunc = myFunc;
   idfx::cout << "Hydro: User-defined gravitational potential has been enrolled" << std::endl;
+}
+
+void Hydro::EnrollBodyForce(BodyForceFunc myFunc) {
+  if(!this->haveBodyForce) {
+    IDEFIX_ERROR("In order to enroll your body force, "
+                 "you need to enable it first in the .ini file "
+                 "with the bodyForce entry in [Hydro].");
+  }
+  this->bodyForceFunc = myFunc;
+  idfx::cout << "Hydro: User-defined body force function has been enrolled" << std::endl;
 }
 
 void Hydro::EnrollUserSourceTerm(SrcTermFunc myFunc) {

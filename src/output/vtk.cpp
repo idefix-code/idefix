@@ -26,25 +26,8 @@
   #endif
 #endif
 
-// Whether or not we wand the staggered field in vtk outputs
-#define WRITE_STAGGERED_FIELD
-
-// Wheter or not we want the electrical current in vtk outputs
-// (this is only defined if hydro requires it)
-#define WRITE_CURRENT
-
-// Whether of not we want to write EMFs
-#define WRITE_EMF
-
-// Whether or not we want to write the cfl dt
-#define WRITE_DT
-/* ---------------------------------------------------------
-    The following macros are specific to this file only
-    and are used to ease up serial/parallel implementation
-    for writing strings and real arrays
-   --------------------------------------------------------- */
-
-
+// Whether of not we write the time in the VTK file
+#define WRITE_TIME
 
 void Vtk::WriteHeaderString(const char* header, IdfxFileHandler fvtk) {
 #ifdef WITH_MPI
@@ -60,17 +43,18 @@ void Vtk::WriteHeaderString(const char* header, IdfxFileHandler fvtk) {
 #endif
 }
 
-void Vtk::WriteHeaderFloat(float* buffer, int64_t nelem, IdfxFileHandler fvtk) {
+template <typename T>
+void Vtk::WriteHeaderBinary(T* buffer, int64_t nelem, IdfxFileHandler fvtk) {
 #ifdef WITH_MPI
   MPI_Status status;
   MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_BYTE, MPI_CHAR,
                                   "native", MPI_INFO_NULL ));
   if(idfx::prank==0) {
-    MPI_SAFE_CALL(MPI_File_write(fvtk, buffer, nelem, MPI_FLOAT, &status));
+    MPI_SAFE_CALL(MPI_File_write(fvtk, buffer, nelem*sizeof(T), MPI_CHAR, &status));
   }
-  offset=offset+nelem*sizeof(float);
+  offset=offset+nelem*sizeof(T);
 #else
-  fwrite(buffer, sizeof(float), nelem, fvtk);
+  fwrite(buffer, sizeof(T), nelem, fvtk);
 #endif
 }
 
@@ -106,6 +90,9 @@ void Vtk::Init(Input &input, DataBlock &datain) {
      - nx1loc,nx2loc,n3loc, which are the local dimensions of the current datablock
   */
 
+  for (int dir=0; dir<3; dir++) {
+    this->periodicity[dir] = (datain.mygrid->lbound[dir] == periodic);
+  }
   // Create the coordinate array required in VTK files
   this->nx1 = grid.np_int[IDIR];
   this->nx2 = grid.np_int[JDIR];
@@ -134,16 +121,16 @@ void Vtk::Init(Input &input, DataBlock &datain) {
   this->znode = new float[nx3+KOFFSET];
 
   for (int32_t i = 0; i < nx1 + IOFFSET; i++) {
-    xnode[i] = BigEndian(grid.xl[IDIR](i + grid.nghost[IDIR]));
+    xnode[i] = BigEndian(static_cast<float>(grid.xl[IDIR](i + grid.nghost[IDIR])));
   }
   for (int32_t j = 0; j < nx2 + JOFFSET; j++)    {
-    ynode[j] = BigEndian(grid.xl[JDIR](j + grid.nghost[JDIR]));
+    ynode[j] = BigEndian(static_cast<float>(grid.xl[JDIR](j + grid.nghost[JDIR])));
   }
   for (int32_t k = 0; k < nx3 + KOFFSET; k++) {
     if(DIMENSIONS==2)
-      znode[k] = BigEndian(0.0);
+      znode[k] = BigEndian(static_cast<float>(0.0));
     else
-      znode[k] = BigEndian(grid.xl[KDIR](k + grid.nghost[KDIR]));
+      znode[k] = BigEndian(static_cast<float>(grid.xl[KDIR](k + grid.nghost[KDIR])));
   }
 #if VTK_FORMAT == VTK_STRUCTURED_GRID   // VTK_FORMAT
   /* -- Allocate memory for node_coord which is later used -- */
@@ -277,7 +264,7 @@ int Vtk::Write(DataBlock &datain, Output &output) {
   fileHdl = fopen(filename.c_str(),"wb");
 #endif
 
-  WriteHeader(fileHdl);
+  WriteHeader(fileHdl, datain.t);
 
   // Write field one by one
   for(int nv = 0 ; nv < NVAR ; nv++) {
@@ -326,7 +313,7 @@ int Vtk::Write(DataBlock &datain, Output &output) {
 
 
 /* ********************************************************************* */
-void Vtk::WriteHeader(IdfxFileHandler fvtk) {
+void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
 /*!
 * Write VTK header in parallel or serial mode.
 *
@@ -367,6 +354,62 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk) {
 #elif VTK_FORMAT == VTK_STRUCTURED_GRID
   ssheader << "DATASET STRUCTURED_GRID" << std::endl;
 #endif
+  // One field for the geometry, another for periodicity
+  int nfields = 2;
+  #ifdef WRITE_TIME
+    nfields ++;
+  #endif
+
+  // Write grid geometry in the VTK file
+  ssheader << "FIELD FieldData " << nfields << std::endl;
+  ssheader << "GEOMETRY 1 1 int" << std::endl;
+
+  // Flush the ascii header
+  header = ssheader.str();
+  WriteHeaderString(header.c_str(), fvtk);
+  // reset the string stream
+  ssheader.str(std::string());
+
+  // convert time to single precision big endian
+  int32_t geoBig = BigEndian(this->geometry);
+
+  WriteHeaderBinary(&geoBig, 1, fvtk);
+  // Done, add cariage return for next ascii write
+  ssheader << std::endl;
+
+  // write grid periodicity
+  ssheader << "PERIODICITY 1 3 int" << std::endl;
+
+  // Flush the ascii header
+  header = ssheader.str();
+  WriteHeaderString(header.c_str(), fvtk);
+  // reset the string stream
+  ssheader.str(std::string());
+
+  int32_t perBig{-1};
+  for (int dir=0; dir<3; dir++) {
+    perBig = BigEndian(this->periodicity[dir]);
+    WriteHeaderBinary(&perBig, 1, fvtk);
+  }
+  // Done, add cariage return for next ascii write
+  ssheader << std::endl;
+
+  #ifdef WRITE_TIME
+    ssheader << "TIME 1 1 float" << std::endl;
+    // Flush the ascii header
+    header = ssheader.str();
+    WriteHeaderString(header.c_str(), fvtk);
+    // reset the string stream
+    ssheader.str(std::string());
+
+    // convert time to single precision big endian
+    float timeBE = BigEndian(static_cast<float>(time));
+
+    WriteHeaderBinary(&timeBE, 1, fvtk);
+    // Done, add cariage return for next ascii write
+    ssheader << std::endl;
+  #endif
+
 
 
   ssheader << "DIMENSIONS " << nx1 + IOFFSET << " " << nx2 + JOFFSET << " " << nx3 + KOFFSET
@@ -384,19 +427,19 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk) {
   header = coordx.str();
   WriteHeaderString(header.c_str(), fvtk);
 
-  WriteHeaderFloat(xnode, nx1 + IOFFSET, fvtk);
+  WriteHeaderBinary(xnode, nx1 + IOFFSET, fvtk);
 
   coordy << std::endl << "Y_COORDINATES " << nx2 + JOFFSET << " float" << std::endl;
   header = coordy.str();
   WriteHeaderString(header.c_str(), fvtk);
 
-  WriteHeaderFloat(ynode, nx2 + JOFFSET, fvtk);
+  WriteHeaderBinary(ynode, nx2 + JOFFSET, fvtk);
 
   coordz << std::endl << "Z_COORDINATES " << nx3 + KOFFSET << " float" << std::endl;
   header = coordz.str();
   WriteHeaderString(header.c_str(), fvtk);
 
-  WriteHeaderFloat(znode, nx3 + KOFFSET, fvtk);
+  WriteHeaderBinary(znode, nx3 + KOFFSET, fvtk);
 
 #elif VTK_FORMAT == VTK_STRUCTURED_GRID
 
@@ -460,7 +503,8 @@ void Vtk::WriteScalar(IdfxFileHandler fvtk, float* Vin,  const std::string &var_
 @param in_number floating point number to be converted in big endian */
 /* *************************************************************************** */
 
-float Vtk::BigEndian(float in_number) {
+template <typename T>
+T Vtk::BigEndian(T in_number) {
   if (shouldSwapEndian) {
     unsigned char *bytes = (unsigned char*) &in_number;
     unsigned char tmp = bytes[0];

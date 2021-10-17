@@ -1,0 +1,4 @@
+# change the list of object files to compile only what is required
+
+EXE = "test"
+OBJ = global.o main.o profiler.o

@@ -43,7 +43,7 @@ extensions = [
 
 source_suffix = [".rst", ".md"]
 
-cpp_id_attributes=["KOKKOS_INLINE_FUNCTION","KOKKOS_RESTRICT"]
+cpp_id_attributes=["KOKKOS_FORCEINLINE_FUNCTION","KOKKOS_INLINE_FUNCTION","KOKKOS_RESTRICT"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

@@ -38,11 +38,14 @@ void ElectroMotiveForce::EvolveMagField(real t, real dt, IdefixArray4D<real> &Vs
   IdefixArray1D<real> dx3=data->dx[KDIR];
 
   #if GEOMETRY == SPHERICAL
-  IdefixArray1D<real> dmu=data->dmu;
-  IdefixArray1D<real> sinx2m=data->sinx2m;
+    IdefixArray1D<real> dmu=data->dmu;
+    IdefixArray1D<real> sinx2m=data->sinx2m;
+    #if DIMENSIONS >= 2
+      bool haveAxis = hydro->haveAxis;
+    #endif
   #endif
 
-  bool haveAxis = hydro->haveAxis;
+
 
   idefix_for("EvolvMagField",
              data->beg[KDIR],data->end[KDIR]+KOFFSET,

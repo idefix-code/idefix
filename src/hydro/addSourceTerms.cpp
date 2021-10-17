@@ -37,6 +37,10 @@ void Hydro::AddSourceTerms(real t, real dt) {
 
   // Fargo
   bool haveFargo  = this->haveFargo;
+  Fargo::FargoType fargoType = this->fargo.type;
+
+  // shearing box (only with fargo)
+  real sbS = this->sbS;
 
   if(haveUserSourceTerm) userSourceTerm(*data, t, dt);
 
@@ -51,12 +55,16 @@ void Hydro::AddSourceTerms(real t, real dt) {
         if(haveRotation) {
           Uc(MX1,k,j,i) +=   TWO_F * dt * Vc(RHO,k,j,i) * OmegaZ * Vc(VX2,k,j,i);
           Uc(MX2,k,j,i) += - TWO_F * dt * Vc(RHO,k,j,i) * OmegaZ * Vc(VX1,k,j,i);
+          if(fargoType == Fargo::shearingbox) {
+            Uc(MX1,k,j,i) +=   TWO_F * dt * Vc(RHO,k,j,i) * OmegaZ * sbS * x1(i);
+          }
         }
       #endif
       // fetch fargo velocity when required
       real fargoV = ZERO_F;
       if(haveFargo) {
-        #if GEOMETRY == POLAR || GEOMETRY == CARTESIAN
+        // No source term when CARTESIAN+Fargo
+        #if GEOMETRY == POLAR
           fargoV = fargoVelocity(k,i);
         #elif GEOMETRY == SPHERICAL
           fargoV = fargoVelocity(j,i);

@@ -50,13 +50,16 @@ From there, one sees 3 files and a directory:
     This directory is provided with most of the tests. Its content allows one to check that the code output is consistent with what is expected.
 
 For the time being, the files are already set up for the Sod test problem. The only thing lacking is a ``makefile`` to actually compile the code.
-In *Idefix* the makefile is created by the ``configure.py`` script located in ``$IDEFIX_DIR``. For this quickstart, let us configure the code to run on
-the cpu in serial. Assuming a ``python3`` interpreter is in the PATH, we simply type in::
+In *Idefix* the makefile is created by `Cmake <https://cmake.org>`_ ,a tool to control code generation on diverse platforms. To configure *Idefix*,
+you need Cmake version >=3.16 installed on your machine. For this quickstart, let us configure the code to run on
+the cpu in serial (default behaviour). Assuming a ``cmake`` is in the PATH, we simply type in::
 
-    python3 $IDEFIX_DIR/configure.py
+    cmake $IDEFIX_DIR
+
+which automatically setups a build tree from the sources in $IDEFIX_DIR using the setup in the current directory.
 
 .. tip::
-    If you want to use a specific C++ compiler which is not the default one on your configuration, you can add the ``-cxx=MyCompiler`` option to the configure script.
+    If you want to use a specific C++ compiler which is not the default one on your configuration, you can add the ``-D CMAKE_CXX_COMPILER=foo`` option to cmake.
 
 Finally, we compile and run the code::
 
@@ -82,10 +85,10 @@ The Orszag-Tang problem is a well known test problem for MHD codes. The configur
 As in the Sod test problem, there are 3 files in that directory which completely define the Orszag Tang test problem. We now need to configure the
 test with::
 
-    python3 $IDEFIX_DIR/configure.py -mhd
+    cmake $IDEFIX_DIR -DIdefix_MHD=ON
 
 .. caution::
-    Do not forget the ``-mhd`` option to the configure script to tell *idefix* that you want to solve for MHD, otherwise *idefix* is compiled with hydro modules only. There is very little chance
+    Do not forget the ``-DIdefix_MHD=ON`` option to the configure script to tell *idefix* that you want to solve for MHD, otherwise *idefix* is compiled with hydro modules only. There is very little chance
     this test works in hydro!
 
 Once the code is configured, it can be ran::
@@ -99,14 +102,14 @@ to check that the last output is consistent with the reference output.
 .. tip::
     Given that the Orszag-Tang test can take a long time, you may want to accelerate your computation with a little bit of parallelisation. This can be done with openmp (assuming you have an openmp-compatible compiler)::
 
-        python3 $IDEFIX_DIR/configure.py -mhd -openmp
+        cmake $IDEFIX_DIR -DIdefix_MHD=ON -DKokkos_ENABLE_OPENMP=ON
         make -j 8
         export OMP_NUM_THREADS=4
         ./idefix
 
     or assuming a MPI library is installed on your machine::
 
-        python3 $IDEFIX_DIR/configure.py -mhd -mpi
+        cmake $IDEFIX_DIR -DIdefix_MHD=ON -DIdefix_ENABLE_MPI=ON
         make -j 8
         mpirun -np 4 ./idefix
 

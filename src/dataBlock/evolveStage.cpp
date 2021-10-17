@@ -7,6 +7,28 @@
 
 #include "../idefix.hpp"
 #include "dataBlock.hpp"
+#include "calcRightHandSide.hpp"
+#include "calcParabolicFlux.hpp"
+#include "calcRiemannFlux.hpp"
+
+template<int dir> void DataBlock::LoopDir() {
+    // Step 2: compute the intercell flux with our Riemann solver, store the resulting InvDt
+    hydro.CalcRiemannFlux<dir>(this->t);
+
+    // Step 2.5: compute intercell parabolic flux when needed
+    if(hydro.haveExplicitParabolicTerms) hydro.CalcParabolicFlux<dir>(this->t);
+
+    // Step 3: compute the resulting evolution of the conserved variables, stored in Uc
+    hydro.CalcRightHandSide<dir>(this->t, this->dt);
+
+    // Recursive: do next dimension
+      LoopDir<dir+1>();
+}
+
+template<> void DataBlock::LoopDir<DIMENSIONS>() {
+  // Do nothing
+}
+
 
 // Evolve one step forward in time of hydro
 void DataBlock::EvolveStage() {
@@ -15,16 +37,7 @@ void DataBlock::EvolveStage() {
   if(hydro.needExplicitCurrent) hydro.CalcCurrent();
 
   // Loop on all of the directions
-  for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
-    // Step 1: compute the intercell flux with our Riemann solver, store the resulting InvDt
-    hydro.CalcRiemannFlux(dir, this->t);
-
-    // Step 2: compute intercell parabolic flux when needed
-    if(hydro.haveExplicitParabolicTerms) hydro.CalcParabolicFlux(dir, this->t);
-
-    // Step 3: compute the resulting evolution of the conserved variables, stored in Uc
-    hydro.CalcRightHandSide(dir, this->t, this->dt);
-  }
+  LoopDir<IDIR>();
 
   // Step 4: add source terms to the conserved variables (curvature, rotation, etc)
   if(hydro.haveSourceTerms) hydro.AddSourceTerms(this->t, this->dt);
@@ -36,7 +49,7 @@ void DataBlock::EvolveStage() {
     hydro.emf.CalcNonidealEMF(this->t);
   hydro.emf.EnforceEMFBoundary();
   hydro.emf.EvolveMagField(this->t, this->dt, hydro.Vs);
-  hydro.ReconstructVcField(hydro.Uc);
+  hydro.boundary.ReconstructVcField(hydro.Uc);
 #endif
 
   idfx::popRegion();

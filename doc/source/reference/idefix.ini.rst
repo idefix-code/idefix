@@ -99,6 +99,17 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 | solver         | string                  | | Type of Riemann Solver. In hydro can be any of ``tvdlf``, ``hll``, ``hllc`` and ``roe``.  |
 |                |                         | | In MHD, can be ``tvdlf``, ``hll``, ``hlld`` and ``roe``                                   |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| emf            | string                  | | Averaging scheme for the electromotive force (only used with MHD). The options            |
+|                |                         | | follows Gardiner & Stone JCP, 2005 (GS05).                                                |
+|                |                         | | ``arithmetic``: simple arithmetic average of the face-centered emfs (eq. 33 in GS05)      |
+|                |                         | | ``uct0``: Upwind constraint transport (UCT) with 0 wave speed (eq. 39 in GS05)            |
+|                |                         | | ``uct_contact``: UCT with contact wave upwinding (eq. 50 in GS05)                         |
+|                |                         | | ``uct_hll``: UCT with 2D Riemann solver using the HLL approximation. Follows Londrillo    |
+|                |                         | |  & del Zanna JCP (2004).                                                                  |
+|                |                         | | ``uct_hlld``: UCT with 2D Riemann solver using the HLLD approximation. Follows Londrillo  |
+|                |                         | |  & del Zanna JCP (2004).                                                                  |
+|                |                         | |  If no averaging scheme is selected in the input file, *Idefix* uses ``uct_contact``.     |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | csiso          | string, (float)         | | Isothermal sound speed. Only used when ISOTHERMAL is defined in ``definitions.hpp``.      |
 |                |                         | | When ``constant``, the second parameter is the spatially constant sound speed.            |
 |                |                         | | When ``userdef``, the ``Hydro`` class expects a user-defined sound speed function         |
@@ -159,11 +170,14 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 |                |                         | | Note that this is not sufficient to fully define a shearing box: boundary conditions      |
 |                |                         | | are also required.                                                                        |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| fargo          | string                  | | Enable orbital advection (Fargp-like) module to speed up integration when a strong        |
-|                |                         | | azimuthal motion is present (as in a thin disk).  The only possible parameter allowed     |
-|                |                         | | for `Fargo` is `userdef`. When this is set, the fargo module expects a user-defined       |
-|                |                         | | velocity function to be enrolled via Hydro.Fargo::EnrollVelocity(FargoVelocityFunc        |
-|                |                         | | (see :ref:`functionEnrollment`) . Examples are provided in `test/HD/FargoPlanet`          |
+| fargo          | string                  | | Enable orbital advection (Fargo-like) module to speed up integration when a strong        |
+|                |                         | | azimuthal motion is present (as in a thin disk).  The parameter can be either             |
+|                |                         | | `shearingbox` or `userdef`.                                                               |
+|                |                         | | When `shearingbox`, the fargo module uses the linear shear computed by the shearing box   |
+|                |                         | | module as the input velocity function.                                                    |
+|                |                         | | When `userdef` is set, the fargo module expects a user-defined  velocity function to      |
+|                |                         | | be enrolled via Hydro.Fargo::EnrollVelocity(FargoVelocityFunc)                            |
+|                |                         | | (see :ref:`functionEnrollment`). Examples are provided in `test/HD/FargoPlanet`           |
 |                |                         | | and `test/MHD/FargoMHDSpherical`                                                          |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 
@@ -175,6 +189,18 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
     For these reasons, Hall can only be used in conjonction with the HLL Riemann solver. In addition, only
     the arithmetic Emf reconstruction scheme has been shown to work systematically with Hall, and is therefore
     strongly recommended for production runs.
+
+``RKL`` section
+------------------
+
+This section controls the Runge-Kutta-Legendre integration module. RKL is automatically enabled when parabolic terms use the `rkl` option. Otherwise,
+this block is simply ignored.
+
++----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
+|  Entry name    | Parameter type     | Comment                                                                                                   |
++================+====================+===========================================================================================================+
+| cfl            | float              | CFL number for the RKL sub-step. Should be <0.5 for stability. Set by default to 0.5 if not provided      |
++----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
 
 ``Boundary`` section
 ------------------------

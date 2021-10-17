@@ -56,7 +56,15 @@ void LISOTHSoundSpeed(DataBlock &data, const real t, IdefixArray3D<real> &cs) {
               });
 }
 
+// Fargo velocity=Keplerian rotation
+void FargoVelocity(DataBlock &data, IdefixArray2D<real> &Vphi) {
+  IdefixArray1D<real> x1 = data.x[IDIR];
 
+  idefix_for("FargoVphi",0,data.np_tot[KDIR], 0, data.np_tot[IDIR],
+      KOKKOS_LAMBDA (int k, int i) {
+      Vphi(k,i) = 1.0/sqrt(x1(i));
+  });
+}
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
@@ -66,6 +74,8 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     aspect_ratio_glob = input.GetReal("Setup","aspect_ratio",0);
     jump_radius_glob = input.GetReal("Setup", "jump_radius",0);
     jump_width_glob = input.GetReal("Setup", "jump_width",0);
+    if(data.hydro.haveFargo)
+      data.hydro.fargo.EnrollVelocity(&FargoVelocity);
 }
 
 // This routine initialize the flow
@@ -92,11 +102,10 @@ void Setup::InitFlow(DataBlock &data) {
           th = d.x[JDIR](j);
 
           // note I didn't explicitly give a "rho0" scaling
-          d.Vc(RHO,k,j,i) = 1 / r * 0.5 * (1.0 + tanh((r - jump_radius)/jump_width));
+          // 1.01 is here to give a density value ~1e-2 in the cavity
+          d.Vc(RHO,k,j,i) = 1 / r * 0.5 * (1.01 + tanh((r - jump_radius)/jump_width));
 
-          // add some random noise to the radial velocity component break the
-          // axial symmetry and let the instability grow
-          d.Vc(VX1,k,j,i) = d.Vc(VX2,k,j,i) * aspect_ratio * 1e-1*(0.5-randm());
+
 
           // pure Keplerian rotation
           d.Vc(VX2,k,j,i) = pow(r,-0.5);
@@ -112,6 +121,11 @@ void Setup::InitFlow(DataBlock &data) {
                                     + 2 * jump_width
                                   )
                              );
+
+          // add some random noise to the radial velocity component break the
+          // axial symmetry and let the instability grow
+          d.Vc(VX1,k,j,i) = d.Vc(VX2,k,j,i) * aspect_ratio * 1e-1*(0.5-randm());
+
         }
       }
     }

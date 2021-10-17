@@ -127,7 +127,7 @@ in C++11.
   GPU specific segmentation faults.
 
 .. warning::
-  Generally, methods that contains calls to ``idefix_loop()`` always be declared as
+  Generally, methods that contain calls to ``idefix_loop()`` should always be declared as
   ``public``. This is due to a limitation of the ``nvcc`` compiler which cannot perform
   lambda captures from private methods.
 
@@ -362,14 +362,14 @@ end of each function). In other words, ``#define DEBUG`` logs the entire stack t
 It is also possible to use `Kokkos-tools <https://github.com/kokkos/kokkos-tools>`_ to debug and profile the code.
 For instance, on the fly profiling, can be enabled with the Kokkos ``space-time-stack`` module. To use it, simply clone
 ``Kokkos-tools`` to the directory of your choice (say ``$KOKKOS_TOOLS``), then ``cd`` to
-``$KOKKOS_TOOLS/src/tools/space-time-stack`` and compile the module with ``make``.
+``$KOKKOS_TOOLS/profiling/space-time-stack`` and compile the module with ``make``.
 
 Once the profiling module is compiled, you can use it by setting the environement variable ``KOKKOS_PROFILE_LIBRARY``.
 For instance, in bash:
 
 .. code-block:: bash
 
-  export KOKKOS_PROFILE_LIBRARY=$KOKKOS_TOOLS/src/tools/space-time-stack/kp_space_time_stack.so
+  export KOKKOS_PROFILE_LIBRARY=$KOKKOS_TOOLS/profiling/space-time-stack/kp_space_time_stack.so
 
 Once this environement variable is set, *Idefix* automatically logs profiling informations when it ends (recompilation of *Idefix*
 is not needed).
@@ -377,5 +377,15 @@ is not needed).
 .. tip::
 
   By default, ``Kokkos-tools`` assumes the user code is using MPI. If one wants to perform profiling in serial, one should disable MPI before
-  compling the ``space-time-stack`` module. This is done by editing the makefile in ``$KOKKOS_TOOLS/src/tools/space-time-stack``
+  compling the ``space-time-stack`` module. This is done by editing the makefile in ``$KOKKOS_TOOLS/profiling/space-time-stack``
   changing the compiler ``CXX`` to a valid serial compiler, and adding ``-DUSE_MPI=0`` to ``CFLAGS``.
+
+Minimal skeleton
+================
+
+Because it is sometimes useful to do experiments with a very simple code without the burden of the full initialisation,
+experiment with ``Idefix`` basic structures (idefix_for, idefix arrays, idefix objects)
+can be done using a minimal skeleton, located in ``$IDEFIX_DIR/test/skeleton``. The file ``main.cpp`` can be filled with any experimental
+code and replaced *Idefix* standard main file. It should then be configured using cmake like any other *Idefix* problem ``cmake $IDEFIX_DIR``
+and compiled with ``make``. In the example provided, the skeleton performs a simple sum on an idefix array and compares it
+to the same reduction on the host.

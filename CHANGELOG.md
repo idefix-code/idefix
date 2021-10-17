@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - new `-autotune` runtime option, which tests and chooses the best loop unrolling strategy
 - code configuration with `cmake` instead of configure.py
 - 3rd order reconstruction scheme (following Cada \& Torrilhon 2009). Can be enabled in definitions.hpp
+- ppm reconstruction in Fargo. Automatically used with ORDER=3, otherwise can be enabled with Idefix_HIGH_ORDER_FARGO in cmake configuration
 - new EMF averaging scheme using 2D HLLD Riemann solves
 - EMF averaging scheme is now set at run time, not compile time.
 - VTK files now includes TIME, GEOMETRY and PERIODICITY fields which can be read with VTK_io python routines

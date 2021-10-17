@@ -29,9 +29,16 @@ add_compile_options(${Idefix_CXX_FLAGS})
 # sub directories should be called after add_executable
 # because the binary target "idefix" should be defined
 # before adding source files via "target_sources"
-#create target binary "idefix"
-add_executable(idefix ${PROJECT_BINARY_DIR}/setup.cpp)
+# create target binary "idefix"
+add_executable(idefix)
 add_subdirectory(src build)
+
+if(EXISTS ${PROJECT_BINARY_DIR}/setup.cpp)
+  target_sources(idefix PUBLIC ${PROJECT_BINARY_DIR}/setup.cpp)
+else()
+  message(WARNING "No specific setup.cpp found in the problem directory")
+  target_sources(idefix PUBLIC ${CMAKE_CURRENT_LIST_DIR}/src/setup.cpp)
+endif()
 
 # If a CMakeLists.txt is in the problem dir (for problem-specific source files)
 # then read it

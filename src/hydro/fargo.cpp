@@ -165,6 +165,11 @@ void Fargo::Init(Input &input, Grid &grid, Hydro *hydro) {
   } else {
     IDEFIX_ERROR("Something went wrong during Fargo initialisation");
   }
+  #ifdef HIGH_ORDER_FARGO
+    idfx::cout << "Fargo: using high order PPM advection scheme." << std::endl;
+  #else
+    idfx::cout << "Fargo: using standard PLM advection scheme." << std::endl;
+  #endif
   idfx::popRegion();
 }
 

@@ -5,6 +5,7 @@ set (CMAKE_CXX_STANDARD 14)
 project (idefix VERSION 1.0.0)
 option(Idefix_MHD "enable MHD" OFF)
 option(Idefix_MPI "enable Message Passing Interface parallelisation" OFF)
+option(Idefix_HIGH_ORDER_FARGO "Force Fargo to use a PPM reconstruction scheme" OFF)
 set(Idefix_CXX_FLAGS "" CACHE STRING "Additional compiler/linker flag")
 set(Idefix_DEFS "definitions.hpp" CACHE STRING "Problem definition header file")
 
@@ -54,6 +55,9 @@ if(Idefix_MPI)
   target_link_libraries(idefix MPI::MPI_CXX)
 endif()
 
+if(Idefix_HIGH_ORDER_FARGO)
+  add_compile_definitions("HIGH_ORDER_FARGO")
+endif()
 
 #update gitversion.hpp if possible
 git_describe(GIT_SHA1)

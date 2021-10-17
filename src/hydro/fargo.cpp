@@ -12,7 +12,12 @@
 #include "dataBlock.hpp"
 #include "fargo.hpp"
 
-#define HIGH_ORDER_FARGO
+// If no high order fargo, then choose the order according to reconstruction
+#ifndef HIGH_ORDER_FARGO
+  #if ORDER == 3
+  #define HIGH_ORDER_FARGO
+  #endif
+#endif
 
 #ifdef HIGH_ORDER_FARGO
 KOKKOS_INLINE_FUNCTION real FargoFlux(const IdefixArray4D<real> &Vin, int n, int k, int j, int i,

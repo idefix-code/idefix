@@ -158,7 +158,7 @@ void RKLegendre::Cycle() {
   stage = 1;
 
   // Apply Boundary conditions on the full set of variables
-  data->hydro.SetBoundary(time);
+  data->hydro.boundary.SetBoundaries(time);
 
   // Convert current state into conservative variable
   data->hydro.ConvertPrimToCons();
@@ -233,7 +233,7 @@ void RKLegendre::Cycle() {
       Vs1(n,k,j,i) = Vs(n,k,j,i);
       Vs(n,k,j,i) = Vs1(n,k,j,i) + mu_tilde_j*dt_hyp*dB0(n,k,j,i);
     });
-    data->hydro.ReconstructVcField(Uc);
+    data->hydro.boundary.ReconstructVcField(Uc);
   }
 
   // Convert current state into primitive variable
@@ -261,7 +261,7 @@ void RKLegendre::Cycle() {
 #endif
 
     // Apply Boundary conditions
-    this->SetBoundary(time);
+    this->SetBoundaries(time);
 
     // evolve RKL stage
     EvolveStage(time);
@@ -303,7 +303,7 @@ void RKLegendre::Cycle() {
                                   + gamma_j*dt_hyp*dB0(n,k,j,i);
   #endif
           });
-      data->hydro.ReconstructVcField(Uc);
+      data->hydro.boundary.ReconstructVcField(Uc);
     }
     // Convert current state into primitive variable
     data->hydro.ConvertConsToPrim();
@@ -588,10 +588,10 @@ void RKLegendre::CalcParabolicRHS(real t) {
   idfx::popRegion();
 }
 
-void RKLegendre::SetBoundary(real t) {
-  idfx::pushRegion("RKLegendre::SetBoundary");
+void RKLegendre::SetBoundaries(real t) {
+  idfx::pushRegion("RKLegendre::SetBoundaries");
   // set internal boundary conditions
-  if(data->hydro.haveInternalBoundary) data->hydro.internalBoundaryFunc(*data, t);
+  if(data->hydro.boundary.haveInternalBoundary) data->hydro.boundary.internalBoundaryFunc(*data, t);
   for(int dir=0 ; dir < DIMENSIONS ; dir++ ) {
       // MPI Exchange data when needed
       // We use the RKL instance MPI object to ensure that we only exchange the data
@@ -611,11 +611,11 @@ void RKLegendre::SetBoundary(real t) {
       }
     }
     #endif
-    data->hydro.EnforceBoundaryDir(t, dir);
+    data->hydro.boundary.EnforceBoundaryDir(t, dir);
     #if MHD == YES
       // Reconstruct the normal field component when using CT
       if(haveVs) {
-        data->hydro.ReconstructNormalField(dir);
+        data->hydro.boundary.ReconstructNormalField(dir);
       }
     #endif
   } // Loop on dimension ends
@@ -623,7 +623,7 @@ void RKLegendre::SetBoundary(real t) {
 #if MHD == YES
   // Remake the cell-centered field.
   if(haveVs) {
-    data->hydro.ReconstructVcField(data->hydro.Vc);
+    data->hydro.boundary.ReconstructVcField(data->hydro.Vc);
   }
 #endif
   idfx::popRegion();

@@ -12,6 +12,34 @@
 void ElectroMotiveForce::CalcCornerEMF(real t) {
   idfx::pushRegion("ElectroMotiveForce::CalcCornerEMF");
 
+#if MHD == YES && DIMENSIONS >= 2
+
+  if(averaging==arithmetic) {
+    CalcArithmeticAverage();
+  }
+  if(averaging==uct_contact||averaging==uct0) {
+    CalcCellCenteredEMF();
+    if(averaging==uct0) {
+      CalcUCT0Average();
+    } else {
+      CalcContactAverage();
+    }
+  }
+  if(averaging==uct_hll || averaging==uct_hlld) {
+    CalcRiemannAverage();
+  }
+
+#endif // MHD
+
+  idfx::popRegion();
+}
+
+
+
+// Compute Corner EMFs from arithmetic averages
+void ElectroMotiveForce::CalcArithmeticAverage() {
+  idfx::pushRegion("ElectroMotiveForce::CalcCornerEMF");
+
   // Corned EMFs
   IdefixArray3D<real> ex = this->ex;
   IdefixArray3D<real> ey = this->ey;
@@ -25,13 +53,12 @@ void ElectroMotiveForce::CalcCornerEMF(real t) {
   IdefixArray3D<real> ezi = this->ezi;
   IdefixArray3D<real> ezj = this->ezj;
 
-#if MHD == YES && DIMENSIONS >= 2
+  #if MHD == YES && DIMENSIONS >= 2
 
-  #if EMF_AVERAGE == ARITHMETIC
-  idefix_for("CalcCornerEMF",
-             data->beg[KDIR],data->end[KDIR]+KOFFSET,
-             data->beg[JDIR],data->end[JDIR]+JOFFSET,
-             data->beg[IDIR],data->end[IDIR]+IOFFSET,
+  idefix_for("CalcArithmeticAverage",
+            data->beg[KDIR],data->end[KDIR]+KOFFSET,
+            data->beg[JDIR],data->end[JDIR]+JOFFSET,
+            data->beg[IDIR],data->end[IDIR]+IOFFSET,
     KOKKOS_LAMBDA (int k, int j, int i) {
                   // CT_EMF_ArithmeticAverage (emf, 0.25);
       real w = ONE_FOURTH_F;
@@ -44,22 +71,25 @@ void ElectroMotiveForce::CalcCornerEMF(real t) {
     #else
       ez(k,j,i) = w * (TWO_F*ezi(k,j,i) + ezj(k,j,i) + ezj(k,j,i-1));
     #endif
-    }
-  );
-  #endif
+    });
+#endif // MHD
 
-  #if EMF_AVERAGE == UCT_CONTACT || EMF_AVERAGE == UCT0
-  // 0. Compute cell-centered emf.
+  idfx::popRegion();
+}
+
+void ElectroMotiveForce::CalcCellCenteredEMF() {
+  idfx::pushRegion("ElectroMotiveForce::CalcCellCenteredEMF");
   IdefixArray4D<real> Vc = hydro->Vc;
-
+    // cell-centered EMFs
   IdefixArray3D<real> Ex1 = this->Ex1;
   IdefixArray3D<real> Ex2 = this->Ex2;
   IdefixArray3D<real> Ex3 = this->Ex3;
 
+#if MHD == YES && DIMENSIONS >= 2
   idefix_for("CalcCenterEMF",
-             0,data->np_tot[KDIR],
-             0,data->np_tot[JDIR],
-             0,data->np_tot[IDIR],
+            0,data->np_tot[KDIR],
+            0,data->np_tot[JDIR],
+            0,data->np_tot[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
       real vx1, vx2, vx3;
       real Bx1, Bx2, Bx3;
@@ -84,41 +114,64 @@ void ElectroMotiveForce::CalcCornerEMF(real t) {
       Ex3(k,j,i) = (vx2*Bx1 - vx1*Bx2);
     }
   );
-  #endif // EMF_AVERAGE
 
-  // 1. averaging scheme
-  #if EMF_AVERAGE == UCT0
-  idefix_for("CalcCornerEMF",
-             data->beg[KDIR]-KOFFSET,data->end[KDIR]+KOFFSET,
-             data->beg[JDIR]-JOFFSET,data->end[JDIR]+JOFFSET,
-             data->beg[IDIR]-IOFFSET,data->end[IDIR]+IOFFSET,
-    KOKKOS_LAMBDA (int k, int j, int i) {
-    #if DIMENSIONS == 3
-      exj(k,j,i) *= TWO_F;
-      exk(k,j,i) *= TWO_F;
-      eyi(k,j,i) *= TWO_F;
-      eyk(k,j,i) *= TWO_F;
+#endif // MHD
 
-      exj(k,j,i) -= HALF_F*(Ex1(k,j-1,i) + Ex1(k,j,i));
-      exk(k,j,i) -= HALF_F*(Ex1(k-1,j,i) + Ex1(k,j,i));
+  idfx::popRegion();
+}
 
-      eyi(k,j,i) -= HALF_F*(Ex2(k,j,i-1) + Ex2(k,j,i));
-      eyk(k,j,i) -= HALF_F*(Ex2(k-1,j,i) + Ex2(k,j,i));
-    #endif
-      ezi(k,j,i) *= TWO_F;
-      ezj(k,j,i) *= TWO_F;
-      ezi(k,j,i) -= HALF_F*(Ex3(k,j,i-1) + Ex3(k,j,i));
-      ezj(k,j,i) -= HALF_F*(Ex3(k,j-1,i) + Ex3(k,j,i));
-    }
-  );
+void ElectroMotiveForce::CalcUCT0Average() {
+  idfx::pushRegion("ElectroMotiveForce::CalcUCT0Average");
+    // Corned EMFs
+  IdefixArray3D<real> ex = this->ex;
+  IdefixArray3D<real> ey = this->ey;
+  IdefixArray3D<real> ez = this->ez;
 
-  idefix_for("CalcCornerEMF",
-             data->beg[KDIR],data->end[KDIR]+KOFFSET,
-             data->beg[JDIR],data->end[JDIR]+JOFFSET,
-             data->beg[IDIR],data->end[IDIR]+IOFFSET,
+  // Face-centered EMFs
+  IdefixArray3D<real> exj = this->exj;
+  IdefixArray3D<real> exk = this->exk;
+  IdefixArray3D<real> eyi = this->eyi;
+  IdefixArray3D<real> eyk = this->eyk;
+  IdefixArray3D<real> ezi = this->ezi;
+  IdefixArray3D<real> ezj = this->ezj;
+
+  // cell-centered EMFs
+  IdefixArray3D<real> Ex1 = this->Ex1;
+  IdefixArray3D<real> Ex2 = this->Ex2;
+  IdefixArray3D<real> Ex3 = this->Ex3;
+
+#if MHD == YES && DIMENSIONS >= 2
+  idefix_for("CalcUCT0FaceCentered",
+              data->beg[KDIR]-KOFFSET,data->end[KDIR]+KOFFSET,
+              data->beg[JDIR]-JOFFSET,data->end[JDIR]+JOFFSET,
+              data->beg[IDIR]-IOFFSET,data->end[IDIR]+IOFFSET,
+      KOKKOS_LAMBDA (int k, int j, int i) {
+      #if DIMENSIONS == 3
+        exj(k,j,i) *= TWO_F;
+        exk(k,j,i) *= TWO_F;
+        eyi(k,j,i) *= TWO_F;
+        eyk(k,j,i) *= TWO_F;
+
+        exj(k,j,i) -= HALF_F*(Ex1(k,j-1,i) + Ex1(k,j,i));
+        exk(k,j,i) -= HALF_F*(Ex1(k-1,j,i) + Ex1(k,j,i));
+
+        eyi(k,j,i) -= HALF_F*(Ex2(k,j,i-1) + Ex2(k,j,i));
+        eyk(k,j,i) -= HALF_F*(Ex2(k-1,j,i) + Ex2(k,j,i));
+      #endif
+        ezi(k,j,i) *= TWO_F;
+        ezj(k,j,i) *= TWO_F;
+        ezi(k,j,i) -= HALF_F*(Ex3(k,j,i-1) + Ex3(k,j,i));
+        ezj(k,j,i) -= HALF_F*(Ex3(k,j-1,i) + Ex3(k,j,i));
+      }
+    );
+
+  idefix_for("CalcUCT0CornerEMF",
+            data->beg[KDIR],data->end[KDIR]+KOFFSET,
+            data->beg[JDIR],data->end[JDIR]+JOFFSET,
+            data->beg[IDIR],data->end[IDIR]+IOFFSET,
     KOKKOS_LAMBDA (int k, int j, int i) {
       // CT_EMF_ArithmeticAverage (emf, 0.25);
-      real w = ONE_FOURTH_F;
+      const real w = ONE_FOURTH_F;
     #if DIMENSIONS == 3
       ex(k,j,i) = w * (exj(k,j,i) + exj(k-1,j,i) + exk(k,j,i) + exk(k,j-1,i));
       ey(k,j,i) = w * (eyi(k,j,i) + eyi(k-1,j,i) + eyk(k,j,i) + eyk(k,j,i-1));
@@ -130,20 +183,40 @@ void ElectroMotiveForce::CalcCornerEMF(real t) {
     #endif
     }
   );
-  #endif // EMF_AVERAGE
+#endif
+  idfx::popRegion();
+}
 
-  #if EMF_AVERAGE == UCT_CONTACT
+void ElectroMotiveForce::CalcContactAverage() {
+  idfx::pushRegion("ElectroMotiveForce::CalcContactAverage");
+        // Corned EMFs
+  IdefixArray3D<real> ex = this->ex;
+  IdefixArray3D<real> ey = this->ey;
+  IdefixArray3D<real> ez = this->ez;
 
+  // Face-centered EMFs
+  IdefixArray3D<real> exj = this->exj;
+  IdefixArray3D<real> exk = this->exk;
+  IdefixArray3D<real> eyi = this->eyi;
+  IdefixArray3D<real> eyk = this->eyk;
+  IdefixArray3D<real> ezi = this->ezi;
+  IdefixArray3D<real> ezj = this->ezj;
 
+  // cell-centered EMFs
+  IdefixArray3D<real> Ex1 = this->Ex1;
+  IdefixArray3D<real> Ex2 = this->Ex2;
+  IdefixArray3D<real> Ex3 = this->Ex3;
+
+  // sign of contact discontinuity
   IdefixArray3D<int> svx = this->svx;
   IdefixArray3D<int> svy = this->svy;
   IdefixArray3D<int> svz = this->svz;
 
-
+#if MHD == YES && DIMENSIONS >= 2
   idefix_for("EMF_ArithmeticAverage",
-             data->beg[KDIR],data->end[KDIR]+KOFFSET,
-             data->beg[JDIR],data->end[JDIR]+JOFFSET,
-             data->beg[IDIR],data->end[IDIR]+IOFFSET,
+            data->beg[KDIR],data->end[KDIR]+KOFFSET,
+            data->beg[JDIR],data->end[JDIR]+JOFFSET,
+            data->beg[IDIR],data->end[IDIR]+IOFFSET,
     KOKKOS_LAMBDA (int k, int j, int i) {
       // CT_EMF_ArithmeticAverage (emf, 1.0);
       real w = ONE_F;
@@ -166,11 +239,10 @@ void ElectroMotiveForce::CalcCornerEMF(real t) {
   IdefixAtomicArray3D<real> eyAtomic = this->ey;
   IdefixAtomicArray3D<real> ezAtomic = this->ez;
   idefix_for("EMF_Integrate to Corner",
-             data->beg[KDIR]-KOFFSET,data->end[KDIR]+KOFFSET,
-             data->beg[JDIR]-JOFFSET,data->end[JDIR]+JOFFSET,
-             data->beg[IDIR]-IOFFSET,data->end[IDIR]+IOFFSET,
+            data->beg[KDIR]-KOFFSET,data->end[KDIR]+KOFFSET,
+            data->beg[JDIR]-JOFFSET,data->end[JDIR]+JOFFSET,
+            data->beg[IDIR]-IOFFSET,data->end[IDIR]+IOFFSET,
     KOKKOS_LAMBDA (int k, int j, int i) {
-      //CT_EMF_IntegrateToCorner (data, emf, grid);
       int iu, ju, ku;
       D_EXPAND( int sx;  ,
                 int sy;  ,
@@ -264,9 +336,9 @@ void ElectroMotiveForce::CalcCornerEMF(real t) {
     });
 
     idefix_for("EMF_Renormalize",
-             data->beg[KDIR],data->end[KDIR]+KOFFSET,
-             data->beg[JDIR],data->end[JDIR]+JOFFSET,
-             data->beg[IDIR],data->end[IDIR]+IOFFSET,
+            data->beg[KDIR],data->end[KDIR]+KOFFSET,
+            data->beg[JDIR],data->end[JDIR]+JOFFSET,
+            data->beg[IDIR],data->end[IDIR]+IOFFSET,
     KOKKOS_LAMBDA (int k, int j, int i) {
     #if DIMENSIONS ==  3
       ex(k,j,i) *= ONE_FOURTH_F;
@@ -289,13 +361,6 @@ void ElectroMotiveForce::CalcCornerEMF(real t) {
   #undef DEZ_DXM
   #undef DEZ_DYM
 
-  #endif // EMF_AVERAGE
-
-  #if EMF_AVERAGE == UCT_HLL
-    calcRiemannEmf();
-  #endif
-
 #endif // MHD
-
   idfx::popRegion();
 }

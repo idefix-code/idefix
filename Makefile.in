@@ -1,7 +1,7 @@
 
 SRC 		 = $(IDEFIX_DIR)/src
-INCLUDE_DIRS = -I, -I. -I$(SRC) -I$(SRC)/hydro -I$(SRC)/hydro/electromotiveforce -I$(SRC)/rkl -I$(SRC)/dataBlock -I$(SRC)/output @extraIncludeDir@
-VPATH 		 = ./:$(SRC):$(SRC)/hydro:$(SRC)/hydro/electromotiveforce:$(SRC)/rkl:$(SRC)/dataBlock:$(SRC)/output@extraVpath@
+INCLUDE_DIRS = -I, -I. -I$(SRC) -I$(SRC)/hydro -I$(SRC)/hydro/electromotiveforce -I$(SRC)/hydro/boundary  -I$(SRC)/rkl -I$(SRC)/dataBlock -I$(SRC)/output @extraIncludeDir@
+VPATH 		 = ./:$(SRC):$(SRC)/hydro:$(SRC)/hydro/electromotiveforce:$(SRC)/hydro/boundary:$(SRC)/rkl:$(SRC)/dataBlock:$(SRC)/output@extraVpath@
 
 KOKKOS_PATH = ${IDEFIX_DIR}/src/kokkos
 KOKKOS_CXX_STANDARD = "c++14"
@@ -11,9 +11,9 @@ KOKKOS_ARCH = @kokkosArch@
 EXE = "idefix"
 
 OBJ = grid.o gridHost.o input.o main.o dataBlock.o global.o profiler.o dataBlockHost.o setup.o timeIntegrator.o hydro.o error.o
-OBJ += addSourceTerms.o boundary.o calcCornerEmf.o calcRiemannEmf.o calcNonidealEMF.o calcCurrent.o checkDivB.o convertConsToPrim.o evolveMagField.o
+OBJ += addSourceTerms.o hydroboundary.o calcCornerEmf.o calcRiemannEmf.o calcNonidealEMF.o calcCurrent.o checkDivB.o convertConsToPrim.o evolveMagField.o
 OBJ += electroMotiveForce.o EMFexchange.o enforceEMFBoundary.o makeGeometry.o dumpToFile.o checkNan.o evolveStage.o viscosity.o axis.o fargo.o rkl.o
-OBJ += vtk.o dump.o output.o dumpImage.o
+OBJ += vtk.o dump.o output.o dumpImage.o tuner.o
 OBJ += @extraObj@
 
 # include local rules which are not hosted on git

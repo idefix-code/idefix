@@ -10,7 +10,7 @@
 #include <fstream>
 #include <iostream>
 #include <Kokkos_Core.hpp>
-#include <Kokkos_DualView.hpp>
+// #include <Kokkos_DualView.hpp> // do we still need this?
 #ifdef WITH_MPI
 #include <mpi.h>
 #endif
@@ -18,23 +18,8 @@
 using Device = Kokkos::DefaultExecutionSpace;
 using Layout = Kokkos::LayoutRight;
 
-// Define the kind of loop we want (see loop.hpp for details)
-//#define  INDEX_LOOP
-//#define  MDRANGE_LOOP
-//#define  SIMD_LOOP
-//#define  TP_INNERX_LOOP
-//#define  TPTTRTVR_LOOP
-
-// Hopefully a master switch which detects which loop is needed on the architecture
-
-
-#ifdef KOKKOS_ENABLE_CUDA
-#define INDEX_LOOP
-#else
-#define TP_INNERX_LOOP
-//#define SIMD_LOOP
-#endif
-
+/// Type of loops we admit in idefix (see loop.hpp for details)
+enum class LoopPattern { SIMDFOR, RANGE, MDRANGE, TPX, TPTTRTVR, UNDEFINED };
 
 #define USE_DOUBLE
 
@@ -59,15 +44,6 @@ using Layout = Kokkos::LayoutRight;
 #define     JDIR    1
 #define     KDIR    2
 
-/*---- EMFs -----*/
-#define ARITHMETIC   1
-#define UCT0         2
-#define UCT_CONTACT  3
-#define UCT_HLL      4
-
-// Runge-Kutta-Legendre switch
-#define RKL   YES
-
 
 // Basic configuration
 #ifndef DEFINITIONS_FILE
@@ -77,10 +53,13 @@ using Layout = Kokkos::LayoutRight;
 #endif
 #include "real_types.hpp"
 
-// Default EMF_AVERAGE value
-#ifndef EMF_AVERAGE
-  #define EMF_AVERAGE     UCT_CONTACT
+#ifdef EMF_AVERAGE
+#error EMF_AVERAGE is deprecated. Use hydro/emf in the input file to set the emf averaging scheme
 #endif
+#if GEOMETRY == CYLINDRICAL && DIMENSIONS == 3
+  #error CYLINDRICAL should only be used with DIMENSIONS <= 2. Use POLAR for 3D problems.
+#endif
+
 
 // Check whether we're isothermal. If we're not, then we need to solve an energy equation
 #ifndef HAVE_ENERGY

@@ -5,8 +5,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Upcoming
+- new `-autotune` runtime option, which tests and chooses the best loop unrolling strategy
+- code configuration with `cmake` instead of configure.py
 - 3rd order reconstruction scheme (following Cada \& Torrilhon 2009). Can be enabled in definitions.hpp
-- New `-defs` option to `configure.py` to chose a specific definitions file in place of the default.
+- new EMF averaging scheme using 2D HLLD Riemann solves
+- EMF averaging scheme is now set at run time, not compile time.
+- VTK files now includes TIME, GEOMETRY and PERIODICITY fields which can be read with VTK_io python routines
+- VTK I/O python functions have been refactored: a single VTK_Read routine can now be called for all geometries
+- New 3D Shearing box boundary conditions
+- `-restart` is ignored if no restart dump is found
+- new command file to stop Idefix when running remotely
+- new boundary loop wrappers in `boundaryloop.hpp`
+
+## [0.8.1] - 2021-06-24
+### Changed
+- Fixed a bug in the hydro HLL solver which used the wrong sound speed for flux computations.
 
 ## [0.8.0] - 2021-06-13
 ### Added
@@ -25,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - deprecate the `-gpu` option in `configure.py`. The GPU mode is now automatically activated if a GPU architecture is requested.
+- add support for persistent options for `configure.py`, specifically for `-arch` and `-cxx`, in a user-defined `idefix.cfg` file.
 
 ## [0.7.2] - 2021-05-11
 ### Changed

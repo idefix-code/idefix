@@ -127,7 +127,7 @@ in C++11.
   GPU specific segmentation faults.
 
 .. warning::
-  Generally, methods that contains calls to ``idefix_loop()`` always be declared as
+  Generally, methods that contain calls to ``idefix_loop()`` should always be declared as
   ``public``. This is due to a limitation of the ``nvcc`` compiler which cannot perform
   lambda captures from private methods.
 

@@ -12,7 +12,6 @@ generators on different architectures.
 
 // Default constructor
 
-
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {

@@ -1,7 +1,6 @@
 #!/bin/bash
 
-rep_HD_list="sod-iso sod MachReflection ViscousFlowPastCylinder ViscousDisk FargoPlanet"
-rep_MHD_list="sod-iso sod AxisFluxTube AmbipolarCshock HallWhistler FargoMHDSpherical OrszagTang OrszagTang3D"
+rep_HD_list="sod-iso sod MachReflection ViscousFlowPastCylinder ViscousDisk FargoPlanet ShearingBox"
 
 # refer to the parent dir of this file, wherever this is called from
 # a python equivalent is e.g.
@@ -40,61 +39,31 @@ for rep in $rep_HD_list; do
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "***********************************************"
+    rm -f CMakeCache.txt
     def_files=$(ls definitions*.hpp)
     for def in $def_files; do
-        python3 $IDEFIX_DIR/configure.py $options -defs=$def
+
+        cmake $IDEFIX_DIR $options -DIdefix_DEFS=$def || { echo "!!!! HD $rep failed during configuration"; exit 1; }
         echo "***********************************************"
         echo "Making  $rep with $def"
         echo "***********************************************"
-        make clean; make -j 4
+        make clean; make -j 4 || { echo "!!!! HD $rep failed during compilation with $def"; exit 1; }
 
         ini_files=$(ls *.ini)
         for ini in $ini_files; do
             echo "***********************************************"
             echo "Running  $rep with $ini"
             echo "***********************************************"
-            ./idefix -i $ini
+            ./idefix -i $ini || { echo "!!!! HD $rep failed running with $def and $ini"; exit 1; }
 
             cd python
             echo "***********************************************"
             echo "Testing  $rep with $ini and $def"
             echo "***********************************************"
-            python3 testidefix.py -noplot
+            python3 testidefix.py -noplot || { echo "!!!! HD $rep failed validation with $def and $ini"; exit 1; }
             cd ..
         done
         make clean
         rm -f *.vtk *.dbl
     done
-done
-
-# MHD tests
-for rep in $rep_MHD_list; do
-    cd $TEST_DIR/MHD/$rep
-    echo "***********************************************"
-    echo "Configuring  $rep"
-    echo "***********************************************"
-    def_files=$(ls definitions*.hpp)
-    for def in $def_files; do
-        python3 $IDEFIX_DIR/configure.py -mhd $options -defs=$def
-        echo "***********************************************"
-        echo "Making  $rep with $def"
-        echo "***********************************************"
-        make clean; make -j 4
-
-        ini_files=$(ls *.ini)
-        for ini in $ini_files; do
-            echo "***********************************************"
-            echo "Running  $rep with $ini"
-            echo "***********************************************"
-            ./idefix -i $ini
-
-            cd python
-            echo "***********************************************"
-            echo "Testing  $rep with $ini and $def"
-            echo "***********************************************"
-            python3 testidefix.py -noplot
-            cd ..
-        done
-    done
-    cd $TEST_DIR
 done

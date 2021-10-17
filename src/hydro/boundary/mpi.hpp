@@ -5,10 +5,14 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef DATABLOCK_MPI_MPI_HPP_
-#define DATABLOCK_MPI_MPI_HPP_
+#ifndef HYDRO_BOUNDARY_MPI_HPP_
+#define HYDRO_BOUNDARY_MPI_HPP_
 
 #include "idefix.hpp"
+
+#ifdef WITH_MPI
+#include "mpi.hpp"
+#endif
 
 class DataBlock;
 
@@ -67,4 +71,4 @@ class Mpi {
   int64_t bytesSentOrReceived{0};
 };
 
-#endif // DATABLOCK_MPI_MPI_HPP_
+#endif // HYDRO_BOUNDARY_MPI_HPP_

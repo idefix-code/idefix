@@ -42,6 +42,10 @@ void Hydro::CalcRightHandSide(real t, real dt) {
   IdefixArray3D<real> phiP = this->phiP;
   bool needPotential = this->haveGravPotential;
 
+  // BodyForce
+  IdefixArray4D<real> bodyForce = this->bodyForceVector;
+  bool needBodyForce = this->haveBodyForce;
+
   // parabolic terms
   bool haveParabolicTerms = this->haveExplicitParabolicTerms;
 
@@ -50,10 +54,20 @@ void Hydro::CalcRightHandSide(real t, real dt) {
 
   // Fargo
   bool haveFargo  = this->haveFargo;
+  Fargo::FargoType fargoType = this->fargo.type;
 
   //Rotation
   bool haveRotation = this->haveRotation;
   real Omega = this->OmegaZ;
+  // disable rotation in cartesian geometry, as Coriolis is then treated as a source term
+  #if GEOMETRY == CARTESIAN
+    haveRotation = false;
+  #endif
+
+  // shearingBox
+  bool haveShearingBox = this->haveShearingBox;
+  real sbS = this->sbS;
+
 
   if(needPotential) {
     IdefixArray1D<real> x1,x2,x3;
@@ -80,7 +94,18 @@ void Hydro::CalcRightHandSide(real t, real dt) {
     gravPotentialFunc(*data, t, x1, x2, x3, phiP);
   }
 
-  if(haveFargo) {
+  if(needBodyForce) {
+    // Only compute body forces when doing the first step
+    if(dir==IDIR) {
+      if(this->bodyForceFunc == nullptr)
+        IDEFIX_ERROR("Body force is enabled, "
+                    "but no user-defined body force has been enrolled.");
+
+      bodyForceFunc(*data, t, bodyForce);
+    }
+  }
+
+  if(haveFargo && fargoType == Fargo::userdef) {
     fargo.GetFargoVelocity(t);
   }
 
@@ -115,7 +140,11 @@ void Hydro::CalcRightHandSide(real t, real dt) {
         if(dir == IDIR) {
           #if (GEOMETRY == CARTESIAN || GEOMETRY == POLAR) && DIMENSIONS >=2
             if(haveFargo) {
-              meanV = HALF_F*(fargoVelocity(k,i-1)+fargoVelocity(k,i));
+              if(fargoType==Fargo::userdef) {
+                meanV = HALF_F*(fargoVelocity(k,i-1)+fargoVelocity(k,i));
+              } else if(fargoType==Fargo::shearingbox) {
+                meanV = sbS * x1m(i);
+              }
             }
             #if GEOMETRY != CARTESIAN
             if(haveRotation) {
@@ -142,7 +171,11 @@ void Hydro::CalcRightHandSide(real t, real dt) {
           }
         #elif (GEOMETRY == CARTESIAN || GEOMETRY == POLAR) && DIMENSIONS >=2
           if((dir == KDIR) && haveFargo) {
-            meanV = HALF_F*(fargoVelocity(k-1,i)+fargoVelocity(k,i));
+            if(fargoType==Fargo::userdef) {
+              meanV = HALF_F*(fargoVelocity(k-1,i)+fargoVelocity(k,i));
+            } else if (fargoType==Fargo::shearingbox) {
+              meanV = sbS*x1(i);
+            }
           }
         #endif // GEOMETRY
 
@@ -207,6 +240,8 @@ void Hydro::CalcRightHandSide(real t, real dt) {
     }
   );
 
+  // If user has requested specific flux functions for the boundaries, here they come
+  if(boundary.haveFluxBoundary) boundary.EnforceFluxBoundaries(dir);
 
   idefix_for("CalcRightHandSide",
              data->beg[KDIR],data->end[KDIR],
@@ -290,7 +325,13 @@ void Hydro::CalcRightHandSide(real t, real dt) {
         // fetch fargo velocity when required
         real meanV = ZERO_F;
         #if (GEOMETRY == POLAR || GEOMETRY == CARTESIAN) && DIMENSIONS >=2
-          if((dir==IDIR || dir == KDIR) && haveFargo) meanV = fargoVelocity(k,i);
+          if((dir==IDIR || dir == KDIR) && haveFargo) {
+            if(fargoType==Fargo::userdef) {
+              meanV = fargoVelocity(k,i);
+            } else if(fargoType==Fargo::shearingbox) {
+              meanV = sbS * x1(i);
+            }
+          }
           #if GEOMETRY != CARTESIAN
             if((dir==IDIR) && haveRotation) {
               meanV += Omega*x1(i);
@@ -328,12 +369,37 @@ void Hydro::CalcRightHandSide(real t, real dt) {
           rhs[MX3] -= dt/dl * Vc(RHO,k,j,i) * (phiP(k+1,j,i) - phiP(k,j,i));
         }
 
-#if HAVE_ENERGY
-        // We conserve total energy without potential
-        rhs[ENG] -=  HALF_F * (phiP(k+koffset,j+joffset,i+ioffset) + phiP(k,j,i)) * rhs[RHO];
-#endif
+        #if HAVE_ENERGY
+          // We conserve total energy without potential
+          rhs[ENG] -=  HALF_F * (phiP(k+koffset,j+joffset,i+ioffset) + phiP(k,j,i)) * rhs[RHO];
+        #endif
       }
 
+      // Body force
+      if(needBodyForce) {
+        rhs[MX1+dir] += dt * Vc(RHO,k,j,i) * bodyForce(dir,k,j,i);
+        #if HAVE_ENERGY
+          rhs[ENG] += dt * Vc(RHO,k,j,i) * Vc(VX1+dir,k,j,i) * bodyForce(dir,k,j,i);
+        #endif
+
+        // Particular cases if we do not sweep all of the components
+        #if DIMENSIONS == 1 && COMPONENTS > 1
+          EXPAND(                                                           ,
+                    rhs[MX2] += dt * Vc(RHO,k,j,i) * bodyForce(JDIR,k,j,i);   ,
+                    rhs[MX3] += dt * Vc(RHO,k,j,i) * bodyForce(KDIR,k,j,i);    )
+          #if HAVE_ENERGY
+            rhs[ENG] += dt * (EXPAND( ZERO_F                                                   ,
+                                      + Vc(RHO,k,j,i) * Vc(VX2,k,j,i) * bodyForce(JDIR,k,j,i)  ,
+                                      + Vc(RHO,k,j,i) * Vc(VX3,k,j,i) * bodyForce(KDIR,k,j,i) ));
+          #endif
+        #endif
+        #if DIMENSIONS == 2 && COMPONENTS == 3
+          rhs[MX3] += dt * Vc(RHO,k,j,i) * bodyForce(KDIR,k,j,i);
+          #if HAVE_ENERGY
+            rhs[ENG] += dt * Vc(RHO,k,j,i) * Vc(VX3,k,j,i) * bodyForce(KDIR,k,j,i);
+          #endif
+        #endif
+      }
 
 
       // Evolve the field components

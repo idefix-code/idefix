@@ -12,6 +12,8 @@
 #include "extrapolatePrimVar.hpp"
 #include "fluxMHD.hpp"
 #include "convertConsToPrimMHD.hpp"
+#include "storeFlux.hpp"
+#include "electroMotiveForce.hpp"
 
 // Compute Riemann fluxes from states using HLL solver
 template<const int DIR>
@@ -43,12 +45,16 @@ void Hydro::HllMHD() {
   IdefixArray3D<real> Eb;
   IdefixArray3D<real> Et;
 
-#if EMF_AVERAGE == UCT_CONTACT
+  const ElectroMotiveForce::AveragingType emfAverage = emf.averaging;
+
+  // Required by UCT_Contact
   IdefixArray3D<int> SV;
-#elif EMF_AVERAGE == UCT_HLL
-  IdefixArray3D<real> SL;
-  IdefixArray3D<real> SR;
-#endif
+
+  // Required by UCT_HLLX
+  IdefixArray3D<real> aL;
+  IdefixArray3D<real> aR;
+  IdefixArray3D<real> dL;
+  IdefixArray3D<real> dR;
 
   real gamma = this->gamma;
   real xHConstant = this->xH;
@@ -58,68 +64,73 @@ void Hydro::HllMHD() {
 
   // Define normal, tangent and bi-tanget indices
   // st and sb will be useful only when Hall is included
-  D_EXPAND( real st;  ,
-                      ,
-            real sb;  )
+  real st,sb;
 
   switch(DIR) {
     case(IDIR):
       ioffset = 1;
-      D_EXPAND(               ,
+      D_EXPAND(
+                st = -ONE_F;  ,
                 jextend = 1;  ,
-                kextend = 1;  )
+                kextend = 1;
+                sb = +ONE_F;  )
 
       Et = this->emf.ezi;
       Eb = this->emf.eyi;
-#if EMF_AVERAGE == UCT_CONTACT
-      SV = this->emf.svx;
-#elif EMF_AVERAGE == UCT_HLL
-      SL = this->emf.SxL;
-      SR = this->emf.SxR;
-#endif
 
-      D_EXPAND( st = -ONE_F;  ,
-                            ,
-                sb = +ONE_F;  )
+      SV = this->emf.svx;
+
+      aL = this->emf.axL;
+      aR = this->emf.axR;
+
+      dL = this->emf.dxL;
+      dR = this->emf.dxR;
+
       break;
+#if DIMENSIONS >= 2
     case(JDIR):
       joffset=1;
-      D_EXPAND( iextend = 1;  ,
+      D_EXPAND(
+                iextend = 1;
+                st = +ONE_F;  ,
                               ,
-                kextend = 1;  )
+                kextend = 1;
+                sb = -ONE_F;  )
 
       Et = this->emf.ezj;
       Eb = this->emf.exj;
-#if EMF_AVERAGE == UCT_CONTACT
-      SV = this->emf.svy;
-#elif EMF_AVERAGE == UCT_HLL
-      SL = this->emf.SyL;
-      SR = this->emf.SyR;
-#endif
 
-      D_EXPAND( st = +ONE_F;  ,
-                              ,
-                sb = -ONE_F;  )
+      SV = this->emf.svy;
+
+      aL = this->emf.ayL;
+      aR = this->emf.ayR;
+
+      dL = this->emf.dyL;
+      dR = this->emf.dyR;
+
       break;
+#endif
+#if DIMENSIONS == 3
     case(KDIR):
       koffset=1;
-      D_EXPAND( iextend = 1;  ,
-              jextend = 1;    ,
-              )
+      D_EXPAND(
+                iextend = 1;
+                st = -ONE_F;  ,
+                jextend = 1;  ,
+                sb = +ONE_F;  )
 
       Et = this->emf.eyk;
       Eb = this->emf.exk;
-#if EMF_AVERAGE == UCT_CONTACT
-      SV = this->emf.svz;
-#elif EMF_AVERAGE == UCT_HLL
-      SL = this->emf.SzL;
-      SR = this->emf.SzR;
-#endif
 
-      D_EXPAND( st = -ONE_F;  ,
-                              ,
-                sb = +ONE_F;  )
+      SV = this->emf.svz;
+
+      aL = this->emf.azL;
+      aR = this->emf.azR;
+
+      dL = this->emf.dzL;
+      dR = this->emf.dzR;
       break;
+#endif
     default:
       IDEFIX_ERROR("Wrong direction");
   }
@@ -399,20 +410,16 @@ void Hydro::HllMHD() {
       cMax(k,j,i) = cmax;
 
       // 7-- Store the flux in the emf components
-      D_EXPAND( Et(k,j,i) = st*Flux(BXt,k,j,i); ,
-                                                ,
-                Eb(k,j,i) = sb*Flux(BXb,k,j,i); )
-
-#if EMF_AVERAGE == UCT_CONTACT
-      int s = 0;
-      if (Flux(RHO,k,j,i) >  eps_UCT_CONTACT) s =  1;
-      if (Flux(RHO,k,j,i) < -eps_UCT_CONTACT) s = -1;
-
-      SV(k,j,i) = s;
-#elif EMF_AVERAGE == UCT_HLL
-      SL(k,j,i) = std::fmax(ZERO_F, -SLb);
-      SR(k,j,i) = std::fmax(ZERO_F,  SRb);
-#endif
+      if (emfAverage==ElectroMotiveForce::arithmetic
+                || emfAverage==ElectroMotiveForce::uct0) {
+        K_StoreEMF<DIR>(i,j,k,st,sb,Flux,Et,Eb);
+      } else if (emfAverage==ElectroMotiveForce::uct_contact) {
+        K_StoreContact<DIR>(i,j,k,st,sb,Flux,Et,Eb,SV);
+      } else if (emfAverage==ElectroMotiveForce::uct_hll) {
+        K_StoreHLL<DIR>(i,j,k,st,sb,sl,sr,vL,vR,Et,Eb,aL,aR,dL,dR);
+      } else if (emfAverage==ElectroMotiveForce::uct_hlld) {
+        K_StoreHLLD<DIR>(i,j,k,st,sb,c2Iso,SLb,SRb,vL,vR,uL,uR,Et,Eb,aL,aR,dL,dR);
+      }
   });
 
   idfx::popRegion();

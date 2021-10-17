@@ -20,6 +20,7 @@ double mpiCallsTimer = 0.0;
 
 IdefixOstream cout;
 Profiler prof;
+LoopPattern defaultLoopPattern;
 
 #ifdef DEBUG
 static int regionIndent = 0;
@@ -35,6 +36,14 @@ int initialize() {
 #endif
   cout.init(prank);
   prof.Init();
+
+  // Init loop Pattern
+  #ifdef KOKKOS_ENABLE_CUDA
+    defaultLoopPattern = LoopPattern::RANGE;  // On cuda, works best (generally)
+  #else
+    defaultLoopPattern = LoopPattern::TPX;    // On cpus, works best (generally)
+  #endif
+
   return(0);
 }   // Initialisation routine for idefix
 

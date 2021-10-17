@@ -30,7 +30,6 @@ HD tests:
 
     - cd test
     - ./checks_hydro.sh
-    - ./checks_mpi.sh
 
 MHD tests:
   stage: checks

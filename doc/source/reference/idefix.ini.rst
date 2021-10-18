@@ -179,6 +179,9 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 |                |                         | | be enrolled via Hydro.Fargo::EnrollVelocity(FargoVelocityFunc)                            |
 |                |                         | | (see :ref:`functionEnrollment`). Examples are provided in `test/HD/FargoPlanet`           |
 |                |                         | | and `test/MHD/FargoMHDSpherical`                                                          |
+|                |                         | | Note that by default, Fargo uses a piecewise linear advection operator. One can enable    |
+|                |                         | | a piecewise parabolic reconstruction method (ppm) setting ``Idefix_HIGH_ORDER_FARGO``     |
+|                |                         | | to ``ON`` in ``cmake`` configuration.                                                     |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 
 

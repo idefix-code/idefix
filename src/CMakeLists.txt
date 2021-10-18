@@ -23,6 +23,7 @@ target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/profiler.cpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/profiler.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/real_types.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/reduce.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/setup.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/timeIntegrator.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/timeIntegrator.cpp

@@ -21,10 +21,10 @@ real Hydro::CheckDivB() {
   IdefixArray3D<real> dV = data->dV;
 
 
-  Kokkos::parallel_reduce("CheckDivB",
-        Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
-            ({data->beg[KDIR],data->beg[JDIR],data->beg[IDIR]},
-             {data->end[KDIR], data->end[JDIR], data->end[IDIR]}),
+  idefix_reduce("CheckDivB",
+    data->beg[KDIR], data->end[KDIR],
+    data->beg[JDIR], data->end[JDIR],
+    data->beg[IDIR], data->end[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i, real &divBmax) {
       real dB1,dB2,dB3;
 

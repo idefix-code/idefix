@@ -210,6 +210,7 @@ enum BoundarySide { left, right};
 #include "error.hpp"
 #include "macros.hpp"
 #include "loop.hpp"
+#include "reduce.hpp"
 #include "arrays.hpp"
 
 #endif  //  IDEFIX_HPP_

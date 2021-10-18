@@ -17,25 +17,26 @@ int DataBlock::CheckNan()  {
   idfx::pushRegion("DataBlock::CheckNan");
   IdefixArray4D<real> Vc=this->hydro.Vc;
 
-  Kokkos::parallel_reduce("checkNanVc",
-        Kokkos::MDRangePolicy<Kokkos::Rank<4, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
-          ({0,beg[KDIR],beg[JDIR],beg[IDIR]}, {NVAR,end[KDIR], end[JDIR], end[IDIR]}),
+  idefix_reduce("checkNanVc",
+    0, NVAR,
+    beg[KDIR], end[KDIR],
+    beg[JDIR], end[JDIR],
+    beg[IDIR], end[IDIR],
     KOKKOS_LAMBDA (int n, int k, int j, int i, int &nnan) {
       if(std::isnan(Vc(n,k,j,i))) nnan++;
-    }
-    , nanVc // reduction variable
+    }, nanVc // reduction variable
   );
 
 #if MHD == YES
   IdefixArray4D<real> Vs=this->hydro.Vs;
-  Kokkos::parallel_reduce("checkNanVs",
-      Kokkos::MDRangePolicy<Kokkos::Rank<4, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
-        ({0,beg[KDIR],beg[JDIR],beg[IDIR]},
-         {DIMENSIONS,end[KDIR]+KOFFSET, end[JDIR]+JOFFSET, end[IDIR]+IOFFSET}),
+  idefix_reduce("checkNanVs",
+    0, DIMENSIONS,
+    beg[KDIR], end[KDIR]+KOFFSET,
+    beg[JDIR], end[JDIR]+JOFFSET,
+    beg[IDIR], end[IDIR]+IOFFSET,
     KOKKOS_LAMBDA (int n, int k, int j, int i, int &nnan) {
       if(std::isnan(Vs(n,k,j,i))) nnan++;
-    }
-    , nanVs // reduction variable
+    }, nanVs // reduction variable
   );
 #endif
 

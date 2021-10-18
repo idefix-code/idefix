@@ -38,8 +38,10 @@ int initialize() {
   prof.Init();
 
   // Init loop Pattern
-  #ifdef KOKKOS_ENABLE_CUDA
+  #if defined(KOKKOS_ENABLE_CUDA)
     defaultLoopPattern = LoopPattern::RANGE;  // On cuda, works best (generally)
+  #elif defined(KOKKOS_ENABLE_HIP)
+    defaultLoopPattern = LoopPattern::RANGE;  // On HIP, works best (generally)
   #else
     defaultLoopPattern = LoopPattern::TPX;    // On cpus, works best (generally)
   #endif

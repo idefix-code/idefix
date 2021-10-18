@@ -4,19 +4,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Upcoming
+## [0.9.0]
+
+### Added
 - new `-autotune` runtime option, which tests and chooses the best loop unrolling strategy
-- code configuration with `cmake` instead of configure.py
 - 3rd order reconstruction scheme (following Cada \& Torrilhon 2009). Can be enabled in definitions.hpp
 - ppm reconstruction in Fargo. Automatically used with ORDER=3, otherwise can be enabled with Idefix_HIGH_ORDER_FARGO in cmake configuration
 - new EMF averaging scheme using 2D HLLD Riemann solves
-- EMF averaging scheme is now set at run time, not compile time.
 - VTK files now includes TIME, GEOMETRY and PERIODICITY fields which can be read with VTK_io python routines
-- VTK I/O python functions have been refactored: a single VTK_Read routine can now be called for all geometries
-- New 3D Shearing box boundary conditions
-- `-restart` is ignored if no restart dump is found
+- new python routines to read Idefix dump files
+- new 3D Shearing box boundary conditions
 - new command file to stop Idefix when running remotely
 - new boundary loop wrappers in `boundaryloop.hpp`
+
+### Changed
+- code configuration with `cmake` instead of configure.py
+- EMF averaging scheme is now set at run time, not compile time.
+- VTK I/O python functions have been refactored: a single VTK_Read routine can now be called for all geometries
+- `-restart` is ignored if no restart dump is found
+
+### Removed
+- deprecated the `configure.py` script. Cmake should now be used instead (this version is the last one that still supports `configure.py`).
 
 ## [0.8.1] - 2021-06-24
 ### Changed

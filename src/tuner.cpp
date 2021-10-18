@@ -93,7 +93,7 @@ void tuneLoops(DataBlock &data, Setup &setup, Input &input) {
     //idfx::cout << "*************************************************" << std::endl;
     //
     // Avoid SIMD for when using CUDA as this is not implemented
-    #ifdef KOKKOS_ENABLE_CUDA
+    #ifdef KOKKOS_ENABLE_CUDA || KOKKOS_ENABLE_HIP
     if (static_cast<LoopPattern>(i) != LoopPattern::SIMDFOR) {
     #endif
       thisPerfs = testLoopType(data,setup,input,numLoops,static_cast<LoopPattern>(i));

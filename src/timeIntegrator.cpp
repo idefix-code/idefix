@@ -208,12 +208,14 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     // Compute next time_step during first stage
     if(stage==0) {
       if(!haveFixedDt) {
-        Kokkos::parallel_reduce("Timestep_reduction",
-            Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
-            ({0,0,0},{data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]}),
-            KOKKOS_LAMBDA (int k, int j, int i, real &dtmin) {
-                dtmin=FMIN(ONE_F/InvDt(k,j,i),dtmin);
-            }, Kokkos::Min<real>(newdt) );
+        idefix_reduce("Timestep_reduction",
+          data.beg[KDIR], data.end[KDIR],
+          data.beg[JDIR], data.end[JDIR],
+          data.beg[IDIR], data.end[IDIR],
+          KOKKOS_LAMBDA (int k, int j, int i, real &dtmin) {
+                  dtmin=FMIN(ONE_F/InvDt(k,j,i),dtmin);
+              },
+          Kokkos::Min<real>(newdt));
 
         Kokkos::fence();
 

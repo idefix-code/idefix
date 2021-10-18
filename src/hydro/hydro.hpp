@@ -133,28 +133,6 @@ class Hydro {
   template<const int>
     void TvdlfHD();
 #endif
-  // Extrapolate function
-  template<const int DIR>
-  KOKKOS_FORCEINLINE_FUNCTION void K_ExtrapolatePrimVar
-      (const int, const int, const int, const IdefixArray4D<real>&,
-      const IdefixArray4D<real>&, const IdefixArray1D<real>&, real[], real[]);
-
-  // Flux functions and converter functions
-  #if MHD == YES
-  KOKKOS_INLINE_FUNCTION void K_Flux(real F[], real V[], real U[], real Cs2Iso,
-                                   ARG_EXPAND(const int Xn, const int Xt, const int Xb),
-                                   ARG_EXPAND(const int BXn, const int BXt, const int BXb));
-  KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[], real gamma_m1);
-  KOKKOS_INLINE_FUNCTION void K_PrimToCons(real Uc[], real Vc[], real gamma_m1);
-
-  #else
-
-  KOKKOS_INLINE_FUNCTION void K_Flux(real *KOKKOS_RESTRICT F, const real *KOKKOS_RESTRICT V,
-                                   const real *KOKKOS_RESTRICT U, real Cs2Iso, const int Xn);
-  KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[],real gamma_m1);
-  KOKKOS_INLINE_FUNCTION void K_PrimToCons(real *KOKKOS_RESTRICT Uc, const real *KOKKOS_RESTRICT Vc,
-                                         real gamma_m1);
-  #endif
 
   // Arrays required by the Hydro object
   IdefixArray4D<real> Vc;      // Main cell-centered primitive variables index

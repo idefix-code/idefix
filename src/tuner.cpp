@@ -96,10 +96,16 @@ void tuneLoops(DataBlock &data, Setup &setup, Input &input) {
     #ifdef KOKKOS_ENABLE_CUDA
     if (static_cast<LoopPattern>(i) != LoopPattern::SIMDFOR) {
     #endif
+    #ifdef KOKKOS_ENABLE_HIP
+    if (static_cast<LoopPattern>(i) != LoopPattern::SIMDFOR) {
+    #endif
       thisPerfs = testLoopType(data,setup,input,numLoops,static_cast<LoopPattern>(i));
     #ifdef KOKKOS_ENABLE_CUDA
     } else {
       //idfx::cout << "Not implemented in Cuda, skipping" << std::endl;
+    }
+    #endif
+    #ifdef KOKKOS_ENABLE_HIP
     }
     #endif
     idfx::cout << "Loop pattern " << LoopText(i) << "(" << i << ") gives "

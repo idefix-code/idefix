@@ -50,7 +50,7 @@ KOKKOS_FORCEINLINE_FUNCTION real LimO3Lim(real dvp, real dvm, real dx) {
 //          Vc(i-1)           PrimL(i)  PrimR(i)       Vc(i)
 
 template<const int DIR>
-KOKKOS_FORCEINLINE_FUNCTION void Hydro::K_ExtrapolatePrimVar
+KOKKOS_FORCEINLINE_FUNCTION void K_ExtrapolatePrimVar
       (const int i, const int j, const int k, const IdefixArray4D<real> &Vc,
       const IdefixArray4D<real> &Vs, const IdefixArray1D<real> &dx, real vL[], real vR[]) {
   // 1-- Store the primitive variables on the left, right, and averaged states

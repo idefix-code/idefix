@@ -11,7 +11,7 @@
 #include "idefix.hpp"
 #include "hydro.hpp"
 
-KOKKOS_INLINE_FUNCTION void Hydro::K_ConsToPrim(
+KOKKOS_INLINE_FUNCTION void K_ConsToPrim(
                                   real Vc[],
                                   real Uc[],
                                   real gamma_m1) {
@@ -41,7 +41,7 @@ KOKKOS_INLINE_FUNCTION void Hydro::K_ConsToPrim(
 #endif  // Have_energy
 }
 
-KOKKOS_INLINE_FUNCTION void Hydro::K_PrimToCons(real *KOKKOS_RESTRICT Uc,
+KOKKOS_INLINE_FUNCTION void K_PrimToCons(real *KOKKOS_RESTRICT Uc,
                                     const real *KOKKOS_RESTRICT Vc,
                                     real gamma_m1) {
   Uc[RHO] = Vc[RHO];

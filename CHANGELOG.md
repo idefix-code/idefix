@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - EMF averaging scheme is now set at run time, not compile time.
 - VTK I/O python functions have been refactored: a single VTK_Read routine can now be called for all geometries
 - `-restart` is ignored if no restart dump is found
+- auto-detect HIP GPU offloading (used for AMD GPUs)
 
 ### Removed
 - deprecated the `configure.py` script. Cmake should now be used instead (this version is the last one that still supports `configure.py`).

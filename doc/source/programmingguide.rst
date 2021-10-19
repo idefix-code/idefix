@@ -146,7 +146,7 @@ a sum if not specified). For instance, a sum over all of the elements would be d
 
   // Allocate an Idefix Array
   IdefixArray3D<real> myArray("MyArray", nx1, nx2, nx3);
-  // Initial the array somehow
+  // Initialize the array somehow
   ...
 
   real mySum = 0.;   // Note that the result will be stored on the host!
@@ -160,17 +160,20 @@ a sum if not specified). For instance, a sum over all of the elements would be d
                 mySum);
 
 
-In the above example, ``localSum`` is the temporary variable over which portions of the reduction
+In the above example, ``localSum`` is the temporary variable *on the device* over which portions of the reduction
 are performed, while ``mySum`` is the final variable, *on the host* where the result is stored.
 
-As stated above, ``idefix_reduce`` performs a sum by default. It is however possible to find the minimum value
-as in:
+As stated above, ``idefix_reduce`` performs a sum by default. It is however possible to do other operations
+like findining minimum, maximum etc (see
+`Kokkos custom reductions <https://github.com/kokkos/kokkos/wiki/Custom-Reductions%3A-Built-In-Reducers>`_
+for a list). For instance, the minimum value is obtained with the following code
+snippet:
 
 .. code-block:: c++
 
   // Allocate an Idefix Array
   IdefixArray3D<real> myArray("MyArray", nx1, nx2, nx3);
-  // Initial the array somehow
+  // Initialize the array somehow
   ...
 
   real myMin = 0.;   // Note that the result will be stored on the host!
@@ -181,7 +184,7 @@ as in:
                 KOKKOS_LAMBDA (int k, int j, int i, real &localMin) {
                     localMin = std::fmin(localMin, myArray(k,j,i));
                 },
-                Kokkos::Min<real>myMin);
+                Kokkos::Min<real>(myMin));
 
 Note that when running on GPU architectures, reductions are particularly inefficient operations. If possible,
 it is therefore recommended to avoid them as much as possible, or to group them.

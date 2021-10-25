@@ -154,7 +154,7 @@ void GridHost::MakeGrid(Input &input) {
             for(int i = 0 - ghostStart ; i < patchSize + ghostEnd ; i++) {
               xl[dir](i+idxstart) = patchEnd - q*(pow(q,patchSize-i)-1)/(q-1)*delta;
               xr[dir](i+idxstart) = patchEnd - q*(pow(q,patchSize-i-1)-1)/(q-1)*delta;
-              dx[dir](i+idxstart) = pow(q,patchSize-i+1)*delta;
+              dx[dir](i+idxstart) = pow(q,patchSize-i)*delta;
               x[dir](i+idxstart)= 0.5*(xr[dir](i+idxstart) + xl[dir](i+idxstart));
             }
           }

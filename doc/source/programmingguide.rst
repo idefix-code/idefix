@@ -1,4 +1,3 @@
-
 .. _programmingGuide:
 
 ======================
@@ -150,7 +149,7 @@ a sum if not specified). For instance, a sum over all of the elements would be d
   ...
 
   real mySum = 0.;   // Note that the result will be stored on the host!
-  idefix_reduce("Sum"
+  idefix_reduce("Sum",
                 kbeg,kend,
                 jbeg,jend,
                 ibeg,ieng,
@@ -177,7 +176,7 @@ snippet:
   ...
 
   real myMin = 0.;   // Note that the result will be stored on the host!
-  idefix_reduce("Minimum"
+  idefix_reduce("Minimum",
                 kbeg,kend,
                 jbeg,jend,
                 ibeg,ieng,

@@ -129,6 +129,13 @@ void GridHost::MakeGrid(Input &input) {
           int refPatchSize = input.GetInt("Grid",label,2+refPatch*3);
           double delta = (refPatchEnd-refPatchStart)/refPatchSize;
           double logdelta = log((patchEnd-patchStart)/delta);
+
+          // Check that it is possible to make a stretch grid (bug report #28)
+          if(std::fabs((patchEnd-patchStart)/patchSize - delta) < 1e-10) {
+            IDEFIX_ERROR("A Stretch grid can be defined only if the stretched domain has a mean\n"
+                         "spacing different from the reference uniform grid.\n"
+                         "Try changing the number of points in your stretched grid.");
+          }
           // Next we have to compute the stretch factor q. Let's start with a guess
           double q=1.05;
           // Use Newton method
@@ -142,6 +149,7 @@ void GridHost::MakeGrid(Input &input) {
             if(fabs(dq)<1e-14*q) break;
             if(iter==50) IDEFIX_ERROR("Failed to create the stretched grid");
           }
+
           // once we know q, we can make the grid
           if(patchType.compare("s-")==0) {
             for(int i = 0 - ghostStart ; i < patchSize + ghostEnd ; i++) {

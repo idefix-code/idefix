@@ -388,7 +388,7 @@ void HydroBoundary::EnforcePeriodic(int dir, BoundarySide side ) {
           Vs(BX1s,k,j,i) = Vs(BX1s,kref,jref,iref);
       });
     }
-    #if COMPONENTS >=2
+    #if DIMENSIONS >=2
       if(dir==IDIR || dir==KDIR) {
         nxi = data->np_int[IDIR];
         nxj = data->np_int[JDIR]+1;
@@ -414,7 +414,7 @@ void HydroBoundary::EnforcePeriodic(int dir, BoundarySide side ) {
         });
       }
     #endif
-    #if COMPONENTS == 3
+    #if DIMENSIONS == 3
       nxi = data->np_int[IDIR];
       nxj = data->np_int[JDIR];
       nxk = data->np_int[KDIR]+1;
@@ -481,7 +481,7 @@ void HydroBoundary::EnforceReflective(int dir, BoundarySide side ) {
           Vs(BX1s,k,j,i) = -Vs(BX1s,kref,jref,i);
         });
     }
-    #if COMPONENTS >=2
+    #if DIMENSIONS >=2
       if(dir==IDIR || dir==KDIR) {
         BoundaryForX2s("BoundaryReflectiveX2s",dir,side,
           KOKKOS_LAMBDA (int k, int j, int i) {
@@ -493,7 +493,7 @@ void HydroBoundary::EnforceReflective(int dir, BoundarySide side ) {
           });
       }
     #endif
-    #if COMPONENTS == 3
+    #if DIMENSIONS == 3
       if(dir==IDIR || dir==JDIR) {
         BoundaryForX3s("BoundaryReflectiveX3s",dir,side,
           KOKKOS_LAMBDA (int k, int j, int i) {
@@ -550,7 +550,7 @@ void HydroBoundary::EnforceOutflow(int dir, BoundarySide side ) {
           Vs(BX1s,k,j,i) = Vs(BX1s,kref,jref,i);
         });
     }
-    #if COMPONENTS >=2
+    #if DIMENSIONS >=2
       if(dir==IDIR || dir==KDIR) {
         BoundaryForX2s("BoundaryOutflowX2s",dir,side,
           KOKKOS_LAMBDA (int k, int j, int i) {
@@ -562,7 +562,7 @@ void HydroBoundary::EnforceOutflow(int dir, BoundarySide side ) {
           });
       }
     #endif
-    #if COMPONENTS == 3
+    #if DIMENSIONS == 3
       if(dir==IDIR || dir==JDIR) {
         BoundaryForX3s("BoundaryOutflowX3s",dir,side,
           KOKKOS_LAMBDA (int k, int j, int i) {
@@ -678,8 +678,8 @@ void HydroBoundary::EnforceShearingBox(real t, int dir, BoundarySide side) {
   // Magnetised version of the same thing
   #if MHD==YES
     IdefixArray4D<real> Vs = hydro->Vs;
-    #if COMPONENTS >= 2
-      for(int component = BX2s ; component < COMPONENTS ; component++) {
+    #if DIMENSIONS >= 2
+      for(int component = BX2s ; component < DIMENSIONS ; component++) {
         BoundaryFor("BoundaryShearingBoxBXs", dir, side,
         KOKKOS_LAMBDA (int k, int j, int i) {
           // jorigin
@@ -730,6 +730,6 @@ void HydroBoundary::EnforceShearingBox(real t, int dir, BoundarySide side) {
                 Vs(component,k,j,i) = scrh(0,k,j,i-istart);
               });
       }// loop on components
-    #endif// COMPONENTS
+    #endif// DIMENSIONS
   #endif // MHD
 }

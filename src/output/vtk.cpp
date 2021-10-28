@@ -198,7 +198,11 @@ void Vtk::Init(Input &input, DataBlock &datain) {
         node_coord(k,j,i,2) = BigEndian(x3);
 
   #elif GEOMETRY == SPHERICAL
-    #if DIMENSIONS == 2
+    #if DIMENSIONS == 1
+        node_coord(k,j,i,0) = BigEndian(x1);
+        node_coord(k,j,i,1) = BigEndian(0.0);
+        node_coord(k,j,i,2) = BigEndian(0.0);
+    #elif DIMENSIONS == 2
         node_coord(k,j,i,0) = BigEndian(x1 * sin(x2));
         node_coord(k,j,i,1) = BigEndian(x1 * cos(x2));
         node_coord(k,j,i,2) = BigEndian(0.0);

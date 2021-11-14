@@ -1,4 +1,3 @@
-
 .. _contributing:
 
 =======================
@@ -53,7 +52,7 @@ included in ``pre-commit`` (see above).
      |-- DoSomething.cpp
      |-- DoSomethingElse.hpp
 
-#. Make your definitions and declaration as clear as possible (use words, not abbreviations!). Use upper cases
+#. Make your definitions and declaration as clear as possible (use words, not abbreviations!). Use camel cases
    if you want to use several word (e.g. ``mySmartVariable``).
 #. Avoid underscore (_) and dash (-) as much as possible.
 #. Class definitions should start with an upper case (e.g. ``DataBlock``).

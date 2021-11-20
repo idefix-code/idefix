@@ -146,8 +146,8 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   data.hydro.EnrollGravPotential(&Potential);
   data.hydro.EnrollIsoSoundSpeed(&MySoundSpeed);
   data.hydro.viscosity.EnrollViscousDiffusivity(&MyViscosity);
-  if(data.hydro.haveFargo)
-    data.hydro.fargo.EnrollVelocity(&FargoVelocity);
+  if(data.haveFargo)
+    data.fargo.EnrollVelocity(&FargoVelocity);
   epsilonGlob = input.GetReal("Setup","epsilon",0);
   alphaGlob = input.GetReal("Setup","alpha",0);
   idfx::cout << "alpha= " << alphaGlob << std::endl;

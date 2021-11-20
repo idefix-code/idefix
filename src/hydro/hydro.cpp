@@ -144,10 +144,13 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
     }
   }
 
-  // Do we use fargo?
+  // Do we use fargo? (deprecated, use a full fargo block in idefix.ini,
+  // instead of including it in hydo)
   if(input.CheckEntry("Hydro","fargo")>=0) {
-    this->haveFargo = true;
-    this->fargo.Init(input,grid, this);
+    IDEFIX_DEPRECATED("Fargo in [Hydro] block is deprecated in the input file. "
+                      "Use a [Fargo] block instead.");
+    data->haveFargo = true;
+    data->fargo.Init(input, this->data);
   }
 
   ///////////////////////

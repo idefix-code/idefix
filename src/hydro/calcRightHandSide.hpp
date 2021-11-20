@@ -35,7 +35,7 @@ void Hydro::CalcRightHandSide(real t, real dt) {
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> dMax = this->dMax;
   IdefixArray4D<real> viscSrc = this->viscosity.viscSrc;
-  IdefixArray2D<real> fargoVelocity = this->fargo.meanVelocity;
+  IdefixArray2D<real> fargoVelocity = data->fargo.meanVelocity;
 
 
   // Gravitational potential
@@ -53,8 +53,8 @@ void Hydro::CalcRightHandSide(real t, real dt) {
   bool haveViscosity = this->viscosityStatus.isExplicit;
 
   // Fargo
-  bool haveFargo  = this->haveFargo;
-  Fargo::FargoType fargoType = this->fargo.type;
+  bool haveFargo  = data->haveFargo;
+  Fargo::FargoType fargoType = data->fargo.type;
 
   //Rotation
   bool haveRotation = this->haveRotation;
@@ -106,7 +106,7 @@ void Hydro::CalcRightHandSide(real t, real dt) {
   }
 
   if(haveFargo && fargoType == Fargo::userdef) {
-    fargo.GetFargoVelocity(t);
+    data->fargo.GetFargoVelocity(t);
   }
 
 

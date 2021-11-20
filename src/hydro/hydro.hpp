@@ -17,7 +17,6 @@
 #include "electroMotiveForce.hpp"
 #include "viscosity.hpp"
 #include "axis.hpp"
-#include "fargo.hpp"
 #include "hydroboundary.hpp"
 
 // forward class declaration
@@ -74,10 +73,6 @@ class Hydro {
   // Whether or not we have to treat the axis
   bool haveAxis{false};
   Axis myAxis;
-
-  // Do we use fargo-like scheme ? (orbital advection)
-  bool haveFargo{false};
-  Fargo fargo;
 
   // Rotation vector
   bool haveRotation{false};

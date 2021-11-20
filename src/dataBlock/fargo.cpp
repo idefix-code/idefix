@@ -112,13 +112,13 @@ KOKKOS_INLINE_FUNCTION real FargoFlux(const IdefixArray4D<real> &Vin, int n, int
 
 
 
-void Fargo::Init(Input &input, Grid &grid, Hydro *hydro) {
+void Fargo::Init(Input &input, DataBlock *data) {
   idfx::pushRegion("Fargo::Init");
-  // Todo(lesurg): should work on the shearing box version of this.
-  this->hydro = hydro;
-  this->data = hydro->data;
-  if(input.CheckEntry("Hydro","fargo")>=0) {
-    std::string opType = input.GetString("Hydro","fargo",0);
+  this->data = data;
+  this->hydro = &(data->hydro);
+
+  if(input.CheckBlock("Fargo")) {
+    std::string opType = input.GetString("Fargo","velocity",0);
     if(opType.compare("userdef")==0) {
       this->type=userdef;
     } else if(opType.compare("shearingbox")==0) {
@@ -127,12 +127,28 @@ void Fargo::Init(Input &input, Grid &grid, Hydro *hydro) {
         IDEFIX_ERROR("Fargo+shearingbox only compatible with cartesian geometry");
       #endif
     } else {
-      IDEFIX_ERROR("Unknown fargo option in the input file. "
+      IDEFIX_ERROR("Unknown fargo velocity in the input file. "
       "Only userdef and shearingbox are allowed");
     }
   } else {
-    IDEFIX_ERROR("Fargo should be enabled in the input file with either userdef "
-                  "or shearingbox options");
+    // DEPRECATED: initialisation from the [Hydro] block
+    if(input.CheckEntry("Hydro","fargo")>=0) {
+      std::string opType = input.GetString("Hydro","fargo",0);
+      if(opType.compare("userdef")==0) {
+        this->type=userdef;
+      } else if(opType.compare("shearingbox")==0) {
+        this->type=shearingbox;
+        #if GEOMETRY != CARTESIAN
+          IDEFIX_ERROR("Fargo+shearingbox only compatible with cartesian geometry");
+        #endif
+      } else {
+        IDEFIX_ERROR("Unknown fargo option in the input file. "
+        "Only userdef and shearingbox are allowed");
+      }
+    } else {
+      IDEFIX_ERROR("Fargo should be enabled in the input file with either userdef "
+                    "or shearingbox options");
+    }
   }
 
   #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR

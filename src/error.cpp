@@ -16,15 +16,27 @@ void ErrorHandler(const int ErrorType,
                   const int ErrorLine,
                   std::string ErrorFile) {
   if (ErrorType == ERROR_WARNING) {
-    idfx::cout << "------------------------------------------------------------------------------"
+    idfx::cout << std::endl
+               << "------------------------------------------------------------------------------"
                << std::endl;
     idfx::cout << "## WARNING in function " << ErrorFunction << " file " << ErrorFile << " line "
                << ErrorLine << std::endl;
     idfx::cout << ErrorMessage.str() << std::endl;
     idfx::cout << "------------------------------------------------------------------------------"
                << std::endl;
-  } else {
+  } else if (ErrorType == ERROR_DEPRECATED) {
+    idfx::cout << std::endl
+               << "------------------------------------------------------------------------------"
+               << std::endl;
+    idfx::cout << "## DEPRECATED call in function " << ErrorFunction << " file " << ErrorFile
+               <<  std::endl
+               << "## This function will be removed in the next Idefix release." << std::endl;
+    idfx::cout << ErrorMessage.str() << std::endl;
     idfx::cout << "------------------------------------------------------------------------------"
+               << std::endl;
+  } else {
+    idfx::cout << std::endl
+               << "------------------------------------------------------------------------------"
                << std::endl;
     idfx::cout << "### FATAL ERROR in function " << ErrorFunction << " file " << ErrorFile
                << " line " << ErrorLine << std::endl;
@@ -44,15 +56,27 @@ void ErrorHandler(const int ErrorType,
                   const int ErrorLine,
                   std::string ErrorFile) {
   if (ErrorType == ERROR_WARNING) {
-    idfx::cout << "------------------------------------------------------------------------------"
+    idfx::cout << std::endl
+               << "------------------------------------------------------------------------------"
                << std::endl;
     idfx::cout << "## WARNING in function " << ErrorFunction << " file " << ErrorFile << " line "
                << ErrorLine << std::endl;
     idfx::cout << ErrorMessage << std::endl;
     idfx::cout << "------------------------------------------------------------------------------"
                << std::endl;
-  } else {
+  } else if (ErrorType == ERROR_DEPRECATED) {
+    idfx::cout << std::endl
+               << "------------------------------------------------------------------------------"
+               << std::endl;
+    idfx::cout << "## DEPRECATED call in function " << ErrorFunction << " file " << ErrorFile
+               <<  std::endl
+               << "## This function will be removed in the next Idefix release." << std::endl;
+    idfx::cout << ErrorMessage << std::endl;
     idfx::cout << "------------------------------------------------------------------------------"
+               << std::endl;
+  } else {
+    idfx::cout << std::endl
+               << "------------------------------------------------------------------------------"
                << std::endl;
     idfx::cout << "### FATAL ERROR in function " << ErrorFunction << " file " << ErrorFile
                << " line " << ErrorLine << std::endl;

@@ -75,8 +75,8 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   // Set the function for userdefboundary
   data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
   data.hydro.EnrollGravPotential(&Potential);
-  if(data.hydro.haveFargo)
-    data.hydro.fargo.EnrollVelocity(&FargoVelocity);
+  if(data.haveFargo)
+    data.fargo.EnrollVelocity(&FargoVelocity);
 }
 
 // This routine initialize the flow

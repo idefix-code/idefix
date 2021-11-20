@@ -123,6 +123,12 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
   // Initialize the hydro object attached to this datablock
   this->hydro.Init(input, grid, this);
 
+  // Initialise Fargo if needed
+  if(input.CheckBlock("Fargo")) {
+    fargo.Init(input, this);
+    this->haveFargo = true;
+  }
+
   idfx::popRegion();
 }
 

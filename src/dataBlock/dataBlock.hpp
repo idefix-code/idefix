@@ -14,6 +14,7 @@
 #include "grid.hpp"
 #include "gridHost.hpp"
 #include "hydro.hpp"
+#include "fargo.hpp"
 
 //TODO(lesurg) What is this standing for?
 #define BOUNDARY_
@@ -79,6 +80,10 @@ class DataBlock {
   void ResetStage();              ///< Reset the variables needed at each major integration Stage
 
   DataBlock();
+
+  // Do we use fargo-like scheme ? (orbital advection)
+  bool haveFargo{false};
+  Fargo fargo;
 
  private:
   void WriteVariable(FILE* , int , int *, char *, void*);

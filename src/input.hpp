@@ -26,11 +26,13 @@ class Input {
 
   // Accessor to input parameters
   // the parameters are always: BlockName, EntryName, ParameterNumber (starting from 0)
-  std::string GetString(std::string, std::string, int); // Read a string from the input file
-  real GetReal(std::string, std::string, int);          // Read a real number from the input file
-  int GetInt(std::string, std::string, int);            // Read an integer from the input file
-  int CheckEntry(std::string, std::string);             // Check that a block/entry is present
-                                                        // in the input file
+  std::string GetString(std::string, std::string, int); ///< Read a string from the input file
+  real GetReal(std::string, std::string, int);          ///< Read a real number from the input file
+  int GetInt(std::string, std::string, int);            ///< Read an integer from the input file
+  int CheckEntry(std::string, std::string);             ///< Check that a block+entry is present
+                                                        ///< in the input file
+  bool CheckBlock(std::string);                         ///< check that whether a block is defined
+                                                        ///< in the input file
   bool CheckForAbort();                                 // have we been asked for an abort?
   void CheckForStopFile();                              // have we been asked for an abort from
                                                         // a stop file?

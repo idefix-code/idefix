@@ -8,5 +8,7 @@ target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/evolveStage.cpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/fargo.cpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/fargo.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/gravity.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/gravity.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/makeGeometry.cpp
   )

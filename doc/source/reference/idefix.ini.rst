@@ -170,19 +170,6 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 |                |                         | | Note that this is not sufficient to fully define a shearing box: boundary conditions      |
 |                |                         | | are also required.                                                                        |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| fargo          | string                  | | Enable orbital advection (Fargo-like) module to speed up integration when a strong        |
-|                |                         | | azimuthal motion is present (as in a thin disk).  The parameter can be either             |
-|                |                         | | `shearingbox` or `userdef`.                                                               |
-|                |                         | | When `shearingbox`, the fargo module uses the linear shear computed by the shearing box   |
-|                |                         | | module as the input velocity function.                                                    |
-|                |                         | | When `userdef` is set, the fargo module expects a user-defined  velocity function to      |
-|                |                         | | be enrolled via Hydro.Fargo::EnrollVelocity(FargoVelocityFunc)                            |
-|                |                         | | (see :ref:`functionEnrollment`). Examples are provided in `test/HD/FargoPlanet`           |
-|                |                         | | and `test/MHD/FargoMHDSpherical`                                                          |
-|                |                         | | Note that by default, Fargo uses a piecewise linear advection operator. One can enable    |
-|                |                         | | a piecewise parabolic reconstruction method (ppm) setting ``Idefix_HIGH_ORDER_FARGO``     |
-|                |                         | | to ``ON`` in ``cmake`` configuration.                                                     |
-+----------------+-------------------------+---------------------------------------------------------------------------------------------+
 
 
 
@@ -192,6 +179,28 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
     For these reasons, Hall can only be used in conjonction with the HLL Riemann solver. In addition, only
     the arithmetic Emf reconstruction scheme has been shown to work systematically with Hall, and is therefore
     strongly recommended for production runs.
+
+``Fargo`` section
+------------------
+
+This section enables the orbital advection algorithm provided in *Idefix*.
+
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+|  Entry name    | Parameter type          | Comment                                                                                     |
++================+=========================+=============================================================================================+
+| velocity       | string                  | | Defines orbital advection (Fargo-like) velocity to speed up integration when a strong     |
+|                |                         | | azimuthal motion is present (as in a thin disk).  The ``velocity`` can be either          |
+|                |                         | | `shearingbox` or `userdef`.                                                               |
+|                |                         | | When `shearingbox`, the fargo module uses the linear shear computed by the shearing box   |
+|                |                         | | module as the input velocity function.                                                    |
+|                |                         | | When `userdef` is set, the fargo module expects a user-defined  velocity function to      |
+|                |                         | | be enrolled via Fargo::EnrollVelocity(FargoVelocityFunc)                                  |
+|                |                         | | (see :ref:`functionEnrollment`). Examples are provided in `test/HD/FargoPlanet`           |
+|                |                         | | and `test/MHD/FargoMHDSpherical`                                                          |
+|                |                         | | Note that by default, Fargo uses a piecewise linear advection operator. One can enable    |
+|                |                         | | a piecewise parabolic reconstruction method (ppm) setting ``Idefix_HIGH_ORDER_FARGO``     |
+|                |                         | | to ``ON`` in ``cmake`` configuration.                                                     |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
 
 ``RKL`` section
 ------------------

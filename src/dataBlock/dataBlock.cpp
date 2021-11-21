@@ -129,6 +129,12 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
     this->haveFargo = true;
   }
 
+  // Initialise gravity if needed
+  if(input.CheckBlock("Gravity")) {
+    gravity.Init(input, this);
+    this->haveGravity = true;
+  }
+
   idfx::popRegion();
 }
 

@@ -55,12 +55,6 @@ class Hydro {
   bool needExplicitCurrent{false};
   bool needRKLCurrent{false};
 
-  // Whether gravitational potential is computed
-  bool haveGravPotential{false};
-
-  // Whether a body force is present
-  bool haveBodyForce{false};
-
   // Nonideal MHD effects coefficients
   ParabolicModuleStatus resistivityStatus, ambipolarStatus, hallStatus;
 
@@ -91,14 +85,12 @@ class Hydro {
   void EnrollEmfBoundary(EmfBoundaryFunc);
   void EnrollFluxBoundary(UserDefBoundaryFunc);
 
-  // Enroll user-defined gravitational potential
-  void EnrollGravPotential(GravPotentialFunc);
-
-  // Enroll user-defined body force
-  void EnrollBodyForce(BodyForceFunc);
-
   // Add some user source terms
   void EnrollUserSourceTerm(SrcTermFunc);
+
+  // DEPRECATED gravity enrollment
+  void EnrollGravPotential(GravPotentialFunc);
+  void EnrollBodyForce(BodyForceFunc);
 
   // Enroll user-defined ohmic, ambipolar and Hall diffusivities
   void EnrollOhmicDiffusivity(DiffusivityFunc);
@@ -178,9 +170,6 @@ class Hydro {
   bool haveEmfBoundary{false};
   EmfBoundaryFunc emfBoundaryFunc{NULL};
 
-  // User defined gravitational potential
-  GravPotentialFunc gravPotentialFunc{NULL};
-
   // User defined source term
   SrcTermFunc userSourceTerm{NULL};
   bool haveUserSourceTerm{false};
@@ -193,13 +182,6 @@ class Hydro {
   DiffusivityFunc hallDiffusivityFunc{NULL};
 
   IdefixArray3D<real> cMax;    // Maximum propagation speed
-
-  // Gravitational potential
-  IdefixArray3D<real> phiP;
-
-  // Body force
-  IdefixArray4D<real> bodyForceVector;
-  BodyForceFunc bodyForceFunc{NULL};
 
   // Nonideal effect diffusion coefficient (only allocated when needed)
   IdefixArray3D<real> etaOhmic;

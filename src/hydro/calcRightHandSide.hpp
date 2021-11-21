@@ -39,12 +39,12 @@ void Hydro::CalcRightHandSide(real t, real dt) {
 
 
   // Gravitational potential
-  IdefixArray3D<real> phiP = this->phiP;
-  bool needPotential = this->haveGravPotential;
+  IdefixArray3D<real> phiP = data->gravity.phiP;
+  bool needPotential = data->gravity.havePotential;
 
   // BodyForce
-  IdefixArray4D<real> bodyForce = this->bodyForceVector;
-  bool needBodyForce = this->haveBodyForce;
+  IdefixArray4D<real> bodyForce = data->gravity.bodyForceVector;
+  bool needBodyForce = data->gravity.haveBodyForce;
 
   // parabolic terms
   bool haveParabolicTerms = this->haveExplicitParabolicTerms;
@@ -68,43 +68,6 @@ void Hydro::CalcRightHandSide(real t, real dt) {
   bool haveShearingBox = this->haveShearingBox;
   real sbS = this->sbS;
 
-
-  if(needPotential) {
-    IdefixArray1D<real> x1,x2,x3;
-
-    if(dir==IDIR)
-      x1 = data->xl[IDIR];
-    else
-      x1 = data->x[IDIR];
-
-    if(dir==JDIR)
-      x2 = data->xl[JDIR];
-    else
-      x2 = data->x[JDIR];
-
-    if(dir==KDIR)
-      x3 = data->xl[KDIR];
-    else
-      x3 = data->x[KDIR];
-
-    if(this->gravPotentialFunc == nullptr)
-      IDEFIX_ERROR("Gravitational potential is enabled, "
-                   "but no user-defined potential has been enrolled.");
-
-    gravPotentialFunc(*data, t, x1, x2, x3, phiP);
-  }
-
-  if(needBodyForce) {
-    // Only compute body forces when doing the first step
-    if(dir==IDIR) {
-      if(this->bodyForceFunc == nullptr)
-        IDEFIX_ERROR("Body force is enabled, "
-                    "but no user-defined body force has been enrolled.");
-
-      bodyForceFunc(*data, t, bodyForce);
-    }
-  }
-
   if(haveFargo && fargoType == Fargo::userdef) {
     data->fargo.GetFargoVelocity(t);
   }
@@ -123,7 +86,10 @@ void Hydro::CalcRightHandSide(real t, real dt) {
              data->beg[JDIR],data->end[JDIR]+joffset,
              data->beg[IDIR],data->end[IDIR]+ioffset,
     KOKKOS_LAMBDA (int k, int j, int i) {
-      // TODO(lesurg): Should add gravitational potential here and Fargo source terms when needed
+      constexpr const int ioffset = (dir==IDIR) ? 1 : 0;
+      constexpr const int joffset = (dir==JDIR) ? 1 : 0;
+      constexpr const int koffset = (dir==KDIR) ? 1 : 0;
+
       // Add Fargo velocity to the fluxes
       if(haveFargo || haveRotation) {
         // Set mean advection direction
@@ -190,7 +156,9 @@ void Hydro::CalcRightHandSide(real t, real dt) {
 
 #if HAVE_ENERGY
       if(needPotential)
-        Flux(ENG, k, j, i) += Flux(RHO, k, j, i) * phiP(k,j,i);  // Potential at the cell face
+        Flux(ENG,k,j,i) += HALF_F * Flux(RHO,k,j,i) *
+                          (phiP(k-koffset,j-joffset,i-ioffset) + phiP(k,j,i));
+                                                                  // Potential at the cell face
 #endif
 
       real Ax = A(k,j,i);
@@ -358,20 +326,26 @@ void Hydro::CalcRightHandSide(real t, real dt) {
       if(needPotential) {
         if (dir==IDIR) {
           // Gravitational force in direction i
-          rhs[MX1] -= dt/dl * Vc(RHO,k,j,i) * (phiP(k,j,i+1) - phiP(k,j,i));
+          rhs[MX1] -= dt/(12.0*dl) * Vc(RHO,k,j,i) * (
+                        - phiP(k,j,i+2) + 8.0 * phiP(k,j,i+1)
+                        - 8.0*phiP(k,j,i-1) + phiP(k,j,i-2));
         }
         if (dir==JDIR) {
           // Gravitational force in direction j
-          rhs[MX2] -= dt/dl * Vc(RHO,k,j,i) * (phiP(k,j+1,i) - phiP(k,j,i));
+          rhs[MX2] -= dt/(12.0*dl) * Vc(RHO,k,j,i) * (
+                        - phiP(k,j+2,i) + 8.0 * phiP(k,j+1,i)
+                        - 8.0*phiP(k,j-1,i) + phiP(k,j-2,i));
         }
         if (dir==KDIR) {
           // Gravitational force in direction k
-          rhs[MX3] -= dt/dl * Vc(RHO,k,j,i) * (phiP(k+1,j,i) - phiP(k,j,i));
+          rhs[MX3] -= dt/(12.0*dl) * Vc(RHO,k,j,i) * (
+                        - phiP(k+2,j,i) + 8.0 * phiP(k+1,j,i)
+                        - 8.0*phiP(k-1,j,i) + phiP(k-2,j,i));
         }
 
         #if HAVE_ENERGY
           // We conserve total energy without potential
-          rhs[ENG] -=  HALF_F * (phiP(k+koffset,j+joffset,i+ioffset) + phiP(k,j,i)) * rhs[RHO];
+          rhs[ENG] -=  phiP(k,j,i) * rhs[RHO];
         #endif
       }
 
@@ -410,12 +384,7 @@ void Hydro::CalcRightHandSide(real t, real dt) {
                   if(nv == BX2) { continue; }  ,
                   if(nv == BX3) { continue; }  )
 
-/*
-          if(rhs[nv]!=rhs[nv]) {
-              printf("Wrong Riemann RHS for var %d in dir=%d\n",nv,dir);
-              exit(1);
-          }
-*/
+
         Uc(nv,k,j,i) = Uc(nv,k,j,i) + rhs[nv];
       }
     }

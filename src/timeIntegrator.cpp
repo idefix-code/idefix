@@ -167,7 +167,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     rkl.Cycle();
   }
 
-    // Apply Boundary conditions
+  // Apply Boundary conditions
   data.SetBoundaries();
 
   // Remove Fargo velocity so that the integrator works on the residual
@@ -195,6 +195,9 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 #endif
 
   for(int stage=0; stage < nstages ; stage++) {
+    // If gravity is needed, update it
+    if(data.haveGravity) data.gravity.ComputeGravity();
+
     // Update Uc & Vs
     data.EvolveStage();
 

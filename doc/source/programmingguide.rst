@@ -139,8 +139,8 @@ The ``idefix_for`` allows one to perform loops on arrays stored on the target. H
 with ``idefix_for``. When a reduction is needed, one should instead use ``idefix_reduce``.
 
 The syntax of ``idefix_reduce`` is very similar to that of ``idefix_for``, with the addition of the
-variable over which the reduction is performed, and the type of reduction which is expected (which is
-a sum if not specified). For instance, a sum over all of the elements would be done through:
+variable over which the reduction is performed, and the type of reduction which is expected.
+For instance, a sum over all of the elements would be done through:
 
 .. code-block:: c++
 
@@ -157,13 +157,13 @@ a sum if not specified). For instance, a sum over all of the elements would be d
                 KOKKOS_LAMBDA (int k, int j, int i, real &localSum) {
                     localSum += myArray(k,j,i);
                 },
-                mySum);
+                Kokkos::Sum<real> (mySum));
 
 
 In the above example, ``localSum`` is the temporary variable *on the device* over which portions of the reduction
 are performed, while ``mySum`` is the final variable, *on the host* where the result is stored.
 
-As stated above, ``idefix_reduce`` performs a sum by default. It is however possible to do other operations
+It is possible to do other reduction operations
 like findining minimum, maximum etc (see
 `Kokkos custom reductions <https://github.com/kokkos/kokkos/wiki/Custom-Reductions%3A-Built-In-Reducers>`_
 for a list). For instance, the minimum value is obtained with the following code

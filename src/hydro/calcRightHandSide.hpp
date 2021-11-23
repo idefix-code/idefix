@@ -154,13 +154,6 @@ void Hydro::CalcRightHandSide(real t, real dt) {
         Flux(MX1+meanDir,k,j,i) += meanV * Flux(RHO,k,j,i);
       } // have Fargo
 
-#if HAVE_ENERGY
-      if(needPotential)
-        Flux(ENG,k,j,i) += HALF_F * Flux(RHO,k,j,i) *
-                          (phiP(k-koffset,j-joffset,i-ioffset) + phiP(k,j,i));
-                                                                  // Potential at the cell face
-#endif
-
       real Ax = A(k,j,i);
 
 #if GEOMETRY != CARTESIAN
@@ -324,28 +317,33 @@ void Hydro::CalcRightHandSide(real t, real dt) {
 
       // Potential terms
       if(needPotential) {
+        real dphi;
         if (dir==IDIR) {
           // Gravitational force in direction i
-          rhs[MX1] -= dt/(12.0*dl) * Vc(RHO,k,j,i) * (
+          dphi = - 1.0/12.0 * (
                         - phiP(k,j,i+2) + 8.0 * phiP(k,j,i+1)
                         - 8.0*phiP(k,j,i-1) + phiP(k,j,i-2));
         }
         if (dir==JDIR) {
           // Gravitational force in direction j
-          rhs[MX2] -= dt/(12.0*dl) * Vc(RHO,k,j,i) * (
+          dphi = - 1.0/12.0 * (
                         - phiP(k,j+2,i) + 8.0 * phiP(k,j+1,i)
                         - 8.0*phiP(k,j-1,i) + phiP(k,j-2,i));
         }
         if (dir==KDIR) {
           // Gravitational force in direction k
-          rhs[MX3] -= dt/(12.0*dl) * Vc(RHO,k,j,i) * (
+          dphi = - 1.0/12.0 * (
                         - phiP(k+2,j,i) + 8.0 * phiP(k+1,j,i)
                         - 8.0*phiP(k-1,j,i) + phiP(k-2,j,i));
         }
+        rhs[MX1+dir] += dt * Vc(RHO,k,j,i) * dphi /dl;
 
         #if HAVE_ENERGY
-          // We conserve total energy without potential
-          rhs[ENG] -=  phiP(k,j,i) * rhs[RHO];
+          // Add gravitational force work as a source term
+          // This is equivalent to rho * v . nabla(phi)
+          // (note that Flux has already been multiplied by A)
+          rhs[ENG] += HALF_F * dtdV  *
+                    (Flux(RHO,k,j,i) + Flux(RHO, k+koffset, j+joffset, i+ioffset)) * dphi;
         #endif
       }
 
@@ -353,8 +351,11 @@ void Hydro::CalcRightHandSide(real t, real dt) {
       if(needBodyForce) {
         rhs[MX1+dir] += dt * Vc(RHO,k,j,i) * bodyForce(dir,k,j,i);
         #if HAVE_ENERGY
-          rhs[ENG] += dt * Vc(RHO,k,j,i) * Vc(VX1+dir,k,j,i) * bodyForce(dir,k,j,i);
-        #endif
+          //  rho * v . f, where rhov is taken as a  volume average of Flux(RHO)
+          rhs[ENG] += HALF_F * dtdV * dl *
+                        (Flux(RHO,k,j,i) + Flux(RHO, k+koffset, j+joffset, i+ioffset)) *
+                         bodyForce(dir,k,j,i);
+        #endif // HAVE_ENERGY
 
         // Particular cases if we do not sweep all of the components
         #if DIMENSIONS == 1 && COMPONENTS > 1
@@ -368,10 +369,13 @@ void Hydro::CalcRightHandSide(real t, real dt) {
           #endif
         #endif
         #if DIMENSIONS == 2 && COMPONENTS == 3
-          rhs[MX3] += dt * Vc(RHO,k,j,i) * bodyForce(KDIR,k,j,i);
-          #if HAVE_ENERGY
-            rhs[ENG] += dt * Vc(RHO,k,j,i) * Vc(VX3,k,j,i) * bodyForce(KDIR,k,j,i);
-          #endif
+          // Only add this term once!
+          if(dir==JDIR) {
+            rhs[MX3] += dt * Vc(RHO,k,j,i) * bodyForce(KDIR,k,j,i);
+            #if HAVE_ENERGY
+              rhs[ENG] += dt * Vc(RHO,k,j,i) * Vc(VX3,k,j,i) * bodyForce(KDIR,k,j,i);
+            #endif
+          }
         #endif
       }
 

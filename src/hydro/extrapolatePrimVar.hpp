@@ -40,6 +40,14 @@ KOKKOS_FORCEINLINE_FUNCTION real LimO3Lim(real dvp, real dvm, real dx) {
   return (lim);
 }
 
+KOKKOS_FORCEINLINE_FUNCTION real PPMLim(real dvp, real dvm) {
+  if(dvp*dvm >0.0) {
+    real dqc = 0.5*(dvp+dvm);
+    real d2q = 2.0*( fabs(dvp) < fabs(dvm) ? dvp : dvm);
+    return( fabs(d2q) < fabs(dqc) ? d2q : dqc);  
+  }
+  return(ZERO_F);
+}
 
 // Build a left and right extrapolation of the primitive variables along direction dir
 
@@ -122,9 +130,9 @@ KOKKOS_FORCEINLINE_FUNCTION void K_ExtrapolatePrimVar
         real dvp1 = Vc(nv,k,j,i) - Vc(nv,k-koffset,j-joffset,i-ioffset);
         real dvp2 = Vc(nv,k+koffset,j+joffset,i+ioffset) - Vc(nv,k,j,i);
 
-        real dvlm = (dvm2*dvm1 > ZERO_F ? TWO_F*dvm2*dvm1/(dvm2 + dvm1) : ZERO_F);
-        real dvl0 = (dvm1*dvp1 > ZERO_F ? TWO_F*dvm1*dvp1/(dvm1 + dvp1) : ZERO_F);
-        real dvlp = (dvp1*dvp2 > ZERO_F ? TWO_F*dvp1*dvp2/(dvp1 + dvp2) : ZERO_F);
+        real dvlm = PPMLim(dvm1,dvm2);
+        real dvl0 = PPMLim(dvp1,dvm1);
+        real dvlp = PPMLim(dvp2,dvp1);
 
         real dvp = 0.5 * dvp1 - (dvlp - dvl0) / 6.0;
         real dvm = -0.5 * dvm1 - (dvl0 - dvlm) / 6.0;
@@ -147,7 +155,7 @@ KOKKOS_FORCEINLINE_FUNCTION void K_ExtrapolatePrimVar
 
         dvlm = dvl0;
         dvl0 = dvlp;
-        dvlp = (dvp1*dvp2 > ZERO_F ? TWO_F*dvp1*dvp2/(dvp1 + dvp2) : ZERO_F);
+        dvlp = PPMLim(dvp2,dvp1);
 
         dvp = 0.5 * dvp1 - (dvlp - dvl0) / 6.0;
         dvm = -0.5 * dvm1 - (dvl0 - dvlm) / 6.0;

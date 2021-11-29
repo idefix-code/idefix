@@ -29,7 +29,11 @@ Grid::Grid(Input &input) {
     int numPatch = input.GetInt("Grid",label,0);
 
     if(dir<DIMENSIONS) {
-      nghost[dir] = 2;
+      #if ORDER < 4
+        nghost[dir] = 2;
+      #else
+        nghost[dir] = 3;
+      #endif
       npoints[dir] = 0;
       for(int patch = 0; patch < numPatch ; patch++) {
         npoints[dir] += input.GetInt("Grid",label,2+3*patch );

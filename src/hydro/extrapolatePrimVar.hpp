@@ -110,7 +110,58 @@ KOKKOS_FORCEINLINE_FUNCTION void K_ExtrapolatePrimVar
         dv = dvm * LimO3Lim(dvm, dvp, dx(index));
         vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
       }
+    #elif ORDER == 4
+    if(nv==BXn) {
+        vR[nv] = vL[nv] = Vs(DIR,k,j,i);
+      } else {
+
+        real dvm2 = Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset)
+                  -Vc(nv,k-3*koffset,j-3*joffset,i-3*ioffset);
+        real dvm1 = Vc(nv,k-koffset,j-joffset,i-ioffset)
+                  -Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset);
+        real dvp1 = Vc(nv,k,j,i) - Vc(nv,k-koffset,j-joffset,i-ioffset);
+        real dvp2 = Vc(nv,k+koffset,j+joffset,i+ioffset) - Vc(nv,k,j,i);
+
+        real dvlm = (dvm2*dvm1 > ZERO_F ? TWO_F*dvm2*dvm1/(dvm2 + dvm1) : ZERO_F);
+        real dvl0 = (dvm1*dvp1 > ZERO_F ? TWO_F*dvm1*dvp1/(dvm1 + dvp1) : ZERO_F);
+        real dvlp = (dvp1*dvp2 > ZERO_F ? TWO_F*dvp1*dvp2/(dvp1 + dvp2) : ZERO_F);
+
+        real dvp = 0.5 * dvp1 - (dvlp - dvl0) / 6.0;
+        real dvm = -0.5 * dvm1 - (dvl0 - dvlm) / 6.0;
+        if(dvp*dvm>0.0) {
+          dvm = dvp = 0.0;
+        } else {
+          if(FABS(dvp) >= 2.0*FABS(dvm)) dvp = -2.0*dvm;
+          // Skip because it's not used
+          //if(FABS(dqm) >= 2.0*FABS(dqp)) dqm = -2.0*dqp;
+        }
+        vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + dvp;
+
+        // Do vR now.
+
+        dvm2 = dvm1;
+        dvm1 = dvp1;
+        dvp1 = dvp2;
+        dvp2 = Vc(nv,k+2*koffset,j+2*joffset,i+2*ioffset) 
+                - Vc(nv,k+koffset,j+joffset,i+ioffset);
+
+        dvlm = dvl0;
+        dvl0 = dvlp;
+        dvlp = (dvp1*dvp2 > ZERO_F ? TWO_F*dvp1*dvp2/(dvp1 + dvp2) : ZERO_F);
+
+        dvp = 0.5 * dvp1 - (dvlp - dvl0) / 6.0;
+        dvm = -0.5 * dvm1 - (dvl0 - dvlm) / 6.0;
+        if(dvp*dvm>0.0) {
+          dvm = dvp = 0.0;
+        } else {
+          if(FABS(dvp) >= 2.0*FABS(dvm)) dvp = -2.0*dvm;
+          if(FABS(dvm) >= 2.0*FABS(dvp)) dvm = -2.0*dvp;
+        }
+
+        vR[nv] = Vc(nv,k,j,i) + dvm;
+      }
     #endif
+
   }
 }
 

@@ -18,7 +18,7 @@ Grid::Grid() {
 Grid::Grid(Input &input) {
   idfx::pushRegion("Grid::Grid(Input)");
 
-  idfx::cout << "Grid::Grid: allocating Grid." << std::endl;
+  idfx::cout << "Grid: allocating Grid." << std::endl;
 
   // Get grid size from input file, block [Grid]
   int npoints[3];

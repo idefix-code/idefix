@@ -17,6 +17,17 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   // Save the datablock to which we are attached from now on
   this->data = datain;
 
+  #if ORDER == 1
+    idfx::cout << "Hydro: Using 1st order (donor cell) reconstruction scheme" << std::endl;
+  #elif ORDER == 2
+    idfx::cout << "Hydro: Using 2nd order (PLM Van Leer) reconstruction scheme" << std::endl;
+  #elif ORDER == 3
+    idfx::cout << "Hydro: Using 3rd order (LimO3) reconstruction scheme" << std::endl;
+  #elif ORDER == 4
+    idfx::cout << "Hydro: Using 4th order (PPM) reconstruction scheme" << std::endl;
+  #else
+    IDEFIX_ERROR("Reconstruction at chosen order is not implemented. Check your definitions file");
+  #endif
   // Initialise boundary conditions
   boundary.Init(input, grid, this);
 

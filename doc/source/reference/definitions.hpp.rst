@@ -26,4 +26,12 @@ made to limit their number to a minimum. Each option is a C preprocessor directi
     If ISOTHERMAL is defined, then the code does not solve the energy equation and instead assume a globally isothermal flow. Otherwise, the flow is assumed to be adiabatic.
 
 ``ORDER``
-    Spatial order of the reconstruction scheme. As of now, can be 1 (first order, donor cell reconstruction), 2 (second order, slope limited Van-leer linear reconstruction) or 3 (third order, Cada \& Torrilhon 2009)
+    Spatial order of the reconstruction scheme. As of now, can be:
+      + ``ORDER = 1``: first order, donor cell reconstruction, 
+      + ``ORDER = 2``: second order, piecewise linear reconstruction (PLM) using Van-leer slope limiter.
+      + ``ORDER = 3``: third order, Cada \& Torrilhon 2009
+      + ``ORDER = 4``: fourth order piecewise parabolic reconstruction (PPM, Colella \& Woodward 1984)
+
+.. note::
+    The number of ghost cells is automatically adjusted as a function of the order of the reconstruction scheme.
+    *Idefix* uses 2 ghost cells when ``ORDER < 4`` and 3 ghost cells when ``ORDER = 4`` 

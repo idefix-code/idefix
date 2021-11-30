@@ -38,6 +38,11 @@ struct ParabolicModuleStatus {
 
 using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side,
                                       const real t);
+using GravPotentialFunc = void (*) (DataBlock &, const real t, IdefixArray1D<real>&,
+                                    IdefixArray1D<real>&, IdefixArray1D<real>&,
+                                    IdefixArray3D<real> &);
+
+using BodyForceFunc = void (*) (DataBlock &, const real t, IdefixArray4D<real>&);
 
 using SrcTermFunc = void (*) (DataBlock &, const real t, const real dt);
 using InternalBoundaryFunc = void (*) (DataBlock &, const real t);

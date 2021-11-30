@@ -98,6 +98,7 @@ KOKKOS_FORCEINLINE_FUNCTION void K_ExtrapolatePrimVar
         dv = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
 
         vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
+
       }
     #elif ORDER == 3
       if(nv==BXn) {
@@ -111,12 +112,48 @@ KOKKOS_FORCEINLINE_FUNCTION void K_ExtrapolatePrimVar
         real dv = dvp * LimO3Lim(dvp, dvm, dx(index-1));
         vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + HALF_F*dv;
 
+        // Check positivity
+        if(nv==RHO) {
+          // If face element is negative, revert to vanleer
+          if(vL[nv] <= 0.0) {
+            dv = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
+            vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + HALF_F*dv;
+          }
+        }
+        #if HAVE_ENERGY
+          if(nv==PRS) {
+            // If face element is negative, revert to vanleer
+            if(vL[nv] <= 0.0) {
+              dv = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
+              vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + HALF_F*dv;
+            }
+          }
+        #endif
+
         dvm = dvp;
         dvp = Vc(nv,k+koffset,j+joffset,i+ioffset) - Vc(nv,k,j,i);
 
         // Limo3 limiter
         dv = dvm * LimO3Lim(dvm, dvp, dx(index));
         vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
+
+        // Check positivity
+        if(nv==RHO) {
+          // If face element is negative, revert to vanleer
+          if(vR[nv] <= 0.0) {
+            dv = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
+            vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
+          }
+        }
+        #if HAVE_ENERGY
+          if(nv==PRS) {
+            // If face element is negative, revert to vanleer
+            if(vR[nv] <= 0.0) {
+              dv = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
+              vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
+            }
+          }
+        #endif
       }
     #elif ORDER == 4
     if(nv==BXn) {

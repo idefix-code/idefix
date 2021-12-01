@@ -32,6 +32,13 @@ Several options can be enabled from the command line (or are accessible with ``c
 ``-D Idefix_DEFS=foo.hpp``
     Specify a particular filename to be used in place of the default problem file ``definitions.hpp``
 
+``-D Idefix_RECONSTRUCTION=x``
+    Specify the type of reconstruction scheme (replaces the old "ORDER" parameter in ``definitions.hpp``). Accepted values for ``x`` are:
+      + ``Constant``: first order, donor cell reconstruction, 
+      + ``Linear``: second order, piecewise linear reconstruction (PLM) using Van-leer slope limiter.
+      + ``LimO3``: third order, Cada \& Torrilhon 2009
+      + ``Parabolic``: fourth order piecewise parabolic reconstruction (PPM, Colella \& Woodward 1984)
+
 ``-D Kokkos_ENABLE_OPENMP=ON``
     Enable OpenMP parallelisation on supported compilers. Note that this can be enabled simultaneously with MPI, resulting in a hybrid MPI+OpenMP compilation.
 
@@ -67,6 +74,22 @@ Several options can be enabled from the command line (or are accessible with ``c
     option to explictely tell ``cmake`` a path to a build=*Idefix* problem directory.
 
 
+Setup-specific options
+++++++++++++++++++++++
+
+Some physical setup might require some ``cmake`` options to be set to specific value (e.g. an MHD setup will surely require MHD to be enable).
+To avoid mistakes, it is then recommended to enforce this choice by creating a custom ``CMakeLists.txt`` in your setup directory, and setting
+explicitely the options as they are required, using the functions ``set_idefix_property`` (for string properties) and ``enable_idefix_propery``/
+``disable_idefix_propery`` (for boolean properties), as in the example below:
+
+.. code-block::
+    :caption: CMakeLists.txt
+
+    set_idefix_property(Idefix_RECONSTRUCTION LimO3)
+    enable_idefix_property(Idefix_MHD)
+
+
+
 .. _customSourceFiles:
 
 Add/replace custom source files
@@ -78,6 +101,7 @@ problem directory, which adds to the ``idefix`` target  *all* the additional sou
 say you want to add source files for an analysis, your ``CMakeLists.txt`` should look like:
 
 .. code-block::
+    :caption: CMakeLists.txt
 
     add_idefix_source(analysis.cpp)
     add_idefix_source(analysis.hpp)
@@ -88,6 +112,7 @@ the main directory of your *Idefix* repository. For instance, say one wants to r
 with a customised `myviscosity.cpp` in the problem directory, one should add a ``CMakeLists.txt`` in the problem directory reading
 
 .. code-block::
+    :caption: CMakeLists.txt
 
     replace_idefix_source(hydro/viscosity.cpp myviscosity.cpp)
 

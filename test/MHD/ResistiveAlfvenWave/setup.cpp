@@ -1,21 +1,51 @@
 #include "idefix.hpp"
 #include "setup.hpp"
 
-/*********************************************/
-/**
-Customized random number generator
-Allow one to have consistant random numbers
-generators on different architectures.
-**/
-/*********************************************/
+#define  FILENAME    "timevol.dat"
 
+// Analyse data to produce an output
+void Analysis(DataBlock & data) {
+  DataBlockHost d(data);
+  d.SyncFromDevice();
+  double etot = 0;
+  idefix_reduce("Analysis", data.beg[KDIR],data.end[KDIR],
+                data.beg[JDIR],data.end[JDIR],
+                data.beg[IDIR],data.end[IDIR],
+              KOKKOS_LAMBDA(int k, int j, int i, double &eloc) {
+                eloc +=  d.Vc(VX2,k,j,i)*d.Vc(VX2,k,j,i)
+                        +d.Vc(VX3,k,j,i)*d.Vc(VX3,k,j,i)
+                        +d.Vc(BX2,k,j,i)*d.Vc(BX2,k,j,i)
+                        +d.Vc(BX3,k,j,i)*d.Vc(BX3,k,j,i);
+              }, Kokkos::Sum<double>(etot));
 
-// Default constructor
+  #ifdef WITH_MPI
+    MPI_Reduce(MPI_IN_LACE, &etot, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  #endif
+
+  if(idfx::prank == 0) {
+    std::ofstream f;
+    f.open(FILENAME,std::ios::app);
+    f.precision(10);
+    f << std::scientific << data.t << "\t" << etot << std::endl;
+    f.close();
+  }
+
+}
 
 
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
+
+  output.EnrollAnalysis(&Analysis);
+
+  if(!input.restartRequested) {
+    // Initialise the output file
+    std::ofstream f;
+    f.open(FILENAME,std::ios::trunc);
+    f << "t\t\t etot" << std::endl;
+    f.close();
+  }
 
 }
 

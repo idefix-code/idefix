@@ -34,15 +34,13 @@ if(not args.noplot):
     plt.close('all')
     plt.figure()
     plt.semilogy(t,e/eth)
-    
+
     plt.ioff()
     plt.show()
-    
+
 if(error<0.03):
     print("SUCCESS")
     sys.exit(0)
 else:
     print("Failed")
     sys.exit(1)
-
-    

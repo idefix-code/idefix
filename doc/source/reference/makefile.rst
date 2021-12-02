@@ -34,15 +34,15 @@ Several options can be enabled from the command line (or are accessible with ``c
 
 ``-D Idefix_RECONSTRUCTION=x``
     Specify the type of reconstruction scheme (replaces the old "ORDER" parameter in ``definitions.hpp``). Accepted values for ``x`` are:
-      + ``Constant``: first order, donor cell reconstruction, 
+      + ``Constant``: first order, donor cell reconstruction,
       + ``Linear``: second order, piecewise linear reconstruction (PLM) using Van-leer slope limiter.
       + ``LimO3``: third order, Cada \& Torrilhon 2009
       + ``Parabolic``: fourth order piecewise parabolic reconstruction (PPM, Colella \& Woodward 1984)
 
 .. note::
-  
+
     The number of ghost cells is automatically adjusted as a function of the order of the reconstruction scheme.
-    *Idefix* uses 2 ghost cells when ``ORDER < 4`` and 3 ghost cells when ``ORDER = 4`` 
+    *Idefix* uses 2 ghost cells when ``ORDER < 4`` and 3 ghost cells when ``ORDER = 4``
 
 ``-D Kokkos_ENABLE_OPENMP=ON``
     Enable OpenMP parallelisation on supported compilers. Note that this can be enabled simultaneously with MPI, resulting in a hybrid MPI+OpenMP compilation.

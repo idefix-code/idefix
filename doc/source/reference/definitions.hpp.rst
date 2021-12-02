@@ -24,5 +24,3 @@ made to limit their number to a minimum. Each option is a C preprocessor directi
 
 ``ISOTHERMAL``
     If ISOTHERMAL is defined, then the code does not solve the energy equation and instead assume a globally isothermal flow. Otherwise, the flow is assumed to be adiabatic.
-
-

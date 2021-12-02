@@ -24,7 +24,7 @@ KOKKOS_FORCEINLINE_FUNCTION real PPMLim(real dvp, real dvm) {
   if(dvp*dvm >0.0) {
     real dqc = 0.5*(dvp+dvm);
     real d2q = 2.0*( fabs(dvp) < fabs(dvm) ? dvp : dvm);
-    return( fabs(d2q) < fabs(dqc) ? d2q : dqc);  
+    return( fabs(d2q) < fabs(dqc) ? d2q : dqc);
   }
   return(ZERO_F);
 }

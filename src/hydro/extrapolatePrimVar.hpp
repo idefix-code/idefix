@@ -44,7 +44,7 @@ KOKKOS_FORCEINLINE_FUNCTION real PPMLim(real dvp, real dvm) {
   if(dvp*dvm >0.0) {
     real dqc = 0.5*(dvp+dvm);
     real d2q = 2.0*( fabs(dvp) < fabs(dvm) ? dvp : dvm);
-    return( fabs(d2q) < fabs(dqc) ? d2q : dqc);  
+    return( fabs(d2q) < fabs(dqc) ? d2q : dqc);
   }
   return(ZERO_F);
 }
@@ -98,7 +98,6 @@ KOKKOS_FORCEINLINE_FUNCTION void K_ExtrapolatePrimVar
         dv = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
 
         vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
-
       }
     #elif ORDER == 3
       if(nv==BXn) {
@@ -194,7 +193,7 @@ KOKKOS_FORCEINLINE_FUNCTION void K_ExtrapolatePrimVar
           //if(FABS(dqm) >= 2.0*FABS(dqp)) dqm = -2.0*dqp;
         }
 
-        // vL= left side of current interface (i-1/2)= right side of cell i-1 
+        // vL= left side of current interface (i-1/2)= right side of cell i-1
         vL[nv] = vr;
 
         // Reconstruction in cell i
@@ -202,7 +201,7 @@ KOKKOS_FORCEINLINE_FUNCTION void K_ExtrapolatePrimVar
         dvm2 = dvm1;
         dvm1 = dvp1;
         dvp1 = dvp2;
-        dvp2 = Vc(nv,k+2*koffset,j+2*joffset,i+2*ioffset) 
+        dvp2 = Vc(nv,k+2*koffset,j+2*joffset,i+2*ioffset)
                 - Vc(nv,k+koffset,j+joffset,i+ioffset);
 
         dvlm = dvl0;
@@ -231,12 +230,10 @@ KOKKOS_FORCEINLINE_FUNCTION void K_ExtrapolatePrimVar
           // Skip because it's not used
           //if(FABS(dqm) >= 2.0*FABS(dqp)) dqm = -2.0*dqp;
         }
-        // vR= right side of current interface (i-1/2)= left side of cell i 
+        // vR= right side of current interface (i-1/2)= left side of cell i
         vR[nv] = vl;
       }
     #endif
-
   }
 }
-
 #endif // HYDRO_EXTRAPOLATEPRIMVAR_HPP_

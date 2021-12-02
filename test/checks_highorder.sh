@@ -96,7 +96,7 @@ for rep in $rep_MPI_list; do
         echo "***********************************************"
         python3 testidefix.py -noplot || { echo "!!!! $rep with $order and MPI failed validation"; exit 1; }
         cd ..
-        done
+
         make clean
         rm -f *.vtk *.dbl
     done

@@ -71,7 +71,7 @@ done
 
 #do it with MPI (only the default .ini files though)
 # High order tests
-for rep in $rep_list; do
+for rep in $rep_MPI_list; do
     cd $TEST_DIR/$rep
     echo "***********************************************"
     echo "Configuring  $rep"

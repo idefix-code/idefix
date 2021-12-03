@@ -11,8 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Nan detection is now explicit on all MPI processes
 - fixed a bug which resulted on the generation of output files at each timestep when the output frequency was reduced at a restart.
 - fixed a bug in VTK outputs which produced wrong grids in 1D spherical geometry.
-- reconstruction now set by cmake and not in definitions.hpp (ORDER parameter). For backward compatibility, if definitions.hpp sets an ORDER, it supersedes the user choice in cmake.
-- fixes a possible segmentation fault when COMPONENTS>DIMENSIONS in the boundary conditions routines.
+- reconstruction is now set by cmake and not in definitions.hpp (ORDER parameter). For backward compatibility, if definitions.hpp sets an ORDER, it supersedes the user choice in cmake.
 
 ### Added
 - piecewise parabolic reconstruction (PPM)

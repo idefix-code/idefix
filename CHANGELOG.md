@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Upcoming
+### Changed
+- enforce positivity of the Limo3 reconstruction scheme for density and pressure (when applicable) by reverting to second order in extreme cases. This makes LimO3 more stable.
+- fixed a bug which resulted in a failure at detecting NaNs on some GPU architectures
+- Nan detection is now explicit on all MPI processes
+- fixed a bug which resulted on the generation of output files at each timestep when the output frequency was reduced at a restart.
+- fixed a bug in VTK outputs which produced wrong grids in 1D spherical geometry.
+- reconstruction now set by cmake and not in definitions.hpp (ORDER parameter). For backward compatibility, if definitions.hpp sets an ORDER, it supersedes the user choice in cmake.
+- fixes a possible segmentation fault when COMPONENTS>DIMENSIONS in the boundary conditions routines.
+
+### Added
+- piecewise parabolic reconstruction (PPM)
+- coding style guidelines in the documentation
+- it is now possible to automatically enable cmake options (e.g. MHD) in each problem directory using set_idefix_property and enable_idefix_property in the problem's CMakeLists.txt.
+
+### Removed
+- configure.py support and related functions.
+
 ## [0.9.1] 2021-10-27
 ### Changed
 - fixed a bug in stretch grid, which led to incorrect grid spacing in s+ grids. This might break the restart of MHD runs from dumps created from previous versions.

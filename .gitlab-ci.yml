@@ -14,13 +14,6 @@ lint:
     - pre-commit install
     - pre-commit run --all-files
 
-configure script tests:
-  stage: checks
-  image: lesurg/idefix:latest
-  script:
-    - python3 -m pip install pytest
-    - python3 -m pytest -vv test/test_configure.py
-
 HD tests:
   stage: checks
   image: lesurg/idefix:latest

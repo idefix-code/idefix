@@ -7,7 +7,9 @@ option(Idefix_MHD "enable MHD" OFF)
 option(Idefix_MPI "enable Message Passing Interface parallelisation" OFF)
 option(Idefix_HIGH_ORDER_FARGO "Force Fargo to use a PPM reconstruction scheme" OFF)
 set(Idefix_CXX_FLAGS "" CACHE STRING "Additional compiler/linker flag")
-set(Idefix_DEFS "definitions.hpp" CACHE STRING "Problem definition header file")
+set(Idefix_DEFS "definitions.hpp" CACHE FILEPATH "Problem definition header file")
+set(Idefix_RECONSTRUCTION "Linear" CACHE STRING "Type of cell reconstruction scheme")
+set_property(CACHE Idefix_RECONSTRUCTION PROPERTY STRINGS Constant Linear LimO3 Parabolic)
 
 
 # load git revision tools
@@ -15,6 +17,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 include(GetGitRevisionDescription)
 include(ReplaceIdefixSource)
 include(AddIdefixSource)
+include(SetIdefixProperty)
 
 #Idefix requires Cuda Lambdas (experimental)
 if(Kokkos_ENABLE_CUDA)
@@ -74,6 +77,19 @@ if(NOT ${Idefix_DEFS} STREQUAL "definitions.hpp")
   add_compile_definitions("DEFINITIONS_FILE=\"${Idefix_DEFS}\"")
 endif()
 
+# Order of the scheme
+if(${Idefix_RECONSTRUCTION} STREQUAL "Constant")
+  add_compile_definitions("ORDER=1")
+elseif(${Idefix_RECONSTRUCTION} STREQUAL "Linear")
+  add_compile_definitions("ORDER=2")
+elseif(${Idefix_RECONSTRUCTION} STREQUAL "LimO3")
+  add_compile_definitions("ORDER=3")
+elseif(${Idefix_RECONSTRUCTION} STREQUAL "Parabolic")
+  add_compile_definitions("ORDER=4")
+else()
+  message(ERROR "Reconstruction type '${Idefix_RECONSTRUCTION}' is invalid")
+endif()
+
 
 target_include_directories(idefix PUBLIC
                            "${PROJECT_BINARY_DIR}"
@@ -96,5 +112,6 @@ target_link_libraries(idefix Kokkos::kokkos)
 message(STATUS "Idefix final configuration")
 message(STATUS "    MHD: ${Idefix_MHD}")
 message(STATUS "    MPI: ${Idefix_MPI}")
+message(STATUS "    Reconstruction: ${Idefix_RECONSTRUCTION}")
 message(STATUS "    Version: ${GIT_SHA1}")
 message(STATUS "    Problem definitions: '${Idefix_DEFS}'")

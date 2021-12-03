@@ -42,9 +42,9 @@ void Setup::InitFlow(DataBlock &data) {
                 y=d.x[JDIR](j);
                 z=d.x[KDIR](k);
 
-                r1 = SQRT(x*x + (z-1)*(z-1));
-                r2 = SQRT(x*x + (z+1)*(z+1));
-                r=SQRT(x*x + z*z);
+                r1 = sqrt(x*x + (z-1)*(z-1));
+                r2 = sqrt(x*x + (z+1)*(z+1));
+                r=sqrt(x*x + z*z);
 
                 d.Vc(RHO,k,j,i) = 1.0;
                 d.Vc(PRS,k,j,i) = 1.0;

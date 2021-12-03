@@ -14,12 +14,21 @@
 
 // If no high order fargo, then choose the order according to reconstruction
 #ifndef HIGH_ORDER_FARGO
-  #if ORDER == 3
+  #if ORDER >= 3
   #define HIGH_ORDER_FARGO
   #endif
 #endif
 
 #ifdef HIGH_ORDER_FARGO
+KOKKOS_FORCEINLINE_FUNCTION real PPMLim(real dvp, real dvm) {
+  if(dvp*dvm >0.0) {
+    real dqc = 0.5*(dvp+dvm);
+    real d2q = 2.0*( fabs(dvp) < fabs(dvm) ? dvp : dvm);
+    return( fabs(d2q) < fabs(dqc) ? d2q : dqc);
+  }
+  return(ZERO_F);
+}
+
 KOKKOS_INLINE_FUNCTION real FargoFlux(const IdefixArray4D<real> &Vin, int n, int k, int j, int i,
                                       int so, int ds, int sbeg, real eps) {
   // compute shifted indices, taking into account the fact that we're periodic
@@ -53,9 +62,9 @@ KOKKOS_INLINE_FUNCTION real FargoFlux(const IdefixArray4D<real> &Vin, int n, int
     dqp2 = Vin(n,sop2,j,i) - qp1;
   #endif
     // slope limited values around the reference point
-    real dqlm = (dqm2*dqm1 > ZERO_F ? TWO_F*dqm2*dqm1/(dqm2 + dqm1) : ZERO_F);
-    real dql0 = (dqm1*dqp1 > ZERO_F ? TWO_F*dqm1*dqp1/(dqm1 + dqp1) : ZERO_F);
-    real dqlp = (dqp2*dqp1 > ZERO_F ? TWO_F*dqp2*dqp1/(dqp2 + dqp1) : ZERO_F);
+    real dqlm = PPMLim(dqm1,dqm2);
+    real dql0 = PPMLim(dqp1,dqm1);
+    real dqlp = PPMLim(dqp2,dqp1);
 
     real dqp = 0.5 * dqp1 - (dqlp - dql0) / 6.0;
     real dqm = -0.5 * dqm1 - (dql0 - dqlm) / 6.0;

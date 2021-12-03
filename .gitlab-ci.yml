@@ -51,6 +51,16 @@ MPI tests:
     - cd test
     - ./checks_mpi.sh
 
+HighOrder tests:
+  stage: checks
+  image: lesurg/idefix:latest
+  script:
+    - cat /proc/cpuinfo
+    - gcc --version
+
+    - cd test
+    - ./checks_highorder.sh
+
 cache:
   # Required to keep artifacts from old builds, e.g. from master
   paths:

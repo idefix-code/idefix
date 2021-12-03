@@ -1,0 +1,1 @@
+enable_idefix_property(Idefix_MHD)

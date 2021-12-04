@@ -43,9 +43,20 @@ void ElectroMotiveForce::Init(Input &input, Hydro *hydro) {
       IDEFIX_ERROR("Unknown EMF averaging scheme");
     }
   } else {
-    this->averaging = uct_contact;
-    idfx::cout << "ElectroMotiveForce: unspecified averaging scheme. Using uct_contact by default"
+    if(hydro->hallStatus.status == HydroModuleStatus::Disabled) {
+      this->averaging = uct_contact;
+      idfx::cout << "ElectroMotiveForce: unspecified averaging scheme. Using uct_contact by default"
                 << std::endl;
+    } else {
+      this->averaging = arithmetic;
+      idfx::cout << "ElectroMotiveForce: unspecified averaging scheme. Using arithmetic since Hall"
+                 << " is enabled" << std::endl;
+    }
+  }
+
+  if(hydro->hallStatus.status != HydroModuleStatus::Disabled && averaging != arithmetic ) {
+    IDEFIX_WARNING("Hall effect has been shown to be stable only with arithmetic "
+                   "EMF reconstruction. Use this setup at your own risk!");
   }
 
   this->data = hydro->data;

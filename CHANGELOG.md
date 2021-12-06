@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Nan detection is now explicit on all MPI processes
 - fixed a bug which resulted on the generation of output files at each timestep when the output frequency was reduced at a restart.
 - fixed a bug in VTK outputs which produced wrong grids in 1D spherical geometry.
+- fixed a bug in VTK and dump outputs with MPI which resulted in garbage at the end of some files when vtk and dmp were overwritten.
 - reconstruction is now set by cmake and not in definitions.hpp (ORDER parameter). For backward compatibility, if definitions.hpp sets an ORDER, it supersedes the user choice in cmake.
 
 ### Added

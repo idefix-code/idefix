@@ -42,23 +42,23 @@
 
 
 int main( int argc, char* argv[] ) {
-  bool haveSlurm = false;
+  bool initKokkosBeforeMPI = false;
 
-  // When running on GPUS allocated from a SLURM scheduler,
+  // When running on GPUS with Omnipath network,
   // Kokkos needs to be initialised *before* the MPI layer
 #ifdef KOKKOS_ENABLE_CUDA
-  if(std::getenv("SLURM_JOB_ID") != NULL) {
-    haveSlurm = true;
+  if(std::getenv("PSM2_CUDA") != NULL) {
+    initKokkosBeforeMPI = true;
   }
 #endif
 
-  if(haveSlurm)  Kokkos::initialize( argc, argv );
+  if(initKokkosBeforeMPI)  Kokkos::initialize( argc, argv );
 
 #ifdef WITH_MPI
   MPI_Init(&argc,&argv);
 #endif
 
-  if(!haveSlurm) Kokkos::initialize( argc, argv );
+  if(!initKokkosBeforeMPI) Kokkos::initialize( argc, argv );
 
 
   {
@@ -68,9 +68,10 @@ int main( int argc, char* argv[] ) {
     input.PrintLogo();
     input.PrintParameters();
 
-    if(haveSlurm)
-      idfx::cout << "Main: detected you were runnning on a SLURM scheduler with CUDA. "
-                    "Kokkos has been initialised accordingly." << std::endl;
+    if(initKokkosBeforeMPI) {
+      idfx::cout << "Main: detected your configuration needed Kokkos to be initialised before MPI. "
+                 << std::endl;
+    }
 
     idfx::cout << "Main: Init Grid." << std::endl;
     // Allocate the grid on device

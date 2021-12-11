@@ -15,15 +15,23 @@ void Gravity::Init(Input &input, DataBlock *datain) {
   this->data = datain;
   data->haveGravity = true;
   // Gravitational potential
-  if(input.CheckEntry("Gravity","potential")>=0) {
-    std::string potentialString = input.GetString("Gravity","potential",0);
-    if(potentialString.compare("userdef") == 0) {
-      this->havePotential = true;
-      this->haveUserDefPotential = true;
-      idfx::cout << "Gravity:: Enabling user-defined gravitational potential" << std::endl;
-    } else {
-      IDEFIX_ERROR("Unknown type of gravitational potential in idefix.ini. "
-                   "Only userdef is implemented");
+  int nPotential = input.CheckEntry("Gravity","potential");
+  if(nPotential >=0) {
+    this->havePotential = true;
+    for(int i = 0 ; i <= nPotential ; i++) {
+      std::string potentialString = input.GetString("Gravity","potential",i);
+      if(potentialString.compare("userdef") == 0) {
+        this->haveUserDefPotential = true;
+        idfx::cout << "Gravity: Enabling user-defined gravitational potential" << std::endl;
+      } else if (potentialString.compare("central")) {
+        this->haveCentralMassPotential = true;
+        idfx::cout << "Gravity: Enabling central mass gravitational potential" << std::endl;
+      } else if (potentialString.compare("selfgravity")) {
+        this->haveSelfGravityPotential = true;
+        idfx::cout << "Gravity: Enabling self Gravity" << std::endl;
+      } else {
+        IDEFIX_ERROR("Unknown type of gravitational potential in idefix.ini. ");
+      }
     }
   }
 
@@ -67,6 +75,7 @@ void Gravity::ComputeGravity() {
     } else {
       ResetPotential();
     }
+    // todo: implement central mass potential
     if(havePlanetsPotential) {
       IDEFIX_ERROR("Planet potential not implemented. Ask GWF.");
     }

@@ -220,9 +220,9 @@ This section enables gravity in the form of a gravitational potential and/or an 
 |                |                         | | using the Mcentral parameter, or using the ``Gravity::SetCentralMass(real)`` method.      |
 |                |                         | | * ``selfgravity`` enable the potential computed from solving Poisson euqation with the    |
 |                |                         | | density distribution                                                                      |
-+----------------+-------------------------+---------------------------------------------------------------------------------------------|
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | Mcentral       | real                    | | Mass of the central object when a central potential is enabled (see above). Default is 1. |
-+----------------+-------------------------+---------------------------------------------------------------------------------------------|
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | bodyForce      | string                  | | Adds an acceleration vector to each cell of the domain. The only parameter possible       |
 |                |                         | | is ``userdef``. The ``Gravity`` class then expects a user-defined bodyforce function to   |
 |                |                         | | be enrolled with ``Gavity::EnrollBodyForce(BodyForceFunc)``(see :ref:`functionEnrollment`)|

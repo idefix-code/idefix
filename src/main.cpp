@@ -114,6 +114,9 @@ int main( int argc, char* argv[] ) {
       mysetup.InitFlow(data);
       data.SetBoundaries();
       output.CheckForWrites(data);
+      if(data.CheckNan()) {
+        IDEFIX_ERROR("Nans were found in your initial conditions.");
+      }
     }
 
     idfx::cout << "Main: Cycling Time Integrator..." << std::endl;

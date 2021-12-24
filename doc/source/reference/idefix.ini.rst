@@ -157,11 +157,6 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 |                |                         | | (see :ref:`functionEnrollment`). In this case, the third and fourth parameters            |
 |                |                         | | are not used.                                                                             |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| gravPotential  | string                  | | Switches on an external gravitational potential. Only ``userdef`` is allowed.             |
-|                |                         | | When ``userdef is set, the ``Hydro`` class expects  a user-defined potential function     |
-|                |                         | | to be enrolled with  ``Hydro::EnrollGravPotential(GravPotentialFunc)``                    |
-|                |                         | | (see :ref:`functionEnrollment`)                                                           |
-+----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | rotation       | float                   | | Add rotation with the z rotation speed given as parameter.                                |
 |                |                         | | Note that this entry only adds Coriolis force in Cartesian geometry.                      |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+

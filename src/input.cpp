@@ -179,6 +179,15 @@ void Input::ParseCommandLine(int argc, char **argv) {
       this->inputFileName = std::string(argv[i]);
     } else if(std::string(argv[i]) == "-autotune") {
       this->tuningRequested = true;
+    } else if(std::string(argv[i]) == "-maxcycles") {
+      if((i+1)>= argc) {
+        IDEFIX_ERROR("-maxcycles requires an additional integer parameter");
+      } else if(std::isdigit(argv[i+1][0]) == 0) {
+        // next argiment is another parameter (does not start with a number)
+        IDEFIX_ERROR("-maxcycles requires an additional integer paramater");
+      }
+      this->maxCycles = std::stoi(std::string(argv[++i]));
+      inputParameters["CommandLine"]["maxCycles"].push_back(std::to_string(maxCycles));
     } else {
       msg << "Unknown option " << argv[i];
       IDEFIX_ERROR(msg);

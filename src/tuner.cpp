@@ -41,7 +41,7 @@ double testLoopType(DataBlock &data, Setup &setup, Input &input,
   }
 
   double tintegration = timer.seconds() / data.mygrid->np_int[IDIR] / data.mygrid->np_int[JDIR]
-                            / data.mygrid->np_int[KDIR] / tint.getNcycles();
+                            / data.mygrid->np_int[KDIR] / tint.GetNCycles();
 
   //idfx::cout << "Perfs are " << 1/tintegration << " cell updates/second" << std::endl;
 

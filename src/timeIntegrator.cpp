@@ -337,7 +337,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
 
 
-int64_t TimeIntegrator::getNcycles() {
+int64_t TimeIntegrator::GetNCycles() {
   return(ncycles);
 }
 

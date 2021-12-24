@@ -49,6 +49,8 @@ class Input {
 
   bool tuningRequested{false};        //< whether the user has asked for loop-tuning
 
+  int maxCycles{-1};                   //< whether we should perform a maximum number of cycles
+
  private:
   std::string inputFileName;
   IdefixInputContainer  inputParameters;

@@ -127,9 +127,15 @@ int main( int argc, char* argv[] ) {
       Tint.Cycle(data);
       output.CheckForWrites(data);
       if(input.CheckForAbort() || Tint.CheckForMaxRuntime() ) {
-        idfx::cout << "Main: Saving current state and aborting calculation" << std::endl;
+        idfx::cout << "Main: Saving current state and aborting calculation." << std::endl;
         output.ForceWrite(data);
         break;
+      }
+      if(input.maxCycles>=0) {
+        if(Tint.GetNCycles() >= input.maxCycles) {
+          idfx::cout << "Main: Reached maximum number of integration cycles." << std::endl;
+          break;
+        }
       }
     }
 
@@ -144,7 +150,7 @@ int main( int argc, char* argv[] ) {
     n_seconds = divres.rem;
 
     double tintegration = timer.seconds() / grid.np_int[IDIR] / grid.np_int[JDIR]
-                            / grid.np_int[KDIR] / Tint.getNcycles();
+                            / grid.np_int[KDIR] / Tint.GetNCycles();
 
     idfx::cout << "Main: Reached t=" << data.t << std::endl;
     idfx::cout << "Main: Completed in ";
@@ -174,8 +180,8 @@ int main( int argc, char* argv[] ) {
       idfx::cout << "s";
     }
     idfx::cout << " ";
-    idfx::cout << "and " << Tint.getNcycles() << " cycle";
-    if (Tint.getNcycles() != 1) {
+    idfx::cout << "and " << Tint.GetNCycles() << " cycle";
+    if (Tint.GetNCycles() != 1) {
       idfx::cout << "s";
     }
     idfx::cout << std::endl;

@@ -50,23 +50,9 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                           Vs(BX3s,k,j,i) = Vs(BX3s,k,j,ighost);
 
             });
-
     }
-
-
-
 }
 
-
-void Potential(DataBlock& data, const real t, IdefixArray1D<real>& x1, IdefixArray1D<real>& x2, IdefixArray1D<real>& x3, IdefixArray3D<real>& phi) {
-
-    // To simplify, we solve here for a cylindrical potential, to avoid having to treat the stratification in theta
-    idefix_for("Potential",0,data.np_tot[KDIR], 0, data.np_tot[JDIR], 0, data.np_tot[IDIR],
-        KOKKOS_LAMBDA (int k, int j, int i) {
-        phi(k,j,i) = -1.0/(x1(i)*sin(x2(j)));
-    });
-
-}
 
 
 // Initialisation routine. Can be used to allocate
@@ -74,7 +60,6 @@ void Potential(DataBlock& data, const real t, IdefixArray1D<real>& x1, IdefixArr
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   // Set the function for userdefboundary
   data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
-  data.hydro.EnrollGravPotential(&Potential);
   if(data.haveFargo)
     data.fargo.EnrollVelocity(&FargoVelocity);
 }

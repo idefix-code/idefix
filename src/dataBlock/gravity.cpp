@@ -138,8 +138,8 @@ void Gravity::ResetPotential() {
 void Gravity::AddCentralMassPotential() {
   idfx::pushRegion("Gravity::AddCentralMassPotential");
   IdefixArray1D<real> x1 = data->x[IDIR];
-  IdefixArray1D<real> x2 = data->x[IDIR];
-  IdefixArray1D<real> x3 = data->x[IDIR];
+  IdefixArray1D<real> x2 = data->x[JDIR];
+  IdefixArray1D<real> x3 = data->x[KDIR];
   real mass = this->centralMass;
   idefix_for("Gravity::AddCentralMassPotential",
               0, data->np_tot[KDIR],

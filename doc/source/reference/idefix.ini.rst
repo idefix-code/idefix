@@ -264,9 +264,6 @@ and ``X1-end``, ``X2-end``, ``X3-end`` for the right boundaries. Each boundary c
 |                | | (see :ref:`userdefBoundaries`)                                                                                 |
 +----------------+------------------------------------------------------------------------------------------------------------------+
 
-.. warning::
-    As of version 0.6, *Idefix* shearing-box assumes axisymmetry, i.e. NX2=1.
-
 
 .. _outputSection:
 

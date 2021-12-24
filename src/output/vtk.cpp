@@ -260,9 +260,21 @@ int Vtk::Write(DataBlock &datain, Output &output) {
 
   // Open file and write header
 #ifdef WITH_MPI
-  MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
-                              MPI_MODE_CREATE | MPI_MODE_RDWR | MPI_MODE_UNIQUE_OPEN,
+  // Open file for creating, return error if file already exists.
+  int err = MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
+                              MPI_MODE_CREATE | MPI_MODE_RDWR
+                              | MPI_MODE_EXCL | MPI_MODE_UNIQUE_OPEN,
+                              MPI_INFO_NULL, &fileHdl);
+  if (err != MPI_SUCCESS)  {
+    // File exists, delete it before reopening
+    if(idfx::prank == 0) {
+      MPI_File_delete(filename.c_str(),MPI_INFO_NULL);
+    }
+    MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
+                              MPI_MODE_CREATE | MPI_MODE_RDWR
+                              | MPI_MODE_EXCL | MPI_MODE_UNIQUE_OPEN,
                               MPI_INFO_NULL, &fileHdl));
+  }
   this->offset = 0;
 #else
   fileHdl = fopen(filename.c_str(),"wb");

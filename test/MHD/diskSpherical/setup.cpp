@@ -71,7 +71,7 @@ void MySourceTerm(DataBlock &data, const real t, const real dtin) {
 
 void FargoVelocity(DataBlock &data, IdefixArray2D<real> &Vphi) {
   IdefixArray1D<real> x1 = data.x[IDIR];
-    IdefixArray1D<real> x2 = data.x[JDIR];
+  IdefixArray1D<real> x2 = data.x[JDIR];
 
   idefix_for("FargoVphi",0,data.np_tot[JDIR], 0, data.np_tot[IDIR],
       KOKKOS_LAMBDA (int j, int i) {
@@ -79,40 +79,6 @@ void FargoVelocity(DataBlock &data, IdefixArray2D<real> &Vphi) {
   });
 }
 
-
-void EmfBoundary(DataBlock& data, const real t) {
-    IdefixArray3D<real> Ex1 = data.hydro.emf.ex;
-    IdefixArray3D<real> Ex2 = data.hydro.emf.ey;
-    IdefixArray3D<real> Ex3 = data.hydro.emf.ez;
-    if(data.lbound[IDIR] == userdef) {
-
-        int ighost = data.nghost[IDIR];
-
-        idefix_for("EMFBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,ighost+1,
-                    KOKKOS_LAMBDA (int k, int j, int i) {
-            Ex3(k,j,i) = ZERO_F;
-        Ex2(k,j,i) = ZERO_F;
-        });
-    }
-    if(data.lbound[JDIR] == userdef) {
-        int jghost = data.nghost[JDIR];
-        //printf("I'mbeing called\n");
-        idefix_for("EMFBoundary",0,data.np_tot[KDIR],0,data.np_tot[IDIR],
-                    KOKKOS_LAMBDA (int k, int i) {
-            Ex3(k,jghost,i) = ZERO_F;
-        Ex1(k,jghost,i) = ZERO_F;
-        });
-    }
-    if(data.rbound[JDIR] == userdef) {
-        int jghost = data.end[JDIR];
-        //printf("I'mbeing called\n");
-        idefix_for("EMFBoundary",0,data.np_tot[KDIR],0,data.np_tot[IDIR],
-                    KOKKOS_LAMBDA (int k, int i) {
-            Ex3(k,jghost,i) = ZERO_F;
-        Ex1(k,jghost,i) = ZERO_F;
-        });
-    }
-}
 
 void InternalBoundary(DataBlock& data, const real t) {
   IdefixArray4D<real> Vc = data.hydro.Vc;
@@ -267,7 +233,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   if(data.hydro.haveFargo)
     data.hydro.fargo.EnrollVelocity(&FargoVelocity);
   output.EnrollUserDefVariables(&ComputeUserVars);
-  //hydro.EnrollEmfBoundary(&EmfBoundary);
+
   gammaGlob=data.hydro.GetGamma();
   epsilonGlob = input.GetReal("Setup","epsilon",0);
   densityFloorGlob = input.GetReal("Setup","densityFloor",0);

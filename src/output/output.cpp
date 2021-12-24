@@ -68,6 +68,14 @@ int Output::CheckForWrites(DataBlock &data) {
       dump.Write(data,*this);
       nfiles++;
       elapsedTime += timer.seconds();
+
+      // Check if our next predicted output should already have happened
+      if((dumpLast+dumpPeriod <= data.t) && dumpPeriod>0.0) {
+        // Move forward dumpLast
+        while(dumpLast <= data.t - dumpPeriod) {
+          dumpLast += dumpPeriod;
+        }
+      }
     }
   }
 
@@ -90,6 +98,14 @@ int Output::CheckForWrites(DataBlock &data) {
       vtk.Write(data, *this);
       nfiles++;
       elapsedTime += timer.seconds();
+
+      // Check if our next predicted output should already have happened
+      if((vtkLast+vtkPeriod <= data.t) && vtkPeriod>0.0) {
+        // Move forward vtkLast
+        while(vtkLast <= data.t - vtkPeriod) {
+          vtkLast += vtkPeriod;
+        }
+      }
     }
   }
 
@@ -107,6 +123,14 @@ int Output::CheckForWrites(DataBlock &data) {
       idfx::popRegion();
       nfiles++;
       elapsedTime += timer.seconds();
+
+      // Check if our next predicted output should already have happened
+      if((analysisLast+analysisPeriod <= data.t) && analysisPeriod>0.0) {
+        // Move forward analysisLast
+        while(analysisLast <= data.t - analysisPeriod) {
+          analysisLast += analysisPeriod;
+        }
+      }
     }
   }
 

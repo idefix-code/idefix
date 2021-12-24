@@ -40,6 +40,14 @@ KOKKOS_FORCEINLINE_FUNCTION real LimO3Lim(real dvp, real dvm, real dx) {
   return (lim);
 }
 
+KOKKOS_FORCEINLINE_FUNCTION real PPMLim(real dvp, real dvm) {
+  if(dvp*dvm >0.0) {
+    real dqc = 0.5*(dvp+dvm);
+    real d2q = 2.0*( fabs(dvp) < fabs(dvm) ? dvp : dvm);
+    return( fabs(d2q) < fabs(dqc) ? d2q : dqc);
+  }
+  return(ZERO_F);
+}
 
 // Build a left and right extrapolation of the primitive variables along direction dir
 
@@ -103,15 +111,129 @@ KOKKOS_FORCEINLINE_FUNCTION void K_ExtrapolatePrimVar
         real dv = dvp * LimO3Lim(dvp, dvm, dx(index-1));
         vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + HALF_F*dv;
 
+        // Check positivity
+        if(nv==RHO) {
+          // If face element is negative, revert to vanleer
+          if(vL[nv] <= 0.0) {
+            dv = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
+            vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + HALF_F*dv;
+          }
+        }
+        #if HAVE_ENERGY
+          if(nv==PRS) {
+            // If face element is negative, revert to vanleer
+            if(vL[nv] <= 0.0) {
+              dv = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
+              vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + HALF_F*dv;
+            }
+          }
+        #endif
+
         dvm = dvp;
         dvp = Vc(nv,k+koffset,j+joffset,i+ioffset) - Vc(nv,k,j,i);
 
         // Limo3 limiter
         dv = dvm * LimO3Lim(dvm, dvp, dx(index));
         vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
+
+        // Check positivity
+        if(nv==RHO) {
+          // If face element is negative, revert to vanleer
+          if(vR[nv] <= 0.0) {
+            dv = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
+            vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
+          }
+        }
+        #if HAVE_ENERGY
+          if(nv==PRS) {
+            // If face element is negative, revert to vanleer
+            if(vR[nv] <= 0.0) {
+              dv = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
+              vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
+            }
+          }
+        #endif
+      }
+    #elif ORDER == 4
+    if(nv==BXn) {
+        vR[nv] = vL[nv] = Vs(DIR,k,j,i);
+      } else {
+        // Reconstruction in cell i-1
+        real dvm2 = Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset)
+                  -Vc(nv,k-3*koffset,j-3*joffset,i-3*ioffset);
+        real dvm1 = Vc(nv,k-koffset,j-joffset,i-ioffset)
+                  -Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset);
+        real dvp1 = Vc(nv,k,j,i) - Vc(nv,k-koffset,j-joffset,i-ioffset);
+        real dvp2 = Vc(nv,k+koffset,j+joffset,i+ioffset) - Vc(nv,k,j,i);
+
+        real dvlm = PPMLim(dvm1,dvm2);
+        real dvl0 = PPMLim(dvp1,dvm1);
+        real dvlp = PPMLim(dvp2,dvp1);
+
+        real dvp = 0.5 * dvp1 - (dvlp - dvl0) / 6.0;
+        real dvm = -0.5 * dvm1 - (dvl0 - dvlm) / 6.0;
+
+        real vc = Vc(nv,k-koffset,j-joffset,i-ioffset);
+
+        real vl = vc + dvm;
+        real vr = vc + dvp;
+
+        if(dvp*dvm>0.0) {
+          vl = vr = vc;
+        } else {
+          if( (vr - vl) * (vc-0.5*(vl+vr)) > (vr-vl)*(vr-vl) / 6.0) {
+            vl = 3.0*vc - 2.0*vr;
+          }
+          if( (vr - vl) * (vc-0.5*(vl+vr)) < - (vr-vl)*(vr-vl) / 6.0) {
+            vr = 3.0*vc - 2.0*vl;
+          }
+
+          //if(FABS(dvp) >= 2.0*FABS(dvm)) dvp = -2.0*dvm;
+          // Skip because it's not used
+          //if(FABS(dqm) >= 2.0*FABS(dqp)) dqm = -2.0*dqp;
+        }
+
+        // vL= left side of current interface (i-1/2)= right side of cell i-1
+        vL[nv] = vr;
+
+        // Reconstruction in cell i
+
+        dvm2 = dvm1;
+        dvm1 = dvp1;
+        dvp1 = dvp2;
+        dvp2 = Vc(nv,k+2*koffset,j+2*joffset,i+2*ioffset)
+                - Vc(nv,k+koffset,j+joffset,i+ioffset);
+
+        dvlm = dvl0;
+        dvl0 = dvlp;
+        dvlp = PPMLim(dvp2,dvp1);
+
+        dvp = 0.5 * dvp1 - (dvlp - dvl0) / 6.0;
+        dvm = -0.5 * dvm1 - (dvl0 - dvlm) / 6.0;
+
+        vc = Vc(nv,k,j,i);
+
+        vl = vc + dvm;
+        vr = vc + dvp;
+
+        if(dvp*dvm>0.0) {
+          vl = vr = vc;
+        } else {
+          if( (vr - vl) * (vc-0.5*(vl+vr)) > (vr-vl)*(vr-vl) / 6.0) {
+            vl = 3.0*vc - 2.0*vr;
+          }
+          if( (vr - vl) * (vc-0.5*(vl+vr)) < - (vr-vl)*(vr-vl) / 6.0) {
+            vr = 3.0*vc - 2.0*vl;
+          }
+
+          //if(FABS(dvp) >= 2.0*FABS(dvm)) dvp = -2.0*dvm;
+          // Skip because it's not used
+          //if(FABS(dqm) >= 2.0*FABS(dqp)) dqm = -2.0*dqp;
+        }
+        // vR= right side of current interface (i-1/2)= left side of cell i
+        vR[nv] = vl;
       }
     #endif
   }
 }
-
 #endif // HYDRO_EXTRAPOLATEPRIMVAR_HPP_

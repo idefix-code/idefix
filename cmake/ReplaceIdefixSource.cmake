@@ -10,7 +10,7 @@ function(replace_idefix_source _old_source _new_source)
   if(listsize LESS 1)
     message(SEND_ERROR "no source file match your search pattern ${_old_source}")
   endif()
-  message(STATUS "replacing: ${fullsource} by ${_new_source}")
+  message(STATUS "    Replacing: ${fullsource} by ${_new_source}")
 
   # remove the old source file from the target source list
   get_target_property(mylist idefix SOURCES)

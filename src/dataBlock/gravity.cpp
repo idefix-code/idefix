@@ -18,15 +18,19 @@ void Gravity::Init(Input &input, DataBlock *datain) {
   int nPotential = input.CheckEntry("Gravity","potential");
   if(nPotential >=0) {
     this->havePotential = true;
-    for(int i = 0 ; i <= nPotential ; i++) {
+    for(int i = 0 ; i < nPotential ; i++) {
       std::string potentialString = input.GetString("Gravity","potential",i);
       if(potentialString.compare("userdef") == 0) {
         this->haveUserDefPotential = true;
         idfx::cout << "Gravity: Enabling user-defined gravitational potential" << std::endl;
-      } else if (potentialString.compare("central")) {
+      } else if (potentialString.compare("central") == 0) {
         this->haveCentralMassPotential = true;
-        idfx::cout << "Gravity: Enabling central mass gravitational potential" << std::endl;
-      } else if (potentialString.compare("selfgravity")) {
+        if(input.CheckEntry("Gravity","Mcentral") >= 0) {
+          this->centralMass = input.GetReal("Gravity","Mcentral",0);
+        }
+        idfx::cout << "Gravity: Enabling central mass gravitational potential with M="
+                   << this->centralMass << std::endl;
+      } else if (potentialString.compare("selfgravity") == 0) {
         this->haveSelfGravityPotential = true;
         idfx::cout << "Gravity: Enabling self Gravity" << std::endl;
       } else {
@@ -75,7 +79,9 @@ void Gravity::ComputeGravity() {
     } else {
       ResetPotential();
     }
-    // todo: implement central mass potential
+    if(haveCentralMassPotential) {
+      AddCentralMassPotential();
+    }
     if(havePlanetsPotential) {
       IDEFIX_ERROR("Planet potential not implemented. Ask GWF.");
     }
@@ -89,7 +95,7 @@ void Gravity::ComputeGravity() {
       IDEFIX_ERROR("Gravitational potential is enabled, "
                    "but no user-defined potential has been enrolled.");
     }
-    idfx::pushRegion("Gravity::user-defined:bodyForceFunc");
+    idfx::pushRegion("Gravity: user-defined:bodyForceFunc");
     bodyForceFunc(*data, data->t, bodyForceVector);
     idfx::popRegion();
   }
@@ -125,6 +131,32 @@ void Gravity::ResetPotential() {
               0, data->np_tot[IDIR],
               KOKKOS_LAMBDA(int k, int j, int i) {
                 phiP(k,j,i) = ZERO_F;
+              });
+  idfx::popRegion();
+}
+
+void Gravity::AddCentralMassPotential() {
+  idfx::pushRegion("Gravity::AddCentralMassPotential");
+  IdefixArray1D<real> x1 = data->x[IDIR];
+  IdefixArray1D<real> x2 = data->x[IDIR];
+  IdefixArray1D<real> x3 = data->x[IDIR];
+  real mass = this->centralMass;
+  idefix_for("Gravity::AddCentralMassPotential",
+              0, data->np_tot[KDIR],
+              0, data->np_tot[JDIR],
+              0, data->np_tot[IDIR],
+              KOKKOS_LAMBDA(int k, int j, int i) {
+                real r;
+                #if GEOMETRY == POLAR
+                  r = D_EXPAND( x1(i)*x1(i),                , + x3(k)*x3(k));
+                  r = sqrt(r);
+                #elif GEOMETRY == CYLINDRICAL
+                  r = D_EXPAND( x1(i)*x1(i), + x2(j)*x2(j)  ,              );
+                  r = sqrt(r);
+                #elif GEOMETRY == SPHERICAL
+                  r = x1(i);
+                #endif
+                  phiP(k,j,i) += -mass/r;
               });
   idfx::popRegion();
 }

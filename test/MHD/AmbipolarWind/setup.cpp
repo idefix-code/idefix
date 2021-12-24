@@ -320,9 +320,12 @@ void Setup::InitFlow(DataBlock &data) {
                     real cscorona = epsilonTopGlob/sqrt(R);
                     real cs2=0.5*(csdisk*csdisk+cscorona*cscorona)+0.5*(cscorona*cscorona-csdisk*csdisk)*tanh(6*log(Zh/HidealGlob));
                     d.Vc(RHO,k,j,i) = 1.0/(R*sqrt(R))  * exp(1.0/ (csdisk*csdisk) * (1.0/sqrt(R*R+z*z)-1.0/R)) ;
-                    d.Vc(VX3,k,j,i) = 1.0/sqrt(R) * sqrt( R / sqrt(R*R + z*z) -2.5*csdisk*csdisk );
+                    d.Vc(VX3,k,j,i) = 1.0/sqrt(R) * sqrt( FMAX(R / sqrt(R*R + z*z) -2.5*csdisk*csdisk,0.0) );
                     d.Vc(PRS,k,j,i) = cs2*d.Vc(RHO,k,j,i);
-
+                    if(std::isnan(d.Vc(VX3,k,j,i))) {
+                      idfx::cout << "Nan in R>Rin at (i,j,k)=("<< i <<"," << j << "," << k << "), (r,th,R,z)=(" << r << "," << th << "," << R << "," << z << ")" << std::endl;
+                      IDEFIX_ERROR("Nan!s");
+                    }
                 }
                 else {
                   real Zh = FABS(z/Rin)/epsilonGlob;
@@ -330,9 +333,14 @@ void Setup::InitFlow(DataBlock &data) {
                   real cscorona = epsilonTopGlob/sqrt(Rin);
                   real cs2=0.5*(csdisk*csdisk+cscorona*cscorona)+0.5*(cscorona*cscorona-csdisk*csdisk)*tanh(6*log(Zh/HidealGlob));
                   d.Vc(RHO,k,j,i) = 1.0/(Rin*sqrt(Rin))  * exp(1.0/ (csdisk*csdisk) * (1.0/sqrt(Rin*Rin+z*z)-1.0/Rin));
-                  d.Vc(VX3,k,j,i) = 1.0/sqrt(Rin) * sqrt( Rin / sqrt(Rin*Rin + z*z) -2.5*csdisk*csdisk );
+                  d.Vc(VX3,k,j,i) = 1.0/sqrt(Rin) * sqrt( FMAX(Rin / sqrt(Rin*Rin + z*z) -2.5*csdisk*csdisk,0.0) );
                   d.Vc(PRS,k,j,i) = cs2*d.Vc(RHO,k,j,i);
+                  if(std::isnan(d.Vc(VX3,k,j,i))) {
+                    idfx::cout << "Nan in R<Rin at (i,j,k)=("<< i <<"," << j << "," << k << "), (r,th,R,z)=(" << r << "," << th << "," << R << "," << z << ")" << std::endl;
+                    IDEFIX_ERROR("Nan!s");
+                  }
                 }
+
                 d.Vc(VX1,k,j,i) = ZERO_F;
                 d.Vc(VX2,k,j,i) = ZERO_F;
 

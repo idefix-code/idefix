@@ -23,6 +23,8 @@ Several options can be provided at command line when running the code. These are
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+
 | -nowrite           |   disable all writes (useful for raw performance measures or for tests)                                                 |
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+
+| -Werror            |   warning messages are considered as errors and stop the code with a non-zero exit code.                                |
++--------------------+-------------------------------------------------------------------------------------------------------------------------+
 | -autotune          | | try to find the best loop runrolling strategy by running a series of integration tests                                |
 |                    | | before starting the real integration loop.                                                                            |
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+

@@ -20,6 +20,7 @@ extern IdefixOstream cout;              //< custom cout for idefix
 extern Profiler prof;                   //< profiler (for memory usage)
 extern double mpiCallsTimer;            //< time significant MPI calls
 extern LoopPattern defaultLoopPattern;  //< default loop patterns (for idefix_for loops)
+extern bool warningsAreErrors;    //< whether warnings should be considered as errors
 
 void pushRegion(const std::string&);
 void popRegion();

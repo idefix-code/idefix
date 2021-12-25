@@ -64,6 +64,13 @@ void ErrorHandler(const int ErrorType,
     idfx::cout << ErrorMessage << std::endl;
     idfx::cout << "------------------------------------------------------------------------------"
                << std::endl;
+    if(idfx::warningsAreErrors) {
+      idfx::cout << "Warnings are considered as errors" << std::endl;
+      #ifdef WITH_MPI
+      MPI_Abort(MPI_COMM_WORLD,1);
+      #endif
+      exit(1);
+    }
   } else if (ErrorType == ERROR_DEPRECATED) {
     idfx::cout << std::endl
                << "------------------------------------------------------------------------------"
@@ -74,6 +81,13 @@ void ErrorHandler(const int ErrorType,
     idfx::cout << ErrorMessage << std::endl;
     idfx::cout << "------------------------------------------------------------------------------"
                << std::endl;
+    if(idfx::warningsAreErrors) {
+      idfx::cout << "Warnings are considered as errors" << std::endl;
+      #ifdef WITH_MPI
+      MPI_Abort(MPI_COMM_WORLD,1);
+      #endif
+      exit(1);
+    }
   } else {
     idfx::cout << std::endl
                << "------------------------------------------------------------------------------"

@@ -18,6 +18,8 @@ int psize;
 
 double mpiCallsTimer = 0.0;
 
+bool warningsAreErrors{false};
+
 IdefixOstream cout;
 Profiler prof;
 LoopPattern defaultLoopPattern;

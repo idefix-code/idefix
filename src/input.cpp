@@ -191,6 +191,8 @@ void Input::ParseCommandLine(int argc, char **argv) {
     } else if(std::string(argv[i]) == "-nowrite") {
       this->forceNoWrite = true;
       idfx::cout.disableLogFile();
+    } else if(std::string(argv[i]) == "-Werror") {
+      idfx::warningAreErrors = true;
     } else {
       msg << "Unknown option " << argv[i];
       IDEFIX_ERROR(msg);

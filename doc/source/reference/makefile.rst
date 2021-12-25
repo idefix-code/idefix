@@ -28,7 +28,7 @@ Several options can be enabled from the command line (or are accessible with ``c
     List all of the available configure options and exit
 
 ``-D Idefix_MHD=ON``
-    Enable MHD in the code (default disabled)
+    Enable MHD. If your setup is MHD-only, making this option mandatory, it is recommended to use a local ``CMakeLists.txt`` file instead, as described in :ref:`setupSpecificOptions`
 
 ``-D Idefix_ENABLE_MPI=ON``
     Enable MPI parallelisation. Requires an MPI library. When used in conjonction with CUDA (Nvidia GPUs), a CUDA-aware MPI library is required by *Idefix*.
@@ -82,6 +82,8 @@ Several options can be enabled from the command line (or are accessible with ``c
     Launching ``cmake`` from a problem directory ensures that ``cmake`` will use that directory as its build directory. Note that it is also possible to use the ``-B``
     option to explictely tell ``cmake`` a path to a build=*Idefix* problem directory.
 
+
+.. _setupSpecificOptions:
 
 Setup-specific options
 ++++++++++++++++++++++

@@ -9,7 +9,7 @@ Configuration with Cmake
 ------------------------
 
 How do I compile and link problem-specific source file with *Idefix*?
-  Use a custum ``CMakeLists.txt`` in your problem directory as described in :ref:`customSourceFiles`.
+  Use a custom ``CMakeLists.txt`` in your problem directory as described in :ref:`customSourceFiles`.
 
 Cmake fails with "CMake wants to use -std=c++1z which is not supported by NVCC" when configuring with Cuda
   This error happens when cmake detects an old version of gcc (<=7). These old version uses

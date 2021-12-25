@@ -85,11 +85,7 @@ The Orszag-Tang problem is a well known test problem for MHD codes. The configur
 As in the Sod test problem, there are 3 files in that directory which completely define the Orszag Tang test problem. We now need to configure the
 test with::
 
-    cmake $IDEFIX_DIR -DIdefix_MHD=ON
-
-.. caution::
-    Do not forget the ``-DIdefix_MHD=ON`` option to the configure script to tell *idefix* that you want to solve for MHD, otherwise *idefix* is compiled with hydro modules only. There is very little chance
-    this test works in hydro!
+    cmake $IDEFIX_DIR
 
 Once the code is configured, it can be ran::
 
@@ -102,14 +98,14 @@ to check that the last output is consistent with the reference output.
 .. tip::
     Given that the Orszag-Tang test can take a long time, you may want to accelerate your computation with a little bit of parallelisation. This can be done with openmp (assuming you have an openmp-compatible compiler)::
 
-        cmake $IDEFIX_DIR -DIdefix_MHD=ON -DKokkos_ENABLE_OPENMP=ON
+        cmake $IDEFIX_DIR -DKokkos_ENABLE_OPENMP=ON
         make -j 8
         export OMP_NUM_THREADS=4
         ./idefix
 
     or assuming a MPI library is installed on your machine::
 
-        cmake $IDEFIX_DIR -DIdefix_MHD=ON -DIdefix_ENABLE_MPI=ON
+        cmake $IDEFIX_DIR -DIdefix_ENABLE_MPI=ON
         make -j 8
         mpirun -np 4 ./idefix
 

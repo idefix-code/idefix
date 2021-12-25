@@ -57,7 +57,7 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
 
     // Local start and end of current datablock
     xbeg[dir] = gridHost.xl[dir](gbeg[dir]);
-    xend[dir] = gridHost.xl[dir](gend[dir]);
+    xend[dir] = gridHost.xr[dir](gend[dir]-1);
   }
 
   if(idfx::psize>1) {

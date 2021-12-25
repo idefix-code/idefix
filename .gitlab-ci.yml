@@ -54,6 +54,16 @@ HighOrder tests:
     - cd test
     - ./checks_highorder.sh
 
+Examples tests:
+  stage: checks
+  image: lesurg/idefix:latest
+  script:
+    - cat /proc/cpuinfo
+    - gcc --version
+
+    - cd test
+    - ./checks_examples.sh
+
 cache:
   # Required to keep artifacts from old builds, e.g. from master
   paths:

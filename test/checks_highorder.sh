@@ -55,7 +55,7 @@ for rep in $rep_list; do
             echo "***********************************************"
             echo "Running  $rep with $order and $ini"
             echo "***********************************************"
-            ./idefix -i $ini || { echo "!!!! $rep with $order failed running with $ini"; exit 1; }
+            ./idefix -i $ini -nolog || { echo "!!!! $rep with $order failed running with $ini"; exit 1; }
 
             cd python
             echo "***********************************************"

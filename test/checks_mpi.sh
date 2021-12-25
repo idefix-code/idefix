@@ -52,7 +52,7 @@ for rep in $rep_2D_mpi_list; do
         echo "***********************************************"
         echo "Running  $rep with $ini"
         echo "***********************************************"
-        mpirun -np 4 ./idefix -i $ini -dec 2 2
+        mpirun -np 4 ./idefix -i $ini -dec 2 2 -nolog
 
         cd python
         echo "***********************************************"
@@ -83,7 +83,7 @@ for rep in $rep_3D_mpi_list; do
         echo "***********************************************"
         echo "Running  $rep with $ini"
         echo "***********************************************"
-        mpirun -np 8 ./idefix -i $ini -dec 2 2 2
+        mpirun -np 8 ./idefix -i $ini -dec 2 2 2 -nolog
 
         cd python
         echo "***********************************************"
@@ -104,7 +104,7 @@ mv data.0001.vtk data.0001.old.vtk
 echo "***********************************************"
 echo "Running  $rep with restart dump # 1"
 echo "***********************************************"
-mpirun -np 8 ./idefix -restart 1 -dec 2 2 2 || { echo "!!!! MHD $rep failed running restart dump validation"; exit 1; }
+mpirun -np 8 ./idefix -restart 1 -dec 2 2 2 -nolog || { echo "!!!! MHD $rep failed running restart dump validation"; exit 1; }
 cd python
 echo "***********************************************"
 echo "Testing  $rep with restart dump # 1"

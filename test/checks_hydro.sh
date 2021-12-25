@@ -54,7 +54,7 @@ for rep in $rep_HD_list; do
             echo "***********************************************"
             echo "Running  $rep with $ini"
             echo "***********************************************"
-            ./idefix -i $ini || { echo "!!!! HD $rep failed running with $def and $ini"; exit 1; }
+            ./idefix -i $ini -nolog || { echo "!!!! HD $rep failed running with $def and $ini"; exit 1; }
 
             cd python
             echo "***********************************************"

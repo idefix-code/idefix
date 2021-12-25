@@ -21,7 +21,9 @@ Several options can be provided at command line when running the code. These are
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+
 | -maxcycles n       |   stops when the code has performed ``n`` integration cycles                                                            |
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+
-| -nowrite           |   disable all writes (useful for raw performance measures or for tests)                                                 |
+| -nolog             |   disable log files                                                                                                     |
++--------------------+-------------------------------------------------------------------------------------------------------------------------+
+| -nowrite           |   disable all writes (useful for raw performance measures or for tests). This option implies ``-nolog``                 |
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+
 | -Werror            |   warning messages are considered as errors and stop the code with a non-zero exit code.                                |
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+

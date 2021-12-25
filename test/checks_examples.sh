@@ -53,7 +53,7 @@ for rep in $rep_example_list; do
     echo "***********************************************"
     echo "Running  $rep"
     echo "***********************************************"
-    ./idefix -maxcycles 10 || { echo "!!!! Example $rep failed running"; exit 1; }
+    ./idefix -maxcycles 10 -nowrite || { echo "!!!! Example $rep failed running"; exit 1; }
 
     make clean
     rm -f *.vtk *.dbl

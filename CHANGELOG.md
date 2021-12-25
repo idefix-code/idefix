@@ -8,16 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - enforce positivity of the Limo3 reconstruction scheme for density and pressure (when applicable) by reverting to second order in extreme cases. This makes LimO3 more stable.
 - fixed a bug which resulted in a failure at detecting NaNs on some GPU architectures
+- Fargo module has been moved to a class that belongs to the datablock, not to hydro (this is for future applications with dust+fargo). Use the [[Fargo]] block in your input file to define properties of the fargo module.
+- gravity is now handled in a specific class, so that new gravity modules (e.g. self-gravity) can be handled automatically. Use the [[Gravity]] block in the input file to define properties of the gravity class (this includes user-defined potential and bodyforce).
 - Nan detection is now explicit on all MPI processes
-- fixed a bug which resulted on the generation of output files at each timestep when the output frequency was reduced at a restart.
+- fixed a bug which resulted in the generation of output files at each timestep when the output frequency was reduced at a restart.
 - fixed a bug in VTK outputs which produced wrong grids in 1D spherical geometry.
 - fixed a bug in VTK and dump outputs with MPI which resulted in garbage at the end of some files when vtk and dmp were overwritten.
 - reconstruction is now set by cmake and not in definitions.hpp (ORDER parameter). For backward compatibility, if definitions.hpp sets an ORDER, it supersedes the user choice in cmake.
+- the examples in the ``test`` directory that can't be validated by the standard CI test (because of the lack of a quantitative validation test) are now handled separatly in an `Examples` queue: they are only compiled and run for a few cycles, looking for errors.
 
 ### Added
 - piecewise parabolic reconstruction (PPM)
 - coding style guidelines in the documentation
 - it is now possible to automatically enable cmake options (e.g. MHD) in each problem directory using set_idefix_property and enable_idefix_property in the problem's CMakeLists.txt.
+- the Gravity class now handles automatically central potential wihtout needing to define your own user-defined potential. Use ``potential   central`` in the [[Gravity]] block of your input file.
+- new -nolog, -nowrite, -maxcycles and -Werror command line arguments. Check the documentation for their usage.
 
 ### Removed
 - configure.py support and related functions.

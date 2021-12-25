@@ -19,6 +19,10 @@ Several options can be provided at command line when running the code. These are
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+
 | -i                 |   specify the name of the input file to be used (default ``idefix.ini``)                                                |
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+
+| -maxcycles n       |   stops when the code has performed ``n`` integration cycles                                                            |
++--------------------+-------------------------------------------------------------------------------------------------------------------------+
+| -nowrite           |   disable all writes (useful for raw performance measures or for tests)                                                 |
++--------------------+-------------------------------------------------------------------------------------------------------------------------+
 | -autotune          | | try to find the best loop runrolling strategy by running a series of integration tests                                |
 |                    | | before starting the real integration loop.                                                                            |
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+

@@ -188,6 +188,9 @@ void Input::ParseCommandLine(int argc, char **argv) {
       }
       this->maxCycles = std::stoi(std::string(argv[++i]));
       inputParameters["CommandLine"]["maxCycles"].push_back(std::to_string(maxCycles));
+    } else if(std::string(argv[i]) == "-nowrite") {
+      this->forceNoWrite = true;
+      idfx::cout.disableLogFile();
     } else {
       msg << "Unknown option " << argv[i];
       IDEFIX_ERROR(msg);

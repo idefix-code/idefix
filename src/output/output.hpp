@@ -40,6 +40,7 @@ class Output {
   Vtk vtk;          // local instance of Vtk class
   Dump dump;        // local instance of Dump class
 
+  bool forceNoWrite = false;    //< explicitely disable all writes
   bool vtkEnabled = false;
   real vtkPeriod = 0.0;   // periodicity of vtk outputs
   real vtkLast = 0.0;

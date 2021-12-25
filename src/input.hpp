@@ -40,16 +40,16 @@ class Input {
   Input();
   void PrintLogo();
 
-  // Should we restart, and if so, from which file?
-  bool restartRequested{false};
-  int  restartFileNumber;
+  bool restartRequested{false};       //< Should we restart?
+  int  restartFileNumber;             //< if yes, from which file?
 
-  // Did we receive an abort signal (USR2) from the system?
-  static bool abortRequested;
+  static bool abortRequested;         //< Did we receive an abort signal (USR2) from the system?
 
   bool tuningRequested{false};        //< whether the user has asked for loop-tuning
 
   int maxCycles{-1};                   //< whether we should perform a maximum number of cycles
+
+  bool forceNoWrite{false};           //< explicitely disable all writes to disk
 
  private:
   std::string inputFileName;

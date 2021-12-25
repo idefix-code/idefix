@@ -12,6 +12,9 @@ Output::Output(Input &input, DataBlock &data) {
   idfx::pushRegion("Output::Output");
   // initialise the output objects for each format
 
+  if(input.forceNoWrite) {
+    this->forceNoWrite = true;
+  }
   // Initialise vtk outputs
   if(input.CheckEntry("Output","vtk")>0) {
     vtkPeriod = input.GetReal("Output","vtk",0);
@@ -60,6 +63,11 @@ int Output::CheckForWrites(DataBlock &data) {
   idfx::pushRegion("Output::CheckForWrites");
   int nfiles=0;
 
+  // skip everything if forced to disable all writes
+  if(forceNoWrite) {
+    idfx::popRegion();
+    return(0);
+  }
   // Do we need a restart dump?
   if(dumpEnabled) {
     if(data.t >= dumpLast + dumpPeriod) {
@@ -150,7 +158,7 @@ void Output::RestartFromDump(DataBlock &data, int readNumber) {
 void Output::ForceWrite(DataBlock &data) {
   idfx::pushRegion("Output::ForceWrite");
 
-  dump.Write(data,*this);
+  if(!forceNoWrite) dump.Write(data,*this);
 
   idfx::popRegion();
 }

@@ -20,7 +20,7 @@ U=readVTKCart('data.0001.ref.vtk')
 error=np.mean(np.abs(V.data['PRS']-U.data['prs'])/U.data['prs'],axis=(0,1))
 
 print("Error=%e"%error)
-if error<2.5e-2:
+if error<5.45e-2:
     print("SUCCESS!")
     sys.exit(0)
 else:

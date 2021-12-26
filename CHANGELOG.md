@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - it is now possible to automatically enable cmake options (e.g. MHD) in each problem directory using set_idefix_property and enable_idefix_property in the problem's CMakeLists.txt.
 - the Gravity class now handles automatically central potential wihtout needing to define your own user-defined potential. Use ``potential   central`` in the [[Gravity]] block of your input file.
 - new -nolog, -nowrite, -maxcycles and -Werror command line arguments. Check the documentation for their usage.
+- new ``Idefix_DEBUG`` cmake option to trigger debugging features (live call stack+array bound checks).
 
 ### Removed
 - configure.py support and related functions.

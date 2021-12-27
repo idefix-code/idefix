@@ -5,8 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef HYDRO_FARGO_HPP_
-#define HYDRO_FARGO_HPP_
+#ifndef DATABLOCK_FARGO_HPP_
+#define DATABLOCK_FARGO_HPP_
 
 #include "idefix.hpp"
 
@@ -19,7 +19,7 @@ using FargoVelocityFunc = void (*) (DataBlock &, IdefixArray2D<real> &);
 class Fargo {
  public:
   enum FargoType {none, userdef, shearingbox};
-  void Init(Input &, Grid &, Hydro *);  // Initialisation
+  void Init(Input &, DataBlock*);  // Initialisation
   void ShiftSolution(const real t, const real dt);  // Effectively shift the solution
   void SubstractVelocity(const real);
   void AddVelocity(const real);
@@ -38,4 +38,4 @@ class Fargo {
   FargoVelocityFunc fargoVelocityFunc{NULL};  // The user-defined fargo velocity function
 };
 
-#endif // HYDRO_FARGO_HPP_
+#endif // DATABLOCK_FARGO_HPP_

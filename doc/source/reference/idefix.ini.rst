@@ -157,11 +157,6 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 |                |                         | | (see :ref:`functionEnrollment`). In this case, the third and fourth parameters            |
 |                |                         | | are not used.                                                                             |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| gravPotential  | string                  | | Switches on an external gravitational potential. Only ``userdef`` is allowed.             |
-|                |                         | | When ``userdef is set, the ``Hydro`` class expects  a user-defined potential function     |
-|                |                         | | to be enrolled with  ``Hydro::EnrollGravPotential(GravPotentialFunc)``                    |
-|                |                         | | (see :ref:`functionEnrollment`)                                                           |
-+----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | rotation       | float                   | | Add rotation with the z rotation speed given as parameter.                                |
 |                |                         | | Note that this entry only adds Coriolis force in Cartesian geometry.                      |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
@@ -169,19 +164,6 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 |                |                         | | :math:`dv_{x2}/d x_1`.                                                                    |
 |                |                         | | Note that this is not sufficient to fully define a shearing box: boundary conditions      |
 |                |                         | | are also required.                                                                        |
-+----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| fargo          | string                  | | Enable orbital advection (Fargo-like) module to speed up integration when a strong        |
-|                |                         | | azimuthal motion is present (as in a thin disk).  The parameter can be either             |
-|                |                         | | `shearingbox` or `userdef`.                                                               |
-|                |                         | | When `shearingbox`, the fargo module uses the linear shear computed by the shearing box   |
-|                |                         | | module as the input velocity function.                                                    |
-|                |                         | | When `userdef` is set, the fargo module expects a user-defined  velocity function to      |
-|                |                         | | be enrolled via Hydro.Fargo::EnrollVelocity(FargoVelocityFunc)                            |
-|                |                         | | (see :ref:`functionEnrollment`). Examples are provided in `test/HD/FargoPlanet`           |
-|                |                         | | and `test/MHD/FargoMHDSpherical`                                                          |
-|                |                         | | Note that by default, Fargo uses a piecewise linear advection operator. One can enable    |
-|                |                         | | a piecewise parabolic reconstruction method (ppm) setting ``Idefix_HIGH_ORDER_FARGO``     |
-|                |                         | | to ``ON`` in ``cmake`` configuration.                                                     |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 
 
@@ -192,6 +174,55 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
     For these reasons, Hall can only be used in conjonction with the HLL Riemann solver. In addition, only
     the arithmetic Emf reconstruction scheme has been shown to work systematically with Hall, and is therefore
     strongly recommended for production runs.
+
+``Fargo`` section
+------------------
+
+This section enables the orbital advection algorithm provided in *Idefix*.
+
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+|  Entry name    | Parameter type          | Comment                                                                                     |
++================+=========================+=============================================================================================+
+| velocity       | string                  | | Defines orbital advection (Fargo-like) velocity to speed up integration when a strong     |
+|                |                         | | azimuthal motion is present (as in a thin disk).  The ``velocity`` can be either          |
+|                |                         | | `shearingbox` or `userdef`.                                                               |
+|                |                         | | When `shearingbox`, the fargo module uses the linear shear computed by the shearing box   |
+|                |                         | | module as the input velocity function.                                                    |
+|                |                         | | When `userdef` is set, the fargo module expects a user-defined  velocity function to      |
+|                |                         | | be enrolled via Fargo::EnrollVelocity(FargoVelocityFunc)                                  |
+|                |                         | | (see :ref:`functionEnrollment`). Examples are provided in `test/HD/FargoPlanet`           |
+|                |                         | | and `test/MHD/FargoMHDSpherical`                                                          |
+|                |                         | | Note that by default, Fargo uses a piecewise linear advection operator. One can enable    |
+|                |                         | | a piecewise parabolic reconstruction method (ppm) setting ``Idefix_HIGH_ORDER_FARGO``     |
+|                |                         | | to ``ON`` in ``cmake`` configuration.                                                     |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+
+``Gravity`` section
+--------------------
+
+This section enables gravity in the form of a gravitational potential and/or an acceleration vector
+
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+|  Entry name    | Parameter type          | Comment                                                                                     |
++================+=========================+=============================================================================================+
+| potential      | string, [string...]     | | Switches on an external gravitational potential. Each parameter adds a potential to the   |
+|                |                         | | total potential used by *Idefix*.                                                         |
+|                |                         | | * ``userdef`` allows the user to give *Idefix* a user-defined potential function. In this |
+|                |                         | | ``Gravity`` class expects a user-defined potential function to be enrolled with           |
+|                |                         | | ``Gavity::EnrollPotential(GravPotentialFunc)``  (see :ref:`functionEnrollment`)           |
+|                |                         | | * ``central`` allows the user to automatically add the potential of a central point mass. |
+|                |                         | | In this case, the central mass is assumed to be 1 in code units. This can be modified     |
+|                |                         | | using the Mcentral parameter, or using the ``Gravity::SetCentralMass(real)`` method.      |
+|                |                         | | * ``selfgravity`` enable the potential computed from solving Poisson euqation with the    |
+|                |                         | | density distribution                                                                      |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| Mcentral       | real                    | | Mass of the central object when a central potential is enabled (see above). Default is 1. |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| bodyForce      | string                  | | Adds an acceleration vector to each cell of the domain. The only parameter possible       |
+|                |                         | | is ``userdef``. The ``Gravity`` class then expects a user-defined bodyforce function to   |
+|                |                         | | be enrolled with ``Gavity::EnrollBodyForce(BodyForceFunc)``(see :ref:`functionEnrollment`)|
+|                |                         | | See the shearing box tests for examples of using bodyForce.                               |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
 
 ``RKL`` section
 ------------------

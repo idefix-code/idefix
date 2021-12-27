@@ -167,11 +167,11 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     rkl.Cycle();
   }
 
-    // Apply Boundary conditions
+  // Apply Boundary conditions
   data.SetBoundaries();
 
   // Remove Fargo velocity so that the integrator works on the residual
-  if(data.hydro.haveFargo) data.hydro.fargo.SubstractVelocity(data.t);
+  if(data.haveFargo) data.fargo.SubstractVelocity(data.t);
 
   // Convert current state into conservative variable and save it
   data.hydro.ConvertPrimToCons();
@@ -195,6 +195,9 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 #endif
 
   for(int stage=0; stage < nstages ; stage++) {
+    // If gravity is needed, update it
+    if(data.haveGravity) data.gravity.ComputeGravity();
+
     // Update Uc & Vs
     data.EvolveStage();
 
@@ -253,15 +256,15 @@ void TimeIntegrator::Cycle(DataBlock &data) {
       data.t = wcs*data.t + w0s*t0;
 
       // Tentatively high order fargo
-      //if(data.hydro.haveFargo) data.hydro.fargo.ShiftSolution(data.t,wcs*data.dt);
+      //if(data.haveFargo) data.fargo.ShiftSolution(data.t,wcs*data.dt);
     } //else {
-      //if(data.hydro.haveFargo) data.hydro.fargo.ShiftSolution(data.t,data.dt);
+      //if(data.haveFargo) data.fargo.ShiftSolution(data.t,data.dt);
     //}
 
     // Shift solution according to fargo if this is our last stage
 
-    if(data.hydro.haveFargo && stage==nstages-1) {
-      data.hydro.fargo.ShiftSolution(t0,data.dt);
+    if(data.haveFargo && stage==nstages-1) {
+      data.fargo.ShiftSolution(t0,data.dt);
     }
 
 
@@ -272,17 +275,17 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     if(stage<nstages-1) {
       // No: Apply boundary conditions & Recompute conservative variables
       // Add back fargo velocity so that boundary conditions are applied on the total V
-      if(data.hydro.haveFargo) data.hydro.fargo.AddVelocity(data.t);
+      if(data.haveFargo) data.fargo.AddVelocity(data.t);
       data.SetBoundaries();
       // And substract it back for next stage
-      if(data.hydro.haveFargo) data.hydro.fargo.SubstractVelocity(data.t);
+      if(data.haveFargo) data.fargo.SubstractVelocity(data.t);
       data.hydro.ConvertPrimToCons();
     }
   }
 
 
   // Add back Fargo velocity so that updated Vc stores the total Velocity
-  if(data.hydro.haveFargo) data.hydro.fargo.AddVelocity(data.t);
+  if(data.haveFargo) data.fargo.AddVelocity(data.t);
 
   // Wait for hydro/newDt MPI reduction
 #ifdef WITH_MPI
@@ -334,7 +337,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
 
 
-int64_t TimeIntegrator::getNcycles() {
+int64_t TimeIntegrator::GetNCycles() {
   return(ncycles);
 }
 

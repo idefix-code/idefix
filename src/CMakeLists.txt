@@ -3,6 +3,7 @@ add_subdirectory(hydro)
 add_subdirectory(dataBlock)
 add_subdirectory(output)
 add_subdirectory(rkl)
+add_subdirectory(gravity)
 
 target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/arrays.hpp

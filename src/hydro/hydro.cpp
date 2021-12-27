@@ -7,7 +7,7 @@
 
 #include <string>
 
-#include "../idefix.hpp"
+#include "idefix.hpp"
 #include "hydro.hpp"
 #include "dataBlock.hpp"
 
@@ -131,34 +131,42 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
                << " and Lx= " << sbLx << std::endl;
   }
 
-  // Gravitational potential
+  // Gravitational potential (deprecated, use [Gravity] block in your input file)
   if(input.CheckEntry("Hydro","gravPotential")>=0) {
+    IDEFIX_DEPRECATED("gravPotential in [Hydro] block is deprecated in the input file. "
+                      "Use a [Gravity] block instead.");
     std::string potentialString = input.GetString("Hydro","gravPotential",0);
     if(potentialString.compare("userdef") == 0) {
-      this->haveGravPotential = true;
-      idfx::cout << "Hydro:: Enabling user-defined gravitational potential" << std::endl;
+      data->gravity.haveUserDefPotential = true;
+      data->gravity.havePotential = true;
+      data->gravity.Init(input,data);
     } else {
       IDEFIX_ERROR("Unknown type of gravitational potential in idefix.ini. "
                    "Only userdef is implemented");
     }
   }
 
-  // Body Force
+  // Body Force (deprecated, use [Gravity] block in your input file)
   if(input.CheckEntry("Hydro","bodyForce")>=0) {
+    IDEFIX_DEPRECATED("bodyForce in [Hydro] block is deprecated in the input file. "
+                      "Use a [Gravity] block instead.");
     std::string potentialString = input.GetString("Hydro","bodyForce",0);
     if(potentialString.compare("userdef") == 0) {
-      this->haveBodyForce = true;
-      idfx::cout << "Hydro:: Enabling user-defined body force" << std::endl;
+      data->gravity.haveBodyForce = true;
+      data->gravity.Init(input,data);
     } else {
       IDEFIX_ERROR("Unknown type of body force in idefix.ini. "
                    "Only userdef is implemented");
     }
   }
 
-  // Do we use fargo?
+  // Do we use fargo? (deprecated, use a full fargo block in idefix.ini,
+  // instead of including it in hydo)
   if(input.CheckEntry("Hydro","fargo")>=0) {
-    this->haveFargo = true;
-    this->fargo.Init(input,grid, this);
+    IDEFIX_DEPRECATED("Fargo in [Hydro] block is deprecated in the input file. "
+                      "Use a [Fargo] block instead.");
+    data->haveFargo = true;
+    data->fargo.Init(input, this->data);
   }
 
   ///////////////////////
@@ -320,17 +328,6 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
                                 data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   }
 
-
-  // Allocate gravitational potential when needed
-  if(this->haveGravPotential)
-    phiP = IdefixArray3D<real>("Hydro_PhiP",
-                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-
-  // Allocate body force array
-  if(this->haveBodyForce)
-    bodyForceVector = IdefixArray4D<real>("Hydro_bodyForce", COMPONENTS,
-                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-
   if(this->haveCurrent) {
     // Allocate current (when hydro needs it)
     J = IdefixArray4D<real>("Hydro_J", 3,
@@ -437,23 +434,18 @@ void Hydro::EnrollEmfBoundary(EmfBoundaryFunc myFunc) {
   idfx::cout << "Hydro: User-defined EMF boundary condition has been enrolled" << std::endl;
 }
 
+// Deprecated function
 void Hydro::EnrollGravPotential(GravPotentialFunc myFunc) {
-  if(!this->haveGravPotential) {
-    IDEFIX_ERROR("In order to enroll your gravitational potential, "
-                 "you need to enable it first in the .ini file.");
-  }
-  this->gravPotentialFunc = myFunc;
-  idfx::cout << "Hydro: User-defined gravitational potential has been enrolled" << std::endl;
+  IDEFIX_DEPRECATED("Calling Hydro::EnrollGravPotential is deprecated."
+                    "Use Gravity::EnrollPotential");
+  data->gravity.EnrollPotential(myFunc);
 }
 
+// Deprecated function
 void Hydro::EnrollBodyForce(BodyForceFunc myFunc) {
-  if(!this->haveBodyForce) {
-    IDEFIX_ERROR("In order to enroll your body force, "
-                 "you need to enable it first in the .ini file "
-                 "with the bodyForce entry in [Hydro].");
-  }
-  this->bodyForceFunc = myFunc;
-  idfx::cout << "Hydro: User-defined body force function has been enrolled" << std::endl;
+  IDEFIX_DEPRECATED("Calling Hydro::EnrollBodyForce is deprecated."
+                    "Use Gravity::EnrollBodyForce");
+  data->gravity.EnrollBodyForce(myFunc);
 }
 
 void Hydro::EnrollUserSourceTerm(SrcTermFunc myFunc) {

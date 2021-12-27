@@ -42,7 +42,7 @@ for rep in $rep_MHD_list; do
     rm -f CMakeCache.txt
     def_files=$(ls definitions*.hpp)
     for def in $def_files; do
-        cmake $IDEFIX_DIR $options -DIdefix_DEFS=$def|| { echo "!!!! MHD $rep failed during configuration"; exit 1; }
+        cmake $IDEFIX_DIR $options -DIdefix_DEFS=$def -DKokkos_ENABLE_DEBUG_BOUNDS_CHECK=ON|| { echo "!!!! MHD $rep failed during configuration"; exit 1; }
         echo "***********************************************"
         echo "Making  $rep with $def"
         echo "***********************************************"
@@ -53,7 +53,7 @@ for rep in $rep_MHD_list; do
             echo "***********************************************"
             echo "Running  $rep with $ini"
             echo "***********************************************"
-            ./idefix -i $ini || { echo "!!!! MHD $rep failed running with $def and $ini"; exit 1; }
+            ./idefix -i $ini -nolog || { echo "!!!! MHD $rep failed running with $def and $ini"; exit 1; }
 
             cd python
             echo "***********************************************"

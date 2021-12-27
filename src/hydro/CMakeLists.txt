@@ -22,8 +22,6 @@ target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/convertConsToPrimHD.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/convertConsToPrimMHD.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/extrapolatePrimVar.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/fargo.cpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/fargo.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/fluxHD.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/fluxMHD.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/hydro_defs.hpp

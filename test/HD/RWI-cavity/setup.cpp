@@ -34,14 +34,6 @@ real randm(void) {
 // cs = H * Omega_K = h * R * sqrt(GM/R^3) = h / sqrt(R)
 // where R is the polar radius
 
-void GravitationalPotential(DataBlock& data, const real t, IdefixArray1D<real>& x1, IdefixArray1D<real>& x2, IdefixArray1D<real>& x3, IdefixArray3D<real>& phi) {
-
-    IdefixArray1D<real> R = x1;
-    idefix_for("Potential",0,data.np_tot[KDIR], 0, data.np_tot[JDIR], 0, data.np_tot[IDIR],
-        KOKKOS_LAMBDA (int k, int j, int i) {
-        phi(k,j,i) = -1.0/R(i);
-    });
-}
 
 void LISOTHSoundSpeed(DataBlock &data, const real t, IdefixArray3D<real> &cs) {
   // locally isothermal soundspeed
@@ -69,13 +61,12 @@ void FargoVelocity(DataBlock &data, IdefixArray2D<real> &Vphi) {
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     // Set the function for userdefboundary
-    data.hydro.EnrollGravPotential(&GravitationalPotential);
     data.hydro.EnrollIsoSoundSpeed(&LISOTHSoundSpeed);
     aspect_ratio_glob = input.GetReal("Setup","aspect_ratio",0);
     jump_radius_glob = input.GetReal("Setup", "jump_radius",0);
     jump_width_glob = input.GetReal("Setup", "jump_width",0);
-    if(data.hydro.haveFargo)
-      data.hydro.fargo.EnrollVelocity(&FargoVelocity);
+    if(data.haveFargo)
+      data.fargo.EnrollVelocity(&FargoVelocity);
 }
 
 // This routine initialize the flow

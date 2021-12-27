@@ -114,7 +114,7 @@ if(not args.noplot):
 
 err=np.mean(0.5*np.sqrt(errb**2+errD**2))
 print("Error total=%e"%err)
-if(err<5e-3):
+if(err<5.9e-3):
     print("Success!")
     sys.exit(0)
 else:

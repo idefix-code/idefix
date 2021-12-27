@@ -162,11 +162,11 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output)// : m_pl
 {
   // Set the function for userdefboundary
   data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
-  data.hydro.EnrollGravPotential(&Potential);
+  data.gravity.EnrollPotential(&Potential);
   data.hydro.EnrollIsoSoundSpeed(&MySoundSpeed);
   data.hydro.viscosity.EnrollViscousDiffusivity(&MyViscosity);
-  if(data.hydro.haveFargo)
-    data.hydro.fargo.EnrollVelocity(&FargoVelocity);
+  if(data.haveFargo)
+    data.fargo.EnrollVelocity(&FargoVelocity);
   sigma0Glob = input.GetReal("Setup","sigma0",0);
   sigmaSlopeGlob = input.GetReal("Setup","sigmaSlope",0);
   h0Glob = input.GetReal("Setup","h0",0);

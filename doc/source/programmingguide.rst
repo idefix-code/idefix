@@ -413,10 +413,12 @@ finished working with it. An example is provided in :ref:`setupInitDump`.
 Debugging and profiling
 =======================
 
-The easiest way to trigger debugging in ``Idefix`` is to add ``#define DEBUG`` in your ``definitions.hpp`` and
-recompile the code. This forces the code to log each time a function is called or returned (this is achieved
-thanks to the ``idfx::pushRegion(std::string)`` and ``idfx::popRegion()`` which are found at the beginning and
-end of each function). In other words, ``#define DEBUG`` logs the entire stack trace to simplify debugging.
+The easiest way to trigger debugging in ``Idefix`` is to switch on ``Idefix_DEBUG`` in cmake (for instance
+adding ``-DIdefix_DEBUG=ON`` when calling cmake). This forces the code to log each time a function is called or
+returned (this is achieved thanks to the ``idfx::pushRegion(std::string)`` and ``idfx::popRegion()`` which are
+found at the beginning and end of each function). In addition, ``Idefix_DEBUG`` enables Kokkos array bound checks, which
+will throw an error each time one tries to access an array out of its allocated memory space. Note that all of these
+debugging features induce a large overhead, and should therefore not be activated in production runs.
 
 It is also possible to use `Kokkos-tools <https://github.com/kokkos/kokkos-tools>`_ to debug and profile the code.
 For instance, on the fly profiling, can be enabled with the Kokkos ``space-time-stack`` module. To use it, simply clone

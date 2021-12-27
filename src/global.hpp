@@ -20,6 +20,7 @@ extern IdefixOstream cout;              //< custom cout for idefix
 extern Profiler prof;                   //< profiler (for memory usage)
 extern double mpiCallsTimer;            //< time significant MPI calls
 extern LoopPattern defaultLoopPattern;  //< default loop patterns (for idefix_for loops)
+extern bool warningsAreErrors;    //< whether warnings should be considered as errors
 
 void pushRegion(const std::string&);
 void popRegion();
@@ -28,22 +29,24 @@ void popRegion();
 class idfx::IdefixOstream {
  public:
   void init(int);
+  void disableLogFile();
   // for regular output of variables and stuff
   template<typename T> IdefixOstream& operator<<(const T& something) {
     if(toscreen) std::cout << something;
-    my_fstream << something;
+    if(logFileEnabled) my_fstream << something;
     return *this;
   }
   // for manipulators like std::endl
   typedef std::ostream& (*stream_function)(std::ostream&);
   IdefixOstream& operator<<(stream_function func) {
     if(toscreen) func(std::cout);
-    func(my_fstream);
+    if(logFileEnabled) func(my_fstream);
     return *this;
   }
  private:
   std::ofstream my_fstream;
   bool toscreen;
+  bool logFileEnabled{true};   //< whether streams are also written to a log file
 };
 
 #endif // GLOBAL_HPP_

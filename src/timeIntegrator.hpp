@@ -16,7 +16,7 @@
 
 class TimeIntegrator {
  public:
-  int64_t getNcycles();   // Get current number of cycles
+  int64_t GetNCycles();   // Get current number of cycles
 
   // Constructor from input and given datablock
   TimeIntegrator(Input &, DataBlock &);

@@ -18,6 +18,8 @@ int psize;
 
 double mpiCallsTimer = 0.0;
 
+bool warningsAreErrors{false};
+
 IdefixOstream cout;
 Profiler prof;
 LoopPattern defaultLoopPattern;
@@ -84,6 +86,13 @@ void IdefixOstream::init(int rank) {
     this->toscreen=true;
   else
     this->toscreen=false;
+}
+
+// disable the log file
+void IdefixOstream::disableLogFile() {
+  my_fstream << "Log files have been disabled (e.g. using -nowrite)." << std::endl;
+  my_fstream.close();
+  this->logFileEnabled = false;
 }
 
 } // namespace idfx

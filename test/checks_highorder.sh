@@ -44,7 +44,7 @@ for rep in $rep_list; do
     rm -f CMakeCache.txt
     for order in $order_list; do
 
-        cmake $IDEFIX_DIR $options -DIdefix_RECONSTRUCTION=$order || { echo "!!!!$rep with $order failed during configuration"; exit 1; }
+        cmake $IDEFIX_DIR $options -DIdefix_RECONSTRUCTION=$order -DKokkos_ENABLE_DEBUG_BOUNDS_CHECK=ON|| { echo "!!!!$rep with $order failed during configuration"; exit 1; }
         echo "***********************************************"
         echo "Making  $rep with $order"
         echo "***********************************************"
@@ -55,7 +55,7 @@ for rep in $rep_list; do
             echo "***********************************************"
             echo "Running  $rep with $order and $ini"
             echo "***********************************************"
-            ./idefix -i $ini || { echo "!!!! $rep with $order failed running with $ini"; exit 1; }
+            ./idefix -i $ini -nolog || { echo "!!!! $rep with $order failed running with $ini"; exit 1; }
 
             cd python
             echo "***********************************************"
@@ -79,7 +79,7 @@ for rep in $rep_MPI_list; do
     rm -f CMakeCache.txt
     for order in $order_list; do
 
-        cmake $IDEFIX_DIR $options -DIdefix_RECONSTRUCTION=$order -DIdefix_MPI=ON || { echo "!!!!$rep with $order failed during configuration"; exit 1; }
+        cmake $IDEFIX_DIR $options -DIdefix_RECONSTRUCTION=$order -DIdefix_MPI=ON -DKokkos_ENABLE_DEBUG_BOUNDS_CHECK=ON|| { echo "!!!!$rep with $order failed during configuration"; exit 1; }
         echo "***********************************************"
         echo "Making  $rep with $order"
         echo "***********************************************"

@@ -37,14 +37,14 @@ void Hydro::CalcParabolicFlux(const real t) {
   if( (viscosityStatus.isExplicit && (!data->rklCycle))
     || (viscosityStatus.isRKL && data->rklCycle))  {
       // Add fargo velocity if using fargo
-    if(haveFargo && viscosityStatus.isExplicit) {
-      fargo.AddVelocity(t);
+    if(data->haveFargo && viscosityStatus.isExplicit) {
+      data->fargo.AddVelocity(t);
     }
     this->viscosity.AddViscousFlux(dir,t);
 
     // Remove back Fargo velocity
-    if(haveFargo && viscosityStatus.isExplicit) {
-      fargo.SubstractVelocity(t);
+    if(data->haveFargo && viscosityStatus.isExplicit) {
+      data->fargo.SubstractVelocity(t);
     }
   }
 

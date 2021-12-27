@@ -5,8 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef HYDRO_BOUNDARY_MPI_HPP_
-#define HYDRO_BOUNDARY_MPI_HPP_
+#ifndef MPI_HPP_
+#define MPI_HPP_
 
 #include "idefix.hpp"
 
@@ -19,13 +19,15 @@ class DataBlock;
 class Mpi {
  public:
   // MPI Exchange functions
-  void ExchangeAll();
-  void ExchangeX1();
-  void ExchangeX2();
-  void ExchangeX3();
+  void ExchangeAll();   ///< Exchange boundary elements in all directions (todo)
+  void ExchangeX1();    ///< Exchange boundary elements in the X1 direction
+  void ExchangeX2();    ///< Exchange boundary elements in the X2 direction
+  void ExchangeX3();    ///< Exchange boundary elements in the X3 direction
 
   // Init from datablock
-  void Init(DataBlock *, IdefixArray1D<int>&, int, bool);
+  void Init(DataBlock *datain, IdefixArray4D<real> inputVc,
+            IdefixHostArray1D<int> inputMap, int nVars,
+            bool inputHaveVs = false, IdefixArray4D<real> inputVs = IdefixArray4D<real>() );
 
   // Destructor
   ~Mpi();
@@ -35,7 +37,9 @@ class Mpi {
   int thisInstance;          // unique number of the current instance
   bool isInitialized{false};
 
-  DataBlock *data;
+  DataBlock *data;          // pointer to datablock object
+  IdefixArray4D<real> Vc;   // reference to cell-centered array on which this object works
+  IdefixArray4D<real> Vs;   // reference to face-centered array on which this object works
 
   enum {faceRight, faceLeft};
 
@@ -71,4 +75,4 @@ class Mpi {
   int64_t bytesSentOrReceived{0};
 };
 
-#endif // HYDRO_BOUNDARY_MPI_HPP_
+#endif // MPI_HPP_

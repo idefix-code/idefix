@@ -36,14 +36,12 @@ void HydroBoundary::Init(Input & input, Grid &grid, Hydro* hydro) {
   int mapNVars = NVAR;
   #endif
 
-  IdefixArray1D<int> mapVars("mapVars",mapNVars);
+  IdefixHostArray1D<int> mapVars("mapVars",mapNVars);
 
-  // Create a host mirror
-  IdefixArray1D<int>::HostMirror mapVarsHost = Kokkos::create_mirror_view(mapVars);
   // Init the list of variables we will exchange in MPI routines
   int ntarget = 0;
   for(int n = 0 ; n < mapNVars ; n++) {
-    mapVarsHost(n) = ntarget;
+    mapVars(n) = ntarget;
     ntarget++;
     #if MHD == YES
       // Skip centered field components if they are also defined in Vs
@@ -58,9 +56,11 @@ void HydroBoundary::Init(Input & input, Grid &grid, Hydro* hydro) {
       #endif
     #endif
   }
-  // Synchronize the mapVars
-  Kokkos::deep_copy(mapVars,mapVarsHost);
-  mpi.Init(this->data, mapVars, mapNVars, true);
+  #if MHD == YES
+    mpi.Init(this->data, hydro->Vc, mapVars, mapNVars, true, hydro->Vs);
+  #else
+    mpi.Init(this->data, hydro->Vc, mapVars, mapNVars);
+  #endif
 #endif // MPI
   idfx::popRegion();
 }

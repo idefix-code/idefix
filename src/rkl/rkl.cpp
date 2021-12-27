@@ -99,7 +99,11 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
   Kokkos::deep_copy(varList,varListHost);
 
   #ifdef WITH_MPI
-    mpi.Init(&datain, varList, nvarRKL, haveVs);
+    if(haveVs) {
+      mpi.Init(&datain, data->hydro.Vc, varListHost, nvarRKL, haveVs, data->hydro.Vs);
+    } else {
+      mpi.Init(&datain, data->hydro.Vc, varListHost, nvarRKL);
+    }
   #endif
 
 

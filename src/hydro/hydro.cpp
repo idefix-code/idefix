@@ -28,8 +28,6 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   #else
     IDEFIX_ERROR("Reconstruction at chosen order is not implemented. Check your definitions file");
   #endif
-  // Initialise boundary conditions
-  boundary.Init(input, grid, this);
 
   if(input.CheckEntry("Hydro","gamma")>0) {
     this->gamma = input.GetReal("Hydro","gamma",0);
@@ -395,6 +393,8 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
     }
   }
 
+  // Initialise boundary conditions
+  boundary.Init(input, grid, this);
 
   idfx::popRegion();
 }

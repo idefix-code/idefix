@@ -36,12 +36,12 @@ void HydroBoundary::Init(Input & input, Grid &grid, Hydro* hydro) {
   int mapNVars = NVAR;
   #endif
 
-  IdefixHostArray1D<int> mapVars("mapVars",mapNVars);
+  std::vector<int> mapVars;
 
   // Init the list of variables we will exchange in MPI routines
   int ntarget = 0;
   for(int n = 0 ; n < mapNVars ; n++) {
-    mapVars(n) = ntarget;
+    mapVars.push_back(ntarget);
     ntarget++;
     #if MHD == YES
       // Skip centered field components if they are also defined in Vs
@@ -57,9 +57,9 @@ void HydroBoundary::Init(Input & input, Grid &grid, Hydro* hydro) {
     #endif
   }
   #if MHD == YES
-    mpi.Init(this->data, hydro->Vc, mapVars, mapNVars, true, hydro->Vs);
+    mpi.Init(this->data, hydro->Vc, mapVars, true, hydro->Vs);
   #else
-    mpi.Init(this->data, hydro->Vc, mapVars, mapNVars);
+    mpi.Init(this->data, hydro->Vc, mapVars);
   #endif
 #endif // MPI
   idfx::popRegion();

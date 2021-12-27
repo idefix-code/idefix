@@ -26,15 +26,13 @@ void Mpi::ExchangeAll() {
 /// @param inputVc: input 4D array of cell centered variables from which cell
 ///                  elements are to be exhanged
 /// @param inputMap: 1st indices of inputVc which are to be exchanged (i.e, the list of variables)
-/// @param nVars: number of elements in inputMap (inputMap.extent(0) must be >= nVars)
 /// @param inputHaveVs: whether the instance should also treat face-centered variable
 ///                     (optional, default false)
 /// @param inputVs: input face-centered variables arrays which is used if inputHaveVs is true
 ///                 (optional)
 ///
 
-void Mpi::Init(DataBlock *datain, IdefixArray4D<real> inputVc,
-               IdefixHostArray1D<int> inputMap, int nVars,
+void Mpi::Init(DataBlock *datain, IdefixArray4D<real> inputVc, std::vector<int> inputMap,
                bool inputHaveVs, IdefixArray4D<real> inputVs ) {
   this->data = datain;
   this->mygrid = datain->mygrid;
@@ -43,10 +41,11 @@ void Mpi::Init(DataBlock *datain, IdefixArray4D<real> inputVc,
   nInstances++;
   thisInstance=nInstances;
 
+  // Transfer the vector of indices as an IdefixArray on the target
+
   // Allocate mapVars on target and copy it from the input argument list
-  mapVars = IdefixArray1D<int>("MPI: mapNVar",inputMap.extent(0));
-  Kokkos::deep_copy(this->mapVars, inputMap);
-  this->mapNVars = nVars;
+  this->mapVars = idfx::ConvertVectorToIdefixArray(inputMap);
+  this->mapNVars = inputMap.size();
   this->haveVs = inputHaveVs;
   this->Vc = inputVc;
   if(haveVs) this->Vs = inputVs;

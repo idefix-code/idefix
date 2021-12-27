@@ -8,6 +8,7 @@
 #ifndef MPI_HPP_
 #define MPI_HPP_
 
+#include <vector>
 #include "idefix.hpp"
 
 #ifdef WITH_MPI
@@ -25,8 +26,7 @@ class Mpi {
   void ExchangeX3();    ///< Exchange boundary elements in the X3 direction
 
   // Init from datablock
-  void Init(DataBlock *datain, IdefixArray4D<real> inputVc,
-            IdefixHostArray1D<int> inputMap, int nVars,
+  void Init(DataBlock *datain, IdefixArray4D<real> inputVc, std::vector<int> inputMap,
             bool inputHaveVs = false, IdefixArray4D<real> inputVs = IdefixArray4D<real>() );
 
   // Destructor

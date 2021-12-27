@@ -8,6 +8,8 @@
 #ifndef GLOBAL_HPP_
 #define GLOBAL_HPP_
 #include <string>
+#include <vector>
+#include "arrays.hpp"
 
 namespace idfx {
 int initialize();   // Initialisation routine for idefix
@@ -24,6 +26,19 @@ extern bool warningsAreErrors;    //< whether warnings should be considered as e
 
 void pushRegion(const std::string&);
 void popRegion();
+
+template<typename T>
+IdefixArray1D<T> ConvertVectorToIdefixArray(std::vector<T> &inputVector) {
+  IdefixArray1D<T> outArr = IdefixArray1D<T>("Vector",inputVector.size());
+  IdefixHostArray1D<T> outArrHost;
+  outArrHost = Kokkos::create_mirror_view(outArr);
+  for(int i = 0; i < inputVector.size() ; i++) {
+    outArrHost(i) = inputVector[i];
+  }
+  Kokkos::deep_copy(outArr, outArrHost);
+  return(outArr);
+}
+
 } // namespace idfx
 
 class idfx::IdefixOstream {

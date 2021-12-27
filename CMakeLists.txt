@@ -112,6 +112,7 @@ target_include_directories(idefix PUBLIC
                            src/hydro/MHDsolvers
                            src/output
                            src/rkl
+                           src/gravity
                            src
                            )
 

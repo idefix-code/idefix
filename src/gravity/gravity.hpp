@@ -5,8 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef DATABLOCK_GRAVITY_HPP_
-#define DATABLOCK_GRAVITY_HPP_
+#ifndef GRAVITY_GRAVITY_HPP_
+#define GRAVITY_GRAVITY_HPP_
 
 #include "idefix.hpp"
 #include "input.hpp"
@@ -64,4 +64,4 @@ class Gravity {
   BodyForceFunc bodyForceFunc{NULL};
 };
 
-#endif // DATABLOCK_GRAVITY_HPP_
+#endif // GRAVITY_GRAVITY_HPP_

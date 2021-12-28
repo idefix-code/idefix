@@ -8,9 +8,6 @@ Frequently asked question
 Configuration with Cmake
 ------------------------
 
-How do I compile and link problem-specific source file with *Idefix*?
-  Use a custom ``CMakeLists.txt`` in your problem directory as described in :ref:`customSourceFiles`.
-
 Cmake fails with "CMake wants to use -std=c++1z which is not supported by NVCC" when configuring with Cuda
   This error happens when cmake detects an old version of gcc (<=7). These old version uses
   ``-std=c++1z`` to enable c++17, but this flag is not recognised by Cuda ``nvcc`` compiler. Use
@@ -25,7 +22,31 @@ How do I use my favourite XXXXX compiler?
   set the ``CXX`` variables to your favourite C++ compiler before calling Cmake (see :ref:`configurationOptions`).
   Do not forget to delete any CmakeCache.txt which could have been produced in your problem directory.
 
+I have a complex setup, and have written some functions in separate .cpp files. How can I add these files to *Idefix* build tree?
+  Add a ``CmakeLists.txt`` in your problem directory and use the function `add_idefix_source` (see :ref:`customSourceFiles`).
+
 Compilation
 -----------
 
-Coming soon :-)
+Is there a way to see explicitely the compilation commands with ``make``?
+  Yes, just add ``VERBOSE=1`` after the ``make`` command.
+
+Execution
+---------
+
+How can I stop the code without loosing the current calculation?
+  Two options: the simplest one is to create an empty file named `stop` in the running directory
+  (e.g. with ``touch stop``). It is also possible to send the POSIX signal SIGUSR2 to one of the
+  *idefix* processes. More details here: :ref:`signalHandling`.
+
+I'm doing performance measures. How do I disable all outputs in *Idefix*?
+  Add ``-nowrite`` when you call *Idefix* executable.
+
+Developement
+------------
+
+I have a serious bug (e.g. segmentation fault), in my setup, how do I proceed?
+  Add ``-DIdefix_DEBUG=ON`` to ``cmake`` and recompile to find out exactly where the code crashes.
+
+I want to test a modification to *Idefix* source code specific to my problem without modifying files in `$IDEFIX_DIR`. How can I proceed?
+  Add a ``CmakeLists.txt`` in your problem directory and use the function `replace_idefix_source` (see :ref:`customSourceFiles`).

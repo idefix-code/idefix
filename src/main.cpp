@@ -9,7 +9,7 @@
 //@HEADER
 // ************************************************************************
 //
-//                        IDEFIX v 0.0-alpha
+//                        IDEFIX v 1.0-alpha
 //
 // ************************************************************************
 //@HEADER
@@ -111,7 +111,9 @@ int main( int argc, char* argv[] ) {
       output.CheckForWrites(data);
     } else {
       idfx::cout << "Main: Creating initial conditions." << std::endl;
+      idfx::pushRegion("Setup::Initflow");
       mysetup.InitFlow(data);
+      idfx::popRegion();
       data.SetBoundaries();
       output.CheckForWrites(data);
       if(data.CheckNan()) {

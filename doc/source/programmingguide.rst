@@ -116,9 +116,9 @@ While this should be transparent to most users, It should be kept in mind that t
 capture their variables by value [=]. To avoid too much overhead, one should therefore avoid capturing
 complex structures. Moreover, a bug in the Nvidia Cuda compiler ``nvcc`` prevents Cuda lambdas
 from capturing class members (`see  this post <https://github.com/kokkos/kokkos/issues/695>`_). While
-this bug is tightly linked to the C++11 norm and will be addressed in C++17, one should always
+this bug is tightly linked to the C++14 norm and will be addressed in C++17, one should always
 make local copies of the class members before using them in loops, to keep compatibility with Cuda
-in C++11.
+in C++14.
 
 .. warning::
   As stated above, to avoid compatibility issues with nvcc, *always* make local copies (references)

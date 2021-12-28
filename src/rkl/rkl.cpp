@@ -15,22 +15,19 @@
 #ifndef RKL_ORDER
   #define RKL_ORDER       2
 #endif
-#define NVAR_MAX         10
 
 
-void RKLegendre::AddVariable(int var, IdefixArray1D<int>::HostMirror &varListHost ) {
+void RKLegendre::AddVariable(int var, std::vector<int> &varListHost ) {
   bool haveit{false};
 
   // Check whether we have this variable in the list
-  for(int i = 0 ; i < nvarRKL ; i++) {
-    if(varListHost(i) == var) haveit=true;
+  for(int i = 0 ; i < varListHost.size() ; i++) {
+    if(varListHost[i] == var) haveit=true;
   }
 
   // We don't have it, then add it to the list
   if(!haveit) {
-    if(nvarRKL >= NVAR_MAX) IDEFIX_ERROR("RKL: cannot compute that many variables");
-    varListHost(nvarRKL) = var;
-    nvarRKL++;
+    varListHost.push_back(var);
   }
 }
 
@@ -67,9 +64,8 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
   rmax_par = 100.0;
 
   // Make a list of variables
-  varList = IdefixArray1D<int>("RKL_VarList",NVAR_MAX);
-  IdefixArray1D<int>::HostMirror varListHost = Kokkos::create_mirror_view(varList);
 
+  std::vector<int> varListHost;
   // Create a list of variables
   // Viscosity
   if(data->hydro.viscosityStatus.isRKL) {
@@ -96,10 +92,15 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
   }
 
   // Copy the list on the device
-  Kokkos::deep_copy(varList,varListHost);
+  varList = idfx::ConvertVectorToIdefixArray(varListHost);
+  nvarRKL = varListHost.size();
 
   #ifdef WITH_MPI
-    mpi.Init(&datain, varList, nvarRKL, haveVs);
+    if(haveVs) {
+      mpi.Init(&datain, data->hydro.Vc, varListHost, haveVs, data->hydro.Vs);
+    } else {
+      mpi.Init(&datain, data->hydro.Vc, varListHost);
+    }
   #endif
 
 

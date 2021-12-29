@@ -97,9 +97,11 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
 
   #ifdef WITH_MPI
     if(haveVs) {
-      mpi.Init(&datain, data->hydro.Vc, varListHost, haveVs, data->hydro.Vs);
+      mpi.Init(datain.mygrid, data->hydro.Vc, varListHost,
+               datain.nghost, datain.np_int, haveVs, data->hydro.Vs);
     } else {
-      mpi.Init(&datain, data->hydro.Vc, varListHost);
+      mpi.Init(datain.mygrid, data->hydro.Vc, varListHost,
+               datain.nghost, datain.np_int);
     }
   #endif
 

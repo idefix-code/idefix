@@ -57,9 +57,9 @@ void HydroBoundary::Init(Input & input, Grid &grid, Hydro* hydro) {
     #endif
   }
   #if MHD == YES
-    mpi.Init(this->data, hydro->Vc, mapVars, true, hydro->Vs);
+    mpi.Init(data->mygrid , hydro->Vc, mapVars, data->nghost, data->np_int, true, hydro->Vs);
   #else
-    mpi.Init(this->data, hydro->Vc, mapVars);
+    mpi.Init(data->mygrid, hydro->Vc, mapVars, data->nghost, data->np_int);
   #endif
 #endif // MPI
   idfx::popRegion();

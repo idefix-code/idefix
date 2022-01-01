@@ -6,6 +6,7 @@
 // ***********************************************************************************
 
 #include <string>
+#include <vector>
 
 #include "idefix.hpp"
 #include "hydro.hpp"
@@ -30,17 +31,18 @@ KOKKOS_FORCEINLINE_FUNCTION real PPMLim(real dvp, real dvm) {
 }
 
 KOKKOS_INLINE_FUNCTION real FargoFlux(const IdefixArray4D<real> &Vin, int n, int k, int j, int i,
-                                      int so, int ds, int sbeg, real eps) {
+                                      int so, int ds, int sbeg, real eps,
+                                      bool haveDomainDecomposition) {
   // compute shifted indices, taking into account the fact that we're periodic
   int sop1 = so+1;
-  if(sop1-sbeg >= ds) sop1 = sop1-ds;
+  if(!haveDomainDecomposition && (sop1-sbeg >= ds)) sop1 = sop1-ds;
   int sop2 = sop1+1;
-  if(sop2-sbeg >= ds) sop2 = sop2-ds;
+  if(!haveDomainDecomposition && (sop2-sbeg >= ds)) sop2 = sop2-ds;
 
   int som1 = so-1;
-  if(som1-sbeg< 0 ) som1 = som1+ds;
+  if(!haveDomainDecomposition && (som1-sbeg< 0 )) som1 = som1+ds;
   int som2 = som1-1;
-  if(som2-sbeg< 0 ) som2 = som2+ds;
+  if(!haveDomainDecomposition && (som2-sbeg< 0 )) som2 = som2+ds;
 
   int sign = (eps>=0) ? 1 : -1;
   real dqm2,dqm1,dqp1,dqp2, q0,qm1, qp1;
@@ -94,13 +96,13 @@ KOKKOS_INLINE_FUNCTION real FargoFlux(const IdefixArray4D<real> &Vin, int n, int
 
 #else// HIGH_ORDER_FARGO
 KOKKOS_INLINE_FUNCTION real FargoFlux(const IdefixArray4D<real> &Vin, int n, int k, int j, int i,
-                                      int so, int ds, int sbeg, real eps) {
+                                      int so, int ds, int sbeg, real eps,
+                                      bool haveDomainDecomposition) {
   // compute shifted indices, taking into account the fact that we're periodic
   int sop1 = so+1;
-  if(sop1-sbeg >= ds) sop1 = sop1-ds;
+  if(!haveDomainDecomposition && (sop1-sbeg >= ds)) sop1 = sop1-ds;
   int som1 = so-1;
-  if(som1-sbeg< 0 ) som1 = som1+ds;
-
+  if(!haveDomainDecomposition && (som1-sbeg< 0 )) som1 = som1+ds;
   int sign = (eps>=0) ? 1 : -1;
   real F, dqm, dqp, dq, V0;
   #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
@@ -125,6 +127,13 @@ void Fargo::Init(Input &input, DataBlock *data) {
   idfx::pushRegion("Fargo::Init");
   this->data = data;
   this->hydro = &(data->hydro);
+
+  // A bit of arithmetic to get the sizes of the working array
+  for(int dir = 0 ; dir < 3 ; dir++) {
+    this->nghost[dir] = data->nghost[dir];
+    this->beg[dir] = data->beg[dir];
+    this->end[dir] = data->end[dir];
+  }
 
   if(input.CheckBlock("Fargo")) {
     std::string opType = input.GetString("Fargo","velocity",0);
@@ -161,17 +170,23 @@ void Fargo::Init(Input &input, DataBlock *data) {
   }
 
   #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
-    // Check there is no domain decomposition in the intended fargo direction
+    // Check if there is a domain decomposition in the intended fargo direction
     if(data->mygrid->nproc[JDIR]>1) {
-      IDEFIX_ERROR("Fargo is not yet compatible with MPI decomposition along the X2 direction");
+      haveDomainDecomposition = true;
+      this->nghost[JDIR] += this->maxShift;
+      this->beg[JDIR] += this->maxShift;
+      this->end[JDIR] += this->maxShift;
     }
     if(this->type==userdef)
       this->meanVelocity = IdefixArray2D<real>("FargoVelocity",data->np_tot[KDIR],
                                                              data->np_tot[IDIR]);
   #elif GEOMETRY == SPHERICAL
-    // Check there is no domain decomposition in the intended fargo direction
+    // Check if there is a domain decomposition in the intended fargo direction
     if(data->mygrid->nproc[KDIR]>1) {
-      IDEFIX_ERROR("Fargo is not yet compatible with MPI decomposition along the X3 direction");
+      haveDomainDecomposition = true;
+      this->nghost[KDIR] += this->maxShift;
+      this->beg[KDIR] += this->maxShift;
+      this->end[KDIR] += this->maxShift;
     }
     this->meanVelocity = IdefixArray2D<real>("FargoVelocity",data->np_tot[JDIR],
                                                              data->np_tot[IDIR]);
@@ -179,10 +194,42 @@ void Fargo::Init(Input &input, DataBlock *data) {
     IDEFIX_ERROR("Fargo is not compatible with the GEOMETRY you intend to use");
   #endif
 
+
   // Initialise our scratch space
-  this->scratch = IdefixArray4D<real>("FargoScratchSpace",NVAR,data->np_tot[KDIR]
-                                                              ,data->np_tot[JDIR]
-                                                              ,data->np_tot[IDIR]);
+  this->scrhUc = IdefixArray4D<real>("FargoVcScratchSpace",NVAR
+                                      ,end[KDIR]-beg[KDIR] + 2*nghost[KDIR]
+                                      ,end[JDIR]-beg[JDIR] + 2*nghost[JDIR]
+                                      ,end[IDIR]-beg[IDIR] + 2*nghost[IDIR]);
+
+  #if MHD == YES
+    if(haveDomainDecomposition) {
+      this->scrhVs = IdefixArray4D<real>("FargoVsScratchSpace",DIMENSIONS
+                                          ,end[KDIR]-beg[KDIR] + 2*nghost[KDIR]+KOFFSET
+                                          ,end[JDIR]-beg[JDIR] + 2*nghost[JDIR]+JOFFSET
+                                          ,end[IDIR]-beg[IDIR] + 2*nghost[IDIR]+IOFFSET);
+
+
+    } else {
+      // A separate allocation for scrhVs is only needed with domain decomposition, otherwise,
+      // we just make a reference to scrhVs
+      this->scrhVs = hydro->Vs;
+    }
+  #endif
+  #ifdef WITH_MPI
+    if(haveDomainDecomposition) {
+      std::vector<int> vars;
+      for(int i=0 ; i < NVAR ; i++) {
+        vars.push_back(i);
+      }
+      idfx::cout << "Fargo: init dedicated MPI object." << std::endl;
+      #if MHD == YES
+        this->mpi.Init(data->mygrid, scrhUc, vars, this->nghost, data->np_int, true, scrhVs);
+      #else
+        this->mpi.Init(data->mygrid, scrhUc, vars, this->nghost, data->np_int);
+      #endif
+    }
+  #endif
+
   if(type==userdef) {
     idfx::cout << "Fargo: Enabled with user-defined velocity function" << std::endl;
   } else if(type==shearingbox) {
@@ -283,6 +330,59 @@ void Fargo::SubstractVelocity(const real t) {
   idfx::popRegion();
 }
 
+void Fargo::StoreToScratch() {
+  IdefixArray4D<real> Uc = hydro->Uc;
+  IdefixArray4D<real> scrhUc = this->scrhUc;
+  bool haveDomainDecomposition = this->haveDomainDecomposition;
+  int maxShift = this->maxShift;
+
+  idefix_for("Fargo:StoreUc",
+            0,NVAR,
+            data->beg[KDIR],data->end[KDIR],
+            data->beg[JDIR],data->end[JDIR],
+            data->beg[IDIR],data->end[IDIR],
+            KOKKOS_LAMBDA(int n, int k, int j, int i) {
+              if(!haveDomainDecomposition) {
+                scrhUc(n,k,j,i) = Uc(n,k,j,i);
+              } else {
+                #if GEOMETRY==POLAR || GEOMETRY==CARTESIAN
+                  scrhUc(n,k,j+maxShift,i) = Uc(n,k,j,i);
+                #elif GEOMETRY == SPHERICAL
+                  scrhUc(n,k+maxShift,j,i) = Uc(n,k,j,i);
+                #endif
+              }
+            });
+
+  #if MHD == YES
+    // in MHD mode, we need to copy Vs only when there is domain decomposition, otherwise,
+    // we just make a reference (this is already done by init)
+    if(haveDomainDecomposition) {
+      IdefixArray4D<real> Vs = hydro->Vs;
+      IdefixArray4D<real> scrhVs = this->scrhVs;
+      idefix_for("Fargo:StoreVs",
+              0,DIMENSIONS,
+              data->beg[KDIR],data->end[KDIR]+KOFFSET,
+              data->beg[JDIR],data->end[JDIR]+JOFFSET,
+              data->beg[IDIR],data->end[IDIR]+IOFFSET,
+              KOKKOS_LAMBDA(int n, int k, int j, int i) {
+                  #if GEOMETRY==POLAR || GEOMETRY==CARTESIAN
+                    scrhVs(n,k,j+maxShift,i) = Vs(n,k,j,i);
+                  #elif GEOMETRY == SPHERICAL
+                    scrhVs(n,k+maxShift,j,i) = Vs(n,k,j,i);
+                  #endif
+              });
+    }
+  #endif
+
+  if(haveDomainDecomposition) {
+    #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
+      this->mpi.ExchangeX2();
+    #elif GEOMETRY == SPHERICAL
+      this->mpi.ExchangeX3();
+    #endif
+  }
+}
+
 void Fargo::ShiftSolution(const real t, const real dt) {
   idfx::pushRegion("Fargo::ShiftSolution");
 
@@ -292,7 +392,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
   }
 
   IdefixArray4D<real> Uc = hydro->Uc;
-  IdefixArray4D<real> scrh = this->scratch;
+  IdefixArray4D<real> scrh = this->scrhUc;
   IdefixArray2D<real> meanV = this->meanVelocity;
   IdefixArray1D<real> x1 = data->x[IDIR];
   IdefixArray1D<real> x2 = data->x[JDIR];
@@ -302,6 +402,8 @@ void Fargo::ShiftSolution(const real t, const real dt) {
   IdefixArray1D<real> sinx2m = data->sinx2m;
   FargoType fargoType = type;
   real sbS = hydro->sbS;
+  bool haveDomainDecomposition = this->haveDomainDecomposition;
+  int maxShift = this->maxShift;
 
   real Lphi;
   int sbeg, send;
@@ -316,6 +418,9 @@ void Fargo::ShiftSolution(const real t, const real dt) {
   #else
     Lphi = 1.0;   // Do nothing, but initialize this.
   #endif
+
+  // move Uc to scratch, and fill the ghost zones if required.
+  StoreToScratch();
 
   idefix_for("Fargo:ShiftVc",
               0,NVAR,
@@ -357,7 +462,13 @@ void Fargo::ShiftSolution(const real t, const real dt) {
                 int ds = send-sbeg;
 
                 // so is the "origin" index
-                int so = sbeg + ((s-m-sbeg)%ds+ds)%ds;
+                int so;
+                if(haveDomainDecomposition) {
+                  so = s-m + maxShift;    // maxshift corresponds to the offset between
+                                          // the indices in scrh and in Uc
+                } else {
+                  so = sbeg + ((s-m-sbeg)%ds+ds)%ds;
+                }
 
                 // Define Left and right fluxes
                 // Fluxes are defined from slop-limited interpolation
@@ -366,28 +477,25 @@ void Fargo::ShiftSolution(const real t, const real dt) {
 
                 if(eps>=ZERO_F) {
                   int som1 = so-1;
-                  if(som1-sbeg< 0 ) som1 = som1+ds;
-                  Fl = FargoFlux(Uc, n, k, j, i, som1, ds, sbeg, eps);
-                  Fr = FargoFlux(Uc, n, k, j, i, so, ds, sbeg, eps);
+                  if(!haveDomainDecomposition && som1-sbeg< 0 ) som1 = som1+ds;
+                  Fl = FargoFlux(scrh, n, k, j, i, som1, ds, sbeg, eps, haveDomainDecomposition);
+                  Fr = FargoFlux(scrh, n, k, j, i, so, ds, sbeg, eps, haveDomainDecomposition);
                 } else {
                   int sop1 = so+1;
-                  if(sop1-sbeg >= ds) sop1 = sop1-ds;
-                  Fl = FargoFlux(Uc, n, k, j, i, so, ds, sbeg, eps);
-                  Fr = FargoFlux(Uc, n, k, j, i, sop1, ds, sbeg, eps);
+                  if(!haveDomainDecomposition && sop1-sbeg >= ds) sop1 = sop1-ds;
+                  Fl = FargoFlux(scrh, n, k, j, i, so, ds, sbeg, eps, haveDomainDecomposition);
+                  Fr = FargoFlux(scrh, n, k, j, i, sop1, ds, sbeg, eps, haveDomainDecomposition);
                 }
 
                 #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
-                  scrh(n,k,s,i) = Uc(n,k,so,i) - (Fr - Fl);
+                  Uc(n,k,s,i) = scrh(n,k,so,i) - (Fr - Fl);
                 #elif GEOMETRY == SPHERICAL
-                  scrh(n,s,j,i) = Uc(n,so,j,i) - (Fr - Fl);
+                  Uc(n,s,j,i) = scrh(n,so,j,i) - (Fr - Fl);
                 #endif
               });
 
-  // move back scratch space into Uc
-  Kokkos::deep_copy(Uc,scrh);
-
 #if MHD == YES
-  IdefixArray4D<real> Vs = hydro->Vs;
+  IdefixArray4D<real> scrhVs = this->scrhVs;
   IdefixArray3D<real> ex = hydro->emf.Ex1;
   IdefixArray3D<real> ey = hydro->emf.Ex2;
   IdefixArray3D<real> ez = hydro->emf.Ex3;
@@ -443,43 +551,80 @@ void Fargo::ShiftSolution(const real t, const real dt) {
       int n = send-sbeg;
 
       // so is the "origin" index
-      int so = sbeg + ((s-m-sbeg)%n+n)%n;
+      int so;
+      if(haveDomainDecomposition) {
+        so = s-m + maxShift;    // maxshift corresponds to the offset between
+                                // the indices in scrh and in Uc
+      } else {
+        so = sbeg + ((s-m-sbeg)%n+n)%n;
+      }
 
       #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
         if(eps>=ZERO_F) {
-          int som1 = sbeg + ((so-1-sbeg)%n+n)%n;
-          ek(k,s,i) = FargoFlux(Vs, BX1s, k, j, i, som1, n, sbeg, eps);
+          int som1;
+          if(haveDomainDecomposition) {
+            som1 = so - 1;
+          } else {
+            som1 = sbeg + ((so-1-sbeg)%n+n)%n;
+          }
+          ek(k,s,i) = FargoFlux(scrhVs, BX1s, k, j, i, som1, n, sbeg, eps, haveDomainDecomposition);
 
         } else {
-          ek(k,s,i) = FargoFlux(Vs, BX1s, k, j, i, so, n, sbeg, eps);
+          ek(k,s,i) = FargoFlux(scrhVs, BX1s, k, j, i, so, n, sbeg, eps, haveDomainDecomposition);
         }
         if(m>0) {
           for(int ss = s-m ; ss < s ; ss++) {
-            int sc = sbeg + ((ss-sbeg)%n+n)%n;
-            ek(k,s,i) += Vs(BX1s,k,sc,i);
+            int sc;
+            if(haveDomainDecomposition) {
+              sc = ss;
+            } else {
+              sc = sbeg + ((ss-sbeg)%n+n)%n;
+            }
+            ek(k,s,i) += scrhVs(BX1s,k,sc,i);
           }
         } else {
           for(int ss = s ; ss < s-m ; ss++) {
-            int sc = sbeg + ((ss-sbeg)%n+n)%n;
-            ek(k,s,i) -= Vs(BX1s,k,sc,i);
+            int sc;
+            if(haveDomainDecomposition) {
+              sc = ss;
+            } else {
+              sc = sbeg + ((ss-sbeg)%n+n)%n;
+            }
+            ek(k,s,i) -= scrhVs(BX1s,k,sc,i);
           }
         }
       #elif GEOMETRY == SPHERICAL
         if(eps>=ZERO_F) {
-          int som1 = sbeg + ((so-1-sbeg)%n+n)%n;
-          ek(s,j,i) = FargoFlux(Vs, BX1s, k, j, i, som1, n, sbeg, eps);
+          int som1;
+          if(haveDomainDecomposition) {
+            som1 = so - 1;
+          } else {
+            som1 = sbeg + ((so-1-sbeg)%n+n)%n;
+          }
+          ek(s,j,i) = FargoFlux(scrhVs, BX1s, k, j, i, som1, n, sbeg, eps, haveDomainDecomposition);
+
         } else {
-          ek(s,j,i) = FargoFlux(Vs, BX1s, k, j, i, so, n, sbeg, eps);
+          ek(s,j,i) = FargoFlux(scrhVs, BX1s, k, j, i, so, n, sbeg, eps, haveDomainDecomposition);
         }
         if(m>0) {
           for(int ss = s-m ; ss < s ; ss++) {
-            int sc = sbeg + ((ss-sbeg)%n+n)%n;
-            ek(s,j,i) += Vs(BX1s,sc,j,i);
+            int sc;
+            if(haveDomainDecomposition) {
+              sc = ss;
+            } else {
+              sc = sbeg + ((ss-sbeg)%n+n)%n;
+            }
+            ek(s,j,i) += scrhVs(BX1s,sc,j,i);
           }
         } else {
           for(int ss = s ; ss < s-m ; ss++) {
-            int sc = sbeg + ((ss-sbeg)%n+n)%n;
-            ek(s,j,i) -= Vs(BX1s,sc,j,i);
+            int sc;
+            if(haveDomainDecomposition) {
+              sc = ss;
+            } else {
+              sc = sbeg + ((ss-sbeg)%n+n)%n;
+            }
+            ek(s,j,i) -= scrhVs(BX1s,sc,j,i);
           }
         }
       #endif  // GEOMETRY
@@ -531,50 +676,81 @@ void Fargo::ShiftSolution(const real t, const real dt) {
       int n = send-sbeg;
 
       // so is the "origin" index
-      int so = sbeg + ((s-m-sbeg)%n+n)%n;
-
-      // compute shifted indices, taking into account the fact that we're periodic
-      int sop1 = sbeg + (so+1-sbeg)%(send-sbeg);
-      int som1 = sbeg + (so-1-sbeg)%(send-sbeg);
-      int som2 = sbeg + (so-2-sbeg)%(send-sbeg);
+      int so;
+      if(haveDomainDecomposition) {
+        so = s-m + maxShift;    // maxshift corresponds to the offset between
+                                // the indices in scrh and in Uc
+      } else {
+        so = sbeg + ((s-m-sbeg)%n+n)%n;
+      }
 
       // Compute EMF due to the shift via second order reconstruction
       real dqm, dqp, dq;
 
       #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
         if(eps>=ZERO_F) {
-          int som1 = sbeg + ((so-1-sbeg)%n+n)%n;
-          ei(k,s,i) = FargoFlux(Vs, BX3s, k, j, i, som1, n, sbeg, eps);
+          int som1;
+          if(haveDomainDecomposition) {
+            som1 = so - 1;
+          } else {
+            som1 = sbeg + ((so-1-sbeg)%n+n)%n;
+          }
+          ei(k,s,i) = FargoFlux(scrhVs, BX3s, k, j, i, som1, n, sbeg, eps, haveDomainDecomposition);
         } else {
-          ei(k,s,i) = FargoFlux(Vs, BX3s, k, j, i, so, n, sbeg, eps);
+          ei(k,s,i) = FargoFlux(scrhVs, BX3s, k, j, i, so, n, sbeg, eps, haveDomainDecomposition);
         }
         if(m>0) {
           for(int ss = s-m ; ss < s ; ss++) {
-            int sc = sbeg + ((ss-sbeg)%n+n)%n;
-            ei(k,s,i) += Vs(BX3s,k,sc,i);
+            int sc;
+            if(haveDomainDecomposition) {
+              sc = ss;
+            } else {
+              sc = sbeg + ((ss-sbeg)%n+n)%n;
+            }
+            ei(k,s,i) += scrhVs(BX3s,k,sc,i);
           }
         } else {
           for(int ss = s ; ss < s-m ; ss++) {
-            int sc = sbeg + ((ss-sbeg)%n+n)%n;
-            ei(k,s,i) -= Vs(BX3s,k,sc,i);
+            int sc;
+            if(haveDomainDecomposition) {
+              sc = ss;
+            } else {
+              sc = sbeg + ((ss-sbeg)%n+n)%n;
+            }
+            ei(k,s,i) -= scrhVs(BX3s,k,sc,i);
           }
         }
       #elif GEOMETRY == SPHERICAL
       if(eps>=ZERO_F) {
-        int som1 = sbeg + ((so-1-sbeg)%n+n)%n;
-        ei(s,j,i) = FargoFlux(Vs, BX2s, k, j, i, som1, n, sbeg, eps);
+        int som1;
+        if(haveDomainDecomposition) {
+          som1 = so - 1;
+        } else {
+          som1 = sbeg + ((so-1-sbeg)%n+n)%n;
+        }
+        ei(s,j,i) = FargoFlux(scrhVs, BX2s, k, j, i, som1, n, sbeg, eps, haveDomainDecomposition);
       } else {
-        ei(s,j,i) = FargoFlux(Vs, BX2s, k, j, i, so, n, sbeg, eps);
+        ei(s,j,i) = FargoFlux(scrhVs, BX2s, k, j, i, so, n, sbeg, eps, haveDomainDecomposition);
       }
       if(m>0) {
         for(int ss = s-m ; ss < s ; ss++) {
-          int sc = sbeg + ((ss-sbeg)%n+n)%n;
-          ei(s,j,i) += Vs(BX2s,sc,j,i);
+          int sc;
+          if(haveDomainDecomposition) {
+            sc = ss;
+          } else {
+            sc = sbeg + ((ss-sbeg)%n+n)%n;
+          }
+          ei(s,j,i) += scrhVs(BX2s,sc,j,i);
         }
       } else {
         for(int ss = s ; ss < s-m ; ss++) {
-          int sc = sbeg + ((ss-sbeg)%n+n)%n;
-          ei(s,j,i) -= Vs(BX2s,sc,j,i);
+          int sc;
+          if(haveDomainDecomposition) {
+            sc = ss;
+          } else {
+            sc = sbeg + ((ss-sbeg)%n+n)%n;
+          }
+          ei(s,j,i) -= scrhVs(BX2s,sc,j,i);
         }
       }
 
@@ -585,7 +761,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
 #endif
 
   // Update field components according to the computed EMFS
-
+  IdefixArray4D<real> Vs = hydro->Vs;
   idefix_for("Fargo::EvolvMagField",
              data->beg[KDIR],data->end[KDIR]+KOFFSET,
              data->beg[JDIR],data->end[JDIR]+JOFFSET,

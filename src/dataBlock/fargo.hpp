@@ -25,6 +25,7 @@ class Fargo {
   void AddVelocity(const real);
   void EnrollVelocity(FargoVelocityFunc);
   void StoreToScratch();
+  void CheckMaxDisplacement();
 
  private:
   friend class Hydro;
@@ -44,7 +45,8 @@ class Fargo {
   int end[3];
   int nghost[3];
   int maxShift{10};                     //< maximum number of cells along which we plan to shift.
-
+  real dtMax{0};                        //< Maximum allowable dt for a given Fargo velocity
+                                        //< when domain decomposition is enabled
   bool velocityHasBeenComputed{false};
   bool haveDomainDecomposition{false};
   void GetFargoVelocity(real);

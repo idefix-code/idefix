@@ -148,6 +148,9 @@ void Fargo::Init(Input &input, DataBlock *data) {
       IDEFIX_ERROR("Unknown fargo velocity in the input file. "
       "Only userdef and shearingbox are allowed");
     }
+    if(input.CheckEntry("Fargo","maxShift")>=0) {
+      this->maxShift = input.GetInt("Fargo", "maxShift",0);
+    }
   } else {
     // DEPRECATED: initialisation from the [Hydro] block
     if(input.CheckEntry("Hydro","fargo")>=0) {
@@ -176,6 +179,10 @@ void Fargo::Init(Input &input, DataBlock *data) {
       this->nghost[JDIR] += this->maxShift;
       this->beg[JDIR] += this->maxShift;
       this->end[JDIR] += this->maxShift;
+      if(data->np_int[JDIR] < this->maxShift + data->nghost[JDIR]) {
+        IDEFIX_ERROR("Subdomain size < Fargo:maxShift. "
+                     "Try reducting the number of processes along X2");
+      }
     }
     if(this->type==userdef)
       this->meanVelocity = IdefixArray2D<real>("FargoVelocity",data->np_tot[KDIR],
@@ -187,6 +194,10 @@ void Fargo::Init(Input &input, DataBlock *data) {
       this->nghost[KDIR] += this->maxShift;
       this->beg[KDIR] += this->maxShift;
       this->end[KDIR] += this->maxShift;
+      if(data->np_int[KDIR] < this->maxShift + data->nghost[KDIR]) {
+        IDEFIX_ERROR("Subdomain size < Fargo:maxShift. "
+                     "Try reducting the number of processes along X3");
+      }
     }
     this->meanVelocity = IdefixArray2D<real>("FargoVelocity",data->np_tot[JDIR],
                                                              data->np_tot[IDIR]);
@@ -221,7 +232,6 @@ void Fargo::Init(Input &input, DataBlock *data) {
       for(int i=0 ; i < NVAR ; i++) {
         vars.push_back(i);
       }
-      idfx::cout << "Fargo: init dedicated MPI object." << std::endl;
       #if MHD == YES
         this->mpi.Init(data->mygrid, scrhUc, vars, this->nghost, data->np_int, true, scrhVs);
       #else
@@ -242,6 +252,10 @@ void Fargo::Init(Input &input, DataBlock *data) {
   #else
     idfx::cout << "Fargo: using standard PLM advection scheme." << std::endl;
   #endif
+  if(haveDomainDecomposition) {
+    idfx::cout << "Fargo: using domain decomposition along the azimuthal direction"
+               << " with maxShift=" << this->maxShift << std::endl;
+  }
   idfx::popRegion();
 }
 
@@ -265,9 +279,69 @@ void Fargo::GetFargoVelocity(real t) {
     }
     fargoVelocityFunc(*data, meanVelocity);
     velocityHasBeenComputed = true;
+    if(this->haveDomainDecomposition) {
+      CheckMaxDisplacement();
+    }
   }
-
   idfx::popRegion();
+}
+
+// This function checks that the velocity provided does not lead to an azimuthal displacement
+// larger than the one allowed
+void Fargo::CheckMaxDisplacement() {
+    IdefixArray2D<real> meanV = this->meanVelocity;
+    int ibeg, iend, jbeg, jend;
+    IdefixArray1D<real> xi;
+    IdefixArray1D<real> xj;
+    IdefixArray1D<real> dxk;
+    FargoType fargoType = type;
+    real sbS = hydro->sbS;
+    real invDt = 0;
+
+    // Get domain size
+    #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
+      ibeg = data->beg[IDIR];
+      iend = data->end[IDIR];
+      jbeg = data->beg[KDIR];
+      jend = data->end[KDIR];
+      xi = data->x[IDIR];
+      xj = data->x[KDIR];
+      dxk = data->dx[JDIR];
+    #elif GEOMETRY == SPHERICAL
+      ibeg = data->beg[IDIR];
+      iend = data->end[IDIR];
+      jbeg = data->beg[JDIR];
+      jend = data->end[JDIR];
+      xi = data->x[IDIR];
+      xj = data->x[JDIR];
+      dxk = data->dx[KDIR];
+    #endif
+
+
+    idefix_reduce("CheckMaxDt", jbeg, jend, ibeg, iend,
+      KOKKOS_LAMBDA(int j, int i, real &invDtLoc) {
+        real w,dphi;
+        #if GEOMETRY == CARTESIAN
+          if(fargoType==userdef) {
+            w = meanV(j,i);
+          } else if(fargoType==shearingbox) {
+            w = sbS*xi(i);
+          }
+        #elif GEOMETRY == POLAR
+          w = meanV(j,i)/xi(i);
+        #elif GEOMETRY == SPHERICAL
+          w = meanV(j,i)/(xi(i)*sin(xj(j)));
+        #endif
+        dphi = dxk(0);  // dphi is supposedly constant when using fargo.
+        invDtLoc = FMAX(invDtLoc, FABS(w/dphi));
+      },
+      Kokkos::Max<real>(invDt));
+  #ifdef WITH_MPI
+    if(idfx::psize>1) {
+          MPI_SAFE_CALL(MPI_Allreduce(MPI_IN_PLACE, &invDt, 1, realMPI, MPI_MAX, MPI_COMM_WORLD));
+        }
+  #endif
+  this->dtMax = this->maxShift / invDt;
 }
 
 void Fargo::AddVelocity(const real t) {
@@ -373,14 +447,15 @@ void Fargo::StoreToScratch() {
               });
     }
   #endif
-
-  if(haveDomainDecomposition) {
-    #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
-      this->mpi.ExchangeX2();
-    #elif GEOMETRY == SPHERICAL
-      this->mpi.ExchangeX3();
-    #endif
-  }
+  #if WITH_MPI
+    if(haveDomainDecomposition) {
+      #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
+        this->mpi.ExchangeX2();
+      #elif GEOMETRY == SPHERICAL
+        this->mpi.ExchangeX3();
+      #endif
+    }
+  #endif
 }
 
 void Fargo::ShiftSolution(const real t, const real dt) {
@@ -389,6 +464,14 @@ void Fargo::ShiftSolution(const real t, const real dt) {
   // Refresh the fargo velocity function
   if(type==userdef) {
     GetFargoVelocity(t);
+  }
+  if(haveDomainDecomposition && dt>dtMax) {
+    std::stringstream message;
+    message << "Your dt is too large with your domain decomposition and Fargo." << std::endl
+            << "Got dt=" << dt << " and Fargo:dtmax=" << dtMax << "." << std::endl
+            << "Try to increase [Fargo]:maxShift to a value larger than "
+            << static_cast<int>(ceil(dt/(dtMax/maxShift))) << std::endl;
+    IDEFIX_ERROR(message);
   }
 
   IdefixArray4D<real> Uc = hydro->Uc;

@@ -57,9 +57,9 @@ void HydroBoundary::Init(Input & input, Grid &grid, Hydro* hydro) {
     #endif
   }
   #if MHD == YES
-    mpi.Init(data->mygrid , hydro->Vc, mapVars, data->nghost, data->np_int, true, hydro->Vs);
+    mpi.Init(data->mygrid, mapVars, data->nghost, data->np_int, true);
   #else
-    mpi.Init(data->mygrid, hydro->Vc, mapVars, data->nghost, data->np_int);
+    mpi.Init(data->mygrid, mapVars, data->nghost, data->np_int);
   #endif
 #endif // MPI
   idfx::popRegion();
@@ -94,13 +94,13 @@ void HydroBoundary::SetBoundaries(real t) {
     if(data->mygrid->nproc[dir]>1) {
       switch(dir) {
         case 0:
-          mpi.ExchangeX1();
+          mpi.ExchangeX1(hydro->Vc, hydro->Vs);
           break;
         case 1:
-          mpi.ExchangeX2();
+          mpi.ExchangeX2(hydro->Vc, hydro->Vs);
           break;
         case 2:
-          mpi.ExchangeX3();
+          mpi.ExchangeX3(hydro->Vc, hydro->Vs);
           break;
       }
     }

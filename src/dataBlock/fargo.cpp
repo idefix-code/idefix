@@ -233,9 +233,9 @@ void Fargo::Init(Input &input, DataBlock *data) {
         vars.push_back(i);
       }
       #if MHD == YES
-        this->mpi.Init(data->mygrid, scrhUc, vars, this->nghost, data->np_int, true, scrhVs);
+        this->mpi.Init(data->mygrid, vars, this->nghost, data->np_int, true);
       #else
-        this->mpi.Init(data->mygrid, scrhUc, vars, this->nghost, data->np_int);
+        this->mpi.Init(data->mygrid, vars, this->nghost, data->np_int);
       #endif
     }
   #endif
@@ -450,9 +450,9 @@ void Fargo::StoreToScratch() {
   #if WITH_MPI
     if(haveDomainDecomposition) {
       #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
-        this->mpi.ExchangeX2();
+        this->mpi.ExchangeX2(scrhUc, scrhVs);
       #elif GEOMETRY == SPHERICAL
-        this->mpi.ExchangeX3();
+        this->mpi.ExchangeX3(scrhUc, scrhVs);
       #endif
     }
   #endif

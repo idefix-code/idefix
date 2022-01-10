@@ -21,14 +21,19 @@ class Mpi {
  public:
   // MPI Exchange functions
   void ExchangeAll();   ///< Exchange boundary elements in all directions (todo)
-  void ExchangeX1();    ///< Exchange boundary elements in the X1 direction
-  void ExchangeX2();    ///< Exchange boundary elements in the X2 direction
-  void ExchangeX3();    ///< Exchange boundary elements in the X3 direction
+  void ExchangeX1(IdefixArray4D<real> inputVc,
+                  IdefixArray4D<real> inputVs = IdefixArray4D<real>());
+                                      ///< Exchange boundary elements in the X1 direction
+  void ExchangeX2(IdefixArray4D<real> inputVc,
+                IdefixArray4D<real> inputVs = IdefixArray4D<real>());
+                                    ///< Exchange boundary elements in the X2 direction
+  void ExchangeX3(IdefixArray4D<real> inputVc,
+                IdefixArray4D<real> inputVs = IdefixArray4D<real>());
+                                      ///< Exchange boundary elements in the X3 direction
 
   // Init from datablock
-  void Init(Grid *grid, IdefixArray4D<real> inputVc, std::vector<int> inputMap,
-            int nghost[3], int nint[3],
-            bool inputHaveVs = false, IdefixArray4D<real> inputVs = IdefixArray4D<real>() );
+  void Init(Grid *grid, std::vector<int> inputMap,
+            int nghost[3], int nint[3], bool inputHaveVs = false );
 
   // Destructor
   ~Mpi();
@@ -39,8 +44,6 @@ class Mpi {
   bool isInitialized{false};
 
   DataBlock *data;          // pointer to datablock object
-  IdefixArray4D<real> Vc;   // reference to cell-centered array on which this object works
-  IdefixArray4D<real> Vs;   // reference to face-centered array on which this object works
 
   enum {faceRight, faceLeft};
 

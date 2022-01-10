@@ -30,20 +30,16 @@ void Mpi::ExchangeAll() {
 ///
 /// Initialise an instance of the MPI class.
 /// @param grid: pointer to the grid object (needed to get the MPI neighbours)
-/// @param inputVc: input 4D array of cell centered variables from which cell
-///                  elements are to be exhanged
 /// @param inputMap: 1st indices of inputVc which are to be exchanged (i.e, the list of variables)
 /// @param nghost: size of the ghost region in each direction
 /// @param nint: size of the internal region in each direction
 /// @param inputHaveVs: whether the instance should also treat face-centered variable
 ///                     (optional, default false)
-/// @param inputVs: input face-centered variables arrays which is used if inputHaveVs is true
-///                 (optional)
 ///
 
-void Mpi::Init(Grid *grid, IdefixArray4D<real> inputVc, std::vector<int> inputMap,
+void Mpi::Init(Grid *grid, std::vector<int> inputMap,
                int nghost[3], int nint[3],
-               bool inputHaveVs, IdefixArray4D<real> inputVs ) {
+               bool inputHaveVs) {
   this->mygrid = grid;
 
   // increase the number of instances
@@ -56,8 +52,6 @@ void Mpi::Init(Grid *grid, IdefixArray4D<real> inputVc, std::vector<int> inputMa
   this->mapVars = idfx::ConvertVectorToIdefixArray(inputMap);
   this->mapNVars = inputMap.size();
   this->haveVs = inputHaveVs;
-  this->Vc = inputVc;
-  if(haveVs) this->Vs = inputVs;
 
   // Compute indices of arrays we will be working with
   for(int dir = 0 ; dir < 3 ; dir++) {
@@ -233,7 +227,7 @@ Mpi::~Mpi() {
   }
 }
 
-void Mpi::ExchangeX1() {
+void Mpi::ExchangeX1(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   idfx::pushRegion("Mpi::ExchangeX1");
 
   // Load  the buffers with data
@@ -241,9 +235,8 @@ void Mpi::ExchangeX1() {
   int nx,ny,nz;
   IdefixArray1D<real> BufferLeft=BufferSendX1[faceLeft];
   IdefixArray1D<real> BufferRight=BufferSendX1[faceRight];
-  IdefixArray4D<real> Vc=this->Vc;
   IdefixArray1D<int> map = this->mapVars;
-  IdefixArray4D<real> Vs=this->Vs;
+
   int VsIndex;
 
   // If MPI Persistent, start receiving even before the buffers are filled
@@ -418,7 +411,7 @@ myTimer -= MPI_Wtime();
 }
 
 
-void Mpi::ExchangeX2() {
+void Mpi::ExchangeX2(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   idfx::pushRegion("Mpi::ExchangeX2");
 
   // Load  the buffers with data
@@ -426,9 +419,7 @@ void Mpi::ExchangeX2() {
   int nx,ny,nz;
   IdefixArray1D<real> BufferLeft=BufferSendX2[faceLeft];
   IdefixArray1D<real> BufferRight=BufferSendX2[faceRight];
-  IdefixArray4D<real> Vc=this->Vc;
   IdefixArray1D<int> map = this->mapVars;
-  IdefixArray4D<real> Vs=this->Vs;
   int VsIndex;
 
 // If MPI Persistent, start receiving even before the buffers are filled
@@ -601,7 +592,7 @@ void Mpi::ExchangeX2() {
 }
 
 
-void Mpi::ExchangeX3() {
+void Mpi::ExchangeX3(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   idfx::pushRegion("Mpi::ExchangeX3");
 
 
@@ -610,9 +601,7 @@ void Mpi::ExchangeX3() {
   int nx,ny,nz;
   IdefixArray1D<real> BufferLeft=BufferSendX3[faceLeft];
   IdefixArray1D<real> BufferRight=BufferSendX3[faceRight];
-  IdefixArray4D<real> Vc=this->Vc;
   IdefixArray1D<int> map = this->mapVars;
-  IdefixArray4D<real> Vs=this->Vs;
   int VsIndex;
 
   // If MPI Persistent, start receiving even before the buffers are filled

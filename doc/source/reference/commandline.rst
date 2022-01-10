@@ -37,8 +37,8 @@ line when running *Idefix*:
 +--------------------------+-------------------------------------------------------------------------------------------------------------------+
 | Option name              | Comment                                                                                                           |
 +==========================+===================================================================================================================+
-| --kokkos-num-devices=x   | | Specify the number of devices (eg CUDA GPU) Kokkos should expect. This option is useful when each MPI           |
-|                          | | process should be attached to a different GPU. This option replace --kokkos-ndevices which is now deprecated    |
+| --kokkos-num-devices=x   | | Specify the number of devices (eg CUDA GPU) Kokkos should expect in each compute node. This option is used by   |
+|                          | | Kokkos to map MPI processes to Kokkos devices (=targets) in each node.                                          |
 +--------------------------+-------------------------------------------------------------------------------------------------------------------+
 
 

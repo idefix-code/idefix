@@ -1,8 +1,8 @@
-Code configuration
-==================
+Code configuration with Cmake
+=============================
 
 
-Introduction to cmake
+Introduction to Cmake
 +++++++++++++++++++++
 `Cmake <https://cmake.org>`_ is a tool to control code generation on diverse platforms. It is the default tool used to configure *Idefix*. *Idefix* (and Kokkos)
 requires ``cmake`` version >= 3.16. It is also recommended to use the graphical frontend ``ccmake`` to configure *Idefix*, as it allows one to have a rapid
@@ -30,11 +30,15 @@ Several options can be enabled from the command line (or are accessible with ``c
 ``-D Idefix_MHD=ON``
     Enable MHD. If your setup is MHD-only, making this option mandatory, it is recommended to use a local ``CMakeLists.txt`` file instead, as described in :ref:`setupSpecificOptions`
 
-``-D Idefix_ENABLE_MPI=ON``
+``-D Idefix_MPI=ON``
     Enable MPI parallelisation. Requires an MPI library. When used in conjonction with CUDA (Nvidia GPUs), a CUDA-aware MPI library is required by *Idefix*.
 
 ``-D Idefix_DEFS=foo.hpp``
     Specify a particular filename to be used in place of the default problem file ``definitions.hpp``
+
+``-D Idefix_DEBUG=ON``
+    Enable debug options in *Idefix*. This triggers a lot of outputs, and automatic bound checks of array accesses. As a result, this
+    option makes the code very slow.
 
 ``-D Idefix_RECONSTRUCTION=x``
     Specify the type of reconstruction scheme (replaces the old "ORDER" parameter in ``definitions.hpp``). Accepted values for ``x`` are:
@@ -88,7 +92,7 @@ Several options can be enabled from the command line (or are accessible with ``c
 Setup-specific options
 ++++++++++++++++++++++
 
-Some physical setup might require some ``cmake`` options to be set to specific value (e.g. an MHD setup will surely require MHD to be enable).
+Some physical setup might require some ``cmake`` options to be set to specific value (e.g. an MHD setup will surely require MHD to be enabled).
 To avoid mistakes, it is then recommended to enforce this choice by creating a custom ``CMakeLists.txt`` in your setup directory, and setting
 explicitely the options as they are required, using the functions ``set_idefix_property`` (for string properties) and ``enable_idefix_propery``/
 ``disable_idefix_propery`` (for boolean properties), as in the example below:

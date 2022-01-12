@@ -1,6 +1,6 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020-2021 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+// Copyright(C) 2020-2022 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
@@ -9,7 +9,7 @@
 //@HEADER
 // ************************************************************************
 //
-//                        IDEFIX v 0.0-alpha
+//                        IDEFIX v 1.0-alpha
 //
 // ************************************************************************
 //@HEADER
@@ -111,7 +111,9 @@ int main( int argc, char* argv[] ) {
       output.CheckForWrites(data);
     } else {
       idfx::cout << "Main: Creating initial conditions." << std::endl;
+      idfx::pushRegion("Setup::Initflow");
       mysetup.InitFlow(data);
+      idfx::popRegion();
       data.SetBoundaries();
       output.CheckForWrites(data);
       if(data.CheckNan()) {

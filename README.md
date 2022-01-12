@@ -2,7 +2,6 @@
 
 <!-- toc -->
 
-- [Full documentation](#full-documentation)
 - [Download:](#download)
 - [Installation:](#installation)
 - [Compile an example:](#compile-an-example)
@@ -16,14 +15,6 @@
 - [Contributing](#contributing)
 
 <!-- tocstop -->
-
-Full documentation
-------------------
-
-The latest documentation is available online following these links
-- [Master branch documentation](https://discs.gricad-pages.univ-grenoble-alpes.fr/idefix/master/index.html).
-- [Develop branch documentation](https://discs.gricad-pages.univ-grenoble-alpes.fr/idefix/develop/index.html).
-
 
 Download:
 ---------
@@ -63,7 +54,7 @@ Configure the code launching cmake (version >= 3.16) in the example directory:
 cmake $IDEFIX_DIR
 ```
 
-Several options can be enabled from the command line (a complete list is available with `cmake $IDEFIX_DIR -LH`). For instance: `-DIdefix_MHD=ON` (enable MHD, required in MHD tests), `-DIdefix_MPI=ON` (enable mpi), `-DKokkos_ENABLE_OPENMP=ON` (enable openmp parallelisation), etc... For more complex target architectures, it is recommended to use cmake GUI launching `ccmake $IDEFIX_DIR` in place of `cmake` and then switching on the required options.
+Several options can be enabled from the command line (a complete list is available with `cmake $IDEFIX_DIR -LH`). For instance: `-DIdefix_RECONSTRUCTION=Parabolic` (enable PPM reconstruction), `-DIdefix_MPI=ON` (enable mpi), `-DKokkos_ENABLE_OPENMP=ON` (enable openmp parallelisation), etc... For more complex target architectures, it is recommended to use cmake GUI launching `ccmake $IDEFIX_DIR` in place of `cmake` and then switching on the required options.
 
 One can then compile the code:
 
@@ -107,14 +98,15 @@ use the kokkos profiler tool, which can be downloaded from kokkos-tools (on gith
 Then set the environement variable:
 
 ```shell
-export KOKKOS_PROFILE_LIBRARY=~/Kokkos/kokkos-tools/src/tools/space-time-stack/kp_space_time_stack.so
+export KOKKOS_PROFILE_LIBRARY=kokkos-tools/src/tools/space-time-stack/kp_space_time_stack.so
 ````
 
 and then simply run the code (no need to recompile)
 
 Debugging
 -------------------
-Add `#define DEBUG` in definitions.hpp and recompile. More to come...
+Add `-DIdefix_DEBUG=ON` when calling cmake, or activate the `Idefix_DEBUG` option in ccmake, and recompile.
+Note that this option triggers a lot of outputs and memory access checks which significantly slow down the code.
 
 Running tests
 -------------------

@@ -64,17 +64,11 @@ Examples tests:
     - cd test
     - ./checks_examples.sh
 
-cache:
-  # Required to keep artifacts from old builds, e.g. from master
-  paths:
-    - public
-
 pages:
   image: lesurg/idefix-documentation:latest
   stage: deploy
   script:
-    - dir="$CI_COMMIT_REF_SLUG"
-    - dir="public/$dir"
+    - dir="public"
     - rm -rf $dir
     - sphinx-build -b html doc/source $dir
   artifacts:
@@ -82,4 +76,3 @@ pages:
       - public
   only:
   - master
-  - develop

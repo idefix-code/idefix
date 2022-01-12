@@ -1,8 +1,7 @@
 #!/bin/bash
 
-rep_HD_2D_mpi_list="MachReflection ViscousFlowPastCylinder"
-rep_MHD_2D_mpi_list="OrszagTang"
-rep_MHD_3D_mpi_list="AmbipolarCshock3D OrszagTang3D"
+rep_2D_mpi_list="HD/MachReflection HD/ViscousFlowPastCylinder HD/FargoPlanet MHD/OrszagTang"
+rep_3D_mpi_list="MHD/AmbipolarCshock3D MHD/FargoMHDSpherical MHD/OrszagTang3D"
 
 # refer to the parent dir of this file, wherever this is called from
 # a python equivalent is e.g.
@@ -35,14 +34,14 @@ echo $IDEFIX_DIR
 set -e
 options=$@
 
-# HD MPI tests
-for rep in $rep_HD_2D_mpi_list; do
-    cd $TEST_DIR/HD/$rep
+# 2D MPI tests
+for rep in $rep_2D_mpi_list; do
+    cd $TEST_DIR/$rep
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "***********************************************"
     rm -f CMakeCache.txt
-    cmake $IDEFIX_DIR -DIdefix_MPI=ON $options
+    cmake $IDEFIX_DIR -DIdefix_MPI=ON -DKokkos_ENABLE_DEBUG_BOUNDS_CHECK=ON $options
     echo "***********************************************"
     echo "Making  $rep"
     echo "***********************************************"
@@ -53,7 +52,7 @@ for rep in $rep_HD_2D_mpi_list; do
         echo "***********************************************"
         echo "Running  $rep with $ini"
         echo "***********************************************"
-        mpirun -np 4 ./idefix -i $ini -dec 2 2
+        mpirun -np 4 ./idefix -i $ini -dec 2 2 -nolog
 
         cd python
         echo "***********************************************"
@@ -67,13 +66,13 @@ for rep in $rep_HD_2D_mpi_list; do
 done
 
 # MHD tests
-for rep in $rep_MHD_2D_mpi_list; do
-    cd $TEST_DIR/MHD/$rep
+for rep in $rep_3D_mpi_list; do
+    cd $TEST_DIR/$rep
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "***********************************************"
     rm -f CMakeCache.txt
-    cmake $IDEFIX_DIR -DIdefix_MHD=ON -DIdefix_MPI=ON $options
+    cmake $IDEFIX_DIR -DIdefix_MPI=ON -DKokkos_ENABLE_DEBUG_BOUNDS_CHECK=ON $options
     echo "***********************************************"
     echo "Making  $rep"
     echo "***********************************************"
@@ -84,38 +83,7 @@ for rep in $rep_MHD_2D_mpi_list; do
         echo "***********************************************"
         echo "Running  $rep with $ini"
         echo "***********************************************"
-        mpirun -np 4 ./idefix -i $ini -dec 2 2
-
-        cd python
-        echo "***********************************************"
-        echo "Testing  $rep with $ini"
-        echo "***********************************************"
-        python3 testidefix.py -noplot
-        cd ..
-    done
-
-    cd $TEST_DIR
-done
-
-# MHD tests
-for rep in $rep_MHD_3D_mpi_list; do
-    cd $TEST_DIR/MHD/$rep
-    echo "***********************************************"
-    echo "Configuring  $rep"
-    echo "***********************************************"
-    rm -f CMakeCache.txt
-    cmake $IDEFIX_DIR -DIdefix_MHD=ON -DIdefix_MPI=ON $options
-    echo "***********************************************"
-    echo "Making  $rep"
-    echo "***********************************************"
-    make clean; make -j 4
-
-    ini_files=$(ls *.ini)
-    for ini in $ini_files; do
-        echo "***********************************************"
-        echo "Running  $rep with $ini"
-        echo "***********************************************"
-        mpirun -np 8 ./idefix -i $ini -dec 2 2 2
+        mpirun -np 8 ./idefix -i $ini -dec 2 2 2 -nolog
 
         cd python
         echo "***********************************************"
@@ -136,7 +104,7 @@ mv data.0001.vtk data.0001.old.vtk
 echo "***********************************************"
 echo "Running  $rep with restart dump # 1"
 echo "***********************************************"
-mpirun -np 8 ./idefix -restart 1 -dec 2 2 2 || { echo "!!!! MHD $rep failed running restart dump validation"; exit 1; }
+mpirun -np 8 ./idefix -restart 1 -dec 2 2 2 -nolog || { echo "!!!! MHD $rep failed running restart dump validation"; exit 1; }
 cd python
 echo "***********************************************"
 echo "Testing  $rep with restart dump # 1"

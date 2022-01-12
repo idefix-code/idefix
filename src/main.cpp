@@ -1,6 +1,6 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020-2021 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+// Copyright(C) 2020-2022 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
@@ -9,7 +9,7 @@
 //@HEADER
 // ************************************************************************
 //
-//                        IDEFIX v 0.0-alpha
+//                        IDEFIX v 1.0-alpha
 //
 // ************************************************************************
 //@HEADER
@@ -42,23 +42,23 @@
 
 
 int main( int argc, char* argv[] ) {
-  bool haveSlurm = false;
+  bool initKokkosBeforeMPI = false;
 
-  // When running on GPUS allocated from a SLURM scheduler,
+  // When running on GPUS with Omnipath network,
   // Kokkos needs to be initialised *before* the MPI layer
 #ifdef KOKKOS_ENABLE_CUDA
-  if(std::getenv("SLURM_JOB_ID") != NULL) {
-    haveSlurm = true;
+  if(std::getenv("PSM2_CUDA") != NULL) {
+    initKokkosBeforeMPI = true;
   }
 #endif
 
-  if(haveSlurm)  Kokkos::initialize( argc, argv );
+  if(initKokkosBeforeMPI)  Kokkos::initialize( argc, argv );
 
 #ifdef WITH_MPI
   MPI_Init(&argc,&argv);
 #endif
 
-  if(!haveSlurm) Kokkos::initialize( argc, argv );
+  if(!initKokkosBeforeMPI) Kokkos::initialize( argc, argv );
 
 
   {
@@ -68,9 +68,10 @@ int main( int argc, char* argv[] ) {
     input.PrintLogo();
     input.PrintParameters();
 
-    if(haveSlurm)
-      idfx::cout << "Main: detected you were runnning on a SLURM scheduler with CUDA. "
-                    "Kokkos has been initialised accordingly." << std::endl;
+    if(initKokkosBeforeMPI) {
+      idfx::cout << "Main: detected your configuration needed Kokkos to be initialised before MPI. "
+                 << std::endl;
+    }
 
     idfx::cout << "Main: Init Grid." << std::endl;
     // Allocate the grid on device
@@ -110,9 +111,14 @@ int main( int argc, char* argv[] ) {
       output.CheckForWrites(data);
     } else {
       idfx::cout << "Main: Creating initial conditions." << std::endl;
+      idfx::pushRegion("Setup::Initflow");
       mysetup.InitFlow(data);
+      idfx::popRegion();
       data.SetBoundaries();
       output.CheckForWrites(data);
+      if(data.CheckNan()) {
+        IDEFIX_ERROR("Nans were found in your initial conditions.");
+      }
     }
 
     idfx::cout << "Main: Cycling Time Integrator..." << std::endl;
@@ -127,9 +133,15 @@ int main( int argc, char* argv[] ) {
       Tint.Cycle(data);
       output.CheckForWrites(data);
       if(input.CheckForAbort() || Tint.CheckForMaxRuntime() ) {
-        idfx::cout << "Main: Saving current state and aborting calculation" << std::endl;
+        idfx::cout << "Main: Saving current state and aborting calculation." << std::endl;
         output.ForceWrite(data);
         break;
+      }
+      if(input.maxCycles>=0) {
+        if(Tint.GetNCycles() >= input.maxCycles) {
+          idfx::cout << "Main: Reached maximum number of integration cycles." << std::endl;
+          break;
+        }
       }
     }
 
@@ -144,7 +156,7 @@ int main( int argc, char* argv[] ) {
     n_seconds = divres.rem;
 
     double tintegration = timer.seconds() / grid.np_int[IDIR] / grid.np_int[JDIR]
-                            / grid.np_int[KDIR] / Tint.getNcycles();
+                            / grid.np_int[KDIR] / Tint.GetNCycles();
 
     idfx::cout << "Main: Reached t=" << data.t << std::endl;
     idfx::cout << "Main: Completed in ";
@@ -174,8 +186,8 @@ int main( int argc, char* argv[] ) {
       idfx::cout << "s";
     }
     idfx::cout << " ";
-    idfx::cout << "and " << Tint.getNcycles() << " cycle";
-    if (Tint.getNcycles() != 1) {
+    idfx::cout << "and " << Tint.GetNCycles() << " cycle";
+    if (Tint.GetNCycles() != 1) {
       idfx::cout << "s";
     }
     idfx::cout << std::endl;

@@ -1,6 +1,6 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020-2021 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+// Copyright(C) 2020-2022 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
@@ -580,9 +580,22 @@ int Dump::Write(DataBlock &data, Output& output) {
 
   // open file
 #ifdef WITH_MPI
-  MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename,
-                              MPI_MODE_CREATE | MPI_MODE_RDWR | MPI_MODE_UNIQUE_OPEN,
+// Open file for creating, return error if file already exists.
+  int err = MPI_File_open(MPI_COMM_WORLD, filename,
+                              MPI_MODE_CREATE | MPI_MODE_RDWR
+                              | MPI_MODE_EXCL | MPI_MODE_UNIQUE_OPEN,
+                              MPI_INFO_NULL, &fileHdl);
+  if (err != MPI_SUCCESS)  {
+    // File exists, delete it before reopening
+    if(idfx::prank == 0) {
+      MPI_File_delete(filename,MPI_INFO_NULL);
+    }
+    MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename,
+                              MPI_MODE_CREATE | MPI_MODE_RDWR
+                              | MPI_MODE_EXCL | MPI_MODE_UNIQUE_OPEN,
                               MPI_INFO_NULL, &fileHdl));
+  }
+
   this->offset = 0;
 #else
   fileHdl = fopen(filename,"wb");

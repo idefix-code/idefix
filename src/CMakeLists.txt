@@ -3,6 +3,7 @@ add_subdirectory(hydro)
 add_subdirectory(dataBlock)
 add_subdirectory(output)
 add_subdirectory(rkl)
+add_subdirectory(gravity)
 
 target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/arrays.hpp
@@ -31,5 +32,11 @@ target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/tuner.cpp
   )
 
+if(Idefix_MPI)
+  target_sources(idefix
+    PUBLIC ${CMAKE_CURRENT_LIST_DIR}/mpi.cpp
+    PUBLIC ${CMAKE_CURRENT_LIST_DIR}/mpi.hpp
+    )
+endif()
 
 #add_subdirectory("${PROJECT_BINARY_DIR}" "${PROJECT_BINARY_DIR}/local")

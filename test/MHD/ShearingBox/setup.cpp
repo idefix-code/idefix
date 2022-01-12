@@ -77,7 +77,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   B0z = input.GetReal("Setup","B0z",0);
 
   // Add our userstep to the timeintegrator
-  data.hydro.EnrollBodyForce(BodyForce);
+  data.gravity.EnrollBodyForce(BodyForce);
 
   analysis = new Analysis(input, grid, data, output,std::string("timevol.dat"));
   output.EnrollAnalysis(&AnalysisFunction);

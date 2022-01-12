@@ -1,6 +1,6 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020-2021 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+// Copyright(C) 2020-2022 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
@@ -16,7 +16,7 @@
 
 class TimeIntegrator {
  public:
-  int64_t getNcycles();   // Get current number of cycles
+  int64_t GetNCycles();   // Get current number of cycles
 
   // Constructor from input and given datablock
   TimeIntegrator(Input &, DataBlock &);

@@ -62,9 +62,24 @@ def readDump(filename):
     field=readEntry(f)
     data.x1=field.array
     field=readEntry(f)
+    data.x1l=field.array
+    field=readEntry(f)
+    data.x1r=field.array
+
+    field=readEntry(f)
     data.x2=field.array
     field=readEntry(f)
+    data.x2l=field.array
+    field=readEntry(f)
+    data.x2r=field.array
+
+    field=readEntry(f)
     data.x3=field.array
+    field=readEntry(f)
+    data.x3l=field.array
+    field=readEntry(f)
+    data.x3r=field.array
+
 
     # read remaining fields and store them
     data.data={}

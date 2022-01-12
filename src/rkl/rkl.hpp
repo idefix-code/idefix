@@ -1,6 +1,6 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020-2021 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+// Copyright(C) 2020-2022 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
@@ -8,6 +8,7 @@
 #ifndef RKL_RKL_HPP_
 #define RKL_RKL_HPP_
 
+#include <vector>
 #include "idefix.hpp"
 #include "input.hpp"
 #include "dataBlock.hpp"
@@ -51,7 +52,7 @@ class RKLegendre {
 #endif
 
   bool haveVs{false};           // Whether we have (and need to compute) cell-centered variables
-  void AddVariable(int, IdefixArray1D<int>::HostMirror & );
+  void AddVariable(int, std::vector<int> & );
 
  private:
   template<int> void LoopDir(real);   // Dimensional loop

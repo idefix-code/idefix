@@ -1,6 +1,6 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020-2021 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+// Copyright(C) 2020-2022 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
@@ -12,6 +12,9 @@ Output::Output(Input &input, DataBlock &data) {
   idfx::pushRegion("Output::Output");
   // initialise the output objects for each format
 
+  if(input.forceNoWrite) {
+    this->forceNoWrite = true;
+  }
   // Initialise vtk outputs
   if(input.CheckEntry("Output","vtk")>0) {
     vtkPeriod = input.GetReal("Output","vtk",0);
@@ -60,6 +63,11 @@ int Output::CheckForWrites(DataBlock &data) {
   idfx::pushRegion("Output::CheckForWrites");
   int nfiles=0;
 
+  // skip everything if forced to disable all writes
+  if(forceNoWrite) {
+    idfx::popRegion();
+    return(0);
+  }
   // Do we need a restart dump?
   if(dumpEnabled) {
     if(data.t >= dumpLast + dumpPeriod) {
@@ -68,6 +76,14 @@ int Output::CheckForWrites(DataBlock &data) {
       dump.Write(data,*this);
       nfiles++;
       elapsedTime += timer.seconds();
+
+      // Check if our next predicted output should already have happened
+      if((dumpLast+dumpPeriod <= data.t) && dumpPeriod>0.0) {
+        // Move forward dumpLast
+        while(dumpLast <= data.t - dumpPeriod) {
+          dumpLast += dumpPeriod;
+        }
+      }
     }
   }
 
@@ -90,6 +106,14 @@ int Output::CheckForWrites(DataBlock &data) {
       vtk.Write(data, *this);
       nfiles++;
       elapsedTime += timer.seconds();
+
+      // Check if our next predicted output should already have happened
+      if((vtkLast+vtkPeriod <= data.t) && vtkPeriod>0.0) {
+        // Move forward vtkLast
+        while(vtkLast <= data.t - vtkPeriod) {
+          vtkLast += vtkPeriod;
+        }
+      }
     }
   }
 
@@ -107,6 +131,14 @@ int Output::CheckForWrites(DataBlock &data) {
       idfx::popRegion();
       nfiles++;
       elapsedTime += timer.seconds();
+
+      // Check if our next predicted output should already have happened
+      if((analysisLast+analysisPeriod <= data.t) && analysisPeriod>0.0) {
+        // Move forward analysisLast
+        while(analysisLast <= data.t - analysisPeriod) {
+          analysisLast += analysisPeriod;
+        }
+      }
     }
   }
 
@@ -126,7 +158,7 @@ void Output::RestartFromDump(DataBlock &data, int readNumber) {
 void Output::ForceWrite(DataBlock &data) {
   idfx::pushRegion("Output::ForceWrite");
 
-  dump.Write(data,*this);
+  if(!forceNoWrite) dump.Write(data,*this);
 
   idfx::popRegion();
 }

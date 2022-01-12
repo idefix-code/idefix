@@ -125,16 +125,6 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 
 }
 
-
-void Potential(DataBlock& data, const real t, IdefixArray1D<real>& x1, IdefixArray1D<real>& x2, IdefixArray1D<real>& x3, IdefixArray3D<real>& phi) {
-
-    idefix_for("Potential",0,data.np_tot[KDIR], 0, data.np_tot[JDIR], 0, data.np_tot[IDIR],
-        KOKKOS_LAMBDA (int k, int j, int i) {
-        phi(k,j,i) = -1.0/x1(i);
-    });
-
-}
-
 // Default constructor
 
 
@@ -143,11 +133,10 @@ void Potential(DataBlock& data, const real t, IdefixArray1D<real>& x1, IdefixArr
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   // Set the function for userdefboundary
   data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
-  data.hydro.EnrollGravPotential(&Potential);
   data.hydro.EnrollIsoSoundSpeed(&MySoundSpeed);
   data.hydro.viscosity.EnrollViscousDiffusivity(&MyViscosity);
-  if(data.hydro.haveFargo)
-    data.hydro.fargo.EnrollVelocity(&FargoVelocity);
+  if(data.haveFargo)
+    data.fargo.EnrollVelocity(&FargoVelocity);
   epsilonGlob = input.GetReal("Setup","epsilon",0);
   alphaGlob = input.GetReal("Setup","alpha",0);
   idfx::cout << "alpha= " << alphaGlob << std::endl;

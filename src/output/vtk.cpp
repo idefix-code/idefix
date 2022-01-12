@@ -1,6 +1,6 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020-2021 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+// Copyright(C) 2020-2022 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
@@ -198,7 +198,11 @@ void Vtk::Init(Input &input, DataBlock &datain) {
         node_coord(k,j,i,2) = BigEndian(x3);
 
   #elif GEOMETRY == SPHERICAL
-    #if DIMENSIONS == 2
+    #if DIMENSIONS == 1
+        node_coord(k,j,i,0) = BigEndian(x1);
+        node_coord(k,j,i,1) = BigEndian(0.0);
+        node_coord(k,j,i,2) = BigEndian(0.0);
+    #elif DIMENSIONS == 2
         node_coord(k,j,i,0) = BigEndian(x1 * sin(x2));
         node_coord(k,j,i,1) = BigEndian(x1 * cos(x2));
         node_coord(k,j,i,2) = BigEndian(0.0);
@@ -256,9 +260,21 @@ int Vtk::Write(DataBlock &datain, Output &output) {
 
   // Open file and write header
 #ifdef WITH_MPI
-  MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
-                              MPI_MODE_CREATE | MPI_MODE_RDWR | MPI_MODE_UNIQUE_OPEN,
+  // Open file for creating, return error if file already exists.
+  int err = MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
+                              MPI_MODE_CREATE | MPI_MODE_RDWR
+                              | MPI_MODE_EXCL | MPI_MODE_UNIQUE_OPEN,
+                              MPI_INFO_NULL, &fileHdl);
+  if (err != MPI_SUCCESS)  {
+    // File exists, delete it before reopening
+    if(idfx::prank == 0) {
+      MPI_File_delete(filename.c_str(),MPI_INFO_NULL);
+    }
+    MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
+                              MPI_MODE_CREATE | MPI_MODE_RDWR
+                              | MPI_MODE_EXCL | MPI_MODE_UNIQUE_OPEN,
                               MPI_INFO_NULL, &fileHdl));
+  }
   this->offset = 0;
 #else
   fileHdl = fopen(filename.c_str(),"wb");

@@ -1,6 +1,6 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020-2021 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+// Copyright(C) 2020-2022 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
@@ -43,9 +43,20 @@ void ElectroMotiveForce::Init(Input &input, Hydro *hydro) {
       IDEFIX_ERROR("Unknown EMF averaging scheme");
     }
   } else {
-    this->averaging = uct_contact;
-    idfx::cout << "ElectroMotiveForce: unspecified averaging scheme. Using uct_contact by default"
+    if(hydro->hallStatus.status == HydroModuleStatus::Disabled) {
+      this->averaging = uct_contact;
+      idfx::cout << "ElectroMotiveForce: unspecified averaging scheme. Using uct_contact by default"
                 << std::endl;
+    } else {
+      this->averaging = arithmetic;
+      idfx::cout << "ElectroMotiveForce: unspecified averaging scheme. Using arithmetic since Hall"
+                 << " is enabled" << std::endl;
+    }
+  }
+
+  if(hydro->hallStatus.status != HydroModuleStatus::Disabled && averaging != arithmetic ) {
+    IDEFIX_WARNING("Hall effect has been shown to be stable only with arithmetic "
+                   "EMF reconstruction. Use this setup at your own risk!");
   }
 
   this->data = hydro->data;

@@ -1,6 +1,6 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020-2021 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+// Copyright(C) 2020-2022 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
@@ -18,7 +18,7 @@ Grid::Grid() {
 Grid::Grid(Input &input) {
   idfx::pushRegion("Grid::Grid(Input)");
 
-  idfx::cout << "Grid::Grid: allocating Grid." << std::endl;
+  idfx::cout << "Grid: allocating Grid." << std::endl;
 
   // Get grid size from input file, block [Grid]
   int npoints[3];
@@ -29,7 +29,11 @@ Grid::Grid(Input &input) {
     int numPatch = input.GetInt("Grid",label,0);
 
     if(dir<DIMENSIONS) {
-      nghost[dir] = 2;
+      #if ORDER < 4
+        nghost[dir] = 2;
+      #else
+        nghost[dir] = 3;
+      #endif
       npoints[dir] = 0;
       for(int patch = 0; patch < numPatch ; patch++) {
         npoints[dir] += input.GetInt("Grid",label,2+3*patch );

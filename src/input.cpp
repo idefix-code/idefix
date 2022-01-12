@@ -1,6 +1,6 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020-2021 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+// Copyright(C) 2020-2022 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
@@ -41,6 +41,7 @@ Input::Input(int argc, char* argv[] ) {
   std::size_t firstChar, lastChar;
   bool haveBlock = false;
   std::stringstream msg;
+  int nParameters = 0;    // # of parameters in current block
 
   // Tell the system we want to catch the SIGUSR2 signals
   signal(SIGUSR2, signalHandler);
@@ -72,8 +73,14 @@ Input::Input(int argc, char* argv[] ) {
             << this->inputFileName << "' not properly ended";
         IDEFIX_ERROR(msg);
       }
+      // Check if previous block was empty
+      if(haveBlock && nParameters == 0) {
+        IDEFIX_WARNING(blockName+std::string(" block is empty in "+inputFileName));
+        inputParameters[blockName]["!!empty!!"].push_back("!!empty!!");
+      }
       blockName.assign(line, firstChar, lastChar-1);
       haveBlock = true;
+      nParameters = 0;
 
       continue;   // Go to next line
     }   // New block
@@ -88,7 +95,7 @@ Input::Input(int argc, char* argv[] ) {
     std::stringstream streamline(line);
     // Store the name of the parameter
     streamline >> paramName;
-
+    nParameters++;
     // Store the parameters in parameter block
     while(streamline >> paramValue) {
       inputParameters[blockName][paramName].push_back(paramValue);
@@ -172,6 +179,22 @@ void Input::ParseCommandLine(int argc, char **argv) {
       this->inputFileName = std::string(argv[i]);
     } else if(std::string(argv[i]) == "-autotune") {
       this->tuningRequested = true;
+    } else if(std::string(argv[i]) == "-maxcycles") {
+      if((i+1)>= argc) {
+        IDEFIX_ERROR("-maxcycles requires an additional integer parameter");
+      } else if(std::isdigit(argv[i+1][0]) == 0) {
+        // next argiment is another parameter (does not start with a number)
+        IDEFIX_ERROR("-maxcycles requires an additional integer paramater");
+      }
+      this->maxCycles = std::stoi(std::string(argv[++i]));
+      inputParameters["CommandLine"]["maxCycles"].push_back(std::to_string(maxCycles));
+    } else if(std::string(argv[i]) == "-nowrite") {
+      this->forceNoWrite = true;
+      idfx::cout.disableLogFile();
+    } else if(std::string(argv[i]) == "-nolog") {
+      idfx::cout.disableLogFile();
+    } else if(std::string(argv[i]) == "-Werror") {
+      idfx::warningsAreErrors = true;
     } else {
       msg << "Unknown option " << argv[i];
       IDEFIX_ERROR(msg);
@@ -390,6 +413,18 @@ int Input::CheckEntry(std::string blockName, std::string paramName) {
       // Parameter exist
       result = param->second.size();
     }
+  }
+  return(result);
+}
+
+// Check that a block is present in the ini file.
+// If yes, return true
+bool Input::CheckBlock(std::string blockName) {
+  bool result = false;
+  IdefixInputContainer::iterator block = inputParameters.find(blockName);
+  if(block != inputParameters.end()) {
+    // Block exists
+    result = true;
   }
   return(result);
 }

@@ -36,19 +36,3 @@ repos:
     hooks:
       - id: cpplint
         args: [--counting=detailed, --exclude=test/*]
-
-  - repo: https://github.com/asottile/add-trailing-comma
-    rev: v2.1.0
-    hooks:
-      - id: add-trailing-comma
-        files: "configure.py"
-
-  - repo: https://gitlab.com/pycqa/flake8
-    rev: '3.9.2'
-    hooks:
-    - id: flake8
-      additional_dependencies: [
-        flake8-bugbear,
-      ]
-      files: "configure.py"
-      args: ["--ignore", "E501"]

@@ -42,7 +42,7 @@ We provide below an example of a setup using both analysis outputs and uservar o
     vtk       1.0                 # VTK files will be written every 1.0
     uservar   rhovx rhovy         # Two user variables will be defined and written in vtk files
 
-.. code-block:: c++
+.. code-block:: c
   :caption: Setup file `setup.cpp`
 
   // Analyse data to produce an ascii output

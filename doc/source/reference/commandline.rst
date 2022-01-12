@@ -19,6 +19,14 @@ Several options can be provided at command line when running the code. These are
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+
 | -i                 |   specify the name of the input file to be used (default ``idefix.ini``)                                                |
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+
+| -maxcycles n       |   stops when the code has performed ``n`` integration cycles                                                            |
++--------------------+-------------------------------------------------------------------------------------------------------------------------+
+| -nolog             |   disable log files                                                                                                     |
++--------------------+-------------------------------------------------------------------------------------------------------------------------+
+| -nowrite           |   disable all writes (useful for raw performance measures or for tests). This option implies ``-nolog``                 |
++--------------------+-------------------------------------------------------------------------------------------------------------------------+
+| -Werror            |   warning messages are considered as errors and stop the code with a non-zero exit code.                                |
++--------------------+-------------------------------------------------------------------------------------------------------------------------+
 | -autotune          | | try to find the best loop runrolling strategy by running a series of integration tests                                |
 |                    | | before starting the real integration loop.                                                                            |
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+
@@ -29,8 +37,8 @@ line when running *Idefix*:
 +--------------------------+-------------------------------------------------------------------------------------------------------------------+
 | Option name              | Comment                                                                                                           |
 +==========================+===================================================================================================================+
-| --kokkos-num-devices=x   | | Specify the number of devices (eg CUDA GPU) Kokkos should expect. This option is useful when each MPI           |
-|                          | | process should be attached to a different GPU. This option replace --kokkos-ndevices which is now deprecated    |
+| --kokkos-num-devices=x   | | Specify the number of devices (eg CUDA GPU) Kokkos should expect in each compute node. This option is used by   |
+|                          | | Kokkos to map MPI processes to Kokkos devices (=targets) in each node.                                          |
 +--------------------------+-------------------------------------------------------------------------------------------------------------------+
 
 

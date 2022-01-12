@@ -1,6 +1,6 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020-2021 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+// Copyright(C) 2020-2022 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
@@ -26,11 +26,13 @@ class Input {
 
   // Accessor to input parameters
   // the parameters are always: BlockName, EntryName, ParameterNumber (starting from 0)
-  std::string GetString(std::string, std::string, int); // Read a string from the input file
-  real GetReal(std::string, std::string, int);          // Read a real number from the input file
-  int GetInt(std::string, std::string, int);            // Read an integer from the input file
-  int CheckEntry(std::string, std::string);             // Check that a block/entry is present
-                                                        // in the input file
+  std::string GetString(std::string, std::string, int); ///< Read a string from the input file
+  real GetReal(std::string, std::string, int);          ///< Read a real number from the input file
+  int GetInt(std::string, std::string, int);            ///< Read an integer from the input file
+  int CheckEntry(std::string, std::string);             ///< Check that a block+entry is present
+                                                        ///< in the input file
+  bool CheckBlock(std::string);                         ///< check that whether a block is defined
+                                                        ///< in the input file
   bool CheckForAbort();                                 // have we been asked for an abort?
   void CheckForStopFile();                              // have we been asked for an abort from
                                                         // a stop file?
@@ -38,14 +40,16 @@ class Input {
   Input();
   void PrintLogo();
 
-  // Should we restart, and if so, from which file?
-  bool restartRequested{false};
-  int  restartFileNumber;
+  bool restartRequested{false};       //< Should we restart?
+  int  restartFileNumber;             //< if yes, from which file?
 
-  // Did we receive an abort signal (USR2) from the system?
-  static bool abortRequested;
+  static bool abortRequested;         //< Did we receive an abort signal (USR2) from the system?
 
   bool tuningRequested{false};        //< whether the user has asked for loop-tuning
+
+  int maxCycles{-1};                   //< whether we should perform a maximum number of cycles
+
+  bool forceNoWrite{false};           //< explicitely disable all writes to disk
 
  private:
   std::string inputFileName;

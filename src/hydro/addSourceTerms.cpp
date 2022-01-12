@@ -1,12 +1,13 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020-2021 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+// Copyright(C) 2020-2022 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
 #include "hydro.hpp"
 #include "dataBlock.hpp"
+#include "fargo.hpp"
 
 // Add source terms
 void Hydro::AddSourceTerms(real t, real dt) {
@@ -16,7 +17,7 @@ void Hydro::AddSourceTerms(real t, real dt) {
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray1D<real> x1 = data->x[IDIR];
   IdefixArray1D<real> x2 = data->x[JDIR];
-  IdefixArray2D<real> fargoVelocity = this->fargo.meanVelocity;
+  IdefixArray2D<real> fargoVelocity = data->fargo.meanVelocity;
 #ifdef ISOTHERMAL
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 #endif
@@ -36,8 +37,8 @@ void Hydro::AddSourceTerms(real t, real dt) {
   real OmegaZ = this->OmegaZ;
 
   // Fargo
-  bool haveFargo  = this->haveFargo;
-  Fargo::FargoType fargoType = this->fargo.type;
+  bool haveFargo  = data->haveFargo;
+  Fargo::FargoType fargoType = data->fargo.type;
 
   // shearing box (only with fargo)
   real sbS = this->sbS;

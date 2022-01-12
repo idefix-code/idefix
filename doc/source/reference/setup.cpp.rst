@@ -3,10 +3,10 @@ Problem Setup ``setup.cpp``
 ===========================
 The source code ``setup.cpp`` contains the code specific to the physical setup at hand. It serves several purposes:
   - Get the setup parameters from the problem input file.
-  - Init arrays and variables you would need
+  - Init arrays and variables you will need
   - Set the initial conditions
-  - Define setup-specific functions which will be called from the inegration loop
-  - Define setup-specific outputs
+  - Define and enroll setup-specific functions which will be called from the integration loop
+  - Define and enroll setup-specific outputs
 
 Most of these initialisations relies on the class ``Setup`` which has to be implemented in your
 ``setup.cpp``. At this stage, if you are not familliar with the ``idefix_loop`` structures,

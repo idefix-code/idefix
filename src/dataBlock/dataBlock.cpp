@@ -1,6 +1,6 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020-2021 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+// Copyright(C) 2020-2022 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
@@ -57,7 +57,7 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
 
     // Local start and end of current datablock
     xbeg[dir] = gridHost.xl[dir](gbeg[dir]);
-    xend[dir] = gridHost.xl[dir](gend[dir]);
+    xend[dir] = gridHost.xr[dir](gend[dir]-1);
   }
 
   if(idfx::psize>1) {
@@ -122,6 +122,18 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
 
   // Initialize the hydro object attached to this datablock
   this->hydro.Init(input, grid, this);
+
+  // Initialise Fargo if needed
+  if(input.CheckBlock("Fargo")) {
+    fargo.Init(input, this);
+    this->haveFargo = true;
+  }
+
+  // Initialise gravity if needed
+  if(input.CheckBlock("Gravity")) {
+    gravity.Init(input, this);
+    this->haveGravity = true;
+  }
 
   idfx::popRegion();
 }

@@ -21,11 +21,11 @@ import textwrap
 # -- Project information -----------------------------------------------------
 
 project = 'Idefix'
-copyright = '2020-2021, Geoffroy Lesur et al.'
+copyright = '2020-2022, Geoffroy Lesur et al.'
 author = 'Geoffroy Lesur'
 
 # The full version, including alpha/beta/rc tags
-release = '0.9'
+release = '1.0'
 
 
 

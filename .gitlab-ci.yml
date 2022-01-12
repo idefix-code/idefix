@@ -14,13 +14,6 @@ lint:
     - pre-commit install
     - pre-commit run --all-files
 
-configure script tests:
-  stage: checks
-  image: lesurg/idefix:latest
-  script:
-    - python3 -m pip install pytest
-    - python3 -m pytest -vv test/test_configure.py
-
 HD tests:
   stage: checks
   image: lesurg/idefix:latest
@@ -51,17 +44,31 @@ MPI tests:
     - cd test
     - ./checks_mpi.sh
 
-cache:
-  # Required to keep artifacts from old builds, e.g. from master
-  paths:
-    - public
+HighOrder tests:
+  stage: checks
+  image: lesurg/idefix:latest
+  script:
+    - cat /proc/cpuinfo
+    - gcc --version
+
+    - cd test
+    - ./checks_highorder.sh
+
+Examples tests:
+  stage: checks
+  image: lesurg/idefix:latest
+  script:
+    - cat /proc/cpuinfo
+    - gcc --version
+
+    - cd test
+    - ./checks_examples.sh
 
 pages:
   image: lesurg/idefix-documentation:latest
   stage: deploy
   script:
-    - dir="$CI_COMMIT_REF_SLUG"
-    - dir="public/$dir"
+    - dir="public"
     - rm -rf $dir
     - sphinx-build -b html doc/source $dir
   artifacts:
@@ -69,4 +76,3 @@ pages:
       - public
   only:
   - master
-  - develop

@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] 2022-01-13
+### Changed
+- enforce positivity of the Limo3 reconstruction scheme for density and pressure (when applicable) by reverting to second order in extreme cases. This makes LimO3 more stable.
+- fixed a bug which resulted in a failure at detecting NaNs on some GPU architectures
+- Fargo module has been moved to a class that belongs to the datablock, not to hydro (this is for future applications with dust+fargo). Use the [Fargo] block in your input file to define properties of the fargo module.
+- gravity is now handled in a specific class, so that new gravity modules (e.g. self-gravity) can be handled automatically. Use the [Gravity] block in the input file to define properties of the gravity class (this includes user-defined potential and bodyforce).
+- Nan detection is now explicit on all MPI processes
+- fixed a bug which resulted in the generation of output files at each timestep when the output frequency was reduced at a restart.
+- fixed a bug in VTK outputs which produced wrong grids in 1D spherical geometry.
+- fixed a bug in VTK and dump outputs with MPI which resulted in garbage at the end of some files when vtk and dmp were overwritten.
+- fixed a bug in Datablock initialisation which could lead to memory corruption
+- fixed a bug in axis regularisation which could lead to memory corruption.
+- reconstruction is now set by cmake and not in definitions.hpp (ORDER parameter). For backward compatibility, if definitions.hpp sets an ORDER, it supersedes the user choice in cmake.
+- the examples in the ``test`` directory that can't be validated by the standard CI test (because of the lack of a quantitative validation test) are now handled separatly in an `Examples` queue: they are only compiled and run for a few cycles, looking for errors.
+- refactor the MPI class so that it is more general than just for hydro objects.
+
+### Added
+- piecewise parabolic reconstruction (PPM)
+- coding style guidelines in the documentation
+- it is now possible to automatically enable cmake options (e.g. MHD) in each problem directory using set_idefix_property and enable_idefix_property in the problem's CMakeLists.txt.
+- the Gravity class now handles automatically central potential wihtout needing to define your own user-defined potential. Use ``potential   central`` in the [[Gravity]] block of your input file.
+- new -nolog, -nowrite, -maxcycles and -Werror command line arguments. Check the documentation for their usage.
+- new ``Idefix_DEBUG`` cmake option to trigger debugging features (live call stack+array bound checks).
+- Fargo now supports domain decomposition in the azimuthal direction.
+
+### Removed
+- configure.py support and related functions.
+
 ## [0.9.1] 2021-10-27
 ### Changed
 - fixed a bug in stretch grid, which led to incorrect grid spacing in s+ grids. This might break the restart of MHD runs from dumps created from previous versions.

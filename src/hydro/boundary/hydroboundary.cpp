@@ -1,6 +1,6 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020-2021 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+// Copyright(C) 2020-2022 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
@@ -36,14 +36,12 @@ void HydroBoundary::Init(Input & input, Grid &grid, Hydro* hydro) {
   int mapNVars = NVAR;
   #endif
 
-  IdefixArray1D<int> mapVars("mapVars",mapNVars);
+  std::vector<int> mapVars;
 
-  // Create a host mirror
-  IdefixArray1D<int>::HostMirror mapVarsHost = Kokkos::create_mirror_view(mapVars);
   // Init the list of variables we will exchange in MPI routines
   int ntarget = 0;
   for(int n = 0 ; n < mapNVars ; n++) {
-    mapVarsHost(n) = ntarget;
+    mapVars.push_back(ntarget);
     ntarget++;
     #if MHD == YES
       // Skip centered field components if they are also defined in Vs
@@ -58,9 +56,11 @@ void HydroBoundary::Init(Input & input, Grid &grid, Hydro* hydro) {
       #endif
     #endif
   }
-  // Synchronize the mapVars
-  Kokkos::deep_copy(mapVars,mapVarsHost);
-  mpi.Init(this->data, mapVars, mapNVars, true);
+  #if MHD == YES
+    mpi.Init(data->mygrid, mapVars, data->nghost, data->np_int, true);
+  #else
+    mpi.Init(data->mygrid, mapVars, data->nghost, data->np_int);
+  #endif
 #endif // MPI
   idfx::popRegion();
 }
@@ -94,13 +94,13 @@ void HydroBoundary::SetBoundaries(real t) {
     if(data->mygrid->nproc[dir]>1) {
       switch(dir) {
         case 0:
-          mpi.ExchangeX1();
+          mpi.ExchangeX1(hydro->Vc, hydro->Vs);
           break;
         case 1:
-          mpi.ExchangeX2();
+          mpi.ExchangeX2(hydro->Vc, hydro->Vs);
           break;
         case 2:
-          mpi.ExchangeX3();
+          mpi.ExchangeX3(hydro->Vc, hydro->Vs);
           break;
       }
     }

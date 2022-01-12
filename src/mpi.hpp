@@ -1,13 +1,14 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020-2021 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+// Copyright(C) 2020-2022 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef HYDRO_BOUNDARY_MPI_HPP_
-#define HYDRO_BOUNDARY_MPI_HPP_
+#ifndef MPI_HPP_
+#define MPI_HPP_
 
+#include <vector>
 #include "idefix.hpp"
 
 #ifdef WITH_MPI
@@ -19,13 +20,20 @@ class DataBlock;
 class Mpi {
  public:
   // MPI Exchange functions
-  void ExchangeAll();
-  void ExchangeX1();
-  void ExchangeX2();
-  void ExchangeX3();
+  void ExchangeAll();   ///< Exchange boundary elements in all directions (todo)
+  void ExchangeX1(IdefixArray4D<real> inputVc,
+                  IdefixArray4D<real> inputVs = IdefixArray4D<real>());
+                                      ///< Exchange boundary elements in the X1 direction
+  void ExchangeX2(IdefixArray4D<real> inputVc,
+                IdefixArray4D<real> inputVs = IdefixArray4D<real>());
+                                    ///< Exchange boundary elements in the X2 direction
+  void ExchangeX3(IdefixArray4D<real> inputVc,
+                IdefixArray4D<real> inputVs = IdefixArray4D<real>());
+                                      ///< Exchange boundary elements in the X3 direction
 
   // Init from datablock
-  void Init(DataBlock *, IdefixArray1D<int>&, int, bool);
+  void Init(Grid *grid, std::vector<int> inputMap,
+            int nghost[3], int nint[3], bool inputHaveVs = false );
 
   // Destructor
   ~Mpi();
@@ -35,7 +43,7 @@ class Mpi {
   int thisInstance;          // unique number of the current instance
   bool isInitialized{false};
 
-  DataBlock *data;
+  DataBlock *data;          // pointer to datablock object
 
   enum {faceRight, faceLeft};
 
@@ -49,6 +57,12 @@ class Mpi {
 
   IdefixArray1D<int>  mapVars;
   int mapNVars{0};
+
+  int nint[3];            //< number of internal elements of the arrays we treat
+  int nghost[3];          //< number of ghost zone of the arrays we treat
+  int ntot[3];            //< total number of cells of the arrays we treat
+  int beg[3];             //< begining index of the active zone
+  int end[3];             //< end index of the active zone
 
   int bufferSizeX1;
   int bufferSizeX2;
@@ -71,4 +85,4 @@ class Mpi {
   int64_t bytesSentOrReceived{0};
 };
 
-#endif // HYDRO_BOUNDARY_MPI_HPP_
+#endif // MPI_HPP_

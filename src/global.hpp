@@ -1,6 +1,6 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020-2021 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+// Copyright(C) 2020-2022 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
@@ -8,6 +8,8 @@
 #ifndef GLOBAL_HPP_
 #define GLOBAL_HPP_
 #include <string>
+#include <vector>
+#include "arrays.hpp"
 
 namespace idfx {
 int initialize();   // Initialisation routine for idefix
@@ -20,30 +22,46 @@ extern IdefixOstream cout;              //< custom cout for idefix
 extern Profiler prof;                   //< profiler (for memory usage)
 extern double mpiCallsTimer;            //< time significant MPI calls
 extern LoopPattern defaultLoopPattern;  //< default loop patterns (for idefix_for loops)
+extern bool warningsAreErrors;    //< whether warnings should be considered as errors
 
 void pushRegion(const std::string&);
 void popRegion();
+
+template<typename T>
+IdefixArray1D<T> ConvertVectorToIdefixArray(std::vector<T> &inputVector) {
+  IdefixArray1D<T> outArr = IdefixArray1D<T>("Vector",inputVector.size());
+  IdefixHostArray1D<T> outArrHost;
+  outArrHost = Kokkos::create_mirror_view(outArr);
+  for(int i = 0; i < inputVector.size() ; i++) {
+    outArrHost(i) = inputVector[i];
+  }
+  Kokkos::deep_copy(outArr, outArrHost);
+  return(outArr);
+}
+
 } // namespace idfx
 
 class idfx::IdefixOstream {
  public:
   void init(int);
+  void disableLogFile();
   // for regular output of variables and stuff
   template<typename T> IdefixOstream& operator<<(const T& something) {
     if(toscreen) std::cout << something;
-    my_fstream << something;
+    if(logFileEnabled) my_fstream << something;
     return *this;
   }
   // for manipulators like std::endl
   typedef std::ostream& (*stream_function)(std::ostream&);
   IdefixOstream& operator<<(stream_function func) {
     if(toscreen) func(std::cout);
-    func(my_fstream);
+    if(logFileEnabled) func(my_fstream);
     return *this;
   }
  private:
   std::ofstream my_fstream;
   bool toscreen;
+  bool logFileEnabled{true};   //< whether streams are also written to a log file
 };
 
 #endif // GLOBAL_HPP_

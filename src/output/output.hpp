@@ -1,6 +1,6 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020-2021 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+// Copyright(C) 2020-2022 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
@@ -40,6 +40,7 @@ class Output {
   Vtk vtk;          // local instance of Vtk class
   Dump dump;        // local instance of Dump class
 
+  bool forceNoWrite = false;    //< explicitely disable all writes
   bool vtkEnabled = false;
   real vtkPeriod = 0.0;   // periodicity of vtk outputs
   real vtkLast = 0.0;

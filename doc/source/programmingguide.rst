@@ -115,9 +115,9 @@ While this should be transparent to most users, It should be kept in mind that t
 capture their variables by value [=]. To avoid too much overhead, one should therefore avoid capturing
 complex structures. Moreover, a bug in the Nvidia Cuda compiler ``nvcc`` prevents Cuda lambdas
 from capturing class members (`see  this post <https://github.com/kokkos/kokkos/issues/695>`_). While
-this bug is tightly linked to the C++11 norm and will be addressed in C++17, one should always
+this bug is tightly linked to the C++14 norm and will be addressed in C++17, one should always
 make local copies of the class members before using them in loops, to keep compatibility with Cuda
-in C++11.
+in C++14.
 
 .. warning::
   As stated above, to avoid compatibility issues with nvcc, *always* make local copies (references)
@@ -138,8 +138,8 @@ The ``idefix_for`` allows one to perform loops on arrays stored on the target. H
 with ``idefix_for``. When a reduction is needed, one should instead use ``idefix_reduce``.
 
 The syntax of ``idefix_reduce`` is very similar to that of ``idefix_for``, with the addition of the
-variable over which the reduction is performed, and the type of reduction which is expected (which is
-a sum if not specified). For instance, a sum over all of the elements would be done through:
+variable over which the reduction is performed, and the type of reduction which is expected.
+For instance, a sum over all of the elements would be done through:
 
 .. code-block:: c++
 
@@ -156,13 +156,13 @@ a sum if not specified). For instance, a sum over all of the elements would be d
                 KOKKOS_LAMBDA (int k, int j, int i, real &localSum) {
                     localSum += myArray(k,j,i);
                 },
-                mySum);
+                Kokkos::Sum<real> (mySum));
 
 
 In the above example, ``localSum`` is the temporary variable *on the device* over which portions of the reduction
 are performed, while ``mySum`` is the final variable, *on the host* where the result is stored.
 
-As stated above, ``idefix_reduce`` performs a sum by default. It is however possible to do other operations
+It is possible to do other reduction operations
 like findining minimum, maximum etc (see
 `Kokkos custom reductions <https://github.com/kokkos/kokkos/wiki/Custom-Reductions%3A-Built-In-Reducers>`_
 for a list). For instance, the minimum value is obtained with the following code
@@ -292,9 +292,6 @@ members
   IdefixArray4D<real> Vs;      // Main face-centered varariables
   IdefixArray4D<real> Uc;      // Main cell-centered conservative variables
 
-  // Enroll user-defined gravitational potential
-  void EnrollGravPotential(GravPotentialFunc);
-
   // Enroll user-defined boundary conditions
   void EnrollUserDefBoundary(UserDefBoundaryFunc);
 
@@ -412,10 +409,12 @@ finished working with it. An example is provided in :ref:`setupInitDump`.
 Debugging and profiling
 =======================
 
-The easiest way to trigger debugging in ``Idefix`` is to add ``#define DEBUG`` in your ``definitions.hpp`` and
-recompile the code. This forces the code to log each time a function is called or returned (this is achieved
-thanks to the ``idfx::pushRegion(std::string)`` and ``idfx::popRegion()`` which are found at the beginning and
-end of each function). In other words, ``#define DEBUG`` logs the entire stack trace to simplify debugging.
+The easiest way to trigger debugging in ``Idefix`` is to switch on ``Idefix_DEBUG`` in cmake (for instance
+adding ``-DIdefix_DEBUG=ON`` when calling cmake). This forces the code to log each time a function is called or
+returned (this is achieved thanks to the ``idfx::pushRegion(std::string)`` and ``idfx::popRegion()`` which are
+found at the beginning and end of each function). In addition, ``Idefix_DEBUG`` enables Kokkos array bound checks, which
+will throw an error each time one tries to access an array out of its allocated memory space. Note that all of these
+debugging features induce a large overhead, and should therefore not be activated in production runs.
 
 It is also possible to use `Kokkos-tools <https://github.com/kokkos/kokkos-tools>`_ to debug and profile the code.
 For instance, on the fly profiling, can be enabled with the Kokkos ``space-time-stack`` module. To use it, simply clone

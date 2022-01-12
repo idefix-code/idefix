@@ -46,16 +46,6 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 
 }
 
-
-void Potential(DataBlock& data, const real t, IdefixArray1D<real>& x1, IdefixArray1D<real>& x2, IdefixArray1D<real>& x3, IdefixArray3D<real>& phi) {
-
-    idefix_for("Potential",0,data.np_tot[KDIR], 0, data.np_tot[JDIR], 0, data.np_tot[IDIR],
-        KOKKOS_LAMBDA (int k, int j, int i) {
-        phi(k,j,i) = -1.0/x1(i);
-    });
-
-}
-
 void Hall(DataBlock& data, const real t, IdefixArray3D<real> &xH) {
   IdefixArray1D<real> x1 = data.x[IDIR];
 
@@ -81,7 +71,6 @@ void Hall(DataBlock& data, const real t, IdefixArray3D<real> &xH) {
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     // Set the function for userdefboundary
     data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
-    data.hydro.EnrollGravPotential(&Potential);
     data.hydro.EnrollHallDiffusivity(&Hall);
 }
 

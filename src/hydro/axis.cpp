@@ -1,6 +1,6 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) 2020-2021 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+// Copyright(C) 2020-2022 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
@@ -92,14 +92,14 @@ void Axis::SymmetrizeEx1Side(int jref) {
 
     int ncells=data->mygrid->np_int[KDIR];
 
-    idefix_for("Ex1_Store",0,data->np_tot[KDIR]+KOFFSET,0,data->np_tot[IDIR],
+    idefix_for("Ex1_Store",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
     KOKKOS_LAMBDA(int k,int i) {
       Ex1(k,jref,i) = Ex1Avg(i)/((real) ncells);
     });
   } else {
     // if we're not doing full two pi, the flow is symmetric with respect to the axis, and the axis
     // EMF is simply zero
-    idefix_for("Ex1_Store",0,data->np_tot[KDIR]+KOFFSET,0,data->np_tot[IDIR],
+    idefix_for("Ex1_Store",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
     KOKKOS_LAMBDA(int k,int i) {
       Ex1(k,jref,i) = ZERO_F;
     });

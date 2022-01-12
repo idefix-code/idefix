@@ -25,15 +25,15 @@ the Fargo velocity field depends only on the coordinates perpendicular to that d
 * in cylindrical geometry, the Fargo velocity depends on :math:`(R,z)` which corresponds to :math:`(x_1,x_3)`
 * in spherical geometry, the Fargo velocity depends on :math:`(r,\theta)` which corresponds to :math:`(x_1,x_2)`
 
-The Fargo veclocity is usually specified enrolling a user-function (see :ref:`functionEnrollment`)
+The Fargo velocity is usually specified enrolling a user-function (see :ref:`functionEnrollment`)
 which fills the 2D Fargo velocity arrays (see examples in `test/HD/FargoPlanet` and `test/MHD/FargoMHDSpherical`).
-In this case, when should set to `userdef` the `velocity` parameter in the Fargo block of the input file (see :ref:`fargoSection`).
+In this case, one should set the `velocity` parameter to `userdef` in the Fargo block of the input file (see :ref:`fargoSection`).
 It is also possible to initialse the Fargo velocity field automatically when using the shearing box module in cartesian geometry.
-In that case, set the `velocity` parameter to `shearingbox`, and do not forget to enable the `shearingbox` module in your input file!
+In that case, set the `velocity` parameter to `shearingbox`, and do not forget to enable the `shearingbox` module in the `Hydro` block!
 
 The Fargo module in *Idefix* is fully parallelised. This means that one can have a MPI domain decomposition in any spatial direction, *including*
 the azimuthal direction. This last option, however, comes at a cost: the Fargo module needs to exchange a large amount of data with
-neightbouring processes for the Fargo advection shift. To limit this communication overhead, Fargo uses a parameter to limit the maximum
+neighbouring processes for the Fargo advection shift. To limit this communication overhead, Fargo uses a parameter to limit the maximum
 number of azimuthal cells over which it will shift the domain at each time step. This optional parameter `maxShift` is by default set to 10.
 If it is too small for your setup (i.e. in a case of a very large timestep compared to the mean advection CFL), *Idefix* will stop and tell
-you you should increase your `maxShift` parameter in the input file. Hence, the user has normally no reason to modify this parameter.
+you to increase your `maxShift` parameter in the input file. Hence, the user has normally no reason to modify this parameter *a priori*.

@@ -175,10 +175,12 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
     the arithmetic Emf reconstruction scheme has been shown to work systematically with Hall, and is therefore
     strongly recommended for production runs.
 
+.. _fargoSection:
+
 ``Fargo`` section
 ------------------
 
-This section enables the orbital advection algorithm provided in *Idefix*.
+This section enables the orbital advection algorithm provided in *Idefix*. More information may be found in :ref:`fargoModule`
 
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 |  Entry name    | Parameter type          | Comment                                                                                     |
@@ -190,11 +192,11 @@ This section enables the orbital advection algorithm provided in *Idefix*.
 |                |                         | | module as the input velocity function.                                                    |
 |                |                         | | When `userdef` is set, the fargo module expects a user-defined  velocity function to      |
 |                |                         | | be enrolled via Fargo::EnrollVelocity(FargoVelocityFunc)                                  |
-|                |                         | | (see :ref:`functionEnrollment`). Examples are provided in `test/HD/FargoPlanet`           |
-|                |                         | | and `test/MHD/FargoMHDSpherical`                                                          |
-|                |                         | | Note that by default, Fargo uses a piecewise linear advection operator. One can enable    |
-|                |                         | | a piecewise parabolic reconstruction method (ppm) setting ``Idefix_HIGH_ORDER_FARGO``     |
-|                |                         | | to ``ON`` in ``cmake`` configuration.                                                     |
+|                |                         | |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| maxShift       | integer                 | | optional: when using MPI with a domain decomposition in the azimuthal direction, this sets|
+|                |                         | | the maximum number of cells Fargo is allowed to shift the domain at each time step.       |
+|                |                         | | Default: 10                                                                               |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 
 ``Gravity`` section

@@ -293,9 +293,6 @@ members
   IdefixArray4D<real> Vs;      // Main face-centered varariables
   IdefixArray4D<real> Uc;      // Main cell-centered conservative variables
 
-  // Enroll user-defined gravitational potential
-  void EnrollGravPotential(GravPotentialFunc);
-
   // Enroll user-defined boundary conditions
   void EnrollUserDefBoundary(UserDefBoundaryFunc);
 

@@ -121,6 +121,10 @@ KOKKOS_INLINE_FUNCTION real FargoFlux(const IdefixArray4D<real> &Vin, int n, int
 
 #endif // HIGH_ORDER_FARGO
 
+KOKKOS_INLINE_FUNCTION int modPositive(int x, int divisor) {
+  int m = x % divisor;
+  return m + ((m >> 31) & divisor); // equivalent to m + (m < 0 ? divisor : 0);
+}
 
 
 void Fargo::Init(Input &input, DataBlock *data) {
@@ -550,7 +554,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
                   so = s-m + maxShift;    // maxshift corresponds to the offset between
                                           // the indices in scrh and in Uc
                 } else {
-                  so = sbeg + ((s-m-sbeg)%ds+ds)%ds;
+                  so = sbeg + modPositive(s-m-sbeg, ds);
                 }
 
                 // Define Left and right fluxes
@@ -639,7 +643,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
         so = s-m + maxShift;    // maxshift corresponds to the offset between
                                 // the indices in scrh and in Uc
       } else {
-        so = sbeg + ((s-m-sbeg)%n+n)%n;
+        so = sbeg + modPositive(s-m-sbeg,n);
       }
 
       #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
@@ -648,7 +652,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
           if(haveDomainDecomposition) {
             som1 = so - 1;
           } else {
-            som1 = sbeg + ((so-1-sbeg)%n+n)%n;
+            som1 = sbeg + modPositive(so-1-sbeg,n);
           }
           ek(k,s,i) = FargoFlux(scrhVs, BX1s, k, j, i, som1, n, sbeg, eps, haveDomainDecomposition);
 
@@ -661,7 +665,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
             if(haveDomainDecomposition) {
               sc = ss;
             } else {
-              sc = sbeg + ((ss-sbeg)%n+n)%n;
+              sc = sbeg + modPositive(ss-sbeg,n);
             }
             ek(k,s,i) += scrhVs(BX1s,k,sc,i);
           }
@@ -671,7 +675,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
             if(haveDomainDecomposition) {
               sc = ss;
             } else {
-              sc = sbeg + ((ss-sbeg)%n+n)%n;
+              sc = sbeg + modPositive(ss-sbeg,n);
             }
             ek(k,s,i) -= scrhVs(BX1s,k,sc,i);
           }
@@ -682,7 +686,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
           if(haveDomainDecomposition) {
             som1 = so - 1;
           } else {
-            som1 = sbeg + ((so-1-sbeg)%n+n)%n;
+            som1 = sbeg + modPositive(so-1-sbeg,n);
           }
           ek(s,j,i) = FargoFlux(scrhVs, BX1s, k, j, i, som1, n, sbeg, eps, haveDomainDecomposition);
 
@@ -695,7 +699,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
             if(haveDomainDecomposition) {
               sc = ss;
             } else {
-              sc = sbeg + ((ss-sbeg)%n+n)%n;
+              sc = sbeg + modPositive(ss-sbeg,n);
             }
             ek(s,j,i) += scrhVs(BX1s,sc,j,i);
           }
@@ -705,7 +709,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
             if(haveDomainDecomposition) {
               sc = ss;
             } else {
-              sc = sbeg + ((ss-sbeg)%n+n)%n;
+              sc = sbeg + modPositive(ss-sbeg,n);
             }
             ek(s,j,i) -= scrhVs(BX1s,sc,j,i);
           }
@@ -764,7 +768,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
         so = s-m + maxShift;    // maxshift corresponds to the offset between
                                 // the indices in scrh and in Uc
       } else {
-        so = sbeg + ((s-m-sbeg)%n+n)%n;
+        so = sbeg + modPositive(s-m-sbeg,n);
       }
 
       // Compute EMF due to the shift via second order reconstruction
@@ -776,7 +780,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
           if(haveDomainDecomposition) {
             som1 = so - 1;
           } else {
-            som1 = sbeg + ((so-1-sbeg)%n+n)%n;
+            som1 = sbeg + modPositive(so-1-sbeg,n);
           }
           ei(k,s,i) = FargoFlux(scrhVs, BX3s, k, j, i, som1, n, sbeg, eps, haveDomainDecomposition);
         } else {
@@ -788,7 +792,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
             if(haveDomainDecomposition) {
               sc = ss;
             } else {
-              sc = sbeg + ((ss-sbeg)%n+n)%n;
+              sc = sbeg + modPositive(ss-sbeg,n);
             }
             ei(k,s,i) += scrhVs(BX3s,k,sc,i);
           }
@@ -798,7 +802,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
             if(haveDomainDecomposition) {
               sc = ss;
             } else {
-              sc = sbeg + ((ss-sbeg)%n+n)%n;
+              sc = sbeg + modPositive(ss-sbeg,n);
             }
             ei(k,s,i) -= scrhVs(BX3s,k,sc,i);
           }
@@ -809,7 +813,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
         if(haveDomainDecomposition) {
           som1 = so - 1;
         } else {
-          som1 = sbeg + ((so-1-sbeg)%n+n)%n;
+          som1 = sbeg + modPositive(so-1-sbeg,n);
         }
         ei(s,j,i) = FargoFlux(scrhVs, BX2s, k, j, i, som1, n, sbeg, eps, haveDomainDecomposition);
       } else {
@@ -821,7 +825,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
           if(haveDomainDecomposition) {
             sc = ss;
           } else {
-            sc = sbeg + ((ss-sbeg)%n+n)%n;
+            sc = sbeg + modPositive(ss-sbeg,n);
           }
           ei(s,j,i) += scrhVs(BX2s,sc,j,i);
         }
@@ -831,7 +835,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
           if(haveDomainDecomposition) {
             sc = ss;
           } else {
-            sc = sbeg + ((ss-sbeg)%n+n)%n;
+            sc = sbeg + modPositive(ss-sbeg,n);
           }
           ei(s,j,i) -= scrhVs(BX2s,sc,j,i);
         }

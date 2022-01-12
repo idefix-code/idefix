@@ -47,6 +47,13 @@ Clément Robert
 Jean Kempf & François Rincon
     anisotropic diffusion
 
+===================
+Acknowledgements
+===================
+
+The developement of *Idefix* is supported by the European Research Council (ERC)
+under the European Union Horizon 2020 research and innovation programme (Grant agreement No. 815559 (MHDiscs))
+
 
 .. toctree::
    :maxdepth: 3

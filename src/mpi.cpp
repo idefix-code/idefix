@@ -5,6 +5,13 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+// ***********************************************************************************
+// Idefix MHD astrophysical code
+// Copyright(C) 2020-2022 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+// and other code contributors
+// Licensed under CeCILL 2.1 License, see COPYING for more information
+// ***********************************************************************************
+
 #include "idefix.hpp"
 #include "dataBlock.hpp"
 #include "mpi.hpp"
@@ -22,20 +29,18 @@ void Mpi::ExchangeAll() {
 
 ///
 /// Initialise an instance of the MPI class.
-/// @param datain: pointer to the parent datablock
-/// @param inputVc: input 4D array of cell centered variables from which cell
-///                  elements are to be exhanged
+/// @param grid: pointer to the grid object (needed to get the MPI neighbours)
 /// @param inputMap: 1st indices of inputVc which are to be exchanged (i.e, the list of variables)
+/// @param nghost: size of the ghost region in each direction
+/// @param nint: size of the internal region in each direction
 /// @param inputHaveVs: whether the instance should also treat face-centered variable
 ///                     (optional, default false)
-/// @param inputVs: input face-centered variables arrays which is used if inputHaveVs is true
-///                 (optional)
 ///
 
-void Mpi::Init(DataBlock *datain, IdefixArray4D<real> inputVc, std::vector<int> inputMap,
-               bool inputHaveVs, IdefixArray4D<real> inputVs ) {
-  this->data = datain;
-  this->mygrid = datain->mygrid;
+void Mpi::Init(Grid *grid, std::vector<int> inputMap,
+               int nghost[3], int nint[3],
+               bool inputHaveVs) {
+  this->mygrid = grid;
 
   // increase the number of instances
   nInstances++;
@@ -47,8 +52,15 @@ void Mpi::Init(DataBlock *datain, IdefixArray4D<real> inputVc, std::vector<int> 
   this->mapVars = idfx::ConvertVectorToIdefixArray(inputMap);
   this->mapNVars = inputMap.size();
   this->haveVs = inputHaveVs;
-  this->Vc = inputVc;
-  if(haveVs) this->Vs = inputVs;
+
+  // Compute indices of arrays we will be working with
+  for(int dir = 0 ; dir < 3 ; dir++) {
+    this->nghost[dir] = nghost[dir];
+    this->nint[dir] = nint[dir];
+    this->ntot[dir] = nint[dir]+2*nghost[dir];
+    this->beg[dir] = nghost[dir];
+    this->end[dir] = nghost[dir]+nint[dir];
+  }
 
   /////////////////////////////////////////////////////////////////////////////
   // Init exchange datasets
@@ -57,15 +69,15 @@ void Mpi::Init(DataBlock *datain, IdefixArray4D<real> inputVc, std::vector<int> 
   bufferSizeX3 = 0;
 
   // Number of cells in X1 boundary condition:
-  bufferSizeX1 = data->nghost[IDIR] * data->np_int[JDIR] * data->np_int[KDIR] * mapNVars;
+  bufferSizeX1 = nghost[IDIR] * nint[JDIR] * nint[KDIR] * mapNVars;
 
   if(haveVs) {
     #if DIMENSIONS>=2
-    bufferSizeX1 += data->nghost[IDIR] * (data->np_int[JDIR]+1) * data->np_int[KDIR];
+    bufferSizeX1 += nghost[IDIR] * (nint[JDIR]+1) * nint[KDIR];
     #endif
 
     #if DIMENSIONS==3
-    bufferSizeX1 += data->nghost[IDIR] * data->np_int[JDIR] * (data->np_int[KDIR]+1);
+    bufferSizeX1 += nghost[IDIR] * nint[JDIR] * (nint[KDIR]+1);
     #endif  // DIMENSIONS
   }
 
@@ -77,12 +89,12 @@ void Mpi::Init(DataBlock *datain, IdefixArray4D<real> inputVc, std::vector<int> 
 
   // Number of cells in X2 boundary condition (only required when problem >2D):
 #if DIMENSIONS >= 2
-  bufferSizeX2 = data->np_tot[IDIR] * data->nghost[JDIR] * data->np_int[KDIR] * mapNVars;
+  bufferSizeX2 = ntot[IDIR] * nghost[JDIR] * nint[KDIR] * mapNVars;
   if(haveVs) {
     // IDIR
-    bufferSizeX2 += (data->np_tot[IDIR]+1) * data->nghost[JDIR] * data->np_int[KDIR];
+    bufferSizeX2 += (ntot[IDIR]+1) * nghost[JDIR] * nint[KDIR];
     #if DIMENSIONS==3
-    bufferSizeX2 += data->np_tot[IDIR] * data->nghost[JDIR] * (data->np_int[KDIR]+1);
+    bufferSizeX2 += ntot[IDIR] * nghost[JDIR] * (nint[KDIR]+1);
     #endif  // DIMENSIONS
   }
 
@@ -94,13 +106,13 @@ void Mpi::Init(DataBlock *datain, IdefixArray4D<real> inputVc, std::vector<int> 
 #endif
 // Number of cells in X3 boundary condition (only required when problem is 3D):
 #if DIMENSIONS ==3
-  bufferSizeX3 = data->np_tot[IDIR] * data->np_tot[JDIR] * data->nghost[KDIR] * mapNVars;
+  bufferSizeX3 = ntot[IDIR] * ntot[JDIR] * nghost[KDIR] * mapNVars;
 
   if(haveVs) {
     // IDIR
-    bufferSizeX3 += (data->np_tot[IDIR]+1) * data->np_tot[JDIR] * data->nghost[KDIR];
+    bufferSizeX3 += (ntot[IDIR]+1) * ntot[JDIR] * nghost[KDIR];
     // JDIR
-    bufferSizeX3 += data->np_tot[IDIR] * (data->np_tot[JDIR]+1) * data->nghost[KDIR];
+    bufferSizeX3 += ntot[IDIR] * (ntot[JDIR]+1) * nghost[KDIR];
   }
 
   BufferRecvX3[faceLeft ] = IdefixArray1D<real>("BufferRecvX3Left", bufferSizeX3);
@@ -215,7 +227,7 @@ Mpi::~Mpi() {
   }
 }
 
-void Mpi::ExchangeX1() {
+void Mpi::ExchangeX1(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   idfx::pushRegion("Mpi::ExchangeX1");
 
   // Load  the buffers with data
@@ -223,9 +235,8 @@ void Mpi::ExchangeX1() {
   int nx,ny,nz;
   IdefixArray1D<real> BufferLeft=BufferSendX1[faceLeft];
   IdefixArray1D<real> BufferRight=BufferSendX1[faceRight];
-  IdefixArray4D<real> Vc=this->Vc;
   IdefixArray1D<int> map = this->mapVars;
-  IdefixArray4D<real> Vs=this->Vs;
+
   int VsIndex;
 
   // If MPI Persistent, start receiving even before the buffers are filled
@@ -242,14 +253,14 @@ void Mpi::ExchangeX1() {
 
   // Coordinates of the ghost region which needs to be transfered
   ibeg   = 0;
-  iend   = data->nghost[IDIR];
-  nx     = data->nghost[IDIR];  // Number of points in x
-  offset = data->end[IDIR];     // Distance between beginning of left and right ghosts
-  jbeg   = data->beg[JDIR];
-  jend   = data->end[JDIR];
+  iend   = nghost[IDIR];
+  nx     = nghost[IDIR];  // Number of points in x
+  offset = end[IDIR];     // Distance between beginning of left and right ghosts
+  jbeg   = beg[JDIR];
+  jend   = end[JDIR];
   ny     = jend - jbeg;
-  kbeg   = data->beg[KDIR];
-  kend   = data->end[KDIR];
+  kbeg   = beg[KDIR];
+  kend   = end[KDIR];
   nz     = kend - kbeg;
 
   idefix_for("LoadBufferX1Vc",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
@@ -400,7 +411,7 @@ myTimer -= MPI_Wtime();
 }
 
 
-void Mpi::ExchangeX2() {
+void Mpi::ExchangeX2(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   idfx::pushRegion("Mpi::ExchangeX2");
 
   // Load  the buffers with data
@@ -408,9 +419,7 @@ void Mpi::ExchangeX2() {
   int nx,ny,nz;
   IdefixArray1D<real> BufferLeft=BufferSendX2[faceLeft];
   IdefixArray1D<real> BufferRight=BufferSendX2[faceRight];
-  IdefixArray4D<real> Vc=this->Vc;
   IdefixArray1D<int> map = this->mapVars;
-  IdefixArray4D<real> Vs=this->Vs;
   int VsIndex;
 
 // If MPI Persistent, start receiving even before the buffers are filled
@@ -427,14 +436,14 @@ void Mpi::ExchangeX2() {
 
   // Coordinates of the ghost region which needs to be transfered
   ibeg   = 0;
-  iend   = data->np_tot[IDIR];
-  nx     = data->np_tot[IDIR];  // Number of points in x
+  iend   = ntot[IDIR];
+  nx     = ntot[IDIR];  // Number of points in x
   jbeg   = 0;
-  jend   = data->nghost[JDIR];
-  offset = data->end[JDIR];     // Distance between beginning of left and right ghosts
-  ny     = data->nghost[JDIR];
-  kbeg   = data->beg[KDIR];
-  kend   = data->end[KDIR];
+  jend   = nghost[JDIR];
+  offset = end[JDIR];     // Distance between beginning of left and right ghosts
+  ny     = nghost[JDIR];
+  kbeg   = beg[KDIR];
+  kend   = end[KDIR];
   nz     = kend - kbeg;
 
   idefix_for("LoadBufferX2Vc",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
@@ -583,7 +592,7 @@ void Mpi::ExchangeX2() {
 }
 
 
-void Mpi::ExchangeX3() {
+void Mpi::ExchangeX3(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   idfx::pushRegion("Mpi::ExchangeX3");
 
 
@@ -592,9 +601,7 @@ void Mpi::ExchangeX3() {
   int nx,ny,nz;
   IdefixArray1D<real> BufferLeft=BufferSendX3[faceLeft];
   IdefixArray1D<real> BufferRight=BufferSendX3[faceRight];
-  IdefixArray4D<real> Vc=this->Vc;
   IdefixArray1D<int> map = this->mapVars;
-  IdefixArray4D<real> Vs=this->Vs;
   int VsIndex;
 
   // If MPI Persistent, start receiving even before the buffers are filled
@@ -610,15 +617,15 @@ void Mpi::ExchangeX3() {
   myTimer += MPI_Wtime();
   // Coordinates of the ghost region which needs to be transfered
   ibeg   = 0;
-  iend   = data->np_tot[IDIR];
-  nx     = data->np_tot[IDIR];  // Number of points in x
+  iend   = ntot[IDIR];
+  nx     = ntot[IDIR];  // Number of points in x
   jbeg   = 0;
-  jend   = data->np_tot[JDIR];
-  ny     = data->np_tot[JDIR];
+  jend   = ntot[JDIR];
+  ny     = ntot[JDIR];
   kbeg   = 0;
-  kend   = data->nghost[KDIR];
-  offset = data->end[KDIR];     // Distance between beginning of left and right ghosts
-  nz     = data->nghost[KDIR];
+  kend   = nghost[KDIR];
+  offset = end[KDIR];     // Distance between beginning of left and right ghosts
+  nz     = nghost[KDIR];
 
   idefix_for("LoadBufferX3Vc",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
       KOKKOS_LAMBDA (int n, int k, int j, int i) {

@@ -96,11 +96,7 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
   nvarRKL = varListHost.size();
 
   #ifdef WITH_MPI
-    if(haveVs) {
-      mpi.Init(&datain, data->hydro.Vc, varListHost, haveVs, data->hydro.Vs);
-    } else {
-      mpi.Init(&datain, data->hydro.Vc, varListHost);
-    }
+    mpi.Init(datain.mygrid, varListHost, datain.nghost, datain.np_int, haveVs);
   #endif
 
 
@@ -601,13 +597,13 @@ void RKLegendre::SetBoundaries(real t) {
     if(data->mygrid->nproc[dir]>1) {
       switch(dir) {
         case 0:
-          this->mpi.ExchangeX1();
+          this->mpi.ExchangeX1(data->hydro.Vc, data->hydro.Vs);
           break;
         case 1:
-          this->mpi.ExchangeX2();
+          this->mpi.ExchangeX2(data->hydro.Vc, data->hydro.Vs);
           break;
         case 2:
-          this->mpi.ExchangeX3();
+          this->mpi.ExchangeX3(data->hydro.Vc, data->hydro.Vs);
           break;
       }
     }

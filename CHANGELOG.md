@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - the Gravity class now handles automatically central potential wihtout needing to define your own user-defined potential. Use ``potential   central`` in the [[Gravity]] block of your input file.
 - new -nolog, -nowrite, -maxcycles and -Werror command line arguments. Check the documentation for their usage.
 - new ``Idefix_DEBUG`` cmake option to trigger debugging features (live call stack+array bound checks).
+- Fargo now supports domain decomposition in the azimuthal direction.
 
 ### Removed
 - configure.py support and related functions.

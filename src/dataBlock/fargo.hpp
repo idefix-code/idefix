@@ -24,6 +24,9 @@ class Fargo {
   void SubstractVelocity(const real);
   void AddVelocity(const real);
   void EnrollVelocity(FargoVelocityFunc);
+  void StoreToScratch();
+  void CheckMaxDisplacement();
+
  private:
   friend class Hydro;
   DataBlock *data;
@@ -31,9 +34,21 @@ class Fargo {
   FargoType type{none};                 // By default, Fargo is disabled
 
   IdefixArray2D<real> meanVelocity;
-  IdefixArray4D<real> scratch;
+  IdefixArray4D<real> scrhUc;
+  IdefixArray4D<real> scrhVs;
 
+#ifdef WITH_MPI
+  Mpi mpi;                      // Fargo-specific MPI layer
+#endif
+
+  int beg[3];
+  int end[3];
+  int nghost[3];
+  int maxShift{10};                     //< maximum number of cells along which we plan to shift.
+  real dtMax{0};                        //< Maximum allowable dt for a given Fargo velocity
+                                        //< when domain decomposition is enabled
   bool velocityHasBeenComputed{false};
+  bool haveDomainDecomposition{false};
   void GetFargoVelocity(real);
   FargoVelocityFunc fargoVelocityFunc{NULL};  // The user-defined fargo velocity function
 };

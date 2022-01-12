@@ -21,13 +21,19 @@ class Mpi {
  public:
   // MPI Exchange functions
   void ExchangeAll();   ///< Exchange boundary elements in all directions (todo)
-  void ExchangeX1();    ///< Exchange boundary elements in the X1 direction
-  void ExchangeX2();    ///< Exchange boundary elements in the X2 direction
-  void ExchangeX3();    ///< Exchange boundary elements in the X3 direction
+  void ExchangeX1(IdefixArray4D<real> inputVc,
+                  IdefixArray4D<real> inputVs = IdefixArray4D<real>());
+                                      ///< Exchange boundary elements in the X1 direction
+  void ExchangeX2(IdefixArray4D<real> inputVc,
+                IdefixArray4D<real> inputVs = IdefixArray4D<real>());
+                                    ///< Exchange boundary elements in the X2 direction
+  void ExchangeX3(IdefixArray4D<real> inputVc,
+                IdefixArray4D<real> inputVs = IdefixArray4D<real>());
+                                      ///< Exchange boundary elements in the X3 direction
 
   // Init from datablock
-  void Init(DataBlock *datain, IdefixArray4D<real> inputVc, std::vector<int> inputMap,
-            bool inputHaveVs = false, IdefixArray4D<real> inputVs = IdefixArray4D<real>() );
+  void Init(Grid *grid, std::vector<int> inputMap,
+            int nghost[3], int nint[3], bool inputHaveVs = false );
 
   // Destructor
   ~Mpi();
@@ -38,8 +44,6 @@ class Mpi {
   bool isInitialized{false};
 
   DataBlock *data;          // pointer to datablock object
-  IdefixArray4D<real> Vc;   // reference to cell-centered array on which this object works
-  IdefixArray4D<real> Vs;   // reference to face-centered array on which this object works
 
   enum {faceRight, faceLeft};
 
@@ -53,6 +57,12 @@ class Mpi {
 
   IdefixArray1D<int>  mapVars;
   int mapNVars{0};
+
+  int nint[3];            //< number of internal elements of the arrays we treat
+  int nghost[3];          //< number of ghost zone of the arrays we treat
+  int ntot[3];            //< total number of cells of the arrays we treat
+  int beg[3];             //< begining index of the active zone
+  int end[3];             //< end index of the active zone
 
   int bufferSizeX1;
   int bufferSizeX2;

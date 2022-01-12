@@ -125,6 +125,7 @@ void Gravity::EnrollBodyForce(BodyForceFunc myFunc) {
 // Fill the gravitational potential with zeros
 void Gravity::ResetPotential() {
   idfx::pushRegion("Gravity::ResetPotential");
+  IdefixArray3D<real> phiP = this->phiP;
   idefix_for("Gravity::ResetPotential",
               0, data->np_tot[KDIR],
               0, data->np_tot[JDIR],
@@ -140,6 +141,7 @@ void Gravity::AddCentralMassPotential() {
   IdefixArray1D<real> x1 = data->x[IDIR];
   IdefixArray1D<real> x2 = data->x[JDIR];
   IdefixArray1D<real> x3 = data->x[KDIR];
+  IdefixArray3D<real> phiP = this->phiP;
   real mass = this->centralMass;
   idefix_for("Gravity::AddCentralMassPotential",
               0, data->np_tot[KDIR],

@@ -41,7 +41,7 @@ for rep in $rep_2D_mpi_list; do
     echo "Configuring  $rep"
     echo "***********************************************"
     rm -f CMakeCache.txt
-    cmake $IDEFIX_DIR -DIdefix_MPI=ON -DKokkos_ENABLE_DEBUG_BOUNDS_CHECK=ON $options
+    cmake $IDEFIX_DIR -DIdefix_MPI=ON  $options
     echo "***********************************************"
     echo "Making  $rep"
     echo "***********************************************"
@@ -72,7 +72,7 @@ for rep in $rep_3D_mpi_list; do
     echo "Configuring  $rep"
     echo "***********************************************"
     rm -f CMakeCache.txt
-    cmake $IDEFIX_DIR -DIdefix_MPI=ON -DKokkos_ENABLE_DEBUG_BOUNDS_CHECK=ON $options
+    cmake $IDEFIX_DIR -DIdefix_MPI=ON $options
     echo "***********************************************"
     echo "Making  $rep"
     echo "***********************************************"

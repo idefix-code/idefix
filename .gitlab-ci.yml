@@ -4,7 +4,7 @@ variables:
 workflow:
   rules:
     - if: $CI_MERGE_REQUEST_ID               # Execute jobs in merge request context
-    - if: $CI_COMMIT_BRANCH == 'master' || $CI_COMMIT_BRANCH == 'develop'    # Execute jobs when a new commit is pushed to master or develop branch
+    - if: $CI_COMMIT_BRANCH == 'master'    # Execute jobs when a new commit is pushed to master branch
 
 stages:
     - checks
@@ -21,51 +21,36 @@ HD tests:
   stage: checks
   image: lesurg/idefix:latest
   script:
-    - cat /proc/cpuinfo
-    - gcc --version
-
     - cd test
-    - ./checks_hydro.sh
+    - ./checks_hydro.sh $TEST_OPTIONS
 
 MHD tests:
   stage: checks
   image: lesurg/idefix:latest
   script:
-    - cat /proc/cpuinfo
-    - gcc --version
-
     - cd test
-    - ./checks_mhd.sh
+    - ./checks_mhd.sh $TEST_OPTIONS
 
 MPI tests:
   stage: checks
   image: lesurg/idefix:latest
   script:
-    - cat /proc/cpuinfo
-    - gcc --version
-
     - cd test
-    - ./checks_mpi.sh
+    - ./checks_mpi.sh $TEST_OPTIONS
 
 HighOrder tests:
   stage: checks
   image: lesurg/idefix:latest
   script:
-    - cat /proc/cpuinfo
-    - gcc --version
-
     - cd test
-    - ./checks_highorder.sh
+    - ./checks_highorder.sh $TEST_OPTIONS
 
 Examples tests:
   stage: checks
   image: lesurg/idefix:latest
   script:
-    - cat /proc/cpuinfo
-    - gcc --version
-
     - cd test
-    - ./checks_examples.sh
+    - ./checks_examples.sh $TEST_OPTIONS
 
 pages:
   image: lesurg/idefix-documentation:latest

@@ -43,7 +43,7 @@ for rep in $rep_example_list; do
     echo "***********************************************"
     rm -f CMakeCache.txt
 
-    cmake $IDEFIX_DIR -DKokkos_ENABLE_DEBUG_BOUNDS_CHECK=ON|| { echo "!!!! Example $rep failed during configuration"; exit 1; }
+    cmake $IDEFIX_DIR $options || { echo "!!!! Example $rep failed during configuration"; exit 1; }
     echo "***********************************************"
     echo "Making  $rep"
     echo "***********************************************"

@@ -37,7 +37,7 @@ void Dump::Init(Input &input, DataBlock &data) {
     #ifdef USE_DOUBLE
     realType = MPI_DOUBLE;
     #else
-    realType = MPI_SINGLE;
+    realType = MPI_FLOAT;
     #endif
 
     int start[3];

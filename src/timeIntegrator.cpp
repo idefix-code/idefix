@@ -135,7 +135,12 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
   // Check divB
   real divB =  data.hydro.CheckDivB();
   idfx::cout << " | " << std::setw(col_width) << divB;
-  if(divB>1e-6) {
+  #ifdef USE_DOUBLE
+  real maxdivB = 1e-6;
+  #else
+  real maxdivB = 1e-2;
+  #endif
+  if(divB>maxdivB) {
     IDEFIX_ERROR("TimeIntegrator::Cycle divB>1e-6, check your calculation");
   }
 #endif

@@ -21,7 +21,7 @@ Download:
 
 using either ssh or https url as `<address>`
 ```shell
-git clone <address>
+git clone <address> idefix
 cd idefix
 git submodule init
 git submodule update

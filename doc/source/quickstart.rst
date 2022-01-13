@@ -8,7 +8,7 @@ Download and install *Idefix*
 One first need to download *Idefix* from the public git. Say you want to install *Idefix* in the directory ``~/src/idefix``, you need to run::
 
     cd ~/src
-    git clone https://<yourFavouriteIdefixRepo>
+    git clone https://<yourFavouriteIdefixRepo> idefix
     cd idefix
     git submodule init
     git submodule update

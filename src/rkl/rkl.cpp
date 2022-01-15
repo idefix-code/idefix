@@ -77,6 +77,12 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
       AddVariable(ENG, varListHost);
     #endif
   }
+  // Thermal diffusion
+  #if HAVE_ENERGY
+    if(data->hydro.thermalDiffusionStatus.isRKL) {
+      AddVariable(ENG, varListHost);
+    }
+  #endif
   // Ambipolar diffusion
   if(data->hydro.ambipolarStatus.isRKL || data->hydro.resistivityStatus.isRKL) {
     #if COMPONENTS == 3 && DIMENSIONS < 3

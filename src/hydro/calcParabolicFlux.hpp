@@ -51,7 +51,7 @@ void Hydro::CalcParabolicFlux(const real t) {
   // Add thermal diffusion
   if( (thermalDiffusionStatus.isExplicit && (!data->rklCycle))
     || (thermalDiffusionStatus.isRKL && data->rklCycle))  {
-    this->thermalDiffusion.AddDiffusionFlux(dir,t);
+    this->thermalDiffusion.AddDiffusiveFlux(dir,t);
   }
 
   idfx::popRegion();

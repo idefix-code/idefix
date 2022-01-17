@@ -192,7 +192,7 @@ int main( int argc, char* argv[] ) {
     }
     idfx::cout << std::endl;
     idfx::cout << "Main: ";
-    idfx::cout << "Perfs are " << 1/tintegration << " cell updates/second" << std::endl;
+    idfx::cout << "Perfs are " << std::scientific << 1/tintegration << " cell updates/second" << std::endl;
     #ifdef WITH_MPI
       idfx::cout << "MPI overhead represents "
                  << static_cast<int>(100.0*idfx::mpiCallsTimer/timer.seconds())

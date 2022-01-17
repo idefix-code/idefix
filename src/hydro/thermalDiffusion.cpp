@@ -158,8 +158,9 @@ void ThermalDiffusion::AddDiffusiveFlux(int dir, const real t) {
         Flux(ENG,k,j,i) += -kappa*gradT;
 
         // Compute total diffusion coefficient
-        dMax(k,j,i) += kappa / (HALF_F * ( Vc(RHO,k,j,i) + Vc(RHO,k-koffset,j-joffset,i-ioffset))
+        real locdmax = kappa / (HALF_F * ( Vc(RHO,k,j,i) + Vc(RHO,k-koffset,j-joffset,i-ioffset))
                                  * (gamma-ONE_F));
+        dMax(k,j,i) = FMAX(dMax(k,j,i) , locdmax);
 
       });
   idfx::popRegion();

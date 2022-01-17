@@ -117,10 +117,12 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
   idfx::cout << "TimeIntegrator: ";
   idfx::cout << std::setw(col_width) << data.t;
   idfx::cout << " | " << std::setw(col_width) << ncycles;
+  idfx::cout << std::scientific;
   idfx::cout << " | " << std::setw(col_width) << data.dt;
   if(ncycles>=cyclePeriod) {
     idfx::cout << " | " << std::setw(col_width) << 1 / rawperf;
 #ifdef WITH_MPI
+  idfx::cout << std::fixed;
     idfx::cout << " | " << std::setw(col_width) << mpiOverhead;
 #endif
   } else {

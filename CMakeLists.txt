@@ -113,6 +113,7 @@ target_include_directories(idefix PUBLIC
                            src/output
                            src/rkl
                            src/gravity
+                           src/utils
                            src
                            )
 

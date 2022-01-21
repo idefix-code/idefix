@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Upcoming
+### Changed
+- slight optimisation of the cfl estimation for parabolic terms (makes a difference when several explicit parabolic terms are used simultaneously)
+
+### Added
+- isotropic thermal diffusion (anisotropic diffusion in MHD will come later)
+
 ## [1.0.0] 2022-01-13
 ### Changed
 - enforce positivity of the Limo3 reconstruction scheme for density and pressure (when applicable) by reverting to second order in extreme cases. This makes LimO3 more stable.

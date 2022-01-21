@@ -22,14 +22,14 @@ void ThermalDiffusion::Init(Input &input, Grid &grid, Hydro *hydroin) {
   // Save the parent hydro object
   this->hydro = hydroin;
 
-  if(input.CheckEntry("Hydro","thermalDiffusion")>=0) {
-    if(input.GetString("Hydro","thermalDiffusion",1).compare("constant") == 0) {
-        this->kappa = input.GetReal("Hydro","thermalDiffusion",2);
+  if(input.CheckEntry("Hydro","TDiffusion")>=0) {
+    if(input.GetString("Hydro","TDiffusion",1).compare("constant") == 0) {
+        this->kappa = input.GetReal("Hydro","TDiffusion",2);
         idfx::cout << "ThermalDiffusion: Enabling constant diffusion function with kappa="
                    << this->kappa << " ."<< std::endl;
         
         this->haveThermalDiffusion = Constant;
-      } else if(input.GetString("Hydro","thermalDiffusion",1).compare("userdef") == 0) {
+      } else if(input.GetString("Hydro","TDiffusion",1).compare("userdef") == 0) {
         idfx::cout << "ThermalDiffusion: Enabling user-defined viscosity function."
                    << std::endl;
         this->haveThermalDiffusion = UserDefFunction;
@@ -42,7 +42,7 @@ void ThermalDiffusion::Init(Input &input, Grid &grid, Hydro *hydroin) {
                      "Can only be constant or userdef.");
       }
   } else {
-    IDEFIX_ERROR("I cannot create a ThermalDiffusion object without thermalDiffusion defined"
+    IDEFIX_ERROR("I cannot create a ThermalDiffusion object without TDiffusion defined"
                    "in the .ini file");
   }
 

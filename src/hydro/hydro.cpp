@@ -190,8 +190,8 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   }
 
   // Check whether thermal diffusion is enabled, if so, init a thermal diffusion object
-  if(input.CheckEntry("Hydro","thermalDiffusion")>=0) {
-    std::string opType = input.GetString("Hydro","thermalDiffusion",0);
+  if(input.CheckEntry("Hydro","TDiffusion")>=0) {
+    std::string opType = input.GetString("Hydro","TDiffusion",0);
     if(opType.compare("explicit") == 0 ) {
       haveExplicitParabolicTerms = true;
       thermalDiffusionStatus.isExplicit = true;

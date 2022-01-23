@@ -10,7 +10,7 @@
 #include "rkl.hpp"
 #include "dataBlock.hpp"
 #include "hydro.hpp"
-
+#include "calcParabolicFlux.hpp"
 
 #ifndef RKL_ORDER
   #define RKL_ORDER       2

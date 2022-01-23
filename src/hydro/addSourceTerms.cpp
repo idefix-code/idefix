@@ -158,7 +158,7 @@ void Hydro::AddSourceTerms(real t, real dt) {
                     +Vc(BX3,k,j,i)*Vc(BX3,k,j,i)  );
   #endif
       Uc(MX1,k,j,i) += dt*Sm/x1(i);
-
+  #if COMPONENTS >= 2
       ct = 1.0/tanx2(j);
        // Centrifugal
       Sm = Vc(RHO,k,j,i) * (EXPAND( ZERO_F, - Vc(iVTH,k,j,i)*Vc(iVR,k,j,i), + ct*vphi*vphi));
@@ -179,6 +179,7 @@ void Hydro::AddSourceTerms(real t, real dt) {
                                +Vc(BX3,k,j,i)*Vc(BX3,k,j,i))  );
   #endif
       Uc(MX2,k,j,i) += dt*Sm / rt(i);
+  #endif // COMPONENTS
 #endif
     }
   );

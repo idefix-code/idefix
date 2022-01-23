@@ -64,7 +64,7 @@ int main( int argc, char* argv[] ) {
   {
     idfx::initialize();
 
-    Input input = Input(argc, argv);
+    Input input(argc, argv);
     input.PrintLogo();
     input.PrintParameters();
 

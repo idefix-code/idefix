@@ -58,6 +58,9 @@ class Input {
   static void signalHandler(int);
   std::vector<std::string> getDirectoryFiles();
   std::string getFileExtension(const std::string file_name);
+  Kokkos::Timer timer;
+
+  double lastStopFileCheck;
 };
 
 #endif // INPUT_HPP_

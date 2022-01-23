@@ -46,6 +46,10 @@ Input::Input(int argc, char* argv[] ) {
   // Tell the system we want to catch the SIGUSR2 signals
   signal(SIGUSR2, signalHandler);
 
+  // Tell the time when input was initialised
+  timer.reset();
+  lastStopFileCheck = timer.seconds();
+
   // Default input file name
   this->inputFileName = std::string("idefix.ini");
 
@@ -242,19 +246,24 @@ void Input::signalHandler(int signum) {
 
 void Input::CheckForStopFile() {
   // Check whether a file "stop" has been created in directory. If so, raise the abort flag
-  std::string filename = std::string("stop");
+  // Look for stop file every 5 seconds to avoid overloading the file system
   if(idfx::prank==0) {
-    std::ifstream f(filename);
-    if(f.good()) {
-      // File exists, delete it and raise the flag
-      std::remove(filename.c_str());
-      abortRequested = true;
-      idfx::cout << std::endl << "Input: Caught stop file command" << std::endl;
+    std::string filename = std::string("stop");
+    if(timer.seconds()-lastStopFileCheck>5.0) {
+      lastStopFileCheck = timer.seconds();
+      std::ifstream f(filename);
+      if(f.good()) {
+        // File exists, delete it and raise the flag
+        std::remove(filename.c_str());
+        abortRequested = true;
+        idfx::cout << std::endl << "Input: Caught stop file command" << std::endl;
+      }
     }
   }
 }
 
 bool Input::CheckForAbort() {
+  idfx::pushRegion("Input::CheckForAbort");
   // Check whether an abort has been requesested
   // When MPI is present, we abort whenever one process got the signal
   CheckForStopFile();
@@ -263,13 +272,14 @@ bool Input::CheckForAbort() {
   bool returnValue{false};
   if(abortRequested) abortValue = 1;
 
-  MPI_Allreduce(MPI_IN_PLACE, &abortValue, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+  MPI_Bcast(&abortValue, 1, MPI_INT, 0, MPI_COMM_WORLD);
   returnValue = abortValue > 0;
   if(returnValue) idfx::cout << "Input: CheckForAbort: abort has been requested." << std::endl;
-
+  idfx::popRegion();
   return(returnValue);
 #else
   if(abortRequested) idfx::cout << "Input: CheckForAbort: abort has been requested." << std::endl;
+  idfx::popRegion();
   return(abortRequested);
 #endif
 }

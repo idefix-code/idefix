@@ -344,6 +344,7 @@ int64_t TimeIntegrator::GetNCycles() {
 // Check whether our maximumruntime has been reached. Reduce the results on all of the cores
 // to make sure they stop simultaneously even if running time are not perfectly in sync
 bool TimeIntegrator::CheckForMaxRuntime() {
+  idfx::pushRegion("TimeIntegrator::CheckForMaxRuntime");
   // if maxRuntime is negative, this function is disabled (default)
   if(this->maxRuntime < 0) return(false);
 
@@ -352,7 +353,7 @@ bool TimeIntegrator::CheckForMaxRuntime() {
 #ifdef WITH_MPI
   int runtimeValue = 0;
   if(runtime >= this->maxRuntime) runtimeValue = 1;
-  MPI_Allreduce(MPI_IN_PLACE, &runtimeValue, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+  MPI_Bcast(&runtimeValue, 1, MPI_INT, 0, MPI_COMM_WORLD);
   runtimeReached = runtimeValue > 0;
 #else
   runtimeReached = runtime >= this->maxRuntime;
@@ -361,5 +362,6 @@ bool TimeIntegrator::CheckForMaxRuntime() {
     idfx::cout << "TimeIntegrator:CheckForMaxRuntime: Maximum runtime reached."
                << std::endl;
   }
+  idfx::popRegion();
   return(runtimeReached);
 }

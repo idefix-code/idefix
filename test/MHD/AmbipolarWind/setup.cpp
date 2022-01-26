@@ -85,6 +85,7 @@ void MySourceTerm(DataBlock &data, const real t, const real dtin) {
   real gamma_m1=gammaGlob-1.0;
   real dt=dtin;
   real Hideal=HidealGlob;
+  real tau2=0.5;
   idefix_for("MySourceTerm",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
               KOKKOS_LAMBDA (int k, int j, int i) {
                 real r=x1(i);
@@ -112,9 +113,9 @@ void MySourceTerm(DataBlock &data, const real t, const real dtin) {
                 Uc(ENG,k,j,i) += -dt*(Vc(PRS,k,j,i)-Ptarget)/(tau*gamma_m1);
 
         // Velocity relaxation
-        if(R<1.2) {
-            Uc(MX1,k,j,i) += -dt*(Vc(VX1,k,j,i)*Vc(RHO,k,j,i));
-            Uc(MX2,k,j,i) += -dt*(Vc(VX2,k,j,i)*Vc(RHO,k,j,i));
+        if(r<1.5) {
+            Uc(MX1,k,j,i) += -dt*(Vc(VX1,k,j,i)*Vc(RHO,k,j,i))/tau2;
+            Uc(MX2,k,j,i) += -dt*(Vc(VX2,k,j,i)*Vc(RHO,k,j,i))/tau2;
         }
 
 });
@@ -179,7 +180,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                 if(Vc(VX1,k,j,ighost)>=ZERO_F) Vc(VX1,k,j,i) = - Vc(VX1,k,j,2*ighost-i);
                        else Vc(VX1,k,j,i) = Vc(VX1,k,j,ighost);
                 Vc(VX2,k,j,i) = Vc(VX2,k,j,ighost);
-                Vc(VX3,k,j,i) = R*Omega;
+                Vc(VX3,k,j,i) = 1.0*Omega; // 1.0=Rin
                 Vs(BX2s,k,j,i) = Vs(BX2s,k,j,ighost);
                 Vc(BX3,k,j,i) = ZERO_F;
 

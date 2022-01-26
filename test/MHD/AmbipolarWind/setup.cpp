@@ -1,5 +1,6 @@
 #include "idefix.hpp"
 #include "setup.hpp"
+#include "boundaryloop.hpp"
 
 real epsilonGlob;
 real epsilonTopGlob;
@@ -168,54 +169,25 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 
         int ighost = data.nghost[IDIR];
         real Omega=1.0;
-        idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,ighost,
-                    KOKKOS_LAMBDA (int k, int j, int i) {
-                        real R=x1(i)*sin(x2(j));
-                        real z=x1(i)*cos(x2(j));
+        data.hydro.boundary.BoundaryFor("UserDefX1",dir,side,
+            KOKKOS_LAMBDA (int k, int j, int i) {
+                real R=x1(i)*sin(x2(j));
+                real z=x1(i)*cos(x2(j));
 
-                        Vc(RHO,k,j,i) = Vc(RHO,k,j,ighost);
-                        Vc(PRS,k,j,i) = Vc(PRS,k,j,ighost);
-                        if(Vc(VX1,k,j,ighost)>=ZERO_F) Vc(VX1,k,j,i) = - Vc(VX1,k,j,2*ighost-i);
-                               else Vc(VX1,k,j,i) = Vc(VX1,k,j,ighost);
-                        Vc(VX2,k,j,i) = Vc(VX2,k,j,ighost);
-                        Vc(VX3,k,j,i) = R*Omega;
-                        Vs(BX2s,k,j,i) = Vs(BX2s,k,j,ighost);
-                        Vc(BX3,k,j,i) = ZERO_F;
+                Vc(RHO,k,j,i) = Vc(RHO,k,j,ighost);
+                Vc(PRS,k,j,i) = Vc(PRS,k,j,ighost);
+                if(Vc(VX1,k,j,ighost)>=ZERO_F) Vc(VX1,k,j,i) = - Vc(VX1,k,j,2*ighost-i);
+                       else Vc(VX1,k,j,i) = Vc(VX1,k,j,ighost);
+                Vc(VX2,k,j,i) = Vc(VX2,k,j,ighost);
+                Vc(VX3,k,j,i) = R*Omega;
+                Vs(BX2s,k,j,i) = Vs(BX2s,k,j,ighost);
+                Vc(BX3,k,j,i) = ZERO_F;
 
-                    });
-
-    }
-
-    if( dir==JDIR) {
-        IdefixArray4D<real> Vc = data.hydro.Vc;
-        IdefixArray4D<real> Vs = data.hydro.Vs;
-        int jghost;
-        int jbeg,jend;
-        if(side == left) {
-            jghost = data.beg[JDIR];
-            jbeg = 0;
-            jend = data.beg[JDIR];
-            //return;
-        }
-        else if(side==right) {
-            jghost = data.end[JDIR]-1;
-            jbeg=data.end[JDIR];
-            jend=data.np_tot[JDIR];
-        }
-
-
-        idefix_for("UserDefBoundary",0,data.np_tot[KDIR],jbeg,jend,0,data.np_tot[IDIR],
-                    KOKKOS_LAMBDA (int k, int j, int i) {
-                        Vc(RHO,k,j,i) = Vc(RHO,k,jghost,i);
-                        Vc(PRS,k,j,i) = Vc(PRS,k,jghost,i);
-                        Vc(VX1,k,j,i) = Vc(VX1,k,jghost,i);
-                        Vc(VX2,k,j,i) = - Vc(VX2,k,2*jghost-j,i);
-                        Vc(VX3,k,j,i) = ZERO_F;
-                        Vs(BX1s,k,j,i) = Vs(BX1s,k,jghost,i);
-                        Vc(BX3,k,j,i) = ZERO_F;
-
-                    });
-
+            });
+      data.hydro.boundary.BoundaryForX2s("UserDefX1",dir,side,
+        KOKKOS_LAMBDA (int k, int j, int i) {
+            Vs(BX2s,k,j,i) = Vs(BX2s,k,j,ighost);
+          });
 
     }
 
@@ -256,17 +228,6 @@ void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
   }
 }
 
-
-void Potential(DataBlock& data, const real t, IdefixArray1D<real>& x1, IdefixArray1D<real>& x2, IdefixArray1D<real>& x3, IdefixArray3D<real>& phi) {
-
-    idefix_for("Potential",0,data.np_tot[KDIR], 0, data.np_tot[JDIR], 0, data.np_tot[IDIR],
-        KOKKOS_LAMBDA (int k, int j, int i) {
-        phi(k,j,i) = -1.0/x1(i);
-    });
-
-}
-
-
 // Default constructor
 
 
@@ -276,7 +237,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     // Set the function for userdefboundary
     data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
     data.hydro.EnrollAmbipolarDiffusivity(&Ambipolar);
-    data.hydro.EnrollOhmicDiffusivity(&Resistivity);
+    //data.hydro.EnrollOhmicDiffusivity(&Resistivity);
     data.hydro.EnrollUserSourceTerm(&MySourceTerm);
     data.hydro.EnrollInternalBoundary(&InternalBoundary);
     //data.hydro.EnrollEmfBoundary(&EmfBoundary);
@@ -374,17 +335,4 @@ void Setup::InitFlow(DataBlock &data) {
 
     // Send it all, if needed
     d.SyncToDevice();
-}
-
-// Analyse data to produce an output
-void MakeAnalysis(DataBlock & data) {
-
-}
-
-
-
-
-// Do a specifically designed user step in the middle of the integration
-void ComputeUserStep(DataBlock &data, real t, real dt) {
-
 }

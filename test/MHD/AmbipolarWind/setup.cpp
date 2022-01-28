@@ -9,6 +9,7 @@ real HidealGlob;
 real AmMidGlob;
 real gammaGlob;
 real densityFloorGlob;
+real trSmoothingGlob;
 
 /*********************************************/
 /**
@@ -41,6 +42,9 @@ void Ambipolar(DataBlock& data, real t, IdefixArray3D<real> &xAin) {
   real epsilon = epsilonGlob;
   real AmMid = AmMidGlob;
   real etamax = 10*epsilon*epsilon; // Corresponds to Rm=0.1
+  real Rin = 1.0;
+  real waveKillWidth = 0.1;
+  real trSmoothing = trSmoothingGlob;
 
   idefix_for("Ambipolar",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
               KOKKOS_LAMBDA (int k, int j, int i) {
@@ -49,12 +53,21 @@ void Ambipolar(DataBlock& data, real t, IdefixArray3D<real> &xAin) {
                 real Omega=pow(R,-1.5);
 
                 real zh = z/(R*epsilon);  // z in units of disc scale height h=R*epsilon
-                real Am = AmMid / ( 0.5*(1-tanh((fabs(zh)-Hideal)/0.5)));
+                real Am;
+
+                  Am = AmMid / ( 0.5*(1-tanh((fabs(zh)-Hideal)/trSmoothing)));
 
                 real B2 = Vc(BX1,k,j,i)*Vc(BX1,k,j,i)+Vc(BX2,k,j,i)*Vc(BX2,k,j,i)+Vc(BX3,k,j,i)*Vc(BX3,k,j,i);
                 real eta = B2/(Omega*Am*Vc(RHO,k,j,i));
                 if(eta>etamax) xA(k,j,i) = etamax/B2;
                 else xA(k,j,i) = 1.0/(Omega*Am*Vc(RHO,k,j,i));
+
+                // Kill it at the radial boundaryloop
+                if(x1(i)/Rin < Rin*(1+waveKillWidth)) {
+                  real w = (x1(i)-Rin)/(Rin*waveKillWidth);
+
+                  xA(k,j,i) = xA(k,j,i)*w;
+                }
               });
 
 }
@@ -85,7 +98,9 @@ void MySourceTerm(DataBlock &data, const real t, const real dtin) {
   real gamma_m1=gammaGlob-1.0;
   real dt=dtin;
   real Hideal=HidealGlob;
-  real tau2=0.5;
+  real tauVel=1.0;
+  real Rin=1.0;
+  real trSmoothing = trSmoothingGlob;
   idefix_for("MySourceTerm",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
               KOKKOS_LAMBDA (int k, int j, int i) {
                 real r=x1(i);
@@ -93,30 +108,26 @@ void MySourceTerm(DataBlock &data, const real t, const real dtin) {
                 real z=r*cos(th);
                 real R=r*sin(th);
                 real cs2, tau;
-                if(R>1.0) {
-                    real Zh = FABS(z/R)/epsilon;
-                    real csdisk = epsilon/sqrt(R);
-                    real cscorona = epsilonTop/sqrt(R);
-                    cs2=0.5*(csdisk*csdisk+cscorona*cscorona)+0.5*(cscorona*cscorona-csdisk*csdisk)*tanh(6*log(Zh/Hideal));
-                    tau= tauGlob*sqrt(R);
-                }
-                else {
-                    real Zh = FABS(z)/epsilon;
-                    real csdisk = epsilon;
-                    real cscorona = epsilonTop;
-                    cs2=0.5*(csdisk*csdisk+cscorona*cscorona)+0.5*(cscorona*cscorona-csdisk*csdisk)*tanh(6*log(Zh/Hideal));
-                    tau=tauGlob;
-                }
+
+                real Zh = FABS(z/R)/epsilon;
+                real Tdisk = epsilon*epsilon/FMAX(R,Rin);
+                real Tcorona = epsilonTop*epsilonTop/FMAX(R,Rin);
+                //if(x1(i) < 1.5) cscorona = csdisk;
+                real Teff=0.5*(Tdisk+Tcorona)+0.5*(Tcorona-Tdisk)*tanh((Zh-Hideal)/trSmoothing);
+
+                tau= tauGlob*(FMIN(pow(R,1.5),1.0));
+
                 // Cooling /heatig function
-                real Ptarget = cs2*Vc(RHO,k,j,i);
+                real Ptarget = Teff*Vc(RHO,k,j,i);
 
                 Uc(ENG,k,j,i) += -dt*(Vc(PRS,k,j,i)-Ptarget)/(tau*gamma_m1);
 
         // Velocity relaxation
+/*
         if(r<1.5) {
-            Uc(MX1,k,j,i) += -dt*(Vc(VX1,k,j,i)*Vc(RHO,k,j,i))/tau2;
-            Uc(MX2,k,j,i) += -dt*(Vc(VX2,k,j,i)*Vc(RHO,k,j,i))/tau2;
-        }
+            Uc(MX1,k,j,i) += -dt*(Vc(VX1,k,j,i)*Vc(RHO,k,j,i))/tauVel;
+            Uc(MX2,k,j,i) += -dt*(Vc(VX2,k,j,i)*Vc(RHO,k,j,i))/tauVel;
+        }*/
 
 });
 
@@ -124,6 +135,33 @@ void MySourceTerm(DataBlock &data, const real t, const real dtin) {
 }
 
 
+KOKKOS_INLINE_FUNCTION real computeDensityFloor(real R, real z, real d_floor_0, real Rin, real c0){
+
+  real  D_return ;
+  if (R>Rin){
+    D_return = d_floor_0 / (R*sqrt(R)) * 1.0/(z*z+1.2*(c0*R)*(c0*R));
+  }
+  else{
+    D_return = d_floor_0 / (Rin*sqrt(Rin)) * 1.0/(z*z+1.2*(c0*Rin)*(c0*Rin));
+  }
+  if (D_return < 1.0e-8){
+    D_return = 1e-8;
+  }
+  return D_return;
+}
+
+KOKKOS_INLINE_FUNCTION real computeVaMax(real t_change, real Va_ini_max, real Va_fin_max, real t){
+  real Va_lim;
+
+  if (t<t_change){
+    Va_lim =t * (Va_fin_max - Va_ini_max)/t_change + Va_ini_max;
+  }
+  else{
+    Va_lim = Va_fin_max;
+  }
+
+  return Va_lim;
+}
 
 void InternalBoundary(DataBlock& data, const real t) {
   IdefixArray4D<real> Vc = data.hydro.Vc;
@@ -131,10 +169,20 @@ void InternalBoundary(DataBlock& data, const real t) {
   IdefixArray1D<real> x1=data.x[IDIR];
   IdefixArray1D<real> x2=data.x[JDIR];
 
-  real vAmax=10.0;
-  real densityFloor = densityFloorGlob;
+  real vAmax=computeVaMax(4.0,50.0,8.0,t);
+  real densityFloor0 = densityFloorGlob;
+  real Rin = 1.0;
+  real tauGlob= 0.1;
+  real Hideal=HidealGlob;
+  real epsilon=epsilonGlob;
+  real epsilonTop = epsilonTopGlob;
+
   idefix_for("InternalBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
               KOKKOS_LAMBDA (int k, int j, int i) {
+                real R=x1(i)*sin(x2(j));
+                real z=x1(i)*cos(x2(j));
+                real zh = FABS(z/R)/epsilon;
+
                 real b2=EXPAND(Vc(BX1,k,j,i)*Vc(BX1,k,j,i) , +Vc(BX2,k,j,i)*Vc(BX2,k,j,i), +Vc(BX3,k,j,i)*Vc(BX3,k,j,i) ) ;
                 real va2=b2/Vc(RHO,k,j,i);
                 real myMax=vAmax;
@@ -144,11 +192,13 @@ void InternalBoundary(DataBlock& data, const real t) {
                   Vc(RHO,k,j,i) = b2/(myMax*myMax);
                   Vc(PRS,k,j,i) = T*Vc(RHO,k,j,i);
                 }
+                real densityFloor = computeDensityFloor(R,z,densityFloor0,Rin,epsilon);
                 if(Vc(RHO,k,j,i) < densityFloor) {
                   real T= Vc(PRS,k,j,i)/Vc(RHO,k,j,i);
                   Vc(RHO,k,j,i)=densityFloor;
-                  Vc(PRS,k,j,i)=T*Vc(RHO,k,j,i);
+                  //Vc(PRS,k,j,i)=T*Vc(RHO,k,j,i);
                 }
+
                 /*
                   real R = x1(i)*sin(x2(j));
                   if(R<1.0) {
@@ -170,6 +220,12 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 
         int ighost = data.nghost[IDIR];
         real Omega=1.0;
+        real Rin = 1.0;
+        real csdisk = epsilonGlob/sqrt(Rin);
+        real cscorona = epsilonTopGlob/sqrt(Rin);
+        real densityFloor0 = densityFloorGlob;
+        real epsilon=epsilonGlob;
+
         data.hydro.boundary.BoundaryFor("UserDefX1",dir,side,
             KOKKOS_LAMBDA (int k, int j, int i) {
                 real R=x1(i)*sin(x2(j));
@@ -177,12 +233,22 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 
                 Vc(RHO,k,j,i) = Vc(RHO,k,j,ighost);
                 Vc(PRS,k,j,i) = Vc(PRS,k,j,ighost);
-                if(Vc(VX1,k,j,ighost)>=ZERO_F) Vc(VX1,k,j,i) = - Vc(VX1,k,j,2*ighost-i);
+                /*
+                Vc(RHO,k,j,i) = 1.0/(Rin*sqrt(Rin))  * exp(1.0/ (csdisk*csdisk) * (1.0/sqrt(Rin*Rin+z*z)-1.0/Rin));
+                real densityFloor = computeDensityFloor(R,z,densityFloor0,Rin,epsilon);
+                if(Vc(RHO,k,j,i) < densityFloor) Vc(RHO,k,j,i) = densityFloor;
+
+                Vc(PRS,k,j,i) = Vc(RHO,k,j,i)*csdisk*csdisk;
+                */
+                if(Vc(VX1,k,j,ighost)>=ZERO_F) Vc(VX1,k,j,i) = 0.0;
                        else Vc(VX1,k,j,i) = Vc(VX1,k,j,ighost);
                 Vc(VX2,k,j,i) = Vc(VX2,k,j,ighost);
-                Vc(VX3,k,j,i) = 1.0*Omega; // 1.0=Rin
-                Vs(BX2s,k,j,i) = Vs(BX2s,k,j,ighost);
-                Vc(BX3,k,j,i) = ZERO_F;
+                //real Rmin = FMAX(0.3,R);
+
+                //Vc(VX3,k,j,i) = 1.0/sqrt(Rmin) * sqrt( Rmin / sqrt(Rmin*Rmin + z*z));
+                Vc(VX3,k,j,i) = Omega*R;
+                Vc(BX3,k,j,i) = - Vc(BX3,k,j,2*ighost-i);
+                //Vc(BX3,k,j,i) = Vc(BX3,k,j,ighost);
 
             });
       data.hydro.boundary.BoundaryForX2s("UserDefX1",dir,side,
@@ -192,7 +258,80 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 
     }
 
+    if( (dir==IDIR) && (side == right)) {
+        IdefixArray4D<real> Vc = data.hydro.Vc;
+        IdefixArray4D<real> Vs = data.hydro.Vs;
+        IdefixArray1D<real> x1 = data.x[IDIR];
+        IdefixArray1D<real> x2 = data.x[JDIR];
+
+        int ighost = data.end[IDIR]-1;
+        real Omega=1.0;
+        real Rin = 1.0;
+        real csdisk = epsilonGlob/sqrt(Rin);
+        real cscorona = epsilonTopGlob/sqrt(Rin);
+        real densityFloor0 = densityFloorGlob;
+        real epsilon=epsilonGlob;
+
+        data.hydro.boundary.BoundaryFor("UserDefX1",dir,side,
+            KOKKOS_LAMBDA (int k, int j, int i) {
+                real R=x1(i)*sin(x2(j));
+                real z=x1(i)*cos(x2(j));
+
+                Vc(RHO,k,j,i) = Vc(RHO,k,j,ighost);
+                Vc(PRS,k,j,i) = Vc(PRS,k,j,ighost);
+
+                if(Vc(VX1,k,j,ighost)<=ZERO_F) Vc(VX1,k,j,i) = 0.0;
+                       else Vc(VX1,k,j,i) = Vc(VX1,k,j,ighost);
+                Vc(VX2,k,j,i) = Vc(VX2,k,j,ighost);
+                //real Rmin = FMAX(0.3,R);
+
+                //Vc(VX3,k,j,i) = 1.0/sqrt(Rmin) * sqrt( Rmin / sqrt(Rmin*Rmin + z*z));
+                Vc(VX3,k,j,i) = Vc(VX3,k,j,ighost);
+                Vc(BX3,k,j,i) = - Vc(BX3,k,j,2*ighost-i);
+                //Vc(BX3,k,j,i) = Vc(BX3,k,j,ighost);
+
+            });
+      data.hydro.boundary.BoundaryForX2s("UserDefX1",dir,side,
+        KOKKOS_LAMBDA (int k, int j, int i) {
+            Vs(BX2s,k,j,i) = Vs(BX2s,k,j,ighost);
+          });
+
+    }
+
+
 }
+
+void EmfBoundary(DataBlock& data, const real t) {
+    IdefixArray3D<real> Ex1 = data.hydro.emf.ex;
+    IdefixArray3D<real> Ex2 = data.hydro.emf.ey;
+    IdefixArray3D<real> Ex3 = data.hydro.emf.ez;
+    if(data.lbound[IDIR] == userdef) {
+
+        int ighost = data.nghost[IDIR];
+
+        idefix_for("EMFBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR]+1,0,ighost+1,
+                    KOKKOS_LAMBDA (int k, int j, int i) {
+            Ex3(k,j,i) = ZERO_F;
+        });
+    }
+    if(data.lbound[JDIR] == userdef) {
+        int jghost = data.nghost[JDIR];
+        //printf("I'mbeing called\n");
+        idefix_for("EMFBoundary",0,data.np_tot[KDIR],0,data.np_tot[IDIR],
+                    KOKKOS_LAMBDA (int k, int i) {
+            Ex3(k,jghost,i) = ZERO_F;
+        });
+    }
+    if(data.rbound[JDIR] == userdef) {
+        int jghost = data.end[JDIR];
+        //printf("I'mbeing called\n");
+        idefix_for("EMFBoundary",0,data.np_tot[KDIR],0,data.np_tot[IDIR],
+                    KOKKOS_LAMBDA (int k, int i) {
+            Ex3(k,jghost,i) = ZERO_F;
+        });
+    }
+}
+
 
 void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
 
@@ -241,7 +380,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     //data.hydro.EnrollOhmicDiffusivity(&Resistivity);
     data.hydro.EnrollUserSourceTerm(&MySourceTerm);
     data.hydro.EnrollInternalBoundary(&InternalBoundary);
-    //data.hydro.EnrollEmfBoundary(&EmfBoundary);
+    data.hydro.EnrollEmfBoundary(&EmfBoundary);
     output.EnrollUserDefVariables(&ComputeUserVars);
     gammaGlob=data.hydro.GetGamma();
     epsilonGlob = input.Get<real>("Setup","epsilon",0);
@@ -279,8 +418,7 @@ void Setup::InitFlow(DataBlock &data) {
                 if(R>Rin) {
                     real Zh = FABS(z/R)/epsilonGlob;
                     real csdisk = epsilonGlob/sqrt(R);
-                    real cscorona = epsilonTopGlob/sqrt(R);
-                    real cs2=0.5*(csdisk*csdisk+cscorona*cscorona)+0.5*(cscorona*cscorona-csdisk*csdisk)*tanh(6*log(Zh/HidealGlob));
+                    real cs2 = csdisk*csdisk;
                     d.Vc(RHO,k,j,i) = 1.0/(R*sqrt(R))  * exp(1.0/ (csdisk*csdisk) * (1.0/sqrt(R*R+z*z)-1.0/R)) ;
                     d.Vc(VX3,k,j,i) = 1.0/sqrt(R) * sqrt( FMAX(R / sqrt(R*R + z*z) -2.5*csdisk*csdisk,0.0) );
                     d.Vc(PRS,k,j,i) = cs2*d.Vc(RHO,k,j,i);
@@ -292,8 +430,7 @@ void Setup::InitFlow(DataBlock &data) {
                 else {
                   real Zh = FABS(z/Rin)/epsilonGlob;
                   real csdisk = epsilonGlob/sqrt(Rin);
-                  real cscorona = epsilonTopGlob/sqrt(Rin);
-                  real cs2=0.5*(csdisk*csdisk+cscorona*cscorona)+0.5*(cscorona*cscorona-csdisk*csdisk)*tanh(6*log(Zh/HidealGlob));
+                  real cs2 = csdisk*csdisk;
                   d.Vc(RHO,k,j,i) = 1.0/(Rin*sqrt(Rin))  * exp(1.0/ (csdisk*csdisk) * (1.0/sqrt(Rin*Rin+z*z)-1.0/Rin));
                   d.Vc(VX3,k,j,i) = 1.0/sqrt(Rin) * sqrt( FMAX(Rin / sqrt(Rin*Rin + z*z) -2.5*csdisk*csdisk,0.0) );
                   d.Vc(PRS,k,j,i) = cs2*d.Vc(RHO,k,j,i);
@@ -306,10 +443,10 @@ void Setup::InitFlow(DataBlock &data) {
                 d.Vc(VX1,k,j,i) = ZERO_F;
                 d.Vc(VX2,k,j,i) = ZERO_F;
 
-                if(d.Vc(RHO,k,j,i) < densityFloorGlob) {
-                  real T2=d.Vc(PRS,k,j,i)/d.Vc(RHO,k,j,i);
-                  d.Vc(RHO,k,j,i) = densityFloorGlob;
-                  d.Vc(PRS,k,j,i) = T2*d.Vc(RHO,k,j,i);
+                real densityFloor = computeDensityFloor(R,z,densityFloorGlob,Rin,epsilonGlob);
+                if(d.Vc(RHO,k,j,i) < densityFloor) {
+                  d.Vc(RHO,k,j,i) = densityFloor;
+                  //d.Vc(PRS,k,j,i) = T2*d.Vc(RHO,k,j,i);
                 }
 
                 // Vector potential on the corner
@@ -321,9 +458,10 @@ void Setup::InitFlow(DataBlock &data) {
 
                 if(R>Rin) {
                   A(KDIR,k,j,i) = B0*(pow(Rin,m+2.0)/R * (-1.0/(m+2.0)) + pow(R,m+1.0)/(m+2.0));
+                  A(KDIR,k,j,i) = B0*(pow(Rin,m+2.0)/R * (-1.0/(m+2.0)) + pow(R,m+1.0)/(m+2.0) + Rin*Rin/(2.0*R));
                 }
                 else {
-                  A(KDIR,k,j,i) = 0.0;
+                  A(KDIR,k,j,i) = B0*R/2.0;
                 }
 
             }

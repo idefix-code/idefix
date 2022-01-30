@@ -152,8 +152,13 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   IdefixArray4D<real> Uc = data.hydro.Uc;
   IdefixArray4D<real> Vs = data.hydro.Vs;
   IdefixArray4D<real> Uc0 = data.hydro.Uc0;
-  IdefixArray4D<real> Vs0 = data.hydro.Vs0;
   IdefixArray3D<real> InvDt = data.hydro.InvDt;
+  #ifdef EVOLVE_VECTOR_POTENTIAL
+  IdefixArray4D<real> Ve0 = data.hydro.Ve0;
+  IdefixArray4D<real> Ve = data.hydro.Ve;
+  #else
+  IdefixArray4D<real> Vs0 = data.hydro.Vs0;
+  #endif
 
   real newdt;
 
@@ -244,14 +249,24 @@ void TimeIntegrator::Cycle(DataBlock &data) {
           Uc(n,k,j,i) = wcs*Uc(n,k,j,i) + w0s*Uc0(n,k,j,i);
       });
 
-#if MHD==YES
-      idefix_for("Cycle-update",0,DIMENSIONS,0,data.np_tot[KDIR]+KOFFSET,
-                                             0,data.np_tot[JDIR]+JOFFSET,
-                                             0,data.np_tot[IDIR]+IOFFSET,
-        KOKKOS_LAMBDA (int n, int k, int j, int i) {
-          Vs(n,k,j,i) = wcs*Vs(n,k,j,i) + w0s*Vs0(n,k,j,i);
-      });
-#endif
+      #if MHD==YES
+        #ifndef EVOLVE_VECTOR_POTENTIAL
+          idefix_for("Cycle-update-Vs",0,DIMENSIONS,0,data.np_tot[KDIR]+KOFFSET,
+                                                0,data.np_tot[JDIR]+JOFFSET,
+                                                0,data.np_tot[IDIR]+IOFFSET,
+            KOKKOS_LAMBDA (int n, int k, int j, int i) {
+              Vs(n,k,j,i) = wcs*Vs(n,k,j,i) + w0s*Vs0(n,k,j,i);
+          });
+        #else
+          idefix_for("Cycle-update-Ve",0,AX3e+1,0,data.np_tot[KDIR]+KOFFSET,
+                                                0,data.np_tot[JDIR]+JOFFSET,
+                                                0,data.np_tot[IDIR]+IOFFSET,
+            KOKKOS_LAMBDA (int n, int k, int j, int i) {
+              Ve(n,k,j,i) = wcs*Ve(n,k,j,i) + w0s*Ve0(n,k,j,i);
+          });
+          data.hydro.emf.ComputeMagFieldFromA(Ve, Vs);
+        #endif
+      #endif
       // update t
       data.t = wcs*data.t + w0s*t0;
 

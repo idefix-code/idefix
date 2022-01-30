@@ -53,6 +53,9 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
   if(data->hydro.haveCurrent) {
     J = Kokkos::create_mirror_view(data->hydro.J);
   }
+  #ifdef EVOLVE_VECTOR_POTENTIAL
+    Ve = Kokkos::create_mirror_view(data->hydro.Ve);
+  #endif
 
   D_EXPAND( Ex3 = Kokkos::create_mirror_view(data->hydro.emf.ez);  ,
                                                              ,
@@ -84,6 +87,10 @@ void DataBlockHost::SyncToDevice() {
 #if MHD == YES
   Kokkos::deep_copy(data->hydro.Vs,Vs);
   if(this->haveCurrent && data->hydro.haveCurrent) Kokkos::deep_copy(data->hydro.J,J);
+  #ifdef EVOLVE_VECTOR_POTENTIAL
+    Kokkos::deep_copy(data->hydro.Ve,Ve);
+  #endif
+
   D_EXPAND( Kokkos::deep_copy(data->hydro.emf.ez,Ex3);  ,
                                                   ,
             Kokkos::deep_copy(data->hydro.emf.ex,Ex1);
@@ -103,7 +110,9 @@ void DataBlockHost::SyncFromDevice() {
 #if MHD == YES
   Kokkos::deep_copy(Vs,data->hydro.Vs);
   if(this->haveCurrent && data->hydro.haveCurrent) Kokkos::deep_copy(J,data->hydro.J);
-
+  #ifdef EVOLVE_VECTOR_POTENTIAL
+    Kokkos::deep_copy(Ve,data->hydro.Ve);
+  #endif
   D_EXPAND( Kokkos::deep_copy(Ex3,data->hydro.emf.ez);  ,
                                                   ,
             Kokkos::deep_copy(Ex1,data->hydro.emf.ex);

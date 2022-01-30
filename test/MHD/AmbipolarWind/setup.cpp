@@ -456,20 +456,31 @@ void Setup::InitFlow(DataBlock &data) {
                 A(IDIR,k,j,i) = ZERO_F;
                 A(JDIR,k,j,i) = ZERO_F;
 
-                if(R>Rin) {
-                  A(KDIR,k,j,i) = B0*(pow(Rin,m+2.0)/R * (-1.0/(m+2.0)) + pow(R,m+1.0)/(m+2.0));
-                  A(KDIR,k,j,i) = B0*(pow(Rin,m+2.0)/R * (-1.0/(m+2.0)) + pow(R,m+1.0)/(m+2.0) + Rin*Rin/(2.0*R));
-                }
-                else {
-                  A(KDIR,k,j,i) = B0*R/2.0;
-                }
+                #ifdef EVOLVE_VECTOR_POTENTIAL
+                  if(R>Rin) {
+                    d.Ve(AX3e,k,j,i) = B0*(pow(Rin,m+2.0)/R * (-1.0/(m+2.0)) + pow(R,m+1.0)/(m+2.0) + Rin*Rin/(2.0*R));
+                  }
+                  else {
+                    d.Ve(AX3e,k,j,i) = B0*R/2.0;
+                  }
+                #else
+                  if(R>Rin) {
+                    A(KDIR,k,j,i) = B0*(pow(Rin,m+2.0)/R * (-1.0/(m+2.0)) + pow(R,m+1.0)/(m+2.0));
+                    A(KDIR,k,j,i) = B0*(pow(Rin,m+2.0)/R * (-1.0/(m+2.0)) + pow(R,m+1.0)/(m+2.0) + Rin*Rin/(2.0*R));
+                  }
+                  else {
+                    A(KDIR,k,j,i) = B0*R/2.0;
+                  }
+                #endif
 
             }
         }
     }
 
     // Make the field from the vector potential
-    d.MakeVsFromAmag(A);
+    #ifndef EVOLVE_VECTOR_POTENTIAL
+      d.MakeVsFromAmag(A);
+    #endif
 
 
     // Send it all, if needed

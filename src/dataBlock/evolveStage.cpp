@@ -50,7 +50,7 @@ void DataBlock::EvolveStage() {
   }
   hydro.emf.EnforceEMFBoundary();
   #ifdef EVOLVE_VECTOR_POTENTIAL
-    hydro.emf.EvolveVectorPotential(this->t, this->dt, hydro.Ve);
+    hydro.emf.EvolveVectorPotential(this->dt, hydro.Ve);
     hydro.emf.ComputeMagFieldFromA(hydro.Ve, hydro.Vs);
   #else
     hydro.emf.EvolveMagField(this->t, this->dt, hydro.Vs);

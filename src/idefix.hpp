@@ -112,7 +112,7 @@ enum class LoopPattern { SIMDFOR, RANGE, MDRANGE, TPX, TPTTRTVR, UNDEFINED };
 #define BX3s  2
 
 // Edge-centered variables
-#ifdef EVOLVE_MAGNETIC_POTENTIAL
+#ifdef EVOLVE_VECTOR_POTENTIAL
   #if DIMENSIONS < 3
     #define AX1e   250
     #define AX2e   251

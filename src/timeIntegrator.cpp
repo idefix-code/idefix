@@ -185,7 +185,11 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   if(nstages>1) {
     Kokkos::deep_copy(Uc0,Uc);
 #if MHD == YES
+  #ifndef EVOLVE_VECTOR_POTENTIAL
     Kokkos::deep_copy(Vs0,Vs);
+  #else
+    Kokkos::deep_copy(Ve0,Ve);
+  #endif
 #endif
   }
 

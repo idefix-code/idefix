@@ -94,7 +94,7 @@ class ElectroMotiveForce {
 
   // Routines for evolving the magnetic potential (only available when EVOLVE_VECTOR_POTENTIAL)
   void EvolveVectorPotential(real, IdefixArray4D<real> &);
-  void ComputeMagFieldfromA(IdefixArray4D<real> &Vein, IdefixArray4D<real> &Vsout);
+  void ComputeMagFieldFromA(IdefixArray4D<real> &Vein, IdefixArray4D<real> &Vsout);
 
 #ifdef WITH_MPI
   // Exchange surface EMFs to remove interprocess round off errors

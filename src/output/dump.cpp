@@ -77,6 +77,57 @@ void Dump::Init(Input &input, DataBlock &data) {
                                              MPI_ORDER_C, realType, &this->descSW[face]));
       MPI_SAFE_CALL(MPI_Type_commit(&this->descSW[face]));
     }
+    // Dimensions for edge-centered field
+    #ifdef EVOLVE_VECTOR_POTENTIAL
+      for(int nv = 0; nv <= AX3e ; nv++) {
+        int edge; // Vector direction(=edge)
+
+        // Map nv to a vector direction
+        #if DIMENSIONS == 2
+          if(nv==AX3e) edge = KDIR;
+          else IDEFIX_ERROR("Wrong direction for vector potential");
+        #elif DIMENSIONS == 3
+          edge = nv;
+        #else
+          IDEFIX_ERROR("Cannot treat vector potential with that number of dimensions");
+        #endif
+
+        // load the array size
+        for(int dir = 0; dir < 3 ; dir++) {
+          size[2-dir] = grid->np_int[dir];
+          start[2-dir] = data.gbeg[dir]-data.nghost[dir];
+          subsize[2-dir] = data.np_int[dir];
+        }
+
+        // Extra cell in the dirs perp to field
+        idfx::cout << "Edge Array read Size : ";
+        for(int i = 0 ; i < DIMENSIONS ; i++) {
+          if(i!=edge) {
+            size[2-i]++;
+            subsize[2-i]++; // valid only for reading 
+                            //since it involves an overlap of data between procs
+          }
+          idfx::cout << size[2-i] << " ";
+        }
+        idfx::cout << std::endl;
+        MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
+                                              MPI_ORDER_C, realType, &this->descER[nv]));
+        MPI_SAFE_CALL(MPI_Type_commit(&this->descER[nv]));
+
+        // Now for writing, it is only the last proc which keeps one additional cell, 
+        // so we remove what we added for reads
+        for(int i = 0 ; i < DIMENSIONS ; i++) {
+          if(i!=edge) {
+            if(grid->xproc[i] != grid->nproc[i] - 1  ) {
+              subsize[2-i]--;
+            }
+          }
+        }
+        MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
+                                              MPI_ORDER_C, realType, &this->descEW[nv]));
+        MPI_SAFE_CALL(MPI_Type_commit(&this->descEW[nv]));
+      }
+    #endif
   #endif
 }
 
@@ -721,12 +772,12 @@ int Dump::Write(DataBlock &data, Output& output) {
       // write edge field components
       for(int nv = 0 ; nv <= AX3e ; nv++) {
         std::snprintf(fieldName,NAMESIZE,"Ve-%s",data.hydro.VeName[nv].c_str());
-        int dir = 0;
+        int edge = 0;
         #if DIMENSIONS == 2
-          if(nv==AX3e) dir = KDIR;
+          if(nv==AX3e) edge = KDIR;
           else IDEFIX_ERROR("Wrong direction for vector potential");
         #elif DIMENSIONS == 3
-          dir = nv;
+          edge = nv;
         #else
           IDEFIX_ERROR("Cannot treat vector potential with that number of dimensions");
         #endif
@@ -737,10 +788,10 @@ int Dump::Write(DataBlock &data, Output& output) {
         }
         // If it is the last datablock of the dimension, increase the size by one in the direction
         // perpendicular to the vector.
-        bool isLast = (data.mygrid->xproc[nv] == data.mygrid->nproc[nv] - 1);
+        
         for(int i = 0 ; i < DIMENSIONS ; i++) {
-          if(i != dir) {
-            if(isLast) nx[i]++;
+          if(i != edge) {
+            if(data.mygrid->xproc[i] == data.mygrid->nproc[i] - 1) nx[i]++;
             nxtot[i]++;
           } 
         }

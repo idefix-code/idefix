@@ -36,6 +36,12 @@ class RKLegendre {
   IdefixArray4D<real> dB0;     // dB of the first stage
   IdefixArray4D<real> Vs1;     // Vs of previous stage
 
+  #ifdef EVOLVE_VECTOR_POTENTIAL
+  IdefixArray4D<real> dA;      // Variation of edge-centered vector potential
+  IdefixArray4D<real> dA0;     // dA of the first stage
+  IdefixArray4D<real> Ve1;     // Ve of previous stage
+  #endif
+
   IdefixArray1D<int> varList;  // List of variables which should be evolved
   int nvarRKL{0};               // # of active variables
 

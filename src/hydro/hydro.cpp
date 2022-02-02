@@ -315,6 +315,7 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
     Vs = IdefixArray4D<real>("Hydro_Vs", DIMENSIONS,
                 data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
     #ifdef EVOLVE_VECTOR_POTENTIAL
+      idfx::cout << "Hydro: using EXPERIMENTAL vector potential formulation for MHD." << std::endl;
       #if DIMENSIONS == 1
         IDEFIX_ERROR("EVOLVE_VECTOR_POTENTIAL is not compatible with 1D MHD");
       #else

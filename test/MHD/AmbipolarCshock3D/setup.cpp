@@ -120,17 +120,26 @@ void Setup::InitFlow(DataBlock &data) {
 #endif
                 d.Vc(VX1,k,j,i) = vin;
                 d.Vc(VX2,k,j,i) = 0.0;
-                d.Vs(BX1s,k,j,i) = B0*cos(theta);
-#if DIMENSIONS >= 2
-                d.Vs(BX2s,k,j,i) = B0*sin(theta);
-#else
+                d.Vc(BX1,k,j,i) = B0*cos(theta);
                 d.Vc(BX2,k,j,i) = B0*sin(theta);
-#endif
-#if DIMENSIONS == 3
-                d.Vs(BX3s,k,j,i) = 0.0;
-#else
                 d.Vc(BX3,k,j,i) = 0.0;
-#endif
+
+                D_EXPAND( d.Vs(BX1s,k,j,i) = B0*cos(theta);  ,
+                          d.Vs(BX2s,k,j,i) = B0*sin(theta);  ,
+                          d.Vs(BX3s,k,j,i) = 0.0;              )
+
+                // Init vector potential if we're requested so
+                #ifdef EVOLVE_VECTOR_POTENTIAL
+                  #if DIMENSIONS == 3
+                    d.Ve(AX1e,k,j,i) = B0*sin(theta)*z;
+                    d.Ve(AX2e,k,j,i) = ZERO_F;
+                    d.Ve(AX3e,k,j,i) = B0*cos(theta)*y;
+                  #else
+                    IDEFIX_ERROR("Vector potential only valid in 3 dimensions for this setup");
+                  #endif
+                #endif
+
+
 
             }
         }

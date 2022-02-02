@@ -100,16 +100,13 @@ void Dump::Init(Input &input, DataBlock &data) {
         }
 
         // Extra cell in the dirs perp to field
-        idfx::cout << "Edge Array read Size : ";
         for(int i = 0 ; i < DIMENSIONS ; i++) {
           if(i!=edge) {
             size[2-i]++;
             subsize[2-i]++; // valid only for reading 
                             //since it involves an overlap of data between procs
           }
-          idfx::cout << size[2-i] << " ";
         }
-        idfx::cout << std::endl;
         MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
                                               MPI_ORDER_C, realType, &this->descER[nv]));
         MPI_SAFE_CALL(MPI_Type_commit(&this->descER[nv]));

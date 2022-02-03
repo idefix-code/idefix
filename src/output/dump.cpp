@@ -563,7 +563,7 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
     } else if(fieldName.compare(0,3,"Ve-") == 0) {
       #if MHD == YES && defined(EVOLVE_VECTOR_POTENTIAL)
         int nv = -1;
-        for(int n = 0 ; n < DIMENSIONS; n++) {
+        for(int n = 0 ; n <= AX3e; n++) {
           if(fieldName.compare(3,4,data.hydro.VeName[n],0,4)==0) nv=n; // Found matching field
         }
         if(nv<0) {

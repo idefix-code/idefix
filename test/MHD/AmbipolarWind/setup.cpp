@@ -307,11 +307,11 @@ void EmfBoundary(DataBlock& data, const real t) {
     IdefixArray3D<real> Ex3 = data.hydro.emf.ez;
     if(data.lbound[IDIR] == userdef) {
 
-        int ighost = data.nghost[IDIR];
+        int ighost = data.beg[IDIR];
 
-        idefix_for("EMFBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR]+1,0,ighost+1,
-                    KOKKOS_LAMBDA (int k, int j, int i) {
-            Ex3(k,j,i) = ZERO_F;
+        idefix_for("EMFBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],
+                    KOKKOS_LAMBDA (int k, int j) {
+            Ex3(k,j,ighost) = ZERO_F;
         });
     }
     if(data.lbound[JDIR] == userdef) {
@@ -336,7 +336,7 @@ void EmfBoundary(DataBlock& data, const real t) {
 void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
 
   // Use Invdt as scratch array
-  IdefixArray3D<real> scrh = data.hydro.InvDt;
+  IdefixArray3D<real> scrh("Scratch", data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
 
   // Ask for a computation of xA ambipolar in this scratch array
   Ambipolar(data, data.t, scrh);
@@ -350,11 +350,13 @@ void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
   // Make references to the user-defined arrays (variables is a container of IdefixHostArray3D)
   // Note that the labels should match the variable names in the input file
   IdefixHostArray3D<real> Am  = variables["Am"];
+  IdefixHostArray3D<real> InvDt  = variables["InvDt"];
 
   IdefixHostArray1D<real> x1=d.x[IDIR];
   IdefixHostArray1D<real> x2=d.x[JDIR];
   IdefixHostArray4D<real> Vc=d.Vc;
-  IdefixHostArray3D<real> scrhHost=d.InvDt;
+  IdefixArray3D<real>::HostMirror scrhHost = Kokkos::create_mirror_view(scrh);
+  Kokkos::deep_copy(scrhHost,scrh);
 
   for(int k = d.beg[KDIR]; k < d.end[KDIR] ; k++) {
     for(int j = d.beg[JDIR]; j < d.end[JDIR] ; j++) {
@@ -363,6 +365,7 @@ void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
         real R=FMAX(FABS(x1(i)*sin(x2(j))),ONE_F);
         real Omega=pow(R,-1.5);
         Am(k,j,i) = 1.0/(Omega*scrhHost(k,j,i)*Vc(RHO,k,j,i));
+        InvDt(k,j,i) = d.InvDt(k,j,i);
       }
     }
   }

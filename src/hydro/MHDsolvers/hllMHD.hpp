@@ -330,6 +330,7 @@ void Hydro::HllMHD() {
           fluxL[BX1] += -xH* (  Jx3*uL[BX1]  );
           fluxR[BX1] += -xH* (  Jx3*uR[BX1]  );
 
+          #if COMPONENTS >= 2
           fluxL[BX2] += -xH* (  Jx3*uL[BX2]  );
           fluxR[BX2] += -xH* (  Jx3*uR[BX2]  );
 
@@ -339,6 +340,7 @@ void Hydro::HllMHD() {
 
           fluxL[BX2] += -xH* (   - Jx2*uL[BX3] );
           fluxR[BX2] += -xH* (   - Jx2*uR[BX3] );
+          #endif
           #endif
         }
 

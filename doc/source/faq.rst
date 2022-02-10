@@ -1,4 +1,3 @@
-
 .. _faq:
 
 =========================
@@ -30,6 +29,9 @@ Compilation
 
 Is there a way to see explicitely the compilation commands with ``make``?
   Yes, just add ``VERBOSE=1`` after the ``make`` command.
+
+The compilation stops while compiling Kokkos with ``/usr/include/stdlib.h(58): error: expected a ";"``
+  This happens on Gricad machines when LIBDL is activated (wrong glibc). Simply disable LIBDL.
 
 Execution
 ---------

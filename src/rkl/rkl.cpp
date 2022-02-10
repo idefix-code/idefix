@@ -10,7 +10,7 @@
 #include "rkl.hpp"
 #include "dataBlock.hpp"
 #include "hydro.hpp"
-
+#include "calcParabolicFlux.hpp"
 
 #ifndef RKL_ORDER
   #define RKL_ORDER       2
@@ -498,17 +498,13 @@ void RKLegendre::CalcParabolicRHS(real t) {
       }
 #endif // GEOMETRY==POLAR OR CYLINDRICAL
 
-#if GEOMETRY == SPHERICAL
+#if GEOMETRY == SPHERICAL && COMPONENTS == 3
       if(dir==IDIR && nv==iMPHI) {
-  #if COMPONENTS == 3
         Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(x1m(i));
-  #endif // COMPONENTS == 3
       } else if(dir==JDIR && nv==iMPHI) {
-  #if COMPONENTS == 3
         Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(sm(j));
-  #endif // COMPONENTS = 3
       }
-#endif // GEOMETRY == SPHERICAL
+#endif // GEOMETRY == SPHERICAL && COMPONENTS == 3
     }
   );
 

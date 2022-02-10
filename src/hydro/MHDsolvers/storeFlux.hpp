@@ -21,9 +21,11 @@ KOKKOS_FORCEINLINE_FUNCTION void K_StoreEMF( const int i, const int j, const int
         const int BXt = (DIR == IDIR ? BX2 : BX1);  ,
         const int BXb = (DIR == KDIR ? BX2 : BX3);   )
 
-  D_EXPAND( Et(k,j,i) = st*Flux(BXt,k,j,i);  ,
-                                                 ,
-            Eb(k,j,i) = sb*Flux(BXb,k,j,i);  )
+  #if COMPONENTS > 1
+    D_EXPAND( Et(k,j,i) = st*Flux(BXt,k,j,i);  ,
+                                                  ,
+              Eb(k,j,i) = sb*Flux(BXb,k,j,i);  )
+  #endif
 }
 
 template <const int DIR>
@@ -60,9 +62,11 @@ KOKKOS_FORCEINLINE_FUNCTION void K_StoreHLL( const int i, const int j, const int
   real al = std::fmin(ZERO_F, sl);
   real scrh = ONE_F/(ar - al);
 
+  #if COMPONENTS > 1
   EXPAND( Et(k,j,i) = -st*(ar*vL[Xt] - al*vR[Xt])*scrh;  ,
                                                         ,
           Eb(k,j,i) = -sb*(ar*vL[Xb] - al*vR[Xb])*scrh;  );
+  #endif
 
   aL(k,j,i) =  ar*scrh;
   aR(k,j,i) = -al*scrh;
@@ -196,9 +200,11 @@ KOKKOS_FORCEINLINE_FUNCTION void K_StoreHLLD( const int i, const int j, const in
     dL(k,j,i) = HALF_F*lambda;
   }
 
+  #if COMPONENTS > 1
   EXPAND( Et(k,j,i) = -st*(ar*vL[Xt] - al*vR[Xt])*scrh;  ,
                                                           ,
           Eb(k,j,i) = -sb*(ar*vL[Xb] - al*vR[Xb])*scrh;  );
+  #endif
 }
 
 #endif //HYDRO_MHDSOLVERS_STOREFLUX_HPP_

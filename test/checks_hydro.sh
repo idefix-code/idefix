@@ -1,6 +1,6 @@
 #!/bin/bash
 
-rep_HD_list="sod-iso sod MachReflection ViscousFlowPastCylinder ViscousDisk FargoPlanet ShearingBox"
+rep_HD_list="sod-iso sod MachReflection ViscousFlowPastCylinder ViscousDisk FargoPlanet ShearingBox thermalDiffusion"
 
 # refer to the parent dir of this file, wherever this is called from
 # a python equivalent is e.g.

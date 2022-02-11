@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - isotropic thermal diffusion (anisotropic diffusion in MHD will come later)
 - fixed a bug in 1D+1D in spherical geometry (J. Mauxion)
 - Increased the efficiency of abort checks using MPI_Bcast instead of MPI_Allreduce
+- allow the user to integrate the magnetic vector potential instead of the field to reduce the accumulation of roundoff errors on div(B) (experimental feature, can be enabled at config time)
 
 ## [1.0.0] 2022-01-13
 ### Changed

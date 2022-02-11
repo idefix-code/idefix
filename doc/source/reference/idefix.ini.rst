@@ -192,7 +192,7 @@ This section enables the orbital advection algorithm provided in *Idefix*. More 
 |                |                         | | module as the input velocity function.                                                    |
 |                |                         | | When `userdef` is set, the fargo module expects a user-defined  velocity function to      |
 |                |                         | | be enrolled via Fargo::EnrollVelocity(FargoVelocityFunc)                                  |
-|                |                         | |
+|                |                         | |                                                                                           |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | maxShift       | integer                 | | optional: when using MPI with a domain decomposition in the azimuthal direction, this sets|
 |                |                         | | the maximum number of cells Fargo is allowed to shift the domain at each time step.       |

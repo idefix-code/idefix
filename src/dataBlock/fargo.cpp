@@ -848,48 +848,76 @@ void Fargo::ShiftSolution(const real t, const real dt) {
 #endif
 
   // Update field components according to the computed EMFS
-  IdefixArray4D<real> Vs = hydro->Vs;
-  idefix_for("Fargo::EvolvMagField",
-             data->beg[KDIR],data->end[KDIR]+KOFFSET,
-             data->beg[JDIR],data->end[JDIR]+JOFFSET,
-             data->beg[IDIR],data->end[IDIR]+IOFFSET,
-    KOKKOS_LAMBDA (int k, int j, int i) {
-      real rhsx1, rhsx2, rhsx3;
-
-#if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
-      Vs(BX1s,k,j,i) += -  (ez(k,j+1,i) - ez(k,j,i) ) / dx2(j);
-
-#elif GEOMETRY == SPHERICAL
-      Vs(BX1s,k,j,i) += -  sinx2(j)*dx2(j)/dmu(j)*(ey(k+1,j,i) - ey(k,j,i) ) / dx3(k);
-#endif
-
-#if GEOMETRY == CARTESIAN
-      Vs(BX2s,k,j,i) += D_EXPAND(    0.0                          ,
-                            + (ez(k,j,i+1) - ez(k,j,i)) / dx1(i)  ,
-                            + (ex(k+1,j,i) - ex(k,j,i)) / dx3(k)  );
-#elif GEOMETRY == POLAR
-      Vs(BX2s,k,j,i) += D_EXPAND(    0.0                                          ,
-                            + (x1m(i+1) * ez(k,j,i+1) - x1m(i)*ez(k,j,i)) / dx1(i)  ,
-                            + x1(i) *  (ex(k+1,j,i) - ex(k,j,i)) / dx3(k)  );
-#elif GEOMETRY == SPHERICAL
-    #if DIMENSIONS == 3
-      Vs(BX2s,k,j,i) += - (ex(k+1,j,i) - ex(k,j,i)) / dx3(k);
-    #endif
-#endif // GEOMETRY
-
-#if DIMENSIONS == 3
+  #ifndef EVOLVE_VECTOR_POTENTIAL
+    IdefixArray4D<real> Vs = hydro->Vs;
+    idefix_for("Fargo::EvolvMagField",
+              data->beg[KDIR],data->end[KDIR]+KOFFSET,
+              data->beg[JDIR],data->end[JDIR]+JOFFSET,
+              data->beg[IDIR],data->end[IDIR]+IOFFSET,
+      KOKKOS_LAMBDA (int k, int j, int i) {
   #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
-    Vs(BX3s,k,j,i) -=  (ex(k,j+1,i) - ex(k,j,i) ) / dx2(j);
+        Vs(BX1s,k,j,i) += -  (ez(k,j+1,i) - ez(k,j,i) ) / dx2(j);
+
   #elif GEOMETRY == SPHERICAL
-    real A1p = x1m(i+1)*x1m(i+1);
-    real A1m = x1m(i)*x1m(i);
-    real A2m = FABS(sinx2m(j));
-    real A2p = FABS(sinx2m(j+1));
-    Vs(BX3s,k,j,i) += sinx2(j) * (A1p * ey(k,j,i+1) - A1m * ey(k,j,i))/(x1(i)*dx1(i))
-                      + (A2p * ex(k,j+1,i) - A2m * ex(k,j,i))/dx2(j);
+        Vs(BX1s,k,j,i) += -  sinx2(j)*dx2(j)/dmu(j)*(ey(k+1,j,i) - ey(k,j,i) ) / dx3(k);
   #endif
-#endif// DIMENSIONS
-  });
+
+  #if GEOMETRY == CARTESIAN
+        Vs(BX2s,k,j,i) += D_EXPAND(    0.0                          ,
+                              + (ez(k,j,i+1) - ez(k,j,i)) / dx1(i)  ,
+                              + (ex(k+1,j,i) - ex(k,j,i)) / dx3(k)  );
+  #elif GEOMETRY == POLAR
+        Vs(BX2s,k,j,i) += D_EXPAND(    0.0                                          ,
+                              + (x1m(i+1) * ez(k,j,i+1) - x1m(i)*ez(k,j,i)) / dx1(i)  ,
+                              + x1(i) *  (ex(k+1,j,i) - ex(k,j,i)) / dx3(k)  );
+  #elif GEOMETRY == SPHERICAL
+      #if DIMENSIONS == 3
+        Vs(BX2s,k,j,i) += - (ex(k+1,j,i) - ex(k,j,i)) / dx3(k);
+      #endif
+  #endif // GEOMETRY
+
+  #if DIMENSIONS == 3
+    #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
+      Vs(BX3s,k,j,i) -=  (ex(k,j+1,i) - ex(k,j,i) ) / dx2(j);
+    #elif GEOMETRY == SPHERICAL
+      real A1p = x1m(i+1)*x1m(i+1);
+      real A1m = x1m(i)*x1m(i);
+      real A2m = FABS(sinx2m(j));
+      real A2p = FABS(sinx2m(j+1));
+      Vs(BX3s,k,j,i) += sinx2(j) * (A1p * ey(k,j,i+1) - A1m * ey(k,j,i))/(x1(i)*dx1(i))
+                        + (A2p * ex(k,j+1,i) - A2m * ex(k,j,i))/dx2(j);
+    #endif
+  #endif// DIMENSIONS
+    });
+
+  #else // EVOLVE_VECTOR_POTENTIAL
+    // evolve field using vector potential
+    IdefixArray4D<real> Ve = hydro->Ve;
+    idefix_for("Fargo::EvolvMagField",
+              data->beg[KDIR],data->end[KDIR]+KOFFSET,
+              data->beg[JDIR],data->end[JDIR]+JOFFSET,
+              data->beg[IDIR],data->end[IDIR]+IOFFSET,
+      KOKKOS_LAMBDA (int k, int j, int i) {
+        #if GEOMETRY == CARTESIAN
+          #if DIMENSIONS == 3
+            Ve(AX1e,k,j,i) += ex(k,j,i);
+          #endif
+          Ve(AX3e,k,j,i) += - ez(k,j,i);
+        #elif GEOMETRY == POLAR
+          #if DIMENSIONS == 3
+            Ve(AX1e,k,j,i) += x1(i) * ex(k,j,i);
+          #endif
+          Ve(AX3e,k,j,i) +=  - x1m(i) * ez(k,j,i);
+        #elif GEOMETRY == SPHERICAL
+          #if DIMENSIONS == 3
+            Ve(AX1e,k,j,i) += - x1(i) * sinx2m(j) * ex(k,j,i);
+            Ve(AX2e,k,j,i) +=   x1m(i) * sinx2(j) * ey(k,j,i);
+          #endif
+        #endif
+      });
+    hydro->emf.ComputeMagFieldFromA(Ve,hydro->Vs);
+  #endif // EVOLVE_VECTOR_POTENTIAL
+
 
   // Rebuild the cell-centered field components
   this->hydro->boundary.ReconstructVcField(Uc);

@@ -42,6 +42,8 @@ void Setup::InitFlow(DataBlock &data) {
                 d.Vc(VX1,k,j,i) = -sin(2.0*M_PI*y);
                 d.Vc(VX2,k,j,i) = sin(2.0*M_PI*x);
                 #ifdef EVOLVE_VECTOR_POTENTIAL
+                  x=d.xl[IDIR](i);
+                  y=d.xl[JDIR](j);
                   d.Ve(AX3e,k,j,i) = B0/(2.0*M_PI)*(
                                       cos(2.0*M_PI*y) + cos(4.0*M_PI*x)/2.0);
                 #else

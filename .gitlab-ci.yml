@@ -31,6 +31,13 @@ MHD tests:
     - cd test
     - ./checks_mhd.sh $TEST_OPTIONS
 
+Vector potential tests:
+  stage: checks
+  image: lesurg/idefix:latest
+  script:
+    - cd test
+    - ./checks_vector_potential.sh $TEST_OPTIONS
+
 MPI tests:
   stage: checks
   image: lesurg/idefix:latest

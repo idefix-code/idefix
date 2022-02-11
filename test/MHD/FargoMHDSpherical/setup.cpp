@@ -84,8 +84,9 @@ void Setup::InitFlow(DataBlock &data) {
     DataBlockHost d(data);
 
     // Make vector potential
-    IdefixHostArray4D<real> A = IdefixHostArray4D<real>("Setup_VectorPotential", 3, data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
-
+    #ifndef EVOLVE_VECTOR_POTENTIAL
+      IdefixHostArray4D<real> A = IdefixHostArray4D<real>("Setup_VectorPotential", 3, data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
+    #endif
 
     real x,y,z;
 
@@ -116,16 +117,23 @@ void Setup::InitFlow(DataBlock &data) {
                 th=d.xl[JDIR](j);
                 R=r*sin(th);
                 z=r*cos(th);
-
-                A(IDIR,k,j,i) = 0.0;
-                A(JDIR,k,j,i) = 0.0;
-                A(KDIR,k,j,i) = B0*cos(6*d.x[KDIR](k));
+                #ifdef EVOLVE_VECTOR_POTENTIAL
+                  d.Ve(AX1e,k,j,i) = 0.0;
+                  d.Ve(AX2e,k,j,i) = 0.0;
+                  d.Ve(AX3e,k,j,i) = B0*cos(6*d.x[KDIR](k));
+                #else
+                  A(IDIR,k,j,i) = 0.0;
+                  A(JDIR,k,j,i) = 0.0;
+                  A(KDIR,k,j,i) = B0*cos(6*d.x[KDIR](k));
+                #endif
             }
         }
     }
 
-    // Make the field from the vector potential
-    d.MakeVsFromAmag(A);
+    #ifndef EVOLVE_VECTOR_POTENTIAL
+      // Make the field from the vector potential
+      d.MakeVsFromAmag(A);
+    #endif
 
     // Send it all, if needed
     d.SyncToDevice();

@@ -125,7 +125,11 @@ target_include_directories(idefix PUBLIC
 target_link_libraries(idefix Kokkos::kokkos)
 
 message(STATUS "Idefix final configuration")
-message(STATUS "    MHD: ${Idefix_MHD}")
+if(Idefix_EVOLVE_VECTOR_POTENTIAL)
+  message(STATUS "    MHD: ${Idefix_MHD} (Vector potential)")
+else()
+  message(STATUS "    MHD: ${Idefix_MHD}")
+endif()
 message(STATUS "    MPI: ${Idefix_MPI}")
 message(STATUS "    Reconstruction: ${Idefix_RECONSTRUCTION}")
 message(STATUS "    Version: ${GIT_SHA1}")

@@ -47,7 +47,7 @@ for rep in $rep_example_list; do
     echo "***********************************************"
     echo "Making  $rep"
     echo "***********************************************"
-    make clean; make -j 4 || { echo "!!!! Example $rep failed during compilation"; exit 1; }
+    make clean; make -j 10 || { echo "!!!! Example $rep failed during compilation"; exit 1; }
 
 
     echo "***********************************************"

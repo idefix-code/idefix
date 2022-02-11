@@ -45,7 +45,7 @@ for rep in $rep_2D_mpi_list; do
     echo "***********************************************"
     echo "Making  $rep"
     echo "***********************************************"
-    make clean; make -j 4
+    make clean; make -j 10
 
     ini_files=$(ls *.ini)
     for ini in $ini_files; do
@@ -76,7 +76,7 @@ for rep in $rep_3D_mpi_list; do
     echo "***********************************************"
     echo "Making  $rep"
     echo "***********************************************"
-    make clean; make -j 4
+    make clean; make -j 10
 
     ini_files=$(ls *.ini)
     for ini in $ini_files; do

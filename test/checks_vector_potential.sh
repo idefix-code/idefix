@@ -46,7 +46,7 @@ for rep in $rep_MHD_list; do
         echo "***********************************************"
         echo "Making  $rep with $def"
         echo "***********************************************"
-        make clean; make -j 4 || { echo "!!!! MHD $rep failed during compilation with $def"; exit 1; }
+        make clean; make -j 10 || { echo "!!!! MHD $rep failed during compilation with $def"; exit 1; }
 
         ini_files=$(ls *.ini)
         for ini in $ini_files; do

@@ -84,8 +84,11 @@ void Dump::Init(Input &input, DataBlock &data) {
 
         // Map nv to a vector direction
         #if DIMENSIONS == 2
-          if(nv==AX3e) edge = KDIR;
-          else IDEFIX_ERROR("Wrong direction for vector potential");
+          if(nv==AX3e) {
+            edge = KDIR;
+          } else {
+            IDEFIX_ERROR("Wrong direction for vector potential");
+          }
         #elif DIMENSIONS == 3
           edge = nv;
         #else
@@ -103,7 +106,7 @@ void Dump::Init(Input &input, DataBlock &data) {
         for(int i = 0 ; i < DIMENSIONS ; i++) {
           if(i!=edge) {
             size[2-i]++;
-            subsize[2-i]++; // valid only for reading 
+            subsize[2-i]++; // valid only for reading
                             //since it involves an overlap of data between procs
           }
         }
@@ -111,7 +114,7 @@ void Dump::Init(Input &input, DataBlock &data) {
                                               MPI_ORDER_C, realType, &this->descER[nv]));
         MPI_SAFE_CALL(MPI_Type_commit(&this->descER[nv]));
 
-        // Now for writing, it is only the last proc which keeps one additional cell, 
+        // Now for writing, it is only the last proc which keeps one additional cell,
         // so we remove what we added for reads
         for(int i = 0 ; i < DIMENSIONS ; i++) {
           if(i!=edge) {
@@ -572,8 +575,11 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
         } else {
           int dir = 0;
           #if DIMENSIONS == 2
-            if(nv==AX3e) dir = KDIR;
-            else IDEFIX_ERROR("Wrong direction for vector potential");
+            if(nv==AX3e) {
+              dir = KDIR;
+            } else {
+              IDEFIX_ERROR("Wrong direction for vector potential");
+            }
           #elif DIMENSIONS == 3
             dir = nv;
           #else
@@ -771,8 +777,11 @@ int Dump::Write(DataBlock &data, Output& output) {
         std::snprintf(fieldName,NAMESIZE,"Ve-%s",data.hydro.VeName[nv].c_str());
         int edge = 0;
         #if DIMENSIONS == 2
-          if(nv==AX3e) edge = KDIR;
-          else IDEFIX_ERROR("Wrong direction for vector potential");
+          if(nv==AX3e) {
+            edge = KDIR;
+          } else {
+            IDEFIX_ERROR("Wrong direction for vector potential");
+          }
         #elif DIMENSIONS == 3
           edge = nv;
         #else
@@ -785,12 +794,12 @@ int Dump::Write(DataBlock &data, Output& output) {
         }
         // If it is the last datablock of the dimension, increase the size by one in the direction
         // perpendicular to the vector.
-        
+
         for(int i = 0 ; i < DIMENSIONS ; i++) {
           if(i != edge) {
             if(data.mygrid->xproc[i] == data.mygrid->nproc[i] - 1) nx[i]++;
             nxtot[i]++;
-          } 
+          }
         }
         for(int k = 0; k < nx[KDIR]; k++) {
           for(int j = 0 ; j < nx[JDIR]; j++) {

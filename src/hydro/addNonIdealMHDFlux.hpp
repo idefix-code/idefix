@@ -85,6 +85,7 @@ void Hydro::AddNonIdealMHDFlux(const real t) {
       real Jx1, Jx2, Jx3;
       real Bx1, Bx2, Bx3;
       real eta,xA;
+      real locdmax = 0.0;
 
       int ip1, jp1, kp1;  // Offset indieces
 
@@ -136,7 +137,7 @@ void Hydro::AddNonIdealMHDFlux(const real t) {
                                       + Bx3 * eta * Jx2  );
           #endif
 
-          dMax(k,j,i) += eta;
+          locdmax += eta;
         }
 
         if(haveAmbipolar) {
@@ -165,7 +166,7 @@ void Hydro::AddNonIdealMHDFlux(const real t) {
                                       + Bx3 * Fx3  );
           #endif
 
-          dMax(k,j,i) += xA*BdotB;
+          locdmax += xA*BdotB;
         }
       }
 
@@ -197,7 +198,7 @@ void Hydro::AddNonIdealMHDFlux(const real t) {
                                                         ,
                                       - Bx3 * eta * Jx1  );
           #endif
-          dMax(k,j,i) += eta;
+          locdmax += eta;
         }
 
 
@@ -230,7 +231,7 @@ void Hydro::AddNonIdealMHDFlux(const real t) {
                                       + Bx3 * Fx3  );
           #endif
 
-          dMax(k,j,i) += xA*BdotB;
+          locdmax += xA*BdotB;
         }
       }
 
@@ -279,9 +280,10 @@ void Hydro::AddNonIdealMHDFlux(const real t) {
             Flux(ENG,k,j,i) += Bx1 * Fx1  + Bx2 * Fx2;
           #endif
 
-          dMax(k,j,i) += xA*BdotB;
+          locdmax += xA*BdotB;
         }
       }
+      dMax(k,j,i) = FMAX(dMax(k,j,i),locdmax);
     }
   );
 

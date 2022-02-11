@@ -155,7 +155,7 @@ int main( int argc, char* argv[] ) {
     n_minutes = divres.quot;
     n_seconds = divres.rem;
 
-    double tintegration = timer.seconds() / grid.np_int[IDIR] / grid.np_int[JDIR]
+    double perfs = timer.seconds() / grid.np_int[IDIR] / grid.np_int[JDIR]
                             / grid.np_int[KDIR] / Tint.GetNCycles();
 
     idfx::cout << "Main: Reached t=" << data.t << std::endl;
@@ -192,7 +192,7 @@ int main( int argc, char* argv[] ) {
     }
     idfx::cout << std::endl;
     idfx::cout << "Main: ";
-    idfx::cout << "Perfs are " << 1/tintegration << " cell updates/second" << std::endl;
+    idfx::cout << "Perfs are " << std::scientific << 1/perfs << " cell updates/second" << std::endl;
     #ifdef WITH_MPI
       idfx::cout << "MPI overhead represents "
                  << static_cast<int>(100.0*idfx::mpiCallsTimer/timer.seconds())

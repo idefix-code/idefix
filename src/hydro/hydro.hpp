@@ -16,6 +16,7 @@
 #include "hydro_defs.hpp"
 #include "electroMotiveForce.hpp"
 #include "viscosity.hpp"
+#include "thermalDiffusion.hpp"
 #include "axis.hpp"
 #include "hydroboundary.hpp"
 
@@ -61,8 +62,14 @@ class Hydro {
   // Whether or not we have viscosity
   ParabolicModuleStatus viscosityStatus;
 
+  // Whether or not we have thermal diffusion
+  ParabolicModuleStatus thermalDiffusionStatus;
+
   // Viscosity object
   Viscosity viscosity;
+
+  // Thermal Diffusion object
+  ThermalDiffusion thermalDiffusion;
 
   // Whether or not we have to treat the axis
   bool haveAxis{false};
@@ -148,6 +155,7 @@ class Hydro {
  private:
   friend class ElectroMotiveForce;
   friend class Viscosity;
+  friend class ThermalDiffusion;
   friend class Fargo;
   friend class Axis;
   friend class RKLegendre;

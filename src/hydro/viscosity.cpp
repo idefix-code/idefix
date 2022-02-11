@@ -362,7 +362,8 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
                                         + 0.5*(Vc(VX3,k,j,i) + Vc(VX3,k,j,i-1))*tau_xz);
         #endif
 
-        dMax(k,j,i) += (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k,j,i-1)));
+        real locdmax = (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k,j,i-1)));
+        dMax(k,j,i) = FMAX(dMax(k,j,i),locdmax);
       });
 
   } else if(dir==JDIR) {
@@ -551,7 +552,8 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
                                       + 0.5*(Vc(VX3,k,j,i) + Vc(VX3,k,j-1,i))*tau_yz);
       #endif
 
-      dMax(k,j,i) += (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k,j-1,i)));
+      real locdmax = (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k,j-1,i)));
+      dMax(k,j,i) = FMAX(dMax(k,j,i),locdmax);
     });
 
   } else if(dir==KDIR) {
@@ -672,7 +674,8 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
                                       + 0.5*(Vc(VX3,k,j,i) + Vc(VX3,k-1,j,i))*tau_zz);
       #endif
 
-      dMax(k,j,i) += (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k-1,j,i)));
+      real locdmax = (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k-1,j,i)));
+      dMax(k,j,i) = FMAX(dMax(k,j,i),locdmax);;
     });
   }
 

@@ -157,6 +157,8 @@ void Gravity::AddCentralMassPotential() {
                   r = sqrt(r);
                 #elif GEOMETRY == SPHERICAL
                   r = x1(i);
+                #else
+                  r = ONE_F; // Make sure this one is initialized
                 #endif
                   phiP(k,j,i) += -mass/r;
               });

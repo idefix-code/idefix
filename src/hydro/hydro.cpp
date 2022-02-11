@@ -172,7 +172,7 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   ///////////////////////
 
 
-  // Check whether viscosity is enabled, if so, construct a viscosity object
+  // Check whether viscosity is enabled, if so, init a viscosity object
   if(input.CheckEntry("Hydro","viscosity")>=0) {
     std::string opType = input.GetString("Hydro","viscosity",0);
     if(opType.compare("explicit") == 0 ) {
@@ -187,6 +187,23 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
       IDEFIX_ERROR(msg);
     }
     this->viscosity.Init(input, grid, this);
+  }
+
+  // Check whether thermal diffusion is enabled, if so, init a thermal diffusion object
+  if(input.CheckEntry("Hydro","TDiffusion")>=0) {
+    std::string opType = input.GetString("Hydro","TDiffusion",0);
+    if(opType.compare("explicit") == 0 ) {
+      haveExplicitParabolicTerms = true;
+      thermalDiffusionStatus.isExplicit = true;
+    } else if(opType.compare("rkl") == 0 ) {
+      haveRKLParabolicTerms = true;
+      thermalDiffusionStatus.isRKL = true;
+    } else {
+      std::stringstream msg;
+      msg  << "Unknown integration type for thermal diffusion: " << opType;
+      IDEFIX_ERROR(msg);
+    }
+    this->thermalDiffusion.Init(input, grid, this);
   }
 
 #if MHD == YES

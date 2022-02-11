@@ -150,12 +150,24 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 |                | float, (float)          | | The first parameter can be ``explicit`` or ``rkl``. When ``explicit``, diffusion is       |
 |                |                         | | integrated in the main integration loop with the usual cfl restriction.  If ``rkl``,      |
 |                |                         | | diffusion  is integrated using the Runge-Kutta Legendre scheme.                           |
+|                |                         | | The second parameter can be  either ``constant`` or ``userdef``.                          |
 |                |                         | | When ``constant``, the third parameter is the flow viscosity and the fourth               |
 |                |                         | | parameter is the second (or compressive) viscosity (which is optionnal).                  |
 |                |                         | | When ``userdef``, the ``Hydro.Viscosity`` class expects a user-defined viscosity function |
 |                |                         | | to be enrolled with   ``Hydro.Viscosity::EnrollViscousDiffusivity(DiffusivityFunc)``      |
 |                |                         | | (see :ref:`functionEnrollment`). In this case, the third and fourth parameters            |
 |                |                         | | are not used.                                                                             |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| TDiffusion     | string, string,         | | Switches on isotropic thermal diffusion.                                                  |
+|                | float                   | | The first parameter can be ``explicit`` or ``rkl``. When ``explicit``, diffusion is       |
+|                |                         | | integrated in the main integration loop with the usual cfl restriction.  If ``rkl``,      |
+|                |                         | | diffusion  is integrated using the Runge-Kutta Legendre scheme.                           |
+|                |                         | | The second parameter can be  either ``constant`` or ``userdef``.                          |
+|                |                         | | When ``constant``, the third parameter is the (constant) thermal diffusivity.             |
+|                |                         | | When ``userdef``, the ``Hydro.ThermalDiffusivity`` class expects a user-defined thermal   |
+|                |                         | | diffusivity function to be enrolled with                                                  |
+|                |                         | | ``Hydro.thermalDiffusion::EnrollThermalDiffusivity(DiffusivityFunc)`` .                   |
+|                |                         | | (see :ref:`functionEnrollment`) In this case, the third parameter is not used.            |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | rotation       | float                   | | Add rotation with the z rotation speed given as parameter.                                |
 |                |                         | | Note that this entry only adds Coriolis force in Cartesian geometry.                      |

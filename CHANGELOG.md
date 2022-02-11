@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Upcoming
 ### Changed
+- slight optimisation of the cfl estimation for parabolic terms (makes a difference when several explicit parabolic terms are used simultaneously)
+
+### Added
+- isotropic thermal diffusion (anisotropic diffusion in MHD will come later)
 - fixed a bug in 1D+1D in spherical geometry (J. Mauxion)
 - Increased the efficiency of abort checks using MPI_Bcast instead of MPI_Allreduce
 

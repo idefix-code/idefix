@@ -331,9 +331,22 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   #if MHD == YES
     Vs = IdefixArray4D<real>("Hydro_Vs", DIMENSIONS,
                 data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
+    #ifdef EVOLVE_VECTOR_POTENTIAL
+      idfx::cout << "Hydro: Using EXPERIMENTAL vector potential formulation for MHD." << std::endl;
+      #if DIMENSIONS == 1
+        IDEFIX_ERROR("EVOLVE_VECTOR_POTENTIAL is not compatible with 1D MHD");
+      #else
+        Ve = IdefixArray4D<real>("Hydro_Ve", AX3e+1,
+              data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
 
-    Vs0 = IdefixArray4D<real>("Hydro_Vs0", DIMENSIONS,
+        Ve0 = IdefixArray4D<real>("Hydro_Ve0", AX3e+1,
                 data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
+      #endif
+    #else // EVOLVE_VECTOR_POTENTIAL
+      // NB: we either need Ve0 or Vs0 to evolve B
+      Vs0 = IdefixArray4D<real>("Hydro_Vs0", DIMENSIONS,
+              data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
+    #endif // EVOLVE_VECTOR_POTENTIAL
     this->emf.Init(input, this);
   #endif
 
@@ -409,6 +422,28 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
         VsName.push_back("Vs_"+std::to_string(i));
     }
   }
+
+  #ifdef EVOLVE_VECTOR_POTENTIAL
+    #if DIMENSIONS < 3
+      VeName.push_back("AX3e");
+    #else
+      for(int i = 0 ; i < DIMENSIONS ; i++) {
+      switch(i) {
+        case 0:
+          VeName.push_back("AX1e");
+          break;
+        case 1:
+          VeName.push_back("AX2e");
+          break;
+        case 2:
+          VeName.push_back("AX3e");
+          break;
+        default:
+          VeName.push_back("Ve_"+std::to_string(i));
+        }
+      }
+    #endif
+  #endif
 
   // Initialise boundary conditions
   boundary.Init(input, grid, this);

@@ -53,6 +53,8 @@ class Dump {
   IdfxDataDescriptor descC;   // Descriptor for cell-centered fields (Read & write)
   IdfxDataDescriptor descSR[3]; // Descriptor for face-centered fields (Read)
   IdfxDataDescriptor descSW[3]; // Descriptor for face-centered fields (Write)
+  IdfxDataDescriptor descER[3]; // Descriptor for edge-centered fields (Read)
+  IdfxDataDescriptor descEW[3]; // Descriptor for edge-centered fields (Write)
 
   void WriteString(IdfxFileHandler, char *, int);
   void WriteSerial(IdfxFileHandler, int, int *, DataType, char*, void*);

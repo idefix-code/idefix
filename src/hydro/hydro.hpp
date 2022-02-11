@@ -131,6 +131,7 @@ class Hydro {
   // Arrays required by the Hydro object
   IdefixArray4D<real> Vc;      // Main cell-centered primitive variables index
   IdefixArray4D<real> Vs;      // Main face-centered varariables
+  IdefixArray4D<real> Ve;      // Main edge-centered varariables (only when EVOLVE_VECTOR_POTENTIAL)
   IdefixArray4D<real> Uc;      // Main cell-centered conservative variables
   IdefixArray4D<real> J;       // Electrical current
                                // (only defined when non-ideal MHD effects are enabled)
@@ -138,6 +139,7 @@ class Hydro {
   // Name of the fields (used in outputs)
   std::vector<std::string> VcName;
   std::vector<std::string> VsName;
+  std::vector<std::string> VeName;
 
   // Storing all of the electromotive forces
   ElectroMotiveForce emf;
@@ -145,6 +147,7 @@ class Hydro {
   // Required by time integrator
   IdefixArray4D<real> Uc0;
   IdefixArray4D<real> Vs0;
+  IdefixArray4D<real> Ve0;
   IdefixArray3D<real> InvDt;
 
   IdefixArray4D<real> FluxRiemann;

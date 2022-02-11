@@ -10,6 +10,9 @@ option(Idefix_DEBUG "Enable Idefix debug features (makes the code very slow)" OF
 set(Idefix_CXX_FLAGS "" CACHE STRING "Additional compiler/linker flag")
 set(Idefix_DEFS "definitions.hpp" CACHE FILEPATH "Problem definition header file")
 set(Idefix_RECONSTRUCTION "Linear" CACHE STRING "Type of cell reconstruction scheme")
+if(Idefix_MHD)
+  option(Idefix_EVOLVE_VECTOR_POTENTIAL "Evolve the vector potential instead of the field (helps reducing div(B) in long runs)" OFF)
+endif()
 set_property(CACHE Idefix_RECONSTRUCTION PROPERTY STRINGS Constant Linear LimO3 Parabolic)
 
 
@@ -77,6 +80,9 @@ if(Idefix_HIGH_ORDER_FARGO)
   add_compile_definitions("HIGH_ORDER_FARGO")
 endif()
 
+if(Idefix_EVOLVE_VECTOR_POTENTIAL)
+  add_compile_definitions("EVOLVE_VECTOR_POTENTIAL")
+endif()
 #update gitversion.hpp if possible
 git_describe(GIT_SHA1)
 write_file(${CMAKE_SOURCE_DIR}/src/gitversion.hpp "#define GITVERSION \"${GIT_SHA1}\"")
@@ -119,7 +125,11 @@ target_include_directories(idefix PUBLIC
 target_link_libraries(idefix Kokkos::kokkos)
 
 message(STATUS "Idefix final configuration")
-message(STATUS "    MHD: ${Idefix_MHD}")
+if(Idefix_EVOLVE_VECTOR_POTENTIAL)
+  message(STATUS "    MHD: ${Idefix_MHD} (Vector potential)")
+else()
+  message(STATUS "    MHD: ${Idefix_MHD}")
+endif()
 message(STATUS "    MPI: ${Idefix_MPI}")
 message(STATUS "    Reconstruction: ${Idefix_RECONSTRUCTION}")
 message(STATUS "    Version: ${GIT_SHA1}")

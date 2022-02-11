@@ -48,7 +48,7 @@ for rep in $rep_list; do
         echo "***********************************************"
         echo "Making  $rep with $order"
         echo "***********************************************"
-        make clean; make -j 4 || { echo "!!!! $rep with $order failed during compilation with"; exit 1; }
+        make clean; make -j 10 || { echo "!!!! $rep with $order failed during compilation with"; exit 1; }
 
         ini_files=$(ls *.ini)
         for ini in $ini_files; do
@@ -83,7 +83,7 @@ for rep in $rep_MPI_list; do
         echo "***********************************************"
         echo "Making  $rep with $order"
         echo "***********************************************"
-        make clean; make -j 4 || { echo "!!!! $rep with $order and MPI failed during compilation with"; exit 1; }
+        make clean; make -j 10 || { echo "!!!! $rep with $order and MPI failed during compilation with"; exit 1; }
 
         echo "***********************************************"
         echo "Running  $rep with $order and MPI"

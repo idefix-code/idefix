@@ -1,5 +1,5 @@
 #!/bin/bash
-rep_MHD_list="sod-iso sod AxisFluxTube AmbipolarCshock HallWhistler ResistiveAlfvenWave FargoMHDSpherical ShearingBox OrszagTang OrszagTang3D"
+rep_MHD_list="AmbipolarCshock3D FargoMHDSpherical ShearingBox OrszagTang OrszagTang3D"
 
 # refer to the parent dir of this file, wherever this is called from
 # a python equivalent is e.g.
@@ -33,7 +33,7 @@ set -e
 options=$@
 
 
-# MHD tests
+# MHD+Vector potential tests
 for rep in $rep_MHD_list; do
     cd $TEST_DIR/MHD/$rep
     echo "***********************************************"
@@ -42,7 +42,7 @@ for rep in $rep_MHD_list; do
     rm -f CMakeCache.txt
     def_files=$(ls definitions*.hpp)
     for def in $def_files; do
-        cmake $IDEFIX_DIR $options -DIdefix_DEFS=$def|| { echo "!!!! MHD $rep failed during configuration"; exit 1; }
+        cmake $IDEFIX_DIR $options -DIdefix_EVOLVE_VECTOR_POTENTIAL=ON -DIdefix_DEFS=$def|| { echo "!!!! MHD $rep failed during configuration"; exit 1; }
         echo "***********************************************"
         echo "Making  $rep with $def"
         echo "***********************************************"

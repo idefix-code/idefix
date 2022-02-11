@@ -41,10 +41,19 @@ void Setup::InitFlow(DataBlock &data) {
                 d.Vc(VX1,k,j,i) = -sin(2.0*M_PI*y);
                 d.Vc(VX2,k,j,i) = sin(2.0*M_PI*x)+cos(2.0*M_PI*z);
                 d.Vc(VX3,k,j,i) = cos(2.0*M_PI*x);
-
-                d.Vs(BX1s,k,j,i) = -B0*sin(2.0*M_PI*y);
-                d.Vs(BX2s,k,j,i) = B0*sin(4.0*M_PI*x);
-                d.Vs(BX3s,k,j,i) = B0*(cos(2.0*M_PI*x)+sin(2.0*M_PI*y));
+                #ifdef EVOLVE_VECTOR_POTENTIAL
+                  real xl=d.xl[IDIR](i);
+                  real yl=d.xl[JDIR](j);
+                  real zl=d.xl[KDIR](k);
+                  d.Ve(AX1e,k,j,i) = B0/(2.0*M_PI)*(cos(2.0*M_PI*yl));
+                  d.Ve(AX2e,k,j,i) = B0/(2.0*M_PI)*sin(2.0*M_PI*xl);
+                  d.Ve(AX3e,k,j,i) = B0/(2.0*M_PI)*(
+                                      cos(2.0*M_PI*yl) + cos(4.0*M_PI*xl)/2.0);
+                #else
+                  d.Vs(BX1s,k,j,i) = -B0*sin(2.0*M_PI*y);
+                  d.Vs(BX2s,k,j,i) = B0*sin(4.0*M_PI*x);
+                  d.Vs(BX3s,k,j,i) = B0*(cos(2.0*M_PI*x)+sin(2.0*M_PI*y));
+                #endif
 
             }
         }

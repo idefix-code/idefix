@@ -5,17 +5,17 @@
 
 // Analyse data to produce an output
 void Analysis(DataBlock & data) {
-  DataBlockHost d(data);
-  d.SyncFromDevice();
   double etot = 0;
+  IdefixArray4D<real> Vc = data.hydro.Vc;
+
   idefix_reduce("Analysis", data.beg[KDIR],data.end[KDIR],
                 data.beg[JDIR],data.end[JDIR],
                 data.beg[IDIR],data.end[IDIR],
               KOKKOS_LAMBDA(int k, int j, int i, double &eloc) {
-                eloc +=  d.Vc(VX2,k,j,i)*d.Vc(VX2,k,j,i)
-                        +d.Vc(VX3,k,j,i)*d.Vc(VX3,k,j,i)
-                        +d.Vc(BX2,k,j,i)*d.Vc(BX2,k,j,i)
-                        +d.Vc(BX3,k,j,i)*d.Vc(BX3,k,j,i);
+                eloc +=  Vc(VX2,k,j,i)*Vc(VX2,k,j,i)
+                        +Vc(VX3,k,j,i)*Vc(VX3,k,j,i)
+                        +Vc(BX2,k,j,i)*Vc(BX2,k,j,i)
+                        +Vc(BX3,k,j,i)*Vc(BX3,k,j,i);
               }, Kokkos::Sum<double>(etot));
 
   #ifdef WITH_MPI

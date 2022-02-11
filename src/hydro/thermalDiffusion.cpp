@@ -27,7 +27,7 @@ void ThermalDiffusion::Init(Input &input, Grid &grid, Hydro *hydroin) {
         this->kappa = input.GetReal("Hydro","TDiffusion",2);
         idfx::cout << "ThermalDiffusion: Enabling constant diffusion function with kappa="
                    << this->kappa << " ."<< std::endl;
-        
+
         this->haveThermalDiffusion = Constant;
       } else if(input.GetString("Hydro","TDiffusion",1).compare("userdef") == 0) {
         idfx::cout << "ThermalDiffusion: Enabling user-defined viscosity function."
@@ -49,7 +49,7 @@ void ThermalDiffusion::Init(Input &input, Grid &grid, Hydro *hydroin) {
   #ifdef ISOTHERMAL
     IDEFIX_ERROR("Thermal diffusion is not compatible with the ISOTHERMAL approximation");
   #endif
-  
+
   idfx::popRegion();
 }
 
@@ -80,8 +80,8 @@ void ThermalDiffusion::AddDiffusiveFlux(int dir, const real t) {
     IdefixArray1D<real> x1 = this->hydro->data->x[IDIR];
   #endif
   #if GEOMETRY == SPHERICAL
-    IdefixArray1D<real> rt   = data->rt;
-    IdefixArray1D<real> dmu  = data->dmu;
+    IdefixArray1D<real> rt   = this->hydro->data->rt;
+    IdefixArray1D<real> dmu  = this->hydro->data->dmu;
     IdefixArray1D<real> dx2 = this->hydro->data->dx[JDIR];
   #endif
 
@@ -120,13 +120,12 @@ void ThermalDiffusion::AddDiffusiveFlux(int dir, const real t) {
 
   idefix_for("ThermalDiffusionFlux",kbeg, kend, jbeg, jend, ibeg, iend,
       KOKKOS_LAMBDA (int k, int j, int i) {
-        
         // Compute gradT
         real gradT;
 
-        gradT = Vc(PRS,k,j,i) / Vc(RHO,k,j,i) 
+        gradT = Vc(PRS,k,j,i) / Vc(RHO,k,j,i)
                - Vc(PRS,k-koffset,j-joffset,i-ioffset) / Vc(RHO,k-koffset,j-joffset,i-ioffset);
-        
+
         // index along dir
         const int ig = ioffset*i + joffset*j + koffset*k;
 
@@ -158,10 +157,9 @@ void ThermalDiffusion::AddDiffusiveFlux(int dir, const real t) {
         Flux(ENG,k,j,i) += -kappa*gradT;
 
         // Compute total diffusion coefficient
-        real locdmax = kappa * (gamma-ONE_F) / 
+        real locdmax = kappa * (gamma-ONE_F) /
                         (HALF_F * ( Vc(RHO,k,j,i) + Vc(RHO,k-koffset,j-joffset,i-ioffset)));
         dMax(k,j,i) = FMAX(dMax(k,j,i) , locdmax);
-
       });
   idfx::popRegion();
 #endif // ISOTHERMAL

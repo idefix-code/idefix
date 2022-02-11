@@ -46,4 +46,4 @@ class ThermalDiffusion {
   real kappa;
 };
 
-#endif // HYDRO_VISCOSITY_HPP_
+#endif // HYDRO_THERMALDIFFUSION_HPP_

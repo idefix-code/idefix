@@ -361,7 +361,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
                                         + 0.5*(Vc(VX2,k,j,i) + Vc(VX2,k,j,i-1))*tau_xy  ,
                                         + 0.5*(Vc(VX3,k,j,i) + Vc(VX3,k,j,i-1))*tau_xz);
         #endif
-        
+
         real locdmax = (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k,j,i-1)));
         dMax(k,j,i) = FMAX(dMax(k,j,i),locdmax);
       });

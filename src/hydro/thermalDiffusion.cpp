@@ -68,7 +68,7 @@ void ThermalDiffusion::EnrollThermalDiffusivity(DiffusivityFunc myFunc) {
 // Associated source terms, present in non-cartesian geometry are also computed
 // and stored in this->viscSrc for later use (in calcRhs).
 void ThermalDiffusion::AddDiffusiveFlux(int dir, const real t) {
-#ifndef ISOTHERMAL
+#if HAVE_ENERGY == 1
   idfx::pushRegion("ThermalDiffusion::AddDiffusiveFlux");
   IdefixArray4D<real> Vc = this->hydro->Vc;
   IdefixArray4D<real> Flux = this->hydro->FluxRiemann;
@@ -162,5 +162,5 @@ void ThermalDiffusion::AddDiffusiveFlux(int dir, const real t) {
         dMax(k,j,i) = FMAX(dMax(k,j,i) , locdmax);
       });
   idfx::popRegion();
-#endif // ISOTHERMAL
+#endif // HAVE_ENERGY
 }

@@ -167,11 +167,9 @@ KOKKOS_FUNCTION real K_ReadCSVFetch(const real x, const real y,
   int endx = nx-1;
   int endy = ny-1;
   if(x < xin(0) || x >xin(endx)) {
-    idfx::cout << "x out of bounds";
     return(NAN);
   }
   if(y < yin(0) || y >yin(endy)) {
-    idfx::cout << "y out of bounds";
     return(NAN);
   }
 

@@ -5,8 +5,10 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef OUTPUT_DUMPIMAGE_HPP_
-#define OUTPUT_DUMPIMAGE_HPP_
+#ifndef
+UTILS_DUMPIMAGE_HPP_
+#define
+UTILS_DUMPIMAGE_HPP_
 #include <string>
 #include <map>
 #include "idefix.hpp"
@@ -26,4 +28,4 @@ class DumpImage {
   std::map<std::string,IdefixHostArray3D<real>> arrays;  // 3D arrays stored in the dump
 };
 
-#endif // OUTPUT_DUMPIMAGE_HPP_
+#endif // UTILS_DUMPIMAGE_HPP_

@@ -50,3 +50,6 @@ I have a serious bug (e.g. segmentation fault), in my setup, how do I proceed?
 
 I want to test a modification to *Idefix* source code specific to my problem without modifying files in `$IDEFIX_DIR`. How can I proceed?
   Add a ``CmakeLists.txt`` in your problem directory and use the function `replace_idefix_source` (see :ref:`customSourceFiles`).
+
+I want to use a lookup table from a CSV file in my idefix_loop. How could I proceed?
+  Use the ``ReadCSV`` class (see :ref:`readCSVClass`)

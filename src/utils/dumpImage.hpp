@@ -5,10 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef
-UTILS_DUMPIMAGE_HPP_
-#define
-UTILS_DUMPIMAGE_HPP_
+#ifndef UTILS_DUMPIMAGE_HPP_
+#define UTILS_DUMPIMAGE_HPP_
 #include <string>
 #include <map>
 #include "idefix.hpp"

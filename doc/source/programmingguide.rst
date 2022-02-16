@@ -406,6 +406,69 @@ finished working with it. An example is provided in :ref:`setupInitDump`.
   It is generically written ``XX-YYY`` where ``XX`` is the array name in the ``dataBlock`` (e.g.
   ``Vc`` or ``Vs``) and ``YYY`` is the variable name (e.g. ``VX2`` or ``BX3s``).
 
+.. _readCSVClass:
+
+``ReadCSV`` class
+-----------------
+
+The ``ReadCSV`` class allows one to read and interpolate elements from a coma-separated value (CSV) file.
+This class can read any CSV file which content has the following shape:
+
+.. list-table:: example.csv
+  :widths: 25 25 25 25
+  :header-rows: 0
+
+  * - unused
+    - x\ :sub:`1`
+    - x\ :sub:`2`
+    - x\ :sub:`3`
+  * - y\ :sub:`1`
+    - data\ :sub:`1,1`
+    - data\ :sub:`2,1`
+    - data\ :sub:`3,1`
+  * - y\ :sub:`1`
+    - data\ :sub:`1,2`
+    - data\ :sub:`2,2`
+    - data\ :sub:`3,2`
+
+Each element of the CSV file can be separated by an arbitrarily chosen delimiter (which can be "," ";", etc...).
+The constructor of the CSV class loads the content of the file in the target's memory (and broadcasts it
+to other running processes when using MPI). Once loaded,
+the elements can be accessed using the inlined function ``ReadCSV_Fetch``. These functions are defined as:
+
+.. code-block:: c++
+
+  ReadCSV::ReadCSV(std::string filename, char delimiter);   // Load the file
+  real ReadCSV_Fetch(const real x,                          // Interpolate data at (x,y)
+                     const real y,
+                     const IdefixArray1D<real> &xin,
+                     const IdefixArray1D<real> &yin,
+                     const IdefixArray2D<real> &datain)
+
+In the end, the CSV class can be used inside the user's code as in:
+
+.. code-block:: c++
+
+  #include "readCSV.hpp"
+
+  ReadCSV csv("example.csv",',');   // here we use "," as delimiter
+
+  // To avoid having to capture the csv object, we must alias the 3 following arrays
+  IdefixArray1D<real> x = csv.x;
+  IdefixArray1D<real> y = csv.y;
+  IdefixArray2D<real> data = csv.data;
+
+  ....
+
+  idefix_for("loop", 0, 10, KOKKOS_LAMBDA (int i) {
+    q(i) = ReadCSV_Fetch(3.5, 2.1, x, y, data); // interpolate the csv data at x=3.5, y=2.1
+  });
+
+
+.. note::
+  The input CSV file is allowed to contain comments, starting with "#". Any character following
+  "#" is ignored by the ``ReadCSV`` class.
+
 Debugging and profiling
 =======================
 

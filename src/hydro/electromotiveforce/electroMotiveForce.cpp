@@ -22,7 +22,7 @@ void ElectroMotiveForce::Init(Input &input, Hydro *hydro) {
 
 #if MHD == YES
   if(input.CheckEntry("Hydro","emf")>=0) {
-    std::string opType = input.GetString("Hydro","emf",0);
+    std::string opType = input.Get<std::string>("Hydro","emf",0);
     if(opType.compare("arithmetic")==0) {
       this->averaging = arithmetic;
       idfx::cout << "ElectroMotiveForce: Using ARITHMETIC averaging scheme." << std::endl;

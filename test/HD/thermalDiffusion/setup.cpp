@@ -41,7 +41,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   output.EnrollAnalysis(&Analysis);
   data.hydro.EnrollInternalBoundary(&InternalBoundary);
 
-  amplitude = input.GetReal("Setup","amplitude",0);
+  amplitude = input.Get<real>("Setup","amplitude",0);
   // Initialise the output file
   std::ofstream f;
   f.open(FILENAME,std::ios::trunc);

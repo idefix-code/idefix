@@ -137,8 +137,8 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   data.hydro.viscosity.EnrollViscousDiffusivity(&MyViscosity);
   if(data.haveFargo)
     data.fargo.EnrollVelocity(&FargoVelocity);
-  epsilonGlob = input.GetReal("Setup","epsilon",0);
-  alphaGlob = input.GetReal("Setup","alpha",0);
+  epsilonGlob = input.Get<real>("Setup","epsilon",0);
+  alphaGlob = input.Get<real>("Setup","alpha",0);
   idfx::cout << "alpha= " << alphaGlob << std::endl;
 }
 

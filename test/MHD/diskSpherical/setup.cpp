@@ -224,8 +224,8 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   output.EnrollUserDefVariables(&ComputeUserVars);
 
   gammaGlob=data.hydro.GetGamma();
-  epsilonGlob = input.GetReal("Setup","epsilon",0);
-  densityFloorGlob = input.GetReal("Setup","densityFloor",0);
+  epsilonGlob = input.Get<real>("Setup","epsilon",0);
+  densityFloorGlob = input.Get<real>("Setup","densityFloor",0);
 }
 
 // This routine initialize the flow

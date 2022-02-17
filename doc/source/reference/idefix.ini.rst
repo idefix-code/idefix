@@ -9,7 +9,7 @@ allows for comments, which should start with ``#``.
 
 .. tip::
     Note that you can add arbitray sections and entries in the input file freely. *Idefix* will automatically read and store them on startup. They are then accessible in the code using the
-    ``Input::GetReal(..)``, ``Input::GetInt(...)`` and ``Input::GetString(..)`` methods defined in the ``Input`` class (see :ref:`inputClass`)
+    ``Input::Get<T>(..)`` and ``Input::GetOrSet<T>`` methods defined in the ``Input`` class (see :ref:`inputClass`).
 
 ``Grid`` section
 --------------------
@@ -116,7 +116,7 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 |                |                         | | to be enrolled with   ``EnrollIsoSoundSpeed(IsoSoundSpeedFunc)``                          |
 |                |                         | | (see :ref:`functionEnrollment`). In this case, the second parameter is not used.          |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| gamma          | float                   | Adiabatic index when ISOTHERMAL is not defined                                              |
+| gamma          | float                   | Adiabatic index when ISOTHERMAL is not defined. Default to 5/3 if not set.                  |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | resistivity    | string, string, (float) | | Switches on Ohmic diffusion.                                                              |
 |                |                         | | The first parameter can be ``explicit`` or ``rkl``. When ``explicit``, diffusion is       |

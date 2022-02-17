@@ -17,7 +17,7 @@ Output::Output(Input &input, DataBlock &data) {
   }
   // Initialise vtk outputs
   if(input.CheckEntry("Output","vtk")>0) {
-    vtkPeriod = input.GetReal("Output","vtk",0);
+    vtkPeriod = input.Get<real>("Output","vtk",0);
     if(vtkPeriod>=0.0) {  // backward compatibility (negative value means no file)
       vtkLast = data.t - vtkPeriod; // write something in the next CheckForWrite()
       vtkEnabled = true;
@@ -27,7 +27,7 @@ Output::Output(Input &input, DataBlock &data) {
 
   // intialise dump outputs
   if(input.CheckEntry("Output","dmp")>0) {
-    dumpPeriod = input.GetReal("Output","dmp",0);
+    dumpPeriod = input.Get<real>("Output","dmp",0);
     dumpLast = data.t - dumpPeriod; // dump something in the next CheckForWrite()
     dumpEnabled = true;
     // Backwards compatibility: negative period means no dump
@@ -37,7 +37,7 @@ Output::Output(Input &input, DataBlock &data) {
 
   // initialise analysis outputs
   if(input.CheckEntry("Output","analysis")>0) {
-    analysisPeriod = input.GetReal("Output","analysis",0);
+    analysisPeriod = input.Get<real>("Output","analysis",0);
     analysisLast = data.t - analysisPeriod; //dump something in the next CheckForWrite()
     analysisEnabled = true;
   }
@@ -46,7 +46,7 @@ Output::Output(Input &input, DataBlock &data) {
   if(input.CheckEntry("Output","uservar")>0) {
     int nvars = input.CheckEntry("Output","uservar");
     for(int var = 0 ; var < nvars ; var++) {
-      std::string arrayName = input.GetString("Output","uservar",var);
+      std::string arrayName = input.Get<std::string>("Output","uservar",var);
       // Create an array to store this user variable
       // and store the whole thing in the container
       userDefVariables[arrayName] = IdefixHostArray3D<real>("userVar-"+arrayName,

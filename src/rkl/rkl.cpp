@@ -54,13 +54,9 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
   // Save the datablock to which we are attached from now on
   this->data = &datain;
 
+  cfl_rkl = input.GetOrSet<real> ("RKL","cfl",0, 0.5);
+  idfx::cout << "RKLegendre: RKL cfl set to " << cfl_rkl <<  "." << std::endl;
 
-  if(input.CheckEntry("RKL","cfl")>0) {
-    cfl_rkl = input.GetReal("RKL","cfl",0);
-  } else {
-    idfx::cout << "RKLegendre: no RKL cfl given. Using 0.5 by default." << std::endl;
-    cfl_rkl = 0.5;
-  }
   rmax_par = 100.0;
 
   // Make a list of variables

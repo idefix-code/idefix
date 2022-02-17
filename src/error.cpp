@@ -16,32 +16,32 @@ void ErrorHandler(const int ErrorType,
                   const int ErrorLine,
                   std::string ErrorFile) {
   if (ErrorType == ERROR_WARNING) {
-    idfx::cout << std::endl
+    idfx::cerr << std::endl
                << "------------------------------------------------------------------------------"
                << std::endl;
-    idfx::cout << "## WARNING in function " << ErrorFunction << " file " << ErrorFile << " line "
+    idfx::cerr << "## WARNING in function " << ErrorFunction << " file " << ErrorFile << " line "
                << ErrorLine << std::endl;
-    idfx::cout << ErrorMessage.str() << std::endl;
-    idfx::cout << "------------------------------------------------------------------------------"
+    idfx::cerr << ErrorMessage.str() << std::endl;
+    idfx::cerr << "------------------------------------------------------------------------------"
                << std::endl;
   } else if (ErrorType == ERROR_DEPRECATED) {
-    idfx::cout << std::endl
+    idfx::cerr << std::endl
                << "------------------------------------------------------------------------------"
                << std::endl;
-    idfx::cout << "## DEPRECATED call in function " << ErrorFunction << " file " << ErrorFile
+    idfx::cerr << "## DEPRECATED call in function " << ErrorFunction << " file " << ErrorFile
                <<  std::endl
                << "## This function will be removed in the next Idefix release." << std::endl;
-    idfx::cout << ErrorMessage.str() << std::endl;
-    idfx::cout << "------------------------------------------------------------------------------"
+    idfx::cerr << ErrorMessage.str() << std::endl;
+    idfx::cerr << "------------------------------------------------------------------------------"
                << std::endl;
   } else {
-    idfx::cout << std::endl
+    idfx::cerr << std::endl
                << "------------------------------------------------------------------------------"
                << std::endl;
-    idfx::cout << "### FATAL ERROR in function " << ErrorFunction << " file " << ErrorFile
+    idfx::cerr << "### FATAL ERROR in function " << ErrorFunction << " file " << ErrorFile
                << " line " << ErrorLine << std::endl;
-    idfx::cout << ErrorMessage.str() << std::endl;
-    idfx::cout << "------------------------------------------------------------------------------"
+    idfx::cerr << ErrorMessage.str() << std::endl;
+    idfx::cerr << "------------------------------------------------------------------------------"
                << std::endl;
     #ifdef WITH_MPI
     MPI_Abort(MPI_COMM_WORLD,1);
@@ -56,46 +56,46 @@ void ErrorHandler(const int ErrorType,
                   const int ErrorLine,
                   std::string ErrorFile) {
   if (ErrorType == ERROR_WARNING) {
-    idfx::cout << std::endl
+    idfx::cerr << std::endl
                << "------------------------------------------------------------------------------"
                << std::endl;
-    idfx::cout << "## WARNING in function " << ErrorFunction << " file " << ErrorFile << " line "
+    idfx::cerr << "## WARNING in function " << ErrorFunction << " file " << ErrorFile << " line "
                << ErrorLine << std::endl;
-    idfx::cout << ErrorMessage << std::endl;
-    idfx::cout << "------------------------------------------------------------------------------"
+    idfx::cerr << ErrorMessage << std::endl;
+    idfx::cerr << "------------------------------------------------------------------------------"
                << std::endl;
     if(idfx::warningsAreErrors) {
-      idfx::cout << "Warnings are considered as errors" << std::endl;
+      idfx::cerr << "Warnings are considered as errors" << std::endl;
       #ifdef WITH_MPI
       MPI_Abort(MPI_COMM_WORLD,1);
       #endif
       exit(1);
     }
   } else if (ErrorType == ERROR_DEPRECATED) {
-    idfx::cout << std::endl
+    idfx::cerr << std::endl
                << "------------------------------------------------------------------------------"
                << std::endl;
-    idfx::cout << "## DEPRECATED call in function " << ErrorFunction << " file " << ErrorFile
+    idfx::cerr << "## DEPRECATED call in function " << ErrorFunction << " file " << ErrorFile
                <<  std::endl
                << "## This function will be removed in the next Idefix release." << std::endl;
-    idfx::cout << ErrorMessage << std::endl;
-    idfx::cout << "------------------------------------------------------------------------------"
+    idfx::cerr << ErrorMessage << std::endl;
+    idfx::cerr << "------------------------------------------------------------------------------"
                << std::endl;
     if(idfx::warningsAreErrors) {
-      idfx::cout << "Warnings are considered as errors" << std::endl;
+      idfx::cerr << "Warnings are considered as errors" << std::endl;
       #ifdef WITH_MPI
       MPI_Abort(MPI_COMM_WORLD,1);
       #endif
       exit(1);
     }
   } else {
-    idfx::cout << std::endl
+    idfx::cerr << std::endl
                << "------------------------------------------------------------------------------"
                << std::endl;
-    idfx::cout << "### FATAL ERROR in function " << ErrorFunction << " file " << ErrorFile
+    idfx::cerr << "### FATAL ERROR in function " << ErrorFunction << " file " << ErrorFile
                << " line " << ErrorLine << std::endl;
-    idfx::cout << ErrorMessage << std::endl;
-    idfx::cout << "------------------------------------------------------------------------------"
+    idfx::cerr << ErrorMessage << std::endl;
+    idfx::cerr << "------------------------------------------------------------------------------"
                << std::endl;
     #ifdef WITH_MPI
     MPI_Abort(MPI_COMM_WORLD,1);

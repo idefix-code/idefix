@@ -26,7 +26,7 @@ Grid::Grid(Input &input) {
     npoints[dir] = 1;
     nghost[dir] = 0;
     std::string label = std::string("X")+std::to_string(dir+1)+std::string("-grid");
-    int numPatch = input.GetInt("Grid",label,0);
+    int numPatch = input.Get<int>("Grid",label,0);
 
     if(dir<DIMENSIONS) {
       #if ORDER < 4
@@ -36,7 +36,7 @@ Grid::Grid(Input &input) {
       #endif
       npoints[dir] = 0;
       for(int patch = 0; patch < numPatch ; patch++) {
-        npoints[dir] += input.GetInt("Grid",label,2+3*patch );
+        npoints[dir] += input.Get<int>("Grid",label,2+3*patch );
       }
     }
   }
@@ -47,7 +47,7 @@ Grid::Grid(Input &input) {
     np_int[dir] = npoints[dir];
 
     std::string label = std::string("X")+std::to_string(dir+1)+std::string("-beg");
-    std::string boundary = input.GetString("Boundary",label,0);
+    std::string boundary = input.Get<std::string>("Boundary",label,0);
 
     if(boundary.compare("outflow") == 0) {
       lbound[dir] = outflow;
@@ -74,7 +74,7 @@ Grid::Grid(Input &input) {
     }
 
     label = std::string("X")+std::to_string(dir+1)+std::string("-end");
-    boundary = input.GetString("Boundary",label,0);
+    boundary = input.Get<std::string>("Boundary",label,0);
     if(boundary.compare("outflow") == 0) {
       rbound[dir] = outflow;
     } else if(boundary.compare("periodic") == 0) {
@@ -143,7 +143,7 @@ Grid::Grid(Input &input) {
       // Manual domain decomposition (with -dec option)
       int ntot=1;
       for(int dir=0 ; dir < DIMENSIONS; dir++) {
-        nproc[dir] = input.GetInt("CommandLine","dec",dir);
+        nproc[dir] = input.Get<int>("CommandLine","dec",dir);
         // Check that the dimension is effectively divisible by number of procs
         if(np_int[dir] % nproc[dir])
           IDEFIX_ERROR("Grid size must be a multiple of the domain decomposition");

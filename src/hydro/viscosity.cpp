@@ -46,21 +46,14 @@ void Viscosity::Init(Input &input, Grid &grid, Hydro *hydroin) {
   this->hydro = hydroin;
 
   if(input.CheckEntry("Hydro","viscosity")>=0) {
-    if(input.GetString("Hydro","viscosity",1).compare("constant") == 0) {
-        this->eta1 = input.GetReal("Hydro","viscosity",2);
-        idfx::cout << "Viscosity: Enabling constant viscosity function with eta1="
-                   << this->eta1 << " ."<< std::endl;
+    if(input.Get<std::string>("Hydro","viscosity",1).compare("constant") == 0) {
+        this->eta1 = input.Get<real>("Hydro","viscosity",2);
         // second viscosity?
-        if(input.CheckEntry("Hydro","viscosity")>3) {
-          this->eta2 = input.GetReal("Hydro","viscosity",3);
-          idfx::cout << "Viscosity: eta2="
-                   << this->eta2 << " ."<< std::endl;
-        } else {
-          this->eta2 = 0.0;
-          idfx::cout << "Viscosity: Second viscosity not provided. Assuming it is 0." << std::endl;
-        }
+        this->eta2 = input.GetOrSet<real>("Hydro","viscosity",3, 0.0);
+        idfx::cout << "Viscosity: Enabling constant viscosity function with eta1="
+                   << this->eta1 << " and eta2=" << this->eta2 << " ."<< std::endl;
         this->haveViscosity = Constant;
-      } else if(input.GetString("Hydro","viscosity",1).compare("userdef") == 0) {
+      } else if(input.Get<std::string>("Hydro","viscosity",1).compare("userdef") == 0) {
         idfx::cout << "Viscosity: Enabling user-defined viscosity function."
                    << std::endl;
         this->haveViscosity = UserDefFunction;

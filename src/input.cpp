@@ -311,17 +311,20 @@ std::string Input::getFileExtension(const std::string file_name) {
 }
 
 // Get a string in a block, parameter, position of the file
-std::string Input::GetAString(std::string blockName, std::string paramName, int num) {
+std::string Input::GetString(std::string blockName, std::string paramName, int num) {
+  IDEFIX_DEPRECATED("Input::GetString is deprecated. Use Input::Get<std::string> instead");
   return(Get<std::string>(blockName, paramName, num));
 }
 
 // Get a real number in a block, parameter, position of the file
-real Input::GetAReal(std::string blockName, std::string paramName, int num) {
+real Input::GetReal(std::string blockName, std::string paramName, int num) {
+  IDEFIX_DEPRECATED("Input::GetReal is deprecated. Use Input::Get<real> instead");
   return(Get<real>(blockName, paramName, num));
 }
 
 // Get an integer number in a block, parameter, position of the file
-int Input::GetAInt(std::string blockName, std::string paramName, int num) {
+int Input::GetInt(std::string blockName, std::string paramName, int num) {
+  IDEFIX_DEPRECATED("Input::GetInt is deprecated. Use Input::Get<int> instead");
   return(Get<int>(blockName, paramName, num));
 }
 

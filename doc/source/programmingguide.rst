@@ -207,14 +207,16 @@ It provides accessors such as
   // Accessor to input parameters
   // the arguments are always: BlockName, EntryName, ParameterNumber (starting from 0)
 
-  // Read a string
-  std::string GetString(std::string, std::string, int);
+  // Read a parameter of type T from the input file and throw an error if it cannot be found
+  // T can be a std::string or a number (real, int, double, float, int64_t, ...)
+  template<typename T>
+  T Get(std::string blockName, std::string paramName, int num);
 
-  // Read a real number
-  real GetReal(std::string, std::string, int);
+  // Read a parameter of type T from the input file. Set it to default if it cannot be found.
+  // T can be a std::string or a number (real, int, double, float, int64_t, ...)
+  template<typename T>
+  T GetOrSet(std::string blockName, std::string paramName, int num, T default);
 
-  // Read an integer
-  int GetInt(std::string, std::string, int);
 
   // Check that a block/entry is present
   int CheckEntry(std::string, std::string);
@@ -236,11 +238,14 @@ instance of ``Input`` is allocated in ``myInput``:
 
 .. code-block:: c++
 
-  real firstParameter = myInput.GetReal("MyBlock","myentry",0)  // firstParameter=1.0
-  real secondParameter = myInput.GetReal("MyBlock","myentry",1)  // secondParameter=0.0
+  real firstParameter = myInput.Get<real>("MyBlock","myentry",0)  // firstParameter=1.0
+  real secondParameter = myInput.Get<real>("MyBlock","myentry",1)  // secondParameter=0.0
+  real thirdParameter = myInput.GetOrSet<real>("MyBlock","myentry",2, 0.0) // thirdParameter default to 0.0
 
-If a parameter is not found, *Idefix* will log an error and exit. One can use the ``CheckEntry``
-method to check if a parameter is set in the ini file before trying to access it.
+
+If a parameter is not found, ``Get<T>`` will log an error and exit. One can use the ``CheckEntry``
+method to check if a parameter is set in the ini file before trying to access it, or use ``GetOrSet<T>``
+with a default value, as in the example above.
 
 .. tip::
   Command line options are also parsed by the ``Input`` class. These options are stored in a

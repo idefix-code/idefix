@@ -50,9 +50,9 @@ void Analysis(DataBlock & data) {
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   output.EnrollUserDefVariables(&ComputeUserVars);
   //output.EnrollAnalysis(&Analysis);
-  Rtorus = input.GetReal("Setup","Rtorus",0);
-  Ztorus = input.GetReal("Setup","Ztorus",0);
-  Rin = input.GetReal("Setup","Rin",0);
+  Rtorus = input.Get<real>("Setup","Rtorus",0);
+  Ztorus = input.Get<real>("Setup","Ztorus",0);
+  Rin = input.Get<real>("Setup","Rin",0);
 }
 
 // This routine initialize the flow

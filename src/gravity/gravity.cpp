@@ -19,15 +19,13 @@ void Gravity::Init(Input &input, DataBlock *datain) {
   if(nPotential >=0) {
     this->havePotential = true;
     for(int i = 0 ; i < nPotential ; i++) {
-      std::string potentialString = input.GetString("Gravity","potential",i);
+      std::string potentialString = input.Get<std::string>("Gravity","potential",i);
       if(potentialString.compare("userdef") == 0) {
         this->haveUserDefPotential = true;
         idfx::cout << "Gravity: Enabling user-defined gravitational potential" << std::endl;
       } else if (potentialString.compare("central") == 0) {
         this->haveCentralMassPotential = true;
-        if(input.CheckEntry("Gravity","Mcentral") >= 0) {
-          this->centralMass = input.GetReal("Gravity","Mcentral",0);
-        }
+        this->centralMass = input.GetOrSet<real>("Gravity","Mcentral",0, 1.0);
         idfx::cout << "Gravity: Enabling central mass gravitational potential with M="
                    << this->centralMass << std::endl;
       } else if (potentialString.compare("selfgravity") == 0) {
@@ -41,7 +39,7 @@ void Gravity::Init(Input &input, DataBlock *datain) {
 
   // Body Force
   if(input.CheckEntry("Gravity","bodyForce")>=0) {
-    std::string potentialString = input.GetString("Gravity","bodyForce",0);
+    std::string potentialString = input.Get<std::string>("Gravity","bodyForce",0);
     if(potentialString.compare("userdef") == 0) {
       this->haveBodyForce = true;
       idfx::cout << "Gravity:: Enabling user-defined body force" << std::endl;

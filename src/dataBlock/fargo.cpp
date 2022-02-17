@@ -140,7 +140,7 @@ void Fargo::Init(Input &input, DataBlock *data) {
   }
 
   if(input.CheckBlock("Fargo")) {
-    std::string opType = input.GetString("Fargo","velocity",0);
+    std::string opType = input.Get<std::string>("Fargo","velocity",0);
     if(opType.compare("userdef")==0) {
       this->type=userdef;
     } else if(opType.compare("shearingbox")==0) {
@@ -152,13 +152,11 @@ void Fargo::Init(Input &input, DataBlock *data) {
       IDEFIX_ERROR("Unknown fargo velocity in the input file. "
       "Only userdef and shearingbox are allowed");
     }
-    if(input.CheckEntry("Fargo","maxShift")>=0) {
-      this->maxShift = input.GetInt("Fargo", "maxShift",0);
-    }
+    this->maxShift = input.GetOrSet<int>("Fargo", "maxShift",0, 10);
   } else {
     // DEPRECATED: initialisation from the [Hydro] block
     if(input.CheckEntry("Hydro","fargo")>=0) {
-      std::string opType = input.GetString("Hydro","fargo",0);
+      std::string opType = input.Get<std::string>("Hydro","fargo",0);
       if(opType.compare("userdef")==0) {
         this->type=userdef;
       } else if(opType.compare("shearingbox")==0) {

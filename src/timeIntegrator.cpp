@@ -19,46 +19,28 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
   this->lastLog=timer.seconds();
   this->lastMpiLog=idfx::mpiCallsTimer + idfx::mpiCallsTimer;
 
-  nstages=input.GetInt("TimeIntegrator","nstages",0);
+  nstages=input.Get<int>("TimeIntegrator","nstages",0);
 
   if(input.CheckEntry("TimeIntegrator","fixed_dt")>0) {
     this->haveFixedDt = true;
-    this->fixedDt = input.GetReal("TimeIntegrator","fixed_dt",0);
+    this->fixedDt = input.Get<real>("TimeIntegrator","fixed_dt",0);
     idfx::cout << "TimeIntegrator: Using fixed dt time stepping. Ignoring CFL and first_dt."
                << std::endl;
     data.dt=fixedDt;
   }
 
   if(!haveFixedDt) {
-    cfl=input.GetReal("TimeIntegrator","CFL",0);
-
-    if(input.CheckEntry("TimeIntegrator","CFL_max_var")>0) {
-      cflMaxVar=input.GetReal("TimeIntegrator","CFL_max_var",0);
-    } else {
-      cflMaxVar=1.1;
-      idfx::cout << "TimeIntegrator: No CFL_max_var defined. Using 1.1 by default." << std::endl;
-    }
-
-    if(input.CheckEntry("TimeIntegrator","first_dt")>0) {
-      data.dt=input.GetReal("TimeIntegrator","first_dt",0);
-    } else {
-      data.dt=1e-10;
-      idfx::cout << "TimeIntegrator: No first_dt provided. Using dt=1e-10."
-                << "This is probably not optimal" << std::endl;
-    }
+    cfl=input.Get<real>("TimeIntegrator","CFL",0);
+    cflMaxVar = input.GetOrSet<real>("TimeIntegrator","CFL_max_var",0, 1.1);
+    data.dt = input.GetOrSet<real>("TimeIntegrator","first_dt",0, 1.0e-10);
+    idfx::cout << "dt=" << data.dt;
   }
+
+  this->cyclePeriod = input.GetOrSet<int>("Output","log",0, 100);
+  this->maxRuntime = 3600*input.GetOrSet<double>("TimeIntegrator","max_runtime",0.0,-1.0);
 
   data.t=0.0;
   ncycles=0;
-
-
-  if(input.CheckEntry("Output","log")>0) {
-    this->cyclePeriod=input.GetInt("Output","log",0);
-  }
-
-  if(input.CheckEntry("TimeIntegrator","max_runtime")>0) {
-    this->maxRuntime = 3600*input.GetReal("TimeIntegrator","max_runtime",0);
-  }
 
   if(nstages==2) {
     wc[0] = 0.5;

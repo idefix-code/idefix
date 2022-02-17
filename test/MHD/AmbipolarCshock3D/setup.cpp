@@ -83,7 +83,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
     data.hydro.EnrollAmbipolarDiffusivity(&AmbipolarFunction);
-    cs=input.GetReal("Hydro","csiso",1);
+    cs=input.Get<real>("Hydro","csiso",1);
 }
 
 // This routine initialize the flow

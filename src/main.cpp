@@ -126,7 +126,7 @@ int main( int argc, char* argv[] ) {
     Kokkos::Timer timer;
     output.ResetTimer();
 
-    real tstop = input.GetReal("TimeIntegrator","tstop",0);
+    real tstop = input.Get<real>("TimeIntegrator","tstop",0);
 
     while(data.t < tstop) {
       if(tstop-data.t < data.dt) data.dt = tstop-data.t;

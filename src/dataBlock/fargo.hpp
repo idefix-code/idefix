@@ -44,7 +44,7 @@ class Fargo {
   int beg[3];
   int end[3];
   int nghost[3];
-  int maxShift{10};                     //< maximum number of cells along which we plan to shift.
+  int maxShift;                         //< maximum number of cells along which we plan to shift.
   real dtMax{0};                        //< Maximum allowable dt for a given Fargo velocity
                                         //< when domain decomposition is enabled
   bool velocityHasBeenComputed{false};

@@ -23,13 +23,13 @@ void ThermalDiffusion::Init(Input &input, Grid &grid, Hydro *hydroin) {
   this->hydro = hydroin;
 
   if(input.CheckEntry("Hydro","TDiffusion")>=0) {
-    if(input.GetString("Hydro","TDiffusion",1).compare("constant") == 0) {
-        this->kappa = input.GetReal("Hydro","TDiffusion",2);
+    if(input.Get<std::string>("Hydro","TDiffusion",1).compare("constant") == 0) {
+        this->kappa = input.Get<real>("Hydro","TDiffusion",2);
         idfx::cout << "ThermalDiffusion: Enabling constant diffusion function with kappa="
                    << this->kappa << " ."<< std::endl;
 
         this->haveThermalDiffusion = Constant;
-      } else if(input.GetString("Hydro","TDiffusion",1).compare("userdef") == 0) {
+      } else if(input.Get<std::string>("Hydro","TDiffusion",1).compare("userdef") == 0) {
         idfx::cout << "ThermalDiffusion: Enabling user-defined viscosity function."
                    << std::endl;
         this->haveThermalDiffusion = UserDefFunction;

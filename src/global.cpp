@@ -20,7 +20,8 @@ double mpiCallsTimer = 0.0;
 
 bool warningsAreErrors{false};
 
-IdefixOstream cout;
+IdefixOutStream cout;
+IdefixErrStream cerr;
 Profiler prof;
 LoopPattern defaultLoopPattern;
 
@@ -75,7 +76,7 @@ void popRegion() {
 }
 
 // Init the iostream with defined rank
-void IdefixOstream::init(int rank) {
+void IdefixOutStream::init(int rank) {
   std::stringstream sslogFileName;
   sslogFileName << "idefix." << rank << ".log";
 
@@ -88,8 +89,9 @@ void IdefixOstream::init(int rank) {
     this->toscreen=false;
 }
 
+
 // disable the log file
-void IdefixOstream::disableLogFile() {
+void IdefixOutStream::disableLogFile() {
   my_fstream << "Log files have been disabled (e.g. using -nowrite)." << std::endl;
   my_fstream.close();
   this->logFileEnabled = false;

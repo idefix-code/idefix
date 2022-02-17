@@ -13,12 +13,14 @@
 
 namespace idfx {
 int initialize();   // Initialisation routine for idefix
-class IdefixOstream;
+class IdefixOutStream;
+class IdefixErrStream;
 class Profiler;
 
 extern int prank;                       //< parallel rank
 extern int psize;
-extern IdefixOstream cout;              //< custom cout for idefix
+extern IdefixOutStream cout;              //< custom cout for idefix
+extern IdefixErrStream cerr;              //< custom cerr for idefix
 extern Profiler prof;                   //< profiler (for memory usage)
 extern double mpiCallsTimer;            //< time significant MPI calls
 extern LoopPattern defaultLoopPattern;  //< default loop patterns (for idefix_for loops)
@@ -41,19 +43,19 @@ IdefixArray1D<T> ConvertVectorToIdefixArray(std::vector<T> &inputVector) {
 
 } // namespace idfx
 
-class idfx::IdefixOstream {
+class idfx::IdefixOutStream {
  public:
   void init(int);
   void disableLogFile();
   // for regular output of variables and stuff
-  template<typename T> IdefixOstream& operator<<(const T& something) {
+  template<typename T> IdefixOutStream& operator<<(const T& something) {
     if(toscreen) std::cout << something;
     if(logFileEnabled) my_fstream << something;
     return *this;
   }
   // for manipulators like std::endl
   typedef std::ostream& (*stream_function)(std::ostream&);
-  IdefixOstream& operator<<(stream_function func) {
+  IdefixOutStream& operator<<(stream_function func) {
     if(toscreen) func(std::cout);
     if(logFileEnabled) func(my_fstream);
     return *this;
@@ -62,6 +64,21 @@ class idfx::IdefixOstream {
   std::ofstream my_fstream;
   bool toscreen;
   bool logFileEnabled{true};   //< whether streams are also written to a log file
+};
+
+class idfx::IdefixErrStream {
+ public:
+  // for error output of variables and stuff
+  template<typename T> IdefixErrStream& operator<<(const T& something) {
+    std::cerr << something;
+    return *this;
+  }
+  // for manipulators like std::endl
+  typedef std::ostream& (*stream_function)(std::ostream&);
+  IdefixErrStream& operator<<(stream_function func) {
+    func(std::cerr);
+    return *this;
+  }
 };
 
 #endif // GLOBAL_HPP_

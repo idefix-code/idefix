@@ -26,11 +26,20 @@ class Input {
 
   // Accessor to input parameters
   // the parameters are always: BlockName, EntryName, ParameterNumber (starting from 0)
-  std::string GetString(std::string, std::string, int); ///< Read a string from the input file
-  real GetReal(std::string, std::string, int);          ///< Read a real number from the input file
-  int GetInt(std::string, std::string, int);            ///< Read an integer from the input file
+  std::string GetAString(std::string, std::string, int); ///< Read a string from the input file
+  real GetAReal(std::string, std::string, int);          ///< Read a real number from the input file
+  int GetAInt(std::string, std::string, int);            ///< Read an integer from the input file
   int CheckEntry(std::string, std::string);             ///< Check that a block+entry is present
                                                         ///< in the input file
+  template<typename T>
+  T Get(std::string, std::string, int);                 ///< read a variable from the input file
+                                                        ///< (abort if not found)
+
+  template<typename T>
+  T GetOrSet(std::string, std::string, int, T);         ///<  read a variable from the input file
+                                                        ///< (set it to T if not found)
+
+
   bool CheckBlock(std::string);                         ///< check that whether a block is defined
                                                         ///< in the input file
   bool CheckForAbort();                                 // have we been asked for an abort?
@@ -62,5 +71,73 @@ class Input {
 
   double lastStopFileCheck;
 };
+
+// Template functions
+
+template<typename T>
+T Input::Get(std::string blockName, std::string paramName, int num) {
+  if(CheckEntry(blockName, paramName) <= num) {
+      std::stringstream msg;
+      msg << "Mandatory parameter [" << blockName << "]:" << paramName << "(" << num+1
+          << "). Cannot be found in the input file" << std::endl;
+      IDEFIX_ERROR(msg);
+  }
+
+  // Fetch it
+  std::string paramString = inputParameters[blockName][paramName][num];
+  T value;
+  try {
+    if(typeid(T) == typeid(int)) {
+      int *v = reinterpret_cast<int*>( &value);
+      *v = std::stoi(paramString, NULL);
+    } else if(typeid(T) == typeid(double)) {
+      double *v = reinterpret_cast<double*>( &value);
+      *v = std::stod(paramString, NULL);
+    } else if(typeid(T) == typeid(float)) {
+      float *v = reinterpret_cast<float*>( &value);
+      *v = std::stof(paramString, NULL);
+    } else if(typeid(T) == typeid(int64_t)) {
+      int64_t *v = reinterpret_cast<int64_t *>( &value);
+      *v = std::stol(paramString, NULL);
+    } else if(typeid(T) == typeid(std::string)) {
+      std::string *v = reinterpret_cast<std::string*>( &value);
+      *v = paramString;
+    } else {
+      IDEFIX_ERROR("Unknown type has been requested from the input file");
+    }
+  } catch(const std::exception& e) {
+    std::stringstream errmsg;
+    errmsg << e.what() << std::endl
+          << "Input::Get: Error while reading [" << blockName << "]:" << paramName << "(" << num+1
+          << ")." << std::endl
+          << "\"" << paramString << "\" cannot be converted to number." << std::endl;
+    IDEFIX_ERROR(errmsg);
+  }
+  return(value);
+}
+
+template<typename T>
+T Input::GetOrSet(std::string blockName, std::string paramName, int num, T def) {
+  int entrySize = CheckEntry(blockName, paramName);
+  if(entrySize <= num ) {
+    // the requested entry has not been set, add it (if we can), otherwise throw an error
+    if(entrySize < 0 && num>0) {
+      std::stringstream msg;
+      msg << "Entry [" << blockName << "]:" << paramName << "is not defined." << std::endl
+          << "Only the first (index 0) parameter can be set by default." << std::endl;
+      IDEFIX_ERROR(msg);
+    }
+    if(entrySize+1 < num) {
+      std::stringstream msg;
+      msg << "Entry [" << blockName << "]:" << paramName << "has " << entrySize << " parameters."
+          << std::endl << ". Only the " << entrySize  << "th (index " << entrySize-1
+          << ") parameter can be set by default." << std::endl;
+      IDEFIX_ERROR(msg);
+    }
+    inputParameters[blockName][paramName].push_back(std::to_string(def));
+  }
+  return(Get<T>(blockName, paramName, num));
+}
+
 
 #endif // INPUT_HPP_

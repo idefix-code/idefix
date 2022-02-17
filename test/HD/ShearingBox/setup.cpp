@@ -68,8 +68,8 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   gammaIdeal=data.hydro.GetGamma();
 
   // Get rotation rate along vertical axis
-  omega=input.GetReal("Hydro","rotation",0);
-  shear=input.GetReal("Hydro","shearingBox",0);
+  omega=input.Get<real>("Hydro","rotation",0);
+  shear=input.Get<real>("Hydro","shearingBox",0);
 
   // Add our userstep to the timeintegrator
   data.gravity.EnrollBodyForce(BodyForce);

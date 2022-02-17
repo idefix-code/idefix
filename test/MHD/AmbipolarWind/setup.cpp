@@ -424,13 +424,13 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     //data.hydro.EnrollFluxBoundary(&FluxBoundary);
     output.EnrollUserDefVariables(&ComputeUserVars);
     gammaGlob=data.hydro.GetGamma();
-    epsilonGlob = input.GetReal("Setup","epsilon",0);
-    epsilonTopGlob = input.GetReal("Setup","epsilonTop",0);
-    betaGlob = input.GetReal("Setup","beta",0);
-    HidealGlob = input.GetReal("Setup","Hideal",0);
-    AmMidGlob = input.GetReal("Setup","Am",0);
-    densityFloorGlob = input.GetReal("Setup","densityFloor",0);
-    trSmoothingGlob = input.GetReal("Setup","transitionSmoothing",0);
+    epsilonGlob = input.Get<real>("Setup","epsilon",0);
+    epsilonTopGlob = input.Get<real>("Setup","epsilonTop",0);
+    betaGlob = input.Get<real>("Setup","beta",0);
+    HidealGlob = input.Get<real>("Setup","Hideal",0);
+    AmMidGlob = input.Get<real>("Setup","Am",0);
+    densityFloorGlob = input.Get<real>("Setup","densityFloor",0);
+    trSmoothingGlob = input.Get<real>("Setup","transitionSmoothing",0);
 }
 
 // This routine initialize the flow

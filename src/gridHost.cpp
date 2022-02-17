@@ -55,10 +55,10 @@ void GridHost::MakeGrid(Input &input) {
   idfx::cout << "GridHost::MakeGrid: " << std::endl;
   for(int dir = 0 ; dir < 3 ; dir++) {
     std::string label = std::string("X")+std::to_string(dir+1)+std::string("-grid");
-    int numPatch = input.GetInt("Grid",label,0);
+    int numPatch = input.Get<int>("Grid",label,0);
 
-    xstart[dir] = input.GetReal("Grid",label,1);
-    xend[dir] = input.GetReal("Grid",label,4+(numPatch-1)*3);
+    xstart[dir] = input.Get<real>("Grid",label,1);
+    xend[dir] = input.Get<real>("Grid",label,4+(numPatch-1)*3);
 
     this->xbeg[dir] = xstart[dir];
     this->xend[dir] = xend[dir];
@@ -68,10 +68,10 @@ void GridHost::MakeGrid(Input &input) {
       // Loop on all the patches
       int idxstart = nghost[dir];
       for(int patch = 0 ; patch < numPatch ; patch++) {
-        std::string patchType = input.GetString("Grid",label,3+patch*3);
-        real patchStart = input.GetReal("Grid",label,1+patch*3);
-        real patchEnd = input.GetReal("Grid",label,4+patch*3);
-        int patchSize = input.GetInt("Grid",label,2+patch*3);
+        std::string patchType = input.Get<std::string>("Grid",label,3+patch*3);
+        real patchStart = input.Get<real>("Grid",label,1+patch*3);
+        real patchEnd = input.Get<real>("Grid",label,4+patch*3);
+        int patchSize = input.Get<int>("Grid",label,2+patch*3);
 
         // If this is the first or last patch, also define ghost cells
         int ghostStart = 0;
@@ -119,14 +119,14 @@ void GridHost::MakeGrid(Input &input) {
                          "from a non-existent patch");
           }
           // Check that the reference patch is a uniform one
-          if(input.GetString("Grid",label,3+3*refPatch).compare("u")) {
+          if(input.Get<std::string>("Grid",label,3+3*refPatch).compare("u")) {
             IDEFIX_ERROR("You're attempting to construct a stretched patch "
                          "from a non-uniform grid");
           }
           // Ok, we have a well-behaved reference patch, compute dx from the reference patch
-          real refPatchStart = input.GetReal("Grid",label,1+refPatch*3);
-          real refPatchEnd = input.GetReal("Grid",label,4+refPatch*3);
-          int refPatchSize = input.GetInt("Grid",label,2+refPatch*3);
+          real refPatchStart = input.Get<real>("Grid",label,1+refPatch*3);
+          real refPatchEnd = input.Get<real>("Grid",label,4+refPatch*3);
+          int refPatchSize = input.Get<int>("Grid",label,2+refPatch*3);
           double delta = (refPatchEnd-refPatchStart)/refPatchSize;
           double logdelta = log((patchEnd-patchStart)/delta);
 

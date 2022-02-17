@@ -41,7 +41,7 @@ void Analysis(DataBlock & data) {
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     output.EnrollAnalysis(&Analysis);
-    mode = input.GetInt("Setup","mode",0);
+    mode = input.Get<int>("Setup","mode",0);
     if(!input.restartRequested) {
       // Initialise the output file
       std::ofstream f;

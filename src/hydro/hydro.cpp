@@ -29,43 +29,27 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
     IDEFIX_ERROR("Reconstruction at chosen order is not implemented. Check your definitions file");
   #endif
 
-  if(input.CheckEntry("Hydro","gamma")>0) {
-    this->gamma = input.GetReal("Hydro","gamma",0);
-    idfx::cout << "Hydro: adiabatic EOS with gamma=" << this->gamma <<std::endl;
-  } else {
-    this->gamma = 5.0/3.0;
-#if HAVE_ENERGY
-    idfx::cout << "Hydro: Warning! no gamma has been set in the input file, assuming gamma=5/3."
-               << std::endl;
-#endif
-  }
+  #if HAVE_ENERGY
+    this->gamma = input.GetOrSet<real>("Hydro","gamma",0, 5.0/3.0);
+  #endif
 
-  if(input.CheckEntry("Hydro","csiso")>0) {
-    #if HAVE_ENERGY
-      IDEFIX_ERROR("csiso is useless without the isothermal EOS enabled in definition.h");
-    #else
-      std::string isoString = input.GetString("Hydro","csiso",0);
-      if(isoString.compare("constant") == 0) {
-        this->haveIsoSoundSpeed = Constant;
-        this->isoSoundSpeed = input.GetReal("Hydro","csiso",1);
-      } else if(isoString.compare("userdef") == 0) {
-        this->haveIsoSoundSpeed = UserDefFunction;
-      } else {
-        IDEFIX_ERROR("csiso admits only constant or userdef entries");
-      }
-    #endif
-  } else {
-#if HAVE_ENERGY
+  #ifdef ISOTHERMAL
+    std::string isoString = input.Get<std::string>("Hydro","csiso",0);
+    if(isoString.compare("constant") == 0) {
+      this->haveIsoSoundSpeed = Constant;
+      this->isoSoundSpeed = input.Get<real>("Hydro","csiso",1);
+    } else if(isoString.compare("userdef") == 0) {
+      this->haveIsoSoundSpeed = UserDefFunction;
+    } else {
+      IDEFIX_ERROR("csiso admits only constant or userdef entries");
+    }
+  #else
     // set the isothermal soundspeed, even though it will not be used
     this->isoSoundSpeed = -1.0;
-#else
-    IDEFIX_ERROR("You are using the ISOTHERMAL approximation "
-                 "but have not set csiso in the ini file.");
-#endif
-  }
+  #endif
 
   // read Solver from input file
-  std::string solverString = input.GetString("Hydro","solver",0);
+  std::string solverString = input.Get<std::string>("Hydro","solver",0);
 
   if (solverString.compare("tvdlf") == 0) {
     mySolver = TVDLF;
@@ -106,7 +90,7 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
     this->haveRotation = true;
     if(rotation >1 ) IDEFIX_ERROR("Rotation needs a a single rotation velocity (Omega_Z) \
                                    in idefix.ini");
-    this->OmegaZ = input.GetReal("Hydro","rotation",0);
+    this->OmegaZ = input.Get<real>("Hydro","rotation",0);
 
     idfx::cout << "Hydro: Rotation enabled with Omega=" << this->OmegaZ << std::endl;
   }
@@ -121,7 +105,7 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
       IDEFIX_ERROR("Shearing box needs a scalar value for the shear rate in idefix.ini");
     }
 
-    this->sbS = input.GetReal("Hydro","shearingBox",0);
+    this->sbS = input.Get<real>("Hydro","shearingBox",0);
     // Get box size
     this->sbLx = grid.xend[IDIR] - grid.xbeg[IDIR];
 
@@ -133,7 +117,7 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   if(input.CheckEntry("Hydro","gravPotential")>=0) {
     IDEFIX_DEPRECATED("gravPotential in [Hydro] block is deprecated in the input file. "
                       "Use a [Gravity] block instead.");
-    std::string potentialString = input.GetString("Hydro","gravPotential",0);
+    std::string potentialString = input.Get<std::string>("Hydro","gravPotential",0);
     if(potentialString.compare("userdef") == 0) {
       data->gravity.haveUserDefPotential = true;
       data->gravity.havePotential = true;
@@ -148,7 +132,7 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   if(input.CheckEntry("Hydro","bodyForce")>=0) {
     IDEFIX_DEPRECATED("bodyForce in [Hydro] block is deprecated in the input file. "
                       "Use a [Gravity] block instead.");
-    std::string potentialString = input.GetString("Hydro","bodyForce",0);
+    std::string potentialString = input.Get<std::string>("Hydro","bodyForce",0);
     if(potentialString.compare("userdef") == 0) {
       data->gravity.haveBodyForce = true;
       data->gravity.Init(input,data);
@@ -174,7 +158,7 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
 
   // Check whether viscosity is enabled, if so, init a viscosity object
   if(input.CheckEntry("Hydro","viscosity")>=0) {
-    std::string opType = input.GetString("Hydro","viscosity",0);
+    std::string opType = input.Get<std::string>("Hydro","viscosity",0);
     if(opType.compare("explicit") == 0 ) {
       haveExplicitParabolicTerms = true;
       viscosityStatus.isExplicit = true;
@@ -191,7 +175,7 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
 
   // Check whether thermal diffusion is enabled, if so, init a thermal diffusion object
   if(input.CheckEntry("Hydro","TDiffusion")>=0) {
-    std::string opType = input.GetString("Hydro","TDiffusion",0);
+    std::string opType = input.Get<std::string>("Hydro","TDiffusion",0);
     if(opType.compare("explicit") == 0 ) {
       haveExplicitParabolicTerms = true;
       thermalDiffusionStatus.isExplicit = true;
@@ -214,7 +198,7 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
     this->haveCurrent = true;
 
     if(input.CheckEntry("Hydro","resistivity")>=0) {
-      std::string opType = input.GetString("Hydro","resistivity",0);
+      std::string opType = input.Get<std::string>("Hydro","resistivity",0);
       if(opType.compare("explicit") == 0 ) {
         haveExplicitParabolicTerms = true;
         resistivityStatus.isExplicit = true;
@@ -228,11 +212,11 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
         msg  << "Unknown integration type for resistivity: " << opType;
         IDEFIX_ERROR(msg);
       }
-      if(input.GetString("Hydro","resistivity",1).compare("constant") == 0) {
+      if(input.Get<std::string>("Hydro","resistivity",1).compare("constant") == 0) {
         idfx::cout << "Hydro: Enabling Ohmic resistivity with constant diffusivity." << std::endl;
-        this->etaO = input.GetReal("Hydro","resistivity",2);
+        this->etaO = input.Get<real>("Hydro","resistivity",2);
         resistivityStatus.status = Constant;
-      } else if(input.GetString("Hydro","resistivity",1).compare("userdef") == 0) {
+      } else if(input.Get<std::string>("Hydro","resistivity",1).compare("userdef") == 0) {
         idfx::cout << "Hydro: Enabling Ohmic resistivity with user-defined diffusivity function."
                    << std::endl;
         resistivityStatus.status = UserDefFunction;
@@ -243,7 +227,7 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
     }
 
     if(input.CheckEntry("Hydro","ambipolar")>=0) {
-      std::string opType = input.GetString("Hydro","ambipolar",0);
+      std::string opType = input.Get<std::string>("Hydro","ambipolar",0);
       if(opType.compare("explicit") == 0 ) {
         haveExplicitParabolicTerms = true;
         ambipolarStatus.isExplicit = true;
@@ -257,12 +241,12 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
         msg  << "Unknown integration type for ambipolar: " << opType;
         IDEFIX_ERROR(msg);
       }
-      if(input.GetString("Hydro","ambipolar",1).compare("constant") == 0) {
+      if(input.Get<std::string>("Hydro","ambipolar",1).compare("constant") == 0) {
         idfx::cout << "Hydro: Enabling ambipolar diffusion with constant diffusivity."
                    << std::endl;
-        this->xA = input.GetReal("Hydro","ambipolar",2);
+        this->xA = input.Get<real>("Hydro","ambipolar",2);
         ambipolarStatus.status = Constant;
-      } else if(input.GetString("Hydro","ambipolar",1).compare("userdef") == 0) {
+      } else if(input.Get<std::string>("Hydro","ambipolar",1).compare("userdef") == 0) {
         idfx::cout << "Hydro: Enabling ambipolar diffusion with user-defined diffusivity function."
                    << std::endl;
         ambipolarStatus.status = UserDefFunction;
@@ -276,7 +260,7 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
       // Check consistency
       if(mySolver != HLL )
         IDEFIX_ERROR("Hall effect is only compatible with HLL Riemann solver.");
-      std::string opType = input.GetString("Hydro","hall",0);
+      std::string opType = input.Get<std::string>("Hydro","hall",0);
       if(opType.compare("explicit") == 0 ) {
         hallStatus.isExplicit = true;
         needExplicitCurrent = true;
@@ -287,11 +271,11 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
         msg  << "Unknown integration type for hall: " << opType;
         IDEFIX_ERROR(msg);
       }
-      if(input.GetString("Hydro","hall",1).compare("constant") == 0) {
+      if(input.Get<std::string>("Hydro","hall",1).compare("constant") == 0) {
         idfx::cout << "Hydro: Enabling Hall effect with constant diffusivity." << std::endl;
-        this->xH = input.GetReal("Hydro","hall",2);
+        this->xH = input.Get<real>("Hydro","hall",2);
         hallStatus.status = Constant;
-      } else if(input.GetString("Hydro","hall",1).compare("userdef") == 0) {
+      } else if(input.Get<std::string>("Hydro","hall",1).compare("userdef") == 0) {
         idfx::cout << "Hydro: Enabling Hall effect with user-defined diffusivity function."
                    << std::endl;
         hallStatus.status = UserDefFunction;

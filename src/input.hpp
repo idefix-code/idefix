@@ -26,9 +26,12 @@ class Input {
 
   // Accessor to input parameters
   // the parameters are always: BlockName, EntryName, ParameterNumber (starting from 0)
-  std::string GetAString(std::string, std::string, int); ///< Read a string from the input file
-  real GetAReal(std::string, std::string, int);          ///< Read a real number from the input file
-  int GetAInt(std::string, std::string, int);            ///< Read an integer from the input file
+  // These specialised functions are deprecated. Use the template Get<T> function.
+  std::string GetString(std::string, std::string, int); ///< Read a string from the input file
+  real GetReal(std::string, std::string, int);          ///< Read a real number from the input file
+  int GetInt(std::string, std::string, int);            ///< Read an integer from the input file
+
+
   int CheckEntry(std::string, std::string);             ///< Check that a block+entry is present
                                                         ///< in the input file
   template<typename T>
@@ -87,6 +90,8 @@ T Input::Get(std::string blockName, std::string paramName, int num) {
   std::string paramString = inputParameters[blockName][paramName][num];
   T value;
   try {
+    // The following mess with pointers is required since we do not have access to constexpr if
+    // in c++ 14, hence we need to cast T to all of the available type we support.
     if(typeid(T) == typeid(int)) {
       int *v = reinterpret_cast<int*>( &value);
       *v = std::stoi(paramString, NULL);
@@ -110,7 +115,7 @@ T Input::Get(std::string blockName, std::string paramName, int num) {
     errmsg << e.what() << std::endl
           << "Input::Get: Error while reading [" << blockName << "]:" << paramName << "(" << num+1
           << ")." << std::endl
-          << "\"" << paramString << "\" cannot be converted to number." << std::endl;
+          << "\"" << paramString << "\" cannot be converted to a number." << std::endl;
     IDEFIX_ERROR(errmsg);
   }
   return(value);
@@ -134,7 +139,9 @@ T Input::GetOrSet(std::string blockName, std::string paramName, int num, T def) 
           << ") parameter can be set by default." << std::endl;
       IDEFIX_ERROR(msg);
     }
-    inputParameters[blockName][paramName].push_back(std::to_string(def));
+    std::stringstream strm;
+    strm << def;
+    inputParameters[blockName][paramName].push_back(strm.str());
   }
   return(Get<T>(blockName, paramName, num));
 }

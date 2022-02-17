@@ -100,7 +100,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   // Set the function for userdefboundary
   data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
   data.hydro.EnrollIsoSoundSpeed(&MySoundSpeed);
-  epsilonGlob = input.GetReal("Setup","epsilon",0);
+  epsilonGlob = input.Get<real>("Setup","epsilon",0);
 }
 
 // This routine initialize the flow

@@ -311,104 +311,18 @@ std::string Input::getFileExtension(const std::string file_name) {
 }
 
 // Get a string in a block, parameter, position of the file
-std::string Input::GetString(std::string blockName, std::string paramName, int num) {
-  std::stringstream msg;
-
-  std::string value;
-
-  IdefixInputContainer::iterator block = inputParameters.find(blockName);
-
-  if(block != inputParameters.end()) {
-    // Block exists
-    IdefixBlockContainer::iterator param = block->second.find(paramName);
-    if(param != block->second.end()) {
-      // Parameter exist
-      if(num<param->second.size()) {
-        // Vector is long enough
-        value=param->second[num];
-      } else {
-        // Vector is not long enough
-        msg << "Index " << num << " cannot be found in block:parameter" << blockName << ":"
-            << paramName;
-        IDEFIX_ERROR(msg);
-      }
-    } else {
-      msg << "Parameter " << paramName << " cannot be found in block [" << blockName <<"]";
-      IDEFIX_ERROR(msg);
-    }
-  } else {
-    msg << "BlockName " << blockName << " cannot be found";
-    IDEFIX_ERROR(msg);
-  }
-  return(value);
+std::string Input::GetAString(std::string blockName, std::string paramName, int num) {
+  return(Get<std::string>(blockName, paramName, num));
 }
 
 // Get a real number in a block, parameter, position of the file
-real Input::GetReal(std::string blockName, std::string paramName, int num) {
-  std::stringstream msg;
-
-  real value;
-
-  IdefixInputContainer::iterator block = inputParameters.find(blockName);
-  if(block != inputParameters.end()) {
-    // Block exists
-    IdefixBlockContainer::iterator param = block->second.find(paramName);
-    if(param != block->second.end()) {
-      // Parameter exist
-      if(num<param->second.size()) {
-        // Vector is long enough
-        #ifdef USE_DOUBLE
-        value = std::stod(param->second[num], NULL);
-        #else
-        value = std::stof(param->second[num], NULL);
-        #endif
-      } else {
-        // Vector is not long enough
-        msg << "Index " << num << " cannot be found in block:parameter" << blockName << ":"
-            << paramName;
-        IDEFIX_ERROR(msg);
-      }
-    } else {
-      msg << "Parameter " << paramName << " cannot be found in block [" << blockName <<"]";
-      IDEFIX_ERROR(msg);
-    }
-  } else {
-    msg << "BlockName " << blockName << " cannot be found";
-    IDEFIX_ERROR(msg);
-  }
-  return(value);
+real Input::GetAReal(std::string blockName, std::string paramName, int num) {
+  return(Get<real>(blockName, paramName, num));
 }
 
 // Get an integer number in a block, parameter, position of the file
-int Input::GetInt(std::string blockName, std::string paramName, int num) {
-  std::stringstream msg;
-
-  int value;
-
-  IdefixInputContainer::iterator block = inputParameters.find(blockName);
-  if(block != inputParameters.end()) {
-    // Block exists
-    IdefixBlockContainer::iterator param = block->second.find(paramName);
-    if(param != block->second.end()) {
-      // Parameter exist
-      if(num<param->second.size()) {
-        // Vector is long enough
-        value = std::stoi(param->second[num], NULL);
-      } else {
-        // Vector is not long enough
-        msg << "Index " << num << " cannot be found in block:parameter" << blockName
-            << ":" << paramName;
-        IDEFIX_ERROR(msg);
-      }
-    } else {
-      msg << "Parameter " << paramName << " cannot be found in block [" << blockName <<"]";
-      IDEFIX_ERROR(msg);
-    }
-  } else {
-    msg << "BlockName " << blockName << " cannot be found";
-    IDEFIX_ERROR(msg);
-  }
-  return(value);
+int Input::GetAInt(std::string blockName, std::string paramName, int num) {
+  return(Get<int>(blockName, paramName, num));
 }
 
 // Check that an entry is present in the ini file.

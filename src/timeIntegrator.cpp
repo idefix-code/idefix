@@ -33,7 +33,6 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
     cfl=input.Get<real>("TimeIntegrator","CFL",0);
     cflMaxVar = input.GetOrSet<real>("TimeIntegrator","CFL_max_var",0, 1.1);
     data.dt = input.GetOrSet<real>("TimeIntegrator","first_dt",0, 1.0e-10);
-    idfx::cout << "dt=" << data.dt;
   }
 
   this->cyclePeriod = input.GetOrSet<int>("Output","log",0, 100);

@@ -9,6 +9,7 @@ rep_HD_list="sod-iso sod MachReflection ViscousFlowPastCylinder ViscousDisk Farg
 # TEST_DIR = pathlib.Path(__file__).parent
 TEST_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
+mkdir $TMP_DIR/HD
 
 function resolve_path {
     # resolve relative paths
@@ -35,9 +36,12 @@ options=$@
 
 # HD tests
 for rep in $rep_HD_list; do
-    cd $TEST_DIR/HD/$rep
+    TMP_DIR="$(mktemp -d)"
+    cp -R $TEST_DIR/HD/$rep/* $TMP_DIR
+    cd $TMP_DIR
     echo "***********************************************"
     echo "Configuring  $rep"
+    echo "Using $TMP_DIR as working directory"
     echo "***********************************************"
     rm -f CMakeCache.txt
     def_files=$(ls definitions*.hpp)
@@ -66,4 +70,8 @@ for rep in $rep_HD_list; do
         make clean
         rm -f *.vtk *.dbl
     done
+    echo "***********************************************"
+    echo "Cleaning  $rep in $TMP_DIR"
+    echo "***********************************************"
+    rm -rf $TMP_DIR
 done

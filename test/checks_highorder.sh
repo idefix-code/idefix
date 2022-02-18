@@ -37,9 +37,12 @@ options=$@
 
 # High order tests
 for rep in $rep_list; do
-    cd $TEST_DIR/$rep
+    TMP_DIR="$(mktemp -d)"
+    cp -R $TEST_DIR/$rep/* $TMP_DIR
+    cd $TMP_DIR
     echo "***********************************************"
     echo "Configuring  $rep"
+    echo "Using $TMP_DIR as working directory"
     echo "***********************************************"
     rm -f CMakeCache.txt
     for order in $order_list; do
@@ -67,14 +70,21 @@ for rep in $rep_list; do
         make clean
         rm -f *.vtk *.dbl
     done
+    echo "***********************************************"
+    echo "Cleaning  $rep in $TMP_DIR"
+    echo "***********************************************"
+    rm -rf $TMP_DIR
 done
 
 #do it with MPI (only the default .ini files though)
 # High order tests
 for rep in $rep_MPI_list; do
-    cd $TEST_DIR/$rep
+    TMP_DIR="$(mktemp -d)"
+    cp -R $TEST_DIR/$rep/* $TMP_DIR
+    cd $TMP_DIR
     echo "***********************************************"
     echo "Configuring  $rep"
+    echo "Using $TMP_DIR as working directory"
     echo "***********************************************"
     rm -f CMakeCache.txt
     for order in $order_list; do
@@ -100,4 +110,8 @@ for rep in $rep_MPI_list; do
         make clean
         rm -f *.vtk *.dbl
     done
+    echo "***********************************************"
+    echo "Cleaning  $rep in $TMP_DIR"
+    echo "***********************************************"
+    rm -rf $TMP_DIR
 done

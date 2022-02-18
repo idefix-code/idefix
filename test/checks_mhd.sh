@@ -7,7 +7,7 @@ rep_MHD_list="sod-iso sod AxisFluxTube AmbipolarCshock HallWhistler ResistiveAlf
 # import pathlib
 # TEST_DIR = pathlib.Path(__file__).parent
 TEST_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-
+TMP_DIR="$(mktemp -d)"
 
 function resolve_path {
     # resolve relative paths
@@ -35,9 +35,11 @@ options=$@
 
 # MHD tests
 for rep in $rep_MHD_list; do
-    cd $TEST_DIR/MHD/$rep
+    cp -R $TEST_DIR/MHD/$rep $TMP_DIR
+    cd $TMP_DIR/$rep
     echo "***********************************************"
     echo "Configuring  $rep"
+    echo "Using $TMP_DIR/$rep as working directory"
     echo "***********************************************"
     rm -f CMakeCache.txt
     def_files=$(ls definitions*.hpp)
@@ -63,13 +65,12 @@ for rep in $rep_MHD_list; do
             cd ..
         done
     done
-    cd $TEST_DIR
 done
 
 # Test restart functions with OT3D which have generated a dump during the first pass
 rep=OrszagTang3D
-cd $TEST_DIR/MHD/$rep
-# remove generated vtk from previous run
+cd $TMP_DIR/$rep
+# save generated vtk from previous run
 mv data.0001.vtk data.0001.old.vtk
 echo "***********************************************"
 echo "Running  $rep with restart dump # 1"
@@ -86,3 +87,6 @@ echo "Checking bitwise compatibility of output from restarts"
 echo "***********************************************"
 diff data.0001.vtk data.0001.old.vtk || { echo "!!!! MHD $rep failed: restart dumps do not produce exactly the same results"; exit 1; }
 echo "Success"
+
+echo "Cleaning temporary directory $TMP_DIR"
+rm -rf $TMP_DIR

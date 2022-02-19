@@ -9,8 +9,6 @@ rep_HD_list="sod-iso sod MachReflection ViscousFlowPastCylinder ViscousDisk Farg
 # TEST_DIR = pathlib.Path(__file__).parent
 TEST_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-mkdir $TMP_DIR/HD
-
 function resolve_path {
     # resolve relative paths
     # work around the fact that `realpath` is not bundled with every UNIX distro

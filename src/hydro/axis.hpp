@@ -36,7 +36,11 @@ class Axis {
   MPI_Comm axisComm;
   std::vector<MPI_Datatype> typeVcSend;
   std::vector<MPI_Datatype> typeVcRecv;
+  std::vector<MPI_Datatype> typeVsSend;
+  std::vector<MPI_Datatype> typeVsRecv;
 #endif
+  void MakeMPIDataypes(int dir);
+  void ExchangeMPI(int side);
 
   IdefixArray1D<real> Ex1Avg;
   IdefixArray1D<int> symmetryVc;

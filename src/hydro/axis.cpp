@@ -27,8 +27,8 @@ void Axis::Init(Grid &grid, Hydro *h) {
       // Check that there is a domain decomposition in phi
       if(data->mygrid->nproc[KDIR]>1) {
         if(data->mygrid->nproc[KDIR]%2==1) {
-          IDEFIX_ERROR("The numbre of processes in the phi direction should
-                        be even for axis decomposition");
+          IDEFIX_ERROR("The numbre of processes in the phi direction should"
+                        " be even for axis decomposition");
         }
         needMPIExchange = true;
       }
@@ -102,7 +102,7 @@ void Axis::SymmetrizeEx1Side(int jref) {
       });
     if(needMPIExchange) {
       // sum along all of the processes on the same r
-      MPI_All_Reduce(MPI_IN_PLACE, Ex1Avg.data(), data->np_tot[IDIR], realMPI, MPI_SUM, axisComm);
+      MPI_Allreduce(MPI_IN_PLACE, Ex1Avg.data(), data->np_tot[IDIR], realMPI, MPI_SUM, axisComm);
     }
 
     int ncells=data->mygrid->np_int[KDIR];
@@ -180,14 +180,15 @@ void Axis::EnforceAxisBoundary(int side) {
             Vc(n,k,j,i) = sVc(n) * scrch[(jend-1) - j];
           }
         });
-    } else {
+    } else { // no MPI exchange
       idefix_for("BoundaryAxis",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
               KOKKOS_LAMBDA (int n, int k, int j, int i) {
                 int kcomp = nghost_k + (( k - nghost_k + np_int_k/2) % np_int_k);
 
                 Vc(n,k,j,i) = sVc(n)*Vc(n, kcomp, 2*jref-j+offset,i);
               });
-  } else {
+    }// MPI Exchange
+  } else {  // not 2pi
     idefix_for("BoundaryAxis",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
             KOKKOS_LAMBDA (int n, int k, int j, int i) {
               // kcomp = k by construction since we're doing a fraction of twopi
@@ -228,16 +229,16 @@ void Axis::EnforceAxisBoundary(int side) {
                 for(int j = jbeg ; j < jend ; j++) {
                   Vs(component,k,j,i) = sVs(component) * scrch[(jend-1) - j];
                 }
-            );
-          } else {
+              });
+          } else { //no mpi exchange
             idefix_for("BoundaryAxisVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
               KOKKOS_LAMBDA (int k, int j, int i) {
                 int kcomp = nghost_k + (( k - nghost_k + np_int_k/2) % np_int_k);
                 Vs(component,k,j,i) = sVs(component)*Vs(component,kcomp, 2*jref-j+offset,i);
               }
             );
-          }
-        } else {
+          } // mpi exchange
+        } else { // not 2pi
           idefix_for("BoundaryAxisVs",kbeg,keb,jbeg,jeb,ibeg,ieb,
             KOKKOS_LAMBDA (int k, int j, int i) {
               Vs(component,k,j,i) = sVs(component)*Vs(component,k, 2*jref-j+offset,i);
@@ -340,7 +341,7 @@ void Axis::ExchangeMPI(int side) {
 
   request.emplace_back();
   MPI_SAFE_CALL(MPI_Irecv(hydro->Vc.data(), 1, typeVcRecv[side], procRecv,
-                 9000+10*face, axisComm, &request.back()));
+                 9000+10*side, axisComm, &request.back()));
 
   request.emplace_back();
   MPI_SAFE_CALL(MPI_Isend(hydro->Vc.data(), 1, typeVcSend[side], procSend,
@@ -352,7 +353,7 @@ void Axis::ExchangeMPI(int side) {
                   9000+10*side+5, axisComm, &request.back()));
 
     request.emplace_back();
-    MPI_SAFE_CALL(MPI_Isend(Vs.data(), 1, typeVsSend[side], procSend,
+    MPI_SAFE_CALL(MPI_Isend(hydro->Vs.data(), 1, typeVsSend[side], procSend,
                   9000+10*side+5, axisComm, &request.back()));
   #endif
 
@@ -409,25 +410,25 @@ void Axis::MakeMPIDataypes(int dir) {
   ///////////////////////////////////////////////////////////////////////
 
   // Create two communicators (one for each face)
-  typeVcSend = std::vector<MPI_Datatype>(2));
-  typeVcRecv = std::vector<MPI_Datatype>(2));
+  typeVcSend = std::vector<MPI_Datatype>(2);
+  typeVcRecv = std::vector<MPI_Datatype>(2);
   // the direction of exchange is assumed to be JDIR
   for(int face = 0 ; face <= 1 ; face++) {
     // We first define the sub-array for one single variable
     for(int i = 0 ; i < 3 ; i++) {
       int ic = 2-i; // because X1 is actually the last index in our arrays
-      size[ic] = ntot[i];
+      size[ic] = data->np_tot[i];
       if(i<dir) {
         startRecv[ic] = startSend[ic] = 0;
-        subsize[ic] = ntot[i];
+        subsize[ic] = data->np_tot[i];
       } else if(i>dir) {
-        startRecv[ic] = startSend[ic] = beg[i];
-        subsize[ic] = nint[i];
+        startRecv[ic] = startSend[ic] = data->beg[i];
+        subsize[ic] = data->np_int[i];
       } else {
         // That's the direction of exchange i==dir
-        startRecv[ic] = (face == faceTop) ? 0 : end[i];
-        startSend[ic] = (face == faceTop) ? beg[i] : end[i] - nghost[i];
-        subsize[ic] = nghost[i];
+        startRecv[ic] = (face == faceTop) ? 0 : data->end[i];
+        startSend[ic] = (face == faceTop) ? data->beg[i] : data->end[i] - data->nghost[i];
+        subsize[ic] = data->nghost[i];
       }
     }
     // We create two datatypes for these exchanges
@@ -462,8 +463,8 @@ void Axis::MakeMPIDataypes(int dir) {
     offset[1] = JOFFSET;
     offset[2] = KOFFSET;
 
-    typeVsSend = std::vector<MPI_Datatype>(2));
-    typeVsRecv = std::vector<MPI_Datatype>(2));
+    typeVsSend = std::vector<MPI_Datatype>(2);
+    typeVsRecv = std::vector<MPI_Datatype>(2);
     // dir is the direction of exchange
     for(int face = 0 ; face <= 1 ; face++) {
       // We need to define one sub-array for each field component
@@ -475,21 +476,21 @@ void Axis::MakeMPIDataypes(int dir) {
         MPI_Aint disp = 1;
         for(int i = 0 ; i < 3 ; i++) {
           int ic = 2-i; // because X1 is actually the last index in our arrays
-          size[ic] = ntot[i]+offset[i];
+          size[ic] = data->np_tot[i]+offset[i];
           disp = disp * size[ic];
           if(i<dir) {
             startRecv[ic] = startSend[ic] = 0;
-            subsize[ic] = ntot[i];
+            subsize[ic] = data->np_tot[i];
             if(i == component) subsize[ic]++;
           } else if(i>dir) {
-            startRecv[ic] = startSend[ic] = beg[i];
-            subsize[ic] = nint[i];
+            startRecv[ic] = startSend[ic] = data->beg[i];
+            subsize[ic] = data->np_int[i];
             if(i == component) subsize[ic]++;
           } else {
             // That's the direction of exchange i==dir
-            startRecv[ic] = (face == faceTop) ? 0 : end[i];
-            startSend[ic] = (face == faceTop) ? beg[i] : end[i] - nghost[i];
-            subsize[ic] = nghost[i];
+            startRecv[ic] = (face == faceTop) ? 0 : data->end[i];
+            startSend[ic] = (face == faceTop) ? data->beg[i] : data->end[i] - data->nghost[i];
+            subsize[ic] = data->nghost[i];
           }
         }
         // We don't exchange the component that is normal to the direction dir

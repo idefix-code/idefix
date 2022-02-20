@@ -272,7 +272,8 @@ and ``X1-end``, ``X2-end``, ``X3-end`` for the right boundaries. Each boundary c
 | axis           | | Axis Boundary conditions. Useful if one wants to include the axis in spherical geometry in the computational   |
 |                | | domain. This condition explicitely requires X2 to go from 0 to :math:`\pi` but can be used for domains         |
 |                | | extending over a fraction of a full circle in X3 (i.e :math:`2\pi/n` where :math:`n` is an integer). When the  |
-|                | | X3 domain spans :math:`2\pi`, this boundary condition is incompatible with MPI domain decomposition along X3.  |
+|                | | X3 domain spans :math:`2\pi` and MPI is used, the number of processes along the X3 direction should be one or  |
+|                | | even (in this last case, additional communications are required which may impact performances).                |
 +----------------+------------------------------------------------------------------------------------------------------------------+
 | userdef        | | User-defined boundary conditions. The boundary condition function should be enrolled in the setup constructor  |
 |                | | (see :ref:`userdefBoundaries`)                                                                                 |

@@ -8,6 +8,7 @@
 #ifndef HYDRO_AXIS_HPP_
 #define HYDRO_AXIS_HPP_
 
+#include <vector>
 #include "idefix.hpp"
 #include "grid.hpp"
 #include "electroMotiveForce.hpp"
@@ -29,6 +30,17 @@ class Axis {
   bool isTwoPi = false;
   bool axisRight = false;
   bool axisLeft = false;
+  bool needMPIExchange = false;
+
+  enum {faceTop, faceBot};
+#ifdef WITH_MPI
+  std::vector<MPI_Datatype> typeVcSend;
+  std::vector<MPI_Datatype> typeVcRecv;
+  std::vector<MPI_Datatype> typeVsSend;
+  std::vector<MPI_Datatype> typeVsRecv;
+#endif
+  void MakeMPIDataypes(int dir);
+  void ExchangeMPI(int side);
 
   IdefixArray1D<real> Ex1Avg;
   IdefixArray1D<int> symmetryVc;

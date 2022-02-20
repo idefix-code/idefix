@@ -182,6 +182,12 @@ Grid::Grid(Input &input) {
   }
   idfx::cout << ")" << std::endl;
 
+  if(haveAxis) {
+      // create axis communicator to be able to exchange data over the axis
+      // (only retain the phi dimension)
+      int remainDims[3] = {false, false, true};
+      MPI_SAFE_CALL(MPI_Cart_sub(CartComm, remainDims, &AxisComm));
+  }
 #endif
 
   idfx::popRegion();
@@ -207,13 +213,6 @@ void Grid::makeDomainDecomposition() {
     int dirmax;
     int nmax=1;
     int ndir=2;
-
-    // If we have the axis, we should not decompose in phi
-    // This is a bit too conservative since if we're not doing full two pi, domain decomposition
-    // in phi is allowed. However, the grid bounds are only initialised later, so we don't have
-    // this information yet. Hence, automatic domain decomposition is conservative in that case.
-    // At least we know it works, even though it's probably sub-optimal in some cases.
-    if(haveAxis) ndir = 1;
 
     for(int dir = ndir; dir >= 0; dir--) {
       // We do this loop backward so that we divide the domain first in the last dimension

@@ -348,7 +348,10 @@ int64_t TimeIntegrator::GetNCycles() {
 bool TimeIntegrator::CheckForMaxRuntime() {
   idfx::pushRegion("TimeIntegrator::CheckForMaxRuntime");
   // if maxRuntime is negative, this function is disabled (default)
-  if(this->maxRuntime < 0) return(false);
+  if(this->maxRuntime < 0) {
+    idfx::popRegion();
+    return(false);
+  }
 
   double runtime = timer.seconds();
   bool runtimeReached{false};

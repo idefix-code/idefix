@@ -33,7 +33,6 @@ class Axis {
 
   enum {faceTop, faceBot};
 #ifdef WITH_MPI
-  MPI_Comm axisComm;
   std::vector<MPI_Datatype> typeVcSend;
   std::vector<MPI_Datatype> typeVcRecv;
   std::vector<MPI_Datatype> typeVsSend;

@@ -78,10 +78,10 @@ void Axis::Init(Grid &grid, Hydro *h) {
   #endif
 
   #ifdef WITH_MPI
-    // create axis communicator (only retain the phi dimension)
-    int remainDims[3] = {false, false, true};
-    MPI_Cart_sub(this->hydro->data->mygrid->CartComm, remainDims, &this->axisComm);
-    if(needMPIExchange) MakeMPIDataypes(JDIR);
+    if(needMPIExchange) {
+      // Make MPI exchange datatypes
+      MakeMPIDataypes(JDIR);
+    }
   #endif
 }
 
@@ -102,7 +102,8 @@ void Axis::SymmetrizeEx1Side(int jref) {
       });
     if(needMPIExchange) {
       // sum along all of the processes on the same r
-      MPI_Allreduce(MPI_IN_PLACE, Ex1Avg.data(), data->np_tot[IDIR], realMPI, MPI_SUM, axisComm);
+      MPI_Allreduce(MPI_IN_PLACE, Ex1Avg.data(), data->np_tot[IDIR], realMPI, 
+                    MPI_SUM, data->mygrid->AxisComm);
     }
 
     int ncells=data->mygrid->np_int[KDIR];
@@ -255,7 +256,7 @@ void Axis::EnforceAxisBoundary(int side) {
 
 // Reconstruct Bx2s taking care of the sides where an axis is lying
 void Axis::ReconstructBx2s() {
-  idfx::pushRegion("Axis::EnforceAxisBoundary");
+  idfx::pushRegion("Axis::ReconstructBx2s");
   IdefixArray4D<real> Vs = hydro->Vs;
   IdefixArray3D<real> Ax1=data->A[IDIR];
   IdefixArray3D<real> Ax2=data->A[JDIR];
@@ -337,24 +338,24 @@ void Axis::ExchangeMPI(int side) {
 
 
   // We receive from procRecv, and we send to procSend, send to the right. Shift by half the domain
-  MPI_SAFE_CALL(MPI_Cart_shift(data->mygrid->CartComm,KDIR,data->mygrid->nproc[KDIR]/2, &procRecv,&procSend ));
+  MPI_SAFE_CALL(MPI_Cart_shift(data->mygrid->AxisComm,0,data->mygrid->nproc[KDIR]/2, &procRecv,&procSend ));
 
   request.emplace_back();
   MPI_SAFE_CALL(MPI_Irecv(hydro->Vc.data(), 1, typeVcRecv[side], procRecv,
-                 9000+10*side, axisComm, &request.back()));
+                 9000+10*side, data->mygrid->AxisComm, &request.back()));
 
   request.emplace_back();
   MPI_SAFE_CALL(MPI_Isend(hydro->Vc.data(), 1, typeVcSend[side], procSend,
-                9000+10*side, axisComm, &request.back()));
+                9000+10*side, data->mygrid->AxisComm, &request.back()));
 
   #if MHD==YES
     request.emplace_back();
     MPI_SAFE_CALL(MPI_Irecv(hydro->Vs.data(), 1, typeVsRecv[side], procRecv,
-                  9000+10*side+5, axisComm, &request.back()));
+                  9000+10*side+5, data->mygrid->AxisComm, &request.back()));
 
     request.emplace_back();
     MPI_SAFE_CALL(MPI_Isend(hydro->Vs.data(), 1, typeVsSend[side], procSend,
-                  9000+10*side+5, axisComm, &request.back()));
+                  9000+10*side+5, data->mygrid->AxisComm, &request.back()));
   #endif
 
 
@@ -369,6 +370,7 @@ void Axis::ExchangeMPI(int side) {
 }
 
 void Axis::MakeMPIDataypes(int dir) {
+  idfx::pushRegion("Axis::MakeMPIDataypes");
 #ifdef WITH_MPI
   // Init the datatype in each direction
   int size[3];
@@ -529,4 +531,5 @@ void Axis::MakeMPIDataypes(int dir) {
     }
 #endif // MHD
 #endif // MPI
+  idfx::popRegion();
 }

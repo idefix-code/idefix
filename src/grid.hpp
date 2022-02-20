@@ -36,6 +36,7 @@ class Grid {
 
   #ifdef WITH_MPI
   MPI_Comm CartComm;
+  MPI_Comm AxisComm;
   #endif
 
   // Constructor

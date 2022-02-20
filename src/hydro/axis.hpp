@@ -29,6 +29,14 @@ class Axis {
   bool isTwoPi = false;
   bool axisRight = false;
   bool axisLeft = false;
+  bool needMPIExchange = false;
+
+  enum {faceTop, faceBot};
+#ifdef WITH_MPI
+  MPI_Comm axisComm;
+  std::vector<MPI_Datatype> typeVcSend;
+  std::vector<MPI_Datatype> typeVcRecv;
+#endif
 
   IdefixArray1D<real> Ex1Avg;
   IdefixArray1D<int> symmetryVc;

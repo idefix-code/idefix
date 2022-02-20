@@ -8,6 +8,7 @@
 #ifndef HYDRO_AXIS_HPP_
 #define HYDRO_AXIS_HPP_
 
+#include <vector>
 #include "idefix.hpp"
 #include "grid.hpp"
 #include "electroMotiveForce.hpp"

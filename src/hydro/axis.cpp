@@ -5,6 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include <vector>
 #include "axis.hpp"
 #include "hydro.hpp"
 #include "dataBlock.hpp"
@@ -101,9 +102,11 @@ void Axis::SymmetrizeEx1Side(int jref) {
         Ex1Avg(i) += Ex1(k,jref,i);
       });
     if(needMPIExchange) {
-      // sum along all of the processes on the same r
-      MPI_Allreduce(MPI_IN_PLACE, Ex1Avg.data(), data->np_tot[IDIR], realMPI, 
-                    MPI_SUM, data->mygrid->AxisComm);
+      #ifdef WITH_MPI
+        // sum along all of the processes on the same r
+        MPI_Allreduce(MPI_IN_PLACE, Ex1Avg.data(), data->np_tot[IDIR], realMPI,
+                      MPI_SUM, data->mygrid->AxisComm);
+      #endif
     }
 
     int ncells=data->mygrid->np_int[KDIR];
@@ -331,6 +334,7 @@ void Axis::ReconstructBx2s() {
 void Axis::ExchangeMPI(int side) {
   idfx::pushRegion("Axis::ExchangeMPI");
 
+#ifdef WITH_MPI
   idfx::mpiCallsTimer -= MPI_Wtime();
   int procSend, procRecv;
 
@@ -338,7 +342,8 @@ void Axis::ExchangeMPI(int side) {
 
 
   // We receive from procRecv, and we send to procSend, send to the right. Shift by half the domain
-  MPI_SAFE_CALL(MPI_Cart_shift(data->mygrid->AxisComm,0,data->mygrid->nproc[KDIR]/2, &procRecv,&procSend ));
+  MPI_SAFE_CALL(MPI_Cart_shift(data->mygrid->AxisComm,0,data->mygrid->nproc[KDIR]/2,
+                               &procRecv,&procSend ));
 
   request.emplace_back();
   MPI_SAFE_CALL(MPI_Irecv(hydro->Vc.data(), 1, typeVcRecv[side], procRecv,
@@ -364,9 +369,8 @@ void Axis::ExchangeMPI(int side) {
 
 
   idfx::mpiCallsTimer += MPI_Wtime();
-
+#endif
   idfx::popRegion();
-
 }
 
 void Axis::MakeMPIDataypes(int dir) {

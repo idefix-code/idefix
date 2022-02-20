@@ -183,7 +183,8 @@ Grid::Grid(Input &input) {
   idfx::cout << ")" << std::endl;
 
   if(haveAxis) {
-      // create axis communicator to be able to exchange data over the axis (only retain the phi dimension)
+      // create axis communicator to be able to exchange data over the axis
+      // (only retain the phi dimension)
       int remainDims[3] = {false, false, true};
       MPI_SAFE_CALL(MPI_Cart_sub(CartComm, remainDims, &AxisComm));
   }

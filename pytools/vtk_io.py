@@ -41,13 +41,13 @@ def readVTK(filename, geometry="unknown"):
 
     s=fid.readline()    # DIMENSIONS NX NY NZ or FIELD
     slist=s.split()
-    entry=str(slist[0],'utf-8')
+    entry=str(slist[0].decode('utf-8'))
     if(entry == "FIELD"):
       nfield=int(slist[2])
       for field in range(nfield):
         s=fid.readline()
         slist=s.split()
-        entry=str(slist[0],'utf-8')
+        entry=str(slist[0].decode('utf-8'))
         if(entry == "TIME"):
           V.t=np.fromfile(fid,dt,1)
         elif(entry == "GEOMETRY"):
@@ -118,7 +118,7 @@ def readVTK(filename, geometry="unknown"):
       s=fid.readline()    # POINT_DATA NXNYNZ
 
       slist=s.split()
-      point_type=str(slist[0],'utf-8')
+      point_type=str(slist[0].decode('utf-8'))
       npoints=int(slist[1])
       s=fid.readline()    # EXTRA LINE FEED
 
@@ -191,7 +191,7 @@ def readVTK(filename, geometry="unknown"):
 
         s=fid.readline()    # CELL_DATA (NX-1)(NY-1)(NZ-1)
         slist=s.split()
-        data_type=str(slist[0],'utf-8')
+        data_type=str(slist[0].decode('utf-8'))
         if(data_type != "CELL_DATA"):
             print("ERROR: this routine expect CELL DATA as produced by idefix.")
             fid.close()
@@ -235,7 +235,7 @@ def readVTK(filename, geometry="unknown"):
 
         s=fid.readline()    # CELL_DATA (NX-1)(NY-1)(NZ-1)
         slist=s.split()
-        data_type=str(slist[0],'utf-8')
+        data_type=str(slist[0].decode('utf-8'))
         if(data_type != "CELL_DATA"):
             print("ERROR: this routine expect CELL DATA as produced by IDEFIX.")
             fid.close()
@@ -272,8 +272,8 @@ def readVTK(filename, geometry="unknown"):
         if len(s)<2:         # leave if end of file
             break
         slist=s.split()
-        datatype=str(slist[0],'utf-8')
-        varname=str(slist[1],'utf-8')
+        datatype=str(slist[0].decode('utf-8'))
+        varname=str(slist[1].decode('utf-8'))
         if datatype == "SCALARS":
             fid.readline()  # LOOKUP TABLE
             V.data[varname] = np.transpose(np.fromfile(fid,dt,V.nx*V.ny*V.nz).reshape(V.nz,V.ny,V.nx))

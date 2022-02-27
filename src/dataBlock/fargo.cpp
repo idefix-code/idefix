@@ -463,6 +463,11 @@ void Fargo::StoreToScratch() {
 void Fargo::ShiftSolution(const real t, const real dt) {
   idfx::pushRegion("Fargo::ShiftSolution");
 
+  #if GEOMETRY == CYLINDRICAL
+    IDEFIX_ERROR("Fargo is not compatible with cylindrical geometry "
+                 "(which is intended to be 2D axisymmetric)");
+  #else 
+
   // Refresh the fargo velocity function
   if(type==userdef) {
     GetFargoVelocity(t);
@@ -921,6 +926,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
   this->hydro->boundary.ReconstructVcField(Uc);
 
 #endif // MHD
+#endif // GEOMETRY==CYLINDRICAL
 
   idfx::popRegion();
 }

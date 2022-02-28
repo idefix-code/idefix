@@ -23,9 +23,11 @@ class DataBlockHost {
   IdefixArray3D<real>::HostMirror A[3];   // cell right interface area
 
   IdefixArray4D<real>::HostMirror Vc;     // Main cell-centered primitive variables index
+  #if MHD == YES
   IdefixArray4D<real>::HostMirror Vs;     // Main face-centered primitive variables index
   IdefixArray4D<real>::HostMirror Ve;     // Main edge-centered primitive variables index
   IdefixArray4D<real>::HostMirror J;      // Current (only when haveCurrent is enabled)
+  #endif
   IdefixArray4D<real>::HostMirror Uc;     // Main cell-centered conservative variables
   IdefixArray3D<real>::HostMirror InvDt;
 

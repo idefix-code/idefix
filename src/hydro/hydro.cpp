@@ -17,17 +17,10 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   // Save the datablock to which we are attached from now on
   this->data = datain;
 
-  #if ORDER == 1
-    idfx::cout << "Hydro: Using 1st order (donor cell) reconstruction scheme" << std::endl;
-  #elif ORDER == 2
-    idfx::cout << "Hydro: Using 2nd order (PLM Van Leer) reconstruction scheme" << std::endl;
-  #elif ORDER == 3
-    idfx::cout << "Hydro: Using 3rd order (LimO3) reconstruction scheme" << std::endl;
-  #elif ORDER == 4
-    idfx::cout << "Hydro: Using 4th order (PPM) reconstruction scheme" << std::endl;
-  #else
-    IDEFIX_ERROR("Reconstruction at chosen order is not implemented. Check your definitions file");
+  #if ORDER < 1 || ORDER > 4
+     IDEFIX_ERROR("Reconstruction at chosen order is not implemented. Check your definitions file");
   #endif
+  
 
   #if HAVE_ENERGY
     this->gamma = input.GetOrSet<real>("Hydro","gamma",0, 5.0/3.0);
@@ -91,8 +84,6 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
     if(rotation >1 ) IDEFIX_ERROR("Rotation needs a a single rotation velocity (Omega_Z) \
                                    in idefix.ini");
     this->OmegaZ = input.Get<real>("Hydro","rotation",0);
-
-    idfx::cout << "Hydro: Rotation enabled with Omega=" << this->OmegaZ << std::endl;
   }
 
   // Check whether we have shearing box
@@ -213,12 +204,9 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
         IDEFIX_ERROR(msg);
       }
       if(input.Get<std::string>("Hydro","resistivity",1).compare("constant") == 0) {
-        idfx::cout << "Hydro: Enabling Ohmic resistivity with constant diffusivity." << std::endl;
         this->etaO = input.Get<real>("Hydro","resistivity",2);
         resistivityStatus.status = Constant;
       } else if(input.Get<std::string>("Hydro","resistivity",1).compare("userdef") == 0) {
-        idfx::cout << "Hydro: Enabling Ohmic resistivity with user-defined diffusivity function."
-                   << std::endl;
         resistivityStatus.status = UserDefFunction;
       } else {
         IDEFIX_ERROR("Unknown resistivity definition in idefix.ini. "
@@ -242,13 +230,9 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
         IDEFIX_ERROR(msg);
       }
       if(input.Get<std::string>("Hydro","ambipolar",1).compare("constant") == 0) {
-        idfx::cout << "Hydro: Enabling ambipolar diffusion with constant diffusivity."
-                   << std::endl;
         this->xA = input.Get<real>("Hydro","ambipolar",2);
         ambipolarStatus.status = Constant;
       } else if(input.Get<std::string>("Hydro","ambipolar",1).compare("userdef") == 0) {
-        idfx::cout << "Hydro: Enabling ambipolar diffusion with user-defined diffusivity function."
-                   << std::endl;
         ambipolarStatus.status = UserDefFunction;
       } else {
         IDEFIX_ERROR("Unknown ambipolar definition in idefix.ini. "
@@ -316,7 +300,6 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
     Vs = IdefixArray4D<real>("Hydro_Vs", DIMENSIONS,
                 data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
     #ifdef EVOLVE_VECTOR_POTENTIAL
-      idfx::cout << "Hydro: Using EXPERIMENTAL vector potential formulation for MHD." << std::endl;
       #if DIMENSIONS == 1
         IDEFIX_ERROR("EVOLVE_VECTOR_POTENTIAL is not compatible with 1D MHD");
       #else
@@ -445,7 +428,6 @@ void Hydro::EnrollIsoSoundSpeed(IsoSoundSpeedFunc myFunc) {
                  "definitions.hpp");
   #endif
   this->isoSoundSpeedFunc = myFunc;
-  idfx::cout << "Hydro: User-defined isothermal sound speed has been enrolled" << std::endl;
 }
 
 void Hydro::EnrollUserDefBoundary(UserDefBoundaryFunc myFunc) {
@@ -465,6 +447,9 @@ void Hydro::EnrollInternalBoundary(InternalBoundaryFunc myFunc) {
 }
 
 void Hydro::EnrollEmfBoundary(EmfBoundaryFunc myFunc) {
+  #if MHD == NO
+    IDEFIX_ERROR("This function can only be used with the MHD solver.");
+  #endif
   this->emfBoundaryFunc = myFunc;
   this->haveEmfBoundary = true;
   idfx::cout << "Hydro: User-defined EMF boundary condition has been enrolled" << std::endl;
@@ -492,30 +477,36 @@ void Hydro::EnrollUserSourceTerm(SrcTermFunc myFunc) {
 }
 
 void Hydro::EnrollOhmicDiffusivity(DiffusivityFunc myFunc) {
+  #if MHD == NO
+    IDEFIX_ERROR("This function can only be used with the MHD solver.");
+  #endif
   if(this->resistivityStatus.status < UserDefFunction) {
     IDEFIX_ERROR("Ohmic diffusivity enrollment requires Hydro/Resistivity "
                  "to be set to userdef in .ini file");
   }
   this->ohmicDiffusivityFunc = myFunc;
-  idfx::cout << "Hydro: User-defined ohmic diffusivity has been enrolled" << std::endl;
 }
 
 void Hydro::EnrollAmbipolarDiffusivity(DiffusivityFunc myFunc) {
+  #if MHD == NO
+    IDEFIX_ERROR("This function can only be used with the MHD solver.");
+  #endif
   if(this->ambipolarStatus.status < UserDefFunction) {
     IDEFIX_ERROR("Ambipolar diffusivity enrollment requires Hydro/Ambipolar "
                  "to be set to userdef in .ini file");
   }
   this->ambipolarDiffusivityFunc = myFunc;
-  idfx::cout << "Hydro: User-defined ambipolar diffusivity has been enrolled" << std::endl;
 }
 
 void Hydro::EnrollHallDiffusivity(DiffusivityFunc myFunc) {
+  #if MHD == NO
+    IDEFIX_ERROR("This function can only be used with the MHD solver.");
+  #endif
   if(this->hallStatus.status < UserDefFunction) {
     IDEFIX_ERROR("Hall diffusivity enrollment requires Hydro/Hall "
                  "to be set to userdef in .ini file");
   }
   this->hallDiffusivityFunc = myFunc;
-  idfx::cout << "Hydro: User-defined Hall diffusivity has been enrolled" << std::endl;
 }
 
 Hydro::Hydro() {
@@ -540,4 +531,155 @@ void Hydro::ResetStage() {
   });
 
   idfx::popRegion();
+}
+
+void Hydro::ShowConfig() {
+  idfx::cout << "Hydro: ";
+  #if MHD == YES
+    idfx::cout << "solving MHD equations." << std::endl;
+    #ifdef EVOLVE_VECTOR_POTENTIAL
+      idfx::cout << "Hydro: Using EXPERIMENTAL vector potential formulation for MHD." << std::endl;
+    #endif
+  #else
+    idfx::cout << "solving HD equations." << std::endl;
+  #endif
+  idfx::cout << "Hydro: Reconstruction: ";
+  #if ORDER == 1
+    idfx::cout << "1st order (donor cell)" << std::endl;
+  #elif ORDER == 2
+    idfx::cout << "2nd order (PLM Van Leer)" << std::endl;
+  #elif ORDER == 3
+    idfx::cout << "3rd order (LimO3)" << std::endl;
+  #elif ORDER == 4
+    idfx::cout << "4th order (PPM)" << std::endl;
+  #endif
+
+  #if HAVE_ENERGY
+    idfx::cout << "Hydro: EOS: ideal with gamma=" << this->gamma << std::endl;
+  #endif
+  #ifdef ISOTHERMAL
+    if(haveIsoSoundSpeed == Constant) {
+      idfx::cout << "Hydro: EOS: isothermal with cs=" << isoSoundSpeed << "." << std::endl;
+    } else if(haveIsoSoundSpeed == UserDefFunction) {
+      idfx::cout << "Hydro: EOS: isothermal with user-defined cs function." << std::endl;
+      if(!isoSoundSpeedFunc) {
+        IDEFIX_ERROR("No user-defined isothermal sound speed function has been enrolled.");
+      }
+    }
+  #endif// ISOTHERMAL
+  idfx::cout << "Hydro: Riemann solver: ";
+  switch(mySolver) {
+    case TVDLF:
+      idfx::cout << "tvdlf." << std::endl;
+      break;
+    case HLL:
+      idfx::cout << "hll." << std::endl;
+      break;
+    #if MHD==YES
+      case HLLD:
+        idfx::cout << "hlld." << std::endl;
+        break;
+    #else
+      case HLLC:
+        idfx::cout << "hllc." << std::endl;
+        break;
+    #endif
+    case ROE:
+      idfx::cout << "roe." << std::endl;
+      break;
+    default:
+      IDEFIX_ERROR("Unknown Riemann solver");
+  }
+  if(haveRotation) {
+    idfx::cout << "Hydro: Rotation ENABLED with Omega=" << this->OmegaZ << std::endl;
+  }
+  if(haveShearingBox) {
+    idfx::cout << "Hydro: ShearingBox ENABLED with shear rate= " << this->sbS
+               << " and Lx= " << sbLx << std::endl;
+  }
+
+
+
+  if(resistivityStatus.status != Disabled) {
+    if(resistivityStatus.status == Constant) {
+      idfx::cout << "Hydro: Ohmic resistivity ENABLED with constant resistivity eta="
+                 << etaO << std::endl;
+    } else if(resistivityStatus.status == UserDefFunction) {
+      idfx::cout << "Hydro: Ohmic resistivity ENABLED with user-defined resistivity function."
+                 << std::endl;
+      if(!ohmicDiffusivityFunc) {
+        IDEFIX_ERROR("No user-defined Ihmic resistivity function has been enrolled.");
+      }
+    } else {
+      IDEFIX_ERROR("Unknown Ohmic resistivity mode");
+    }
+    if(resistivityStatus.isExplicit) {
+      idfx::cout << "Hydro: Ohmic resistivity uses an explicit time integration." << std::endl;
+    } else if(resistivityStatus.isRKL) {
+      idfx::cout << "Hydro: Ohmic resistivity uses a Runge-Kutta-Legendre time integration." 
+                 << std::endl;
+    } else {
+      IDEFIX_ERROR("Unknown time integrator for Ohmic resistivity");
+    }
+  }
+
+  if(ambipolarStatus.status != Disabled) {
+    if(ambipolarStatus.status == Constant) {
+      idfx::cout << "Hydro: Ambipolar diffusion ENABLED with constant diffusivity xA="
+                 << xA << std::endl;
+    } else if(ambipolarStatus.status == UserDefFunction) {
+      idfx::cout << "Hydro: Ambipolar diffusion ENABLED with user-defined diffusivity function."
+                 << std::endl;
+      if(!ambipolarDiffusivityFunc) {
+        IDEFIX_ERROR("No user-defined ambipolar diffusion function has been enrolled.");
+      }
+    } else {
+      IDEFIX_ERROR("Unknown Ambipolar diffusion mode");
+    }
+    if(ambipolarStatus.isExplicit) {
+      idfx::cout << "Hydro: Ambipolar diffusion uses an explicit time integration." << std::endl;
+    } else if(ambipolarStatus.isRKL) {
+      idfx::cout << "Hydro: Ambipolar diffusion uses a Runge-Kutta-Legendre time integration." 
+                 << std::endl;
+    } else {
+      IDEFIX_ERROR("Unknown time integrator for ambipolar diffusion");
+    }
+  }
+
+  if(hallStatus.status != Disabled) {
+    if(hallStatus.status == Constant) {
+      idfx::cout << "Hydro: Hall effect ENABLED with constant diffusivity xH="
+                 << xH << std::endl;
+    } else if(hallStatus.status == UserDefFunction) {
+      idfx::cout << "Hydro: Hall effect ENABLED with user-defined diffusivity function."
+                 << std::endl;
+      if(!hallDiffusivityFunc) {
+        IDEFIX_ERROR("No user-defined Hall diffusivity function has been enrolled.");
+      }
+    } else {
+      IDEFIX_ERROR("Unknown Hall effect mode");
+    }
+    if(hallStatus.isExplicit) {
+      idfx::cout << "Hydro: Hall effect uses an explicit time integration." << std::endl;
+    }  else {
+      IDEFIX_ERROR("Unknown time integrator for Hall effect");
+    }
+  }
+
+  if(emfBoundaryFunc) {
+    idfx::cout << "Hydro: user-defined EMF boundaries ENABLED." << std::endl;
+  }
+  if(userSourceTerm) {
+    idfx::cout << "Hydro: user-defined source terms ENABLED." << std::endl;
+  }
+  #if MHD == YES
+    emf.ShowConfig();
+  #endif
+  if(viscosityStatus.isExplicit || viscosityStatus.isRKL) {
+    viscosity.ShowConfig();
+  }
+  if(thermalDiffusionStatus.isExplicit || thermalDiffusionStatus.isRKL) {
+    thermalDiffusion.ShowConfig();
+  }
+
 }

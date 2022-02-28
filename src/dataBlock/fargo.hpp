@@ -26,6 +26,7 @@ class Fargo {
   void EnrollVelocity(FargoVelocityFunc);
   void StoreToScratch();
   void CheckMaxDisplacement();
+  void ShowConfig();
 
  private:
   friend class Hydro;

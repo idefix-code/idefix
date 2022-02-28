@@ -60,15 +60,6 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
     xend[dir] = gridHost.xr[dir](gend[dir]-1);
   }
 
-  if(idfx::psize>1) {
-    idfx::cout << "DataBlock::InitFromGrid: local size is " << std::endl;
-
-    for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
-      idfx::cout << "\t Direction X" << (dir+1) << ": " << xbeg[dir] << "...." << np_int[dir]
-        << "...." << xend[dir] << std::endl;
-    }
-  }
-
   // Allocate the required fields
   for(int dir = 0 ; dir < 3 ; dir++) {
     x[dir] = IdefixArray1D<real>("DataBlock_x",np_tot[dir]);
@@ -145,4 +136,18 @@ void DataBlock::ResetStage() {
 // Set the boundaries of the data structures in this datablock
 void DataBlock::SetBoundaries() {
   hydro.boundary.SetBoundaries(t);
+}
+
+void DataBlock::ShowConfig() {
+  if(idfx::psize>1) {
+    idfx::cout << "DataBlock: this process grid size is " << std::endl;
+
+    for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
+      idfx::cout << "\t Direction X" << (dir+1) << ": " << xbeg[dir] << "...." << np_int[dir]
+        << "...." << xend[dir] << std::endl;
+    }
+  }
+  hydro.ShowConfig();
+  if(haveFargo) fargo.ShowConfig();
+  if(haveGravity) gravity.ShowConfig();
 }

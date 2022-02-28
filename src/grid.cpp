@@ -18,8 +18,6 @@ Grid::Grid() {
 Grid::Grid(Input &input) {
   idfx::pushRegion("Grid::Grid(Input)");
 
-  idfx::cout << "Grid: allocating Grid." << std::endl;
-
   // Get grid size from input file, block [Grid]
   int npoints[3];
   for(int dir = 0 ; dir < 3 ; dir++) {
@@ -257,3 +255,64 @@ Grid& Grid::operator=(const Grid& grid) {
     return *this;
 }
 */
+
+void Grid::ShowConfig() {
+  for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
+    idfx::cout << "Grid: ";
+    std::string lboundString, rboundString;
+      switch(lbound[dir]) {
+        case outflow:
+          lboundString="outflow";
+          break;
+        case reflective:
+          lboundString="reflective";
+          break;
+        case periodic:
+          lboundString="periodic";
+          break;
+        case internal:
+          lboundString="internal";
+          break;
+        case shearingbox:
+          lboundString="shearingbox";
+          break;
+        case axis:
+          lboundString="axis";
+          break;
+        case userdef:
+          lboundString="userdef";
+          break;
+        default:
+          lboundString="unknown";
+      }
+      switch(rbound[dir]) {
+        case outflow:
+          rboundString="outflow";
+          break;
+        case reflective:
+          rboundString="reflective";
+          break;
+        case periodic:
+          rboundString="periodic";
+          break;
+        case internal:
+          rboundString="internal";
+          break;
+        case shearingbox:
+          rboundString="shearingbox";
+          break;
+        case axis:
+          rboundString="axis";
+          break;
+        case userdef:
+          rboundString="userdef";
+          break;
+        default:
+          rboundString="unknown";
+      }
+
+      idfx::cout << "Direction X" << (dir+1) << ": " << lboundString << "\t" << xbeg[dir]
+                 << "...." << np_int[dir] << "...." << xend[dir] << "\t" << rboundString
+                 << std::endl;
+  }
+}

@@ -76,7 +76,7 @@ class DataBlock {
 
   void EvolveStage();             ///< Evolve this DataBlock by dt
   void SetBoundaries();       ///< Enforce boundary conditions to this datablock
-
+  void ShowConfig();              ///< Show the datablock's configuration
 
   void ResetStage();              ///< Reset the variables needed at each major integration Stage
 

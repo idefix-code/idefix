@@ -52,7 +52,6 @@ void GridHost::MakeGrid(Input &input) {
   // Create the grid
 
   // Get grid parameters from input file, block [Grid]
-  idfx::cout << "GridHost::MakeGrid: " << std::endl;
   for(int dir = 0 ; dir < 3 ; dir++) {
     std::string label = std::string("X")+std::to_string(dir+1)+std::string("-grid");
     int numPatch = input.Get<int>("Grid",label,0);
@@ -175,62 +174,6 @@ void GridHost::MakeGrid(Input &input) {
         // Increment offset
         idxstart += patchSize;
       }
-
-      std::string lboundString, rboundString;
-      switch(lbound[dir]) {
-        case outflow:
-          lboundString="outflow";
-          break;
-        case reflective:
-          lboundString="reflective";
-          break;
-        case periodic:
-          lboundString="periodic";
-          break;
-        case internal:
-          lboundString="internal";
-          break;
-        case shearingbox:
-          lboundString="shearingbox";
-          break;
-        case axis:
-          lboundString="axis";
-          break;
-        case userdef:
-          lboundString="userdef";
-          break;
-        default:
-          lboundString="unknown";
-      }
-      switch(rbound[dir]) {
-        case outflow:
-          rboundString="outflow";
-          break;
-        case reflective:
-          rboundString="reflective";
-          break;
-        case periodic:
-          rboundString="periodic";
-          break;
-        case internal:
-          rboundString="internal";
-          break;
-        case shearingbox:
-          rboundString="shearingbox";
-          break;
-        case axis:
-          rboundString="axis";
-          break;
-        case userdef:
-          rboundString="userdef";
-          break;
-        default:
-          rboundString="unknown";
-      }
-
-      idfx::cout << "\t Direction X" << (dir+1) << ": " << lboundString << "\t" << xstart[dir]
-                 << "...." << np_int[dir] << "...." << xend[dir] << "\t" << rboundString
-                 << std::endl;
     } else {
       // dir >= DIMENSIONS/ Init simple uniform grid
       for(int i = 0 ; i < np_tot[dir] ; i++) {

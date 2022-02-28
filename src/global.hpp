@@ -46,7 +46,7 @@ IdefixArray1D<T> ConvertVectorToIdefixArray(std::vector<T> &inputVector) {
 class idfx::IdefixOutStream {
  public:
   void init(int);
-  void disableLogFile();
+  void enableLogFile();
   // for regular output of variables and stuff
   template<typename T> IdefixOutStream& operator<<(const T& something) {
     if(toscreen) std::cout << something;
@@ -63,7 +63,7 @@ class idfx::IdefixOutStream {
  private:
   std::ofstream my_fstream;
   bool toscreen;
-  bool logFileEnabled{true};   //< whether streams are also written to a log file
+  bool logFileEnabled{false};   //< whether streams are also written to a log file
 };
 
 class idfx::IdefixErrStream {

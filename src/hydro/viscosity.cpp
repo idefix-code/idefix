@@ -91,6 +91,28 @@ void Viscosity::Init(Input &input, Grid &grid, Hydro *hydroin) {
   idfx::popRegion();
 }
 
+void Viscosity::ShowConfig() {
+  if(haveViscosity==Constant) {
+    idfx::cout << "Viscosity: ENEABLED with constant viscosity eta1="
+                    << this->eta1 << " and eta2=" << this->eta2 << " ."<< std::endl;
+  } else if (haveViscosity==UserDefFunction) {
+    idfx::cout << "Viscosity: ENABLED with user-defined viscosity function."
+                   << std::endl;
+    if(!viscousDiffusivityFunc) {
+      IDEFIX_ERROR("No viscosity function has been enrolled");
+    }
+  } else {
+    IDEFIX_ERROR("Unknown viscosity mode");
+  }
+  if(hydro->viscosityStatus.isExplicit) {
+    idfx::cout << "Viscosity: uses an explicit time integration." << std::endl;
+  } else if(hydro->viscosityStatus.isRKL) {
+    idfx::cout << "Viscosity: uses a Runge-Kutta-Legendre time integration." 
+                << std::endl;
+  } else {
+    IDEFIX_ERROR("Unknown time integrator for viscosity.");
+  }
+}
 
 void Viscosity::EnrollViscousDiffusivity(ViscousDiffusivityFunc myFunc) {
   if(this->haveViscosity < UserDefFunction) {
@@ -98,7 +120,6 @@ void Viscosity::EnrollViscousDiffusivity(ViscousDiffusivityFunc myFunc) {
                  "to be set to userdef in .ini file");
   }
   this->viscousDiffusivityFunc = myFunc;
-  idfx::cout << "Viscosity: User-defined viscous diffusion has been enrolled." << std::endl;
 }
 
 // This function computes the viscous flux and stores it in hydro->fluxRiemann

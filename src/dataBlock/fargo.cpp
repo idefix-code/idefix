@@ -242,10 +242,19 @@ void Fargo::Init(Input &input, DataBlock *data) {
     }
   #endif
 
+  
+  idfx::popRegion();
+}
+
+void Fargo::ShowConfig() {
+  idfx::pushRegion("Fargo::ShowConfig");
   if(type==userdef) {
-    idfx::cout << "Fargo: Enabled with user-defined velocity function" << std::endl;
+    idfx::cout << "Fargo: ENABLED with user-defined velocity function." << std::endl;
+    if(!fargoVelocityFunc) {
+      IDEFIX_ERROR("No Fargo velocity function has been enabled.");
+    }
   } else if(type==shearingbox) {
-    idfx::cout << "Fargo: Enabled with shearing-box velocity function" << std::endl;
+    idfx::cout << "Fargo: ENABLED with shearing-box velocity function." << std::endl;
   } else {
     IDEFIX_ERROR("Something went wrong during Fargo initialisation");
   }
@@ -267,7 +276,6 @@ void Fargo::EnrollVelocity(FargoVelocityFunc myFunc) {
                  "to be set to userdef in .ini file");
   }
   this->fargoVelocityFunc = myFunc;
-  idfx::cout << "Fargo: User-defined velocity function has been enrolled." << std::endl;
 }
 
 // This function fetches Fargo velocity when required

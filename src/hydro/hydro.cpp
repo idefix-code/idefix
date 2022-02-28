@@ -99,9 +99,6 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
     this->sbS = input.Get<real>("Hydro","shearingBox",0);
     // Get box size
     this->sbLx = grid.xend[IDIR] - grid.xbeg[IDIR];
-
-    idfx::cout << "Hydro: ShearingBox enabled with Shear rate= " << this->sbS
-               << " and Lx= " << sbLx << std::endl;
   }
 
   // Gravitational potential (deprecated, use [Gravity] block in your input file)
@@ -256,12 +253,9 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
         IDEFIX_ERROR(msg);
       }
       if(input.Get<std::string>("Hydro","hall",1).compare("constant") == 0) {
-        idfx::cout << "Hydro: Enabling Hall effect with constant diffusivity." << std::endl;
         this->xH = input.Get<real>("Hydro","hall",2);
         hallStatus.status = Constant;
       } else if(input.Get<std::string>("Hydro","hall",1).compare("userdef") == 0) {
-        idfx::cout << "Hydro: Enabling Hall effect with user-defined diffusivity function."
-                   << std::endl;
         hallStatus.status = UserDefFunction;
       } else {
         IDEFIX_ERROR("Unknown Hall definition in idefix.ini. Can only be constant or userdef.");
@@ -452,7 +446,6 @@ void Hydro::EnrollEmfBoundary(EmfBoundaryFunc myFunc) {
   #endif
   this->emfBoundaryFunc = myFunc;
   this->haveEmfBoundary = true;
-  idfx::cout << "Hydro: User-defined EMF boundary condition has been enrolled" << std::endl;
 }
 
 // Deprecated function
@@ -473,7 +466,6 @@ void Hydro::EnrollUserSourceTerm(SrcTermFunc myFunc) {
   this->userSourceTerm = myFunc;
   this->haveUserSourceTerm = true;
   this->haveSourceTerms = true;
-  idfx::cout << "Hydro: User-defined source term has been enrolled" << std::endl;
 }
 
 void Hydro::EnrollOhmicDiffusivity(DiffusivityFunc myFunc) {

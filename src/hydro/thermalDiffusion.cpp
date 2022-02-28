@@ -64,7 +64,7 @@ void ThermalDiffusion::ShowConfig() {
   if(hydro->thermalDiffusionStatus.isExplicit) {
     idfx::cout << "Thermal Diffusion: uses an explicit time integration." << std::endl;
   } else if(hydro->thermalDiffusionStatus.isRKL) {
-    idfx::cout << "Thermal Diffusion: uses a Runge-Kutta-Legendre time integration." 
+    idfx::cout << "Thermal Diffusion: uses a Runge-Kutta-Legendre time integration."
                 << std::endl;
   } else {
     IDEFIX_ERROR("Unknown time integrator for viscosity.");

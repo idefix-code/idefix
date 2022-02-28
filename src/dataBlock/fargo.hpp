@@ -8,6 +8,7 @@
 #ifndef DATABLOCK_FARGO_HPP_
 #define DATABLOCK_FARGO_HPP_
 
+#include <vector>
 #include "idefix.hpp"
 
 // Forward class hydro declaration

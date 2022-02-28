@@ -79,7 +79,6 @@ void Gravity::ShowConfig() {
         IDEFIX_ERROR("No user-defined body force has been enrolled.");
       }
     }
-    
   }
 }
 // This function compute the gravitational field, using both body force and potential

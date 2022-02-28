@@ -8,6 +8,8 @@
 #ifndef DATABLOCK_DATABLOCKHOST_HPP_
 #define DATABLOCK_DATABLOCKHOST_HPP_
 
+#include <vector>
+
 #include "idefix.hpp"
 #include "dataBlock.hpp"
 
@@ -27,7 +29,7 @@ class DataBlockHost {
   IdefixArray4D<real>::HostMirror Vs;     ///> Main face-centered primitive variables index
   IdefixArray4D<real>::HostMirror Ve;     ///> Main edge-centered primitive variables index
   IdefixArray4D<real>::HostMirror J;      ///> Current (only when haveCurrent is enabled)
-  
+
   IdefixArray3D<real>::HostMirror Ex1;    ///> x1 electric field
   IdefixArray3D<real>::HostMirror Ex2;    ///> x2 electric field
   IdefixArray3D<real>::HostMirror Ex3;    ///> x3 electric field

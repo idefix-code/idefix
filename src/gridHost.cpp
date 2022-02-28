@@ -6,6 +6,7 @@
 // ***********************************************************************************
 
 #include <string>
+#include <vector>
 
 #include "idefix.hpp"
 #include "grid.hpp"
@@ -28,7 +29,7 @@ GridHost::GridHost(Grid &grid) {
 
   xbeg = grid.xbeg;
   xend = grid.xend;
-  
+
   haveAxis = grid.haveAxis;
 
   // Create mirrors on host
@@ -214,7 +215,6 @@ void GridHost::SyncFromDevice() {
     Kokkos::deep_copy(xr[dir],grid->xr[dir]);
     Kokkos::deep_copy(xl[dir],grid->xl[dir]);
     Kokkos::deep_copy(dx[dir],grid->dx[dir]);
-
   }
 
   xbeg = grid->xbeg;

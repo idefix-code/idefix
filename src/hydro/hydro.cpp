@@ -20,7 +20,7 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   #if ORDER < 1 || ORDER > 4
      IDEFIX_ERROR("Reconstruction at chosen order is not implemented. Check your definitions file");
   #endif
-  
+
 
   #if HAVE_ENERGY
     this->gamma = input.GetOrSet<real>("Hydro","gamma",0, 5.0/3.0);
@@ -616,7 +616,7 @@ void Hydro::ShowConfig() {
     if(resistivityStatus.isExplicit) {
       idfx::cout << "Hydro: Ohmic resistivity uses an explicit time integration." << std::endl;
     } else if(resistivityStatus.isRKL) {
-      idfx::cout << "Hydro: Ohmic resistivity uses a Runge-Kutta-Legendre time integration." 
+      idfx::cout << "Hydro: Ohmic resistivity uses a Runge-Kutta-Legendre time integration."
                  << std::endl;
     } else {
       IDEFIX_ERROR("Unknown time integrator for Ohmic resistivity");
@@ -639,7 +639,7 @@ void Hydro::ShowConfig() {
     if(ambipolarStatus.isExplicit) {
       idfx::cout << "Hydro: Ambipolar diffusion uses an explicit time integration." << std::endl;
     } else if(ambipolarStatus.isRKL) {
-      idfx::cout << "Hydro: Ambipolar diffusion uses a Runge-Kutta-Legendre time integration." 
+      idfx::cout << "Hydro: Ambipolar diffusion uses a Runge-Kutta-Legendre time integration."
                  << std::endl;
     } else {
       IDEFIX_ERROR("Unknown time integrator for ambipolar diffusion");
@@ -681,5 +681,4 @@ void Hydro::ShowConfig() {
   if(thermalDiffusionStatus.isExplicit || thermalDiffusionStatus.isRKL) {
     thermalDiffusion.ShowConfig();
   }
-
 }

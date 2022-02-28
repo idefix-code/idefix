@@ -186,7 +186,7 @@ Grid::Grid(Input &input) {
   MPI_Cart_coords(CartComm, idfx::prank, 3, xproc.data());
 
   MPI_Barrier(MPI_COMM_WORLD);
-  
+
 
   if(haveAxis) {
       // create axis communicator to be able to exchange data over the axis

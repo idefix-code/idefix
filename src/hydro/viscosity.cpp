@@ -103,7 +103,7 @@ void Viscosity::ShowConfig() {
   if(hydro->viscosityStatus.isExplicit) {
     idfx::cout << "Viscosity: uses an explicit time integration." << std::endl;
   } else if(hydro->viscosityStatus.isRKL) {
-    idfx::cout << "Viscosity: uses a Runge-Kutta-Legendre time integration." 
+    idfx::cout << "Viscosity: uses a Runge-Kutta-Legendre time integration."
                 << std::endl;
   } else {
     IDEFIX_ERROR("Unknown time integrator for viscosity.");

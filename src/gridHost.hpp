@@ -8,6 +8,7 @@
 #ifndef GRIDHOST_HPP_
 #define GRIDHOST_HPP_
 
+#include <vector>
 #include "idefix.hpp"
 #include "grid.hpp"
 #include "input.hpp"

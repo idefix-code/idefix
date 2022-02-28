@@ -52,7 +52,7 @@ Input::Input(int argc, char* argv[] ) {
 
   // Default input file name
   this->inputFileName = std::string("idefix.ini");
-  
+
   // Parse command line (may replace the input file)
   ParseCommandLine(argc,argv);
 

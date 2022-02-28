@@ -19,21 +19,23 @@ GridHost::GridHost(Grid &grid) {
   idfx::pushRegion("GridHost::GridHost(Grid)");
 
   this->grid=&grid;
-  for(int dir = 0 ; dir < 3 ; dir++) {
-    nghost[dir] = grid.nghost[dir];
-    np_tot[dir] = grid.np_tot[dir];
-    np_int[dir] = grid.np_int[dir];
+  nghost = grid.nghost;
+  np_tot = grid.np_tot;
+  np_int = grid.np_int;
 
-    lbound[dir] = grid.lbound[dir];
-    rbound[dir] = grid.rbound[dir];
+  lbound = grid.lbound;
+  rbound = grid.rbound;
 
-    xbeg[dir] = grid.xbeg[dir];
-    xend[dir] = grid.xend[dir];
-  }
-
-  this->haveAxis = grid.haveAxis;
+  xbeg = grid.xbeg;
+  xend = grid.xend;
+  
+  haveAxis = grid.haveAxis;
 
   // Create mirrors on host
+  x = std::vector<IdefixArray1D<real>::HostMirror> (3);
+  xr = std::vector<IdefixArray1D<real>::HostMirror> (3);
+  xl = std::vector<IdefixArray1D<real>::HostMirror> (3);
+  dx = std::vector<IdefixArray1D<real>::HostMirror> (3);
   for(int dir = 0 ; dir < 3 ; dir++) {
     x[dir] = Kokkos::create_mirror_view(grid.x[dir]);
     xr[dir] = Kokkos::create_mirror_view(grid.xr[dir]);
@@ -213,9 +215,10 @@ void GridHost::SyncFromDevice() {
     Kokkos::deep_copy(xl[dir],grid->xl[dir]);
     Kokkos::deep_copy(dx[dir],grid->dx[dir]);
 
-    xbeg[dir] = grid->xbeg[dir];
-    xend[dir] = grid->xend[dir];
   }
+
+  xbeg = grid->xbeg;
+  xend = grid->xend;
 
   idfx::popRegion();
 }
@@ -229,10 +232,10 @@ void GridHost::SyncToDevice() {
     Kokkos::deep_copy(grid->xr[dir],xr[dir]);
     Kokkos::deep_copy(grid->xl[dir],xl[dir]);
     Kokkos::deep_copy(grid->dx[dir],dx[dir]);
-
-    grid->xbeg[dir] = xbeg[dir];
-    grid->xend[dir] = xend[dir];
   }
+
+  grid->xbeg = xbeg;
+  grid->xend = xend;
 
   idfx::popRegion();
 }

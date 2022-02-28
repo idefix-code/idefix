@@ -24,6 +24,19 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
   GridHost gridHost(grid);
   gridHost.SyncFromDevice();
 
+  nghost = std::vector<int>(3);
+  np_int = std::vector<int>(3);
+  np_tot = std::vector<int>(3);
+  lbound = std::vector<BoundaryType>(3);
+  rbound = std::vector<BoundaryType>(3);
+  beg = std::vector<int>(3);
+  end = std::vector<int>(3);
+  gbeg = std::vector<int>(3);
+  gend = std::vector<int>(3);
+
+  xbeg = std::vector<real>(3);
+  xend = std::vector<real>(3);
+
   // Get the number of points from the parent grid object
   for(int dir = 0 ; dir < 3 ; dir++) {
     nghost[dir] = grid.nghost[dir];
@@ -62,14 +75,14 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
 
   // Allocate the required fields
   for(int dir = 0 ; dir < 3 ; dir++) {
-    x[dir] = IdefixArray1D<real>("DataBlock_x",np_tot[dir]);
-    xr[dir] = IdefixArray1D<real>("DataBlock_xr",np_tot[dir]);
-    xl[dir] = IdefixArray1D<real>("DataBlock_xl",np_tot[dir]);
-    dx[dir] = IdefixArray1D<real>("DataBlock_dx",np_tot[dir]);
-    xgc[dir] = IdefixArray1D<real>("DataBlock_xgc",np_tot[dir]);
+    x.push_back(IdefixArray1D<real>("DataBlock_x",np_tot[dir]));
+    xr.push_back(IdefixArray1D<real>("DataBlock_xr",np_tot[dir]));
+    xl.push_back(IdefixArray1D<real>("DataBlock_xl",np_tot[dir]));
+    dx.push_back(IdefixArray1D<real>("DataBlock_dx",np_tot[dir]));
+    xgc.push_back(IdefixArray1D<real>("DataBlock_xgc",np_tot[dir]));
 
-    A[dir] = IdefixArray3D<real>("DataBlock_A",
-                                 np_tot[KDIR]+KOFFSET, np_tot[JDIR]+JOFFSET, np_tot[IDIR]+IOFFSET);
+    A.push_back(IdefixArray3D<real>("DataBlock_A",
+                                 np_tot[KDIR]+KOFFSET, np_tot[JDIR]+JOFFSET, np_tot[IDIR]+IOFFSET));
   }
 
   dV = IdefixArray3D<real>("DataBlock_dV",np_tot[KDIR],np_tot[JDIR],np_tot[IDIR]);

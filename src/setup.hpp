@@ -17,7 +17,7 @@
 // These two will likely be used in the code, so we include them here
 #include "gridHost.hpp"
 #include "dataBlockHost.hpp"
-#include "boundaryLoop.hpp"
+#include "boundaryloop.hpp"
 
 class Setup {
  public:

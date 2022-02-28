@@ -15,20 +15,20 @@
 
 class GridHost {
  public:
-  IdefixArray1D<real>::HostMirror x[3]; // geometrical central points
-  IdefixArray1D<real>::HostMirror xr[3]; // cell right interface
-  IdefixArray1D<real>::HostMirror xl[3]; // cell left interface
-  IdefixArray1D<real>::HostMirror dx[3]; // cell width
+  std::vector<IdefixArray1D<real>::HostMirror> x;     ///< geometrical central points
+  std::vector<IdefixArray1D<real>::HostMirror> xr; ///< cell right interface
+  std::vector<IdefixArray1D<real>::HostMirror> xl; ///< cell left interface
+  std::vector<IdefixArray1D<real>::HostMirror> dx; ///< cell width
 
-  real xbeg[3];                   // Beginning of grid
-  real xend[3];                   // End of grid
+  std::vector<real> xbeg;                   ///< Beginning of grid
+  std::vector<real> xend;                   ///< End of grid
 
-  int np_tot[3];                  // total number of grid points
-  int np_int[3];                  // internal number of grid points
+  std::vector<int> np_tot;                  ///< total number of grid points
+  std::vector<int> np_int;                  ///< internal number of grid points
 
-  int nghost[3];                  // number of ghost cells
-  BoundaryType lbound[3];                  // Boundary condition to the left
-  BoundaryType rbound[3];                  // Boundary condition to the right
+  std::vector<int> nghost;                  ///< number of ghost cells
+  std::vector<BoundaryType> lbound;         ///< Boundary condition to the left
+  std::vector<BoundaryType> rbound;         ///< Boundary condition to the right
 
   bool haveAxis=false;    // Do we require a special treatment of the axis in spherical coords?
 

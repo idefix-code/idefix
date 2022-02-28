@@ -7,32 +7,33 @@
 
 #ifndef GRID_HPP_
 #define GRID_HPP_
+#include <vector>
 #include "idefix.hpp"
 #include "input.hpp"
 
 
 class Grid {
  public:
-  IdefixArray1D<real> x[3];    // geometrical central points
-  IdefixArray1D<real> xr[3];   // cell right interface
-  IdefixArray1D<real> xl[3];   // cell left interface
-  IdefixArray1D<real> dx[3];   // cell width
+  std::vector<IdefixArray1D<real>> x;    // geometrical central points
+  std::vector<IdefixArray1D<real>> xr;   // cell right interface
+  std::vector<IdefixArray1D<real>> xl;   // cell left interface
+  std::vector<IdefixArray1D<real>> dx;   // cell width
 
-  real xbeg[3];           // Beginning of grid
-  real xend[3];           // End of grid
+  std::vector<real> xbeg;           // Beginning of grid
+  std::vector<real> xend;           // End of grid
 
-  int np_tot[3];          // total number of grid points (including ghosts)
-  int np_int[3];          // internal number of grid points (excluding ghosts)
+  std::vector<int> np_tot;          // total number of grid points (including ghosts)
+  std::vector<int> np_int;          // internal number of grid points (excluding ghosts)
 
-  int nghost[3];          // number of ghost cells
-  BoundaryType lbound[3];          // Boundary condition to the left
-  BoundaryType rbound[3];          // Boundary condition to the right
+  std::vector<int> nghost;          // number of ghost cells
+  std::vector<BoundaryType> lbound;          // Boundary condition to the left
+  std::vector<BoundaryType> rbound;          // Boundary condition to the right
 
   bool haveAxis=false;    // Do we require a special treatment of the axis in spherical coords?
 
   // MPI data
-  int nproc[3];           // Total number of procs in each direction
-  int xproc[3];           // Coordinates of current proc in the array of procs
+  std::vector<int> nproc;           // Total number of procs in each direction
+  std::vector<int> xproc;           // Coordinates of current proc in the array of procs
 
   #ifdef WITH_MPI
   MPI_Comm CartComm;

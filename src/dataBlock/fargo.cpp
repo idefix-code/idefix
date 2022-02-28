@@ -133,11 +133,9 @@ void Fargo::Init(Input &input, DataBlock *data) {
   this->hydro = &(data->hydro);
 
   // A bit of arithmetic to get the sizes of the working array
-  for(int dir = 0 ; dir < 3 ; dir++) {
-    this->nghost[dir] = data->nghost[dir];
-    this->beg[dir] = data->beg[dir];
-    this->end[dir] = data->end[dir];
-  }
+  this->nghost = data->nghost;
+  this->beg = data->beg;
+  this->end = data->end;
 
   if(input.CheckBlock("Fargo")) {
     std::string opType = input.Get<std::string>("Fargo","velocity",0);
@@ -235,9 +233,9 @@ void Fargo::Init(Input &input, DataBlock *data) {
         vars.push_back(i);
       }
       #if MHD == YES
-        this->mpi.Init(data->mygrid, vars, this->nghost, data->np_int, true);
+        this->mpi.Init(data->mygrid, vars, this->nghost.data(), data->np_int.data(), true);
       #else
-        this->mpi.Init(data->mygrid, vars, this->nghost, data->np_int);
+        this->mpi.Init(data->mygrid, vars, this->nghost.data(), data->np_int.data());
       #endif
     }
   #endif

@@ -98,7 +98,7 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
   nvarRKL = varListHost.size();
 
   #ifdef WITH_MPI
-    mpi.Init(datain.mygrid, varListHost, datain.nghost, datain.np_int, haveVs);
+    mpi.Init(datain.mygrid, varListHost, datain.nghost.data(), datain.np_int.data(), haveVs);
   #endif
 
 

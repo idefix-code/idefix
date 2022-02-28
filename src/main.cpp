@@ -98,6 +98,7 @@ int main( int argc, char* argv[] ) {
     input.ShowConfig();
     grid.ShowConfig();
     data.ShowConfig();
+    Tint.ShowConfig();
 
     // if the user asked for auto-tune, then tune loops now
     if(input.tuningRequested) {

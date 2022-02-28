@@ -50,12 +50,8 @@ void Viscosity::Init(Input &input, Grid &grid, Hydro *hydroin) {
         this->eta1 = input.Get<real>("Hydro","viscosity",2);
         // second viscosity?
         this->eta2 = input.GetOrSet<real>("Hydro","viscosity",3, 0.0);
-        idfx::cout << "Viscosity: Enabling constant viscosity function with eta1="
-                   << this->eta1 << " and eta2=" << this->eta2 << " ."<< std::endl;
         this->haveViscosity = Constant;
       } else if(input.Get<std::string>("Hydro","viscosity",1).compare("userdef") == 0) {
-        idfx::cout << "Viscosity: Enabling user-defined viscosity function."
-                   << std::endl;
         this->haveViscosity = UserDefFunction;
         this->eta1Arr = IdefixArray3D<real>("ViscosityEta1Array",hydro->data->np_tot[KDIR],
                                                                  hydro->data->np_tot[JDIR],

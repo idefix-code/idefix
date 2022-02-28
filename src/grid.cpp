@@ -259,9 +259,8 @@ Grid& Grid::operator=(const Grid& grid) {
 */
 
 void Grid::ShowConfig() {
-  
+  idfx::cout << "Grid: full grid size is " << std::endl;
   for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
-    idfx::cout << "Grid: ";
     std::string lboundString, rboundString;
       switch(lbound[dir]) {
         case outflow:
@@ -314,7 +313,7 @@ void Grid::ShowConfig() {
           rboundString="unknown";
       }
 
-      idfx::cout << "Direction X" << (dir+1) << ": " << lboundString << "\t" << xbeg[dir]
+      idfx::cout << "\t Direction X" << (dir+1) << ": " << lboundString << "\t" << xbeg[dir]
                  << "...." << np_int[dir] << "...." << xend[dir] << "\t" << rboundString
                  << std::endl;
   }

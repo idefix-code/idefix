@@ -68,10 +68,10 @@ void HydroBoundary::Init(Input & input, Grid &grid, Hydro* hydro) {
 void HydroBoundary::EnrollFluxBoundary(UserDefBoundaryFunc myFunc) {
   this->haveFluxBoundary = true;
   this->fluxBoundaryFunc = myFunc;
-  idfx::cout << "HydroBoundary: User-defined flux boundary has been enrolled" << std::endl;
 }
 
 void HydroBoundary::EnforceFluxBoundaries(int dir) {
+  idfx::pushRegion("HydroBoundary::EnforceFluxBoundaries");
   if(haveFluxBoundary) {
     if(data->lbound[dir] != internal) {
       fluxBoundaryFunc(*data, dir, left, data->t);
@@ -82,6 +82,7 @@ void HydroBoundary::EnforceFluxBoundaries(int dir) {
   } else {
     IDEFIX_ERROR("Cannot enforce flux boundary conditions without enrolling a specific function");
   }
+  idfx::popRegion();
 }
 
 void HydroBoundary::SetBoundaries(real t) {
@@ -323,13 +324,11 @@ void HydroBoundary::ReconstructNormalField(int dir) {
 void HydroBoundary::EnrollUserDefBoundary(UserDefBoundaryFunc myFunc) {
   this->userDefBoundaryFunc = myFunc;
   this->haveUserDefBoundary = true;
-  idfx::cout << "Hydro: User-defined boundary condition has been enrolled" << std::endl;
 }
 
 void HydroBoundary::EnrollInternalBoundary(InternalBoundaryFunc myFunc) {
   this->internalBoundaryFunc = myFunc;
   this->haveInternalBoundary = true;
-  idfx::cout << "Hydro: User-defined internal boundary condition has been enrolled" << std::endl;
 }
 
 void HydroBoundary::EnforcePeriodic(int dir, BoundarySide side ) {

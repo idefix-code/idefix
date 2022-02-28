@@ -28,6 +28,7 @@ class TimeIntegrator {
   bool CheckForMaxRuntime();
 
   void ShowLog(DataBlock &);    //<  Display progress log
+  void ShowConfig();            //< Show configuration of time integrator
 
   bool isSilent{false};   // Whether the integration should proceed silently
 

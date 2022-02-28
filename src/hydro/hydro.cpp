@@ -681,4 +681,7 @@ void Hydro::ShowConfig() {
   if(thermalDiffusionStatus.isExplicit || thermalDiffusionStatus.isRKL) {
     thermalDiffusion.ShowConfig();
   }
+  if(haveAxis) {
+    myAxis.ShowConfig();
+  }
 }

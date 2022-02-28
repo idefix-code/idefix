@@ -105,7 +105,7 @@ to check that the last output is consistent with the reference output.
 
     or assuming a MPI library is installed on your machine::
 
-        cmake $IDEFIX_DIR -DIdefix_ENABLE_MPI=ON
+        cmake $IDEFIX_DIR -DIdefix_MPI=ON
         make -j 8
         mpirun -np 4 ./idefix
 

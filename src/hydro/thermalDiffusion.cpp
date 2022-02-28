@@ -25,13 +25,8 @@ void ThermalDiffusion::Init(Input &input, Grid &grid, Hydro *hydroin) {
   if(input.CheckEntry("Hydro","TDiffusion")>=0) {
     if(input.Get<std::string>("Hydro","TDiffusion",1).compare("constant") == 0) {
         this->kappa = input.Get<real>("Hydro","TDiffusion",2);
-        idfx::cout << "ThermalDiffusion: Enabling constant diffusion function with kappa="
-                   << this->kappa << " ."<< std::endl;
-
         this->haveThermalDiffusion = Constant;
       } else if(input.Get<std::string>("Hydro","TDiffusion",1).compare("userdef") == 0) {
-        idfx::cout << "ThermalDiffusion: Enabling user-defined viscosity function."
-                   << std::endl;
         this->haveThermalDiffusion = UserDefFunction;
         this->kappaArr = IdefixArray3D<real>("ThermalDiffusionKappaArray",hydro->data->np_tot[KDIR],
                                                                  hydro->data->np_tot[JDIR],
@@ -53,6 +48,28 @@ void ThermalDiffusion::Init(Input &input, Grid &grid, Hydro *hydroin) {
   idfx::popRegion();
 }
 
+void ThermalDiffusion::ShowConfig() {
+  if(haveThermalDiffusion==Constant) {
+    idfx::cout << "Thermal Diffusion: ENEABLED with constant diffusivity kappa="
+                    << this->kappa << " ."<< std::endl;
+  } else if (haveThermalDiffusion==UserDefFunction) {
+    idfx::cout << "Thermal Diffusion: ENABLED with user-defined diffusivity function."
+                   << std::endl;
+    if(!diffusivityFunc) {
+      IDEFIX_ERROR("No thermal diffusion function has been enrolled");
+    }
+  } else {
+    IDEFIX_ERROR("Unknown thermal diffusion mode");
+  }
+  if(hydro->thermalDiffusionStatus.isExplicit) {
+    idfx::cout << "Thermal Diffusion: uses an explicit time integration." << std::endl;
+  } else if(hydro->thermalDiffusionStatus.isRKL) {
+    idfx::cout << "Thermal Diffusion: uses a Runge-Kutta-Legendre time integration."
+                << std::endl;
+  } else {
+    IDEFIX_ERROR("Unknown time integrator for viscosity.");
+  }
+}
 
 void ThermalDiffusion::EnrollThermalDiffusivity(DiffusivityFunc myFunc) {
   if(this->haveThermalDiffusion < UserDefFunction) {

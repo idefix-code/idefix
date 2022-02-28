@@ -19,11 +19,10 @@ void Axis::Init(Grid &grid, Hydro *h) {
   #if GEOMETRY != SPHERICAL
     IDEFIX_ERROR("Axis boundary conditions are only designed to handle spherical geometry");
   #endif
-  idfx::cout << "Axis: Axis regularisation enabled ";
+
 
   if(fabs((grid.xend[KDIR] - grid.xbeg[KDIR] -2.0*M_PI)) < 1e-10) {
     this->isTwoPi = true;
-    idfx::cout << "with full (2pi) azimuthal extension" << std::endl;;
     #ifdef WITH_MPI
       // Check that there is a domain decomposition in phi
       if(data->mygrid->nproc[KDIR]>1) {
@@ -36,7 +35,6 @@ void Axis::Init(Grid &grid, Hydro *h) {
     #endif
   } else {
     this->isTwoPi = false;
-    idfx::cout << "with partial (<2pi) azimuthal extension" << std::endl;
   }
 
   // Check where the axis is lying.
@@ -84,6 +82,18 @@ void Axis::Init(Grid &grid, Hydro *h) {
       MakeMPIDataypes(JDIR);
     }
   #endif
+}
+
+void Axis::ShowConfig() {
+  idfx::cout << "Axis: Axis regularisation ENABLED." << std::endl;
+  if(isTwoPi) {
+    idfx::cout << "Axis: Full 2pi regularisation around the axis." << std::endl;
+    if(needMPIExchange) {
+      idfx::cout << "Axis: Using MPI exchanges for axis regularisation" << std::endl;
+    }
+  } else {
+    idfx::cout << "Axis: Fractional (2pi/N) regularisation around the axis." << std::endl;
+  }
 }
 
 void Axis::SymmetrizeEx1Side(int jref) {

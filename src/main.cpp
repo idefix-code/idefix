@@ -63,17 +63,13 @@ int main( int argc, char* argv[] ) {
 
   {
     idfx::initialize();
+    ///////////////////////////////
+    // Initialization
+    ///////////////////////////////
 
+    idfx::cout << "Main: Initialization stage." << std::endl;
     Input input(argc, argv);
-    input.PrintLogo();
-    input.PrintParameters();
 
-    if(initKokkosBeforeMPI) {
-      idfx::cout << "Main: detected your configuration needed Kokkos to be initialised before MPI. "
-                 << std::endl;
-    }
-
-    idfx::cout << "Main: Init Grid." << std::endl;
     // Allocate the grid on device
     Grid grid(input);
     // Allocate the grid image on host
@@ -83,26 +79,35 @@ int main( int argc, char* argv[] ) {
     gridHost.MakeGrid(input);
     gridHost.SyncToDevice();
 
-    // Make a datablock
-    idfx::cout << "Main: Init DataBlock." << std::endl;
+    // instantiate required objects.
     DataBlock data;
     data.InitFromGrid(grid, input);
-
-    idfx::cout << "Main: Init Time Integrator." << std::endl;
     TimeIntegrator Tint(input,data);
-
-    idfx::cout << "Main: Init Output Routines." << std::endl;
     Output output(input, data);
-
-    idfx::cout << "Main: Init Setup." << std::endl;
     Setup mysetup(input, grid, data, output);
+    idfx::cout << "Main: initialisation finished." << std::endl;
+
+    ///////////////////////////////
+    // Show configuration
+    ///////////////////////////////
+    input.PrintLogo();
+    if(initKokkosBeforeMPI) {
+      idfx::cout << "Main: detected your configuration needed Kokkos to be initialised before MPI. "
+                 << std::endl;
+    }
+    input.ShowConfig();
+    grid.ShowConfig();
+    data.ShowConfig();
+    Tint.ShowConfig();
 
     // if the user asked for auto-tune, then tune loops now
     if(input.tuningRequested) {
       Tuner::tuneLoops(data, mysetup, input);
     }
-    // Apply initial conditions
 
+    ///////////////////////////////
+    // Initial conditions (or restart)
+    ///////////////////////////////
     // Are we restarting?
     if(input.restartRequested) {
       idfx::cout << "Main: Restarting from dump file."  << std::endl;
@@ -124,6 +129,9 @@ int main( int argc, char* argv[] ) {
       }
     }
 
+    ///////////////////////////////
+    // Main Loop
+    ///////////////////////////////
     idfx::cout << "Main: Cycling Time Integrator..." << std::endl;
 
     Kokkos::Timer timer;

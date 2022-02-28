@@ -40,6 +40,7 @@ class Hydro {
   real GetGamma();
   real CheckDivB();
   void ResetStage();
+  void ShowConfig();
 
   // Our boundary conditions
   HydroBoundary boundary;

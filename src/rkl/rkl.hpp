@@ -26,6 +26,7 @@ class RKLegendre {
   void EvolveStage(real);
   template <int> void CalcParabolicRHS(real);
   void ComputeDt();
+  void ShowConfig();
   void Copy(IdefixArray4D<real>&, IdefixArray4D<real>&);
 
   IdefixArray4D<real> dU;      // variation of main cell-centered conservative variables

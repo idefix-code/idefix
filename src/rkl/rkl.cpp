@@ -50,12 +50,10 @@ void RKLegendre::Copy(IdefixArray4D<real> &out, IdefixArray4D<real> &in) {
 void RKLegendre::Init(Input &input, DataBlock &datain) {
   idfx::pushRegion("RKLegendre::Init");
 
-  idfx::cout << "RKLegendre: enabled." << std::endl;
   // Save the datablock to which we are attached from now on
   this->data = &datain;
 
   cfl_rkl = input.GetOrSet<real> ("RKL","cfl",0, 0.5);
-  idfx::cout << "RKLegendre: RKL cfl set to " << cfl_rkl <<  "." << std::endl;
 
   rmax_par = 100.0;
 
@@ -98,7 +96,7 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
   nvarRKL = varListHost.size();
 
   #ifdef WITH_MPI
-    mpi.Init(datain.mygrid, varListHost, datain.nghost, datain.np_int, haveVs);
+    mpi.Init(datain.mygrid, varListHost, datain.nghost.data(), datain.np_int.data(), haveVs);
   #endif
 
 
@@ -144,6 +142,16 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
   idfx::popRegion();
 }
 
+void RKLegendre::ShowConfig() {
+  #if RKL_ORDER == 1
+    idfx::cout << "RKLegendre: 1st order scheme ENABLED." << std::endl;
+  #elif RKL_ORDER == 2
+    idfx::cout << "RKLegendre: 2nd order scheme ENABLED." << std::endl;
+  #else
+    IDEFIX_ERROR("Unknown RKL scheme order");
+  #endif
+  idfx::cout << "RKLegendre: RKL cfl set to " << cfl_rkl <<  "." << std::endl;
+}
 
 void RKLegendre::Cycle() {
   idfx::pushRegion("RKLegendre::Cycle");

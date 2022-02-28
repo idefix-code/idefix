@@ -77,12 +77,6 @@ void popRegion() {
 
 // Init the iostream with defined rank
 void IdefixOutStream::init(int rank) {
-  std::stringstream sslogFileName;
-  sslogFileName << "idefix." << rank << ".log";
-
-  std::string logFileName(sslogFileName.str());
-  this->my_fstream.open(logFileName.c_str());
-
   if(rank==0)
     this->toscreen=true;
   else
@@ -91,10 +85,14 @@ void IdefixOutStream::init(int rank) {
 
 
 // disable the log file
-void IdefixOutStream::disableLogFile() {
-  my_fstream << "Log files have been disabled (e.g. using -nowrite)." << std::endl;
-  my_fstream.close();
-  this->logFileEnabled = false;
+void IdefixOutStream::enableLogFile() {
+  std::stringstream sslogFileName;
+  sslogFileName << "idefix." << idfx::prank << ".log";
+
+  std::string logFileName(sslogFileName.str());
+  this->my_fstream.open(logFileName.c_str());
+
+  this->logFileEnabled = true;
 }
 
 } // namespace idfx

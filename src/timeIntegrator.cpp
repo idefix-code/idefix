@@ -24,8 +24,6 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
   if(input.CheckEntry("TimeIntegrator","fixed_dt")>0) {
     this->haveFixedDt = true;
     this->fixedDt = input.Get<real>("TimeIntegrator","fixed_dt",0);
-    idfx::cout << "TimeIntegrator: Using fixed dt time stepping. Ignoring CFL and first_dt."
-               << std::endl;
     data.dt=fixedDt;
   }
 
@@ -369,4 +367,29 @@ bool TimeIntegrator::CheckForMaxRuntime() {
   }
   idfx::popRegion();
   return(runtimeReached);
+}
+
+void TimeIntegrator::ShowConfig() {
+  if(nstages==1) {
+    idfx::cout << "TimeIntegrator: using 1st Order (EULER) integrator." << std::endl;
+  } else if(nstages==2) {
+    idfx::cout << "TimeIntegrator: using 2nd Order (RK2) integrator." << std::endl;
+  } else if(nstages==3) {
+    idfx::cout << "TimeIntegrator: using 3rd Order (RK3) integrator." << std::endl;
+  } else {
+    IDEFIX_ERROR("Unknown time integrator");
+  }
+  if(haveFixedDt) {
+    idfx::cout << "TimeIntegrator: Using fixed dt=" << fixedDt << ". Ignoring CFL and first_dt."
+              << std::endl;
+  } else {
+    idfx::cout << "TimeIntegrator: Using adaptive dt with CFL=" << cfl << " ." << std::endl;
+  }
+  if(maxRuntime>0) {
+    idfx::cout << "TimeIntegrator: will stop after " << maxRuntime/3600 << " hours." << std::endl;
+  }
+
+  if(haveRKL) {
+    rkl.ShowConfig();
+  }
 }

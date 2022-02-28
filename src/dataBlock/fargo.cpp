@@ -133,11 +133,9 @@ void Fargo::Init(Input &input, DataBlock *data) {
   this->hydro = &(data->hydro);
 
   // A bit of arithmetic to get the sizes of the working array
-  for(int dir = 0 ; dir < 3 ; dir++) {
-    this->nghost[dir] = data->nghost[dir];
-    this->beg[dir] = data->beg[dir];
-    this->end[dir] = data->end[dir];
-  }
+  this->nghost = data->nghost;
+  this->beg = data->beg;
+  this->end = data->end;
 
   if(input.CheckBlock("Fargo")) {
     std::string opType = input.Get<std::string>("Fargo","velocity",0);
@@ -235,17 +233,26 @@ void Fargo::Init(Input &input, DataBlock *data) {
         vars.push_back(i);
       }
       #if MHD == YES
-        this->mpi.Init(data->mygrid, vars, this->nghost, data->np_int, true);
+        this->mpi.Init(data->mygrid, vars, this->nghost.data(), data->np_int.data(), true);
       #else
-        this->mpi.Init(data->mygrid, vars, this->nghost, data->np_int);
+        this->mpi.Init(data->mygrid, vars, this->nghost.data(), data->np_int.data());
       #endif
     }
   #endif
 
+
+  idfx::popRegion();
+}
+
+void Fargo::ShowConfig() {
+  idfx::pushRegion("Fargo::ShowConfig");
   if(type==userdef) {
-    idfx::cout << "Fargo: Enabled with user-defined velocity function" << std::endl;
+    idfx::cout << "Fargo: ENABLED with user-defined velocity function." << std::endl;
+    if(!fargoVelocityFunc) {
+      IDEFIX_ERROR("No Fargo velocity function has been enabled.");
+    }
   } else if(type==shearingbox) {
-    idfx::cout << "Fargo: Enabled with shearing-box velocity function" << std::endl;
+    idfx::cout << "Fargo: ENABLED with shearing-box velocity function." << std::endl;
   } else {
     IDEFIX_ERROR("Something went wrong during Fargo initialisation");
   }
@@ -267,7 +274,6 @@ void Fargo::EnrollVelocity(FargoVelocityFunc myFunc) {
                  "to be set to userdef in .ini file");
   }
   this->fargoVelocityFunc = myFunc;
-  idfx::cout << "Fargo: User-defined velocity function has been enrolled." << std::endl;
 }
 
 // This function fetches Fargo velocity when required
@@ -462,6 +468,11 @@ void Fargo::StoreToScratch() {
 
 void Fargo::ShiftSolution(const real t, const real dt) {
   idfx::pushRegion("Fargo::ShiftSolution");
+
+  #if GEOMETRY == CYLINDRICAL
+    IDEFIX_ERROR("Fargo is not compatible with cylindrical geometry "
+                 "(which is intended to be 2D axisymmetric)");
+  #else
 
   // Refresh the fargo velocity function
   if(type==userdef) {
@@ -921,6 +932,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
   this->hydro->boundary.ReconstructVcField(Uc);
 
 #endif // MHD
+#endif // GEOMETRY==CYLINDRICAL
 
   idfx::popRegion();
 }

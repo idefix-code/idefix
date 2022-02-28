@@ -24,6 +24,8 @@ class ThermalDiffusion {
 
   void Init(Input &, Grid &, Hydro *);  // Initialisation
 
+  void ShowConfig(); // display configuration
+
   void AddDiffusiveFlux(int, const real);
 
   // Enroll user-defined viscous diffusivity

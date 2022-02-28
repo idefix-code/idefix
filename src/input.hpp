@@ -22,7 +22,7 @@ class Input {
  public:
   // Constructor from a file
   Input (int, char ** );
-  void PrintParameters();
+  void ShowConfig();
 
   // Accessor to input parameters
   // the parameters are always: BlockName, EntryName, ParameterNumber (starting from 0)

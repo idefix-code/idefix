@@ -26,6 +26,7 @@ class Viscosity {
   Viscosity();  // Default (empty) constructor
 
   void Init(Input &, Grid &, Hydro *);  // Initialisation
+  void ShowConfig();                    // print configuration
 
   void AddViscousFlux(int, const real);
 

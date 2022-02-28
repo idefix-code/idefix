@@ -24,6 +24,7 @@ class Axis {
   void SymmetrizeEx1Side(int);         // Symmetrize on a specific side (internal method)
   void EnforceAxisBoundary(int side);   // Enforce the boundary conditions (along X2)
   void ReconstructBx2s();
+  void ShowConfig();
 
 
  private:

@@ -102,26 +102,5 @@ for rep in $rep_3D_mpi_list; do
     cd $TEST_DIR
 done
 
-# Test restart functions with OT3D which have generated a dump during the first pass
-rep=OrszagTang3D
-cd $TMP_DIR/MHD/$rep
-# remove generated vtk from previous run
-mv data.0001.vtk data.0001.old.vtk
-echo "***********************************************"
-echo "Running  $rep with restart dump # 1"
-echo "***********************************************"
-mpirun -np 8 ./idefix -restart 1 -dec 2 2 2 -nolog || { echo "!!!! MHD $rep failed running restart dump validation"; exit 1; }
-cd python
-echo "***********************************************"
-echo "Testing  $rep with restart dump # 1"
-echo "***********************************************"
-python3 testidefix.py -noplot || { echo "!!!! MHD $rep failed checking restart dump validation"; exit 1; }
-cd ..
-echo "***********************************************"
-echo "Checking bitwise compatibility of output from restarts"
-echo "***********************************************"
-diff data.0001.vtk data.0001.old.vtk || { echo "!!!! MHD $rep failed: restart dumps do not produce exactly the same results"; exit 1; }
-echo "Success"
-
 echo "Cleaning temporary directory $TMP_DIR"
 rm -rf $TMP_DIR

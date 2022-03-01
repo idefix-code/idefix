@@ -121,7 +121,7 @@ void Gravity::ComputeGravity() {
 
 void Gravity::EnrollPotential(GravPotentialFunc myFunc) {
   if(!this->haveUserDefPotential) {
-    IDEFIX_ERROR("In order to enroll your gravitational potential, "
+    IDEFIX_WARNING("In order to enroll your gravitational potential, "
                  "you need to enable it first in the .ini file "
                  "with the potential entry in [Gravity].");
   }
@@ -130,7 +130,7 @@ void Gravity::EnrollPotential(GravPotentialFunc myFunc) {
 
 void Gravity::EnrollBodyForce(BodyForceFunc myFunc) {
   if(!this->haveBodyForce) {
-    IDEFIX_ERROR("In order to enroll your body force, "
+    IDEFIX_WARNING("In order to enroll your body force, "
                  "you need to enable it first in the .ini file "
                  "with the bodyForce entry in [Gravity].");
   }

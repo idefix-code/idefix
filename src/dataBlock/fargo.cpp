@@ -270,7 +270,7 @@ void Fargo::ShowConfig() {
 
 void Fargo::EnrollVelocity(FargoVelocityFunc myFunc) {
   if(this->type!=userdef) {
-    IDEFIX_ERROR("Fargo velocity function enrollment requires Hydro/Fargo "
+    IDEFIX_WARNING("Fargo velocity function enrollment requires Hydro/Fargo "
                  "to be set to userdef in .ini file");
   }
   this->fargoVelocityFunc = myFunc;

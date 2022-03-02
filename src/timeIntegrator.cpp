@@ -153,26 +153,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     rkl.Cycle();
   }
 
-  // Apply Boundary conditions
-  data.SetBoundaries();
 
-  // Remove Fargo velocity so that the integrator works on the residual
-  if(data.haveFargo) data.fargo.SubstractVelocity(data.t);
-
-  // Convert current state into conservative variable and save it
-  data.hydro.ConvertPrimToCons();
-
-  // Store initial stage for multi-stage time integrators
-  if(nstages>1) {
-    Kokkos::deep_copy(Uc0,Uc);
-#if MHD == YES
-  #ifndef EVOLVE_VECTOR_POTENTIAL
-    Kokkos::deep_copy(Vs0,Vs);
-  #else
-    Kokkos::deep_copy(Ve0,Ve);
-  #endif
-#endif
-  }
 
   // save t at the begining of the cycle
   const real t0 = data.t;
@@ -185,6 +166,26 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 #endif
 
   for(int stage=0; stage < nstages ; stage++) {
+    // Apply Boundary conditions
+    data.SetBoundaries();
+
+    // Remove Fargo velocity so that the integrator works on the residual
+    if(data.haveFargo) data.fargo.SubstractVelocity(data.t);
+
+    // Convert current state into conservative variable and save it
+    data.hydro.ConvertPrimToCons();
+
+  // Store initial stage for multi-stage time integrators
+    if(nstages>1 && stage==0) {
+      Kokkos::deep_copy(Uc0,Uc);
+  #if MHD == YES
+    #ifndef EVOLVE_VECTOR_POTENTIAL
+      Kokkos::deep_copy(Vs0,Vs);
+    #else
+      Kokkos::deep_copy(Ve0,Ve);
+    #endif
+  #endif
+    }
     // If gravity is needed, update it
     if(data.haveGravity) data.gravity.ComputeGravity();
 
@@ -267,20 +268,11 @@ void TimeIntegrator::Cycle(DataBlock &data) {
       data.fargo.ShiftSolution(t0,data.dt);
     }
 
-
     // Back to using Vc
     data.hydro.ConvertConsToPrim();
 
-    // Check if this is our last stage
-    if(stage<nstages-1) {
-      // No: Apply boundary conditions & Recompute conservative variables
-      // Add back fargo velocity so that boundary conditions are applied on the total V
-      if(data.haveFargo) data.fargo.AddVelocity(data.t);
-      data.SetBoundaries();
-      // And substract it back for next stage
-      if(data.haveFargo) data.fargo.SubstractVelocity(data.t);
-      data.hydro.ConvertPrimToCons();
-    }
+    // Add back fargo velocity so that boundary conditions are applied on the total V
+    if(data.haveFargo) data.fargo.AddVelocity(data.t);
   }
 
 

@@ -275,10 +275,6 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     if(data.haveFargo) data.fargo.AddVelocity(data.t);
   }
 
-
-  // Add back Fargo velocity so that updated Vc stores the total Velocity
-  if(data.haveFargo) data.fargo.AddVelocity(data.t);
-
   // Wait for hydro/newDt MPI reduction
 #ifdef WITH_MPI
   if(idfx::psize>1) {

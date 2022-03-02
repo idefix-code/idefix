@@ -175,16 +175,16 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     // Convert current state into conservative variable and save it
     data.hydro.ConvertPrimToCons();
 
-  // Store initial stage for multi-stage time integrators
+    // Store initial stage for multi-stage time integrators
     if(nstages>1 && stage==0) {
       Kokkos::deep_copy(Uc0,Uc);
-  #if MHD == YES
-    #ifndef EVOLVE_VECTOR_POTENTIAL
-      Kokkos::deep_copy(Vs0,Vs);
-    #else
-      Kokkos::deep_copy(Ve0,Ve);
-    #endif
-  #endif
+      #if MHD == YES
+        #ifndef EVOLVE_VECTOR_POTENTIAL
+          Kokkos::deep_copy(Vs0,Vs);
+        #else
+          Kokkos::deep_copy(Ve0,Ve);
+        #endif
+      #endif
     }
     // If gravity is needed, update it
     if(data.haveGravity) data.gravity.ComputeGravity();

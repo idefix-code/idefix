@@ -67,8 +67,9 @@ int main( int argc, char* argv[] ) {
     // Initialization
     ///////////////////////////////
 
-    idfx::cout << "Main: Initialization stage." << std::endl;
     Input input(argc, argv);
+    input.PrintLogo();
+    idfx::cout << "Main: Initialization stage." << std::endl;
 
     // Allocate the grid on device
     Grid grid(input);
@@ -90,7 +91,6 @@ int main( int argc, char* argv[] ) {
     ///////////////////////////////
     // Show configuration
     ///////////////////////////////
-    input.PrintLogo();
     if(initKokkosBeforeMPI) {
       idfx::cout << "Main: detected your configuration needed Kokkos to be initialised before MPI. "
                  << std::endl;

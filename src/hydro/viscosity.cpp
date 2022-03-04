@@ -112,7 +112,7 @@ void Viscosity::ShowConfig() {
 
 void Viscosity::EnrollViscousDiffusivity(ViscousDiffusivityFunc myFunc) {
   if(this->haveViscosity < UserDefFunction) {
-    IDEFIX_ERROR("Viscous diffusivity enrollment requires Hydro/Viscosity "
+    IDEFIX_WARNING("Viscous diffusivity enrollment requires Hydro/Viscosity "
                  "to be set to userdef in .ini file");
   }
   this->viscousDiffusivityFunc = myFunc;

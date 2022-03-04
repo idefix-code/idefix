@@ -73,7 +73,7 @@ void ThermalDiffusion::ShowConfig() {
 
 void ThermalDiffusion::EnrollThermalDiffusivity(DiffusivityFunc myFunc) {
   if(this->haveThermalDiffusion < UserDefFunction) {
-    IDEFIX_ERROR("Thermal diffusivity enrollment requires Hydro/ThermalDiffusion "
+    IDEFIX_WARNING("Thermal diffusivity enrollment requires Hydro/ThermalDiffusion "
                  "to be set to userdef in .ini file");
   }
   this->diffusivityFunc = myFunc;

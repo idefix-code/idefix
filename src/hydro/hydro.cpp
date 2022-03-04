@@ -414,7 +414,7 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
 
 void Hydro::EnrollIsoSoundSpeed(IsoSoundSpeedFunc myFunc) {
   if(this->haveIsoSoundSpeed != UserDefFunction) {
-    IDEFIX_ERROR("Isothermal sound speed enrollment requires Hydro/csiso "
+    IDEFIX_WARNING("Isothermal sound speed enrollment requires Hydro/csiso "
                  " to be set to userdef in .ini file");
   }
   #if HAVE_ENERGY
@@ -473,7 +473,7 @@ void Hydro::EnrollOhmicDiffusivity(DiffusivityFunc myFunc) {
     IDEFIX_ERROR("This function can only be used with the MHD solver.");
   #endif
   if(this->resistivityStatus.status < UserDefFunction) {
-    IDEFIX_ERROR("Ohmic diffusivity enrollment requires Hydro/Resistivity "
+    IDEFIX_WARNING("Ohmic diffusivity enrollment requires Hydro/Resistivity "
                  "to be set to userdef in .ini file");
   }
   this->ohmicDiffusivityFunc = myFunc;
@@ -484,7 +484,7 @@ void Hydro::EnrollAmbipolarDiffusivity(DiffusivityFunc myFunc) {
     IDEFIX_ERROR("This function can only be used with the MHD solver.");
   #endif
   if(this->ambipolarStatus.status < UserDefFunction) {
-    IDEFIX_ERROR("Ambipolar diffusivity enrollment requires Hydro/Ambipolar "
+    IDEFIX_WARNING("Ambipolar diffusivity enrollment requires Hydro/Ambipolar "
                  "to be set to userdef in .ini file");
   }
   this->ambipolarDiffusivityFunc = myFunc;
@@ -495,7 +495,7 @@ void Hydro::EnrollHallDiffusivity(DiffusivityFunc myFunc) {
     IDEFIX_ERROR("This function can only be used with the MHD solver.");
   #endif
   if(this->hallStatus.status < UserDefFunction) {
-    IDEFIX_ERROR("Hall diffusivity enrollment requires Hydro/Hall "
+    IDEFIX_WARNING("Hall diffusivity enrollment requires Hydro/Hall "
                  "to be set to userdef in .ini file");
   }
   this->hallDiffusivityFunc = myFunc;

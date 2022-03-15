@@ -107,7 +107,7 @@ void Setup::InitFlow(DataBlock &data) {
 #else
                 d.Vc(RHO,k,j,i) = 1.0;
 #endif
-#ifdef ISOTHERMAL
+#ifndef ISOTHERMAL
                 d.Vc(PRS,k,j,i) = d.Vc(RHO,k,j,i)*cs2/gammaIdeal;
 #endif
                 d.Vc(VX1,k,j,i) = 1e-5*sin(2.0*M_PI*(y+4*z));

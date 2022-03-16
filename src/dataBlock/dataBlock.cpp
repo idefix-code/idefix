@@ -170,3 +170,22 @@ void DataBlock::ShowConfig() {
   if(haveFargo) fargo.ShowConfig();
   if(haveGravity) gravity.ShowConfig();
 }
+
+
+real DataBlock::ComputeTimestep() {
+  // Compute the timestep using all of the enabled modules in the current dataBlock
+
+  // First with the hydro block
+  auto InvDt = hydro.InvDt;
+  real dt;
+  idefix_reduce("Timestep_reduction",
+          beg[KDIR], end[KDIR],
+          beg[JDIR], end[JDIR],
+          beg[IDIR], end[IDIR],
+          KOKKOS_LAMBDA (int k, int j, int i, real &dtmin) {
+                  dtmin=FMIN(ONE_F/InvDt(k,j,i),dtmin);
+              },
+          Kokkos::Min<real>(dt));
+  Kokkos::fence();
+  return(dt);
+}

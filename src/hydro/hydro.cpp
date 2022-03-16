@@ -278,8 +278,6 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   Uc = IdefixArray4D<real>("Hydro_Uc", NVAR,
                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  Uc0 = IdefixArray4D<real>("Hydro_Uc0", NVAR,
-                           data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
   data->states["current"].PushArray(Uc, State::center, "Hydro_Uc");
 
@@ -302,15 +300,9 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
         Ve = IdefixArray4D<real>("Hydro_Ve", AX3e+1,
               data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
 
-        Ve0 = IdefixArray4D<real>("Hydro_Ve0", AX3e+1,
-                data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
-
         data->states["current"].PushArray(Ve, State::center, "Hydro_Ve");
       #endif
     #else // EVOLVE_VECTOR_POTENTIAL
-      // NB: we either need Ve0 or Vs0 to evolve B
-      Vs0 = IdefixArray4D<real>("Hydro_Vs0", DIMENSIONS,
-              data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
       data->states["current"].PushArray(Vs, State::center, "Hydro_Vs");
     #endif // EVOLVE_VECTOR_POTENTIAL
     this->emf.Init(input, this);

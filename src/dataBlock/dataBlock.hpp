@@ -81,6 +81,7 @@ class DataBlock {
   void EvolveStage();             ///< Evolve this DataBlock by dt
   void SetBoundaries();       ///< Enforce boundary conditions to this datablock
   void ShowConfig();              ///< Show the datablock's configuration
+  real ComputeTimestep();         ///< compute maximum timestep from current state of affairs
 
   void ResetStage();              ///< Reset the variables needed at each major integration Stage
 

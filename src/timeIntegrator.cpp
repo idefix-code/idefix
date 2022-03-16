@@ -37,6 +37,16 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
   this->cyclePeriod = input.GetOrSet<int>("Output","log",0, 100);
   this->maxRuntime = 3600*input.GetOrSet<double>("TimeIntegrator","max_runtime",0.0,-1.0);
 
+  #if defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_CUDA)
+  // When Cuda/HIP is enabled, increase the periodicity of nan checks, as this takes a lot of time
+  // on GPUs
+   checkNanPeriodicity = 100;
+  #endif
+  
+  // override default check nan periodicity if user decides to
+  checkNanPeriodicity = input.GetOrSet<int>("TimeIntegrator","check_nan", 0,
+                                            checkNanPeriodicity);
+
   data.t=0.0;
   ncycles=0;
 
@@ -62,6 +72,8 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
     data.states["begin"] = StateContainer();
     data.states["begin"].AllocateAs(data.states["current"]);
   }
+
+  
 
   idfx::popRegion();
 }
@@ -188,30 +200,20 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
     // Look for Nans every now and then (this actually cost a lot of time on GPUs
     // because streams are divergent)
-    if(ncycles%100==0) if(data.CheckNan()>0) IDEFIX_ERROR("Nan found after integration cycle");
+    if(ncycles%checkNanPeriodicity==0) {
+      if(data.CheckNan()>0) IDEFIX_ERROR("Nan found after integration cycle");
+    }
 
     // Compute next time_step during first stage
     if(stage==0) {
       if(!haveFixedDt) {
-        idefix_reduce("Timestep_reduction",
-          data.beg[KDIR], data.end[KDIR],
-          data.beg[JDIR], data.end[JDIR],
-          data.beg[IDIR], data.end[IDIR],
-          KOKKOS_LAMBDA (int k, int j, int i, real &dtmin) {
-                  dtmin=FMIN(ONE_F/InvDt(k,j,i),dtmin);
-              },
-          Kokkos::Min<real>(newdt));
-
-        Kokkos::fence();
-
-        newdt=newdt*cfl;
-
-  #ifdef WITH_MPI
-        if(idfx::psize>1) {
-          MPI_SAFE_CALL(MPI_Iallreduce(MPI_IN_PLACE, &newdt, 1, realMPI, MPI_MIN, MPI_COMM_WORLD,
-                                       &dtReduce));
-        }
-  #endif
+        newdt = cfl*data.ComputeTimestep();
+        #ifdef WITH_MPI
+          if(idfx::psize>1) {
+            MPI_SAFE_CALL(MPI_Iallreduce(MPI_IN_PLACE, &newdt, 1, realMPI, MPI_MIN, MPI_COMM_WORLD,
+                                        &dtReduce));
+          }
+        #endif
       }
     }
 
@@ -221,18 +223,11 @@ void TimeIntegrator::Cycle(DataBlock &data) {
       real wcs=wc[stage-1];
       real w0s=w0[stage-1];
       data.states["current"].AddAndStore(wcs, w0s, data.states["begin"]);
-      
+
       // update t
       data.t = wcs*data.t + w0s*t0;
-
-      // Tentatively high order fargo
-      //if(data.haveFargo) data.fargo.ShiftSolution(data.t,wcs*data.dt);
-    } //else {
-      //if(data.haveFargo) data.fargo.ShiftSolution(data.t,data.dt);
-    //}
-
+    } 
     // Shift solution according to fargo if this is our last stage
-
     if(data.haveFargo && stage==nstages-1) {
       data.fargo.ShiftSolution(t0,data.dt);
     }

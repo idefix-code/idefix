@@ -67,7 +67,9 @@ class DataBlock {
 
   Grid *mygrid;                ///< Parent grid object
 
-  std::map<std::string, StateContainer> states;       ///< conservative state of the datablock (contains references to dedicated objects)
+  std::map<std::string, StateContainer> states;
+                                ///< conservative state of the datablock
+                                ///< (contains references to dedicated objects)
 
   Hydro hydro;                  ///< The Hydro object attached to this datablock
 

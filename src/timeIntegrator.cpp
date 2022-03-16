@@ -7,6 +7,7 @@
 
 #include <cstdio>
 #include <iomanip>
+#include <string>
 #include "idefix.hpp"
 #include "timeIntegrator.hpp"
 #include "input.hpp"
@@ -38,11 +39,11 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
   this->maxRuntime = 3600*input.GetOrSet<double>("TimeIntegrator","max_runtime",0.0,-1.0);
 
   #if defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_CUDA)
-  // When Cuda/HIP is enabled, increase the periodicity of nan checks, as this takes a lot of time
-  // on GPUs
-   checkNanPeriodicity = 100;
+    // When Cuda/HIP is enabled, increase the periodicity of nan checks, as this takes a lot of time
+    // on GPUs
+    checkNanPeriodicity = 100;
   #endif
-  
+
   // override default check nan periodicity if user decides to
   checkNanPeriodicity = input.GetOrSet<int>("TimeIntegrator","check_nan", 0,
                                             checkNanPeriodicity);
@@ -72,8 +73,6 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
     data.states["begin"] = StateContainer();
     data.states["begin"].AllocateAs(data.states["current"]);
   }
-
-  
 
   idfx::popRegion();
 }
@@ -150,20 +149,15 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
 void TimeIntegrator::Cycle(DataBlock &data) {
   // Do one cycle
   IdefixArray3D<real> InvDt = data.hydro.InvDt;
-
   real newdt;
-
 
   idfx::pushRegion("TimeIntegrator::Cycle");
 
-  //if(timer.seconds()-lastLog >= 1.0) {
   if(ncycles%cyclePeriod==0) ShowLog(data);
 
   if(haveRKL && (ncycles%2)==1) {    // Runge-Kutta-Legendre cycle
     rkl.Cycle();
   }
-
-
 
   // save t at the begining of the cycle
   const real t0 = data.t;
@@ -175,6 +169,9 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   MPI_Request dtReduce;
 #endif
 
+  /////////////////////////////////////////////////
+  // BEGIN STAGES LOOP                           //
+  /////////////////////////////////////////////////
   for(int stage=0; stage < nstages ; stage++) {
     // Apply Boundary conditions
     data.SetBoundaries();
@@ -201,7 +198,9 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     // Look for Nans every now and then (this actually cost a lot of time on GPUs
     // because streams are divergent)
     if(ncycles%checkNanPeriodicity==0) {
-      if(data.CheckNan()>0) IDEFIX_ERROR("Nan found after integration cycle");
+      if(data.CheckNan()>0) {
+        throw std::runtime_error(std::string("Nan found after integration cycle"));
+      }
     }
 
     // Compute next time_step during first stage
@@ -226,7 +225,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
       // update t
       data.t = wcs*data.t + w0s*t0;
-    } 
+    }
     // Shift solution according to fargo if this is our last stage
     if(data.haveFargo && stage==nstages-1) {
       data.fargo.ShiftSolution(t0,data.dt);
@@ -238,8 +237,11 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     // Add back fargo velocity so that boundary conditions are applied on the total V
     if(data.haveFargo) data.fargo.AddVelocity(data.t);
   }
+  /////////////////////////////////////////////////
+  // END STAGES LOOP                             //
+  /////////////////////////////////////////////////
 
-  // Wait for hydro/newDt MPI reduction
+  // Wait for dt MPI reduction
 #ifdef WITH_MPI
   if(idfx::psize>1) {
     MPI_SAFE_CALL(MPI_Wait(&dtReduce, MPI_STATUS_IGNORE));
@@ -275,7 +277,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     if(data.dt < 1e-15) {
       std::stringstream msg;
       msg << "dt = " << data.dt << " is too small.";
-      IDEFIX_ERROR(msg);
+      throw std::runtime_error(msg.str());
     }
   } else {
     data.dt = fixedDt;

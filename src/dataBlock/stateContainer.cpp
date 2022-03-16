@@ -6,16 +6,18 @@
 // ***********************************************************************************
 
 #include "stateContainer.hpp"
-#include "idefix.hpp"
 #include <vector>
 #include <string>
+#include "idefix.hpp"
+
 
 StateContainer::StateContainer() {
   // do nothing
 }
 
 void StateContainer::CopyFrom(StateContainer &in) {
-  // Make a deep copy from in 
+  idfx::pushRegion("StateContainer::CopyFrom");
+  // Make a deep copy from in
   if(in.stateVector.size() != this->stateVector.size()) {
     IDEFIX_ERROR("You cannot copy two state containers of different sizes.");
   }
@@ -23,10 +25,11 @@ void StateContainer::CopyFrom(StateContainer &in) {
   for(int s = 0 ; s < this->stateVector.size() ; s++) {
     Kokkos::deep_copy(this->stateVector[s].array, in.stateVector[s].array);
   }
-  return;
+  idfx::popRegion();
 }
 
 void StateContainer::AllocateAs(StateContainer &in) {
+  idfx::pushRegion("StateContainer::AllocateAs");
   // Allocate arrays of current StateContainer with the same shape as in
   for(State stateIn : in.stateVector) {
     // We first do a shallow copy
@@ -39,9 +42,12 @@ void StateContainer::AllocateAs(StateContainer &in) {
     // And add the new state to our stateVector
     this->stateVector.push_back(stateOut);
   }
+  idfx::popRegion();
 }
 
-void StateContainer::PushArray(IdefixArray4D<real>& in, State::TypeLocalisation loc, std::string name) {
+void StateContainer::PushArray(IdefixArray4D<real>& in,
+                               State::TypeLocalisation loc,
+                               std::string name) {
   idfx::pushRegion("StateContainer::PushArray");
   State state;
   state.array = in;
@@ -63,15 +69,14 @@ void StateContainer::AddAndStore(real wl, real wr, StateContainer & in) {
     State stateOut = this->stateVector[s];
     auto Vin = stateIn.array;
     auto Vout = stateOut.array;
-    idefix_for("StateContainer::AddAndStore", 
-                0, Vin.extent(0), 
+    idefix_for("StateContainer::AddAndStore",
+                0, Vin.extent(0),
                 0, Vin.extent(1),
                 0, Vin.extent(2),
                 0, Vin.extent(3),
                 KOKKOS_LAMBDA(int n, int k, int j, int i) {
                    Vout(n,k,j,i) = wl * Vout(n,k,j,i) + wr * Vin(n,k,j,i);
-                } ); 
+                } );
   }
   idfx::popRegion();
-
 }

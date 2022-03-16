@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - use input::Get<T> and input::GetOrSet<T> instead of the old input:GetInt, input:GetReal... the new functions have a better error handling, and also allows explicit default values.
 - ensure that error messages are sent to std::cerr using a dedicated stream
 - added a parameter check_nan to control the periodicity of Nan checks in the time integration
+- added exception handling for the time integration, which saves a final vtk when a error is detected in the time integration loop
 
 ### Added
 - isotropic thermal diffusion (anisotropic diffusion in MHD will come later)

@@ -82,6 +82,9 @@ This section is used by *Idefix* time integrator class to define the time integr
 | nstages        | integer            | | number of stages of the integrator. Can be  either 1, 2 or 3. 1=First order Euler method,               |
 |                |                    | | 2, 3 = second and third order  TVD Runge-Kutta                                                          |
 +----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
+| check_nan      | integer            | | number of time integration cycles between each Nan verification. Default is one on CPUs and 100 on GPUs.| 
+|                |                    | | Note that Nan checks are slow on GPUs, and low values of ``check_nan`` are not recommended.             |                                                        |
++----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
 
 .. note::
     The ``first_dt`` is recommended since wave speeds are evaluated when Riemann problems are solved, hence the CFL

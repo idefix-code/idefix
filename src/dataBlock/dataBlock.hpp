@@ -16,6 +16,7 @@
 #include "hydro.hpp"
 #include "fargo.hpp"
 #include "gravity.hpp"
+#include "stateContainer.hpp"
 
 //TODO(lesurg) What is this standing for?
 #define BOUNDARY_
@@ -64,6 +65,8 @@ class DataBlock {
   real t;                      ///< Current time
 
   Grid *mygrid;                ///< Parent grid object
+
+  StateContainer states;       ///< conservative state of the datablock (contains references to dedicated objects)
 
   Hydro hydro;                  ///< The Hydro object attached to this datablock
 

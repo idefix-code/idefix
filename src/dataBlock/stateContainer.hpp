@@ -1,4 +1,4 @@
-/ ***********************************************************************************
+// ***********************************************************************************
 // Idefix MHD astrophysical code
 // Copyright(C) 2020-2022 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
 // and other code contributors
@@ -18,16 +18,15 @@ class State{
 
   IdefixArray4D<real> array;
   TypeLocalisation localisation;
-  std::vector<std::string> arraysName; // Name of each 3D subarrays (when applicable)
-  std::string stateName;               // Name of the fulle state (always applicable)
+  std::string name;               // Name of the fulle state (always applicable)
 };
 
 class StateContainer {
  public:
   StateContainer();
   StateContainer Copy();    // Return a deepcopy of the current state container
-  void PushStateArray(&IdefixArray4D<real>, State::TypeLocalisation, std::string);
-  void AddAndStore(&StateContainer, real, real);
+  void PushArray(IdefixArray4D<real> &, State::TypeLocalisation, std::string);
+  void AddAndStore(real, real, StateContainer&);
 
 
  private:

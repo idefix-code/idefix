@@ -61,7 +61,7 @@ void Analysis(DataBlock& data) {
   #endif
 
   // Trigger dump creation
-  myOutput->ForceWrite(data);
+  myOutput->ForceWriteDump(data);
 
   // Load back the restart dump
   myOutput->RestartFromDump(data, outnum);

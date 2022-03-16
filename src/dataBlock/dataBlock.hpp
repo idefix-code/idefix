@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <string>
+#include <map>
 #include "idefix.hpp"
 #include "grid.hpp"
 #include "gridHost.hpp"
@@ -66,7 +67,7 @@ class DataBlock {
 
   Grid *mygrid;                ///< Parent grid object
 
-  StateContainer states;       ///< conservative state of the datablock (contains references to dedicated objects)
+  std::map<std::string, StateContainer> states;       ///< conservative state of the datablock (contains references to dedicated objects)
 
   Hydro hydro;                  ///< The Hydro object attached to this datablock
 

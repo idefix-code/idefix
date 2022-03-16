@@ -24,7 +24,8 @@ class State{
 class StateContainer {
  public:
   StateContainer();
-  StateContainer Copy();    // Return a deepcopy of the current state container
+  void CopyFrom(StateContainer &);    // Return a deepcopy of the current state container
+  void AllocateAs(StateContainer &);    // Return a deepcopy of the current state container
   void PushArray(IdefixArray4D<real> &, State::TypeLocalisation, std::string);
   void AddAndStore(real, real, StateContainer&);
 

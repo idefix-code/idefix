@@ -124,6 +124,12 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
   // Iniaitlize the geometry
   this->MakeGeometry();
 
+  // Initialise the state containers
+  // (by default, datablock only initialise the current state, which is a reference
+  // to arrays in the daughter object
+
+  this->states["current"] = StateContainer();
+
   // Initialize the hydro object attached to this datablock
   this->hydro.Init(input, grid, this);
 

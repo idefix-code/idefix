@@ -10,6 +10,7 @@
 #include "idefix.hpp"
 #include "timeIntegrator.hpp"
 #include "input.hpp"
+#include "stateContainer.hpp"
 
 
 TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
@@ -54,6 +55,12 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
   if(data.hydro.haveRKLParabolicTerms) {
     rkl.Init(input,data);
     haveRKL = true;
+  }
+
+  // If multi-sage, create a new state in the datablock called "begin"
+  if(nstages>1) {
+    data.states["begin"] = StateContainer();
+    data.states["begin"].AllocateAs(data.states["current"]);
   }
 
   idfx::popRegion();
@@ -130,16 +137,7 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
 // Compute one full cycle of the time Integrator
 void TimeIntegrator::Cycle(DataBlock &data) {
   // Do one cycle
-  IdefixArray4D<real> Uc = data.hydro.Uc;
-  IdefixArray4D<real> Vs = data.hydro.Vs;
-  IdefixArray4D<real> Uc0 = data.hydro.Uc0;
   IdefixArray3D<real> InvDt = data.hydro.InvDt;
-  #ifdef EVOLVE_VECTOR_POTENTIAL
-  IdefixArray4D<real> Ve0 = data.hydro.Ve0;
-  IdefixArray4D<real> Ve = data.hydro.Ve;
-  #else
-  IdefixArray4D<real> Vs0 = data.hydro.Vs0;
-  #endif
 
   real newdt;
 
@@ -175,16 +173,9 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     // Convert current state into conservative variable and save it
     data.hydro.ConvertPrimToCons();
 
-    // Store initial stage for multi-stage time integrators
+    // Store (deep copy) initial stage for multi-stage time integrators
     if(nstages>1 && stage==0) {
-      Kokkos::deep_copy(Uc0,Uc);
-      #if MHD == YES
-        #ifndef EVOLVE_VECTOR_POTENTIAL
-          Kokkos::deep_copy(Vs0,Vs);
-        #else
-          Kokkos::deep_copy(Ve0,Ve);
-        #endif
-      #endif
+      data.states["begin"].CopyFrom(data.states["current"]);
     }
     // If gravity is needed, update it
     if(data.haveGravity) data.gravity.ComputeGravity();
@@ -229,30 +220,8 @@ void TimeIntegrator::Cycle(DataBlock &data) {
       // do the partial evolution required by the multi-step
       real wcs=wc[stage-1];
       real w0s=w0[stage-1];
-
-      idefix_for("Cycle-update",0,NVAR,0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
-        KOKKOS_LAMBDA (int n, int k, int j, int i) {
-          Uc(n,k,j,i) = wcs*Uc(n,k,j,i) + w0s*Uc0(n,k,j,i);
-      });
-
-      #if MHD==YES
-        #ifndef EVOLVE_VECTOR_POTENTIAL
-          idefix_for("Cycle-update-Vs",0,DIMENSIONS,0,data.np_tot[KDIR]+KOFFSET,
-                                                0,data.np_tot[JDIR]+JOFFSET,
-                                                0,data.np_tot[IDIR]+IOFFSET,
-            KOKKOS_LAMBDA (int n, int k, int j, int i) {
-              Vs(n,k,j,i) = wcs*Vs(n,k,j,i) + w0s*Vs0(n,k,j,i);
-          });
-        #else
-          idefix_for("Cycle-update-Ve",0,AX3e+1,0,data.np_tot[KDIR]+KOFFSET,
-                                                0,data.np_tot[JDIR]+JOFFSET,
-                                                0,data.np_tot[IDIR]+IOFFSET,
-            KOKKOS_LAMBDA (int n, int k, int j, int i) {
-              Ve(n,k,j,i) = wcs*Ve(n,k,j,i) + w0s*Ve0(n,k,j,i);
-          });
-          data.hydro.emf.ComputeMagFieldFromA(Ve, Vs);
-        #endif
-      #endif
+      data.states["current"].AddAndStore(wcs, w0s, data.states["begin"]);
+      
       // update t
       data.t = wcs*data.t + w0s*t0;
 

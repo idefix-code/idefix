@@ -14,10 +14,21 @@ StateContainer::StateContainer() {
   // do nothing
 }
 
-StateContainer StateContainer::Copy() {
-  // Return a deepcopy of the current state container
-  StateContainer sc;
-  for(State stateIn : this->stateVector) {
+void StateContainer::CopyFrom(StateContainer &in) {
+  // Make a deep copy from in 
+  if(in.stateVector.size() != this->stateVector.size()) {
+    IDEFIX_ERROR("You cannot copy two state containers of different sizes.");
+  }
+
+  for(int s = 0 ; s < this->stateVector.size() ; s++) {
+    Kokkos::deep_copy(this->stateVector[s].array, in.stateVector[s].array);
+  }
+  return;
+}
+
+void StateContainer::AllocateAs(StateContainer &in) {
+  // Allocate arrays of current StateContainer with the same shape as in
+  for(State stateIn : in.stateVector) {
     // We first do a shallow copy
     State stateOut = stateIn;
     // But then reinit the array
@@ -25,12 +36,10 @@ StateContainer StateContainer::Copy() {
                                                             stateIn.array.extent(1),
                                                             stateIn.array.extent(2),
                                                             stateIn.array.extent(3));
-    // A do a deep copy
-    Kokkos::deep_copy(stateOut.array, stateIn.array);
-    sc.stateVector.push_back(stateOut);
+    // And add the new state to our stateVector
+    this->stateVector.push_back(stateOut);
   }
-  return(sc);
-}    
+}
 
 void StateContainer::PushArray(IdefixArray4D<real>& in, State::TypeLocalisation loc, std::string name) {
   idfx::pushRegion("StateContainer::PushArray");

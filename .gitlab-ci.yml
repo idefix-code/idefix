@@ -5,6 +5,7 @@ workflow:
   rules:
     - if: $CI_MERGE_REQUEST_ID               # Execute jobs in merge request context
     - if: $CI_COMMIT_BRANCH == 'master'    # Execute jobs when a new commit is pushed to master branch
+    - if: $CI_PIPELINE_SOURCE == 'web'     # execute jobs when created by using Run pipeline button in the GitLab UI, from the project’s CI/CD > Pipelines section.
 
 stages:
     - checks

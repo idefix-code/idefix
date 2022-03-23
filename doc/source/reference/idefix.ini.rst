@@ -221,20 +221,21 @@ This section enables gravity in the form of a gravitational potential and/or an 
 +================+=========================+=============================================================================================+
 | potential      | string, [string...]     | | Switches on an external gravitational potential. Each parameter adds a potential to the   |
 |                |                         | | total potential used by *Idefix*.                                                         |
+|                |                         | |                                                                                           |
 |                |                         | | * ``userdef`` allows the user to give *Idefix* a user-defined potential function. In this |
 |                |                         | | ``Gravity`` class expects a user-defined potential function to be enrolled with           |
 |                |                         | | ``Gavity::EnrollPotential(GravPotentialFunc)``  (see :ref:`functionEnrollment`)           |
 |                |                         | | * ``central`` allows the user to automatically add the potential of a central point mass. |
 |                |                         | | In this case, the central mass is assumed to be 1 in code units. This can be modified     |
 |                |                         | | using the Mcentral parameter, or using the ``Gravity::SetCentralMass(real)`` method.      |
-|                |                         | | * ``selfgravity`` enable the potential computed from solving Poisson euqation with the    |
+|                |                         | | * ``selfgravity`` enables the potential computed from solving Poisson euqation with the   |
 |                |                         | | density distribution                                                                      |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | Mcentral       | real                    | | Mass of the central object when a central potential is enabled (see above). Default is 1. |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| bodyForce      | string                  | | Adds an acceleration vector to each cell of the domain. The only parameter possible       |
+| bodyForce      | string                  | | Adds an acceleration vector to each cell of the domain. The only value allowed            |
 |                |                         | | is ``userdef``. The ``Gravity`` class then expects a user-defined bodyforce function to   |
-|                |                         | | be enrolled with ``Gavity::EnrollBodyForce(BodyForceFunc)``(see :ref:`functionEnrollment`)|
+|                |                         | | be enrolled via ``Gavity::EnrollBodyForce(BodyForceFunc)`` (see :ref:`functionEnrollment`)|
 |                |                         | | See the shearing box tests for examples of using bodyForce.                               |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 

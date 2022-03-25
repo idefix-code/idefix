@@ -93,8 +93,13 @@ T Input::Get(std::string blockName, std::string paramName, int num) {
     // The following mess with pointers is required since we do not have access to constexpr if
     // in c++ 14, hence we need to cast T to all of the available type we support.
     if(typeid(T) == typeid(int)) {
-      int *v = reinterpret_cast<int*>( &value);
-      *v = static_cast<int>(std::round(std::stod(paramString, NULL)));
+      double *v = reinterpret_cast<int*>( &value);
+      double dv = std::stod(paramString, NULL);
+      int iv = static_cast<int>(std::round(dv));
+      if (std::abs((dv - iv)/dv) > 1e-14) {
+        IDEFIX_WARNING("Detected a truncation error while reading an integer");
+      }
+      *v  = iv;
     } else if(typeid(T) == typeid(double)) {
       double *v = reinterpret_cast<double*>( &value);
       *v = std::stod(paramString, NULL);

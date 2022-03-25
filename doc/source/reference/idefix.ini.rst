@@ -228,7 +228,7 @@ This section enables gravity in the form of a gravitational potential and/or an 
 |                |                         | | * ``central`` allows the user to automatically add the potential of a central point mass. |
 |                |                         | | In this case, the central mass is assumed to be 1 in code units. This can be modified     |
 |                |                         | | using the Mcentral parameter, or using the ``Gravity::SetCentralMass(real)`` method.      |
-|                |                         | | * ``selfgravity`` enables the potential computed from solving Poisson euqation with the   |
+|                |                         | | * ``selfgravity`` enables the potential computed from solving Poisson equation with the   |
 |                |                         | | density distribution                                                                      |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | Mcentral       | real                    | | Mass of the central object when a central potential is enabled (see above). Default is 1. |

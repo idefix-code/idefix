@@ -10,12 +10,14 @@
 
 #include <vector>
 #include <string>
+#include <map>
 #include "idefix.hpp"
 #include "grid.hpp"
 #include "gridHost.hpp"
 #include "hydro.hpp"
 #include "fargo.hpp"
 #include "gravity.hpp"
+#include "stateContainer.hpp"
 
 //TODO(lesurg) What is this standing for?
 #define BOUNDARY_
@@ -65,6 +67,10 @@ class DataBlock {
 
   Grid *mygrid;                ///< Parent grid object
 
+  std::map<std::string, StateContainer> states;
+                                ///< conservative state of the datablock
+                                ///< (contains references to dedicated objects)
+
   Hydro hydro;                  ///< The Hydro object attached to this datablock
 
   void InitFromGrid(Grid &, Input &); ///< init from a Grid object
@@ -77,6 +83,7 @@ class DataBlock {
   void EvolveStage();             ///< Evolve this DataBlock by dt
   void SetBoundaries();       ///< Enforce boundary conditions to this datablock
   void ShowConfig();              ///< Show the datablock's configuration
+  real ComputeTimestep();         ///< compute maximum timestep from current state of affairs
 
   void ResetStage();              ///< Reset the variables needed at each major integration Stage
 

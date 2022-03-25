@@ -7,9 +7,11 @@
 
 #include <cstdio>
 #include <iomanip>
+#include <string>
 #include "idefix.hpp"
 #include "timeIntegrator.hpp"
 #include "input.hpp"
+#include "stateContainer.hpp"
 
 
 TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
@@ -36,6 +38,16 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
   this->cyclePeriod = input.GetOrSet<int>("Output","log",0, 100);
   this->maxRuntime = 3600*input.GetOrSet<double>("TimeIntegrator","max_runtime",0.0,-1.0);
 
+  #if defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_CUDA)
+    // When Cuda/HIP is enabled, increase the periodicity of nan checks, as this takes a lot of time
+    // on GPUs
+    checkNanPeriodicity = 100;
+  #endif
+
+  // override default check nan periodicity if user decides to
+  checkNanPeriodicity = input.GetOrSet<int>("TimeIntegrator","check_nan", 0,
+                                            checkNanPeriodicity);
+
   data.t=0.0;
   ncycles=0;
 
@@ -54,6 +66,12 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
   if(data.hydro.haveRKLParabolicTerms) {
     rkl.Init(input,data);
     haveRKL = true;
+  }
+
+  // If multi-sage, create a new state in the datablock called "begin"
+  if(nstages>1) {
+    data.states["begin"] = StateContainer();
+    data.states["begin"].AllocateAs(data.states["current"]);
   }
 
   idfx::popRegion();
@@ -130,30 +148,16 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
 // Compute one full cycle of the time Integrator
 void TimeIntegrator::Cycle(DataBlock &data) {
   // Do one cycle
-  IdefixArray4D<real> Uc = data.hydro.Uc;
-  IdefixArray4D<real> Vs = data.hydro.Vs;
-  IdefixArray4D<real> Uc0 = data.hydro.Uc0;
   IdefixArray3D<real> InvDt = data.hydro.InvDt;
-  #ifdef EVOLVE_VECTOR_POTENTIAL
-  IdefixArray4D<real> Ve0 = data.hydro.Ve0;
-  IdefixArray4D<real> Ve = data.hydro.Ve;
-  #else
-  IdefixArray4D<real> Vs0 = data.hydro.Vs0;
-  #endif
-
   real newdt;
-
 
   idfx::pushRegion("TimeIntegrator::Cycle");
 
-  //if(timer.seconds()-lastLog >= 1.0) {
   if(ncycles%cyclePeriod==0) ShowLog(data);
 
   if(haveRKL && (ncycles%2)==1) {    // Runge-Kutta-Legendre cycle
     rkl.Cycle();
   }
-
-
 
   // save t at the begining of the cycle
   const real t0 = data.t;
@@ -165,6 +169,9 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   MPI_Request dtReduce;
 #endif
 
+  /////////////////////////////////////////////////
+  // BEGIN STAGES LOOP                           //
+  /////////////////////////////////////////////////
   for(int stage=0; stage < nstages ; stage++) {
     // Apply Boundary conditions
     data.SetBoundaries();
@@ -175,16 +182,9 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     // Convert current state into conservative variable and save it
     data.hydro.ConvertPrimToCons();
 
-    // Store initial stage for multi-stage time integrators
+    // Store (deep copy) initial stage for multi-stage time integrators
     if(nstages>1 && stage==0) {
-      Kokkos::deep_copy(Uc0,Uc);
-      #if MHD == YES
-        #ifndef EVOLVE_VECTOR_POTENTIAL
-          Kokkos::deep_copy(Vs0,Vs);
-        #else
-          Kokkos::deep_copy(Ve0,Ve);
-        #endif
-      #endif
+      data.states["begin"].CopyFrom(data.states["current"]);
     }
     // If gravity is needed, update it
     if(data.haveGravity) data.gravity.ComputeGravity();
@@ -197,30 +197,22 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
     // Look for Nans every now and then (this actually cost a lot of time on GPUs
     // because streams are divergent)
-    if(ncycles%100==0) if(data.CheckNan()>0) IDEFIX_ERROR("Nan found after integration cycle");
+    if(ncycles%checkNanPeriodicity==0) {
+      if(data.CheckNan()>0) {
+        throw std::runtime_error(std::string("Nan found after integration cycle"));
+      }
+    }
 
     // Compute next time_step during first stage
     if(stage==0) {
       if(!haveFixedDt) {
-        idefix_reduce("Timestep_reduction",
-          data.beg[KDIR], data.end[KDIR],
-          data.beg[JDIR], data.end[JDIR],
-          data.beg[IDIR], data.end[IDIR],
-          KOKKOS_LAMBDA (int k, int j, int i, real &dtmin) {
-                  dtmin=FMIN(ONE_F/InvDt(k,j,i),dtmin);
-              },
-          Kokkos::Min<real>(newdt));
-
-        Kokkos::fence();
-
-        newdt=newdt*cfl;
-
-  #ifdef WITH_MPI
-        if(idfx::psize>1) {
-          MPI_SAFE_CALL(MPI_Iallreduce(MPI_IN_PLACE, &newdt, 1, realMPI, MPI_MIN, MPI_COMM_WORLD,
-                                       &dtReduce));
-        }
-  #endif
+        newdt = cfl*data.ComputeTimestep();
+        #ifdef WITH_MPI
+          if(idfx::psize>1) {
+            MPI_SAFE_CALL(MPI_Iallreduce(MPI_IN_PLACE, &newdt, 1, realMPI, MPI_MIN, MPI_COMM_WORLD,
+                                        &dtReduce));
+          }
+        #endif
       }
     }
 
@@ -229,41 +221,12 @@ void TimeIntegrator::Cycle(DataBlock &data) {
       // do the partial evolution required by the multi-step
       real wcs=wc[stage-1];
       real w0s=w0[stage-1];
+      data.states["current"].AddAndStore(wcs, w0s, data.states["begin"]);
 
-      idefix_for("Cycle-update",0,NVAR,0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
-        KOKKOS_LAMBDA (int n, int k, int j, int i) {
-          Uc(n,k,j,i) = wcs*Uc(n,k,j,i) + w0s*Uc0(n,k,j,i);
-      });
-
-      #if MHD==YES
-        #ifndef EVOLVE_VECTOR_POTENTIAL
-          idefix_for("Cycle-update-Vs",0,DIMENSIONS,0,data.np_tot[KDIR]+KOFFSET,
-                                                0,data.np_tot[JDIR]+JOFFSET,
-                                                0,data.np_tot[IDIR]+IOFFSET,
-            KOKKOS_LAMBDA (int n, int k, int j, int i) {
-              Vs(n,k,j,i) = wcs*Vs(n,k,j,i) + w0s*Vs0(n,k,j,i);
-          });
-        #else
-          idefix_for("Cycle-update-Ve",0,AX3e+1,0,data.np_tot[KDIR]+KOFFSET,
-                                                0,data.np_tot[JDIR]+JOFFSET,
-                                                0,data.np_tot[IDIR]+IOFFSET,
-            KOKKOS_LAMBDA (int n, int k, int j, int i) {
-              Ve(n,k,j,i) = wcs*Ve(n,k,j,i) + w0s*Ve0(n,k,j,i);
-          });
-          data.hydro.emf.ComputeMagFieldFromA(Ve, Vs);
-        #endif
-      #endif
       // update t
       data.t = wcs*data.t + w0s*t0;
-
-      // Tentatively high order fargo
-      //if(data.haveFargo) data.fargo.ShiftSolution(data.t,wcs*data.dt);
-    } //else {
-      //if(data.haveFargo) data.fargo.ShiftSolution(data.t,data.dt);
-    //}
-
+    }
     // Shift solution according to fargo if this is our last stage
-
     if(data.haveFargo && stage==nstages-1) {
       data.fargo.ShiftSolution(t0,data.dt);
     }
@@ -274,8 +237,11 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     // Add back fargo velocity so that boundary conditions are applied on the total V
     if(data.haveFargo) data.fargo.AddVelocity(data.t);
   }
+  /////////////////////////////////////////////////
+  // END STAGES LOOP                             //
+  /////////////////////////////////////////////////
 
-  // Wait for hydro/newDt MPI reduction
+  // Wait for dt MPI reduction
 #ifdef WITH_MPI
   if(idfx::psize>1) {
     MPI_SAFE_CALL(MPI_Wait(&dtReduce, MPI_STATUS_IGNORE));
@@ -311,7 +277,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     if(data.dt < 1e-15) {
       std::stringstream msg;
       msg << "dt = " << data.dt << " is too small.";
-      IDEFIX_ERROR(msg);
+      throw std::runtime_error(msg.str());
     }
   } else {
     data.dt = fixedDt;

@@ -42,6 +42,8 @@ class TimeIntegrator {
   real w0[2];
   real wc[2];
 
+  int checkNanPeriodicity{1};
+
   bool haveFixedDt = false;
   real fixedDt;
 

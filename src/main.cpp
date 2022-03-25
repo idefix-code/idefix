@@ -44,6 +44,11 @@
 int main( int argc, char* argv[] ) {
   bool initKokkosBeforeMPI = false;
 
+  // return code is zero if the simulation reached final time
+  // >0 if a fatal error occured (too small timestep, Nans)
+  // <0 if simulation was interrupted (max_runtime or user-triggered interruption
+  int returnCode = 0;
+
   // When running on GPUS with Omnipath network,
   // Kokkos needs to be initialised *before* the MPI layer
 #ifdef KOKKOS_ENABLE_CUDA
@@ -141,11 +146,22 @@ int main( int argc, char* argv[] ) {
 
     while(data.t < tstop) {
       if(tstop-data.t < data.dt) data.dt = tstop-data.t;
-      Tint.Cycle(data);
+      try {
+        Tint.Cycle(data);
+      } catch(std::exception &e) {
+        idfx::cout << "Main: WARNING! Caught an exception in time integrator." << std::endl;
+        idfx::cout << e.what() << std::endl;
+        idfx::cout << "Main: attempting to save the current state for inspection." << std::endl;
+        output.ForceWriteVtk(data);
+        idfx::cout << "Main: Aborting current calculation." << std::endl;
+        returnCode = 1;
+        break;
+      }
       output.CheckForWrites(data);
       if(input.CheckForAbort() || Tint.CheckForMaxRuntime() ) {
         idfx::cout << "Main: Saving current state and aborting calculation." << std::endl;
-        output.ForceWrite(data);
+        output.ForceWriteDump(data);
+        returnCode = -1;
         break;
       }
       if(input.maxCycles>=0) {
@@ -223,5 +239,5 @@ int main( int argc, char* argv[] ) {
   MPI_Finalize();
 #endif
 
-  return 0;
+  return(returnCode);
 }

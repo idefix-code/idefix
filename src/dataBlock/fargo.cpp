@@ -436,6 +436,10 @@ void Fargo::StoreToScratch() {
             });
 
   #if MHD == YES
+    #ifdef EVOLVE_VECTOR_POTENTIAL
+      // Update Vs to its latest
+      hydro->emf.ComputeMagFieldFromA(hydro->Ve,hydro->Vs);
+    #endif
     // in MHD mode, we need to copy Vs only when there is domain decomposition, otherwise,
     // we just make a reference (this is already done by init)
     if(haveDomainDecomposition) {
@@ -924,12 +928,9 @@ void Fargo::ShiftSolution(const real t, const real dt) {
           #endif
         #endif
       });
-    hydro->emf.ComputeMagFieldFromA(Ve,hydro->Vs);
+
   #endif // EVOLVE_VECTOR_POTENTIAL
 
-
-  // Rebuild the cell-centered field components
-  this->hydro->boundary.ReconstructVcField(Uc);
 
 #endif // MHD
 #endif // GEOMETRY==CYLINDRICAL

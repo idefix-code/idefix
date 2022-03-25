@@ -106,6 +106,8 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   dU0 = IdefixArray4D<real>("RKL_dU0", NVAR,
                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+  Uc0 = IdefixArray4D<real>("RKL_Uc0", NVAR,
+                           data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   Uc1 = IdefixArray4D<real>("RKL_Uc1", NVAR,
                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
@@ -119,6 +121,10 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
                         data->np_tot[KDIR]+KOFFSET,
                         data->np_tot[JDIR]+JOFFSET,
                         data->np_tot[IDIR]+IOFFSET);
+      Ve0 = IdefixArray4D<real>("RKL_Ve0", AX3e+1,
+                        data->np_tot[KDIR]+KOFFSET,
+                        data->np_tot[JDIR]+JOFFSET,
+                        data->np_tot[IDIR]+IOFFSET);
       Ve1 = IdefixArray4D<real>("RKL_Ve1", AX3e+1,
                         data->np_tot[KDIR]+KOFFSET,
                         data->np_tot[JDIR]+JOFFSET,
@@ -129,6 +135,10 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
                         data->np_tot[JDIR]+JOFFSET,
                         data->np_tot[IDIR]+IOFFSET);
       dB0 = IdefixArray4D<real>("RKL_dB0", DIMENSIONS,
+                        data->np_tot[KDIR]+KOFFSET,
+                        data->np_tot[JDIR]+JOFFSET,
+                        data->np_tot[IDIR]+IOFFSET);
+      Vs0 = IdefixArray4D<real>("RKL_Vs0", DIMENSIONS,
                         data->np_tot[KDIR]+KOFFSET,
                         data->np_tot[JDIR]+JOFFSET,
                         data->np_tot[IDIR]+IOFFSET);
@@ -159,20 +169,20 @@ void RKLegendre::Cycle() {
   IdefixArray4D<real> dU = this->dU;
   IdefixArray4D<real> dU0 = this->dU0;
   IdefixArray4D<real> Uc = data->hydro.Uc;
-  IdefixArray4D<real> Uc0 = data->hydro.Uc0;
+  IdefixArray4D<real> Uc0 = this->Uc0;
   IdefixArray4D<real> Uc1 = this->Uc1;
 
   IdefixArray4D<real> dB = this->dB;
   IdefixArray4D<real> dB0 = this->dB0;
   IdefixArray4D<real> Vs = data->hydro.Vs;
-  IdefixArray4D<real> Vs0 = data->hydro.Vs0;
+  IdefixArray4D<real> Vs0 = this->Vs0;
   IdefixArray4D<real> Vs1 = this->Vs1;
 
   #ifdef EVOLVE_VECTOR_POTENTIAL
   IdefixArray4D<real> dA = this->dA;
   IdefixArray4D<real> dA0 = this->dA0;
   IdefixArray4D<real> Ve = data->hydro.Ve;
-  IdefixArray4D<real> Ve0 = data->hydro.Ve0;
+  IdefixArray4D<real> Ve0 = this->Ve0;
   IdefixArray4D<real> Ve1 = this->Ve1;
   #endif
 

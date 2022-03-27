@@ -94,7 +94,12 @@ T Input::Get(std::string blockName, std::string paramName, int num) {
     // in c++ 14, hence we need to cast T to all of the available type we support.
     if(typeid(T) == typeid(int)) {
       int *v = reinterpret_cast<int*>( &value);
-      *v = std::stoi(paramString, NULL);
+      double dv = std::stod(paramString, NULL);
+      int iv = static_cast<int>(std::round(dv));
+      if (std::abs((dv - iv)/dv) > 1e-14) {
+        IDEFIX_WARNING("Detected a truncation error while reading an integer");
+      }
+      *v  = iv;
     } else if(typeid(T) == typeid(double)) {
       double *v = reinterpret_cast<double*>( &value);
       *v = std::stod(paramString, NULL);
@@ -103,7 +108,7 @@ T Input::Get(std::string blockName, std::string paramName, int num) {
       *v = std::stof(paramString, NULL);
     } else if(typeid(T) == typeid(int64_t)) {
       int64_t *v = reinterpret_cast<int64_t *>( &value);
-      *v = std::stol(paramString, NULL);
+      *v = static_cast<int64_t>(std::round(std::stod(paramString, NULL)));
     } else if(typeid(T) == typeid(std::string)) {
       std::string *v = reinterpret_cast<std::string*>( &value);
       *v = paramString;

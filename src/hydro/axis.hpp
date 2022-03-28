@@ -46,10 +46,6 @@ class Axis {
   IdefixArray1D<int>  mapVars;
   int mapNVars{0};
 
-  std::vector<MPI_Datatype> typeVcSend;
-  std::vector<MPI_Datatype> typeVcRecv;
-  std::vector<MPI_Datatype> typeVsSend;
-  std::vector<MPI_Datatype> typeVsRecv;
 #endif
   void InitMPI();
   void ExchangeMPI(int side);

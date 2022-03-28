@@ -35,12 +35,23 @@ class Axis {
 
   enum {faceTop, faceBot};
 #ifdef WITH_MPI
+  MPI_Request sendRequest;
+  MPI_Request recvRequest;
+
+  IdefixArray1D<real> bufferSend;
+  IdefixArray1D<real> bufferRecv;
+
+  int bufferSize;
+
+  IdefixArray1D<int>  mapVars;
+  int mapNVars{0};
+
   std::vector<MPI_Datatype> typeVcSend;
   std::vector<MPI_Datatype> typeVcRecv;
   std::vector<MPI_Datatype> typeVsSend;
   std::vector<MPI_Datatype> typeVsRecv;
 #endif
-  void MakeMPIDataypes(int dir);
+  void InitMPI();
   void ExchangeMPI(int side);
 
   IdefixArray1D<real> Ex1Avg;

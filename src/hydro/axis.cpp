@@ -537,10 +537,10 @@ void Axis::InitMPI() {
                                &procRecv,&procSend ));
 
   MPI_SAFE_CALL(MPI_Send_init(bufferSend.data(), bufferSize, realMPI, procSend,
-                650, data->mygrid->CartComm, &sendRequest));
+                650, data->mygrid->AxisComm, &sendRequest));
 
   MPI_SAFE_CALL(MPI_Recv_init(bufferRecv.data(), bufferSize, realMPI, procRecv,
-                650, data->mygrid->CartComm, &recvRequest));
+                650, data->mygrid->AxisComm, &recvRequest));
 
   #endif
   idfx::popRegion();

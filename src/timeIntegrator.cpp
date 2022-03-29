@@ -112,9 +112,9 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
   }
 
   idfx::cout << "TimeIntegrator: ";
+  idfx::cout << std::scientific;
   idfx::cout << std::setw(col_width) << data.t;
   idfx::cout << " | " << std::setw(col_width) << ncycles;
-  idfx::cout << std::scientific;
   idfx::cout << " | " << std::setw(col_width) << data.dt;
   if(ncycles>=cyclePeriod) {
     idfx::cout << " | " << std::setw(col_width) << 1 / rawperf;
@@ -133,6 +133,7 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
 #if MHD == YES
   // Check divB
   real divB =  data.hydro.CheckDivB();
+  idfx::cout << std::scientific;
   idfx::cout << " | " << std::setw(col_width) << divB;
   if(divB>1e-6) {
     IDEFIX_ERROR("TimeIntegrator::Cycle divB>1e-6, check your calculation");

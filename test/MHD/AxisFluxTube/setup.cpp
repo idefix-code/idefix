@@ -69,17 +69,23 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                 real ez_p=0.0;
 
 
-                d.Vc(RHO,k,j,i) = 1.0;
-                d.Vc(PRS,k,j,i) = 1.0;
-                d.Vc(VX1,k,j,i) = (ex_r+ey_r)/sqrt(2);
-                d.Vc(VX2,k,j,i) = (ex_t+ey_t)/sqrt(2);
-                d.Vc(VX3,k,j,i) = (ex_p+ey_p)/sqrt(2);
+                Vc(RHO,k,j,i) = 1.0;
+                Vc(PRS,k,j,i) = 1.0;
+                Vc(VX1,k,j,i) = (ex_r+ey_r)/sqrt(2);
+                Vc(VX2,k,j,i) = (ex_t+ey_t)/sqrt(2);
+                Vc(VX3,k,j,i) = (ex_p+ey_p)/sqrt(2);
 
             });
-      data.hydro.boundary.BoundaryForX2s("UserDefX1",dir,side,
+      data.hydro.boundary.BoundaryForX2s("UserDefX2s",dir,side,
         KOKKOS_LAMBDA (int k, int j, int i) {
-            Vs(BX2s,k,j,i) = Vs(BX2s,k,j,ighost);
+            Vs(BX2s,k,j,i) = ZERO_F;
           });
+      data.hydro.boundary.BoundaryForX3s("UserDefX2s",dir,side,
+        KOKKOS_LAMBDA (int k, int j, int i) {
+            Vs(BX2s,k,j,i) = ZERO_F;
+          });
+    }
+  }
 
 void Analysis(DataBlock & data) {
   // Mirror data on Host
@@ -91,6 +97,7 @@ void Analysis(DataBlock & data) {
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   output.EnrollUserDefVariables(&ComputeUserVars);
+  data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
   //output.EnrollAnalysis(&Analysis);
   Rtorus = input.Get<real>("Setup","Rtorus",0);
   Ztorus = input.Get<real>("Setup","Ztorus",0);

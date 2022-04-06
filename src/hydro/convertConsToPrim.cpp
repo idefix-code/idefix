@@ -23,7 +23,7 @@ void Hydro::ConvertConsToPrim() {
   real gamma_m1=this->gamma-ONE_F;
 
   #if MHD == YES
-    #if EVOLVE_VECTOR_POTENTIAL
+    #ifdef EVOLVE_VECTOR_POTENTIAL
       emf.ComputeMagFieldFromA(Ve,Vs);
     #endif
     boundary.ReconstructVcField(Uc);

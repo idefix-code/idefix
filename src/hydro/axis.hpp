@@ -27,6 +27,10 @@ class Axis {
   void ShowConfig();
 
 
+  void ExchangeMPI(int side);           // Function has to be public for GPU, but its technically
+                                        // a private function
+
+
  private:
   bool isTwoPi = false;
   bool axisRight = false;
@@ -48,7 +52,6 @@ class Axis {
 
 #endif
   void InitMPI();
-  void ExchangeMPI(int side);
 
   IdefixArray1D<real> Ex1Avg;
   IdefixArray1D<int> symmetryVc;

@@ -28,6 +28,7 @@ class TimeIntegrator {
   bool CheckForMaxRuntime();
 
   void ShowLog(DataBlock &);    //<  Display progress log
+  void ShowConfig();            //< Show configuration of time integrator
 
   bool isSilent{false};   // Whether the integration should proceed silently
 
@@ -41,6 +42,8 @@ class TimeIntegrator {
   real w0[2];
   real wc[2];
 
+  int checkNanPeriodicity{1};
+
   bool haveFixedDt = false;
   real fixedDt;
 
@@ -49,8 +52,8 @@ class TimeIntegrator {
   int64_t ncycles;        // # of cycles
   double lastLog;         // time for the last log (s)
   double lastMpiLog;      // time for the last MPI log (s)
-  double maxRuntime{-1.0};      // Maximum runtime requested (disabled when negative)
-  int64_t cyclePeriod = 100;    // # of cycles between two logs
+  double maxRuntime;      // Maximum runtime requested (disabled when negative)
+  int64_t cyclePeriod;    // # of cycles between two logs
   Kokkos::Timer timer;    // Internal timer of the integrator
 };
 

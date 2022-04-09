@@ -68,8 +68,8 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   gammaIdeal=data.hydro.GetGamma();
 
   // Get rotation rate along vertical axis
-  omega=input.GetReal("Hydro","rotation",0);
-  shear=input.GetReal("Hydro","shearingBox",0);
+  omega=input.Get<real>("Hydro","rotation",0);
+  shear=input.Get<real>("Hydro","shearingBox",0);
 
   // Add our userstep to the timeintegrator
   data.gravity.EnrollBodyForce(BodyForce);
@@ -107,7 +107,9 @@ void Setup::InitFlow(DataBlock &data) {
 #else
                 d.Vc(RHO,k,j,i) = 1.0;
 #endif
-                d.Vc(PRS,k,j,i) = d.Vc(RHO,k,j,i)/cs2*gammaIdeal;
+#ifndef ISOTHERMAL
+                d.Vc(PRS,k,j,i) = d.Vc(RHO,k,j,i)*cs2/gammaIdeal;
+#endif
                 d.Vc(VX1,k,j,i) = 1e-5*sin(2.0*M_PI*(y+4*z));
                 d.Vc(VX2,k,j,i) = shear*x;
                 d.Vc(VX3,k,j,i) = 0.0;

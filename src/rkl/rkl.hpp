@@ -26,15 +26,25 @@ class RKLegendre {
   void EvolveStage(real);
   template <int> void CalcParabolicRHS(real);
   void ComputeDt();
+  void ShowConfig();
   void Copy(IdefixArray4D<real>&, IdefixArray4D<real>&);
 
   IdefixArray4D<real> dU;      // variation of main cell-centered conservative variables
   IdefixArray4D<real> dU0;      // dU of the first stage
+  IdefixArray4D<real> Uc0;      // Uc at initial stage
   IdefixArray4D<real> Uc1;      // Uc of the previous stage, Uc1 = Uc(stage-1)
 
   IdefixArray4D<real> dB;      // Variation of cell-centered magnetic variables
   IdefixArray4D<real> dB0;     // dB of the first stage
+  IdefixArray4D<real> Vs0;     // Vs of initial stage
   IdefixArray4D<real> Vs1;     // Vs of previous stage
+
+  #ifdef EVOLVE_VECTOR_POTENTIAL
+  IdefixArray4D<real> dA;      // Variation of edge-centered vector potential
+  IdefixArray4D<real> dA0;     // dA of the first stage
+  IdefixArray4D<real> Ve0;     // Ve of initial stage
+  IdefixArray4D<real> Ve1;     // Ve of previous stage
+  #endif
 
   IdefixArray1D<int> varList;  // List of variables which should be evolved
   int nvarRKL{0};               // # of active variables

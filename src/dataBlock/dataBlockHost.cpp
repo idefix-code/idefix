@@ -23,24 +23,27 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
 
   // Create mirrors (should be mirror_view)
   for(int dir = 0 ; dir < 3 ; dir++) {
-    x[dir] = Kokkos::create_mirror_view(data->x[dir]);
-    xr[dir] = Kokkos::create_mirror_view(data->xr[dir]);
-    xl[dir] = Kokkos::create_mirror_view(data->xl[dir]);
-    dx[dir] = Kokkos::create_mirror_view(data->dx[dir]);
-    A[dir] = Kokkos::create_mirror_view(data->A[dir]);
-    np_tot[dir] = data->np_tot[dir];
-    np_int[dir] = data->np_int[dir];
-    nghost[dir] = data->nghost[dir];
+    x.push_back(Kokkos::create_mirror_view(data->x[dir]));
+    xr.push_back(Kokkos::create_mirror_view(data->xr[dir]));
+    xl.push_back(Kokkos::create_mirror_view(data->xl[dir]));
+    dx.push_back(Kokkos::create_mirror_view(data->dx[dir]));
+    A.push_back(Kokkos::create_mirror_view(data->A[dir]));
+  }
 
-    xbeg[dir] = data->xbeg[dir];
-    xend[dir] = data->xend[dir];
-    beg[dir] = data->beg[dir];
-    end[dir] = data->end[dir];
-    gbeg[dir] = data->gbeg[dir];
-    gend[dir] = data->gend[dir];
+  np_tot = data->np_tot;
+  np_int = data->np_int;
+  np_tot = data->np_tot;
+
+  nghost = data->nghost;
+
+  xbeg = data->xbeg;
+  xend = data->xend;
+  beg = data->beg;
+  end = data->end;
+  gbeg = data->gbeg;
+  gend = data->gend;
 
     // TO BE COMPLETED...
-  }
 
   dV = Kokkos::create_mirror_view(data->dV);
   Vc = Kokkos::create_mirror_view(data->hydro.Vc);
@@ -53,6 +56,9 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
   if(data->hydro.haveCurrent) {
     J = Kokkos::create_mirror_view(data->hydro.J);
   }
+  #ifdef EVOLVE_VECTOR_POTENTIAL
+    Ve = Kokkos::create_mirror_view(data->hydro.Ve);
+  #endif
 
   D_EXPAND( Ex3 = Kokkos::create_mirror_view(data->hydro.emf.ez);  ,
                                                              ,
@@ -84,6 +90,10 @@ void DataBlockHost::SyncToDevice() {
 #if MHD == YES
   Kokkos::deep_copy(data->hydro.Vs,Vs);
   if(this->haveCurrent && data->hydro.haveCurrent) Kokkos::deep_copy(data->hydro.J,J);
+  #ifdef EVOLVE_VECTOR_POTENTIAL
+    Kokkos::deep_copy(data->hydro.Ve,Ve);
+  #endif
+
   D_EXPAND( Kokkos::deep_copy(data->hydro.emf.ez,Ex3);  ,
                                                   ,
             Kokkos::deep_copy(data->hydro.emf.ex,Ex1);
@@ -103,7 +113,9 @@ void DataBlockHost::SyncFromDevice() {
 #if MHD == YES
   Kokkos::deep_copy(Vs,data->hydro.Vs);
   if(this->haveCurrent && data->hydro.haveCurrent) Kokkos::deep_copy(J,data->hydro.J);
-
+  #ifdef EVOLVE_VECTOR_POTENTIAL
+    Kokkos::deep_copy(Ve,data->hydro.Ve);
+  #endif
   D_EXPAND( Kokkos::deep_copy(Ex3,data->hydro.emf.ez);  ,
                                                   ,
             Kokkos::deep_copy(Ex1,data->hydro.emf.ex);

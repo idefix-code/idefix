@@ -53,12 +53,13 @@ Input::Input(int argc, char* argv[] ) {
   // Default input file name
   this->inputFileName = std::string("idefix.ini");
 
-  Input::ParseCommandLine(argc,argv);
+  // Parse command line (may replace the input file)
+  ParseCommandLine(argc,argv);
 
   file.open(this->inputFileName);
 
   if(!file) {
-    msg << "Input constructor cannot open input file " << this->inputFileName;
+    msg << "Input: cannot open input file " << this->inputFileName;
     IDEFIX_ERROR(msg);
   }
 
@@ -111,6 +112,7 @@ Input::Input(int argc, char* argv[] ) {
 // This routine parse command line options
 void Input::ParseCommandLine(int argc, char **argv) {
   std::stringstream msg;
+  bool enableLogs = true;
   for(int i = 1 ; i < argc ; i++) {
     // MPI decomposition argument
     if(std::string(argv[i]) == "-dec") {
@@ -194,9 +196,9 @@ void Input::ParseCommandLine(int argc, char **argv) {
       inputParameters["CommandLine"]["maxCycles"].push_back(std::to_string(maxCycles));
     } else if(std::string(argv[i]) == "-nowrite") {
       this->forceNoWrite = true;
-      idfx::cout.disableLogFile();
+      enableLogs = false;
     } else if(std::string(argv[i]) == "-nolog") {
-      idfx::cout.disableLogFile();
+      enableLogs = false;
     } else if(std::string(argv[i]) == "-Werror") {
       idfx::warningsAreErrors = true;
     } else {
@@ -204,11 +206,14 @@ void Input::ParseCommandLine(int argc, char **argv) {
       IDEFIX_ERROR(msg);
     }
   }
+  if(enableLogs) {
+    idfx::cout.enableLogFile();
+  }
 }
 
 
 // This routine prints the parameters stored in the inputParameters structure
-void Input::PrintParameters() {
+void Input::ShowConfig() {
   std::string blockName, paramName, paramValue;
   idfx::cout << "-----------------------------------------------------------------------------"
              << std::endl;
@@ -236,6 +241,22 @@ void Input::PrintParameters() {
              << std::endl;
   idfx::cout << "-----------------------------------------------------------------------------"
              << std::endl;
+
+  // Show dimensionality and other general options:
+  idfx::cout << "Input: DIMENSIONS=" << DIMENSIONS << "." << std::endl;
+  idfx::cout << "Input: COMPONENTS=" << COMPONENTS << "." << std::endl;
+  #ifdef WITH_MPI
+    idfx::cout << "Input: MPI ENABLED." << std::endl;
+  #endif
+  #ifdef KOKKOS_ENABLE_HIP
+    idfx::cout << "Input: Kokkos HIP target ENABLED." << std::endl;
+  #endif
+  #ifdef KOKKOS_ENABLE_CUDA
+    idfx::cout << "Input: Kokkos CUDA target ENABLED." << std::endl;
+  #endif
+  #ifdef KOKKOS_ENABLE_OPENMP
+    idfx::cout << "Input: Kokkos OpenMP ENABLED." << std::endl;
+  #endif
 }
 
 // This routine is called whenever a specific OS signal is caught
@@ -312,103 +333,20 @@ std::string Input::getFileExtension(const std::string file_name) {
 
 // Get a string in a block, parameter, position of the file
 std::string Input::GetString(std::string blockName, std::string paramName, int num) {
-  std::stringstream msg;
-
-  std::string value;
-
-  IdefixInputContainer::iterator block = inputParameters.find(blockName);
-
-  if(block != inputParameters.end()) {
-    // Block exists
-    IdefixBlockContainer::iterator param = block->second.find(paramName);
-    if(param != block->second.end()) {
-      // Parameter exist
-      if(num<param->second.size()) {
-        // Vector is long enough
-        value=param->second[num];
-      } else {
-        // Vector is not long enough
-        msg << "Index " << num << " cannot be found in block:parameter" << blockName << ":"
-            << paramName;
-        IDEFIX_ERROR(msg);
-      }
-    } else {
-      msg << "Parameter " << paramName << " cannot be found in block [" << blockName <<"]";
-      IDEFIX_ERROR(msg);
-    }
-  } else {
-    msg << "BlockName " << blockName << " cannot be found";
-    IDEFIX_ERROR(msg);
-  }
-  return(value);
+  IDEFIX_DEPRECATED("Input::GetString is deprecated. Use Input::Get<std::string> instead");
+  return(Get<std::string>(blockName, paramName, num));
 }
 
 // Get a real number in a block, parameter, position of the file
 real Input::GetReal(std::string blockName, std::string paramName, int num) {
-  std::stringstream msg;
-
-  real value;
-
-  IdefixInputContainer::iterator block = inputParameters.find(blockName);
-  if(block != inputParameters.end()) {
-    // Block exists
-    IdefixBlockContainer::iterator param = block->second.find(paramName);
-    if(param != block->second.end()) {
-      // Parameter exist
-      if(num<param->second.size()) {
-        // Vector is long enough
-        #ifdef USE_DOUBLE
-        value = std::stod(param->second[num], NULL);
-        #else
-        value = std::stof(param->second[num], NULL);
-        #endif
-      } else {
-        // Vector is not long enough
-        msg << "Index " << num << " cannot be found in block:parameter" << blockName << ":"
-            << paramName;
-        IDEFIX_ERROR(msg);
-      }
-    } else {
-      msg << "Parameter " << paramName << " cannot be found in block [" << blockName <<"]";
-      IDEFIX_ERROR(msg);
-    }
-  } else {
-    msg << "BlockName " << blockName << " cannot be found";
-    IDEFIX_ERROR(msg);
-  }
-  return(value);
+  IDEFIX_DEPRECATED("Input::GetReal is deprecated. Use Input::Get<real> instead");
+  return(Get<real>(blockName, paramName, num));
 }
 
 // Get an integer number in a block, parameter, position of the file
 int Input::GetInt(std::string blockName, std::string paramName, int num) {
-  std::stringstream msg;
-
-  int value;
-
-  IdefixInputContainer::iterator block = inputParameters.find(blockName);
-  if(block != inputParameters.end()) {
-    // Block exists
-    IdefixBlockContainer::iterator param = block->second.find(paramName);
-    if(param != block->second.end()) {
-      // Parameter exist
-      if(num<param->second.size()) {
-        // Vector is long enough
-        value = std::stoi(param->second[num], NULL);
-      } else {
-        // Vector is not long enough
-        msg << "Index " << num << " cannot be found in block:parameter" << blockName
-            << ":" << paramName;
-        IDEFIX_ERROR(msg);
-      }
-    } else {
-      msg << "Parameter " << paramName << " cannot be found in block [" << blockName <<"]";
-      IDEFIX_ERROR(msg);
-    }
-  } else {
-    msg << "BlockName " << blockName << " cannot be found";
-    IDEFIX_ERROR(msg);
-  }
-  return(value);
+  IDEFIX_DEPRECATED("Input::GetInt is deprecated. Use Input::Get<int> instead");
+  return(Get<int>(blockName, paramName, num));
 }
 
 // Check that an entry is present in the ini file.
@@ -479,11 +417,4 @@ void Input::PrintLogo() {
   idfx::cout << std::endl;
   idfx::cout << std::endl;
   idfx::cout << "       This is Idefix " << GITVERSION << std::endl;
-#if defined(KOKKOS_ENABLE_CUDA)
-  idfx::cout << "         Compiled for GPU (nvidia-CUDA) " << std::endl;
-#elif defined(KOKKOS_ENABLE_HIP)
-  idfx::cout << "         Compiled for GPU (HIP backend) " << std::endl;
-#else
-  idfx::cout << "         Compiled for CPUs " << std::endl;
-#endif
 }

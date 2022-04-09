@@ -50,17 +50,11 @@ void RKLegendre::Copy(IdefixArray4D<real> &out, IdefixArray4D<real> &in) {
 void RKLegendre::Init(Input &input, DataBlock &datain) {
   idfx::pushRegion("RKLegendre::Init");
 
-  idfx::cout << "RKLegendre: enabled." << std::endl;
   // Save the datablock to which we are attached from now on
   this->data = &datain;
 
+  cfl_rkl = input.GetOrSet<real> ("RKL","cfl",0, 0.5);
 
-  if(input.CheckEntry("RKL","cfl")>0) {
-    cfl_rkl = input.GetReal("RKL","cfl",0);
-  } else {
-    idfx::cout << "RKLegendre: no RKL cfl given. Using 0.5 by default." << std::endl;
-    cfl_rkl = 0.5;
-  }
   rmax_par = 100.0;
 
   // Make a list of variables
@@ -77,6 +71,12 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
       AddVariable(ENG, varListHost);
     #endif
   }
+  // Thermal diffusion
+  #if HAVE_ENERGY
+    if(data->hydro.thermalDiffusionStatus.isRKL) {
+      AddVariable(ENG, varListHost);
+    }
+  #endif
   // Ambipolar diffusion
   if(data->hydro.ambipolarStatus.isRKL || data->hydro.resistivityStatus.isRKL) {
     #if COMPONENTS == 3 && DIMENSIONS < 3
@@ -96,7 +96,7 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
   nvarRKL = varListHost.size();
 
   #ifdef WITH_MPI
-    mpi.Init(datain.mygrid, varListHost, datain.nghost, datain.np_int, haveVs);
+    mpi.Init(datain.mygrid, varListHost, datain.nghost.data(), datain.np_int.data(), haveVs);
   #endif
 
 
@@ -106,27 +106,62 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   dU0 = IdefixArray4D<real>("RKL_dU0", NVAR,
                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+  Uc0 = IdefixArray4D<real>("RKL_Uc0", NVAR,
+                           data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   Uc1 = IdefixArray4D<real>("RKL_Uc1", NVAR,
                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
   if(haveVs) {
-    dB = IdefixArray4D<real>("RKL_dB", DIMENSIONS,
+    #ifdef EVOLVE_VECTOR_POTENTIAL
+      dA = IdefixArray4D<real>("RKL_dA", AX3e+1,
                       data->np_tot[KDIR]+KOFFSET,
                       data->np_tot[JDIR]+JOFFSET,
                       data->np_tot[IDIR]+IOFFSET);
-    dB0 = IdefixArray4D<real>("RKL_dB0", DIMENSIONS,
-                      data->np_tot[KDIR]+KOFFSET,
-                      data->np_tot[JDIR]+JOFFSET,
-                      data->np_tot[IDIR]+IOFFSET);
-    Vs1 = IdefixArray4D<real>("RKL_Vs1", DIMENSIONS,
-                      data->np_tot[KDIR]+KOFFSET,
-                      data->np_tot[JDIR]+JOFFSET,
-                      data->np_tot[IDIR]+IOFFSET);
+      dA0 = IdefixArray4D<real>("RKL_dA0", AX3e+1,
+                        data->np_tot[KDIR]+KOFFSET,
+                        data->np_tot[JDIR]+JOFFSET,
+                        data->np_tot[IDIR]+IOFFSET);
+      Ve0 = IdefixArray4D<real>("RKL_Ve0", AX3e+1,
+                        data->np_tot[KDIR]+KOFFSET,
+                        data->np_tot[JDIR]+JOFFSET,
+                        data->np_tot[IDIR]+IOFFSET);
+      Ve1 = IdefixArray4D<real>("RKL_Ve1", AX3e+1,
+                        data->np_tot[KDIR]+KOFFSET,
+                        data->np_tot[JDIR]+JOFFSET,
+                        data->np_tot[IDIR]+IOFFSET);
+    #else
+      dB = IdefixArray4D<real>("RKL_dB", DIMENSIONS,
+                        data->np_tot[KDIR]+KOFFSET,
+                        data->np_tot[JDIR]+JOFFSET,
+                        data->np_tot[IDIR]+IOFFSET);
+      dB0 = IdefixArray4D<real>("RKL_dB0", DIMENSIONS,
+                        data->np_tot[KDIR]+KOFFSET,
+                        data->np_tot[JDIR]+JOFFSET,
+                        data->np_tot[IDIR]+IOFFSET);
+      Vs0 = IdefixArray4D<real>("RKL_Vs0", DIMENSIONS,
+                        data->np_tot[KDIR]+KOFFSET,
+                        data->np_tot[JDIR]+JOFFSET,
+                        data->np_tot[IDIR]+IOFFSET);
+      Vs1 = IdefixArray4D<real>("RKL_Vs1", DIMENSIONS,
+                        data->np_tot[KDIR]+KOFFSET,
+                        data->np_tot[JDIR]+JOFFSET,
+                        data->np_tot[IDIR]+IOFFSET);
+    #endif
   }
 
   idfx::popRegion();
 }
 
+void RKLegendre::ShowConfig() {
+  #if RKL_ORDER == 1
+    idfx::cout << "RKLegendre: 1st order scheme ENABLED." << std::endl;
+  #elif RKL_ORDER == 2
+    idfx::cout << "RKLegendre: 2nd order scheme ENABLED." << std::endl;
+  #else
+    IDEFIX_ERROR("Unknown RKL scheme order");
+  #endif
+  idfx::cout << "RKLegendre: RKL cfl set to " << cfl_rkl <<  "." << std::endl;
+}
 
 void RKLegendre::Cycle() {
   idfx::pushRegion("RKLegendre::Cycle");
@@ -134,14 +169,22 @@ void RKLegendre::Cycle() {
   IdefixArray4D<real> dU = this->dU;
   IdefixArray4D<real> dU0 = this->dU0;
   IdefixArray4D<real> Uc = data->hydro.Uc;
-  IdefixArray4D<real> Uc0 = data->hydro.Uc0;
+  IdefixArray4D<real> Uc0 = this->Uc0;
   IdefixArray4D<real> Uc1 = this->Uc1;
 
   IdefixArray4D<real> dB = this->dB;
   IdefixArray4D<real> dB0 = this->dB0;
   IdefixArray4D<real> Vs = data->hydro.Vs;
-  IdefixArray4D<real> Vs0 = data->hydro.Vs0;
+  IdefixArray4D<real> Vs0 = this->Vs0;
   IdefixArray4D<real> Vs1 = this->Vs1;
+
+  #ifdef EVOLVE_VECTOR_POTENTIAL
+  IdefixArray4D<real> dA = this->dA;
+  IdefixArray4D<real> dA0 = this->dA0;
+  IdefixArray4D<real> Ve = data->hydro.Ve;
+  IdefixArray4D<real> Ve0 = this->Ve0;
+  IdefixArray4D<real> Ve1 = this->Ve1;
+  #endif
 
   IdefixArray1D<int> varList = this->varList;
   real time = data->t;
@@ -162,7 +205,13 @@ void RKLegendre::Cycle() {
 
   // Store the result in Uc0
   Copy(Uc0,Uc);
-  if(haveVs) Kokkos::deep_copy(Vs0,Vs);
+  if(haveVs) {
+    #ifdef EVOLVE_VECTOR_POTENTIAL
+      Kokkos::deep_copy(Ve0,Ve);
+    #else
+      Kokkos::deep_copy(Vs0,Vs);
+    #endif
+  }
 
   // evolve RKL stage
   EvolveStage(time);
@@ -170,7 +219,14 @@ void RKLegendre::Cycle() {
   ComputeDt();
 
   Copy(dU0,dU);
-  if(haveVs) Kokkos::deep_copy(dB0,dB);
+
+  if(haveVs) {
+    #ifdef EVOLVE_VECTOR_POTENTIAL
+      Kokkos::deep_copy(dA0,dA);
+    #else
+      Kokkos::deep_copy(dB0,dB);
+    #endif
+  }
 
   // Compute number of RKL steps
   real nrkl;
@@ -221,15 +277,28 @@ void RKLegendre::Cycle() {
     }
   );
   if(haveVs) {
-    idefix_for("RKL_Cycle_InitVs1",
-             0, DIMENSIONS,
-             data->beg[KDIR],data->end[KDIR]+KOFFSET,
-             data->beg[JDIR],data->end[JDIR]+JOFFSET,
-             data->beg[IDIR],data->end[IDIR]+IOFFSET,
-    KOKKOS_LAMBDA (int n, int k, int j, int i) {
-      Vs1(n,k,j,i) = Vs(n,k,j,i);
-      Vs(n,k,j,i) = Vs1(n,k,j,i) + mu_tilde_j*dt_hyp*dB0(n,k,j,i);
-    });
+    #ifdef EVOLVE_VECTOR_POTENTIAL
+      idefix_for("RKL_Cycle_InitVe1",
+              0, AX3e+1,
+              data->beg[KDIR],data->end[KDIR]+KOFFSET,
+              data->beg[JDIR],data->end[JDIR]+JOFFSET,
+              data->beg[IDIR],data->end[IDIR]+IOFFSET,
+      KOKKOS_LAMBDA (int n, int k, int j, int i) {
+        Ve1(n,k,j,i) = Ve(n,k,j,i);
+        Ve(n,k,j,i) = Ve1(n,k,j,i) + mu_tilde_j*dt_hyp*dA0(n,k,j,i);
+      });
+      data->hydro.emf.ComputeMagFieldFromA(Ve,Vs);
+    #else
+      idefix_for("RKL_Cycle_InitVs1",
+              0, DIMENSIONS,
+              data->beg[KDIR],data->end[KDIR]+KOFFSET,
+              data->beg[JDIR],data->end[JDIR]+JOFFSET,
+              data->beg[IDIR],data->end[IDIR]+IOFFSET,
+      KOKKOS_LAMBDA (int n, int k, int j, int i) {
+        Vs1(n,k,j,i) = Vs(n,k,j,i);
+        Vs(n,k,j,i) = Vs1(n,k,j,i) + mu_tilde_j*dt_hyp*dB0(n,k,j,i);
+      });
+    #endif
     data->hydro.boundary.ReconstructVcField(Uc);
   }
 
@@ -283,23 +352,44 @@ void RKLegendre::Cycle() {
         });
 
     if(haveVs) {
-      // update Vs
-      idefix_for("RKL_Cycle_UpdateVs",
-              0, DIMENSIONS,
-              data->beg[KDIR],data->end[KDIR]+KOFFSET,
-              data->beg[JDIR],data->end[JDIR]+JOFFSET,
-              data->beg[IDIR],data->end[IDIR]+IOFFSET,
-        KOKKOS_LAMBDA (int n, int k, int j, int i) {
-          real Y = mu_j*Vs(n,k,j,i) + nu_j*Vs1(n,k,j,i);
-          Vs1(n,k,j,i) = Vs(n,k,j,i);
-  #if RKL_ORDER == 1
-          Vs(n,k,j,i) = Y + dt_hyp*mu_tilde_j*dB(n,k,j,i);
-  #elif RKL_ORDER == 2
-          Vs(n,k,j,i) = Y + (1.0 - mu_j - nu_j)*Vs0(n,k,j,i)
-                                  + dt_hyp*mu_tilde_j*dB(n,k,j,i)
-                                  + gamma_j*dt_hyp*dB0(n,k,j,i);
-  #endif
+      #ifdef EVOLVE_VECTOR_POTENTIAL
+        // update Ve
+        idefix_for("RKL_Cycle_UpdateVe",
+                0, AX3e+1,
+                data->beg[KDIR],data->end[KDIR]+KOFFSET,
+                data->beg[JDIR],data->end[JDIR]+JOFFSET,
+                data->beg[IDIR],data->end[IDIR]+IOFFSET,
+          KOKKOS_LAMBDA (int n, int k, int j, int i) {
+            real Y = mu_j*Ve(n,k,j,i) + nu_j*Ve1(n,k,j,i);
+            Ve1(n,k,j,i) = Ve(n,k,j,i);
+            #if RKL_ORDER == 1
+              Ve(n,k,j,i) = Y + dt_hyp*mu_tilde_j*dA(n,k,j,i);
+            #elif RKL_ORDER == 2
+              Ve(n,k,j,i) = Y + (1.0 - mu_j - nu_j)*Ve0(n,k,j,i)
+                                    + dt_hyp*mu_tilde_j*dA(n,k,j,i)
+                                    + gamma_j*dt_hyp*dA0(n,k,j,i);
+            #endif
           });
+        data->hydro.emf.ComputeMagFieldFromA(Ve,Vs);
+      #else
+        // update Vs
+        idefix_for("RKL_Cycle_UpdateVs",
+                0, DIMENSIONS,
+                data->beg[KDIR],data->end[KDIR]+KOFFSET,
+                data->beg[JDIR],data->end[JDIR]+JOFFSET,
+                data->beg[IDIR],data->end[IDIR]+IOFFSET,
+          KOKKOS_LAMBDA (int n, int k, int j, int i) {
+            real Y = mu_j*Vs(n,k,j,i) + nu_j*Vs1(n,k,j,i);
+            Vs1(n,k,j,i) = Vs(n,k,j,i);
+            #if RKL_ORDER == 1
+              Vs(n,k,j,i) = Y + dt_hyp*mu_tilde_j*dB(n,k,j,i);
+            #elif RKL_ORDER == 2
+              Vs(n,k,j,i) = Y + (1.0 - mu_j - nu_j)*Vs0(n,k,j,i)
+                                    + dt_hyp*mu_tilde_j*dB(n,k,j,i)
+                                    + gamma_j*dt_hyp*dB0(n,k,j,i);
+            #endif
+          });
+      #endif  // EVOLVE_VECTOR_POTENTIAL
       data->hydro.boundary.ReconstructVcField(Uc);
     }
     // Convert current state into primitive variable
@@ -341,7 +431,11 @@ void RKLegendre::ResetStage() {
 
   IdefixArray4D<real> dU = this->dU;
   IdefixArray4D<real> Flux = data->hydro.FluxRiemann;
-  IdefixArray4D<real> dB = this->dB;
+  #ifdef EVOLVE_VECTOR_POTENTIAL
+    IdefixArray4D<real> dA = this->dA;
+  #else
+    IdefixArray4D<real> dB = this->dB;
+  #endif
   IdefixArray3D<real> ex = data->hydro.emf.ex;
   IdefixArray3D<real> ey = data->hydro.emf.ey;
   IdefixArray3D<real> ez = data->hydro.emf.ez;
@@ -364,9 +458,15 @@ void RKLegendre::ResetStage() {
         invDt(k,j,i) = ZERO_F;
 
       if(haveVs) {
-        for(int n=0; n < DIMENSIONS; n++) {
-          dB(n,k,j,i) = ZERO_F;
-        }
+        #ifdef EVOLVE_VECTOR_POTENTIAL
+          for(int n=0; n < AX3e+1; n++) {
+            dA(n,k,j,i) = ZERO_F;
+          }
+        #else
+          for(int n=0; n < DIMENSIONS; n++) {
+            dB(n,k,j,i) = ZERO_F;
+          }
+        #endif
         D_EXPAND( ez(k,j,i) = 0.0;    ,
                                       ,
                   ex(k,j,i) = 0.0;
@@ -436,7 +536,11 @@ void RKLegendre::EvolveStage(real t) {
     data->hydro.emf.CalcNonidealEMF(t);
     data->hydro.emf.EnforceEMFBoundary();
     real dt=1.0;
-    data->hydro.emf.EvolveMagField(t, dt, this->dB);
+    #ifdef EVOLVE_VECTOR_POTENTIAL
+      data->hydro.emf.EvolveVectorPotential(dt, this->dA);
+    #else
+      data->hydro.emf.EvolveMagField(t, dt, this->dB);
+    #endif
   }
   idfx::popRegion();
 }

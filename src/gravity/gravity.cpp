@@ -19,20 +19,14 @@ void Gravity::Init(Input &input, DataBlock *datain) {
   if(nPotential >=0) {
     this->havePotential = true;
     for(int i = 0 ; i < nPotential ; i++) {
-      std::string potentialString = input.GetString("Gravity","potential",i);
+      std::string potentialString = input.Get<std::string>("Gravity","potential",i);
       if(potentialString.compare("userdef") == 0) {
         this->haveUserDefPotential = true;
-        idfx::cout << "Gravity: Enabling user-defined gravitational potential" << std::endl;
       } else if (potentialString.compare("central") == 0) {
         this->haveCentralMassPotential = true;
-        if(input.CheckEntry("Gravity","Mcentral") >= 0) {
-          this->centralMass = input.GetReal("Gravity","Mcentral",0);
-        }
-        idfx::cout << "Gravity: Enabling central mass gravitational potential with M="
-                   << this->centralMass << std::endl;
+        this->centralMass = input.GetOrSet<real>("Gravity","Mcentral",0, 1.0);
       } else if (potentialString.compare("selfgravity") == 0) {
         this->haveSelfGravityPotential = true;
-        idfx::cout << "Gravity: Enabling self Gravity" << std::endl;
       } else {
         IDEFIX_ERROR("Unknown type of gravitational potential in idefix.ini. ");
       }
@@ -41,10 +35,9 @@ void Gravity::Init(Input &input, DataBlock *datain) {
 
   // Body Force
   if(input.CheckEntry("Gravity","bodyForce")>=0) {
-    std::string potentialString = input.GetString("Gravity","bodyForce",0);
+    std::string potentialString = input.Get<std::string>("Gravity","bodyForce",0);
     if(potentialString.compare("userdef") == 0) {
       this->haveBodyForce = true;
-      idfx::cout << "Gravity:: Enabling user-defined body force" << std::endl;
     } else {
       IDEFIX_ERROR("Unknown type of body force in idefix.ini. "
                    "Only userdef is implemented");
@@ -64,6 +57,30 @@ void Gravity::Init(Input &input, DataBlock *datain) {
   }
 }
 
+void Gravity::ShowConfig() {
+  if(data->haveGravity) {
+    idfx::cout << "Gravity: ENABLED." << std::endl;
+    if(haveUserDefPotential) {
+      idfx::cout << "Gravity: User-defined gravitational potential ENABLED." << std::endl;
+      if(!gravPotentialFunc) {
+        IDEFIX_ERROR("No user-defined gravitational potential has been enrolled.");
+      }
+    }
+    if(haveCentralMassPotential) {
+      idfx::cout << "Gravity: central mass gravitational potential ENABLED with M="
+                  << this->centralMass << std::endl;
+    }
+    if(haveSelfGravityPotential) {
+      idfx::cout << "Gravity: self-gravity ENABLED." << std::endl;
+    }
+    if(haveBodyForce) {
+      idfx::cout << "Gravity: user-defined body force ENABLED." << std::endl;
+      if(!bodyForceFunc) {
+        IDEFIX_ERROR("No user-defined body force has been enrolled.");
+      }
+    }
+  }
+}
 // This function compute the gravitational field, using both body force and potential
 void Gravity::ComputeGravity() {
   idfx::pushRegion("Gravity::ComputeGravity");
@@ -104,22 +121,20 @@ void Gravity::ComputeGravity() {
 
 void Gravity::EnrollPotential(GravPotentialFunc myFunc) {
   if(!this->haveUserDefPotential) {
-    IDEFIX_ERROR("In order to enroll your gravitational potential, "
+    IDEFIX_WARNING("In order to enroll your gravitational potential, "
                  "you need to enable it first in the .ini file "
                  "with the potential entry in [Gravity].");
   }
   this->gravPotentialFunc = myFunc;
-  idfx::cout << "Gravity: User-defined gravitational potential has been enrolled" << std::endl;
 }
 
 void Gravity::EnrollBodyForce(BodyForceFunc myFunc) {
   if(!this->haveBodyForce) {
-    IDEFIX_ERROR("In order to enroll your body force, "
+    IDEFIX_WARNING("In order to enroll your body force, "
                  "you need to enable it first in the .ini file "
                  "with the bodyForce entry in [Gravity].");
   }
   this->bodyForceFunc = myFunc;
-  idfx::cout << "Gravity: User-defined body force function has been enrolled" << std::endl;
 }
 
 // Fill the gravitational potential with zeros
@@ -143,6 +158,9 @@ void Gravity::AddCentralMassPotential() {
   IdefixArray1D<real> x3 = data->x[KDIR];
   IdefixArray3D<real> phiP = this->phiP;
   real mass = this->centralMass;
+  #if GEOMETRY == CARTESIAN
+    IDEFIX_ERROR("Central mass potential is not defined in cartesian geometry");
+  #endif
   idefix_for("Gravity::AddCentralMassPotential",
               0, data->np_tot[KDIR],
               0, data->np_tot[JDIR],
@@ -157,6 +175,8 @@ void Gravity::AddCentralMassPotential() {
                   r = sqrt(r);
                 #elif GEOMETRY == SPHERICAL
                   r = x1(i);
+                #else
+                  r = ONE_F; // Make sure this one is initialized
                 #endif
                   phiP(k,j,i) += -mass/r;
               });

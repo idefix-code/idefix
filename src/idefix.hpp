@@ -78,6 +78,7 @@ enum class LoopPattern { SIMDFOR, RANGE, MDRANGE, TPX, TPTTRTVR, UNDEFINED };
 #define  BX1 (COMPONENTS + 1)
 #define  BX2 (COMPONENTS >= 2 ? (BX1+1): 252)
 #define  BX3 (COMPONENTS == 3 ? (BX1+2): 251)
+
 #else
 #define  BX1 253
 #define  BX2 252
@@ -107,6 +108,19 @@ enum class LoopPattern { SIMDFOR, RANGE, MDRANGE, TPX, TPTTRTVR, UNDEFINED };
 #define BX1s  0
 #define BX2s  1
 #define BX3s  2
+
+// Edge-centered variables
+#ifdef EVOLVE_VECTOR_POTENTIAL
+  #if DIMENSIONS < 3
+    #define AX1e   250
+    #define AX2e   251
+    #define AX3e   0
+  #else
+    #define AX1e   0
+    #define AX2e   1
+    #define AX3e   2
+  #endif
+#endif
 
 // User-Friendly variables in non-cartesian geometry
 #if GEOMETRY == CYLINDRICAL

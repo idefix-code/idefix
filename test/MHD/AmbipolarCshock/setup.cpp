@@ -55,20 +55,20 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
             int ighost = data.end[IDIR]-1;
         idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],data.end[IDIR],data.np_tot[IDIR],
                         KOKKOS_LAMBDA (int k, int j, int i) {
-                                Vc(RHO,k,j,i) = Vc(RHO,k,j,2*ighost-i);
+                                Vc(RHO,k,j,i) = Vc(RHO,k,j,2*ighost-i+1);
                                 #if HAVE_ENERGY
-                                Vc(PRS,k,j,i) = Vc(PRS,k,j,2*ighost-i);
+                                Vc(PRS,k,j,i) = Vc(PRS,k,j,2*ighost-i+1);
                                 #endif
-                                Vc(VX1,k,j,i) = -Vc(VX1,k,j,2*ighost-i);
-                                Vc(VX2,k,j,i) = Vc(VX2,k,j,2*ighost-i);
-                                Vc(BX2,k,j,i) = Vc(BX2,k,j,2*ighost-i);
+                                Vc(VX1,k,j,i) = -Vc(VX1,k,j,2*ighost-i+1);
+                                Vc(VX2,k,j,i) = Vc(VX2,k,j,2*ighost-i+1);
+                                Vc(BX2,k,j,i) = Vc(BX2,k,j,2*ighost-i+1);
                                 #if COMPONENTS == 3
-                                Vc(VX3,k,j,i) = Vc(VX3,k,j,2*ighost-i);
-                                Vc(BX3,k,j,i) = Vc(BX3,k,j,2*ighost-i);
+                                Vc(VX3,k,j,i) = Vc(VX3,k,j,2*ighost-i+1);
+                                Vc(BX3,k,j,i) = Vc(BX3,k,j,2*ighost-i+1);
                                 #endif
                                 D_EXPAND(                          ,
-                                         Vs(BX2s,k,j,i) = Vs(BX2s,k,j,2*ighost-i);  ,
-                                         Vs(BX3s,k,j,i) = Vs(BX3s,k,j,2*ighost-i); )
+                                         Vs(BX2s,k,j,i) = Vs(BX2s,k,j,2*ighost-i+1);  ,
+                                         Vs(BX3s,k,j,i) = Vs(BX3s,k,j,2*ighost-i+1); )
 
             });
         }
@@ -83,7 +83,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
     data.hydro.EnrollAmbipolarDiffusivity(&AmbipolarFunction);
-    cs=input.GetReal("Hydro","csiso",1);
+    cs=input.Get<real>("Hydro","csiso",1);
 }
 
 // This routine initialize the flow

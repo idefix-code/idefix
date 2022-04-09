@@ -16,6 +16,7 @@
 #include "hydro_defs.hpp"
 #include "electroMotiveForce.hpp"
 #include "viscosity.hpp"
+#include "thermalDiffusion.hpp"
 #include "axis.hpp"
 #include "hydroboundary.hpp"
 
@@ -39,6 +40,7 @@ class Hydro {
   real GetGamma();
   real CheckDivB();
   void ResetStage();
+  void ShowConfig();
 
   // Our boundary conditions
   HydroBoundary boundary;
@@ -61,8 +63,14 @@ class Hydro {
   // Whether or not we have viscosity
   ParabolicModuleStatus viscosityStatus;
 
+  // Whether or not we have thermal diffusion
+  ParabolicModuleStatus thermalDiffusionStatus;
+
   // Viscosity object
   Viscosity viscosity;
+
+  // Thermal Diffusion object
+  ThermalDiffusion thermalDiffusion;
 
   // Whether or not we have to treat the axis
   bool haveAxis{false};
@@ -124,6 +132,7 @@ class Hydro {
   // Arrays required by the Hydro object
   IdefixArray4D<real> Vc;      // Main cell-centered primitive variables index
   IdefixArray4D<real> Vs;      // Main face-centered varariables
+  IdefixArray4D<real> Ve;      // Main edge-centered varariables (only when EVOLVE_VECTOR_POTENTIAL)
   IdefixArray4D<real> Uc;      // Main cell-centered conservative variables
   IdefixArray4D<real> J;       // Electrical current
                                // (only defined when non-ideal MHD effects are enabled)
@@ -131,6 +140,7 @@ class Hydro {
   // Name of the fields (used in outputs)
   std::vector<std::string> VcName;
   std::vector<std::string> VsName;
+  std::vector<std::string> VeName;
 
   // Storing all of the electromotive forces
   ElectroMotiveForce emf;
@@ -138,6 +148,7 @@ class Hydro {
   // Required by time integrator
   IdefixArray4D<real> Uc0;
   IdefixArray4D<real> Vs0;
+  IdefixArray4D<real> Ve0;
   IdefixArray3D<real> InvDt;
 
   IdefixArray4D<real> FluxRiemann;
@@ -148,6 +159,7 @@ class Hydro {
  private:
   friend class ElectroMotiveForce;
   friend class Viscosity;
+  friend class ThermalDiffusion;
   friend class Fargo;
   friend class Axis;
   friend class RKLegendre;

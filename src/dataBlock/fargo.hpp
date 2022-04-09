@@ -8,6 +8,7 @@
 #ifndef DATABLOCK_FARGO_HPP_
 #define DATABLOCK_FARGO_HPP_
 
+#include <vector>
 #include "idefix.hpp"
 
 // Forward class hydro declaration
@@ -26,6 +27,7 @@ class Fargo {
   void EnrollVelocity(FargoVelocityFunc);
   void StoreToScratch();
   void CheckMaxDisplacement();
+  void ShowConfig();
 
  private:
   friend class Hydro;
@@ -41,10 +43,10 @@ class Fargo {
   Mpi mpi;                      // Fargo-specific MPI layer
 #endif
 
-  int beg[3];
-  int end[3];
-  int nghost[3];
-  int maxShift{10};                     //< maximum number of cells along which we plan to shift.
+  std::vector<int> beg;
+  std::vector<int> end;
+  std::vector<int> nghost;
+  int maxShift;                         //< maximum number of cells along which we plan to shift.
   real dtMax{0};                        //< Maximum allowable dt for a given Fargo velocity
                                         //< when domain decomposition is enabled
   bool velocityHasBeenComputed{false};

@@ -9,7 +9,7 @@ allows for comments, which should start with ``#``.
 
 .. tip::
     Note that you can add arbitray sections and entries in the input file freely. *Idefix* will automatically read and store them on startup. They are then accessible in the code using the
-    ``Input::GetReal(..)``, ``Input::GetInt(...)`` and ``Input::GetString(..)`` methods defined in the ``Input`` class (see :ref:`inputClass`)
+    ``Input::Get<T>(..)`` and ``Input::GetOrSet<T>`` methods defined in the ``Input`` class (see :ref:`inputClass`).
 
 ``Grid`` section
 --------------------
@@ -82,6 +82,9 @@ This section is used by *Idefix* time integrator class to define the time integr
 | nstages        | integer            | | number of stages of the integrator. Can be  either 1, 2 or 3. 1=First order Euler method,               |
 |                |                    | | 2, 3 = second and third order  TVD Runge-Kutta                                                          |
 +----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
+| check_nan      | integer            | | number of time integration cycles between each Nan verification. Default is one on CPUs and 100 on GPUs.|
+|                |                    | | Note that Nan checks are slow on GPUs, and low values of ``check_nan`` are not recommended.             |                                                        |
++----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
 
 .. note::
     The ``first_dt`` is recommended since wave speeds are evaluated when Riemann problems are solved, hence the CFL
@@ -116,7 +119,7 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 |                |                         | | to be enrolled with   ``EnrollIsoSoundSpeed(IsoSoundSpeedFunc)``                          |
 |                |                         | | (see :ref:`functionEnrollment`). In this case, the second parameter is not used.          |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| gamma          | float                   | Adiabatic index when ISOTHERMAL is not defined                                              |
+| gamma          | float                   | Adiabatic index when ISOTHERMAL is not defined. Default to 5/3 if not set.                  |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | resistivity    | string, string, (float) | | Switches on Ohmic diffusion.                                                              |
 |                |                         | | The first parameter can be ``explicit`` or ``rkl``. When ``explicit``, diffusion is       |
@@ -150,12 +153,24 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 |                | float, (float)          | | The first parameter can be ``explicit`` or ``rkl``. When ``explicit``, diffusion is       |
 |                |                         | | integrated in the main integration loop with the usual cfl restriction.  If ``rkl``,      |
 |                |                         | | diffusion  is integrated using the Runge-Kutta Legendre scheme.                           |
+|                |                         | | The second parameter can be  either ``constant`` or ``userdef``.                          |
 |                |                         | | When ``constant``, the third parameter is the flow viscosity and the fourth               |
 |                |                         | | parameter is the second (or compressive) viscosity (which is optionnal).                  |
 |                |                         | | When ``userdef``, the ``Hydro.Viscosity`` class expects a user-defined viscosity function |
 |                |                         | | to be enrolled with   ``Hydro.Viscosity::EnrollViscousDiffusivity(DiffusivityFunc)``      |
 |                |                         | | (see :ref:`functionEnrollment`). In this case, the third and fourth parameters            |
 |                |                         | | are not used.                                                                             |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| TDiffusion     | string, string,         | | Switches on isotropic thermal diffusion.                                                  |
+|                | float                   | | The first parameter can be ``explicit`` or ``rkl``. When ``explicit``, diffusion is       |
+|                |                         | | integrated in the main integration loop with the usual cfl restriction.  If ``rkl``,      |
+|                |                         | | diffusion  is integrated using the Runge-Kutta Legendre scheme.                           |
+|                |                         | | The second parameter can be  either ``constant`` or ``userdef``.                          |
+|                |                         | | When ``constant``, the third parameter is the (constant) thermal diffusivity.             |
+|                |                         | | When ``userdef``, the ``Hydro.ThermalDiffusivity`` class expects a user-defined thermal   |
+|                |                         | | diffusivity function to be enrolled with                                                  |
+|                |                         | | ``Hydro.thermalDiffusion::EnrollThermalDiffusivity(DiffusivityFunc)`` .                   |
+|                |                         | | (see :ref:`functionEnrollment`) In this case, the third parameter is not used.            |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | rotation       | float                   | | Add rotation with the z rotation speed given as parameter.                                |
 |                |                         | | Note that this entry only adds Coriolis force in Cartesian geometry.                      |
@@ -192,7 +207,7 @@ This section enables the orbital advection algorithm provided in *Idefix*. More 
 |                |                         | | module as the input velocity function.                                                    |
 |                |                         | | When `userdef` is set, the fargo module expects a user-defined  velocity function to      |
 |                |                         | | be enrolled via Fargo::EnrollVelocity(FargoVelocityFunc)                                  |
-|                |                         | |
+|                |                         | |                                                                                           |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | maxShift       | integer                 | | optional: when using MPI with a domain decomposition in the azimuthal direction, this sets|
 |                |                         | | the maximum number of cells Fargo is allowed to shift the domain at each time step.       |
@@ -209,20 +224,21 @@ This section enables gravity in the form of a gravitational potential and/or an 
 +================+=========================+=============================================================================================+
 | potential      | string, [string...]     | | Switches on an external gravitational potential. Each parameter adds a potential to the   |
 |                |                         | | total potential used by *Idefix*.                                                         |
+|                |                         | |                                                                                           |
 |                |                         | | * ``userdef`` allows the user to give *Idefix* a user-defined potential function. In this |
 |                |                         | | ``Gravity`` class expects a user-defined potential function to be enrolled with           |
 |                |                         | | ``Gavity::EnrollPotential(GravPotentialFunc)``  (see :ref:`functionEnrollment`)           |
 |                |                         | | * ``central`` allows the user to automatically add the potential of a central point mass. |
 |                |                         | | In this case, the central mass is assumed to be 1 in code units. This can be modified     |
 |                |                         | | using the Mcentral parameter, or using the ``Gravity::SetCentralMass(real)`` method.      |
-|                |                         | | * ``selfgravity`` enable the potential computed from solving Poisson euqation with the    |
+|                |                         | | * ``selfgravity`` enables the potential computed from solving Poisson equation with the   |
 |                |                         | | density distribution                                                                      |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | Mcentral       | real                    | | Mass of the central object when a central potential is enabled (see above). Default is 1. |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| bodyForce      | string                  | | Adds an acceleration vector to each cell of the domain. The only parameter possible       |
+| bodyForce      | string                  | | Adds an acceleration vector to each cell of the domain. The only value allowed            |
 |                |                         | | is ``userdef``. The ``Gravity`` class then expects a user-defined bodyforce function to   |
-|                |                         | | be enrolled with ``Gavity::EnrollBodyForce(BodyForceFunc)``(see :ref:`functionEnrollment`)|
+|                |                         | | be enrolled via ``Gavity::EnrollBodyForce(BodyForceFunc)`` (see :ref:`functionEnrollment`)|
 |                |                         | | See the shearing box tests for examples of using bodyForce.                               |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 
@@ -260,7 +276,8 @@ and ``X1-end``, ``X2-end``, ``X3-end`` for the right boundaries. Each boundary c
 | axis           | | Axis Boundary conditions. Useful if one wants to include the axis in spherical geometry in the computational   |
 |                | | domain. This condition explicitely requires X2 to go from 0 to :math:`\pi` but can be used for domains         |
 |                | | extending over a fraction of a full circle in X3 (i.e :math:`2\pi/n` where :math:`n` is an integer). When the  |
-|                | | X3 domain spans :math:`2\pi`, this boundary condition is incompatible with MPI domain decomposition along X3.  |
+|                | | X3 domain spans :math:`2\pi` and MPI is used, the number of processes along the X3 direction should be one or  |
+|                | | even (in this last case, additional communications are required which may impact performances).                |
 +----------------+------------------------------------------------------------------------------------------------------------------+
 | userdef        | | User-defined boundary conditions. The boundary condition function should be enrolled in the setup constructor  |
 |                | | (see :ref:`userdefBoundaries`)                                                                                 |

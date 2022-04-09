@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 set(CMAKE_BUILD_TYPE Release)
 set (CMAKE_CXX_STANDARD 14)
 
-project (idefix VERSION 0.9.0)
+project (idefix VERSION 1.0.0)
 option(Idefix_MHD "enable MHD" OFF)
 option(Idefix_MPI "enable Message Passing Interface parallelisation" OFF)
 option(Idefix_HIGH_ORDER_FARGO "Force Fargo to use a PPM reconstruction scheme" OFF)
@@ -10,6 +10,9 @@ option(Idefix_DEBUG "Enable Idefix debug features (makes the code very slow)" OF
 set(Idefix_CXX_FLAGS "" CACHE STRING "Additional compiler/linker flag")
 set(Idefix_DEFS "definitions.hpp" CACHE FILEPATH "Problem definition header file")
 set(Idefix_RECONSTRUCTION "Linear" CACHE STRING "Type of cell reconstruction scheme")
+if(Idefix_MHD)
+  option(Idefix_EVOLVE_VECTOR_POTENTIAL "Evolve the vector potential instead of the field (helps reducing div(B) in long runs)" OFF)
+endif()
 set_property(CACHE Idefix_RECONSTRUCTION PROPERTY STRINGS Constant Linear LimO3 Parabolic)
 set(Idefix_PRECISION "Double" CACHE STRING "Precision of arithmetics")
 set_property(CACHE Idefix_PRECISION PROPERTY STRINGS Double Single)
@@ -79,6 +82,9 @@ if(Idefix_HIGH_ORDER_FARGO)
   add_compile_definitions("HIGH_ORDER_FARGO")
 endif()
 
+if(Idefix_EVOLVE_VECTOR_POTENTIAL)
+  add_compile_definitions("EVOLVE_VECTOR_POTENTIAL")
+endif()
 #update gitversion.hpp if possible
 git_describe(GIT_SHA1)
 write_file(${CMAKE_SOURCE_DIR}/src/gitversion.hpp "#define GITVERSION \"${GIT_SHA1}\"")
@@ -118,13 +124,18 @@ target_include_directories(idefix PUBLIC
                            src/output
                            src/rkl
                            src/gravity
+                           src/utils
                            src
                            )
 
 target_link_libraries(idefix Kokkos::kokkos)
 
 message(STATUS "Idefix final configuration")
-message(STATUS "    MHD: ${Idefix_MHD}")
+if(Idefix_EVOLVE_VECTOR_POTENTIAL)
+  message(STATUS "    MHD: ${Idefix_MHD} (Vector potential)")
+else()
+  message(STATUS "    MHD: ${Idefix_MHD}")
+endif()
 message(STATUS "    MPI: ${Idefix_MPI}")
 message(STATUS "    Reconstruction: ${Idefix_RECONSTRUCTION}")
 message(STATUS "    Precision: ${Idefix_PRECISION}")

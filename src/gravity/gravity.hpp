@@ -35,6 +35,7 @@ class Gravity {
 
   void AddCentralMassPotential();   ///< Àdd the potential due to a centrall mass
 
+  void ShowConfig();                ///< Show the gravity configuration
   bool havePotential{false};        ///< Whether a gravitational potential is present
                                         ///< in which case, (at least) one of the following is true
   bool haveUserDefPotential{false};     ///< Whether a potential is defined by user
@@ -53,7 +54,7 @@ class Gravity {
  private:
   bool haveInitialisedPotential{false};     ///< whether a potential has already been initialised
   bool haveInitialisedBodyForce{false};     ///< whether a body force has already been initialised
-  real centralMass{1.0};                    ///< central mass parameter when central mass potential
+  real centralMass;                    ///< central mass parameter when central mass potential
                                             ///< is enabled
   DataBlock *data;
 

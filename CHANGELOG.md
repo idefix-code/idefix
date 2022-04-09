@@ -6,8 +6,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Upcoming
 ### Changed
+- use buffers for mpi axis exchanges to improve performances on GPUs
+- slight optimisation of the cfl estimation for parabolic terms (makes a difference when several explicit parabolic terms are used simultaneously)
+- use input::Get<T> and input::GetOrSet<T> instead of the old input:GetInt, input:GetReal... the new functions have a better error handling, and also allows explicit default values.
+- ensure that error messages are sent to std::cerr using a dedicated stream
+- added a parameter check_nan to control the periodicity of Nan checks in the time integration
+- added exception handling for the time integration, which saves a final vtk when a error is detected in the time integration loop
+
+### Added
+- isotropic thermal diffusion (anisotropic diffusion in MHD will come later)
 - fixed a bug in 1D+1D in spherical geometry (J. Mauxion)
 - Increased the efficiency of abort checks using MPI_Bcast instead of MPI_Allreduce
+- allow the user to integrate the magnetic vector potential instead of the field to reduce the accumulation of roundoff errors on div(B) (experimental feature, can be enabled at config time)
+- allow for domain decomposition along X3 with axis boundary condition and 2pi azimuthal domains.
+- addition of stateContainers to automatically evolve variables in multi-step time integration
 
 ## [1.0.0] 2022-01-13
 ### Changed

@@ -55,20 +55,20 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
             int ighost = data.end[IDIR]-1;
         idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],data.end[IDIR],data.np_tot[IDIR],
                         KOKKOS_LAMBDA (int k, int j, int i) {
-                                Vc(RHO,k,j,i) = Vc(RHO,k,j,2*ighost-i);
+                                Vc(RHO,k,j,i) = Vc(RHO,k,j,2*ighost-i+1);
                                 #if HAVE_ENERGY
-                                Vc(PRS,k,j,i) = Vc(PRS,k,j,2*ighost-i);
+                                Vc(PRS,k,j,i) = Vc(PRS,k,j,2*ighost-i+1);
                                 #endif
-                                Vc(VX1,k,j,i) = -Vc(VX1,k,j,2*ighost-i);
-                                Vc(VX2,k,j,i) = Vc(VX2,k,j,2*ighost-i);
-                                Vc(BX2,k,j,i) = Vc(BX2,k,j,2*ighost-i);
+                                Vc(VX1,k,j,i) = -Vc(VX1,k,j,2*ighost-i+1);
+                                Vc(VX2,k,j,i) = Vc(VX2,k,j,2*ighost-i+1);
+                                Vc(BX2,k,j,i) = Vc(BX2,k,j,2*ighost-i+1);
                                 #if COMPONENTS == 3
-                                Vc(VX3,k,j,i) = Vc(VX3,k,j,2*ighost-i);
-                                Vc(BX3,k,j,i) = Vc(BX3,k,j,2*ighost-i);
+                                Vc(VX3,k,j,i) = Vc(VX3,k,j,2*ighost-i+1);
+                                Vc(BX3,k,j,i) = Vc(BX3,k,j,2*ighost-i+1);
                                 #endif
                                 D_EXPAND(                          ,
-                                         Vs(BX2s,k,j,i) = Vs(BX2s,k,j,2*ighost-i);  ,
-                                         Vs(BX3s,k,j,i) = Vs(BX3s,k,j,2*ighost-i); )
+                                         Vs(BX2s,k,j,i) = Vs(BX2s,k,j,2*ighost-i+1);  ,
+                                         Vs(BX3s,k,j,i) = Vs(BX3s,k,j,2*ighost-i+1); )
 
             });
         }
@@ -83,7 +83,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
     data.hydro.EnrollAmbipolarDiffusivity(&AmbipolarFunction);
-    cs=input.GetReal("Hydro","csiso",1);
+    cs=input.Get<real>("Hydro","csiso",1);
 }
 
 // This routine initialize the flow
@@ -120,17 +120,26 @@ void Setup::InitFlow(DataBlock &data) {
 #endif
                 d.Vc(VX1,k,j,i) = vin;
                 d.Vc(VX2,k,j,i) = 0.0;
-                d.Vs(BX1s,k,j,i) = B0*cos(theta);
-#if DIMENSIONS >= 2
-                d.Vs(BX2s,k,j,i) = B0*sin(theta);
-#else
+                d.Vc(BX1,k,j,i) = B0*cos(theta);
                 d.Vc(BX2,k,j,i) = B0*sin(theta);
-#endif
-#if DIMENSIONS == 3
-                d.Vs(BX3s,k,j,i) = 0.0;
-#else
                 d.Vc(BX3,k,j,i) = 0.0;
-#endif
+
+                D_EXPAND( d.Vs(BX1s,k,j,i) = B0*cos(theta);  ,
+                          d.Vs(BX2s,k,j,i) = B0*sin(theta);  ,
+                          d.Vs(BX3s,k,j,i) = 0.0;              )
+
+                // Init vector potential if we're requested so
+                #ifdef EVOLVE_VECTOR_POTENTIAL
+                  #if DIMENSIONS == 3
+                    d.Ve(AX1e,k,j,i) = B0*sin(theta)*z;
+                    d.Ve(AX2e,k,j,i) = ZERO_F;
+                    d.Ve(AX3e,k,j,i) = B0*cos(theta)*y;
+                  #else
+                    IDEFIX_ERROR("Vector potential only valid in 3 dimensions for this setup");
+                  #endif
+                #endif
+
+
 
             }
         }

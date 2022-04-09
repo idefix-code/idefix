@@ -46,23 +46,12 @@ void Viscosity::Init(Input &input, Grid &grid, Hydro *hydroin) {
   this->hydro = hydroin;
 
   if(input.CheckEntry("Hydro","viscosity")>=0) {
-    if(input.GetString("Hydro","viscosity",1).compare("constant") == 0) {
-        this->eta1 = input.GetReal("Hydro","viscosity",2);
-        idfx::cout << "Viscosity: Enabling constant viscosity function with eta1="
-                   << this->eta1 << " ."<< std::endl;
+    if(input.Get<std::string>("Hydro","viscosity",1).compare("constant") == 0) {
+        this->eta1 = input.Get<real>("Hydro","viscosity",2);
         // second viscosity?
-        if(input.CheckEntry("Hydro","viscosity")>3) {
-          this->eta2 = input.GetReal("Hydro","viscosity",3);
-          idfx::cout << "Viscosity: eta2="
-                   << this->eta2 << " ."<< std::endl;
-        } else {
-          this->eta2 = 0.0;
-          idfx::cout << "Viscosity: Second viscosity not provided. Assuming it is 0." << std::endl;
-        }
+        this->eta2 = input.GetOrSet<real>("Hydro","viscosity",3, 0.0);
         this->haveViscosity = Constant;
-      } else if(input.GetString("Hydro","viscosity",1).compare("userdef") == 0) {
-        idfx::cout << "Viscosity: Enabling user-defined viscosity function."
-                   << std::endl;
+      } else if(input.Get<std::string>("Hydro","viscosity",1).compare("userdef") == 0) {
         this->haveViscosity = UserDefFunction;
         this->eta1Arr = IdefixArray3D<real>("ViscosityEta1Array",hydro->data->np_tot[KDIR],
                                                                  hydro->data->np_tot[JDIR],
@@ -98,14 +87,35 @@ void Viscosity::Init(Input &input, Grid &grid, Hydro *hydroin) {
   idfx::popRegion();
 }
 
+void Viscosity::ShowConfig() {
+  if(haveViscosity==Constant) {
+    idfx::cout << "Viscosity: ENEABLED with constant viscosity eta1="
+                    << this->eta1 << " and eta2=" << this->eta2 << " ."<< std::endl;
+  } else if (haveViscosity==UserDefFunction) {
+    idfx::cout << "Viscosity: ENABLED with user-defined viscosity function."
+                   << std::endl;
+    if(!viscousDiffusivityFunc) {
+      IDEFIX_ERROR("No viscosity function has been enrolled");
+    }
+  } else {
+    IDEFIX_ERROR("Unknown viscosity mode");
+  }
+  if(hydro->viscosityStatus.isExplicit) {
+    idfx::cout << "Viscosity: uses an explicit time integration." << std::endl;
+  } else if(hydro->viscosityStatus.isRKL) {
+    idfx::cout << "Viscosity: uses a Runge-Kutta-Legendre time integration."
+                << std::endl;
+  } else {
+    IDEFIX_ERROR("Unknown time integrator for viscosity.");
+  }
+}
 
 void Viscosity::EnrollViscousDiffusivity(ViscousDiffusivityFunc myFunc) {
   if(this->haveViscosity < UserDefFunction) {
-    IDEFIX_ERROR("Viscous diffusivity enrollment requires Hydro/Viscosity "
+    IDEFIX_WARNING("Viscous diffusivity enrollment requires Hydro/Viscosity "
                  "to be set to userdef in .ini file");
   }
   this->viscousDiffusivityFunc = myFunc;
-  idfx::cout << "Viscosity: User-defined viscous diffusion has been enrolled." << std::endl;
 }
 
 // This function computes the viscous flux and stores it in hydro->fluxRiemann
@@ -362,7 +372,8 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
                                         + 0.5*(Vc(VX3,k,j,i) + Vc(VX3,k,j,i-1))*tau_xz);
         #endif
 
-        dMax(k,j,i) += (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k,j,i-1)));
+        real locdmax = (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k,j,i-1)));
+        dMax(k,j,i) = FMAX(dMax(k,j,i),locdmax);
       });
 
   } else if(dir==JDIR) {
@@ -551,7 +562,8 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
                                       + 0.5*(Vc(VX3,k,j,i) + Vc(VX3,k,j-1,i))*tau_yz);
       #endif
 
-      dMax(k,j,i) += (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k,j-1,i)));
+      real locdmax = (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k,j-1,i)));
+      dMax(k,j,i) = FMAX(dMax(k,j,i),locdmax);
     });
 
   } else if(dir==KDIR) {
@@ -672,7 +684,8 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
                                       + 0.5*(Vc(VX3,k,j,i) + Vc(VX3,k-1,j,i))*tau_zz);
       #endif
 
-      dMax(k,j,i) += (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k-1,j,i)));
+      real locdmax = (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k-1,j,i)));
+      dMax(k,j,i) = FMAX(dMax(k,j,i),locdmax);;
     });
   }
 

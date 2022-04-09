@@ -24,6 +24,19 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
   GridHost gridHost(grid);
   gridHost.SyncFromDevice();
 
+  nghost = std::vector<int>(3);
+  np_int = std::vector<int>(3);
+  np_tot = std::vector<int>(3);
+  lbound = std::vector<BoundaryType>(3);
+  rbound = std::vector<BoundaryType>(3);
+  beg = std::vector<int>(3);
+  end = std::vector<int>(3);
+  gbeg = std::vector<int>(3);
+  gend = std::vector<int>(3);
+
+  xbeg = std::vector<real>(3);
+  xend = std::vector<real>(3);
+
   // Get the number of points from the parent grid object
   for(int dir = 0 ; dir < 3 ; dir++) {
     nghost[dir] = grid.nghost[dir];
@@ -60,25 +73,16 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
     xend[dir] = gridHost.xr[dir](gend[dir]-1);
   }
 
-  if(idfx::psize>1) {
-    idfx::cout << "DataBlock::InitFromGrid: local size is " << std::endl;
-
-    for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
-      idfx::cout << "\t Direction X" << (dir+1) << ": " << xbeg[dir] << "...." << np_int[dir]
-        << "...." << xend[dir] << std::endl;
-    }
-  }
-
   // Allocate the required fields
   for(int dir = 0 ; dir < 3 ; dir++) {
-    x[dir] = IdefixArray1D<real>("DataBlock_x",np_tot[dir]);
-    xr[dir] = IdefixArray1D<real>("DataBlock_xr",np_tot[dir]);
-    xl[dir] = IdefixArray1D<real>("DataBlock_xl",np_tot[dir]);
-    dx[dir] = IdefixArray1D<real>("DataBlock_dx",np_tot[dir]);
-    xgc[dir] = IdefixArray1D<real>("DataBlock_xgc",np_tot[dir]);
+    x.push_back(IdefixArray1D<real>("DataBlock_x",np_tot[dir]));
+    xr.push_back(IdefixArray1D<real>("DataBlock_xr",np_tot[dir]));
+    xl.push_back(IdefixArray1D<real>("DataBlock_xl",np_tot[dir]));
+    dx.push_back(IdefixArray1D<real>("DataBlock_dx",np_tot[dir]));
+    xgc.push_back(IdefixArray1D<real>("DataBlock_xgc",np_tot[dir]));
 
-    A[dir] = IdefixArray3D<real>("DataBlock_A",
-                                 np_tot[KDIR]+KOFFSET, np_tot[JDIR]+JOFFSET, np_tot[IDIR]+IOFFSET);
+    A.push_back(IdefixArray3D<real>("DataBlock_A",
+                                 np_tot[KDIR]+KOFFSET, np_tot[JDIR]+JOFFSET, np_tot[IDIR]+IOFFSET));
   }
 
   dV = IdefixArray3D<real>("DataBlock_dV",np_tot[KDIR],np_tot[JDIR],np_tot[IDIR]);
@@ -120,6 +124,12 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
   // Iniaitlize the geometry
   this->MakeGeometry();
 
+  // Initialise the state containers
+  // (by default, datablock only initialise the current state, which is a reference
+  // to arrays in the daughter object
+
+  this->states["current"] = StateContainer();
+
   // Initialize the hydro object attached to this datablock
   this->hydro.Init(input, grid, this);
 
@@ -145,4 +155,37 @@ void DataBlock::ResetStage() {
 // Set the boundaries of the data structures in this datablock
 void DataBlock::SetBoundaries() {
   hydro.boundary.SetBoundaries(t);
+}
+
+void DataBlock::ShowConfig() {
+  if(idfx::psize>1) {
+    idfx::cout << "DataBlock: this process grid size is " << std::endl;
+
+    for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
+      idfx::cout << "\t Direction X" << (dir+1) << ": " << xbeg[dir] << "...." << np_int[dir]
+        << "...." << xend[dir] << std::endl;
+    }
+  }
+  hydro.ShowConfig();
+  if(haveFargo) fargo.ShowConfig();
+  if(haveGravity) gravity.ShowConfig();
+}
+
+
+real DataBlock::ComputeTimestep() {
+  // Compute the timestep using all of the enabled modules in the current dataBlock
+
+  // First with the hydro block
+  auto InvDt = hydro.InvDt;
+  real dt;
+  idefix_reduce("Timestep_reduction",
+          beg[KDIR], end[KDIR],
+          beg[JDIR], end[JDIR],
+          beg[IDIR], end[IDIR],
+          KOKKOS_LAMBDA (int k, int j, int i, real &dtmin) {
+                  dtmin=FMIN(ONE_F/InvDt(k,j,i),dtmin);
+              },
+          Kokkos::Min<real>(dt));
+  Kokkos::fence();
+  return(dt);
 }

@@ -18,7 +18,10 @@ Grid::Grid() {
 Grid::Grid(Input &input) {
   idfx::pushRegion("Grid::Grid(Input)");
 
-  idfx::cout << "Grid: allocating Grid." << std::endl;
+  xbeg = std::vector<real>(3);
+  xend = std::vector<real>(3);
+
+  nghost = std::vector<int>(3);
 
   // Get grid size from input file, block [Grid]
   int npoints[3];
@@ -26,7 +29,7 @@ Grid::Grid(Input &input) {
     npoints[dir] = 1;
     nghost[dir] = 0;
     std::string label = std::string("X")+std::to_string(dir+1)+std::string("-grid");
-    int numPatch = input.GetInt("Grid",label,0);
+    int numPatch = input.Get<int>("Grid",label,0);
 
     if(dir<DIMENSIONS) {
       #if ORDER < 4
@@ -36,18 +39,22 @@ Grid::Grid(Input &input) {
       #endif
       npoints[dir] = 0;
       for(int patch = 0; patch < numPatch ; patch++) {
-        npoints[dir] += input.GetInt("Grid",label,2+3*patch );
+        npoints[dir] += input.Get<int>("Grid",label,2+3*patch );
       }
     }
   }
 
+  np_tot = std::vector<int>(3);
+  np_int = std::vector<int>(3);
+  lbound = std::vector<BoundaryType>(3);
+  rbound = std::vector<BoundaryType>(3);
 
   for(int dir = 0 ; dir < 3 ; dir++) {
     np_tot[dir] = npoints[dir] + 2*nghost[dir];
     np_int[dir] = npoints[dir];
 
     std::string label = std::string("X")+std::to_string(dir+1)+std::string("-beg");
-    std::string boundary = input.GetString("Boundary",label,0);
+    std::string boundary = input.Get<std::string>("Boundary",label,0);
 
     if(boundary.compare("outflow") == 0) {
       lbound[dir] = outflow;
@@ -74,7 +81,7 @@ Grid::Grid(Input &input) {
     }
 
     label = std::string("X")+std::to_string(dir+1)+std::string("-end");
-    boundary = input.GetString("Boundary",label,0);
+    boundary = input.Get<std::string>("Boundary",label,0);
     if(boundary.compare("outflow") == 0) {
       rbound[dir] = outflow;
     } else if(boundary.compare("periodic") == 0) {
@@ -101,7 +108,10 @@ Grid::Grid(Input &input) {
   }
 
   // Allocate the grid structure on device. Initialisation will come from GridHost
-
+  x = std::vector<IdefixArray1D<real>>(3);
+  xr = std::vector<IdefixArray1D<real>>(3);
+  xl = std::vector<IdefixArray1D<real>>(3);
+  dx = std::vector<IdefixArray1D<real>>(3);
   for(int dir = 0 ; dir < 3 ; dir++) {
     x[dir] = IdefixArray1D<real>("Grid_x",np_tot[dir]);
     xr[dir] = IdefixArray1D<real>("Grid_xr",np_tot[dir]);
@@ -110,6 +120,8 @@ Grid::Grid(Input &input) {
   }
 
   // Allocate proc structure (by default: one proc in each direction, size one)
+  nproc = std::vector<int> (3);
+  xproc = std::vector<int> (3);
   for(int i=0 ; i < 3; i++) {
     nproc[i] = 1;
     xproc[i] = 0;
@@ -143,7 +155,7 @@ Grid::Grid(Input &input) {
       // Manual domain decomposition (with -dec option)
       int ntot=1;
       for(int dir=0 ; dir < DIMENSIONS; dir++) {
-        nproc[dir] = input.GetInt("CommandLine","dec",dir);
+        nproc[dir] = input.Get<int>("CommandLine","dec",dir);
         // Check that the dimension is effectively divisible by number of procs
         if(np_int[dir] % nproc[dir])
           IDEFIX_ERROR("Grid size must be a multiple of the domain decomposition");
@@ -170,18 +182,18 @@ Grid::Grid(Input &input) {
   }
 
   // Create cartesian communicator along with cartesian coordinates.
-  MPI_Cart_create(MPI_COMM_WORLD, 3, nproc, period, 0, &CartComm);
-  MPI_Cart_coords(CartComm, idfx::prank, 3, xproc);
+  MPI_Cart_create(MPI_COMM_WORLD, 3, nproc.data(), period, 0, &CartComm);
+  MPI_Cart_coords(CartComm, idfx::prank, 3, xproc.data());
 
   MPI_Barrier(MPI_COMM_WORLD);
-  idfx::cout << "Grid::Grid: Current MPI proc coordinates (";
 
-  for(int dir = 0; dir < 3; dir++) {
-    idfx::cout << xproc[dir];
-    if(dir < 2) idfx::cout << ", ";
+
+  if(haveAxis) {
+      // create axis communicator to be able to exchange data over the axis
+      // (only retain the phi dimension)
+      int remainDims[3] = {false, false, true};
+      MPI_SAFE_CALL(MPI_Cart_sub(CartComm, remainDims, &AxisComm));
   }
-  idfx::cout << ")" << std::endl;
-
 #endif
 
   idfx::popRegion();
@@ -208,13 +220,6 @@ void Grid::makeDomainDecomposition() {
     int nmax=1;
     int ndir=2;
 
-    // If we have the axis, we should not decompose in phi
-    // This is a bit too conservative since if we're not doing full two pi, domain decomposition
-    // in phi is allowed. However, the grid bounds are only initialised later, so we don't have
-    // this information yet. Hence, automatic domain decomposition is conservative in that case.
-    // At least we know it works, even though it's probably sub-optimal in some cases.
-    if(haveAxis) ndir = 1;
-
     for(int dir = ndir; dir >= 0; dir--) {
       // We do this loop backward so that we divide the domain first in the last dimension
       // (better for cache optimisation)
@@ -232,12 +237,6 @@ void Grid::makeDomainDecomposition() {
     nproc[dirmax]=nproc[dirmax]*2;
     nleft=nleft/2;
   }
-
-  idfx::cout << "Grid::makeDomainDecomposition: grid is (";
-  for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
-    idfx::cout << " " << nproc[dir] << " ";
-  }
-  idfx::cout << ")" << std::endl;
 }
 /*
 Grid& Grid::operator=(const Grid& grid) {
@@ -258,3 +257,78 @@ Grid& Grid::operator=(const Grid& grid) {
     return *this;
 }
 */
+
+void Grid::ShowConfig() {
+  idfx::cout << "Grid: full grid size is " << std::endl;
+  for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
+    std::string lboundString, rboundString;
+      switch(lbound[dir]) {
+        case outflow:
+          lboundString="outflow";
+          break;
+        case reflective:
+          lboundString="reflective";
+          break;
+        case periodic:
+          lboundString="periodic";
+          break;
+        case internal:
+          lboundString="internal";
+          break;
+        case shearingbox:
+          lboundString="shearingbox";
+          break;
+        case axis:
+          lboundString="axis";
+          break;
+        case userdef:
+          lboundString="userdef";
+          break;
+        default:
+          lboundString="unknown";
+      }
+      switch(rbound[dir]) {
+        case outflow:
+          rboundString="outflow";
+          break;
+        case reflective:
+          rboundString="reflective";
+          break;
+        case periodic:
+          rboundString="periodic";
+          break;
+        case internal:
+          rboundString="internal";
+          break;
+        case shearingbox:
+          rboundString="shearingbox";
+          break;
+        case axis:
+          rboundString="axis";
+          break;
+        case userdef:
+          rboundString="userdef";
+          break;
+        default:
+          rboundString="unknown";
+      }
+
+      idfx::cout << "\t Direction X" << (dir+1) << ": " << lboundString << "\t" << xbeg[dir]
+                 << "...." << np_int[dir] << "...." << xend[dir] << "\t" << rboundString
+                 << std::endl;
+  }
+  #ifdef WITH_MPI
+    idfx::cout << "Grid: MPI domain decomposition is (";
+    for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
+      idfx::cout << " " << nproc[dir] << " ";
+    }
+    idfx::cout << ")" << std::endl;
+    idfx::cout << "Grid: Current MPI proc coordinates (";
+
+    for(int dir = 0; dir < 3; dir++) {
+      idfx::cout << xproc[dir];
+      if(dir < 2) idfx::cout << ", ";
+    }
+    idfx::cout << ")" << std::endl;
+  #endif
+}

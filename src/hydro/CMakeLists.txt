@@ -29,4 +29,6 @@ target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/hydro.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/viscosity.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/viscosity.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/thermalDiffusion.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/thermalDiffusion.cpp
   )

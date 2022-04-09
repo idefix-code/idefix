@@ -1,7 +1,7 @@
 #!/bin/bash
 
 rep_2D_mpi_list="HD/MachReflection HD/ViscousFlowPastCylinder HD/FargoPlanet MHD/OrszagTang"
-rep_3D_mpi_list="MHD/AmbipolarCshock3D MHD/FargoMHDSpherical MHD/OrszagTang3D"
+rep_3D_mpi_list="MHD/AmbipolarCshock3D MHD/AxisFluxTube MHD/FargoMHDSpherical MHD/OrszagTang3D"
 
 # refer to the parent dir of this file, wherever this is called from
 # a python equivalent is e.g.
@@ -9,7 +9,9 @@ rep_3D_mpi_list="MHD/AmbipolarCshock3D MHD/FargoMHDSpherical MHD/OrszagTang3D"
 # import pathlib
 # TEST_DIR = pathlib.Path(__file__).parent
 TEST_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-
+TMP_DIR="$(mktemp -d)"
+mkdir $TMP_DIR/HD
+mkdir $TMP_DIR/MHD
 
 function resolve_path {
     # resolve relative paths
@@ -36,16 +38,18 @@ options=$@
 
 # 2D MPI tests
 for rep in $rep_2D_mpi_list; do
-    cd $TEST_DIR/$rep
+    cp -R $TEST_DIR/$rep $TMP_DIR/$rep
+    cd $TMP_DIR/$rep
     echo "***********************************************"
     echo "Configuring  $rep"
+    echo "Using $TMP_DIR/$rep as working directory"
     echo "***********************************************"
     rm -f CMakeCache.txt
     cmake $IDEFIX_DIR -DIdefix_MPI=ON  $options
     echo "***********************************************"
     echo "Making  $rep"
     echo "***********************************************"
-    make clean; make -j 4
+    make clean; make -j 10
 
     ini_files=$(ls *.ini)
     for ini in $ini_files; do
@@ -67,16 +71,18 @@ done
 
 # MHD tests
 for rep in $rep_3D_mpi_list; do
-    cd $TEST_DIR/$rep
+    cp -R $TEST_DIR/$rep $TMP_DIR/$rep
+    cd $TMP_DIR/$rep
     echo "***********************************************"
     echo "Configuring  $rep"
+    echo "Using $TMP_DIR/$rep as working directory"
     echo "***********************************************"
     rm -f CMakeCache.txt
     cmake $IDEFIX_DIR -DIdefix_MPI=ON $options
     echo "***********************************************"
     echo "Making  $rep"
     echo "***********************************************"
-    make clean; make -j 4
+    make clean; make -j 10
 
     ini_files=$(ls *.ini)
     for ini in $ini_files; do
@@ -96,23 +102,5 @@ for rep in $rep_3D_mpi_list; do
     cd $TEST_DIR
 done
 
-# Test restart functions with OT3D which have generated a dump during the first pass
-rep=OrszagTang3D
-cd $TEST_DIR/MHD/$rep
-# remove generated vtk from previous run
-mv data.0001.vtk data.0001.old.vtk
-echo "***********************************************"
-echo "Running  $rep with restart dump # 1"
-echo "***********************************************"
-mpirun -np 8 ./idefix -restart 1 -dec 2 2 2 -nolog || { echo "!!!! MHD $rep failed running restart dump validation"; exit 1; }
-cd python
-echo "***********************************************"
-echo "Testing  $rep with restart dump # 1"
-echo "***********************************************"
-python3 testidefix.py -noplot || { echo "!!!! MHD $rep failed checking restart dump validation"; exit 1; }
-cd ..
-echo "***********************************************"
-echo "Checking bitwise compatibility of output from restarts"
-echo "***********************************************"
-diff data.0001.vtk data.0001.old.vtk || { echo "!!!! MHD $rep failed: restart dumps do not produce exactly the same results"; exit 1; }
-echo "Success"
+echo "Cleaning temporary directory $TMP_DIR"
+rm -rf $TMP_DIR

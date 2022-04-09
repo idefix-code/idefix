@@ -7,4 +7,5 @@ target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/EMFexchange.cpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/enforceEMFBoundary.cpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/evolveMagField.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/evolveVectorPotential.cpp
   )

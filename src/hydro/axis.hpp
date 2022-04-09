@@ -8,6 +8,7 @@
 #ifndef HYDRO_AXIS_HPP_
 #define HYDRO_AXIS_HPP_
 
+#include <vector>
 #include "idefix.hpp"
 #include "grid.hpp"
 #include "electroMotiveForce.hpp"
@@ -23,12 +24,34 @@ class Axis {
   void SymmetrizeEx1Side(int);         // Symmetrize on a specific side (internal method)
   void EnforceAxisBoundary(int side);   // Enforce the boundary conditions (along X2)
   void ReconstructBx2s();
+  void ShowConfig();
+
+
+  void ExchangeMPI(int side);           // Function has to be public for GPU, but its technically
+                                        // a private function
 
 
  private:
   bool isTwoPi = false;
   bool axisRight = false;
   bool axisLeft = false;
+  bool needMPIExchange = false;
+
+  enum {faceTop, faceBot};
+#ifdef WITH_MPI
+  MPI_Request sendRequest;
+  MPI_Request recvRequest;
+
+  IdefixArray1D<real> bufferSend;
+  IdefixArray1D<real> bufferRecv;
+
+  int bufferSize;
+
+  IdefixArray1D<int>  mapVars;
+  int mapNVars{0};
+
+#endif
+  void InitMPI();
 
   IdefixArray1D<real> Ex1Avg;
   IdefixArray1D<int> symmetryVc;

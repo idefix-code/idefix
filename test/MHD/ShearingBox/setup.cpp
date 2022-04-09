@@ -71,10 +71,10 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   gammaIdeal=data.hydro.GetGamma();
 
   // Get rotation rate along vertical axis
-  omega=input.GetReal("Hydro","rotation",0);
-  shear=input.GetReal("Hydro","shearingBox",0);
-  B0y = input.GetReal("Setup","B0y",0);
-  B0z = input.GetReal("Setup","B0z",0);
+  omega=input.Get<real>("Hydro","rotation",0);
+  shear=input.Get<real>("Hydro","shearingBox",0);
+  B0y = input.Get<real>("Setup","B0y",0);
+  B0z = input.Get<real>("Setup","B0z",0);
 
   // Add our userstep to the timeintegrator
   data.gravity.EnrollBodyForce(BodyForce);
@@ -111,13 +111,21 @@ void Setup::InitFlow(DataBlock &data) {
 #else
                 d.Vc(RHO,k,j,i) = 1.0;
 #endif
-                d.Vc(PRS,k,j,i) = d.Vc(RHO,k,j,i)/cs2*gammaIdeal;
+#ifndef ISOTHERMAL
+                d.Vc(PRS,k,j,i) = d.Vc(RHO,k,j,i)*cs2/gammaIdeal;
+#endif
                 d.Vc(VX1,k,j,i) = 1e-5*sin(2.0*M_PI*(y+2*z));
                 d.Vc(VX2,k,j,i) = shear*x;
                 d.Vc(VX3,k,j,i) = 0.0;
-                d.Vs(BX1s,k,j,i) = 0.0;
-                d.Vs(BX2s,k,j,i) = B0y;
-                d.Vs(BX3s,k,j,i) = B0z;
+                #ifdef EVOLVE_VECTOR_POTENTIAL
+                  d.Ve(AX1e,k,j,i) = -B0z * y + B0y * z;
+                  d.Ve(AX2e,k,j,i) = 0.0;
+                  d.Ve(AX3e,k,j,i) = 0.0;
+                #else
+                  d.Vs(BX1s,k,j,i) = 0.0;
+                  d.Vs(BX2s,k,j,i) = B0y;
+                  d.Vs(BX3s,k,j,i) = B0z;
+                #endif
 
             }
         }

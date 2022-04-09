@@ -22,41 +22,28 @@ void ElectroMotiveForce::Init(Input &input, Hydro *hydro) {
 
 #if MHD == YES
   if(input.CheckEntry("Hydro","emf")>=0) {
-    std::string opType = input.GetString("Hydro","emf",0);
+    std::string opType = input.Get<std::string>("Hydro","emf",0);
     if(opType.compare("arithmetic")==0) {
       this->averaging = arithmetic;
-      idfx::cout << "ElectroMotiveForce: Using ARITHMETIC averaging scheme." << std::endl;
     } else if(opType.compare("uct0")==0) {
       this->averaging = uct0;
-      idfx::cout << "ElectroMotiveForce: Using UCT0 averaging scheme." << std::endl;
     } else if(opType.compare("uct_contact")==0) {
       this->averaging = uct_contact;
-      idfx::cout << "ElectroMotiveForce: Using UCT_CONTACT averaging scheme." << std::endl;
     } else if(opType.compare("uct_hll")==0) {
       this->averaging = uct_hll;
-      idfx::cout << "ElectroMotiveForce: Using 2D-HLL averaging scheme." << std::endl;
     } else if(opType.compare("uct_hlld")==0) {
       this->averaging = uct_hlld;
-      idfx::cout << "ElectroMotiveForce: Using 2D-HLLD averaging scheme." << std::endl;
     } else {
       idfx::cout << "ElectroMotiveForce: unknown averaging scheme " << opType << std::endl;
       IDEFIX_ERROR("Unknown EMF averaging scheme");
     }
   } else {
     if(hydro->hallStatus.status == HydroModuleStatus::Disabled) {
+      // by default, use uct_contact
       this->averaging = uct_contact;
-      idfx::cout << "ElectroMotiveForce: unspecified averaging scheme. Using uct_contact by default"
-                << std::endl;
     } else {
       this->averaging = arithmetic;
-      idfx::cout << "ElectroMotiveForce: unspecified averaging scheme. Using arithmetic since Hall"
-                 << " is enabled" << std::endl;
     }
-  }
-
-  if(hydro->hallStatus.status != HydroModuleStatus::Disabled && averaging != arithmetic ) {
-    IDEFIX_WARNING("Hall effect has been shown to be stable only with arithmetic "
-                   "EMF reconstruction. Use this setup at your own risk!");
   }
 
   this->data = hydro->data;
@@ -296,4 +283,26 @@ ElectroMotiveForce::~ElectroMotiveForce() {
     }
     #endif
   #endif
+}
+
+void ElectroMotiveForce::ShowConfig() {
+  switch(averaging) {
+    case arithmetic:
+      idfx::cout << "ElectroMotiveForce: Using ARITHMETIC averaging scheme." << std::endl;
+      break;
+    case uct0:
+      idfx::cout << "ElectroMotiveForce: Using UCT0 averaging scheme." << std::endl;
+      break;
+    case uct_contact:
+      idfx::cout << "ElectroMotiveForce: Using UCT_CONTACT averaging scheme." << std::endl;
+      break;
+    case uct_hll:
+      idfx::cout << "ElectroMotiveForce: Using 2D-HLL averaging scheme." << std::endl;
+      break;
+    case uct_hlld:
+      idfx::cout << "ElectroMotiveForce: Using 2D-HLLD averaging scheme." << std::endl;
+      break;
+    default:
+      IDEFIX_ERROR("Unknown averaging scheme");
+  }
 }

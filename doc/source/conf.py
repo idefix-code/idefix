@@ -36,6 +36,7 @@ release = '1.0'
 # ones.
 extensions = [
     "sphinx_rtd_theme",
+    'sphinx_git',
     "breathe",
     "exhale",
     "m2r2"

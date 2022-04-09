@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Upcoming
 ### Changed
+- use buffers for mpi axis exchanges to improve performances on GPUs
 - slight optimisation of the cfl estimation for parabolic terms (makes a difference when several explicit parabolic terms are used simultaneously)
 - use input::Get<T> and input::GetOrSet<T> instead of the old input:GetInt, input:GetReal... the new functions have a better error handling, and also allows explicit default values.
 - ensure that error messages are sent to std::cerr using a dedicated stream

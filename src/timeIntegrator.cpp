@@ -136,12 +136,14 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
   idfx::cout << std::scientific;
   idfx::cout << " | " << std::setw(col_width) << divB;
   #ifdef USE_DOUBLE
-  real maxdivB = 1e-6;
+    const real maxdivB = 1e-6;
   #else
-  real maxdivB = 1e-2;
+    const real maxdivB = 1e-2;
   #endif
   if(divB>maxdivB) {
-    IDEFIX_ERROR("TimeIntegrator::Cycle divB>1e-6, check your calculation");
+    std::stringstream msg;
+    msg << std::endl << "divB>1e-6, check your calculation";
+    throw std::runtime_error(msg.str());
   }
 #endif
   if(haveRKL) {

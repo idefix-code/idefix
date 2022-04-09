@@ -53,6 +53,13 @@ HighOrder tests:
     - cd test
     - ./checks_highorder.sh $TEST_OPTIONS
 
+SinglePrecision tests:
+  stage: checks
+  image: lesurg/idefix:latest
+  script:
+    - cd test
+    - ./checks_singleprecision.sh $TEST_OPTIONS
+
 Examples tests:
   stage: checks
   image: lesurg/idefix:latest

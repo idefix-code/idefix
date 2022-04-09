@@ -242,6 +242,11 @@ void Input::ShowConfig() {
   idfx::cout << "-----------------------------------------------------------------------------"
              << std::endl;
 
+  #ifdef SINGLE_PRECISION
+    idfx::cout << "Input: Compiled with SINGLE PRECISION arithmetic." << std::endl;
+  #else
+    idfx::cout << "Input: Compiled with DOUBLE PRECISION arithmetic." << std::endl;
+  #endif
   // Show dimensionality and other general options:
   idfx::cout << "Input: DIMENSIONS=" << DIMENSIONS << "." << std::endl;
   idfx::cout << "Input: COMPONENTS=" << COMPONENTS << "." << std::endl;

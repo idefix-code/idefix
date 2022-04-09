@@ -47,7 +47,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
         IdefixArray1D<real> x1Arr = data.x[IDIR];
         IdefixArray1D<real> x2Arr = data.x[JDIR];
         IdefixArray1D<real> x3Arr = data.x[KDIR];
-        
+
         const real sq2 = sqrt(2);
 
         data.hydro.boundary.BoundaryFor("UserDefX1",dir,side,

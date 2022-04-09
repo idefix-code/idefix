@@ -17,7 +17,7 @@
   #ifdef WITH_MPI
     #define realMPI      MPI_FLOAT
   #endif
-#else 
+#else
   using real = double;
   #ifdef WITH_MPI
     #define realMPI     MPI_DOUBLE

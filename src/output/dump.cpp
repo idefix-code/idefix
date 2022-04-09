@@ -32,13 +32,6 @@ void Dump::Init(Input &input, DataBlock &data) {
 
   #ifdef WITH_MPI
     Grid *grid = data.mygrid;
-    MPI_Datatype realType;
-
-    #ifdef USE_DOUBLE
-    realType = MPI_DOUBLE;
-    #else
-    realType = MPI_FLOAT;
-    #endif
 
     int start[3];
     int size[3];
@@ -52,7 +45,7 @@ void Dump::Init(Input &input, DataBlock &data) {
     }
 
     MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
-                                           MPI_ORDER_C, realType, &this->descC));
+                                           MPI_ORDER_C, realMPI, &this->descC));
     MPI_SAFE_CALL(MPI_Type_commit(&this->descC));
 
     // Dimensions for face-centered field
@@ -68,13 +61,13 @@ void Dump::Init(Input &input, DataBlock &data) {
                          //since it involves an overlap of data between procs
 
       MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
-                                             MPI_ORDER_C, realType, &this->descSR[face]));
+                                             MPI_ORDER_C, realMPI, &this->descSR[face]));
       MPI_SAFE_CALL(MPI_Type_commit(&this->descSR[face]));
 
       // Now for writing, it is only the last proc which keeps one additional cell
       if(grid->xproc[face] != grid->nproc[face] - 1  ) subsize[2-face]--;
       MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
-                                             MPI_ORDER_C, realType, &this->descSW[face]));
+                                             MPI_ORDER_C, realMPI, &this->descSW[face]));
       MPI_SAFE_CALL(MPI_Type_commit(&this->descSW[face]));
     }
     // Dimensions for edge-centered field
@@ -111,7 +104,7 @@ void Dump::Init(Input &input, DataBlock &data) {
           }
         }
         MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
-                                              MPI_ORDER_C, realType, &this->descER[nv]));
+                                              MPI_ORDER_C, realMPI, &this->descER[nv]));
         MPI_SAFE_CALL(MPI_Type_commit(&this->descER[nv]));
 
         // Now for writing, it is only the last proc which keeps one additional cell,
@@ -124,7 +117,7 @@ void Dump::Init(Input &input, DataBlock &data) {
           }
         }
         MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
-                                              MPI_ORDER_C, realType, &this->descEW[nv]));
+                                              MPI_ORDER_C, realMPI, &this->descEW[nv]));
         MPI_SAFE_CALL(MPI_Type_commit(&this->descEW[nv]));
       }
     #endif
@@ -222,7 +215,7 @@ void Dump::WriteDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gd
 
   // Define current datatype
   DataType type;
-  #ifdef USE_DOUBLE
+  #ifndef SINGLE_PRECISION
   type = DoubleType;
   #else
   type = SingleType;
@@ -415,7 +408,7 @@ void Dump::ReadDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gdi
   #ifdef WITH_MPI
     MPI_Datatype MpiType;
 
-    #ifdef USE_DOUBLE
+    #ifndef SINGLE_PRECISION
     MpiType = MPI_DOUBLE;
     #else
     MpiType = MPI_FLOAT;
@@ -658,7 +651,7 @@ int Dump::Write(DataBlock &data, Output& output) {
   int nx[3];
   int nxtot[3];
 
-  #ifdef USE_DOUBLE
+  #ifndef SINGLE_PRECISION
   const DataType realType = DoubleType;
   #else
   const DataType realType = SingleType;

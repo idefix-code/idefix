@@ -39,6 +39,56 @@ void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
   }
 }
 
+void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
+
+    if( (dir==IDIR) && (side == right)) {
+        IdefixArray4D<real> Vc = data.hydro.Vc;
+        IdefixArray4D<real> Vs = data.hydro.Vs;
+        IdefixArray1D<real> x1Arr = data.x[IDIR];
+        IdefixArray1D<real> x2Arr = data.x[JDIR];
+        IdefixArray1D<real> x3Arr = data.x[KDIR];
+
+        const real sq2 = sqrt(2);
+
+        data.hydro.boundary.BoundaryFor("UserDefX1",dir,side,
+            KOKKOS_LAMBDA (int k, int j, int i) {
+                real x1 = x1Arr(i);
+                real x2 = x2Arr(j);
+                real x3 = x3Arr(k);
+
+                // Vector components in cartesian coordinates
+
+                real ex_r=cos(x3)*sin(x2);
+                real ex_t=cos(x3)*cos(x2);
+                real ex_p=-sin(x3);
+
+                real ey_r=sin(x3)*sin(x2);
+                real ey_t=sin(x3)*cos(x2);
+                real ey_p=cos(x3);
+
+                real ez_r=cos(x2);
+                real ez_t=-sin(x2);
+                real ez_p=0.0;
+
+
+                Vc(RHO,k,j,i) = 1.0;
+                Vc(PRS,k,j,i) = 1.0;
+                Vc(VX1,k,j,i) = (ex_r+ey_r)/sq2;
+                Vc(VX2,k,j,i) = (ex_t+ey_t)/sq2;
+                Vc(VX3,k,j,i) = (ex_p+ey_p)/sq2;
+
+            });
+      data.hydro.boundary.BoundaryForX2s("UserDefX2s",dir,side,
+        KOKKOS_LAMBDA (int k, int j, int i) {
+            Vs(BX2s,k,j,i) = ZERO_F;
+          });
+      data.hydro.boundary.BoundaryForX3s("UserDefX2s",dir,side,
+        KOKKOS_LAMBDA (int k, int j, int i) {
+            Vs(BX3s,k,j,i) = ZERO_F;
+          });
+    }
+  }
+
 void Analysis(DataBlock & data) {
   // Mirror data on Host
   data.hydro.boundary.SetBoundaries(data.t);
@@ -49,6 +99,7 @@ void Analysis(DataBlock & data) {
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   output.EnrollUserDefVariables(&ComputeUserVars);
+  data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
   //output.EnrollAnalysis(&Analysis);
   Rtorus = input.Get<real>("Setup","Rtorus",0);
   Ztorus = input.Get<real>("Setup","Ztorus",0);
@@ -94,7 +145,7 @@ void Setup::InitFlow(DataBlock &data) {
                 d.Vc(VX2,k,j,i) = (ex_t+ey_t)/sqrt(2);
                 d.Vc(VX3,k,j,i) = (ex_p+ey_p)/sqrt(2);
 
-                real bphi = 1.0 - (pow(R-Rtorus,2.0) + pow(Z-Ztorus,2.0)) / Rin;
+                real bphi = 1.0 - (pow(R-Rtorus,2.0) + pow(fabs(Z)-Ztorus,2.0)) / Rin;
                 if(bphi<0.0) bphi = 0.0;
                 d.Vs(BX1s,k,j,i) = 0.0;
                 d.Vs(BX2s,k,j,i) = 0.0;

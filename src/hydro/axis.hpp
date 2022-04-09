@@ -27,6 +27,10 @@ class Axis {
   void ShowConfig();
 
 
+  void ExchangeMPI(int side);           // Function has to be public for GPU, but its technically
+                                        // a private function
+
+
  private:
   bool isTwoPi = false;
   bool axisRight = false;
@@ -35,13 +39,19 @@ class Axis {
 
   enum {faceTop, faceBot};
 #ifdef WITH_MPI
-  std::vector<MPI_Datatype> typeVcSend;
-  std::vector<MPI_Datatype> typeVcRecv;
-  std::vector<MPI_Datatype> typeVsSend;
-  std::vector<MPI_Datatype> typeVsRecv;
+  MPI_Request sendRequest;
+  MPI_Request recvRequest;
+
+  IdefixArray1D<real> bufferSend;
+  IdefixArray1D<real> bufferRecv;
+
+  int bufferSize;
+
+  IdefixArray1D<int>  mapVars;
+  int mapNVars{0};
+
 #endif
-  void MakeMPIDataypes(int dir);
-  void ExchangeMPI(int side);
+  void InitMPI();
 
   IdefixArray1D<real> Ex1Avg;
   IdefixArray1D<int> symmetryVc;

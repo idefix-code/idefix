@@ -158,6 +158,9 @@ void Gravity::AddCentralMassPotential() {
   IdefixArray1D<real> x3 = data->x[KDIR];
   IdefixArray3D<real> phiP = this->phiP;
   real mass = this->centralMass;
+  #if GEOMETRY == CARTESIAN
+    IDEFIX_ERROR("Central mass potential is not defined in cartesian geometry");
+  #endif
   idefix_for("Gravity::AddCentralMassPotential",
               0, data->np_tot[KDIR],
               0, data->np_tot[JDIR],

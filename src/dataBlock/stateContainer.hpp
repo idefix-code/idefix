@@ -18,7 +18,7 @@ class State{
 
   IdefixArray4D<real> array;
   TypeLocalisation localisation;
-  std::string name;               // Name of the fulle state (always applicable)
+  std::string name;               // Name of the full state (always applicable)
 };
 
 class StateContainer {

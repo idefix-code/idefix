@@ -47,6 +47,8 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
         IdefixArray1D<real> x1Arr = data.x[IDIR];
         IdefixArray1D<real> x2Arr = data.x[JDIR];
         IdefixArray1D<real> x3Arr = data.x[KDIR];
+        
+        const real sq2 = sqrt(2);
 
         data.hydro.boundary.BoundaryFor("UserDefX1",dir,side,
             KOKKOS_LAMBDA (int k, int j, int i) {
@@ -71,9 +73,9 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 
                 Vc(RHO,k,j,i) = 1.0;
                 Vc(PRS,k,j,i) = 1.0;
-                Vc(VX1,k,j,i) = (ex_r+ey_r)/sqrt(2);
-                Vc(VX2,k,j,i) = (ex_t+ey_t)/sqrt(2);
-                Vc(VX3,k,j,i) = (ex_p+ey_p)/sqrt(2);
+                Vc(VX1,k,j,i) = (ex_r+ey_r)/sq2;
+                Vc(VX2,k,j,i) = (ex_t+ey_t)/sq2;
+                Vc(VX3,k,j,i) = (ex_p+ey_p)/sq2;
 
             });
       data.hydro.boundary.BoundaryForX2s("UserDefX2s",dir,side,

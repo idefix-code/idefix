@@ -135,8 +135,15 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
   real divB =  data.hydro.CheckDivB();
   idfx::cout << std::scientific;
   idfx::cout << " | " << std::setw(col_width) << divB;
-  if(divB>1e-6) {
-    IDEFIX_ERROR("TimeIntegrator::Cycle divB>1e-6, check your calculation");
+  #ifndef SINGLE_PRECISION
+    const real maxdivB = 1e-6;
+  #else
+    const real maxdivB = 1e-2;
+  #endif
+  if(divB>maxdivB) {
+    std::stringstream msg;
+    msg << std::endl << "divB too large, check your calculation";
+    throw std::runtime_error(msg.str());
   }
 #endif
   if(haveRKL) {

@@ -14,6 +14,8 @@ if(Idefix_MHD)
   option(Idefix_EVOLVE_VECTOR_POTENTIAL "Evolve the vector potential instead of the field (helps reducing div(B) in long runs)" OFF)
 endif()
 set_property(CACHE Idefix_RECONSTRUCTION PROPERTY STRINGS Constant Linear LimO3 Parabolic)
+set(Idefix_PRECISION "Double" CACHE STRING "Precision of arithmetics")
+set_property(CACHE Idefix_PRECISION PROPERTY STRINGS Double Single)
 
 
 # load git revision tools
@@ -104,6 +106,9 @@ else()
   message(ERROR "Reconstruction type '${Idefix_RECONSTRUCTION}' is invalid")
 endif()
 
+if(${Idefix_PRECISION} STREQUAL "Single")
+  add_compile_definitions("SINGLE_PRECISION")
+endif()
 
 target_include_directories(idefix PUBLIC
                            "${PROJECT_BINARY_DIR}"
@@ -133,5 +138,6 @@ else()
 endif()
 message(STATUS "    MPI: ${Idefix_MPI}")
 message(STATUS "    Reconstruction: ${Idefix_RECONSTRUCTION}")
+message(STATUS "    Precision: ${Idefix_PRECISION}")
 message(STATUS "    Version: ${GIT_SHA1}")
 message(STATUS "    Problem definitions: '${Idefix_DEFS}'")

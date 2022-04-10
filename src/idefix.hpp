@@ -21,8 +21,6 @@ using Layout = Kokkos::LayoutRight;
 /// Type of loops we admit in idefix (see loop.hpp for details)
 enum class LoopPattern { SIMDFOR, RANGE, MDRANGE, TPX, TPTTRTVR, UNDEFINED };
 
-#define USE_DOUBLE
-
 #define     YES     255
 #define     NO      0
 

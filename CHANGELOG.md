@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - added exception handling for the time integration, which saves a final vtk when a error is detected in the time integration loop
 
 ### Added
+- single precision version is validated and fully operational. Can be enabled from cmake.
 - isotropic thermal diffusion (anisotropic diffusion in MHD will come later)
 - fixed a bug in 1D+1D in spherical geometry (J. Mauxion)
 - Increased the efficiency of abort checks using MPI_Bcast instead of MPI_Allreduce

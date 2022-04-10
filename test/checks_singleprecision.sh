@@ -86,7 +86,7 @@ for rep in $rep_MPI_list; do
     echo "***********************************************"
     rm -f CMakeCache.txt
 
-    cmake $IDEFIX_DIR $options -DIdefix_MPI=ON || { echo "!!!!$rep in single precision failed during configuration"; exit 1; }
+    cmake $IDEFIX_DIR $options -DIdefix_MPI=ON -DIdefix_PRECISION=Single || { echo "!!!!$rep in single precision failed during configuration"; exit 1; }
     echo "***********************************************"
     echo "Making  $rep in single precision"
     echo "***********************************************"

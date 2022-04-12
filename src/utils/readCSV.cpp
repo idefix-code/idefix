@@ -12,6 +12,7 @@
 #include "idefix.hpp"
 #include "readCSV.hpp"
 
+
 ReadCSV::ReadCSV(std::string filename, char delimiter) {
   idfx::pushRegion("ReadCSV::ReadCSV");
   // Only 1 process loads the file
@@ -45,11 +46,6 @@ ReadCSV::ReadCSV(std::string filename, char delimiter) {
         std::stringstream str(line);
         std::string valueString;
         while(std::getline(str, valueString, delimiter)) {
-          if(firstLine && firstColumn) {
-            // We skip this
-            firstColumn = false;
-            continue;
-          }
           real value;
           try {
             value = std::stod(valueString);
@@ -99,12 +95,12 @@ ReadCSV::ReadCSV(std::string filename, char delimiter) {
   #endif
 
   //Allocate arrays so that the data fits in it
-  this->x = IdefixArray1D<real> ("CSV_x", size[0]);
-  this->y = IdefixArray1D<real> ("CSV_y", size[1]);
+  this->xin = IdefixArray1D<real> ("CSV_x", size[0]);
+  this->yin = IdefixArray1D<real> ("CSV_y", size[1]);
   this->data =  IdefixArray2D<real> ("CSV_data", size[0], size[1]);
 
-  IdefixArray1D<real>::HostMirror xHost = Kokkos::create_mirror_view(this->x);
-  IdefixArray1D<real>::HostMirror yHost = Kokkos::create_mirror_view(this->y);
+  IdefixArray1D<real>::HostMirror xHost = Kokkos::create_mirror_view(this->xin);
+  IdefixArray1D<real>::HostMirror yHost = Kokkos::create_mirror_view(this->yin);
   IdefixArray2D<real>::HostMirror dataHost = Kokkos::create_mirror_view(this->data);
 
   // Fill the arrays with the std::vector content
@@ -131,8 +127,8 @@ ReadCSV::ReadCSV(std::string filename, char delimiter) {
   #endif
 
   // Copy to target
-  Kokkos::deep_copy(this->x ,xHost);
-  Kokkos::deep_copy(this->y, yHost);
+  Kokkos::deep_copy(this->xin ,xHost);
+  Kokkos::deep_copy(this->yin, yHost);
   Kokkos::deep_copy(this->data, dataHost);
 
 

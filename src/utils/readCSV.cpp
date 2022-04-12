@@ -12,17 +12,7 @@
 #include "idefix.hpp"
 #include "readCSV.hpp"
 
-ReadCSVDeviceContext ReadCSV::GetDeviceContext() const {
-  idfx::pushRegion("ReadCSV::GetDeviceContext()");
 
-  ReadCSVDeviceContext context;
-  context.xin = xin;
-  context.yin = yin;
-  context.data = data;
-
-  idfx::popRegion();
-  return context;
-}
 ReadCSV::ReadCSV(std::string filename, char delimiter) {
   idfx::pushRegion("ReadCSV::ReadCSV");
   // Only 1 process loads the file
@@ -56,11 +46,6 @@ ReadCSV::ReadCSV(std::string filename, char delimiter) {
         std::stringstream str(line);
         std::string valueString;
         while(std::getline(str, valueString, delimiter)) {
-          if(firstLine && firstColumn) {
-            // We skip this
-            firstColumn = false;
-            continue;
-          }
           real value;
           try {
             value = std::stod(valueString);

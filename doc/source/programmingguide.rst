@@ -423,7 +423,7 @@ This class can read any CSV file which content has the following shape:
   :widths: 25 25 25 25
   :header-rows: 0
 
-  * - unused
+  * -
     - x\ :sub:`1`
     - x\ :sub:`2`
     - x\ :sub:`3`
@@ -431,7 +431,7 @@ This class can read any CSV file which content has the following shape:
     - data\ :sub:`1,1`
     - data\ :sub:`2,1`
     - data\ :sub:`3,1`
-  * - y\ :sub:`1`
+  * - y\ :sub:`2`
     - data\ :sub:`1,2`
     - data\ :sub:`2,2`
     - data\ :sub:`3,2`
@@ -439,16 +439,15 @@ This class can read any CSV file which content has the following shape:
 Each element of the CSV file can be separated by an arbitrarily chosen delimiter (which can be "," ";", etc...).
 The constructor of the CSV class loads the content of the file in the target's memory (and broadcasts it
 to other running processes when using MPI). Once loaded,
-the elements can be accessed using the inlined function ``ReadCSV_Fetch``. These functions are defined as:
+the elements can be accessed using the function ``Get`` in an ``idefix_for`` loop. These functions are defined as:
 
 .. code-block:: c++
 
-  ReadCSV::ReadCSV(std::string filename, char delimiter);   // Load the file
-  real ReadCSV_Fetch(const real x,                          // Interpolate data at (x,y)
-                     const real y,
-                     const IdefixArray1D<real> &xin,
-                     const IdefixArray1D<real> &yin,
-                     const IdefixArray2D<real> &datain)
+  ReadCSV::ReadCSV(std::string filename, char delimiter);   // Load the file (from the host)
+
+  KOKKOS_INLINE_FUNCTION
+  real Get(const real x, const real y) const;               // Interpolate the table (on the device)
+
 
 In the end, the CSV class can be used inside the user's code as in:
 
@@ -458,15 +457,8 @@ In the end, the CSV class can be used inside the user's code as in:
 
   ReadCSV csv("example.csv",',');   // here we use "," as delimiter
 
-  // To avoid having to capture the csv object, we must alias the 3 following arrays
-  IdefixArray1D<real> x = csv.x;
-  IdefixArray1D<real> y = csv.y;
-  IdefixArray2D<real> data = csv.data;
-
-  ....
-
   idefix_for("loop", 0, 10, KOKKOS_LAMBDA (int i) {
-    q(i) = ReadCSV_Fetch(3.5, 2.1, x, y, data); // interpolate the csv data at x=3.5, y=2.1
+    q(i) = csv.Get(3.5, 2.1); // interpolate the csv data at x=3.5, y=2.1
   });
 
 

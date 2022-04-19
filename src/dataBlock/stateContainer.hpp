@@ -14,10 +14,10 @@
 
 class State{
  public:
-  enum TypeLocalisation{none, center, face, edge};
+  enum TypeLocation{none, center, face, edge};
 
   IdefixArray4D<real> array;
-  TypeLocalisation localisation;
+  TypeLocation localisation;
   std::string name;               // Name of the full state (always applicable)
 };
 
@@ -26,7 +26,7 @@ class StateContainer {
   StateContainer();
   void CopyFrom(StateContainer &);    // Return a deepcopy of the current state container
   void AllocateAs(StateContainer &);    // Return a deepcopy of the current state container
-  void PushArray(IdefixArray4D<real> &, State::TypeLocalisation, std::string);
+  void PushArray(IdefixArray4D<real> &, State::TypeLocation, std::string);
   void AddAndStore(real, real, StateContainer&);
 
 

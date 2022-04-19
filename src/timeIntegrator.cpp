@@ -68,7 +68,7 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
     haveRKL = true;
   }
 
-  // If multi-sage, create a new state in the datablock called "begin"
+  // If multi-stage, create a new state in the datablock called "begin"
   if(nstages>1) {
     data.states["begin"] = StateContainer();
     data.states["begin"].AllocateAs(data.states["current"]);

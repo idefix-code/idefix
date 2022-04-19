@@ -46,7 +46,7 @@ void StateContainer::AllocateAs(StateContainer &in) {
 }
 
 void StateContainer::PushArray(IdefixArray4D<real>& in,
-                               State::TypeLocalisation loc,
+                               State::TypeLocation loc,
                                std::string name) {
   idfx::pushRegion("StateContainer::PushArray");
   State state;

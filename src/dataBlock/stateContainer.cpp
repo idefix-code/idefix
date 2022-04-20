@@ -66,6 +66,7 @@ void StateContainer::PushArray(IdefixArray4D<real>& in,
   state.array = in;
   state.type = State::idefixArray4D;
   state.name = name;
+  state.location = loc;
   this->stateVector.push_back(state);
   idfx::popRegion();
 }

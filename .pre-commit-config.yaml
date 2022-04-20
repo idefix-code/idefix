@@ -19,6 +19,11 @@ repos:
       - id: markdown-toc
         files: README.md
 
+  - repo: https://github.com/neutrinoceros/inifix
+    rev: v2.0.0
+    hooks:
+      - id: inifix-format
+
   - repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.1.12
     hooks:

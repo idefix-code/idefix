@@ -14,11 +14,14 @@
 
 class State{
  public:
-  enum TypeLocation{none, center, face, edge};
+  enum TypeLocation{undefined, center, face, edge};
+  enum TypeState{none, idefixArray4D};
 
-  IdefixArray4D<real> array;
-  TypeLocation localisation;
-  std::string name;               // Name of the full state (always applicable)
+  TypeState type{none};           ///< type of data contained by this state
+  IdefixArray4D<real> array;      ///< only defined if type==IdefixArray4D
+  TypeLocation location{undefined};    ///< location of array when type==IdefixArray4D
+                                       ///< (otherwise undefined)
+  std::string name;               ///< Name of the full state (always applicable)
 };
 
 class StateContainer {

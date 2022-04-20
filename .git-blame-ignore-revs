@@ -5,3 +5,6 @@
 
 # auto-fix trailing whitespace and tabs+space mixing with pre-commit hooks
 467f543f256823da2852b35707fda55dfb007405
+
+# apply inifix-format to all .ini files
+ac260f4af48221229aef4fc1f93ffbf9df450739

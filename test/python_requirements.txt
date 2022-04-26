@@ -1,7 +1,7 @@
 # note: version requirements are indicative and tests # should be able to run with
 # older versions of our dependencies, though it is not guaranteed.
 
-numpy>=1.19.4
-matplotlib>=3.3.3
-scipy>=1.5.4
-pre-commit>=2.9.3
+# minimally require last versions available for Python 2.7
+numpy>=1.16.6
+matplotlib>=2.2.5
+scipy>=1.2.3

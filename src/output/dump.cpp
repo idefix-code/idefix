@@ -696,8 +696,18 @@ int Dump::Write(DataBlock &data, Output& output) {
   GridHost gridHost(*data.mygrid);
   gridHost.SyncFromDevice();
 
+  // Test endianness
+  std::string endian;
+  int tmp1 = 1;
+  unsigned char *tmp2 = (unsigned char *) &tmp1;
+  if (*tmp2 != 0) {
+    endian = "little";
+  } else {
+    endian = "big";
+  }
+
   char header[HEADERSIZE];
-  std::snprintf(header, HEADERSIZE, "Idefix %s Dump Data", GITVERSION);
+  std::snprintf(header, HEADERSIZE, "Idefix %s Dump Data %s endian", GITVERSION, endian.c_str());
   WriteString(fileHdl, header, HEADERSIZE);
 
   for(int dir = 0; dir < 3 ; dir++) {

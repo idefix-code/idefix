@@ -40,7 +40,7 @@ class DumpField(object):
             stringchar = "d"
             dtype = "float64"
         elif self.type == 1:
-            mysize = DOUBLE_SIZE
+            mysize = FLOAT_SIZE
             stringchar = "f"
             dtype = "float32"
         elif self.type == 2:

@@ -11,7 +11,6 @@ import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
 from pytools.vtk_io import readVTKPolar
 import numpy as np
-import matplotlib.pyplot as plt
 
 V=readVTKPolar('../data.0001.vtk')
 U=readVTKPolar('data.0001.ref.vtk')

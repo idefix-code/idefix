@@ -11,7 +11,6 @@ import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
 from pytools.vtk_io import readVTKSpherical
 import numpy as np
-import matplotlib.pyplot as plt
 
 V=readVTKSpherical('../data.0001.vtk')
 U=readVTKSpherical('data.0001.ref.vtk')

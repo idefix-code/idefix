@@ -4,89 +4,118 @@ Created on Fri Nov 27 22:07:47 2020
 
 @author: lesurg
 """
+import os
+import re
 import struct
+import warnings
+
 import numpy as np
 
+__all__ = ["readDump"]
 
-class dataStruct:
-    pass
 
-def readHeader(fileHandler):
-    headerSize = 128
-    q=fileHandler.read(headerSize)
-    n=q.index(b'\x00')
-    header=q[:n].decode('utf-8')
-    return(header)
+header_regexp = re.compile(
+    r"Idefix (?P<version>v\d+\.\d+\.\d+(-(?P<ncommit>\d+))?(-(?P<sha>\w+))?) Dump Data"
+    r"((?P<byteorder>(little|big)) endian)?"
+)
+INT_SIZE = 4
+NAME_SIZE = 16
+DOUBLE_SIZE = 8
+FLOAT_SIZE = 4
 
-def readEntry(fileHandler):
-    intSize = 4
-    nameSize = 16
-    dblSize = 8
+HEADER_SIZE = 128
 
-    byteorder='little'
-    data=dataStruct()
-    # read entry name
-    q=fileHandler.read(nameSize)
-    # cut it at the first 0 (cstring format)
-    n=q.index(b'\x00')
-    data.name=q[:n].decode('utf-8')
-    #read datatype, and allocate its size
-    data.type=int.from_bytes(fileHandler.read(intSize),byteorder)
-    if(data.type==0):
-        mysize=dblSize
-        stringchar="d"
-    if(data.type==1):
-        mysize=dblSize
-        stringchar="f"
-    if(data.type==2):
-        mysize=intSize
-        stringchar="i"
-    data.ndims=int.from_bytes(fileHandler.read(intSize), byteorder)
-    dims=[]
-    ntot=1
-    for dim in range(data.ndims):
-        dims.append(int.from_bytes(fileHandler.read(intSize), byteorder))
-        ntot=ntot*dims[-1]
-    raw=struct.unpack(str(ntot)+stringchar,fileHandler.read(mysize*ntot))
-    data.array=(np.asarray(raw).reshape(dims[::-1])).T
-    return data
 
+class DumpField(object):
+    def __init__(self, fh, byteorder="little"):
+        # read entry name
+        q = fh.read(NAME_SIZE)
+        # cut it at the first 0 (cstring format)
+        n = q.index(b"\x00")
+        self.name = q[:n].decode("utf-8")
+        # read datatype, and allocate its size
+        self.type = int.from_bytes(fh.read(INT_SIZE), byteorder)
+        if self.type == 0:
+            mysize = DOUBLE_SIZE
+            stringchar = "d"
+            dtype = "float64"
+        elif self.type == 1:
+            mysize = FLOAT_SIZE
+            stringchar = "f"
+            dtype = "float32"
+        elif self.type == 2:
+            mysize = INT_SIZE
+            stringchar = "i"
+            dtype = "int64"
+        else:
+            raise RuntimeError(
+                "Found unknown data type %d for field %s" % (self.type, self.name)
+            )
+        self.ndims = int.from_bytes(fh.read(INT_SIZE), byteorder)
+        dims = []
+        ntot = 1
+        for dim in range(self.ndims):
+            dims.append(int.from_bytes(fh.read(INT_SIZE), byteorder))
+            ntot = ntot * dims[-1]
+        raw = struct.unpack(str(ntot) + stringchar, fh.read(mysize * ntot))
+        self.array = np.asarray(raw, dtype=dtype).reshape(dims[::-1]).T
+
+
+class DumpDataset(object):
+    def __init__(self, filename):
+        self.filename = os.path.abspath(filename)
+        self.metadata = {}
+        with open(filename, "rb") as fh:
+            self._read_header(fh)
+            self._read_fields(fh)
+
+    def _read_header(self, fh):
+        q = fh.read(HEADER_SIZE)
+        n = q.index(b"\x00")
+        self.header = q[:n].decode("utf-8")
+
+        match = re.match(header_regexp, self.header)
+        # note that "version" is the only field that is expected to be always present
+        # other fields are set to None if there were not found in the header
+        self.metadata["version"] = match.group("version")
+        self.metadata["ncommit"] = match.group("ncommit")
+        self.metadata["sha"] = match.group("sha")
+        self.metadata["byteorder"] = match.group("byteorder")
+
+        ref_position = fh.tell()
+
+    def _read_field(self, fh):
+        if self.metadata["byteorder"] is None:
+            # "little" is a safe bet. If anyone ever *needs* to analyze big-endian data produced
+            # with old versions of Idefix, then we could offer some flexibility here.
+            byteorder = "little"
+        else:
+            byteorder = self.metadata["byteorder"]
+
+        return DumpField(fh, byteorder)
+
+    def _read_fields(self, fh):
+        # read coordinates
+
+        self.x1 = self._read_field(fh).array
+        self.x1l = self._read_field(fh).array
+        self.x1r = self._read_field(fh).array
+        self.x2 = self._read_field(fh).array
+        self.x2l = self._read_field(fh).array
+        self.x2r = self._read_field(fh).array
+        self.x3 = self._read_field(fh).array
+        self.x3l = self._read_field(fh).array
+        self.x3r = self._read_field(fh).array
+
+        # read remaining fields and store them
+        self.data = {}
+        while True:
+            field = self._read_field(fh)
+            if field.name == "eof":
+                break
+            self.data[field.name] = field.array
+
+
+# public API
 def readDump(filename):
-
-    f=open(filename,"rb")
-    data=dataStruct()
-    # read the header
-    data.header=readHeader(f)
-
-    #read coordinates
-    field=readEntry(f)
-    data.x1=field.array
-    field=readEntry(f)
-    data.x1l=field.array
-    field=readEntry(f)
-    data.x1r=field.array
-
-    field=readEntry(f)
-    data.x2=field.array
-    field=readEntry(f)
-    data.x2l=field.array
-    field=readEntry(f)
-    data.x2r=field.array
-
-    field=readEntry(f)
-    data.x3=field.array
-    field=readEntry(f)
-    data.x3l=field.array
-    field=readEntry(f)
-    data.x3r=field.array
-
-
-    # read remaining fields and store them
-    data.data={}
-    while(field.name!="eof"):
-
-        field=readEntry(f)
-        data.data[field.name]=field.array
-
-    f.close()
-    return(data)
+    return DumpDataset(filename)

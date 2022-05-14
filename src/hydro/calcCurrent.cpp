@@ -69,9 +69,9 @@ void Hydro::CalcCurrent() {
 
 
       // define geometrical factors
-      D_EXPAND( d12 = d13 = ONE_F / dx1(i);  ,
-                d21 = d23 = ONE_F / dx2(j);  ,
-                d31 = d32 = ONE_F / dx3(k);  )
+      D_EXPAND( d12 = d13 = TWO_F / (dx1(i-1)+dx1(i));  ,
+                d21 = d23 = TWO_F / (dx2(j-1)+dx2(j));  ,
+                d31 = d32 = TWO_F / (dx3(k-1)+dx3(k));  )
 
       real a13Bx3_000 = Bx3_000;
       real a13Bx3_m00 = Bx3_m00;

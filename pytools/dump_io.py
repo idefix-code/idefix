@@ -15,7 +15,7 @@ __all__ = ["readDump"]
 
 
 header_regexp = re.compile(
-    r"Idefix (?P<version>v\d+\.\d+\.\d+(-(?P<ncommit>\d+))?(-(?P<sha>\w+))?) Dump Data"
+    r"Idefix (?P<version>[\w\.-]+) Dump Data"
     r"((?P<byteorder>(little|big)) endian)?"
 )
 INT_SIZE = 4
@@ -76,10 +76,8 @@ class DumpDataset(object):
 
         match = re.match(header_regexp, self.header)
         # note that "version" is the only field that is expected to be always present
-        # other fields are set to None if there were not found in the header
+        # byteorder is set to None if not found in the header
         self.metadata["version"] = match.group("version")
-        self.metadata["ncommit"] = match.group("ncommit")
-        self.metadata["sha"] = match.group("sha")
         self.metadata["byteorder"] = match.group("byteorder")
 
         ref_position = fh.tell()

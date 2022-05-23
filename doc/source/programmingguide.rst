@@ -208,12 +208,12 @@ It provides accessors such as
   // the arguments are always: BlockName, EntryName, ParameterNumber (starting from 0)
 
   // Read a parameter of type T from the input file and throw an error if it cannot be found
-  // T can be a std::string or a number (real, int, double, float, int64_t, ...)
+  // T can be a std::string, a number (real, int, double, float, int64_t) or a boolean
   template<typename T>
   T Get(std::string blockName, std::string paramName, int num);
 
   // Read a parameter of type T from the input file. Set it to default if it cannot be found.
-  // T can be a std::string or a number (real, int, double, float, int64_t, ...)
+  // T can be a std::string or a number (real, int, double, float, int64_t) or a boolean
   template<typename T>
   T GetOrSet(std::string blockName, std::string paramName, int num, T default);
 

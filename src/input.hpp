@@ -11,6 +11,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <algorithm>
 
 #include "idefix.hpp"
 
@@ -81,7 +82,7 @@ template<typename T>
 T Input::Get(std::string blockName, std::string paramName, int num) {
   if(CheckEntry(blockName, paramName) <= num) {
       std::stringstream msg;
-      msg << "Mandatory parameter [" << blockName << "]:" << paramName << "(" << num+1
+      msg << "Mandatory parameter [" << blockName << "]:" << paramName << "(" << num
           << "). Cannot be found in the input file" << std::endl;
       IDEFIX_ERROR(msg);
   }
@@ -112,15 +113,42 @@ T Input::Get(std::string blockName, std::string paramName, int num) {
     } else if(typeid(T) == typeid(std::string)) {
       std::string *v = reinterpret_cast<std::string*>( &value);
       *v = paramString;
+    } else if(typeid(T) == typeid(bool)) {
+      bool *v = reinterpret_cast<bool*>( &value);
+      // convert string to lower case
+      std::for_each(paramString.begin(), paramString.end(), [](char & c){
+        c = ::tolower(c);
+      });
+      if(paramString.compare("yes") == 0) {
+        *v = true;
+      } else if(paramString.compare("true") == 0) {
+        *v = true;
+      } else if(paramString.compare("1") == 0) {
+        *v = true;
+      } else if(paramString.compare("no") == 0) {
+        *v = false;
+      } else if(paramString.compare("false") == 0) {
+        *v = false;
+      } else if(paramString.compare("0") == 0) {
+        *v = false;
+      } else {
+        std::stringstream msg;
+        msg << "Boolean parameter [" << blockName << "]:" << paramName << "(" << num
+          << ") cannot be interpreted as boolean in the input file." << std::endl
+          << std::endl << "I read \"" << paramString << "\"" << std::endl
+          << "Use \"yes\", \"true\" or \"1\" for boolean true ;"
+          << " or \"no\", \"false\" or \"0\" for boolean false.";
+        IDEFIX_ERROR(msg);
+      }
     } else {
       IDEFIX_ERROR("Unknown type has been requested from the input file");
     }
   } catch(const std::exception& e) {
     std::stringstream errmsg;
     errmsg << e.what() << std::endl
-          << "Input::Get: Error while reading [" << blockName << "]:" << paramName << "(" << num+1
+          << "Input::Get: Error while reading [" << blockName << "]:" << paramName << "(" << num
           << ")." << std::endl
-          << "\"" << paramString << "\" cannot be converted to a number." << std::endl;
+          << "\"" << paramString << "\" cannot be interpreted as required." << std::endl;
     IDEFIX_ERROR(errmsg);
   }
   return(value);
@@ -145,7 +173,7 @@ T Input::GetOrSet(std::string blockName, std::string paramName, int num, T def) 
       IDEFIX_ERROR(msg);
     }
     std::stringstream strm;
-    strm << def;
+    strm << std::boolalpha << def;
     inputParameters[blockName][paramName].push_back(strm.str());
   }
   return(Get<T>(blockName, paramName, num));

@@ -123,21 +123,19 @@ T Input::Get(std::string blockName, std::string paramName, int num) {
         *v = true;
       } else if(paramString.compare("true") == 0) {
         *v = true;
-      } else if(paramString.compare("1") == 0) {
-        *v = true;
       } else if(paramString.compare("no") == 0) {
         *v = false;
       } else if(paramString.compare("false") == 0) {
         *v = false;
-      } else if(paramString.compare("0") == 0) {
+      } else if(paramString.compare("f") == 0) {
         *v = false;
       } else {
         std::stringstream msg;
         msg << "Boolean parameter [" << blockName << "]:" << paramName << "(" << num
           << ") cannot be interpreted as boolean in the input file." << std::endl
           << std::endl << "I read \"" << paramString << "\"" << std::endl
-          << "Use \"yes\", \"true\" or \"1\" for boolean true ;"
-          << " or \"no\", \"false\" or \"0\" for boolean false.";
+          << "Use \"yes\" or \"true\" for boolean true ;"
+          << " use \"no\" or \"false\" for boolean false.";
         IDEFIX_ERROR(msg);
       }
     } else {

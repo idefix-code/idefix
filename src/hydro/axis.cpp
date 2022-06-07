@@ -138,6 +138,33 @@ void Axis::SymmetrizeEx1Side(int jref) {
 #endif
 }
 
+void Axis::RegularizeEx3side(int jref) {
+  IdefixArray3D<real> Ex3 = emf->ez;
+
+  idefix_for("Ex3_Regularise",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
+    KOKKOS_LAMBDA(int k,int i) {
+      Ex3(k,jref,i) = 0.0;
+    });
+}
+
+// Average the Emf component along the axis
+void Axis::RegularizeEMFs() {
+  idfx::pushRegion("Axis::RegularizeEMFs");
+
+  if(this->axisLeft) {
+    int jref = hydro->data->beg[JDIR];
+    SymmetrizeEx1Side(jref);
+    RegularizeEx3side(jref);
+  }
+  if(this->axisRight) {
+    int jref = hydro->data->end[JDIR];
+    SymmetrizeEx1Side(jref);
+    RegularizeEx3side(jref);
+  }
+
+  idfx::popRegion();
+}
+
 void Axis::FixBx2sAxis(int side) {
   // Compute the values of Bx and By that are consistent with BX2 along the axis
   #if DIMENSIONS == 3
@@ -190,21 +217,7 @@ void Axis::FixBx2sAxis(int side) {
   #endif // DIMENSIONS
 }
 
-// Average the Emf component along the axis
-void Axis::SymmetrizeEx1() {
-  idfx::pushRegion("Axis::SymmetrizeEx1");
 
-  if(this->axisLeft) {
-    int jref = hydro->data->beg[JDIR];
-    this->SymmetrizeEx1Side(jref);
-  }
-  if(this->axisRight) {
-    int jref = hydro->data->end[JDIR];
-    this->SymmetrizeEx1Side(jref);
-  }
-
-  idfx::popRegion();
-}
 
 // enforce the boundary conditions on the ghost zone accross the axis
 void Axis::EnforceAxisBoundary(int side) {

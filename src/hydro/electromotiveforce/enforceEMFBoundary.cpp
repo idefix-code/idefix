@@ -17,7 +17,7 @@ void ElectroMotiveForce::EnforceEMFBoundary() {
     this->data->hydro.emfBoundaryFunc(*data, data->t);
 
   if(this->data->hydro.haveAxis) {
-    this->data->hydro.myAxis.SymmetrizeEx1();
+    this->data->hydro.myAxis.RegularizeEMFs();
   }
 
   #ifdef WITH_MPI

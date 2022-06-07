@@ -20,8 +20,9 @@ class DataBlock;
 class Axis {
  public:
   void Init(Grid &, Hydro *);  // Initialisation
-  void SymmetrizeEx1();                 // Symmetrize Emf component Ex1
+  void RegularizeEMFs();                 // Regularize the EMF sitting on the axis
   void SymmetrizeEx1Side(int);         // Symmetrize on a specific side (internal method)
+  void RegularizeEx3side(int);                 // Regularize Ex3 along the axis (internal method)
   void EnforceAxisBoundary(int side);   // Enforce the boundary conditions (along X2)
   void FixBx2sAxis(int side);           // Fix BX2s on the axis using the field around it
   void ReconstructBx2s();               // Reconstruct BX2s in the ghost zone using divB=0

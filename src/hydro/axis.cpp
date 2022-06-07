@@ -74,6 +74,8 @@ void Axis::Init(Grid &grid, Hydro *h) {
 
   #if MHD == YES
   this->Ex1Avg = IdefixArray1D<real>("Axis:Ex1Avg",hydro->data->np_tot[IDIR]);
+  this->BAvg = IdefixArray2D<real>("Axis:BxAvg",hydro->data->np_tot[IDIR],2);
+
   #endif
 
   #ifdef WITH_MPI
@@ -134,6 +136,58 @@ void Axis::SymmetrizeEx1Side(int jref) {
     });
   }
 #endif
+}
+
+void Axis::FixBx2sAxis(int side) {
+  // Compute the values of Bx and By that are consistent with BX2 along the axis
+  #if DIMENSIONS == 3
+    IdefixArray4D<real> Vs = hydro->Vs;
+    IdefixAtomicArray2D<real> BAvg = this->BAvg;
+    IdefixArray1D<real> phi = data->x[KDIR];
+
+    int jref = 0;
+    int sign = 0;
+
+    if(side == left) {
+      jref = data->beg[JDIR];
+      sign = 1;
+    }
+    if(side == right) {
+      jref = data->end[JDIR];
+      sign = -1;
+    }
+
+    idefix_for("B_ini",0,data->np_tot[IDIR],0,2,
+          KOKKOS_LAMBDA(int i, int n) {
+            BAvg(i,n) = ZERO_F;
+    });
+    idefix_for("BHorizontal_compute",data->beg[KDIR],data->end[KDIR],0,data->np_tot[IDIR],
+        KOKKOS_LAMBDA(int k,int i) {
+          real Bthmid = sign*HALF_F*(Vs(BX2s,k,jref-1,i) + Vs(BX2s,k,jref+1,i));
+          real Bphimid = HALF_F*(Vs(BX3s,k,jref-1,i) + Vs(BX3s,k,jref,i));
+          //Bthmid = 0.0;
+          //Bphimid = 0.0;
+
+          BAvg(i,IDIR) += Bthmid * cos(phi(k)) - Bphimid * sin(phi(k));
+          BAvg(i,JDIR) += Bthmid * sin(phi(k)) + Bphimid * cos(phi(k));
+    });
+    if(needMPIExchange) {
+      #ifdef WITH_MPI
+        // sum along all of the processes on the same r
+        MPI_Allreduce(MPI_IN_PLACE, BAvg.data(), 2*data->np_tot[IDIR], realMPI,
+                      MPI_SUM, data->mygrid->AxisComm);
+      #endif
+    }
+    int ncells=data->mygrid->np_int[KDIR];
+
+    idefix_for("fixBX2s",data->beg[KDIR],data->end[KDIR],0,data->np_tot[IDIR],
+        KOKKOS_LAMBDA(int k,int i) {
+          real Bx = BAvg(i,IDIR) / ((real) ncells*sign);
+          real By = BAvg(i,JDIR) / ((real) ncells*sign);
+
+          Vs(BX2s,k,jref,i) = cos(phi(k))*Bx + sin(phi(k))*By;
+        });
+  #endif // DIMENSIONS
 }
 
 // Average the Emf component along the axis
@@ -283,29 +337,22 @@ void Axis::ReconstructBx2s() {
   // Set BX2s on the axis to the average of the two agacent cells
   // This is required since Bx2s on the axis is not evolved since
   // there is no circulation around it
-    bool left = axisLeft;
-    bool right = axisRight;
+    bool haveleft = axisLeft;
+    bool haveright = axisRight;
 
     int jright = data->end[JDIR];
     int jleft = data->beg[JDIR];
     if(isTwoPi) {
-      idefix_for("Axis:BoundaryAvg",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
-            KOKKOS_LAMBDA (int k, int i) {
-              if(left) {
-                Vs(BX2s,k,jleft,i) = HALF_F*(Vs(BX2s,k,jleft-1,i)+Vs(BX2s,k,jleft+1,i));
-              }
-              if(right) {
-                Vs(BX2s,k,jright,i) = HALF_F*(Vs(BX2s,k,jright-1,i)+Vs(BX2s,k,jright+1,i));
-              }
-            }
-          );
+      if(haveleft) FixBx2sAxis(left);
+      if(haveright) FixBx2sAxis(right);
+
     } else {
       idefix_for("Axis:BoundaryAvg",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
             KOKKOS_LAMBDA (int k, int i) {
-              if(left) {
+              if(haveleft) {
                 Vs(BX2s,k,jleft,i) = ZERO_F;
               }
-              if(right) {
+              if(haveright) {
                 Vs(BX2s,k,jright,i) = ZERO_F;
               }
             }

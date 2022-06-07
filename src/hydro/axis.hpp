@@ -23,7 +23,8 @@ class Axis {
   void SymmetrizeEx1();                 // Symmetrize Emf component Ex1
   void SymmetrizeEx1Side(int);         // Symmetrize on a specific side (internal method)
   void EnforceAxisBoundary(int side);   // Enforce the boundary conditions (along X2)
-  void ReconstructBx2s();
+  void FixBx2sAxis(int side);           // Fix BX2s on the axis using the field around it
+  void ReconstructBx2s();               // Reconstruct BX2s in the ghost zone using divB=0
   void ShowConfig();
 
 
@@ -54,6 +55,7 @@ class Axis {
   void InitMPI();
 
   IdefixArray1D<real> Ex1Avg;
+  IdefixArray2D<real> BAvg;
   IdefixArray1D<int> symmetryVc;
   IdefixArray1D<int> symmetryVs;
 

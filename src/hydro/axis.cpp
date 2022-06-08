@@ -75,7 +75,9 @@ void Axis::Init(Grid &grid, Hydro *h) {
   #if MHD == YES
   this->Ex1Avg = IdefixArray1D<real>("Axis:Ex1Avg",hydro->data->np_tot[IDIR]);
   this->BAvg = IdefixArray2D<real>("Axis:BxAvg",hydro->data->np_tot[IDIR],2);
-
+  if(haveCurrent) {
+    this->JAvg = IdefixArray2D<real>("Axis:JAvg",hydro->data->np_tot[IDIR],3);
+  }
   #endif
 
   #ifdef WITH_MPI
@@ -147,6 +149,66 @@ void Axis::RegularizeEx3side(int jref) {
     });
 }
 
+void Axis::RegularizeCurrentSide(int side) {
+  // Compute the values of Jx, Jy and Jz that are consistent for all cells touching the axis
+  #if DIMENSIONS == 3
+    IdefixArray4D<real> J = hydro->J;
+    IdefixArray2D<real> JAvg = this->JAvg;
+    IdefixArray1D<real> phi = data->x[KDIR];
+
+    int jref = 0;
+    int sign = 0;
+
+    if(side == left) {
+      jref = data->beg[JDIR];
+      sign = 1;
+    }
+    if(side == right) {
+      jref = data->end[JDIR];
+      sign = -1;
+    }
+
+    idefix_for("J_ini",0,data->np_tot[IDIR],0,3,
+          KOKKOS_LAMBDA(int i, int n) {
+            JAvg(i,n) = ZERO_F;
+    });
+    idefix_for("JHorizontal_compute",data->beg[KDIR],data->end[KDIR],0,data->np_tot[IDIR],
+        KOKKOS_LAMBDA(int k,int i) {
+          real Jthmid = sign*(J(JDIR,k  ,jref-1,i) +
+                              J(JDIR,k  ,jref  ,i) +
+                              J(JDIR,k+1,jref-1,i) +
+                              J(JDIR,k+1,jref  ,i)) / 4.0;
+
+          real Jphimid = J(KDIR,k, jref, i);
+
+          Kokkos::atomic_add(&JAvg(i,IDIR), Jthmid * cos(phi(k)) - Jphimid * sin(phi(k)));
+          Kokkos::atomic_add(&JAvg(i,JDIR), Jthmid * sin(phi(k)) + Jphimid * cos(phi(k)));
+          Kokkos::atomic_add(&JAVg(i,KDIR), J(IDIR,k,jref,i));
+    });
+
+    if(needMPIExchange) {
+      #ifdef WITH_MPI
+        // sum along all of the processes on the same r
+        MPI_Allreduce(MPI_IN_PLACE, JAvg.data(), 3*data->np_tot[IDIR], realMPI,
+                      MPI_SUM, data->mygrid->AxisComm);
+      #endif
+    }
+
+    const int ncells=data->mygrid->np_int[KDIR];
+
+    idefix_for("fixBX2s",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
+        KOKKOS_LAMBDA(int k,int i) {
+          real Jx = JAvg(i,IDIR) / ((real) ncells*sign);
+          real Jy = JAvg(i,JDIR) / ((real) ncells*sign);
+          real Jz = JAvg(i,KDIR) / ((real) ncells);
+
+          J(IDIR, k,jref,i) = Jz;
+          J(JDIR, k,jref,i) = cos(phi(k))*Jx + sin(phi(k))*Jy;
+          // There is nothing along KDIR since Jphi is never localised on the axis.
+        });
+  #endif // DIMENSIONS
+}
+
 // Average the Emf component along the axis
 void Axis::RegularizeEMFs() {
   idfx::pushRegion("Axis::RegularizeEMFs");
@@ -160,6 +222,20 @@ void Axis::RegularizeEMFs() {
     int jref = hydro->data->end[JDIR];
     SymmetrizeEx1Side(jref);
     RegularizeEx3side(jref);
+  }
+
+  idfx::popRegion();
+}
+
+// Average the Emf component along the axis
+void Axis::RegularizeCurrent() {
+  idfx::pushRegion("Axis::RegularizeCurrent");
+
+  if(this->axisLeft) {
+    RegularizeCurrentSide(left);
+  }
+  if(this->axisRight) {
+    RegularizeCurrentSide(right);
   }
 
   idfx::popRegion();

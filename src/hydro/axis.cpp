@@ -75,7 +75,7 @@ void Axis::Init(Grid &grid, Hydro *h) {
   #if MHD == YES
   this->Ex1Avg = IdefixArray1D<real>("Axis:Ex1Avg",hydro->data->np_tot[IDIR]);
   this->BAvg = IdefixArray2D<real>("Axis:BxAvg",hydro->data->np_tot[IDIR],2);
-  if(haveCurrent) {
+  if(hydro->haveCurrent) {
     this->JAvg = IdefixArray2D<real>("Axis:JAvg",hydro->data->np_tot[IDIR],3);
   }
   #endif
@@ -103,7 +103,7 @@ void Axis::ShowConfig() {
 void Axis::SymmetrizeEx1Side(int jref) {
 #if DIMENSIONS == 3
   IdefixArray3D<real> Ex1 = emf->ex;
-  IdefixAtomicArray1D<real> Ex1Avg = this->Ex1Avg;
+  IdefixArray1D<real> Ex1Avg = this->Ex1Avg;
 
   if(isTwoPi) {
     idefix_for("Ex1_ini",0,data->np_tot[IDIR],
@@ -113,7 +113,7 @@ void Axis::SymmetrizeEx1Side(int jref) {
 
     idefix_for("Ex1_Symmetrize",data->beg[KDIR],data->end[KDIR],0,data->np_tot[IDIR],
       KOKKOS_LAMBDA(int k,int i) {
-        Ex1Avg(i) += Ex1(k,jref,i);
+        Kokkos::atomic_add(&Ex1Avg(i),  Ex1(k,jref,i));
       });
     if(needMPIExchange) {
       #ifdef WITH_MPI
@@ -153,9 +153,6 @@ void Axis::RegularizeCurrentSide(int side) {
   // Compute the values of Jx, Jy and Jz that are consistent for all cells touching the axis
   #if DIMENSIONS == 3
     IdefixArray4D<real> J = hydro->J;
-    IdefixArray2D<real> JAvg = this->JAvg;
-    IdefixArray1D<real> phi = data->x[KDIR];
-
     int jref = 0;
     int sign = 0;
 
@@ -167,6 +164,10 @@ void Axis::RegularizeCurrentSide(int side) {
       jref = data->end[JDIR];
       sign = -1;
     }
+    IdefixArray2D<real> JAvg = this->JAvg;
+    IdefixArray1D<real> phi = data->x[KDIR];
+
+
 
     idefix_for("J_ini",0,data->np_tot[IDIR],0,3,
           KOKKOS_LAMBDA(int i, int n) {
@@ -183,7 +184,8 @@ void Axis::RegularizeCurrentSide(int side) {
 
           Kokkos::atomic_add(&JAvg(i,IDIR), Jthmid * cos(phi(k)) - Jphimid * sin(phi(k)));
           Kokkos::atomic_add(&JAvg(i,JDIR), Jthmid * sin(phi(k)) + Jphimid * cos(phi(k)));
-          Kokkos::atomic_add(&JAVg(i,KDIR), J(IDIR,k,jref,i));
+          Kokkos::atomic_add(&JAvg(i,KDIR), J(IDIR,k,jref+sign,i)); // We pick up the radial current
+                                                                    // in the active zones
     });
 
     if(needMPIExchange) {
@@ -196,7 +198,7 @@ void Axis::RegularizeCurrentSide(int side) {
 
     const int ncells=data->mygrid->np_int[KDIR];
 
-    idefix_for("fixBX2s",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
+    idefix_for("fixJ",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
         KOKKOS_LAMBDA(int k,int i) {
           real Jx = JAvg(i,IDIR) / ((real) ncells*sign);
           real Jy = JAvg(i,JDIR) / ((real) ncells*sign);
@@ -206,6 +208,7 @@ void Axis::RegularizeCurrentSide(int side) {
           J(JDIR, k,jref,i) = cos(phi(k))*Jx + sin(phi(k))*Jy;
           // There is nothing along KDIR since Jphi is never localised on the axis.
         });
+
   #endif // DIMENSIONS
 }
 
@@ -245,7 +248,7 @@ void Axis::FixBx2sAxis(int side) {
   // Compute the values of Bx and By that are consistent with BX2 along the axis
   #if DIMENSIONS == 3
     IdefixArray4D<real> Vs = hydro->Vs;
-    IdefixAtomicArray2D<real> BAvg = this->BAvg;
+    IdefixArray2D<real> BAvg = this->BAvg;
     IdefixArray1D<real> phi = data->x[KDIR];
 
     int jref = 0;
@@ -271,8 +274,8 @@ void Axis::FixBx2sAxis(int side) {
           //Bthmid = 0.0;
           //Bphimid = 0.0;
 
-          BAvg(i,IDIR) += Bthmid * cos(phi(k)) - Bphimid * sin(phi(k));
-          BAvg(i,JDIR) += Bthmid * sin(phi(k)) + Bphimid * cos(phi(k));
+          Kokkos::atomic_add(&BAvg(i,IDIR), Bthmid * cos(phi(k)) - Bphimid * sin(phi(k)));
+          Kokkos::atomic_add(&BAvg(i,JDIR), Bthmid * sin(phi(k)) + Bphimid * cos(phi(k)));
     });
     if(needMPIExchange) {
       #ifdef WITH_MPI

@@ -153,9 +153,10 @@ void Hydro::CalcCurrent() {
   );
 
   // Regularize the current along the axis in cases where an axis is present.
-  if(this->haveAxis) {
-    this->myAxis.RegularizeCurrent();
-  }
+  // This feature is not yet ready, so it is commented out
+  //if(this->haveAxis) {
+  //  this->myAxis.RegularizeCurrent();
+  //}
 
   idfx::popRegion();
 }

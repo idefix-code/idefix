@@ -466,7 +466,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
   #if GEOMETRY == CYLINDRICAL
     IDEFIX_ERROR("Fargo is not compatible with cylindrical geometry "
                  "(which is intended to be 2D axisymmetric)");
-  #else 
+  #else
 
   // Refresh the fargo velocity function
   if(type==userdef) {

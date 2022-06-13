@@ -10,12 +10,12 @@
 
 #include <string>
 #include "idefix.hpp"
-#include "readCSV.hpp"
+#include "readTable.hpp"
 
 template <int nDim>
-class ReadCSV {
+class ReadTable {
  public:
-  ReadCSV(std::string filename, char delimiter);
+  ReadTable(std::string filename, char delimiter);
 
   IdefixArray1D<int> dimensions;
   IdefixArray1D<int> offset;      // Actually sum_(n-1) (dimensions)
@@ -69,7 +69,7 @@ class ReadCSV {
         index = index * dimensions(m);
         unsigned int myBit = 1 << m;
         // If bit is set, we're doing the right vertex, otherwise we're doing the left vertex
-        if(n & myBit > 0) {
+        if((n & myBit) > 0) {
           // We're on the right
           weight = weight*delta[m];
           index += idx[m]+1;
@@ -155,6 +155,7 @@ ReadTable<nDim>::ReadTable(std::string filename, char delimiter) {
           }
           dataVector.push_back(dataLine);
           firstLine = false;
+          if(nDim < 2) break; // Stop reading what's after the first two lines
         }
       }
       file.close();
@@ -184,8 +185,8 @@ ReadTable<nDim>::ReadTable(std::string filename, char delimiter) {
   this->data =  IdefixArray1D<real> ("Table_data", size[0]*size[1]);
 
   IdefixArray1D<real>::HostMirror xHost = Kokkos::create_mirror_view(this->xin);
-  IdefixArray1D<real>::HostMirror dimensionsHost = Kokkos::create_mirror_view(this->dimensions);
-  IdefixArray1D<real>::HostMirror offsetHost = Kokkos::create_mirror_view(this->offset);
+  IdefixArray1D<int>::HostMirror dimensionsHost = Kokkos::create_mirror_view(this->dimensions);
+  IdefixArray1D<int>::HostMirror offsetHost = Kokkos::create_mirror_view(this->offset);
   IdefixArray1D<real>::HostMirror dataHost = Kokkos::create_mirror_view(this->data);
 
   // Fill the arrays with the std::vector content
@@ -214,9 +215,10 @@ ReadTable<nDim>::ReadTable(std::string filename, char delimiter) {
 
   #ifdef WITH_MPI
     // Share with the others
-    MPI_Bcast(xHost.data(), size[0], realMPI, 0, MPI_COMM_WORLD);
-    MPI_Bcast(yHost.data(), size[1], realMPI, 0, MPI_COMM_WORLD);
-    MPI_Bcast(dataHost.data(), size[0]*size[1], realMPI, 0, MPI_COMM_WORLD);
+    MPI_Bcast(xHost.data(), xHost.extent(0), realMPI, 0, MPI_COMM_WORLD);
+    MPI_Bcast(dimensionsHost.data(), dimensionsHost.extent(0), MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(offsetHost.data(), offsetHost.extent(0), MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(dataHost.data(),dataHost.extent(0), realMPI, 0, MPI_COMM_WORLD);
   #endif
 
   // Copy to target

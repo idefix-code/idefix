@@ -36,6 +36,10 @@ TMP_DIR="$(mktemp -d)"
 cp -R $TEST_DIR/$rep/* $TMP_DIR
 cd $TMP_DIR
 echo "***********************************************"
+echo "Making numpy test files"
+echo "***********************************************"
+python3 makeNpy.py
+echo "***********************************************"
 echo "Configuring  $rep"
 echo "Using $TMP_DIR/$rep as working directory"
 echo "***********************************************"

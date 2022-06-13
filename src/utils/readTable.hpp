@@ -11,12 +11,13 @@
 #include <string>
 #include "idefix.hpp"
 #include "readTable.hpp"
+#include "npy.hpp"
 
 template <int nDim>
 class ReadTable {
  public:
   ReadTable(std::string filename, char delimiter);
-
+  ReadTable(std::vector<std::string> filenames, std::string dataSet);
   IdefixArray1D<int> dimensions;
   IdefixArray1D<int> offset;      // Actually sum_(n-1) (dimensions)
   IdefixArray1D<real> xin;
@@ -46,6 +47,7 @@ class ReadTable {
       // Check if resulting bounding elements are correct
       if(xin(offset(n) + i) > x[n] || xin(offset(n) + i+1) < x[n]) {
         // Nop, so the points are not evenly distributed
+        // Search for the correct index (a dicotomy would be more appropriate...)
         i = 0;
         while(xin(offset(n) + i) > x[n]) {
           i++;;
@@ -59,6 +61,7 @@ class ReadTable {
       delta[n] = (x[n] - xin(offset(n) + i) ) / (xin(offset(n) + i+1) - xin(offset(n) + i));
     }
 
+    // De a linear interpolation from the neightbouring points to get our value.
     real value = 0;
     
     // loop on all of the vertices of the neighbours
@@ -85,6 +88,78 @@ class ReadTable {
     return(value);
   }
 };
+
+template <int nDim>
+ReadTable<nDim>::ReadTable(std::vector<std::string> filenames, std::string dataSet) {
+  std::vector<unsigned long> shape;
+  bool fortran_order;
+  std::vector<double> dataVector;
+  if(filenames.size() != nDim) {
+    IDEFIX_ERROR("The list of coordinate files should match the number of dimensions of ReadTable");
+  }
+  // Load the full dataset
+  npy::LoadArrayFromNumpy(dataSet, shape, fortran_order, dataVector);
+
+  if(shape.size() != nDim) {
+    IDEFIX_ERROR("The input numpy dataSet dimensions and ReadTable dimensions do not match");
+  }
+  if(fortran_order) {
+    IDEFIX_ERROR("The input numpy dataSet should follow C ordering convention (not FORTRAN)");
+  }
+
+  // Load this crap in memory
+  int64_t sizeTotal = 0;
+  for(int n=0 ; n < shape.size() ; n++) {
+    sizeTotal += shape[n];
+  }
+
+  // Allocate the required memory
+  //Allocate arrays so that the data fits in it
+  this->xin = IdefixArray1D<real> ("Table_x", sizeTotal);
+  this->dimensions = IdefixArray1D<int> ("Table_dim", nDim);
+  this->offset = IdefixArray1D<int> ("Table_offset", nDim);
+  this->data =  IdefixArray1D<real> ("Table_data", dataVector.size());
+
+  IdefixArray1D<real>::HostMirror xHost = Kokkos::create_mirror_view(this->xin);
+  IdefixArray1D<int>::HostMirror dimensionsHost = Kokkos::create_mirror_view(this->dimensions);
+  IdefixArray1D<int>::HostMirror offsetHost = Kokkos::create_mirror_view(this->offset);
+  IdefixArray1D<real>::HostMirror dataHost = Kokkos::create_mirror_view(this->data);
+  
+  // Copy data in memory
+  for(long int i = 0 ; i < dataVector.size() ; i++) {
+    dataHost(i) = dataVector[i];
+  }
+
+  // Copy shape arrays and coordinates
+  offsetHost(0) = 0;
+  for(int n = 0 ; n < nDim ; n++) {
+    dimensionsHost(n) = shape[n];
+    if(n>0) offsetHost(n) = offsetHost(n-1) + shape[n-1];
+    std::vector<unsigned long> shapeX;
+    std::vector<double> dataX;
+    shapeX.clear();
+    dataX.clear();
+    npy::LoadArrayFromNumpy(filenames[n], shapeX, fortran_order, dataX);
+    if(shapeX[0] != dimensionsHost(n)) {
+      idfx::cout << "ERROR: Dimension of " << filenames[n] 
+                 << " does not match "<< n+1 << "th dimension of " << dataSet << std::endl;
+      IDEFIX_ERROR("Cannot make a lookup table out of provided numpy files");
+    }
+    if(fortran_order) {
+      IDEFIX_ERROR("The input numpy coordinates should follow C ordering convention (not FORTRAN)");
+    }
+    for(int i = 0 ; i < shapeX[0] ; i++) {
+      xHost(offsetHost(n)+i) = dataX[i];
+    }
+  }
+
+  // Copy to target
+  Kokkos::deep_copy(this->xin ,xHost);
+  Kokkos::deep_copy(this->dimensions, dimensionsHost);
+  Kokkos::deep_copy(this->offset, offsetHost);
+  Kokkos::deep_copy(this->data, dataHost);
+}
+
 
 // Constructor from CSV file
 template <int nDim>

@@ -5,7 +5,7 @@
 #include <Kokkos_Core.hpp>
 
 #include "idefix.hpp"
-#include "readTable.hpp"
+#include "lookupTable.hpp"
 
 // minimal skeleton to use idfx basic functions
 void testReduction();
@@ -45,7 +45,7 @@ int main( int argc, char* argv[] )
     IdefixArray1D<real> arr = IdefixArray1D<real>("Test",1);
     IdefixArray1D<real>::HostMirror arrHost = Kokkos::create_mirror_view(arr);
 
-    ReadTable<2> csv("toto.csv",',');
+    LookupTable<2> csv("toto.csv",',');
 
     idefix_for("loop",0, 1, KOKKOS_LAMBDA (int i) {
       real x[2];
@@ -68,7 +68,7 @@ int main( int argc, char* argv[] )
     idfx::cout << "--------------------------------------" << std::endl;
     idfx::cout << "Testing 1D CSV file." << std::endl;
     // Read 1D CSV File
-    ReadTable<1> csv1D("toto1D.csv",',');
+    LookupTable<1> csv1D("toto1D.csv",',');
 
     idefix_for("loop",0, 1, KOKKOS_LAMBDA (int i) {
       real x[2];
@@ -91,7 +91,7 @@ int main( int argc, char* argv[] )
     // Read npy File
     std::vector<std::string> coords({"x.npy","y.npy","z.npy"});
 
-    ReadTable<3> csvnpy(coords, std::string("data.npy"));
+    LookupTable<3> csvnpy(coords, std::string("data.npy"));
 
     idefix_for("loop",0, 1, KOKKOS_LAMBDA (int i) {
       real x[3];

@@ -10,14 +10,14 @@
 
 #include <string>
 #include "idefix.hpp"
-#include "readTable.hpp"
+#include "lookupTable.hpp"
 #include "npy.hpp"
 
 template <int nDim>
-class ReadTable {
+class LookupTable {
  public:
-  ReadTable(std::string filename, char delimiter);
-  ReadTable(std::vector<std::string> filenames, std::string dataSet);
+  LookupTable(std::string filename, char delimiter);
+  LookupTable(std::vector<std::string> filenames, std::string dataSet);
   IdefixArray1D<int> dimensions;
   IdefixArray1D<int> offset;      // Actually sum_(n-1) (dimensions)
   IdefixArray1D<real> xin;
@@ -26,7 +26,7 @@ class ReadTable {
 
   // Fetch function that should be called inside idefix_loop
   KOKKOS_INLINE_FUNCTION
-  real Get(const real x[]) const {
+  real Get(const real x[nDim] ) const {
 
     int idx[nDim];
     real delta[nDim];
@@ -90,18 +90,18 @@ class ReadTable {
 };
 
 template <int nDim>
-ReadTable<nDim>::ReadTable(std::vector<std::string> filenames, std::string dataSet) {
+LookupTable<nDim>::LookupTable(std::vector<std::string> filenames, std::string dataSet) {
   std::vector<unsigned long> shape;
   bool fortran_order;
   std::vector<double> dataVector;
   if(filenames.size() != nDim) {
-    IDEFIX_ERROR("The list of coordinate files should match the number of dimensions of ReadTable");
+    IDEFIX_ERROR("The list of coordinate files should match the number of dimensions of LookupTable");
   }
   // Load the full dataset
   npy::LoadArrayFromNumpy(dataSet, shape, fortran_order, dataVector);
 
   if(shape.size() != nDim) {
-    IDEFIX_ERROR("The input numpy dataSet dimensions and ReadTable dimensions do not match");
+    IDEFIX_ERROR("The input numpy dataSet dimensions and LookupTable dimensions do not match");
   }
   if(fortran_order) {
     IDEFIX_ERROR("The input numpy dataSet should follow C ordering convention (not FORTRAN)");
@@ -163,8 +163,8 @@ ReadTable<nDim>::ReadTable(std::vector<std::string> filenames, std::string dataS
 
 // Constructor from CSV file
 template <int nDim>
-ReadTable<nDim>::ReadTable(std::string filename, char delimiter) {
-  idfx::pushRegion("ReadTable::ReadTable");
+LookupTable<nDim>::LookupTable(std::string filename, char delimiter) {
+  idfx::pushRegion("LookupTable::LookupTable");
   if(nDim>2) {
     IDEFIX_ERROR("CSV files are only compatible with 1D and 2D tables");
   }
@@ -207,7 +207,7 @@ ReadTable<nDim>::ReadTable(std::string filename, char delimiter) {
           } catch(const std::exception& e) {
             std::stringstream errmsg;
             errmsg << e.what() << std::endl
-                   << "ReadTable: Error while parsing " << filename  << ", \"" << valueString
+                   << "LookupTable: Error while parsing " << filename  << ", \"" << valueString
                    << "\" cannot be converted to real." << std::endl;
             IDEFIX_ERROR(errmsg);
           }
@@ -226,7 +226,7 @@ ReadTable<nDim>::ReadTable(std::string filename, char delimiter) {
           firstLine=false;
         } else {
           if(dataLine.size() != nx) {
-            IDEFIX_ERROR("ReadTable: The number of columns in the input CSV file should be constant");
+            IDEFIX_ERROR("LookupTable: The number of columns in the input CSV file should be constant");
           }
           dataVector.push_back(dataLine);
           firstLine = false;
@@ -237,7 +237,7 @@ ReadTable<nDim>::ReadTable(std::string filename, char delimiter) {
       // End of file reached
     } else {
       std::stringstream errmsg;
-      errmsg << "ReadTable: Unable to open file " << filename << std::endl;
+      errmsg << "LookupTable: Unable to open file " << filename << std::endl;
       IDEFIX_ERROR(errmsg);
     }
 

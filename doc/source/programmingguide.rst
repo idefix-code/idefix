@@ -411,15 +411,31 @@ finished working with it. An example is provided in :ref:`setupInitDump`.
   It is generically written ``XX-YYY`` where ``XX`` is the array name in the ``dataBlock`` (e.g.
   ``Vc`` or ``Vs``) and ``YYY`` is the variable name (e.g. ``VX2`` or ``BX3s``).
 
-.. _readCSVClass:
+.. _LookupTableClass:
 
-``ReadCSV`` class
+``LookupTable`` class
 -----------------
 
-The ``ReadCSV`` class allows one to read and interpolate elements from a coma-separated value (CSV) file.
-This class can read any CSV file which content has the following shape:
+The ``LookupTable`` class allows one to read and interpolate elements from a coma-separated value (CSV) file or a numpy file
+(generated from ``numpy.save`` in python).
 
-.. list-table:: example.csv
+CSV constructor
++++++++++++++++
+
+``LookupTable`` can be initialised with any CSV file with a 1D or 2D lookup table which content has the following shape:
+
+.. list-table:: example1D.csv
+  :widths: 25 25 25
+  :header-rows: 0
+
+  * - x\ :sub:`1`
+    - x\ :sub:`2`
+    - x\ :sub:`3`
+  * - data\ :sub:`1`
+    - data\ :sub:`2`
+    - data\ :sub:`3`
+
+.. list-table:: example2D.csv
   :widths: 25 25 25 25
   :header-rows: 0
 
@@ -436,35 +452,62 @@ This class can read any CSV file which content has the following shape:
     - data\ :sub:`2,2`
     - data\ :sub:`3,2`
 
-Each element of the CSV file can be separated by an arbitrarily chosen delimiter (which can be "," ";", etc...).
-The constructor of the CSV class loads the content of the file in the target's memory (and broadcasts it
-to other running processes when using MPI). Once loaded,
-the elements can be accessed using the function ``Get`` in an ``idefix_for`` loop. These functions are defined as:
+
+Each element of the CSV file can be separated by an arbitrarily chosen delimiter (which can be "," ";", etc...). Such a file
+can be loaded using the constructor
+
+.. code-block:: c++
+  
+  template <int nDim>
+  LookupTable<nDim>::LookupTable(std::string filename, char delimiter);   // Load a CSV file
+
+Note that the number of dimensions the lookup table should expect is given as a template parameter ``nDim`` to the class ``LookupTable``.
+For the CSV constructor, ``nDim`` can only have the values 1 or 2.
+
+.. note::
+  The input CSV file is allowed to contain comments, starting with "#". Any character following
+  "#" is ignored by the ``LookupTable`` class.
+
+
+Numpy constructor
++++++++++++++++++
+
+An instance of ``LookupTable`` can also be initialised from numpy arrays with an arbitrary number of dimensions ``nDim``. In this case, 
+the constructor expects a vector of size ``nDim`` of .npy files for the 1D coordinates of the lookup table, and a single file containing the
+``nDim`` dimensions of the lookup table. The constructor is defined as
 
 .. code-block:: c++
 
-  ReadCSV::ReadCSV(std::string filename, char delimiter);   // Load the file (from the host)
-
-  KOKKOS_INLINE_FUNCTION
-  real Get(const real x, const real y) const;               // Interpolate the table (on the device)
+  template <int nDim>
+  LookupTable<nDim>::LookupTable(std::vector<std::string> coordinates, std::string dataSet);
 
 
-In the end, the CSV class can be used inside the user's code as in:
+Note that the template parameter ``nDim`` should match the number of dimensions of the numpy array stored in the file ``dataSet``. 
+
+Using the lookup table
+++++++++++++++++++++++
+
+Once an instance of ``LookupTable`` has been created from a CSV or a Numpy file, it can be used using the ``Get`` method inside an idefix_for loop.
+The ``Get`` function expects a C array of size ``nDim`` and returns the multi-linear interpolation from the lookup table. For instance:
 
 .. code-block:: c++
 
-  #include "readCSV.hpp"
+  #include "lookupTable.hpp"
 
-  ReadCSV csv("example.csv",',');   // here we use "," as delimiter
+  // Load a 2D CSV lookup table
+  LookupTable<2> csv("example2D.csv",',');
 
-  idefix_for("loop", 0, 10, KOKKOS_LAMBDA (int i) {
-    q(i) = csv.Get(3.5, 2.1); // interpolate the csv data at x=3.5, y=2.1
+  // Use the lookuptable in an idefix_for loop
+  idefix_for("loop",0, 10, KOKKOS_LAMBDA (int i) {
+    real x[2];
+    x[0] = 2.1;
+    x[1] = 3.5;
+    arr(i) = csv.Get(x);
   });
 
 
 .. note::
-  The input CSV file is allowed to contain comments, starting with "#". Any character following
-  "#" is ignored by the ``ReadCSV`` class.
+  Usage examples are provided in `test/utils/lookupTable`.
 
 Debugging and profiling
 =======================

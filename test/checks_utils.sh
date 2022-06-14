@@ -31,7 +31,7 @@ set -e
 options=$@
 
 # Validate ReadTable
-rep="utils/ReadTable"
+rep="utils/readTable"
 TMP_DIR="$(mktemp -d)"
 cp -R $TEST_DIR/$rep/* $TMP_DIR
 cd $TMP_DIR

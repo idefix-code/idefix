@@ -30,8 +30,8 @@ echo $IDEFIX_DIR
 set -e
 options=$@
 
-# Validate ReadTable
-rep="utils/ReadTable"
+# Validate LookupTable
+rep="utils/LookupTable"
 TMP_DIR="$(mktemp -d)"
 cp -R $TEST_DIR/$rep/* $TMP_DIR
 cd $TMP_DIR

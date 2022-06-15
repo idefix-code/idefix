@@ -37,6 +37,7 @@
 #include <array>
 #include <vector>
 #include <stdexcept>
+#include <tuple>
 #include <algorithm>
 #include <unordered_map>
 #include <type_traits>
@@ -63,7 +64,7 @@ const bool big_endian = false;
 
 
 const char magic_string[] = "\x93NUMPY";
-const size_t magic_string_length = 6;
+static const size_t kMagicStringLength = 6;
 
 const char little_endian_char = '<';
 const char big_endian_char = '>';
@@ -79,7 +80,7 @@ constexpr char host_endian_char = (big_endian ?
                                    little_endian_char);
 
 /* npy array length */
-typedef unsigned long int ndarray_len_t;
+typedef uint64_t ndarray_len_t;
 
 typedef std::pair<char, char> version_t;
 
@@ -90,9 +91,9 @@ struct dtype_t {
 
 // TODO(llohse): implement as constexpr
   inline std::string str() const {
-    const size_t max_buflen = 16;
-    char buf[max_buflen];
-    std::snprintf(buf, max_buflen, "%c%c%u", byteorder, kind, itemsize);
+    static const size_t kMaxBuflen = 16;
+    char buf[kMaxBuflen];
+    std::snprintf(buf, kMaxBuflen, "%c%c%u", byteorder, kind, itemsize);
     return std::string(buf);
   }
 
@@ -109,25 +110,25 @@ struct header_t {
 };
 
 inline void write_magic(std::ostream &ostream, version_t version) {
-  ostream.write(magic_string, magic_string_length);
+  ostream.write(magic_string, kMagicStringLength);
   ostream.put(version.first);
   ostream.put(version.second);
 }
 
 inline version_t read_magic(std::istream &istream) {
-  char buf[magic_string_length + 2];
-  istream.read(buf, magic_string_length + 2);
+  char buf[kMagicStringLength + 2];
+  istream.read(buf, kMagicStringLength + 2);
 
   if (!istream) {
     throw std::runtime_error("io error: failed reading file");
   }
 
-  if (0 != std::memcmp(buf, magic_string, magic_string_length))
+  if (0 != std::memcmp(buf, magic_string, kMagicStringLength))
     throw std::runtime_error("this file does not have a valid npy format.");
 
   version_t version;
-  version.first = buf[magic_string_length];
-  version.second = buf[magic_string_length + 1];
+  version.first = buf[kMagicStringLength];
+  version.second = buf[kMagicStringLength + 1];
 
   return version;
 }
@@ -154,14 +155,6 @@ struct has_typestring<double> {
 };
 constexpr dtype_t
 has_typestring<double>::dtype;
-template<>
-struct has_typestring<long double> {
-  static const bool value = true;
-  static constexpr dtype_t
-  dtype = {host_endian_char, 'f', sizeof(long double)};
-};
-constexpr dtype_t
-has_typestring<long double>::dtype;
 
 template<>
 struct has_typestring<char> {
@@ -180,13 +173,13 @@ struct has_typestring<signed char> {
 constexpr dtype_t
 has_typestring<signed char>::dtype;
 template<>
-struct has_typestring<short> {
+struct has_typestring<int16_t> {
   static const bool value = true;
   static constexpr dtype_t
-  dtype = {host_endian_char, 'i', sizeof(short)};
+  dtype = {host_endian_char, 'i', sizeof(int16_t)};
 };
 constexpr dtype_t
-has_typestring<short>::dtype;
+has_typestring<int16_t>::dtype;
 template<>
 struct has_typestring<int> {
   static const bool value = true;
@@ -196,21 +189,13 @@ struct has_typestring<int> {
 constexpr dtype_t
 has_typestring<int>::dtype;
 template<>
-struct has_typestring<long> {
+struct has_typestring<int64_t> {
   static const bool value = true;
   static constexpr dtype_t
-  dtype = {host_endian_char, 'i', sizeof(long)};
+  dtype = {host_endian_char, 'i', sizeof(int64_t)};
 };
 constexpr dtype_t
-has_typestring<long>::dtype;
-template<>
-struct has_typestring<long long> {
-  static const bool value = true;
-  static constexpr dtype_t
-  dtype = {host_endian_char, 'i', sizeof(long long)};
-};
-constexpr dtype_t
-has_typestring<long long>::dtype;
+has_typestring<int64_t>::dtype;
 
 template<>
 struct has_typestring<unsigned char> {
@@ -221,13 +206,13 @@ struct has_typestring<unsigned char> {
 constexpr dtype_t
 has_typestring<unsigned char>::dtype;
 template<>
-struct has_typestring<unsigned short> {
+struct has_typestring<uint16_t> {
   static const bool value = true;
   static constexpr dtype_t
-  dtype = {host_endian_char, 'u', sizeof(unsigned short)};
+  dtype = {host_endian_char, 'u', sizeof(uint16_t)};
 };
 constexpr dtype_t
-has_typestring<unsigned short>::dtype;
+has_typestring<uint16_t>::dtype;
 template<>
 struct has_typestring<unsigned int> {
   static const bool value = true;
@@ -237,21 +222,13 @@ struct has_typestring<unsigned int> {
 constexpr dtype_t
 has_typestring<unsigned int>::dtype;
 template<>
-struct has_typestring<unsigned long> {
+struct has_typestring<uint64_t> {
   static const bool value = true;
   static constexpr dtype_t
-  dtype = {host_endian_char, 'u', sizeof(unsigned long)};
+  dtype = {host_endian_char, 'u', sizeof(uint64_t)};
 };
 constexpr dtype_t
-has_typestring<unsigned long>::dtype;
-template<>
-struct has_typestring<unsigned long long> {
-  static const bool value = true;
-  static constexpr dtype_t
-  dtype = {host_endian_char, 'u', sizeof(unsigned long long)};
-};
-constexpr dtype_t
-has_typestring<unsigned long long>::dtype;
+has_typestring<uint64_t>::dtype;
 
 template<>
 struct has_typestring<std::complex < float>> {
@@ -270,15 +247,6 @@ dtype = {host_endian_char, 'c', sizeof(std::complex < double > )};
 };
 constexpr dtype_t
 has_typestring<std::complex < double>>
-::dtype;
-template<>
-struct has_typestring<std::complex < long double>>{
-static const bool value = true;
-static constexpr dtype_t
-dtype = {host_endian_char, 'c', sizeof(std::complex < long double > )};
-};
-constexpr dtype_t
-has_typestring<std::complex < long double>>
 ::dtype;
 
 
@@ -348,7 +316,8 @@ inline std::string get_value_from_map(const std::string &mapstr) {
    Parses the string representation of a Python dict
    The keys need to be known and may not appear anywhere else in the data.
  */
-inline std::unordered_map <std::string, std::string> parse_dict(std::string in, const std::vector <std::string> &keys) {
+inline std::unordered_map <std::string, std::string>
+              parse_dict(std::string in, const std::vector <std::string> &keys) {
   std::unordered_map <std::string, std::string> map;
 
   if (keys.size() == 0)
@@ -480,17 +449,25 @@ inline header_t parse_header(std::string header) {
   /*
      The first 6 bytes are a magic string: exactly "x93NUMPY".
      The next 1 byte is an unsigned byte: the major version number of the file format, e.g. x01.
-     The next 1 byte is an unsigned byte: the minor version number of the file format, e.g. x00. Note: the version of the file format is not tied to the version of the numpy package.
-     The next 2 bytes form a little-endian unsigned short int: the length of the header data HEADER_LEN.
-     The next HEADER_LEN bytes form the header data describing the array's format. It is an ASCII string which contains a Python literal expression of a dictionary. It is terminated by a newline ('n') and padded with spaces ('x20') to make the total length of the magic string + 4 + HEADER_LEN be evenly divisible by 16 for alignment purposes.
+     The next 1 byte is an unsigned byte: the minor version number of the file format, e.g. x00.
+     Note: the version of the file format is not tied to the version of the numpy package.
+     The next 2 bytes form a little-endian unsigned short int: the length of the header
+     data HEADER_LEN.
+     The next HEADER_LEN bytes form the header data describing the array's format. It is an ASCII
+     string which contains a Python literal expression of a dictionary. It is terminated by a
+     newline ('n') and padded with spaces ('x20') to make the total length of the magic
+     string + 4 + HEADER_LEN be evenly divisible by 16 for alignment purposes.
      The dictionary contains three keys:
      "descr" : dtype.descr
-     An object that can be passed as an argument to the numpy.dtype() constructor to create the array's dtype.
+     An object that can be passed as an argument to the numpy.dtype() constructor to create the
+     array's dtype.
      "fortran_order" : bool
-     Whether the array data is Fortran-contiguous or not. Since Fortran-contiguous arrays are a common form of non-C-contiguity, we allow them to be written directly to disk for efficiency.
+     Whether the array data is Fortran-contiguous or not. Since Fortran-contiguous arrays are a
+     common form of non-C-contiguity, we allow them to be written directly to disk for efficiency.
      "shape" : tuple of int
      The shape of the array.
-     For repeatability and readability, this dictionary is formatted using pprint.pformat() so the keys are in alphabetic order.
+     For repeatability and readability, this dictionary is formatted using pprint.pformat() so the
+     keys are in alphabetic order.
    */
 
   // remove trailing newline
@@ -529,21 +506,25 @@ inline header_t parse_header(std::string header) {
 
 
 inline std::string
-write_header_dict(const std::string &descr, bool fortran_order, const std::vector <ndarray_len_t> &shape) {
+write_header_dict(const std::string &descr,
+                  bool fortran_order,
+                  const std::vector <ndarray_len_t> &shape) {
   std::string s_fortran_order = npy::pyparse::write_boolean(fortran_order);
   std::string shape_s = npy::pyparse::write_tuple(shape);
 
-  return "{'descr': '" + descr + "', 'fortran_order': " + s_fortran_order + ", 'shape': " + shape_s + ", }";
+  return "{'descr': '" + descr + "', 'fortran_order': " + s_fortran_order +
+            ", 'shape': " + shape_s + ", }";
 }
 
 inline void write_header(std::ostream &out, const header_t &header) {
-  std::string header_dict = write_header_dict(header.dtype.str(), header.fortran_order, header.shape);
+  std::string header_dict =
+                      write_header_dict(header.dtype.str(), header.fortran_order, header.shape);
 
-  size_t length = magic_string_length + 2 + 2 + header_dict.length() + 1;
+  size_t length = kMagicStringLength + 2 + 2 + header_dict.length() + 1;
 
   version_t version{1, 0};
   if (length >= 255 * 255) {
-    length = magic_string_length + 2 + 4 + header_dict.length() + 1;
+    length = kMagicStringLength + 2 + 4 + header_dict.length() + 1;
     version = {2, 0};
   }
   size_t padding_len = 16 - length % 16;
@@ -584,7 +565,7 @@ inline std::string read_header(std::istream &istream) {
     istream.read(reinterpret_cast<char *>(header_len_le16), 2);
     header_length = (header_len_le16[0] << 0) | (header_len_le16[1] << 8);
 
-    if ((magic_string_length + 2 + 2 + header_length) % 16 != 0) {
+    if ((kMagicStringLength + 2 + 2 + header_length) % 16 != 0) {
       // TODO(llohse): display warning
     }
   } else if (version == version_t{2, 0}) {
@@ -594,7 +575,7 @@ inline std::string read_header(std::istream &istream) {
     header_length = (header_len_le32[0] << 0) | (header_len_le32[1] << 8)
                     | (header_len_le32[2] << 16) | (header_len_le32[3] << 24);
 
-    if ((magic_string_length + 2 + 4 + header_length) % 16 != 0) {
+    if ((kMagicStringLength + 2 + 4 + header_length) % 16 != 0) {
       // TODO(llohse): display warning
     }
   } else {
@@ -619,8 +600,8 @@ inline ndarray_len_t comp_size(const std::vector <ndarray_len_t> &shape) {
 
 template<typename Scalar>
 inline void
-SaveArrayAsNumpy(const std::string &filename, bool fortran_order, unsigned int n_dims, const unsigned long shape[],
-                 const Scalar* data) {
+SaveArrayAsNumpy(const std::string &filename, bool fortran_order, unsigned int n_dims,
+                 const uint64_t shape[], const Scalar* data) {
   static_assert(has_typestring<Scalar>::value, "scalar type not understood");
   dtype_t dtype = has_typestring<Scalar>::dtype;
 
@@ -640,21 +621,22 @@ SaveArrayAsNumpy(const std::string &filename, bool fortran_order, unsigned int n
 
 template<typename Scalar>
 inline void
-SaveArrayAsNumpy(const std::string &filename, bool fortran_order, unsigned int n_dims, const unsigned long shape[],
-                 const std::vector <Scalar> &data) {
+SaveArrayAsNumpy(const std::string &filename, bool fortran_order, unsigned int n_dims,
+                 const uint64_t shape[], const std::vector <Scalar> &data) {
   SaveArrayAsNumpy(filename, fortran_order, n_dims, shape, data.data());
 }
 
 template<typename Scalar>
 inline void
-LoadArrayFromNumpy(const std::string &filename, std::vector<unsigned long> &shape, std::vector <Scalar> &data) {
+LoadArrayFromNumpy(const std::string &filename, std::vector<uint64_t> &shape,
+                   std::vector <Scalar> &data) {
   bool fortran_order;
   LoadArrayFromNumpy<Scalar>(filename, shape, fortran_order, data);
 }
 
 template<typename Scalar>
-inline void LoadArrayFromNumpy(const std::string &filename, std::vector<unsigned long> &shape, bool &fortran_order,
-                               std::vector <Scalar> &data) {
+inline void LoadArrayFromNumpy(const std::string &filename, std::vector<uint64_t> &shape,
+                               bool &fortran_order, std::vector <Scalar> &data) {
   std::ifstream stream(filename, std::ifstream::binary);
   if (!stream) {
     throw std::runtime_error("io error: failed to open a file.");

@@ -5,15 +5,16 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef UTILS_READCSV_HPP_
-#define UTILS_READCSV_HPP_
+#ifndef UTILS_LOOKUPTABLE_HPP_
+#define UTILS_LOOKUPTABLE_HPP_
 
 #include <string>
+#include <vector>
 #include "idefix.hpp"
 #include "lookupTable.hpp"
 #include "npy.hpp"
 
-template <int nDim>
+template <const int kDim>
 class LookupTable {
  public:
   LookupTable(std::string filename, char delimiter);
@@ -26,13 +27,11 @@ class LookupTable {
 
   // Fetch function that should be called inside idefix_loop
   KOKKOS_INLINE_FUNCTION
-  real Get(const real x[nDim] ) const {
+  real Get(const real x[kDim] ) const {
+    int idx[kDim];
+    real delta[kDim];
 
-    int idx[nDim];
-    real delta[nDim];
-
-    for(int n = 0 ; n < nDim ; n++) {
-
+    for(int n = 0 ; n < kDim ; n++) {
       real xstart = xin(offset(n));
       real xend = xin(offset(n)+dimensions(n)-1);
 
@@ -65,10 +64,10 @@ class LookupTable {
     real value = 0;
 
     // loop on all of the vertices of the neighbours
-    for(unsigned int n = 0 ; n < (1 << nDim) ; n++) {
+    for(unsigned int n = 0 ; n < (1 << kDim) ; n++) {
       int index = 0;
       real weight = 1.0;
-      for(unsigned int m = 0 ; m < nDim ; m++) {
+      for(unsigned int m = 0 ; m < kDim ; m++) {
         index = index * dimensions(m);
         unsigned int myBit = 1 << m;
         // If bit is set, we're doing the right vertex, otherwise we're doing the left vertex
@@ -89,18 +88,20 @@ class LookupTable {
   }
 };
 
-template <int nDim>
-LookupTable<nDim>::LookupTable(std::vector<std::string> filenames, std::string dataSet) {
-  std::vector<unsigned long> shape;
+template <int kDim>
+LookupTable<kDim>::LookupTable(std::vector<std::string> filenames, std::string dataSet) {
+  idfx::pushRegion("LookupTable::LookupTable");
+  std::vector<uint64_t> shape;
   bool fortran_order;
   std::vector<double> dataVector;
-  if(filenames.size() != nDim) {
-    IDEFIX_ERROR("The list of coordinate files should match the number of dimensions of LookupTable");
+  if(filenames.size() != kDim) {
+    IDEFIX_ERROR("The list of coordinate files should match the number
+                  of dimensions of LookupTable");
   }
   // Load the full dataset
   npy::LoadArrayFromNumpy(dataSet, shape, fortran_order, dataVector);
 
-  if(shape.size() != nDim) {
+  if(shape.size() != kDim) {
     IDEFIX_ERROR("The input numpy dataSet dimensions and LookupTable dimensions do not match");
   }
   if(fortran_order) {
@@ -116,8 +117,8 @@ LookupTable<nDim>::LookupTable(std::vector<std::string> filenames, std::string d
   // Allocate the required memory
   //Allocate arrays so that the data fits in it
   this->xin = IdefixArray1D<real> ("Table_x", sizeTotal);
-  this->dimensions = IdefixArray1D<int> ("Table_dim", nDim);
-  this->offset = IdefixArray1D<int> ("Table_offset", nDim);
+  this->dimensions = IdefixArray1D<int> ("Table_dim", kDim);
+  this->offset = IdefixArray1D<int> ("Table_offset", kDim);
   this->data =  IdefixArray1D<real> ("Table_data", dataVector.size());
 
   IdefixArray1D<real>::HostMirror xHost = Kokkos::create_mirror_view(this->xin);
@@ -126,16 +127,16 @@ LookupTable<nDim>::LookupTable(std::vector<std::string> filenames, std::string d
   IdefixArray1D<real>::HostMirror dataHost = Kokkos::create_mirror_view(this->data);
 
   // Copy data in memory
-  for(long int i = 0 ; i < dataVector.size() ; i++) {
+  for(uint64_t i = 0 ; i < dataVector.size() ; i++) {
     dataHost(i) = dataVector[i];
   }
 
   // Copy shape arrays and coordinates
   offsetHost(0) = 0;
-  for(int n = 0 ; n < nDim ; n++) {
+  for(int n = 0 ; n < kDim ; n++) {
     dimensionsHost(n) = shape[n];
     if(n>0) offsetHost(n) = offsetHost(n-1) + shape[n-1];
-    std::vector<unsigned long> shapeX;
+    std::vector<uint64_t> shapeX;
     std::vector<double> dataX;
     shapeX.clear();
     dataX.clear();
@@ -158,14 +159,16 @@ LookupTable<nDim>::LookupTable(std::vector<std::string> filenames, std::string d
   Kokkos::deep_copy(this->dimensions, dimensionsHost);
   Kokkos::deep_copy(this->offset, offsetHost);
   Kokkos::deep_copy(this->data, dataHost);
+
+  idfx::popRegion();
 }
 
 
 // Constructor from CSV file
-template <int nDim>
-LookupTable<nDim>::LookupTable(std::string filename, char delimiter) {
+template <int kDim>
+LookupTable<kDim>::LookupTable(std::string filename, char delimiter) {
   idfx::pushRegion("LookupTable::LookupTable");
-  if(nDim>2) {
+  if(kDim>2) {
     IDEFIX_ERROR("CSV files are only compatible with 1D and 2D tables");
   }
   // Only 1 process loads the file
@@ -193,7 +196,7 @@ LookupTable<nDim>::LookupTable(std::string filename, char delimiter) {
         if (firstChar == std::string::npos) continue;      // line is all white space
         // Walk the line
         bool firstColumn=true;
-        if(nDim == 1) firstColumn = false;
+        if(kDim == 1) firstColumn = false;
 
         std::vector<real> dataLine;
         dataLine.clear();
@@ -226,11 +229,12 @@ LookupTable<nDim>::LookupTable(std::string filename, char delimiter) {
           firstLine=false;
         } else {
           if(dataLine.size() != nx) {
-            IDEFIX_ERROR("LookupTable: The number of columns in the input CSV file should be constant");
+            IDEFIX_ERROR("LookupTable: The number of columns in the input CSV
+                          file should be constant");
           }
           dataVector.push_back(dataLine);
           firstLine = false;
-          if(nDim < 2) break; // Stop reading what's after the first two lines
+          if(kDim < 2) break; // Stop reading what's after the first two lines
         }
       }
       file.close();
@@ -242,8 +246,11 @@ LookupTable<nDim>::LookupTable(std::string filename, char delimiter) {
     }
 
     size[0] = xVector.size();
-    if(nDim>1) size[1] = yVector.size();
-    else size[1] = 1;
+    if(kDim>1) {
+      size[1] = yVector.size();
+    } else {
+      size[1] = 1;
+    }
   }
 
   #ifdef WITH_MPI
@@ -251,12 +258,12 @@ LookupTable<nDim>::LookupTable(std::string filename, char delimiter) {
     MPI_Bcast(size, 2, MPI_INT, 0, MPI_COMM_WORLD);
   #endif
   int sizeTotal = size[0];
-  if(nDim>1) sizeTotal += size[1];
+  if(kDim>1) sizeTotal += size[1];
 
   //Allocate arrays so that the data fits in it
   this->xin = IdefixArray1D<real> ("Table_x", sizeTotal);
-  this->dimensions = IdefixArray1D<int> ("Table_dim", nDim);
-  this->offset = IdefixArray1D<int> ("Table_offset", nDim);
+  this->dimensions = IdefixArray1D<int> ("Table_dim", kDim);
+  this->offset = IdefixArray1D<int> ("Table_offset", kDim);
   this->data =  IdefixArray1D<real> ("Table_data", size[0]*size[1]);
 
   IdefixArray1D<real>::HostMirror xHost = Kokkos::create_mirror_view(this->xin);
@@ -272,7 +279,7 @@ LookupTable<nDim>::LookupTable(std::string filename, char delimiter) {
     for(int i = 0 ; i < xVector.size(); i++) {
       xHost(i) = xVector[i];
     }
-    if(nDim>1) {
+    if(kDim>1) {
       dimensionsHost(1) = size[1];
       offsetHost(1) = offsetHost(0)+dimensionsHost(0);
       for(int i = 0 ; i < yVector.size(); i++) {
@@ -323,4 +330,4 @@ LookupTable<nDim>::LookupTable(std::string filename, char delimiter) {
 }
 
 
-#endif //UTILS_READCSV_HPP_
+#endif //UTILS_LOOKUPTABLE_HPP_

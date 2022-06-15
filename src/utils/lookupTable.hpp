@@ -95,8 +95,8 @@ LookupTable<kDim>::LookupTable(std::vector<std::string> filenames, std::string d
   bool fortran_order;
   std::vector<double> dataVector;
   if(filenames.size() != kDim) {
-    IDEFIX_ERROR("The list of coordinate files should match the number
-                  of dimensions of LookupTable");
+    IDEFIX_ERROR("The list of coordinate files should match the number"
+                  " of dimensions of LookupTable");
   }
   // Load the full dataset
   npy::LoadArrayFromNumpy(dataSet, shape, fortran_order, dataVector);
@@ -229,8 +229,8 @@ LookupTable<kDim>::LookupTable(std::string filename, char delimiter) {
           firstLine=false;
         } else {
           if(dataLine.size() != nx) {
-            IDEFIX_ERROR("LookupTable: The number of columns in the input CSV
-                          file should be constant");
+            IDEFIX_ERROR("LookupTable: The number of columns in the input CSV "
+                          "file should be constant");
           }
           dataVector.push_back(dataLine);
           firstLine = false;

@@ -44,7 +44,7 @@ class Vtk {
   int64_t ngx1,ngx2,ngx3;
 
   // Coordinates needed by VTK outputs
-  float *xnode, *ynode, *znode, *Vwrite;
+  float *xnode, *ynode, *znode;
 
   IdefixHostArray4D<float> node_coord;
 

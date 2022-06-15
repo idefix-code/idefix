@@ -102,9 +102,6 @@ void Vtk::Init(Input &input, DataBlock &datain) {
   this->nx2loc = data.np_int[JDIR];
   this->nx3loc = data.np_int[KDIR];
 
-  // Vector array where we store the pencil before write
-  this->Vwrite = new float[nx1loc+IOFFSET];
-
   // Temporary storage on host for 3D arrays
   this->vect3D = new float[nx1loc*nx2loc*nx3loc];
 

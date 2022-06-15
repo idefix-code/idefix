@@ -24,8 +24,8 @@
    SOFTWARE.
 */
 
-#ifndef NPY_HPP_
-#define NPY_HPP_
+#ifndef UTILS_NPY_HPP_
+#define UTILS_NPY_HPP_
 
 #include <complex>
 #include <fstream>
@@ -685,4 +685,4 @@ inline void LoadArrayFromNumpy(const std::string &filename, std::vector<unsigned
 
 }  // namespace npy
 
-#endif  // NPY_HPP_
+#endif  // UTILS_NPY_HPP_

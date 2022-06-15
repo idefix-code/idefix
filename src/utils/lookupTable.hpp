@@ -32,7 +32,7 @@ class LookupTable {
     real delta[nDim];
 
     for(int n = 0 ; n < nDim ; n++) {
-      
+
       real xstart = xin(offset(n));
       real xend = xin(offset(n)+dimensions(n)-1);
 
@@ -53,7 +53,7 @@ class LookupTable {
           i++;;
         }
       }
-      
+
       // Store the index
       idx[n] = i;
 
@@ -63,7 +63,7 @@ class LookupTable {
 
     // De a linear interpolation from the neightbouring points to get our value.
     real value = 0;
-    
+
     // loop on all of the vertices of the neighbours
     for(unsigned int n = 0 ; n < (1 << nDim) ; n++) {
       int index = 0;
@@ -84,7 +84,7 @@ class LookupTable {
       }
       value = value + weight*data(index);
     }
-    
+
     return(value);
   }
 };
@@ -124,7 +124,7 @@ LookupTable<nDim>::LookupTable(std::vector<std::string> filenames, std::string d
   IdefixArray1D<int>::HostMirror dimensionsHost = Kokkos::create_mirror_view(this->dimensions);
   IdefixArray1D<int>::HostMirror offsetHost = Kokkos::create_mirror_view(this->offset);
   IdefixArray1D<real>::HostMirror dataHost = Kokkos::create_mirror_view(this->data);
-  
+
   // Copy data in memory
   for(long int i = 0 ; i < dataVector.size() ; i++) {
     dataHost(i) = dataVector[i];
@@ -141,7 +141,7 @@ LookupTable<nDim>::LookupTable(std::vector<std::string> filenames, std::string d
     dataX.clear();
     npy::LoadArrayFromNumpy(filenames[n], shapeX, fortran_order, dataX);
     if(shapeX[0] != dimensionsHost(n)) {
-      idfx::cout << "ERROR: Dimension of " << filenames[n] 
+      idfx::cout << "ERROR: Dimension of " << filenames[n]
                  << " does not match "<< n+1 << "th dimension of " << dataSet << std::endl;
       IDEFIX_ERROR("Cannot make a lookup table out of provided numpy files");
     }
@@ -279,7 +279,7 @@ LookupTable<nDim>::LookupTable(std::string filename, char delimiter) {
         xHost(offsetHost(1)+i) = yVector[i];
       }
     }
-    
+
     for(int j = 0 ; j < dataVector.size(); j++) {
       auto line = dataVector[j];
       for(int i = 0 ; i < line.size(); i++) {

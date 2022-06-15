@@ -457,7 +457,7 @@ Each element of the CSV file can be separated by an arbitrarily chosen delimiter
 can be loaded using the constructor
 
 .. code-block:: c++
-  
+
   template <int nDim>
   LookupTable<nDim>::LookupTable(std::string filename, char delimiter);   // Load a CSV file
 
@@ -472,7 +472,7 @@ For the CSV constructor, ``nDim`` can only have the values 1 or 2.
 Numpy constructor
 +++++++++++++++++
 
-An instance of ``LookupTable`` can also be initialised from numpy arrays with an arbitrary number of dimensions ``nDim``. In this case, 
+An instance of ``LookupTable`` can also be initialised from numpy arrays with an arbitrary number of dimensions ``nDim``. In this case,
 the constructor expects a vector of size ``nDim`` of .npy files for the 1D coordinates of the lookup table, and a single file containing the
 ``nDim`` dimensions of the lookup table. The constructor is defined as
 
@@ -482,7 +482,7 @@ the constructor expects a vector of size ``nDim`` of .npy files for the 1D coord
   LookupTable<nDim>::LookupTable(std::vector<std::string> coordinates, std::string dataSet);
 
 
-Note that the template parameter ``nDim`` should match the number of dimensions of the numpy array stored in the file ``dataSet``. 
+Note that the template parameter ``nDim`` should match the number of dimensions of the numpy array stored in the file ``dataSet``.
 
 Using the lookup table
 ++++++++++++++++++++++

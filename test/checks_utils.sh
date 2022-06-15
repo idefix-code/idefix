@@ -31,7 +31,8 @@ set -e
 options=$@
 
 # Validate LookupTable
-rep="utils/LookupTable"
+rep="utils/lookupTable"
+
 TMP_DIR="$(mktemp -d)"
 cp -R $TEST_DIR/$rep/* $TMP_DIR
 cd $TMP_DIR

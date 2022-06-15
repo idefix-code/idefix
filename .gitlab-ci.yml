@@ -67,6 +67,13 @@ Examples tests:
     - cd test
     - ./checks_examples.sh $TEST_OPTIONS
 
+Utils tests:
+  stage: checks
+  image: lesurg/idefix:latest
+  script:
+    - cd test
+    - ./checks_utils.sh $TEST_OPTIONS
+
 pages:
   image: lesurg/idefix-documentation:latest
   stage: deploy

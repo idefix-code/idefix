@@ -63,6 +63,7 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
   // Create a list of variables
   // Viscosity
   if(data->hydro.viscosityStatus.isRKL) {
+    haveVc = true;
     EXPAND( AddVariable(MX1, varListHost);   ,
             AddVariable(MX2, varListHost);   ,
             AddVariable(MX3, varListHost);   )
@@ -74,18 +75,22 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
   // Thermal diffusion
   #if HAVE_ENERGY
     if(data->hydro.thermalDiffusionStatus.isRKL) {
+      haveVc = true;
       AddVariable(ENG, varListHost);
     }
   #endif
   // Ambipolar diffusion
   if(data->hydro.ambipolarStatus.isRKL || data->hydro.resistivityStatus.isRKL) {
     #if COMPONENTS == 3 && DIMENSIONS < 3
+      haveVc = true;
       AddVariable(BX3, varListHost);
     #endif
     #if COMPONENTS >= 2 && DIMENSIONS < 2
+      haveVc = true;
       AddVariable(BX2, varListHost);
     #endif
     #if HAVE_ENERGY
+      haveVc = true;
       AddVariable(ENG, varListHost);
     #endif
     haveVs = true;
@@ -161,6 +166,12 @@ void RKLegendre::ShowConfig() {
     IDEFIX_ERROR("Unknown RKL scheme order");
   #endif
   idfx::cout << "RKLegendre: RKL cfl set to " << cfl_rkl <<  "." << std::endl;
+  if(haveVc) {
+     idfx::cout << "RKLegendre: will evolve cell-centered fields Vc." << std::endl;
+  }
+  if(haveVs) {
+     idfx::cout << "RKLegendre: will evolve face-centered fields Vs." << std::endl;
+  }
 }
 
 void RKLegendre::Cycle() {
@@ -264,18 +275,19 @@ void RKLegendre::Cycle() {
 #elif RKL_ORDER == 2
   time = data->t + 0.25*dt_hyp*(stage*stage+stage-2)*w1;
 #endif
-
-  idefix_for("RKL_Cycle_InitUc1",
-             0, nvarRKL,
-             data->beg[KDIR],data->end[KDIR],
-             data->beg[JDIR],data->end[JDIR],
-             data->beg[IDIR],data->end[IDIR],
-    KOKKOS_LAMBDA (int n, int k, int j, int i) {
-      int nv = varList(n);
-      Uc1(nv,k,j,i) = Uc(nv,k,j,i);
-      Uc(nv,k,j,i) = Uc1(nv,k,j,i) + mu_tilde_j*dt_hyp*dU0(nv,k,j,i);
-    }
-  );
+  if(haveVc) {
+    idefix_for("RKL_Cycle_InitUc1",
+              0, nvarRKL,
+              data->beg[KDIR],data->end[KDIR],
+              data->beg[JDIR],data->end[JDIR],
+              data->beg[IDIR],data->end[IDIR],
+      KOKKOS_LAMBDA (int n, int k, int j, int i) {
+        int nv = varList(n);
+        Uc1(nv,k,j,i) = Uc(nv,k,j,i);
+        Uc(nv,k,j,i) = Uc1(nv,k,j,i) + mu_tilde_j*dt_hyp*dU0(nv,k,j,i);
+      }
+    );
+  }
   if(haveVs) {
     #ifdef EVOLVE_VECTOR_POTENTIAL
       idefix_for("RKL_Cycle_InitVe1",
@@ -331,26 +343,26 @@ void RKLegendre::Cycle() {
 
     // evolve RKL stage
     EvolveStage(time);
-
-    // update Uc
-    idefix_for("RKL_Cycle_UpdateUc",
-             0, nvarRKL,
-             data->beg[KDIR],data->end[KDIR],
-             data->beg[JDIR],data->end[JDIR],
-             data->beg[IDIR],data->end[IDIR],
-      KOKKOS_LAMBDA (int n, int k, int j, int i) {
-        const int nv = varList(n);
-        real Y = mu_j*Uc(nv,k,j,i) + nu_j*Uc1(nv,k,j,i);
-        Uc1(nv,k,j,i) = Uc(nv,k,j,i);
-#if RKL_ORDER == 1
-        Uc(nv,k,j,i) = Y + dt_hyp*mu_tilde_j*dU(nv,k,j,i);
-#elif RKL_ORDER == 2
-        Uc(nv,k,j,i) = Y + (1.0 - mu_j - nu_j)*Uc0(nv,k,j,i)
-                                + dt_hyp*mu_tilde_j*dU(nv,k,j,i)
-                                + gamma_j*dt_hyp*dU0(nv,k,j,i);
-#endif
-        });
-
+    if(haveVc) {
+      // update Uc
+      idefix_for("RKL_Cycle_UpdateUc",
+              0, nvarRKL,
+              data->beg[KDIR],data->end[KDIR],
+              data->beg[JDIR],data->end[JDIR],
+              data->beg[IDIR],data->end[IDIR],
+        KOKKOS_LAMBDA (int n, int k, int j, int i) {
+          const int nv = varList(n);
+          real Y = mu_j*Uc(nv,k,j,i) + nu_j*Uc1(nv,k,j,i);
+          Uc1(nv,k,j,i) = Uc(nv,k,j,i);
+  #if RKL_ORDER == 1
+          Uc(nv,k,j,i) = Y + dt_hyp*mu_tilde_j*dU(nv,k,j,i);
+  #elif RKL_ORDER == 2
+          Uc(nv,k,j,i) = Y + (1.0 - mu_j - nu_j)*Uc0(nv,k,j,i)
+                                  + dt_hyp*mu_tilde_j*dU(nv,k,j,i)
+                                  + gamma_j*dt_hyp*dU0(nv,k,j,i);
+  #endif
+          });
+    } 
     if(haveVs) {
       #ifdef EVOLVE_VECTOR_POTENTIAL
         // update Ve
@@ -445,14 +457,19 @@ void RKLegendre::ResetStage() {
   int nvar = this->nvarRKL;
   bool haveVs=this->haveVs;
 
+  bool haveVc = this->haveVc || (this->stage ==1 );
+
+
   idefix_for("RKL_ResetStage",
              0,data->np_tot[KDIR],
              0,data->np_tot[JDIR],
              0,data->np_tot[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
-      for(int n = 0 ; n < nvar ; n++) {
-        const int nv = vars(n);
-        dU(nv,k,j,i) = ZERO_F;
+      if(haveVc) {
+        for(int n = 0 ; n < nvar ; n++) {
+          const int nv = vars(n);
+          dU(nv,k,j,i) = ZERO_F;
+        }
       }
       if(stage == 1)
         invDt(k,j,i) = ZERO_F;
@@ -530,7 +547,7 @@ void RKLegendre::EvolveStage(real t) {
   if(haveVs && data->hydro.needRKLCurrent) data->hydro.CalcCurrent();
 
   // Loop on dimensions for the parabolic fluxes and RHS, starting from IDIR
-  LoopDir<IDIR>(t);
+  if(haveVc || stage == 1) LoopDir<IDIR>(t);
 
   if(haveVs) {
     data->hydro.emf.CalcNonidealEMF(t);

@@ -251,7 +251,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
   // Wait for dt MPI reduction
 #ifdef WITH_MPI
-  if(idfx::psize>1) {
+  if(!haveFixedDt && idfx::psize>1) {
     MPI_SAFE_CALL(MPI_Wait(&dtReduce, MPI_STATUS_IGNORE));
   }
 #endif

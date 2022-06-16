@@ -362,7 +362,7 @@ void RKLegendre::Cycle() {
                                   + gamma_j*dt_hyp*dU0(nv,k,j,i);
   #endif
           });
-    } 
+    }
     if(haveVs) {
       #ifdef EVOLVE_VECTOR_POTENTIAL
         // update Ve

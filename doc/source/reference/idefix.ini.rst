@@ -8,8 +8,9 @@ The problem input file is read when *Idefix* starts. It is split into several se
 allows for comments, which should start with ``#``.
 
 .. tip::
-    Note that you can add arbitray sections and entries in the input file freely. *Idefix* will automatically read and store them on startup. They are then accessible in the code using the
-    ``Input::Get<T>(..)`` and ``Input::GetOrSet<T>`` methods defined in the ``Input`` class (see :ref:`inputClass`).
+    You can add arbitray sections and entries in the input file freely. *Idefix* will automatically read and store them on startup. They are then accessible in the code using the
+    ``Input::Get<T>(..)`` and ``Input::GetOrSet<T>`` template methods defined in the ``Input`` class (see :ref:`inputClass`).
+    To avoid any name collisions with future versions of Idefix, we recommend setting setup-specific parameters in a ``[Setup]`` section.
 
 ``Grid`` section
 --------------------

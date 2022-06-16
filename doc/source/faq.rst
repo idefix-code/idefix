@@ -54,4 +54,4 @@ I want to test a modification to *Idefix* source code specific to my problem wit
   Add a ``CmakeLists.txt`` in your problem directory and use the function `replace_idefix_source` (see :ref:`customSourceFiles`).
 
 I want to use a lookup table from a CSV file in my idefix_loop. How could I proceed?
-  Use the ``ReadCSV`` class (see :ref:`readCSVClass`)
+  Use the ``LookupTable`` class (see :ref:`LookupTableClass`)

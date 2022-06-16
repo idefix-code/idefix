@@ -20,6 +20,7 @@ Makefile
 CMakeFiles
 CMakeCache.txt
 cmake_install.cmake
+Makefile.local
 
 # test artifacts
 test/**/*.o

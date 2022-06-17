@@ -232,12 +232,19 @@ int main( int argc, char* argv[] ) {
     // Show profiler output
     idfx::prof.Show();
   }
-  idfx::cout << "Main: Job's done" << std::endl;
+
+  if(returnCode<0) {
+    idfx::cout << "Main: Job was interrupted before completion." << std::endl;
+  } else if (returnCode>0) {
+    idfx::cout << "Main: Job was aborted because of an unrecoverable error." << std::endl;
+  } else {
+    idfx::cout << "Main: Job completed successfully." << std::endl;
+  }
   Kokkos::finalize();
 
 #ifdef WITH_MPI
   MPI_Finalize();
 #endif
 
-  return(returnCode);
+  return(0);
 }

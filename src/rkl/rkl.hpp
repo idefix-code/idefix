@@ -61,7 +61,8 @@ class RKLegendre {
   Mpi mpi;                      // RKL-specific MPI layer
 #endif
 
-  bool haveVs{false};           // Whether we have (and need to compute) cell-centered variables
+  bool haveVs{false};           // Whether we have (and need to compute) face-centered variables
+  bool haveVc{false};           // Whether we need to compute cell-centered variables
   void AddVariable(int, std::vector<int> & );
 
  private:

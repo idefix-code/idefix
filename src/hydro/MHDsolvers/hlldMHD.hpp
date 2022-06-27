@@ -9,7 +9,7 @@
 #define HYDRO_MHDSOLVERS_HLLDMHD_HPP_
 
 #include "../idefix.hpp"
-#include "extrapolatePrimVar.hpp"
+#include "slopeLimiter.hpp"
 #include "fluxMHD.hpp"
 #include "convertConsToPrimMHD.hpp"
 #include "storeFlux.hpp"
@@ -54,6 +54,7 @@ void Hydro::HlldMHD() {
   real csIso = this->isoSoundSpeed;
   HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
 
+  SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR]);
 
   // st and sb will be useful only when Hall is included
   real st,sb;
@@ -145,7 +146,9 @@ void Hydro::HlldMHD() {
       real vL[NVAR];
       real vR[NVAR];
 
-      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, dx, vL, vR);
+      slopeLim.ExtrapolatePrimVar(i, j, k, vL, vR);
+      vL[BXn] = Vs(DIR,k,j,i);
+      vR[BXn] = vL[BXn];
 
       // Conservative variables
       real uL[NVAR];

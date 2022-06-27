@@ -9,7 +9,7 @@
 #define HYDRO_MHDSOLVERS_ROEMHD_HPP_
 
 #include "../idefix.hpp"
-#include "extrapolatePrimVar.hpp"
+#include "slopeLimiter.hpp"
 #include "fluxMHD.hpp"
 #include "convertConsToPrimMHD.hpp"
 #include "storeFlux.hpp"
@@ -69,6 +69,7 @@ void Hydro::RoeMHD() {
 
   const ElectroMotiveForce::AveragingType emfAverage = emf.averaging;
 
+
   // Required by UCT_Contact
   IdefixArray3D<int> SV;
 
@@ -89,6 +90,8 @@ void Hydro::RoeMHD() {
   // Define normal, tangent and bi-tanget indices
   // st and sb will be useful only when Hall is included
   real st,sb;
+
+  SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR]);
 
   switch(DIR) {
     case(IDIR):
@@ -192,7 +195,10 @@ void Hydro::RoeMHD() {
       real um[NVAR];
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, dx, vL, vR);
+      slopeLim.ExtrapolatePrimVar(i, j, k, vL, vR);
+      vL[BXn] = Vs(DIR,k,j,i);
+      vR[BXn] = vL[BXn];
+
 #pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
         dV[nv] = vR[nv] - vL[nv];

@@ -10,7 +10,7 @@
 
 #include "../idefix.hpp"
 #include "hydro.hpp"
-#include "extrapolatePrimVar.hpp"
+#include "slopeLimiter.hpp"
 #include "fluxHD.hpp"
 #include "convertConsToPrimHD.hpp"
 
@@ -59,13 +59,12 @@ void Hydro::RoeHD() {
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 
-  // Required for high order interpolations
-  IdefixArray1D<real> dx = this->data->dx[DIR];
-
   real gamma = this->gamma;
   real gamma_m1 = this->gamma - ONE_F;
   real csIso = this->isoSoundSpeed;
   HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
+
+  SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR]);
 
   idefix_for("ROE_Kernel",
              data->beg[KDIR],data->end[KDIR]+koffset,
@@ -94,7 +93,7 @@ void Hydro::RoeHD() {
       real um[NVAR];
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, dx, vL, vR);
+      slopeLim.ExtrapolatePrimVar(i, j, k, vL, vR);
 #pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
         dv[nv] = vR[nv] - vL[nv];

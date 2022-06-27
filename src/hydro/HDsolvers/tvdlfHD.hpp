@@ -10,7 +10,7 @@
 
 #include "../idefix.hpp"
 #include "hydro.hpp"
-#include "extrapolatePrimVar.hpp"
+#include "slopeLimiter.hpp"
 #include "fluxHD.hpp"
 #include "convertConsToPrimHD.hpp"
 
@@ -40,6 +40,8 @@ void Hydro::TvdlfHD() {
   real csIso = this->isoSoundSpeed;
   HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
 
+  SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR]);
+
   idefix_for("TVDLF_Kernel",
              data->beg[KDIR],data->end[KDIR]+koffset,
              data->beg[JDIR],data->end[JDIR]+joffset,
@@ -66,7 +68,8 @@ void Hydro::TvdlfHD() {
       real cRL, cmax;
 
       // 1-- Read primitive variables
-      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, dx, vL, vR);
+      slopeLim.ExtrapolatePrimVar(i, j, k, vL, vR);
+
 #pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
         vRL[nv] = HALF_F*(vL[nv]+vR[nv]);

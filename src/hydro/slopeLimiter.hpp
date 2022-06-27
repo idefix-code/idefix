@@ -243,8 +243,8 @@ class SlopeLimiter {
     }
   }
 
-  IdefixArray4D<real> &Vc;
-  IdefixArray1D<real> &dx;
+  IdefixArray4D<real> Vc;
+  IdefixArray1D<real> dx;
 };
 
 

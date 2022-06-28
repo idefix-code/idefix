@@ -68,7 +68,7 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   }
 
   // Shock flattening
-  this->haveShockFlattening = input.CheckEntry("Hydro","shockFlattening");
+  this->haveShockFlattening = input.CheckEntry("Hydro","shockFlattening")>=0;
 
   // Source terms (always activated when non-cartesian geometry because of curvature source terms)
 #if GEOMETRY == CARTESIAN

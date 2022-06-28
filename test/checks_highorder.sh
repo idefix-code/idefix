@@ -68,7 +68,7 @@ for rep in $rep_list; do
             cd ..
         done
         make clean
-        rm -f *.vtk *.dbl
+        rm -f *.vtk *.dbl *.dmp
     done
     echo "***********************************************"
     echo "Cleaning  $rep in $TMP_DIR"
@@ -108,7 +108,7 @@ for rep in $rep_MPI_list; do
         cd ..
 
         make clean
-        rm -f *.vtk *.dbl
+        rm -f *.vtk *.dbl *.dmp
     done
     echo "***********************************************"
     echo "Cleaning  $rep in $TMP_DIR"

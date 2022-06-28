@@ -66,7 +66,7 @@ for rep in $rep_HD_list; do
             cd ..
         done
         make clean
-        rm -f *.vtk *.dbl
+        rm -f *.vtk *.dbl *.dmp
     done
     echo "***********************************************"
     echo "Cleaning  $rep in $TMP_DIR"

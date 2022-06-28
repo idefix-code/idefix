@@ -9,18 +9,21 @@
 #include "hydro.hpp"
 #include "shockFlattening.hpp"
 
-ShockFlattening::ShockFlattening(Hydro *h) {
+ShockFlattening::ShockFlattening(Hydro *h, real invSmoothing) {
   hydro = h;
   flagArray = IdefixArray3D<FlagShock>("flagArray",h->data->np_tot[KDIR],
                                               h->data->np_tot[JDIR],
                                               h->data->np_tot[IDIR]);
   this->isActive = true;
+  this->smoothing = 1.0/invSmoothing;
 }
 
 void ShockFlattening::FindShock() {
   idfx::pushRegion("ShockFlattening::FindShock");
   auto flags = flagArray;
   auto Vc = hydro->Vc;
+  real smoothing = this->smoothing;
+
   #if GEOMETRY == CARTESIAN
     auto dx1 = hydro->data->dx[IDIR];
     auto dx2 = hydro->data->dx[JDIR];
@@ -93,7 +96,7 @@ void ShockFlattening::FindShock() {
                     gradP += FABS(Vc(PRS,k+1,j,i) - Vc(PRS,k-1,j,i));
                   #endif
                 #endif // ISOTHERMAL
-                if(gradP > 0.1*pmin) {
+                if(gradP > smoothing*pmin) {
                   flags(k,j,i) = FlagShock::Shock;
                 }
               }

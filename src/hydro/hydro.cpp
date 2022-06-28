@@ -68,7 +68,7 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   }
 
   // Shock flattening
-  this->haveShockFlattening = input.GetOrSet<bool>("Hydro","shockFlattening",0,false);
+  this->haveShockFlattening = input.CheckEntry("Hydro","shockFlattening");
 
   // Source terms (always activated when non-cartesian geometry because of curvature source terms)
 #if GEOMETRY == CARTESIAN
@@ -410,7 +410,7 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
 
   // Init shock flattening
   if(haveShockFlattening) {
-    this->shockFlattening = ShockFlattening(this);
+    this->shockFlattening = ShockFlattening(this,input.Get<real>("Hydro","shockFlattening",0));
   }
 
   idfx::popRegion();

@@ -91,7 +91,7 @@ void Hydro::RoeMHD() {
   // st and sb will be useful only when Hall is included
   real st,sb;
 
-  SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR]);
+  SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR],shockFlattening);
 
   switch(DIR) {
     case(IDIR):

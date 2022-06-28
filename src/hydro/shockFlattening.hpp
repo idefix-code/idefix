@@ -14,7 +14,7 @@ enum class FlagShock{None, Shock};
 
 class ShockFlattening {
  public:
-  explicit ShockFlattening(Hydro*);
+  ShockFlattening(Hydro*, real);
   ShockFlattening() {}
 
   void FindShock();
@@ -22,5 +22,6 @@ class ShockFlattening {
   Hydro *hydro;
   IdefixArray3D<FlagShock> flagArray;
   bool isActive{false};
+  real smoothing{0};
 };
 #endif //HYDRO_SHOCKFLATTENING_HPP_

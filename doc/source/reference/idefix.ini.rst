@@ -181,7 +181,11 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 |                |                         | | Note that this is not sufficient to fully define a shearing box: boundary conditions      |
 |                |                         | | are also required.                                                                        |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-
+| shockFlattening| float                   | | Enable shock flattening.  When enabled, the reconstruction scheme reverts to minmod       |
+|                |                         | | limiter when strong shocks are detected. The entry parameter is the threshold above which |
+|                |                         | | a shock is considered "strong", in units of :math:`|\nabla P /P|`. A low value hence tends|
+|                |                         | | to increase the code numerical diffusivity. Typical values are 1 to 10.                   |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
 
 
 .. note::

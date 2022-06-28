@@ -9,13 +9,13 @@
 #include "hydro.hpp"
 #include "shockFlattening.hpp"
 
-ShockFlattening::ShockFlattening(Hydro *h, real invSmoothing) {
+ShockFlattening::ShockFlattening(Hydro *h, real smoothing) {
   hydro = h;
   flagArray = IdefixArray3D<FlagShock>("flagArray",h->data->np_tot[KDIR],
                                               h->data->np_tot[JDIR],
                                               h->data->np_tot[IDIR]);
   this->isActive = true;
-  this->smoothing = 1.0/invSmoothing;
+  this->smoothing = smoothing;
 }
 
 void ShockFlattening::FindShock() {

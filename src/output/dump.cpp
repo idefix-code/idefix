@@ -287,7 +287,6 @@ void Dump::WriteDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gd
 void Dump::ReadNextFieldProperties(IdfxFileHandler fileHdl, int &ndim, int *dim,
                                          DataType &type, std::string &name) {
   char fieldName[NAMESIZE];
-  int64_t ntot=1;
   #ifdef WITH_MPI
     // Read Name
     MPI_Status status;
@@ -396,7 +395,6 @@ void Dump::ReadSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
 
 void Dump::ReadDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gdim,
                                  IdfxDataDescriptor &descriptor, void* data) {
-  int size;
   int64_t ntot=1;
   int64_t nglob=1;
   // Get total size

@@ -36,6 +36,8 @@ void ShockFlattening::FindShock() {
   #endif
   #ifdef ISOTHERMAL
     auto cs = hydro->isoSoundSpeedArray;
+    HydroModuleStatus haveIsoCs = hydro->haveIsoSoundSpeed;
+    real csIso = hydro->isoSoundSpeed;
   #endif
 
   auto beg = hydro->data->beg;
@@ -62,24 +64,44 @@ void ShockFlattening::FindShock() {
 
               if(divV<ZERO_F) {
                 #ifdef ISOTHERMAL
-
-                  real pmin = Vc(RHO,k,j,i)*cs(k,j,i)*cs(k,j,i);
-                  pmin = FMIN(pmin,Vc(RHO,k,j,i+1)*cs(k,j,i+1)*cs(k,j,i+1));
-                  pmin = FMIN(pmin,Vc(RHO,k,j,i-1)*cs(k,j,i-1)*cs(k,j,i-1));
-                  real gradP = FABS(Vc(RHO,k,j,i+1)*cs(k,j,i+1)*cs(k,j,i+1) -
-                                    Vc(RHO,k,j,i-1)*cs(k,j,i-1)*cs(k,j,i-1));
-                  #if DIMENSIONS >= 2
-                    pmin = FMIN(pmin,Vc(RHO,k,j+1,i)*cs(k,j+1,i)*cs(k,j+1,i));
-                    pmin = FMIN(pmin,Vc(RHO,k,j-1,i)*cs(k,j-1,i)*cs(k,j-1,i));
-                    gradP += FABS(Vc(RHO,k,j+1,i)*cs(k,j+1,i)*cs(k,j+1,i) -
-                                  Vc(RHO,k,j-1,i)*cs(k,j-1,i)*cs(k,j-1,i));
-                  #endif
-                  #if DIMENSIONS == 3
-                    pmin = FMIN(pmin,Vc(RHO,k+1,j,i)*cs(k+1,j,i)*cs(k+1,j,i));
-                    pmin = FMIN(pmin,Vc(RHO,k-1,j,i)*cs(k-1,j,i)*cs(k-1,j,i));
-                    gradP += FABS(Vc(RHO,k+1,j,i)*cs(k+1,j,i)*cs(k+1,j,i) -
-                                  Vc(RHO,k-1,j,i)*cs(k-1,j,i)*cs(k-1,j,i));
-                  #endif
+                  real pmin, gradP;
+                  if(haveIsoCs == UserDefFunction) {
+                    pmin = Vc(RHO,k,j,i)*cs(k,j,i)*cs(k,j,i);
+                    pmin = FMIN(pmin,Vc(RHO,k,j,i+1)*cs(k,j,i+1)*cs(k,j,i+1));
+                    pmin = FMIN(pmin,Vc(RHO,k,j,i-1)*cs(k,j,i-1)*cs(k,j,i-1));
+                    gradP = FABS(Vc(RHO,k,j,i+1)*cs(k,j,i+1)*cs(k,j,i+1) -
+                                 Vc(RHO,k,j,i-1)*cs(k,j,i-1)*cs(k,j,i-1));
+                    #if DIMENSIONS >= 2
+                      pmin = FMIN(pmin,Vc(RHO,k,j+1,i)*cs(k,j+1,i)*cs(k,j+1,i));
+                      pmin = FMIN(pmin,Vc(RHO,k,j-1,i)*cs(k,j-1,i)*cs(k,j-1,i));
+                      gradP += FABS(Vc(RHO,k,j+1,i)*cs(k,j+1,i)*cs(k,j+1,i) -
+                                    Vc(RHO,k,j-1,i)*cs(k,j-1,i)*cs(k,j-1,i));
+                    #endif
+                    #if DIMENSIONS == 3
+                      pmin = FMIN(pmin,Vc(RHO,k+1,j,i)*cs(k+1,j,i)*cs(k+1,j,i));
+                      pmin = FMIN(pmin,Vc(RHO,k-1,j,i)*cs(k-1,j,i)*cs(k-1,j,i));
+                      gradP += FABS(Vc(RHO,k+1,j,i)*cs(k+1,j,i)*cs(k+1,j,i) -
+                                    Vc(RHO,k-1,j,i)*cs(k-1,j,i)*cs(k-1,j,i));
+                    #endif
+                  } else {
+                    pmin = Vc(RHO,k,j,i)*csIso*csIso;
+                    pmin = FMIN(pmin,Vc(RHO,k,j,i+1)*csIso*csIso);
+                    pmin = FMIN(pmin,Vc(RHO,k,j,i-1)*csIso*csIso);
+                    gradP = FABS(Vc(RHO,k,j,i+1)*csIso*csIso -
+                                 Vc(RHO,k,j,i-1)*csIso*csIso);
+                    #if DIMENSIONS >= 2
+                      pmin = FMIN(pmin,Vc(RHO,k,j+1,i)*csIso*csIso);
+                      pmin = FMIN(pmin,Vc(RHO,k,j-1,i)*csIso*csIso);
+                      gradP += FABS(Vc(RHO,k,j+1,i)*csIso*csIso -
+                                    Vc(RHO,k,j-1,i)*csIso*csIso);
+                    #endif
+                    #if DIMENSIONS == 3
+                      pmin = FMIN(pmin,Vc(RHO,k+1,j,i)*csIso*csIso);
+                      pmin = FMIN(pmin,Vc(RHO,k-1,j,i)*csIso*csIso);
+                      gradP += FABS(Vc(RHO,k+1,j,i)*csIso*csIso -
+                                    Vc(RHO,k-1,j,i)*csIso*csIso);
+                    #endif
+                  }
                 #else // ISOTHERMAL
                   real pmin = Vc(PRS,k,j,i);
                   pmin = FMIN(pmin,Vc(PRS,k,j,i+1));

@@ -19,6 +19,7 @@
 #include "thermalDiffusion.hpp"
 #include "axis.hpp"
 #include "hydroboundary.hpp"
+#include "shockFlattening.hpp"
 
 // forward class declaration
 class DataBlock;
@@ -86,6 +87,9 @@ class Hydro {
   // Box width for shearing box problems
   real sbLx;
 
+  // ShockFlattening
+  bool haveShockFlattening{false};
+  ShockFlattening shockFlattening;
 
   // Enroll user-defined boundary conditions
   void EnrollUserDefBoundary(UserDefBoundaryFunc);
@@ -164,6 +168,7 @@ class Hydro {
   friend class Axis;
   friend class RKLegendre;
   friend class HydroBoundary;
+  friend class ShockFlattening;
 
   // Isothermal EOS parameters
   real isoSoundSpeed;

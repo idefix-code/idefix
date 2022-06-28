@@ -9,6 +9,7 @@
 
 #include "hydro.hpp"
 #include "dataBlock.hpp"
+#include "shockFlattening.hpp"
 
 // Build a left and right extrapolation of the primitive variables along direction dir
 
@@ -23,7 +24,8 @@ template<const int dir,
          const int order = ORDER>
 class SlopeLimiter {
  public:
-  SlopeLimiter(IdefixArray4D<real> &Vc, IdefixArray1D<real> &dx): Vc(Vc), dx(dx) {}
+  SlopeLimiter(IdefixArray4D<real> &Vc, IdefixArray1D<real> &dx, ShockFlattening &sf):
+        Vc(Vc), dx(dx), flags(sf.flagArray), shockFlattening(sf.isActive) {}
 
   KOKKOS_FORCEINLINE_FUNCTION real MinModLim(const real dvp, const real dvm) const {
     real dq= 0.0;
@@ -104,13 +106,33 @@ class SlopeLimiter {
         real dvm = Vc(nv,k-koffset,j-joffset,i-ioffset)
                   -Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset);
         real dvp = Vc(nv,k,j,i)-Vc(nv,k-koffset,j-joffset,i-ioffset);
-        real dv = PLMLim(dvp,dvm);
+
+        real dv;
+        if(shockFlattening) {
+          if(flags(k,j,i) == FlagShock::Shock) {
+            // Force slope limiter to minmod
+            dv = MinModLim(dvp,dvm);
+          } else {
+            dv = PLMLim(dvp,dvm);
+          }
+        } else { // No shock flattening
+          dv = PLMLim(dvp,dvm);
+        }
 
         vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + HALF_F*dv;
 
         dvm = dvp;
         dvp = Vc(nv,k+koffset,j+joffset,i+ioffset) - Vc(nv,k,j,i);
-        dv = PLMLim(dvp,dvm);
+
+        if(shockFlattening) {
+          if(flags(k,j,i) == FlagShock::Shock) {
+            dv = MinModLim(dvp,dvm);
+          } else {
+            dv = PLMLim(dvp,dvm);
+          }
+        } else { // No shock flattening
+          dv = PLMLim(dvp,dvm);
+        }
 
         vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
       } else if constexpr(order == 3) {
@@ -245,6 +267,8 @@ class SlopeLimiter {
 
   IdefixArray4D<real> Vc;
   IdefixArray1D<real> dx;
+  IdefixArray3D<FlagShock> flags;
+  bool shockFlattening{false};
 };
 
 

@@ -64,7 +64,7 @@ void Hydro::RoeHD() {
   real csIso = this->isoSoundSpeed;
   HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
 
-  SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR]);
+  SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR],shockFlattening);
 
   idefix_for("ROE_Kernel",
              data->beg[KDIR],data->end[KDIR]+koffset,

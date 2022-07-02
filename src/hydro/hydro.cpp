@@ -67,6 +67,8 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
     IDEFIX_ERROR(msg);
   }
 
+  // Shock flattening
+  this->haveShockFlattening = input.CheckEntry("Hydro","shockFlattening")>=0;
 
   // Source terms (always activated when non-cartesian geometry because of curvature source terms)
 #if GEOMETRY == CARTESIAN
@@ -406,6 +408,11 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   // Initialise boundary conditions
   boundary.Init(input, grid, this);
 
+  // Init shock flattening
+  if(haveShockFlattening) {
+    this->shockFlattening = ShockFlattening(this,input.Get<real>("Hydro","shockFlattening",0));
+  }
+
   idfx::popRegion();
 }
 
@@ -586,7 +593,9 @@ void Hydro::ShowConfig() {
     idfx::cout << "Hydro: ShearingBox ENABLED with shear rate= " << this->sbS
                << " and Lx= " << sbLx << std::endl;
   }
-
+  if(haveShockFlattening) {
+    idfx::cout << "Hydro: Shock Flattening ENABLED." << std::endl;
+  }
 
 
   if(resistivityStatus.status != Disabled) {

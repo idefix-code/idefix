@@ -9,7 +9,7 @@
 #define HYDRO_MHDSOLVERS_TVDLFMHD_HPP_
 
 #include "../idefix.hpp"
-#include "extrapolatePrimVar.hpp"
+#include "slopeLimiter.hpp"
 #include "fluxMHD.hpp"
 #include "convertConsToPrimMHD.hpp"
 #include "storeFlux.hpp"
@@ -56,6 +56,7 @@ void Hydro::TvdlfMHD() {
   real csIso = this->isoSoundSpeed;
   HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
 
+  SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR],shockFlattening);
   // Define normal, tangent and bi-tanget indices
   // st and sb will be useful only when Hall is included
   real st,sb;
@@ -154,7 +155,9 @@ void Hydro::TvdlfMHD() {
       real fluxR[NVAR];
 
       // Load primitive variables
-      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, dx, vL, vR);
+      slopeLim.ExtrapolatePrimVar(i, j, k, vL, vR);
+      vL[BXn] = Vs(DIR,k,j,i);
+      vR[BXn] = vL[BXn];
 #pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
         v[nv] = HALF_F*(vL[nv] + vR[nv]);

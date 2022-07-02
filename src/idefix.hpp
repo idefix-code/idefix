@@ -20,6 +20,7 @@ using Layout = Kokkos::LayoutRight;
 
 /// Type of loops we admit in idefix (see loop.hpp for details)
 enum class LoopPattern { SIMDFOR, RANGE, MDRANGE, TPX, TPTTRTVR, UNDEFINED };
+enum class Limiter {VanLeer, MinMod, McLim};
 
 #define     YES     255
 #define     NO      0

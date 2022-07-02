@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - allow for domain decomposition along X3 with axis boundary condition and 2pi azimuthal domains (!182).
 - addition of stateContainers to automatically evolve variables in multi-step time integration (!191)
 - added a class to use easily lookup tables in idefix_for constructs (class LookupTable) (!213, !198, !178)
+- added a shock flattening module (!219)
 
 ## [1.0.0] 2022-01-13
 ### Changed

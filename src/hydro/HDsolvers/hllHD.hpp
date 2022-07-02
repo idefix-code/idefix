@@ -10,7 +10,7 @@
 
 #include "../idefix.hpp"
 #include "hydro.hpp"
-#include "extrapolatePrimVar.hpp"
+#include "slopeLimiter.hpp"
 #include "fluxHD.hpp"
 #include "convertConsToPrimHD.hpp"
 
@@ -40,6 +40,8 @@ void Hydro::HllHD() {
   real csIso = this->isoSoundSpeed;
   HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
 
+  SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR],shockFlattening);
+
   idefix_for("HLL_Kernel",
              data->beg[KDIR],data->end[KDIR]+koffset,
              data->beg[JDIR],data->end[JDIR]+joffset,
@@ -66,7 +68,7 @@ void Hydro::HllHD() {
       real cL, cR, cmax;
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, dx, vL, vR);
+      slopeLim.ExtrapolatePrimVar(i, j, k, vL, vR);
 
       // 2-- Get the wave speed
 #if HAVE_ENERGY
@@ -93,7 +95,7 @@ void Hydro::HllHD() {
 
       cmax  = FMAX(FABS(SL), FABS(SR));
 
-      // 2-- Compute the conservative variables
+      // 2-- Compute the conservative variables: do this by extrapolation
       K_PrimToCons(uL, vL, gamma_m1);
       K_PrimToCons(uR, vR, gamma_m1);
 

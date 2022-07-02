@@ -36,6 +36,9 @@ void DataBlock::EvolveStage() {
   // Compute current when needed
   if(hydro.needExplicitCurrent) hydro.CalcCurrent();
 
+  // enable shock flattening
+  if(hydro.haveShockFlattening) hydro.shockFlattening.FindShock();
+
   // Loop on all of the directions
   LoopDir<IDIR>();
 

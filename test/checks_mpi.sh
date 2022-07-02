@@ -66,7 +66,7 @@ for rep in $rep_2D_mpi_list; do
         cd ..
     done
     make clean
-    rm -f *.vtk *.dbl
+    rm -f *.vtk *.dbl *.dmp
 done
 
 # MHD tests

@@ -353,7 +353,6 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
 
   std::string header;
   std::stringstream ssheader;
-  float x1, x2, x3;
 
   /* -------------------------------------------
   1. File version and identifier
@@ -506,7 +505,6 @@ void Vtk::WriteScalar(IdfxFileHandler fvtk, float* Vin,  const std::string &var_
 *
 *********************************************************************** */
 
-  int i, j, k;
   std::stringstream ssheader;
 
   ssheader << std::endl << "SCALARS " << var_name.c_str() << " float" << std::endl;

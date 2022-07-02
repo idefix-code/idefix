@@ -34,7 +34,6 @@ void DataBlock::WriteVariable(FILE* fileHdl, int ndim, int *dim,
 void DataBlock::DumpToFile(std::string filebase)  {
   FILE *fileHdl;
 
-  int ndims;
   int dims[5];
   char fieldName[NAMESIZE+1]; // +1 is just in case
 

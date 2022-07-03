@@ -62,6 +62,7 @@ Several options can be enabled from the command line (or are accessible with ``c
 ``-D Kokkos_ARCH_{...}=ON``
     Enable architecture-specific optimisation. A complete list can be obtained with the ``-LH`` option. Note that several host and target architecture can be enabled
     simulatenously (e.g for a CPU and a GPU). For instance:
+
       + Intel CPUs: BDW (Broadwell), HSW (Haswell), KNL (Knights Landing Xeon phi), SKX (Skylake Xeon with AVX512), SNB (Sandy/Ivy bridge), WSM (Westmere) ...
       + NVIDIA GPUs: PASCAL60, PASCAL61, VOLTA70, VOLTA72, AMPERE80, AMPERE86, ...
       + IBM CPUs: POWER7, POWER8, POWER9, BOOL (Blue gene Q)

@@ -20,7 +20,7 @@
 //          Vc(i-1)           PrimL(i)  PrimR(i)       Vc(i)
 template<const int dir,
          const int nvmax,
-         const Limiter limiter = Limiter::McLim,
+         const Limiter limiter = Limiter::VanLeer,
          const int order = ORDER>
 class SlopeLimiter {
  public:
@@ -87,6 +87,65 @@ class SlopeLimiter {
     if constexpr(limiter == Limiter::MinMod) return(MinModLim(dvp,dvm));
   }
 
+  template <typename T> 
+  KOKKOS_FORCEINLINE_FUNCTION int sign(T val) const {
+    return (T(0) < val) - (val < T(0));
+}
+
+
+  KOKKOS_FORCEINLINE_FUNCTION real getDeltaWi(const real vm1, const real v0, const real vp1) const {
+    // PH13, eq. 3.30
+    real delta1 = vp1 - vm1;
+    real deltaL = v0 - vm1;
+    real deltaR = vp1 - v0;
+    real deltaw0 = 0.0;
+
+    if(deltaR*deltaL>0) {
+      deltaw0 = FMIN(FABS(deltaL),FABS(deltaR));
+      deltaw0 = FMIN(0.5*FABS(delta1), 2*deltaw0);
+      deltaw0 *= sign(delta1);
+    }
+
+    return(deltaw0);
+  }
+
+  // This implementation follows the PPM4 scheme of Peterson & Hammet (PH13) 
+  // SIAM J. Sci Comput (2013)
+
+  KOKKOS_FORCEINLINE_FUNCTION void getPPMStates(const real vm2, const real vm1, const real v0,
+                                                const real vp1, const real vp2, real &vl, real &vr) 
+                                                const {
+    const int n = 3;
+
+    vr = 7.0/12.0*(v0+vp1) - 1.0/12.0*(vm1+vp2);
+    vl = 7.0/12.0*(vm1+v0) - 1.0/12.0*(vm2+vp1);
+
+    if( (v0-vr)*(vp1-vr) > 0 ) {
+      // PH13 equation 3.28
+      real deltaw0 = getDeltaWi(vm1,v0,vp1);
+      real deltawp = getDeltaWi(v0,vp1,vp2);
+      vr = 0.5*(v0+vp1) - (deltawp - deltaw0)/6.0;
+    } 
+    if( (vm1-vl)*(v0-vl) > 0) {
+      // PH13 3.29
+      real deltaw0 = getDeltaWi(vm1,v0,vp1);
+      real deltawm = getDeltaWi(vm2,vm1,v0);
+      vl = 0.5*(vm1+v0) - (deltaw0 - deltawm)/6.0;
+    }
+
+    // PH13 3.31
+    if( ((vr - v0)*(v0 - vl) <= 0) || (vm1 - v0)*(v0 - vp1) <= 0 ) {
+      vr = vl = v0;
+    }
+
+    // PH13 3.32
+    if(FABS(vr-v0) >= n*FABS(v0-vl)) {
+      vr = v0 + n*(v0-vl);
+    }
+    if(FABS(vl-v0) >= n*FABS(v0-vr)) {
+      vl = v0 + n*(v0-vr);
+    }                                          
+  }
 
   KOKKOS_FORCEINLINE_FUNCTION void ExtrapolatePrimVar(const int i,
                                                     const int j,
@@ -188,78 +247,28 @@ class SlopeLimiter {
             }
           #endif
       } else if constexpr(order == 4) {
-          // Reconstruction in cell i-1/2 Left
-          // Naive 4th order reconstruction
+          // Reconstruction in cell i-1
+          real vm2 = Vc(nv,k-3*koffset,j-3*joffset,i-3*ioffset);;
+          real vm1 = Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset);
+          real v0 = Vc(nv,k-koffset,j-joffset,i-ioffset);
+          real vp1 = Vc(nv,k,j,i);
+          real vp2 = Vc(nv,k+koffset,j+joffset,i+ioffset);
 
-          real qim2 = Vc(nv,k-3*koffset,j-3*joffset,i-3*ioffset);
-          real qim1 = Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset);
-          real qip1 = Vc(nv,k-koffset,j-joffset,i-ioffset);
-          real qip2 = Vc(nv,k,j,i);
-
-          // Eq. 67 CDHM11
-          real qi0 = 7.0/12.0*(qim1+qip1)-1.0/12.0*(qim2+qip2);
-
-          real dq = qip1-qim1;
-          real dq0 = qi0 - qim1;
-
-          real dqm =  McLim(dq0,dq);
-//          dqm = dq0;
-
-          qim2 = qim1;
-          qim1 = qip1;
-          qip1 = qip2;
-          qip2 = Vc(nv,k+koffset,j+joffset,i+ioffset);
-
-          // Eq. 67 CDHM11
-          qi0 = 7.0/12.0*(qim1+qip1)-1.0/12.0*(qim2+qip2);
-
-          dq = qip1-qim1;
-          dq0 = qi0 - qim1;
-
-          real dqp = McLim(dq0,dq);
- //         dqp = dq0;
-
-          if(dqp*dqm <= 0) {
-            dqp=0;
-          } else {
-            if(FABS(dqp)>2*FABS(dqm)) dqp = 2*dqm;
-            //if(FABS(dqm)>2*FABS(dqp)) dqm = 2*dqp;
-          }
-
+          real vr,vl;
+          getPPMStates(vm2, vm1, v0, vp1, vp2, vl, vr);
           // vL= left side of current interface (i-1/2)= right side of cell i-1
-          // vL[nv] = vr;
-          vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + dqp;
-
-          /////////////////////////////////////////////////
+          vL[nv] = vr;
           // Reconstruction in cell i
-          // dq0 and dq are already computed aboive for cell i left
 
-          dqm =  McLim(dq0,dq);
-//          dqm=dq0;
-
-          qim2 = qim1;
-          qim1 = qip1;
-          qip1 = qip2;
-          qip2 = Vc(nv,k+2*koffset,j+2*joffset,i+2*ioffset);
-
-          // Eq. 67 CDHM11
-          qi0 = 7.0/12.0*(qim1+qip1)-1.0/12.0*(qim2+qip2);
-
-          dq = qip1-qim1;
-          dq0 = qi0 - qim1;
-
-          dqp = McLim(dq0,dq);
-//          dqp=dq0;
-
-          if(dqp*dqm <= 0) {
-            dqm=0;
-          } else {
-            //if(FABS(dqp)>2*FABS(dqm)) dqp = 2*dqm;
-            if(FABS(dqm)>2*FABS(dqp)) dqm = 2*dqp;
-          }
-
-
-          vR[nv] = Vc(nv,k,j,i) - dqm;
+          vm2 = vm1;
+          vm1 = v0;
+          v0 = vp1;
+          vp1 = vp2;
+          vp2 = Vc(nv,k+2*koffset,j+2*joffset,i+2*ioffset);
+          
+          getPPMStates(vm2, vm1, v0, vp1, vp2, vl, vr);
+          
+          vR[nv] = vl;
       }
     }
   }

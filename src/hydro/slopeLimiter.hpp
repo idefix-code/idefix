@@ -20,7 +20,7 @@
 //          Vc(i-1)           PrimL(i)  PrimR(i)       Vc(i)
 template<const int dir,
          const int nvmax,
-         const Limiter limiter = Limiter::VanLeer,
+         const Limiter limiter = Limiter::McLim,
          const int order = ORDER>
 class SlopeLimiter {
  public:
@@ -86,6 +86,7 @@ class SlopeLimiter {
     if constexpr(limiter == Limiter::McLim) return(McLim(dvp,dvm));
     if constexpr(limiter == Limiter::MinMod) return(MinModLim(dvp,dvm));
   }
+
 
   KOKKOS_FORCEINLINE_FUNCTION void ExtrapolatePrimVar(const int i,
                                                     const int j,
@@ -187,80 +188,78 @@ class SlopeLimiter {
             }
           #endif
       } else if constexpr(order == 4) {
-          // Reconstruction in cell i-1
-          real dvm2 = Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset)
-                    -Vc(nv,k-3*koffset,j-3*joffset,i-3*ioffset);
-          real dvm1 = Vc(nv,k-koffset,j-joffset,i-ioffset)
-                    -Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset);
-          real dvp1 = Vc(nv,k,j,i) - Vc(nv,k-koffset,j-joffset,i-ioffset);
-          real dvp2 = Vc(nv,k+koffset,j+joffset,i+ioffset) - Vc(nv,k,j,i);
+          // Reconstruction in cell i-1/2 Left
+          // Naive 4th order reconstruction
 
-          real dvlm = McLim(dvm1,dvm2);
-          real dvl0 = McLim(dvp1,dvm1);
-          real dvlp = McLim(dvp2,dvp1);
+          real qim2 = Vc(nv,k-3*koffset,j-3*joffset,i-3*ioffset);
+          real qim1 = Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset);
+          real qip1 = Vc(nv,k-koffset,j-joffset,i-ioffset);
+          real qip2 = Vc(nv,k,j,i);
 
-          real dvp = 0.5 * dvp1 - (dvlp - dvl0) / 6.0;
-          real dvm = -0.5 * dvm1 - (dvl0 - dvlm) / 6.0;
+          // Eq. 67 CDHM11
+          real qi0 = 7.0/12.0*(qim1+qip1)-1.0/12.0*(qim2+qip2);
 
-          real vc = Vc(nv,k-koffset,j-joffset,i-ioffset);
+          real dq = qip1-qim1;
+          real dq0 = qi0 - qim1;
 
-          real vl = vc + dvm;
-          real vr = vc + dvp;
+          real dqm =  McLim(dq0,dq);
+//          dqm = dq0;
 
-          if(dvp*dvm>0.0) {
-            vl = vr = vc;
+          qim2 = qim1;
+          qim1 = qip1;
+          qip1 = qip2;
+          qip2 = Vc(nv,k+koffset,j+joffset,i+ioffset);
+
+          // Eq. 67 CDHM11
+          qi0 = 7.0/12.0*(qim1+qip1)-1.0/12.0*(qim2+qip2);
+
+          dq = qip1-qim1;
+          dq0 = qi0 - qim1;
+
+          real dqp = McLim(dq0,dq);
+ //         dqp = dq0;
+
+          if(dqp*dqm <= 0) {
+            dqp=0;
           } else {
-            if( (vr - vl) * (vc-0.5*(vl+vr)) > (vr-vl)*(vr-vl) / 6.0) {
-              vl = 3.0*vc - 2.0*vr;
-            }
-            if( (vr - vl) * (vc-0.5*(vl+vr)) < - (vr-vl)*(vr-vl) / 6.0) {
-              vr = 3.0*vc - 2.0*vl;
-            }
-
-            //if(FABS(dvp) >= 2.0*FABS(dvm)) dvp = -2.0*dvm;
-            // Skip because it's not used
-            //if(FABS(dqm) >= 2.0*FABS(dqp)) dqm = -2.0*dqp;
+            if(FABS(dqp)>2*FABS(dqm)) dqp = 2*dqm;
+            //if(FABS(dqm)>2*FABS(dqp)) dqm = 2*dqp;
           }
 
           // vL= left side of current interface (i-1/2)= right side of cell i-1
-          vL[nv] = vr;
+          // vL[nv] = vr;
+          vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + dqp;
 
+          /////////////////////////////////////////////////
           // Reconstruction in cell i
+          // dq0 and dq are already computed aboive for cell i left
 
-          dvm2 = dvm1;
-          dvm1 = dvp1;
-          dvp1 = dvp2;
-          dvp2 = Vc(nv,k+2*koffset,j+2*joffset,i+2*ioffset)
-                  - Vc(nv,k+koffset,j+joffset,i+ioffset);
+          dqm =  McLim(dq0,dq);
+//          dqm=dq0;
 
-          dvlm = dvl0;
-          dvl0 = dvlp;
-          dvlp = McLim(dvp2,dvp1);
+          qim2 = qim1;
+          qim1 = qip1;
+          qip1 = qip2;
+          qip2 = Vc(nv,k+2*koffset,j+2*joffset,i+2*ioffset);
 
-          dvp = 0.5 * dvp1 - (dvlp - dvl0) / 6.0;
-          dvm = -0.5 * dvm1 - (dvl0 - dvlm) / 6.0;
+          // Eq. 67 CDHM11
+          qi0 = 7.0/12.0*(qim1+qip1)-1.0/12.0*(qim2+qip2);
 
-          vc = Vc(nv,k,j,i);
+          dq = qip1-qim1;
+          dq0 = qi0 - qim1;
 
-          vl = vc + dvm;
-          vr = vc + dvp;
+          dqp = McLim(dq0,dq);
+//          dqp=dq0;
 
-          if(dvp*dvm>0.0) {
-            vl = vr = vc;
+          if(dqp*dqm <= 0) {
+            dqm=0;
           } else {
-            if( (vr - vl) * (vc-0.5*(vl+vr)) > (vr-vl)*(vr-vl) / 6.0) {
-              vl = 3.0*vc - 2.0*vr;
-            }
-            if( (vr - vl) * (vc-0.5*(vl+vr)) < - (vr-vl)*(vr-vl) / 6.0) {
-              vr = 3.0*vc - 2.0*vl;
-            }
-
-            //if(FABS(dvp) >= 2.0*FABS(dvm)) dvp = -2.0*dvm;
-            // Skip because it's not used
-            //if(FABS(dqm) >= 2.0*FABS(dqp)) dqm = -2.0*dqp;
+            //if(FABS(dqp)>2*FABS(dqm)) dqp = 2*dqm;
+            if(FABS(dqm)>2*FABS(dqp)) dqm = 2*dqp;
           }
-          // vR= right side of current interface (i-1/2)= left side of cell i
-          vR[nv] = vl;
+
+
+          vR[nv] = Vc(nv,k,j,i) - dqm;
       }
     }
   }

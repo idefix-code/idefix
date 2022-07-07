@@ -1,8 +1,6 @@
 #include "idefix.hpp"
 #include "setup.hpp"
 
-#define  FILENAME    "timevol.dat"
-
 int mode;
 real epsilon;
 

@@ -39,16 +39,23 @@ class LookupTable {
       if(x[n] < xin(offset(n)) || x[n] > xin(offset(n)+dimensions(n)-1)) {
         return(NAN);
       }
+      // TODO(mauxionj): it sounds to me that there is a flaw here. If we exactly
+      // match xend, there will be no Nan but the following will give the i=dim(n)
+      // such that we would fall in the next row. Though it would be very unlikely.
 
       // Compute index of closest element assuming even distribution
       int i = static_cast<int> ( (x[n] - xstart) / (xend - xstart) * dimensions(n) );
 
       // Check if resulting bounding elements are correct
       if(xin(offset(n) + i) > x[n] || xin(offset(n) + i+1) < x[n]) {
+        // TODO(mauxion): here again I would take <= instead of < as if
+        // x[o+i+1]=x[n] we would use x[i] but the value for interpolation won't be good.
+        // But again very unlikely.
+
         // Nop, so the points are not evenly distributed
         // Search for the correct index (a dicotomy would be more appropriate...)
         i = 0;
-        while(xin(offset(n) + i) > x[n]) {
+        while(xin(offset(n) + i) < x[n]) {
           i++;;
         }
       }

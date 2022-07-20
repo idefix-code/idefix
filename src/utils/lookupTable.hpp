@@ -58,6 +58,7 @@ class LookupTable {
         while(xin(offset(n) + i) < x[n]) {
           i++;;
         }
+        i = i-1; // i is overestimated by one
       }
 
       // Store the index

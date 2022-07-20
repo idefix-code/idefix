@@ -57,12 +57,12 @@ int main( int argc, char* argv[] )
     Kokkos::deep_copy(arrHost , arr);
 
     idfx::cout << "result="<<arrHost(0) << std::endl;
-    if(arrHost(0) != 5.6) {
+    if(std::fabs(arrHost(0) - 5.6)>1e-13) {
       idfx::cerr << std::scientific;
       idfx::cerr << "ERROR!!" << std::endl;
+      idfx::cerr << arrHost(0)-5.6;
       exit(1);
     }
-
     idfx::cout << "Success" << std::endl;
 
     idfx::cout << "--------------------------------------" << std::endl;

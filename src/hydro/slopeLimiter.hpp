@@ -109,42 +109,81 @@ class SlopeLimiter {
     return(deltaw0);
   }
 
+  KOKKOS_FORCEINLINE_FUNCTION void limitPPMFaceValues(const real vm1, const real v0, const real vp1, 
+                                                      const real vp2, real &vph) const {
+    
+    
+    // if local extremum, then use limited curvature estimate
+    if( (vp1-vph)*(vph-v0) < 0.0) {
+      // Collela, eqns. 85
+      const real deltaL = (vm1-2*v0+vp1);
+      const real deltaC = 3*(v0-2*vph+vp1);
+      const real deltaR = (v0-2*vp1+vp2);
+      // Compute limited curvature estimate
+      real delta = 0.0;
+
+      if(sign(deltaL) == sign(deltaC) && sign(deltaR) == sign(deltaC)) {
+        const real C = 1.25;
+        delta = C * FMIN(FABS(deltaL), FABS(deltaR));
+        delta = sign(deltaC) * FMIN(delta, FABS(deltaC));
+      }
+      vph = 0.5*(v0+vp1) - delta / 6.0;
+    }
+
+  }
+
   // This implementation follows the PPM4 scheme of Peterson & Hammet (PH13) 
   // SIAM J. Sci Comput (2013)
 
   KOKKOS_FORCEINLINE_FUNCTION void getPPMStates(const real vm2, const real vm1, const real v0,
                                                 const real vp1, const real vp2, real &vl, real &vr) 
                                                 const {
-    const int n = 3;
+    const int n = 2;
 
     vr = 7.0/12.0*(v0+vp1) - 1.0/12.0*(vm1+vp2);
     vl = 7.0/12.0*(vm1+v0) - 1.0/12.0*(vm2+vp1);
 
-    if( (v0-vr)*(vp1-vr) > 0 ) {
-      // PH13 equation 3.28
-      real deltaw0 = getDeltaWi(vm1,v0,vp1);
-      real deltawp = getDeltaWi(v0,vp1,vp2);
-      vr = 0.5*(v0+vp1) - (deltawp - deltaw0)/6.0;
-    } 
-    if( (vm1-vl)*(v0-vl) > 0) {
-      // PH13 3.29
-      real deltaw0 = getDeltaWi(vm1,v0,vp1);
-      real deltawm = getDeltaWi(vm2,vm1,v0);
-      vl = 0.5*(vm1+v0) - (deltaw0 - deltawm)/6.0;
+    limitPPMFaceValues(vm2,vm1,v0,vp1,vl);
+    limitPPMFaceValues(vm1,v0,vp1,vp2,vr);
+
+    real dqfm = v0 - vl;
+    real dqfp = vr - v0;
+    real d2qf = 6.0*(vl+vr-2.0*v0);
+    real d2qc0 = vm1 + vp1 - 2.0*v0;
+    real d2qcp1 = v0 + vp2 - 2.0*vp1;
+    real d2qcm1 = vm2 + v0 - 2.0*vm1;
+
+    real d2q = 0.0;
+    if(sign(d2qf) == sign(d2qc0) && sign(d2qf) == sign(d2qcp1) && sign(d2qf) == sign(d2qcm1)) {
+      // smooth extrememum
+      const real C = 1.25;
+      d2q = FMIN(FABS(d2qc0),FABS(d2qcp1));
+      d2q = C * FMIN(FABS(d2qcm1), d2q);
+      d2q = sign(d2qf) * FMIN(FABS(d2qf), d2q);
+    }
+    
+    real qmax = FMAX(FMAX(FABS(vm1),FABS(v0)),FABS(vp1));
+    real rho = 0.0;
+    // todo(GL): replace 1e-12 by mixed precision value
+    if(FABS(d2q) > 1e-12*qmax) {
+      rho = d2q / d2qf;
     }
 
     // PH13 3.31
     if( ((vr - v0)*(v0 - vl) <= 0) || (vm1 - v0)*(v0 - vp1) <= 0 ) {
-      vr = vl = v0;
-    }
-
-    // PH13 3.32
-    if(FABS(vr-v0) >= n*FABS(v0-vl)) {
-      vr = v0 + n*(v0-vl);
-    }
-    if(FABS(vl-v0) >= n*FABS(v0-vr)) {
-      vl = v0 + n*(v0-vr);
-    }                                          
+      if(rho <= (1.0 - 1e-12)) {
+        vl = v0 - rho * (v0 - vl);
+        vr = v0 + rho * (vr - v0);
+      }
+    } else {
+      // PH13 3.32
+      if(FABS(vr-v0) >= n*FABS(v0-vl)) {
+        vr = v0 + n*(v0-vl);
+      }
+      if(FABS(vl-v0) >= n*FABS(v0-vr)) {
+        vl = v0 + n*(v0-vr);
+      }       
+    }                          
   }
 
   KOKKOS_FORCEINLINE_FUNCTION void ExtrapolatePrimVar(const int i,

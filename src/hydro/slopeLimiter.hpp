@@ -165,7 +165,7 @@ class SlopeLimiter {
     real qmax = FMAX(FMAX(FABS(vm1),FABS(v0)),FABS(vp1));
     real rho = 0.0;
     // todo(GL): replace 1e-12 by mixed precision value
-    if(FABS(d2q) > 1e-12*qmax) {
+    if(FABS(d2qf) > 1e-12*qmax) {
       rho = d2q / d2qf;
     }
 

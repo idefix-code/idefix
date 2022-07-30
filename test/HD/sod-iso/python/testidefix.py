@@ -9,7 +9,7 @@ Created on Thu Mar  5 11:29:41 2020
 import os
 import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
-from pytools.vtk_io import readVTKCart
+from pytools.vtk_io import readVTK
 from pytools import sod
 import argparse
 import numpy as np
@@ -25,7 +25,7 @@ parser.add_argument("-noplot",
 
 args=parser.parse_args()
 
-V=readVTKCart('../data.0002.vtk')
+V=readVTK('../data.0002.vtk', geometry='cartesian')
 gamma = 1.00000000001
 npts = 5000
 

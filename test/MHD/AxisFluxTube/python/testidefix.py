@@ -9,11 +9,11 @@ Created on Thu Mar  5 11:29:41 2020
 import os
 import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
-from pytools.vtk_io import readVTKSpherical
+from pytools.vtk_io import readVTK
 import numpy as np
 
-V=readVTKSpherical('../data.0001.vtk')
-U=readVTKSpherical('data.0001.ref.vtk')
+V=readVTK('../data.0001.vtk', geometry='spherical')
+U=readVTK('data.0001.ref.vtk', geometry='spherical')
 
 # Compute BRMS
 Brms_ref=np.sqrt(V.data['BX1']**2+V.data['BX2']**2+V.data['BX3']**2)

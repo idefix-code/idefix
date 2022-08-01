@@ -10,8 +10,8 @@ real epsilon;
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
 
-  mode = input.GetInt("Setup","mode",0);
-  epsilon = input.GetReal("Setup","epsilon",0);
+  mode = input.Get<int>("Setup","mode",0);
+  epsilon = input.Get<real>("Setup","epsilon",0);
 
 }
 

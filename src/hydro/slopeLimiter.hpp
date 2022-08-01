@@ -148,7 +148,7 @@ class SlopeLimiter {
 
     real dqfm = v0 - vl;
     real dqfp = vr - v0;
-    real d2qf = 6.0*(vl+vr-2.0*v0);
+    real d2qf = 6.0*(vl + vr - 2.0*v0);
     real d2qc0 = vm1 + vp1 - 2.0*v0;
     real d2qcp1 = v0 + vp2 - 2.0*vp1;
     real d2qcm1 = vm2 + v0 - 2.0*vm1;

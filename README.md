@@ -72,14 +72,16 @@ simple launch the executable
 ```
 
 ### With MPI (cpu)
-When `NX`, `NY`, `NZ` and `nproc` are **all** powers of 2, Idefix can guess the best domain
-decomposition automatically. In the other cases, the -dec option for idefix is mandatory. Exemple, in 2D, using a 2x2 domain decomposition:
+`-dec` can be used to specify a domain decomposition manually.
+
+It can be omitted for 1D problems, or if `NX`, `NY`, `NZ` and `nproc` are **all** powers of 2.
+Otherwise, `-dec` is mandatory. For instance, in 2D, using a 2x2 domain decomposition:
 
 ```shell
 mpirun -np 4 ./idefix -dec 2 2
 ```
 
-in 3D, using a 1x2x4 decomposition:
+or in 3D, using a 1x2x4 decomposition:
 
 ```shell
 mpirun -np 8 ./idefix -dec 1 2 4

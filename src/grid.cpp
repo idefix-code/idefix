@@ -138,19 +138,25 @@ Grid::Grid(Input &input) {
   // Check if the dec option has been passed when number of procs > 1
   if(idfx::psize>1) {
     if(input.CheckEntry("CommandLine","dec")  != DIMENSIONS) {
-      // No command line decomposition, see if auto-decomposition is possible
-      // (only when nproc and dimensions are powers of 2)
-      bool autoDecomposition=true;
-      if(!isPow2(idfx::psize)) autoDecomposition=false;
-      for(int dir = 0; dir < 3; dir++) {
-        if(np_int[dir]>1) {
-          if(!isPow2(np_int[dir])) autoDecomposition=false;
+      // No command line decomposition, make auto-decomposition if possible
+      // (only when nproc and dimensions are powers of 2, and in 1D)
+      if(DIMENSIONS == 1) {
+        nproc[0] = idfx::psize;
+      } else {
+        if(!isPow2(idfx::psize))
+          IDEFIX_ERROR(
+            "Automatic domain decomposition requires the number of processes to be a power of 2. "
+            "Alternatively, set a manual decomposition with -dec"
+          );
+        for(int dir = 0; dir < 3; dir++) {
+          if(!isPow2(np_int[dir]))
+            IDEFIX_ERROR(
+              "Automatic domain decomposition requires nx1, nx2 and nx3 to be powers of 2. "
+              "Alternatively, set a manual decomposition with -dec"
+            );
         }
-      }
-      if(autoDecomposition)
         makeDomainDecomposition();
-      else
-        IDEFIX_ERROR("-dec option is mandatory when nproc or nx1, nx2, nx3 are not powers of 2.");
+      }
     } else {
       // Manual domain decomposition (with -dec option)
       int ntot=1;

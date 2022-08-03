@@ -9,11 +9,11 @@ Created on Thu Mar  5 11:29:41 2020
 import os
 import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
-from pytools.vtk_io import readVTKPolar
+from pytools.vtk_io import readVTK
 import numpy as np
 
-V=readVTKPolar('../data.0001.vtk')
-U=readVTKPolar('data.0001.ref.vtk')
+V=readVTK('../data.0001.vtk', geometry='polar')
+U=readVTK('data.0001.ref.vtk', geometry='polar')
 
 # Compute the error on RHO
 error=np.mean(np.abs(V.data['RHO']-U.data['rho']),axis=(0,1))

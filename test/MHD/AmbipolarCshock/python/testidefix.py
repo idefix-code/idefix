@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import os
 import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
-from pytools.vtk_io import readVTKCart
+from pytools.vtk_io import readVTK
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -41,7 +41,7 @@ def f(x,D):
     return(diff)
 
 # load solution
-V=readVTKCart('../data.0001.vtk')
+V=readVTK('../data.0001.vtk', geometry='cartesian')
 
 DSim=V.data['RHO'].flatten()
 if(V.y.size>V.x.size):

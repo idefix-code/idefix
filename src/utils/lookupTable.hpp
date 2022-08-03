@@ -41,16 +41,17 @@ class LookupTable {
       }
 
       // Compute index of closest element assuming even distribution
-      int i = static_cast<int> ( (x[n] - xstart) / (xend - xstart) * dimensions(n) );
+      int i = static_cast<int> ( (x[n] - xstart) / (xend - xstart) * (dimensions(n)-1));
 
       // Check if resulting bounding elements are correct
       if(xin(offset(n) + i) > x[n] || xin(offset(n) + i+1) < x[n]) {
         // Nop, so the points are not evenly distributed
         // Search for the correct index (a dicotomy would be more appropriate...)
         i = 0;
-        while(xin(offset(n) + i) > x[n]) {
+        while(xin(offset(n) + i) < x[n]) {
           i++;;
         }
+        i = i-1; // i is overestimated by one
       }
 
       // Store the index

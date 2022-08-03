@@ -66,10 +66,6 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                 real ey_t=sin(x3)*cos(x2);
                 real ey_p=cos(x3);
 
-                real ez_r=cos(x2);
-                real ez_t=-sin(x2);
-                real ez_p=0.0;
-
 
                 Vc(RHO,k,j,i) = 1.0;
                 Vc(PRS,k,j,i) = 1.0;
@@ -133,10 +129,6 @@ void Setup::InitFlow(DataBlock &data) {
                 real ey_r=sin(x3)*sin(x2);
                 real ey_t=sin(x3)*cos(x2);
                 real ey_p=cos(x3);
-
-                real ez_r=cos(x2);
-                real ez_t=-sin(x2);
-                real ez_p=0.0;
 
 
                 d.Vc(RHO,k,j,i) = 1.0;

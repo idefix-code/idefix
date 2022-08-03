@@ -110,8 +110,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
 void Setup::InitFlow(DataBlock &data) {
     // Create a host copy
     DataBlockHost d(data);
-    real x,y,z;
-    real vphi,f,r,th;
+    real r,th;
     real epsilon=epsilonGlob;
 
     for(int k = 0; k < d.np_tot[KDIR] ; k++) {

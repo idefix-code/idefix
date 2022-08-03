@@ -80,16 +80,16 @@ void Hydro::RoeMHD() {
   IdefixArray3D<real> dR;
 
   real gamma = this->gamma;
-  real gamma_m1=this->gamma-ONE_F;
-  real csIso = this->isoSoundSpeed;
-  HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
+  [[maybe_unused]] real gamma_m1=gamma-ONE_F;
+  [[maybe_unused]] real csIso = this->isoSoundSpeed;
+  [[maybe_unused]] HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
 
   // TODO(baghdads) what is this delta?
   real delta    = 1.e-6;
 
   // Define normal, tangent and bi-tanget indices
   // st and sb will be useful only when Hall is included
-  real st,sb;
+  real st = ONE_F, sb = ONE_F;
 
   SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR],shockFlattening);
 
@@ -184,7 +184,7 @@ void Hydro::RoeMHD() {
       // Conservative variables
       real uL[NVAR];
       real uR[NVAR];
-      real dU[NVAR];
+      [[maybe_unused]] real dU[NVAR];
 
       // Flux (left and right)
       real fluxL[NVAR];
@@ -192,7 +192,7 @@ void Hydro::RoeMHD() {
 
       // Roe
       real Rc[NVAR][NVAR];
-      real um[NVAR];
+
 
       // 1-- Store the primitive variables on the left, right, and averaged states
       slopeLim.ExtrapolatePrimVar(i, j, k, vL, vR);
@@ -258,7 +258,7 @@ void Hydro::RoeMHD() {
 
       sqrt_rho = std::sqrt(rho);
 
-      real u, v, w, Bx, By, Bz, sBx, bx, by, bz, bt2, b2, Btmag;
+      [[maybe_unused]] real u, v, w, Bx, By, Bz, sBx, bx, by, bz, bt2, b2, Btmag;
 
       EXPAND ( u = sl*vL[Xn] + sr*vR[Xn];  ,
                v = sl*vL[Xt] + sr*vR[Xt];  ,
@@ -282,7 +282,7 @@ void Hydro::RoeMHD() {
       X /= (sqr_rho_L + sqr_rho_R)*(sqr_rho_L + sqr_rho_R)*2.0;
 
 
-      real Bmag2L, Bmag2R, pL, pR;
+      [[maybe_unused]] real Bmag2L, Bmag2R, pL, pR;
       Bmag2L = EXPAND(vL[BX1]*vL[BX1] , + vL[BX2]*vL[BX2], + vL[BX3]*vL[BX3]);
       Bmag2R = EXPAND(vR[BX1]*vR[BX1] , + vR[BX2]*vR[BX2], + vR[BX3]*vR[BX3]);
 #if HAVE_ENERGY
@@ -333,7 +333,7 @@ void Hydro::RoeMHD() {
       characteristic speeds.
       ------------------------------------------------------------ */
 
-      real scrh, ca, cf, cs, ca2, cf2, cs2, alpha_f, alpha_s, beta_y, beta_z;
+      [[maybe_unused]] real scrh, ca, cf, cs, ca2, cf2, cs2, alpha_f, alpha_s, beta_y, beta_z;
       scrh = a2 - b2;
       ca2  = bx*bx;
       scrh = scrh*scrh + 4.0*bt2*a2;
@@ -398,7 +398,7 @@ void Hydro::RoeMHD() {
 
       // Fast wave:  u - c_f
       real lambda[NFLX], alambda[NFLX], eta[NFLX];
-      real beta_dv, beta_dB, beta_v;
+      [[maybe_unused]] real beta_dv, beta_dB, beta_v;
 
       int kk = KFASTM;
       lambda[kk] = u - cf;
@@ -637,7 +637,8 @@ void Hydro::RoeMHD() {
       } else if (emfAverage==ElectroMotiveForce::uct_hll) {
         K_StoreHLL<DIR>(i,j,k,st,sb,sl,sr,vL,vR,Et,Eb,aL,aR,dL,dR);
       } else if (emfAverage==ElectroMotiveForce::uct_hlld) {
-        K_StoreHLLD<DIR>(i,j,k,st,sb,a2L,sl,sr,vL,vR,uL,uR,Et,Eb,aL,aR,dL,dR);
+        K_StoreHLLD<DIR>(i,j,k,st,sb,a2L,sl,sr,lambda[KALFVM],lambda[KALFVP],
+                         vL,vR,uL,uR,Et,Eb,aL,aR,dL,dR);
       }
   });
 

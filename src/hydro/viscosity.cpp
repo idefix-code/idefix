@@ -180,15 +180,15 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
     iend++;
     idefix_for("ViscousFluxIDIR",kbeg, kend, jbeg, jend, ibeg, iend,
       KOKKOS_LAMBDA (int k, int j, int i) {
-        real tau_xx, tau_xy, tau_xz;
-        real tau_yy, tau_yz;
-        real tau_zz;
+        [[maybe_unused]] real tau_xx, tau_xy, tau_xz;
+        [[maybe_unused]] real tau_yy, tau_yz;
+        [[maybe_unused]] real tau_zz;
 
-        real dVxi, dVxj, dVxk;
-        real dVyi, dVyj, dVyk;
-        real dVzi, dVzj, dVzk;
+        [[maybe_unused]] real dVxi, dVxj, dVxk;
+        [[maybe_unused]] real dVyi, dVyj, dVyk;
+        [[maybe_unused]] real dVzi, dVzj, dVzk;
 
-        real divV;
+        [[maybe_unused]] real divV;
 
         tau_xx = tau_xy = tau_xz = ZERO_F;
         tau_yy = tau_yz = ZERO_F;
@@ -199,7 +199,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
         dVzi = dVzj = dVzk = ZERO_F;
 
         real eta1, eta2;
-        real etaC1, etaC2;
+        [[maybe_unused]] real etaC1, etaC2;
 
         if(haveViscosity == UserDefFunction) {
           etaC1 = eta1Arr(k,j ,i);
@@ -384,13 +384,13 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
     jend++;
     idefix_for("ViscousFluxJDIR",kbeg, kend, jbeg, jend, ibeg, iend,
     KOKKOS_LAMBDA (int k, int j, int i) {
-      real tau_xx, tau_xy, tau_xz;
-      real tau_yy, tau_yz;
-      real tau_zz;
+      [[maybe_unused]] real tau_xx, tau_xy, tau_xz;
+      [[maybe_unused]] real tau_yy, tau_yz;
+      [[maybe_unused]] real tau_zz;
 
-      real dVxi, dVxj, dVxk;
-      real dVyi, dVyj, dVyk;
-      real dVzi, dVzj, dVzk;
+      [[maybe_unused]] real dVxi, dVxj, dVxk;
+      [[maybe_unused]] real dVyi, dVyj, dVyk;
+      [[maybe_unused]] real dVzi, dVzj, dVzk;
 
       real divV;
 
@@ -403,7 +403,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
       dVzi = dVzj = dVzk = ZERO_F;
 
       real eta1, eta2;
-      real etaC1, etaC2;
+      [[maybe_unused]] real etaC1, etaC2;
 
       if(haveViscosity == UserDefFunction) {
         etaC1 = eta1Arr(k,j,i);
@@ -574,13 +574,13 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
     ///////////////////////////////////////////
     idefix_for("ViscousFluxKDIR",kbeg, kend, jbeg, jend, ibeg, iend,
     KOKKOS_LAMBDA (int k, int j, int i) {
-      real tau_xx, tau_xy, tau_xz;
-      real tau_yy, tau_yz;
-      real tau_zz;
+      [[maybe_unused]] real tau_xx, tau_xy, tau_xz;
+      [[maybe_unused]] real tau_yy, tau_yz;
+      [[maybe_unused]] real tau_zz;
 
-      real dVxi, dVxj, dVxk;
-      real dVyi, dVyj, dVyk;
-      real dVzi, dVzj, dVzk;
+      [[maybe_unused]] real dVxi, dVxj, dVxk;
+      [[maybe_unused]] real dVyi, dVyj, dVyk;
+      [[maybe_unused]] real dVzi, dVzj, dVzk;
 
       real divV;
 
@@ -593,7 +593,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
       dVzi = dVzj = dVzk = ZERO_F;
 
       real eta1, eta2;
-      real etaC1, etaC2;
+      [[maybe_unused]]  real etaC1, etaC2;
 
       if(haveViscosity == UserDefFunction) {
         etaC1 = eta1Arr(k,j,i);

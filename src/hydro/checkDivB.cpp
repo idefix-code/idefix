@@ -26,7 +26,7 @@ real Hydro::CheckDivB() {
     data->beg[JDIR], data->end[JDIR],
     data->beg[IDIR], data->end[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i, real &divBmax) {
-      real dB1,dB2,dB3;
+      [[maybe_unused]] real dB1,dB2,dB3;
 
       dB1=dB2=dB3=ZERO_F;
 

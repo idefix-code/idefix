@@ -82,16 +82,12 @@ void Setup::InitFlow(DataBlock &data) {
     // Create a host copy
     DataBlockHost d(data);
 
-    real x,y,z;
-
-    real vphi,f,r,th;
     real beta=1e3;
 
     for(int k = 0; k < d.np_tot[KDIR] ; k++) {
         for(int j = 0; j < d.np_tot[JDIR] ; j++) {
             for(int i = 0; i < d.np_tot[IDIR] ; i++) {
-                r=d.x[IDIR](i);
-                th=d.x[JDIR](j);
+                const real r = d.x[IDIR](i);
 
                 d.Vc(RHO,k,j,i) = 1.0;
                 d.Vc(PRS,k,j,i) = 1.0e-2;

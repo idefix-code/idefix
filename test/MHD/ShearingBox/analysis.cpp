@@ -132,7 +132,6 @@ void Analysis::PerformAnalysis(DataBlock &data) {
   idfx::pushRegion("Analysis::PerformAnalysis");
   d->SyncFromDevice();
   int fields[3];
-  int nfields;
   if(idfx::prank==0) {
     file.open(filename, std::ios::app);
     file.precision(precision);

@@ -7,6 +7,7 @@ option(Idefix_MHD "enable MHD" OFF)
 option(Idefix_MPI "enable Message Passing Interface parallelisation" OFF)
 option(Idefix_HIGH_ORDER_FARGO "Force Fargo to use a PPM reconstruction scheme" OFF)
 option(Idefix_DEBUG "Enable Idefix debug features (makes the code very slow)" OFF)
+option(Idefix_WERROR "Treat compiler warnings as errors" OFF)
 set(Idefix_CXX_FLAGS "" CACHE STRING "Additional compiler/linker flag")
 set(Idefix_DEFS "definitions.hpp" CACHE FILEPATH "Problem definition header file")
 set(Idefix_RECONSTRUCTION "Linear" CACHE STRING "Type of cell reconstruction scheme")
@@ -35,6 +36,14 @@ add_subdirectory(src/kokkos build/kokkos)
 
 # Add Idefix CXX Flags
 add_compile_options(${Idefix_CXX_FLAGS})
+
+if(Idefix_WERROR)
+  if(Kokkos_ENABLE_CUDA)
+    add_compile_options(-Xcudafe --promote_warnings)
+  else()
+    add_compile_options(-Werror)
+  endif()
+endif()
 
 # sub directories should be called after add_executable
 # because the binary target "idefix" should be defined
@@ -74,9 +83,7 @@ endif()
 if(Idefix_DEBUG)
   add_compile_definitions("DEBUG")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
-  set(Kokkos_ENABLE_DEBUG_BOUNDS_CHECK ON CACHE STRING "Enabled by Idefix_DEBUG" FORCE)
 endif()
-
 
 if(Idefix_HIGH_ORDER_FARGO)
   add_compile_definitions("HIGH_ORDER_FARGO")

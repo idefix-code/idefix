@@ -119,17 +119,20 @@ void ElectroMotiveForce::Init(Input &input, Hydro *hydro) {
               dzR = IdefixArray3D<real>("EMF_dzR",
                                 data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  )
   }
+  if(averaging==uct_hlld) {
+    if(hydro->mySolver == Solver::HLL || hydro->mySolver == Solver::TVDLF) {
+      IDEFIX_ERROR("HLLD EMF reconstruction is only compatible with HLLD or ROE Riemann solvers");
+    }
+  }
 
   Ex1 = IdefixArray3D<real>("EMF_Ex1", data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   Ex2 = IdefixArray3D<real>("EMF_Ex2", data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   Ex3 = IdefixArray3D<real>("EMF_Ex3", data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
-
-  Grid *mygrid = data->mygrid;
-
   // MPI initialisation
   #ifdef WITH_MPI
 
+  Grid *mygrid = data->mygrid;
   // init timer
   this->timer.reset();
   /////////////////////////////////////////////////////////////////////////////

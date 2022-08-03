@@ -91,9 +91,7 @@ void Setup::InitFlow(DataBlock &data) {
     DataBlockHost d(data);
     real x,y,z;
 
-    real B0 = 0.02;
     real cs2 = gammaIdeal*omega*omega;
-
 
     for(int k = 0; k < d.np_tot[KDIR] ; k++) {
         for(int j = 0; j < d.np_tot[JDIR] ; j++) {

@@ -44,7 +44,6 @@ KOKKOS_INLINE_FUNCTION real FargoFlux(const IdefixArray4D<real> &Vin, int n, int
   int som2 = som1-1;
   if(!haveDomainDecomposition && (som2-sbeg< 0 )) som2 = som2+ds;
 
-  int sign = (eps>=0) ? 1 : -1;
   real dqm2,dqm1,dqp1,dqp2, q0,qm1, qp1;
   #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
     q0 = Vin(n,k,so,i);
@@ -140,11 +139,15 @@ void Fargo::Init(Input &input, DataBlock *data) {
   if(input.CheckBlock("Fargo")) {
     std::string opType = input.Get<std::string>("Fargo","velocity",0);
     if(opType.compare("userdef")==0) {
+       #if GEOMETRY != SPHERICAL && GEOMETRY != POLAR
+        IDEFIX_ERROR("Fargo+userdef is only compatible with SPHERICAL and POLAR geometries");
+      #endif
       this->type=userdef;
     } else if(opType.compare("shearingbox")==0) {
       this->type=shearingbox;
       #if GEOMETRY != CARTESIAN
-        IDEFIX_ERROR("Fargo+shearingbox only compatible with cartesian geometry");
+        // Actually, this has never really been tested, so assumes it doesn't work...
+        IDEFIX_ERROR("Fargo+shearingbox is only compatible with cartesian geometry");
       #endif
     } else {
       IDEFIX_ERROR("Unknown fargo velocity in the input file. "
@@ -302,8 +305,8 @@ void Fargo::CheckMaxDisplacement() {
     IdefixArray1D<real> xi;
     IdefixArray1D<real> xj;
     IdefixArray1D<real> dxk;
-    FargoType fargoType = type;
-    real sbS = hydro->sbS;
+    [[maybe_unused]] FargoType fargoType = type;
+    [[maybe_unused]] real sbS = hydro->sbS;
     real invDt = 0;
 
     // Get domain size
@@ -360,8 +363,8 @@ void Fargo::AddVelocity(const real t) {
   IdefixArray1D<real> x1 = data->x[IDIR];
   IdefixArray4D<real> Vc = hydro->Vc;
   IdefixArray2D<real> meanV = this->meanVelocity;
-  FargoType fargoType = type;
-  real sbS = hydro->sbS;
+  [[maybe_unused]] FargoType fargoType = type;
+  [[maybe_unused]] real sbS = hydro->sbS;
 
   idefix_for("FargoAddVelocity",
               0,data->np_tot[KDIR],
@@ -389,9 +392,9 @@ void Fargo::SubstractVelocity(const real t) {
   }
   IdefixArray1D<real> x1 = data->x[IDIR];
   IdefixArray4D<real> Vc = hydro->Vc;
-  IdefixArray2D<real> meanV = this->meanVelocity;
-  FargoType fargoType = type;
-  real sbS = hydro->sbS;
+  [[maybe_unused]] IdefixArray2D<real> meanV = this->meanVelocity;
+  [[maybe_unused]] FargoType fargoType = type;
+  [[maybe_unused]] real sbS = hydro->sbS;
 
   idefix_for("FargoSubstractVelocity",
               0,data->np_tot[KDIR],
@@ -500,8 +503,8 @@ void Fargo::ShiftSolution(const real t, const real dt) {
   IdefixArray1D<real> dx3 = data->dx[KDIR];
   IdefixArray1D<real> sinx2 = data->sinx2;
   IdefixArray1D<real> sinx2m = data->sinx2m;
-  FargoType fargoType = type;
-  real sbS = hydro->sbS;
+  [[maybe_unused]] FargoType fargoType = type;
+  [[maybe_unused]] real sbS = hydro->sbS;
   bool haveDomainDecomposition = this->haveDomainDecomposition;
   int maxShift = this->maxShift;
 
@@ -785,8 +788,6 @@ void Fargo::ShiftSolution(const real t, const real dt) {
       }
 
       // Compute EMF due to the shift via second order reconstruction
-      real dqm, dqp, dq;
-
       #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
         if(eps>=ZERO_F) {
           int som1;

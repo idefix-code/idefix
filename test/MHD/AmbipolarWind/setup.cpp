@@ -126,10 +126,9 @@ void MySourceTerm(DataBlock &data, const real t, const real dtin) {
   real gamma_m1=gammaGlob-1.0;
   real dt=dtin;
   real Hideal=HidealGlob;
-  real tauVel=0.5;
   real Rin=1.0;
   real trSmoothing = trSmoothingGlob;
-  real densityFloor0 = densityFloorGlob;
+
   idefix_for("MySourceTerm",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
               KOKKOS_LAMBDA (int k, int j, int i) {
                 real r=x1(i);
@@ -137,7 +136,7 @@ void MySourceTerm(DataBlock &data, const real t, const real dtin) {
                 real z=r*cos(th);
                 real R=r*sin(th);
                 real R0=FMAX(R,Rin);
-                real cs2, tau;
+                real tau;
 
                 real Zh = FABS(z/R)/epsilon;
                 real Tdisk = epsilon*epsilon/R0;
@@ -192,10 +191,7 @@ void InternalBoundary(DataBlock& data, const real t) {
   real vAmax=computeVaMax(4.0,50.0,8.0,t);
   real densityFloor0 = densityFloorGlob;
   real Rin = 1.0;
-  real tauGlob= 0.1;
-  real Hideal=HidealGlob;
   real epsilon=epsilonGlob;
-  real epsilonTop = epsilonTopGlob;
 
   idefix_for("InternalBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
               KOKKOS_LAMBDA (int k, int j, int i) {
@@ -285,12 +281,9 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
         IdefixArray1D<real> x2 = data.x[JDIR];
 
         int ighost = data.end[IDIR]-1;
-        real Omega=1.0;
         real Rin = 1.0;
         real csdisk = epsilonGlob/sqrt(Rin);
         real cscorona = epsilonTopGlob/sqrt(Rin);
-        real densityFloor0 = densityFloorGlob;
-        real epsilon=epsilonGlob;
 
         data.hydro.boundary.BoundaryFor("UserDefX1",dir,side,
             KOKKOS_LAMBDA (int k, int j, int i) {

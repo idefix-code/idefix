@@ -24,13 +24,13 @@ void ElectroMotiveForce::ExchangeX1() {
 
   // Load  the buffers with data
   int ileft,iright,jbeg,jend,kbeg,kend;
-  int ny,nz;
+  int ny;
+  [[maybe_unused]] int nz;
+
   IdefixArray1D<real> BufferLeft=BufferSendX1[faceLeft];
   IdefixArray1D<real> BufferRight=BufferSendX1[faceRight];
   IdefixArray3D<real> ey=this->ey;
   IdefixArray3D<real> ez=this->ez;
-
-  int Vsindex = 0;
 
 
   // If MPI Persistent, start receiving even before the buffers are filled
@@ -61,7 +61,7 @@ void ElectroMotiveForce::ExchangeX1() {
     }
   );
   #if DIMENSIONS == 3
-  Vsindex = (ny+1)*nz;
+  int Vsindex = (ny+1)*nz;
 
   idefix_for("LoadBufferX1Emfy",kbeg,kend+1,jbeg,jend,
     KOKKOS_LAMBDA (int k, int j) {
@@ -123,14 +123,12 @@ void ElectroMotiveForce::ExchangeX2() {
 
   // Load  the buffers with data
   int jleft,jright,ibeg,iend,kbeg,kend;
-  int nx,nz;
+  int nx;
+  [[maybe_unused]] int nz;
   IdefixArray1D<real> BufferLeft=BufferSendX2[faceLeft];
   IdefixArray1D<real> BufferRight=BufferSendX2[faceRight];
   IdefixArray3D<real> ex=this->ex;
   IdefixArray3D<real> ez=this->ez;
-
-  int Vsindex = 0;
-
 
   // If MPI Persistent, start receiving even before the buffers are filled
   double tStart = MPI_Wtime();
@@ -159,7 +157,7 @@ void ElectroMotiveForce::ExchangeX2() {
     }
   );
   #if DIMENSIONS == 3
-  Vsindex = (nx+1)*nz;
+  int Vsindex = (nx+1)*nz;
 
   idefix_for("LoadBufferX1Emfx",kbeg,kend+1,ibeg,iend,
     KOKKOS_LAMBDA (int k, int i) {

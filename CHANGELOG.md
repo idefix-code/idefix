@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - added exception handling for the time integration, which saves a final vtk when a error is detected in the time integration loop (!190)
 - fixed a bug in the test shearing box setup which led to memory corruption and incorrect pressure when ISOTHERMAL approximation was disabled (!190)
 - make RKL faster when running in 3D with MHD diffusion terms by skipping the evolution of cell-centered fields (!215)
+- fixed the many warning messages when compiling on CUDA (!229)
 
 ### Added
 - single precision version is validated and fully operational. Can be enabled from cmake. (!197)

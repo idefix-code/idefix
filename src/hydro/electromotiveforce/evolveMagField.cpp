@@ -11,7 +11,7 @@
 // Evolve the magnetic field in Vs according to Constranied transport
 void ElectroMotiveForce::EvolveMagField(real t, real dt, IdefixArray4D<real> &Vsin) {
   idfx::pushRegion("ElectroMotiveForce::EvolveMagField");
-
+#if MHD == YES
   // Corned EMFs
   IdefixArray3D<real> Ex1 = this->ex;
   IdefixArray3D<real> Ex2 = this->ey;
@@ -52,7 +52,8 @@ void ElectroMotiveForce::EvolveMagField(real t, real dt, IdefixArray4D<real> &Vs
              data->beg[JDIR],data->end[JDIR]+JOFFSET,
              data->beg[IDIR],data->end[IDIR]+IOFFSET,
     KOKKOS_LAMBDA (int k, int j, int i) {
-      real rhsx1, rhsx2, rhsx3;
+      real rhsx1;
+      [[maybe_unused]] real rhsx2, rhsx3;
 
 #if GEOMETRY == CARTESIAN
       rhsx1 = D_EXPAND( ZERO_F                                     ,
@@ -126,6 +127,6 @@ void ElectroMotiveForce::EvolveMagField(real t, real dt, IdefixArray4D<real> &Vs
       Vs(BX3s,k,j,i) = Vs(BX3s,k,j,i) + rhsx3;
 #endif
   });
-
+#endif
   idfx::popRegion();
 }

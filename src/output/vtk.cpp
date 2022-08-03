@@ -133,7 +133,7 @@ void Vtk::Init(Input &input, DataBlock &datain) {
   /* -- Allocate memory for node_coord which is later used -- */
 
   // initialize node array dimensions
-  int nodestart[4];
+  [[maybe_unused]] int nodestart[4];
   int nodesize[4];
   int nodesubsize[4];
 
@@ -174,8 +174,8 @@ void Vtk::Init(Input &input, DataBlock &datain) {
 
   // fill the node_coord array
   float x1 = 0.0;
-  float x2 = 0.0;
-  float x3 = 0.0;
+  [[maybe_unused]] float x2 = 0.0;
+  [[maybe_unused]] float x3 = 0.0;
   for (int32_t k = 0; k < nodesubsize[0]; k++) {
     for (int32_t j = 0; j < nodesubsize[1]; j++) {
       for (int32_t i = 0; i < nodesubsize[2]; i++) {

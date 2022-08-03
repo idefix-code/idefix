@@ -237,8 +237,6 @@ void Mpi::ExchangeX1(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   IdefixArray1D<real> BufferRight=BufferSendX1[faceRight];
   IdefixArray1D<int> map = this->mapVars;
 
-  int VsIndex;
-
   // If MPI Persistent, start receiving even before the buffers are filled
   myTimer -= MPI_Wtime();
 #ifdef MPI_PERSISTENT
@@ -273,7 +271,7 @@ void Mpi::ExchangeX1(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   // Load face-centered field in the buffer
   if(haveVs) {
     #if DIMENSIONS >= 2
-    VsIndex = mapNVars*nx*ny*nz;
+    int VsIndex = mapNVars*nx*ny*nz;
 
     idefix_for("LoadBufferX1JDIR",kbeg,kend,jbeg,jend+1,ibeg,iend,
       KOKKOS_LAMBDA (int k, int j, int i) {
@@ -373,7 +371,7 @@ void Mpi::ExchangeX1(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
 
   if(haveVs) {
     #if DIMENSIONS >= 2
-    VsIndex = mapNVars*nx*ny*nz;
+    int VsIndex = mapNVars*nx*ny*nz;
 
     idefix_for("StoreBufferX1JDIR",kbeg,kend,jbeg,jend+1,ibeg,iend,
       KOKKOS_LAMBDA (int k, int j, int i) {
@@ -420,7 +418,6 @@ void Mpi::ExchangeX2(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   IdefixArray1D<real> BufferLeft=BufferSendX2[faceLeft];
   IdefixArray1D<real> BufferRight=BufferSendX2[faceRight];
   IdefixArray1D<int> map = this->mapVars;
-  int VsIndex;
 
 // If MPI Persistent, start receiving even before the buffers are filled
   myTimer -= MPI_Wtime();
@@ -455,7 +452,7 @@ void Mpi::ExchangeX2(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
 
   // Load face-centered field in the buffer
   if(haveVs) {
-    VsIndex = mapNVars*nx*ny*nz;
+    int VsIndex = mapNVars*nx*ny*nz;
 
     idefix_for("LoadBufferX2IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
       KOKKOS_LAMBDA (int k, int j, int i) {
@@ -555,7 +552,7 @@ void Mpi::ExchangeX2(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
 
   // Load face-centered field in the buffer
   if(haveVs) {
-    VsIndex = mapNVars*nx*ny*nz;
+    int VsIndex = mapNVars*nx*ny*nz;
 
     idefix_for("StoreBufferX2IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
       KOKKOS_LAMBDA (int k, int j, int i) {
@@ -602,7 +599,6 @@ void Mpi::ExchangeX3(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   IdefixArray1D<real> BufferLeft=BufferSendX3[faceLeft];
   IdefixArray1D<real> BufferRight=BufferSendX3[faceRight];
   IdefixArray1D<int> map = this->mapVars;
-  int VsIndex;
 
   // If MPI Persistent, start receiving even before the buffers are filled
   myTimer -= MPI_Wtime();
@@ -637,7 +633,7 @@ void Mpi::ExchangeX3(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
 
   // Load face-centered field in the buffer
   if(haveVs) {
-    VsIndex = mapNVars*nx*ny*nz;
+    int VsIndex = mapNVars*nx*ny*nz;
 
     idefix_for("LoadBufferX3IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
       KOKKOS_LAMBDA (int k, int j, int i) {
@@ -733,7 +729,7 @@ void Mpi::ExchangeX3(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
 
   // Load face-centered field in the buffer
   if(haveVs) {
-    VsIndex = mapNVars*nx*ny*nz;
+    int VsIndex = mapNVars*nx*ny*nz;
 
     idefix_for("StoreBufferX3IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
       KOKKOS_LAMBDA (int k, int j, int i) {

@@ -16,11 +16,6 @@ int main( int argc, char* argv[] )
 {
   bool initKokkosBeforeMPI = false;
 
-  // return code is zero if the simulation reached final time
-  // >0 if a fatal error occured (too small timestep, Nans)
-  // <0 if simulation was interrupted (max_runtime or user-triggered interruption
-  int returnCode = 0;
-
   // When running on GPUS with Omnipath network,
   // Kokkos needs to be initialised *before* the MPI layer
 #ifdef KOKKOS_ENABLE_CUDA

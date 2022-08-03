@@ -68,13 +68,13 @@ void ElectroMotiveForce::CalcRiemannAverage() {
              data->beg[JDIR],data->end[JDIR]+JOFFSET,
              data->beg[IDIR],data->end[IDIR]+IOFFSET,
     KOKKOS_LAMBDA (int k, int j, int i) {
-      real phi, vL, vR, dv, bL, bR, db;
-      real aL, aR, dL, dR;
-
-      int im = i-1, jm = j-1, km = k-1;
-
       // IDIR
 #if DIMENSIONS >= 2
+      [[maybe_unused]] real phi, vL, vR, dv, bL, bR, db;
+      [[maybe_unused]] real aL, aR, dL, dR;
+
+      [[maybe_unused]] int im = i-1, jm = j-1, km = k-1;
+
       // EMF: Z component at (i-1/2, j-1/2, k)
       aL = HALF_F*(axL(k,jm,i) + axL(k,jm+1,i));
       aR = HALF_F*(axR(k,jm,i) + axR(k,jm+1,i));

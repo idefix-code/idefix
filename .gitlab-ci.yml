@@ -1,10 +1,6 @@
 variables:
   GIT_SUBMODULE_STRATEGY: recursive
 
-cache:
-  paths:
-    - .python-env/
-
 workflow:
   rules:
     - if: $CI_MERGE_REQUEST_ID               # Execute jobs in merge request context
@@ -12,20 +8,8 @@ workflow:
     - if: $CI_PIPELINE_SOURCE == 'web'     # execute jobs when created by using Run pipeline button in the GitLab UI, from the project’s CI/CD > Pipelines section.
 
 stages:
-    - setup
     - checks
     - deploy
-
-
-Setup python test env:
-  stage: setup
-  image: lesurg/idefix:latest
-  script:
-    - python3 --version
-    - python3 -m venv .python-env
-    - source .python-env/bin/activate
-    - python3 -m pip install --upgrade pip
-    - python3 -m pip install -r test/python_requirements.txt
 
 lint:
   stage: checks

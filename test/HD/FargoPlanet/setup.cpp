@@ -66,48 +66,41 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
   IdefixArray4D<real> Vc = data.hydro.Vc;
   IdefixArray1D<real> x1 = data.x[IDIR];
   IdefixArray1D<real> x3 = data.x[KDIR];
-  real h0=h0Glob;
-  real sigma0=sigma0Glob;
-  real sigmaSlope=sigmaSlopeGlob;
-    if(dir==IDIR) {
+  if(dir==IDIR) {
+    int ighost,ibeg,iend;
+    if(side == left) {
+      ighost = data.beg[IDIR];
+      ibeg = 0;
+      iend = data.beg[IDIR];
+      idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],ibeg,iend,
+        KOKKOS_LAMBDA (int k, int j, int i) {
+          real R=x1(i);
+          real z=x3(k);
+          real Vk = 1.0/sqrt(R);
 
-
-        int ighost,ibeg,iend;
-        if(side == left) {
-            ighost = data.beg[IDIR];
-            ibeg = 0;
-            iend = data.beg[IDIR];
-            idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],ibeg,iend,
-                        KOKKOS_LAMBDA (int k, int j, int i) {
-                            real R=x1(i);
-                            real z=x3(k);
-                            real Vk = 1.0/sqrt(R);
-                            real cs2=(h0*Vk)*(h0*Vk);
-
-                            Vc(RHO,k,j,i) = Vc(RHO,k,j,2*ighost - i +1);
-                            Vc(VX1,k,j,i) = - Vc(VX1,k,j,2*ighost - i +1);
-                            Vc(VX2,k,j,i) = Vk;
-                            Vc(VX3,k,j,i) = Vc(VX3,k,j,2*ighost - i +1);
-                        });
-        }
-        else if(side==right) {
-            ighost = data.end[IDIR]-1;
-            ibeg=data.end[IDIR];
-            iend=data.np_tot[IDIR];
-            idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],ibeg,iend,
-                        KOKKOS_LAMBDA (int k, int j, int i) {
-                            real R=x1(i);
-                            real z=x3(k);
-                            real Vk = 1.0/sqrt(R);
-                            real cs2=(h0*Vk)*(h0*Vk);
-
-                            Vc(RHO,k,j,i) = Vc(RHO,k,j,ighost);
-                            Vc(VX1,k,j,i) = Vc(VX1,k,j,ighost);
-                            Vc(VX2,k,j,i) = Vk;
-                            Vc(VX3,k,j,i) = Vc(VX3,k,j,ighost);
-                        });
-        }
+          Vc(RHO,k,j,i) = Vc(RHO,k,j,2*ighost - i +1);
+          Vc(VX1,k,j,i) = - Vc(VX1,k,j,2*ighost - i +1);
+          Vc(VX2,k,j,i) = Vk;
+          Vc(VX3,k,j,i) = Vc(VX3,k,j,2*ighost - i +1);
+        });
     }
+    else if(side==right) {
+      ighost = data.end[IDIR]-1;
+      ibeg=data.end[IDIR];
+      iend=data.np_tot[IDIR];
+      idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],ibeg,iend,
+        KOKKOS_LAMBDA (int k, int j, int i) {
+          real R=x1(i);
+          real z=x3(k);
+          real Vk = 1.0/sqrt(R);
+
+          Vc(RHO,k,j,i) = Vc(RHO,k,j,ighost);
+          Vc(VX1,k,j,i) = Vc(VX1,k,j,ighost);
+          Vc(VX2,k,j,i) = Vk;
+          Vc(VX3,k,j,i) = Vc(VX3,k,j,ighost);
+        });
+    }
+  }
 }
 
 void Potential(DataBlock& data, const real t, IdefixArray1D<real>& x1, IdefixArray1D<real>& x2, IdefixArray1D<real>& x3, IdefixArray3D<real>& phi) {
@@ -185,11 +178,9 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output)// : m_pl
 void Setup::InitFlow(DataBlock &data) {
     // Create a host copy
     DataBlockHost d(data);
-    real x,y,z;
-    real vphi,f;
     real h0=h0Glob;
     real sigma0=sigma0Glob;
-    real sigmaSlope=sigmaSlopeGlob;
+    real sigmaSlope = sigmaSlopeGlob;
 
     for(int k = 0; k < d.np_tot[KDIR] ; k++) {
         for(int j = 0; j < d.np_tot[JDIR] ; j++) {

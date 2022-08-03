@@ -12,6 +12,7 @@
 void ElectroMotiveForce::CalcNonidealEMF(real t) {
   idfx::pushRegion("ElectroMotiveForce::CalcNonidealEMF");
 
+#if MHD == YES
   // Corned EMFs
   IdefixArray3D<real> ex = this->ex;
   IdefixArray3D<real> ey = this->ey;
@@ -42,8 +43,6 @@ void ElectroMotiveForce::CalcNonidealEMF(real t) {
   real etaConstant = hydro->etaO;
   real xAConstant = hydro->xA;
 
-
-#if MHD == YES
   idefix_for("CalcNIEMF",
              data->beg[KDIR],data->end[KDIR]+KOFFSET,
              data->beg[JDIR],data->end[JDIR]+JOFFSET,

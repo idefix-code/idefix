@@ -246,6 +246,7 @@ void Axis::EnforceAxisBoundary(int side) {
 // Reconstruct Bx2s taking care of the sides where an axis is lying
 void Axis::ReconstructBx2s() {
   idfx::pushRegion("Axis::ReconstructBx2s");
+#if DIMENSIONS >= 2 && MHD == YES
   IdefixArray4D<real> Vs = hydro->Vs;
   IdefixArray3D<real> Ax1=data->A[IDIR];
   IdefixArray3D<real> Ax2=data->A[JDIR];
@@ -254,12 +255,11 @@ void Axis::ReconstructBx2s() {
   int nend = data->end[JDIR];
   int ntot = data->np_tot[JDIR];
 
-  int signLeft = 1;
-  int signRight = 1;
+  [[maybe_unused]] int signLeft = 1;
+  [[maybe_unused]] int signRight = 1;
   if(axisLeft) signLeft = -1;
   if(axisRight) signRight = -1;
 
-#if DIMENSIONS >= 2
   // This loop is a copy of ReconstructNormalField, with the proper sign when we cross the axis
   idefix_for("Axis::ReconstructBX2s",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
         KOKKOS_LAMBDA (int k, int i) {
@@ -312,8 +312,6 @@ void Axis::ReconstructBx2s() {
           );
     }
 #endif
-
-
   idfx::popRegion();
 }
 
@@ -330,7 +328,6 @@ void Axis::ExchangeMPI(int side) {
   IdefixArray4D<real> Vc = hydro->Vc;
   IdefixArray4D<real> Vs = hydro->Vs;
 
-  int VsIndex;
 // If MPI Persistent, start receiving even before the buffers are filled
 
   MPI_Status sendStatus;
@@ -359,7 +356,7 @@ void Axis::ExchangeMPI(int side) {
       }
     );
     #if MHD == YES
-      VsIndex = mapNVars*nx*ny*nz;
+      int VsIndex = mapNVars*nx*ny*nz;
       idefix_for("LoadBufferX2IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
         KOKKOS_LAMBDA (int k, int j, int i) {
           bufferSend(i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex ) =
@@ -384,7 +381,7 @@ void Axis::ExchangeMPI(int side) {
 
     // Load face-centered field in the buffer
      #if MHD == YES
-      VsIndex = mapNVars*nx*ny*nz;
+      int VsIndex = mapNVars*nx*ny*nz;
       idefix_for("LoadBufferX2IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
         KOKKOS_LAMBDA (int k, int j, int i) {
           bufferSend(i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex ) =
@@ -423,7 +420,7 @@ void Axis::ExchangeMPI(int side) {
 
     // Load face-centered field in the buffer
      #if MHD == YES
-      VsIndex = mapNVars*nx*ny*nz;
+      int VsIndex = mapNVars*nx*ny*nz;
       auto sVs = this->symmetryVs;
       idefix_for("StoreBufferX2IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
         KOKKOS_LAMBDA (int k, int j, int i) {
@@ -451,7 +448,7 @@ void Axis::ExchangeMPI(int side) {
 
     // Load face-centered field in the buffer
     #if MHD == YES
-    VsIndex = mapNVars*nx*ny*nz;
+    int VsIndex = mapNVars*nx*ny*nz;
     auto sVs = this->symmetryVs;
     idefix_for("StoreBufferX2IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
       KOKKOS_LAMBDA (int k, int j, int i) {

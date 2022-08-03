@@ -91,8 +91,8 @@ void ElectroMotiveForce::CalcCellCenteredEMF() {
             0,data->np_tot[JDIR],
             0,data->np_tot[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
-      real vx1, vx2, vx3;
-      real Bx1, Bx2, Bx3;
+      [[maybe_unused]] real vx1, vx2, vx3;
+      [[maybe_unused]] real Bx1, Bx2, Bx3;
 
       vx1 = vx2 = vx3 = ZERO_F;
       Bx1 = Bx2 = Bx3 = ZERO_F;
@@ -243,7 +243,7 @@ void ElectroMotiveForce::CalcContactAverage() {
             data->beg[JDIR]-JOFFSET,data->end[JDIR]+JOFFSET,
             data->beg[IDIR]-IOFFSET,data->end[IDIR]+IOFFSET,
     KOKKOS_LAMBDA (int k, int j, int i) {
-      int iu, ju, ku;
+      [[maybe_unused]] int iu, ju, ku;
       D_EXPAND( int sx;  ,
                 int sy;  ,
                 int sz;  )

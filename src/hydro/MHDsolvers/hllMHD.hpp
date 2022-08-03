@@ -57,16 +57,16 @@ void Hydro::HllMHD() {
   IdefixArray3D<real> dR;
 
   real gamma = this->gamma;
-  real xHConstant = this->xH;
-  real gamma_m1=this->gamma-ONE_F;
-  real csIso = this->isoSoundSpeed;
-  HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
+  [[maybe_unused]] real xHConstant = this->xH;
+  [[maybe_unused]] real gamma_m1=gamma-ONE_F;
+  [[maybe_unused]] real csIso = this->isoSoundSpeed;
+  [[maybe_unused]] HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
 
   SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR],shockFlattening);
 
   // Define normal, tangent and bi-tanget indices
   // st and sb will be useful only when Hall is included
-  real st,sb;
+  real st = ONE_F, sb = ONE_F;
 
   switch(DIR) {
     case(IDIR):
@@ -288,7 +288,7 @@ void Hydro::HllMHD() {
 
       // 4-- Compute the Hall flux
       if(haveHall) {
-        int ip1, jp1, kp1;
+        [[maybe_unused]] int ip1, jp1, kp1;
         real Jx1, Jx2, Jx3;
         ip1=i+1;
         #if DIMENSIONS >=2
@@ -427,9 +427,11 @@ void Hydro::HllMHD() {
         K_StoreContact<DIR>(i,j,k,st,sb,Flux,Et,Eb,SV);
       } else if (emfAverage==ElectroMotiveForce::uct_hll) {
         K_StoreHLL<DIR>(i,j,k,st,sb,sl,sr,vL,vR,Et,Eb,aL,aR,dL,dR);
-      } else if (emfAverage==ElectroMotiveForce::uct_hlld) {
-        K_StoreHLLD<DIR>(i,j,k,st,sb,c2Iso,SLb,SRb,vL,vR,uL,uR,Et,Eb,aL,aR,dL,dR);
       }
+      /* else if (emfAverage==ElectroMotiveForce::uct_hlld) {
+        // We do not have the Alfven speed in the HLL solver
+        K_StoreHLLD<DIR>(i,j,k,st,sb,c2Iso,SLb,SRb,vL,vR,uL,uR,Et,Eb,aL,aR,dL,dR);
+      }*/
   });
 
   idfx::popRegion();

@@ -42,10 +42,10 @@ void Hydro::HllcHD() {
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 
-  real gamma = this->gamma;
-  real gamma_m1 = this->gamma - ONE_F;
-  real csIso = this->isoSoundSpeed;
-  HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
+  [[maybe_unused]] real gamma = this->gamma;
+  [[maybe_unused]] real gamma_m1 = this->gamma - ONE_F;
+  [[maybe_unused]] real csIso = this->isoSoundSpeed;
+  [[maybe_unused]] HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
 
   SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR],shockFlattening);
 
@@ -55,9 +55,9 @@ void Hydro::HllcHD() {
              data->beg[IDIR],data->end[IDIR]+ioffset,
     KOKKOS_LAMBDA (int k, int j, int i) {
       // Init the directions (should be in the kernel for proper optimisation by the compilers)
-      EXPAND( const int Xn = DIR+MX1;                    ,
-              const int Xt = (DIR == IDIR ? MX2 : MX1);  ,
-              const int Xb = (DIR == KDIR ? MX2 : MX3);  )
+      EXPAND( constexpr int Xn = DIR+MX1;                    ,
+              constexpr int Xt = (DIR == IDIR ? MX2 : MX1);  ,
+              constexpr int Xb = (DIR == KDIR ? MX2 : MX3);  )
 
       // Primitive variables
       real vL[NVAR];

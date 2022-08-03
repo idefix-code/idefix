@@ -93,7 +93,6 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
 void Setup::InitFlow(DataBlock &data) {
     // Create a host copy
     DataBlockHost d(data);
-    real x,y,z;
 
     real M=50;
     real theta=M_PI/4.0;
@@ -110,10 +109,6 @@ void Setup::InitFlow(DataBlock &data) {
     for(int k = 0; k < d.np_tot[KDIR] ; k++) {
         for(int j = 0; j < d.np_tot[JDIR] ; j++) {
             for(int i = 0; i < d.np_tot[IDIR] ; i++) {
-                x=d.x[IDIR](i);
-                y=d.x[JDIR](j);
-                z=d.x[KDIR](k);
-
                 d.Vc(RHO,k,j,i) = 1.0;
 #if HAVE_ENERGY
                 d.Vc(PRS,k,j,i) = 1.0;

@@ -28,8 +28,6 @@ fi
 
 export IDEFIX_DIR=$target_dir
 echo $IDEFIX_DIR
-# activate decicated Python virtual environment
-source $IDEFIX_DIR/.python-env/bin/activate
 
 set -e
 options=$@

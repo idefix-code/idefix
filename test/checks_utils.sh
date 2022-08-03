@@ -39,7 +39,6 @@ cd $TMP_DIR
 echo "***********************************************"
 echo "Making numpy test files"
 echo "***********************************************"
-source $IDEFIX_DIR/.python-env/bin/activate
 python3 makeNpy.py
 echo "***********************************************"
 echo "Configuring  $rep"

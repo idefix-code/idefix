@@ -60,3 +60,32 @@ included in ``pre-commit`` (see above).
 #. variable names and class instances should start with lower cases. (e.g. ``int myVariable``).
 #. Macro and preprocessor functions should be all in upper case (e.g. ``EXPAND``)
 #. If global variables//functions are needed, they should be in the namespace ``idfx::``. They follow the rules above for naming.
+
+
+Running tests locally
+---------------------
+
+Tests are organized in categories such as hydro, MHD, MPI ... each corresponding to a bash script
+located in ``$IDEFIX_DIR/test/``. For instance, the following invoke will run tests in batch and
+without producing artifacts: compilation and output files are stored in temporary directories
+
+.. code-block:: shell
+
+   test/checks_hydro.sh
+
+
+Requirements
+============
+
+Most tests are performed using Python scripts to analyse outputs.
+It is recommended to use a Python virtual environment to run tests.
+Tests scripts will look for an environment directory at ``$IDEFIX_DIR/.python-env/``.
+To create this directory, run
+
+.. code-block::shell
+
+    cd $IDEFIX_DIR
+    python -m venv .python-env
+    source .python-env/bin/activate
+    python -m pip install --upgrade pip
+    python -m pip install -r test/python_requirements.txt

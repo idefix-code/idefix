@@ -42,9 +42,6 @@ class LookupTable {
 
       // Compute index of closest element assuming even distribution
       int i = static_cast<int> ( (x[n] - xstart) / (xend - xstart) * (dimensions(n)-1));
-      // Dimension is reduced by one, regarding what was done in ReadCSV. This Should
-      // fix the problem where you fall in not evenly spaced even when evenly spaced grid.
-
 
       // Check if resulting bounding elements are correct
       if(xin(offset(n) + i) > x[n] || xin(offset(n) + i+1) < x[n]) {

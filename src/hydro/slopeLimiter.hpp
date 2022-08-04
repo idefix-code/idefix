@@ -296,6 +296,25 @@ class SlopeLimiter {
           real vr,vl;
           getPPMStates(vm2, vm1, v0, vp1, vp2, vl, vr);
           // vL= left side of current interface (i-1/2)= right side of cell i-1
+
+          // Check positivity
+          if(nv==RHO) {
+            // If face element is negative, revert to vanleer
+            if(vr <= 0.0) {
+              real dv = PLMLim(vp1-v0,v0-vm1);
+              vr = v0+dv;
+            }
+          }
+          #if HAVE_ENERGY
+            if(nv==PRS) {
+              // If face element is negative, revert to vanleer
+              if(vr <= 0.0) {
+                real dv = PLMLim(vp1-v0,v0-vm1);
+                vr = v0+dv;
+              }
+            }
+          #endif
+
           vL[nv] = vr;
           // Reconstruction in cell i
 
@@ -306,6 +325,24 @@ class SlopeLimiter {
           vp2 = Vc(nv,k+2*koffset,j+2*joffset,i+2*ioffset);
           
           getPPMStates(vm2, vm1, v0, vp1, vp2, vl, vr);
+
+          // Check positivity
+          if(nv==RHO) {
+            // If face element is negative, revert to vanleer
+            if(vl <= 0.0) {
+              real dv = PLMLim(vp1-v0,v0-vm1);
+              vl = v0-dv;
+            }
+          }
+          #if HAVE_ENERGY
+            if(nv==PRS) {
+              // If face element is negative, revert to vanleer
+              if(vl <= 0.0) {
+                real dv = PLMLim(vp1-v0,v0-vm1);
+                vl = v0-dv;
+              }
+            }
+          #endif
           
           vR[nv] = vl;
       }

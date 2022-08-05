@@ -24,7 +24,7 @@ inline void idefix_reduce(const std::string & NAME,
                 Function function,
                 Reducer redFunction) {
     Kokkos::parallel_reduce(NAME,
-      IB, IE, function, redFunction);
+      Kokkos::RangePolicy<>(IB,IE), function, redFunction);
 }
 
 // 2D default loop pattern

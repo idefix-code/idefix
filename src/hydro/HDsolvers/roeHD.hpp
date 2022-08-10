@@ -22,11 +22,16 @@
   #define IE 2
   #define I2 3
   #define I3 4
+
+  #define NMODES 5
+
 #else
   #define I0 0
   #define I1 1
   #define I2 2
   #define I3 3
+
+  #define NMODES 4
 #endif
 
 // Compute Riemann fluxes from states using ROE solver
@@ -192,8 +197,8 @@ void Hydro::RoeHD() {
       eigenvalues (lambda) and wave strenght eta = L.du
       ----------------------------------------------------------------  */
 
-      real lambda[NVAR], alambda[NVAR];
-      real eta[NVAR];
+      real lambda[NMODES], alambda[NMODES];
+      real eta[NMODES];
 
 #pragma unroll
       for(int nv1 = 0 ; nv1 < NVAR; nv1++) {

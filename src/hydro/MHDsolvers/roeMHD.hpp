@@ -29,12 +29,16 @@
 #define KALFVM 6
 #define KALFVP 7
 
+#define NMODES 8
+
 #else
 
 #define KSLOWM 3
 #define KSLOWP 4
 #define KALFVM 5
 #define KALFVP 6
+
+#define NMODES 7
 
 #endif
 
@@ -397,7 +401,7 @@ void Hydro::RoeMHD() {
       ------------------------------------------------------------------- */
 
       // Fast wave:  u - c_f
-      real lambda[NFLX], alambda[NFLX], eta[NFLX];
+      real lambda[NMODES], alambda[NMODES], eta[NMODES];
       [[maybe_unused]] real beta_dv, beta_dB, beta_v;
 
       int kk = KFASTM;

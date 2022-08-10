@@ -75,7 +75,6 @@ void Setup::InitFlow(DataBlock &data) {
 
     // Make vector potential
     IdefixHostArray4D<real> A = IdefixHostArray4D<real>("Setup_VectorPotential", 3, data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
-    real x,y,z;
 
     real r0 = 0.1;
     real r1 = 0.115;
@@ -88,9 +87,7 @@ void Setup::InitFlow(DataBlock &data) {
             for(int i = 0; i < d.np_tot[IDIR] ; i++) {
                 r=d.x[IDIR](i);
                 th=d.x[JDIR](j);
-                x=r*cos(th);
-                y=r*sin(th);
-                z=d.x[KDIR](k);
+                real y=r*sin(th);
 
                 f=(r1-r)/(r1-r0);
 

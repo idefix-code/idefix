@@ -10,7 +10,6 @@ generators on different architectures.
 /*********************************************/
 
 const int advectionDirection        =   IDIR;
-const int advectedFieldDirection    =   IDIR;
 // Default constructor
 
 
@@ -30,7 +29,7 @@ void Setup::InitFlow(DataBlock &data) {
     DataBlockHost d(data);
     IdefixHostArray4D<real> A = IdefixHostArray4D<real>("VectorPotential",3,d.np_tot[KDIR],d.np_tot[JDIR],d.np_tot[IDIR]);
 
-    real x,y,z;
+    real x,y;
     real B0=1e-6;
 
     for(int k = 0; k < d.np_tot[KDIR] ; k++) {

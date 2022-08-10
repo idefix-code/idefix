@@ -18,7 +18,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
 void Setup::InitFlow(DataBlock &data) {
     // Create a host copy
     DataBlockHost d(data);
-    real x,y,z;
+    real x,y;
 
     real r0 = 0.1;
     real r1 = 0.115;
@@ -31,7 +31,7 @@ void Setup::InitFlow(DataBlock &data) {
             for(int i = 0; i < d.np_tot[IDIR] ; i++) {
                 x=d.x[IDIR](i);
                 y=d.x[JDIR](j);
-                z=d.x[KDIR](k);
+
                 r=pow(x*x+y*y,0.5);
                 f=(r1-r)/(r1-r0);
 

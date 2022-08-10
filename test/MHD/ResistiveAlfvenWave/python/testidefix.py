@@ -33,7 +33,8 @@ if(not args.noplot):
 
     plt.close('all')
     plt.figure()
-    plt.semilogy(t,e/eth)
+    plt.semilogy(t,e)
+    plt.semilogy(t,eth)
 
     plt.ioff()
     plt.show()

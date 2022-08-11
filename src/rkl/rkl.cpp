@@ -705,7 +705,10 @@ void RKLegendre::CalcParabolicRHS(real t) {
 void RKLegendre::SetBoundaries(real t) {
   idfx::pushRegion("RKLegendre::SetBoundaries");
   // set internal boundary conditions
-  if(data->hydro.boundary.haveInternalBoundary) data->hydro.boundary.internalBoundaryFunc(*data, t);
+  // Disabled since this might affect fields that are NOT updated
+  // by the MPI instance of RKLegendre
+  //if(data->hydro.boundary.haveInternalBoundary)
+  //   data->hydro.boundary.internalBoundaryFunc(*data, t);
   for(int dir=0 ; dir < DIMENSIONS ; dir++ ) {
       // MPI Exchange data when needed
       // We use the RKL instance MPI object to ensure that we only exchange the data

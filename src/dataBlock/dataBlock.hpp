@@ -19,8 +19,14 @@
 #include "gravity.hpp"
 #include "stateContainer.hpp"
 
-//TODO(lesurg) What is this standing for?
-#define BOUNDARY_
+//////////////////////////////////////////////////////////////////////////////////////////////////
+/// The DataBlock class is designed to store the data and child class instances that belongs to the
+/// current MPI process ONLY.  In particular grid-related arrays of the DataBlock
+/// only contains information of the local portion of the grid that belongs to the current MPI
+/// process. The full grid is defined in the parent Grid class (for which a pointer is defined).
+/// Note that all of the arrays of a DataBlock are on the device. If a Host access is needed, it
+/// is recommended to use a DataBlockHost instance from this DataBlock, and sync it.
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
 class DataBlock {
  public:
@@ -87,7 +93,7 @@ class DataBlock {
 
   void ResetStage();              ///< Reset the variables needed at each major integration Stage
 
-  DataBlock();
+  DataBlock() = default;
 
   // Do we use fargo-like scheme ? (orbital advection)
   bool haveFargo{false};

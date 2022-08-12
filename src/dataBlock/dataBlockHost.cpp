@@ -8,10 +8,6 @@
 #include "idefix.hpp"
 #include "dataBlockHost.hpp"
 
-DataBlockHost::DataBlockHost() {
-  // Do nothing
-}
-
 DataBlockHost::DataBlockHost(DataBlock& datain) {
   idfx::pushRegion("DataBlockHost::DataBlockHost(DataBlock)");
 

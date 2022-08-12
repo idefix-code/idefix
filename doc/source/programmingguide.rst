@@ -188,6 +188,23 @@ snippet:
 Note that when running on GPU architectures, reductions are particularly inefficient operations. If possible,
 it is therefore recommended to avoid them as much as possible, or to group them.
 
+.. _grid:
+
+Grid
+========
+
+Idefix uses a grid which is automatically built during startup using the informations provided in
+the input file (see :ref:`gridSection`). While programming your own physical problem, it can be
+useful to have access to the informations about the grid, such as the grid coordinates, cell volume,
+etc. Because Idefix uses MPI domain decomposition, the grid is accessible in two classes. The *full* grid
+(i.e the full physical problem, omitting any domain decomposition) is stored in the :ref:`gridClass`,
+while the local MPI subdomain that belongs to each processor is stored in the :ref:`datablockClass` class.
+
+The indices which are defined and used throughout the code in each of these classes are presented in the scheme below
+(the numbers in parenthesis are the value of each variable in this particular example).
+
+.. image:: images/grid.png
+  :alt: Idefix grid schematics
 
 .. _classes:
 
@@ -257,21 +274,11 @@ with a default value, as in the example above.
 ------------------
 
 ``Grid`` is essentially a datastructure which represents the full computational domain (i.e. without domain decomposition,
-if MPI has been enabled). It is useful when one needs to have access to the full grid coordinates for instance. Some of the useful arrays stored
-by the grid are:
+if MPI has been enabled). Here is the full API for this class (one may refer to :ref:`grid` for a graphical representation of the grid ):
 
-.. code-block:: c++
+.. doxygenclass:: Grid
+  :members:
 
-  IdefixArray1D<real> x[3];   // geometrical central points
-  IdefixArray1D<real> xr[3];  // cell right interface
-  IdefixArray1D<real> xl[3];  // cell left interface
-  IdefixArray1D<real> dx[3];  // cell width
-
-  real xbeg[3];  // Beginning of grid
-  real xend[3];  // End of grid
-
-  int np_tot[3];  // total number of grid points (including ghosts)
-  int np_int[3];  // internal number of grid points (excluding ghosts)
 
 .. _datablockClass:
 
@@ -279,9 +286,10 @@ by the grid are:
 -----------------------
 
 ``DataBlock`` contains all of the data structures that belong to that particular process (i.e. if MPI is enabled, it contains data
-specific to this subprocess, in contrast to ``Grid``). In particular, the DataBlocks have the local grid coordinates, stored
-in arrays having the same name as ``Grid``. ``DataBlock`` also contains instances of the physical modules. Currently,
-it only contains an instance of the ``Hydro`` class, but future physical modules will follow the same path.
+specific to this subprocess, in contrast to ``Grid``). Here is the full API for the dataBlock class (one may refer to :ref:`grid` for a graphical representation of the grid ):
+
+.. doxygenclass:: DataBlock
+  :members:
 
 .. _hydroClass:
 

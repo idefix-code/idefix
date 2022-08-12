@@ -12,6 +12,8 @@ allows for comments, which should start with ``#``.
     ``Input::Get<T>(..)`` and ``Input::GetOrSet<T>`` template methods defined in the ``Input`` class (see :ref:`inputClass`).
     To avoid any name collisions with future versions of Idefix, we recommend setting setup-specific parameters in a ``[Setup]`` section.
 
+.. _gridSection:
+
 ``Grid`` section
 --------------------
 The grid section defines the grid total dimension. It consists of 3 entries ``X1-grid``, ``X2-grid`` and ``X3-grid``. Each entry defines the repartition of the grid points in the corresponding direction (the grid is always rectilinear).

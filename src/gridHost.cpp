@@ -12,10 +12,6 @@
 #include "grid.hpp"
 #include "gridHost.hpp"
 
-GridHost::GridHost() {
-  // Void
-}
-
 GridHost::GridHost(Grid &grid) {
   idfx::pushRegion("GridHost::GridHost(Grid)");
 

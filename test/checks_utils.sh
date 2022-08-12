@@ -51,3 +51,26 @@ echo "Making  $rep"
 echo "***********************************************"
 make clean; make -j 10
 mpirun -np 4 ./idefix
+cd $TEST_DIR
+rm -rf $TMP_DIR
+
+
+# Validate DumpImage
+rep="utils/dumpImage"
+
+TMP_DIR="$(mktemp -d)"
+cp -R $TEST_DIR/$rep/* $TMP_DIR
+cd $TMP_DIR
+echo "***********************************************"
+echo "Configuring  $rep"
+echo "Using $TMP_DIR/$rep as working directory"
+echo "***********************************************"
+rm -f CMakeCache.txt
+cmake $IDEFIX_DIR  $options
+echo "***********************************************"
+echo "Making  $rep"
+echo "***********************************************"
+make clean; make -j 10
+./idefix
+cd $TEST_DIR
+rm -rf $TMP_DIR

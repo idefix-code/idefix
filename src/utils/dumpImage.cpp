@@ -49,9 +49,9 @@ DumpImage::DumpImage(std::string filename, Output &output) {
     // Store the size of the array
     this->np_int[dir] = nx[0];
     // Allocate arrays dynamically
-    this->x[dir] = IdefixArray1D<real>("DumpImageX",np_int[dir]);
-    this->xl[dir] = IdefixArray1D<real>("DumpImageXl",np_int[dir]);
-    this->xr[dir] = IdefixArray1D<real>("DumpImageXr",np_int[dir]);
+    this->x[dir] = IdefixHostArray1D<real>("DumpImageX",np_int[dir]);
+    this->xl[dir] = IdefixHostArray1D<real>("DumpImageXl",np_int[dir]);
+    this->xr[dir] = IdefixHostArray1D<real>("DumpImageXr",np_int[dir]);
 
     // Read coordinates
     dump.ReadSerial(fileHdl, ndim, nx, type, reinterpret_cast<void*>( this->x[dir].data()) );

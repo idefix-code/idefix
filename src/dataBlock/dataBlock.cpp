@@ -8,14 +8,7 @@
 #include "../idefix.hpp"
 #include "dataBlock.hpp"
 
-DataBlock::DataBlock() {
-  // Do nothing
-}
-
 void DataBlock::InitFromGrid(Grid &grid, Input &input) {
-  // This initialisation is only valid for *serial*
-  // MPI initialisation will involve domain decomposition of grids into DataBlocks
-
   idfx::pushRegion("DataBlock::InitFromGrid");
 
   this->mygrid=&grid;

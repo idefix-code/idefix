@@ -11,10 +11,6 @@
 #include "gridHost.hpp"
 #include "grid.hpp"
 
-Grid::Grid() {
-  // Do nothing
-}
-
 Grid::Grid(Input &input) {
   idfx::pushRegion("Grid::Grid(Input)");
 

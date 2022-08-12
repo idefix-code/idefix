@@ -13,6 +13,12 @@
 #include "grid.hpp"
 #include "input.hpp"
 
+//////////////////////////////////////////////////////////////////////////////////////////////////
+/// The GridHost class is designed to store the grid data of the FULL computational domain (i.e. of
+/// all of the MPI processes running) on the HOST. It comes handy to define initial conditions on
+/// the Host and for output routines. Typical usage is to instantiate a GridHost from an existing
+/// Grid instance, sync it and the use the grid information in Host routines.
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
 class GridHost {
  public:
@@ -31,20 +37,16 @@ class GridHost {
   std::vector<BoundaryType> lbound;         ///< Boundary condition to the left
   std::vector<BoundaryType> rbound;         ///< Boundary condition to the right
 
-  bool haveAxis=false;    // Do we require a special treatment of the axis in spherical coords?
+  bool haveAxis=false;    ///< Do we require a special treatment of the axis in spherical coords?
 
-  // Constructor
-  explicit GridHost(Grid&);
-  GridHost();
+  explicit GridHost(Grid&);   ///< Constructor from a corresponding Grid on the Device.
+                              ///< (NB: this constructor does not sync any data)
+  GridHost() = default;       ///< default constructor, should not be used explicitely.
 
-  // Actually make the grid
-  void MakeGrid(Input &);
+  void MakeGrid(Input &);      ///< create grid coordinates from the input data.
 
-  // Sync from a device grid
-  void SyncFromDevice();
-
-  // Sync to a device grid
-  void SyncToDevice();
+  void SyncFromDevice();      ///< Synchronize this to the device Grid
+  void SyncToDevice();      ///< Synchronize this from the device Grid
 
  private:
   Grid *grid;

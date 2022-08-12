@@ -198,12 +198,12 @@ the input file (see :ref:`gridSection`). While programming your own physical pro
 useful to have access to the informations about the grid, such as the grid coordinates, cell volume,
 etc. Because Idefix uses MPI domain decomposition, the grid is accessible in two classes. The *full* grid
 (i.e the full physical problem, omitting any domain decomposition) is stored in the :ref:`gridClass`,
-while the local domain subdomain that belongs to each processor is stored in the :ref:`datablockClass` class.
+while the local MPI subdomain that belongs to each processor is stored in the :ref:`datablockClass` class.
 
-The indices which are defined and used throughout the code in each of these classes are presented in the scheme below.
+The indices which are defined and used throughout the code in each of these classes are presented in the scheme below
+(the numbers in parenthesis are the value of each variable in this particular example).
 
 .. image:: images/grid.png
-  :width: 1000
   :alt: Idefix grid schematics
 
 .. _classes:
@@ -274,7 +274,7 @@ with a default value, as in the example above.
 ------------------
 
 ``Grid`` is essentially a datastructure which represents the full computational domain (i.e. without domain decomposition,
-if MPI has been enabled). Here is the full API for this class (one may refer to ::ref:`grid` for a graphical representation of the grid ):
+if MPI has been enabled). Here is the full API for this class (one may refer to :ref:`grid` for a graphical representation of the grid ):
 
 .. doxygenclass:: Grid
   :members:
@@ -286,7 +286,7 @@ if MPI has been enabled). Here is the full API for this class (one may refer to 
 -----------------------
 
 ``DataBlock`` contains all of the data structures that belong to that particular process (i.e. if MPI is enabled, it contains data
-specific to this subprocess, in contrast to ``Grid``). Here is the full API for the dataBlock class (one may refer to ::ref:`grid` for a graphical representation of the grid ):
+specific to this subprocess, in contrast to ``Grid``). Here is the full API for the dataBlock class (one may refer to :ref:`grid` for a graphical representation of the grid ):
 
 .. doxygenclass:: DataBlock
   :members:

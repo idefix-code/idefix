@@ -140,6 +140,12 @@ void Axis::SymmetrizeEx1Side(int jref) {
 #endif
 }
 
+// Ex3 (=Ephi) on the axis is ill-defined. However, the length of cell edges along the phi
+// direction is zero on the axis, so this EMF is not relevent when using CT.
+// Nevertheless, when using a vector potential formulation, Ex3 on the axis may pile up
+// in Ve(AX3e...), leading potentially numerical instabilities in that region.
+// Hence, we enforce a regularisation of Ex3 for consistancy.
+
 void Axis::RegularizeEx3side(int jref) {
   IdefixArray3D<real> Ex3 = emf->ez;
 

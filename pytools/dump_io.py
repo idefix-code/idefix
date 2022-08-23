@@ -80,8 +80,6 @@ class DumpDataset(object):
         self.metadata["version"] = match.group("version")
         self.metadata["byteorder"] = match.group("byteorder")
 
-        ref_position = fh.tell()
-
     def _read_field(self, fh):
         if self.metadata["byteorder"] is None:
             # "little" is a safe bet. If anyone ever *needs* to analyze big-endian data produced

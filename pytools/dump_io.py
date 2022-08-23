@@ -113,6 +113,8 @@ class DumpDataset(object):
                 break
             self.data[field.name] = field.array
 
+    def __repr__(self):
+        return "DumpDataset('%s')" % self.filename
 
 # public API
 def readDump(filename):

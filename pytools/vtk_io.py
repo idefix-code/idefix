@@ -29,7 +29,7 @@ KNOWN_GEOMETRIES = {
 }
 
 
-class DataStructure(object):
+class VTKDataset(object):
     def __init__(self, filename, geometry=None):
         self.filename = os.path.abspath(filename)
         self.data = {}
@@ -341,6 +341,8 @@ class DataStructure(object):
     def _load_particles(self, fh):
         raise NotImplementedError("Particles vtk are not supported yet !")
 
+    def __repr__(self):
+        return "VTKDataset('%s')" % self.filename
 
 # ////// public API //////
 def readVTK(filename, geometry=None):
@@ -356,7 +358,7 @@ def readVTK(filename, geometry=None):
         raise ValueError(
             "Unknown geometry '%s', expected one of %s" % (geometry, valid_geometries)
         )
-    return DataStructure(filename, geometry=geometry)
+    return VTKDataset(filename, geometry=geometry)
 
 
 # Former geometry-specific readers (only for hydro datasets)

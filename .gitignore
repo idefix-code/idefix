@@ -26,6 +26,7 @@ Makefile.local
 test/**/*.o
 test/**/*.vtk
 test/**/*.dmp
+test/**/*.idfx
 test/**/*.tmp
 test/**/Makefile
 test/**/KokkosCore*

@@ -18,10 +18,12 @@ header_regexp = re.compile(
     r"Idefix (?P<version>[\w\.-]+) Dump Data"
     r"((?P<byteorder>(little|big)) endian)?"
 )
-INT_SIZE = 4
 NAME_SIZE = 16
+
 DOUBLE_SIZE = 8
 FLOAT_SIZE = 4
+INT_SIZE = 4
+BOOL_SIZE = 4
 
 HEADER_SIZE = 128
 
@@ -46,7 +48,11 @@ class DumpField(object):
         elif self.type == 2:
             mysize = INT_SIZE
             stringchar = "i"
-            dtype = "int64"
+            dtype = "int32"
+        elif self.type == 3:
+            mysize = BOOL_SIZE
+            stringchar = "?"
+            dtype = bool
         else:
             raise RuntimeError(
                 "Found unknown data type %d for field %s" % (self.type, self.name)

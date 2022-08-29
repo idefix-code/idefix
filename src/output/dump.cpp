@@ -365,6 +365,7 @@ void Dump::ReadSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
   if(type == DoubleType) size=sizeof(double);
   if(type == SingleType) size=sizeof(float);
   if(type == IntegerType) size=sizeof(int);
+  if(type == BoolType) size=sizeof(bool);
 
   #ifdef WITH_MPI
     MPI_Status status;
@@ -373,6 +374,7 @@ void Dump::ReadSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
     if(type == DoubleType) MpiType=MPI_DOUBLE;
     if(type == SingleType) MpiType=MPI_FLOAT;
     if(type == IntegerType) MpiType=MPI_INT;
+    if(type == BoolType) MpiType=MPI_CXX_BOOL;
 
     MPI_SAFE_CALL(MPI_File_set_view(fileHdl, this->offset, MPI_BYTE,
                                     MPI_CHAR, "native", MPI_INFO_NULL ));

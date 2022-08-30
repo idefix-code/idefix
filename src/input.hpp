@@ -91,44 +91,35 @@ T Input::Get(std::string blockName, std::string paramName, int num) {
   std::string paramString = inputParameters[blockName][paramName][num];
   T value;
   try {
-    // The following mess with pointers is required since we do not have access to constexpr if
-    // in c++ 14, hence we need to cast T to all of the available type we support.
-    if(typeid(T) == typeid(int)) {
-      int *v = reinterpret_cast<int*>( &value);
+    if constexpr(std::is_same<T, int>::value) {
       double dv = std::stod(paramString, NULL);
-      int iv = static_cast<int>(std::round(dv));
-      if (std::abs((dv - iv)/dv) > 1e-14) {
+      value = static_cast<int>(std::round(dv));
+      if (std::abs((dv - value)/dv) > 1e-14) {
         IDEFIX_WARNING("Detected a truncation error while reading an integer");
       }
-      *v  = iv;
-    } else if(typeid(T) == typeid(double)) {
-      double *v = reinterpret_cast<double*>( &value);
-      *v = std::stod(paramString, NULL);
-    } else if(typeid(T) == typeid(float)) {
-      float *v = reinterpret_cast<float*>( &value);
-      *v = std::stof(paramString, NULL);
-    } else if(typeid(T) == typeid(int64_t)) {
-      int64_t *v = reinterpret_cast<int64_t *>( &value);
-      *v = static_cast<int64_t>(std::round(std::stod(paramString, NULL)));
-    } else if(typeid(T) == typeid(std::string)) {
-      std::string *v = reinterpret_cast<std::string*>( &value);
-      *v = paramString;
-    } else if(typeid(T) == typeid(bool)) {
-      bool *v = reinterpret_cast<bool*>( &value);
+    } else if constexpr(std::is_same<T, double>::value) {
+      value = std::stod(paramString, NULL);
+    } else if constexpr(std::is_same<T, float>::value) {
+      value = std::stof(paramString, NULL);
+    } else if constexpr(std::is_same<T, int64_t>::value) {
+      value = static_cast<int64_t>(std::round(std::stod(paramString, NULL)));
+    } else if constexpr(std::is_same<T, std::string>::value) {
+      value = paramString;
+    } else if constexpr(std::is_same<T, bool>::value) {
       // convert string to lower case
       std::for_each(paramString.begin(), paramString.end(), [](char & c){
         c = ::tolower(c);
       });
       if(paramString.compare("yes") == 0) {
-        *v = true;
+        value = true;
       } else if(paramString.compare("true") == 0) {
-        *v = true;
+        value = true;
       } else if(paramString.compare("no") == 0) {
-        *v = false;
+        value = false;
       } else if(paramString.compare("false") == 0) {
-        *v = false;
+        value = false;
       } else if(paramString.compare("f") == 0) {
-        *v = false;
+        value = false;
       } else {
         std::stringstream msg;
         msg << "Boolean parameter [" << blockName << "]:" << paramName << "(" << num

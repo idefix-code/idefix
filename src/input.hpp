@@ -91,8 +91,6 @@ T Input::Get(std::string blockName, std::string paramName, int num) {
   std::string paramString = inputParameters[blockName][paramName][num];
   T value;
   try {
-    // The following mess with pointers is required since we do not have access to constexpr if
-    // in c++ 14, hence we need to cast T to all of the available type we support.
     if constexpr(std::is_same<T, int>::value) {
       double dv = std::stod(paramString, NULL);
       value = static_cast<int>(std::round(dv));

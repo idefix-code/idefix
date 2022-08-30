@@ -13,7 +13,7 @@
 #include "dataBlock.hpp"
 
 
-enum DataType {DoubleType, SingleType, IntegerType};
+enum DataType {DoubleType, SingleType, IntegerType, BoolType};
 
 // Define data descriptor used for distributed I/O when MPI is enabled
 #ifdef WITH_MPI

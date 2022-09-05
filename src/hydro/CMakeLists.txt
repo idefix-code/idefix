@@ -18,6 +18,7 @@ target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/calcRiemannFlux.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/calcRightHandSide.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/checkDivB.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/coarsenFlow.cpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/convertConsToPrim.cpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/convertConsToPrimHD.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/convertConsToPrimMHD.hpp

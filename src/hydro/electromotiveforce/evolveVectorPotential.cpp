@@ -150,6 +150,10 @@ void ElectroMotiveForce::ComputeMagFieldFromA(IdefixArray4D<real> &Vein,
   #endif // GEOMETRY
   });
 
+  if(data->haveGridCoarsening) {
+    hydro->CoarsenMagField(Vsout);
+  }
+
   idfx::popRegion();
   #endif
 }

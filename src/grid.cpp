@@ -198,6 +198,37 @@ Grid::Grid(Input &input) {
   }
 #endif
 
+  // init coarsening
+  if(input.CheckEntry("Grid","coarsening")>=0) {
+    std::string coarsenType = input.Get<std::string>("Grid","coarsening",0);
+    if(coarsenType.compare("static")==0) {
+      this->haveGridCoarsening = GridCoarsening::enabled;
+    } else if(coarsenType.compare("dynamic")==0) {
+      this->haveGridCoarsening = GridCoarsening::dynamic;
+    } else {
+      std::stringstream msg;
+      msg << "Grid coarsening can only be static or dynamic. I got: " << coarsenType;
+      IDEFIX_ERROR(msg);
+    }
+    this->coarseningDirection = std::vector<bool>(3, false);
+    int directions = input.CheckEntry("Grid","coarsening");
+    for(int i = 1 ; i < directions ; i++) {
+      std::string dirname = input.Get<std::string>("Grid","coarsening",i);
+      if(dirname.compare("X1")==0) {
+        coarseningDirection[IDIR] = true;
+      } else if(dirname.compare("X2")==0) {
+        coarseningDirection[JDIR] = true;
+      } else if(dirname.compare("X3")==0) {
+        coarseningDirection[KDIR] = true;
+      } else {
+        std::stringstream msg;
+        msg << "Grid coarsening direction can only be X1, X2 and/or X3. I got: " << dirname;
+        IDEFIX_ERROR(msg);
+      }
+    }
+
+    this->haveGridCoarsening = GridCoarsening::enabled;
+  }
   idfx::popRegion();
 }
 
@@ -333,4 +364,19 @@ void Grid::ShowConfig() {
     }
     idfx::cout << ")" << std::endl;
   #endif
+  if(haveGridCoarsening) {
+    if(haveGridCoarsening == GridCoarsening::enabled ) {
+      idfx::cout << "Grid: static grid coarsening enabled in direction(s) ";
+    } else if (haveGridCoarsening == GridCoarsening::dynamic ) {
+      idfx::cout << "Grid: dynamic grid coarsening enabled in direction(s) ";
+    } else {
+      IDEFIX_ERROR("Unknown grid coarsening");
+    }
+    for(int i = 0 ; i < 3 ; i++) {
+      if(coarseningDirection[i]) {
+        idfx::cout << "X" << i+1 << " ";
+      }
+    }
+    idfx::cout << std::endl;
+  }
 }

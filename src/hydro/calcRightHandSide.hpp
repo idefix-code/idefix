@@ -37,6 +37,14 @@ void Hydro::CalcRightHandSide(real t, real dt) {
   IdefixArray4D<real> viscSrc = this->viscosity.viscSrc;
   IdefixArray2D<real> fargoVelocity = data->fargo.meanVelocity;
 
+  // Grid coarsening
+  bool haveGridCoarsening = false;
+  IdefixArray2D<int> coarseningLevel;
+
+  if(data->haveGridCoarsening) {
+    haveGridCoarsening = data->coarseningDirection[dir];
+    coarseningLevel = data->coarseningLevel[dir];
+  }
 
   // Gravitational potential
   IdefixArray3D<real> phiP = data->gravity.phiP;
@@ -246,6 +254,23 @@ void Hydro::CalcRightHandSide(real t, real dt) {
       // Compute dt from max signal speed
       const int ig = ioffset*i + joffset*j + koffset*k;
       real dl = dx(ig);
+
+      // Change elementary grid spacing according to local coarsening level.
+
+      if(haveGridCoarsening) {
+        int factor;
+        //factor = 2^(coarsening-1)
+        if(dir==IDIR) {
+          factor = 1 << (coarseningLevel(k,j) - 1);
+        }
+        if(dir==JDIR) {
+          factor = 1 << (coarseningLevel(k,i) - 1);
+        }
+        if(dir==KDIR) {
+          factor = 1 << (coarseningLevel(j,i) - 1);
+        }
+        dl = dl * factor;
+      }
 #if GEOMETRY == POLAR
       if(dir==JDIR)
         dl = dl*x1(i);

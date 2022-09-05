@@ -23,7 +23,7 @@ parser.add_argument("-noplot",
                     action="store_true")
 
 
-args=parser.parse_args()
+args, unknown=parser.parse_known_args()
 
 V=readVTK('../data.0002.vtk', geometry='cartesian')
 gamma = 1.00000000001

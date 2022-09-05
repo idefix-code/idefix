@@ -53,7 +53,7 @@ parser.add_argument("-noplot",
                     action="store_true")
 
 
-args=parser.parse_args()
+args, unknown=parser.parse_known_args()
 
 
 #initial condition: vr=1, rest is 0, mode initial is nx=0, ny=1, nz=5)

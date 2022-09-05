@@ -62,7 +62,7 @@ for rep in $rep_2D_mpi_list; do
         echo "***********************************************"
         echo "Testing  $rep with $ini"
         echo "***********************************************"
-        python3 testidefix.py -noplot
+        python3 testidefix.py -noplot -i ../$ini
         cd ..
     done
     make clean
@@ -95,7 +95,7 @@ for rep in $rep_3D_mpi_list; do
         echo "***********************************************"
         echo "Testing  $rep with $ini"
         echo "***********************************************"
-        python3 testidefix.py -noplot
+        python3 testidefix.py -noplot -i ../$ini
         cd ..
     done
 

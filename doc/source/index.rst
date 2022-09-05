@@ -72,8 +72,8 @@ under the European Union Horizon 2020 research and innovation programme (Grant a
    :caption: Contents:
 
    quickstart
-   modules
    reference
+   modules
    programmingguide
    contributing
    faq

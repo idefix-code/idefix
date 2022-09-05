@@ -28,6 +28,11 @@
 /// is recommended to use a DataBlockHost instance from this DataBlock, and sync it.
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+// forward class declaration (used by enrollment functions)
+class DataBlock;
+
+using GridCoarseningFunc = void(*) (DataBlock &);
+
 class DataBlock {
  public:
   // Local grid information
@@ -46,6 +51,11 @@ class DataBlock {
   IdefixArray1D<real> dmu;     ///< In spherical coordinates,
                                ///< gives the $\theta$ volume = fabs(cos(th_m) - cos(th_p))
 
+  std::vector<IdefixArray2D<int>> coarseningLevel; ///< Grid coarsening levels
+                                                  ///< (only defined when coarsening
+                                                  ///< is enabled)
+  std::vector<bool> coarseningDirection;  ///< whether a coarsening is used in each direction
+
   std::vector<real> xbeg;             ///< Beginning of active domain in datablock
   std::vector<real> xend;             ///< End of active domain in datablock
 
@@ -60,7 +70,14 @@ class DataBlock {
   std::vector<BoundaryType> rbound;      ///< Boundary condition to the right
 
   bool haveAxis{false};       ///< DataBlock contains points on the axis and a special treatment
-                              ///< has been required for these.
+                               ///< has been required for these.
+
+  GridCoarsening haveGridCoarsening{GridCoarsening::disabled};
+                                ///< Is grid coarsening enabled?
+  GridCoarseningFunc gridCoarseningFunc{NULL};
+                               ///< The user-defined grid coarsening level computation function
+
+
 
   std::vector<int> beg;       ///< First local index of the active domain
   std::vector<int> end;       ///< Last local index of the active domain+1
@@ -88,11 +105,15 @@ class DataBlock {
 
   void EvolveStage();             ///< Evolve this DataBlock by dt
   void SetBoundaries();       ///< Enforce boundary conditions to this datablock
+  void Coarsen();             ///< Coarsen this datablock and its objects
   void ShowConfig();              ///< Show the datablock's configuration
   real ComputeTimestep();         ///< compute maximum timestep from current state of affairs
 
   void ResetStage();              ///< Reset the variables needed at each major integration Stage
 
+  void EnrollGridCoarseningLevels(GridCoarseningFunc);
+                                  ///< Enroll a user function to compute coarsening levels
+  void CheckCoarseningLevels();   ///< Check that coarsening levels satisfy requirements
   DataBlock() = default;
 
   // Do we use fargo-like scheme ? (orbital advection)
@@ -107,6 +128,7 @@ class DataBlock {
   void WriteVariable(FILE* , int , int *, char *, void*);
 
   template<int dir> void LoopDir();     ///< // recursive loop on dimensions
+  void ComputeGridCoarseningLevels();   ///< Call user defined function to define Coarsening levels
 };
 
 #endif // DATABLOCK_DATABLOCK_HPP_

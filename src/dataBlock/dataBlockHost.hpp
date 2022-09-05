@@ -47,9 +47,15 @@ class DataBlockHost {
   IdefixArray4D<real>::HostMirror Uc;     ///< Main cell-centered conservative variables
   IdefixArray3D<real>::HostMirror InvDt;  ///< Inverse of maximum timestep in each cell
 
+  std::vector<IdefixArray2D<int>::HostMirror> coarseningLevel; ///< Grid coarsening level
+                                                     ///< (only defined when coarsening
+                                                     ///< is enabled)
 
-  std::vector<real> xbeg;                  ///< Beginning of dataBlock
-  std::vector<real> xend;                  ///< End of dataBlock
+  std::vector<bool> coarseningDirection;         ///< whether a coarsening is used in each direction
+
+
+  std::vector<real> xbeg;                        ///> Beginning of dataBlock
+  std::vector<real> xend;                        ///> End of dataBlock
 
   std::vector<int> np_tot;                  ///< total number of grid points
   std::vector<int> np_int;                  ///< internal number of grid points
@@ -78,6 +84,7 @@ class DataBlockHost {
 
   bool haveCurrent;                               ///< Whether the electrical current J is defined
 
+  GridCoarsening haveGridCoarsening{GridCoarsening::disabled}; ///< Is grid coarsening enabled?
 
  private:
   // Data object to which we are the mirror

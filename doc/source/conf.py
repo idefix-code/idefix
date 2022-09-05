@@ -75,9 +75,9 @@ def setup(app):
 
 # Setup the breathe extension
 breathe_projects = {
-    "My Project": "./xml"
+    "Idefix": "./xml"
 }
-breathe_default_project = "My Project"
+breathe_default_project = "Idefix"
 
 # Setup the exhale extension
 exhale_args = {

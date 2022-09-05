@@ -37,11 +37,15 @@ class Grid {
   std::vector<BoundaryType> lbound;          ///< Boundary condition to the left
   std::vector<BoundaryType> rbound;          ///< Boundary condition to the right
 
-  bool haveAxis=false;    ///< Do we require a special treatment of the axis in spherical coords?
+  bool haveAxis{false};    ///< Do we require a special treatment of the axis in spherical coords?
+
+
+  GridCoarsening haveGridCoarsening{GridCoarsening::disabled}; ///< Is grid coarsening enabled?
+  std::vector<bool> coarseningDirection;  ///< whether a coarsening is used in each direction
 
   // MPI data
-  std::vector<int> nproc;           ///< Total number of procs in each direction
-  std::vector<int> xproc;           ///< Coordinates of current proc in the array of procs
+  std::vector<int> nproc;           ///</< Total number of procs in each direction
+  std::vector<int> xproc;           ///</< Coordinates of current proc in the array of procs
 
   #ifdef WITH_MPI
   MPI_Comm CartComm;                ///< Cartesian communicator for the planned domain decomposition

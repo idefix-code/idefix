@@ -11,7 +11,7 @@ parser.add_argument("-noplot",
                     action="store_true")
 
 
-args=parser.parse_args()
+args, unknown=parser.parse_known_args()
 
 
 # values for the field strength to compute theoretical decay rate

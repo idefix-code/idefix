@@ -37,7 +37,9 @@ class Hydro {
   template <int> void CalcRightHandSide(real, real );
   void CalcCurrent();
   void AddSourceTerms(real, real );
-
+  void CoarsenFlow(IdefixArray4D<real>&);
+  void CoarsenMagField(IdefixArray4D<real>&);
+  void CoarsenVectorPotential();
   real GetGamma();
   real CheckDivB();
   void ResetStage();

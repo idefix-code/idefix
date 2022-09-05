@@ -198,6 +198,23 @@ if(haveAxis) {
   if((fabs(xend[JDIR]-M_PI)>1e-10) && (rbound[JDIR] == axis )) {
     IDEFIX_ERROR("Axis Boundaries requires your X2 domain to end at exactly x2=Pi");
   }
+  // Enforce symmetry of theta grid spacing when we cross the axis
+  if(lbound[JDIR] == axis) {
+    int jref = nghost[JDIR];
+    for(int j = jref - 1 ; j>=0 ; j -- ) {
+      dx[JDIR](j) = dx[JDIR](2*jref - j - 1);
+      xl[JDIR](j) = xl[JDIR](j+1)- dx[JDIR](j);
+      xr[JDIR](j) = xl[JDIR](j+1);
+    }
+  }
+  if(rbound[JDIR] == axis) {
+    int jref = nghost[JDIR]+np_int[JDIR] - 1;
+    for(int j = jref + 1 ; j<np_tot[JDIR] ; j++ ) {
+      dx[JDIR](j) = dx[JDIR](2*jref - j + 1);
+      xr[JDIR](j) = xr[JDIR](j-1) + dx[JDIR](j);
+      xl[JDIR](j) = xr[JDIR](j-1);
+    }
+  }
 }
 
   idfx::popRegion();

@@ -218,6 +218,11 @@ using IdfxFileHandler = FILE*;
 enum BoundaryType { internal, periodic, reflective, outflow, shearingbox, axis, userdef};
 enum BoundarySide { left, right};
 
+// Type of grid coarsening
+enum GridCoarsening{disabled,
+                    enabled,
+                    dynamic}; ///< enabled = static coarsening (static is a reserved c++ keyword)
+
 // Commonly used classes and functions
 #include "global.hpp"
 #include "error.hpp"

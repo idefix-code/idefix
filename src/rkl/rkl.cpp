@@ -214,6 +214,11 @@ void RKLegendre::Cycle() {
   // Convert current state into conservative variable
   data->hydro.ConvertPrimToCons();
 
+  // Coarsen the conservative variables if needed
+  if(data->haveGridCoarsening) {
+    data->Coarsen();
+  }
+
   // Store the result in Uc0
   Copy(Uc0,Uc);
   if(haveVs) {
@@ -314,6 +319,11 @@ void RKLegendre::Cycle() {
     data->hydro.boundary.ReconstructVcField(Uc);
   }
 
+  // Coarsen conservative variables once they have been evolved
+  if(data->haveGridCoarsening) {
+    data->Coarsen();
+  }
+
   // Convert current state into primitive variable
   data->hydro.ConvertConsToPrim();
 
@@ -402,7 +412,13 @@ void RKLegendre::Cycle() {
             #endif
           });
       #endif  // EVOLVE_VECTOR_POTENTIAL
+
       data->hydro.boundary.ReconstructVcField(Uc);
+    }
+
+    // Coarsen the flow if needed
+    if(data->haveGridCoarsening) {
+      data->Coarsen();
     }
     // Convert current state into primitive variable
     data->hydro.ConvertConsToPrim();
@@ -704,6 +720,13 @@ void RKLegendre::CalcParabolicRHS(real t) {
 
 void RKLegendre::SetBoundaries(real t) {
   idfx::pushRegion("RKLegendre::SetBoundaries");
+  if(data->haveGridCoarsening) {
+    data->hydro.CoarsenFlow(data->hydro.Vc);
+    #if MHD==YES
+      data->hydro.CoarsenMagField(data->hydro.Vs);
+    #endif
+  }
+
   // set internal boundary conditions
   // Disabled since this might affect fields that are NOT updated
   // by the MPI instance of RKLegendre

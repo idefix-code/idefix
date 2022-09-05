@@ -56,8 +56,12 @@ The grid spacing can be one of the following:
 * Stretched spacing (``s+`` or ``s-``): the block spacing is defined to follow a geometrical series, starting from the reference spacing :math:`\Delta x_0` taken from the previous (``-``) or next (``+``) uniform block. Mathematically, the grid spacing is defined as :math:`\Delta x_i=\Delta x_0 r^{i-1}` for ``s+`` and  :math:`\Delta x_i=\Delta x_0 r^{N-i}` for ``s-``. The streching ratio :math:`r` is itself defined implicitly as :math:`\frac{r-r^{N+1}}{1-r}=\frac{x_\mathrm{end}-x_\mathrm{start}}{\Delta x_0}`
 
 
-.. tip::
+.. note::
   Note that the stretched block requires at least one uniform block on one of it side to define the reference spacing :math:`\Delta x_0`
+
+.. tip::
+  It is also possible to change the grid spacing to increase the integration timestep with the ``coarsening`` entry, which enables grid coarsening
+  (see :ref:`gridCoarseningModule`)
 
 ``TimeIntegrator`` section
 ------------------------------

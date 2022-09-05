@@ -61,7 +61,7 @@ for rep in $rep_MHD_list; do
             echo "***********************************************"
             echo "Testing  $rep with $ini and $def"
             echo "***********************************************"
-            python3 testidefix.py -noplot || { echo "!!!! MHD $rep failed validation with $def and $ini"; exit 1; }
+            python3 testidefix.py -noplot -i ../$ini || { echo "!!!! MHD $rep failed validation with $def and $ini"; exit 1; }
             cd ..
         done
     done

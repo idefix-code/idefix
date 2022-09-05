@@ -21,7 +21,7 @@ parser.add_argument("-noplot",
                     action="store_true")
 
 
-args=parser.parse_args()
+args, unknown=parser.parse_known_args()
 
 # Parameters from Maclow+ 1995
 theta=np.pi/4

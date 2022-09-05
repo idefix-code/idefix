@@ -91,6 +91,22 @@ void Analysis(DataBlock & data) {
   data.DumpToFile("analysis");
 }
 
+void CoarsenFunction(DataBlock &data) {
+  IdefixArray2D<int> coarseningLevel = data.coarseningLevel[KDIR];
+  IdefixArray1D<real> th = data.x[JDIR];
+  idefix_for("set_coarsening", 0, data.np_tot[JDIR], 0, data.np_tot[IDIR],
+      KOKKOS_LAMBDA(int j,int i) {
+        coarseningLevel(j,i) = 1;
+        if(th(j) < 0.3) {
+          coarseningLevel(j,i) = 2;
+          /*
+          if(th(j)<0.1) {
+            coarseningLevel(j,i) = 3;
+          }*/
+        }
+      });
+}
+
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
@@ -100,6 +116,10 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   Rtorus = input.Get<real>("Setup","Rtorus",0);
   Ztorus = input.Get<real>("Setup","Ztorus",0);
   Rin = input.Get<real>("Setup","Rin",0);
+
+  if(data.haveGridCoarsening) {
+    data.EnrollGridCoarseningLevels(&CoarsenFunction);
+  }
 }
 
 // This routine initialize the flow

@@ -239,6 +239,11 @@ void TimeIntegrator::Cycle(DataBlock &data) {
       data.fargo.ShiftSolution(t0,data.dt);
     }
 
+    // Coarsen conservative variables once they have been evolved
+    if(data.haveGridCoarsening) {
+      data.Coarsen();
+    }
+
     // Back to using Vc
     data.hydro.ConvertConsToPrim();
 
@@ -260,6 +265,10 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     rkl.Cycle();
   }
 
+  // Coarsen the grid
+  if(data.haveGridCoarsening) {
+    data.Coarsen();
+  }
   // Update current time (should have already been done, but this gets rid of roundoff errors)
   data.t=t0+data.dt;
 

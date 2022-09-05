@@ -62,6 +62,17 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
             Ex2 = Kokkos::create_mirror_view(data->hydro.emf.ey);  )
 #endif
 
+  // if grid coarsening is enabled
+  if(data->haveGridCoarsening) {
+    this->haveGridCoarsening = data->haveGridCoarsening;
+    this->coarseningDirection = data->coarseningDirection;
+    this->coarseningLevel = std::vector<IdefixArray2D<int>::HostMirror>(3);
+    for(int dir = 0 ; dir < 3 ; dir++) {
+      if(coarseningDirection[dir]) {
+        coarseningLevel[dir] = Kokkos::create_mirror_view(data->coarseningLevel[dir]);
+      }
+    }
+  }
   // Store the grid informations from the dataBlock
   for(int dir = 0 ; dir < 3 ; dir++) {
     Kokkos::deep_copy(x[dir],data->x[dir]);
@@ -98,6 +109,14 @@ void DataBlockHost::SyncToDevice() {
 
   Kokkos::deep_copy(data->hydro.Uc,Uc);
 
+  if(haveGridCoarsening) {
+    for(int dir = 0 ; dir < 3 ; dir++) {
+      if(coarseningDirection[dir]) {
+        Kokkos::deep_copy(data->coarseningLevel[dir], coarseningLevel[dir]);
+      }
+    }
+  }
+
   idfx::popRegion();
 }
 
@@ -119,6 +138,14 @@ void DataBlockHost::SyncFromDevice() {
 #endif
 
   Kokkos::deep_copy(Uc,data->hydro.Uc);
+
+  if(haveGridCoarsening) {
+    for(int dir = 0 ; dir < 3 ; dir++) {
+      if(coarseningDirection[dir]) {
+        Kokkos::deep_copy(coarseningLevel[dir], data->coarseningLevel[dir]);
+      }
+    }
+  }
 
   idfx::popRegion();
 }

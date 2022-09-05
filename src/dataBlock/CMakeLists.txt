@@ -1,5 +1,6 @@
 target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/checkNan.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/coarsen.cpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/dataBlock.cpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/dataBlock.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/dataBlockHost.cpp

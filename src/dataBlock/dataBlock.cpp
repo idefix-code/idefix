@@ -114,6 +114,33 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
     );
   }
 
+  // Initialize grid coarsening if needed
+  if(grid.haveGridCoarsening != GridCoarsening::disabled) {
+    this->haveGridCoarsening = grid.haveGridCoarsening;
+    this->coarseningDirection = grid.coarseningDirection;
+    this->coarseningLevel = std::vector<IdefixArray2D<int>>(3);
+
+    for(int dir = 0 ; dir < 3 ; dir++) {
+      if(coarseningDirection[dir]) {
+        const int Xt = (dir == IDIR ? JDIR : IDIR);
+        const int Xb = (dir == KDIR ? JDIR : KDIR);
+
+        // Allocate coarsening level arrays
+        coarseningLevel[dir] = IdefixArray2D<int>(
+                                  "DataBlock_corseLevel",
+                                  np_tot[Xb],
+                                  np_tot[Xt]);
+        // Make a local reference
+        IdefixArray2D<int> coarseInit = coarseningLevel[dir];
+        // Init coarsening level array to one everywhere
+        idefix_for("init_coarsening", 0, np_tot[Xb], 0, np_tot[Xt],
+                KOKKOS_LAMBDA(int j, int i) {
+                  coarseInit(j,i) = 1;
+                });
+      }
+    }
+  }
+
   // Iniaitlize the geometry
   this->MakeGeometry();
 
@@ -147,8 +174,17 @@ void DataBlock::ResetStage() {
 
 // Set the boundaries of the data structures in this datablock
 void DataBlock::SetBoundaries() {
+  if(haveGridCoarsening) {
+    ComputeGridCoarseningLevels();
+    hydro.CoarsenFlow(hydro.Vc);
+    #if MHD==YES
+      hydro.CoarsenMagField(hydro.Vs);
+    #endif
+  }
   hydro.boundary.SetBoundaries(t);
 }
+
+
 
 void DataBlock::ShowConfig() {
   if(idfx::psize>1) {

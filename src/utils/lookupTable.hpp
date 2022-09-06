@@ -179,7 +179,7 @@ LookupTable<kDim>::LookupTable(std::vector<std::string> filenames,
       npy::LoadArrayFromNumpy(filenames[n], shapeX, fortran_order, dataX);
     } catch(std::exception &e) {
       std::stringstream errmsg;
-      errmsg << e.what();
+      errmsg << e.what() << std::endl;
       errmsg << "LookupTable cannot load the file " << filenames[n] << std::endl;
       IDEFIX_ERROR(errmsg);
     }

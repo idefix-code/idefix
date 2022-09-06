@@ -92,23 +92,6 @@ class SlopeLimiter {
     return (T(0) < val) - (val < T(0));
 }
 
-
-  KOKKOS_FORCEINLINE_FUNCTION real getDeltaWi(const real vm1, const real v0, const real vp1) const {
-    // PH13, eq. 3.30
-    real delta1 = vp1 - vm1;
-    real deltaL = v0 - vm1;
-    real deltaR = vp1 - v0;
-    real deltaw0 = 0.0;
-
-    if(deltaR*deltaL>0) {
-      deltaw0 = FMIN(FABS(deltaL),FABS(deltaR));
-      deltaw0 = FMIN(0.5*FABS(delta1), 2*deltaw0);
-      deltaw0 *= sign(delta1);
-    }
-
-    return(deltaw0);
-  }
-
   KOKKOS_FORCEINLINE_FUNCTION void limitPPMFaceValues(const real vm1, const real v0, const real vp1,
                                                       const real vp2, real &vph) const {
     // if local extremum, then use limited curvature estimate

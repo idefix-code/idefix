@@ -87,7 +87,7 @@ class SlopeLimiter {
     if constexpr(limiter == Limiter::MinMod) return(MinModLim(dvp,dvm));
   }
 
-  template <typename T> 
+  template <typename T>
   KOKKOS_FORCEINLINE_FUNCTION int sign(T val) const {
     return (T(0) < val) - (val < T(0));
 }
@@ -109,10 +109,8 @@ class SlopeLimiter {
     return(deltaw0);
   }
 
-  KOKKOS_FORCEINLINE_FUNCTION void limitPPMFaceValues(const real vm1, const real v0, const real vp1, 
+  KOKKOS_FORCEINLINE_FUNCTION void limitPPMFaceValues(const real vm1, const real v0, const real vp1,
                                                       const real vp2, real &vph) const {
-    
-    
     // if local extremum, then use limited curvature estimate
     if( (vp1-vph)*(vph-v0) < 0.0) {
       // Collela, eqns. 85
@@ -129,14 +127,13 @@ class SlopeLimiter {
       }
       vph = 0.5*(v0+vp1) - delta / 6.0;
     }
-
   }
 
-  // This implementation follows the PPM4 scheme of Peterson & Hammet (PH13) 
+  // This implementation follows the PPM4 scheme of Peterson & Hammet (PH13)
   // SIAM J. Sci Comput (2013)
 
   KOKKOS_FORCEINLINE_FUNCTION void getPPMStates(const real vm2, const real vm1, const real v0,
-                                                const real vp1, const real vp2, real &vl, real &vr) 
+                                                const real vp1, const real vp2, real &vl, real &vr)
                                                 const {
     const int n = 2;
 
@@ -146,8 +143,6 @@ class SlopeLimiter {
     limitPPMFaceValues(vm2,vm1,v0,vp1,vl);
     limitPPMFaceValues(vm1,v0,vp1,vp2,vr);
 
-    real dqfm = v0 - vl;
-    real dqfp = vr - v0;
     real d2qf = 6.0*(vl + vr - 2.0*v0);
     real d2qc0 = vm1 + vp1 - 2.0*v0;
     real d2qcp1 = v0 + vp2 - 2.0*vp1;
@@ -161,7 +156,7 @@ class SlopeLimiter {
       d2q = C * FMIN(FABS(d2qcm1), d2q);
       d2q = sign(d2qf) * FMIN(FABS(d2qf), d2q);
     }
-    
+
     real qmax = FMAX(FMAX(FABS(vm1),FABS(v0)),FABS(vp1));
     real rho = 0.0;
     // todo(GL): replace 1e-12 by mixed precision value
@@ -182,8 +177,8 @@ class SlopeLimiter {
       }
       if(FABS(vl-v0) >= n*FABS(v0-vr)) {
         vl = v0 + n*(v0-vr);
-      }       
-    }                          
+      }
+    }
   }
 
   KOKKOS_FORCEINLINE_FUNCTION void ExtrapolatePrimVar(const int i,
@@ -323,7 +318,7 @@ class SlopeLimiter {
           v0 = vp1;
           vp1 = vp2;
           vp2 = Vc(nv,k+2*koffset,j+2*joffset,i+2*ioffset);
-          
+
           getPPMStates(vm2, vm1, v0, vp1, vp2, vl, vr);
 
           // Check positivity
@@ -343,7 +338,7 @@ class SlopeLimiter {
               }
             }
           #endif
-          
+
           vR[nv] = vl;
       }
     }

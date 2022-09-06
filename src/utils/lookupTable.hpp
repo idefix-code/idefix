@@ -122,7 +122,14 @@ LookupTable<kDim>::LookupTable(std::vector<std::string> filenames,
                   " of dimensions of LookupTable");
   }
   // Load the full dataset
-  npy::LoadArrayFromNumpy(dataSet, shape, fortran_order, dataVector);
+  try {
+    npy::LoadArrayFromNumpy(dataSet, shape, fortran_order, dataVector);
+  } catch(std::exception &e) {
+    std::stringstream errmsg;
+    errmsg << e.what();
+    errmsg << "LookupTable cannot load the file " << dataSet << std::endl;
+    IDEFIX_ERROR(errmsg);
+  }
 
   if(shape.size() != kDim) {
     IDEFIX_ERROR("The input numpy dataSet dimensions and LookupTable dimensions do not match");
@@ -168,7 +175,14 @@ LookupTable<kDim>::LookupTable(std::vector<std::string> filenames,
     std::vector<double> dataX;
     shapeX.clear();
     dataX.clear();
-    npy::LoadArrayFromNumpy(filenames[n], shapeX, fortran_order, dataX);
+    try {
+      npy::LoadArrayFromNumpy(filenames[n], shapeX, fortran_order, dataX);
+    } catch(std::exception &e) {
+      std::stringstream errmsg;
+      errmsg << e.what();
+      errmsg << "LookupTable cannot load the file " << filenames[n] << std::endl;
+      IDEFIX_ERROR(errmsg);
+    }
     if(shapeX[0] != dimensionsHost(n)) {
       idfx::cout << "ERROR: Dimension of " << filenames[n]
                  << " does not match "<< n+1 << "th dimension of " << dataSet << std::endl;

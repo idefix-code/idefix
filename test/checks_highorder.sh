@@ -1,6 +1,6 @@
 #!/bin/bash
 
-rep_list="HD/sod-iso HD/sod MHD/sod MHD/sod-iso MHD/OrszagTang"
+rep_list="HD/sod-iso HD/sod MHD/sod MHD/sod-iso MHD/LinearWaveTest MHD/OrszagTang"
 rep_MPI_list="MHD/OrszagTang3D"
 order_list="LimO3 Parabolic"
 

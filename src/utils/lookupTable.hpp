@@ -17,13 +17,18 @@
 template <const int kDim>
 class LookupTable {
  public:
-  LookupTable(std::string filename, char delimiter);
-  LookupTable(std::vector<std::string> filenames, std::string dataSet);
+  LookupTable() = default;
+  LookupTable(std::string filename, char delimiter, bool errorIfOutOfBound = true);
+  LookupTable(std::vector<std::string> filenames,
+              std::string dataSet,
+               bool errorIfOutOfBound = true);
   IdefixArray1D<int> dimensions;
   IdefixArray1D<int> offset;      // Actually sum_(n-1) (dimensions)
   IdefixArray1D<real> xin;
 
   IdefixArray1D<real> data;
+
+  bool errorIfOutOfBound{true};
 
   // Fetch function that should be called inside idefix_loop
   KOKKOS_INLINE_FUNCTION
@@ -34,21 +39,34 @@ class LookupTable {
     for(int n = 0 ; n < kDim ; n++) {
       real xstart = xin(offset(n));
       real xend = xin(offset(n)+dimensions(n)-1);
+      real x_n = x[n];
 
        // Check that we're within bounds
-      if(x[n] < xin(offset(n)) || x[n] > xin(offset(n)+dimensions(n)-1)) {
-        return(NAN);
+      if(x_n < xin(offset(n))) {
+        if(errorIfOutOfBound) {
+          Kokkos::abort("LookupTable:: ERROR! Attempt to interpolate below your lower bound.");
+        } else {
+          x_n = xin(offset(n));
+        }
+      }
+
+      if( x_n >= xin(offset(n)+dimensions(n)-1)) {
+        if(errorIfOutOfBound) {
+          Kokkos::abort("LookupTable:: ERROR! Attempt to interpolate above your upper bound.");
+        } else {
+          x_n = xin(offset(n)+dimensions(n)-1) - SMALL_NUMBER;
+        }
       }
 
       // Compute index of closest element assuming even distribution
-      int i = static_cast<int> ( (x[n] - xstart) / (xend - xstart) * (dimensions(n)-1));
+      int i = static_cast<int> ( (x_n - xstart) / (xend - xstart) * (dimensions(n)-1));
 
       // Check if resulting bounding elements are correct
-      if(xin(offset(n) + i) > x[n] || xin(offset(n) + i+1) < x[n]) {
+      if(xin(offset(n) + i) > x_n || xin(offset(n) + i+1) < x_n) {
         // Nop, so the points are not evenly distributed
         // Search for the correct index (a dicotomy would be more appropriate...)
         i = 0;
-        while(xin(offset(n) + i) < x[n]) {
+        while(xin(offset(n) + i) < x_n) {
           i++;;
         }
         i = i-1; // i is overestimated by one
@@ -58,7 +76,7 @@ class LookupTable {
       idx[n] = i;
 
       // Store the elementary ratio
-      delta[n] = (x[n] - xin(offset(n) + i) ) / (xin(offset(n) + i+1) - xin(offset(n) + i));
+      delta[n] = (x_n - xin(offset(n) + i) ) / (xin(offset(n) + i+1) - xin(offset(n) + i));
     }
 
     // De a linear interpolation from the neightbouring points to get our value.
@@ -90,8 +108,12 @@ class LookupTable {
 };
 
 template <int kDim>
-LookupTable<kDim>::LookupTable(std::vector<std::string> filenames, std::string dataSet) {
+LookupTable<kDim>::LookupTable(std::vector<std::string> filenames,
+                               std::string dataSet,
+                               bool errOOB) {
   idfx::pushRegion("LookupTable::LookupTable");
+  this->errorIfOutOfBound = errOOB;
+
   std::vector<uint64_t> shape;
   bool fortran_order;
   std::vector<double> dataVector;
@@ -130,6 +152,11 @@ LookupTable<kDim>::LookupTable(std::vector<std::string> filenames, std::string d
   // Copy data in memory
   for(uint64_t i = 0 ; i < dataVector.size() ; i++) {
     dataHost(i) = dataVector[i];
+    if(std::isnan(dataHost(i))) {
+      std::stringstream msg;
+      msg << "Nans were found while reading " << dataSet << std::endl;
+      IDEFIX_ERROR(msg);
+    }
   }
 
   // Copy shape arrays and coordinates
@@ -152,6 +179,11 @@ LookupTable<kDim>::LookupTable(std::vector<std::string> filenames, std::string d
     }
     for(int i = 0 ; i < shapeX[0] ; i++) {
       xHost(offsetHost(n)+i) = dataX[i];
+      if(std::isnan(dataX[i])) {
+        std::stringstream msg;
+        msg << "Nans were found while reading " << filenames[n] << std::endl;
+        IDEFIX_ERROR(msg);
+      }
     }
   }
 
@@ -167,8 +199,9 @@ LookupTable<kDim>::LookupTable(std::vector<std::string> filenames, std::string d
 
 // Constructor from CSV file
 template <int kDim>
-LookupTable<kDim>::LookupTable(std::string filename, char delimiter) {
+LookupTable<kDim>::LookupTable(std::string filename, char delimiter, bool errOOB) {
   idfx::pushRegion("LookupTable::LookupTable");
+    this->errorIfOutOfBound = errOOB;
   if(kDim>2) {
     IDEFIX_ERROR("CSV files are only compatible with 1D and 2D tables");
   }
@@ -279,12 +312,22 @@ LookupTable<kDim>::LookupTable(std::string filename, char delimiter) {
 
     for(int i = 0 ; i < xVector.size(); i++) {
       xHost(i) = xVector[i];
+      if(std::isnan(xHost(i))) {
+        std::stringstream msg;
+        msg << "Nans were found in coordinates while reading " << filename << std::endl;
+        IDEFIX_ERROR(msg);
+      }
     }
     if(kDim>1) {
       dimensionsHost(1) = size[1];
       offsetHost(1) = offsetHost(0)+dimensionsHost(0);
       for(int i = 0 ; i < yVector.size(); i++) {
         xHost(offsetHost(1)+i) = yVector[i];
+        if(std::isnan(yVector[i])) {
+          std::stringstream msg;
+          msg << "Nans were found in coordinates while reading " << filename << std::endl;
+          IDEFIX_ERROR(msg);
+        }
       }
     }
 
@@ -292,6 +335,11 @@ LookupTable<kDim>::LookupTable(std::string filename, char delimiter) {
       auto line = dataVector[j];
       for(int i = 0 ; i < line.size(); i++) {
         dataHost(i*size[1]+j) = line[i];
+        if(std::isnan(line[i])) {
+          std::stringstream msg;
+          msg << "Nans were found in dataset while reading " << filename << std::endl;
+          IDEFIX_ERROR(msg);
+        }
       }
     }
   }

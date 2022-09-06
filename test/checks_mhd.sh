@@ -1,5 +1,5 @@
 #!/bin/bash
-rep_MHD_list="sod-iso sod AxisFluxTube AmbipolarCshock HallWhistler ResistiveAlfvenWave FargoMHDSpherical ShearingBox OrszagTang OrszagTang3D"
+rep_MHD_list="sod-iso sod AxisFluxTube AmbipolarCshock HallWhistler ResistiveAlfvenWave LinearWaveTest FargoMHDSpherical ShearingBox OrszagTang OrszagTang3D"
 
 # refer to the parent dir of this file, wherever this is called from
 # a python equivalent is e.g.

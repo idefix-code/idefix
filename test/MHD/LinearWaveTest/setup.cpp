@@ -26,7 +26,6 @@ void Setup::InitFlow(DataBlock &data) {
 
     real x,y,z;
 
-    real lambda=1.0;
     real gamma = data.hydro.GetGamma();
     // The eigenmode
     real R[8];

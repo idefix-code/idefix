@@ -81,19 +81,4 @@ class idfx::IdefixErrStream {
   }
 };
 
-class idfx::IdefixErrStream {
- public:
-  // for error output of variables and stuff
-  template<typename T> IdefixErrStream& operator<<(const T& something) {
-    std::cerr << something;
-    return *this;
-  }
-  // for manipulators like std::endl
-  typedef std::ostream& (*stream_function)(std::ostream&);
-  IdefixErrStream& operator<<(stream_function func) {
-    func(std::cerr);
-    return *this;
-  }
-};
-
 #endif // GLOBAL_HPP_

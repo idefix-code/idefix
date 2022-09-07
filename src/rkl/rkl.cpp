@@ -6,6 +6,7 @@
 // ***********************************************************************************
 
 #include <cmath>
+#include <string>
 
 #include "rkl.hpp"
 #include "dataBlock.hpp"
@@ -54,6 +55,13 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
   this->data = &datain;
 
   cfl_rkl = input.GetOrSet<real> ("RKL","cfl",0, 0.5);
+
+  // By default check nans in debug mode
+  #ifdef DEBUG
+  this->checkNan = true;
+  #endif
+
+  this->checkNan = input.GetOrSet<bool>("RKL","check_nan",0, this->checkNan);
 
   rmax_par = 100.0;
 
@@ -171,6 +179,10 @@ void RKLegendre::ShowConfig() {
   }
   if(haveVs) {
      idfx::cout << "RKLegendre: will evolve face-centered fields Vs." << std::endl;
+  }
+  if(checkNan) {
+    idfx::cout << "RKLegendre: will check consistency of solution in the integrator (slow!)."
+               << std::endl;
   }
 }
 
@@ -326,6 +338,11 @@ void RKLegendre::Cycle() {
 
   // Convert current state into primitive variable
   data->hydro.ConvertConsToPrim();
+  if(checkNan) {
+    if(data->CheckNan()>0) {
+      throw std::runtime_error(std::string("Nan found during RKL stage 1"));
+    }
+  }
 
   real mu_j, nu_j, gamma_j;
   // subStages loop
@@ -422,6 +439,12 @@ void RKLegendre::Cycle() {
     }
     // Convert current state into primitive variable
     data->hydro.ConvertConsToPrim();
+
+    if(checkNan) {
+      if(data->CheckNan()>0) {
+        throw std::runtime_error(std::string("Nan found during RKL stage ")+std::to_string(stage));
+      }
+    }
 
     // increment time
 #if RKL_ORDER == 1

@@ -41,6 +41,8 @@ class LookupTable {
       real xend = xin(offset(n)+dimensions(n)-1);
       real x_n = x[n];
 
+      if(std::isnan(x_n)) return(NAN);
+
        // Check that we're within bounds
       if(x_n < xin(offset(n))) {
         if(errorIfOutOfBound) {

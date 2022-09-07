@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Upcoming
+## [1.1.0] 2022-09-07
 ### Changed
 - use buffers for mpi axis exchanges to improve performances on GPUs (!195)
 - slight optimisation of the cfl estimation for parabolic terms by using the maximum diffusion coefficient instead of the sum of all of the diffusion coefficients (makes a difference when several explicit parabolic terms are used simultaneously) (!176)
@@ -15,11 +15,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fixed a bug in the test shearing box setup which led to memory corruption and incorrect pressure when ISOTHERMAL approximation was disabled (!190)
 - make RKL faster when running in 3D with MHD diffusion terms by skipping the evolution of cell-centered fields (!215)
 - fixed the many warning messages when compiling on CUDA (!229)
+- improved spherical axis regularisation in full 3D (!245)
+- improved PPM scheme by using Peterson & Hammet (2013) formulation (!251)
 
 ### Added
 - single precision version is validated and fully operational. Can be enabled from cmake. (!197)
 - isotropic thermal diffusion (anisotropic diffusion in MHD will come later) (!176)
-- fixed a bug in 1D+1D in spherical geometry (J. Mauxion) (!175)
+- fixed a bug in 1D+1D in spherical geometry (!175)
 - fixed a bug in calcCurrent which led to incorrectly computed currents on non-uniform grids (!206)
 - Increase the efficiency of abort checks using MPI_Bcast instead of MPI_Allreduce (!174)
 - allow the user to integrate the magnetic vector potential instead of the field to reduce the accumulation of roundoff errors on div(B) (experimental feature, can be enabled at config time) (!177)
@@ -27,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - addition of stateContainers to automatically evolve variables in multi-step time integration (!191)
 - added a class to use easily lookup tables in idefix_for constructs (class LookupTable) (!213, !198, !178)
 - added a shock flattening module (!219)
+- added a grid coarsening module to increase the explicit timestep in heterogeneous grids (!246)
+- added the linear wave test of Gardiner & Stone (2005) (!251)
 
 ## [1.0.0] 2022-01-13
 ### Changed

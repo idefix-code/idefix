@@ -65,6 +65,8 @@ class RKLegendre {
   bool haveVc{false};           // Whether we need to compute cell-centered variables
   void AddVariable(int, std::vector<int> & );
 
+  bool checkNan{false};         // whether we should look for Nans when RKL is running
+
  private:
   template<int> void LoopDir(real);   // Dimensional loop
 };

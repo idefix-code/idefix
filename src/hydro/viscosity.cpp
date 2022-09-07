@@ -50,12 +50,8 @@ void Viscosity::Init(Input &input, Grid &grid, Hydro *hydroin) {
         this->eta1 = input.Get<real>("Hydro","viscosity",2);
         // second viscosity?
         this->eta2 = input.GetOrSet<real>("Hydro","viscosity",3, 0.0);
-        idfx::cout << "Viscosity: Enabling constant viscosity function with eta1="
-                   << this->eta1 << " and eta2=" << this->eta2 << " ."<< std::endl;
         this->haveViscosity = Constant;
       } else if(input.Get<std::string>("Hydro","viscosity",1).compare("userdef") == 0) {
-        idfx::cout << "Viscosity: Enabling user-defined viscosity function."
-                   << std::endl;
         this->haveViscosity = UserDefFunction;
         this->eta1Arr = IdefixArray3D<real>("ViscosityEta1Array",hydro->data->np_tot[KDIR],
                                                                  hydro->data->np_tot[JDIR],
@@ -91,14 +87,35 @@ void Viscosity::Init(Input &input, Grid &grid, Hydro *hydroin) {
   idfx::popRegion();
 }
 
+void Viscosity::ShowConfig() {
+  if(haveViscosity==Constant) {
+    idfx::cout << "Viscosity: ENEABLED with constant viscosity eta1="
+                    << this->eta1 << " and eta2=" << this->eta2 << " ."<< std::endl;
+  } else if (haveViscosity==UserDefFunction) {
+    idfx::cout << "Viscosity: ENABLED with user-defined viscosity function."
+                   << std::endl;
+    if(!viscousDiffusivityFunc) {
+      IDEFIX_ERROR("No viscosity function has been enrolled");
+    }
+  } else {
+    IDEFIX_ERROR("Unknown viscosity mode");
+  }
+  if(hydro->viscosityStatus.isExplicit) {
+    idfx::cout << "Viscosity: uses an explicit time integration." << std::endl;
+  } else if(hydro->viscosityStatus.isRKL) {
+    idfx::cout << "Viscosity: uses a Runge-Kutta-Legendre time integration."
+                << std::endl;
+  } else {
+    IDEFIX_ERROR("Unknown time integrator for viscosity.");
+  }
+}
 
 void Viscosity::EnrollViscousDiffusivity(ViscousDiffusivityFunc myFunc) {
   if(this->haveViscosity < UserDefFunction) {
-    IDEFIX_ERROR("Viscous diffusivity enrollment requires Hydro/Viscosity "
+    IDEFIX_WARNING("Viscous diffusivity enrollment requires Hydro/Viscosity "
                  "to be set to userdef in .ini file");
   }
   this->viscousDiffusivityFunc = myFunc;
-  idfx::cout << "Viscosity: User-defined viscous diffusion has been enrolled." << std::endl;
 }
 
 // This function computes the viscous flux and stores it in hydro->fluxRiemann
@@ -163,15 +180,15 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
     iend++;
     idefix_for("ViscousFluxIDIR",kbeg, kend, jbeg, jend, ibeg, iend,
       KOKKOS_LAMBDA (int k, int j, int i) {
-        real tau_xx, tau_xy, tau_xz;
-        real tau_yy, tau_yz;
-        real tau_zz;
+        [[maybe_unused]] real tau_xx, tau_xy, tau_xz;
+        [[maybe_unused]] real tau_yy, tau_yz;
+        [[maybe_unused]] real tau_zz;
 
-        real dVxi, dVxj, dVxk;
-        real dVyi, dVyj, dVyk;
-        real dVzi, dVzj, dVzk;
+        [[maybe_unused]] real dVxi, dVxj, dVxk;
+        [[maybe_unused]] real dVyi, dVyj, dVyk;
+        [[maybe_unused]] real dVzi, dVzj, dVzk;
 
-        real divV;
+        [[maybe_unused]] real divV;
 
         tau_xx = tau_xy = tau_xz = ZERO_F;
         tau_yy = tau_yz = ZERO_F;
@@ -182,7 +199,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
         dVzi = dVzj = dVzk = ZERO_F;
 
         real eta1, eta2;
-        real etaC1, etaC2;
+        [[maybe_unused]] real etaC1, etaC2;
 
         if(haveViscosity == UserDefFunction) {
           etaC1 = eta1Arr(k,j ,i);
@@ -367,13 +384,13 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
     jend++;
     idefix_for("ViscousFluxJDIR",kbeg, kend, jbeg, jend, ibeg, iend,
     KOKKOS_LAMBDA (int k, int j, int i) {
-      real tau_xx, tau_xy, tau_xz;
-      real tau_yy, tau_yz;
-      real tau_zz;
+      [[maybe_unused]] real tau_xx, tau_xy, tau_xz;
+      [[maybe_unused]] real tau_yy, tau_yz;
+      [[maybe_unused]] real tau_zz;
 
-      real dVxi, dVxj, dVxk;
-      real dVyi, dVyj, dVyk;
-      real dVzi, dVzj, dVzk;
+      [[maybe_unused]] real dVxi, dVxj, dVxk;
+      [[maybe_unused]] real dVyi, dVyj, dVyk;
+      [[maybe_unused]] real dVzi, dVzj, dVzk;
 
       real divV;
 
@@ -386,7 +403,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
       dVzi = dVzj = dVzk = ZERO_F;
 
       real eta1, eta2;
-      real etaC1, etaC2;
+      [[maybe_unused]] real etaC1, etaC2;
 
       if(haveViscosity == UserDefFunction) {
         etaC1 = eta1Arr(k,j,i);
@@ -557,13 +574,13 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
     ///////////////////////////////////////////
     idefix_for("ViscousFluxKDIR",kbeg, kend, jbeg, jend, ibeg, iend,
     KOKKOS_LAMBDA (int k, int j, int i) {
-      real tau_xx, tau_xy, tau_xz;
-      real tau_yy, tau_yz;
-      real tau_zz;
+      [[maybe_unused]] real tau_xx, tau_xy, tau_xz;
+      [[maybe_unused]] real tau_yy, tau_yz;
+      [[maybe_unused]] real tau_zz;
 
-      real dVxi, dVxj, dVxk;
-      real dVyi, dVyj, dVyk;
-      real dVzi, dVzj, dVzk;
+      [[maybe_unused]] real dVxi, dVxj, dVxk;
+      [[maybe_unused]] real dVyi, dVyj, dVyk;
+      [[maybe_unused]] real dVzi, dVzj, dVzk;
 
       real divV;
 
@@ -576,7 +593,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
       dVzi = dVzj = dVzk = ZERO_F;
 
       real eta1, eta2;
-      real etaC1, etaC2;
+      [[maybe_unused]]  real etaC1, etaC2;
 
       if(haveViscosity == UserDefFunction) {
         etaC1 = eta1Arr(k,j,i);

@@ -9,12 +9,27 @@ Created on Thu Mar  5 11:29:41 2020
 import os
 import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
-from pytools.vtk_io import readVTKSpherical
+from pytools.vtk_io import readVTK
 import numpy as np
-import matplotlib.pyplot as plt
+import argparse
+import inifix
 
-V=readVTKSpherical('../data.0001.vtk')
-U=readVTKSpherical('data.0001.ref.vtk')
+parser = argparse.ArgumentParser()
+parser.add_argument("-i",
+                    default=False,
+                    help="idefix input file")
+
+args, unknown=parser.parse_known_args()
+
+referenceFile = 'data.0001.ref.vtk'
+
+if(args.i):
+  conf = inifix.load(args.i)
+  if "coarsening" in conf["Grid"]:
+    referenceFile = 'data.0001.ref-coarsening.vtk'
+
+V=readVTK('../data.0001.vtk')
+U=readVTK(referenceFile)
 
 # Compute BRMS
 Brms_ref=np.sqrt(V.data['BX1']**2+V.data['BX2']**2+V.data['BX3']**2)

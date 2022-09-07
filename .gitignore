@@ -5,9 +5,9 @@ doc/source/_public/*
 doc/source/api/*
 doc/source/xml/*
 
-
 # compiled files
 **/__pycache__
+*.pyc
 **/idefix
 
 # generated files
@@ -15,11 +15,18 @@ doc/source/xml/*
 src/gitversion.hpp
 **/libkokkos.a
 **/KokkosCore_config.h
+build
+Makefile
+CMakeFiles
+CMakeCache.txt
+cmake_install.cmake
+Makefile.local
 
 # test artifacts
 test/**/*.o
 test/**/*.vtk
 test/**/*.dmp
+test/**/*.idfx
 test/**/*.tmp
 test/**/Makefile
 test/**/KokkosCore*
@@ -28,7 +35,9 @@ test/**/*.pyc
 
 # machine specific cache and hidden files
 .*
+*.DS_Store
 
 # tmp files
 *~
 *\#
+*.tar.gz

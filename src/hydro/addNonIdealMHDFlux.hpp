@@ -16,6 +16,8 @@ template <int dir>
 void Hydro::AddNonIdealMHDFlux(const real t) {
   idfx::pushRegion("Hydro::addNonIdealMHDFlux");
 
+#if MHD == YES
+
   int ioffset,joffset,koffset;
 
   IdefixArray4D<real> Flux = this->FluxRiemann;
@@ -87,8 +89,8 @@ void Hydro::AddNonIdealMHDFlux(const real t) {
       real eta,xA;
       real locdmax = 0.0;
 
-      int ip1, jp1, kp1;  // Offset indieces
-
+      int ip1;  // Offset indieces
+      [[maybe_unused]] int jp1, kp1;
       ip1=i+1;
 #if DIMENSIONS >=2
       jp1 = j+1;
@@ -144,10 +146,10 @@ void Hydro::AddNonIdealMHDFlux(const real t) {
           if(ambipolar == UserDefFunction)
             xA = AVERAGE_3D_X(xAmbiArr,k,j,i);
 
-          real BdotB = EXPAND( Bx1*Bx1, +Bx2*Bx2, +Bx3*Bx3);
+          [[maybe_unused]] real BdotB = EXPAND( Bx1*Bx1, +Bx2*Bx2, +Bx3*Bx3);
 
-          real Fx2 = -xA * BdotB * Jx3;
-          real Fx3 = xA * BdotB * Jx2;
+          [[maybe_unused]] real Fx2 = -xA * BdotB * Jx3;
+          [[maybe_unused]] real Fx3 = xA * BdotB * Jx2;
           #if COMPONENTS == 3
             real JdotB = Jx1 * Bx1 + Jx2 * Bx2 + Jx3 * Bx3;
             Fx2 += xA * JdotB * Bx3;
@@ -206,10 +208,10 @@ void Hydro::AddNonIdealMHDFlux(const real t) {
           if(ambipolar == UserDefFunction)
             xA = AVERAGE_3D_Y(xAmbiArr,k,j,i);
 
-          real BdotB = EXPAND( Bx1*Bx1, +Bx2*Bx2, +Bx3*Bx3);
+          [[maybe_unused]] real BdotB = EXPAND( Bx1*Bx1, +Bx2*Bx2, +Bx3*Bx3);
 
-          real Fx1 = xA * BdotB * Jx3;
-          real Fx3 = -xA * BdotB * Jx1;
+          [[maybe_unused]] real Fx1 = xA * BdotB * Jx3;
+          [[maybe_unused]] real Fx3 = -xA * BdotB * Jx1;
           #if COMPONENTS == 3
             real JdotB = Jx1 * Bx1 + Jx2 * Bx2 + Jx3 * Bx3;
             Fx1 += -xA * JdotB * Bx3;
@@ -263,10 +265,10 @@ void Hydro::AddNonIdealMHDFlux(const real t) {
           if(ambipolar == UserDefFunction)
             xA = AVERAGE_3D_Z(xAmbiArr,k,j,i);
 
-          real BdotB = Bx1*Bx1 + Bx2*Bx2 + Bx3*Bx3;
+          [[maybe_unused]] real BdotB = Bx1*Bx1 + Bx2*Bx2 + Bx3*Bx3;
 
-          real Fx1 = -xA * BdotB * Jx2;
-          real Fx2 = xA * BdotB * Jx1;
+          [[maybe_unused]] real Fx1 = -xA * BdotB * Jx2;
+          [[maybe_unused]] real Fx2 = xA * BdotB * Jx1;
           #if COMPONENTS == 3
             real JdotB = Jx1 * Bx1 + Jx2 * Bx2 + Jx3 * Bx3;
             Fx1 += xA * JdotB * Bx2;
@@ -287,6 +289,7 @@ void Hydro::AddNonIdealMHDFlux(const real t) {
     }
   );
 
+#endif
   idfx::popRegion();
 }
 

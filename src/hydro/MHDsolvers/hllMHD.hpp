@@ -9,7 +9,7 @@
 #define HYDRO_MHDSOLVERS_HLLMHD_HPP_
 
 #include "../idefix.hpp"
-#include "extrapolatePrimVar.hpp"
+#include "slopeLimiter.hpp"
 #include "fluxMHD.hpp"
 #include "convertConsToPrimMHD.hpp"
 #include "storeFlux.hpp"
@@ -57,14 +57,16 @@ void Hydro::HllMHD() {
   IdefixArray3D<real> dR;
 
   real gamma = this->gamma;
-  real xHConstant = this->xH;
-  real gamma_m1=this->gamma-ONE_F;
-  real csIso = this->isoSoundSpeed;
-  HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
+  [[maybe_unused]] real xHConstant = this->xH;
+  [[maybe_unused]] real gamma_m1=gamma-ONE_F;
+  [[maybe_unused]] real csIso = this->isoSoundSpeed;
+  [[maybe_unused]] HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
+
+  SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR],shockFlattening);
 
   // Define normal, tangent and bi-tanget indices
   // st and sb will be useful only when Hall is included
-  real st,sb;
+  real st = ONE_F, sb = ONE_F;
 
   switch(DIR) {
     case(IDIR):
@@ -168,7 +170,9 @@ void Hydro::HllMHD() {
       c2Iso = ZERO_F;
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, dx, vL, vR);
+      slopeLim.ExtrapolatePrimVar(i, j, k, vL, vR);
+      vL[BXn] = Vs(DIR,k,j,i);
+      vR[BXn] = vL[BXn];
 
       // 2-- Get the wave speed
       real gpr, b1, b2, b3, Btmag2, Bmag2;
@@ -268,11 +272,15 @@ void Hydro::HllMHD() {
       K_PrimToCons(uL, vL, gamma_m1);
       K_PrimToCons(uR, vR, gamma_m1);
 
+
+
 #pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
         fluxL[nv] = uL[nv];
         fluxR[nv] = uR[nv];
       }
+
+
 
       // 3-- Compute the left and right fluxes
       K_Flux(fluxL, vL, fluxL, c2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
@@ -280,7 +288,7 @@ void Hydro::HllMHD() {
 
       // 4-- Compute the Hall flux
       if(haveHall) {
-        int ip1, jp1, kp1;
+        [[maybe_unused]] int ip1, jp1, kp1;
         real Jx1, Jx2, Jx3;
         ip1=i+1;
         #if DIMENSIONS >=2
@@ -419,9 +427,11 @@ void Hydro::HllMHD() {
         K_StoreContact<DIR>(i,j,k,st,sb,Flux,Et,Eb,SV);
       } else if (emfAverage==ElectroMotiveForce::uct_hll) {
         K_StoreHLL<DIR>(i,j,k,st,sb,sl,sr,vL,vR,Et,Eb,aL,aR,dL,dR);
-      } else if (emfAverage==ElectroMotiveForce::uct_hlld) {
-        K_StoreHLLD<DIR>(i,j,k,st,sb,c2Iso,SLb,SRb,vL,vR,uL,uR,Et,Eb,aL,aR,dL,dR);
       }
+      /* else if (emfAverage==ElectroMotiveForce::uct_hlld) {
+        // We do not have the Alfven speed in the HLL solver
+        K_StoreHLLD<DIR>(i,j,k,st,sb,c2Iso,SLb,SRb,vL,vR,uL,uR,Et,Eb,aL,aR,dL,dR);
+      }*/
   });
 
   idfx::popRegion();

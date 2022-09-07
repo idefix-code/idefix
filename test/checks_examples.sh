@@ -2,7 +2,7 @@
 
 # check that the provided examples (which do not have a reference case) compile and run for a few loops
 
-rep_example_list="HD/KHI HD/RWI-cavity HD/VSI MHD/AmbipolarShearingBox MHD/AmbipolarWind MHD/FieldLoop MHD/HallDisk MHD/HallWhistler MHD/disk MHD/diskSpherical"
+rep_example_list="HD/KHI HD/RWI-cavity HD/VSI MHD/RotorCartesian MHD/RotorPolar MHD/advectionOBlique MHD/AmbipolarShearingBox MHD/AmbipolarWind MHD/FieldLoop MHD/HallDisk MHD/disk MHD/diskSpherical"
 
 # refer to the parent dir of this file, wherever this is called from
 # a python equivalent is e.g.
@@ -50,7 +50,7 @@ for rep in $rep_example_list; do
     echo "***********************************************"
     echo "Making  $rep"
     echo "***********************************************"
-    make clean; make -j 4 || { echo "!!!! Example $rep failed during compilation"; exit 1; }
+    make clean; make -j 10 || { echo "!!!! Example $rep failed during compilation"; exit 1; }
 
 
     echo "***********************************************"

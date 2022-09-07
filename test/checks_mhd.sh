@@ -1,5 +1,5 @@
 #!/bin/bash
-rep_MHD_list="sod-iso sod AxisFluxTube AmbipolarCshock HallWhistler ResistiveAlfvenWave FargoMHDSpherical ShearingBox OrszagTang OrszagTang3D"
+rep_MHD_list="sod-iso sod AxisFluxTube AmbipolarCshock HallWhistler ResistiveAlfvenWave LinearWaveTest FargoMHDSpherical ShearingBox OrszagTang OrszagTang3D"
 
 # refer to the parent dir of this file, wherever this is called from
 # a python equivalent is e.g.
@@ -48,7 +48,7 @@ for rep in $rep_MHD_list; do
         echo "***********************************************"
         echo "Making  $rep with $def"
         echo "***********************************************"
-        make clean; make -j 4 || { echo "!!!! MHD $rep failed during compilation with $def"; exit 1; }
+        make clean; make -j 10 || { echo "!!!! MHD $rep failed during compilation with $def"; exit 1; }
 
         ini_files=$(ls *.ini)
         for ini in $ini_files; do
@@ -61,32 +61,11 @@ for rep in $rep_MHD_list; do
             echo "***********************************************"
             echo "Testing  $rep with $ini and $def"
             echo "***********************************************"
-            python3 testidefix.py -noplot || { echo "!!!! MHD $rep failed validation with $def and $ini"; exit 1; }
+            python3 testidefix.py -noplot -i ../$ini || { echo "!!!! MHD $rep failed validation with $def and $ini"; exit 1; }
             cd ..
         done
     done
 done
-
-# Test restart functions with OT3D which have generated a dump during the first pass
-rep=OrszagTang3D
-cd $TMP_DIR/$rep
-# save generated vtk from previous run
-mv data.0001.vtk data.0001.old.vtk
-echo "***********************************************"
-echo "Running  $rep with restart dump # 1"
-echo "***********************************************"
-./idefix -restart 1 || { echo "!!!! MHD $rep failed running restart dump validation"; exit 1; }
-cd python
-echo "***********************************************"
-echo "Testing  $rep with restart dump # 1"
-echo "***********************************************"
-python3 testidefix.py -noplot || { echo "!!!! MHD $rep failed checking restart dump validation"; exit 1; }
-cd ..
-echo "***********************************************"
-echo "Checking bitwise compatibility of output from restarts"
-echo "***********************************************"
-diff data.0001.vtk data.0001.old.vtk || { echo "!!!! MHD $rep failed: restart dumps do not produce exactly the same results"; exit 1; }
-echo "Success"
 
 echo "Cleaning temporary directory $TMP_DIR"
 rm -rf $TMP_DIR

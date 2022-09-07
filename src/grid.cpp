@@ -11,14 +11,13 @@
 #include "gridHost.hpp"
 #include "grid.hpp"
 
-Grid::Grid() {
-  // Do nothing
-}
-
 Grid::Grid(Input &input) {
   idfx::pushRegion("Grid::Grid(Input)");
 
-  idfx::cout << "Grid: allocating Grid." << std::endl;
+  xbeg = std::vector<real>(3);
+  xend = std::vector<real>(3);
+
+  nghost = std::vector<int>(3);
 
   // Get grid size from input file, block [Grid]
   int npoints[3];
@@ -41,6 +40,10 @@ Grid::Grid(Input &input) {
     }
   }
 
+  np_tot = std::vector<int>(3);
+  np_int = std::vector<int>(3);
+  lbound = std::vector<BoundaryType>(3);
+  rbound = std::vector<BoundaryType>(3);
 
   for(int dir = 0 ; dir < 3 ; dir++) {
     np_tot[dir] = npoints[dir] + 2*nghost[dir];
@@ -101,7 +104,10 @@ Grid::Grid(Input &input) {
   }
 
   // Allocate the grid structure on device. Initialisation will come from GridHost
-
+  x = std::vector<IdefixArray1D<real>>(3);
+  xr = std::vector<IdefixArray1D<real>>(3);
+  xl = std::vector<IdefixArray1D<real>>(3);
+  dx = std::vector<IdefixArray1D<real>>(3);
   for(int dir = 0 ; dir < 3 ; dir++) {
     x[dir] = IdefixArray1D<real>("Grid_x",np_tot[dir]);
     xr[dir] = IdefixArray1D<real>("Grid_xr",np_tot[dir]);
@@ -110,6 +116,8 @@ Grid::Grid(Input &input) {
   }
 
   // Allocate proc structure (by default: one proc in each direction, size one)
+  nproc = std::vector<int> (3);
+  xproc = std::vector<int> (3);
   for(int i=0 ; i < 3; i++) {
     nproc[i] = 1;
     xproc[i] = 0;
@@ -126,19 +134,25 @@ Grid::Grid(Input &input) {
   // Check if the dec option has been passed when number of procs > 1
   if(idfx::psize>1) {
     if(input.CheckEntry("CommandLine","dec")  != DIMENSIONS) {
-      // No command line decomposition, see if auto-decomposition is possible
-      // (only when nproc and dimensions are powers of 2)
-      bool autoDecomposition=true;
-      if(!isPow2(idfx::psize)) autoDecomposition=false;
-      for(int dir = 0; dir < 3; dir++) {
-        if(np_int[dir]>1) {
-          if(!isPow2(np_int[dir])) autoDecomposition=false;
+      // No command line decomposition, make auto-decomposition if possible
+      // (only when nproc and dimensions are powers of 2, and in 1D)
+      if(DIMENSIONS == 1) {
+        nproc[0] = idfx::psize;
+      } else {
+        if(!isPow2(idfx::psize))
+          IDEFIX_ERROR(
+            "Automatic domain decomposition requires the number of processes to be a power of 2. "
+            "Alternatively, set a manual decomposition with -dec"
+          );
+        for(int dir = 0; dir < 3; dir++) {
+          if(!isPow2(np_int[dir]))
+            IDEFIX_ERROR(
+              "Automatic domain decomposition requires nx1, nx2 and nx3 to be powers of 2. "
+              "Alternatively, set a manual decomposition with -dec"
+            );
         }
-      }
-      if(autoDecomposition)
         makeDomainDecomposition();
-      else
-        IDEFIX_ERROR("-dec option is mandatory when nproc or nx1, nx2, nx3 are not powers of 2.");
+      }
     } else {
       // Manual domain decomposition (with -dec option)
       int ntot=1;
@@ -170,20 +184,51 @@ Grid::Grid(Input &input) {
   }
 
   // Create cartesian communicator along with cartesian coordinates.
-  MPI_Cart_create(MPI_COMM_WORLD, 3, nproc, period, 0, &CartComm);
-  MPI_Cart_coords(CartComm, idfx::prank, 3, xproc);
+  MPI_Cart_create(MPI_COMM_WORLD, 3, nproc.data(), period, 0, &CartComm);
+  MPI_Cart_coords(CartComm, idfx::prank, 3, xproc.data());
 
   MPI_Barrier(MPI_COMM_WORLD);
-  idfx::cout << "Grid::Grid: Current MPI proc coordinates (";
 
-  for(int dir = 0; dir < 3; dir++) {
-    idfx::cout << xproc[dir];
-    if(dir < 2) idfx::cout << ", ";
+
+  if(haveAxis) {
+      // create axis communicator to be able to exchange data over the axis
+      // (only retain the phi dimension)
+      int remainDims[3] = {false, false, true};
+      MPI_SAFE_CALL(MPI_Cart_sub(CartComm, remainDims, &AxisComm));
   }
-  idfx::cout << ")" << std::endl;
-
 #endif
 
+  // init coarsening
+  if(input.CheckEntry("Grid","coarsening")>=0) {
+    std::string coarsenType = input.Get<std::string>("Grid","coarsening",0);
+    if(coarsenType.compare("static")==0) {
+      this->haveGridCoarsening = GridCoarsening::enabled;
+    } else if(coarsenType.compare("dynamic")==0) {
+      this->haveGridCoarsening = GridCoarsening::dynamic;
+    } else {
+      std::stringstream msg;
+      msg << "Grid coarsening can only be static or dynamic. I got: " << coarsenType;
+      IDEFIX_ERROR(msg);
+    }
+    this->coarseningDirection = std::vector<bool>(3, false);
+    int directions = input.CheckEntry("Grid","coarsening");
+    for(int i = 1 ; i < directions ; i++) {
+      std::string dirname = input.Get<std::string>("Grid","coarsening",i);
+      if(dirname.compare("X1")==0) {
+        coarseningDirection[IDIR] = true;
+      } else if(dirname.compare("X2")==0) {
+        coarseningDirection[JDIR] = true;
+      } else if(dirname.compare("X3")==0) {
+        coarseningDirection[KDIR] = true;
+      } else {
+        std::stringstream msg;
+        msg << "Grid coarsening direction can only be X1, X2 and/or X3. I got: " << dirname;
+        IDEFIX_ERROR(msg);
+      }
+    }
+
+    this->haveGridCoarsening = GridCoarsening::enabled;
+  }
   idfx::popRegion();
 }
 
@@ -208,13 +253,6 @@ void Grid::makeDomainDecomposition() {
     int nmax=1;
     int ndir=2;
 
-    // If we have the axis, we should not decompose in phi
-    // This is a bit too conservative since if we're not doing full two pi, domain decomposition
-    // in phi is allowed. However, the grid bounds are only initialised later, so we don't have
-    // this information yet. Hence, automatic domain decomposition is conservative in that case.
-    // At least we know it works, even though it's probably sub-optimal in some cases.
-    if(haveAxis) ndir = 1;
-
     for(int dir = ndir; dir >= 0; dir--) {
       // We do this loop backward so that we divide the domain first in the last dimension
       // (better for cache optimisation)
@@ -232,12 +270,6 @@ void Grid::makeDomainDecomposition() {
     nproc[dirmax]=nproc[dirmax]*2;
     nleft=nleft/2;
   }
-
-  idfx::cout << "Grid::makeDomainDecomposition: grid is (";
-  for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
-    idfx::cout << " " << nproc[dir] << " ";
-  }
-  idfx::cout << ")" << std::endl;
 }
 /*
 Grid& Grid::operator=(const Grid& grid) {
@@ -258,3 +290,93 @@ Grid& Grid::operator=(const Grid& grid) {
     return *this;
 }
 */
+
+void Grid::ShowConfig() {
+  idfx::cout << "Grid: full grid size is " << std::endl;
+  for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
+    std::string lboundString, rboundString;
+      switch(lbound[dir]) {
+        case outflow:
+          lboundString="outflow";
+          break;
+        case reflective:
+          lboundString="reflective";
+          break;
+        case periodic:
+          lboundString="periodic";
+          break;
+        case internal:
+          lboundString="internal";
+          break;
+        case shearingbox:
+          lboundString="shearingbox";
+          break;
+        case axis:
+          lboundString="axis";
+          break;
+        case userdef:
+          lboundString="userdef";
+          break;
+        default:
+          lboundString="unknown";
+      }
+      switch(rbound[dir]) {
+        case outflow:
+          rboundString="outflow";
+          break;
+        case reflective:
+          rboundString="reflective";
+          break;
+        case periodic:
+          rboundString="periodic";
+          break;
+        case internal:
+          rboundString="internal";
+          break;
+        case shearingbox:
+          rboundString="shearingbox";
+          break;
+        case axis:
+          rboundString="axis";
+          break;
+        case userdef:
+          rboundString="userdef";
+          break;
+        default:
+          rboundString="unknown";
+      }
+
+      idfx::cout << "\t Direction X" << (dir+1) << ": " << lboundString << "\t" << xbeg[dir]
+                 << "...." << np_int[dir] << "...." << xend[dir] << "\t" << rboundString
+                 << std::endl;
+  }
+  #ifdef WITH_MPI
+    idfx::cout << "Grid: MPI domain decomposition is (";
+    for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
+      idfx::cout << " " << nproc[dir] << " ";
+    }
+    idfx::cout << ")" << std::endl;
+    idfx::cout << "Grid: Current MPI proc coordinates (";
+
+    for(int dir = 0; dir < 3; dir++) {
+      idfx::cout << xproc[dir];
+      if(dir < 2) idfx::cout << ", ";
+    }
+    idfx::cout << ")" << std::endl;
+  #endif
+  if(haveGridCoarsening) {
+    if(haveGridCoarsening == GridCoarsening::enabled ) {
+      idfx::cout << "Grid: static grid coarsening enabled in direction(s) ";
+    } else if (haveGridCoarsening == GridCoarsening::dynamic ) {
+      idfx::cout << "Grid: dynamic grid coarsening enabled in direction(s) ";
+    } else {
+      IDEFIX_ERROR("Unknown grid coarsening");
+    }
+    for(int i = 0 ; i < 3 ; i++) {
+      if(coarseningDirection[i]) {
+        idfx::cout << "X" << i+1 << " ";
+      }
+    }
+    idfx::cout << std::endl;
+  }
+}

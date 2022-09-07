@@ -7,9 +7,11 @@
 
 #include <cstdio>
 #include <iomanip>
+#include <string>
 #include "idefix.hpp"
 #include "timeIntegrator.hpp"
 #include "input.hpp"
+#include "stateContainer.hpp"
 
 
 TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
@@ -24,8 +26,6 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
   if(input.CheckEntry("TimeIntegrator","fixed_dt")>0) {
     this->haveFixedDt = true;
     this->fixedDt = input.Get<real>("TimeIntegrator","fixed_dt",0);
-    idfx::cout << "TimeIntegrator: Using fixed dt time stepping. Ignoring CFL and first_dt."
-               << std::endl;
     data.dt=fixedDt;
   }
 
@@ -37,6 +37,16 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
 
   this->cyclePeriod = input.GetOrSet<int>("Output","log",0, 100);
   this->maxRuntime = 3600*input.GetOrSet<double>("TimeIntegrator","max_runtime",0.0,-1.0);
+
+  #if defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_CUDA)
+    // When Cuda/HIP is enabled, increase the periodicity of nan checks, as this takes a lot of time
+    // on GPUs
+    checkNanPeriodicity = 100;
+  #endif
+
+  // override default check nan periodicity if user decides to
+  checkNanPeriodicity = input.GetOrSet<int>("TimeIntegrator","check_nan", 0,
+                                            checkNanPeriodicity);
 
   data.t=0.0;
   ncycles=0;
@@ -56,6 +66,12 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
   if(data.hydro.haveRKLParabolicTerms) {
     rkl.Init(input,data);
     haveRKL = true;
+  }
+
+  // If multi-stage, create a new state in the datablock called "begin"
+  if(nstages>1) {
+    data.states["begin"] = StateContainer();
+    data.states["begin"].AllocateAs(data.states["current"]);
   }
 
   idfx::popRegion();
@@ -96,9 +112,9 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
   }
 
   idfx::cout << "TimeIntegrator: ";
+  idfx::cout << std::scientific;
   idfx::cout << std::setw(col_width) << data.t;
   idfx::cout << " | " << std::setw(col_width) << ncycles;
-  idfx::cout << std::scientific;
   idfx::cout << " | " << std::setw(col_width) << data.dt;
   if(ncycles>=cyclePeriod) {
     idfx::cout << " | " << std::setw(col_width) << 1 / rawperf;
@@ -117,9 +133,17 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
 #if MHD == YES
   // Check divB
   real divB =  data.hydro.CheckDivB();
+  idfx::cout << std::scientific;
   idfx::cout << " | " << std::setw(col_width) << divB;
-  if(divB>1e-6) {
-    IDEFIX_ERROR("TimeIntegrator::Cycle divB>1e-6, check your calculation");
+  #ifndef SINGLE_PRECISION
+    const real maxdivB = 1e-6;
+  #else
+    const real maxdivB = 1e-2;
+  #endif
+  if(divB>maxdivB) {
+    std::stringstream msg;
+    msg << std::endl << "divB too large, check your calculation";
+    throw std::runtime_error(msg.str());
   }
 #endif
   if(haveRKL) {
@@ -132,39 +156,15 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
 // Compute one full cycle of the time Integrator
 void TimeIntegrator::Cycle(DataBlock &data) {
   // Do one cycle
-  IdefixArray4D<real> Uc = data.hydro.Uc;
-  IdefixArray4D<real> Vs = data.hydro.Vs;
-  IdefixArray4D<real> Uc0 = data.hydro.Uc0;
-  IdefixArray4D<real> Vs0 = data.hydro.Vs0;
   IdefixArray3D<real> InvDt = data.hydro.InvDt;
-
   real newdt;
-
 
   idfx::pushRegion("TimeIntegrator::Cycle");
 
-  //if(timer.seconds()-lastLog >= 1.0) {
   if(ncycles%cyclePeriod==0) ShowLog(data);
 
   if(haveRKL && (ncycles%2)==1) {    // Runge-Kutta-Legendre cycle
     rkl.Cycle();
-  }
-
-  // Apply Boundary conditions
-  data.SetBoundaries();
-
-  // Remove Fargo velocity so that the integrator works on the residual
-  if(data.haveFargo) data.fargo.SubstractVelocity(data.t);
-
-  // Convert current state into conservative variable and save it
-  data.hydro.ConvertPrimToCons();
-
-  // Store initial stage for multi-stage time integrators
-  if(nstages>1) {
-    Kokkos::deep_copy(Uc0,Uc);
-#if MHD == YES
-    Kokkos::deep_copy(Vs0,Vs);
-#endif
   }
 
   // save t at the begining of the cycle
@@ -177,7 +177,23 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   MPI_Request dtReduce;
 #endif
 
+  /////////////////////////////////////////////////
+  // BEGIN STAGES LOOP                           //
+  /////////////////////////////////////////////////
   for(int stage=0; stage < nstages ; stage++) {
+    // Apply Boundary conditions
+    data.SetBoundaries();
+
+    // Remove Fargo velocity so that the integrator works on the residual
+    if(data.haveFargo) data.fargo.SubstractVelocity(data.t);
+
+    // Convert current state into conservative variable and save it
+    data.hydro.ConvertPrimToCons();
+
+    // Store (deep copy) initial stage for multi-stage time integrators
+    if(nstages>1 && stage==0) {
+      data.states["begin"].CopyFrom(data.states["current"]);
+    }
     // If gravity is needed, update it
     if(data.haveGravity) data.gravity.ComputeGravity();
 
@@ -189,30 +205,22 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
     // Look for Nans every now and then (this actually cost a lot of time on GPUs
     // because streams are divergent)
-    if(ncycles%100==0) if(data.CheckNan()>0) IDEFIX_ERROR("Nan found after integration cycle");
+    if(ncycles%checkNanPeriodicity==0) {
+      if(data.CheckNan()>0) {
+        throw std::runtime_error(std::string("Nan found after integration cycle"));
+      }
+    }
 
     // Compute next time_step during first stage
     if(stage==0) {
       if(!haveFixedDt) {
-        idefix_reduce("Timestep_reduction",
-          data.beg[KDIR], data.end[KDIR],
-          data.beg[JDIR], data.end[JDIR],
-          data.beg[IDIR], data.end[IDIR],
-          KOKKOS_LAMBDA (int k, int j, int i, real &dtmin) {
-                  dtmin=FMIN(ONE_F/InvDt(k,j,i),dtmin);
-              },
-          Kokkos::Min<real>(newdt));
-
-        Kokkos::fence();
-
-        newdt=newdt*cfl;
-
-  #ifdef WITH_MPI
-        if(idfx::psize>1) {
-          MPI_SAFE_CALL(MPI_Iallreduce(MPI_IN_PLACE, &newdt, 1, realMPI, MPI_MIN, MPI_COMM_WORLD,
-                                       &dtReduce));
-        }
-  #endif
+        newdt = cfl*data.ComputeTimestep();
+        #ifdef WITH_MPI
+          if(idfx::psize>1) {
+            MPI_SAFE_CALL(MPI_Iallreduce(MPI_IN_PLACE, &newdt, 1, realMPI, MPI_MIN, MPI_COMM_WORLD,
+                                        &dtReduce));
+          }
+        #endif
       }
     }
 
@@ -221,58 +229,34 @@ void TimeIntegrator::Cycle(DataBlock &data) {
       // do the partial evolution required by the multi-step
       real wcs=wc[stage-1];
       real w0s=w0[stage-1];
+      data.states["current"].AddAndStore(wcs, w0s, data.states["begin"]);
 
-      idefix_for("Cycle-update",0,NVAR,0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
-        KOKKOS_LAMBDA (int n, int k, int j, int i) {
-          Uc(n,k,j,i) = wcs*Uc(n,k,j,i) + w0s*Uc0(n,k,j,i);
-      });
-
-#if MHD==YES
-      idefix_for("Cycle-update",0,DIMENSIONS,0,data.np_tot[KDIR]+KOFFSET,
-                                             0,data.np_tot[JDIR]+JOFFSET,
-                                             0,data.np_tot[IDIR]+IOFFSET,
-        KOKKOS_LAMBDA (int n, int k, int j, int i) {
-          Vs(n,k,j,i) = wcs*Vs(n,k,j,i) + w0s*Vs0(n,k,j,i);
-      });
-#endif
       // update t
       data.t = wcs*data.t + w0s*t0;
-
-      // Tentatively high order fargo
-      //if(data.haveFargo) data.fargo.ShiftSolution(data.t,wcs*data.dt);
-    } //else {
-      //if(data.haveFargo) data.fargo.ShiftSolution(data.t,data.dt);
-    //}
-
+    }
     // Shift solution according to fargo if this is our last stage
-
     if(data.haveFargo && stage==nstages-1) {
       data.fargo.ShiftSolution(t0,data.dt);
     }
 
+    // Coarsen conservative variables once they have been evolved
+    if(data.haveGridCoarsening) {
+      data.Coarsen();
+    }
 
     // Back to using Vc
     data.hydro.ConvertConsToPrim();
 
-    // Check if this is our last stage
-    if(stage<nstages-1) {
-      // No: Apply boundary conditions & Recompute conservative variables
-      // Add back fargo velocity so that boundary conditions are applied on the total V
-      if(data.haveFargo) data.fargo.AddVelocity(data.t);
-      data.SetBoundaries();
-      // And substract it back for next stage
-      if(data.haveFargo) data.fargo.SubstractVelocity(data.t);
-      data.hydro.ConvertPrimToCons();
-    }
+    // Add back fargo velocity so that boundary conditions are applied on the total V
+    if(data.haveFargo) data.fargo.AddVelocity(data.t);
   }
+  /////////////////////////////////////////////////
+  // END STAGES LOOP                             //
+  /////////////////////////////////////////////////
 
-
-  // Add back Fargo velocity so that updated Vc stores the total Velocity
-  if(data.haveFargo) data.fargo.AddVelocity(data.t);
-
-  // Wait for hydro/newDt MPI reduction
+  // Wait for dt MPI reduction
 #ifdef WITH_MPI
-  if(idfx::psize>1) {
+  if(!haveFixedDt && idfx::psize>1) {
     MPI_SAFE_CALL(MPI_Wait(&dtReduce, MPI_STATUS_IGNORE));
   }
 #endif
@@ -281,6 +265,10 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     rkl.Cycle();
   }
 
+  // Coarsen the grid
+  if(data.haveGridCoarsening) {
+    data.Coarsen();
+  }
   // Update current time (should have already been done, but this gets rid of roundoff errors)
   data.t=t0+data.dt;
 
@@ -306,7 +294,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     if(data.dt < 1e-15) {
       std::stringstream msg;
       msg << "dt = " << data.dt << " is too small.";
-      IDEFIX_ERROR(msg);
+      throw std::runtime_error(msg.str());
     }
   } else {
     data.dt = fixedDt;
@@ -329,7 +317,10 @@ int64_t TimeIntegrator::GetNCycles() {
 bool TimeIntegrator::CheckForMaxRuntime() {
   idfx::pushRegion("TimeIntegrator::CheckForMaxRuntime");
   // if maxRuntime is negative, this function is disabled (default)
-  if(this->maxRuntime < 0) return(false);
+  if(this->maxRuntime < 0) {
+    idfx::popRegion();
+    return(false);
+  }
 
   double runtime = timer.seconds();
   bool runtimeReached{false};
@@ -347,4 +338,29 @@ bool TimeIntegrator::CheckForMaxRuntime() {
   }
   idfx::popRegion();
   return(runtimeReached);
+}
+
+void TimeIntegrator::ShowConfig() {
+  if(nstages==1) {
+    idfx::cout << "TimeIntegrator: using 1st Order (EULER) integrator." << std::endl;
+  } else if(nstages==2) {
+    idfx::cout << "TimeIntegrator: using 2nd Order (RK2) integrator." << std::endl;
+  } else if(nstages==3) {
+    idfx::cout << "TimeIntegrator: using 3rd Order (RK3) integrator." << std::endl;
+  } else {
+    IDEFIX_ERROR("Unknown time integrator");
+  }
+  if(haveFixedDt) {
+    idfx::cout << "TimeIntegrator: Using fixed dt=" << fixedDt << ". Ignoring CFL and first_dt."
+              << std::endl;
+  } else {
+    idfx::cout << "TimeIntegrator: Using adaptive dt with CFL=" << cfl << " ." << std::endl;
+  }
+  if(maxRuntime>0) {
+    idfx::cout << "TimeIntegrator: will stop after " << maxRuntime/3600 << " hours." << std::endl;
+  }
+
+  if(haveRKL) {
+    rkl.ShowConfig();
+  }
 }

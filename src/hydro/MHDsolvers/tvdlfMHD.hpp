@@ -9,7 +9,7 @@
 #define HYDRO_MHDSOLVERS_TVDLFMHD_HPP_
 
 #include "../idefix.hpp"
-#include "extrapolatePrimVar.hpp"
+#include "slopeLimiter.hpp"
 #include "fluxMHD.hpp"
 #include "convertConsToPrimMHD.hpp"
 #include "storeFlux.hpp"
@@ -52,13 +52,14 @@ void Hydro::TvdlfMHD() {
   IdefixArray3D<real> dR;
 
   real gamma = this->gamma;
-  real gamma_m1=gamma-ONE_F;
-  real csIso = this->isoSoundSpeed;
-  HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
+  [[maybe_unused]] real gamma_m1=gamma-ONE_F;
+  [[maybe_unused]] real csIso = this->isoSoundSpeed;
+  [[maybe_unused]] HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
 
+  SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR],shockFlattening);
   // Define normal, tangent and bi-tanget indices
   // st and sb will be useful only when Hall is included
-  real st,sb;
+  real st = ONE_F, sb = ONE_F;
 
   switch(DIR) {
     case(IDIR):
@@ -154,7 +155,9 @@ void Hydro::TvdlfMHD() {
       real fluxR[NVAR];
 
       // Load primitive variables
-      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, dx, vL, vR);
+      slopeLim.ExtrapolatePrimVar(i, j, k, vL, vR);
+      vL[BXn] = Vs(DIR,k,j,i);
+      vR[BXn] = vL[BXn];
 #pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
         v[nv] = HALF_F*(vL[nv] + vR[nv]);
@@ -223,9 +226,11 @@ void Hydro::TvdlfMHD() {
         K_StoreContact<DIR>(i,j,k,st,sb,Flux,Et,Eb,SV);
       } else if (emfAverage==ElectroMotiveForce::uct_hll) {
         K_StoreHLL<DIR>(i,j,k,st,sb,sl,sr,vL,vR,Et,Eb,aL,aR,dL,dR);
-      } else if (emfAverage==ElectroMotiveForce::uct_hlld) {
-        K_StoreHLLD<DIR>(i,j,k,st,sb,c2Iso,sl,sr,vL,vR,uL,uR,Et,Eb,aL,aR,dL,dR);
       }
+      /*else if (emfAverage==ElectroMotiveForce::uct_hlld) {
+        // We do not have the Alfven speed in the HLL solver
+        K_StoreHLLD<DIR>(i,j,k,st,sb,c2Iso,sl,sr,vL,vR,uL,uR,Et,Eb,aL,aR,dL,dR);
+      } */
   });
 
   idfx::popRegion();

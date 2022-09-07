@@ -44,6 +44,11 @@
 int main( int argc, char* argv[] ) {
   bool initKokkosBeforeMPI = false;
 
+  // return code is zero if the simulation reached final time
+  // >0 if a fatal error occured (too small timestep, Nans)
+  // <0 if simulation was interrupted (max_runtime or user-triggered interruption
+  int returnCode = 0;
+
   // When running on GPUS with Omnipath network,
   // Kokkos needs to be initialised *before* the MPI layer
 #ifdef KOKKOS_ENABLE_CUDA
@@ -63,17 +68,14 @@ int main( int argc, char* argv[] ) {
 
   {
     idfx::initialize();
+    ///////////////////////////////
+    // Initialization
+    ///////////////////////////////
 
     Input input(argc, argv);
     input.PrintLogo();
-    input.PrintParameters();
+    idfx::cout << "Main: Initialization stage." << std::endl;
 
-    if(initKokkosBeforeMPI) {
-      idfx::cout << "Main: detected your configuration needed Kokkos to be initialised before MPI. "
-                 << std::endl;
-    }
-
-    idfx::cout << "Main: Init Grid." << std::endl;
     // Allocate the grid on device
     Grid grid(input);
     // Allocate the grid image on host
@@ -83,26 +85,34 @@ int main( int argc, char* argv[] ) {
     gridHost.MakeGrid(input);
     gridHost.SyncToDevice();
 
-    // Make a datablock
-    idfx::cout << "Main: Init DataBlock." << std::endl;
+    // instantiate required objects.
     DataBlock data;
     data.InitFromGrid(grid, input);
-
-    idfx::cout << "Main: Init Time Integrator." << std::endl;
     TimeIntegrator Tint(input,data);
-
-    idfx::cout << "Main: Init Output Routines." << std::endl;
     Output output(input, data);
-
-    idfx::cout << "Main: Init Setup." << std::endl;
     Setup mysetup(input, grid, data, output);
+    idfx::cout << "Main: initialisation finished." << std::endl;
+
+    ///////////////////////////////
+    // Show configuration
+    ///////////////////////////////
+    if(initKokkosBeforeMPI) {
+      idfx::cout << "Main: detected your configuration needed Kokkos to be initialised before MPI. "
+                 << std::endl;
+    }
+    input.ShowConfig();
+    grid.ShowConfig();
+    data.ShowConfig();
+    Tint.ShowConfig();
 
     // if the user asked for auto-tune, then tune loops now
     if(input.tuningRequested) {
       Tuner::tuneLoops(data, mysetup, input);
     }
-    // Apply initial conditions
 
+    ///////////////////////////////
+    // Initial conditions (or restart)
+    ///////////////////////////////
     // Are we restarting?
     if(input.restartRequested) {
       idfx::cout << "Main: Restarting from dump file."  << std::endl;
@@ -114,6 +124,9 @@ int main( int argc, char* argv[] ) {
       idfx::pushRegion("Setup::Initflow");
       mysetup.InitFlow(data);
       idfx::popRegion();
+      #if MHD == YES && defined(EVOLVE_VECTOR_POTENTIAL)
+        data.hydro.emf.ComputeMagFieldFromA(data.hydro.Ve, data.hydro.Vs);
+      #endif
       data.SetBoundaries();
       output.CheckForWrites(data);
       if(data.CheckNan()) {
@@ -121,6 +134,9 @@ int main( int argc, char* argv[] ) {
       }
     }
 
+    ///////////////////////////////
+    // Main Loop
+    ///////////////////////////////
     idfx::cout << "Main: Cycling Time Integrator..." << std::endl;
 
     Kokkos::Timer timer;
@@ -130,11 +146,22 @@ int main( int argc, char* argv[] ) {
 
     while(data.t < tstop) {
       if(tstop-data.t < data.dt) data.dt = tstop-data.t;
-      Tint.Cycle(data);
+      try {
+        Tint.Cycle(data);
+      } catch(std::exception &e) {
+        idfx::cout << "Main: WARNING! Caught an exception in time integrator." << std::endl;
+        idfx::cout << e.what() << std::endl;
+        idfx::cout << "Main: attempting to save the current state for inspection." << std::endl;
+        output.ForceWriteVtk(data);
+        idfx::cout << "Main: Aborting current calculation." << std::endl;
+        returnCode = 1;
+        break;
+      }
       output.CheckForWrites(data);
       if(input.CheckForAbort() || Tint.CheckForMaxRuntime() ) {
         idfx::cout << "Main: Saving current state and aborting calculation." << std::endl;
-        output.ForceWrite(data);
+        output.ForceWriteDump(data);
+        returnCode = -1;
         break;
       }
       if(input.maxCycles>=0) {
@@ -205,12 +232,19 @@ int main( int argc, char* argv[] ) {
     // Show profiler output
     idfx::prof.Show();
   }
-  idfx::cout << "Main: Job's done" << std::endl;
+
+  if(returnCode<0) {
+    idfx::cout << "Main: Job was interrupted before completion." << std::endl;
+  } else if (returnCode>0) {
+    idfx::cout << "Main: Job was aborted because of an unrecoverable error." << std::endl;
+  } else {
+    idfx::cout << "Main: Job completed successfully." << std::endl;
+  }
   Kokkos::finalize();
 
 #ifdef WITH_MPI
   MPI_Finalize();
 #endif
 
-  return 0;
+  return(0);
 }

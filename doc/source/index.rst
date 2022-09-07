@@ -47,6 +47,18 @@ Clément Robert
 Jean Kempf & François Rincon
     anisotropic diffusion
 
+========================
+About this documentation
+========================
+
+This documentation has automatically been generated on |today| from the following *Idefix* commit:
+
+.. git_commit_detail::
+    :branch:
+    :commit:
+    :sha_length: 10
+    :no_github_link:
+
 ===================
 Acknowledgements
 ===================
@@ -60,17 +72,14 @@ under the European Union Horizon 2020 research and innovation programme (Grant a
    :caption: Contents:
 
    quickstart
-   modules
    reference
+   modules
    programmingguide
    contributing
    faq
    changelog
 
    api/library_root
-
-
-
 
 
 

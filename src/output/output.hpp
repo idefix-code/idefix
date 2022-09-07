@@ -30,7 +30,8 @@ class Output {
   Output(Input &, DataBlock &);           // Create Output Object
   int CheckForWrites(DataBlock &);        // Check if outputs are needed at this stage
   void RestartFromDump(DataBlock &, int);  // Restart from a dump file.
-  void ForceWrite(DataBlock &);            // Force write outputs (needed during an abort)
+  void ForceWriteDump(DataBlock &);            // Force write dumps (needed during an abort)
+  void ForceWriteVtk(DataBlock &);            // Force write vtks
   void ResetTimer();                      // Reset internal timer
   double GetTimer();
   void EnrollAnalysis(AnalysisFunc);

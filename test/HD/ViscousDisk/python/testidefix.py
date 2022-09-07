@@ -9,7 +9,7 @@ Created on Thu Mar  5 11:29:41 2020
 import os
 import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
-from pytools.vtk_io import readVTKSpherical
+from pytools.vtk_io import readVTK
 import numpy as np
 import argparse
 import matplotlib.pyplot as plt
@@ -21,10 +21,10 @@ parser.add_argument("-noplot",
                     action="store_true")
 
 
-args=parser.parse_args()
+args, unknown=parser.parse_known_args()
 
 
-V=readVTKSpherical('../data.0001.vtk')
+V=readVTK('../data.0001.vtk', geometry='spherical')
 
 
 iref=32

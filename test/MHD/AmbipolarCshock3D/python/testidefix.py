@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import os
 import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
-from pytools.vtk_io import readVTKCart
+from pytools.vtk_io import readVTK
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -21,7 +21,7 @@ parser.add_argument("-noplot",
                     action="store_true")
 
 
-args=parser.parse_args()
+args, unknown=parser.parse_known_args()
 
 # Parameters from Maclow+ 1995
 theta=np.pi/4
@@ -41,7 +41,7 @@ def f(x,D):
     return(diff)
 
 # load solution
-V=readVTKCart('../data.0001.vtk')
+V=readVTK('../data.0001.vtk', geometry='cartesian')
 
 
 if(V.y.size>V.x.size):

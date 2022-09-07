@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import os
 import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
-from pytools.vtk_io import readVTKCart
+from pytools.vtk_io import readVTK
 
 rep='../'
 nend=1000
@@ -23,7 +23,7 @@ Bx=np.zeros(nend)
 
 t=dt*np.arange(0,nend)
 for n in range(nend):
-    V=readVTKCart(rep+'/data.'+'%0*d'%(4,n)+'.vtk')
+    V=readVTK(rep+'/data.'+'%0*d'%(4,n)+'.vtk', geometry='cartesian')
     Bx[n]=np.sqrt(np.mean(np.mean(V.data['BX1']**2,axis=2),axis=0))
 
 plt.figure()

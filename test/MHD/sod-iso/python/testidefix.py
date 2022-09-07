@@ -9,7 +9,7 @@ Created on Thu Mar  5 11:29:41 2020
 import os
 import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
-from pytools.vtk_io import readVTKCart
+from pytools.vtk_io import readVTK
 import numpy as np
 import argparse
 import matplotlib.pyplot as plt
@@ -22,10 +22,10 @@ parser.add_argument("-noplot",
                     action="store_true")
 
 
-args=parser.parse_args()
+args, unknown=parser.parse_known_args()
 
-V=readVTKCart('../data.0001.vtk')
-U=readVTKCart('data.ref.vtk')
+V=readVTK('../data.0001.vtk', geometry='cartesian')
+U=readVTK('data.ref.vtk', geometry='cartesian')
 
 solinterp=interp1d(U.x,U.data['rho'][:,0,0])
 

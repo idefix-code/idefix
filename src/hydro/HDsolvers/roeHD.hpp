@@ -10,7 +10,7 @@
 
 #include "../idefix.hpp"
 #include "hydro.hpp"
-#include "extrapolatePrimVar.hpp"
+#include "slopeLimiter.hpp"
 #include "fluxHD.hpp"
 #include "convertConsToPrimHD.hpp"
 
@@ -22,11 +22,16 @@
   #define IE 2
   #define I2 3
   #define I3 4
+
+  #define NMODES 5
+
 #else
   #define I0 0
   #define I1 1
   #define I2 2
   #define I3 3
+
+  #define NMODES 4
 #endif
 
 // Compute Riemann fluxes from states using ROE solver
@@ -59,13 +64,12 @@ void Hydro::RoeHD() {
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 
-  // Required for high order interpolations
-  IdefixArray1D<real> dx = this->data->dx[DIR];
+  [[maybe_unused]] real gamma = this->gamma;
+  [[maybe_unused]] real gamma_m1 = this->gamma - ONE_F;
+  [[maybe_unused]] real csIso = this->isoSoundSpeed;
+  [[maybe_unused]] HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
 
-  real gamma = this->gamma;
-  real gamma_m1 = this->gamma - ONE_F;
-  real csIso = this->isoSoundSpeed;
-  HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
+  SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR],shockFlattening);
 
   idefix_for("ROE_Kernel",
              data->beg[KDIR],data->end[KDIR]+koffset,
@@ -94,7 +98,7 @@ void Hydro::RoeHD() {
       real um[NVAR];
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, dx, vL, vR);
+      slopeLim.ExtrapolatePrimVar(i, j, k, vL, vR);
 #pragma unroll
       for(int nv = 0 ; nv < NVAR; nv++) {
         dv[nv] = vR[nv] - vL[nv];
@@ -193,8 +197,8 @@ void Hydro::RoeHD() {
       eigenvalues (lambda) and wave strenght eta = L.du
       ----------------------------------------------------------------  */
 
-      real lambda[NVAR], alambda[NVAR];
-      real eta[NVAR];
+      real lambda[NMODES], alambda[NMODES];
+      real eta[NMODES];
 
 #pragma unroll
       for(int nv1 = 0 ; nv1 < NVAR; nv1++) {

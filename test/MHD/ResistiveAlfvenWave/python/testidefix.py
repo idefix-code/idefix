@@ -11,7 +11,7 @@ parser.add_argument("-noplot",
                     action="store_true")
 
 
-args=parser.parse_args()
+args, unknown=parser.parse_known_args()
 
 
 # values for the field strength to compute theoretical decay rate
@@ -33,7 +33,8 @@ if(not args.noplot):
 
     plt.close('all')
     plt.figure()
-    plt.semilogy(t,e/eth)
+    plt.semilogy(t,e)
+    plt.semilogy(t,eth)
 
     plt.ioff()
     plt.show()

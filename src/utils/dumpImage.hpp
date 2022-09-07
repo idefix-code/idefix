@@ -5,8 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef OUTPUT_DUMPIMAGE_HPP_
-#define OUTPUT_DUMPIMAGE_HPP_
+#ifndef UTILS_DUMPIMAGE_HPP_
+#define UTILS_DUMPIMAGE_HPP_
 #include <string>
 #include <map>
 #include "idefix.hpp"
@@ -19,11 +19,11 @@ class DumpImage {
   int np_int[3];               // number of points in each direction
   int geometry;                // geometry of the dump
   real time;                   // time at which the dump was created
-  IdefixArray1D<real> x[3];    // geometrical central points
-  IdefixArray1D<real> xr[3];   // cell right interface
-  IdefixArray1D<real> xl[3];   // cell left interface
+  IdefixHostArray1D<real> x[3];    // geometrical central points
+  IdefixHostArray1D<real> xr[3];   // cell right interface
+  IdefixHostArray1D<real> xl[3];   // cell left interface
 
   std::map<std::string,IdefixHostArray3D<real>> arrays;  // 3D arrays stored in the dump
 };
 
-#endif // OUTPUT_DUMPIMAGE_HPP_
+#endif // UTILS_DUMPIMAGE_HPP_

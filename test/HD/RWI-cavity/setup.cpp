@@ -77,10 +77,6 @@ void Setup::InitFlow(DataBlock &data) {
     // Create a host copy
     DataBlockHost d(data);
 
-    real x,y,z;
-
-    real vphi,f,r,th;
-
     // arbitrary values for now, I'll set those as parameters later
     real jump_width{jump_width_glob};
     real jump_radius{jump_radius_glob};
@@ -89,8 +85,7 @@ void Setup::InitFlow(DataBlock &data) {
     for(int k = 0; k < d.np_tot[KDIR] ; k++) {
       for(int j = 0; j < d.np_tot[JDIR] ; j++) {
         for(int i = 0; i < d.np_tot[IDIR] ; i++) {
-          r = d.x[IDIR](i);
-          th = d.x[JDIR](j);
+          real r = d.x[IDIR](i);
 
           // note I didn't explicitly give a "rho0" scaling
           // 1.01 is here to give a density value ~1e-2 in the cavity

@@ -6,14 +6,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Upcoming
 ### Changed
-- slight optimisation of the cfl estimation for parabolic terms (makes a difference when several explicit parabolic terms are used simultaneously)
-- use input::Get<T> and input::GetOrSet<T> instead of the old input:GetInt, input:GetReal... the new functions have a better error handling, and also allows explicit default values.
-- ensure that error messages are sent to std::cerr using a dedicated stream
+- use buffers for mpi axis exchanges to improve performances on GPUs (!195)
+- slight optimisation of the cfl estimation for parabolic terms by using the maximum diffusion coefficient instead of the sum of all of the diffusion coefficients (makes a difference when several explicit parabolic terms are used simultaneously) (!176)
+- use input::Get<T> and input::GetOrSet<T> instead of the old input:GetInt, input:GetReal... the new functions have a better error handling, and also allows explicit default values. (!208, !179)
+- ensure that error messages are sent to std::cerr using a dedicated stream (!179)
+- added a parameter check_nan to control the periodicity of Nan checks in the time integration (!191)
+- added exception handling for the time integration, which saves a final vtk when a error is detected in the time integration loop (!190)
+- fixed a bug in the test shearing box setup which led to memory corruption and incorrect pressure when ISOTHERMAL approximation was disabled (!190)
+- make RKL faster when running in 3D with MHD diffusion terms by skipping the evolution of cell-centered fields (!215)
+- fixed the many warning messages when compiling on CUDA (!229)
 
 ### Added
-- isotropic thermal diffusion (anisotropic diffusion in MHD will come later)
-- fixed a bug in 1D+1D in spherical geometry (J. Mauxion)
-- Increased the efficiency of abort checks using MPI_Bcast instead of MPI_Allreduce
+- single precision version is validated and fully operational. Can be enabled from cmake. (!197)
+- isotropic thermal diffusion (anisotropic diffusion in MHD will come later) (!176)
+- fixed a bug in 1D+1D in spherical geometry (J. Mauxion) (!175)
+- fixed a bug in calcCurrent which led to incorrectly computed currents on non-uniform grids (!206)
+- Increase the efficiency of abort checks using MPI_Bcast instead of MPI_Allreduce (!174)
+- allow the user to integrate the magnetic vector potential instead of the field to reduce the accumulation of roundoff errors on div(B) (experimental feature, can be enabled at config time) (!177)
+- allow for domain decomposition along X3 with axis boundary condition and 2pi azimuthal domains (!182).
+- addition of stateContainers to automatically evolve variables in multi-step time integration (!191)
+- added a class to use easily lookup tables in idefix_for constructs (class LookupTable) (!213, !198, !178)
+- added a shock flattening module (!219)
 
 ## [1.0.0] 2022-01-13
 ### Changed

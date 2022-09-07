@@ -155,11 +155,32 @@ void Output::RestartFromDump(DataBlock &data, int readNumber) {
   idfx::popRegion();
 }
 
-void Output::ForceWrite(DataBlock &data) {
-  idfx::pushRegion("Output::ForceWrite");
+void Output::ForceWriteDump(DataBlock &data) {
+  idfx::pushRegion("Output::ForceWriteDump");
 
   if(!forceNoWrite) dump.Write(data,*this);
 
+  idfx::popRegion();
+}
+
+void Output::ForceWriteVtk(DataBlock &data) {
+  idfx::pushRegion("Output::ForceWriteVtk");
+
+  if(!forceNoWrite) {
+    if(userDefVariablesEnabled) {
+        if(haveUserDefVariablesFunc) {
+          // Call user-def function to fill the userdefined variable arrays
+          idfx::pushRegion("UserDef::User-defined variables function");
+          userDefVariablesFunc(data, userDefVariables);
+          idfx::popRegion();
+        } else {
+          IDEFIX_ERROR("Cannot output user-defined variables without "
+                        "enrollment of your user-defined variables function");
+        }
+      }
+      vtkLast += vtkPeriod;
+      vtk.Write(data, *this);
+  }
   idfx::popRegion();
 }
 
@@ -184,7 +205,6 @@ void Output::EnrollUserDefVariables(UserDefVariablesFunc myFunc) {
   }
   userDefVariablesFunc = myFunc;
   haveUserDefVariablesFunc = true;
-  idfx::cout << "Output: User-defined variables for outputs have been enrolled" << std::endl;
   idfx::popRegion();
 }
 

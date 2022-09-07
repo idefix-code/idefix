@@ -33,12 +33,15 @@ void Hydro::CalcCurrent() {
              JOFFSET,data->np_tot[JDIR],
              IOFFSET,data->np_tot[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
-      real Bx1_000 = ZERO_F, Bx1_0m0 = ZERO_F, Bx1_00m = ZERO_F;
-      real Bx2_000 = ZERO_F, Bx2_m00 = ZERO_F, Bx2_00m = ZERO_F;
-      real Bx3_000 = ZERO_F, Bx3_m00 = ZERO_F, Bx3_0m0 = ZERO_F;
+      [[maybe_unused]] real Bx1_000 = ZERO_F, Bx1_0m0 = ZERO_F, Bx1_00m = ZERO_F;
+      [[maybe_unused]] real Bx2_000 = ZERO_F, Bx2_m00 = ZERO_F, Bx2_00m = ZERO_F;
+      [[maybe_unused]] real Bx3_000 = ZERO_F, Bx3_m00 = ZERO_F, Bx3_0m0 = ZERO_F;
 
-      real d12 = ZERO_F, d13 = ZERO_F, d21 = ZERO_F, d23 = ZERO_F, d31 = ZERO_F, d32 = ZERO_F;
-      real Jx = ZERO_F, Jy = ZERO_F, Jz = ZERO_F;
+      [[maybe_unused]] real d12 = ZERO_F, d13 = ZERO_F,
+                            d21 = ZERO_F, d23 = ZERO_F,
+                            d31 = ZERO_F, d32 = ZERO_F;
+
+      [[maybe_unused]] real Jx = ZERO_F, Jy = ZERO_F, Jz = ZERO_F;
 
       Bx1_000 = Vs(BX1s,k,j,i);
 
@@ -73,12 +76,12 @@ void Hydro::CalcCurrent() {
                 d21 = d23 = TWO_F / (dx2(j-1)+dx2(j));  ,
                 d31 = d32 = TWO_F / (dx3(k-1)+dx3(k));  )
 
-      real a13Bx3_000 = Bx3_000;
-      real a13Bx3_m00 = Bx3_m00;
-      real a23Bx3_000 = Bx3_000;
-      real a23Bx3_0m0 = Bx3_0m0;
-      real a12Bx2_000 = Bx2_000;
-      real a12Bx2_m00 = Bx2_m00;
+      [[maybe_unused]] real a13Bx3_000 = Bx3_000;
+      [[maybe_unused]] real a13Bx3_m00 = Bx3_m00;
+      [[maybe_unused]] real a23Bx3_000 = Bx3_000;
+      [[maybe_unused]] real a23Bx3_0m0 = Bx3_0m0;
+      [[maybe_unused]] real a12Bx2_000 = Bx2_000;
+      [[maybe_unused]] real a12Bx2_m00 = Bx2_m00;
 
 
 #if GEOMETRY == CYLINDRICAL
@@ -148,6 +151,12 @@ void Hydro::CalcCurrent() {
       J(KDIR, k, j, i) = Jz;
     }
   );
+
+  // Regularize the current along the axis in cases where an axis is present.
+  // This feature is not yet ready, so it is commented out
+  //if(this->haveAxis) {
+  //  this->myAxis.RegularizeCurrent();
+  //}
 
   idfx::popRegion();
 }

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-rep_list="HD/sod-iso HD/sod MHD/sod MHD/sod-iso MHD/OrszagTang"
+rep_list="HD/sod-iso HD/sod MHD/sod MHD/sod-iso MHD/LinearWaveTest MHD/OrszagTang"
 rep_MPI_list="MHD/OrszagTang3D"
 order_list="LimO3 Parabolic"
 
@@ -51,7 +51,7 @@ for rep in $rep_list; do
         echo "***********************************************"
         echo "Making  $rep with $order"
         echo "***********************************************"
-        make clean; make -j 4 || { echo "!!!! $rep with $order failed during compilation with"; exit 1; }
+        make clean; make -j 10 || { echo "!!!! $rep with $order failed during compilation with"; exit 1; }
 
         ini_files=$(ls *.ini)
         for ini in $ini_files; do
@@ -68,7 +68,7 @@ for rep in $rep_list; do
             cd ..
         done
         make clean
-        rm -f *.vtk *.dbl
+        rm -f *.vtk *.dbl *.dmp
     done
     echo "***********************************************"
     echo "Cleaning  $rep in $TMP_DIR"
@@ -93,7 +93,7 @@ for rep in $rep_MPI_list; do
         echo "***********************************************"
         echo "Making  $rep with $order"
         echo "***********************************************"
-        make clean; make -j 4 || { echo "!!!! $rep with $order and MPI failed during compilation with"; exit 1; }
+        make clean; make -j 10 || { echo "!!!! $rep with $order and MPI failed during compilation with"; exit 1; }
 
         echo "***********************************************"
         echo "Running  $rep with $order and MPI"
@@ -108,7 +108,7 @@ for rep in $rep_MPI_list; do
         cd ..
 
         make clean
-        rm -f *.vtk *.dbl
+        rm -f *.vtk *.dbl *.dmp
     done
     echo "***********************************************"
     echo "Cleaning  $rep in $TMP_DIR"

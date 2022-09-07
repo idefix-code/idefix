@@ -5,6 +5,7 @@ workflow:
   rules:
     - if: $CI_MERGE_REQUEST_ID               # Execute jobs in merge request context
     - if: $CI_COMMIT_BRANCH == 'master'    # Execute jobs when a new commit is pushed to master branch
+    - if: $CI_PIPELINE_SOURCE == 'web'     # execute jobs when created by using Run pipeline button in the GitLab UI, from the project’s CI/CD > Pipelines section.
 
 stages:
     - checks
@@ -31,6 +32,13 @@ MHD tests:
     - cd test
     - ./checks_mhd.sh $TEST_OPTIONS
 
+Vector potential tests:
+  stage: checks
+  image: lesurg/idefix:latest
+  script:
+    - cd test
+    - ./checks_vector_potential.sh $TEST_OPTIONS
+
 MPI tests:
   stage: checks
   image: lesurg/idefix:latest
@@ -45,12 +53,26 @@ HighOrder tests:
     - cd test
     - ./checks_highorder.sh $TEST_OPTIONS
 
+SinglePrecision tests:
+  stage: checks
+  image: lesurg/idefix:latest
+  script:
+    - cd test
+    - ./checks_singleprecision.sh $TEST_OPTIONS
+
 Examples tests:
   stage: checks
   image: lesurg/idefix:latest
   script:
     - cd test
     - ./checks_examples.sh $TEST_OPTIONS
+
+Utils tests:
+  stage: checks
+  image: lesurg/idefix:latest
+  script:
+    - cd test
+    - ./checks_utils.sh $TEST_OPTIONS
 
 pages:
   image: lesurg/idefix-documentation:latest

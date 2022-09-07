@@ -93,7 +93,6 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
 void Setup::InitFlow(DataBlock &data) {
     // Create a host copy
     DataBlockHost d(data);
-    real x,y,z;
 
     real M=50;
     real theta=M_PI/4.0;
@@ -110,27 +109,34 @@ void Setup::InitFlow(DataBlock &data) {
     for(int k = 0; k < d.np_tot[KDIR] ; k++) {
         for(int j = 0; j < d.np_tot[JDIR] ; j++) {
             for(int i = 0; i < d.np_tot[IDIR] ; i++) {
-                x=d.x[IDIR](i);
-                y=d.x[JDIR](j);
-                z=d.x[KDIR](k);
-
                 d.Vc(RHO,k,j,i) = 1.0;
 #if HAVE_ENERGY
                 d.Vc(PRS,k,j,i) = 1.0;
 #endif
                 d.Vc(VX1,k,j,i) = vin;
                 d.Vc(VX2,k,j,i) = 0.0;
-                d.Vs(BX1s,k,j,i) = B0*cos(theta);
-#if DIMENSIONS >= 2
-                d.Vs(BX2s,k,j,i) = B0*sin(theta);
-#else
+                d.Vc(BX1,k,j,i) = B0*cos(theta);
                 d.Vc(BX2,k,j,i) = B0*sin(theta);
-#endif
-#if DIMENSIONS == 3
-                d.Vs(BX3s,k,j,i) = 0.0;
-#else
                 d.Vc(BX3,k,j,i) = 0.0;
-#endif
+
+                D_EXPAND( d.Vs(BX1s,k,j,i) = B0*cos(theta);  ,
+                          d.Vs(BX2s,k,j,i) = B0*sin(theta);  ,
+                          d.Vs(BX3s,k,j,i) = 0.0;              )
+
+                // Init vector potential if we're requested so
+                #ifdef EVOLVE_VECTOR_POTENTIAL
+                  #if DIMENSIONS == 3
+                    real z = d.x[KDIR](k);
+                    real y = d.x[JDIR](j);
+                    d.Ve(AX1e,k,j,i) = B0*sin(theta)*z;
+                    d.Ve(AX2e,k,j,i) = ZERO_F;
+                    d.Ve(AX3e,k,j,i) = B0*cos(theta)*y;
+                  #else
+                    IDEFIX_ERROR("Vector potential only valid in 3 dimensions for this setup");
+                  #endif
+                #endif
+
+
 
             }
         }

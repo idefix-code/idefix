@@ -44,7 +44,6 @@ KOKKOS_INLINE_FUNCTION real FargoFlux(const IdefixArray4D<real> &Vin, int n, int
   int som2 = som1-1;
   if(!haveDomainDecomposition && (som2-sbeg< 0 )) som2 = som2+ds;
 
-  int sign = (eps>=0) ? 1 : -1;
   real dqm2,dqm1,dqp1,dqp2, q0,qm1, qp1;
   #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
     q0 = Vin(n,k,so,i);
@@ -133,20 +132,22 @@ void Fargo::Init(Input &input, DataBlock *data) {
   this->hydro = &(data->hydro);
 
   // A bit of arithmetic to get the sizes of the working array
-  for(int dir = 0 ; dir < 3 ; dir++) {
-    this->nghost[dir] = data->nghost[dir];
-    this->beg[dir] = data->beg[dir];
-    this->end[dir] = data->end[dir];
-  }
+  this->nghost = data->nghost;
+  this->beg = data->beg;
+  this->end = data->end;
 
   if(input.CheckBlock("Fargo")) {
     std::string opType = input.Get<std::string>("Fargo","velocity",0);
     if(opType.compare("userdef")==0) {
+       #if GEOMETRY != SPHERICAL && GEOMETRY != POLAR
+        IDEFIX_ERROR("Fargo+userdef is only compatible with SPHERICAL and POLAR geometries");
+      #endif
       this->type=userdef;
     } else if(opType.compare("shearingbox")==0) {
       this->type=shearingbox;
       #if GEOMETRY != CARTESIAN
-        IDEFIX_ERROR("Fargo+shearingbox only compatible with cartesian geometry");
+        // Actually, this has never really been tested, so assumes it doesn't work...
+        IDEFIX_ERROR("Fargo+shearingbox is only compatible with cartesian geometry");
       #endif
     } else {
       IDEFIX_ERROR("Unknown fargo velocity in the input file. "
@@ -235,17 +236,26 @@ void Fargo::Init(Input &input, DataBlock *data) {
         vars.push_back(i);
       }
       #if MHD == YES
-        this->mpi.Init(data->mygrid, vars, this->nghost, data->np_int, true);
+        this->mpi.Init(data->mygrid, vars, this->nghost.data(), data->np_int.data(), true);
       #else
-        this->mpi.Init(data->mygrid, vars, this->nghost, data->np_int);
+        this->mpi.Init(data->mygrid, vars, this->nghost.data(), data->np_int.data());
       #endif
     }
   #endif
 
+
+  idfx::popRegion();
+}
+
+void Fargo::ShowConfig() {
+  idfx::pushRegion("Fargo::ShowConfig");
   if(type==userdef) {
-    idfx::cout << "Fargo: Enabled with user-defined velocity function" << std::endl;
+    idfx::cout << "Fargo: ENABLED with user-defined velocity function." << std::endl;
+    if(!fargoVelocityFunc) {
+      IDEFIX_ERROR("No Fargo velocity function has been enabled.");
+    }
   } else if(type==shearingbox) {
-    idfx::cout << "Fargo: Enabled with shearing-box velocity function" << std::endl;
+    idfx::cout << "Fargo: ENABLED with shearing-box velocity function." << std::endl;
   } else {
     IDEFIX_ERROR("Something went wrong during Fargo initialisation");
   }
@@ -263,11 +273,10 @@ void Fargo::Init(Input &input, DataBlock *data) {
 
 void Fargo::EnrollVelocity(FargoVelocityFunc myFunc) {
   if(this->type!=userdef) {
-    IDEFIX_ERROR("Fargo velocity function enrollment requires Hydro/Fargo "
+    IDEFIX_WARNING("Fargo velocity function enrollment requires Hydro/Fargo "
                  "to be set to userdef in .ini file");
   }
   this->fargoVelocityFunc = myFunc;
-  idfx::cout << "Fargo: User-defined velocity function has been enrolled." << std::endl;
 }
 
 // This function fetches Fargo velocity when required
@@ -296,8 +305,8 @@ void Fargo::CheckMaxDisplacement() {
     IdefixArray1D<real> xi;
     IdefixArray1D<real> xj;
     IdefixArray1D<real> dxk;
-    FargoType fargoType = type;
-    real sbS = hydro->sbS;
+    [[maybe_unused]] FargoType fargoType = type;
+    [[maybe_unused]] real sbS = hydro->sbS;
     real invDt = 0;
 
     // Get domain size
@@ -354,8 +363,8 @@ void Fargo::AddVelocity(const real t) {
   IdefixArray1D<real> x1 = data->x[IDIR];
   IdefixArray4D<real> Vc = hydro->Vc;
   IdefixArray2D<real> meanV = this->meanVelocity;
-  FargoType fargoType = type;
-  real sbS = hydro->sbS;
+  [[maybe_unused]] FargoType fargoType = type;
+  [[maybe_unused]] real sbS = hydro->sbS;
 
   idefix_for("FargoAddVelocity",
               0,data->np_tot[KDIR],
@@ -383,9 +392,9 @@ void Fargo::SubstractVelocity(const real t) {
   }
   IdefixArray1D<real> x1 = data->x[IDIR];
   IdefixArray4D<real> Vc = hydro->Vc;
-  IdefixArray2D<real> meanV = this->meanVelocity;
-  FargoType fargoType = type;
-  real sbS = hydro->sbS;
+  [[maybe_unused]] IdefixArray2D<real> meanV = this->meanVelocity;
+  [[maybe_unused]] FargoType fargoType = type;
+  [[maybe_unused]] real sbS = hydro->sbS;
 
   idefix_for("FargoSubstractVelocity",
               0,data->np_tot[KDIR],
@@ -430,6 +439,10 @@ void Fargo::StoreToScratch() {
             });
 
   #if MHD == YES
+    #ifdef EVOLVE_VECTOR_POTENTIAL
+      // Update Vs to its latest
+      hydro->emf.ComputeMagFieldFromA(hydro->Ve,hydro->Vs);
+    #endif
     // in MHD mode, we need to copy Vs only when there is domain decomposition, otherwise,
     // we just make a reference (this is already done by init)
     if(haveDomainDecomposition) {
@@ -490,8 +503,8 @@ void Fargo::ShiftSolution(const real t, const real dt) {
   IdefixArray1D<real> dx3 = data->dx[KDIR];
   IdefixArray1D<real> sinx2 = data->sinx2;
   IdefixArray1D<real> sinx2m = data->sinx2m;
-  FargoType fargoType = type;
-  real sbS = hydro->sbS;
+  [[maybe_unused]] FargoType fargoType = type;
+  [[maybe_unused]] real sbS = hydro->sbS;
   bool haveDomainDecomposition = this->haveDomainDecomposition;
   int maxShift = this->maxShift;
 
@@ -775,8 +788,6 @@ void Fargo::ShiftSolution(const real t, const real dt) {
       }
 
       // Compute EMF due to the shift via second order reconstruction
-      real dqm, dqp, dq;
-
       #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
         if(eps>=ZERO_F) {
           int som1;
@@ -851,51 +862,76 @@ void Fargo::ShiftSolution(const real t, const real dt) {
 #endif
 
   // Update field components according to the computed EMFS
-  IdefixArray4D<real> Vs = hydro->Vs;
-  idefix_for("Fargo::EvolvMagField",
-             data->beg[KDIR],data->end[KDIR]+KOFFSET,
-             data->beg[JDIR],data->end[JDIR]+JOFFSET,
-             data->beg[IDIR],data->end[IDIR]+IOFFSET,
-    KOKKOS_LAMBDA (int k, int j, int i) {
-      real rhsx1, rhsx2, rhsx3;
-
-#if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
-      Vs(BX1s,k,j,i) += -  (ez(k,j+1,i) - ez(k,j,i) ) / dx2(j);
-
-#elif GEOMETRY == SPHERICAL
-      Vs(BX1s,k,j,i) += -  sinx2(j)*dx2(j)/dmu(j)*(ey(k+1,j,i) - ey(k,j,i) ) / dx3(k);
-#endif
-
-#if GEOMETRY == CARTESIAN
-      Vs(BX2s,k,j,i) += D_EXPAND(    0.0                          ,
-                            + (ez(k,j,i+1) - ez(k,j,i)) / dx1(i)  ,
-                            + (ex(k+1,j,i) - ex(k,j,i)) / dx3(k)  );
-#elif GEOMETRY == POLAR
-      Vs(BX2s,k,j,i) += D_EXPAND(    0.0                                          ,
-                            + (x1m(i+1) * ez(k,j,i+1) - x1m(i)*ez(k,j,i)) / dx1(i)  ,
-                            + x1(i) *  (ex(k+1,j,i) - ex(k,j,i)) / dx3(k)  );
-#elif GEOMETRY == SPHERICAL
-    #if DIMENSIONS == 3
-      Vs(BX2s,k,j,i) += - (ex(k+1,j,i) - ex(k,j,i)) / dx3(k);
-    #endif
-#endif // GEOMETRY
-
-#if DIMENSIONS == 3
+  #ifndef EVOLVE_VECTOR_POTENTIAL
+    IdefixArray4D<real> Vs = hydro->Vs;
+    idefix_for("Fargo::EvolvMagField",
+              data->beg[KDIR],data->end[KDIR]+KOFFSET,
+              data->beg[JDIR],data->end[JDIR]+JOFFSET,
+              data->beg[IDIR],data->end[IDIR]+IOFFSET,
+      KOKKOS_LAMBDA (int k, int j, int i) {
   #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
-    Vs(BX3s,k,j,i) -=  (ex(k,j+1,i) - ex(k,j,i) ) / dx2(j);
-  #elif GEOMETRY == SPHERICAL
-    real A1p = x1m(i+1)*x1m(i+1);
-    real A1m = x1m(i)*x1m(i);
-    real A2m = FABS(sinx2m(j));
-    real A2p = FABS(sinx2m(j+1));
-    Vs(BX3s,k,j,i) += sinx2(j) * (A1p * ey(k,j,i+1) - A1m * ey(k,j,i))/(x1(i)*dx1(i))
-                      + (A2p * ex(k,j+1,i) - A2m * ex(k,j,i))/dx2(j);
-  #endif
-#endif// DIMENSIONS
-  });
+        Vs(BX1s,k,j,i) += -  (ez(k,j+1,i) - ez(k,j,i) ) / dx2(j);
 
-  // Rebuild the cell-centered field components
-  this->hydro->boundary.ReconstructVcField(Uc);
+  #elif GEOMETRY == SPHERICAL
+        Vs(BX1s,k,j,i) += -  sinx2(j)*dx2(j)/dmu(j)*(ey(k+1,j,i) - ey(k,j,i) ) / dx3(k);
+  #endif
+
+  #if GEOMETRY == CARTESIAN
+        Vs(BX2s,k,j,i) += D_EXPAND(    0.0                          ,
+                              + (ez(k,j,i+1) - ez(k,j,i)) / dx1(i)  ,
+                              + (ex(k+1,j,i) - ex(k,j,i)) / dx3(k)  );
+  #elif GEOMETRY == POLAR
+        Vs(BX2s,k,j,i) += D_EXPAND(    0.0                                          ,
+                              + (x1m(i+1) * ez(k,j,i+1) - x1m(i)*ez(k,j,i)) / dx1(i)  ,
+                              + x1(i) *  (ex(k+1,j,i) - ex(k,j,i)) / dx3(k)  );
+  #elif GEOMETRY == SPHERICAL
+      #if DIMENSIONS == 3
+        Vs(BX2s,k,j,i) += - (ex(k+1,j,i) - ex(k,j,i)) / dx3(k);
+      #endif
+  #endif // GEOMETRY
+
+  #if DIMENSIONS == 3
+    #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
+      Vs(BX3s,k,j,i) -=  (ex(k,j+1,i) - ex(k,j,i) ) / dx2(j);
+    #elif GEOMETRY == SPHERICAL
+      real A1p = x1m(i+1)*x1m(i+1);
+      real A1m = x1m(i)*x1m(i);
+      real A2m = FABS(sinx2m(j));
+      real A2p = FABS(sinx2m(j+1));
+      Vs(BX3s,k,j,i) += sinx2(j) * (A1p * ey(k,j,i+1) - A1m * ey(k,j,i))/(x1(i)*dx1(i))
+                        + (A2p * ex(k,j+1,i) - A2m * ex(k,j,i))/dx2(j);
+    #endif
+  #endif// DIMENSIONS
+    });
+
+  #else // EVOLVE_VECTOR_POTENTIAL
+    // evolve field using vector potential
+    IdefixArray4D<real> Ve = hydro->Ve;
+    idefix_for("Fargo::EvolvMagField",
+              data->beg[KDIR],data->end[KDIR]+KOFFSET,
+              data->beg[JDIR],data->end[JDIR]+JOFFSET,
+              data->beg[IDIR],data->end[IDIR]+IOFFSET,
+      KOKKOS_LAMBDA (int k, int j, int i) {
+        #if GEOMETRY == CARTESIAN
+          #if DIMENSIONS == 3
+            Ve(AX1e,k,j,i) += ex(k,j,i);
+          #endif
+          Ve(AX3e,k,j,i) += - ez(k,j,i);
+        #elif GEOMETRY == POLAR
+          #if DIMENSIONS == 3
+            Ve(AX1e,k,j,i) += x1(i) * ex(k,j,i);
+          #endif
+          Ve(AX3e,k,j,i) +=  - x1m(i) * ez(k,j,i);
+        #elif GEOMETRY == SPHERICAL
+          #if DIMENSIONS == 3
+            Ve(AX1e,k,j,i) += - x1(i) * sinx2m(j) * ex(k,j,i);
+            Ve(AX2e,k,j,i) +=   x1m(i) * sinx2(j) * ey(k,j,i);
+          #endif
+        #endif
+      });
+
+  #endif // EVOLVE_VECTOR_POTENTIAL
+
 
 #endif // MHD
 #endif // GEOMETRY==CYLINDRICAL

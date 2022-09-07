@@ -32,13 +32,6 @@ void Dump::Init(Input &input, DataBlock &data) {
 
   #ifdef WITH_MPI
     Grid *grid = data.mygrid;
-    MPI_Datatype realType;
-
-    #ifdef USE_DOUBLE
-    realType = MPI_DOUBLE;
-    #else
-    realType = MPI_SINGLE;
-    #endif
 
     int start[3];
     int size[3];
@@ -52,7 +45,7 @@ void Dump::Init(Input &input, DataBlock &data) {
     }
 
     MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
-                                           MPI_ORDER_C, realType, &this->descC));
+                                           MPI_ORDER_C, realMPI, &this->descC));
     MPI_SAFE_CALL(MPI_Type_commit(&this->descC));
 
     // Dimensions for face-centered field
@@ -68,15 +61,66 @@ void Dump::Init(Input &input, DataBlock &data) {
                          //since it involves an overlap of data between procs
 
       MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
-                                             MPI_ORDER_C, realType, &this->descSR[face]));
+                                             MPI_ORDER_C, realMPI, &this->descSR[face]));
       MPI_SAFE_CALL(MPI_Type_commit(&this->descSR[face]));
 
       // Now for writing, it is only the last proc which keeps one additional cell
       if(grid->xproc[face] != grid->nproc[face] - 1  ) subsize[2-face]--;
       MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
-                                             MPI_ORDER_C, realType, &this->descSW[face]));
+                                             MPI_ORDER_C, realMPI, &this->descSW[face]));
       MPI_SAFE_CALL(MPI_Type_commit(&this->descSW[face]));
     }
+    // Dimensions for edge-centered field
+    #ifdef EVOLVE_VECTOR_POTENTIAL
+      for(int nv = 0; nv <= AX3e ; nv++) {
+        int edge; // Vector direction(=edge)
+
+        // Map nv to a vector direction
+        #if DIMENSIONS == 2
+          if(nv==AX3e) {
+            edge = KDIR;
+          } else {
+            IDEFIX_ERROR("Wrong direction for vector potential");
+          }
+        #elif DIMENSIONS == 3
+          edge = nv;
+        #else
+          IDEFIX_ERROR("Cannot treat vector potential with that number of dimensions");
+        #endif
+
+        // load the array size
+        for(int dir = 0; dir < 3 ; dir++) {
+          size[2-dir] = grid->np_int[dir];
+          start[2-dir] = data.gbeg[dir]-data.nghost[dir];
+          subsize[2-dir] = data.np_int[dir];
+        }
+
+        // Extra cell in the dirs perp to field
+        for(int i = 0 ; i < DIMENSIONS ; i++) {
+          if(i!=edge) {
+            size[2-i]++;
+            subsize[2-i]++; // valid only for reading
+                            //since it involves an overlap of data between procs
+          }
+        }
+        MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
+                                              MPI_ORDER_C, realMPI, &this->descER[nv]));
+        MPI_SAFE_CALL(MPI_Type_commit(&this->descER[nv]));
+
+        // Now for writing, it is only the last proc which keeps one additional cell,
+        // so we remove what we added for reads
+        for(int i = 0 ; i < DIMENSIONS ; i++) {
+          if(i!=edge) {
+            if(grid->xproc[i] != grid->nproc[i] - 1  ) {
+              subsize[2-i]--;
+            }
+          }
+        }
+        MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
+                                              MPI_ORDER_C, realMPI, &this->descEW[nv]));
+        MPI_SAFE_CALL(MPI_Type_commit(&this->descEW[nv]));
+      }
+    #endif
   #endif
 }
 
@@ -171,7 +215,7 @@ void Dump::WriteDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gd
 
   // Define current datatype
   DataType type;
-  #ifdef USE_DOUBLE
+  #ifndef SINGLE_PRECISION
   type = DoubleType;
   #else
   type = SingleType;
@@ -243,7 +287,6 @@ void Dump::WriteDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gd
 void Dump::ReadNextFieldProperties(IdfxFileHandler fileHdl, int &ndim, int *dim,
                                          DataType &type, std::string &name) {
   char fieldName[NAMESIZE];
-  int64_t ntot=1;
   #ifdef WITH_MPI
     // Read Name
     MPI_Status status;
@@ -322,6 +365,7 @@ void Dump::ReadSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
   if(type == DoubleType) size=sizeof(double);
   if(type == SingleType) size=sizeof(float);
   if(type == IntegerType) size=sizeof(int);
+  if(type == BoolType) size=sizeof(bool);
 
   #ifdef WITH_MPI
     MPI_Status status;
@@ -330,6 +374,7 @@ void Dump::ReadSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
     if(type == DoubleType) MpiType=MPI_DOUBLE;
     if(type == SingleType) MpiType=MPI_FLOAT;
     if(type == IntegerType) MpiType=MPI_INT;
+    if(type == BoolType) MpiType=MPI_CXX_BOOL;
 
     MPI_SAFE_CALL(MPI_File_set_view(fileHdl, this->offset, MPI_BYTE,
                                     MPI_CHAR, "native", MPI_INFO_NULL ));
@@ -352,7 +397,6 @@ void Dump::ReadSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
 
 void Dump::ReadDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gdim,
                                  IdfxDataDescriptor &descriptor, void* data) {
-  int size;
   int64_t ntot=1;
   int64_t nglob=1;
   // Get total size
@@ -364,7 +408,7 @@ void Dump::ReadDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gdi
   #ifdef WITH_MPI
     MPI_Datatype MpiType;
 
-    #ifdef USE_DOUBLE
+    #ifndef SINGLE_PRECISION
     MpiType = MPI_DOUBLE;
     #else
     MpiType = MPI_FLOAT;
@@ -512,6 +556,53 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
         IDEFIX_WARNING("Code configured without MHD. Face-centered magnetic field components \
                         from the restart dump are skipped");
       #endif
+    } else if(fieldName.compare(0,3,"Ve-") == 0) {
+      #if MHD == YES && defined(EVOLVE_VECTOR_POTENTIAL)
+        int nv = -1;
+        for(int n = 0 ; n <= AX3e; n++) {
+          if(fieldName.compare(3,4,data.hydro.VeName[n],0,4)==0) nv=n; // Found matching field
+        }
+        if(nv<0) {
+          IDEFIX_ERROR("Cannot find a field matching " + fieldName
+                              + " in current running code.");
+        } else {
+          int dir = 0;
+          #if DIMENSIONS == 2
+            if(nv==AX3e) {
+              dir = KDIR;
+            } else {
+              IDEFIX_ERROR("Wrong direction for vector potential");
+            }
+          #elif DIMENSIONS == 3
+            dir = nv;
+          #else
+            IDEFIX_ERROR("Cannot treat vector potential with that number of dimensions");
+          #endif
+          // Load it
+          for(int i = 0 ; i < 3; i++) {
+            nx[i] = dataHost.np_int[i];
+          }
+          // Extra cell in the dirs perp to field
+          for(int i = 0 ; i < DIMENSIONS ; i++) {
+            if(i!=dir) nx[i] ++;
+          }
+
+          ReadDistributed(fileHdl, ndim, nx, nxglob, descER[nv], scrch);
+
+          for(int k = 0; k < nx[KDIR]; k++) {
+            for(int j = 0 ; j < nx[JDIR]; j++) {
+              for(int i = 0; i < nx[IDIR]; i++) {
+                dataHost.Ve(nv,k+dataHost.beg[KDIR],j+dataHost.beg[JDIR],i+dataHost.beg[IDIR])
+                            = scrch[i + j*nx[IDIR] + k*nx[IDIR]*nx[JDIR]];
+              }
+            }
+          }
+        }
+
+      #else
+      IDEFIX_WARNING("Code configured without vector potential support. Vector potentials \
+                        from the restart dump are skipped");
+      #endif
     } else if(fieldName.compare("time") == 0) {
       ReadSerial(fileHdl, ndim, nxglob, type, &data.t);
     } else if(fieldName.compare("dt") == 0) {
@@ -560,7 +651,7 @@ int Dump::Write(DataBlock &data, Output& output) {
   int nx[3];
   int nxtot[3];
 
-  #ifdef USE_DOUBLE
+  #ifndef SINGLE_PRECISION
   const DataType realType = DoubleType;
   #else
   const DataType realType = SingleType;
@@ -605,8 +696,18 @@ int Dump::Write(DataBlock &data, Output& output) {
   GridHost gridHost(*data.mygrid);
   gridHost.SyncFromDevice();
 
+  // Test endianness
+  std::string endian;
+  int tmp1 = 1;
+  unsigned char *tmp2 = (unsigned char *) &tmp1;
+  if (*tmp2 != 0) {
+    endian = "little";
+  } else {
+    endian = "big";
+  }
+
   char header[HEADERSIZE];
-  std::snprintf(header, HEADERSIZE, "Idefix %s Dump Data", GITVERSION);
+  std::snprintf(header, HEADERSIZE, "Idefix %s Dump Data %s endian", GITVERSION, endian.c_str());
   WriteString(fileHdl, header, HEADERSIZE);
 
   for(int dir = 0; dir < 3 ; dir++) {
@@ -673,6 +774,48 @@ int Dump::Write(DataBlock &data, Output& output) {
       }
       WriteDistributed(fileHdl, 3, nx, nxtot, fieldName, this->descSW[nv], scrch);
     }
+    #ifdef EVOLVE_VECTOR_POTENTIAL
+      // write edge field components
+      for(int nv = 0 ; nv <= AX3e ; nv++) {
+        std::snprintf(fieldName,NAMESIZE,"Ve-%s",data.hydro.VeName[nv].c_str());
+        int edge = 0;
+        #if DIMENSIONS == 2
+          if(nv==AX3e) {
+            edge = KDIR;
+          } else {
+            IDEFIX_ERROR("Wrong direction for vector potential");
+          }
+        #elif DIMENSIONS == 3
+          edge = nv;
+        #else
+          IDEFIX_ERROR("Cannot treat vector potential with that number of dimensions");
+        #endif
+        // Load the active domain in the scratch space
+        for(int i = 0; i < 3 ; i++) {
+          nx[i] = dataHost.np_int[i];
+          nxtot[i] = gridHost.np_int[i];
+        }
+        // If it is the last datablock of the dimension, increase the size by one in the direction
+        // perpendicular to the vector.
+
+        for(int i = 0 ; i < DIMENSIONS ; i++) {
+          if(i != edge) {
+            if(data.mygrid->xproc[i] == data.mygrid->nproc[i] - 1) nx[i]++;
+            nxtot[i]++;
+          }
+        }
+        for(int k = 0; k < nx[KDIR]; k++) {
+          for(int j = 0 ; j < nx[JDIR]; j++) {
+            for(int i = 0; i < nx[IDIR]; i++) {
+              scrch[i + j*nx[IDIR] + k*nx[IDIR]*nx[JDIR] ] = dataHost.Ve(nv,k+dataHost.beg[KDIR],
+                                                                            j+dataHost.beg[JDIR],
+                                                                            i+dataHost.beg[IDIR]);
+            }
+          }
+        }
+        WriteDistributed(fileHdl, 3, nx, nxtot, fieldName, this->descEW[nv], scrch);
+      }
+    #endif
   #endif
 
   // Write some raw data

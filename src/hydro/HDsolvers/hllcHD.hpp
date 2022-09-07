@@ -10,7 +10,7 @@
 
 #include "../idefix.hpp"
 #include "hydro.hpp"
-#include "extrapolatePrimVar.hpp"
+#include "slopeLimiter.hpp"
 #include "fluxHD.hpp"
 #include "convertConsToPrimHD.hpp"
 
@@ -42,13 +42,12 @@ void Hydro::HllcHD() {
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 
-  // Required for high order interpolations
-  IdefixArray1D<real> dx = this->data->dx[DIR];
+  [[maybe_unused]] real gamma = this->gamma;
+  [[maybe_unused]] real gamma_m1 = this->gamma - ONE_F;
+  [[maybe_unused]] real csIso = this->isoSoundSpeed;
+  [[maybe_unused]] HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
 
-  real gamma = this->gamma;
-  real gamma_m1 = this->gamma - ONE_F;
-  real csIso = this->isoSoundSpeed;
-  HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
+  SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR],shockFlattening);
 
   idefix_for("HLLC_Kernel",
              data->beg[KDIR],data->end[KDIR]+koffset,
@@ -56,9 +55,9 @@ void Hydro::HllcHD() {
              data->beg[IDIR],data->end[IDIR]+ioffset,
     KOKKOS_LAMBDA (int k, int j, int i) {
       // Init the directions (should be in the kernel for proper optimisation by the compilers)
-      EXPAND( const int Xn = DIR+MX1;                    ,
-              const int Xt = (DIR == IDIR ? MX2 : MX1);  ,
-              const int Xb = (DIR == KDIR ? MX2 : MX3);  )
+      EXPAND( constexpr int Xn = DIR+MX1;                    ,
+              constexpr int Xt = (DIR == IDIR ? MX2 : MX1);  ,
+              constexpr int Xb = (DIR == KDIR ? MX2 : MX3);  )
 
       // Primitive variables
       real vL[NVAR];
@@ -76,7 +75,7 @@ void Hydro::HllcHD() {
       real cL, cR, cmax;
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-      K_ExtrapolatePrimVar<DIR>(i, j, k, Vc, Vs, dx, vL, vR);
+      slopeLim.ExtrapolatePrimVar(i, j, k, vL, vR);
 
       // 2-- Get the wave speed
 #if HAVE_ENERGY

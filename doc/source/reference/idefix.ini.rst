@@ -8,8 +8,11 @@ The problem input file is read when *Idefix* starts. It is split into several se
 allows for comments, which should start with ``#``.
 
 .. tip::
-    Note that you can add arbitray sections and entries in the input file freely. *Idefix* will automatically read and store them on startup. They are then accessible in the code using the
-    ``Input::Get<T>(..)`` and ``Input::GetOrSet<T>`` methods defined in the ``Input`` class (see :ref:`inputClass`).
+    You can add arbitray sections and entries in the input file freely. *Idefix* will automatically read and store them on startup. They are then accessible in the code using the
+    ``Input::Get<T>(..)`` and ``Input::GetOrSet<T>`` template methods defined in the ``Input`` class (see :ref:`inputClass`).
+    To avoid any name collisions with future versions of Idefix, we recommend setting setup-specific parameters in a ``[Setup]`` section.
+
+.. _gridSection:
 
 ``Grid`` section
 --------------------
@@ -53,8 +56,12 @@ The grid spacing can be one of the following:
 * Stretched spacing (``s+`` or ``s-``): the block spacing is defined to follow a geometrical series, starting from the reference spacing :math:`\Delta x_0` taken from the previous (``-``) or next (``+``) uniform block. Mathematically, the grid spacing is defined as :math:`\Delta x_i=\Delta x_0 r^{i-1}` for ``s+`` and  :math:`\Delta x_i=\Delta x_0 r^{N-i}` for ``s-``. The streching ratio :math:`r` is itself defined implicitly as :math:`\frac{r-r^{N+1}}{1-r}=\frac{x_\mathrm{end}-x_\mathrm{start}}{\Delta x_0}`
 
 
-.. tip::
+.. note::
   Note that the stretched block requires at least one uniform block on one of it side to define the reference spacing :math:`\Delta x_0`
+
+.. tip::
+  It is also possible to change the grid spacing to increase the integration timestep with the ``coarsening`` entry, which enables grid coarsening
+  (see :ref:`gridCoarseningModule`)
 
 ``TimeIntegrator`` section
 ------------------------------
@@ -81,6 +88,9 @@ This section is used by *Idefix* time integrator class to define the time integr
 +----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
 | nstages        | integer            | | number of stages of the integrator. Can be  either 1, 2 or 3. 1=First order Euler method,               |
 |                |                    | | 2, 3 = second and third order  TVD Runge-Kutta                                                          |
++----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
+| check_nan      | integer            | | number of time integration cycles between each Nan verification. Default is one on CPUs and 100 on GPUs.|
+|                |                    | | Note that Nan checks are slow on GPUs, and low values of ``check_nan`` are not recommended.             |
 +----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
 
 .. note::
@@ -177,7 +187,11 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 |                |                         | | Note that this is not sufficient to fully define a shearing box: boundary conditions      |
 |                |                         | | are also required.                                                                        |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-
+| shockFlattening| float                   | | Enable shock flattening.  When enabled, the reconstruction scheme reverts to minmod       |
+|                |                         | | limiter when strong shocks are detected. The entry parameter is the threshold above which |
+|                |                         | | a shock is considered "strong", in units of :math:`|\nabla P /P|`. A low value hence tends|
+|                |                         | | to increase the code numerical diffusivity. Typical values are 1 to 10.                   |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
 
 
 .. note::
@@ -204,7 +218,7 @@ This section enables the orbital advection algorithm provided in *Idefix*. More 
 |                |                         | | module as the input velocity function.                                                    |
 |                |                         | | When `userdef` is set, the fargo module expects a user-defined  velocity function to      |
 |                |                         | | be enrolled via Fargo::EnrollVelocity(FargoVelocityFunc)                                  |
-|                |                         | |
+|                |                         | |                                                                                           |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | maxShift       | integer                 | | optional: when using MPI with a domain decomposition in the azimuthal direction, this sets|
 |                |                         | | the maximum number of cells Fargo is allowed to shift the domain at each time step.       |
@@ -250,6 +264,8 @@ this block is simply ignored.
 +================+====================+===========================================================================================================+
 | cfl            | float              | CFL number for the RKL sub-step. Should be <0.5 for stability. Set by default to 0.5 if not provided      |
 +----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
+| check_nan      | bool               | Whether RKL should check the solution when running. This option affects performances. Default false.      |
++----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
 
 ``Boundary`` section
 ------------------------
@@ -273,7 +289,8 @@ and ``X1-end``, ``X2-end``, ``X3-end`` for the right boundaries. Each boundary c
 | axis           | | Axis Boundary conditions. Useful if one wants to include the axis in spherical geometry in the computational   |
 |                | | domain. This condition explicitely requires X2 to go from 0 to :math:`\pi` but can be used for domains         |
 |                | | extending over a fraction of a full circle in X3 (i.e :math:`2\pi/n` where :math:`n` is an integer). When the  |
-|                | | X3 domain spans :math:`2\pi`, this boundary condition is incompatible with MPI domain decomposition along X3.  |
+|                | | X3 domain spans :math:`2\pi` and MPI is used, the number of processes along the X3 direction should be one or  |
+|                | | even (in this last case, additional communications are required which may impact performances).                |
 +----------------+------------------------------------------------------------------------------------------------------------------+
 | userdef        | | User-defined boundary conditions. The boundary condition function should be enrolled in the setup constructor  |
 |                | | (see :ref:`userdefBoundaries`)                                                                                 |

@@ -22,10 +22,8 @@ void UserdefBoundary(DataBlock & data, int dir, BoundarySide side, const real t)
         IdefixArray4D<real> Vc = data.hydro.Vc;
         IdefixArray1D<real> x1 = data.x[IDIR];
         IdefixArray1D<real> x2 = data.x[JDIR];
-        int jghost;
         int jbeg,jend;
         if(side == left) {
-            jghost = data.beg[JDIR];
             jbeg = 0;
             jend = data.beg[JDIR];
             idefix_for("UserDefBoundaryX2Beg",0,data.np_tot[KDIR],jbeg,jend,0,data.np_tot[IDIR],
@@ -45,7 +43,6 @@ void UserdefBoundary(DataBlock & data, int dir, BoundarySide side, const real t)
                         });
             //return;
         } else if(side==right) {
-            jghost = data.end[JDIR]-1;
             jbeg=data.end[JDIR];
             jend=data.np_tot[JDIR];
             real xs = 10.0*t/sin(alpha) + 1.0/6.0 + 1.0/tan(alpha);

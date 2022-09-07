@@ -9,13 +9,12 @@ Created on Thu Mar  5 11:29:41 2020
 import os
 import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
-from pytools.vtk_io import readVTKCart
+from pytools.vtk_io import readVTK
 import numpy as np
 
-import matplotlib.pyplot as plt
 
-V=readVTKCart('../data.0001.vtk')
-U=readVTKCart('data.0001.ref.vtk')
+V=readVTK('../data.0001.vtk', geometry='cartesian')
+U=readVTK('data.0001.ref.vtk', geometry='cartesian')
 
 # Compute the error on PRS
 error=np.mean(np.abs(np.log(V.data['RHO'])-np.log(U.data['RHO'])),axis=(0,1))

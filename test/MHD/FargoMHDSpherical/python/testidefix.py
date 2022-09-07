@@ -9,12 +9,11 @@ Created on Thu Mar  5 11:29:41 2020
 import os
 import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
-from pytools.vtk_io import readVTKSpherical
+from pytools.vtk_io import readVTK
 import numpy as np
-import matplotlib.pyplot as plt
 
-V=readVTKSpherical('../data.0001.vtk')
-U=readVTKSpherical('data.0001.ref.vtk')
+V=readVTK('../data.0001.vtk', geometry='spherical')
+U=readVTK('data.0001.ref.vtk', geometry='spherical')
 
 # Compute the error on BX1
 error=np.mean(np.abs(V.data['BX1']-U.data['BX1']))/np.amax(V.data['BX1'])

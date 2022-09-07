@@ -29,7 +29,7 @@ void Setup::InitFlow(DataBlock &data) {
 
     // Create a host copy
     DataBlockHost d(data);
-    real x,y,z,r1,r2,r;
+    [[maybe_unused]] real x,y,z,r1,r2,r;
 
     real A0=1.0e-3;
     real R0=0.3;

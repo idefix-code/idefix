@@ -36,6 +36,9 @@ void DataBlock::EvolveStage() {
   // Compute current when needed
   if(hydro.needExplicitCurrent) hydro.CalcCurrent();
 
+  // enable shock flattening
+  if(hydro.haveShockFlattening) hydro.shockFlattening.FindShock();
+
   // Loop on all of the directions
   LoopDir<IDIR>();
 
@@ -45,10 +48,17 @@ void DataBlock::EvolveStage() {
 #if MHD == YES && DIMENSIONS >= 2
   // Compute the field evolution according to CT
   hydro.emf.CalcCornerEMF(this->t);
-  if(hydro.resistivityStatus.isExplicit || hydro.ambipolarStatus.isExplicit)
+  if(hydro.resistivityStatus.isExplicit || hydro.ambipolarStatus.isExplicit) {
     hydro.emf.CalcNonidealEMF(this->t);
+  }
   hydro.emf.EnforceEMFBoundary();
-  hydro.emf.EvolveMagField(this->t, this->dt, hydro.Vs);
+  #ifdef EVOLVE_VECTOR_POTENTIAL
+    hydro.emf.EvolveVectorPotential(this->dt, hydro.Ve);
+    hydro.emf.ComputeMagFieldFromA(hydro.Ve, hydro.Vs);
+  #else
+    hydro.emf.EvolveMagField(this->t, this->dt, hydro.Vs);
+  #endif
+
   hydro.boundary.ReconstructVcField(hydro.Uc);
 #endif
 

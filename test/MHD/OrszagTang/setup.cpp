@@ -26,24 +26,28 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
 void Setup::InitFlow(DataBlock &data) {
     // Create a host copy
     DataBlockHost d(data);
-    real x,y,z;
 
     real B0=1.0/sqrt(4.0*M_PI);
 
     for(int k = 0; k < d.np_tot[KDIR] ; k++) {
         for(int j = 0; j < d.np_tot[JDIR] ; j++) {
             for(int i = 0; i < d.np_tot[IDIR] ; i++) {
-                x=d.x[IDIR](i);
-                y=d.x[JDIR](j);
-                z=d.x[KDIR](k);
+                real x=d.x[IDIR](i);
+                real y=d.x[JDIR](j);
 
                 d.Vc(RHO,k,j,i) = 25.0/(36.0*M_PI);
                 d.Vc(PRS,k,j,i) = 5.0/(12.0*M_PI);
                 d.Vc(VX1,k,j,i) = -sin(2.0*M_PI*y);
                 d.Vc(VX2,k,j,i) = sin(2.0*M_PI*x);
-
-                d.Vs(BX1s,k,j,i) = -B0*sin(2.0*M_PI*y);
-                d.Vs(BX2s,k,j,i) = B0*sin(4.0*M_PI*x);
+                #ifdef EVOLVE_VECTOR_POTENTIAL
+                  x=d.xl[IDIR](i);
+                  y=d.xl[JDIR](j);
+                  d.Ve(AX3e,k,j,i) = B0/(2.0*M_PI)*(
+                                      cos(2.0*M_PI*y) + cos(4.0*M_PI*x)/2.0);
+                #else
+                  d.Vs(BX1s,k,j,i) = -B0*sin(2.0*M_PI*y);
+                  d.Vs(BX2s,k,j,i) = B0*sin(4.0*M_PI*x);
+                #endif
 
             }
         }

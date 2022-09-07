@@ -8,42 +8,45 @@
 #ifndef GRIDHOST_HPP_
 #define GRIDHOST_HPP_
 
+#include <vector>
 #include "idefix.hpp"
 #include "grid.hpp"
 #include "input.hpp"
 
+//////////////////////////////////////////////////////////////////////////////////////////////////
+/// The GridHost class is designed to store the grid data of the FULL computational domain (i.e. of
+/// all of the MPI processes running) on the HOST. It comes handy to define initial conditions on
+/// the Host and for output routines. Typical usage is to instantiate a GridHost from an existing
+/// Grid instance, sync it and the use the grid information in Host routines.
+/////////////////////////////////////////////////////////////////////////////////////////////////
 
 class GridHost {
  public:
-  IdefixArray1D<real>::HostMirror x[3]; // geometrical central points
-  IdefixArray1D<real>::HostMirror xr[3]; // cell right interface
-  IdefixArray1D<real>::HostMirror xl[3]; // cell left interface
-  IdefixArray1D<real>::HostMirror dx[3]; // cell width
+  std::vector<IdefixArray1D<real>::HostMirror> x;     ///< geometrical central points
+  std::vector<IdefixArray1D<real>::HostMirror> xr; ///< cell right interface
+  std::vector<IdefixArray1D<real>::HostMirror> xl; ///< cell left interface
+  std::vector<IdefixArray1D<real>::HostMirror> dx; ///< cell width
 
-  real xbeg[3];                   // Beginning of grid
-  real xend[3];                   // End of grid
+  std::vector<real> xbeg;                   ///< Beginning of grid
+  std::vector<real> xend;                   ///< End of grid
 
-  int np_tot[3];                  // total number of grid points
-  int np_int[3];                  // internal number of grid points
+  std::vector<int> np_tot;                  ///< total number of grid points
+  std::vector<int> np_int;                  ///< internal number of grid points
 
-  int nghost[3];                  // number of ghost cells
-  BoundaryType lbound[3];                  // Boundary condition to the left
-  BoundaryType rbound[3];                  // Boundary condition to the right
+  std::vector<int> nghost;                  ///< number of ghost cells
+  std::vector<BoundaryType> lbound;         ///< Boundary condition to the left
+  std::vector<BoundaryType> rbound;         ///< Boundary condition to the right
 
-  bool haveAxis=false;    // Do we require a special treatment of the axis in spherical coords?
+  bool haveAxis=false;    ///< Do we require a special treatment of the axis in spherical coords?
 
-  // Constructor
-  explicit GridHost(Grid&);
-  GridHost();
+  explicit GridHost(Grid&);   ///< Constructor from a corresponding Grid on the Device.
+                              ///< (NB: this constructor does not sync any data)
+  GridHost() = default;       ///< default constructor, should not be used explicitely.
 
-  // Actually make the grid
-  void MakeGrid(Input &);
+  void MakeGrid(Input &);      ///< create grid coordinates from the input data.
 
-  // Sync from a device grid
-  void SyncFromDevice();
-
-  // Sync to a device grid
-  void SyncToDevice();
+  void SyncFromDevice();      ///< Synchronize this to the device Grid
+  void SyncToDevice();      ///< Synchronize this from the device Grid
 
  private:
   Grid *grid;

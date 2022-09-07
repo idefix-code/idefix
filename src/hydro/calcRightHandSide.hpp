@@ -37,6 +37,14 @@ void Hydro::CalcRightHandSide(real t, real dt) {
   IdefixArray4D<real> viscSrc = this->viscosity.viscSrc;
   IdefixArray2D<real> fargoVelocity = data->fargo.meanVelocity;
 
+  // Grid coarsening
+  bool haveGridCoarsening = false;
+  IdefixArray2D<int> coarseningLevel;
+
+  if(data->haveGridCoarsening) {
+    haveGridCoarsening = data->coarseningDirection[dir];
+    coarseningLevel = data->coarseningLevel[dir];
+  }
 
   // Gravitational potential
   IdefixArray3D<real> phiP = data->gravity.phiP;
@@ -49,8 +57,8 @@ void Hydro::CalcRightHandSide(real t, real dt) {
   // parabolic terms
   bool haveParabolicTerms = this->haveExplicitParabolicTerms;
 
-  // Viscosity
-  bool haveViscosity = this->viscosityStatus.isExplicit;
+  // Viscosity  (source term only when non-cartesian geometry)
+  [[maybe_unused]] bool haveViscosity = this->viscosityStatus.isExplicit;
 
   // Fargo
   bool haveFargo  = data->haveFargo;
@@ -58,38 +66,29 @@ void Hydro::CalcRightHandSide(real t, real dt) {
 
   //Rotation
   bool haveRotation = this->haveRotation;
-  real Omega = this->OmegaZ;
+  [[maybe_unused]] real Omega = this->OmegaZ;
   // disable rotation in cartesian geometry, as Coriolis is then treated as a source term
   #if GEOMETRY == CARTESIAN
     haveRotation = false;
   #endif
 
   // shearingBox
-  bool haveShearingBox = this->haveShearingBox;
-  real sbS = this->sbS;
+  [[maybe_unused]] bool haveShearingBox = this->haveShearingBox;
+  [[maybe_unused]] real sbS = this->sbS;
 
   if(haveFargo && fargoType == Fargo::userdef) {
     data->fargo.GetFargoVelocity(t);
   }
 
-
-  int ioffset,joffset,koffset;
-  ioffset=joffset=koffset=0;
-  // Determine the offset along which we do the extrapolation
-  if(dir==IDIR) ioffset=1;
-  if(dir==JDIR) joffset=1;
-  if(dir==KDIR) koffset=1;
-
+  constexpr const int ioffset = (dir==IDIR) ? 1 : 0;
+  constexpr const int joffset = (dir==JDIR) ? 1 : 0;
+  constexpr const int koffset = (dir==KDIR) ? 1 : 0;
 
   idefix_for("CalcTotalFlux",
              data->beg[KDIR],data->end[KDIR]+koffset,
              data->beg[JDIR],data->end[JDIR]+joffset,
              data->beg[IDIR],data->end[IDIR]+ioffset,
     KOKKOS_LAMBDA (int k, int j, int i) {
-      constexpr const int ioffset = (dir==IDIR) ? 1 : 0;
-      constexpr const int joffset = (dir==JDIR) ? 1 : 0;
-      constexpr const int koffset = (dir==KDIR) ? 1 : 0;
-
       // Add Fargo velocity to the fluxes
       if(haveFargo || haveRotation) {
         // Set mean advection direction
@@ -209,11 +208,6 @@ void Hydro::CalcRightHandSide(real t, real dt) {
              data->beg[JDIR],data->end[JDIR],
              data->beg[IDIR],data->end[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
-      constexpr const int ioffset = (dir==IDIR) ? 1 : 0;
-      constexpr const int joffset = (dir==JDIR) ? 1 : 0;
-      constexpr const int koffset = (dir==KDIR) ? 1 : 0;
-
-      //
       real dtdV=dt / dV(k,j,i);
       real rhs[NVAR];
 
@@ -260,6 +254,23 @@ void Hydro::CalcRightHandSide(real t, real dt) {
       // Compute dt from max signal speed
       const int ig = ioffset*i + joffset*j + koffset*k;
       real dl = dx(ig);
+
+      // Change elementary grid spacing according to local coarsening level.
+
+      if(haveGridCoarsening) {
+        int factor;
+        //factor = 2^(coarsening-1)
+        if(dir==IDIR) {
+          factor = 1 << (coarseningLevel(k,j) - 1);
+        }
+        if(dir==JDIR) {
+          factor = 1 << (coarseningLevel(k,i) - 1);
+        }
+        if(dir==KDIR) {
+          factor = 1 << (coarseningLevel(j,i) - 1);
+        }
+        dl = dl * factor;
+      }
 #if GEOMETRY == POLAR
       if(dir==JDIR)
         dl = dl*x1(i);

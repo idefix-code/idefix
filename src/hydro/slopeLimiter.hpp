@@ -173,8 +173,6 @@ class SlopeLimiter {
     constexpr int joffset = (dir==JDIR ? 1 : 0);
     constexpr int koffset = (dir==KDIR ? 1 : 0);
 
-    // 1D index along the chosen direction
-    const int index = ioffset*i + joffset*j + koffset*k;
     for(int nv = 0 ; nv < nvmax ; nv++) {
       if constexpr(order == 1) {
         vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset);
@@ -213,6 +211,8 @@ class SlopeLimiter {
 
         vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
       } else if constexpr(order == 3) {
+          // 1D index along the chosen direction
+          const int index = ioffset*i + joffset*j + koffset*k;
           real dvm = Vc(nv,k-koffset,j-joffset,i-ioffset)
                     -Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset);
           real dvp = Vc(nv,k,j,i)-Vc(nv,k-koffset,j-joffset,i-ioffset);

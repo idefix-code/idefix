@@ -710,6 +710,15 @@ void RKLegendre::CalcParabolicRHS(real t) {
 
   // Compute hyperbolic timestep only if we're in the first stage of the RKL loop
   if(stage==1) {
+    // Grid coarsening
+    bool haveGridCoarsening = false;
+    IdefixArray2D<int> coarseningLevel;
+
+    if(data->haveGridCoarsening) {
+      haveGridCoarsening = data->coarseningDirection[dir];
+      coarseningLevel = data->coarseningLevel[dir];
+    }
+
     idefix_for("CalcDt",
              data->beg[KDIR],data->end[KDIR],
              data->beg[JDIR],data->end[JDIR],
@@ -721,6 +730,21 @@ void RKLegendre::CalcParabolicRHS(real t) {
                // Compute dt from max signal speed
                 const int ig = ioffset*i + joffset*j + koffset*k;
                 real dl = dx(ig);
+
+                if(haveGridCoarsening) {
+                  int factor;
+                  //factor = 2^(coarsening-1)
+                  if(dir==IDIR) {
+                    factor = 1 << (coarseningLevel(k,j) - 1);
+                  }
+                  if(dir==JDIR) {
+                    factor = 1 << (coarseningLevel(k,i) - 1);
+                  }
+                  if(dir==KDIR) {
+                    factor = 1 << (coarseningLevel(j,i) - 1);
+                  }
+                  dl = dl * factor;
+                }
                 #if GEOMETRY == POLAR
                   if (dir==JDIR)
                     dl = dl*x1(i);

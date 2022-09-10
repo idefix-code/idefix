@@ -77,6 +77,8 @@ DumpImage::DumpImage(std::string filename, Output &output) {
       dump.ReadSerial(fileHdl, ndim, nx, type, &this->time);
     } else if(fieldName.compare("geometry")==0) {
       dump.ReadSerial(fileHdl, ndim, nx, type, &this->geometry);
+    } else if(fieldName.compare("centralMass")==0) {
+      dump.ReadSerial(fileHdl, ndim, nx, type, &this->centralMass);
     } else {
       int size=sizeof(double);
       for(int dim =0 ; dim<ndim ; dim++) {

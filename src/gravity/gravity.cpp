@@ -14,6 +14,8 @@
 void Gravity::Init(Input &input, DataBlock *datain) {
   this->data = datain;
   data->haveGravity = true;
+  // Gravitational constant G
+  this->gravCst = input.GetOrSet<real>("Gravity","gravCst",0, 1.0);
   // Gravitational potential
   int nPotential = input.CheckEntry("Gravity","potential");
   if(nPotential >=0) {
@@ -44,8 +46,11 @@ void Gravity::Init(Input &input, DataBlock *datain) {
     }
   }
 
+
+
   // Allocate required arrays
-  if(havePotential && !haveInitialisedPotential) {
+  if(havePotential && (!haveInitialisedPotential)) {
+    idfx::cout << "Gravity:: Allocating gravitational potential PhiP" << std::endl;
     phiP = IdefixArray3D<real>("Gravity_PhiP",
                                 data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
     haveInitialisedPotential = true;
@@ -55,11 +60,24 @@ void Gravity::Init(Input &input, DataBlock *datain) {
                                 data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
     haveInitialisedBodyForce = true;
   }
+
+  // TODO(mauxionj): the following should consider the possibility to enable SelfGravity
+  // even tought it is not explicitly asked by the user, to handle dependencies of other modules
+  // (e.g. planet module ?). Those dependencies are to be handled in the previous conditional block
+  // such that from this point, if SelfGravity is needed, haveSelfGravityPotential is true and
+  // we build the corresponding object if not done yet.
+  // Check SelfGravity object
+  if(haveSelfGravityPotential) {
+    idfx::cout << "Gravity:: Init self-gravity." << std::endl;
+    selfGravity.Init(input, this->data);
+    haveInitialisedSelfGravity = true;
+  }
 }
 
 void Gravity::ShowConfig() {
   if(data->haveGravity) {
     idfx::cout << "Gravity: ENABLED." << std::endl;
+    idfx::cout << "Gravity: G=" << gravCst << "." << std::endl;
     if(haveUserDefPotential) {
       idfx::cout << "Gravity: User-defined gravitational potential ENABLED." << std::endl;
       if(!gravPotentialFunc) {
@@ -72,6 +90,7 @@ void Gravity::ShowConfig() {
     }
     if(haveSelfGravityPotential) {
       idfx::cout << "Gravity: self-gravity ENABLED." << std::endl;
+      selfGravity.ShowConfig();
     }
     if(haveBodyForce) {
       idfx::cout << "Gravity: user-defined body force ENABLED." << std::endl;
@@ -103,7 +122,11 @@ void Gravity::ComputeGravity() {
       IDEFIX_ERROR("Planet potential not implemented. Ask GWF.");
     }
     if(haveSelfGravityPotential) {
-      IDEFIX_ERROR("Self gravity potential not implemented. Ask JM.");
+      // Solving Poisson for the current gas density distribution
+      selfGravity.SolvePoisson();
+
+      // Adding gas self-gravity contribution to global gravity potential
+      selfGravity.AddSelfGravityPotential(phiP);
     }
   }
   if(haveBodyForce) {
@@ -116,6 +139,14 @@ void Gravity::ComputeGravity() {
     bodyForceFunc(*data, data->t, bodyForceVector);
     idfx::popRegion();
   }
+
+  // For debug purpose
+  #ifdef DEBUG_GRAVITY
+    potTotFile.open("potTot.dat",std::ios::trunc);
+    this->selfGravity.WriteField(potTotFile,this->phiP);
+    potTotFile.close();
+  #endif
+
   idfx::popRegion();
 }
 
@@ -158,6 +189,7 @@ void Gravity::AddCentralMassPotential() {
   IdefixArray1D<real> x3 = data->x[KDIR];
   IdefixArray3D<real> phiP = this->phiP;
   real mass = this->centralMass;
+  real gravCst = this->gravCst;
   #if GEOMETRY == CARTESIAN
     IDEFIX_ERROR("Central mass potential is not defined in cartesian geometry");
   #endif
@@ -178,7 +210,7 @@ void Gravity::AddCentralMassPotential() {
                 #else
                   r = ONE_F; // Make sure this one is initialized
                 #endif
-                  phiP(k,j,i) += -mass/r;
+                  phiP(k,j,i) += -gravCst*mass/r;
               });
   idfx::popRegion();
 }

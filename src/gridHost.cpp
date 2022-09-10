@@ -192,10 +192,15 @@ if(haveAxis) {
   #if DIMENSIONS < 2
     IDEFIX_ERROR("Axis Boundaries requires at least two dimenions");
   #endif
-  if((fabs(xbeg[JDIR])>1e-10) && (lbound[JDIR] == axis)) {
+  #ifdef SINGLE_PRECISION
+    const real smallNumber = 1e-5;
+  #else
+    const real smallNumber = 1e-10;
+  #endif
+  if((fabs(xbeg[JDIR])>smallNumber) && (lbound[JDIR] == axis)) {
     IDEFIX_ERROR("Axis Boundaries requires your X2 domain to start at exactly x2=0.0");
   }
-  if((fabs(xend[JDIR]-M_PI)>1e-10) && (rbound[JDIR] == axis )) {
+  if((fabs(xend[JDIR]-M_PI)>smallNumber) && (rbound[JDIR] == axis )) {
     IDEFIX_ERROR("Axis Boundaries requires your X2 domain to end at exactly x2=Pi");
   }
   // Enforce symmetry of theta grid spacing when we cross the axis

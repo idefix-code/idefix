@@ -52,6 +52,7 @@ class TimeIntegrator {
   int64_t ncycles;        // # of cycles
   double lastLog;         // time for the last log (s)
   double lastMpiLog;      // time for the last MPI log (s)
+  double lastSGLog;      // time for the last SelfGravity log (s)
   double maxRuntime;      // Maximum runtime requested (disabled when negative)
   int64_t cyclePeriod;    // # of cycles between two logs
   Kokkos::Timer timer;    // Internal timer of the integrator

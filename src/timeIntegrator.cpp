@@ -89,6 +89,13 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
   double mpiOverhead = 100.0 * mpiCycleTime / (timer.seconds() - lastLog);
   lastMpiLog = idfx::mpiCallsTimer;
 #endif
+  double sgOverhead;
+  if(data.gravity.haveSelfGravityPotential) {
+    double sgCycleTime = data.gravity.selfGravity.elapsedTime - lastSGLog;
+    sgOverhead = 100.0 * sgCycleTime / (timer.seconds() - lastLog);
+    lastSGLog = data.gravity.selfGravity.elapsedTime;
+  }
+
   lastLog = timer.seconds();
 
 
@@ -107,6 +114,11 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
 #endif
     if(haveRKL) {
       idfx::cout << " | " << std::setw(col_width) << "RKL stages";
+    }
+    if(data.gravity.haveSelfGravityPotential) {
+      idfx::cout << " | " << std::setw(col_width) << "SG iterations";
+      idfx::cout << " | " << std::setw(col_width) << "SG error";
+      idfx::cout << " | " << std::setw(col_width) << "SG overhead (%)";
     }
     idfx::cout << std::endl;
   }
@@ -148,6 +160,19 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
 #endif
   if(haveRKL) {
     idfx::cout << " | " << std::setw(col_width) << rkl.stage;
+  }
+  if(data.gravity.haveSelfGravityPotential) {
+    if(ncycles>=cyclePeriod) {
+      idfx::cout << " | " << std::setw(col_width) << data.gravity.selfGravity.nsteps;
+      idfx::cout << std::scientific;
+      idfx::cout << " | " << std::setw(col_width) << data.gravity.selfGravity.currentError;
+      idfx::cout << std::fixed;
+      idfx::cout << " | " << std::setw(col_width) << sgOverhead;
+    } else {
+      idfx::cout << " | " << std::setw(col_width) << "N/A";
+      idfx::cout << " | " << std::setw(col_width) << "N/A";
+      idfx::cout << " | " << std::setw(col_width) << "N/A";
+    }
   }
   idfx::cout << std::endl;
 }

@@ -128,7 +128,7 @@ void Hydro::AddSourceTerms(real t, real dt) {
       Uc(MX1,k,j,i) += dt * Sm / x1(i);
 
 #elif GEOMETRY == SPHERICAL
-      real vphi,Sm,ct;
+      real vphi,Sm;
       vphi = SELECT(ZERO_F, ZERO_F, Vc(iVPHI,k,j,i))+fargoV;
       if(haveRotation) vphi += OmegaZ*x1(i)*FABS(sinx2(j));
       // Centrifugal
@@ -158,7 +158,7 @@ void Hydro::AddSourceTerms(real t, real dt) {
   #endif
       Uc(MX1,k,j,i) += dt*Sm/x1(i);
   #if COMPONENTS >= 2
-      ct = 1.0/tanx2(j);
+      real ct = 1.0/tanx2(j);
        // Centrifugal
       Sm = Vc(RHO,k,j,i) * (EXPAND( ZERO_F, - Vc(iVTH,k,j,i)*Vc(iVR,k,j,i), + ct*vphi*vphi));
       // Pressure curvature

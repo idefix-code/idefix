@@ -60,7 +60,7 @@ class DataBlock {
   std::vector<real> xend;             ///< End of active domain in datablock
 
   IdefixArray3D<real> dV;                ///< cell volume
-  std::vector<IdefixArray3D<real>> A;    ///< cell right interface area
+  std::vector<IdefixArray3D<real>> A;    ///< cell left interface area
 
   std::vector<int> np_tot;        ///< total number of grid points in datablock
   std::vector<int> np_int;        ///< active number of grid points in datablock (excl. ghost cells)
@@ -123,6 +123,8 @@ class DataBlock {
   // Do we have Gravity ?
   bool haveGravity{false};
   Gravity gravity;
+
+
 
  private:
   void WriteVariable(FILE* , int , int *, char *, void*);

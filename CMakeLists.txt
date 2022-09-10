@@ -132,6 +132,7 @@ target_include_directories(idefix PUBLIC
                            src/rkl
                            src/gravity
                            src/utils
+                           src/utils/iterativesolver
                            src
                            )
 

@@ -2,6 +2,7 @@
 
 rep_2D_mpi_list="HD/MachReflection HD/ViscousFlowPastCylinder HD/FargoPlanet MHD/OrszagTang"
 rep_3D_mpi_list="MHD/AmbipolarCshock3D MHD/AxisFluxTube MHD/LinearWaveTest MHD/FargoMHDSpherical MHD/OrszagTang3D"
+rep_3D_noX3_list="SelfGravity/RandomSphere"
 
 # refer to the parent dir of this file, wherever this is called from
 # a python equivalent is e.g.
@@ -12,6 +13,7 @@ TEST_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 TMP_DIR="$(mktemp -d)"
 mkdir $TMP_DIR/HD
 mkdir $TMP_DIR/MHD
+mkdir $TMP_DIR/SelfGravity
 
 function resolve_path {
     # resolve relative paths
@@ -70,6 +72,38 @@ for rep in $rep_2D_mpi_list; do
 done
 
 # MHD tests
+for rep in $rep_3D_noX3_list; do
+    cp -R $TEST_DIR/$rep $TMP_DIR/$rep
+    cd $TMP_DIR/$rep
+    echo "***********************************************"
+    echo "Configuring  $rep"
+    echo "Using $TMP_DIR/$rep as working directory"
+    echo "***********************************************"
+    rm -f CMakeCache.txt
+    cmake $IDEFIX_DIR -DIdefix_MPI=ON $options
+    echo "***********************************************"
+    echo "Making  $rep"
+    echo "***********************************************"
+    make clean; make -j 10
+
+    ini_files=$(ls *.ini)
+    for ini in $ini_files; do
+        echo "***********************************************"
+        echo "Running  $rep with $ini"
+        echo "***********************************************"
+        mpirun -np 4 ./idefix -i $ini -dec 2 2 1 -nolog
+
+        cd python
+        echo "***********************************************"
+        echo "Testing  $rep with $ini"
+        echo "***********************************************"
+        python3 testidefix.py -noplot
+        cd ..
+    done
+
+    cd $TEST_DIR
+done
+
 for rep in $rep_3D_mpi_list; do
     cp -R $TEST_DIR/$rep $TMP_DIR/$rep
     cd $TMP_DIR/$rep

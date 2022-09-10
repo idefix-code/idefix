@@ -20,6 +20,7 @@
 #include "axis.hpp"
 #include "hydroboundary.hpp"
 #include "shockFlattening.hpp"
+#include "selfGravity.hpp"
 
 // forward class declaration
 class DataBlock;

@@ -621,6 +621,8 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
       ReadSerial(fileHdl, ndim, nxglob, type, &this->geometry);
     } else if(fieldName.compare("periodicity")==0) {
       ReadSerial(fileHdl, ndim, nxglob, type, &this->periodicity);
+    } else if(fieldName.compare("centralMass")==0) {
+      ReadSerial(fileHdl, ndim, nxglob, type, &data.gravity.centralMass);
     } else {
       ReadSerial(fileHdl,ndim, nxglob, type, scrch);
       IDEFIX_WARNING("Unknown field "+fieldName+" in restart dump. Skipping.");
@@ -836,6 +838,8 @@ int Dump::Write(DataBlock &data, Output& output) {
   WriteSerial(fileHdl, 1, nx, realType, fieldName, &output.analysisLast);
   std::snprintf(fieldName,NAMESIZE, "geometry");
   WriteSerial(fileHdl, 1, nx, IntegerType, fieldName, &this->geometry);
+  std::snprintf(fieldName,NAMESIZE, "centralMass");
+  WriteSerial(fileHdl, 1, nx, realType, fieldName, &data.gravity.centralMass);
 
   nx[0] = 3;
   std::snprintf(fieldName,NAMESIZE, "periodicity");

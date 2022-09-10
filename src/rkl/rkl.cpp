@@ -55,6 +55,7 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
   this->data = &datain;
 
   cfl_rkl = input.GetOrSet<real> ("RKL","cfl",0, 0.5);
+  rmax_par = input.GetOrSet<real> ("RKL","rmax_par",0, 100.0);
 
   // By default check nans in debug mode
   #ifdef DEBUG
@@ -62,8 +63,6 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
   #endif
 
   this->checkNan = input.GetOrSet<bool>("RKL","check_nan",0, this->checkNan);
-
-  rmax_par = 100.0;
 
   // Make a list of variables
 
@@ -174,6 +173,8 @@ void RKLegendre::ShowConfig() {
     IDEFIX_ERROR("Unknown RKL scheme order");
   #endif
   idfx::cout << "RKLegendre: RKL cfl set to " << cfl_rkl <<  "." << std::endl;
+  idfx::cout << "RKLegendre: maximum ratio hyperbolic/parabolic timestep "
+             << rmax_par <<  "." << std::endl;
   if(haveVc) {
      idfx::cout << "RKLegendre: will evolve cell-centered fields Vc." << std::endl;
   }

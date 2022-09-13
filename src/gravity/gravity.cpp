@@ -101,7 +101,7 @@ void Gravity::ShowConfig() {
   }
 }
 // This function compute the gravitational field, using both body force and potential
-void Gravity::ComputeGravity() {
+void Gravity::ComputeGravity(int stepNumber) {
   idfx::pushRegion("Gravity::ComputeGravity");
   if(havePotential) {
     if(haveUserDefPotential) {
@@ -123,7 +123,7 @@ void Gravity::ComputeGravity() {
     }
     if(haveSelfGravityPotential) {
       // Solving Poisson for the current gas density distribution
-      selfGravity.SolvePoisson();
+      if(stepNumber % selfGravity.skipSelfGravity == 0) selfGravity.SolvePoisson();
 
       // Adding gas self-gravity contribution to global gravity potential
       selfGravity.AddSelfGravityPotential(phiP);

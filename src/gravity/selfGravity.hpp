@@ -35,7 +35,7 @@ class SelfGravity {
  public:
   // Types of boundary which can be treated
   enum GravityBoundaryType {internalgrav, periodic, nullgrad, nullpot, userdef, axis, origin};
-  enum GravitySolver {JACOBI, BICGSTAB, PBICGSTAB};
+  enum GravitySolver {JACOBI, BICGSTAB, PBICGSTAB, PCG, CG, PMINRES, MINRES};
 
   // Handling userdef boundary. TODO(mauxionj): not fully working.
   using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side,
@@ -91,6 +91,9 @@ class SelfGravity {
   real currentError{0};       // last error of the iterative solver
   int nsteps{0};              // # of steps of the latest iteration
   double elapsedTime;        // time spent solving self gravity
+
+  // Whether we should skip self-gravity computation every n steps
+  int skipSelfGravity{1};
 
  private:
   DataBlock *data;  // My parent data object

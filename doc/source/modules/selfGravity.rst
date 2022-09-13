@@ -27,7 +27,8 @@ This specific method allows to solve the Poisson equation in any dimensions and 
     However, an optional preconditionning feature (PBICGSTAB) is
     implemented to handle particularly irregular and inhomogeneous grids, that may prevent the
     convergence of the classic BICGSTAB. Note also that a simpler (yet very slow) Jacobi method
-    has been left for debug purpose.
+    has been left for debug purpose. The user can also try the conjugate gradient and minimal residual
+    methods which have been tested successfully and are faster than BICGSTAB for some problems/grids.
 
 The main output of the ``SelfGravity`` module is the addition of the self-gravitational potential inferred from the
 gas distribution to the various sources of gravitational potential. At the beginning of every (M)HD step, the module is called to compute
@@ -46,14 +47,19 @@ set in a dedicated ``[SelfGravity]`` block:
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 |  Entry name    | Parameter type          | Comment                                                                                     |
 +================+=========================+=============================================================================================+
-| solver         | string                  | | Specifies which solver should be used. Can be ``Jacobi``, ``BICGSTAB`` or ``PBICGSTAB``   |
-|                |                         | | for the left preconditionned BICGSTAB solve.                                              |
+| solver         | string                  | | Specifies which solver should be used. Can be ``Jacobi``, ``CG``, ``MINRES``, ``BICGSTAB``|
+|                |                         | | which corresponds to Jacobin, conjugate gradient, Minimal residual or bi-conjugate        |
+|                |                         | | stabilised method. Note that a preconditionned version is available adding a ``P`` to     |
+|                |                         | | the solver  name (e.g. ``PCG`` or ``PBIGCSTAB`` ).                                        |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | targetError    | real                    | | Set the error allowed in the residual :math:`r=\Delta\psi_{SG}/(4\pi G_c)-\rho`. The error|
 |                |                         | | computation is based on a L2 norm. Default is 1e-2.                                       |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | maxIter        | int                     | | Set the maximum number of iterations allowed to the solver to reach convergence. Default  |
 |                |                         | | is 1000.                                                                                  |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| skip           | int                     | | Set the number of integration cycles between each computation of self-gravity potential.  |
+|                |                         | | Default is 1 (i.e. self-gravity is computed at every cycle).                              |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 
 

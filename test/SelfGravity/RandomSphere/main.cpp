@@ -145,7 +145,7 @@ int main( int argc, char* argv[] ) {
     real tstop = input.Get<real>("TimeIntegrator","tstop",0);
 
     while(data.t < tstop) {
-      data.gravity.ComputeGravity();
+      data.gravity.ComputeGravity(0);
       output.ForceWriteVtk(data);
       data.t = tstop;
       // if(tstop-data.t < data.dt) data.dt = tstop-data.t;

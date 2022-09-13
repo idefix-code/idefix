@@ -15,6 +15,8 @@
 #include "hydro.hpp"
 #include "vector.hpp"
 #include "bicgstab.hpp"
+#include "cg.hpp"
+#include "minres.hpp"
 #include "jacobi.hpp"
 
 
@@ -40,6 +42,11 @@ void SelfGravity::Init(Input &input, DataBlock *datain) {
 
   // get maxiter when provided
   real maxiter = input.GetOrSet<int>("SelfGravity","maxIter",0,1000);
+
+  this->skipSelfGravity = input.GetOrSet<int>("SelfGravity","skip",0,1);
+  if(skipSelfGravity<1) {
+    IDEFIX_ERROR("[SelfGravity]:skip should be a strictly positive integer");
+  }
 
   // // Update gravCst when provided
   // if(input.CheckEntry("SelfGravity","gravCst") >= 0) {
@@ -174,6 +181,14 @@ void SelfGravity::Init(Input &input, DataBlock *datain) {
       solver = BICGSTAB;
     } else if(strSolver.compare("PBICGSTAB")==0) {
       solver = PBICGSTAB;
+    } else if(strSolver.compare("CG")==0) {
+      solver = CG;
+    } else if(strSolver.compare("PCG")==0) {
+      solver = PCG;
+    } else if(strSolver.compare("MINRES")==0) {
+      solver = MINRES;
+    } else if(strSolver.compare("PMINRES")==0) {
+      solver = PMINRES;
     } else {
       try {
         // Try to use the old solver definition with integer (deprecated)
@@ -194,11 +209,21 @@ void SelfGravity::Init(Input &input, DataBlock *datain) {
   }
 
   // Enable preconditionner
-  if(this->solver==PBICGSTAB) this->havePreconditioner = true;
+  if(this->solver==PBICGSTAB || this->solver == PCG || this->solver == PMINRES) {
+    this->havePreconditioner = true;
+  }
 
   // Instantiate the bicgstab solver
   if(solver == BICGSTAB || solver == PBICGSTAB) {
     iterativeSolver = new Bicgstab<SelfGravity>(this, &SelfGravity::ComputeLaplacian,
+                                                targetError, maxiter,
+                                                this->np_tot, this->beg, this->end);
+  } else if(solver == CG || solver == PCG) {
+    iterativeSolver = new Cg<SelfGravity>(this, &SelfGravity::ComputeLaplacian,
+                                                targetError, maxiter,
+                                                this->np_tot, this->beg, this->end);
+  } else if(solver == MINRES || solver == PMINRES) {
+    iterativeSolver = new Minres<SelfGravity>(this, &SelfGravity::ComputeLaplacian,
                                                 targetError, maxiter,
                                                 this->np_tot, this->beg, this->end);
   } else {
@@ -388,6 +413,18 @@ void SelfGravity::ShowConfig() {
     case PBICGSTAB:
       idfx::cout << "preconditionned BICGSTAB";
       break;
+    case PCG:
+      idfx::cout << "preconditionned CG";
+      break;
+    case CG:
+      idfx::cout << "unpreconditionned CG";
+      break;
+    case MINRES:
+      idfx::cout << "unpreconditionned MinRes";
+      break;
+    case PMINRES:
+      idfx::cout << "preconditionned MinRes";
+      break;
     default:
       IDEFIX_ERROR("SelfGravity:: Unknown solver");
   }
@@ -406,6 +443,10 @@ void SelfGravity::ShowConfig() {
                << "radial points." << std::endl;
   }
 
+  if(this->skipSelfGravity>1) {
+    idfx::cout << "SelfGravity: self-gravity field will be updated every " << skipSelfGravity
+               << " cycles." << std::endl;
+  }
   iterativeSolver->ShowConfig();
 }
 

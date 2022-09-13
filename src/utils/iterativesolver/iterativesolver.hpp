@@ -163,6 +163,7 @@ void IterativeSolver<C>::TestErrorL2() {
 
   // Squared error
   this->currentError = sqrt(normL2Vector.v[0] / normL2Vector.v[1]);
+  //idfx::cout << "Error=" << this->currentError << std::endl;
 
   // Checking Nans
   if(std::isnan(currentError)) {

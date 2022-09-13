@@ -20,7 +20,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   rho0 = 3.0; // Background density
   gammaGlob=data.hydro.GetGamma(); // Input gamma
   prs0 = 1.0/gammaGlob; // Background pressure
-  A = 0.0000001; // Perturbation amplitude
+  A = 0.0001; // Perturbation amplitude
 }
 
 // This routine initialize the flow

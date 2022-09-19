@@ -16,12 +16,13 @@ void HydroBoundary::Init(Input & input, Grid &grid, Hydro* hydro) {
   this->hydro = hydro;
   this->data = hydro->data;
 
-  // This should be required only when shearing box is on
-  sBArray = IdefixArray4D<real>("ShearingBoxArray",
-                                NVAR,
-                                data->np_tot[KDIR]+1,
-                                data->np_tot[JDIR]+1,
-                                data->nghost[IDIR]);
+  if(data->lbound[IDIR] == shearingbox || data->rbound[IDIR] == shearingbox) {
+    sBArray = IdefixArray4D<real>("ShearingBoxArray",
+                                  NVAR,
+                                  data->np_tot[KDIR]+1,
+                                  data->np_tot[JDIR]+1,
+                                  data->nghost[IDIR]);
+  }
 
   // Init MPI stack when needed
 #ifdef WITH_MPI

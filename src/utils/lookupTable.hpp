@@ -56,7 +56,7 @@ class LookupTable {
         if(errorIfOutOfBound) {
           Kokkos::abort("LookupTable:: ERROR! Attempt to interpolate above your upper bound.");
         } else {
-          x_n = xin(offset(n)+dimensions(n)-1) - SMALL_NUMBER;
+          x_n = xin(offset(n)+dimensions(n)-1)*(1 - SMALL_NUMBER);
         }
       }
 

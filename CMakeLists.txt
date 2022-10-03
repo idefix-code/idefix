@@ -56,7 +56,6 @@ if(EXISTS ${PROJECT_BINARY_DIR}/setup.cpp)
   target_sources(idefix PUBLIC ${PROJECT_BINARY_DIR}/setup.cpp)
 else()
   message(WARNING "No specific setup.cpp found in the problem directory")
-  target_sources(idefix PUBLIC ${CMAKE_CURRENT_LIST_DIR}/src/setup.cpp)
 endif()
 
 # If a CMakeLists.txt is in the problem dir (for problem-specific source files)

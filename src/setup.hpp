@@ -22,7 +22,7 @@
 class Setup {
  public:
   Setup(Input &, Grid &, DataBlock &, Output&);
-
+  ~Setup();
   void InitFlow(DataBlock &);
 };
 

@@ -220,7 +220,9 @@ void TimeIntegrator::Cycle(DataBlock &data) {
       data.states["begin"].CopyFrom(data.states["current"]);
     }
     // If gravity is needed, update it
-    if(data.haveGravity) data.gravity.ComputeGravity(ncycles);
+    if(data.haveGravity) {
+      if(ncycles % data.gravity.skipGravity == 0) data.gravity.ComputeGravity(ncycles);
+    }
 
     // Update Uc & Vs
     data.EvolveStage();

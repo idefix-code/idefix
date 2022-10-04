@@ -264,6 +264,9 @@ section as followed:
 |                |                         | | be enrolled via ``Gavity::EnrollBodyForce(BodyForceFunc)`` (see :ref:`functionEnrollment`)|
 |                |                         | | See the shearing box tests for examples of using bodyForce.                               |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| skip           | int                     | | Set the number of integration cycles between each computation of the gravity potential.   |
+|                |                         | | Default is 1 (i.e. gravity is computed at every cycle).                                   |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
 
 
 
@@ -293,6 +296,9 @@ of gravitational potential in the ``Gravity`` section (see :ref:`gravitySection`
 |                |                         | | ``beg`` or ``end`` and indicates the side of the boundary.                                |
 |                |                         | | The boundary conditions allowed by the self-gravity solver are described in               |
 |                |                         | | :ref:`selfGravityModule`                                                                  |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| skip           | int                     | | Set the number of integration cycles between each computation of self-gravity potential.  |
+|                |                         | | Default is 1 (i.e. self-gravity is computed at every cycle).                              |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 
 

@@ -66,11 +66,17 @@ void Gravity::Init(Input &input, DataBlock *datain) {
   // (e.g. planet module ?). Those dependencies are to be handled in the previous conditional block
   // such that from this point, if SelfGravity is needed, haveSelfGravityPotential is true and
   // we build the corresponding object if not done yet.
+
   // Check SelfGravity object
   if(haveSelfGravityPotential) {
     idfx::cout << "Gravity:: Init self-gravity." << std::endl;
     selfGravity.Init(input, this->data);
     haveInitialisedSelfGravity = true;
+  }
+
+  this->skipGravity = input.GetOrSet<int>("Gravity","skip",0,1);
+  if(skipGravity<1) {
+    IDEFIX_ERROR("[Gravity]:skip should be a strictly positive integer");
   }
 }
 
@@ -97,6 +103,10 @@ void Gravity::ShowConfig() {
       if(!bodyForceFunc) {
         IDEFIX_ERROR("No user-defined body force has been enrolled.");
       }
+    }
+    if(skipGravity>1) {
+      idfx::cout << "Gravity: gravity field will be updated every " << skipGravity
+                 << " cycles." << std::endl;
     }
   }
 }

@@ -62,6 +62,10 @@ class Gravity {
   // Gravitational constant G
   real gravCst{1.0};
 
+  // Whether we should skip gravity computation every n steps
+  int skipGravity{1};
+
+
  private:
   bool haveInitialisedPotential{false};     ///< whether a potential has already been initialised
   bool haveInitialisedBodyForce{false};     ///< whether a body force has already been initialised

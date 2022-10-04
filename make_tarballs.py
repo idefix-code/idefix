@@ -17,10 +17,8 @@ CORE_EXCLUDE_LIST = [
 
 KOKKOS_EXCLUDE_LIST = [
     ".*",
-    "example",
     "appveyor.yml",
     "scripts",
-    "*test*",
 ]
 
 

@@ -10,6 +10,7 @@
 
 #include <vector>
 #include "idefix.hpp"
+#include "grid.hpp"
 
 #ifdef WITH_MPI
 #include "mpi.hpp"
@@ -34,6 +35,9 @@ class Mpi {
   // Init from datablock
   void Init(Grid *grid, std::vector<int> inputMap,
             int nghost[3], int nint[3], bool inputHaveVs = false );
+
+  // Check that MPI will work with the designated target (in particular GPU Direct)
+  static void CheckConfig();
 
   // Destructor
   ~Mpi();

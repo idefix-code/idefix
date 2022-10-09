@@ -11,6 +11,10 @@
 #include "global.hpp"
 #include "profiler.hpp"
 
+#ifdef WITH_MPI
+#include "mpi.hpp"
+#endif
+
 namespace idfx {
 
 int prank;
@@ -47,6 +51,10 @@ int initialize() {
     defaultLoopPattern = LoopPattern::RANGE;  // On HIP, works best (generally)
   #else
     defaultLoopPattern = LoopPattern::TPX;    // On cpus, works best (generally)
+  #endif
+
+  #ifdef WITH_MPI
+    Mpi::CheckConfig();
   #endif
 
   return(0);

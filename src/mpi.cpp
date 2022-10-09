@@ -788,7 +788,7 @@ void Mpi::CheckConfig() {
 
   MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
   try {
-    int ierr = MPI_Allreduce(src.data(), dst.data(), 1, MPI_INT64_T, MPI_SUM, MPI_COMM_WORLD);
+    int ierr = MPI_Allreduce(src.data(), dstHost.data(), 1, MPI_INT64_T, MPI_SUM, MPI_COMM_WORLD);
     if(ierr != 0) {
       char MPImsg[MPI_MAX_ERROR_STRING];
       int MPImsgLen;

@@ -782,7 +782,6 @@ void Mpi::CheckConfig() {
 
   srcHost(0) = idfx::prank;
   Kokkos::deep_copy(src, srcHost);
-  bool failed = false;
 
   IdefixArray1D<int64_t> dst("MPICheckdst",1);
   IdefixArray1D<int64_t>::HostMirror dstHost = Kokkos::create_mirror_view(dst);

@@ -774,7 +774,7 @@ void Mpi::CheckConfig() {
   // compile time check
   #ifdef KOKKOS_ENABLE_CUDA
     #if defined(MPIX_CUDA_AWARE_SUPPORT) && !MPIX_CUDA_AWARE_SUPPORT
-      static_assert(false, "Your MPI library is not CUDA Aware (check Idefix requirements).");
+      #error Your MPI library is not CUDA Aware (check Idefix requirements).
     #endif
   #endif /* MPIX_CUDA_AWARE_SUPPORT */
 
@@ -845,9 +845,10 @@ void Mpi::SigErrorHandler(int nSignum, siginfo_t* si, void* vcontext) {
   errmsg << std::endl;
   #ifdef KOKKOS_ENABLE_CUDA
     errmsg << "Check that your MPI library is CUDA aware." << std::endl;
-  #endif
-  #ifdef KOKKOS_ENABLE_HIP
-    errmsg << "Check that your MPI library is HIP aware." << std::endl;
+  #elif KOKKOS_ENABLE_HIP
+    errmsg << "Check that your MPI library is RocM aware." << std::endl;
+  #else
+    errmsg << "Check your MPI library configuration." << std::endl;
   #endif
   IDEFIX_ERROR(errmsg);
 }

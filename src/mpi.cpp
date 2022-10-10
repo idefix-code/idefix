@@ -6,15 +6,16 @@
 // ***********************************************************************************
 
 
+#include "mpi.hpp"
+#include <signal.h>
+#include <string>
 #include "idefix.hpp"
 #include "dataBlock.hpp"
-#include "mpi.hpp"
+
 
 #if defined(OPEN_MPI) && OPEN_MPI
-#include "mpi-ext.h"                // Needed for CUDA-aware check */
+//#include "mpi-ext.h"                // Needed for CUDA-aware check */
 #endif
-
-#include <string>
 
 
 //#define MPI_NON_BLOCKING
@@ -767,6 +768,7 @@ void Mpi::ExchangeX3(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
 }
 
 
+
 void Mpi::CheckConfig() {
   idfx::pushRegion("Mpi::CheckConfig");
   // compile time check
@@ -787,8 +789,17 @@ void Mpi::CheckConfig() {
   IdefixArray1D<int64_t>::HostMirror dstHost = Kokkos::create_mirror_view(dst);
 
   MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+
+  // Capture segfaults
+  struct sigaction newHandler;
+  struct sigaction oldHandler;
+  memset(&newHandler, 0, sizeof(newHandler));
+  newHandler.sa_flags = SA_SIGINFO;
+  newHandler.sa_sigaction = Mpi::SigErrorHandler;
+  sigaction(SIGSEGV, &newHandler, &oldHandler);
+
   try {
-    int ierr = MPI_Allreduce(src.data(), dstHost.data(), 1, MPI_INT64_T, MPI_SUM, MPI_COMM_WORLD);
+    int ierr = MPI_Allreduce(src.data(), dst.data(), 1, MPI_INT64_T, MPI_SUM, MPI_COMM_WORLD);
     if(ierr != 0) {
       char MPImsg[MPI_MAX_ERROR_STRING];
       int MPImsgLen;
@@ -808,6 +819,8 @@ void Mpi::CheckConfig() {
     errmsg << "Error: " << e.what() << std::endl;
     IDEFIX_ERROR(errmsg);
   }
+  // Restore old handlers
+  sigaction(SIGSEGV, &oldHandler, NULL );
   MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_ARE_FATAL);
 
     // Check that we have the proper end result
@@ -821,4 +834,19 @@ void Mpi::CheckConfig() {
     IDEFIX_ERROR(errmsg);
   }
   idfx::popRegion();
+}
+
+void Mpi::SigErrorHandler(int nSignum, siginfo_t* si, void* vcontext) {
+  std::stringstream errmsg;
+  errmsg << "A segmentation fault was triggered while attempting to test your MPI library.";
+  errmsg << std::endl;
+  errmsg << "Your MPI library is unable to perform reductions on device Idefix arrays.";
+  errmsg << std::endl;
+  #ifdef KOKKOS_ENABLE_CUDA
+    errmsg << "Check that your MPI library is CUDA aware." << std::endl;
+  #endif
+  #ifdef KOKKOS_ENABLE_HIP
+    errmsg << "Check that your MPI library is HIP aware." << std::endl;
+  #endif
+  IDEFIX_ERROR(errmsg);
 }

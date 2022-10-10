@@ -8,13 +8,11 @@
 #ifndef MPI_HPP_
 #define MPI_HPP_
 
+#include <signal.h>
 #include <vector>
 #include "idefix.hpp"
 #include "grid.hpp"
 
-#ifdef WITH_MPI
-#include "mpi.hpp"
-#endif
 
 class DataBlock;
 
@@ -38,6 +36,7 @@ class Mpi {
 
   // Check that MPI will work with the designated target (in particular GPU Direct)
   static void CheckConfig();
+
 
   // Destructor
   ~Mpi();
@@ -87,6 +86,9 @@ class Mpi {
   // MPI throughput timer specific to this object
   double myTimer{0};
   int64_t bytesSentOrReceived{0};
+
+  // Error handler used by CheckConfig
+  static void SigErrorHandler(int, siginfo_t* , void* );
 };
 
 #endif // MPI_HPP_

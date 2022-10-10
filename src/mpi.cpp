@@ -5,16 +5,18 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-// ***********************************************************************************
-// Idefix MHD astrophysical code
-// Copyright(C) 2020-2022 Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
-// and other code contributors
-// Licensed under CeCILL 2.1 License, see COPYING for more information
-// ***********************************************************************************
 
+#include "mpi.hpp"
+#include <signal.h>
+#include <string>
 #include "idefix.hpp"
 #include "dataBlock.hpp"
-#include "mpi.hpp"
+
+
+#if defined(OPEN_MPI) && OPEN_MPI
+#include "mpi-ext.h"                // Needed for CUDA-aware check */
+#endif
+
 
 //#define MPI_NON_BLOCKING
 #define MPI_PERSISTENT
@@ -763,4 +765,90 @@ void Mpi::ExchangeX3(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   bytesSentOrReceived += 4*bufferSizeX2*sizeof(real);
 
   idfx::popRegion();
+}
+
+
+
+void Mpi::CheckConfig() {
+  idfx::pushRegion("Mpi::CheckConfig");
+  // compile time check
+  #ifdef KOKKOS_ENABLE_CUDA
+    #if defined(MPIX_CUDA_AWARE_SUPPORT) && !MPIX_CUDA_AWARE_SUPPORT
+      #error Your MPI library is not CUDA Aware (check Idefix requirements).
+    #endif
+  #endif /* MPIX_CUDA_AWARE_SUPPORT */
+
+  // Run-time check that we can do a reduce on device arrays
+  IdefixArray1D<int64_t> src("MPIChecksrc",1);
+  IdefixArray1D<int64_t>::HostMirror srcHost = Kokkos::create_mirror_view(src);
+
+  srcHost(0) = idfx::prank;
+  Kokkos::deep_copy(src, srcHost);
+
+  IdefixArray1D<int64_t> dst("MPICheckdst",1);
+  IdefixArray1D<int64_t>::HostMirror dstHost = Kokkos::create_mirror_view(dst);
+
+  MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+
+  // Capture segfaults
+  struct sigaction newHandler;
+  struct sigaction oldHandler;
+  memset(&newHandler, 0, sizeof(newHandler));
+  newHandler.sa_flags = SA_SIGINFO;
+  newHandler.sa_sigaction = Mpi::SigErrorHandler;
+  sigaction(SIGSEGV, &newHandler, &oldHandler);
+
+  try {
+    int ierr = MPI_Allreduce(src.data(), dst.data(), 1, MPI_INT64_T, MPI_SUM, MPI_COMM_WORLD);
+    if(ierr != 0) {
+      char MPImsg[MPI_MAX_ERROR_STRING];
+      int MPImsgLen;
+      MPI_Error_string(ierr, MPImsg, &MPImsgLen);
+      throw std::runtime_error(std::string(MPImsg, MPImsgLen));
+    }
+  } catch(std::exception &e) {
+    std::stringstream errmsg;
+    errmsg << "Your MPI library is unable to perform reductions on Idefix arrays.";
+    errmsg << std::endl;
+    #ifdef KOKKOS_ENABLE_CUDA
+      errmsg << "Check that your MPI library is CUDA aware." << std::endl;
+    #elif KOKKOS_ENABLE_HIP
+      errmsg << "Check that your MPI library is RocM aware." << std::endl;
+    #else
+      errmsg << "Check your MPI library configuration." << std::endl;
+    #endif
+    errmsg << "Error: " << e.what() << std::endl;
+    IDEFIX_ERROR(errmsg);
+  }
+  // Restore old handlers
+  sigaction(SIGSEGV, &oldHandler, NULL );
+  MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_ARE_FATAL);
+
+    // Check that we have the proper end result
+  Kokkos::deep_copy(dstHost, dst);
+  int64_t size = static_cast<int64_t>(idfx::psize);
+  if(dstHost(0) != size*(size-1)/2) {
+    std::stringstream errmsg;
+    errmsg << "Your MPI library managed to perform reduction on Idefix Arrays, but the result ";
+    errmsg << "is incorrect. " << std::endl;
+    errmsg << "Check your MPI library configuration." << std::endl;
+    IDEFIX_ERROR(errmsg);
+  }
+  idfx::popRegion();
+}
+
+void Mpi::SigErrorHandler(int nSignum, siginfo_t* si, void* vcontext) {
+  std::stringstream errmsg;
+  errmsg << "A segmentation fault was triggered while attempting to test your MPI library.";
+  errmsg << std::endl;
+  errmsg << "Your MPI library is unable to perform reductions on Idefix arrays.";
+  errmsg << std::endl;
+  #ifdef KOKKOS_ENABLE_CUDA
+    errmsg << "Check that your MPI library is CUDA aware." << std::endl;
+  #elif KOKKOS_ENABLE_HIP
+    errmsg << "Check that your MPI library is RocM aware." << std::endl;
+  #else
+    errmsg << "Check your MPI library configuration." << std::endl;
+  #endif
+  IDEFIX_ERROR(errmsg);
 }

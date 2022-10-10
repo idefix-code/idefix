@@ -14,7 +14,7 @@
 
 
 #if defined(OPEN_MPI) && OPEN_MPI
-//#include "mpi-ext.h"                // Needed for CUDA-aware check */
+#include "mpi-ext.h"                // Needed for CUDA-aware check */
 #endif
 
 
@@ -774,7 +774,7 @@ void Mpi::CheckConfig() {
   // compile time check
   #ifdef KOKKOS_ENABLE_CUDA
     #if defined(MPIX_CUDA_AWARE_SUPPORT) && !MPIX_CUDA_AWARE_SUPPORT
-      #error Your MPI library is not CUDA Aware, which is required by Idefix.
+      static_assert(false, "Your MPI library is not CUDA Aware (check Idefix requirements).");
     #endif
   #endif /* MPIX_CUDA_AWARE_SUPPORT */
 
@@ -808,13 +808,14 @@ void Mpi::CheckConfig() {
     }
   } catch(std::exception &e) {
     std::stringstream errmsg;
-    errmsg << "Your MPI library is unable to perform reductions on device Idefix arrays.";
+    errmsg << "Your MPI library is unable to perform reductions on Idefix arrays.";
     errmsg << std::endl;
     #ifdef KOKKOS_ENABLE_CUDA
       errmsg << "Check that your MPI library is CUDA aware." << std::endl;
-    #endif
-    #ifdef KOKKOS_ENABLE_HIP
-      errmsg << "Check that your MPI library is HIP aware." << std::endl;
+    #elif KOKKOS_ENABLE_HIP
+      errmsg << "Check that your MPI library is RocM aware." << std::endl;
+    #else
+      errmsg << "Check your MPI library configuration." << std::endl;
     #endif
     errmsg << "Error: " << e.what() << std::endl;
     IDEFIX_ERROR(errmsg);
@@ -840,7 +841,7 @@ void Mpi::SigErrorHandler(int nSignum, siginfo_t* si, void* vcontext) {
   std::stringstream errmsg;
   errmsg << "A segmentation fault was triggered while attempting to test your MPI library.";
   errmsg << std::endl;
-  errmsg << "Your MPI library is unable to perform reductions on device Idefix arrays.";
+  errmsg << "Your MPI library is unable to perform reductions on Idefix arrays.";
   errmsg << std::endl;
   #ifdef KOKKOS_ENABLE_CUDA
     errmsg << "Check that your MPI library is CUDA aware." << std::endl;

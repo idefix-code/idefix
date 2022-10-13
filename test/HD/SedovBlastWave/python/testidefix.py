@@ -35,25 +35,26 @@ p = R.data['PRS'][:,0,0]
 x= R.r
 
 [x3D, y3D, z3D]= np.meshgrid(V.x,V.y,V.z,indexing='ij')
-r3D=np.sqrt(x3D**2+y3D**2+z3D**2)
-p3D=V.data['PRS']
+r3D=np.sqrt(x3D**2+y3D**2+z3D**2).flatten()
+p3D=V.data['PRS'].flatten()
 
+index=np.argwhere((r3D>0.4) & (r3D<0.458))
 
 solinterp=interp1d(x,p)
 
 
 if(not args.noplot):
     plt.figure(1)
-    plt.plot(x,p)
     plt.plot(r3D.flatten(),p3D.flatten(),'+',markersize=2)
+    plt.plot(x,p)
     plt.title('Pressure')
 
     plt.ioff()
     plt.show()
 
-error=np.mean(np.fabs(V.data['PRS'][:,0,0]-solinterp(V.x)))
+error=np.mean(np.fabs(p3D[index]-solinterp(r3D[index])))
 print("Error=%e"%error)
-if error<2e-3:
+if error<7.7e-2:
     print("SUCCESS!")
     sys.exit(0)
 else:

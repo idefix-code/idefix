@@ -12,13 +12,6 @@ sys.path.append(os.getenv("IDEFIX_DIR"))
 from pytools.vtk_io import readVTK
 import numpy as np
 import argparse
-
-from importlib.util import find_spec
-
-if find_spec("inifix") is None:
-    print("SKIPPED! (inifix isn't installed)")
-    sys.exit(0)
-
 import inifix
 
 parser = argparse.ArgumentParser()

@@ -20,14 +20,31 @@ void Setup::InitFlow(DataBlock &data) {
     DataBlockHost d(data);
 
     real V = 0;
+    #if GEOMETRY == SPHERICAL
+      const real x0 = 0.1;
+      const real y0 = 0.0;
+      const real z0 = 1.0;
+    #endif
     for(int k = 0; k < d.np_int[KDIR] ; k++) {
         for(int j = 0; j < d.np_int[JDIR] ; j++) {
             for(int i = 0; i < d.np_int[IDIR] ; i++) {
-              real x = d.x[IDIR](i);
-              real y = d.x[JDIR](j);
-              real z = d.x[KDIR](k);
-              real r=sqrt(x*x+y*y+z*z);
+              #if GEOMETRY == CARTESIAN
+                real x = d.x[IDIR](i);
+                real y = d.x[JDIR](j);
+                real z = d.x[KDIR](k);
+                real r=sqrt(x*x+y*y+z*z);
 
+              #elif GEOMETRY == SPHERICAL
+                real r = d.x[IDIR](i);
+                real th = d.x[JDIR](j);
+                real phi = d.x[KDIR](k);
+
+                real x = r*sin(th)*cos(phi) - x0;
+                real y = r*sin(th)*sin(phi) - y0;
+                real z = r*cos(th) - z0;
+
+                r=sqrt(x*x+y*y+z*z);
+              #endif
               if(r<Rstart) {
                 V += d.dV(k,j,i);
               }
@@ -41,9 +58,23 @@ void Setup::InitFlow(DataBlock &data) {
     for(int k = 0; k < d.np_tot[KDIR] ; k++) {
         for(int j = 0; j < d.np_tot[JDIR] ; j++) {
             for(int i = 0; i < d.np_tot[IDIR] ; i++) {
-              real x = d.x[IDIR](i);
-              real y = d.x[JDIR](j);
-              real z = d.x[KDIR](k);
+              #if GEOMETRY == CARTESIAN
+                real x = d.x[IDIR](i);
+                real y = d.x[JDIR](j);
+                real z = d.x[KDIR](k);
+                real r=sqrt(x*x+y*y+z*z);
+
+              #elif GEOMETRY == SPHERICAL
+                real r = d.x[IDIR](i);
+                real th = d.x[JDIR](j);
+                real phi = d.x[KDIR](k);
+
+                real x = r*sin(th)*cos(phi) - x0;
+                real y = r*sin(th)*sin(phi) - y0;
+                real z = r*cos(th) - z0;
+
+                r=sqrt(x*x+y*y+z*z);
+              #endif
 
               // Sedov Blast Wave Following Stone+2018, 3.4.4
               d.Vc(RHO,k,j,i) = 1.0;
@@ -53,7 +84,6 @@ void Setup::InitFlow(DataBlock &data) {
 
               d.Vc(PRS,k,j,i) = 0.01;
 
-              real r=sqrt(x*x+y*y+z*z);
               if(r<Rstart) {
                 d.Vc(PRS,k,j,i) = (gamma-1)/V;
               }

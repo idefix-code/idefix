@@ -34,7 +34,23 @@ R=readVTK('1Dsolution/data.0001.vtk')
 p = R.data['PRS'][:,0,0]
 x= R.r
 
-[x3D, y3D, z3D]= np.meshgrid(V.x,V.y,V.z,indexing='ij')
+if V.geometry=="cartesian":
+  [x3D, y3D, z3D]= np.meshgrid(V.x,V.y,V.z,indexing='ij')
+
+elif V.geometry=="spherical":
+  [r, theta, phi] = np.meshgrid(V.r,V.theta,V.phi,indexing='ij')
+  x0=0.1
+  y0=0
+  z0=1.0
+
+  x3D=r*np.sin(theta)*np.cos(phi)-x0
+  y3D=r*np.sin(theta)*np.sin(phi)-y0
+  z3D=r*np.cos(theta)-z0
+
+else:
+  print("Unknown geometry "+V.geometry)
+  sys.exit(1)
+
 r3D=np.sqrt(x3D**2+y3D**2+z3D**2).flatten()
 p3D=V.data['PRS'].flatten()
 

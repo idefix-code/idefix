@@ -37,6 +37,9 @@
 #include "setup.hpp"
 #include "output.hpp"
 #include "tuner.hpp"
+#ifdef WITH_MPI
+#include "mpi.hpp"
+#endif
 
 
 
@@ -149,7 +152,16 @@ int main( int argc, char* argv[] ) {
       try {
         Tint.Cycle(data);
       } catch(std::exception &e) {
-        idfx::cout << "Main: WARNING! Caught an exception in time integrator." << std::endl;
+        idfx::cout << "Main: WARNING! Caught an exception in TimeIntegrator." << std::endl;
+        #ifdef WITH_MPI
+          if(!Mpi::CheckSync(5)) {
+            std::stringstream message;
+            message << "A non-synchronous exception was raised in TimeIntegrator:" << std::endl;
+            message << e.what();
+            message << std::endl << "No emergency output can be produced." << std::endl;
+            IDEFIX_ERROR(message);
+          }
+        #endif
         idfx::cout << e.what() << std::endl;
         idfx::cout << "Main: attempting to save the current state for inspection." << std::endl;
         output.ForceWriteVtk(data);

@@ -9,6 +9,8 @@
 #include "mpi.hpp"
 #include <signal.h>
 #include <string>
+#include <chrono>   // NOLINT [build/c++11]
+#include <thread>  // NOLINT [build/c++11]
 #include "idefix.hpp"
 #include "dataBlock.hpp"
 
@@ -851,4 +853,37 @@ void Mpi::SigErrorHandler(int nSignum, siginfo_t* si, void* vcontext) {
     errmsg << "Check your MPI library configuration." << std::endl;
   #endif
   IDEFIX_ERROR(errmsg);
+}
+
+// This routine check that all of the processes are synced.
+// Returns true if this is the case, false otherwise
+
+bool Mpi::CheckSync(real timeout) {
+  // If no parallelism, then we're in sync!
+  if(idfx::psize == 1) return(true);
+
+  int send = idfx::prank;
+  int recv = 0;
+  MPI_Request request;
+
+  MPI_Iallreduce(&send, &recv, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD, &request);
+
+  double start = MPI_Wtime();
+  int flag = 0;
+  MPI_Status status;
+
+  while((MPI_Wtime()-start < timeout) && !flag) {
+    MPI_Test(&request, &flag, &status);
+    // sleep for 10 ms
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+  if(!flag) {
+    // We did not managed to do an allreduce, so this is a failure.
+    return(false);
+  }
+  if(recv != idfx::psize*(idfx::psize-1)/2) {
+    IDEFIX_ERROR("wrong result for synchronisation");
+  }
+
+  return(true);
 }

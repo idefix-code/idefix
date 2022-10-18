@@ -37,7 +37,9 @@
 #include "setup.hpp"
 #include "output.hpp"
 #include "tuner.hpp"
+#ifdef WITH_MPI
 #include "mpi.hpp"
+#endif
 
 
 

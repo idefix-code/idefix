@@ -67,14 +67,25 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
   }
 
   // Allocate the required fields
+  std::string label;
   for(int dir = 0 ; dir < 3 ; dir++) {
-    x.push_back(IdefixArray1D<real>("DataBlock_x",np_tot[dir]));
-    xr.push_back(IdefixArray1D<real>("DataBlock_xr",np_tot[dir]));
-    xl.push_back(IdefixArray1D<real>("DataBlock_xl",np_tot[dir]));
-    dx.push_back(IdefixArray1D<real>("DataBlock_dx",np_tot[dir]));
-    xgc.push_back(IdefixArray1D<real>("DataBlock_xgc",np_tot[dir]));
+    label = "DataBlock_x" + std::to_string(dir);
+    x.push_back(IdefixArray1D<real>(label, np_tot[dir]));
 
-    A.push_back(IdefixArray3D<real>("DataBlock_A",
+    label = "DataBlock_xr" + std::to_string(dir);
+    xr.push_back(IdefixArray1D<real>(label,np_tot[dir]));
+
+    label = "DataBlock_xl" + std::to_string(dir);
+    xl.push_back(IdefixArray1D<real>(label,np_tot[dir]));
+
+    label = "DataBlock_dx" + std::to_string(dir);
+    dx.push_back(IdefixArray1D<real>(label,np_tot[dir]));
+
+    label = "DataBlock_xgc" + std::to_string(dir);
+    xgc.push_back(IdefixArray1D<real>(label,np_tot[dir]));
+
+    label = "DataBlock_A" + std::to_string(dir);
+    A.push_back(IdefixArray3D<real>(label,
                                  np_tot[KDIR]+KOFFSET, np_tot[JDIR]+JOFFSET, np_tot[IDIR]+IOFFSET));
   }
 

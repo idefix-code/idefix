@@ -37,6 +37,9 @@ class Mpi {
   // Check that MPI will work with the designated target (in particular GPU Direct)
   static void CheckConfig();
 
+  // Check that MPI processes are synced
+  static bool CheckSync(real);
+
 
   // Destructor
   ~Mpi();

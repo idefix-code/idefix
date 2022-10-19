@@ -84,6 +84,9 @@ void Hydro::CalcRightHandSide(real t, real dt) {
   constexpr const int joffset = (dir==JDIR) ? 1 : 0;
   constexpr const int koffset = (dir==KDIR) ? 1 : 0;
 
+/////////////////////////////////////////////////////////////////////////////
+// Flux correction (for fargo/non-cartesian geometry)
+/////////////////////////////////////////////////////////////////////////////
   idefix_for("CalcTotalFlux",
              data->beg[KDIR],data->end[KDIR]+koffset,
              data->beg[JDIR],data->end[JDIR]+joffset,
@@ -148,8 +151,10 @@ void Hydro::CalcRightHandSide(real t, real dt) {
         // since in that case meanV=0
 
         #if HAVE_ENERGY
+          // Mignone (2012): second and third term of rhs of (25)
           Flux(ENG,k,j,i) += meanV * (HALF_F*meanV*Flux(RHO,k,j,i) + Flux(MX1+meanDir,k,j,i));
         #endif
+        // Mignone+2012: second term of rhs of (24)
         Flux(MX1+meanDir,k,j,i) += meanV * Flux(RHO,k,j,i);
       } // have Fargo
 
@@ -203,6 +208,9 @@ void Hydro::CalcRightHandSide(real t, real dt) {
   // If user has requested specific flux functions for the boundaries, here they come
   if(boundary.haveFluxBoundary) boundary.EnforceFluxBoundaries(dir);
 
+/////////////////////////////////////////////////////////////////////////////
+// Final conserved quantity budget from fluxes divergence
+/////////////////////////////////////////////////////////////////////////////
   idefix_for("CalcRightHandSide",
              data->beg[KDIR],data->end[KDIR],
              data->beg[JDIR],data->end[JDIR],
@@ -241,6 +249,48 @@ void Hydro::CalcRightHandSide(real t, real dt) {
       }
       // Nothing for KDIR
 
+#endif // GEOMETRY != CARTESIAN
+
+
+      // Fargo terms to enfore conservation (actually substract back what was added in
+      // Totalflux loop)
+      if(haveFargo || haveRotation) {
+        // fetch fargo velocity when required
+        real meanV = ZERO_F;
+        #if (GEOMETRY == POLAR || GEOMETRY == CARTESIAN) && DIMENSIONS >=2
+          if((dir==IDIR || dir == KDIR) && haveFargo) {
+            if(fargoType==Fargo::userdef) {
+              meanV = fargoVelocity(k,i);
+            } else if(fargoType==Fargo::shearingbox) {
+              meanV = sbS * x1(i);
+            }
+          }
+          #if GEOMETRY != CARTESIAN
+            if((dir==IDIR) && haveRotation) {
+              meanV += Omega*x1(i);
+            }
+          #endif
+          const int meanDir = JDIR;
+        #elif GEOMETRY == SPHERICAL && DIMENSIONS ==3
+          if((dir==IDIR || dir == JDIR) && haveFargo) meanV = fargoVelocity(j,i);
+          if((dir==IDIR || dir == JDIR) && haveRotation) {
+            meanV += Omega*x1(i)*sinx2(j);
+          }
+          const int meanDir = KDIR;
+        #else
+          const int meanDir = 0;
+        #endif
+        // NB: MX1+meanDir = iMPHI
+        // Mignone+2012, rhs of eq. 24, last term
+        rhs[MX1+meanDir] -= meanV*rhs[RHO];
+        #if HAVE_ENERGY
+          // Mignone+2012, rhs of eq.25, 4th and 5th term. NB: rhs[MX1+meanDir] is alreay the
+          // divergence of the *total* Momentum Flux F_my+w F_rho
+          rhs[ENG] -= meanV * ( HALF_F*meanV*rhs[RHO] + rhs[MX1+meanDir]);
+        #endif
+      }
+
+#if GEOMETRY != CARTESIAN
       // Viscosity source terms
       if(haveViscosity) {
 #pragma unroll
@@ -251,7 +301,7 @@ void Hydro::CalcRightHandSide(real t, real dt) {
 
 #endif // GEOMETRY != CARTESIAN
 
-      // Compute dt from max signal speed
+      // elmentary length for gradient computations
       const int ig = ioffset*i + joffset*j + koffset*k;
       real dl = dx(ig);
 
@@ -299,70 +349,6 @@ void Hydro::CalcRightHandSide(real t, real dt) {
         #endif
       }
 
-
-      // Timestep computation
-      // Change elementary grid spacing according to local coarsening level.
-      if(haveGridCoarsening) {
-        int factor;
-        //factor = 2^(coarsening-1)
-        if (dir==IDIR) {
-          factor = 1 << (coarseningLevel(k,j) - 1);
-        }
-        if (dir==JDIR) {
-          factor = 1 << (coarseningLevel(k,i) - 1);
-        }
-        if (dir==KDIR) {
-          factor = 1 << (coarseningLevel(j,i) - 1);
-        }
-        dl = dl * factor;
-      }
-
-      // Compute dt from max signal speed
-      invDt(k,j,i) = invDt(k,j,i) + HALF_F*(cMax(k+koffset,j+joffset,i+ioffset)
-                    + cMax(k,j,i)) / (dl);
-
-      if(haveParabolicTerms) {
-        invDt(k,j,i) = invDt(k,j,i) + TWO_F* FMAX(dMax(k+koffset,j+joffset,i+ioffset),
-                                                   dMax(k,j,i)) / (dl*dl);
-      }
-
-      // Fargo terms to enfore conservation (actually substract back what was added in
-      // Totalflux loop)
-      if(haveFargo || haveRotation) {
-        // fetch fargo velocity when required
-        real meanV = ZERO_F;
-        #if (GEOMETRY == POLAR || GEOMETRY == CARTESIAN) && DIMENSIONS >=2
-          if((dir==IDIR || dir == KDIR) && haveFargo) {
-            if(fargoType==Fargo::userdef) {
-              meanV = fargoVelocity(k,i);
-            } else if(fargoType==Fargo::shearingbox) {
-              meanV = sbS * x1(i);
-            }
-          }
-          #if GEOMETRY != CARTESIAN
-            if((dir==IDIR) && haveRotation) {
-              meanV += Omega*x1(i);
-            }
-          #endif
-          const int meanDir = JDIR;
-        #elif GEOMETRY == SPHERICAL && DIMENSIONS ==3
-          if((dir==IDIR || dir == JDIR) && haveFargo) meanV = fargoVelocity(j,i);
-          if((dir==IDIR || dir == JDIR) && haveRotation) {
-            meanV += Omega*x1(i)*sinx2(j);
-          }
-          const int meanDir = KDIR;
-        #else
-          const int meanDir = 0;
-        #endif
-        // NB: MX1+meanDir = iMPHI
-        rhs[MX1+meanDir] -= meanV*rhs[RHO];
-        #if HAVE_ENERGY
-          rhs[ENG] -= meanV * ( HALF_F*meanV*rhs[RHO] + rhs[MX1+meanDir]);
-        #endif
-      }
-
-
-
       // Body force
       if(needBodyForce) {
         rhs[MX1+dir] += dt * Vc(RHO,k,j,i) * bodyForce(dir,k,j,i);
@@ -393,6 +379,33 @@ void Hydro::CalcRightHandSide(real t, real dt) {
             #endif
           }
         #endif
+      }
+
+
+      // Timestep computation
+      // Change elementary grid spacing according to local coarsening level.
+      if(haveGridCoarsening) {
+        int factor;
+        //factor = 2^(coarsening-1)
+        if (dir==IDIR) {
+          factor = 1 << (coarseningLevel(k,j) - 1);
+        }
+        if (dir==JDIR) {
+          factor = 1 << (coarseningLevel(k,i) - 1);
+        }
+        if (dir==KDIR) {
+          factor = 1 << (coarseningLevel(j,i) - 1);
+        }
+        dl = dl * factor;
+      }
+
+      // Compute dt from max signal speed
+      invDt(k,j,i) = invDt(k,j,i) + HALF_F*(cMax(k+koffset,j+joffset,i+ioffset)
+                    + cMax(k,j,i)) / (dl);
+
+      if(haveParabolicTerms) {
+        invDt(k,j,i) = invDt(k,j,i) + TWO_F* FMAX(dMax(k+koffset,j+joffset,i+ioffset),
+                                                   dMax(k,j,i)) / (dl*dl);
       }
 
 

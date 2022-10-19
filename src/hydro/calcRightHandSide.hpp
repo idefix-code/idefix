@@ -255,34 +255,69 @@ void Hydro::CalcRightHandSide(real t, real dt) {
       const int ig = ioffset*i + joffset*j + koffset*k;
       real dl = dx(ig);
 
-      // Change elementary grid spacing according to local coarsening level.
 
+#if GEOMETRY == POLAR
+      if constexpr(dir==JDIR)
+        dl = dl*x1(i);
+
+#elif GEOMETRY == SPHERICAL
+      if constexpr(dir==JDIR)
+        dl = dl*rt(i);
+      else if constexpr(dir==KDIR)
+          dl = dl*rt(i)*dmu(j)/dx2(j);
+#endif
+
+      // Potential terms
+      if(needPotential) {
+        real dphi;
+        if constexpr(dir==IDIR) {
+          // Gravitational force in direction i
+          dphi = - 1.0/12.0 * (
+                        - phiP(k,j,i+2) + 8.0 * phiP(k,j,i+1)
+                        - 8.0*phiP(k,j,i-1) + phiP(k,j,i-2));
+        }
+        if constexpr(dir==JDIR) {
+          // Gravitational force in direction j
+          dphi = - 1.0/12.0 * (
+                        - phiP(k,j+2,i) + 8.0 * phiP(k,j+1,i)
+                        - 8.0*phiP(k,j-1,i) + phiP(k,j-2,i));
+        }
+        if constexpr(dir==KDIR) {
+          // Gravitational force in direction k
+          dphi = - 1.0/12.0 * (
+                        - phiP(k+2,j,i) + 8.0 * phiP(k+1,j,i)
+                        - 8.0*phiP(k-1,j,i) + phiP(k-2,j,i));
+        }
+        rhs[MX1+dir] += dt * Vc(RHO,k,j,i) * dphi /dl;
+
+        #if HAVE_ENERGY
+          // Add gravitational force work as a source term
+          // This is equivalent to rho * v . nabla(phi)
+          // (note that Flux has already been multiplied by A)
+          rhs[ENG] += HALF_F * dtdV  *
+                    (Flux(RHO,k,j,i) + Flux(RHO, k+koffset, j+joffset, i+ioffset)) * dphi;
+        #endif
+      }
+
+
+      // Timestep computation
+      // Change elementary grid spacing according to local coarsening level.
       if(haveGridCoarsening) {
         int factor;
         //factor = 2^(coarsening-1)
-        if(dir==IDIR) {
+        if constexpr(dir==IDIR) {
           factor = 1 << (coarseningLevel(k,j) - 1);
         }
-        if(dir==JDIR) {
+        if constexpr(dir==JDIR) {
           factor = 1 << (coarseningLevel(k,i) - 1);
         }
-        if(dir==KDIR) {
+        if constexpr(dir==KDIR) {
           factor = 1 << (coarseningLevel(j,i) - 1);
         }
         dl = dl * factor;
       }
-#if GEOMETRY == POLAR
-      if(dir==JDIR)
-        dl = dl*x1(i);
 
-#elif GEOMETRY == SPHERICAL
-      if(dir==JDIR)
-        dl = dl*rt(i);
-      else
-        if(dir==KDIR)
-          dl = dl*rt(i)*dmu(j)/dx2(j);
-#endif
-
+      // Compute dt from max signal speed
       invDt(k,j,i) = invDt(k,j,i) + HALF_F*(cMax(k+koffset,j+joffset,i+ioffset)
                     + cMax(k,j,i)) / (dl);
 
@@ -326,37 +361,7 @@ void Hydro::CalcRightHandSide(real t, real dt) {
         #endif
       }
 
-      // Potential terms
-      if(needPotential) {
-        real dphi;
-        if (dir==IDIR) {
-          // Gravitational force in direction i
-          dphi = - 1.0/12.0 * (
-                        - phiP(k,j,i+2) + 8.0 * phiP(k,j,i+1)
-                        - 8.0*phiP(k,j,i-1) + phiP(k,j,i-2));
-        }
-        if (dir==JDIR) {
-          // Gravitational force in direction j
-          dphi = - 1.0/12.0 * (
-                        - phiP(k,j+2,i) + 8.0 * phiP(k,j+1,i)
-                        - 8.0*phiP(k,j-1,i) + phiP(k,j-2,i));
-        }
-        if (dir==KDIR) {
-          // Gravitational force in direction k
-          dphi = - 1.0/12.0 * (
-                        - phiP(k+2,j,i) + 8.0 * phiP(k+1,j,i)
-                        - 8.0*phiP(k-1,j,i) + phiP(k-2,j,i));
-        }
-        rhs[MX1+dir] += dt * Vc(RHO,k,j,i) * dphi /dl;
 
-        #if HAVE_ENERGY
-          // Add gravitational force work as a source term
-          // This is equivalent to rho * v . nabla(phi)
-          // (note that Flux has already been multiplied by A)
-          rhs[ENG] += HALF_F * dtdV  *
-                    (Flux(RHO,k,j,i) + Flux(RHO, k+koffset, j+joffset, i+ioffset)) * dphi;
-        #endif
-      }
 
       // Body force
       if(needBodyForce) {

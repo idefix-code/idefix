@@ -307,13 +307,13 @@ void Hydro::CalcRightHandSide(real t, real dt) {
 
 
 #if GEOMETRY == POLAR
-      if constexpr(dir==JDIR)
+      if (dir==JDIR)
         dl = dl*x1(i);
 
 #elif GEOMETRY == SPHERICAL
-      if constexpr(dir==JDIR)
+      if (dir==JDIR)
         dl = dl*rt(i);
-      else if constexpr(dir==KDIR)
+      else if (dir==KDIR)
           dl = dl*rt(i)*dmu(j)/dx2(j);
 #endif
 

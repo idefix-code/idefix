@@ -270,19 +270,19 @@ void Hydro::CalcRightHandSide(real t, real dt) {
       // Potential terms
       if(needPotential) {
         real dphi;
-        if constexpr(dir==IDIR) {
+        if (dir==IDIR) {
           // Gravitational force in direction i
           dphi = - 1.0/12.0 * (
                         - phiP(k,j,i+2) + 8.0 * phiP(k,j,i+1)
                         - 8.0*phiP(k,j,i-1) + phiP(k,j,i-2));
         }
-        if constexpr(dir==JDIR) {
+        if (dir==JDIR) {
           // Gravitational force in direction j
           dphi = - 1.0/12.0 * (
                         - phiP(k,j+2,i) + 8.0 * phiP(k,j+1,i)
                         - 8.0*phiP(k,j-1,i) + phiP(k,j-2,i));
         }
-        if constexpr(dir==KDIR) {
+        if (dir==KDIR) {
           // Gravitational force in direction k
           dphi = - 1.0/12.0 * (
                         - phiP(k+2,j,i) + 8.0 * phiP(k+1,j,i)
@@ -305,13 +305,13 @@ void Hydro::CalcRightHandSide(real t, real dt) {
       if(haveGridCoarsening) {
         int factor;
         //factor = 2^(coarsening-1)
-        if constexpr(dir==IDIR) {
+        if (dir==IDIR) {
           factor = 1 << (coarseningLevel(k,j) - 1);
         }
-        if constexpr(dir==JDIR) {
+        if (dir==JDIR) {
           factor = 1 << (coarseningLevel(k,i) - 1);
         }
-        if constexpr(dir==KDIR) {
+        if (dir==KDIR) {
           factor = 1 << (coarseningLevel(j,i) - 1);
         }
         dl = dl * factor;

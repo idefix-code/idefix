@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Upcoming
 ### Changed
 - RKL scheme now correctly takes into account grid coarsening when estimating the timestep of parabolic terms (!254)
+- fixed a bug in the evaluation of gravitational forces from the gradient of the potential in regions where grid coarsening is enabled (!267)
+- fixed a bug that resulted in erroneous momentum and energy fluxes when using the combination of Fargo and Viscosity in non-cartesian geometries. (!267)
 ### Added
 - Self-gravity (!186)
 

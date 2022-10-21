@@ -367,4 +367,4 @@ LookupTableHost<kDim>::LookupTableHost(std::string filename, char delimiter, boo
 }
 
 
-#endif //UTILS_LOOKUPTABLE_HPP_
+#endif //UTILS_LOOKUPTABLEHOST_HPP_

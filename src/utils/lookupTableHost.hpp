@@ -306,11 +306,6 @@ LookupTableHost<kDim>::LookupTableHost(std::string filename, char delimiter, boo
   this->offset = IdefixHostArray1D<int> ("Table_offset", kDim);
   this->data =  IdefixHostArray1D<real> ("Table_data", size[0]*size[1]);
 
-  // IdefixHostArray1D<real>::HostMirror xHost = Kokkos::create_mirror_view(this->xin);
-  // IdefixHostArray1D<int>::HostMirror dimensionsHost = Kokkos::create_mirror_view(this->dimensions);
-  // IdefixHostArray1D<int>::HostMirror offsetHost = Kokkos::create_mirror_view(this->offset);
-  // IdefixHostArray1D<real>::HostMirror dataHost = Kokkos::create_mirror_view(this->data);
-
   // Fill the arrays with the std::vector content
   if(idfx::prank == 0) {
     this->dimensions(0) = size[0];
@@ -350,12 +345,6 @@ LookupTableHost<kDim>::LookupTableHost(std::string filename, char delimiter, boo
     }
   }
 
-
-  // Copy to target
-  // Kokkos::deep_copy(this->xin ,xHost);
-  // Kokkos::deep_copy(this->dimensions, dimensionsHost);
-  // Kokkos::deep_copy(this->offset, offsetHost);
-  // Kokkos::deep_copy(this->data, dataHost);
 
   // Show the content
   /*

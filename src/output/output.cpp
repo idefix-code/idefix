@@ -21,9 +21,10 @@ Output::Output(Input &input, DataBlock &data) {
     if(vtkPeriod>=0.0) {  // backward compatibility (negative value means no file)
       vtkLast = data.t - vtkPeriod; // write something in the next CheckForWrite()
       vtkEnabled = true;
-      vtk.Init(input,data);
     }
   }
+
+  vtk.Init(input,data); // Always initialised in case of emergency vtk output
 
   // intialise dump outputs
   if(input.CheckEntry("Output","dmp")>0) {

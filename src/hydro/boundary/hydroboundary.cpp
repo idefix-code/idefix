@@ -623,7 +623,7 @@ void HydroBoundary::EnforceShearingBox(real t, int dir, BoundarySide side) {
   const real eps = dL / dy - m;
 
 
-  // New we need to perform the shift
+  // Now we need to perform the shift
   BoundaryForAll("BoundaryShearingBox", dir, side,
         KOKKOS_LAMBDA ( int n, int k, int j, int i) {
           // jorigin
@@ -634,7 +634,7 @@ void HydroBoundary::EnforceShearingBox(real t, int dir, BoundarySide side) {
           const int jom2 = jghost + ((jo-2-jghost)%nxj+nxj)%nxj;
 
           // Define Left and right fluxes
-          // Fluxes are defined from slop-limited interpolation
+          // Fluxes are defined from slope-limited interpolation
           // Using Van-leer slope limiter (consistently with the main advection scheme)
           real Fl,Fr;
           real dqm, dqp, dq;
@@ -690,7 +690,7 @@ void HydroBoundary::EnforceShearingBox(real t, int dir, BoundarySide side) {
           const int jom2 = jghost + ((jo-2-jghost)%nxj+nxj)%nxj;
 
           // Define Left and right fluxes
-          // Fluxes are defined from slop-limited interpolation
+          // Fluxes are defined from slope-limited interpolation
           // Using Van-leer slope limiter (consistently with the main advection scheme)
           real Fl,Fr;
           real dqm, dqp, dq;

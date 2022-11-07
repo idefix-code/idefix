@@ -574,7 +574,7 @@ void Fargo::ShiftSolution(const real t, const real dt) {
                 }
 
                 // Define Left and right fluxes
-                // Fluxes are defined from slop-limited interpolation
+                // Fluxes are defined from slope-limited interpolation
                 // Using Van-leer slope limiter (consistently with the main advection scheme)
                 real Fl,Fr;
 

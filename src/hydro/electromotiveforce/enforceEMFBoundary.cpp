@@ -213,7 +213,7 @@ void ElectroMotiveForce::ExtrapolateEMFShearingBox(BoundarySide side,
           const int jom2 = jghost + ((jo-2-jghost)%nxj+nxj)%nxj;
 
           // Define Left and right fluxes
-          // Fluxes are defined from slop-limited interpolation
+          // Fluxes are defined from slope-limited interpolation
           // Using Van-leer slope limiter (consistently with the main advection scheme)
           real Fl,Fr;
           real dqm, dqp, dq;

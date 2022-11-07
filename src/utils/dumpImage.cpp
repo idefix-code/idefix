@@ -33,10 +33,13 @@ DumpImage::DumpImage(std::string filename, Output &output) {
   dump.offset = 0;
 #else
   fileHdl = fopen(filename.c_str(),"rb");
+  if(fileHdl == NULL) {
+    std::stringstream msg;
+    msg << "Failed to open dump file: " << filename << std::endl;
+    IDEFIX_ERROR(msg);
+  }
 #endif
-if(fileHdl == NULL);{
-  IDEFIX_ERROR("Failed to open dump file.");
-}
+
   // skip the header
 #ifdef WITH_MPI
   dump.offset += HEADERSIZE;

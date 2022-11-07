@@ -459,6 +459,11 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
   this->offset = 0;
 #else
   fileHdl = fopen(filename,"rb");
+  if(fileHdl == NULL) {
+    std::stringstream msg;
+    msg << "Failed to open dump file: " << std::string(filename) << std::endl;
+    IDEFIX_ERROR(msg);
+  }
 #endif
   // File is open
 

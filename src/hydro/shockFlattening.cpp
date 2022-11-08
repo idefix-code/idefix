@@ -43,9 +43,9 @@ void ShockFlattening::FindShock() {
   auto beg = hydro->data->beg;
   auto end = hydro->data->end;
   idefix_for("findshocks",
-             beg[KDIR], end[KDIR],
-             beg[JDIR], end[JDIR],
-             beg[IDIR], end[IDIR],
+             beg[KDIR]-KOFFSET, end[KDIR]+KOFFSET,
+             beg[JDIR]-JOFFSET, end[JDIR]+JOFFSET,
+             beg[IDIR]-IOFFSET, end[IDIR]+IOFFSET,
              KOKKOS_LAMBDA(int k, int j, int i) {
               flags(k,j,i) = FlagShock::None;
               #if GEOMETRY == CARTESIAN

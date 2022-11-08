@@ -33,6 +33,11 @@ DumpImage::DumpImage(std::string filename, Output &output) {
   dump.offset = 0;
 #else
   fileHdl = fopen(filename.c_str(),"rb");
+  if(fileHdl == NULL) {
+    std::stringstream msg;
+    msg << "Failed to open dump file: " << filename << std::endl;
+    IDEFIX_ERROR(msg);
+  }
 #endif
 
   // skip the header

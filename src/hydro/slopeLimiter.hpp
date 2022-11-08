@@ -184,7 +184,7 @@ class SlopeLimiter {
 
         real dv;
         if(shockFlattening) {
-          if(flags(k,j,i) == FlagShock::Shock) {
+          if(flags(k-koffset,j-joffset,i-ioffset) == FlagShock::Shock) {
             // Force slope limiter to minmod
             dv = MinModLim(dvp,dvm);
           } else {

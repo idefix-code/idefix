@@ -30,48 +30,12 @@
 typedef Kokkos::TeamPolicy<>               team_policy;
 typedef Kokkos::TeamPolicy<>::member_type  member_type;
 
-// 1D default loop pattern
-template <typename Function>
-inline void idefix_for(const std::string & NAME,
-                       const int & IB, const int & IE,
-                       Function function) {
-  idefix_for(idfx::defaultLoopPattern,NAME,IB,IE,function);
-}
-
-// 2D default loop pattern
-template <typename Function>
-inline void idefix_for(const std::string & NAME,
-                       const int & JB, const int & JE,
-                       const int & IB, const int & IE,
-                       Function function) {
-  idefix_for(idfx::defaultLoopPattern,NAME,JB,JE,IB,IE,function);
-}
-
-// 3D default loop pattern
-template <typename Function>
-inline void idefix_for(const std::string & NAME,
-                const int & KB, const int & KE,
-                const int & JB, const int & JE,
-                const int & IB, const int & IE,
-                Function function) {
-  idefix_for(idfx::defaultLoopPattern,NAME,KB,KE,JB,JE,IB,IE,function);
-}
-
-// 4D default loop pattern
-template <typename Function>
-inline void idefix_for(const std::string & NAME,
-                const int & NB, const int & NE,
-                const int & KB, const int & KE,
-                const int & JB, const int & JE,
-                const int & IB, const int & IE,
-                Function function) {
-  idefix_for(idfx::defaultLoopPattern,NAME,NB,NE,KB,KE,JB,JE,IB,IE,function);
-}
+constexpr LoopPattern defaultLoop = LoopPattern::SIMDFOR;
 
 
 // 1D loop
 template <typename Function>
-inline void idefix_for(LoopPattern lp, const std::string & NAME,
+inline void idefix_for(const std::string & NAME,
                        const int & IB, const int & IE,
                        Function function) {
   const int NI = IE - IB;
@@ -86,12 +50,12 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
 
 // 2D loop
 template <typename Function>
-inline void idefix_for(LoopPattern lp, const std::string & NAME,
+inline void idefix_for(const std::string & NAME,
                        const int & JB, const int & JE,
                        const int & IB, const int & IE,
                        Function function) {
   // Kokkos 1D Range
-  if (lp == LoopPattern::RANGE) {
+  if constexpr(defaultLoop == LoopPattern::RANGE) {
     const int NJ = JE - JB;
     const int NI = IE - IB;
     const int NJNI = NJ * NI;
@@ -105,13 +69,13 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
     });
 
     // MDRange loops
-  } else if (lp == LoopPattern::MDRANGE) {
+  } else if constexpr(defaultLoop == LoopPattern::MDRANGE) {
     Kokkos::parallel_for(NAME,
       Kokkos::MDRangePolicy<Kokkos::Rank<2, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
         ({JB,IB},{JE,IE}), function);
 
     // TeamPolicies with single inner loops
-  } else if (lp == LoopPattern::TPX || lp == LoopPattern::TPTTRTVR ) {
+  } else if constexpr(defaultLoop == LoopPattern::TPX || defaultLoop == LoopPattern::TPTTRTVR ) {
     const int NJ = JE - JB;
     Kokkos::parallel_for(NAME, team_policy (NJ, Kokkos::AUTO,KOKKOS_VECTOR_LENGTH),
       KOKKOS_LAMBDA (member_type team_member) {
@@ -123,7 +87,7 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
     });
 
     // SIMD FOR loops
-  } else if (lp == LoopPattern::SIMDFOR) {
+  } else if constexpr(defaultLoop == LoopPattern::SIMDFOR) {
     for (auto j = JB; j < JE; j++)
 #pragma omp simd
       for (auto i = IB; i < IE; i++)
@@ -136,13 +100,13 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
 
 // 3D loop
 template <typename Function>
-inline void idefix_for(LoopPattern lp, const std::string & NAME,
+inline void idefix_for(const std::string & NAME,
                        const int & KB, const int & KE,
                        const int & JB, const int & JE,
                        const int & IB, const int & IE,
                        Function function) {
   // Kokkos 1D Range
-  if (lp == LoopPattern::RANGE) {
+  if constexpr(defaultLoop == LoopPattern::RANGE) {
     const int NK = KE - KB;
     const int NJ = JE - JB;
     const int NI = IE - IB;
@@ -160,13 +124,13 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
     });
 
   // MDRange loops
-  } else if (lp == LoopPattern::MDRANGE) {
+  } else if constexpr(defaultLoop == LoopPattern::MDRANGE) {
     Kokkos::parallel_for(NAME,
       Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
         ({KB,JB,IB},{KE,JE,IE}), function);
 
   // TeamPolicy with single inner loops
-  } else if (lp == LoopPattern::TPX) {
+  } else if constexpr(defaultLoop == LoopPattern::TPX) {
     const int NK = KE - KB;
     const int NJ = JE - JB;
     const int NKNJ = NK * NJ;
@@ -182,7 +146,7 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
       });
 
   // TeamPolicy with nested TeamThreadRange and ThreadVectorRange
-  } else if (lp == LoopPattern::TPTTRTVR) {
+  } else if constexpr(defaultLoop == LoopPattern::TPTTRTVR) {
     const int NK = KE - KB;
     Kokkos::parallel_for(NAME,
       team_policy (NK, Kokkos::AUTO,KOKKOS_VECTOR_LENGTH),
@@ -200,7 +164,7 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
       });
 
   // SIMD FOR loops
-  } else if (lp == LoopPattern::SIMDFOR) {
+  } else if constexpr(defaultLoop == LoopPattern::SIMDFOR) {
     for (auto k = KB; k < KE; k++)
       for (auto j = JB; j < JE; j++)
 #pragma omp simd
@@ -213,14 +177,14 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
 
 // 4D loop
 template <typename Function>
-inline void idefix_for(LoopPattern lp, const std::string & NAME,
+inline void idefix_for(const std::string & NAME,
                        const int NB, const int NE,
                        const int KB, const int KE,
                        const int JB, const int JE,
                        const int IB, const int IE,
                        Function function) {
   // Kokkos 1D Range
-  if (lp == LoopPattern::RANGE) {
+  if constexpr(defaultLoop == LoopPattern::RANGE) {
     const int NN = (NE) - (NB);
     const int NK = (KE) - (KB);
     const int NJ = (JE) - (JB);
@@ -242,13 +206,13 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
     });
 
   // MDRange loops
-  } else if (lp == LoopPattern::MDRANGE) {
+  } else if constexpr(defaultLoop == LoopPattern::MDRANGE) {
     Kokkos::parallel_for(NAME,
       Kokkos::MDRangePolicy<Kokkos::Rank<4,Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
         ({NB,KB,JB,IB},{NE,KE,JE,IE}), function);
 
   // TeamPolicy loops
-  } else if (lp == LoopPattern::TPX) {
+  } else if constexpr(defaultLoop == LoopPattern::TPX) {
     const int NN = NE - NB;
     const int NK = KE - KB;
     const int NJ = JE - JB;
@@ -270,7 +234,7 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
       });
 
   // TeamPolicy with nested TeamThreadRange and ThreadVectorRange
-  } else if (lp == LoopPattern::TPTTRTVR) {
+  } else if constexpr(defaultLoop == LoopPattern::TPTTRTVR) {
     const int NN = NE - NB;
     const int NK = KE - KB;
     const int NNNK = NN * NK;
@@ -291,7 +255,7 @@ inline void idefix_for(LoopPattern lp, const std::string & NAME,
       });
 
   // SIMD FOR loops
-  } else if (lp == LoopPattern::SIMDFOR) {
+  } else if constexpr(defaultLoop == LoopPattern::SIMDFOR) {
     for (auto n = NB; n < NE; n++)
       for (auto k = KB; k < KE; k++)
         for (auto j = JB; j < JE; j++)

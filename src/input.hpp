@@ -116,8 +116,6 @@ T Input::Get(std::string blockName, std::string paramName, int num) {
         value = false;
       } else if(paramString.compare("false") == 0) {
         value = false;
-      } else if(paramString.compare("f") == 0) {
-        value = false;
       } else {
         std::stringstream msg;
         msg << "Boolean parameter [" << blockName << "]:" << paramName << "(" << num

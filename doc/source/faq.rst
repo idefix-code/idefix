@@ -33,6 +33,9 @@ Is there a way to see explicitely the compilation commands with ``make``?
 The compilation stops while compiling Kokkos with ``/usr/include/stdlib.h(58): error: expected a ";"``
   This happens on Gricad machines when LIBDL is activated (wrong glibc). Simply disable LIBDL.
 
+When using the Intel compiler on a Mac Intel, I get a linking error involving the ``SharedAllocationRecordIvvE18t_tracking_enabledE`` symbol.
+  This is a known bug of the Intel Mac compiler with Kokkos. Apparently Intel has decided not to fix it. Check the issue on the `Kokkos git page <https://github.com/kokkos/kokkos/issues/1959>`_.
+
 Execution
 ---------
 

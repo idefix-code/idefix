@@ -3,13 +3,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
 ## Upcoming
 ### Changed
 - RKL scheme now correctly takes into account grid coarsening when estimating the timestep of parabolic terms (!254)
 - fixed a bug in the evaluation of gravitational forces from the gradient of the potential in regions where grid coarsening is enabled (!267)
 - fixed a bug that resulted in erroneous momentum and energy fluxes when using the combination of Fargo and Viscosity in non-cartesian geometries. (!267)
+- fixed a bug in shock flattening that resulted in loss of conservative properties when using periodic boundaries and/or MPI domain decomposition (!275)
+- fixed a bug in emergency vtk outputs that could lead to an MPI deadlock when the user did not enable VTK outputs (!274)
+- fixed a bug that could result in MPI deadlocks when an exception is thrown by a single MPI process in the integration loop (!266)
+
 ### Added
 - Self-gravity (!186)
+- Check that the MPI library is GPU-aware when using a GPU backend (!262)
+- An optional user-defined Setup destructor can now be defined (!260)
 
 ## [1.1.0] 2022-09-07
 ### Changed

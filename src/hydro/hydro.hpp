@@ -8,6 +8,8 @@
 #ifndef HYDRO_HYDRO_HPP_
 #define HYDRO_HYDRO_HPP_
 
+#define PRECOMPUTE_STATES
+
 #include <string>
 #include <vector>
 #include "idefix.hpp"
@@ -158,6 +160,8 @@ class Hydro {
   IdefixArray3D<real> InvDt;
 
   IdefixArray4D<real> FluxRiemann;
+  IdefixArray4D<real> PrimL;
+  IdefixArray4D<real> PrimR;
   IdefixArray3D<real> dMax;    // Maximum diffusion speed
 
 

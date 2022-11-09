@@ -292,6 +292,13 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
   FluxRiemann =  IdefixArray4D<real>("Hydro_FluxRiemann", NVAR,
                                      data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
+  #ifdef PRECOMPUTE_STATES
+    PrimR = IdefixArray4D<real>("Hydro_PrimR", data->np_tot[KDIR], data->np_tot[JDIR],
+                                               data->np_tot[IDIR], NVAR);
+    PrimL = IdefixArray4D<real>("Hydro_PrimR", data->np_tot[KDIR], data->np_tot[JDIR],
+                                               data->np_tot[IDIR], NVAR);
+  #endif
+
   #if MHD == YES
     Vs = IdefixArray4D<real>("Hydro_Vs", DIMENSIONS,
                 data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);

@@ -62,7 +62,7 @@ void Hydro::HllMHD() {
   [[maybe_unused]] real csIso = this->isoSoundSpeed;
   [[maybe_unused]] HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
 
-  SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR],shockFlattening);
+  SlopeLimiter<DIR,NVAR> slopeLim(Vc,PrimL,PrimR,data,shockFlattening);
 
   // Define normal, tangent and bi-tanget indices
   // st and sb will be useful only when Hall is included

@@ -29,7 +29,7 @@ void Hydro::HlldMHD() {
   #if DIMENSIONS > 1
     constexpr int jextend = (DIR==JDIR) ? 0 : 1;
   #else
-    constexpt int jextend = 0;
+    constexpr int jextend = 0;
   #endif
   #if DIMENSIONS > 2
     constexpr int kextend = (DIR==KDIR) ? 0 : 1;
@@ -66,7 +66,7 @@ void Hydro::HlldMHD() {
   [[maybe_unused]] real csIso = this->isoSoundSpeed;
   [[maybe_unused]] HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
 
-  SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR],shockFlattening);
+  SlopeLimiter<DIR,NVAR> slopeLim(Vc,PrimL,PrimR,data,shockFlattening);
 
   // st and sb will be useful only when Hall is included
   real st = ONE_F, sb = ONE_F;

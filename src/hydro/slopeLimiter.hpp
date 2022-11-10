@@ -180,8 +180,8 @@ class SlopeLimiter {
 
   #ifdef PRECOMPUTE_STATES
     for(int nv = 0 ; nv < nvmax ; nv++) {
-      vL[nv] = PrimL(nv,k,j,i);
-      vR[nv] = PrimR(nv,k,j,i);
+      vL[nv] = PrimL(k,j,i,nv);
+      vR[nv] = PrimR(k,j,i,nv);
     }
   #else // PRECOMPUTE_STATES
     constexpr int ioffset = (dir==IDIR ? 1 : 0);
@@ -376,8 +376,8 @@ class SlopeLimiter {
               data->beg[IDIR]-iextend-ioffset,data->end[IDIR]+ioffset+iextend,
       KOKKOS_LAMBDA (int nv, int k, int j, int i) {
         if constexpr(order == 1) {
-        PrimL(nv,k+koffset,j+joffset,i+ioffset) = Vc(nv,k,j,i);
-        PrimR(nv,k,j,i) = Vc(nv,k,j,i);
+        PrimL(k+koffset,j+joffset,i+ioffset,nv) = Vc(nv,k,j,i);
+        PrimR(k,j,i,nv) = Vc(nv,k,j,i);
 
       } else if constexpr(order == 2) {
         real dvm = Vc(nv,k,j,i)-Vc(nv,k-koffset,j-joffset,i-ioffset);
@@ -393,8 +393,8 @@ class SlopeLimiter {
           dv = PLMLim(dvp,dvm);
         }
 
-        PrimR(nv,k,j,i) = Vc(nv,k,j,i) - HALF_F*dv;
-        PrimL(nv,k+koffset,j+joffset,i+ioffset) =  Vc(nv,k,j,i) + HALF_F*dv;
+        PrimR(k,j,i,nv) = Vc(nv,k,j,i) - HALF_F*dv;
+        PrimL(k+koffset,j+joffset,i+ioffset,nv) =  Vc(nv,k,j,i) + HALF_F*dv;
 
       } else if constexpr(order == 3) {
           // 1D index along the chosen direction
@@ -420,8 +420,8 @@ class SlopeLimiter {
             }
           #endif
 
-          PrimL(nv,k+koffset,j+joffset,i+ioffset) =  Vc(nv,k,j,i) + HALF_F*dv;
-          PrimR(nv,k,j,i) = Vc(nv,k,j,i) - HALF_F*dv;
+          PrimL(k+koffset,j+joffset,i+ioffset,nv) =  Vc(nv,k,j,i) + HALF_F*dv;
+          PrimR(k,j,i,nv) = Vc(nv,k,j,i) - HALF_F*dv;
 
       } else if constexpr(order == 4) {
           // Reconstruction in cell i
@@ -455,8 +455,8 @@ class SlopeLimiter {
             }
           #endif
 
-          PrimL(nv,k+koffset,j+joffset,i+ioffset) = vr;
-          PrimR(nv,k,j,i) = vl;
+          PrimL(k+koffset,j+joffset,i+ioffset,nv) = vr;
+          PrimR(k,j,i,nv) = vl;
       }
     });
     idfx::popRegion();

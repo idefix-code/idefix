@@ -293,10 +293,10 @@ void Hydro::Init(Input &input, Grid &grid, DataBlock *datain) {
                                      data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
   #ifdef PRECOMPUTE_STATES
-    PrimR = IdefixArray4D<real>("Hydro_PrimR", NVAR,
-                                     data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-    PrimL = IdefixArray4D<real>("Hydro_PrimR", NVAR,
-                                     data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+    PrimR = IdefixArray4D<real>("Hydro_PrimR", data->np_tot[KDIR], data->np_tot[JDIR],
+                                               data->np_tot[IDIR], NVAR);
+    PrimL = IdefixArray4D<real>("Hydro_PrimR", data->np_tot[KDIR], data->np_tot[JDIR],
+                                               data->np_tot[IDIR], NVAR);
   #endif
 
   #if MHD == YES

@@ -30,13 +30,13 @@
 typedef Kokkos::TeamPolicy<>               team_policy;
 typedef Kokkos::TeamPolicy<>::member_type  member_type;
 
-#ifdef KOKKOS_ENABLE_OPENMP
+#if defined(KOKKOS_ENABLE_OPENMP)
   constexpr LoopPattern defaultLoop = LoopPattern::TPTTRTVR;
-#elif KOKKOS_ENABLE_CUDA
+#elif defined(KOKKOS_ENABLE_CUDA)
   constexpr LoopPattern defaultLoop = LoopPattern::RANGE;
-#elif KOKKOS_ENABLE_HIP
+#elif defined(KOKKOS_ENABLE_HIP)
   constexpr LoopPattern defaultLoop = LoopPattern::RANGE;
-#elif KOKKOS_ENABLE_SERIAL
+#elif defined(KOKKOS_ENABLE_SERIAL)
   constexpr LoopPattern defaultLoop = LoopPattern::SIMD;
 #else
   #warning "Unknown target architeture: default to MDrange"

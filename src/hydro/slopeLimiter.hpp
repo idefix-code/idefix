@@ -7,8 +7,6 @@
 #ifndef HYDRO_SLOPELIMITER_HPP_
 #define HYDRO_SLOPELIMITER_HPP_
 
-
-
 #include "hydro.hpp"
 #include "dataBlock.hpp"
 #include "shockFlattening.hpp"
@@ -26,14 +24,8 @@ template<const int dir,
          const int order = ORDER>
 class SlopeLimiter {
  public:
-  SlopeLimiter(IdefixArray4D<real> &Vc, IdefixArray4D<real> &PrimL, IdefixArray4D<real> &PrimR,
-        DataBlock *data, ShockFlattening &sf):
-          Vc(Vc), PrimL(PrimL), PrimR(PrimR), data(data), dx(data->dx[dir]),
-          flags(sf.flagArray), shockFlattening(sf.isActive) {
-            #ifdef PRECOMPUTE_STATES
-              FillFaceArrays();
-            #endif
-          }
+  SlopeLimiter(IdefixArray4D<real> &Vc, IdefixArray1D<real> &dx, ShockFlattening &sf):
+        Vc(Vc), dx(dx), flags(sf.flagArray), shockFlattening(sf.isActive) {}
 
   KOKKOS_FORCEINLINE_FUNCTION real MinModLim(const real dvp, const real dvm) const {
     real dq= 0.0;
@@ -177,13 +169,6 @@ class SlopeLimiter {
                                                     const int k,
                                                     real vL[], real vR[]) const {
     // 1-- Store the primitive variables on the left, right, and averaged states
-
-  #ifdef PRECOMPUTE_STATES
-    for(int nv = 0 ; nv < nvmax ; nv++) {
-      vL[nv] = PrimL(k,j,i,nv);
-      vR[nv] = PrimR(k,j,i,nv);
-    }
-  #else // PRECOMPUTE_STATES
     constexpr int ioffset = (dir==IDIR ? 1 : 0);
     constexpr int joffset = (dir==JDIR ? 1 : 0);
     constexpr int koffset = (dir==KDIR ? 1 : 0);
@@ -295,7 +280,7 @@ class SlopeLimiter {
             // If face element is negative, revert to vanleer
             if(vr <= 0.0) {
               real dv = PLMLim(vp1-v0,v0-vm1);
-              vr = v0+HALF_F*dv;
+              vr = v0+dv;
             }
           }
           #if HAVE_ENERGY
@@ -303,7 +288,7 @@ class SlopeLimiter {
               // If face element is negative, revert to vanleer
               if(vr <= 0.0) {
                 real dv = PLMLim(vp1-v0,v0-vm1);
-                vr = v0+HALF_F*dv;
+                vr = v0+dv;
               }
             }
           #endif
@@ -324,7 +309,7 @@ class SlopeLimiter {
             // If face element is negative, revert to vanleer
             if(vl <= 0.0) {
               real dv = PLMLim(vp1-v0,v0-vm1);
-              vl = v0-HALF_F*dv;
+              vl = v0-dv;
             }
           }
           #if HAVE_ENERGY
@@ -332,7 +317,7 @@ class SlopeLimiter {
               // If face element is negative, revert to vanleer
               if(vl <= 0.0) {
                 real dv = PLMLim(vp1-v0,v0-vm1);
-                vl = v0-HALF_F*dv;
+                vl = v0-dv;
               }
             }
           #endif
@@ -340,136 +325,11 @@ class SlopeLimiter {
           vR[nv] = vl;
       }
     }
-    #endif
-  }
-
-  void FillFaceArrays() {
-    idfx::pushRegion("SlopeLimiter::FillFaceArrays");
-    constexpr int ioffset = (dir==IDIR) ? 1 : 0;
-    constexpr int joffset = (dir==JDIR) ? 1 : 0;
-    constexpr int koffset = (dir==KDIR) ? 1 : 0;
-
-    // extension in perp to the direction of integration, as required by CT.
-    constexpr int iextend = (dir==IDIR) ? 0 : 1;
-    #if DIMENSIONS > 1
-      constexpr int jextend = (dir==JDIR) ? 0 : 1;
-    #else
-      constexpr int jextend = 0;
-    #endif
-    #if DIMENSIONS > 2
-      constexpr int kextend = (dir==KDIR) ? 0 : 1;
-    #else
-      constexpr int kextend = 0;
-    #endif
-
-    auto Vc = this->Vc;
-    auto PrimL = this->PrimL;
-    auto PrimR = this->PrimR;
-    auto dx = this->dx;
-    auto flags = this->flags;
-
-
-    idefix_for("FillFaceArrays",
-              0, nvmax,
-              data->beg[KDIR]-kextend-koffset,data->end[KDIR]+koffset+kextend,
-              data->beg[JDIR]-jextend-joffset,data->end[JDIR]+joffset+jextend,
-              data->beg[IDIR]-iextend-ioffset,data->end[IDIR]+ioffset+iextend,
-      KOKKOS_LAMBDA (int nv, int k, int j, int i) {
-        if constexpr(order == 1) {
-        PrimL(k+koffset,j+joffset,i+ioffset,nv) = Vc(nv,k,j,i);
-        PrimR(k,j,i,nv) = Vc(nv,k,j,i);
-
-      } else if constexpr(order == 2) {
-        real dvm = Vc(nv,k,j,i)-Vc(nv,k-koffset,j-joffset,i-ioffset);
-        real dvp = Vc(nv,k+koffset,j+joffset,i+ioffset) - Vc(nv,k,j,i);
-        real dv;
-        if(shockFlattening) {
-          if(flags(k,j,i) == FlagShock::Shock) {
-            dv = MinModLim(dvp,dvm);
-          } else {
-            dv = PLMLim(dvp,dvm);
-          }
-        } else { // No shock flattening
-          dv = PLMLim(dvp,dvm);
-        }
-
-        PrimR(k,j,i,nv) = Vc(nv,k,j,i) - HALF_F*dv;
-        PrimL(k+koffset,j+joffset,i+ioffset,nv) =  Vc(nv,k,j,i) + HALF_F*dv;
-
-      } else if constexpr(order == 3) {
-          // 1D index along the chosen direction
-          const int index = ioffset*i + joffset*j + koffset*k;
-          real dvm = Vc(nv,k,j,i)-Vc(nv,k-koffset,j-joffset,i-ioffset);
-          real dvp = Vc(nv,k+koffset,j+joffset,i+ioffset) - Vc(nv,k,j,i);
-
-          // Limo3 limiter
-          real dv = dvp * LimO3Lim(dvp, dvm, dx(index));
-
-          // Check positivity
-          if(nv==RHO) {
-            if(dv>2*Vc(nv,k,j,i)) {
-              dv = PLMLim(dvp,dvm);
-            }
-          }
-          #if HAVE_ENERGY
-            if(nv==PRS) {
-              // If face element is negative, revert to vanleer
-              if(dv>2*Vc(nv,k,j,i)) {
-                dv = PLMLim(dvp,dvm);
-              }
-            }
-          #endif
-
-          PrimL(k+koffset,j+joffset,i+ioffset,nv) =  Vc(nv,k,j,i) + HALF_F*dv;
-          PrimR(k,j,i,nv) = Vc(nv,k,j,i) - HALF_F*dv;
-
-      } else if constexpr(order == 4) {
-          // Reconstruction in cell i
-          real vm2 = Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset);
-          real vm1 = Vc(nv,k-koffset,j-joffset,i-ioffset);
-          real v0 = Vc(nv,k,j,i);
-          real vp1 = Vc(nv,k+koffset,j+joffset,i+ioffset);
-          real vp2 = Vc(nv,k+2*koffset,j+2*joffset,i+2*ioffset);
-
-          real vr,vl;
-          getPPMStates(vm2, vm1, v0, vp1, vp2, vl, vr);
-          // vL= left side of current interface (i-1/2)= right side of cell i-1
-
-          // Check positivity
-          if(nv==RHO) {
-            // If face element is negative, revert to vanleer
-            if(vr <= 0.0 || vl <=0.0 ) {
-              real dv = PLMLim(vp1-v0,v0-vm1);
-              vr = v0+HALF_F*dv;
-              vl = v0-HALF_F*dv;
-            }
-          }
-          #if HAVE_ENERGY
-            if(nv==PRS) {
-              // If face element is negative, revert to vanleer
-              if(vr <= 0.0 || vl <=0.0 ) {
-                real dv = PLMLim(vp1-v0,v0-vm1);
-                vr = v0+HALF_F*dv;
-                vl = v0-HALF_F*dv;
-              }
-            }
-          #endif
-
-          PrimL(k+koffset,j+joffset,i+ioffset,nv) = vr;
-          PrimR(k,j,i,nv) = vl;
-      }
-    });
-    idfx::popRegion();
   }
 
   IdefixArray4D<real> Vc;
-  IdefixArray4D<real> PrimL;
-  IdefixArray4D<real> PrimR;
   IdefixArray1D<real> dx;
   IdefixArray3D<FlagShock> flags;
-
-  DataBlock *data;
-
   bool shockFlattening{false};
 };
 

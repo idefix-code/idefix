@@ -29,7 +29,7 @@ void Hydro::HlldMHD() {
   #if DIMENSIONS > 1
     constexpr int jextend = (DIR==JDIR) ? 0 : 1;
   #else
-    constexpt int jextend = 0;
+    constexpr int jextend = 0;
   #endif
   #if DIMENSIONS > 2
     constexpr int kextend = (DIR==KDIR) ? 0 : 1;

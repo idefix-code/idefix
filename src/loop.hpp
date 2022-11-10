@@ -37,7 +37,7 @@ typedef Kokkos::TeamPolicy<>::member_type  member_type;
 #elif defined(KOKKOS_ENABLE_HIP)
   constexpr LoopPattern defaultLoop = LoopPattern::RANGE;
 #elif defined(KOKKOS_ENABLE_SERIAL)
-  constexpr LoopPattern defaultLoop = LoopPattern::SIMD;
+  constexpr LoopPattern defaultLoop = LoopPattern::SIMDFOR;
 #else
   #warning "Unknown target architeture: default to MDrange"
   constexpr LoopPattern defaultLoop = LoopPattern::MDRANGE;

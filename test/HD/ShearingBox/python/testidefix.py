@@ -46,7 +46,7 @@ parser.add_argument("-noplot",
 args, unknown=parser.parse_known_args()
 
 
-#initial condition: vr=1, rest is 0, mode initial is nx=0, ny=1, nz=5)
+#initial condition: vr=1, rest is 0, mode initial is nx=0, ny=1, nz=4)
 y=solve_ivp(rhs, [0,30], [1, 0, 0], args=(1, 1.5, 0, 2.0*np.pi, 8*np.pi), dense_output=True)
 
 

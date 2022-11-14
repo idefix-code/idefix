@@ -3,16 +3,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-<<<<<<< HEAD
-=======
+
 ## Upcoming
 ### Changed
 - RKL scheme now correctly takes into account grid coarsening when estimating the timestep of parabolic terms (!254)
 - fixed a bug in the evaluation of gravitational forces from the gradient of the potential in regions where grid coarsening is enabled (!267)
 - fixed a bug that resulted in erroneous momentum and energy fluxes when using the combination of Fargo and Viscosity in non-cartesian geometries. (!267)
+- fixed a bug in shock flattening that resulted in loss of conservative properties when using periodic boundaries and/or MPI domain decomposition (!275)
+- fixed a bug in emergency vtk outputs that could lead to an MPI deadlock when the user did not enable VTK outputs (!274)
+- fixed a bug that could result in MPI deadlocks when an exception is thrown by a single MPI process in the integration loop (!266)
+- fixed a bug in shock flattening that could lead to the breakup of conservation properties (!275)
+- fixed a bug in LookupTable that could lead to incorrect interpolation (!286)
+- fixed a bug that prevented to compile on HIP backend (!291)
+
+
+
 ### Added
 - Self-gravity (!186)
->>>>>>> ae8c8db8 (Update CHANGELOG.md)
+- Check that the MPI library is GPU-aware when using a GPU backend (!262)
+- An optional user-defined Setup destructor can now be defined (!260)
+- performance improvement on CPUs by cleaning loops and rewriting EMF reconstruction (!281)
+- The tolerance on div(B) allowed by the code can now be set at runtime (!292)
+- Nan detection is now performed every 100 integration loops by default so as mitigate performance impact on CPUs (!292)
+
+
+### Removed
+- auto-tuning was removed as it was preventing auto-vectorisation on Intel compilers. Loop tuning are now set at compile time (!281)
 
 ## [1.1.0] 2022-09-07
 ### Changed

@@ -392,7 +392,7 @@ void Hydro::HlldMHD() {
           }
         } else {   // -- This state exists only if B_x != 0
           // Compute U**
-          real vss, wss;
+          [[maybe_unused]] real vss, wss;
           real ussl[NVAR];
           real ussr[NVAR];
 

@@ -19,22 +19,9 @@ template<const int DIR>
 void Hydro::HllcHD() {
   idfx::pushRegion("Hydro::HLLC_Solver");
 
-  int ioffset,joffset,koffset;
-  ioffset=joffset=koffset=0;
-  // Determine the offset along which we do the extrapolation
-  switch(DIR) {
-    case(IDIR):
-      ioffset = 1;
-      break;
-    case(JDIR):
-      joffset=1;
-      break;
-    case(KDIR):
-      koffset=1;
-      break;
-    default:
-      IDEFIX_ERROR("Wrong direction");
-  }
+  constexpr int ioffset = (DIR==IDIR) ? 1 : 0;
+  constexpr int joffset = (DIR==JDIR) ? 1 : 0;
+  constexpr int koffset = (DIR==KDIR) ? 1 : 0;
 
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Vs = this->Vs;

@@ -20,11 +20,22 @@ template<const int DIR>
 void Hydro::HllMHD() {
   idfx::pushRegion("Hydro::HLL_MHD");
 
-  int ioffset,joffset,koffset;
-  int iextend, jextend,kextend;
-  ioffset=joffset=koffset=0;
+  constexpr int ioffset = (DIR==IDIR) ? 1 : 0;
+  constexpr int joffset = (DIR==JDIR) ? 1 : 0;
+  constexpr int koffset = (DIR==KDIR) ? 1 : 0;
+
   // extension in perp to the direction of integration, as required by CT.
-  iextend=jextend=kextend=0;
+  constexpr int iextend = (DIR==IDIR) ? 0 : 1;
+  #if DIMENSIONS > 1
+    constexpr int jextend = (DIR==JDIR) ? 0 : 1;
+  #else
+    constexpr int jextend = 0;
+  #endif
+  #if DIMENSIONS > 2
+    constexpr int kextend = (DIR==KDIR) ? 0 : 1;
+  #else
+    constexpr int kextend = 0;
+  #endif
 
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Vs = this->Vs;
@@ -70,11 +81,10 @@ void Hydro::HllMHD() {
 
   switch(DIR) {
     case(IDIR):
-      ioffset = 1;
       D_EXPAND(
                 st = -ONE_F;  ,
-                jextend = 1;  ,
-                kextend = 1;
+                  ,
+
                 sb = +ONE_F;  )
 
       Et = this->emf.ezi;
@@ -91,12 +101,10 @@ void Hydro::HllMHD() {
       break;
 #if DIMENSIONS >= 2
     case(JDIR):
-      joffset=1;
       D_EXPAND(
-                iextend = 1;
                 st = +ONE_F;  ,
                               ,
-                kextend = 1;
+
                 sb = -ONE_F;  )
 
       Et = this->emf.ezj;
@@ -114,11 +122,11 @@ void Hydro::HllMHD() {
 #endif
 #if DIMENSIONS == 3
     case(KDIR):
-      koffset=1;
+
       D_EXPAND(
-                iextend = 1;
+
                 st = -ONE_F;  ,
-                jextend = 1;  ,
+                  ,
                 sb = +ONE_F;  )
 
       Et = this->emf.eyk;

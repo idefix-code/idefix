@@ -641,7 +641,7 @@ void Hydro::RoeMHD() {
       } else if (emfAverage==ElectroMotiveForce::uct_hll) {
         K_StoreHLL<DIR>(i,j,k,st,sb,sl,sr,vL,vR,Et,Eb,aL,aR,dL,dR);
       } else if (emfAverage==ElectroMotiveForce::uct_hlld) {
-        K_StoreHLLD<DIR>(i,j,k,st,sb,a2L,sl,sr,lambda[KALFVM],lambda[KALFVP],
+        K_StoreHLLD<DIR>(i,j,k,st,sb,a2L,sl,sr,
                          vL,vR,uL,uR,Et,Eb,aL,aR,dL,dR);
       }
   });

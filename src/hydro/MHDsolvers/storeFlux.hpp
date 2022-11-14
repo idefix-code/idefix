@@ -79,7 +79,6 @@ KOKKOS_FORCEINLINE_FUNCTION void K_StoreHLLD( const int i, const int j, const in
                                         const real st, const real sb,
                                         const real c2Iso,
                                         const real sl, const real sr,
-                                        real SaL, real SaR,
                                         real vL[], real vR[],
                                         real uL[], real uR[],
                                         const IdefixArray3D<real> &Et,
@@ -116,7 +115,7 @@ KOKKOS_FORCEINLINE_FUNCTION void K_StoreHLLD( const int i, const int j, const in
 
   real Bn = (sr*vR[BXn] - sl*vL[BXn])/(sr - sl);
 
-  real chiL, chiR, nuLR, nuL, nuR;
+  real chiL, chiR, nuLR, nuL, nuR, SaL, SaR;
   real Sc;
   real eps = 1.e-12*(fabs(sl) + fabs(sr));
   real duL  = sl - vL[Xn];
@@ -146,7 +145,7 @@ KOKKOS_FORCEINLINE_FUNCTION void K_StoreHLLD( const int i, const int j, const in
 #else
   real scrh    = ONE_F/(sr - sl);
   real rho_h   = (uR[RHO]*duR - uL[RHO]*duL)*scrh;
-  Sc = HALF_F*(SaL + SaR);
+  Sc = (sl*uR[RHO]*duR - sr*uL[RHO]*duL)*scrh/rho_h;
   // Recompute speeds
   real sqrho_h = sqrt(rho_h);
   SaL = Sc - fabs(Bn)/sqrho_h;

@@ -284,7 +284,7 @@ void Hydro::HlldMHD() {
 
 #if HAVE_ENERGY
         real Uhll[NVAR];
-        real vs, pts, sqrL, sqrR, vsL, vsR, wsL, wsR;
+        real pts, sqrL, sqrR, vsL, vsR, wsL, wsR;
 
         // 3c. Compute U*(L), U^*(R)
         scrh = ONE_F/(sr - sl);

@@ -183,22 +183,7 @@ class SlopeLimiter {
         real dvp = Vc(nv,k,j,i)-Vc(nv,k-koffset,j-joffset,i-ioffset);
 
         real dv;
-        if(shockFlattening) {
-          if(flags(k-koffset,j-joffset,i-ioffset) == FlagShock::Shock) {
-            // Force slope limiter to minmod
-            dv = MinModLim(dvp,dvm);
-          } else {
-            dv = PLMLim(dvp,dvm);
-          }
-        } else { // No shock flattening
-          dv = PLMLim(dvp,dvm);
-        }
-
-        vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + HALF_F*dv;
-
-        dvm = dvp;
-        dvp = Vc(nv,k+koffset,j+joffset,i+ioffset) - Vc(nv,k,j,i);
-
+        /*
         if(shockFlattening) {
           if(flags(k,j,i) == FlagShock::Shock) {
             dv = MinModLim(dvp,dvm);
@@ -206,8 +191,25 @@ class SlopeLimiter {
             dv = PLMLim(dvp,dvm);
           }
         } else { // No shock flattening
+        */
           dv = PLMLim(dvp,dvm);
-        }
+        //}
+
+        vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + HALF_F*dv;
+
+        dvm = dvp;
+        dvp = Vc(nv,k+koffset,j+joffset,i+ioffset) - Vc(nv,k,j,i);
+/*
+        if(shockFlattening) {
+          if(flags(k,j,i) == FlagShock::Shock) {
+            dv = MinModLim(dvp,dvm);
+          } else {
+            dv = PLMLim(dvp,dvm);
+          }
+        } else { // No shock flattening
+        */
+          dv = PLMLim(dvp,dvm);
+        //}
 
         vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
       } else if constexpr(order == 3) {

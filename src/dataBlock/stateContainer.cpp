@@ -72,7 +72,7 @@ void StateContainer::PushArray(IdefixArray4D<real>& in,
 }
 
 
-void StateContainer::AddAndStore(real wl, real wr, StateContainer & in) {
+void StateContainer::AddAndStore(const real wl, const real wr, StateContainer & in) {
   idfx::pushRegion("StateContainer::AddAndStore");
 
   if(in.stateVector.size() != this->stateVector.size()) {

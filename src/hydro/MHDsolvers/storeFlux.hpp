@@ -34,11 +34,11 @@ KOKKOS_FORCEINLINE_FUNCTION void K_StoreContact( const int i, const int j, const
                                         const IdefixArray4D<real> &Flux,
                                         const IdefixArray3D<real> &Et,
                                         const IdefixArray3D<real> &Eb,
-                                        const IdefixArray3D<int> &SV) {
+                                        const IdefixArray3D<real> &SV) {
   K_StoreEMF<DIR>(i,j,k,st,sb,Flux,Et,Eb);
-  int s = 0;
-  if (Flux(RHO,k,j,i) >  eps_UCT_CONTACT) s =  1;
-  if (Flux(RHO,k,j,i) < -eps_UCT_CONTACT) s = -1;
+  real s = HALF_F;
+  if (Flux(RHO,k,j,i) >  eps_UCT_CONTACT) s =  ONE_F;
+  if (Flux(RHO,k,j,i) < -eps_UCT_CONTACT) s = ZERO_F;
 
   SV(k,j,i) = s;
 }

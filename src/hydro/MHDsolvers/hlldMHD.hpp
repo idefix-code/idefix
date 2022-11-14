@@ -53,7 +53,7 @@ void Hydro::HlldMHD() {
   const ElectroMotiveForce::AveragingType emfAverage = emf.averaging;
 
   // Required by UCT_Contact
-  IdefixArray3D<int> SV;
+  IdefixArray3D<real> SV;
 
   // Required by UCT_HLLX
   IdefixArray3D<real> aL;
@@ -392,7 +392,7 @@ void Hydro::HlldMHD() {
           }
         } else {   // -- This state exists only if B_x != 0
           // Compute U**
-          [[maybe_unused]] real vss, wss;
+          [[maybe_unused]]real vss, wss;
           real ussl[NVAR];
           real ussr[NVAR];
 

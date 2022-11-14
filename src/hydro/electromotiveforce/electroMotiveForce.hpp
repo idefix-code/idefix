@@ -36,9 +36,9 @@ class ElectroMotiveForce {
   IdefixArray3D<real>     ez;
 
 // Required by uct_contact averaging
-  IdefixArray3D<int>      svx;
-  IdefixArray3D<int>      svy;
-  IdefixArray3D<int>      svz;
+  IdefixArray3D<real>      svx;
+  IdefixArray3D<real>      svy;
+  IdefixArray3D<real>      svz;
 
 // required by uct_hll averaging
   IdefixArray3D<real> axL;

@@ -53,7 +53,7 @@ void Hydro::TvdlfMHD() {
   const ElectroMotiveForce::AveragingType emfAverage = emf.averaging;
 
   // Required by UCT_Contact
-  IdefixArray3D<int> SV;
+  IdefixArray3D<real> SV;
 
   // Required by UCT_HLLX
   IdefixArray3D<real> aL;

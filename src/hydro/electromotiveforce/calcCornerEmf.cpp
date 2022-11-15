@@ -208,36 +208,73 @@ void ElectroMotiveForce::CalcContactAverage() {
   IdefixArray3D<real> Ex3 = this->Ex3;
 
   // sign of contact discontinuity
-  IdefixArray3D<int> svx = this->svx;
-  IdefixArray3D<int> svy = this->svy;
-  IdefixArray3D<int> svz = this->svz;
+  IdefixArray3D<real> wsx = this->svx;
+  IdefixArray3D<real> wsy = this->svy;
+  IdefixArray3D<real> wsz = this->svz;
 
 #if MHD == YES && DIMENSIONS >= 2
-  idefix_for("EMF_ArithmeticAverage",
+
+  idefix_for("EMF_Integrate_to_Corner",
             data->beg[KDIR],data->end[KDIR]+KOFFSET,
             data->beg[JDIR],data->end[JDIR]+JOFFSET,
             data->beg[IDIR],data->end[IDIR]+IOFFSET,
     KOKKOS_LAMBDA (int k, int j, int i) {
-      // CT_EMF_ArithmeticAverage (emf, 1.0);
-      real w = ONE_F;
-    #if DIMENSIONS == 3
-      ex(k,j,i) = w * (exj(k,j,i) + exj(k-1,j,i) + exk(k,j,i) + exk(k,j-1,i));
-      ey(k,j,i) = w * (eyi(k,j,i) + eyi(k-1,j,i) + eyk(k,j,i) + eyk(k,j,i-1));
-    #endif
-    #if DIMENSIONS >= 2
-      ez(k,j,i) = w * (ezi(k,j,i) + ezi(k,j-1,i) + ezj(k,j,i) + ezj(k,j,i-1));
-    #else
-      ez(k,j,i) = w * (TWO_F*ezi(k,j,i) + ezj(k,j,i) + ezj(k,j,i-1));
-    #endif
+      real ez_l2 = (1-wsx(k,j-1,i)) * (ezj(k,j,i)   - Ex3(k,j-1,i)) +
+                   (  wsx(k,j-1,i)) * (ezj(k,j,i-1) - Ex3(k,j-1,i-1));
+
+      real ez_r2 = (1-wsx(k,j,i)) * (ezj(k,j,i)   - Ex3(k,j,i)) +
+                   (  wsx(k,j,i)) * (ezj(k,j,i-1) - Ex3(k,j,i-1));
+
+      real ez_l1 = (1-wsy(k,j,i-1)) * (ezi(k,j,i)   - Ex3(k,j,i-1)) +
+                   (  wsy(k,j,i-1)) * (ezi(k,j-1,i) - Ex3(k,j-1,i-1));
+
+      real ez_r1 = (1-wsy(k,j,i)) * (ezi(k,j,i)   - Ex3(k,j,i)) +
+                   (  wsy(k,j,i)) * (ezi(k,j-1,i) - Ex3(k,j-1,i));
+
+      ez(k,j,i) = ONE_FOURTH_F * (ez_l2 + ez_r2 + ez_l1 + ez_r1 +
+                        #if DIMENSIONS >= 2
+                          ezi(k,j,i) + ezi(k,j-1,i) + ezj(k,j,i) + ezj(k,j,i-1)
+                        #else
+                          TWO_F*ezi(k,j,i) + ezj(k,j,i) + ezj(k,j,i-1)
+                        #endif
+                        );
+
+      #if DIMENSIONS == 3
+        real ex_l3 = (1-wsy(k-1,j,i)) * (exk(k,j,i)   - Ex1(k-1,j,i)) +
+                     (  wsy(k-1,j,i)) * (exk(k,j-1,i) - Ex1(k-1,j-1,i));
+
+        real ex_r3 = (1-wsy(k,j,i)) * (exk(k,j,i)   - Ex1(k,j,i)) +
+                     (  wsy(k,j,i)) * (exk(k,j-1,i) - Ex1(k,j-1,i));
+
+        real ex_l2 = (1-wsz(k,j-1,i)) * (exj(k,j,i)   - Ex1(k,j-1,i)) +
+                     (  wsz(k,j-1,i)) * (exj(k-1,j,i) - Ex1(k-1,j-1,i));
+
+        real ex_r2 = (1-wsz(k,j,i)) * (exj(k,j,i)   - Ex1(k,j,i)) +
+                     (  wsz(k,j,i)) * (exj(k-1,j,i) - Ex1(k-1,j,i));
+
+        ex(k,j,i) = ONE_FOURTH_F * (ex_l3 + ex_r3 + ex_l2 + ex_r2 +
+                            exj(k,j,i) + exj(k-1,j,i) + exk(k,j,i) + exk(k,j-1,i) );
+
+        real ey_l3 = (1-wsx(k-1,j,i)) * (eyk(k,j,i)   - Ex2(k-1,j,i)) +
+                     (  wsx(k-1,j,i)) * (eyk(k,j,i-1) - Ex2(k-1,j,i-1));
+
+        real ey_r3 = (1-wsx(k,j,i)) * (eyk(k,j,i)   - Ex2(k,j,i)) +
+                     (  wsx(k,j,i)) * (eyk(k,j,i-1) - Ex2(k,j,i-1));
+
+        real ey_l1 = (1-wsz(k,j,i-1)) * (eyi(k,j,i)   - Ex2(k,j,i-1)) +
+                     (  wsz(k,j,i-1)) * (eyi(k-1,j,i) - Ex2(k-1,j,i-1));
+
+        real ey_r1 = (1-wsz(k,j,i)) * (eyi(k,j,i)   - Ex2(k,j,i)) +
+                     (  wsz(k,j,i)) * (eyi(k-1,j,i) - Ex2(k-1,j,i));
+
+        ey(k,j,i) = ONE_FOURTH_F * (ey_l3 + ey_r3 + ey_l1 + ey_r1 +
+                            eyi(k,j,i) + eyi(k-1,j,i) + eyk(k,j,i) + eyk(k,j,i-1));
+
+
+      #endif
     });
 
-  // We define atomic references to ex,ey, ez because the loop "EMF_Integrate to corner"
-  // Is not incrementing only e(k,j,i) but also its neighbour. Hence race conditions
-  // Could occur in this loop.
-
-  IdefixAtomicArray3D<real> exAtomic = this->ex;
-  IdefixAtomicArray3D<real> eyAtomic = this->ey;
-  IdefixAtomicArray3D<real> ezAtomic = this->ez;
+  /*
   idefix_for("EMF_Integrate to Corner",
             data->beg[KDIR]-KOFFSET,data->end[KDIR]+KOFFSET,
             data->beg[JDIR]-JOFFSET,data->end[JDIR]+JOFFSET,
@@ -281,6 +318,8 @@ void ElectroMotiveForce::CalcContactAverage() {
 
 #define DEZ_DXM(k,j,i)    (Ex3(k,j,i) - ezi(k,j,i))
 #define DEZ_DYM(k,j,i)    (Ex3(k,j,i) - ezj(k,j,i))
+
+
 
 
       if (sx == 0) {
@@ -360,6 +399,7 @@ void ElectroMotiveForce::CalcContactAverage() {
   #undef DEY_DZM
   #undef DEZ_DXM
   #undef DEZ_DYM
+  */
 
 #endif // MHD
   idfx::popRegion();

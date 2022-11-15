@@ -79,11 +79,11 @@ void ElectroMotiveForce::Init(Input &input, Hydro *hydro) {
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]); )
 
   if(averaging==uct_contact) {
-    D_EXPAND( svx = IdefixArray3D<int>("EMF_svx",
+    D_EXPAND( svx = IdefixArray3D<real>("EMF_svx",
                                 data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
-              svy = IdefixArray3D<int>("EMF_svy",
+              svy = IdefixArray3D<real>("EMF_svy",
                                 data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  ,
-              svz = IdefixArray3D<int>("EMF_svz",
+              svz = IdefixArray3D<real>("EMF_svz",
                                 data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  )
   }
 

@@ -19,12 +19,9 @@ template<const int DIR>
 void Hydro::TvdlfHD() {
   idfx::pushRegion("Hydro::TVDLF_Solver");
 
-  int ioffset,joffset,koffset;
-  ioffset=joffset=koffset=0;
-  // Determine the offset along which we do the extrapolation
-  if(DIR==IDIR) ioffset=1;
-  if(DIR==JDIR) joffset=1;
-  if(DIR==KDIR) koffset=1;
+  constexpr int ioffset = (DIR==IDIR) ? 1 : 0;
+  constexpr int joffset = (DIR==JDIR) ? 1 : 0;
+  constexpr int koffset = (DIR==KDIR) ? 1 : 0;
 
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Vs = this->Vs;

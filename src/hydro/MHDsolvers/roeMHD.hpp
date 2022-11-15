@@ -51,12 +51,22 @@ template<const int DIR>
 void Hydro::RoeMHD() {
   idfx::pushRegion("Hydro::ROE_MHD");
 
-  int ioffset,joffset,koffset;
-  int iextend, jextend,kextend;
+  constexpr int ioffset = (DIR==IDIR) ? 1 : 0;
+  constexpr int joffset = (DIR==JDIR) ? 1 : 0;
+  constexpr int koffset = (DIR==KDIR) ? 1 : 0;
 
-  ioffset=joffset=koffset=0;
   // extension in perp to the direction of integration, as required by CT.
-  iextend=jextend=kextend=0;
+  constexpr int iextend = (DIR==IDIR) ? 0 : 1;
+  #if DIMENSIONS > 1
+    constexpr int jextend = (DIR==JDIR) ? 0 : 1;
+  #else
+    constexpr int jextend = 0;
+  #endif
+  #if DIMENSIONS > 2
+    constexpr int kextend = (DIR==KDIR) ? 0 : 1;
+  #else
+    constexpr int kextend = 0;
+  #endif
 
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Vs = this->Vs;
@@ -75,7 +85,7 @@ void Hydro::RoeMHD() {
 
 
   // Required by UCT_Contact
-  IdefixArray3D<int> SV;
+  IdefixArray3D<real> SV;
 
   // Required by UCT_HLLX
   IdefixArray3D<real> aL;
@@ -99,11 +109,10 @@ void Hydro::RoeMHD() {
 
   switch(DIR) {
     case(IDIR):
-      ioffset = 1;
       D_EXPAND(
                 st = -ONE_F;  ,
-                jextend = 1;  ,
-                kextend = 1;
+                  ,
+
                 sb = +ONE_F;  )
 
       Et = this->emf.ezi;
@@ -120,12 +129,10 @@ void Hydro::RoeMHD() {
       break;
 #if DIMENSIONS >= 2
     case(JDIR):
-      joffset=1;
       D_EXPAND(
-                iextend = 1;
                 st = +ONE_F;  ,
                               ,
-                kextend = 1;
+
                 sb = -ONE_F;  )
 
       Et = this->emf.ezj;
@@ -143,11 +150,11 @@ void Hydro::RoeMHD() {
 #endif
 #if DIMENSIONS == 3
     case(KDIR):
-      koffset=1;
+
       D_EXPAND(
-                iextend = 1;
+
                 st = -ONE_F;  ,
-                jextend = 1;  ,
+                  ,
                 sb = +ONE_F;  )
 
       Et = this->emf.eyk;
@@ -641,7 +648,7 @@ void Hydro::RoeMHD() {
       } else if (emfAverage==ElectroMotiveForce::uct_hll) {
         K_StoreHLL<DIR>(i,j,k,st,sb,sl,sr,vL,vR,Et,Eb,aL,aR,dL,dR);
       } else if (emfAverage==ElectroMotiveForce::uct_hlld) {
-        K_StoreHLLD<DIR>(i,j,k,st,sb,a2L,sl,sr,lambda[KALFVM],lambda[KALFVP],
+        K_StoreHLLD<DIR>(i,j,k,st,sb,a2L,sl,sr,
                          vL,vR,uL,uR,Et,Eb,aL,aR,dL,dR);
       }
   });

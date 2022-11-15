@@ -280,7 +280,7 @@ class SlopeLimiter {
             // If face element is negative, revert to vanleer
             if(vr <= 0.0) {
               real dv = PLMLim(vp1-v0,v0-vm1);
-              vr = v0+dv;
+              vr = v0+HALF_F*dv;
             }
           }
           #if HAVE_ENERGY
@@ -288,7 +288,7 @@ class SlopeLimiter {
               // If face element is negative, revert to vanleer
               if(vr <= 0.0) {
                 real dv = PLMLim(vp1-v0,v0-vm1);
-                vr = v0+dv;
+                vr = v0+HALF_F*dv;
               }
             }
           #endif
@@ -309,7 +309,7 @@ class SlopeLimiter {
             // If face element is negative, revert to vanleer
             if(vl <= 0.0) {
               real dv = PLMLim(vp1-v0,v0-vm1);
-              vl = v0-dv;
+              vl = v0-HALF_F*dv;
             }
           }
           #if HAVE_ENERGY
@@ -317,7 +317,7 @@ class SlopeLimiter {
               // If face element is negative, revert to vanleer
               if(vl <= 0.0) {
                 real dv = PLMLim(vp1-v0,v0-vm1);
-                vl = v0-dv;
+                vl = v0-HALF_F*dv;
               }
             }
           #endif

@@ -30,7 +30,7 @@ class StateContainer {
   void CopyFrom(StateContainer &);    // Return a deepcopy of the current state container
   void AllocateAs(StateContainer &);    // Return a deepcopy of the current state container
   void PushArray(IdefixArray4D<real> &, State::TypeLocation, std::string);
-  void AddAndStore(real, real, StateContainer&);
+  void AddAndStore(const real, const real, StateContainer&);
 
 
  private:

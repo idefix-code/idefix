@@ -183,8 +183,6 @@ void Input::ParseCommandLine(int argc, char **argv) {
       if((++i) >= argc) IDEFIX_ERROR(
                       "You must specify -i filename where filename is the name of the input file.");
       this->inputFileName = std::string(argv[i]);
-    } else if(std::string(argv[i]) == "-autotune") {
-      this->tuningRequested = true;
     } else if(std::string(argv[i]) == "-maxcycles") {
       if((i+1)>= argc) {
         IDEFIX_ERROR("-maxcycles requires an additional integer parameter");

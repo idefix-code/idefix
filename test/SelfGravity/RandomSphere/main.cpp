@@ -36,7 +36,6 @@
 #include "timeIntegrator.hpp"
 #include "setup.hpp"
 #include "output.hpp"
-#include "tuner.hpp"
 
 
 
@@ -104,11 +103,6 @@ int main( int argc, char* argv[] ) {
     grid.ShowConfig();
     data.ShowConfig();
     Tint.ShowConfig();
-
-    // if the user asked for auto-tune, then tune loops now
-    if(input.tuningRequested) {
-      Tuner::tuneLoops(data, mysetup, input);
-    }
 
     ///////////////////////////////
     // Initial conditions (or restart)

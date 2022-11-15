@@ -30,8 +30,6 @@ target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/setup.cpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/timeIntegrator.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/timeIntegrator.cpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/tuner.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/tuner.cpp
   )
 
 if(Idefix_MPI)

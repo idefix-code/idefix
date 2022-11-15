@@ -18,6 +18,9 @@ set_property(CACHE Idefix_RECONSTRUCTION PROPERTY STRINGS Constant Linear LimO3 
 set(Idefix_PRECISION "Double" CACHE STRING "Precision of arithmetics")
 set_property(CACHE Idefix_PRECISION PROPERTY STRINGS Double Single)
 
+set(Idefix_LOOP_PATTERN "Default" CACHE STRING "Loop pattern for idefix_for")
+set_property(CACHE Idefix_LOOP_PATTERN PROPERTY STRINGS Default SIMD Range MDRange TeamPolicy TeamPolicyInnerVector)
+
 
 # load git revision tools
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
@@ -112,6 +115,31 @@ else()
   message(ERROR "Reconstruction type '${Idefix_RECONSTRUCTION}' is invalid")
 endif()
 
+#Loop type
+if(${Idefix_LOOP_PATTERN} STREQUAL "SIMD")
+  if(Kokkos_ENABLE_OPENMP)
+    message(ERROR "SIMD loop pattern is incompatible with OPENMP")
+  endif()
+  if(Kokkos_ENABLE_CUDA)
+    message(ERROR "SIMD loop pattern is incompatible with Cuda")
+  endif()
+  if(Kokkos_ENABLE_HIP)
+    message(ERROR "SIMD loop pattern is incompatible with HIP")
+  endif()
+  add_compile_definitions("LOOP_PATTERN_SIMD")
+elseif(${Idefix_LOOP_PATTERN} STREQUAL "Range")
+  add_compile_definitions("LOOP_PATTERN_1DRANGE")
+elseif(${Idefix_LOOP_PATTERN} STREQUAL "MDRange")
+  add_compile_definitions("LOOP_PATTERN_MDRANGE")
+elseif(${Idefix_LOOP_PATTERN} STREQUAL "TeamPolicy")
+  add_compile_definitions("LOOP_PATTERN_TPX")
+elseif(${Idefix_LOOP_PATTERN} STREQUAL "TeamPolicyInnerVector")
+  add_compile_definitions("LOOP_PATTERN_TPTTRTVR")
+elseif(NOT ${Idefix_LOOP_PATTERN} STREQUAL "Default")
+  message(ERROR "Unknown loop Pattern")
+endif()
+
+# precision
 if(${Idefix_PRECISION} STREQUAL "Single")
   add_compile_definitions("SINGLE_PRECISION")
 endif()

@@ -30,18 +30,35 @@
 typedef Kokkos::TeamPolicy<>               team_policy;
 typedef Kokkos::TeamPolicy<>::member_type  member_type;
 
-#if defined(KOKKOS_ENABLE_OPENMP)
-  constexpr LoopPattern defaultLoop = LoopPattern::TPTTRTVR;
-#elif defined(KOKKOS_ENABLE_CUDA)
-  constexpr LoopPattern defaultLoop = LoopPattern::RANGE;
-#elif defined(KOKKOS_ENABLE_HIP)
-  constexpr LoopPattern defaultLoop = LoopPattern::RANGE;
-#elif defined(KOKKOS_ENABLE_SERIAL)
+
+
+// Check if the user requested a specific loop unrolling strategy
+#if defined(LOOP_PATTERN_SIMD)
   constexpr LoopPattern defaultLoop = LoopPattern::SIMDFOR;
-#else
-  #warning "Unknown target architeture: default to MDrange"
+#elif defined(LOOP_PATTERN_1DRANGE)
+  constexpr LoopPattern defaultLoop = LoopPattern::RANGE;
+#elif defined(LOOP_PATTERN_MDRANGE)
   constexpr LoopPattern defaultLoop = LoopPattern::MDRANGE;
+#elif defined(LOOP_PATTERN_TPX)
+  constexpr LoopPattern defaultLoop = LoopPattern::TPX;
+#elif defined(LOOP_PATTERN_TPTTRTVR)
+  constexpr LoopPattern defaultLoop = LoopPattern::TPTTRTVR;
+#else // no loop strategy has been defined
+  // Default loops
+  #if defined(KOKKOS_ENABLE_OPENMP)
+    constexpr LoopPattern defaultLoop = LoopPattern::TPTTRTVR;
+  #elif defined(KOKKOS_ENABLE_CUDA)
+    constexpr LoopPattern defaultLoop = LoopPattern::RANGE;
+  #elif defined(KOKKOS_ENABLE_HIP)
+    constexpr LoopPattern defaultLoop = LoopPattern::RANGE;
+  #elif defined(KOKKOS_ENABLE_SERIAL)
+    constexpr LoopPattern defaultLoop = LoopPattern::SIMDFOR;
+  #else
+    #warning "Unknown target architeture: default to MDrange"
+    constexpr LoopPattern defaultLoop = LoopPattern::MDRANGE;
+  #endif
 #endif
+
 
 
 // 1D loop

@@ -7,7 +7,6 @@ Created on Fri Nov 27 22:07:47 2020
 import os
 import re
 import struct
-import warnings
 
 import numpy as np
 

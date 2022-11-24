@@ -90,14 +90,8 @@ void FluxBoundary(DataBlock & data, int dir, BoundarySide side, const real t) {
                     },
                     Kokkos::Sum<real>(fluxTotMass));
 
-      // TODO(mauxionj): implement new COMM to handle internal boundary only
-      // // Reduction on the whole grid
-      // #ifdef WITH_MPI
-      // MPI_Allreduce(MPI_IN_PLACE, &fluxTotMass, 1, realMPI, MPI_SUM, MPI_COMM_WORLD);
-      // #endif
-
       // We normalize by the considered totalA then extrapolate to the whole
-      // sphere at given radius
+      // sphere at given radius (cause we're only 1D)
       data.gravity.centralMass = data.gravity.centralMass
                                - fluxTotMass*halfDt*4.*M_PI*rin*rin/internalArea;
     }
@@ -114,8 +108,6 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   output.EnrollUserDefVariables(&ComputeUserVars);
   output.EnrollAnalysis(&Analysis);
   RcloudGlob = 60.;
-  // TODO(mauxionj): check wether this simpler computation of the internal
-  // area introduce errors wrt to the dataBlock reduction.
   internalAreaGlob = grid.xbeg[IDIR]*grid.xbeg[IDIR];
 }
 

@@ -25,19 +25,12 @@ class Hydro;
 class DataBlock;
 
 class SelfGravity {
-  // // Types of boundary which can be treated
-  // enum GravityBoundaryType {internalgrav, periodic, nullgrad, nullpot, userdef, axis};
-  //
-  // // Handling userdef boundary. TODO(mauxionj): not fully working.
-  // using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side,
-  //                                       const real t, IdefixArray3D<real> &arr);
-
  public:
   // Types of boundary which can be treated
   enum GravityBoundaryType {internalgrav, periodic, nullgrad, nullpot, userdef, axis, origin};
   enum GravitySolver {JACOBI, BICGSTAB, PBICGSTAB, PCG, CG, PMINRES, MINRES};
 
-  // Handling userdef boundary. TODO(mauxionj): not fully working.
+  // Handling userdef boundary.
   using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side,
                                        const real t, IdefixArray3D<real> &arr);
 

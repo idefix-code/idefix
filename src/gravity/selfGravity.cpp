@@ -35,23 +35,18 @@ void SelfGravity::Init(Input &input, DataBlock *datain) {
   // Initialise (default) solver parameters
   this->dt = 0.;
   this->isPeriodic = true;
-  // this->gravCst = 1.0; // 4piG=1
 
   // Update targetError when provided
   real targetError = input.GetOrSet<real>("SelfGravity","targetError",0,1e-2);
 
-  // get maxiter when provided
+  // Get maxiter when provided
   real maxiter = input.GetOrSet<int>("SelfGravity","maxIter",0,1000);
 
+  // Get the number of skipped cycles when provided and check consistency
   this->skipSelfGravity = input.GetOrSet<int>("SelfGravity","skip",0,1);
   if(skipSelfGravity<1) {
     IDEFIX_ERROR("[SelfGravity]:skip should be a strictly positive integer");
   }
-
-  // // Update gravCst when provided
-  // if(input.CheckEntry("SelfGravity","gravCst") >= 0) {
-  //   this->gravCst = input.Get<real>("SelfGravity","gravCst",0); // Warning : gravCst is 4piG
-  // }
 
   // Get the gravity-related boundary conditions
   for(int dir = 0 ; dir < 3 ; dir++) {
@@ -300,7 +295,7 @@ void SelfGravity::InitInternalGrid() {
   // xl and xr are used only temporarily in this subroutine.
   auto x1l = IdefixArray1D<real>("SG_x1l", this->np_tot[IDIR]);
   auto x1r = IdefixArray1D<real>("SG_x1r", this->np_tot[IDIR]);
-  // incidentally, sinx2 is not affected by a grid extensio in x1, so no need to
+  // incidentally, sinx2 is not affected by a grid extension in x1, so no need to
   // allocate a new array
 
 
@@ -429,7 +424,7 @@ void SelfGravity::ShowConfig() {
       IDEFIX_ERROR("SelfGravity:: Unknown solver");
   }
   idfx::cout << " solver." << std::endl;
-  //idfx::cout << "SelfGravity: target L2 norm error=" << targetError << "." << std::endl;
+  // idfx::cout << "SelfGravity: target L2 norm error=" << targetError << "." << std::endl;
   // idfx::cout << "SelfGravity: 4piG=" << gravCst << "." << std::endl;
 
   // The setup is periodic if it passes the previous boundary loading
@@ -779,7 +774,7 @@ void SelfGravity::SubstractMeanDensity() {
              });
 
   #ifdef DEBUG_GRAVITY
-  idfx::cout << "SelfGravity:: Average value " << mean << " substracted to density." << std::endl;
+  idfx::cout << "SelfGravity:: Average value " << mean << " substracted to density" << std::endl;
   #endif
 
   idfx::popRegion();
@@ -1035,8 +1030,8 @@ void SelfGravity::EnforceBoundary(int dir, BoundarySide side, GravityBoundaryTyp
     }
 
     case origin: {
-      // Assume the grid is extended inwards close to the origin. hence the inner ghost
-      // all have the sam value
+      // Assume the grid is extended inwards close to the origin. Hence the inner ghost
+      // all have the same value.
       int iref = this->beg[IDIR];
 
       real psiIn = 0.0;
@@ -1156,12 +1151,12 @@ void SelfGravity::SolvePoisson() {
 
   this->nsteps = iterativeSolver->Solve(potential, density);
   if (this->nsteps<0) {
-    idfx::cout << "SelfGravity:: BICGSTAB failed. Resetting potential." << std::endl;
+    idfx::cout << "SelfGravity:: BICGSTAB failed, resetting potential" << std::endl;
 
     // Look for Nans to explain the repetitive failing
     if(data->CheckNan()>0) {
       std::stringstream msg;
-      msg << "Nan found after BICGSTAB failed at time " << data->t << " ." << std::endl;
+      msg << "Nan found after BICGSTAB failed at time " << data->t << std::endl;
       throw std::runtime_error(msg.str());
     }
 
@@ -1179,7 +1174,7 @@ void SelfGravity::SolvePoisson() {
     // Try again !
     this->nsteps = iterativeSolver->Solve(this->potential, density);
     if (this->nsteps<0) {
-      IDEFIX_ERROR("SelfGravity:: BICGSTAB failed despite restart.");
+      IDEFIX_ERROR("SelfGravity:: BICGSTAB failed despite restart");
     }
   }
 
@@ -1188,14 +1183,14 @@ void SelfGravity::SolvePoisson() {
   #ifdef DEBUG_GRAVITY
   WriteField(potentialFile,potential,n);
   if(this->convStatus == true) {
-    idfx::cout << "SelfGravity:: Reached convergence after " << n << " iterations." << std::endl;
+    idfx::cout << "SelfGravity:: Reached convergence after " << n << " iterations" << std::endl;
     rhoFile.close();
     potentialFile.close();
   } else if(n == maxiter) {
-    idfx::cout << "SelfGravity:: Reached max iter." << std::endl;
+    idfx::cout << "SelfGravity:: Reached max iter" << std::endl;
     rhoFile.close();
     potentialFile.close();
-    IDEFIX_WARNING("SelfGravity:: Failed to converge before reaching max iter.");
+    IDEFIX_WARNING("SelfGravity:: Failed to converge before reaching max iter");
   }
   #endif
 

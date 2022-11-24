@@ -201,7 +201,6 @@ void IterativeSolver<C>::TestErrorLINF() {
 
   real maxRes2, rho2;
 
-  // TODO(mauxionj) : can these idefix_reduce be merged if the operators are different ?
   // Searching for the maximum residual over the grid
   idefix_reduce("MaxRes2",
                 kbeg, kend,

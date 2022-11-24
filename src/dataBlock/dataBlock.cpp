@@ -176,17 +176,6 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
     this->haveGravity = true; // TODO(mauxionj): why do it here and in init gravity ?
   }
 
-  // GL: self-gravity should be in the gravity block and handled by gravity *only*
-  // Initialise self-gravity if needed
-  /*
-  if(input.CheckBlock("SelfGravity")) {
-    // TODO(mauxionj): should SelfGravity have its own block or should it be
-    // a Gravity entry ?
-    selfGravity.Init(input, this);
-    this->haveSelfGravity = true;
-  }
-  */
-
   idfx::popRegion();
 }
 

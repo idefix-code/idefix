@@ -14,8 +14,6 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
-import sphinx_rtd_theme
-import sphinx.ext.mathjax
 import textwrap
 
 # -- Project information -----------------------------------------------------
@@ -85,7 +83,6 @@ exhale_args = {
     "containmentFolder":     "./api",
     "rootFileName":          "library_root.rst",
     "rootFileTitle":         "Idefix API",
-    "doxygenStripFromPath":  "..",
     # Suggested optional arguments
     "createTreeView":        False,
     # TIP: if using the sphinx-bootstrap-theme, you need

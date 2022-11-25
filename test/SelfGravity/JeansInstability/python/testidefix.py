@@ -11,7 +11,7 @@ import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
 from pytools.vtk_io import readVTK
 import numpy as np
-from scipy.fftpack import fft, fftfreq, fftshift
+from scipy.fftpack import fft, fftfreq
 
 # Arguments
 gravCst = np.pi # grav cst G=pi

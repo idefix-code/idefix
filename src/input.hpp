@@ -112,11 +112,13 @@ T Input::Get(std::string blockName, std::string paramName, int num) {
         value = true;
       } else if(paramString.compare("true") == 0) {
         value = true;
+      } else if(paramString.compare("debout") == 0) {
+        value = true;
       } else if(paramString.compare("no") == 0) {
         value = false;
       } else if(paramString.compare("false") == 0) {
         value = false;
-      } else if(paramString.compare("f") == 0) {
+      } else if(paramString.compare("couche") == 0) {
         value = false;
       } else {
         std::stringstream msg;

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 rep_2D_mpi_list="HD/MachReflection HD/ViscousFlowPastCylinder HD/FargoPlanet MHD/OrszagTang"
-rep_3D_mpi_list="HD/SedovBlastWave MHD/AmbipolarCshock3D MHD/AxisFluxTube MHD/LinearWaveTest MHD/FargoMHDSpherical MHD/OrszagTang3D"
+rep_3D_mpi_list="MHD/AmbipolarCshock3D MHD/AxisFluxTube MHD/LinearWaveTest MHD/FargoMHDSpherical MHD/OrszagTang3D"
 
 # refer to the parent dir of this file, wherever this is called from
 # a python equivalent is e.g.
@@ -101,6 +101,63 @@ for rep in $rep_3D_mpi_list; do
 
     cd $TEST_DIR
 done
+
+# Blast wave test
+rep="HD/SedovBlastWave"
+
+## Cartesian blast
+cp -R $TEST_DIR/$rep $TMP_DIR/$rep
+cd $TMP_DIR/$rep
+echo "***********************************************"
+echo "Configuring  $rep"
+echo "Using $TMP_DIR/$rep as working directory"
+echo "***********************************************"
+rm -f CMakeCache.txt
+cmake $IDEFIX_DIR -DIdefix_MPI=ON $options
+echo "***********************************************"
+echo "Making  $rep"
+echo "***********************************************"
+make clean; make -j 10
+
+ini="idefix.ini"
+echo "***********************************************"
+echo "Running  $rep with $ini"
+echo "***********************************************"
+mpirun -np 8 ./idefix -i $ini -dec 2 2 2 -nolog
+
+cd python
+echo "***********************************************"
+echo "Testing  $rep with $ini"
+echo "***********************************************"
+python3 testidefix.py -noplot -i ../$ini
+cd ..
+
+## Spherical blast
+echo "***********************************************"
+echo "Configuring  $rep in spherical geometry"
+echo "Using $TMP_DIR/$rep as working directory"
+echo "***********************************************"
+rm -f CMakeCache.txt
+cmake $IDEFIX_DIR -DIdefix_MPI=ON -DIdefix_DEFS=definitions-spherical.hpp $options
+echo "***********************************************"
+echo "Making  $rep"
+echo "***********************************************"
+make clean; make -j 10
+
+ini="idefix-spherical.ini"
+echo "***********************************************"
+echo "Running  $rep with $ini"
+echo "***********************************************"
+mpirun -np 8 ./idefix -i $ini -dec 2 2 2 -nolog
+
+cd python
+echo "***********************************************"
+echo "Testing  $rep with $ini"
+echo "***********************************************"
+python3 testidefix.py -noplot -i ../$ini
+
+cd $TEST_DIR
+
 
 echo "Cleaning temporary directory $TMP_DIR"
 rm -rf $TMP_DIR

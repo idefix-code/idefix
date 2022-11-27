@@ -70,7 +70,10 @@ if(not args.noplot):
 
 error=np.mean(np.fabs(p3D[index]-solinterp(r3D[index])))
 print("Error=%e"%error)
-if error<7.7e-2:
+erroref = 7.7e-2
+if V.geometry == "spherical":
+    erroref = 1.9e-1
+if error<erroref:
     print("SUCCESS!")
     sys.exit(0)
 else:

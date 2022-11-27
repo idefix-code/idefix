@@ -10,7 +10,6 @@ import os
 import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
 from pytools.vtk_io import readVTK
-from pytools import sod
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt

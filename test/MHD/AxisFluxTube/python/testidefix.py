@@ -16,7 +16,7 @@ import argparse
 def checkInput(key):
   f = open(args.i,'r')
   content = f.read()
-  if content.find(key):
+  if content.find(key) > -1:
     return True
   else:
     return False

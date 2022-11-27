@@ -12,7 +12,14 @@ sys.path.append(os.getenv("IDEFIX_DIR"))
 from pytools.vtk_io import readVTK
 import numpy as np
 import argparse
-import inifix
+
+def checkInput(key):
+  f = open(args.i,'r')
+  content = f.read()
+  if content.find(key):
+    return True
+  else:
+    return False
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-i",
@@ -24,8 +31,7 @@ args, unknown=parser.parse_known_args()
 referenceFile = 'data.0001.ref.vtk'
 
 if(args.i):
-  conf = inifix.load(args.i)
-  if "coarsening" in conf["Grid"]:
+  if checkInput("coarsening"):
     referenceFile = 'data.0001.ref-coarsening.vtk'
 
 V=readVTK('../data.0001.vtk')

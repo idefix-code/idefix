@@ -495,8 +495,9 @@ Note that the template parameter ``nDim`` should match the number of dimensions 
 Using the lookup table
 ++++++++++++++++++++++
 
-Once an instance of ``LookupTable`` has been created from a CSV or a Numpy file, it can be used using the ``Get`` method inside an idefix_for loop.
-The ``Get`` function expects a C array of size ``nDim`` and returns the multi-linear interpolation from the lookup table. For instance:
+Once an instance of ``LookupTable`` has been created from a CSV or a Numpy file, it can be used using the ``Get`` method inside an ``idefix_for`` loop (i.e. from the device), or with
+the ``GetHost`` method when calling outside of a ``idefix_for`` (i.e. from the host).
+The ``Get`` and ``GetHost`` functions expect a C array of size ``nDim`` and returns the multi-linear interpolation from the lookup table. For instance:
 
 .. code-block:: c++
 
@@ -505,13 +506,19 @@ The ``Get`` function expects a C array of size ``nDim`` and returns the multi-li
   // Load a 2D CSV lookup table
   LookupTable<2> csv("example2D.csv",',');
 
-  // Use the lookuptable in an idefix_for loop
+  // Use the lookup table in an idefix_for loop (Device)
   idefix_for("loop",0, 10, KOKKOS_LAMBDA (int i) {
     real x[2];
     x[0] = 2.1;
     x[1] = 3.5;
     arr(i) = csv.Get(x);
   });
+
+  // Use the lookup table outside of an idefix_loop (Host)
+  real y[2];
+  y[0] = 3.0]
+  y[1] = -1.0;
+  real result = csv.GetHost(y);
 
 
 .. note::

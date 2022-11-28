@@ -22,17 +22,25 @@ class LookupTable {
   LookupTable(std::vector<std::string> filenames,
               std::string dataSet,
                bool errorIfOutOfBound = true);
-  IdefixArray1D<int> dimensions;
-  IdefixArray1D<int> offset;      // Actually sum_(n-1) (dimensions)
-  IdefixArray1D<real> xin;
 
-  IdefixArray1D<real> data;
+  IdefixArray1D<int> dimensionsDev;
+  IdefixArray1D<int> offsetDev;      // Actually sum_(n-1) (dimensions)
+  IdefixArray1D<real> xinDev;
+  IdefixArray1D<real> dataDev;
+
+  IdefixHostArray1D<int> dimensionsHost;
+  IdefixHostArray1D<int> offsetHost;      // Actually sum_(n-1) (dimensions)
+  IdefixHostArray1D<real> xinHost;
+  IdefixHostArray1D<real> dataHost;
+
 
   bool errorIfOutOfBound{true};
 
-  // Fetch function that should be called inside idefix_loop
+  // Generic getter for all kinds of input arrays
+  template<typename Tint, typename Treal>
   KOKKOS_INLINE_FUNCTION
-  real Get(const real x[kDim] ) const {
+  real Get(const real x[kDim], Tint &dimensions, Tint &offset, Treal &xin, Treal &data) const {
+  // Fetch function that should be called inside idefix_loop
     int idx[kDim];
     real delta[kDim];
 
@@ -107,6 +115,18 @@ class LookupTable {
 
     return(value);
   }
+
+  // Getter on device
+  KOKKOS_INLINE_FUNCTION
+  real Get(const real x[kDim]) const {
+    return(Get(x, dimensionsDev, offsetDev, xinDev, dataDev));
+  }
+
+  // Getter on Host
+  KOKKOS_INLINE_FUNCTION
+  real GetHost(const real x[kDim]) const {
+    return(Get(x, dimensionsHost, offsetHost, xinHost, dataHost));
+  }
 };
 
 template <int kDim>
@@ -148,15 +168,15 @@ LookupTable<kDim>::LookupTable(std::vector<std::string> filenames,
 
   // Allocate the required memory
   //Allocate arrays so that the data fits in it
-  this->xin = IdefixArray1D<real> ("Table_x", sizeTotal);
-  this->dimensions = IdefixArray1D<int> ("Table_dim", kDim);
-  this->offset = IdefixArray1D<int> ("Table_offset", kDim);
-  this->data =  IdefixArray1D<real> ("Table_data", dataVector.size());
+  this->xinDev = IdefixArray1D<real> ("Table_x", sizeTotal);
+  this->dimensionsDev = IdefixArray1D<int> ("Table_dim", kDim);
+  this->offsetDev = IdefixArray1D<int> ("Table_offset", kDim);
+  this->dataDev =  IdefixArray1D<real> ("Table_data", dataVector.size());
 
-  IdefixArray1D<real>::HostMirror xHost = Kokkos::create_mirror_view(this->xin);
-  IdefixArray1D<int>::HostMirror dimensionsHost = Kokkos::create_mirror_view(this->dimensions);
-  IdefixArray1D<int>::HostMirror offsetHost = Kokkos::create_mirror_view(this->offset);
-  IdefixArray1D<real>::HostMirror dataHost = Kokkos::create_mirror_view(this->data);
+  this->xinHost = Kokkos::create_mirror_view(this->xinDev);
+  this->dimensionsHost = Kokkos::create_mirror_view(this->dimensionsDev);
+  this->offsetHost = Kokkos::create_mirror_view(this->offsetDev);
+  this->dataHost = Kokkos::create_mirror_view(this->dataDev);
 
   // Copy data in memory
   for(uint64_t i = 0 ; i < dataVector.size() ; i++) {
@@ -194,7 +214,7 @@ LookupTable<kDim>::LookupTable(std::vector<std::string> filenames,
       IDEFIX_ERROR("The input numpy coordinates should follow C ordering convention (not FORTRAN)");
     }
     for(int i = 0 ; i < shapeX[0] ; i++) {
-      xHost(offsetHost(n)+i) = dataX[i];
+      xinHost(offsetHost(n)+i) = dataX[i];
       if(std::isnan(dataX[i])) {
         std::stringstream msg;
         msg << "Nans were found while reading " << filenames[n] << std::endl;
@@ -204,10 +224,10 @@ LookupTable<kDim>::LookupTable(std::vector<std::string> filenames,
   }
 
   // Copy to target
-  Kokkos::deep_copy(this->xin ,xHost);
-  Kokkos::deep_copy(this->dimensions, dimensionsHost);
-  Kokkos::deep_copy(this->offset, offsetHost);
-  Kokkos::deep_copy(this->data, dataHost);
+  Kokkos::deep_copy(this->xinDev ,xinHost);
+  Kokkos::deep_copy(this->dimensionsDev, dimensionsHost);
+  Kokkos::deep_copy(this->offsetDev, offsetHost);
+  Kokkos::deep_copy(this->dataDev, dataHost);
 
   idfx::popRegion();
 }
@@ -311,15 +331,15 @@ LookupTable<kDim>::LookupTable(std::string filename, char delimiter, bool errOOB
   if(kDim>1) sizeTotal += size[1];
 
   //Allocate arrays so that the data fits in it
-  this->xin = IdefixArray1D<real> ("Table_x", sizeTotal);
-  this->dimensions = IdefixArray1D<int> ("Table_dim", kDim);
-  this->offset = IdefixArray1D<int> ("Table_offset", kDim);
-  this->data =  IdefixArray1D<real> ("Table_data", size[0]*size[1]);
+  this->xinDev = IdefixArray1D<real> ("Table_x", sizeTotal);
+  this->dimensionsDev = IdefixArray1D<int> ("Table_dim", kDim);
+  this->offsetDev = IdefixArray1D<int> ("Table_offset", kDim);
+  this->dataDev =  IdefixArray1D<real> ("Table_data", size[0]*size[1]);
 
-  IdefixArray1D<real>::HostMirror xHost = Kokkos::create_mirror_view(this->xin);
-  IdefixArray1D<int>::HostMirror dimensionsHost = Kokkos::create_mirror_view(this->dimensions);
-  IdefixArray1D<int>::HostMirror offsetHost = Kokkos::create_mirror_view(this->offset);
-  IdefixArray1D<real>::HostMirror dataHost = Kokkos::create_mirror_view(this->data);
+  this->xinHost = Kokkos::create_mirror_view(this->xinDev);
+  this->dimensionsHost = Kokkos::create_mirror_view(this->dimensionsDev);
+  this->offsetHost = Kokkos::create_mirror_view(this->offsetDev);
+  this->dataHost = Kokkos::create_mirror_view(this->dataDev);
 
   // Fill the arrays with the std::vector content
   if(idfx::prank == 0) {
@@ -327,8 +347,8 @@ LookupTable<kDim>::LookupTable(std::string filename, char delimiter, bool errOOB
     offsetHost(0) = 0;
 
     for(int i = 0 ; i < xVector.size(); i++) {
-      xHost(i) = xVector[i];
-      if(std::isnan(xHost(i))) {
+      xinHost(i) = xVector[i];
+      if(std::isnan(xinHost(i))) {
         std::stringstream msg;
         msg << "Nans were found in coordinates while reading " << filename << std::endl;
         IDEFIX_ERROR(msg);
@@ -338,7 +358,7 @@ LookupTable<kDim>::LookupTable(std::string filename, char delimiter, bool errOOB
       dimensionsHost(1) = size[1];
       offsetHost(1) = offsetHost(0)+dimensionsHost(0);
       for(int i = 0 ; i < yVector.size(); i++) {
-        xHost(offsetHost(1)+i) = yVector[i];
+        xinHost(offsetHost(1)+i) = yVector[i];
         if(std::isnan(yVector[i])) {
           std::stringstream msg;
           msg << "Nans were found in coordinates while reading " << filename << std::endl;
@@ -362,17 +382,17 @@ LookupTable<kDim>::LookupTable(std::string filename, char delimiter, bool errOOB
 
   #ifdef WITH_MPI
     // Share with the others
-    MPI_Bcast(xHost.data(), xHost.extent(0), realMPI, 0, MPI_COMM_WORLD);
+    MPI_Bcast(xinHost.data(), xinHost.extent(0), realMPI, 0, MPI_COMM_WORLD);
     MPI_Bcast(dimensionsHost.data(), dimensionsHost.extent(0), MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(offsetHost.data(), offsetHost.extent(0), MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast(dataHost.data(),dataHost.extent(0), realMPI, 0, MPI_COMM_WORLD);
   #endif
 
   // Copy to target
-  Kokkos::deep_copy(this->xin ,xHost);
-  Kokkos::deep_copy(this->dimensions, dimensionsHost);
-  Kokkos::deep_copy(this->offset, offsetHost);
-  Kokkos::deep_copy(this->data, dataHost);
+  Kokkos::deep_copy(this->xinDev ,xinHost);
+  Kokkos::deep_copy(this->dimensionsDev, dimensionsHost);
+  Kokkos::deep_copy(this->offsetDev, offsetHost);
+  Kokkos::deep_copy(this->dataDev, dataHost);
 
   // Show the content
   /*

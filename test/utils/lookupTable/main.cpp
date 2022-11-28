@@ -36,7 +36,7 @@ int main( int argc, char* argv[] )
   {
     idfx::initialize();
     idfx::cout << "--------------------------------------" << std::endl;
-    idfx::cout << "Testing 2D CSV file." << std::endl;
+    idfx::cout << "Testing 2D CSV file on device." << std::endl;
     IdefixArray1D<real> arr = IdefixArray1D<real>("Test",1);
     IdefixArray1D<real>::HostMirror arrHost = Kokkos::create_mirror_view(arr);
 
@@ -60,8 +60,23 @@ int main( int argc, char* argv[] )
     }
     idfx::cout << "Success" << std::endl;
 
+      idfx::cout << "--------------------------------------" << std::endl;
+    idfx::cout << "Testing 2D CSV file on Host." << std::endl;
+    real x[2];
+    x[0] = 2.1;
+    x[1] = 3.5;
+    real result = csv.GetHost(x);
+    idfx::cout << "result="<<result << std::endl;
+    if(std::fabs(result - 5.6)>1e-13) {
+      idfx::cerr << std::scientific;
+      idfx::cerr << "ERROR!!" << std::endl;
+      idfx::cerr << result-5.6;
+      exit(1);
+    }
+    idfx::cout << "Success" << std::endl;
+
     idfx::cout << "--------------------------------------" << std::endl;
-    idfx::cout << "Testing 1D CSV file." << std::endl;
+    idfx::cout << "Testing 1D CSV file on device." << std::endl;
     // Read 1D CSV File
     LookupTable<1> csv1D("toto1D.csv",',');
 
@@ -82,7 +97,20 @@ int main( int argc, char* argv[] )
     idfx::cout << "Success" << std::endl;
 
     idfx::cout << "--------------------------------------" << std::endl;
-    idfx::cout << "Testing 3D npy file." << std::endl;
+    idfx::cout << "Testing 1D CSV file on Host." << std::endl;
+
+    x[0] = 2.1;
+    result = csv1D.GetHost(x);
+    idfx::cout << "result="<<result << std::endl;
+    if(result != 4.2) {
+      idfx::cerr << std::scientific;
+      idfx::cerr << "ERROR!!" << std::endl;
+      exit(1);
+    }
+    idfx::cout << "Success" << std::endl;
+
+    idfx::cout << "--------------------------------------" << std::endl;
+    idfx::cout << "Testing 3D npy file on device." << std::endl;
     // Read npy File
     std::vector<std::string> coords({"x.npy","y.npy","z.npy"});
 
@@ -103,6 +131,24 @@ int main( int argc, char* argv[] )
       idfx::cerr << std::scientific;
       idfx::cerr << "ERROR!!" << std::endl;
       idfx::cerr << arrHost(0)-13.6;
+      exit(1);
+    }
+    idfx::cout << "Success" << std::endl;
+
+    idfx::cout << "--------------------------------------" << std::endl;
+    idfx::cout << "Testing 3D npy file on host." << std::endl;
+
+    real y[3];
+    y[0] = 2.7;
+    y[1] = 7.4;
+    y[2] = 3.9;
+    result = csvnpy.GetHost(y);
+
+    idfx::cout << "result="<< result << std::endl;
+    if(std::fabs(result - 13.6)>1e-13) {
+      idfx::cerr << std::scientific;
+      idfx::cerr << "ERROR!!" << std::endl;
+      idfx::cerr << result-13.6;
       exit(1);
     }
     idfx::cout << "Success" << std::endl;

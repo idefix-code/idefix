@@ -51,35 +51,40 @@ class LookupTable {
 
       if(std::isnan(x_n)) return(NAN);
 
+      // Compute index of closest element assuming even distribution
+      int i;
+
        // Check that we're within bounds
-      if(x_n < xin(offset(n))) {
+      if(x_n < xstart) {
         if(errorIfOutOfBound) {
           Kokkos::abort("LookupTable:: ERROR! Attempt to interpolate below your lower bound.");
         } else {
-          x_n = xin(offset(n));
+          x_n = xstart;
+          i = 0;
         }
-      }
-
-      if( x_n >= xin(offset(n)+dimensions(n)-1)) {
+      } else if( x_n >= xend) {
         if(errorIfOutOfBound) {
           Kokkos::abort("LookupTable:: ERROR! Attempt to interpolate above your upper bound.");
         } else {
-          x_n = xin(offset(n)+dimensions(n)-1)*(1 - SMALL_NUMBER);
+          // We set x_n=xend, and we do the interpolation between xin(dim-2) and xin(dim-1),
+          // so i= dim-2
+          i = dimensions(n)-2;
+          x_n = xend;
         }
-      }
+      } else {
+        // Bounds are fine,
+        i = static_cast<int> ( (x_n - xstart) / (xend - xstart) * (dimensions(n)-1));
+        // Check if resulting bounding elements are correct
+        if(xin(offset(n) + i) > x_n || xin(offset(n) + i+1) < x_n) {
+          // Nop, so the points are not evenly distributed
+          // Search for the correct index (a dicotomy would be more appropriate...)
 
-      // Compute index of closest element assuming even distribution
-      int i = static_cast<int> ( (x_n - xstart) / (xend - xstart) * (dimensions(n)-1));
-
-      // Check if resulting bounding elements are correct
-      if(xin(offset(n) + i) > x_n || xin(offset(n) + i+1) < x_n) {
-        // Nop, so the points are not evenly distributed
-        // Search for the correct index (a dicotomy would be more appropriate...)
-        i = 0;
-        while(xin(offset(n) + i) < x_n) {
-          i++;;
+          i = 0;
+          while(xin(offset(n) + i) < x_n && i < dimensions(n)-1 ) {
+            i++;
+          }
+          i = i-1; // i is overestimated by one
         }
-        i = i-1; // i is overestimated by one
       }
 
       // Store the index

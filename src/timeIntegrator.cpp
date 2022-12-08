@@ -38,15 +38,17 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
   this->cyclePeriod = input.GetOrSet<int>("Output","log",0, 100);
   this->maxRuntime = 3600*input.GetOrSet<double>("TimeIntegrator","max_runtime",0.0,-1.0);
 
-  #if defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_CUDA)
-    // When Cuda/HIP is enabled, increase the periodicity of nan checks, as this takes a lot of time
-    // on GPUs
-    checkNanPeriodicity = 100;
+  // check nan periodicity every 100 loops
+  this->checkNanPeriodicity = input.GetOrSet<int>("TimeIntegrator","check_nan", 0, 100);
+
+  #ifndef SINGLE_PRECISION
+    const real maxdivBDefault = 1e-6;
+  #else
+    const real maxdivBDefault = 1e-2;
   #endif
 
-  // override default check nan periodicity if user decides to
-  checkNanPeriodicity = input.GetOrSet<int>("TimeIntegrator","check_nan", 0,
-                                            checkNanPeriodicity);
+  this->maxdivB = input.GetOrSet<real>("TimeIntegrator","maxdivB", 0,maxdivBDefault);
+
 
   data.t=0.0;
   ncycles=0;
@@ -135,11 +137,7 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
   real divB =  data.hydro.CheckDivB();
   idfx::cout << std::scientific;
   idfx::cout << " | " << std::setw(col_width) << divB;
-  #ifndef SINGLE_PRECISION
-    const real maxdivB = 1e-6;
-  #else
-    const real maxdivB = 1e-2;
-  #endif
+
   if(divB>maxdivB) {
     std::stringstream msg;
     msg << std::endl << "divB too large, check your calculation";

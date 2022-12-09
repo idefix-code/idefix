@@ -243,8 +243,8 @@ void Mpi::ExchangeX1(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
 
   // If MPI Persistent, start receiving even before the buffers are filled
   myTimer -= MPI_Wtime();
-#ifdef MPI_PERSISTENT
   double tStart = MPI_Wtime();
+#ifdef MPI_PERSISTENT
   MPI_Status sendStatus[2];
   MPI_Status recvStatus[2];
 
@@ -302,12 +302,11 @@ void Mpi::ExchangeX1(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   // Wait for completion before sending out everything
   Kokkos::fence();
   myTimer -= MPI_Wtime();
-#ifdef MPI_PERSISTENT
   tStart = MPI_Wtime();
+#ifdef MPI_PERSISTENT
   MPI_SAFE_CALL(MPI_Startall(2, sendRequestX1));
   // Wait for buffers to be received
   MPI_Waitall(2,recvRequestX1,recvStatus);
-  idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
 #else
   int procSend, procRecv;
@@ -354,13 +353,13 @@ void Mpi::ExchangeX1(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   // We receive from procRecv, and we send to procSend
   MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,0,-1,&procRecv,&procSend ));
 
-  tStart = MPI_Wtime();
   MPI_SAFE_CALL(MPI_Sendrecv(BufferSendX1[faceLeft].data(), bufferSizeX1, realMPI, procSend, 101,
                 BufferRecvX1[faceRight].data(), bufferSizeX1, realMPI, procRecv, 101,
                 mygrid->CartComm, &status));
   #endif
 #endif
   myTimer += MPI_Wtime();
+  idfx::mpiCallsTimer += MPI_Wtime() - tStart;
   // Unpack
   BufferLeft=BufferRecvX1[faceLeft];
   BufferRight=BufferRecvX1[faceRight];
@@ -425,11 +424,11 @@ void Mpi::ExchangeX2(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
 
 // If MPI Persistent, start receiving even before the buffers are filled
   myTimer -= MPI_Wtime();
+  double tStart = MPI_Wtime();
 #ifdef MPI_PERSISTENT
   MPI_Status sendStatus[2];
   MPI_Status recvStatus[2];
 
-  double tStart = MPI_Wtime();
   MPI_SAFE_CALL(MPI_Startall(2, recvRequestX2));
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 #endif
@@ -483,11 +482,10 @@ void Mpi::ExchangeX2(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   Kokkos::fence();
 
   myTimer -= MPI_Wtime();
-#ifdef MPI_PERSISTENT
   tStart = MPI_Wtime();
+#ifdef MPI_PERSISTENT
   MPI_SAFE_CALL(MPI_Startall(2, sendRequestX2));
   MPI_Waitall(2,recvRequestX2,recvStatus);
-  idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
 #else
   int procSend, procRecv;
@@ -534,13 +532,13 @@ void Mpi::ExchangeX2(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   // We receive from procRecv, and we send to procSend
   MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,1,-1,&procRecv,&procSend ));
 
-  tStart = MPI_Wtime():
   MPI_SAFE_CALL(MPI_Sendrecv(BufferSendX2[faceLeft].data(), bufferSizeX2, realMPI, procSend, 201,
                 BufferRecvX2[faceRight].data(), bufferSizeX2, realMPI, procRecv, 201,
                 mygrid->CartComm, &status));
   #endif
 #endif
   myTimer += MPI_Wtime();
+  idfx::mpiCallsTimer += MPI_Wtime() - tStart;
   // Unpack
   BufferLeft=BufferRecvX2[faceLeft];
   BufferRight=BufferRecvX2[faceRight];
@@ -606,11 +604,12 @@ void Mpi::ExchangeX3(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
 
   // If MPI Persistent, start receiving even before the buffers are filled
   myTimer -= MPI_Wtime();
+
+  double tStart = MPI_Wtime();
 #ifdef MPI_PERSISTENT
   MPI_Status sendStatus[2];
   MPI_Status recvStatus[2];
 
-  double tStart = MPI_Wtime();
   MPI_SAFE_CALL(MPI_Startall(2, recvRequestX3));
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 #endif
@@ -662,8 +661,8 @@ void Mpi::ExchangeX3(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   Kokkos::fence();
 
   myTimer -= MPI_Wtime();
-#ifdef MPI_PERSISTENT
   tStart = MPI_Wtime();
+#ifdef MPI_PERSISTENT
   MPI_SAFE_CALL(MPI_Startall(2, sendRequestX3));
   MPI_Waitall(2,recvRequestX3,recvStatus);
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
@@ -712,13 +711,13 @@ void Mpi::ExchangeX3(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   // We receive from procRecv, and we send to procSend
   MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,2,-1,&procRecv,&procSend ));
 
-  tStart = MPI_Wtime();
   MPI_SAFE_CALL(MPI_Sendrecv(BufferSendX3[faceLeft].data(), bufferSizeX3, realMPI, procSend, 301,
                 BufferRecvX3[faceRight].data(), bufferSizeX3, realMPI, procRecv, 301,
                 mygrid->CartComm, &status));
   #endif
 #endif
   myTimer += MPI_Wtime();
+  idfx::mpiCallsTimer += MPI_Wtime() - tStart;
   // Unpack
   BufferLeft=BufferRecvX3[faceLeft];
   BufferRight=BufferRecvX3[faceRight];

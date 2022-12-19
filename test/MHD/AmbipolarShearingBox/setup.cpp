@@ -7,29 +7,6 @@ static real shear;
 
 //#define STRATIFIED
 
-/*********************************************/
-/**
- Customized random number generator
- Allow one to have consistant random numbers
- generators on different architectures.
- **/
-/*********************************************/
-real randm(void) {
-    const int a    =    16807;
-    const int m =    2147483647;
-    static int in0 = 13763 + 2417*idfx::prank;
-    int q;
-
-    /* find random number  */
-    q= (int) fmod((double) a * in0, m);
-    in0=q;
-
-    return((real) ((double) q/(double)m));
-}
-
-// Default constructor
-
-
 // UserStep, here only gravity (vertical and radial)
 void UserStep(DataBlock &data, const real t, const real dt) {
     Kokkos::Profiling::pushRegion("Setup::UserStep");
@@ -93,9 +70,9 @@ void Setup::InitFlow(DataBlock &data) {
                 d.Vc(RHO,k,j,i) = 1.0;
 #endif
                 d.Vc(PRS,k,j,i) = d.Vc(RHO,k,j,i)/cs2*gammaIdeal;
-                d.Vc(VX1,k,j,i) = 1e-4*(randm()-0.5);
+                d.Vc(VX1,k,j,i) = 1e-4*(idfx::randm()-0.5);
                 d.Vc(VX2,k,j,i) = shear*x;
-                d.Vc(VX3,k,j,i) = 1e-4*(randm()-0.5);
+                d.Vc(VX3,k,j,i) = 1e-4*(idfx::randm()-0.5);
 
                 d.Vs(BX1s,k,j,i) = 0;
                 d.Vs(BX2s,k,j,i) = B0y;

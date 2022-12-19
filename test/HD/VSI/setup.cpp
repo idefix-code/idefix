@@ -9,26 +9,6 @@ real AmMidGlob;
 real gammaGlob;
 real densityFloorGlob;
 
-/*********************************************/
-/**
-Customized random number generator
-Allow one to have consistant random numbers
-generators on different architectures.
-**/
-/*********************************************/
-real randm(void) {
-    const int a    =    16807;
-    const int m =    2147483647;
-    static int in0 = 13763 + 2417*idfx::prank;
-    int q;
-
-    /* find random number  */
-    q= (int) fmod((double) a * in0, m);
-    in0=q;
-
-    return((real) ((double) q/(double)m));
-}
-
 
 void MySoundSpeed(DataBlock &data, const real t, IdefixArray3D<real> &cs) {
   IdefixArray1D<real> r=data.x[IDIR];
@@ -126,7 +106,7 @@ void Setup::InitFlow(DataBlock &data) {
 
                 d.Vc(RHO,k,j,i) = 1.0/(R*sqrt(R))*exp(1.0/(cs2)*(1/r-1/R));
                 d.Vc(VX1,k,j,i) = 0.0;
-                d.Vc(VX2,k,j,i) = 1e-1*(0.5-randm());
+                d.Vc(VX2,k,j,i) = 1e-1*(0.5-idfx::randm());
                 d.Vc(VX3,k,j,i) = Vk*sqrt(R/r-2.5*epsilon*epsilon);
 
             }

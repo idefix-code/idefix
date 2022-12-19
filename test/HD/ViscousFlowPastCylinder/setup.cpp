@@ -1,27 +1,6 @@
 #include "idefix.hpp"
 #include "setup.hpp"
 
-/*********************************************/
-/**
-Customized random number generator
-Allow one to have consistant random numbers
-generators on different architectures.
-**/
-/*********************************************/
-real randm(void) {
-    const int a    =    16807;
-    const int m =    2147483647;
-    static int in0 = 13763 + 2417*idfx::prank;
-    int q;
-
-    /* find random number  */
-    q= (int) fmod((double) a * in0, m);
-    in0=q;
-
-    return((real) ((double) q/(double)m));
-}
-
-
 // User-defined boundaries
 void UserdefBoundary(DataBlock & data, int dir, BoundarySide side, const real t) {
     if(dir==IDIR) {
@@ -85,8 +64,8 @@ void Setup::InitFlow(DataBlock &data) {
                 // Flow past a cylinder
 
                 d.Vc(RHO,k,j,i) = ONE_F;
-                d.Vc(VX1,k,j,i) = COS(d.x[JDIR](j))+0.02*(randm()-0.5);
-                d.Vc(VX2,k,j,i) = -SIN(d.x[JDIR](j))+0.02*(randm()-0.5);
+                d.Vc(VX1,k,j,i) = COS(d.x[JDIR](j))+0.02*(idfx::randm()-0.5);
+                d.Vc(VX2,k,j,i) = -SIN(d.x[JDIR](j))+0.02*(idfx::randm()-0.5);
 
 #if HAVE_ENERGY
                 d.Vc(PRS,k,j,i) = ONE_F;

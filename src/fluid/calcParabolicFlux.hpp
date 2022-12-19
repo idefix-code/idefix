@@ -7,13 +7,14 @@
 #ifndef FLUID_CALCPARABOLICFLUX_HPP_
 #define FLUID_CALCPARABOLICFLUX_HPP_
 
-#include "hydro.hpp"
+#include "fluid.hpp"
 #include "dataBlock.hpp"
 #include "addNonIdealMHDFlux.hpp"
 
 // Compute parabolic fluxes
+template <typename Phys>
 template <int dir>
-void Hydro::CalcParabolicFlux(const real t) {
+void Fluid<Phys>::CalcParabolicFlux(const real t) {
   idfx::pushRegion("Hydro::CalcParabolicFlux");
 
   IdefixArray3D<real> dMax = this->dMax;

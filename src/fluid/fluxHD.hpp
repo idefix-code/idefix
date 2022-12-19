@@ -8,7 +8,7 @@
 #ifndef FLUID_FLUXHD_HPP_
 #define FLUID_FLUXHD_HPP_
 #include "idefix.hpp"
-#include "hydro.hpp"
+#include "fluid.hpp"
 
 
 // Local Kokkos Inlined functions

@@ -14,7 +14,6 @@
 #include "idefix.hpp"
 #include "grid.hpp"
 #include "gridHost.hpp"
-#include "hydro.hpp"
 #include "fargo.hpp"
 #include "gravity.hpp"
 #include "stateContainer.hpp"
@@ -30,6 +29,11 @@
 
 // forward class declaration (used by enrollment functions)
 class DataBlock;
+
+// Forward class hydro declaration
+#include "physics.hpp"
+template <typename Phys> class Fluid;
+using Hydro = Fluid<Physics>;
 
 using GridCoarseningFunc = void(*) (DataBlock &);
 
@@ -94,7 +98,7 @@ class DataBlock {
                                 ///< conservative state of the datablock
                                 ///< (contains references to dedicated objects)
 
-  Hydro hydro;                  ///< The Hydro object attached to this datablock
+  Hydro *hydro;                  ///< The Hydro object attached to this datablock
 
   void InitFromGrid(Grid &, Input &); ///< init from a Grid object
   void MakeGeometry();                ///< Compute geometrical terms

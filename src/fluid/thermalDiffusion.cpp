@@ -8,14 +8,10 @@
 
 #include <string>
 
+
 #include "thermalDiffusion.hpp"
 #include "dataBlock.hpp"
-
-
-
-ThermalDiffusion::ThermalDiffusion() {
-  // Default constructor
-}
+#include "fluid.hpp"
 
 void ThermalDiffusion::Init(Input &input, Grid &grid, Hydro *hydroin) {
   idfx::pushRegion("ThermalDiffusion::Init");

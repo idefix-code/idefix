@@ -12,6 +12,7 @@
 
 #include "viscosity.hpp"
 #include "dataBlock.hpp"
+#include "fluid.hpp"
 
 
 #define D_DX_I(q,n)  (q(n,k,j,i) - q(n,k,j,i - 1))

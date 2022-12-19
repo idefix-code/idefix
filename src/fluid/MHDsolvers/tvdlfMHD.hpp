@@ -16,8 +16,9 @@
 #include "electroMotiveForce.hpp"
 
 // Compute Riemann fluxes from states using TVDLF solver
+template <typename Phys>
 template<const int DIR>
-void Hydro::TvdlfMHD() {
+void Fluid<Phys>::TvdlfMHD() {
   idfx::pushRegion("Hydro::TVDLF_MHD");
 
   constexpr int ioffset = (DIR==IDIR) ? 1 : 0;

@@ -10,6 +10,7 @@
 
 #include "../idefix.hpp"
 
+
 // Common definitions for all of the objects dependent on hydro
 
 // forward class declaration

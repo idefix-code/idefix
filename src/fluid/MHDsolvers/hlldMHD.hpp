@@ -16,8 +16,9 @@
 #include "electroMotiveForce.hpp"
 
 // Compute Riemann fluxes from states using HLLD solver
+template <typename Phys>
 template<const int DIR>
-void Hydro::HlldMHD() {
+void Fluid<Phys>::HlldMHD() {
   idfx::pushRegion("Hydro::HLLD_MHD");
 
   constexpr int ioffset = (DIR==IDIR) ? 1 : 0;

@@ -8,7 +8,9 @@
 #ifndef FLUID_SHOCKFLATTENING_HPP_
 #define FLUID_SHOCKFLATTENING_HPP_
 
-#include "hydro.hpp"
+#include "fluid.hpp"
+#include "../physics.hpp"
+using Hydro = Fluid<Physics>;
 
 enum class FlagShock{None, Shock};
 

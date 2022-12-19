@@ -7,7 +7,7 @@
 
 #include <string>
 #include "electroMotiveForce.hpp"
-#include "hydro.hpp"
+#include "fluid.hpp"
 #include "dataBlock.hpp"
 #include "input.hpp"
 

@@ -8,13 +8,14 @@
 #ifndef FLUID_CALCRIGHTHANDSIDE_HPP_
 #define FLUID_CALCRIGHTHANDSIDE_HPP_
 
-#include "hydro.hpp"
+#include "fluid.hpp"
 #include "dataBlock.hpp"
 
 
 // Compute the right handside in direction dir from conservative equation, with timestep dt
+template<typename Phys>
 template<int dir>
-void Hydro::CalcRightHandSide(real t, real dt) {
+void Fluid<Phys>::CalcRightHandSide(real t, real dt) {
   idfx::pushRegion("Hydro::CalcRightHandSide");
 
   IdefixArray4D<real> Uc   = this->Uc;

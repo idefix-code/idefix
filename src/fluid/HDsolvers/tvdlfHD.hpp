@@ -9,14 +9,15 @@
 #define FLUID_HDSOLVERS_TVDLFHD_HPP_
 
 #include "../idefix.hpp"
-#include "hydro.hpp"
+#include "fluid.hpp"
 #include "slopeLimiter.hpp"
 #include "fluxHD.hpp"
 #include "convertConsToPrimHD.hpp"
 
 // Compute Riemann fluxes from states using TVDLF solver
+template <typename Phys>
 template<const int DIR>
-void Hydro::TvdlfHD() {
+void Fluid<Phys>::TvdlfHD() {
   idfx::pushRegion("Hydro::TVDLF_Solver");
 
   constexpr int ioffset = (DIR==IDIR) ? 1 : 0;

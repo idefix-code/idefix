@@ -5,11 +5,11 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#include "hydro.hpp"
+#include "fluid.hpp"
 #include "dataBlock.hpp"
 
-
-real Hydro::CheckDivB() {
+template<typename Phys>
+real Fluid<Phys>::CheckDivB() {
   real divB;
   IdefixArray4D<real> Vs = this->Vs;
   IdefixArray1D<real> dx1 = data->dx[IDIR];

@@ -9,7 +9,7 @@
 #define FLUID_HDSOLVERS_ROEHD_HPP_
 
 #include "../idefix.hpp"
-#include "hydro.hpp"
+#include "fluid.hpp"
 #include "slopeLimiter.hpp"
 #include "fluxHD.hpp"
 #include "convertConsToPrimHD.hpp"
@@ -35,8 +35,9 @@
 #endif
 
 // Compute Riemann fluxes from states using ROE solver
+template <typename Phys>
 template<const int DIR>
-void Hydro::RoeHD() {
+void Fluid<Phys>::RoeHD() {
   idfx::pushRegion("Hydro::ROE_Solver");
 
   constexpr int ioffset = (DIR==IDIR) ? 1 : 0;

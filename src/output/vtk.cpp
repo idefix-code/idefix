@@ -14,6 +14,7 @@
 #include "dataBlockHost.hpp"
 #include "gridHost.hpp"
 #include "output.hpp"
+#include "fluid.hpp"
 
 #define VTK_RECTILINEAR_GRID    14
 #define VTK_STRUCTURED_GRID     35
@@ -289,7 +290,7 @@ int Vtk::Write(DataBlock &datain, Output &output) {
         }
       }
     }
-    WriteScalar(fileHdl, vect3D, datain.hydro.VcName[nv]);
+    WriteScalar(fileHdl, vect3D, datain.hydro->VcName[nv]);
   }
   // Write user-defined variables (when required by output)
   if(output.userDefVariablesEnabled) {

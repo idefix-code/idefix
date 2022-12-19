@@ -12,6 +12,7 @@
 #include "timeIntegrator.hpp"
 #include "input.hpp"
 #include "stateContainer.hpp"
+#include "fluid.hpp"
 
 
 TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
@@ -65,7 +66,7 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
   }
 
   // Init the RKL scheme if it's needed
-  if(data.hydro.haveRKLParabolicTerms) {
+  if(data.hydro->haveRKLParabolicTerms) {
     rkl.Init(input,data);
     haveRKL = true;
   }
@@ -146,7 +147,7 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
 
 #if MHD == YES
   // Check divB
-  real divB =  data.hydro.CheckDivB();
+  real divB =  data.hydro->CheckDivB();
   idfx::cout << std::scientific;
   idfx::cout << " | " << std::setw(col_width) << divB;
 
@@ -179,7 +180,7 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
 // Compute one full cycle of the time Integrator
 void TimeIntegrator::Cycle(DataBlock &data) {
   // Do one cycle
-  IdefixArray3D<real> InvDt = data.hydro.InvDt;
+  IdefixArray3D<real> InvDt = data.hydro->InvDt;
   real newdt;
 
   idfx::pushRegion("TimeIntegrator::Cycle");
@@ -211,7 +212,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     if(data.haveFargo) data.fargo.SubstractVelocity(data.t);
 
     // Convert current state into conservative variable and save it
-    data.hydro.ConvertPrimToCons();
+    data.hydro->ConvertPrimToCons();
 
     // Store (deep copy) initial stage for multi-stage time integrators
     if(nstages>1 && stage==0) {
@@ -270,7 +271,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     }
 
     // Back to using Vc
-    data.hydro.ConvertConsToPrim();
+    data.hydro->ConvertConsToPrim();
 
     // Add back fargo velocity so that boundary conditions are applied on the total V
     if(data.haveFargo) data.fargo.AddVelocity(data.t);

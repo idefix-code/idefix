@@ -7,6 +7,7 @@
 
 #include "../idefix.hpp"
 #include "dataBlock.hpp"
+#include "fluid.hpp"
 
 void DataBlock::InitFromGrid(Grid &grid, Input &input) {
   idfx::pushRegion("DataBlock::InitFromGrid");
@@ -162,7 +163,8 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
   this->states["current"] = StateContainer();
 
   // Initialize the hydro object attached to this datablock
-  this->hydro.Init(input, grid, this);
+  this->hydro = new(Hydro);
+  this->hydro->Init(input, grid, this);
 
   // Initialise Fargo if needed
   if(input.CheckBlock("Fargo")) {
@@ -180,19 +182,19 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
 }
 
 void DataBlock::ResetStage() {
-  this->hydro.ResetStage();
+  this->hydro->ResetStage();
 }
 
 // Set the boundaries of the data structures in this datablock
 void DataBlock::SetBoundaries() {
   if(haveGridCoarsening) {
     ComputeGridCoarseningLevels();
-    hydro.CoarsenFlow(hydro.Vc);
+    hydro->CoarsenFlow(hydro->Vc);
     #if MHD==YES
-      hydro.CoarsenMagField(hydro.Vs);
+      hydro->CoarsenMagField(hydro->Vs);
     #endif
   }
-  hydro.boundary.SetBoundaries(t);
+  hydro->boundary.SetBoundaries(t);
 }
 
 
@@ -206,7 +208,7 @@ void DataBlock::ShowConfig() {
         << "...." << xend[dir] << std::endl;
     }
   }
-  hydro.ShowConfig();
+  hydro->ShowConfig();
   if(haveFargo) fargo.ShowConfig();
   if(haveGravity) gravity.ShowConfig();
 }
@@ -216,7 +218,7 @@ real DataBlock::ComputeTimestep() {
   // Compute the timestep using all of the enabled modules in the current dataBlock
 
   // First with the hydro block
-  auto InvDt = hydro.InvDt;
+  auto InvDt = hydro->InvDt;
   real dt;
   idefix_reduce("Timestep_reduction",
           beg[KDIR], end[KDIR],

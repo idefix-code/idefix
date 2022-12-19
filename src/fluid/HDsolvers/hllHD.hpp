@@ -9,14 +9,15 @@
 #define FLUID_HDSOLVERS_HLLHD_HPP_
 
 #include "../idefix.hpp"
-#include "hydro.hpp"
+#include "fluid.hpp"
 #include "slopeLimiter.hpp"
 #include "fluxHD.hpp"
 #include "convertConsToPrimHD.hpp"
 
 // Compute Riemann fluxes from states using HLL solver
+template <typename Phys>
 template<const int DIR>
-void Hydro::HllHD() {
+void Fluid<Phys>::HllHD() {
   idfx::pushRegion("Hydro::HLL_Solver");
 
   constexpr int ioffset = (DIR==IDIR) ? 1 : 0;

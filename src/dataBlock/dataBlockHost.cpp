@@ -7,6 +7,7 @@
 
 #include "idefix.hpp"
 #include "dataBlockHost.hpp"
+#include "fluid.hpp"
 
 DataBlockHost::DataBlockHost(DataBlock& datain) {
   idfx::pushRegion("DataBlockHost::DataBlockHost(DataBlock)");
@@ -42,24 +43,24 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
     // TO BE COMPLETED...
 
   dV = Kokkos::create_mirror_view(data->dV);
-  Vc = Kokkos::create_mirror_view(data->hydro.Vc);
-  Uc = Kokkos::create_mirror_view(data->hydro.Uc);
-  InvDt = Kokkos::create_mirror_view(data->hydro.InvDt);
+  Vc = Kokkos::create_mirror_view(data->hydro->Vc);
+  Uc = Kokkos::create_mirror_view(data->hydro->Uc);
+  InvDt = Kokkos::create_mirror_view(data->hydro->InvDt);
 
 #if MHD == YES
-  Vs = Kokkos::create_mirror_view(data->hydro.Vs);
-  this->haveCurrent = data->hydro.haveCurrent;
-  if(data->hydro.haveCurrent) {
-    J = Kokkos::create_mirror_view(data->hydro.J);
+  Vs = Kokkos::create_mirror_view(data->hydro->Vs);
+  this->haveCurrent = data->hydro->haveCurrent;
+  if(data->hydro->haveCurrent) {
+    J = Kokkos::create_mirror_view(data->hydro->J);
   }
   #ifdef EVOLVE_VECTOR_POTENTIAL
-    Ve = Kokkos::create_mirror_view(data->hydro.Ve);
+    Ve = Kokkos::create_mirror_view(data->hydro->Ve);
   #endif
 
-  D_EXPAND( Ex3 = Kokkos::create_mirror_view(data->hydro.emf.ez);  ,
+  D_EXPAND( Ex3 = Kokkos::create_mirror_view(data->hydro->emf.ez);  ,
                                                              ,
-            Ex1 = Kokkos::create_mirror_view(data->hydro.emf.ex);
-            Ex2 = Kokkos::create_mirror_view(data->hydro.emf.ey);  )
+            Ex1 = Kokkos::create_mirror_view(data->hydro->emf.ex);
+            Ex2 = Kokkos::create_mirror_view(data->hydro->emf.ey);  )
 #endif
 
   // if grid coarsening is enabled
@@ -91,23 +92,23 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
 void DataBlockHost::SyncToDevice() {
   idfx::pushRegion("DataBlockHost::SyncToDevice()");
 
-  Kokkos::deep_copy(data->hydro.Vc,Vc);
-  Kokkos::deep_copy(data->hydro.InvDt,InvDt);
+  Kokkos::deep_copy(data->hydro->Vc,Vc);
+  Kokkos::deep_copy(data->hydro->InvDt,InvDt);
 
 #if MHD == YES
-  Kokkos::deep_copy(data->hydro.Vs,Vs);
-  if(this->haveCurrent && data->hydro.haveCurrent) Kokkos::deep_copy(data->hydro.J,J);
+  Kokkos::deep_copy(data->hydro->Vs,Vs);
+  if(this->haveCurrent && data->hydro->haveCurrent) Kokkos::deep_copy(data->hydro->J,J);
   #ifdef EVOLVE_VECTOR_POTENTIAL
-    Kokkos::deep_copy(data->hydro.Ve,Ve);
+    Kokkos::deep_copy(data->hydro->Ve,Ve);
   #endif
 
-  D_EXPAND( Kokkos::deep_copy(data->hydro.emf.ez,Ex3);  ,
+  D_EXPAND( Kokkos::deep_copy(data->hydro->emf.ez,Ex3);  ,
                                                   ,
-            Kokkos::deep_copy(data->hydro.emf.ex,Ex1);
-            Kokkos::deep_copy(data->hydro.emf.ey,Ex2);  )
+            Kokkos::deep_copy(data->hydro->emf.ex,Ex1);
+            Kokkos::deep_copy(data->hydro->emf.ey,Ex2);  )
 #endif
 
-  Kokkos::deep_copy(data->hydro.Uc,Uc);
+  Kokkos::deep_copy(data->hydro->Uc,Uc);
 
   if(haveGridCoarsening) {
     for(int dir = 0 ; dir < 3 ; dir++) {
@@ -122,22 +123,22 @@ void DataBlockHost::SyncToDevice() {
 
 void DataBlockHost::SyncFromDevice() {
   idfx::pushRegion("DataBlockHost::SyncFromDevice()");
-  Kokkos::deep_copy(Vc,data->hydro.Vc);
-  Kokkos::deep_copy(InvDt,data->hydro.InvDt);
+  Kokkos::deep_copy(Vc,data->hydro->Vc);
+  Kokkos::deep_copy(InvDt,data->hydro->InvDt);
 
 #if MHD == YES
-  Kokkos::deep_copy(Vs,data->hydro.Vs);
-  if(this->haveCurrent && data->hydro.haveCurrent) Kokkos::deep_copy(J,data->hydro.J);
+  Kokkos::deep_copy(Vs,data->hydro->Vs);
+  if(this->haveCurrent && data->hydro->haveCurrent) Kokkos::deep_copy(J,data->hydro->J);
   #ifdef EVOLVE_VECTOR_POTENTIAL
-    Kokkos::deep_copy(Ve,data->hydro.Ve);
+    Kokkos::deep_copy(Ve,data->hydro->Ve);
   #endif
-  D_EXPAND( Kokkos::deep_copy(Ex3,data->hydro.emf.ez);  ,
+  D_EXPAND( Kokkos::deep_copy(Ex3,data->hydro->emf.ez);  ,
                                                   ,
-            Kokkos::deep_copy(Ex1,data->hydro.emf.ex);
-            Kokkos::deep_copy(Ex2,data->hydro.emf.ey);  )
+            Kokkos::deep_copy(Ex1,data->hydro->emf.ex);
+            Kokkos::deep_copy(Ex2,data->hydro->emf.ey);  )
 #endif
 
-  Kokkos::deep_copy(Uc,data->hydro.Uc);
+  Kokkos::deep_copy(Uc,data->hydro->Uc);
 
   if(haveGridCoarsening) {
     for(int dir = 0 ; dir < 3 ; dir++) {

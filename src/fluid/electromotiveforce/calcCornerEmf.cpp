@@ -5,7 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#include "hydro.hpp"
+#include "fluid.hpp"
 #include "dataBlock.hpp"
 
 // Compute Corner EMFs from the one stored in the Riemann step

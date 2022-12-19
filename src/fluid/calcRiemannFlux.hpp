@@ -8,7 +8,7 @@
 #ifndef FLUID_CALCRIEMANNFLUX_HPP_
 #define FLUID_CALCRIEMANNFLUX_HPP_
 
-#include "hydro.hpp"
+#include "fluid.hpp"
 #include "dataBlock.hpp"
 
 #if MHD == YES
@@ -24,8 +24,9 @@
 #endif
 
 // Compute Riemann fluxes from states
+template <typename Phys>
 template <int dir>
-void Hydro::CalcRiemannFlux(const real t) {
+void Fluid<Phys>::CalcRiemannFlux(const real t) {
   idfx::pushRegion("Hydro::CalcRiemannFlux");
 
   if(hallStatus.status == UserDefFunction && dir == IDIR) {

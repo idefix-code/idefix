@@ -11,16 +11,19 @@
 #include "idefix.hpp"
 #include "input.hpp"
 #include "grid.hpp"
-#include "FLUID_defs.hpp"
+#include "fluid_defs.hpp"
 
 
 // Forward class hydro declaration
-class Hydro;
+#include "physics.hpp"
+template <typename Phys> class Fluid;
+using Hydro = Fluid<Physics>;
+
 class DataBlock;
 
 class ThermalDiffusion {
  public:
-  ThermalDiffusion();  // Default (empty) constructor
+  ThermalDiffusion() = default;  // Default (empty) constructor
 
   void Init(Input &, Grid &, Hydro *);  // Initialisation
 

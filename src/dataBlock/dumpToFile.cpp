@@ -8,6 +8,7 @@
 #include "../idefix.hpp"
 #include "dataBlock.hpp"
 #include "gitversion.hpp"
+#include "fluid.hpp"
 
 #define  NAMESIZE     16
 #define  HEADERSIZE 128
@@ -42,15 +43,15 @@ void DataBlock::DumpToFile(std::string filebase)  {
 
 
   // TODO(lesurg) Make datablock a friend of hydro to get the Riemann flux?
-  //IdefixArray4D<real>::HostMirror locFlux = Kokkos::create_mirror_view(this->hydro.FluxRiemann);
+  //IdefixArray4D<real>::HostMirror locFlux = Kokkos::create_mirror_view(this->hydro->FluxRiemann);
   //Kokkos::deep_copy(locFlux, this->FluxRiemann);
 #if MHD == YES
 
 
   IdefixArray4D<real>::HostMirror locJ;
-  if(hydro.haveCurrent) {
-    locJ = Kokkos::create_mirror_view(this->hydro.J);
-    Kokkos::deep_copy(locJ, this->hydro.J);
+  if(hydro->haveCurrent) {
+    locJ = Kokkos::create_mirror_view(this->hydro->J);
+    Kokkos::deep_copy(locJ, this->hydro->J);
   }
 #endif
 
@@ -78,8 +79,8 @@ void DataBlock::DumpToFile(std::string filebase)  {
   fwrite (header, sizeof(char), HEADERSIZE, fileHdl);
 
   // Write Vc
-  IdefixArray4D<real>::HostMirror locVc = Kokkos::create_mirror_view(this->hydro.Vc);
-  Kokkos::deep_copy(locVc,this->hydro.Vc);
+  IdefixArray4D<real>::HostMirror locVc = Kokkos::create_mirror_view(this->hydro->Vc);
+  Kokkos::deep_copy(locVc,this->hydro->Vc);
   dims[0] = this->np_tot[IDIR];
   dims[1] = this->np_tot[JDIR];
   dims[2] = this->np_tot[KDIR];
@@ -107,8 +108,8 @@ void DataBlock::DumpToFile(std::string filebase)  {
   // Write Vs
 #if MHD == YES
   // Write Vs
-  IdefixArray4D<real>::HostMirror locVs = Kokkos::create_mirror_view(this->hydro.Vs);
-  Kokkos::deep_copy(locVs,this->hydro.Vs);
+  IdefixArray4D<real>::HostMirror locVs = Kokkos::create_mirror_view(this->hydro->Vs);
+  Kokkos::deep_copy(locVs,this->hydro->Vs);
   dims[0] = this->np_tot[IDIR]+IOFFSET;
   dims[1] = this->np_tot[JDIR]+JOFFSET;
   dims[2] = this->np_tot[KDIR]+KOFFSET;
@@ -124,23 +125,23 @@ void DataBlock::DumpToFile(std::string filebase)  {
   dims[2] = this->np_tot[KDIR];
 
   std::snprintf(fieldName,NAMESIZE,"Ex3");
-  IdefixArray3D<real>::HostMirror locE = Kokkos::create_mirror_view(this->hydro.emf.ez);
-  Kokkos::deep_copy(locE,this->hydro.emf.ez);
+  IdefixArray3D<real>::HostMirror locE = Kokkos::create_mirror_view(this->hydro->emf.ez);
+  Kokkos::deep_copy(locE,this->hydro->emf.ez);
   WriteVariable(fileHdl, 3, dims, fieldName, locE.data());
 
   #if DIMENSIONS == 3
   std::snprintf(fieldName,NAMESIZE,"Ex1");
-  Kokkos::deep_copy(locE,this->hydro.emf.ex);
+  Kokkos::deep_copy(locE,this->hydro->emf.ex);
   WriteVariable(fileHdl, 3, dims, fieldName, locE.data());
   std::snprintf(fieldName,NAMESIZE,"Ex2");
-  Kokkos::deep_copy(locE,this->hydro.emf.ey);
+  Kokkos::deep_copy(locE,this->hydro->emf.ey);
   WriteVariable(fileHdl, 3, dims, fieldName, locE.data());
   #endif
 
 
-  if(hydro.haveCurrent) {
-    IdefixArray4D<real>::HostMirror locJ = Kokkos::create_mirror_view(this->hydro.J);
-    Kokkos::deep_copy(locJ,this->hydro.J);
+  if(hydro->haveCurrent) {
+    IdefixArray4D<real>::HostMirror locJ = Kokkos::create_mirror_view(this->hydro->J);
+    Kokkos::deep_copy(locJ,this->hydro->J);
     dims[0] = this->np_tot[IDIR];
     dims[1] = this->np_tot[JDIR];
     dims[2] = this->np_tot[KDIR];

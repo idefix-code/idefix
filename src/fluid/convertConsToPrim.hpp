@@ -5,7 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#include "hydro.hpp"
+#include "fluid.hpp"
 #include "dataBlock.hpp"
 
 #if MHD == YES
@@ -15,7 +15,8 @@
 #endif
 
 // Convect Conservative to Primitive variable
-void Hydro::ConvertConsToPrim() {
+template<typename Phys>
+void Fluid<Phys>::ConvertConsToPrim() {
   idfx::pushRegion("Hydro::ConvertConsToPrim");
 
   IdefixArray4D<real> Vc = this->Vc;
@@ -54,7 +55,8 @@ void Hydro::ConvertConsToPrim() {
 }
 
 // Convert Primitive to conservative variables
-void Hydro::ConvertPrimToCons() {
+template<typename Phys>
+void Fluid<Phys>::ConvertPrimToCons() {
   idfx::pushRegion("Hydro::ConvertPrimToCons");
 
   IdefixArray4D<real> Vc = this->Vc;

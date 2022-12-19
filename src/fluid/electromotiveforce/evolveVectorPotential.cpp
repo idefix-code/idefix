@@ -8,7 +8,7 @@
 #include <string>
 
 #include "idefix.hpp"
-#include "hydro.hpp"
+#include "fluid.hpp"
 #include "dataBlock.hpp"
 
 void ElectroMotiveForce::EvolveVectorPotential(real dt, IdefixArray4D<real> &Vein) {

@@ -6,7 +6,7 @@
 // ***********************************************************************************
 
 #include "dataBlock.hpp"
-#include "hydro.hpp"
+#include "fluid.hpp"
 #include "shockFlattening.hpp"
 
 ShockFlattening::ShockFlattening(Hydro *h, real smoothing) {

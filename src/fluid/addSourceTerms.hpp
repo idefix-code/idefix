@@ -5,12 +5,13 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#include "hydro.hpp"
+#include "fluid.hpp"
 #include "dataBlock.hpp"
 #include "fargo.hpp"
 
 // Add source terms
-void Hydro::AddSourceTerms(real t, real dt) {
+template <typename Phys>
+void Fluid<Phys>::AddSourceTerms(real t, real dt) {
   idfx::pushRegion("Hydro::AddSourceTerms");
 
   IdefixArray4D<real> Uc = this->Uc;

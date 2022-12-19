@@ -8,13 +8,14 @@
 #ifndef FLUID_ADDNONIDEALMHDFLUX_HPP_
 #define FLUID_ADDNONIDEALMHDFLUX_HPP_
 
-#include "hydro.hpp"
+#include "fluid.hpp"
 #include "dataBlock.hpp"
 
 // Compute parabolic fluxes
+template<typename Phys>
 template <int dir>
-void Hydro::AddNonIdealMHDFlux(const real t) {
-  idfx::pushRegion("Hydro::addNonIdealMHDFlux");
+void Fluid<Phys>::AddNonIdealMHDFlux(const real t) {
+  idfx::pushRegion("Fluid::addNonIdealMHDFlux");
 
 #if MHD == YES
 

@@ -9,6 +9,7 @@
 #include "../idefix.hpp"
 #include "dataBlock.hpp"
 #include "dataBlockHost.hpp"
+#include "fluid.hpp"
 
 void DataBlock::Coarsen() {
   if(!haveGridCoarsening)  {
@@ -16,9 +17,9 @@ void DataBlock::Coarsen() {
   }
   ComputeGridCoarseningLevels();
   // This routine coarsen the *conservative* variables
-  hydro.CoarsenFlow(hydro.Uc);
+  hydro->CoarsenFlow(hydro->Uc);
   #if MHD==YES
-    hydro.CoarsenMagField(hydro.Vs);
+    hydro->CoarsenMagField(hydro->Vs);
   #endif
 }
 

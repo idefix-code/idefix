@@ -5,7 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#include "hydro.hpp"
+#include "fluid.hpp"
 #include "dataBlock.hpp"
 
 KOKKOS_INLINE_FUNCTION int Kmax(int n, int m) {
@@ -13,7 +13,8 @@ KOKKOS_INLINE_FUNCTION int Kmax(int n, int m) {
 }
 // This function coarsen the flow according to the grid coarsening array
 
-void Hydro::CoarsenFlow(IdefixArray4D<real> &Vi) {
+template<typename Phys>
+void Fluid<Phys>::CoarsenFlow(IdefixArray4D<real> &Vi) {
   idfx::pushRegion("Hydro::CoarsenFlow");
 
   IdefixArray3D<real> dV   = data->dV;
@@ -75,7 +76,8 @@ void Hydro::CoarsenFlow(IdefixArray4D<real> &Vi) {
   idfx::popRegion();
 }
 
-void Hydro::CoarsenMagField(IdefixArray4D<real> &Vsin) {
+template<typename Phys>
+void Fluid<Phys>::CoarsenMagField(IdefixArray4D<real> &Vsin) {
 #if MHD == YES
   idfx::pushRegion("Hydro::CoarsenMagField");
   #if DIMENSIONS >= 2
@@ -321,7 +323,8 @@ void Hydro::CoarsenMagField(IdefixArray4D<real> &Vsin) {
 #endif
 }
 
-void Hydro::CoarsenVectorPotential() {
+template<typename Phys>
+void Fluid<Phys>::CoarsenVectorPotential() {
 #if MHD == YES && defined(EVOLVE_VECTOR_POTENTIAL)
   idfx::pushRegion("Hydro::VectorPotential");
 

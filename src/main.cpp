@@ -31,7 +31,7 @@
 #include "input.hpp"
 #include "grid.hpp"
 #include "gridHost.hpp"
-#include "hydro.hpp"
+#include "fluid.hpp"
 #include "dataBlock.hpp"
 #include "timeIntegrator.hpp"
 #include "setup.hpp"

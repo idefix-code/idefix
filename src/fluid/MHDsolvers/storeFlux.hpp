@@ -9,7 +9,7 @@
 #define FLUID_MHDSOLVERS_STOREFLUX_HPP_
 
 #include "idefix.hpp"
-#include "hydro.hpp"
+#include "fluid.hpp"
 
 template <const int DIR>
 KOKKOS_FORCEINLINE_FUNCTION void K_StoreEMF( const int i, const int j, const int k,

@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 #include "idefix.hpp"
-#include "FLUID_defs.hpp"
+#include "fluid_defs.hpp"
 #include "grid.hpp"
 
 #ifdef WITH_MPI
@@ -19,7 +19,9 @@
 
 // forward class declaration
 class DataBlock;
-class Hydro;
+#include "physics.hpp"
+template <typename Phys> class Fluid;
+using Hydro = Fluid<Physics>;
 
 class HydroBoundary {
  public:

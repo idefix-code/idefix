@@ -5,11 +5,12 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#include "hydro.hpp"
+#include "fluid.hpp"
 #include "dataBlock.hpp"
 
 // Compute the electrical current on faces
-void Hydro::CalcCurrent() {
+template <typename Phys>
+void Fluid<Phys>::CalcCurrent() {
   idfx::pushRegion("Hydro::CalcCurrent");
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Vs = this->Vs;

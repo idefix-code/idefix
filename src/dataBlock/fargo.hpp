@@ -12,7 +12,9 @@
 #include "idefix.hpp"
 
 // Forward class hydro declaration
-class Hydro;
+#include "physics.hpp"
+template <typename Phys> class Fluid;
+using Hydro = Fluid<Physics>;
 class DataBlock;
 
 using FargoVelocityFunc = void (*) (DataBlock &, IdefixArray2D<real> &);
@@ -30,7 +32,7 @@ class Fargo {
   void ShowConfig();
 
  private:
-  friend class Hydro;
+  friend Hydro;
   DataBlock *data;
   Hydro *hydro;
   FargoType type{none};                 // By default, Fargo is disabled

@@ -7,7 +7,7 @@
 #ifndef FLUID_SLOPELIMITER_HPP_
 #define FLUID_SLOPELIMITER_HPP_
 
-#include "hydro.hpp"
+#include "fluid.hpp"
 #include "dataBlock.hpp"
 #include "shockFlattening.hpp"
 

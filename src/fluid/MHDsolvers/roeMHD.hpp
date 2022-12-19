@@ -47,8 +47,9 @@
 #define DSIGN(x) ( (x) >= 0.0 ? (1.0) : (-1.0))
 
 // Compute Riemann fluxes from states using ROE solver
+template <typename Phys>
 template<const int DIR>
-void Hydro::RoeMHD() {
+void Fluid<Phys>::RoeMHD() {
   idfx::pushRegion("Hydro::ROE_MHD");
 
   constexpr int ioffset = (DIR==IDIR) ? 1 : 0;

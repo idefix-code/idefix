@@ -14,7 +14,10 @@
 #include "electroMotiveForce.hpp"
 
 // Forward class hydro declaration
-class Hydro;
+#include "physics.hpp"
+template <typename Phys> class Fluid;
+using Hydro = Fluid<Physics>;
+
 class DataBlock;
 
 // Whether we use athena++ procedure to regularise BX2s

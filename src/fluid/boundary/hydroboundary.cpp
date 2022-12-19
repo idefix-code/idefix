@@ -6,7 +6,7 @@
 // ***********************************************************************************
 
 #include "hydroboundary.hpp"
-#include "hydro.hpp"
+#include "fluid.hpp"
 #include "dataBlock.hpp"
 #include "boundaryloop.hpp"
 

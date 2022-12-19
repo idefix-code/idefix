@@ -12,7 +12,9 @@
 #include "input.hpp"
 
 // Forward declarations
-class Hydro;
+#include "physics.hpp"
+template <typename Phys> class Fluid;
+using Hydro = Fluid<Physics>;
 class DataBlock;
 
 class ElectroMotiveForce {

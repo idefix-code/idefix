@@ -9,7 +9,7 @@
 #define FLUID_CONVERTCONSTOPRIMMHD_HPP_
 
 #include "idefix.hpp"
-#include "hydro.hpp"
+#include "fluid.hpp"
 
 
 KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[], real gamma_m1) {

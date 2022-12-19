@@ -13,7 +13,7 @@
 #include "idefix.hpp"
 #include "input.hpp"
 #include "grid.hpp"
-#include "hydro_defs.hpp"
+#include "fluid_defs.hpp"
 #include "iterativesolver.hpp"
 
 #ifdef WITH_MPI
@@ -21,7 +21,6 @@
 #endif
 
 // Forward class hydro declaration
-class Hydro;
 class DataBlock;
 
 class SelfGravity {

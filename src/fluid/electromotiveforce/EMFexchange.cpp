@@ -6,7 +6,7 @@
 // ***********************************************************************************
 
 #include "electroMotiveForce.hpp"
-#include "hydro.hpp"
+#include "fluid.hpp"
 #include "dataBlock.hpp"
 
 #ifdef WITH_MPI

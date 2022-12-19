@@ -11,6 +11,7 @@
 
 #include <string>
 #include "idefix.hpp"
+#include "hydroboundary.hpp"
 
 template <typename Function>
 inline void HydroBoundary::BoundaryForAll(

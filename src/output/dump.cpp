@@ -10,6 +10,7 @@
 #include "dataBlockHost.hpp"
 #include "gridHost.hpp"
 #include "output.hpp"
+#include "fluid.hpp"
 
 // Max size of array name
 #define  NAMESIZE     16
@@ -529,7 +530,7 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
       // Matching Name is Vc-<<VcName>>
       int nv = -1;
       for(int n = 0 ; n < NVAR; n++) {
-        if(fieldName.compare(3,3,data.hydro.VcName[n],0,3)==0) nv=n; // Found matching field
+        if(fieldName.compare(3,3,data.hydro->VcName[n],0,3)==0) nv=n; // Found matching field
       }
       // Load it
       for(int dir = 0 ; dir < 3; dir++) {
@@ -558,7 +559,7 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
       #if MHD == YES
         int nv = -1;
         for(int n = 0 ; n < DIMENSIONS; n++) {
-          if(fieldName.compare(3,4,data.hydro.VsName[n],0,4)==0) nv=n; // Found matching field
+          if(fieldName.compare(3,4,data.hydro->VsName[n],0,4)==0) nv=n; // Found matching field
         }
         if(nv<0) {
           IDEFIX_ERROR("Cannot find a field matching " + fieldName
@@ -586,7 +587,7 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
       #if MHD == YES && defined(EVOLVE_VECTOR_POTENTIAL)
         int nv = -1;
         for(int n = 0 ; n <= AX3e; n++) {
-          if(fieldName.compare(3,4,data.hydro.VeName[n],0,4)==0) nv=n; // Found matching field
+          if(fieldName.compare(3,4,data.hydro->VeName[n],0,4)==0) nv=n; // Found matching field
         }
         if(nv<0) {
           IDEFIX_ERROR("Cannot find a field matching " + fieldName
@@ -760,7 +761,7 @@ int Dump::Write(DataBlock &data, Output& output) {
   dataHost.SyncFromDevice();
 
   for(int nv = 0 ; nv <NVAR ; nv++) {
-    std::snprintf(fieldName,NAMESIZE,"Vc-%s",data.hydro.VcName[nv].c_str());
+    std::snprintf(fieldName,NAMESIZE,"Vc-%s",data.hydro->VcName[nv].c_str());
     // Load the active domain in the scratch space
     for(int i = 0; i < 3 ; i++) {
       nx[i] = dataHost.np_int[i];
@@ -782,7 +783,7 @@ int Dump::Write(DataBlock &data, Output& output) {
   #if MHD == YES
     // write staggered field components
     for(int nv = 0 ; nv <DIMENSIONS ; nv++) {
-      std::snprintf(fieldName,NAMESIZE,"Vs-%s",data.hydro.VsName[nv].c_str());
+      std::snprintf(fieldName,NAMESIZE,"Vs-%s",data.hydro->VsName[nv].c_str());
       // Load the active domain in the scratch space
       for(int i = 0; i < 3 ; i++) {
         nx[i] = dataHost.np_int[i];
@@ -807,7 +808,7 @@ int Dump::Write(DataBlock &data, Output& output) {
     #ifdef EVOLVE_VECTOR_POTENTIAL
       // write edge field components
       for(int nv = 0 ; nv <= AX3e ; nv++) {
-        std::snprintf(fieldName,NAMESIZE,"Ve-%s",data.hydro.VeName[nv].c_str());
+        std::snprintf(fieldName,NAMESIZE,"Ve-%s",data.hydro->VeName[nv].c_str());
         int edge = 0;
         #if DIMENSIONS == 2
           if(nv==AX3e) {

@@ -150,11 +150,11 @@ target_include_directories(idefix PUBLIC
 target_include_directories(idefix PUBLIC
                            src/kokkos/core/src
                            src/dataBlock
-                           src/hydro
-                           src/hydro/boundary
-                           src/hydro/electromotiveforce
-                           src/hydro/HDsolvers
-                           src/hydro/MHDsolvers
+                           src/fluid
+                           src/fluid/boundary
+                           src/fluid/electromotiveforce
+                           src/fluid/HDsolvers
+                           src/fluid/MHDsolvers
                            src/output
                            src/rkl
                            src/gravity

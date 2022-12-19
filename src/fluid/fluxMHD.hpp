@@ -9,7 +9,7 @@
 #define FLUID_FLUXMHD_HPP_
 
 #include "idefix.hpp"
-#include "hydro.hpp"
+#include "fluid.hpp"
 
 /********************************************************************************************
  * @fn void K_Flux(real F[], real V[], real U[], real Cs2Iso,

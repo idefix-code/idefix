@@ -147,6 +147,7 @@ void Dump::WriteSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
   if(type == DoubleType) size=sizeof(double);
   if(type == SingleType) size=sizeof(float);
   if(type == IntegerType) size=sizeof(int);
+  if(type == BoolType) size=sizeof(bool);
 
   // Write field name
 

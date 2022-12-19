@@ -10,26 +10,6 @@ real gammaGlob;
 real densityFloorGlob;
 real alphaGlob;
 
-/*********************************************/
-/**
-Customized random number generator
-Allow one to have consistant random numbers
-generators on different architectures.
-**/
-/*********************************************/
-real randm(void) {
-    const int a    =    16807;
-    const int m =    2147483647;
-    static int in0 = 13763 + 2417*idfx::prank;
-    int q;
-
-    /* find random number  */
-    q= (int) fmod((double) a * in0, m);
-    in0=q;
-
-    return((real) ((double) q/(double)m));
-}
-
 
 void MySoundSpeed(DataBlock &data, const real t, IdefixArray3D<real> &cs) {
   IdefixArray1D<real> r=data.x[IDIR];

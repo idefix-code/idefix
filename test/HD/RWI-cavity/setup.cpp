@@ -11,22 +11,6 @@ real jump_radius_glob{-1};
 real jump_width_glob{-1};
 
 
-real randm(void) {
-  // Customized random number generator
-  // Allow one to have consistent random numbers
-  // generators on different architectures.
-  const int a = 16807;
-  const int m = 2147483647;
-  static int in0 = 13763 + 2417*idfx::prank;
-  int q;
-
-  /* find random number  */
-  q = (int) fmod((double) a * in0, m);
-  in0=q;
-
-  return((real) ((double) q/(double)m));
-}
-
 
 // hydro functions to enroll
 // note that everywhere we make the assumption GM = 1, so that
@@ -110,7 +94,7 @@ void Setup::InitFlow(DataBlock &data) {
 
           // add some random noise to the radial velocity component break the
           // axial symmetry and let the instability grow
-          d.Vc(VX1,k,j,i) = d.Vc(VX2,k,j,i) * aspect_ratio * 1e-1*(0.5-randm());
+          d.Vc(VX1,k,j,i) = d.Vc(VX2,k,j,i) * aspect_ratio * 1e-1*(0.5-idfx::randm());
 
         }
       }

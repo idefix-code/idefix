@@ -103,4 +103,25 @@ void IdefixOutStream::enableLogFile() {
   this->logFileEnabled = true;
 }
 
+
+/*********************************************/
+/**
+Customized random number generator
+Allow one to have consistant random numbers
+generators on different architectures.
+**/
+/*********************************************/
+real randm(void) {
+    const int a = 16807;
+    const int m = 2147483647;
+    static int in0 = 13763 + 2417*prank;
+    int q;
+
+    /* find random number  */
+    q = static_cast<int>(fmod(static_cast<double>(a) * in0, m));
+    in0 = q;
+
+    return static_cast<real>(static_cast<double>(q) / static_cast<double>(m));
+}
+
 } // namespace idfx

@@ -13,6 +13,7 @@
 
 namespace idfx {
 int initialize();   // Initialisation routine for idefix
+real randm();      // Custom random number generator
 class IdefixOutStream;
 class IdefixErrStream;
 class Profiler;

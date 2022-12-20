@@ -207,7 +207,7 @@ void Fluid<Phys>::CalcRightHandSide(real t, real dt) {
   );
 
   // If user has requested specific flux functions for the boundaries, here they come
-  if(boundary.haveFluxBoundary) boundary.EnforceFluxBoundaries(dir);
+  if(boundary->haveFluxBoundary) boundary->EnforceFluxBoundaries(dir);
 
 /////////////////////////////////////////////////////////////////////////////
 // Final conserved quantity budget from fluxes divergence

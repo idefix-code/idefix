@@ -12,7 +12,11 @@
 
 // Physics type
 struct Physics {
+  #if MHD == YES
   static constexpr bool mhd{true};
+  #else
+  static constexpr bool mhd{false};
+  #endif
   #if HAVE_ENERGY == 1
     static constexpr bool pressure{true};
   #else

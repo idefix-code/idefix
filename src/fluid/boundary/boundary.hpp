@@ -5,16 +5,104 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#include "hydroboundary.hpp"
+#ifndef FLUID_BOUNDARY_BOUNDARY_HPP_
+#define FLUID_BOUNDARY_BOUNDARY_HPP_
+#include <string>
+#include <vector>
+#include "idefix.hpp"
+#include "fluid_defs.hpp"
+#include "grid.hpp"
+
+#ifdef WITH_MPI
+#include "mpi.hpp"
+#endif
+
+// forward class declaration
+class DataBlock;
+#include "physics.hpp"
+template <typename Phys> class Fluid;
+using Hydro = Fluid<Physics>;
+
+template<typename Phys>
+class Boundary {
+ public:
+  Boundary(Input &, Grid &, Fluid<Phys>* );
+  void SetBoundaries(real);                         ///< Set the ghost zones in all directions
+  void EnforceBoundaryDir(real, int);             ///< write in the ghost zone in specific direction
+  void ReconstructVcField(IdefixArray4D<real> &);  ///< reconstruct cell-centered magnetic field
+  void ReconstructNormalField(int dir);           ///< reconstruct normal field using divB=0
+
+  void EnforceFluxBoundaries(int dir);        ///< Apply boundary condition conditions to the fluxes
+
+  void EnrollUserDefBoundary(UserDefBoundaryFunc);
+  void EnrollInternalBoundary(InternalBoundaryFunc);
+  void EnrollFluxBoundary(UserDefBoundaryFunc);
+
+  void EnforcePeriodic(int, BoundarySide ); ///< Enforce periodic BC in direction and side
+  void EnforceReflective(int, BoundarySide ); ///< Enforce reflective BC in direction and side
+  void EnforceOutflow(int, BoundarySide ); ///< Enforce outflow BC in direction and side
+  void EnforceShearingBox(real, int, BoundarySide ); ///< Enforce Shearing box BCs
+
+  #ifdef WITH_MPI
+  Mpi mpi;                     ///< Mpi object when WITH_MPI is set
+  #endif
+
+    // User defined Boundary conditions
+  UserDefBoundaryFunc userDefBoundaryFunc{NULL};
+  bool haveUserDefBoundary{false};
+
+  // Internal boundary function
+  bool haveInternalBoundary{false};
+  InternalBoundaryFunc internalBoundaryFunc{NULL};
+
+  // Flux boundary function
+  bool haveFluxBoundary{false};
+  UserDefBoundaryFunc fluxBoundaryFunc{NULL};
+
+  // specific for loops on ghost cells
+  template <typename Function>
+  void BoundaryFor(const std::string &,
+                            const int &,
+                            const BoundarySide &,
+                            Function );
+
+  template <typename Function>
+  void BoundaryForAll(const std::string &,
+                            const int &,
+                            const BoundarySide &,
+                            Function );
+
+  template <typename Function>
+  void BoundaryForX1s(const std::string &,
+                            const int &,
+                            const BoundarySide &,
+                            Function );
+
+  template <typename Function>
+  void BoundaryForX2s(const std::string &,
+                            const int &,
+                            const BoundarySide &,
+                            Function );
+
+  template <typename Function>
+  void BoundaryForX3s(const std::string &,
+                            const int &,
+                            const BoundarySide &,
+                            Function );
+  IdefixArray4D<real> sBArray;    ///< Array use by shearingbox boundary conditions
+
+ private:
+  Fluid<Phys> *fluid;    // pointer to parent hydro object
+  DataBlock *data;  // pointer to parent datablock
+};
+
 #include "fluid.hpp"
-#include "dataBlock.hpp"
-#include "boundaryloop.hpp"
 
-
-void HydroBoundary::Init(Input & input, Grid &grid, Hydro* hydro) {
+template<typename Phys>
+Boundary<Phys>::Boundary(Input & input, Grid &grid, Fluid<Phys>* fluid) {
   idfx::pushRegion("HydroBoundary::Init");
-  this->hydro = hydro;
-  this->data = hydro->data;
+  this->fluid = fluid;
+  this->data = fluid->data;
 
   if(data->lbound[IDIR] == shearingbox || data->rbound[IDIR] == shearingbox) {
     sBArray = IdefixArray4D<real>("ShearingBoxArray",
@@ -31,11 +119,8 @@ void HydroBoundary::Init(Input & input, Grid &grid, Hydro* hydro) {
   // The variable mapper list all of the variable which are exchanged in MPI boundary calls
   // This is required since we skip some of the variables in Vc to limit the amount of data
   // being exchanged
-  #if MHD == YES
-  int mapNVars = NVAR - DIMENSIONS; // We will not send magnetic field components which are in Vs
-  #else
   int mapNVars = NVAR;
-  #endif
+  if constexpr(Phys::mhd) mapNVars -= DIMENSIONS;
 
   std::vector<int> mapVars;
 
@@ -44,7 +129,7 @@ void HydroBoundary::Init(Input & input, Grid &grid, Hydro* hydro) {
   for(int n = 0 ; n < mapNVars ; n++) {
     mapVars.push_back(ntarget);
     ntarget++;
-    #if MHD == YES
+    if constexpr(Phys::mhd) {
       // Skip centered field components if they are also defined in Vs
       #if DIMENSIONS >= 1
         if(ntarget==BX1) ntarget++;
@@ -55,23 +140,23 @@ void HydroBoundary::Init(Input & input, Grid &grid, Hydro* hydro) {
       #if DIMENSIONS == 3
         if(ntarget==BX3) ntarget++;
       #endif
-    #endif
+    }
   }
-  #if MHD == YES
-    mpi.Init(data->mygrid, mapVars, data->nghost.data(), data->np_int.data(), true);
-  #else
-    mpi.Init(data->mygrid, mapVars, data->nghost.data(), data->np_int.data());
-  #endif
+
+  mpi.Init(data->mygrid, mapVars, data->nghost.data(), data->np_int.data(), Phys::mhd);
+
 #endif // MPI
   idfx::popRegion();
 }
 
-void HydroBoundary::EnrollFluxBoundary(UserDefBoundaryFunc myFunc) {
+template<typename Phys>
+void Boundary<Phys>::EnrollFluxBoundary(UserDefBoundaryFunc myFunc) {
   this->haveFluxBoundary = true;
   this->fluxBoundaryFunc = myFunc;
 }
 
-void HydroBoundary::EnforceFluxBoundaries(int dir) {
+template<typename Phys>
+void Boundary<Phys>::EnforceFluxBoundaries(int dir) {
   idfx::pushRegion("HydroBoundary::EnforceFluxBoundaries");
   if(haveFluxBoundary) {
     if(data->lbound[dir] != internal) {
@@ -86,7 +171,8 @@ void HydroBoundary::EnforceFluxBoundaries(int dir) {
   idfx::popRegion();
 }
 
-void HydroBoundary::SetBoundaries(real t) {
+template<typename Phys>
+void Boundary<Phys>::SetBoundaries(real t) {
   idfx::pushRegion("HydroBoundary::SetBoundaries");
   // set internal boundary conditions
   if(haveInternalBoundary) internalBoundaryFunc(*data, t);
@@ -96,34 +182,36 @@ void HydroBoundary::SetBoundaries(real t) {
     if(data->mygrid->nproc[dir]>1) {
       switch(dir) {
         case 0:
-          mpi.ExchangeX1(hydro->Vc, hydro->Vs);
+          mpi.ExchangeX1(fluid->Vc, fluid->Vs);
           break;
         case 1:
-          mpi.ExchangeX2(hydro->Vc, hydro->Vs);
+          mpi.ExchangeX2(fluid->Vc, fluid->Vs);
           break;
         case 2:
-          mpi.ExchangeX3(hydro->Vc, hydro->Vs);
+          mpi.ExchangeX3(fluid->Vc, fluid->Vs);
           break;
       }
     }
     #endif
     EnforceBoundaryDir(t, dir);
-    #if MHD == YES
+    if constexpr(Phys::mhd) {
       // Reconstruct the normal field component when using CT
       ReconstructNormalField(dir);
-    #endif
+    }
   } // Loop on dimension ends
 
-#if MHD == YES
-  // Remake the cell-centered field.
-  ReconstructVcField(hydro->Vc);
-#endif
+  if constexpr(Phys::mhd) {
+    // Remake the cell-centered field.
+    ReconstructVcField(fluid->Vc);
+  }
+
   idfx::popRegion();
 }
 
 
 // Enforce boundary conditions by writing into ghost zones
-void HydroBoundary::EnforceBoundaryDir(real t, int dir) {
+template<typename Phys>
+void Boundary<Phys>::EnforceBoundaryDir(real t, int dir) {
   idfx::pushRegion("Hydro::EnforceBoundaryDir");
 
   // left boundary
@@ -150,7 +238,7 @@ void HydroBoundary::EnforceBoundaryDir(real t, int dir) {
       EnforceShearingBox(t,dir,left);
       break;
     case axis:
-      hydro->myAxis.EnforceAxisBoundary(left);
+      fluid->myAxis.EnforceAxisBoundary(left);
       break;
     case userdef:
       if(this->haveUserDefBoundary)
@@ -185,7 +273,7 @@ void HydroBoundary::EnforceBoundaryDir(real t, int dir) {
       EnforceShearingBox(t,dir,right);
       break;
     case axis:
-      hydro->myAxis.EnforceAxisBoundary(right);
+      fluid->myAxis.EnforceAxisBoundary(right);
       break;
     case userdef:
       if(this->haveUserDefBoundary)
@@ -202,10 +290,11 @@ void HydroBoundary::EnforceBoundaryDir(real t, int dir) {
 }
 
 
-void HydroBoundary::ReconstructVcField(IdefixArray4D<real> &Vc) {
+template<typename Phys>
+void Boundary<Phys>::ReconstructVcField(IdefixArray4D<real> &Vc) {
   idfx::pushRegion("Hydro::ReconstructVcField");
 
-  IdefixArray4D<real> Vs=hydro->Vs;
+  IdefixArray4D<real> Vs=fluid->Vs;
 
   // Reconstruct cell average field when using CT
   idefix_for("ReconstructVcMagField",0,data->np_tot[KDIR],0,data->np_tot[JDIR],0,data->np_tot[IDIR],
@@ -220,11 +309,12 @@ void HydroBoundary::ReconstructVcField(IdefixArray4D<real> &Vc) {
 }
 
 
-void HydroBoundary::ReconstructNormalField(int dir) {
+template<typename Phys>
+void Boundary<Phys>::ReconstructNormalField(int dir) {
   idfx::pushRegion("Hydro::ReconstructNormalField");
 
   // Reconstruct the field
-  IdefixArray4D<real> Vs = hydro->Vs;
+  IdefixArray4D<real> Vs = fluid->Vs;
   // Coordinates
   IdefixArray1D<real> x1=data->x[IDIR];
   IdefixArray1D<real> x2=data->x[JDIR];
@@ -272,7 +362,7 @@ void HydroBoundary::ReconstructNormalField(int dir) {
   if(dir==JDIR) {
     nstart = data->beg[JDIR]-1;
     nend = data->end[JDIR];
-    if(!hydro->haveAxis) {
+    if(!fluid->haveAxis) {
       idefix_for("ReconstructBX2s",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
         KOKKOS_LAMBDA (int k, int i) {
           for(int j = nstart ; j>=0 ; j-- ) {
@@ -291,7 +381,7 @@ void HydroBoundary::ReconstructNormalField(int dir) {
       );
     } else {
       // We have an axis, ask myAxis to do that job for us
-      hydro->myAxis.ReconstructBx2s();
+      fluid->myAxis.ReconstructBx2s();
     }
   }
 #endif
@@ -322,18 +412,21 @@ void HydroBoundary::ReconstructNormalField(int dir) {
 }
 
 
-void HydroBoundary::EnrollUserDefBoundary(UserDefBoundaryFunc myFunc) {
+template<typename Phys>
+void Boundary<Phys>::EnrollUserDefBoundary(UserDefBoundaryFunc myFunc) {
   this->userDefBoundaryFunc = myFunc;
   this->haveUserDefBoundary = true;
 }
 
-void HydroBoundary::EnrollInternalBoundary(InternalBoundaryFunc myFunc) {
+template<typename Phys>
+void Boundary<Phys>::EnrollInternalBoundary(InternalBoundaryFunc myFunc) {
   this->internalBoundaryFunc = myFunc;
   this->haveInternalBoundary = true;
 }
 
-void HydroBoundary::EnforcePeriodic(int dir, BoundarySide side ) {
-  IdefixArray4D<real> Vc = hydro->Vc;
+template<typename Phys>
+void Boundary<Phys>::EnforcePeriodic(int dir, BoundarySide side ) {
+  IdefixArray4D<real> Vc = fluid->Vc;
   int nxi = data->np_int[IDIR];
   int nxj = data->np_int[JDIR];
   int nxk = data->np_int[KDIR];
@@ -363,7 +456,7 @@ void HydroBoundary::EnforcePeriodic(int dir, BoundarySide side ) {
         });
 
   #if MHD==YES
-    IdefixArray4D<real> Vs = hydro->Vs;
+    IdefixArray4D<real> Vs = fluid->Vs;
     if(dir==JDIR || dir==KDIR) {
       nxi = data->np_int[IDIR]+1;
       nxj = data->np_int[JDIR];
@@ -444,8 +537,9 @@ void HydroBoundary::EnforcePeriodic(int dir, BoundarySide side ) {
 }
 
 
-void HydroBoundary::EnforceReflective(int dir, BoundarySide side ) {
-  IdefixArray4D<real> Vc = hydro->Vc;
+template<typename Phys>
+void Boundary<Phys>::EnforceReflective(int dir, BoundarySide side ) {
+  IdefixArray4D<real> Vc = fluid->Vc;
   const int nxi = data->np_int[IDIR];
   const int nxj = data->np_int[JDIR];
   const int nxk = data->np_int[KDIR];
@@ -468,7 +562,7 @@ void HydroBoundary::EnforceReflective(int dir, BoundarySide side ) {
         });
 
   #if MHD==YES
-    IdefixArray4D<real> Vs = hydro->Vs;
+    IdefixArray4D<real> Vs = fluid->Vs;
     if(dir==JDIR || dir==KDIR) {
       BoundaryForX1s("BoundaryReflectiveX1s",dir,side,
         KOKKOS_LAMBDA (int k, int j, int i) {
@@ -508,8 +602,9 @@ void HydroBoundary::EnforceReflective(int dir, BoundarySide side ) {
   #endif// MHD
 }
 
-void HydroBoundary::EnforceOutflow(int dir, BoundarySide side ) {
-  IdefixArray4D<real> Vc = hydro->Vc;
+template<typename Phys>
+void Boundary<Phys>::EnforceOutflow(int dir, BoundarySide side ) {
+  IdefixArray4D<real> Vc = fluid->Vc;
   const int nxi = data->np_int[IDIR];
   const int nxj = data->np_int[JDIR];
   const int nxk = data->np_int[KDIR];
@@ -538,7 +633,7 @@ void HydroBoundary::EnforceOutflow(int dir, BoundarySide side ) {
         });
 
   #if MHD==YES
-    IdefixArray4D<real> Vs = hydro->Vs;
+    IdefixArray4D<real> Vs = fluid->Vs;
     if(dir==JDIR || dir==KDIR) {
       BoundaryForX1s("BoundaryOutflowX1s",dir,side,
         KOKKOS_LAMBDA (int k, int j, int i) {
@@ -577,7 +672,8 @@ void HydroBoundary::EnforceOutflow(int dir, BoundarySide side ) {
   #endif// MHD
 }
 
-void HydroBoundary::EnforceShearingBox(real t, int dir, BoundarySide side) {
+template<typename Phys>
+void Boundary<Phys>::EnforceShearingBox(real t, int dir, BoundarySide side) {
   if(dir != IDIR)
     IDEFIX_ERROR("Shearing box boundaries can only be applied along the X1 direction");
   if(data->mygrid->nproc[JDIR]>1)
@@ -587,7 +683,7 @@ void HydroBoundary::EnforceShearingBox(real t, int dir, BoundarySide side) {
   if(data->mygrid->nproc[dir] == 1) EnforcePeriodic(dir, side);
 
   IdefixArray4D<real> scrh = sBArray;
-  IdefixArray4D<real> Vc = hydro->Vc;
+  IdefixArray4D<real> Vc = fluid->Vc;
 
   const int nxi = data->np_int[IDIR];
   const int nxj = data->np_int[JDIR];
@@ -601,7 +697,7 @@ void HydroBoundary::EnforceShearingBox(real t, int dir, BoundarySide side) {
   const int istart = side*(ighost+nxi);
 
   // Shear rate
-  const real S  = hydro->sbS;
+  const real S  = fluid->sbS;
 
   // Box size
   const real Lx = data->mygrid->xend[IDIR] - data->mygrid->xbeg[IDIR];
@@ -677,7 +773,7 @@ void HydroBoundary::EnforceShearingBox(real t, int dir, BoundarySide side) {
 
   // Magnetised version of the same thing
   #if MHD==YES
-    IdefixArray4D<real> Vs = hydro->Vs;
+    IdefixArray4D<real> Vs = fluid->Vs;
     #if DIMENSIONS >= 2
       for(int component = BX2s ; component < DIMENSIONS ; component++) {
         BoundaryFor("BoundaryShearingBoxBXs", dir, side,
@@ -733,3 +829,138 @@ void HydroBoundary::EnforceShearingBox(real t, int dir, BoundarySide side) {
     #endif// DIMENSIONS
   #endif // MHD
 }
+
+template<typename Phys>
+template <typename Function>
+inline void Boundary<Phys>::BoundaryForAll(
+  const std::string & name,
+  const int &dir,
+  const BoundarySide &side,
+  Function function) {
+    const int nxi = data->np_int[IDIR];
+    const int nxj = data->np_int[JDIR];
+    const int nxk = data->np_int[KDIR];
+
+    const int ighost = data->nghost[IDIR];
+    const int jghost = data->nghost[JDIR];
+    const int kghost = data->nghost[KDIR];
+
+    // Boundaries of the loop
+    const int ibeg = (dir == IDIR) ? side*(ighost+nxi) : 0;
+    const int iend = (dir == IDIR) ? ighost + side*(ighost+nxi) : data->np_tot[IDIR];
+    const int jbeg = (dir == JDIR) ? side*(jghost+nxj) : 0;
+    const int jend = (dir == JDIR) ? jghost + side*(jghost+nxj) : data->np_tot[JDIR];
+    const int kbeg = (dir == KDIR) ? side*(kghost+nxk) : 0;
+    const int kend = (dir == KDIR) ? kghost + side*(kghost+nxk) : data->np_tot[KDIR];
+
+    idefix_for(name, 0, NVAR, kbeg, kend, jbeg, jend, ibeg, iend, function);
+}
+
+template<typename Phys>
+template <typename Function>
+inline void Boundary<Phys>::BoundaryFor(
+  const std::string & name,
+  const int &dir,
+  const BoundarySide &side,
+  Function function) {
+    const int nxi = data->np_int[IDIR];
+    const int nxj = data->np_int[JDIR];
+    const int nxk = data->np_int[KDIR];
+
+    const int ighost = data->nghost[IDIR];
+    const int jghost = data->nghost[JDIR];
+    const int kghost = data->nghost[KDIR];
+
+    // Boundaries of the loop
+    const int ibeg = (dir == IDIR) ? side*(ighost+nxi) : 0;
+    const int iend = (dir == IDIR) ? ighost + side*(ighost+nxi) : data->np_tot[IDIR];
+    const int jbeg = (dir == JDIR) ? side*(jghost+nxj) : 0;
+    const int jend = (dir == JDIR) ? jghost + side*(jghost+nxj) : data->np_tot[JDIR];
+    const int kbeg = (dir == KDIR) ? side*(kghost+nxk) : 0;
+    const int kend = (dir == KDIR) ? kghost + side*(kghost+nxk) : data->np_tot[KDIR];
+
+
+
+    idefix_for(name, kbeg, kend, jbeg, jend, ibeg, iend, function);
+}
+
+template<typename Phys>
+template <typename Function>
+inline void Boundary<Phys>::BoundaryForX1s(
+  const std::string & name,
+  const int &dir,
+  const BoundarySide &side,
+  Function function) {
+    const int nxi = data->np_int[IDIR]+1;
+    const int nxj = data->np_int[JDIR];
+    const int nxk = data->np_int[KDIR];
+
+    const int ighost = data->nghost[IDIR];
+    const int jghost = data->nghost[JDIR];
+    const int kghost = data->nghost[KDIR];
+
+    // Boundaries of the loop
+    const int ibeg = (dir == IDIR) ? side*(ighost+nxi) : 0;
+    const int iend = (dir == IDIR) ? ighost + side*(ighost+nxi) : data->np_tot[IDIR]+1;
+    const int jbeg = (dir == JDIR) ? side*(jghost+nxj) : 0;
+    const int jend = (dir == JDIR) ? jghost + side*(jghost+nxj) : data->np_tot[JDIR];
+    const int kbeg = (dir == KDIR) ? side*(kghost+nxk) : 0;
+    const int kend = (dir == KDIR) ? kghost + side*(kghost+nxk) : data->np_tot[KDIR];
+
+    idefix_for(name, kbeg, kend, jbeg, jend, ibeg, iend, function);
+}
+
+template<typename Phys>
+template <typename Function>
+inline void Boundary<Phys>::BoundaryForX2s(
+  const std::string & name,
+  const int &dir,
+  const BoundarySide &side,
+  Function function) {
+    const int nxi = data->np_int[IDIR];
+    const int nxj = data->np_int[JDIR]+1;
+    const int nxk = data->np_int[KDIR];
+
+    const int ighost = data->nghost[IDIR];
+    const int jghost = data->nghost[JDIR];
+    const int kghost = data->nghost[KDIR];
+
+    // Boundaries of the loop
+    const int ibeg = (dir == IDIR) ? side*(ighost+nxi) : 0;
+    const int iend = (dir == IDIR) ? ighost + side*(ighost+nxi) : data->np_tot[IDIR];
+    const int jbeg = (dir == JDIR) ? side*(jghost+nxj) : 0;
+    const int jend = (dir == JDIR) ? jghost + side*(jghost+nxj) : data->np_tot[JDIR]+1;
+    const int kbeg = (dir == KDIR) ? side*(kghost+nxk) : 0;
+    const int kend = (dir == KDIR) ? kghost + side*(kghost+nxk) : data->np_tot[KDIR];
+
+    idefix_for(name, kbeg, kend, jbeg, jend, ibeg, iend, function);
+}
+
+template<typename Phys>
+template <typename Function>
+inline void Boundary<Phys>::BoundaryForX3s(
+  const std::string & name,
+  const int &dir,
+  const BoundarySide &side,
+  Function function) {
+    const int nxi = data->np_int[IDIR];
+    const int nxj = data->np_int[JDIR];
+    const int nxk = data->np_int[KDIR]+1;
+
+    const int ighost = data->nghost[IDIR];
+    const int jghost = data->nghost[JDIR];
+    const int kghost = data->nghost[KDIR];
+
+    // Boundaries of the loop
+    const int ibeg = (dir == IDIR) ? side*(ighost+nxi) : 0;
+    const int iend = (dir == IDIR) ? ighost + side*(ighost+nxi) : data->np_tot[IDIR];
+    const int jbeg = (dir == JDIR) ? side*(jghost+nxj) : 0;
+    const int jend = (dir == JDIR) ? jghost + side*(jghost+nxj) : data->np_tot[JDIR];
+    const int kbeg = (dir == KDIR) ? side*(kghost+nxk) : 0;
+    const int kend = (dir == KDIR) ? kghost + side*(kghost+nxk) : data->np_tot[KDIR]+1;
+
+    idefix_for(name, kbeg, kend, jbeg, jend, ibeg, iend, function);
+}
+
+
+#endif // FLUID_BOUNDARY_HYDROBOUNDARY_HPP_

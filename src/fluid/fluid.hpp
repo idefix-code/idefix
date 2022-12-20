@@ -18,12 +18,13 @@
 #include "viscosity.hpp"
 #include "thermalDiffusion.hpp"
 #include "axis.hpp"
-#include "hydroboundary.hpp"
 #include "shockFlattening.hpp"
 #include "selfGravity.hpp"
 
 // forward class declaration
 class DataBlock;
+template<typename Phys>
+class Boundary;
 
 template<typename Phys>
 class Fluid {
@@ -47,7 +48,7 @@ class Fluid {
   void ShowConfig();
 
   // Our boundary conditions
-  HydroBoundary boundary;
+  Boundary<Phys>* boundary;
 
   // Source terms
   bool haveSourceTerms{false};
@@ -170,7 +171,7 @@ class Fluid {
   friend class Fargo;
   friend class Axis;
   friend class RKLegendre;
-  friend class HydroBoundary;
+  friend class Boundary<Phys>;
   friend class ShockFlattening;
 
   // Isothermal EOS parameters
@@ -215,6 +216,7 @@ class Fluid {
 
 #include "../physics.hpp"
 #include "dataBlock.hpp"
+#include "boundary.hpp"
 
 using Hydro = Fluid<Physics>;
 
@@ -577,7 +579,7 @@ Fluid<Phys>::Fluid(Input &input, Grid &grid, DataBlock *datain) {
   #endif
 
   // Initialise boundary conditions
-  boundary.Init(input, grid, this);
+  boundary = new Boundary<Phys>(input, grid, this);
 
   // Init shock flattening
   if(haveShockFlattening) {

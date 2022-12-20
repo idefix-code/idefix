@@ -222,7 +222,7 @@ void RKLegendre::Cycle() {
   stage = 1;
 
   // Apply Boundary conditions on the full set of variables
-  data->hydro->boundary.SetBoundaries(time);
+  data->hydro->boundary->SetBoundaries(time);
 
   // Convert current state into conservative variable
   data->hydro->ConvertPrimToCons();
@@ -329,7 +329,7 @@ void RKLegendre::Cycle() {
         Vs(n,k,j,i) = Vs1(n,k,j,i) + mu_tilde_j*dt_hyp*dB0(n,k,j,i);
       });
     #endif
-    data->hydro->boundary.ReconstructVcField(Uc);
+    data->hydro->boundary->ReconstructVcField(Uc);
   }
 
   // Coarsen conservative variables once they have been evolved
@@ -431,7 +431,7 @@ void RKLegendre::Cycle() {
           });
       #endif  // EVOLVE_VECTOR_POTENTIAL
 
-      data->hydro->boundary.ReconstructVcField(Uc);
+      data->hydro->boundary->ReconstructVcField(Uc);
     }
 
     // Coarsen the flow if needed
@@ -778,8 +778,8 @@ void RKLegendre::SetBoundaries(real t) {
   // set internal boundary conditions
   // Disabled since this might affect fields that are NOT updated
   // by the MPI instance of RKLegendre
-  //if(data->hydro->boundary.haveInternalBoundary)
-  //   data->hydro->boundary.internalBoundaryFunc(*data, t);
+  //if(data->hydro->boundary->haveInternalBoundary)
+  //   data->hydro->boundary->internalBoundaryFunc(*data, t);
   for(int dir=0 ; dir < DIMENSIONS ; dir++ ) {
       // MPI Exchange data when needed
       // We use the RKL instance MPI object to ensure that we only exchange the data
@@ -799,11 +799,11 @@ void RKLegendre::SetBoundaries(real t) {
       }
     }
     #endif
-    data->hydro->boundary.EnforceBoundaryDir(t, dir);
+    data->hydro->boundary->EnforceBoundaryDir(t, dir);
     #if MHD == YES
       // Reconstruct the normal field component when using CT
       if(haveVs) {
-        data->hydro->boundary.ReconstructNormalField(dir);
+        data->hydro->boundary->ReconstructNormalField(dir);
       }
     #endif
   } // Loop on dimension ends
@@ -811,7 +811,7 @@ void RKLegendre::SetBoundaries(real t) {
 #if MHD == YES
   // Remake the cell-centered field.
   if(haveVs) {
-    data->hydro->boundary.ReconstructVcField(data->hydro->Vc);
+    data->hydro->boundary->ReconstructVcField(data->hydro->Vc);
   }
 #endif
   idfx::popRegion();

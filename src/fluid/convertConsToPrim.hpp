@@ -27,7 +27,7 @@ void Fluid<Phys>::ConvertConsToPrim() {
     #ifdef EVOLVE_VECTOR_POTENTIAL
       emf.ComputeMagFieldFromA(Ve,Vs);
     #endif
-    boundary.ReconstructVcField(Uc);
+    boundary->ReconstructVcField(Uc);
   #endif
 
   idefix_for("ConsToPrim",

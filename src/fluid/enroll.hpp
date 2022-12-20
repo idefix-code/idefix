@@ -22,19 +22,19 @@ void Fluid<Phys>::EnrollIsoSoundSpeed(IsoSoundSpeedFunc myFunc) {
 template<typename Phys>
 void Fluid<Phys>::EnrollUserDefBoundary(UserDefBoundaryFunc myFunc) {
   // This is a proxy for userdef enrollment
-  boundary.EnrollUserDefBoundary(myFunc);
+  boundary->EnrollUserDefBoundary(myFunc);
 }
 
 template<typename Phys>
 void Fluid<Phys>::EnrollFluxBoundary(UserDefBoundaryFunc myFunc) {
   // This is a proxy for userdef enrollment
-  boundary.EnrollFluxBoundary(myFunc);
+  boundary->EnrollFluxBoundary(myFunc);
 }
 
 template<typename Phys>
 void Fluid<Phys>::EnrollInternalBoundary(InternalBoundaryFunc myFunc) {
   // This is a proxy for userdef enrollment
-  boundary.EnrollInternalBoundary(myFunc);
+  boundary->EnrollInternalBoundary(myFunc);
 }
 
 template<typename Phys>

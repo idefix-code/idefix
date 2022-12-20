@@ -193,7 +193,7 @@ void DataBlock::SetBoundaries() {
       hydro->CoarsenMagField(hydro->Vs);
     #endif
   }
-  hydro->boundary.SetBoundaries(t);
+  hydro->boundary->SetBoundaries(t);
 }
 
 

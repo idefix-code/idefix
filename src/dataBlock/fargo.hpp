@@ -10,6 +10,9 @@
 
 #include <vector>
 #include "idefix.hpp"
+#ifdef WITH_MPI
+  #include "mpi.hpp"
+#endif
 
 // Forward class hydro declaration
 #include "physics.hpp"
@@ -18,6 +21,8 @@ using Hydro = Fluid<Physics>;
 class DataBlock;
 
 using FargoVelocityFunc = void (*) (DataBlock &, IdefixArray2D<real> &);
+
+
 
 class Fargo {
  public:

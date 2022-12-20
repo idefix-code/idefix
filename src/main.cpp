@@ -122,7 +122,7 @@ int main( int argc, char* argv[] ) {
       mysetup.InitFlow(data);
       idfx::popRegion();
       #if MHD == YES && defined(EVOLVE_VECTOR_POTENTIAL)
-        data.hydro.emf.ComputeMagFieldFromA(data.hydro.Ve, data.hydro.Vs);
+        data.hydro->emf.ComputeMagFieldFromA(data.hydro->Ve, data.hydro->Vs);
       #endif
       data.SetBoundaries();
       output.CheckForWrites(data);

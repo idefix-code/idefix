@@ -16,7 +16,7 @@ static real cs;
 
 void AmbipolarFunction(DataBlock &data, real t, IdefixArray3D<real> &xAin ) {
     IdefixArray3D<real> xA = xAin;
-    IdefixArray4D<real> Vc = data.hydro.Vc;
+    IdefixArray4D<real> Vc = data.hydro->Vc;
     idefix_for("AmbipolarFunction",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
         xA(k,j,i) = 2.0/Vc(RHO,k,j,i);
@@ -26,8 +26,8 @@ void AmbipolarFunction(DataBlock &data, real t, IdefixArray3D<real> &xAin ) {
 // User-defined boundaries
 void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
     if( (dir==IDIR) && (side == left)) {
-        IdefixArray4D<real> Vc = data.hydro.Vc;
-        IdefixArray4D<real> Vs = data.hydro.Vs;
+        IdefixArray4D<real> Vc = data.hydro->Vc;
+        IdefixArray4D<real> Vs = data.hydro->Vs;
 
         int ighost = data.nghost[IDIR];
         idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,ighost,
@@ -49,8 +49,8 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
         });
     }
     if( (dir==IDIR) && (side == right)) {
-            IdefixArray4D<real> Vc = data.hydro.Vc;
-            IdefixArray4D<real> Vs = data.hydro.Vs;
+            IdefixArray4D<real> Vc = data.hydro->Vc;
+            IdefixArray4D<real> Vs = data.hydro->Vs;
 
             int ighost = data.end[IDIR]-1;
         idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],data.end[IDIR],data.np_tot[IDIR],
@@ -81,8 +81,8 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
-    data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
-    data.hydro.EnrollAmbipolarDiffusivity(&AmbipolarFunction);
+    data.hydro->EnrollUserDefBoundary(&UserdefBoundary);
+    data.hydro->EnrollAmbipolarDiffusivity(&AmbipolarFunction);
     cs=input.Get<real>("Hydro","csiso",1);
 }
 

@@ -17,7 +17,7 @@ target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/calcParabolicFlux.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/calcRiemannFlux.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/calcRightHandSide.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/checkDivB.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/checkDivB.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/coarsenFlow.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/convertConsToPrim.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/convertConsToPrimHD.hpp

@@ -41,7 +41,7 @@ void Analysis(DataBlock& data) {
   // Check that the save/load routines have left everything unchanged.
   char fieldName[20];
   for(int n = 0; n < NVAR ; n++) {
-    std::snprintf(fieldName,20,"Vc-%s",data.hydro.VcName[n].c_str());
+    std::snprintf(fieldName,20,"Vc-%s",data.hydro->VcName[n].c_str());
     for(int k = d.beg[KDIR]; k < d.end[KDIR] ; k++) {
       for(int j = d.beg[JDIR]; j < d.end[JDIR] ; j++) {
         for(int i = d.beg[IDIR]; i < d.end[IDIR] ; i++) {
@@ -56,7 +56,7 @@ void Analysis(DataBlock& data) {
       }
     }
   }
-  std::snprintf(fieldName,20,"Vs-%s",data.hydro.VsName[0].c_str());
+  std::snprintf(fieldName,20,"Vs-%s",data.hydro->VsName[0].c_str());
   for(int k = d.beg[KDIR]; k < d.end[KDIR] ; k++) {
     for(int j = d.beg[JDIR]; j < d.end[JDIR] ; j++) {
       for(int i = d.beg[IDIR]; i < d.end[IDIR]+IOFFSET ; i++) {
@@ -70,7 +70,7 @@ void Analysis(DataBlock& data) {
       }
     }
   }
-  std::snprintf(fieldName,20,"Vs-%s",data.hydro.VsName[1].c_str());
+  std::snprintf(fieldName,20,"Vs-%s",data.hydro->VsName[1].c_str());
   for(int k = d.beg[KDIR]; k < d.end[KDIR] ; k++) {
     for(int j = d.beg[JDIR]; j < d.end[JDIR]+JOFFSET ; j++) {
       for(int i = d.beg[IDIR]; i < d.end[IDIR] ; i++) {
@@ -84,7 +84,7 @@ void Analysis(DataBlock& data) {
       }
     }
   }
-  std::snprintf(fieldName,20,"Vs-%s",data.hydro.VsName[2].c_str());
+  std::snprintf(fieldName,20,"Vs-%s",data.hydro->VsName[2].c_str());
   for(int k = d.beg[KDIR]; k < d.end[KDIR]+KOFFSET ; k++) {
     for(int j = d.beg[JDIR]; j < d.end[JDIR] ; j++) {
       for(int i = d.beg[IDIR]; i < d.end[IDIR] ; i++) {

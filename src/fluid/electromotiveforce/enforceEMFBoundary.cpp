@@ -13,11 +13,11 @@
 void ElectroMotiveForce::EnforceEMFBoundary() {
   idfx::pushRegion("Emf::EnforceEMFBoundary");
 #if MHD == YES
-  if(data->hydro.haveEmfBoundary)
-    this->data->hydro.emfBoundaryFunc(*data, data->t);
+  if(data->hydro->haveEmfBoundary)
+    this->data->hydro->emfBoundaryFunc(*data, data->t);
 
-  if(this->data->hydro.haveAxis) {
-    this->data->hydro.myAxis.RegularizeEMFs();
+  if(this->data->hydro->haveAxis) {
+    this->data->hydro->myAxis.RegularizeEMFs();
   }
 
   #ifdef WITH_MPI

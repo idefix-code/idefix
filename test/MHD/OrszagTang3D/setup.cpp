@@ -66,7 +66,7 @@ void Analysis(DataBlock& data) {
   // Load back the restart dump
   myOutput->RestartFromDump(data, outnum);
   #ifdef EVOLVE_VECTOR_POTENTIAL
-    data.hydro.emf.ComputeMagFieldFromA(data.hydro.Ve, data.hydro.Vs);
+    data.hydro->emf.ComputeMagFieldFromA(data.hydro->Ve, data.hydro->Vs);
   #endif
   d.SyncFromDevice();
 

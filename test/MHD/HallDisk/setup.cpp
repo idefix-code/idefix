@@ -5,8 +5,8 @@
 // User-defined boundaries
 void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
     if( (dir==IDIR) && (side == left)) {
-        IdefixArray4D<real> Vc = data.hydro.Vc;
-        IdefixArray4D<real> Vs = data.hydro.Vs;
+        IdefixArray4D<real> Vc = data.hydro->Vc;
+        IdefixArray4D<real> Vs = data.hydro->Vs;
         IdefixArray1D<real> x1 = data.x[IDIR];
 
         int ighost = data.nghost[IDIR];
@@ -50,8 +50,8 @@ void Hall(DataBlock& data, const real t, IdefixArray3D<real> &xH) {
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     // Set the function for userdefboundary
-    data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
-    data.hydro.EnrollHallDiffusivity(&Hall);
+    data.hydro->EnrollUserDefBoundary(&UserdefBoundary);
+    data.hydro->EnrollHallDiffusivity(&Hall);
 }
 
 // This routine initialize the flow

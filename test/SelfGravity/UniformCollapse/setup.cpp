@@ -40,7 +40,7 @@ void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
 // User-defined boundaries
 void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
     if((dir==IDIR) && (side == left)) {
-        IdefixArray4D<real> Vc = data.hydro.Vc;
+        IdefixArray4D<real> Vc = data.hydro->Vc;
         int ighost = data.nghost[IDIR];
         IdefixArray1D<real> r = data.x[IDIR];
 
@@ -60,7 +60,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 void FluxBoundary(DataBlock & data, int dir, BoundarySide side, const real t) {
     if((dir==IDIR) && (side == left)) {
       // Loading needed data
-      IdefixArray4D<real> Flux = data.hydro.FluxRiemann;
+      IdefixArray4D<real> Flux = data.hydro->FluxRiemann;
       real halfDt = data.dt/2.; // RK2, dt is actually half at each flux calculation
       int iref = data.nghost[IDIR];
       real rin = data.xbeg[IDIR];
@@ -103,8 +103,8 @@ void FluxBoundary(DataBlock & data, int dir, BoundarySide side, const real t) {
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
-  data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
-  data.hydro.EnrollFluxBoundary(&FluxBoundary);
+  data.hydro->EnrollUserDefBoundary(&UserdefBoundary);
+  data.hydro->EnrollFluxBoundary(&FluxBoundary);
   output.EnrollUserDefVariables(&ComputeUserVars);
   output.EnrollAnalysis(&Analysis);
   RcloudGlob = 60.;

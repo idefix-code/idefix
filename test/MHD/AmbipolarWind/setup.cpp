@@ -45,7 +45,7 @@ void Ambipolar(DataBlock& data, real t, IdefixArray3D<real> &xAin) {
   IdefixArray3D<real> xA = xAin;
   IdefixArray1D<real> x1=data.x[IDIR];
   IdefixArray1D<real> x2=data.x[JDIR];
-  IdefixArray4D<real> Vc=data.hydro.Vc;
+  IdefixArray4D<real> Vc=data.hydro->Vc;
 
   real Hideal = HidealGlob;
   real epsilon = epsilonGlob;
@@ -85,7 +85,7 @@ void Resistivity(DataBlock& data, real t, IdefixArray3D<real> &etain) {
   IdefixArray3D<real> eta = etain;
   IdefixArray1D<real> x1=data.x[IDIR];
   IdefixArray1D<real> x2=data.x[JDIR];
-  IdefixArray4D<real> Vc=data.hydro.Vc;
+  IdefixArray4D<real> Vc=data.hydro->Vc;
 
   real epsilon = epsilonGlob;
 
@@ -97,8 +97,8 @@ void Resistivity(DataBlock& data, real t, IdefixArray3D<real> &etain) {
 }
 
 void MySourceTerm(DataBlock &data, const real t, const real dtin) {
-  IdefixArray4D<real> Vc = data.hydro.Vc;
-  IdefixArray4D<real> Uc = data.hydro.Uc;
+  IdefixArray4D<real> Vc = data.hydro->Vc;
+  IdefixArray4D<real> Uc = data.hydro->Uc;
   IdefixArray1D<real> x1=data.x[IDIR];
   IdefixArray1D<real> x2=data.x[JDIR];
   real epsilonTop = epsilonTopGlob;
@@ -164,8 +164,8 @@ void MySourceTerm(DataBlock &data, const real t, const real dtin) {
 
 
 void InternalBoundary(DataBlock& data, const real t) {
-  IdefixArray4D<real> Vc = data.hydro.Vc;
-  IdefixArray4D<real> Vs = data.hydro.Vs;
+  IdefixArray4D<real> Vc = data.hydro->Vc;
+  IdefixArray4D<real> Vs = data.hydro->Vs;
   IdefixArray1D<real> x1=data.x[IDIR];
   IdefixArray1D<real> x2=data.x[JDIR];
 
@@ -210,8 +210,8 @@ void InternalBoundary(DataBlock& data, const real t) {
 void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 
     if( (dir==IDIR) && (side == left)) {
-        IdefixArray4D<real> Vc = data.hydro.Vc;
-        IdefixArray4D<real> Vs = data.hydro.Vs;
+        IdefixArray4D<real> Vc = data.hydro->Vc;
+        IdefixArray4D<real> Vs = data.hydro->Vs;
         IdefixArray1D<real> x1 = data.x[IDIR];
         IdefixArray1D<real> x2 = data.x[JDIR];
 
@@ -223,7 +223,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
         real densityFloor0 = densityFloorGlob;
         real epsilon=epsilonGlob;
 
-        data.hydro.boundary.BoundaryFor("UserDefX1",dir,side,
+        data.hydro->boundary.BoundaryFor("UserDefX1",dir,side,
             KOKKOS_LAMBDA (int k, int j, int i) {
                 real R=x1(i)*sin(x2(j));
                 real z=x1(i)*cos(x2(j));
@@ -248,7 +248,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                 //Vc(BX3,k,j,i) = Vc(BX3,k,j,ighost);
 
             });
-      data.hydro.boundary.BoundaryForX2s("UserDefX1",dir,side,
+      data.hydro->boundary.BoundaryForX2s("UserDefX1",dir,side,
         KOKKOS_LAMBDA (int k, int j, int i) {
             Vs(BX2s,k,j,i) = Vs(BX2s,k,j,ighost);
           });
@@ -256,8 +256,8 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
     }
 
     if( (dir==IDIR) && (side == right)) {
-        IdefixArray4D<real> Vc = data.hydro.Vc;
-        IdefixArray4D<real> Vs = data.hydro.Vs;
+        IdefixArray4D<real> Vc = data.hydro->Vc;
+        IdefixArray4D<real> Vs = data.hydro->Vs;
         IdefixArray1D<real> x1 = data.x[IDIR];
         IdefixArray1D<real> x2 = data.x[JDIR];
 
@@ -266,7 +266,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
         real csdisk = epsilonGlob/sqrt(Rin);
         real cscorona = epsilonTopGlob/sqrt(Rin);
 
-        data.hydro.boundary.BoundaryFor("UserDefX1",dir,side,
+        data.hydro->boundary.BoundaryFor("UserDefX1",dir,side,
             KOKKOS_LAMBDA (int k, int j, int i) {
                 real R=x1(i)*sin(x2(j));
                 real z=x1(i)*cos(x2(j));
@@ -285,7 +285,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                 //Vc(BX3,k,j,i) = Vc(BX3,k,j,ighost);
 
             });
-      data.hydro.boundary.BoundaryForX2s("UserDefX1",dir,side,
+      data.hydro->boundary.BoundaryForX2s("UserDefX1",dir,side,
         KOKKOS_LAMBDA (int k, int j, int i) {
             Vs(BX2s,k,j,i) = Vs(BX2s,k,j,ighost);
           });
@@ -296,9 +296,9 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 }
 
 void EmfBoundary(DataBlock& data, const real t) {
-    IdefixArray3D<real> Ex1 = data.hydro.emf.ex;
-    IdefixArray3D<real> Ex2 = data.hydro.emf.ey;
-    IdefixArray3D<real> Ex3 = data.hydro.emf.ez;
+    IdefixArray3D<real> Ex1 = data.hydro->emf.ex;
+    IdefixArray3D<real> Ex2 = data.hydro->emf.ey;
+    IdefixArray3D<real> Ex3 = data.hydro->emf.ez;
     if(data.lbound[IDIR] == userdef) {
 
         int ighost = data.beg[IDIR];
@@ -328,7 +328,7 @@ void EmfBoundary(DataBlock& data, const real t) {
 }
 
 void FluxBoundary(DataBlock & data, int dir, BoundarySide side, const real t) {
-    IdefixArray4D<real> Flux = data.hydro.FluxRiemann;
+    IdefixArray4D<real> Flux = data.hydro->FluxRiemann;
     if( dir==IDIR && side == left) {
         int iref = data.beg[IDIR];
 
@@ -389,15 +389,15 @@ void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     // Set the function for userdefboundary
-    data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
-    data.hydro.EnrollAmbipolarDiffusivity(&Ambipolar);
-    //data.hydro.EnrollOhmicDiffusivity(&Resistivity);
-    data.hydro.EnrollUserSourceTerm(&MySourceTerm);
-    data.hydro.EnrollInternalBoundary(&InternalBoundary);
-    data.hydro.EnrollEmfBoundary(&EmfBoundary);
-    //data.hydro.EnrollFluxBoundary(&FluxBoundary);
+    data.hydro->EnrollUserDefBoundary(&UserdefBoundary);
+    data.hydro->EnrollAmbipolarDiffusivity(&Ambipolar);
+    //data.hydro->EnrollOhmicDiffusivity(&Resistivity);
+    data.hydro->EnrollUserSourceTerm(&MySourceTerm);
+    data.hydro->EnrollInternalBoundary(&InternalBoundary);
+    data.hydro->EnrollEmfBoundary(&EmfBoundary);
+    //data.hydro->EnrollFluxBoundary(&FluxBoundary);
     output.EnrollUserDefVariables(&ComputeUserVars);
-    gammaGlob=data.hydro.GetGamma();
+    gammaGlob=data.hydro->GetGamma();
     epsilonGlob = input.Get<real>("Setup","epsilon",0);
     epsilonTopGlob = input.Get<real>("Setup","epsilonTop",0);
     betaGlob = input.Get<real>("Setup","beta",0);

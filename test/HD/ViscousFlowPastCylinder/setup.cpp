@@ -4,7 +4,7 @@
 // User-defined boundaries
 void UserdefBoundary(DataBlock & data, int dir, BoundarySide side, const real t) {
     if(dir==IDIR) {
-        IdefixArray4D<real> Vc = data.hydro.Vc;
+        IdefixArray4D<real> Vc = data.hydro->Vc;
         IdefixArray1D<real> th = data.x[JDIR];
         if(side==right) {
           int ighost = data.end[IDIR]-1;
@@ -45,7 +45,7 @@ void UserdefBoundary(DataBlock & data, int dir, BoundarySide side, const real t)
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
-    data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
+    data.hydro->EnrollUserDefBoundary(&UserdefBoundary);
 
 }
 

@@ -12,6 +12,7 @@
 #include "input.hpp"
 #include "grid.hpp"
 #include "dataBlock.hpp"
+#include "fluid.hpp"
 #include "output.hpp"
 
 // These two will likely be used in the code, so we include them here

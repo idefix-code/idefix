@@ -375,4 +375,5 @@ void Fluid<Phys>::ShowConfig() {
 #include "calcCurrent.hpp"
 #include "coarsenFlow.hpp"
 #include "convertConsToPrim.hpp"
+#include "checkDivB.hpp"
 #endif // FLUID_FLUID_HPP_

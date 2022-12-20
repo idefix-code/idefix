@@ -25,6 +25,7 @@ target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/slopeLimiter.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/shockFlattening.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/shockFlattening.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/evolveStage.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/fluxHD.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/fluxMHD.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/fluid_defs.hpp

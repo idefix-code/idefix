@@ -83,11 +83,6 @@ void Fluid<Phys>::EnrollHallDiffusivity(DiffusivityFunc myFunc) {
 }
 
 template<typename Phys>
-Fluid<Phys>::Fluid() {
-  // Do nothing !
-}
-
-template<typename Phys>
 real Fluid<Phys>::GetGamma() {
   return(this->gamma);
 }

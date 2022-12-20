@@ -163,8 +163,7 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
   this->states["current"] = StateContainer();
 
   // Initialize the hydro object attached to this datablock
-  this->hydro = new(Hydro);
-  this->hydro->Init(input, grid, this);
+  this->hydro = new Hydro(input, grid, this);
 
   // Initialise Fargo if needed
   if(input.CheckBlock("Fargo")) {

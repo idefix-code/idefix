@@ -134,7 +134,6 @@ class DataBlock {
  private:
   void WriteVariable(FILE* , int , int *, char *, void*);
 
-  template<int dir> void LoopDir();     ///< // recursive loop on dimensions
   void ComputeGridCoarseningLevels();   ///< Call user defined function to define Coarsening levels
 };
 

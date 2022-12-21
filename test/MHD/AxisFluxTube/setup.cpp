@@ -78,7 +78,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
         KOKKOS_LAMBDA (int k, int j, int i) {
             Vs(BX2s,k,j,i) = ZERO_F;
           });
-      data.hydro->boundary.BoundaryForX3s("UserDefX2s",dir,side,
+      data.hydro->boundary->BoundaryForX3s("UserDefX2s",dir,side,
         KOKKOS_LAMBDA (int k, int j, int i) {
             Vs(BX3s,k,j,i) = ZERO_F;
           });

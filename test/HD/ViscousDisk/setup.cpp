@@ -1,6 +1,5 @@
 #include "idefix.hpp"
 #include "setup.hpp"
-#include "boundaryloop.hpp"
 
 real epsilonGlob;
 real betaGlob;

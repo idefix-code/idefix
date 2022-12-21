@@ -1,6 +1,5 @@
 #include "idefix.hpp"
 #include "setup.hpp"
-#include "boundaryloop.hpp"
 
 real epsilonGlob;
 real epsilonTopGlob;
@@ -223,7 +222,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
         real densityFloor0 = densityFloorGlob;
         real epsilon=epsilonGlob;
 
-        data.hydro->boundary.BoundaryFor("UserDefX1",dir,side,
+        data.hydro->boundary->BoundaryFor("UserDefX1",dir,side,
             KOKKOS_LAMBDA (int k, int j, int i) {
                 real R=x1(i)*sin(x2(j));
                 real z=x1(i)*cos(x2(j));
@@ -248,7 +247,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                 //Vc(BX3,k,j,i) = Vc(BX3,k,j,ighost);
 
             });
-      data.hydro->boundary.BoundaryForX2s("UserDefX1",dir,side,
+      data.hydro->boundary->BoundaryForX2s("UserDefX1",dir,side,
         KOKKOS_LAMBDA (int k, int j, int i) {
             Vs(BX2s,k,j,i) = Vs(BX2s,k,j,ighost);
           });
@@ -266,7 +265,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
         real csdisk = epsilonGlob/sqrt(Rin);
         real cscorona = epsilonTopGlob/sqrt(Rin);
 
-        data.hydro->boundary.BoundaryFor("UserDefX1",dir,side,
+        data.hydro->boundary->BoundaryFor("UserDefX1",dir,side,
             KOKKOS_LAMBDA (int k, int j, int i) {
                 real R=x1(i)*sin(x2(j));
                 real z=x1(i)*cos(x2(j));
@@ -285,7 +284,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                 //Vc(BX3,k,j,i) = Vc(BX3,k,j,ighost);
 
             });
-      data.hydro->boundary.BoundaryForX2s("UserDefX1",dir,side,
+      data.hydro->boundary->BoundaryForX2s("UserDefX1",dir,side,
         KOKKOS_LAMBDA (int k, int j, int i) {
             Vs(BX2s,k,j,i) = Vs(BX2s,k,j,ighost);
           });

@@ -48,7 +48,7 @@ class Fluid {
   void ShowConfig();
 
   // Our boundary conditions
-  Boundary<Phys>* boundary;
+  std::unique_ptr<Boundary<Phys>> boundary;
 
   // Source terms
   bool haveSourceTerms{false};
@@ -579,7 +579,7 @@ Fluid<Phys>::Fluid(Input &input, Grid &grid, DataBlock *datain) {
   #endif
 
   // Initialise boundary conditions
-  boundary = new Boundary<Phys>(input, grid, this);
+  boundary = std::unique_ptr<Boundary<Phys>> (new Boundary<Phys>(input, grid, this));
 
   // Init shock flattening
   if(haveShockFlattening) {
@@ -588,7 +588,6 @@ Fluid<Phys>::Fluid(Input &input, Grid &grid, DataBlock *datain) {
 
   idfx::popRegion();
 }
-
 
 
 #include "addSourceTerms.hpp"

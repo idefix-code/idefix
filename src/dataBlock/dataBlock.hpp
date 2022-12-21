@@ -98,9 +98,10 @@ class DataBlock {
                                 ///< conservative state of the datablock
                                 ///< (contains references to dedicated objects)
 
-  Hydro *hydro;                  ///< The Hydro object attached to this datablock
+  std::unique_ptr<Hydro> hydro;   ///< The Hydro object attached to this datablock
 
-  void InitFromGrid(Grid &, Input &); ///< init from a Grid object
+  DataBlock(Grid &, Input &);     ///< init from a Grid object
+
   void MakeGeometry();                ///< Compute geometrical terms
   void DumpToFile(std::string);   ///< Dump current datablock to a file for inspection
   void Validate();                ///< error out early in case problems are found in IC
@@ -119,7 +120,6 @@ class DataBlock {
   void EnrollGridCoarseningLevels(GridCoarseningFunc);
                                   ///< Enroll a user function to compute coarsening levels
   void CheckCoarseningLevels();   ///< Check that coarsening levels satisfy requirements
-  DataBlock() = default;
 
   // Do we use fargo-like scheme ? (orbital advection)
   bool haveFargo{false};

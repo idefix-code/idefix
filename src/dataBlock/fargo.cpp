@@ -129,7 +129,7 @@ KOKKOS_INLINE_FUNCTION int modPositive(int x, int divisor) {
 void Fargo::Init(Input &input, DataBlock *data) {
   idfx::pushRegion("Fargo::Init");
   this->data = data;
-  this->hydro = data->hydro;
+  this->hydro = data->hydro.get();
 
   // A bit of arithmetic to get the sizes of the working array
   this->nghost = data->nghost;

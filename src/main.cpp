@@ -88,8 +88,7 @@ int main( int argc, char* argv[] ) {
     gridHost.SyncToDevice();
 
     // instantiate required objects.
-    DataBlock data;
-    data.InitFromGrid(grid, input);
+    DataBlock data(grid, input);
     TimeIntegrator Tint(input,data);
     Output output(input, data);
     Setup mysetup(input, grid, data, output);

@@ -9,8 +9,8 @@
 #include "dataBlock.hpp"
 #include "fluid.hpp"
 
-void DataBlock::InitFromGrid(Grid &grid, Input &input) {
-  idfx::pushRegion("DataBlock::InitFromGrid");
+DataBlock::DataBlock(Grid &grid, Input &input) {
+  idfx::pushRegion("DataBlock::DataBlock");
 
   this->mygrid=&grid;
 
@@ -163,7 +163,7 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
   this->states["current"] = StateContainer();
 
   // Initialize the hydro object attached to this datablock
-  this->hydro = new Hydro(input, grid, this);
+  this->hydro = std::unique_ptr<Hydro>(new Hydro(input, grid, this));
 
   // Initialise Fargo if needed
   if(input.CheckBlock("Fargo")) {

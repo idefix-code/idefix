@@ -63,7 +63,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
             ighost = data.end[IDIR]-1;
         }
 
-        data.hydro->boundary.BoundaryFor("UserDefBoundary", dir, side,
+        data.hydro->boundary->BoundaryFor("UserDefBoundary", dir, side,
           KOKKOS_LAMBDA (int k, int j, int i) {
               real R=x1(i)*sin(x2(j));
               real z=x1(i)*cos(x2(j));
@@ -87,7 +87,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
         }
 
 
-        data.hydro->boundary.BoundaryFor("UserDefBoundary", dir, side,
+        data.hydro->boundary->BoundaryFor("UserDefBoundary", dir, side,
             KOKKOS_LAMBDA (int k, int j, int i) {
               real R=x1(i)*sin(x2(j));
               real z=x1(i)*cos(x2(j));

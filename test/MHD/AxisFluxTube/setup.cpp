@@ -50,7 +50,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 
         const real sq2 = sqrt(2);
 
-        data.hydro->boundary.BoundaryFor("UserDefX1",dir,side,
+        data.hydro->boundary->BoundaryFor("UserDefX1",dir,side,
             KOKKOS_LAMBDA (int k, int j, int i) {
                 real x1 = x1Arr(i);
                 real x2 = x2Arr(j);
@@ -74,7 +74,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                 Vc(VX3,k,j,i) = (ex_p+ey_p)/sq2;
 
             });
-      data.hydro->boundary.BoundaryForX2s("UserDefX2s",dir,side,
+      data.hydro->boundary->BoundaryForX2s("UserDefX2s",dir,side,
         KOKKOS_LAMBDA (int k, int j, int i) {
             Vs(BX2s,k,j,i) = ZERO_F;
           });

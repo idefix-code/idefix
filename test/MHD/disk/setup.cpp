@@ -10,7 +10,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 
         int ighost = data.beg[IDIR];
 
-        data.hydro->boundary.BoundaryFor("UserDefBoundary", dir, side,
+        data.hydro->boundary->BoundaryFor("UserDefBoundary", dir, side,
             KOKKOS_LAMBDA (int k, int j, int i) {
                 Vc(RHO,k,j,i) = Vc(RHO,k,j,ighost);
                 Vc(PRS,k,j,i) = Vc(PRS,k,j,ighost);
@@ -18,11 +18,11 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                 Vc(VX2,k,j,i) = Vc(VX2,k,j,ighost) * sqrt(x1(i)/x1(ighost));
                 Vc(VX3,k,j,i) = Vc(VX3,k,j,ighost) * sqrt(x1(i)/x1(ighost));
             });
-        data.hydro->boundary.BoundaryForX2s("UserDefBoundaryBX2s", dir, side,
+        data.hydro->boundary->BoundaryForX2s("UserDefBoundaryBX2s", dir, side,
             KOKKOS_LAMBDA (int k, int j, int i) {
                 Vs(BX2s,k,j,i) = Vs(BX2s,k,j,ighost);
         });
-        data.hydro->boundary.BoundaryForX3s("UserDefBoundaryBX3s", dir, side,
+        data.hydro->boundary->BoundaryForX3s("UserDefBoundaryBX3s", dir, side,
             KOKKOS_LAMBDA (int k, int j, int i) {
                 Vs(BX3s,k,j,i) = Vs(BX3s,k,j,ighost);
             });

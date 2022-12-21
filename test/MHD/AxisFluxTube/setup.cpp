@@ -87,7 +87,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 
 void Analysis(DataBlock & data) {
   // Mirror data on Host
-  data.hydro->boundary.SetBoundaries(data.t);
+  data.hydro->boundary->SetBoundaries(data.t);
   data.DumpToFile("analysis");
 }
 

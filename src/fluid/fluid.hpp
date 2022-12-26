@@ -444,11 +444,6 @@ Fluid<Phys>::Fluid(Input &input, Grid &grid, DataBlock *datain) {
   }
   #endif // MHD
 
-  // Do we have to take care of the axis?
-  if(data->haveAxis) {
-    this->myAxis = std::unique_ptr<Axis<Phys>>(new Axis<Phys>(grid, this));
-    this->haveAxis = true;
-  }
   /////////////////////////////////////////
   //  ALLOCATION SECION ///////////////////
   /////////////////////////////////////////
@@ -485,7 +480,7 @@ Fluid<Phys>::Fluid(Input &input, Grid &grid, DataBlock *datain) {
       #else // EVOLVE_VECTOR_POTENTIAL
         data->states["current"].PushArray(Vs, State::center, "FLUID_Vs");
       #endif // EVOLVE_VECTOR_POTENTIAL
-      this->emf = std::unique_ptr<ElectroMotiveForce<Phys>>(new ElectroMotiveForce<Phys>(input, this));
+      
     }
 
   // Allocate sound speed array if needed
@@ -582,6 +577,21 @@ Fluid<Phys>::Fluid(Input &input, Grid &grid, DataBlock *datain) {
       }
     #endif
   #endif
+
+
+  //*******************************************
+  //** Child object allocation section
+  //*********************************************
+
+  if constexpr(Phys::mhd) {
+    this->emf = std::unique_ptr<ElectroMotiveForce<Phys>>(new ElectroMotiveForce<Phys>(input, this));
+  }
+  
+  // Do we have to take care of the axis?
+  if(data->haveAxis) {
+    this->myAxis = std::unique_ptr<Axis<Phys>>(new Axis<Phys>(grid, this));
+    this->haveAxis = true;
+  }
 
   // Initialise boundary conditions
   boundary = std::unique_ptr<Boundary<Phys>> (new Boundary<Phys>(input, grid, this));

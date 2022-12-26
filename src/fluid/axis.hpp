@@ -135,6 +135,7 @@ Axis<Phys>::Axis(Grid &grid, Fluid<Phys> *h) {
   Kokkos::deep_copy(symmetryVc, symmetryVcHost);
 
   if constexpr(Phys::mhd) {
+    idfx::cout << "Phys MHD" << std::endl;
     symmetryVs = IdefixArray1D<int>("Axis:SymmetryVs",DIMENSIONS);
     IdefixArray1D<int>::HostMirror symmetryVsHost = Kokkos::create_mirror_view(symmetryVs);
     // Init the array
@@ -178,6 +179,7 @@ void Axis<Phys>::ShowConfig() {
 template<typename Phys>
 void Axis<Phys>::SymmetrizeEx1Side(int jref) {
 #if DIMENSIONS == 3
+
   IdefixArray3D<real> Ex1 = emf->ex;
   IdefixArray1D<real> Ex1Avg = this->Ex1Avg;
 

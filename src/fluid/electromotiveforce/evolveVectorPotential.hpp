@@ -11,7 +11,8 @@
 #include "fluid.hpp"
 #include "dataBlock.hpp"
 
-void ElectroMotiveForce::EvolveVectorPotential(real dt, IdefixArray4D<real> &Vein) {
+template<typename Phys>
+void ElectroMotiveForce<Phys>::EvolveVectorPotential(real dt, IdefixArray4D<real> &Vein) {
   #ifdef EVOLVE_VECTOR_POTENTIAL
     idfx::pushRegion("ElectroMotiveForce::EvolveVectorPotential");
     IdefixArray4D<real> Ve = Vein;
@@ -39,7 +40,8 @@ void ElectroMotiveForce::EvolveVectorPotential(real dt, IdefixArray4D<real> &Vei
 
 
 
-void ElectroMotiveForce::ComputeMagFieldFromA(IdefixArray4D<real> &Vein,
+template<typename Phys>
+void ElectroMotiveForce<Phys>::ComputeMagFieldFromA(IdefixArray4D<real> &Vein,
                                               IdefixArray4D<real> &Vsout) {
   #ifdef EVOLVE_VECTOR_POTENTIAL
     idfx::pushRegion("ElectroMotiveForce::ComputeMagFieldfromA");

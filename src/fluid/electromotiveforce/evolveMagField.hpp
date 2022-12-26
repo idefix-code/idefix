@@ -9,7 +9,8 @@
 #include "dataBlock.hpp"
 
 // Evolve the magnetic field in Vs according to Constranied transport
-void ElectroMotiveForce::EvolveMagField(real t, real dt, IdefixArray4D<real> &Vsin) {
+template<typename Phys>
+void ElectroMotiveForce<Phys>::EvolveMagField(real t, real dt, IdefixArray4D<real> &Vsin) {
   idfx::pushRegion("ElectroMotiveForce::EvolveMagField");
 #if MHD == YES
   // Corned EMFs

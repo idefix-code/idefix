@@ -9,7 +9,8 @@
 #include "dataBlock.hpp"
 
 // Compute Corner EMFs from the one stored in the Riemann step
-void ElectroMotiveForce::CalcCornerEMF(real t) {
+template<typename Phys>
+void ElectroMotiveForce<Phys>::CalcCornerEMF(real t) {
   idfx::pushRegion("ElectroMotiveForce::CalcCornerEMF");
 
 #if MHD == YES && DIMENSIONS >= 2
@@ -37,7 +38,8 @@ void ElectroMotiveForce::CalcCornerEMF(real t) {
 
 
 // Compute Corner EMFs from arithmetic averages
-void ElectroMotiveForce::CalcArithmeticAverage() {
+template<typename Phys>
+void ElectroMotiveForce<Phys>::CalcArithmeticAverage() {
   idfx::pushRegion("ElectroMotiveForce::CalcCornerEMF");
 
   // Corned EMFs
@@ -77,7 +79,8 @@ void ElectroMotiveForce::CalcArithmeticAverage() {
   idfx::popRegion();
 }
 
-void ElectroMotiveForce::CalcCellCenteredEMF() {
+template<typename Phys>
+void ElectroMotiveForce<Phys>::CalcCellCenteredEMF() {
   idfx::pushRegion("ElectroMotiveForce::CalcCellCenteredEMF");
   IdefixArray4D<real> Vc = hydro->Vc;
     // cell-centered EMFs
@@ -120,7 +123,8 @@ void ElectroMotiveForce::CalcCellCenteredEMF() {
   idfx::popRegion();
 }
 
-void ElectroMotiveForce::CalcUCT0Average() {
+template<typename Phys>
+void ElectroMotiveForce<Phys>::CalcUCT0Average() {
   idfx::pushRegion("ElectroMotiveForce::CalcUCT0Average");
     // Corned EMFs
   IdefixArray3D<real> ex = this->ex;
@@ -187,7 +191,8 @@ void ElectroMotiveForce::CalcUCT0Average() {
   idfx::popRegion();
 }
 
-void ElectroMotiveForce::CalcContactAverage() {
+template<typename Phys>
+void ElectroMotiveForce<Phys>::CalcContactAverage() {
   idfx::pushRegion("ElectroMotiveForce::CalcContactAverage");
         // Corned EMFs
   IdefixArray3D<real> ex = this->ex;

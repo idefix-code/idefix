@@ -10,7 +10,8 @@
 #include "dataBlock.hpp"
 
 #ifdef WITH_MPI
-void ElectroMotiveForce::ExchangeAll() {
+template<typename Phys>
+void ElectroMotiveForce<Phys>::ExchangeAll() {
   if(data->mygrid->nproc[IDIR]>1) this->ExchangeX1();
   if(data->mygrid->nproc[JDIR]>1) this->ExchangeX2();
   if(data->mygrid->nproc[KDIR]>1) this->ExchangeX3();
@@ -18,7 +19,8 @@ void ElectroMotiveForce::ExchangeAll() {
 
 
 // Exchange EMFs in X1
-void ElectroMotiveForce::ExchangeX1() {
+template<typename Phys>
+void ElectroMotiveForce<Phys>::ExchangeX1() {
   idfx::pushRegion("Emf::ExchangeX1");
 
 
@@ -118,7 +120,8 @@ void ElectroMotiveForce::ExchangeX1() {
 }
 
 // Exchange EMFs in X2
-void ElectroMotiveForce::ExchangeX2() {
+template<typename Phys>
+void ElectroMotiveForce<Phys>::ExchangeX2() {
   idfx::pushRegion("Emf::ExchangeX2");
 
   // Load  the buffers with data
@@ -213,7 +216,8 @@ void ElectroMotiveForce::ExchangeX2() {
 }
 
 // Exchange EMFs in X3
-void ElectroMotiveForce::ExchangeX3() {
+template<typename Phys>
+void ElectroMotiveForce<Phys>::ExchangeX3() {
   idfx::pushRegion("Emf::ExchangeX3");
 
 

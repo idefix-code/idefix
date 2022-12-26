@@ -27,6 +27,9 @@ template<typename Phys>
 class Boundary;
 
 template<typename Phys>
+class ElectromotiveForce;
+
+template<typename Phys>
 class Fluid {
  public:
   Fluid(Input &, Grid &, DataBlock *);
@@ -151,7 +154,7 @@ class Fluid {
   std::vector<std::string> VeName;
 
   // Storing all of the electromotive forces
-  ElectroMotiveForce emf;
+  std::unique_ptr<ElectromotiveForce<Phys>> emf;
 
   // Required by time integrator
   IdefixArray4D<real> Uc0;
@@ -465,23 +468,23 @@ Fluid<Phys>::Fluid(Input &input, Grid &grid, DataBlock *datain) {
   FluxRiemann =  IdefixArray4D<real>("FLUID_FluxRiemann", NVAR,
                                      data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
-  #if MHD == YES
-    Vs = IdefixArray4D<real>("FLUID_Vs", DIMENSIONS,
+    if constexpr(Phys::mhd) {
+      Vs = IdefixArray4D<real>("FLUID_Vs", DIMENSIONS,
+                  data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
+      #ifdef EVOLVE_VECTOR_POTENTIAL
+        #if DIMENSIONS == 1
+          IDEFIX_ERROR("EVOLVE_VECTOR_POTENTIAL is not compatible with 1D MHD");
+        #else
+          Ve = IdefixArray4D<real>("FLUID_Ve", AX3e+1,
                 data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
-    #ifdef EVOLVE_VECTOR_POTENTIAL
-      #if DIMENSIONS == 1
-        IDEFIX_ERROR("EVOLVE_VECTOR_POTENTIAL is not compatible with 1D MHD");
-      #else
-        Ve = IdefixArray4D<real>("FLUID_Ve", AX3e+1,
-              data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
 
-        data->states["current"].PushArray(Ve, State::center, "FLUID_Ve");
-      #endif
-    #else // EVOLVE_VECTOR_POTENTIAL
-      data->states["current"].PushArray(Vs, State::center, "FLUID_Vs");
-    #endif // EVOLVE_VECTOR_POTENTIAL
-    this->emf.Init(input, this);
-  #endif
+          data->states["current"].PushArray(Ve, State::center, "FLUID_Ve");
+        #endif
+      #else // EVOLVE_VECTOR_POTENTIAL
+        data->states["current"].PushArray(Vs, State::center, "FLUID_Vs");
+      #endif // EVOLVE_VECTOR_POTENTIAL
+      this->emf = std::unique_ptr<ElectroMotiveForce<Phys>>(new ElectroMotiveForce(input, this));
+    }
 
   // Allocate sound speed array if needed
   if(this->haveIsoSoundSpeed == UserDefFunction) {

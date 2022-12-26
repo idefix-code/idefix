@@ -9,7 +9,8 @@
 #include "dataBlock.hpp"
 
 // Compute Corner EMFs from nonideal MHD
-void ElectroMotiveForce::CalcNonidealEMF(real t) {
+template<typename Phys>
+void ElectroMotiveForce<Phys>::CalcNonidealEMF(real t) {
   idfx::pushRegion("ElectroMotiveForce::CalcNonidealEMF");
 
 #if MHD == YES

@@ -51,7 +51,7 @@ void Fluid<Phys>::TvdlfMHD() {
   IdefixArray3D<real> Eb;
   IdefixArray3D<real> Et;
 
-  const ElectroMotiveForce::AveragingType emfAverage = emf.averaging;
+  const ElectroMotiveForce<Phys>::AveragingType emfAverage = emf->averaging;
 
   // Required by UCT_Contact
   IdefixArray3D<real> SV;
@@ -80,16 +80,16 @@ void Fluid<Phys>::TvdlfMHD() {
 
                 sb = +ONE_F;  )
 
-      Et = this->emf.ezi;
-      Eb = this->emf.eyi;
+      Et = this->emf->ezi;
+      Eb = this->emf->eyi;
 
-      SV = this->emf.svx;
+      SV = this->emf->svx;
 
-      aL = this->emf.axL;
-      aR = this->emf.axR;
+      aL = this->emf->axL;
+      aR = this->emf->axR;
 
-      dL = this->emf.dxL;
-      dR = this->emf.dxR;
+      dL = this->emf->dxL;
+      dR = this->emf->dxR;
 
       break;
 #if DIMENSIONS >= 2
@@ -100,16 +100,16 @@ void Fluid<Phys>::TvdlfMHD() {
 
                 sb = -ONE_F;  )
 
-      Et = this->emf.ezj;
-      Eb = this->emf.exj;
+      Et = this->emf->ezj;
+      Eb = this->emf->exj;
 
-      SV = this->emf.svy;
+      SV = this->emf->svy;
 
-      aL = this->emf.ayL;
-      aR = this->emf.ayR;
+      aL = this->emf->ayL;
+      aR = this->emf->ayR;
 
-      dL = this->emf.dyL;
-      dR = this->emf.dyR;
+      dL = this->emf->dyL;
+      dR = this->emf->dyR;
 
       break;
 #endif
@@ -122,16 +122,16 @@ void Fluid<Phys>::TvdlfMHD() {
                   ,
                 sb = +ONE_F;  )
 
-      Et = this->emf.eyk;
-      Eb = this->emf.exk;
+      Et = this->emf->eyk;
+      Eb = this->emf->exk;
 
-      SV = this->emf.svz;
+      SV = this->emf->svz;
 
-      aL = this->emf.azL;
-      aR = this->emf.azR;
+      aL = this->emf->azL;
+      aR = this->emf->azR;
 
-      dL = this->emf.dzL;
-      dR = this->emf.dzR;
+      dL = this->emf->dzL;
+      dR = this->emf->dzR;
       break;
 #endif
     default:

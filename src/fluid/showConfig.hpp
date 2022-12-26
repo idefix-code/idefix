@@ -154,7 +154,7 @@ void Fluid<Phys>::ShowConfig() {
     idfx::cout << "Fluid: user-defined source terms ENABLED." << std::endl;
   }
   #if MHD == YES
-    emf.ShowConfig();
+    emf->ShowConfig();
   #endif
   if(viscosityStatus.isExplicit || viscosityStatus.isRKL) {
     viscosity.ShowConfig();

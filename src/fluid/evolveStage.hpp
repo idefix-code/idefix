@@ -41,16 +41,16 @@ void Fluid<Phys>::EvolveStage(const real t, const real dt) {
   if constexpr(Phys::mhd) {
     #if DIMENSIONS >= 2
       // Compute the field evolution according to CT
-      emf.CalcCornerEMF(t);
+      emf->CalcCornerEMF(t);
       if(resistivityStatus.isExplicit || ambipolarStatus.isExplicit) {
-        emf.CalcNonidealEMF(t);
+        emf->CalcNonidealEMF(t);
       }
-      emf.EnforceEMFBoundary();
+      emf->EnforceEMFBoundary();
       #ifdef EVOLVE_VECTOR_POTENTIAL
-        emf.EvolveVectorPotential(dt, Ve);
-        emf.ComputeMagFieldFromA(Ve, Vs);
+        emf->EvolveVectorPotential(dt, Ve);
+        emf->ComputeMagFieldFromA(Ve, Vs);
       #else
-        emf.EvolveMagField(t, dt, Vs);
+        emf->EvolveMagField(t, dt, Vs);
       #endif
 
       boundary->ReconstructVcField(Uc);

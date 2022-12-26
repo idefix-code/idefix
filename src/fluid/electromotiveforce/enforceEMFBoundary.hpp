@@ -10,7 +10,8 @@
 #include "dataBlock.hpp"
 
 
-void ElectroMotiveForce::EnforceEMFBoundary() {
+template<typename Phys>
+void ElectroMotiveForce<Phys>::EnforceEMFBoundary() {
   idfx::pushRegion("Emf::EnforceEMFBoundary");
 #if MHD == YES
   if(data->hydro->haveEmfBoundary)
@@ -93,7 +94,8 @@ void ElectroMotiveForce::EnforceEMFBoundary() {
   idfx::popRegion();
 }
 
-void ElectroMotiveForce::SymmetrizeEMFShearingBox() {
+template<typename Phys>
+void ElectroMotiveForce<Phys>::SymmetrizeEMFShearingBox() {
   idfx::pushRegion("Emf::EnforceEMFBoundary");
   #if MHD == YES
 
@@ -170,7 +172,8 @@ void ElectroMotiveForce::SymmetrizeEMFShearingBox() {
 }
 
 
-void ElectroMotiveForce::ExtrapolateEMFShearingBox(BoundarySide side,
+template<typename Phys>
+void ElectroMotiveForce<Phys>::ExtrapolateEMFShearingBox(BoundarySide side,
                                                    IdefixArray2D<real> Ein,
                                                    IdefixArray2D<real> Eout) {
   const int nxi = data->np_int[IDIR];

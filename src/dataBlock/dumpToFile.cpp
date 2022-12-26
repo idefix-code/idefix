@@ -125,16 +125,16 @@ void DataBlock::DumpToFile(std::string filebase)  {
   dims[2] = this->np_tot[KDIR];
 
   std::snprintf(fieldName,NAMESIZE,"Ex3");
-  IdefixArray3D<real>::HostMirror locE = Kokkos::create_mirror_view(this->hydro->emf.ez);
-  Kokkos::deep_copy(locE,this->hydro->emf.ez);
+  IdefixArray3D<real>::HostMirror locE = Kokkos::create_mirror_view(this->hydro->emf->ez);
+  Kokkos::deep_copy(locE,this->hydro->emf->ez);
   WriteVariable(fileHdl, 3, dims, fieldName, locE.data());
 
   #if DIMENSIONS == 3
   std::snprintf(fieldName,NAMESIZE,"Ex1");
-  Kokkos::deep_copy(locE,this->hydro->emf.ex);
+  Kokkos::deep_copy(locE,this->hydro->emf->ex);
   WriteVariable(fileHdl, 3, dims, fieldName, locE.data());
   std::snprintf(fieldName,NAMESIZE,"Ex2");
-  Kokkos::deep_copy(locE,this->hydro->emf.ey);
+  Kokkos::deep_copy(locE,this->hydro->emf->ey);
   WriteVariable(fileHdl, 3, dims, fieldName, locE.data());
   #endif
 

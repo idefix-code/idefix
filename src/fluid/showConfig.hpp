@@ -163,6 +163,6 @@ void Fluid<Phys>::ShowConfig() {
     thermalDiffusion.ShowConfig();
   }
   if(haveAxis) {
-    myAxis.ShowConfig();
+    myAxis->ShowConfig();
   }
 }

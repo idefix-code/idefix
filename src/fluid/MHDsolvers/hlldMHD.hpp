@@ -15,11 +15,15 @@
 #include "storeFlux.hpp"
 #include "electroMotiveForce.hpp"
 
+
+
 // Compute Riemann fluxes from states using HLLD solver
 template <typename Phys>
 template<const int DIR>
 void Fluid<Phys>::HlldMHD() {
   idfx::pushRegion("Hydro::HLLD_MHD");
+
+  using EMF = ElectroMotiveForce<Phys>;
 
   constexpr int ioffset = (DIR==IDIR) ? 1 : 0;
   constexpr int joffset = (DIR==JDIR) ? 1 : 0;
@@ -51,7 +55,8 @@ void Fluid<Phys>::HlldMHD() {
   IdefixArray3D<real> Eb;
   IdefixArray3D<real> Et;
 
-  const ElectroMotiveForce<Phys>::AveragingType emfAverage = emf->averaging;
+
+  const typename EMF::AveragingType emfAverage = emf->averaging;
 
   // Required by UCT_Contact
   IdefixArray3D<real> SV;
@@ -572,14 +577,14 @@ void Fluid<Phys>::HlldMHD() {
       cMax(k,j,i) = cmax;
 
       // 7-- Store the flux in the emf components
-      if (emfAverage==ElectroMotiveForce::arithmetic
-                || emfAverage==ElectroMotiveForce::uct0) {
+      if (emfAverage==EMF::arithmetic
+                || emfAverage==EMF::uct0) {
         K_StoreEMF<DIR>(i,j,k,st,sb,Flux,Et,Eb);
-      } else if (emfAverage==ElectroMotiveForce::uct_contact) {
+      } else if (emfAverage==EMF::uct_contact) {
         K_StoreContact<DIR>(i,j,k,st,sb,Flux,Et,Eb,SV);
-      } else if (emfAverage==ElectroMotiveForce::uct_hll) {
+      } else if (emfAverage==EMF::uct_hll) {
         K_StoreHLL<DIR>(i,j,k,st,sb,sl,sr,vL,vR,Et,Eb,aL,aR,dL,dR);
-      } else if (emfAverage==ElectroMotiveForce::uct_hlld) {
+      } else if (emfAverage==EMF::uct_hlld) {
         K_StoreHLLD<DIR>(i,j,k,st,sb,c2Iso,sl,sr,vL,vR,uL,uR,Et,Eb,aL,aR,dL,dR);
       }
   });

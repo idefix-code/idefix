@@ -441,7 +441,7 @@ void Fargo::StoreToScratch() {
   #if MHD == YES
     #ifdef EVOLVE_VECTOR_POTENTIAL
       // Update Vs to its latest
-      hydro->emf.ComputeMagFieldFromA(hydro->Ve,hydro->Vs);
+      hydro->emf->ComputeMagFieldFromA(hydro->Ve,hydro->Vs);
     #endif
     // in MHD mode, we need to copy Vs only when there is domain decomposition, otherwise,
     // we just make a reference (this is already done by init)
@@ -599,9 +599,9 @@ void Fargo::ShiftSolution(const real t, const real dt) {
 
 #if MHD == YES
   IdefixArray4D<real> scrhVs = this->scrhVs;
-  IdefixArray3D<real> ex = hydro->emf.Ex1;
-  IdefixArray3D<real> ey = hydro->emf.Ex2;
-  IdefixArray3D<real> ez = hydro->emf.Ex3;
+  IdefixArray3D<real> ex = hydro->emf->Ex1;
+  IdefixArray3D<real> ey = hydro->emf->Ex2;
+  IdefixArray3D<real> ez = hydro->emf->Ex3;
   IdefixArray1D<real> x1m = data->xl[IDIR];
   IdefixArray1D<real> x2m = data->xl[JDIR];
   IdefixArray1D<real> dmu = data->dmu;

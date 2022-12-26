@@ -11,13 +11,10 @@
 #include <string>
 #include <vector>
 #include "idefix.hpp"
-
 #include "grid.hpp"
 #include "fluid_defs.hpp"
-#include "electroMotiveForce.hpp"
 #include "viscosity.hpp"
 #include "thermalDiffusion.hpp"
-#include "axis.hpp"
 #include "shockFlattening.hpp"
 #include "selfGravity.hpp"
 
@@ -27,7 +24,10 @@ template<typename Phys>
 class Boundary;
 
 template<typename Phys>
-class ElectromotiveForce;
+class Axis;
+
+template<typename Phys>
+class ElectroMotiveForce;
 
 template<typename Phys>
 class Fluid {
@@ -82,7 +82,7 @@ class Fluid {
 
   // Whether or not we have to treat the axis
   bool haveAxis{false};
-  Axis myAxis;
+  std::unique_ptr<Axis<Phys>> myAxis;
 
   // Rotation vector
   bool haveRotation{false};
@@ -154,7 +154,7 @@ class Fluid {
   std::vector<std::string> VeName;
 
   // Storing all of the electromotive forces
-  std::unique_ptr<ElectromotiveForce<Phys>> emf;
+  std::unique_ptr<ElectroMotiveForce<Phys>> emf;
 
   // Required by time integrator
   IdefixArray4D<real> Uc0;
@@ -168,11 +168,11 @@ class Fluid {
 
 
  private:
-  friend class ElectroMotiveForce;
+  friend class ElectroMotiveForce<Phys>;
   friend class Viscosity;
   friend class ThermalDiffusion;
   friend class Fargo;
-  friend class Axis;
+  friend class Axis<Phys>;
   friend class RKLegendre;
   friend class Boundary<Phys>;
   friend class ShockFlattening;
@@ -220,6 +220,8 @@ class Fluid {
 #include "../physics.hpp"
 #include "dataBlock.hpp"
 #include "boundary.hpp"
+#include "electroMotiveForce.hpp"
+#include "axis.hpp"
 
 using Hydro = Fluid<Physics>;
 
@@ -444,7 +446,7 @@ Fluid<Phys>::Fluid(Input &input, Grid &grid, DataBlock *datain) {
 
   // Do we have to take care of the axis?
   if(data->haveAxis) {
-    this->myAxis.Init(grid, this);
+    this->myAxis = std::unique_ptr<Axis<Phys>>(new Axis<Phys>(grid, this));
     this->haveAxis = true;
   }
   /////////////////////////////////////////
@@ -483,7 +485,7 @@ Fluid<Phys>::Fluid(Input &input, Grid &grid, DataBlock *datain) {
       #else // EVOLVE_VECTOR_POTENTIAL
         data->states["current"].PushArray(Vs, State::center, "FLUID_Vs");
       #endif // EVOLVE_VECTOR_POTENTIAL
-      this->emf = std::unique_ptr<ElectroMotiveForce<Phys>>(new ElectroMotiveForce(input, this));
+      this->emf = std::unique_ptr<ElectroMotiveForce<Phys>>(new ElectroMotiveForce<Phys>(input, this));
     }
 
   // Allocate sound speed array if needed

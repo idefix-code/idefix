@@ -57,10 +57,10 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
     Ve = Kokkos::create_mirror_view(data->hydro->Ve);
   #endif
 
-  D_EXPAND( Ex3 = Kokkos::create_mirror_view(data->hydro->emf.ez);  ,
+  D_EXPAND( Ex3 = Kokkos::create_mirror_view(data->hydro->emf->ez);  ,
                                                              ,
-            Ex1 = Kokkos::create_mirror_view(data->hydro->emf.ex);
-            Ex2 = Kokkos::create_mirror_view(data->hydro->emf.ey);  )
+            Ex1 = Kokkos::create_mirror_view(data->hydro->emf->ex);
+            Ex2 = Kokkos::create_mirror_view(data->hydro->emf->ey);  )
 #endif
 
   // if grid coarsening is enabled
@@ -102,10 +102,10 @@ void DataBlockHost::SyncToDevice() {
     Kokkos::deep_copy(data->hydro->Ve,Ve);
   #endif
 
-  D_EXPAND( Kokkos::deep_copy(data->hydro->emf.ez,Ex3);  ,
+  D_EXPAND( Kokkos::deep_copy(data->hydro->emf->ez,Ex3);  ,
                                                   ,
-            Kokkos::deep_copy(data->hydro->emf.ex,Ex1);
-            Kokkos::deep_copy(data->hydro->emf.ey,Ex2);  )
+            Kokkos::deep_copy(data->hydro->emf->ex,Ex1);
+            Kokkos::deep_copy(data->hydro->emf->ey,Ex2);  )
 #endif
 
   Kokkos::deep_copy(data->hydro->Uc,Uc);
@@ -132,10 +132,10 @@ void DataBlockHost::SyncFromDevice() {
   #ifdef EVOLVE_VECTOR_POTENTIAL
     Kokkos::deep_copy(Ve,data->hydro->Ve);
   #endif
-  D_EXPAND( Kokkos::deep_copy(Ex3,data->hydro->emf.ez);  ,
+  D_EXPAND( Kokkos::deep_copy(Ex3,data->hydro->emf->ez);  ,
                                                   ,
-            Kokkos::deep_copy(Ex1,data->hydro->emf.ex);
-            Kokkos::deep_copy(Ex2,data->hydro->emf.ey);  )
+            Kokkos::deep_copy(Ex1,data->hydro->emf->ex);
+            Kokkos::deep_copy(Ex2,data->hydro->emf->ey);  )
 #endif
 
   Kokkos::deep_copy(Uc,data->hydro->Uc);

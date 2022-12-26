@@ -155,7 +155,7 @@ class ElectroMotiveForce {
 
 // Init the emf from a datablock pointer
 template<typename Phys>
-ElectroMotiveForce<Phys>::ElectromotiveForce(Input &input, Hydro *hydro) {
+ElectroMotiveForce<Phys>::ElectroMotiveForce(Input &input, Hydro *hydro) {
   idfx::pushRegion("ElectroMotiveForce::Init");
 
   if(input.CheckEntry("Hydro","emf")>=0) {

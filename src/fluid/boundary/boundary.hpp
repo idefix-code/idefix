@@ -238,7 +238,7 @@ void Boundary<Phys>::EnforceBoundaryDir(real t, int dir) {
       EnforceShearingBox(t,dir,left);
       break;
     case axis:
-      fluid->myAxis.EnforceAxisBoundary(left);
+      fluid->myAxis->EnforceAxisBoundary(left);
       break;
     case userdef:
       if(this->haveUserDefBoundary)
@@ -273,7 +273,7 @@ void Boundary<Phys>::EnforceBoundaryDir(real t, int dir) {
       EnforceShearingBox(t,dir,right);
       break;
     case axis:
-      fluid->myAxis.EnforceAxisBoundary(right);
+      fluid->myAxis->EnforceAxisBoundary(right);
       break;
     case userdef:
       if(this->haveUserDefBoundary)
@@ -381,7 +381,7 @@ void Boundary<Phys>::ReconstructNormalField(int dir) {
       );
     } else {
       // We have an axis, ask myAxis to do that job for us
-      fluid->myAxis.ReconstructBx2s();
+      fluid->myAxis->ReconstructBx2s();
     }
   }
 #endif

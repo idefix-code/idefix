@@ -317,7 +317,7 @@ void RKLegendre::Cycle() {
         Ve1(n,k,j,i) = Ve(n,k,j,i);
         Ve(n,k,j,i) = Ve1(n,k,j,i) + mu_tilde_j*dt_hyp*dA0(n,k,j,i);
       });
-      data->hydro->emf.ComputeMagFieldFromA(Ve,Vs);
+      data->hydro->emf->ComputeMagFieldFromA(Ve,Vs);
     #else
       idefix_for("RKL_Cycle_InitVs1",
               0, DIMENSIONS,
@@ -410,7 +410,7 @@ void RKLegendre::Cycle() {
                                     + gamma_j*dt_hyp*dA0(n,k,j,i);
             #endif
           });
-        data->hydro->emf.ComputeMagFieldFromA(Ve,Vs);
+        data->hydro->emf->ComputeMagFieldFromA(Ve,Vs);
       #else
         // update Vs
         idefix_for("RKL_Cycle_UpdateVs",
@@ -488,9 +488,9 @@ void RKLegendre::ResetStage() {
   #else
     IdefixArray4D<real> dB = this->dB;
   #endif
-  IdefixArray3D<real> ex = data->hydro->emf.ex;
-  IdefixArray3D<real> ey = data->hydro->emf.ey;
-  IdefixArray3D<real> ez = data->hydro->emf.ez;
+  IdefixArray3D<real> ex = data->hydro->emf->ex;
+  IdefixArray3D<real> ey = data->hydro->emf->ey;
+  IdefixArray3D<real> ez = data->hydro->emf->ez;
   IdefixArray1D<int> vars = this->varList;
   IdefixArray3D<real> invDt = data->hydro->InvDt;
   int stage = this->stage;
@@ -590,13 +590,13 @@ void RKLegendre::EvolveStage(real t) {
   if(haveVc || stage == 1) LoopDir<IDIR>(t);
 
   if(haveVs) {
-    data->hydro->emf.CalcNonidealEMF(t);
-    data->hydro->emf.EnforceEMFBoundary();
+    data->hydro->emf->CalcNonidealEMF(t);
+    data->hydro->emf->EnforceEMFBoundary();
     real dt=1.0;
     #ifdef EVOLVE_VECTOR_POTENTIAL
-      data->hydro->emf.EvolveVectorPotential(dt, this->dA);
+      data->hydro->emf->EvolveVectorPotential(dt, this->dA);
     #else
-      data->hydro->emf.EvolveMagField(t, dt, this->dB);
+      data->hydro->emf->EvolveMagField(t, dt, this->dB);
     #endif
   }
   idfx::popRegion();

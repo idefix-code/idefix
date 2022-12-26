@@ -483,14 +483,16 @@ void RKLegendre::ResetStage() {
 
   IdefixArray4D<real> dU = this->dU;
   IdefixArray4D<real> Flux = data->hydro->FluxRiemann;
-  #ifdef EVOLVE_VECTOR_POTENTIAL
-    IdefixArray4D<real> dA = this->dA;
-  #else
-    IdefixArray4D<real> dB = this->dB;
+  #if MHD == YES
+    #ifdef EVOLVE_VECTOR_POTENTIAL
+      IdefixArray4D<real> dA = this->dA;
+    #else
+      IdefixArray4D<real> dB = this->dB;
+    #endif
+    IdefixArray3D<real> ex = data->hydro->emf->ex;
+    IdefixArray3D<real> ey = data->hydro->emf->ey;
+    IdefixArray3D<real> ez = data->hydro->emf->ez;
   #endif
-  IdefixArray3D<real> ex = data->hydro->emf->ex;
-  IdefixArray3D<real> ey = data->hydro->emf->ey;
-  IdefixArray3D<real> ez = data->hydro->emf->ez;
   IdefixArray1D<int> vars = this->varList;
   IdefixArray3D<real> invDt = data->hydro->InvDt;
   int stage = this->stage;
@@ -513,7 +515,7 @@ void RKLegendre::ResetStage() {
       }
       if(stage == 1)
         invDt(k,j,i) = ZERO_F;
-
+      #if MHD == YES
       if(haveVs) {
         #ifdef EVOLVE_VECTOR_POTENTIAL
           for(int n=0; n < AX3e+1; n++) {
@@ -529,6 +531,7 @@ void RKLegendre::ResetStage() {
                   ex(k,j,i) = 0.0;
                   ey(k,j,i) = 0.0;    )
       }
+      #endif
     });
 
   idfx::popRegion();

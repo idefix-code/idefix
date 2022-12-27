@@ -12,11 +12,14 @@
 #include <vector>
 #include "idefix.hpp"
 #include "grid.hpp"
+#include "output.hpp"
 #include "fluid_defs.hpp"
 #include "viscosity.hpp"
 #include "thermalDiffusion.hpp"
 #include "shockFlattening.hpp"
 #include "selfGravity.hpp"
+#include "vtk.hpp"
+#include "dump.hpp"
 
 // forward class declaration
 class DataBlock;
@@ -32,7 +35,7 @@ class ElectroMotiveForce;
 template<typename Phys>
 class Fluid {
  public:
-  Fluid(Input &, Grid &, DataBlock *);
+  Fluid( Grid &, Input&, DataBlock *);
   void ConvertConsToPrim();
   void ConvertPrimToCons();
   template <int> void CalcRiemannFlux(const real);
@@ -227,7 +230,7 @@ using Hydro = Fluid<Physics>;
 
 
 template<typename Phys>
-Fluid<Phys>::Fluid(Input &input, Grid &grid, DataBlock *datain) {
+Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
   idfx::pushRegion("Fluid::Init");
   // Save the datablock to which we are attached from now on
   this->data = datain;
@@ -511,32 +514,41 @@ Fluid<Phys>::Fluid(Input &input, Grid &grid, DataBlock *datain) {
     switch(i) {
       case RHO:
         VcName.push_back("RHO");
+        data->vtk->RegisterVariable(Vc, "RHO", RHO);
         break;
       case VX1:
         VcName.push_back("VX1");
+        data->vtk->RegisterVariable(Vc, "VX1", VX1);
         break;
       case VX2:
         VcName.push_back("VX2");
+        data->vtk->RegisterVariable(Vc, "VX2", VX2);
         break;
       case VX3:
         VcName.push_back("VX3");
+        data->vtk->RegisterVariable(Vc, "VX3", VX3);
         break;
       case BX1:
         VcName.push_back("BX1");
+        data->vtk->RegisterVariable(Vc, "BX1", BX1);
         break;
       case BX2:
         VcName.push_back("BX2");
+        data->vtk->RegisterVariable(Vc, "BX2", BX2);
         break;
       case BX3:
         VcName.push_back("BX3");
+        data->vtk->RegisterVariable(Vc, "BX3", BX3);
         break;
 #if HAVE_ENERGY
       case PRS:
         VcName.push_back("PRS");
+        data->vtk->RegisterVariable(Vc, "PRS", PRS);
         break;
 #endif
       default:
         VcName.push_back("Vc_"+std::to_string(i));
+        data->vtk->RegisterVariable(Vc, "Vc_"+std::to_string(i), i);
     }
   }
 
@@ -586,7 +598,7 @@ Fluid<Phys>::Fluid(Input &input, Grid &grid, DataBlock *datain) {
   if constexpr(Phys::mhd) {
     this->emf = std::unique_ptr<ElectroMotiveForce<Phys>>(new ElectroMotiveForce<Phys>(input, this));
   }
-  
+
   // Do we have to take care of the axis?
   if(data->haveAxis) {
     this->myAxis = std::unique_ptr<Axis<Phys>>(new Axis<Phys>(grid, this));

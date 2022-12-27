@@ -14,6 +14,7 @@
 #include "idefix.hpp"
 #include "grid.hpp"
 #include "gridHost.hpp"
+#include "output.hpp"
 #include "fargo.hpp"
 #include "gravity.hpp"
 #include "stateContainer.hpp"
@@ -29,6 +30,8 @@
 
 // forward class declaration (used by enrollment functions)
 class DataBlock;
+class Vtk;
+class Dump;
 
 // Forward class hydro declaration
 #include "physics.hpp"
@@ -100,6 +103,9 @@ class DataBlock {
 
   std::unique_ptr<Hydro> hydro;   ///< The Hydro object attached to this datablock
 
+  std::unique_ptr<Vtk> vtk;
+  std::unique_ptr<Dump> dump;
+
   DataBlock(Grid &, Input &);     ///< init from a Grid object
 
   void MakeGeometry();                ///< Compute geometrical terms
@@ -132,6 +138,7 @@ class DataBlock {
 
 
  private:
+
   void WriteVariable(FILE* , int , int *, char *, void*);
 
   void ComputeGridCoarseningLevels();   ///< Call user defined function to define Coarsening levels

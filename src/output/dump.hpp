@@ -25,17 +25,20 @@ enum DataType {DoubleType, SingleType, IntegerType, BoolType};
 // Forward class declaration
 //class Vtk;
 class Output;
+class DataBlock;
 
 class Dump {
   friend class DumpImage; // Allow dumpimag to have access to dump API
  public:
-  void Init(Input &, DataBlock &);               // Create Dump Object
+  Dump(DataBlock *);               // Create Dump Object
+
   // Create a Dump file from the current state of the code
-  int Write(DataBlock &, Output&);
+  int Write(Output&);
   // Read and load a dump file as current state of the code
-  int Read(DataBlock &, Output&, int);
+  int Read(Output&, int);
 
  private:
+  DataBlock *data;
   int dumpFileNumber;
   int geometry{GEOMETRY};
   int periodicity[3];

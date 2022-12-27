@@ -6,13 +6,13 @@
 // ***********************************************************************************
 
 #include "dumpImage.hpp"
-#include "output.hpp"
+#include "dataBlock.hpp"
 #include "idefix.hpp"
 
 
 #define  HEADERSIZE 128
 
-DumpImage::DumpImage(std::string filename, Output &output) {
+DumpImage::DumpImage(std::string filename, DataBlock *data) {
   idfx::pushRegion("DumpImage::DumpImage");
 
   int nx[3];
@@ -21,7 +21,7 @@ DumpImage::DumpImage(std::string filename, Output &output) {
   DataType type;
   int ndim;
   IdfxFileHandler fileHdl;
-  Dump &dump = output.dump;
+  Dump dump(data);
 
   idfx::cout << "DumpImage: loading restart file " << filename << "..." << std::flush;
 

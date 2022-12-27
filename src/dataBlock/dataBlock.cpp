@@ -8,6 +8,8 @@
 #include "../idefix.hpp"
 #include "dataBlock.hpp"
 #include "fluid.hpp"
+#include "vtk.hpp"
+#include "dump.hpp"
 
 DataBlock::DataBlock(Grid &grid, Input &input) {
   idfx::pushRegion("DataBlock::DataBlock");
@@ -110,8 +112,14 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
 
   this->states["current"] = StateContainer();
 
+  // Initialize the VTK object
+  this->vtk = std::unique_ptr<Vtk>(new Vtk(input, this));
+
+    // Initialize the Dump object
+  this->dump = std::unique_ptr<Dump>(new Dump(this));
+
   // Initialize the hydro object attached to this datablock
-  this->hydro = std::unique_ptr<Hydro>(new Hydro(input, grid, this));
+  this->hydro = std::unique_ptr<Hydro>(new Hydro(grid, input, this));
 
   // Initialise Fargo if needed
   if(input.CheckBlock("Fargo")) {

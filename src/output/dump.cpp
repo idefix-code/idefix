@@ -17,22 +17,22 @@
 #define  FILENAMESIZE   256
 #define  HEADERSIZE 128
 
-void Dump::Init(Input &input, DataBlock &data) {
+Dump::Dump(DataBlock *datain) {
   // Init the output period
-
+  this->data = datain;
 
   for (int dir=0; dir<3; dir++) {
-    this->periodicity[dir] = (data.mygrid->lbound[dir] == periodic);
+    this->periodicity[dir] = (data->mygrid->lbound[dir] == periodic);
   }
   this->dumpFileNumber = 0;
 
   // Allocate scratch Array
-  this->scrch = new real[ (data.np_int[IDIR]+IOFFSET)*
-                          (data.np_int[JDIR]+JOFFSET)*
-                          (data.np_int[KDIR]+KOFFSET)];
+  this->scrch = new real[ (data->np_int[IDIR]+IOFFSET)*
+                          (data->np_int[JDIR]+JOFFSET)*
+                          (data->np_int[KDIR]+KOFFSET)];
 
   #ifdef WITH_MPI
-    Grid *grid = data.mygrid;
+    Grid *grid = data->mygrid;
 
     int start[3];
     int size[3];
@@ -41,8 +41,8 @@ void Dump::Init(Input &input, DataBlock &data) {
     // Dimensions for cell-centered fields
     for(int dir = 0; dir < 3 ; dir++) {
       size[2-dir] = grid->np_int[dir];
-      start[2-dir] = data.gbeg[dir]-data.nghost[dir];
-      subsize[2-dir] = data.np_int[dir];
+      start[2-dir] = data->gbeg[dir]-data->nghost[dir];
+      subsize[2-dir] = data->np_int[dir];
     }
 
     MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
@@ -53,8 +53,8 @@ void Dump::Init(Input &input, DataBlock &data) {
     for(int face = 0; face < 3 ; face++) {
       for(int dir = 0; dir < 3 ; dir++) {
         size[2-dir] = grid->np_int[dir];
-        start[2-dir] = data.gbeg[dir]-data.nghost[dir];
-        subsize[2-dir] = data.np_int[dir];
+        start[2-dir] = data->gbeg[dir]-data->nghost[dir];
+        subsize[2-dir] = data->np_int[dir];
       }
       // Add the extra guy in the face direction
       size[2-face]++;
@@ -92,8 +92,8 @@ void Dump::Init(Input &input, DataBlock &data) {
         // load the array size
         for(int dir = 0; dir < 3 ; dir++) {
           size[2-dir] = grid->np_int[dir];
-          start[2-dir] = data.gbeg[dir]-data.nghost[dir];
-          subsize[2-dir] = data.np_int[dir];
+          start[2-dir] = data->gbeg[dir]-data->nghost[dir];
+          subsize[2-dir] = data->np_int[dir];
         }
 
         // Extra cell in the dirs perp to field
@@ -451,7 +451,7 @@ void Dump::ReadDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gdi
   #endif
 }
 
-int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
+int Dump::Read(Output& output, int readNumber ) {
   char filename[FILENAMESIZE];
   int nx[3];
   int nxglob[3];
@@ -472,7 +472,7 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
   std::snprintf (filename, FILENAMESIZE, "dump.%04d.dmp", readNumber);
 
   // Make a local image of the datablock
-  DataBlockHost dataHost(data);
+  DataBlockHost dataHost(*data);
 
   // open file
 #ifdef WITH_MPI
@@ -500,7 +500,7 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
   for(int dir=0 ; dir < 3; dir++) {
     ReadNextFieldProperties(fileHdl, ndim, nx, type, fieldName);
     if(ndim>1) IDEFIX_ERROR("Wrong coordinate array dimensions while reading restart dump");
-    if(nx[0] != data.mygrid->np_int[dir]) {
+    if(nx[0] != data->mygrid->np_int[dir]) {
       idfx::cout << "dir " << dir << ", restart has " << nx[0] << " points " << std::endl;
       IDEFIX_ERROR("Domain size from the restart dump is different from the current one");
     }
@@ -530,7 +530,7 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
       // Matching Name is Vc-<<VcName>>
       int nv = -1;
       for(int n = 0 ; n < NVAR; n++) {
-        if(fieldName.compare(3,3,data.hydro->VcName[n],0,3)==0) nv=n; // Found matching field
+        if(fieldName.compare(3,3,data->hydro->VcName[n],0,3)==0) nv=n; // Found matching field
       }
       // Load it
       for(int dir = 0 ; dir < 3; dir++) {
@@ -559,7 +559,7 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
       #if MHD == YES
         int nv = -1;
         for(int n = 0 ; n < DIMENSIONS; n++) {
-          if(fieldName.compare(3,4,data.hydro->VsName[n],0,4)==0) nv=n; // Found matching field
+          if(fieldName.compare(3,4,data->hydro->VsName[n],0,4)==0) nv=n; // Found matching field
         }
         if(nv<0) {
           IDEFIX_ERROR("Cannot find a field matching " + fieldName
@@ -587,7 +587,7 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
       #if MHD == YES && defined(EVOLVE_VECTOR_POTENTIAL)
         int nv = -1;
         for(int n = 0 ; n <= AX3e; n++) {
-          if(fieldName.compare(3,4,data.hydro->VeName[n],0,4)==0) nv=n; // Found matching field
+          if(fieldName.compare(3,4,data->hydro->VeName[n],0,4)==0) nv=n; // Found matching field
         }
         if(nv<0) {
           IDEFIX_ERROR("Cannot find a field matching " + fieldName
@@ -633,11 +633,11 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
 
       #endif
     } else if(fieldName.compare("time") == 0) {
-      ReadSerial(fileHdl, ndim, nxglob, type, &data.t);
+      ReadSerial(fileHdl, ndim, nxglob, type, &data->t);
     } else if(fieldName.compare("dt") == 0) {
-      ReadSerial(fileHdl, ndim, nxglob, type, &data.dt);
+      ReadSerial(fileHdl, ndim, nxglob, type, &data->dt);
     } else if(fieldName.compare("vtkFileNumber")==0) {
-      ReadSerial(fileHdl, ndim, nxglob, type, &output.vtk.vtkFileNumber);
+      ReadSerial(fileHdl, ndim, nxglob, type, &data->vtk->vtkFileNumber);
     } else if(fieldName.compare("vtkLast")==0) {
       ReadSerial(fileHdl, ndim, nxglob, type, &output.vtkLast);
     } else if(fieldName.compare("dumpFileNumber")==0) {
@@ -651,7 +651,7 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
     } else if(fieldName.compare("periodicity")==0) {
       ReadSerial(fileHdl, ndim, nxglob, type, &this->periodicity);
     } else if(fieldName.compare("centralMass")==0) {
-      ReadSerial(fileHdl, ndim, nxglob, type, &data.gravity.centralMass);
+      ReadSerial(fileHdl, ndim, nxglob, type, &data->gravity.centralMass);
     } else {
       Skip(fileHdl, ndim, nxglob, type);
       IDEFIX_WARNING("Unknown field "+fieldName+" in restart dump. Skipping.");
@@ -668,7 +668,7 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
   dataHost.SyncToDevice();
 
   idfx::cout << "done in " << timer.seconds() << " s." << std::endl;
-  idfx::cout << "Restarting from t=" << data.t << "." << std::endl;
+  idfx::cout << "Restarting from t=" << data->t << "." << std::endl;
 
   idfx::popRegion();
 
@@ -676,7 +676,7 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
 }
 
 
-int Dump::Write(DataBlock &data, Output& output) {
+int Dump::Write(Output& output) {
   char filename[FILENAMESIZE];
   char fieldName[NAMESIZE+1]; // +1 is just in case
   int nx[3];
@@ -724,7 +724,7 @@ int Dump::Write(DataBlock &data, Output& output) {
 #endif
   // File is open
   // First thing we need are coordinates: init a host mirror and sync it
-  GridHost gridHost(*data.mygrid);
+  GridHost gridHost(*data->mygrid);
   gridHost.SyncFromDevice();
 
   // Test endianness
@@ -757,11 +757,11 @@ int Dump::Write(DataBlock &data, Output& output) {
   }
 
   // Then write raw data from Vc
-  DataBlockHost dataHost(data);
+  DataBlockHost dataHost(*data);
   dataHost.SyncFromDevice();
 
   for(int nv = 0 ; nv <NVAR ; nv++) {
-    std::snprintf(fieldName,NAMESIZE,"Vc-%s",data.hydro->VcName[nv].c_str());
+    std::snprintf(fieldName,NAMESIZE,"Vc-%s",data->hydro->VcName[nv].c_str());
     // Load the active domain in the scratch space
     for(int i = 0; i < 3 ; i++) {
       nx[i] = dataHost.np_int[i];
@@ -783,7 +783,7 @@ int Dump::Write(DataBlock &data, Output& output) {
   #if MHD == YES
     // write staggered field components
     for(int nv = 0 ; nv <DIMENSIONS ; nv++) {
-      std::snprintf(fieldName,NAMESIZE,"Vs-%s",data.hydro->VsName[nv].c_str());
+      std::snprintf(fieldName,NAMESIZE,"Vs-%s",data->hydro->VsName[nv].c_str());
       // Load the active domain in the scratch space
       for(int i = 0; i < 3 ; i++) {
         nx[i] = dataHost.np_int[i];
@@ -791,7 +791,7 @@ int Dump::Write(DataBlock &data, Output& output) {
       }
       // If it is the last datablock of the dimension, increase the size by one to get the last
       //active face of the staggered mesh.
-      if(data.mygrid->xproc[nv] == data.mygrid->nproc[nv] - 1  ) nx[nv]++;
+      if(data->mygrid->xproc[nv] == data->mygrid->nproc[nv] - 1  ) nx[nv]++;
       nxtot[nv]++;
 
       for(int k = 0; k < nx[KDIR]; k++) {
@@ -808,7 +808,7 @@ int Dump::Write(DataBlock &data, Output& output) {
     #ifdef EVOLVE_VECTOR_POTENTIAL
       // write edge field components
       for(int nv = 0 ; nv <= AX3e ; nv++) {
-        std::snprintf(fieldName,NAMESIZE,"Ve-%s",data.hydro->VeName[nv].c_str());
+        std::snprintf(fieldName,NAMESIZE,"Ve-%s",data->hydro->VeName[nv].c_str());
         int edge = 0;
         #if DIMENSIONS == 2
           if(nv==AX3e) {
@@ -831,7 +831,7 @@ int Dump::Write(DataBlock &data, Output& output) {
 
         for(int i = 0 ; i < DIMENSIONS ; i++) {
           if(i != edge) {
-            if(data.mygrid->xproc[i] == data.mygrid->nproc[i] - 1) nx[i]++;
+            if(data->mygrid->xproc[i] == data->mygrid->nproc[i] - 1) nx[i]++;
             nxtot[i]++;
           }
         }
@@ -852,11 +852,11 @@ int Dump::Write(DataBlock &data, Output& output) {
   // Write some raw data
   nx[0] = 1;
   std::snprintf(fieldName,NAMESIZE, "time");
-  WriteSerial(fileHdl, 1, nx, realType, fieldName, &data.t);
+  WriteSerial(fileHdl, 1, nx, realType, fieldName, &data->t);
   std::snprintf(fieldName,NAMESIZE, "dt");
-  WriteSerial(fileHdl, 1, nx, realType, fieldName, &data.dt);
+  WriteSerial(fileHdl, 1, nx, realType, fieldName, &data->dt);
   std::snprintf(fieldName,NAMESIZE, "vtkFileNumber");
-  WriteSerial(fileHdl, 1, nx, IntegerType, fieldName, &output.vtk.vtkFileNumber);
+  WriteSerial(fileHdl, 1, nx, IntegerType, fieldName, &data->vtk->vtkFileNumber);
   std::snprintf(fieldName,NAMESIZE, "vtkLast");
   WriteSerial(fileHdl, 1, nx, realType, fieldName, &output.vtkLast);
   std::snprintf(fieldName,NAMESIZE, "dumpFileNumber");
@@ -868,7 +868,7 @@ int Dump::Write(DataBlock &data, Output& output) {
   std::snprintf(fieldName,NAMESIZE, "geometry");
   WriteSerial(fileHdl, 1, nx, IntegerType, fieldName, &this->geometry);
   std::snprintf(fieldName,NAMESIZE, "centralMass");
-  WriteSerial(fileHdl, 1, nx, realType, fieldName, &data.gravity.centralMass);
+  WriteSerial(fileHdl, 1, nx, realType, fieldName, &data->gravity.centralMass);
 
   nx[0] = 3;
   std::snprintf(fieldName,NAMESIZE, "periodicity");

@@ -38,8 +38,6 @@ class Output {
   void EnrollUserDefVariables(UserDefVariablesFunc);
 
  private:
-  Vtk vtk;          // local instance of Vtk class
-  Dump dump;        // local instance of Dump class
 
   bool forceNoWrite = false;    //< explicitely disable all writes
   bool vtkEnabled = false;

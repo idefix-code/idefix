@@ -51,6 +51,7 @@ Output::Output(Input &input, DataBlock &data) {
                                                                   data.np_tot[KDIR],
                                                                   data.np_tot[JDIR],
                                                                   data.np_tot[IDIR]);
+      data.vtk->RegisterVariable(userDefVariables[arrayName],arrayName);
     }
     userDefVariablesEnabled = true;
   }

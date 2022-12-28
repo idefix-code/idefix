@@ -13,6 +13,7 @@
 #include "dump.hpp"
 
 class DataBlock;
+
 class DumpImage {
  public:
   DumpImage(std::string, DataBlock *);

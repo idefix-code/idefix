@@ -28,7 +28,7 @@ class VtkScalarField {
 
   IdefixHostArray3D<real> GetHostField() const {
     if(type==Host3D) {
-      return(d3Darray);
+      return(h3Darray);
     } else if(type==Host4D) {
       IdefixHostArray3D<real> arr3D = Kokkos::subview(h4Darray, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
       return(arr3D);

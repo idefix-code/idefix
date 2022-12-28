@@ -8,7 +8,7 @@
 #include "electroMotiveForce.hpp"
 #include "fluid.hpp"
 #include "dataBlock.hpp"
-
+#include "axis.hpp"
 
 template<typename Phys>
 void ElectroMotiveForce<Phys>::EnforceEMFBoundary() {

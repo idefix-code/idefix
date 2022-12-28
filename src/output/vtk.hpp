@@ -43,7 +43,7 @@ class VtkScalarField {
       return(arr3D);
     } else {
       IDEFIX_ERROR("unknown field");
-      return(d3Darray);
+      return(h3Darray);
     }
   }
 

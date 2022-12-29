@@ -67,7 +67,6 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
 
   // Init the RKL scheme if it's needed
   if(data.hydro->haveRKLParabolicTerms) {
-    rkl.Init(input,data);
     haveRKL = true;
   }
 
@@ -158,7 +157,7 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
   }
 #endif
   if(haveRKL) {
-    idfx::cout << " | " << std::setw(col_width) << rkl.stage;
+    idfx::cout << " | " << std::setw(col_width) << data.hydro->rkl->stage;
   }
   if(data.gravity.haveSelfGravityPotential) {
     if(ncycles>=cyclePeriod) {
@@ -188,7 +187,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   if(ncycles%cyclePeriod==0) ShowLog(data);
 
   if(haveRKL && (ncycles%2)==1) {    // Runge-Kutta-Legendre cycle
-    rkl.Cycle();
+    data.EvolveRKLStage();
   }
 
   // save t at the begining of the cycle
@@ -288,7 +287,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 #endif
 
   if(haveRKL && (ncycles%2)==0) {    // Runge-Kutta-Legendre cycle
-    rkl.Cycle();
+    data.EvolveRKLStage();
   }
 
   // Coarsen the grid
@@ -300,8 +299,8 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
   if(haveRKL) {
     // update next time step
-    real tt = newdt/rkl.dt;
-    newdt *= std::fmin(ONE_F, rkl.rmax_par/(tt));
+    real tt = newdt/data.hydro->rkl->dt;
+    newdt *= std::fmin(ONE_F, data.hydro->rkl->rmax_par/(tt));
   }
 
   // Next time step
@@ -386,7 +385,4 @@ void TimeIntegrator::ShowConfig() {
     idfx::cout << "TimeIntegrator: will stop after " << maxRuntime/3600 << " hours." << std::endl;
   }
 
-  if(haveRKL) {
-    rkl.ShowConfig();
-  }
 }

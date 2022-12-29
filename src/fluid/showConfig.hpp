@@ -156,6 +156,9 @@ void Fluid<Phys>::ShowConfig() {
   #if MHD == YES
     emf->ShowConfig();
   #endif
+  if(haveRKLParabolicTerms) {
+    rkl->ShowConfig();
+  }
   if(viscosityStatus.isExplicit || viscosityStatus.isRKL) {
     viscosity.ShowConfig();
   }

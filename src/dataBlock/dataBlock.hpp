@@ -116,6 +116,7 @@ class DataBlock {
   bool rklCycle{false};           ///<  // Set to true when we're inside a RKL call
 
   void EvolveStage();             ///< Evolve this DataBlock by dt
+  void EvolveRKLStage();          ///< Evolve this DataBlock by dt for terms impacted by RKL
   void SetBoundaries();       ///< Enforce boundary conditions to this datablock
   void Coarsen();             ///< Coarsen this datablock and its objects
   void ShowConfig();              ///< Show the datablock's configuration

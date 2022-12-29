@@ -7,6 +7,7 @@
 
 #include "../idefix.hpp"
 #include "dataBlock.hpp"
+#include "fluid.hpp"
 #include "calcRightHandSide.hpp"
 #include "calcParabolicFlux.hpp"
 #include "calcRiemannFlux.hpp"
@@ -17,5 +18,13 @@ void DataBlock::EvolveStage() {
   
   hydro->EvolveStage(this->t,this->dt);
 
+  idfx::popRegion();
+}
+
+void DataBlock::EvolveRKLStage() {
+  idfx::pushRegion("DataBlock::EvolveRKLStage");
+  if(hydro->haveRKLParabolicTerms) {
+    hydro->rkl->Cycle();
+  }
   idfx::popRegion();
 }

@@ -33,6 +33,9 @@ template<typename Phys>
 class ElectroMotiveForce;
 
 template<typename Phys>
+class RKLegendre;
+
+template<typename Phys>
 class Fluid {
  public:
   Fluid( Grid &, Input&, DataBlock *);
@@ -62,6 +65,8 @@ class Fluid {
   // Parabolic terms
   bool haveExplicitParabolicTerms{false};
   bool haveRKLParabolicTerms{false};
+
+  std::unique_ptr<RKLegendre<Phys>> rkl;
 
   // Current
   bool haveCurrent{false};
@@ -176,7 +181,7 @@ class Fluid {
   friend class ThermalDiffusion;
   friend class Fargo;
   friend class Axis<Phys>;
-  friend class RKLegendre;
+  friend class RKLegendre<Phys>;
   friend class Boundary<Phys>;
   friend class ShockFlattening;
 
@@ -225,6 +230,7 @@ class Fluid {
 #include "boundary.hpp"
 #include "electroMotiveForce.hpp"
 #include "axis.hpp"
+#include "rkl.hpp"
 
 using Hydro = Fluid<Physics>;
 
@@ -599,6 +605,7 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
     this->emf = std::unique_ptr<ElectroMotiveForce<Phys>>(new ElectroMotiveForce<Phys>(input, this));
   }
 
+
   // Do we have to take care of the axis?
   if(data->haveAxis) {
     this->myAxis = std::unique_ptr<Axis<Phys>>(new Axis<Phys>(grid, this));
@@ -611,6 +618,10 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
   // Init shock flattening
   if(haveShockFlattening) {
     this->shockFlattening = ShockFlattening(this,input.Get<real>(std::string(Phys::prefix),"shockFlattening",0));
+  }
+
+  if(haveRKLParabolicTerms) {
+    this->rkl = std::unique_ptr<RKLegendre<Phys>> (new RKLegendre<Phys>(input,this));
   }
 
   idfx::popRegion();

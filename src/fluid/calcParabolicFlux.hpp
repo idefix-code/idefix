@@ -10,6 +10,7 @@
 #include "fluid.hpp"
 #include "dataBlock.hpp"
 #include "addNonIdealMHDFlux.hpp"
+#include "fargo.hpp"
 
 // Compute parabolic fluxes
 template <typename Phys>
@@ -39,13 +40,13 @@ void Fluid<Phys>::CalcParabolicFlux(const real t) {
     || (viscosityStatus.isRKL && data->rklCycle))  {
       // Add fargo velocity if using fargo
     if(data->haveFargo && viscosityStatus.isExplicit) {
-      data->fargo.AddVelocity(t);
+      data->fargo->AddVelocityFluid(t,this);
     }
     this->viscosity.AddViscousFlux(dir,t);
 
     // Remove back Fargo velocity
     if(data->haveFargo && viscosityStatus.isExplicit) {
-      data->fargo.SubstractVelocity(t);
+      data->fargo->SubstractVelocityFluid(t,this);
     }
   }
 

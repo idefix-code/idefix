@@ -15,7 +15,6 @@
 #include "grid.hpp"
 #include "gridHost.hpp"
 #include "output.hpp"
-#include "fargo.hpp"
 #include "gravity.hpp"
 #include "stateContainer.hpp"
 
@@ -32,6 +31,7 @@
 class DataBlock;
 class Vtk;
 class Dump;
+class Fargo;
 
 // Forward class hydro declaration
 #include "physics.hpp"
@@ -101,7 +101,7 @@ class DataBlock {
                                 ///< conservative state of the datablock
                                 ///< (contains references to dedicated objects)
 
-  std::unique_ptr<Hydro> hydro;   ///< The Hydro object attached to this datablock
+  std::shared_ptr<Hydro> hydro;   ///< The Hydro object attached to this datablock
 
   std::unique_ptr<Vtk> vtk;
   std::unique_ptr<Dump> dump;
@@ -130,7 +130,7 @@ class DataBlock {
 
   // Do we use fargo-like scheme ? (orbital advection)
   bool haveFargo{false};
-  Fargo fargo;
+  std::unique_ptr<Fargo> fargo;
 
   // Do we have Gravity ?
   bool haveGravity{false};

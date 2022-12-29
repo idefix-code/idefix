@@ -119,11 +119,11 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
   this->dump = std::unique_ptr<Dump>(new Dump(this));
 
   // Initialize the hydro object attached to this datablock
-  this->hydro = std::unique_ptr<Hydro>(new Hydro(grid, input, this));
+  this->hydro = std::shared_ptr<Hydro>(new Hydro(grid, input, this));
 
   // Initialise Fargo if needed
   if(input.CheckBlock("Fargo")) {
-    fargo.Init(input, this);
+    this->fargo = std::unique_ptr<Fargo>(new Fargo(input, Physics::nvar, this));
     this->haveFargo = true;
   }
 
@@ -164,7 +164,7 @@ void DataBlock::ShowConfig() {
     }
   }
   hydro->ShowConfig();
-  if(haveFargo) fargo.ShowConfig();
+  if(haveFargo) fargo->ShowConfig();
   if(haveGravity) gravity.ShowConfig();
 }
 

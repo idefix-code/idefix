@@ -12,17 +12,20 @@
 
 // Physics type
 struct Physics {
-  #if MHD == YES
-  static constexpr bool mhd{true};
-  #else
-  static constexpr bool mhd{false};
-  #endif
   #if HAVE_ENERGY == 1
     static constexpr bool pressure{true};
   #else
     static constexpr bool pressure{false};
   #endif
-  static constexpr int nvar{1+2*COMPONENTS  + (pressure?1:0)};
+  #if MHD == YES
+    static constexpr bool mhd{true};
+    static constexpr int nvar{1+2*COMPONENTS  + (pressure?1:0)};
+  #else
+    static constexpr bool mhd{false};
+    static constexpr int nvar{1+COMPONENTS  + (pressure?1:0)};
+  #endif
+  
+
   // prefix 
   static constexpr std::string_view prefix = "Hydro";
 };

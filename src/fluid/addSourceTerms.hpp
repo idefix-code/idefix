@@ -18,7 +18,7 @@ void Fluid<Phys>::AddSourceTerms(real t, real dt) {
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray1D<real> x1 = data->x[IDIR];
   IdefixArray1D<real> x2 = data->x[JDIR];
-  IdefixArray2D<real> fargoVelocity = data->fargo.meanVelocity;
+  
 #ifdef ISOTHERMAL
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 #endif
@@ -39,6 +39,10 @@ void Fluid<Phys>::AddSourceTerms(real t, real dt) {
 
   // Fargo
   bool haveFargo  = data->haveFargo;
+  IdefixArray2D<real> fargoVelocity;
+  if(haveFargo) {
+    fargoVelocity = data->fargo->meanVelocity;
+  }
 
   // shearing box (only with fargo&cartesian)
   [[maybe_unused]] real sbS = this->sbS;

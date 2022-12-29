@@ -208,7 +208,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     data.SetBoundaries();
 
     // Remove Fargo velocity so that the integrator works on the residual
-    if(data.haveFargo) data.fargo.SubstractVelocity(data.t);
+    if(data.haveFargo) data.fargo->SubstractVelocity(data.t);
 
     // Convert current state into conservative variable and save it
     data.hydro->ConvertPrimToCons();
@@ -261,7 +261,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     }
     // Shift solution according to fargo if this is our last stage
     if(data.haveFargo && stage==nstages-1) {
-      data.fargo.ShiftSolution(t0,data.dt);
+      data.fargo->ShiftSolution(t0,data.dt);
     }
 
     // Coarsen conservative variables once they have been evolved
@@ -273,7 +273,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     data.hydro->ConvertConsToPrim();
 
     // Add back fargo velocity so that boundary conditions are applied on the total V
-    if(data.haveFargo) data.fargo.AddVelocity(data.t);
+    if(data.haveFargo) data.fargo->AddVelocity(data.t);
   }
   /////////////////////////////////////////////////
   // END STAGES LOOP                             //

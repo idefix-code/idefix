@@ -39,6 +39,7 @@ template<typename Phys>
 class Fluid {
  public:
   Fluid( Grid &, Input&, DataBlock *);
+  ~Fluid() {idfx::cout << "Fluid is destructed" << std::endl;}
   void ConvertConsToPrim();
   void ConvertPrimToCons();
   template <int> void CalcRiemannFlux(const real);

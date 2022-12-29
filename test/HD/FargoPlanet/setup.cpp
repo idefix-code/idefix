@@ -139,7 +139,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output)// : m_pl
   data.hydro->EnrollIsoSoundSpeed(&MySoundSpeed);
   data.hydro->viscosity.EnrollViscousDiffusivity(&MyViscosity);
   if(data.haveFargo)
-    data.fargo.EnrollVelocity(&FargoVelocity);
+    data.fargo->EnrollVelocity(&FargoVelocity);
   sigma0Glob = input.Get<real>("Setup","sigma0",0);
   sigmaSlopeGlob = input.Get<real>("Setup","sigmaSlope",0);
   h0Glob = input.Get<real>("Setup","h0",0);

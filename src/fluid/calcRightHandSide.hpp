@@ -36,7 +36,7 @@ void Fluid<Phys>::CalcRightHandSide(real t, real dt) {
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> dMax = this->dMax;
   IdefixArray4D<real> viscSrc = this->viscosity.viscSrc;
-  IdefixArray2D<real> fargoVelocity = data->fargo.meanVelocity;
+
 
   // Grid coarsening
   bool haveGridCoarsening = false;
@@ -62,8 +62,13 @@ void Fluid<Phys>::CalcRightHandSide(real t, real dt) {
   [[maybe_unused]] bool haveViscosity = this->viscosityStatus.isExplicit;
 
   // Fargo
+  IdefixArray2D<real> fargoVelocity;
+  Fargo::FargoType fargoType;
   bool haveFargo  = data->haveFargo;
-  Fargo::FargoType fargoType = data->fargo.type;
+  if(haveFargo) {
+    fargoVelocity = data->fargo->meanVelocity;
+    fargoType = data->fargo->type;
+  }
 
   //Rotation
   bool haveRotation = this->haveRotation;
@@ -78,7 +83,7 @@ void Fluid<Phys>::CalcRightHandSide(real t, real dt) {
   [[maybe_unused]] real sbS = this->sbS;
 
   if(haveFargo && fargoType == Fargo::userdef) {
-    data->fargo.GetFargoVelocity(t);
+    data->fargo->GetFargoVelocity(t);
   }
 
   constexpr const int ioffset = (dir==IDIR) ? 1 : 0;

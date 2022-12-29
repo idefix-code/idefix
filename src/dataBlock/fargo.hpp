@@ -28,7 +28,6 @@ class Fargo {
  public:
   enum FargoType {none, userdef, shearingbox};
   Fargo(Input &, int, DataBlock*);  // Initialisation
-  ~Fargo() {idfx::cout << "Fargo is destructed" << std::endl; }
   void ShiftSolution(const real t, const real dt);  // Effectively shift the solution
   void SubstractVelocity(const real);
   void AddVelocity(const real);

@@ -198,7 +198,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   data.hydro->EnrollUserSourceTerm(&MySourceTerm);
   data.hydro->EnrollInternalBoundary(&InternalBoundary);
   if(data.haveFargo)
-    data.fargo.EnrollVelocity(&FargoVelocity);
+    data.fargo->EnrollVelocity(&FargoVelocity);
   output.EnrollUserDefVariables(&ComputeUserVars);
 
   gammaGlob=data.hydro->GetGamma();

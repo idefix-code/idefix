@@ -72,7 +72,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   data.hydro->EnrollUserDefBoundary(&UserdefBoundary);
   data.gravity.EnrollPotential(&Potential);
   if(data.haveFargo)
-    data.fargo.EnrollVelocity(&FargoVelocity);
+    data.fargo->EnrollVelocity(&FargoVelocity);
 }
 
 // This routine initialize the flow

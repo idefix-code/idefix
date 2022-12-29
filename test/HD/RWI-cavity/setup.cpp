@@ -50,7 +50,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     jump_radius_glob = input.Get<real>("Setup", "jump_radius",0);
     jump_width_glob = input.Get<real>("Setup", "jump_width",0);
     if(data.haveFargo)
-      data.fargo.EnrollVelocity(&FargoVelocity);
+      data.fargo->EnrollVelocity(&FargoVelocity);
 }
 
 // This routine initialize the flow

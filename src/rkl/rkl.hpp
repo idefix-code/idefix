@@ -175,7 +175,7 @@ RKLegendre<Phys>::RKLegendre(Input &input, Fluid<Phys>* hydroin) {
   nvarRKL = varListHost.size();
 
   #ifdef WITH_MPI
-    mpi.Init(datain.mygrid, varListHost, datain.nghost.data(), datain.np_int.data(), haveVs);
+    mpi.Init(data->mygrid, varListHost, data->nghost.data(), data->np_int.data(), haveVs);
   #endif
 
 

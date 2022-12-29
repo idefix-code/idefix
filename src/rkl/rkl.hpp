@@ -56,6 +56,7 @@ class RKLegendre {
   void SetBoundaries(real);        // Enforce boundary conditions on the variables solved by RKL
 
   DataBlock *data;
+  Hydro *hydro;
 
 #ifdef WITH_MPI
   Mpi mpi;                      // RKL-specific MPI layer

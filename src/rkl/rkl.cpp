@@ -53,6 +53,7 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
 
   // Save the datablock to which we are attached from now on
   this->data = &datain;
+  this->hydro = datain.hydro.get();
 
   cfl_rkl = input.GetOrSet<real> ("RKL","cfl",0, 0.5);
   rmax_par = input.GetOrSet<real> ("RKL","rmax_par",0, 100.0);
@@ -69,7 +70,7 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
   std::vector<int> varListHost;
   // Create a list of variables
   // Viscosity
-  if(data->hydro->viscosityStatus.isRKL) {
+  if(hydro->viscosityStatus.isRKL) {
     haveVc = true;
     EXPAND( AddVariable(MX1, varListHost);   ,
             AddVariable(MX2, varListHost);   ,
@@ -81,13 +82,13 @@ void RKLegendre::Init(Input &input, DataBlock &datain) {
   }
   // Thermal diffusion
   #if HAVE_ENERGY
-    if(data->hydro->thermalDiffusionStatus.isRKL) {
+    if(hydro->thermalDiffusionStatus.isRKL) {
       haveVc = true;
       AddVariable(ENG, varListHost);
     }
   #endif
   // Ambipolar diffusion
-  if(data->hydro->ambipolarStatus.isRKL || data->hydro->resistivityStatus.isRKL) {
+  if(hydro->ambipolarStatus.isRKL || hydro->resistivityStatus.isRKL) {
     #if COMPONENTS == 3 && DIMENSIONS < 3
       haveVc = true;
       AddVariable(BX3, varListHost);
@@ -192,20 +193,20 @@ void RKLegendre::Cycle() {
 
   IdefixArray4D<real> dU = this->dU;
   IdefixArray4D<real> dU0 = this->dU0;
-  IdefixArray4D<real> Uc = data->hydro->Uc;
+  IdefixArray4D<real> Uc = hydro->Uc;
   IdefixArray4D<real> Uc0 = this->Uc0;
   IdefixArray4D<real> Uc1 = this->Uc1;
 
   IdefixArray4D<real> dB = this->dB;
   IdefixArray4D<real> dB0 = this->dB0;
-  IdefixArray4D<real> Vs = data->hydro->Vs;
+  IdefixArray4D<real> Vs = hydro->Vs;
   IdefixArray4D<real> Vs0 = this->Vs0;
   IdefixArray4D<real> Vs1 = this->Vs1;
 
   #ifdef EVOLVE_VECTOR_POTENTIAL
   IdefixArray4D<real> dA = this->dA;
   IdefixArray4D<real> dA0 = this->dA0;
-  IdefixArray4D<real> Ve = data->hydro->Ve;
+  IdefixArray4D<real> Ve = hydro->Ve;
   IdefixArray4D<real> Ve0 = this->Ve0;
   IdefixArray4D<real> Ve1 = this->Ve1;
   #endif
@@ -222,10 +223,10 @@ void RKLegendre::Cycle() {
   stage = 1;
 
   // Apply Boundary conditions on the full set of variables
-  data->hydro->boundary->SetBoundaries(time);
+  hydro->boundary->SetBoundaries(time);
 
   // Convert current state into conservative variable
-  data->hydro->ConvertPrimToCons();
+  hydro->ConvertPrimToCons();
 
   // Coarsen the conservative variables if needed
   if(data->haveGridCoarsening) {
@@ -317,7 +318,7 @@ void RKLegendre::Cycle() {
         Ve1(n,k,j,i) = Ve(n,k,j,i);
         Ve(n,k,j,i) = Ve1(n,k,j,i) + mu_tilde_j*dt_hyp*dA0(n,k,j,i);
       });
-      data->hydro->emf->ComputeMagFieldFromA(Ve,Vs);
+      hydro->emf->ComputeMagFieldFromA(Ve,Vs);
     #else
       idefix_for("RKL_Cycle_InitVs1",
               0, DIMENSIONS,
@@ -329,7 +330,7 @@ void RKLegendre::Cycle() {
         Vs(n,k,j,i) = Vs1(n,k,j,i) + mu_tilde_j*dt_hyp*dB0(n,k,j,i);
       });
     #endif
-    data->hydro->boundary->ReconstructVcField(Uc);
+    hydro->boundary->ReconstructVcField(Uc);
   }
 
   // Coarsen conservative variables once they have been evolved
@@ -338,7 +339,7 @@ void RKLegendre::Cycle() {
   }
 
   // Convert current state into primitive variable
-  data->hydro->ConvertConsToPrim();
+  hydro->ConvertConsToPrim();
   if(checkNan) {
     if(data->CheckNan()>0) {
       throw std::runtime_error(std::string("Nan found during RKL stage 1"));
@@ -410,7 +411,7 @@ void RKLegendre::Cycle() {
                                     + gamma_j*dt_hyp*dA0(n,k,j,i);
             #endif
           });
-        data->hydro->emf->ComputeMagFieldFromA(Ve,Vs);
+        hydro->emf->ComputeMagFieldFromA(Ve,Vs);
       #else
         // update Vs
         idefix_for("RKL_Cycle_UpdateVs",
@@ -431,7 +432,7 @@ void RKLegendre::Cycle() {
           });
       #endif  // EVOLVE_VECTOR_POTENTIAL
 
-      data->hydro->boundary->ReconstructVcField(Uc);
+      hydro->boundary->ReconstructVcField(Uc);
     }
 
     // Coarsen the flow if needed
@@ -439,7 +440,7 @@ void RKLegendre::Cycle() {
       data->Coarsen();
     }
     // Convert current state into primitive variable
-    data->hydro->ConvertConsToPrim();
+    hydro->ConvertConsToPrim();
 
     if(checkNan) {
       if(data->CheckNan()>0) {
@@ -463,7 +464,7 @@ void RKLegendre::Cycle() {
 
 void RKLegendre::ResetFlux() {
   idfx::pushRegion("RKLegendre::ResetFlux");
-  IdefixArray4D<real> Flux = data->hydro->FluxRiemann;
+  IdefixArray4D<real> Flux = hydro->FluxRiemann;
   IdefixArray1D<int> vars = this->varList;
   idefix_for("RKL_ResetFlux",
              0,nvarRKL,
@@ -482,19 +483,19 @@ void RKLegendre::ResetStage() {
   idfx::pushRegion("RKLegendre::ResetStage");
 
   IdefixArray4D<real> dU = this->dU;
-  IdefixArray4D<real> Flux = data->hydro->FluxRiemann;
+  IdefixArray4D<real> Flux = hydro->FluxRiemann;
   #if MHD == YES
     #ifdef EVOLVE_VECTOR_POTENTIAL
       IdefixArray4D<real> dA = this->dA;
     #else
       IdefixArray4D<real> dB = this->dB;
     #endif
-    IdefixArray3D<real> ex = data->hydro->emf->ex;
-    IdefixArray3D<real> ey = data->hydro->emf->ey;
-    IdefixArray3D<real> ez = data->hydro->emf->ez;
+    IdefixArray3D<real> ex = hydro->emf->ex;
+    IdefixArray3D<real> ey = hydro->emf->ey;
+    IdefixArray3D<real> ez = hydro->emf->ez;
   #endif
   IdefixArray1D<int> vars = this->varList;
-  IdefixArray3D<real> invDt = data->hydro->InvDt;
+  IdefixArray3D<real> invDt = hydro->InvDt;
   int stage = this->stage;
   int nvar = this->nvarRKL;
   bool haveVs=this->haveVs;
@@ -541,7 +542,7 @@ void RKLegendre::ResetStage() {
 void RKLegendre::ComputeDt() {
   idfx::pushRegion("RKLegendre::ComputeDt");
 
-  IdefixArray3D<real> invDt = data->hydro->InvDt;
+  IdefixArray3D<real> invDt = hydro->InvDt;
 
   real newinvdt = ZERO_F;
   Kokkos::parallel_reduce("RKL_Timestep_reduction",
@@ -569,7 +570,7 @@ template<int dir> void RKLegendre::LoopDir(real t) {
     ResetFlux();
 
     // CalcParabolicFlux
-    data->hydro->CalcParabolicFlux<dir>(t);
+    hydro->CalcParabolicFlux<dir>(t);
 
     // Calc Right Hand Side
     CalcParabolicRHS<dir>(t);
@@ -587,19 +588,19 @@ void RKLegendre::EvolveStage(real t) {
 
   ResetStage();
 
-  if(haveVs && data->hydro->needRKLCurrent) data->hydro->CalcCurrent();
+  if(haveVs && hydro->needRKLCurrent) hydro->CalcCurrent();
 
   // Loop on dimensions for the parabolic fluxes and RHS, starting from IDIR
   if(haveVc || stage == 1) LoopDir<IDIR>(t);
 
   if(haveVs) {
-    data->hydro->emf->CalcNonidealEMF(t);
-    data->hydro->emf->EnforceEMFBoundary();
+    hydro->emf->CalcNonidealEMF(t);
+    hydro->emf->EnforceEMFBoundary();
     real dt=1.0;
     #ifdef EVOLVE_VECTOR_POTENTIAL
-      data->hydro->emf->EvolveVectorPotential(dt, this->dA);
+      hydro->emf->EvolveVectorPotential(dt, this->dA);
     #else
-      data->hydro->emf->EvolveMagField(t, dt, this->dB);
+      hydro->emf->EvolveMagField(t, dt, this->dB);
     #endif
   }
   idfx::popRegion();
@@ -609,7 +610,7 @@ template <int dir>
 void RKLegendre::CalcParabolicRHS(real t) {
   idfx::pushRegion("RKLegendre::CalcParabolicRHS");
 
-  IdefixArray4D<real> Flux = data->hydro->FluxRiemann;
+  IdefixArray4D<real> Flux = hydro->FluxRiemann;
   IdefixArray3D<real> A    = data->A[dir];
   IdefixArray3D<real> dV   = data->dV;
   IdefixArray1D<real> x1m  = data->xl[IDIR];
@@ -620,13 +621,13 @@ void RKLegendre::CalcParabolicRHS(real t) {
   IdefixArray1D<real> s    = data->sinx2;
   IdefixArray1D<real> dx   = data->dx[dir];
   IdefixArray1D<real> dx2  = data->dx[JDIR];
-  IdefixArray3D<real> invDt = data->hydro->InvDt;
-  IdefixArray3D<real> dMax = data->hydro->dMax;
-  IdefixArray4D<real> viscSrc = data->hydro->viscosity.viscSrc;
+  IdefixArray3D<real> invDt = hydro->InvDt;
+  IdefixArray3D<real> dMax = hydro->dMax;
+  IdefixArray4D<real> viscSrc = hydro->viscosity.viscSrc;
   IdefixArray4D<real> dU = this->dU;
   IdefixArray1D<int> varList = this->varList;
 
-  bool haveViscosity = data->hydro->viscosityStatus.isRKL;
+  bool haveViscosity = hydro->viscosityStatus.isRKL;
 
   int ioffset,joffset,koffset;
   ioffset=joffset=koffset=0;
@@ -772,17 +773,17 @@ void RKLegendre::CalcParabolicRHS(real t) {
 void RKLegendre::SetBoundaries(real t) {
   idfx::pushRegion("RKLegendre::SetBoundaries");
   if(data->haveGridCoarsening) {
-    data->hydro->CoarsenFlow(data->hydro->Vc);
+    hydro->CoarsenFlow(hydro->Vc);
     #if MHD==YES
-      data->hydro->CoarsenMagField(data->hydro->Vs);
+      hydro->CoarsenMagField(hydro->Vs);
     #endif
   }
 
   // set internal boundary conditions
   // Disabled since this might affect fields that are NOT updated
   // by the MPI instance of RKLegendre
-  //if(data->hydro->boundary->haveInternalBoundary)
-  //   data->hydro->boundary->internalBoundaryFunc(*data, t);
+  //if(hydro->boundary->haveInternalBoundary)
+  //   hydro->boundary->internalBoundaryFunc(*data, t);
   for(int dir=0 ; dir < DIMENSIONS ; dir++ ) {
       // MPI Exchange data when needed
       // We use the RKL instance MPI object to ensure that we only exchange the data
@@ -791,22 +792,22 @@ void RKLegendre::SetBoundaries(real t) {
     if(data->mygrid->nproc[dir]>1) {
       switch(dir) {
         case 0:
-          this->mpi.ExchangeX1(data->hydro->Vc, data->hydro->Vs);
+          this->mpi.ExchangeX1(hydro->Vc, hydro->Vs);
           break;
         case 1:
-          this->mpi.ExchangeX2(data->hydro->Vc, data->hydro->Vs);
+          this->mpi.ExchangeX2(hydro->Vc, hydro->Vs);
           break;
         case 2:
-          this->mpi.ExchangeX3(data->hydro->Vc, data->hydro->Vs);
+          this->mpi.ExchangeX3(hydro->Vc, hydro->Vs);
           break;
       }
     }
     #endif
-    data->hydro->boundary->EnforceBoundaryDir(t, dir);
+    hydro->boundary->EnforceBoundaryDir(t, dir);
     #if MHD == YES
       // Reconstruct the normal field component when using CT
       if(haveVs) {
-        data->hydro->boundary->ReconstructNormalField(dir);
+        hydro->boundary->ReconstructNormalField(dir);
       }
     #endif
   } // Loop on dimension ends
@@ -814,7 +815,7 @@ void RKLegendre::SetBoundaries(real t) {
 #if MHD == YES
   // Remake the cell-centered field.
   if(haveVs) {
-    data->hydro->boundary->ReconstructVcField(data->hydro->Vc);
+    hydro->boundary->ReconstructVcField(hydro->Vc);
   }
 #endif
   idfx::popRegion();

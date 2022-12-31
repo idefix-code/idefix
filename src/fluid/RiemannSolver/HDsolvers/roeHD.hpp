@@ -37,7 +37,7 @@
 // Compute Riemann fluxes from states using ROE solver
 template <typename Phys>
 template<const int DIR>
-void RiemannSolver<Phys>::RoeHD(IdefixArray4D<real> &Fluxin) {
+void RiemannSolver<Phys>::RoeHD(IdefixArray4D<real> &Flux) {
   idfx::pushRegion("Hydro::ROE_Solver");
 
   constexpr int ioffset = (DIR==IDIR) ? 1 : 0;
@@ -46,7 +46,6 @@ void RiemannSolver<Phys>::RoeHD(IdefixArray4D<real> &Fluxin) {
 
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Vs = this->Vs;
-  IdefixArray4D<real> Flux = Fluxin;
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> csIsoArr = hydro->isoSoundSpeedArray;
 

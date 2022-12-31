@@ -375,9 +375,6 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
     }
 
     if(input.CheckEntry(std::string(Phys::prefix),"hall")>=0) {
-      // Check consistency
-      if(mySolver != HLL )
-        IDEFIX_ERROR("Hall effect is only compatible with HLL Riemann solver.");
       std::string opType = input.Get<std::string>(std::string(Phys::prefix),"hall",0);
       if(opType.compare("explicit") == 0 ) {
         hallStatus.isExplicit = true;

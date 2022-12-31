@@ -18,7 +18,7 @@
 // Compute Riemann fluxes from states using TVDLF solver
 template <typename Phys>
 template<const int DIR>
-void RiemannSolver<Phys>::TvdlfMHD() {
+void RiemannSolver<Phys>::TvdlfMHD(IdefixArray4D<real> &Flux) {
   idfx::pushRegion("Hydro::TVDLF_MHD");
 
   using EMF = ElectroMotiveForce<Phys>;
@@ -42,9 +42,8 @@ void RiemannSolver<Phys>::TvdlfMHD() {
 
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Vs = this->Vs;
-  IdefixArray4D<real> Flux = this->FluxRiemann;
   IdefixArray3D<real> cMax = this->cMax;
-  IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
+  IdefixArray3D<real> csIsoArr = hydro->isoSoundSpeedArray;
 
   // Required for high order interpolations
   IdefixArray1D<real> dx = this->data->dx[DIR];
@@ -53,7 +52,7 @@ void RiemannSolver<Phys>::TvdlfMHD() {
   IdefixArray3D<real> Eb;
   IdefixArray3D<real> Et;
 
-  const typename EMF::AveragingType emfAverage = emf->averaging;
+  const typename EMF::AveragingType emfAverage = hydro->emf->averaging;
 
   // Required by UCT_Contact
   IdefixArray3D<real> SV;
@@ -64,10 +63,10 @@ void RiemannSolver<Phys>::TvdlfMHD() {
   IdefixArray3D<real> dL;
   IdefixArray3D<real> dR;
 
-  real gamma = this->gamma;
+  real gamma = hydro->gamma;
   [[maybe_unused]] real gamma_m1=gamma-ONE_F;
-  [[maybe_unused]] real csIso = this->isoSoundSpeed;
-  [[maybe_unused]] HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
+  [[maybe_unused]] real csIso = hydro->isoSoundSpeed;
+  [[maybe_unused]] HydroModuleStatus haveIsoCs = hydro->haveIsoSoundSpeed;
 
   SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR],shockFlattening);
   // Define normal, tangent and bi-tanget indices
@@ -82,16 +81,16 @@ void RiemannSolver<Phys>::TvdlfMHD() {
 
                 sb = +ONE_F;  )
 
-      Et = this->emf->ezi;
-      Eb = this->emf->eyi;
+      Et = hydro->emf->ezi;
+      Eb = hydro->emf->eyi;
 
-      SV = this->emf->svx;
+      SV = hydro->emf->svx;
 
-      aL = this->emf->axL;
-      aR = this->emf->axR;
+      aL = hydro->emf->axL;
+      aR = hydro->emf->axR;
 
-      dL = this->emf->dxL;
-      dR = this->emf->dxR;
+      dL = hydro->emf->dxL;
+      dR = hydro->emf->dxR;
 
       break;
 #if DIMENSIONS >= 2
@@ -102,16 +101,16 @@ void RiemannSolver<Phys>::TvdlfMHD() {
 
                 sb = -ONE_F;  )
 
-      Et = this->emf->ezj;
-      Eb = this->emf->exj;
+      Et = hydro->emf->ezj;
+      Eb = hydro->emf->exj;
 
-      SV = this->emf->svy;
+      SV = hydro->emf->svy;
 
-      aL = this->emf->ayL;
-      aR = this->emf->ayR;
+      aL = hydro->emf->ayL;
+      aR = hydro->emf->ayR;
 
-      dL = this->emf->dyL;
-      dR = this->emf->dyR;
+      dL = hydro->emf->dyL;
+      dR = hydro->emf->dyR;
 
       break;
 #endif
@@ -124,16 +123,16 @@ void RiemannSolver<Phys>::TvdlfMHD() {
                   ,
                 sb = +ONE_F;  )
 
-      Et = this->emf->eyk;
-      Eb = this->emf->exk;
+      Et = hydro->emf->eyk;
+      Eb = hydro->emf->exk;
 
-      SV = this->emf->svz;
+      SV = hydro->emf->svz;
 
-      aL = this->emf->azL;
-      aR = this->emf->azR;
+      aL = hydro->emf->azL;
+      aR = hydro->emf->azR;
 
-      dL = this->emf->dzL;
-      dR = this->emf->dzR;
+      dL = hydro->emf->dzL;
+      dR = hydro->emf->dzR;
       break;
 #endif
     default:

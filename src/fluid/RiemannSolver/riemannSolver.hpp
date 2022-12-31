@@ -124,7 +124,7 @@ RiemannSolver<Phys>::RiemannSolver(Input &input, Fluid<Phys>* hydro) : Vc{hydro-
   // Check if Hall is enabled
   if(input.CheckEntry(std::string(Phys::prefix),"hall")>=0) {
       // Check consistency
-      if(mySolver != HLL )
+      if(mySolver != HLL_MHD )
         IDEFIX_ERROR("Hall effect is only compatible with HLL Riemann solver.");
   }
 

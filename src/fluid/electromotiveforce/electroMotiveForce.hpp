@@ -258,7 +258,7 @@ ElectroMotiveForce<Phys>::ElectroMotiveForce(Input &input, Hydro *hydro) {
                                 data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  )
   }
   if(averaging==uct_hlld) {
-    if(hydro->rSolver->GetSolver() == RiemannSolver<Phys>::Solver::HLL || hydro->rSolver->GetSolver() == RiemannSolver<Phys>::Solver::HLL) {
+    if(hydro->rSolver->GetSolver() == RiemannSolver<Phys>::Solver::HLL_MHD || hydro->rSolver->GetSolver() == RiemannSolver<Phys>::Solver::TVDLF_MHD) {
       IDEFIX_ERROR("HLLD EMF reconstruction is only compatible with HLLD or ROE Riemann solvers");
     }
   }

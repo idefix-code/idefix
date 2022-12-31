@@ -16,7 +16,6 @@ target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/convertConsToPrim.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/convertConsToPrimHD.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/convertConsToPrimMHD.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/slopeLimiter.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/evolveStage.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/fluxHD.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/fluxMHD.hpp

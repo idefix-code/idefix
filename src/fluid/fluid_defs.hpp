@@ -19,12 +19,7 @@ class DataBlock;
 #define     SMALL_PRESSURE_FIX      (1.0e-5)
 #define     eps_UCT_CONTACT         (1.0e-6)
 
-// Riemann Solver type
-#if MHD == YES
-enum Solver {TVDLF=1, HLL, HLLD, ROE};
-#else
-enum Solver {TVDLF=1, HLL, HLLC, ROE};
-#endif
+
 
 // Parabolic terms can have different status
 enum HydroModuleStatus {Disabled, Constant, UserDefFunction };

@@ -5,11 +5,14 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+
+#include "fluid.hpp"
+#include "riemannSolver.hpp"
 template<typename Phys>
 template<int dir> 
 void Fluid<Phys>::LoopDir(const real t, const real dt) {
     // Step 2: compute the intercell flux with our Riemann solver, store the resulting InvDt
-    CalcRiemannFlux<dir>(t);
+    this->rSolver->template CalcFlux<dir>(this->FluxRiemann);
 
     // Step 2.5: compute intercell parabolic flux when needed
     if(haveExplicitParabolicTerms) CalcParabolicFlux<dir>(t);
@@ -30,8 +33,19 @@ void Fluid<Phys>::EvolveStage(const real t, const real dt) {
   // Compute current when needed
   if(needExplicitCurrent) CalcCurrent();
 
-  // enable shock flattening
-  if(haveShockFlattening) shockFlattening.FindShock();
+  if(hallStatus.status == UserDefFunction) {
+    if(hallDiffusivityFunc)
+      hallDiffusivityFunc(*data, t, xHall);
+    else
+      IDEFIX_ERROR("No user-defined Hall diffusivity function has been enrolled");
+  }
+
+  if(haveIsoSoundSpeed == UserDefFunction) {
+    if(isoSoundSpeedFunc)
+      isoSoundSpeedFunc(*data, t, isoSoundSpeedArray);
+    else
+      IDEFIX_ERROR("No user-defined isothermal sound speed function has been enrolled");
+  }
 
   // Loop on all of the directions
   LoopDir<IDIR>(t,dt);

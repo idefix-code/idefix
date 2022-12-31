@@ -1,11 +1,7 @@
 add_subdirectory(boundary)
 add_subdirectory(electromotiveforce)
+add_subdirectory(RiemannSolver)
 
-if(Idefix_MHD)
-  add_subdirectory(MHDsolvers)
-else()
-  add_subdirectory(HDsolvers)
-endif()
 
 
 target_sources(idefix
@@ -14,7 +10,6 @@ target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/axis.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/calcCurrent.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/calcParabolicFlux.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/calcRiemannFlux.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/calcRightHandSide.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/checkDivB.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/coarsenFlow.hpp
@@ -22,8 +17,6 @@ target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/convertConsToPrimHD.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/convertConsToPrimMHD.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/slopeLimiter.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/shockFlattening.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/shockFlattening.cpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/evolveStage.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/fluxHD.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/fluxMHD.hpp

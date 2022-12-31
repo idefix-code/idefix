@@ -16,7 +16,6 @@
 #include "fluid_defs.hpp"
 #include "viscosity.hpp"
 #include "thermalDiffusion.hpp"
-#include "shockFlattening.hpp"
 #include "selfGravity.hpp"
 #include "vtk.hpp"
 #include "dump.hpp"
@@ -36,12 +35,14 @@ template<typename Phys>
 class RKLegendre;
 
 template<typename Phys>
+class RiemannSolver;
+
+template<typename Phys>
 class Fluid {
  public:
   Fluid( Grid &, Input&, DataBlock *);
   void ConvertConsToPrim();
   void ConvertPrimToCons();
-  template <int> void CalcRiemannFlux(const real);
   template <int> void CalcParabolicFlux(const real);
   template <int> void AddNonIdealMHDFlux(const real);
   template <int> void CalcRightHandSide(real, real );
@@ -102,9 +103,6 @@ class Fluid {
   // Box width for shearing box problems
   real sbLx;
 
-  // ShockFlattening
-  bool haveShockFlattening{false};
-  ShockFlattening shockFlattening;
 
   // Enroll user-defined boundary conditions
   void EnrollUserDefBoundary(UserDefBoundaryFunc);
@@ -127,26 +125,7 @@ class Fluid {
   // Enroll user-defined isothermal sound speed
   void EnrollIsoSoundSpeed(IsoSoundSpeedFunc);
 
-  // Riemann Solvers
-#if MHD == YES
-  template<const int>
-    void HlldMHD();
-  template<const int>
-    void HllMHD();
-  template<const int>
-    void RoeMHD();
-  template<const int>
-    void TvdlfMHD();
-#else
-  template<const int>
-    void HllcHD();
-  template<const int>
-    void HllHD();
-  template<const int>
-    void RoeHD();
-  template<const int>
-    void TvdlfHD();
-#endif
+  
 
   // Arrays required by the Hydro object
   IdefixArray4D<real> Vc;      // Main cell-centered primitive variables index
@@ -165,14 +144,12 @@ class Fluid {
   std::unique_ptr<ElectroMotiveForce<Phys>> emf;
 
   // Required by time integrator
-  IdefixArray4D<real> Uc0;
-  IdefixArray4D<real> Vs0;
-  IdefixArray4D<real> Ve0;
   IdefixArray3D<real> InvDt;
 
   IdefixArray4D<real> FluxRiemann;
   IdefixArray3D<real> dMax;    // Maximum diffusion speed
 
+  std::unique_ptr<RiemannSolver<Phys>> rSolver;
 
 
  private:
@@ -184,6 +161,7 @@ class Fluid {
   friend class RKLegendre<Phys>;
   friend class Boundary<Phys>;
   friend class ShockFlattening;
+  friend class RiemannSolver<Phys>;
 
   // Isothermal EOS parameters
   real isoSoundSpeed;
@@ -193,8 +171,6 @@ class Fluid {
 
   // Adiabatic EOS parameters
   real gamma;
-
-  Solver mySolver;
 
   DataBlock *data;
 
@@ -231,6 +207,7 @@ class Fluid {
 #include "electroMotiveForce.hpp"
 #include "axis.hpp"
 #include "rkl.hpp"
+#include "riemannSolver.hpp"
 
 using Hydro = Fluid<Physics>;
 
@@ -264,35 +241,6 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
     // set the isothermal soundspeed, even though it will not be used
     this->isoSoundSpeed = -1.0;
   #endif
-
-  // read Solver from input file
-  std::string solverString = input.Get<std::string>(std::string(Phys::prefix),"solver",0);
-
-  if (solverString.compare("tvdlf") == 0) {
-    mySolver = TVDLF;
-  } else if (solverString.compare("hll") == 0) {
-    mySolver = HLL;
-#if MHD == YES
-  } else if (solverString.compare("hlld") == 0) {
-    mySolver = HLLD;
-#else
-  } else if (solverString.compare("hllc") == 0) {
-    mySolver = HLLC;
-#endif
-  } else if (solverString.compare("roe") == 0) {
-    mySolver = ROE;
-  } else {
-    std::stringstream msg;
-#if MHD == YES
-    msg << "Unknown MHD solver type " << solverString;
-#else
-    msg << "Unknown HD solver type " << solverString;
-#endif
-    IDEFIX_ERROR(msg);
-  }
-
-  // Shock flattening
-  this->haveShockFlattening = input.CheckEntry(std::string(Phys::prefix),"shockFlattening")>=0;
 
   // Source terms (always activated when non-cartesian geometry because of curvature source terms)
 #if GEOMETRY == CARTESIAN
@@ -601,6 +549,9 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
   //** Child object allocation section
   //*********************************************
 
+    // Initialise Riemann Solver
+  this->rSolver = std::unique_ptr<RiemannSolver<Phys>> (new RiemannSolver(input, this));
+
   if constexpr(Phys::mhd) {
     this->emf = std::unique_ptr<ElectroMotiveForce<Phys>>(new ElectroMotiveForce<Phys>(input, this));
   }
@@ -615,11 +566,6 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
   // Initialise boundary conditions
   boundary = std::unique_ptr<Boundary<Phys>> (new Boundary<Phys>(input, grid, this));
 
-  // Init shock flattening
-  if(haveShockFlattening) {
-    this->shockFlattening = ShockFlattening(this,input.Get<real>(std::string(Phys::prefix),"shockFlattening",0));
-  }
-
   if(haveRKLParabolicTerms) {
     this->rkl = std::unique_ptr<RKLegendre<Phys>> (new RKLegendre<Phys>(input,this));
   }
@@ -629,6 +575,7 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
 
 
 #include "addSourceTerms.hpp"
+#include "calcRightHandSide.hpp"
 #include "enroll.hpp"
 #include "calcCurrent.hpp"
 #include "coarsenFlow.hpp"

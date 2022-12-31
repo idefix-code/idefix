@@ -8,9 +8,6 @@
 #ifndef FLUID_CALCRIEMANNFLUX_HPP_
 #define FLUID_CALCRIEMANNFLUX_HPP_
 
-#include "fluid.hpp"
-#include "dataBlock.hpp"
-
 #if MHD == YES
 #include "hlldMHD.hpp"
 #include "hllMHD.hpp"
@@ -26,49 +23,40 @@
 // Compute Riemann fluxes from states
 template <typename Phys>
 template <int dir>
-void Fluid<Phys>::CalcRiemannFlux(const real t) {
-  idfx::pushRegion("Hydro::CalcRiemannFlux");
-
-  if(hallStatus.status == UserDefFunction && dir == IDIR) {
-    if(hallDiffusivityFunc)
-      hallDiffusivityFunc(*data, t, xHall);
-    else
-      IDEFIX_ERROR("No user-defined Hall diffusivity function has been enrolled");
+void RiemannSolver<Phys>::CalcFlux(IdefixArray4D<real> &flux) {
+  idfx::pushRegion("RiemannSolver::CalcFlux");
+  if constexpr(dir == IDIR) {
+    // enable shock flattening
+    if(haveShockFlattening) shockFlattening.FindShock();
   }
-
-  if(haveIsoSoundSpeed == UserDefFunction && dir == IDIR) {
-    if(isoSoundSpeedFunc)
-      isoSoundSpeedFunc(*data, t, isoSoundSpeedArray);
-    else
-      IDEFIX_ERROR("No user-defined isothermal sound speed function has been enrolled");
-  }
+  
 
   switch (mySolver) {
 #if MHD == YES
     case TVDLF:
-      TvdlfMHD<dir>();
+      TvdlfMHD<dir>(flux);
       break;
     case HLL:
-      HllMHD<dir>();
+      HllMHD<dir>(flux);
       break;
     case HLLD:
-      HlldMHD<dir>();
+      HlldMHD<dir>(flux);
       break;
     case ROE:
-      RoeMHD<dir>();
+      RoeMHD<dir>(flux);
       break;
 #else
     case TVDLF:
-      TvdlfHD<dir>();
+      TvdlfHD<dir>(flux);
       break;
     case HLL:
-      HllHD<dir>();
+      HllHD<dir>(flux);
       break;
     case HLLC:
-      HllcHD<dir>();
+      HllcHD<dir>(flux);
       break;
     case ROE:
-      RoeHD<dir>();
+      RoeHD<dir>(flux);
       break;
 #endif
     default: // do nothing

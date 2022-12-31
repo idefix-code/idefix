@@ -155,6 +155,7 @@ target_include_directories(idefix PUBLIC
                            src/fluid/electromotiveforce
                            src/fluid/HDsolvers
                            src/fluid/MHDsolvers
+                           src/fluid/RiemannSolver
                            src/output
                            src/rkl
                            src/gravity

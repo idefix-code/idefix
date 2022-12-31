@@ -46,29 +46,7 @@ void Fluid<Phys>::ShowConfig() {
       }
     }
   #endif// ISOTHERMAL
-  idfx::cout << "Fluid: Riemann solver: ";
-  switch(mySolver) {
-    case TVDLF:
-      idfx::cout << "tvdlf." << std::endl;
-      break;
-    case HLL:
-      idfx::cout << "hll." << std::endl;
-      break;
-    #if MHD==YES
-      case HLLD:
-        idfx::cout << "hlld." << std::endl;
-        break;
-    #else
-      case HLLC:
-        idfx::cout << "hllc." << std::endl;
-        break;
-    #endif
-    case ROE:
-      idfx::cout << "roe." << std::endl;
-      break;
-    default:
-      IDEFIX_ERROR("Unknown Riemann solver");
-  }
+  
   if(haveRotation) {
     idfx::cout << "Fluid: Rotation ENABLED with Omega=" << this->OmegaZ << std::endl;
   }
@@ -76,10 +54,6 @@ void Fluid<Phys>::ShowConfig() {
     idfx::cout << "Fluid: ShearingBox ENABLED with shear rate= " << this->sbS
                << " and Lx= " << sbLx << std::endl;
   }
-  if(haveShockFlattening) {
-    idfx::cout << "Fluid: Shock Flattening ENABLED." << std::endl;
-  }
-
 
   if(resistivityStatus.status != Disabled) {
     if(resistivityStatus.status == Constant) {
@@ -153,6 +127,8 @@ void Fluid<Phys>::ShowConfig() {
   if(userSourceTerm) {
     idfx::cout << "Fluid: user-defined source terms ENABLED." << std::endl;
   }
+  rSolver->ShowConfig();
+  
   #if MHD == YES
     emf->ShowConfig();
   #endif

@@ -37,7 +37,7 @@
 // Compute Riemann fluxes from states using ROE solver
 template <typename Phys>
 template<const int DIR>
-void Fluid<Phys>::RoeHD() {
+void RiemannSolver<Phys>::RoeHD(IdefixArray4D<real> &Fluxin) {
   idfx::pushRegion("Hydro::ROE_Solver");
 
   constexpr int ioffset = (DIR==IDIR) ? 1 : 0;
@@ -46,14 +46,14 @@ void Fluid<Phys>::RoeHD() {
 
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Vs = this->Vs;
-  IdefixArray4D<real> Flux = this->FluxRiemann;
+  IdefixArray4D<real> Flux = Fluxin;
   IdefixArray3D<real> cMax = this->cMax;
-  IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
+  IdefixArray3D<real> csIsoArr = hydro->isoSoundSpeedArray;
 
-  [[maybe_unused]] real gamma = this->gamma;
-  [[maybe_unused]] real gamma_m1 = this->gamma - ONE_F;
-  [[maybe_unused]] real csIso = this->isoSoundSpeed;
-  [[maybe_unused]] HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
+  [[maybe_unused]] real gamma = hydro->gamma;
+  [[maybe_unused]] real gamma_m1 = hydro->gamma - ONE_F;
+  [[maybe_unused]] real csIso = hydro->isoSoundSpeed;
+  [[maybe_unused]] HydroModuleStatus haveIsoCs = hydro->haveIsoSoundSpeed;
 
   SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR],shockFlattening);
 

@@ -49,7 +49,7 @@
 // Compute Riemann fluxes from states using ROE solver
 template <typename Phys>
 template<const int DIR>
-void Fluid<Phys>::RoeMHD() {
+void RiemannSolver<Phys>::RoeMHD() {
   idfx::pushRegion("Hydro::ROE_MHD");
 
   using EMF = ElectroMotiveForce<Phys>;

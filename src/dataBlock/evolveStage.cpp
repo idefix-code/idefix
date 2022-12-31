@@ -8,9 +8,6 @@
 #include "../idefix.hpp"
 #include "dataBlock.hpp"
 #include "fluid.hpp"
-#include "calcRightHandSide.hpp"
-#include "calcParabolicFlux.hpp"
-#include "calcRiemannFlux.hpp"
 
 // Evolve one step forward in time of hydro
 void DataBlock::EvolveStage() {

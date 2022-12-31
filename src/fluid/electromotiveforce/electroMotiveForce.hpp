@@ -10,6 +10,7 @@
 
 #include "idefix.hpp"
 #include "input.hpp"
+#include "riemannSolver.hpp"
 
 // Forward declarations
 #include "physics.hpp"
@@ -257,7 +258,7 @@ ElectroMotiveForce<Phys>::ElectroMotiveForce(Input &input, Hydro *hydro) {
                                 data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  )
   }
   if(averaging==uct_hlld) {
-    if(hydro->mySolver == Solver::HLL || hydro->mySolver == Solver::TVDLF) {
+    if(hydro->rSolver->GetSolver() == RiemannSolver<Phys>::Solver::HLL || hydro->rSolver->GetSolver() == RiemannSolver<Phys>::Solver::HLL) {
       IDEFIX_ERROR("HLLD EMF reconstruction is only compatible with HLLD or ROE Riemann solvers");
     }
   }

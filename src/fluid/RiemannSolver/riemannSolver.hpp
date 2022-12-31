@@ -20,11 +20,8 @@ template <typename Phys>
 class RiemannSolver {
  public:
   // Riemann Solver type
-  #if MHD == YES
-  enum Solver {TVDLF=1, HLL, HLLD, ROE};
-  #else
-  enum Solver {TVDLF=1, HLL, HLLC, ROE};
-  #endif
+
+  enum Solver {TVDLF_MHD, HLL_MHD, HLLD_MHD, ROE_MHD, TVDLF, HLL, HLLC, ROE};
 
   RiemannSolver(Input &input, Fluid<Phys>* hydro);
   
@@ -37,7 +34,7 @@ class RiemannSolver {
   void ShowConfig();
 
  // Riemann Solvers
-#if MHD == YES
+
   template<const int>
     void HlldMHD(IdefixArray4D<real> &);
   template<const int>
@@ -46,7 +43,7 @@ class RiemannSolver {
     void RoeMHD(IdefixArray4D<real> &);
   template<const int>
     void TvdlfMHD(IdefixArray4D<real> &);
-#else
+
   template<const int>
     void HllcHD(IdefixArray4D<real> &);
   template<const int>
@@ -55,7 +52,7 @@ class RiemannSolver {
     void RoeHD(IdefixArray4D<real> &);
   template<const int>
     void TvdlfHD(IdefixArray4D<real> &);
-#endif
+
 
  private:
   IdefixArray4D<real> Vc;
@@ -85,25 +82,42 @@ RiemannSolver<Phys>::RiemannSolver(Input &input, Fluid<Phys>* hydro) : Vc{hydro-
   std::string solverString = input.Get<std::string>(std::string(Phys::prefix),"solver",0);
 
   if (solverString.compare("tvdlf") == 0) {
-    mySolver = TVDLF;
+    if constexpr(Phys::mhd) {
+      mySolver = TVDLF_MHD;
+    } else {
+      mySolver = TVDLF;
+    }
   } else if (solverString.compare("hll") == 0) {
-    mySolver = HLL;
-#if MHD == YES
+    if constexpr(Phys::mhd) {
+      mySolver = HLL_MHD;
+    } else {
+      mySolver = HLL;
+    }
   } else if (solverString.compare("hlld") == 0) {
-    mySolver = HLLD;
-#else
+    if constexpr(Phys::mhd) {
+     mySolver = HLLD_MHD;
+    } else {
+      IDEFIX_ERROR("hlld Riemann solver requires a MHD fluid");
+    }
   } else if (solverString.compare("hllc") == 0) {
-    mySolver = HLLC;
-#endif
+    if constexpr(Phys::mhd) {
+      IDEFIX_ERROR("hllc Riemann solver requires a HD fluid");
+    } else {
+        mySolver = HLLC;
+    }
   } else if (solverString.compare("roe") == 0) {
-    mySolver = ROE;
+    if constexpr(Phys::mhd) {
+      mySolver = ROE_MHD;
+    } else {
+      mySolver = ROE;
+    }
   } else {
     std::stringstream msg;
-#if MHD == YES
-    msg << "Unknown MHD solver type " << solverString;
-#else
-    msg << "Unknown HD solver type " << solverString;
-#endif
+    if constexpr(Phys::mhd) {
+      msg << "Unknown MHD solver type " << solverString;
+    } else {
+      msg << "Unknown HD solver type " << solverString;
+    }
     IDEFIX_ERROR(msg);
   }
 
@@ -127,22 +141,28 @@ void RiemannSolver<Phys>::ShowConfig() {
   idfx::cout << "RiemannSolver: ";
   switch(mySolver) {
     case TVDLF:
-      idfx::cout << "tvdlf." << std::endl;
+      idfx::cout << "tvdlf (HD)." << std::endl;
+      break;
+    case TVDLF_MHD:
+      idfx::cout << "tvdlf (MHD)." << std::endl;
       break;
     case HLL:
-      idfx::cout << "hll." << std::endl;
+      idfx::cout << "hll (HD)." << std::endl;
       break;
-    #if MHD==YES
-      case HLLD:
-        idfx::cout << "hlld." << std::endl;
+    case HLL_MHD:
+      idfx::cout << "hll (MHD)." << std::endl;
+      break;
+    case HLLD_MHD:
+        idfx::cout << "hlld (MHD)." << std::endl;
         break;
-    #else
-      case HLLC:
-        idfx::cout << "hllc." << std::endl;
-        break;
-    #endif
+    case HLLC:
+      idfx::cout << "hllc (HD)." << std::endl;
+      break;
     case ROE:
-      idfx::cout << "roe." << std::endl;
+      idfx::cout << "roe (HD)." << std::endl;
+      break;
+    case ROE_MHD:
+      idfx::cout << "roe (MHD)." << std::endl;
       break;
     default:
       IDEFIX_ERROR("Unknown Riemann solver");

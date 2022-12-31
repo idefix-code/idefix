@@ -30,37 +30,40 @@ void RiemannSolver<Phys>::CalcFlux(IdefixArray4D<real> &flux) {
     if(haveShockFlattening) shockFlattening.FindShock();
   }
   
-
-  switch (mySolver) {
-#if MHD == YES
-    case TVDLF:
-      TvdlfMHD<dir>(flux);
-      break;
-    case HLL:
-      HllMHD<dir>(flux);
-      break;
-    case HLLD:
-      HlldMHD<dir>(flux);
-      break;
-    case ROE:
-      RoeMHD<dir>(flux);
-      break;
-#else
-    case TVDLF:
-      TvdlfHD<dir>(flux);
-      break;
-    case HLL:
-      HllHD<dir>(flux);
-      break;
-    case HLLC:
-      HllcHD<dir>(flux);
-      break;
-    case ROE:
-      RoeHD<dir>(flux);
-      break;
-#endif
-    default: // do nothing
-      break;
+  if constexpr(Phys::mhd) {
+    switch (mySolver) {
+      case TVDLF_MHD:
+        TvdlfMHD<dir>(flux);
+        break;
+      case HLL_MHD:
+        HllMHD<dir>(flux);
+        break;
+      case HLLD_MHD:
+        HlldMHD<dir>(flux);
+        break;
+      case ROE_MHD:
+        RoeMHD<dir>(flux);
+        break;
+      default:
+        break;
+    }
+  } else {
+    switch (mySolver) {
+      case TVDLF:
+        TvdlfHD<dir>(flux);
+        break;
+      case HLL:
+        HllHD<dir>(flux);
+        break;
+      case HLLC:
+        HllcHD<dir>(flux);
+        break;
+      case ROE:
+        RoeHD<dir>(flux);
+        break;
+      default: // do nothing
+        break;
+    }
   }
 
   idfx::popRegion();

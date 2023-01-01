@@ -5,13 +5,13 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#include "electroMotiveForce.hpp"
+#include "constrainedTransport.hpp"
 #include "fluid.hpp"
 #include "dataBlock.hpp"
 #include "axis.hpp"
 
 template<typename Phys>
-void ElectroMotiveForce<Phys>::EnforceEMFBoundary() {
+void ConstrainedTransport<Phys>::EnforceEMFBoundary() {
   idfx::pushRegion("Emf::EnforceEMFBoundary");
 #if MHD == YES
   if(data->hydro->haveEmfBoundary)
@@ -95,7 +95,7 @@ void ElectroMotiveForce<Phys>::EnforceEMFBoundary() {
 }
 
 template<typename Phys>
-void ElectroMotiveForce<Phys>::SymmetrizeEMFShearingBox() {
+void ConstrainedTransport<Phys>::SymmetrizeEMFShearingBox() {
   idfx::pushRegion("Emf::EnforceEMFBoundary");
   #if MHD == YES
 
@@ -173,7 +173,7 @@ void ElectroMotiveForce<Phys>::SymmetrizeEMFShearingBox() {
 
 
 template<typename Phys>
-void ElectroMotiveForce<Phys>::ExtrapolateEMFShearingBox(BoundarySide side,
+void ConstrainedTransport<Phys>::ExtrapolateEMFShearingBox(BoundarySide side,
                                                    IdefixArray2D<real> Ein,
                                                    IdefixArray2D<real> Eout) {
   const int nxi = data->np_int[IDIR];

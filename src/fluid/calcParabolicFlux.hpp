@@ -42,7 +42,7 @@ void Fluid<Phys>::CalcParabolicFlux(const real t) {
     if(data->haveFargo && viscosityStatus.isExplicit) {
       data->fargo->AddVelocityFluid(t,this);
     }
-    this->viscosity.AddViscousFlux(dir,t);
+    this->viscosity->AddViscousFlux(dir,t, this->FluxRiemann);
 
     // Remove back Fargo velocity
     if(data->haveFargo && viscosityStatus.isExplicit) {

@@ -14,7 +14,6 @@
 #include "grid.hpp"
 #include "output.hpp"
 #include "fluid_defs.hpp"
-#include "viscosity.hpp"
 #include "thermalDiffusion.hpp"
 #include "selfGravity.hpp"
 #include "vtk.hpp"
@@ -29,13 +28,15 @@ template<typename Phys>
 class Axis;
 
 template<typename Phys>
-class ElectroMotiveForce;
+class ConstrainedTransport;
 
 template<typename Phys>
 class RKLegendre;
 
 template<typename Phys>
 class RiemannSolver;
+
+class Viscosity;
 
 template<typename Phys>
 class Fluid {
@@ -84,7 +85,7 @@ class Fluid {
   ParabolicModuleStatus thermalDiffusionStatus;
 
   // Viscosity object
-  Viscosity viscosity;
+  std::unique_ptr<Viscosity> viscosity;
 
   // Thermal Diffusion object
   ThermalDiffusion thermalDiffusion;
@@ -141,7 +142,7 @@ class Fluid {
   std::vector<std::string> VeName;
 
   // Storing all of the electromotive forces
-  std::unique_ptr<ElectroMotiveForce<Phys>> emf;
+  std::unique_ptr<ConstrainedTransport<Phys>> emf;
 
   // Required by time integrator
   IdefixArray3D<real> InvDt;
@@ -153,7 +154,7 @@ class Fluid {
 
 
  private:
-  friend class ElectroMotiveForce<Phys>;
+  friend class ConstrainedTransport<Phys>;
   friend class Viscosity;
   friend class ThermalDiffusion;
   friend class Fargo;
@@ -204,10 +205,11 @@ class Fluid {
 #include "../physics.hpp"
 #include "dataBlock.hpp"
 #include "boundary.hpp"
-#include "electroMotiveForce.hpp"
+#include "constrainedTransport.hpp"
 #include "axis.hpp"
 #include "rkl.hpp"
 #include "riemannSolver.hpp"
+#include "viscosity.hpp"
 
 using Hydro = Fluid<Physics>;
 
@@ -295,7 +297,7 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
       msg  << "Unknown integration type for viscosity: " << opType;
       IDEFIX_ERROR(msg);
     }
-    this->viscosity.Init(input, grid, this);
+    this->viscosity = std::unique_ptr<Viscosity>(new Viscosity(input, grid, this));
   }
 
   // Check whether thermal diffusion is enabled, if so, init a thermal diffusion object
@@ -550,7 +552,7 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
   this->rSolver = std::unique_ptr<RiemannSolver<Phys>> (new RiemannSolver(input, this));
 
   if constexpr(Phys::mhd) {
-    this->emf = std::unique_ptr<ElectroMotiveForce<Phys>>(new ElectroMotiveForce<Phys>(input, this));
+    this->emf = std::unique_ptr<ConstrainedTransport<Phys>>(new ConstrainedTransport<Phys>(input, this));
   }
 
 

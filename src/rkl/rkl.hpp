@@ -12,6 +12,7 @@
 #include "idefix.hpp"
 #include "input.hpp"
 #include "dataBlock.hpp"
+#include "viscosity.hpp"
 #ifdef WITH_MPI
 #include "mpi.hpp"
 #endif
@@ -697,11 +698,12 @@ void RKLegendre<Phys>::CalcParabolicRHS(real t) {
   IdefixArray1D<real> dx2  = data->dx[JDIR];
   IdefixArray3D<real> invDt = hydro->InvDt;
   IdefixArray3D<real> dMax = hydro->dMax;
-  IdefixArray4D<real> viscSrc = hydro->viscosity.viscSrc;
+  IdefixArray4D<real> viscSrc;
   IdefixArray4D<real> dU = this->dU;
   IdefixArray1D<int> varList = this->varList;
 
   bool haveViscosity = hydro->viscosityStatus.isRKL;
+  if(haveViscosity) viscSrc = hydro->viscosity->viscSrc;
 
   int ioffset,joffset,koffset;
   ioffset=joffset=koffset=0;

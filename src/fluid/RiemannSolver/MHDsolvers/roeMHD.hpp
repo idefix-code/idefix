@@ -13,7 +13,7 @@
 #include "fluxMHD.hpp"
 #include "convertConsToPrimMHD.hpp"
 #include "storeFlux.hpp"
-#include "electroMotiveForce.hpp"
+#include "constrainedTransport.hpp"
 
 #define ROE_AVERAGE 0
 
@@ -52,7 +52,7 @@ template<const int DIR>
 void RiemannSolver<Phys>::RoeMHD(IdefixArray4D<real> &Flux) {
   idfx::pushRegion("Hydro::ROE_MHD");
 
-  using EMF = ElectroMotiveForce<Phys>;
+  using EMF = ConstrainedTransport<Phys>;
 
   constexpr int ioffset = (DIR==IDIR) ? 1 : 0;
   constexpr int joffset = (DIR==JDIR) ? 1 : 0;

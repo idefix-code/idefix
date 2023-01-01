@@ -11,14 +11,14 @@
 #include <vector>
 #include "idefix.hpp"
 #include "grid.hpp"
-#include "electroMotiveForce.hpp"
+#include "constrainedTransport.hpp"
 
 // Forward class hydro declaration
 #include "physics.hpp"
 template <typename Phys> class Fluid;
 using Hydro = Fluid<Physics>;
 
-template <typename Phys> class ElectroMotiveForce;
+template <typename Phys> class ConstrainedTransport;
 
 class DataBlock;
 
@@ -78,7 +78,7 @@ class Axis {
 
   Fluid<Phys> *hydro;
   DataBlock *data;
-  ElectroMotiveForce<Phys> *emf;
+  ConstrainedTransport<Phys> *emf;
 };
 
 

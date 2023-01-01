@@ -152,7 +152,7 @@ target_include_directories(idefix PUBLIC
                            src/dataBlock
                            src/fluid
                            src/fluid/boundary
-                           src/fluid/electromotiveforce
+                           src/fluid/constrainedTransport
                            src/fluid/RiemannSolver
                            src/fluid/RiemannSolver/HDsolvers
                            src/fluid/RiemannSolver/MHDsolvers

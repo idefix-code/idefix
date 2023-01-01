@@ -5,8 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef FLUID_ELECTROMOTIVEFORCE_ELECTROMOTIVEFORCE_HPP_
-#define  FLUID_ELECTROMOTIVEFORCE_ELECTROMOTIVEFORCE_HPP_
+#ifndef FLUID_CONSTRAINED_TRANSPORT_HPP_
+#define  FLUID_CONSTRAINED_TRANSPORT_HPP_
 
 #include "idefix.hpp"
 #include "input.hpp"
@@ -19,7 +19,7 @@ using Hydro = Fluid<Physics>;
 class DataBlock;
 
 template <typename Phys>
-class ElectroMotiveForce {
+class ConstrainedTransport {
  public:
   enum AveragingType {none, arithmetic, uct0, uct_contact, uct_hll, uct_hlld};
 
@@ -74,7 +74,8 @@ class ElectroMotiveForce {
   // Range of existence
 
   // Init from Hydro class
-  ElectroMotiveForce(Input &, Hydro *);
+  ConstrainedTransport(Input &, Hydro *);
+  ~ConstrainedTransport();
 
   void EvolveMagField(real, real, IdefixArray4D<real>&);
   void CalcCornerEMF(real );
@@ -108,12 +109,6 @@ class ElectroMotiveForce {
   void ExchangeX2();
   void ExchangeX3();
 #endif
-
-  // Default constructor
-  ElectroMotiveForce();
-
-  // Destructor
-  ~ElectroMotiveForce();
 
  private:
   DataBlock *data;
@@ -156,8 +151,8 @@ class ElectroMotiveForce {
 
 // Init the emf from a datablock pointer
 template<typename Phys>
-ElectroMotiveForce<Phys>::ElectroMotiveForce(Input &input, Hydro *hydro) {
-  idfx::pushRegion("ElectroMotiveForce::Init");
+ConstrainedTransport<Phys>::ConstrainedTransport(Input &input, Hydro *hydro) {
+  idfx::pushRegion("ConstrainedTransport::Init");
 
   if(input.CheckEntry("Hydro","emf")>=0) {
     std::string opType = input.Get<std::string>("Hydro","emf",0);
@@ -172,7 +167,7 @@ ElectroMotiveForce<Phys>::ElectroMotiveForce(Input &input, Hydro *hydro) {
     } else if(opType.compare("uct_hlld")==0) {
       this->averaging = uct_hlld;
     } else {
-      idfx::cout << "ElectroMotiveForce: unknown averaging scheme " << opType << std::endl;
+      idfx::cout << "ConstrainedTransport: unknown averaging scheme " << opType << std::endl;
       IDEFIX_ERROR("Unknown EMF averaging scheme");
     }
   } else {
@@ -403,7 +398,7 @@ ElectroMotiveForce<Phys>::ElectroMotiveForce(Input &input, Hydro *hydro) {
 
 // Destructor (clean up persistent communication channels)
 template<typename Phys>
-ElectroMotiveForce<Phys>::~ElectroMotiveForce() {
+ConstrainedTransport<Phys>::~ConstrainedTransport() {
   #if MHD == YES
     #ifdef WITH_MPI
     // Properly clean up the mess
@@ -427,22 +422,22 @@ ElectroMotiveForce<Phys>::~ElectroMotiveForce() {
 }
 
 template<typename Phys>
-void ElectroMotiveForce<Phys>::ShowConfig() {
+void ConstrainedTransport<Phys>::ShowConfig() {
   switch(averaging) {
     case arithmetic:
-      idfx::cout << "ElectroMotiveForce: Using ARITHMETIC averaging scheme." << std::endl;
+      idfx::cout << "ConstrainedTransport: Using ARITHMETIC averaging scheme." << std::endl;
       break;
     case uct0:
-      idfx::cout << "ElectroMotiveForce: Using UCT0 averaging scheme." << std::endl;
+      idfx::cout << "ConstrainedTransport: Using UCT0 averaging scheme." << std::endl;
       break;
     case uct_contact:
-      idfx::cout << "ElectroMotiveForce: Using UCT_CONTACT averaging scheme." << std::endl;
+      idfx::cout << "ConstrainedTransport: Using UCT_CONTACT averaging scheme." << std::endl;
       break;
     case uct_hll:
-      idfx::cout << "ElectroMotiveForce: Using 2D-HLL averaging scheme." << std::endl;
+      idfx::cout << "ConstrainedTransport: Using 2D-HLL averaging scheme." << std::endl;
       break;
     case uct_hlld:
-      idfx::cout << "ElectroMotiveForce: Using 2D-HLLD averaging scheme." << std::endl;
+      idfx::cout << "ConstrainedTransport: Using 2D-HLLD averaging scheme." << std::endl;
       break;
     default:
       IDEFIX_ERROR("Unknown averaging scheme");

@@ -13,7 +13,7 @@
 #include "fluxMHD.hpp"
 #include "convertConsToPrimMHD.hpp"
 #include "storeFlux.hpp"
-#include "electroMotiveForce.hpp"
+#include "constrainedTransport.hpp"
 
 
 
@@ -23,7 +23,7 @@ template<const int DIR>
 void RiemannSolver<Phys>::HlldMHD(IdefixArray4D<real> &Flux) {
   idfx::pushRegion("Hydro::HLLD_MHD");
 
-  using EMF = ElectroMotiveForce<Phys>;
+  using EMF = ConstrainedTransport<Phys>;
 
   constexpr int ioffset = (DIR==IDIR) ? 1 : 0;
   constexpr int joffset = (DIR==JDIR) ? 1 : 0;

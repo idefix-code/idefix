@@ -136,7 +136,7 @@ void Fluid<Phys>::ShowConfig() {
     rkl->ShowConfig();
   }
   if(viscosityStatus.isExplicit || viscosityStatus.isRKL) {
-    viscosity.ShowConfig();
+    viscosity->ShowConfig();
   }
   if(thermalDiffusionStatus.isExplicit || thermalDiffusionStatus.isRKL) {
     thermalDiffusion.ShowConfig();

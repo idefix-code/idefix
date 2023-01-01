@@ -10,8 +10,8 @@
 
 // Evolve the magnetic field in Vs according to Constranied transport
 template<typename Phys>
-void ElectroMotiveForce<Phys>::EvolveMagField(real t, real dt, IdefixArray4D<real> &Vsin) {
-  idfx::pushRegion("ElectroMotiveForce::EvolveMagField");
+void ConstrainedTransport<Phys>::EvolveMagField(real t, real dt, IdefixArray4D<real> &Vsin) {
+  idfx::pushRegion("ConstrainedTransport::EvolveMagField");
 #if MHD == YES
   // Corned EMFs
   IdefixArray3D<real> Ex1 = this->ex;

@@ -12,9 +12,9 @@
 #include "dataBlock.hpp"
 
 template<typename Phys>
-void ElectroMotiveForce<Phys>::EvolveVectorPotential(real dt, IdefixArray4D<real> &Vein) {
+void ConstrainedTransport<Phys>::EvolveVectorPotential(real dt, IdefixArray4D<real> &Vein) {
   #ifdef EVOLVE_VECTOR_POTENTIAL
-    idfx::pushRegion("ElectroMotiveForce::EvolveVectorPotential");
+    idfx::pushRegion("ConstrainedTransport::EvolveVectorPotential");
     IdefixArray4D<real> Ve = Vein;
         // Corned EMFs
     IdefixArray3D<real> Ex1 = this->ex;
@@ -41,10 +41,10 @@ void ElectroMotiveForce<Phys>::EvolveVectorPotential(real dt, IdefixArray4D<real
 
 
 template<typename Phys>
-void ElectroMotiveForce<Phys>::ComputeMagFieldFromA(IdefixArray4D<real> &Vein,
+void ConstrainedTransport<Phys>::ComputeMagFieldFromA(IdefixArray4D<real> &Vein,
                                               IdefixArray4D<real> &Vsout) {
   #ifdef EVOLVE_VECTOR_POTENTIAL
-    idfx::pushRegion("ElectroMotiveForce::ComputeMagFieldfromA");
+    idfx::pushRegion("ConstrainedTransport::ComputeMagFieldfromA");
 
     // Corned EMFs
     IdefixArray3D<real> Ex1 = this->ex;

@@ -10,8 +10,8 @@
 
 // Compute Corner EMFs from nonideal MHD
 template<typename Phys>
-void ElectroMotiveForce<Phys>::CalcNonidealEMF(real t) {
-  idfx::pushRegion("ElectroMotiveForce::CalcNonidealEMF");
+void ConstrainedTransport<Phys>::CalcNonidealEMF(real t) {
+  idfx::pushRegion("ConstrainedTransport::CalcNonidealEMF");
 
 #if MHD == YES
   // Corned EMFs

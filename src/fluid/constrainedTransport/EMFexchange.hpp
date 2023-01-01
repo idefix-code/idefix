@@ -5,13 +5,13 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#include "electroMotiveForce.hpp"
+#include "constrainedTransport.hpp"
 #include "fluid.hpp"
 #include "dataBlock.hpp"
 
 #ifdef WITH_MPI
 template<typename Phys>
-void ElectroMotiveForce<Phys>::ExchangeAll() {
+void ConstrainedTransport<Phys>::ExchangeAll() {
   if(data->mygrid->nproc[IDIR]>1) this->ExchangeX1();
   if(data->mygrid->nproc[JDIR]>1) this->ExchangeX2();
   if(data->mygrid->nproc[KDIR]>1) this->ExchangeX3();
@@ -20,7 +20,7 @@ void ElectroMotiveForce<Phys>::ExchangeAll() {
 
 // Exchange EMFs in X1
 template<typename Phys>
-void ElectroMotiveForce<Phys>::ExchangeX1() {
+void ConstrainedTransport<Phys>::ExchangeX1() {
   idfx::pushRegion("Emf::ExchangeX1");
 
 
@@ -121,7 +121,7 @@ void ElectroMotiveForce<Phys>::ExchangeX1() {
 
 // Exchange EMFs in X2
 template<typename Phys>
-void ElectroMotiveForce<Phys>::ExchangeX2() {
+void ConstrainedTransport<Phys>::ExchangeX2() {
   idfx::pushRegion("Emf::ExchangeX2");
 
   // Load  the buffers with data
@@ -217,7 +217,7 @@ void ElectroMotiveForce<Phys>::ExchangeX2() {
 
 // Exchange EMFs in X3
 template<typename Phys>
-void ElectroMotiveForce<Phys>::ExchangeX3() {
+void ConstrainedTransport<Phys>::ExchangeX3() {
   idfx::pushRegion("Emf::ExchangeX3");
 
 

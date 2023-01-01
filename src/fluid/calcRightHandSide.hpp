@@ -35,7 +35,7 @@ void Fluid<Phys>::CalcRightHandSide(real t, real dt) {
   IdefixArray3D<real> invDt = this->InvDt;
   IdefixArray3D<real> cMax = this->cMax;
   IdefixArray3D<real> dMax = this->dMax;
-  IdefixArray4D<real> viscSrc = this->viscosity.viscSrc;
+  IdefixArray4D<real> viscSrc;
 
 
   // Grid coarsening
@@ -59,7 +59,8 @@ void Fluid<Phys>::CalcRightHandSide(real t, real dt) {
   bool haveParabolicTerms = this->haveExplicitParabolicTerms;
 
   // Viscosity  (source term only when non-cartesian geometry)
-  [[maybe_unused]] bool haveViscosity = this->viscosityStatus.isExplicit;
+  bool haveViscosity = this->viscosityStatus.isExplicit;
+  if(haveViscosity) viscSrc = this->viscosity->viscSrc;
 
   // Fargo
   IdefixArray2D<real> fargoVelocity;

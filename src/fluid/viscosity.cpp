@@ -37,56 +37,9 @@
 #define D_DY_K(q,n)  (  0.25*(q(n,k,j + 1,i) + q(n,k - 1,j + 1,i)) \
                     - 0.25*(q(n,k,j - 1,i) + q(n,k - 1,j - 1,i)))
 
-Viscosity::Viscosity() {
-  // Default constructor
-}
 
-void Viscosity::Init(Input &input, Grid &grid, Hydro *hydroin) {
-  idfx::pushRegion("Viscosity::Init");
-  // Save the parent hydro object
-  this->hydro = hydroin;
 
-  if(input.CheckEntry("Hydro","viscosity")>=0) {
-    if(input.Get<std::string>("Hydro","viscosity",1).compare("constant") == 0) {
-        this->eta1 = input.Get<real>("Hydro","viscosity",2);
-        // second viscosity?
-        this->eta2 = input.GetOrSet<real>("Hydro","viscosity",3, 0.0);
-        this->haveViscosity = Constant;
-      } else if(input.Get<std::string>("Hydro","viscosity",1).compare("userdef") == 0) {
-        this->haveViscosity = UserDefFunction;
-        this->eta1Arr = IdefixArray3D<real>("ViscosityEta1Array",hydro->data->np_tot[KDIR],
-                                                                 hydro->data->np_tot[JDIR],
-                                                                 hydro->data->np_tot[IDIR]);
-        this->eta2Arr = IdefixArray3D<real>("ViscosityEta1Array",hydro->data->np_tot[KDIR],
-                                                                 hydro->data->np_tot[JDIR],
-                                                                 hydro->data->np_tot[IDIR]);
 
-      } else {
-        IDEFIX_ERROR("Unknown viscosity definition in idefix.ini. "
-                     "Can only be constant or userdef.");
-      }
-  } else {
-    IDEFIX_ERROR("I cannot create a Viscosity object without viscosity defined"
-                   "in the .ini file");
-  }
-
-  // Allocate and fill arrays when needed
-  #if GEOMETRY != CARTESIAN
-    one_dmu = IdefixArray1D<real>("Viscosity_1dmu", hydro->data->np_tot[JDIR]);
-    IdefixArray1D<real> dmu = one_dmu;
-    IdefixArray1D<real> th = hydro->data->x[JDIR];
-    idefix_for("ViscousInitGeometry",1,hydro->data->np_tot[JDIR],
-      KOKKOS_LAMBDA(int j) {
-        real scrch =  FABS((1.0-cos(th(j)))*(sin(th(j)) >= 0.0 ? 1.0:-1.0)
-                     -(1.0-cos(th(j-1))) * (sin(th(j-1)) > 0.0 ? 1.0:-1.0));
-        dmu(j) = 1.0/scrch;
-      });
-  #endif
-  viscSrc = IdefixArray4D<real>("Viscosity_source", COMPONENTS, hydro->data->np_tot[KDIR],
-                                                                hydro->data->np_tot[JDIR],
-                                                                hydro->data->np_tot[IDIR]);
-  idfx::popRegion();
-}
 
 void Viscosity::ShowConfig() {
   if(haveViscosity==Constant) {
@@ -101,9 +54,9 @@ void Viscosity::ShowConfig() {
   } else {
     IDEFIX_ERROR("Unknown viscosity mode");
   }
-  if(hydro->viscosityStatus.isExplicit) {
+  if(this->status.isExplicit) {
     idfx::cout << "Viscosity: uses an explicit time integration." << std::endl;
-  } else if(hydro->viscosityStatus.isRKL) {
+  } else if(this->status.isRKL) {
     idfx::cout << "Viscosity: uses a Runge-Kutta-Legendre time integration."
                 << std::endl;
   } else {
@@ -119,34 +72,33 @@ void Viscosity::EnrollViscousDiffusivity(ViscousDiffusivityFunc myFunc) {
   this->viscousDiffusivityFunc = myFunc;
 }
 
-// This function computes the viscous flux and stores it in hydro->fluxRiemann
+// This function computes the viscous flux and stores it in Flux
 // (this avoids an extra array)
 // Associated source terms, present in non-cartesian geometry are also computed
 // and stored in this->viscSrc for later use (in calcRhs).
-void Viscosity::AddViscousFlux(int dir, const real t) {
+void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> &Flux) {
   idfx::pushRegion("Viscosity::AddViscousFlux");
-  IdefixArray4D<real> Vc = this->hydro->Vc;
-  IdefixArray4D<real> Flux = this->hydro->FluxRiemann;
+  IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> viscSrc = this->viscSrc;
-  IdefixArray3D<real> dMax = this->hydro->dMax;
+  IdefixArray3D<real> dMax = this->dMax;
   IdefixArray3D<real> eta1Arr = this->eta1Arr;
   IdefixArray3D<real> eta2Arr = this->eta2Arr;
   IdefixArray1D<real> one_dmu = this->one_dmu;
-  IdefixArray1D<real> x1 = this->hydro->data->x[IDIR];
-  IdefixArray1D<real> x2 = this->hydro->data->x[JDIR];
-  IdefixArray1D<real> x3 = this->hydro->data->x[KDIR];
-  IdefixArray1D<real> x1l = this->hydro->data->xl[IDIR];
-  IdefixArray1D<real> x2l = this->hydro->data->xl[JDIR];
-  IdefixArray1D<real> x3l = this->hydro->data->xl[KDIR];
-  IdefixArray1D<real> dx1 = this->hydro->data->dx[IDIR];
-  IdefixArray1D<real> dx2 = this->hydro->data->dx[JDIR];
-  IdefixArray1D<real> dx3 = this->hydro->data->dx[KDIR];
+  IdefixArray1D<real> x1 = this->data->x[IDIR];
+  IdefixArray1D<real> x2 = this->data->x[JDIR];
+  IdefixArray1D<real> x3 = this->data->x[KDIR];
+  IdefixArray1D<real> x1l = this->data->xl[IDIR];
+  IdefixArray1D<real> x2l = this->data->xl[JDIR];
+  IdefixArray1D<real> x3l = this->data->xl[KDIR];
+  IdefixArray1D<real> dx1 = this->data->dx[IDIR];
+  IdefixArray1D<real> dx2 = this->data->dx[JDIR];
+  IdefixArray1D<real> dx3 = this->data->dx[KDIR];
 
   #if GEOMETRY == SPHERICAL
-  IdefixArray1D<real> sinx2 = this->hydro->data->sinx2;
-  IdefixArray1D<real> tanx2 = this->hydro->data->tanx2;
-  IdefixArray1D<real> sinx2m = this->hydro->data->sinx2m;
-  IdefixArray1D<real> tanx2m = this->hydro->data->tanx2m;
+  IdefixArray1D<real> sinx2 = this->data->sinx2;
+  IdefixArray1D<real> tanx2 = this->data->tanx2;
+  IdefixArray1D<real> sinx2m = this->data->sinx2m;
+  IdefixArray1D<real> tanx2m = this->data->tanx2m;
   #endif
 
 
@@ -155,7 +107,7 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
   // Compute viscosity if needed
   if(haveViscosity == UserDefFunction && dir == IDIR) {
     if(viscousDiffusivityFunc) {
-      viscousDiffusivityFunc(*this->hydro->data, t, eta1Arr, eta2Arr);
+      viscousDiffusivityFunc(*data, t, eta1Arr, eta2Arr);
     } else {
       IDEFIX_ERROR("No user-defined viscosity function has been enrolled");
     }
@@ -163,12 +115,12 @@ void Viscosity::AddViscousFlux(int dir, const real t) {
 
 
   int ibeg, iend, jbeg, jend, kbeg, kend;
-  ibeg = this->hydro->data->beg[IDIR];
-  iend = this->hydro->data->end[IDIR];
-  jbeg = this->hydro->data->beg[JDIR];
-  jend = this->hydro->data->end[JDIR];
-  kbeg = this->hydro->data->beg[KDIR];
-  kend = this->hydro->data->end[KDIR];
+  ibeg = this->data->beg[IDIR];
+  iend = this->data->end[IDIR];
+  jbeg = this->data->beg[JDIR];
+  jend = this->data->end[JDIR];
+  kbeg = this->data->beg[KDIR];
+  kend = this->data->end[KDIR];
 
 
   real eta1Constant = this->eta1;

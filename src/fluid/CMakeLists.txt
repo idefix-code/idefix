@@ -1,5 +1,5 @@
 add_subdirectory(boundary)
-add_subdirectory(electromotiveforce)
+add_subdirectory(constrainedTransport)
 add_subdirectory(RiemannSolver)
 
 

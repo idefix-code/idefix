@@ -10,8 +10,8 @@
 
 // Compute Corner EMFs from the one stored in the Riemann step
 template<typename Phys>
-void ElectroMotiveForce<Phys>::CalcCornerEMF(real t) {
-  idfx::pushRegion("ElectroMotiveForce::CalcCornerEMF");
+void ConstrainedTransport<Phys>::CalcCornerEMF(real t) {
+  idfx::pushRegion("ConstrainedTransport::CalcCornerEMF");
 
 #if MHD == YES && DIMENSIONS >= 2
 
@@ -39,8 +39,8 @@ void ElectroMotiveForce<Phys>::CalcCornerEMF(real t) {
 
 // Compute Corner EMFs from arithmetic averages
 template<typename Phys>
-void ElectroMotiveForce<Phys>::CalcArithmeticAverage() {
-  idfx::pushRegion("ElectroMotiveForce::CalcCornerEMF");
+void ConstrainedTransport<Phys>::CalcArithmeticAverage() {
+  idfx::pushRegion("ConstrainedTransport::CalcCornerEMF");
 
   // Corned EMFs
   IdefixArray3D<real> ex = this->ex;
@@ -80,8 +80,8 @@ void ElectroMotiveForce<Phys>::CalcArithmeticAverage() {
 }
 
 template<typename Phys>
-void ElectroMotiveForce<Phys>::CalcCellCenteredEMF() {
-  idfx::pushRegion("ElectroMotiveForce::CalcCellCenteredEMF");
+void ConstrainedTransport<Phys>::CalcCellCenteredEMF() {
+  idfx::pushRegion("ConstrainedTransport::CalcCellCenteredEMF");
   IdefixArray4D<real> Vc = hydro->Vc;
     // cell-centered EMFs
   IdefixArray3D<real> Ex1 = this->Ex1;
@@ -124,8 +124,8 @@ void ElectroMotiveForce<Phys>::CalcCellCenteredEMF() {
 }
 
 template<typename Phys>
-void ElectroMotiveForce<Phys>::CalcUCT0Average() {
-  idfx::pushRegion("ElectroMotiveForce::CalcUCT0Average");
+void ConstrainedTransport<Phys>::CalcUCT0Average() {
+  idfx::pushRegion("ConstrainedTransport::CalcUCT0Average");
     // Corned EMFs
   IdefixArray3D<real> ex = this->ex;
   IdefixArray3D<real> ey = this->ey;
@@ -192,8 +192,8 @@ void ElectroMotiveForce<Phys>::CalcUCT0Average() {
 }
 
 template<typename Phys>
-void ElectroMotiveForce<Phys>::CalcContactAverage() {
-  idfx::pushRegion("ElectroMotiveForce::CalcContactAverage");
+void ConstrainedTransport<Phys>::CalcContactAverage() {
+  idfx::pushRegion("ConstrainedTransport::CalcContactAverage");
         // Corned EMFs
   IdefixArray3D<real> ex = this->ex;
   IdefixArray3D<real> ey = this->ey;

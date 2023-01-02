@@ -15,8 +15,13 @@ int outnum;
 // This analysis checks that the restart routines are performing as they should
 void Analysis(DataBlock& data) {
 
-  // Mirror data on Host
+
   idfx::cout << "Analysis: Checking restart routines" << std::endl;
+
+  // Trigger dump creation
+  myOutput->ForceWriteDump(data);
+
+    // Mirror data on Host
   DataBlockHost d(data);
 
   // Sync it
@@ -34,6 +39,8 @@ void Analysis(DataBlock& data) {
       for(int j = 0; j < d.np_tot[JDIR] ; j++) {
         for(int i = 0; i < d.np_tot[IDIR] ; i++) {
           myVc(n,k,j,i) = d.Vc(n,k,j,i);
+          d.Vc(n,k,j,i) = 0.0;
+
         }
       }
     }
@@ -44,6 +51,7 @@ void Analysis(DataBlock& data) {
       for(int j = 0; j < d.np_tot[JDIR] + JOFFSET; j++) {
         for(int i = 0; i < d.np_tot[IDIR] + IOFFSET; i++) {
           myVs(n,k,j,i) = d.Vs(n,k,j,i);
+          d.Vs(n,k,j,i) = 0.0;
         }
       }
     }
@@ -54,17 +62,20 @@ void Analysis(DataBlock& data) {
         for(int j = 0; j < d.np_tot[JDIR] + JOFFSET; j++) {
           for(int i = 0; i < d.np_tot[IDIR] + IOFFSET; i++) {
             myVe(n,k,j,i) = d.Ve(n,k,j,i);
+            d.Ve(n,k,j,i) = 0.0;
           }
         }
       }
     }
   #endif
 
-  // Trigger dump creation
-  myOutput->ForceWriteDump(data);
+  // Push our datablockHost to erase everything
+  d.SyncToDevice();
+  // From this point, the dataBlock is full of zeros
 
   // Load back the restart dump
   myOutput->RestartFromDump(data, outnum);
+  data.SetBoundaries();
   #ifdef EVOLVE_VECTOR_POTENTIAL
     data.hydro->emf->ComputeMagFieldFromA(data.hydro->Ve, data.hydro->Vs);
   #endif

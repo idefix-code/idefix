@@ -112,11 +112,11 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
 
   this->states["current"] = StateContainer();
 
+  // Initialize the Dump object
+  this->dump = std::unique_ptr<Dump>(new Dump(this));
+
   // Initialize the VTK object
   this->vtk = std::unique_ptr<Vtk>(new Vtk(input, this));
-
-    // Initialize the Dump object
-  this->dump = std::unique_ptr<Dump>(new Dump(this));
 
   // Initialize the hydro object attached to this datablock
   this->hydro = std::shared_ptr<Hydro>(new Hydro(grid, input, this));
@@ -132,6 +132,10 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
     gravity.Init(input, this);
     this->haveGravity = true; // TODO(mauxionj): why do it here and in init gravity ?
   }
+
+  // Register variables that need to be saved in case of restart dump
+  dump->RegisterVariable(&t, "time");
+  dump->RegisterVariable(&dt, "dt");
 
   idfx::popRegion();
 }
@@ -185,4 +189,13 @@ real DataBlock::ComputeTimestep() {
           Kokkos::Min<real>(dt));
   Kokkos::fence();
   return(dt);
+}
+
+// Recompute magnetic fields from vector potential in dedicated fluids
+void DataBlock::DeriveVectorPotential() {
+  if constexpr(Physics::mhd) {
+    #ifdef EVOLVE_VECTOR_POTENTIAL
+      hydro->emf->ComputeMagFieldFromA(hydro->Ve, hydro->Vs);
+    #endif
+  }
 }

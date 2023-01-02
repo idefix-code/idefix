@@ -118,6 +118,7 @@ class DataBlock {
   void EvolveStage();             ///< Evolve this DataBlock by dt
   void EvolveRKLStage();          ///< Evolve this DataBlock by dt for terms impacted by RKL
   void SetBoundaries();       ///< Enforce boundary conditions to this datablock
+  void DeriveVectorPotential(); ///< Compute magnetic fields from vector potential where applicable
   void Coarsen();             ///< Coarsen this datablock and its objects
   void ShowConfig();              ///< Show the datablock's configuration
   real ComputeTimestep();         ///< compute maximum timestep from current state of affairs

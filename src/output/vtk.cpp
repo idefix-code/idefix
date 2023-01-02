@@ -234,6 +234,10 @@ Vtk::Vtk(Input &input, DataBlock *datain) {
                                          MPI_FLOAT, &this->view));
   MPI_SAFE_CALL(MPI_Type_commit(&this->view));
 #endif
+
+  // Register variables that are required in restart dumps
+  data->dump->RegisterVariable(&vtkFileNumber, "vtkFileNumber");
+  
 }
 
 
@@ -293,39 +297,6 @@ int Vtk::Write() {
     }
     WriteScalar(fileHdl, vect3D, name);
   }
-  /*
-  // Write user-defined variables (when required by output)
-  if(output.userDefVariablesEnabled) {
-    // Walk the map and make an output for each key of the map
-    // (and we thank c++11 for its cute way of doing this)
-    for(auto const &variable : output.userDefVariables) {
-      for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++ ) {
-        for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++ ) {
-          for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
-            vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc + (k-data.beg[KDIR])*nx1loc*nx2loc]
-                = BigEndian(static_cast<float>(variable.second(k,j,i)));
-          }
-        }
-      }
-      WriteScalar(fileHdl, vect3D, variable.first);
-    }
-  }
-
-  // Write vector potential if we're using this
-  #ifdef EVOLVE_VECTOR_POTENTIAL
-  for(int nv = 0 ; nv <= AX3e ; nv++) {
-    for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++ ) {
-      for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++ ) {
-        for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
-          vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc + (k-data.beg[KDIR])*nx1loc*nx2loc]
-              = BigEndian(static_cast<float>(data.Ve(nv,k,j,i)));
-        }
-      }
-    }
-    WriteScalar(fileHdl, vect3D, datain.hydro->VeName[nv]);
-  }
-  #endif
-*/
 
 #ifdef WITH_MPI
   MPI_SAFE_CALL(MPI_File_close(&fileHdl));

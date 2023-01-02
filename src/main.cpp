@@ -120,9 +120,7 @@ int main( int argc, char* argv[] ) {
       idfx::pushRegion("Setup::Initflow");
       mysetup.InitFlow(data);
       idfx::popRegion();
-      #if MHD == YES && defined(EVOLVE_VECTOR_POTENTIAL)
-        data.hydro->emf->ComputeMagFieldFromA(data.hydro->Ve, data.hydro->Vs);
-      #endif
+      data.DeriveVectorPotential();   // This does something only when evolveVectorPotential is on
       data.SetBoundaries();
       output.CheckForWrites(data);
       data.Validate();

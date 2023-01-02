@@ -55,6 +55,12 @@ Output::Output(Input &input, DataBlock &data) {
     }
     userDefVariablesEnabled = true;
   }
+
+  // Register variables that are needed in restart dumps
+  data.dump->RegisterVariable(&dumpLast, "dumpLast");
+  data.dump->RegisterVariable(&analysisLast, "analysisLast");
+  data.dump->RegisterVariable(&vtkLast, "vtkLast");
+
   idfx::popRegion();
 }
 
@@ -150,6 +156,7 @@ void Output::RestartFromDump(DataBlock &data, int readNumber) {
   idfx::pushRegion("Output::RestartFromDump");
 
   data.dump->Read(*this, readNumber);
+  data.DeriveVectorPotential();
 
   idfx::popRegion();
 }

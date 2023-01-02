@@ -151,8 +151,10 @@ Dump::Dump(DataBlock *datain) {
   this->RegisterVariable(&dumpFileNumber, "dumpFileNumber");
   this->RegisterVariable(&geometry, "geometry");
   this->RegisterVariable(periodicity, "periodicity", 3);
+}
 
-
+Dump::~Dump() {
+  delete scrch;
 }
 
 void Dump::WriteString(IdfxFileHandler fileHdl, char *str, int size) {
@@ -545,9 +547,10 @@ int Dump::Read(Output& output, int readNumber ) {
   // Coordinates are ok, load the bulk
   while(true) {
     ReadNextFieldProperties(fileHdl, ndim, nxglob, type, fieldName);
+    /*
     idfx::cout << "Next field is " << fieldName << " with " << ndim << " dimensions and (";
     for(int i = 0 ; i < ndim ; i++) idfx::cout << nxglob[i] << " ";
-    idfx::cout << ") points." << std::endl;
+    idfx::cout << ") points." << std::endl;*/
 
     if(fieldName.compare(eof) == 0) {
       // We have reached end of dump file

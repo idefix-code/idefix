@@ -152,6 +152,7 @@ class Dump {
   friend class DumpImage; // Allow dumpimag to have access to dump API
  public:
   Dump(DataBlock *);               // Create Dump Object
+  ~Dump();
 
   // Create a Dump file from the current state of the code
   int Write(Output&);

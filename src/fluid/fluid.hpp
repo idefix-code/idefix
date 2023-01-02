@@ -469,22 +469,22 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
       case RHO:
         VcName.push_back("RHO");
         data->vtk->RegisterVariable(Vc, "RHO", RHO);
-        data->dump->RegisterVariable(Vc, "Vc_RHO", RHO);
+        data->dump->RegisterVariable(Vc, "Vc-RHO", RHO);
         break;
       case VX1:
         VcName.push_back("VX1");
         data->vtk->RegisterVariable(Vc, "VX1", VX1);
-        data->dump->RegisterVariable(Vc, "Vc_VX1", VX1, IDIR);
+        data->dump->RegisterVariable(Vc, "Vc-VX1", VX1, IDIR);
         break;
       case VX2:
         VcName.push_back("VX2");
         data->vtk->RegisterVariable(Vc, "VX2", VX2);
-        data->dump->RegisterVariable(Vc, "Vc_VX2", VX2, JDIR);
+        data->dump->RegisterVariable(Vc, "Vc-VX2", VX2, JDIR);
         break;
       case VX3:
         VcName.push_back("VX3");
         data->vtk->RegisterVariable(Vc, "VX3", VX3);
-        data->dump->RegisterVariable(Vc, "Vc_VX3", VX3, KDIR);
+        data->dump->RegisterVariable(Vc, "Vc-VX3", VX3, KDIR);
         break;
       case BX1:
         VcName.push_back("BX1");
@@ -502,12 +502,12 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
       case PRS:
         VcName.push_back("PRS");
         data->vtk->RegisterVariable(Vc, "PRS", PRS);
-        data->dump->RegisterVariable(Vc, "Vc_PRS", PRS);
+        data->dump->RegisterVariable(Vc, "Vc-PRS", PRS);
         break;
 #endif
       default:
-        VcName.push_back("Vc_"+std::to_string(i));
-        data->vtk->RegisterVariable(Vc, "Vc_"+std::to_string(i), i);
+        VcName.push_back("Vc-"+std::to_string(i));
+        data->vtk->RegisterVariable(Vc, "Vc-"+std::to_string(i), i);
     }
   }
 
@@ -518,42 +518,42 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
         switch(i) {
           case 0:
             VsName.push_back("BX1s");
-            data->dump->RegisterVariable(Vs, "Vs_BX1s", BX1s, IDIR, DumpField::ArrayLocation::Face);
+            data->dump->RegisterVariable(Vs, "Vs-BX1s", BX1s, IDIR, DumpField::ArrayLocation::Face);
             break;
           case 1:
             VsName.push_back("BX2s");
-            data->dump->RegisterVariable(Vs, "Vs_BX2s", BX2s, JDIR, DumpField::ArrayLocation::Face);
+            data->dump->RegisterVariable(Vs, "Vs-BX2s", BX2s, JDIR, DumpField::ArrayLocation::Face);
             break;
           case 2:
             VsName.push_back("BX3s");
-            data->dump->RegisterVariable(Vs, "Vs_BX3s", BX3s, KDIR, DumpField::ArrayLocation::Face);
+            data->dump->RegisterVariable(Vs, "Vs-BX3s", BX3s, KDIR, DumpField::ArrayLocation::Face);
             break;
           default:
-            VsName.push_back("Vs_"+std::to_string(i));
+            VsName.push_back("Vs-"+std::to_string(i));
         }
       }
 
     #else
       #if DIMENSIONS < 3
         VeName.push_back("AX3e");
-        data->dump->RegisterVariable(Ve, "Ve_AX3e", AX3e, KDIR, DumpField::ArrayLocation::Edge);
+        data->dump->RegisterVariable(Ve, "Ve-AX3e", AX3e, KDIR, DumpField::ArrayLocation::Edge);
       #else
         for(int i = 0 ; i < DIMENSIONS ; i++) {
         switch(i) {
           case 0:
             VeName.push_back("AX1e");
-            data->dump->RegisterVariable(Ve, "Ve_AX1e", AX1e, IDIR, DumpField::ArrayLocation::Edge);
+            data->dump->RegisterVariable(Ve, "Ve-AX1e", AX1e, IDIR, DumpField::ArrayLocation::Edge);
             break;
           case 1:
             VeName.push_back("AX2e");
-            data->dump->RegisterVariable(Ve, "Ve_AX2e", AX2e, JDIR, DumpField::ArrayLocation::Edge);
+            data->dump->RegisterVariable(Ve, "Ve-AX2e", AX2e, JDIR, DumpField::ArrayLocation::Edge);
             break;
           case 2:
             VeName.push_back("AX3e");
-            data->dump->RegisterVariable(Ve, "Ve_AX3e", AX3e, KDIR, DumpField::ArrayLocation::Edge);
+            data->dump->RegisterVariable(Ve, "Ve-AX3e", AX3e, KDIR, DumpField::ArrayLocation::Edge);
             break;
           default:
-            VeName.push_back("Ve_"+std::to_string(i));
+            VeName.push_back("Ve-"+std::to_string(i));
           }
         }
       #endif

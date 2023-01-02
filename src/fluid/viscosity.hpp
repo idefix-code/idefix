@@ -34,6 +34,9 @@ class Viscosity {
   // Enroll user-defined viscous diffusivity
   void EnrollViscousDiffusivity(ViscousDiffusivityFunc);
 
+  // Function for internal use (but public to allow for Cuda lambda capture)
+  void InitArrays();
+
   IdefixArray4D<real> viscSrc;  // Source terms of the viscous operator
   IdefixArray3D<real> eta1Arr;
   IdefixArray3D<real> eta2Arr;
@@ -93,21 +96,8 @@ Viscosity::Viscosity(Input &input, Grid &grid, Fluid<Phys> *hydroin):
                    "in the .ini file");
   }
 
-  // Allocate and fill arrays when needed
-  #if GEOMETRY != CARTESIAN
-    one_dmu = IdefixArray1D<real>("Viscosity_1dmu", data->np_tot[JDIR]);
-    IdefixArray1D<real> dmu = one_dmu;
-    IdefixArray1D<real> th = data->x[JDIR];
-    idefix_for("ViscousInitGeometry",1,data->np_tot[JDIR],
-      KOKKOS_LAMBDA(int j) {
-        real scrch =  FABS((1.0-cos(th(j)))*(sin(th(j)) >= 0.0 ? 1.0:-1.0)
-                     -(1.0-cos(th(j-1))) * (sin(th(j-1)) > 0.0 ? 1.0:-1.0));
-        dmu(j) = 1.0/scrch;
-      });
-  #endif
-  viscSrc = IdefixArray4D<real>("Viscosity_source", COMPONENTS, data->np_tot[KDIR],
-                                                                data->np_tot[JDIR],
-                                                                data->np_tot[IDIR]);
+  InitArrays();
+  
   idfx::popRegion();
 }
 #endif // FLUID_VISCOSITY_HPP_

@@ -40,7 +40,27 @@
 
 
 
+// This function is technically part of the constructor,
+// but since constructors cannot be Lambda-captured by cuda
+// we need an extra public function for array initialisation in the constructor
 
+void Viscosity::InitArrays() {
+  // Allocate and fill arrays when needed
+  #if GEOMETRY != CARTESIAN
+    one_dmu = IdefixArray1D<real>("Viscosity_1dmu", data->np_tot[JDIR]);
+    IdefixArray1D<real> dmu = one_dmu;
+    IdefixArray1D<real> th = data->x[JDIR];
+    idefix_for("ViscousInitGeometry",1,data->np_tot[JDIR],
+      KOKKOS_LAMBDA(int j) {
+        real scrch =  FABS((1.0-cos(th(j)))*(sin(th(j)) >= 0.0 ? 1.0:-1.0)
+                     -(1.0-cos(th(j-1))) * (sin(th(j-1)) > 0.0 ? 1.0:-1.0));
+        dmu(j) = 1.0/scrch;
+      });
+  #endif
+  viscSrc = IdefixArray4D<real>("Viscosity_source", COMPONENTS, data->np_tot[KDIR],
+                                                                data->np_tot[JDIR],
+                                                                data->np_tot[IDIR]);
+}
 void Viscosity::ShowConfig() {
   if(haveViscosity==Constant) {
     idfx::cout << "Viscosity: ENEABLED with constant viscosity eta1="

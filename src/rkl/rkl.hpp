@@ -17,6 +17,9 @@
 #include "mpi.hpp"
 #endif
 
+// Functors being used by RKL
+template <typename Phys>
+struct RKLegendre_ResetStageFunctor;
 
 template<typename Phys>
 class RKLegendre {
@@ -55,6 +58,7 @@ class RKLegendre {
   int stage{0};
 
  private:
+  friend struct RKLegendre_ResetStageFunctor<Phys>;
   void SetBoundaries(real);        // Enforce boundary conditions on the variables solved by RKL
 
   DataBlock *data;
@@ -531,6 +535,7 @@ void RKLegendre<Phys>::Cycle() {
 }
 
 
+
 template<typename Phys>
 void RKLegendre<Phys>::ResetFlux() {
   idfx::pushRegion("RKLegendre::ResetFlux");
@@ -550,63 +555,77 @@ void RKLegendre<Phys>::ResetFlux() {
 }
 
 template<typename Phys>
+struct RKLegendre_ResetStageFunctor {
+  RKLegendre_ResetStageFunctor(RKLegendre<Phys> *rkl) {
+    dU = rkl->dU;
+    Flux = rkl->hydro->FluxRiemann;
+    vars = rkl->varList;
+    stage = rkl->stage;
+    nvar = rkl->nvarRKL;
+    haveVc = rkl->haveVc || (rkl->stage ==1 );
+    haveVs = rkl->haveVs;
+    invDt = rkl->hydro->InvDt;
+    if constexpr(Phys::mhd) {
+      #ifdef EVOLVE_VECTOR_POTENTIAL
+        dA = rkl->dA;
+      #else
+        dB = rkl->dB;
+      #endif
+      ex = rkl->hydro->emf->ex;
+      ey = rkl->hydro->emf->ey;
+      ez = rkl->hydro->emf->ez;
+    }
+  }
+
+  IdefixArray4D<real> dU;
+  IdefixArray4D<real> Flux;
+  IdefixArray1D<int> vars;
+  IdefixArray4D<real> dA, dB;
+  IdefixArray3D<real> ex,ey,ez;
+  IdefixArray3D<real> invDt;
+  int stage, nvar;
+  bool haveVs, haveVc;
+  
+  KOKKOS_INLINE_FUNCTION void operator() (const int k, const int j,  const int i) {
+    if(haveVc) {
+      for(int n = 0 ; n < nvar ; n++) {
+        const int nv = vars(n);
+        dU(nv,k,j,i) = ZERO_F;
+      }
+    }
+    if(stage == 1)   invDt(k,j,i) = ZERO_F;
+    if constexpr(Phys::mhd) {
+      if(haveVs) {
+        #ifdef EVOLVE_VECTOR_POTENTIAL
+          for(int n=0; n < AX3e+1; n++) {
+            dA(n,k,j,i) = ZERO_F;
+          }
+        #else
+          for(int n=0; n < DIMENSIONS; n++) {
+            dB(n,k,j,i) = ZERO_F;
+          }
+        #endif
+        D_EXPAND( ez(k,j,i) = 0.0;    ,
+                                      ,
+                  ex(k,j,i) = 0.0;
+                  ey(k,j,i) = 0.0;    )
+      }
+    }
+  }
+};
+
+template<typename Phys>
 void RKLegendre<Phys>::ResetStage() {
   idfx::pushRegion("RKLegendre::ResetStage");
 
-  IdefixArray4D<real> dU = this->dU;
-  IdefixArray4D<real> Flux = hydro->FluxRiemann;
-  [[maybe unused]] IdefixArray4D<real> dA, dB;
-  [[maybe unused]] IdefixArray3D<real> ex,ey,ez;
-  if constexpr(Phys::mhd) {
-    #ifdef EVOLVE_VECTOR_POTENTIAL
-      dA = this->dA;
-    #else
-      dB = this->dB;
-    #endif
-    ex = hydro->emf->ex;
-    ey = hydro->emf->ey;
-    ez = hydro->emf->ez;
-  }
-  IdefixArray1D<int> vars = this->varList;
-  IdefixArray3D<real> invDt = hydro->InvDt;
-  int stage = this->stage;
-  int nvar = this->nvarRKL;
-  [[maybe_unused]] bool haveVs=this->haveVs;
-
-  bool haveVc = this->haveVc || (this->stage ==1 );
+  auto func = RKLegendre_ResetStageFunctor(this);
 
 
   idefix_for("RKL_ResetStage",
              0,data->np_tot[KDIR],
              0,data->np_tot[JDIR],
              0,data->np_tot[IDIR],
-    KOKKOS_LAMBDA (int k, int j, int i) {
-      if(haveVc) {
-        for(int n = 0 ; n < nvar ; n++) {
-          const int nv = vars(n);
-          dU(nv,k,j,i) = ZERO_F;
-        }
-      }
-      if(stage == 1)
-        invDt(k,j,i) = ZERO_F;
-        if (Phys::mhd) {
-          if(haveVs) {
-            #ifdef EVOLVE_VECTOR_POTENTIAL
-              for(int n=0; n < AX3e+1; n++) {
-                dA(n,k,j,i) = ZERO_F;
-              }
-            #else
-              for(int n=0; n < DIMENSIONS; n++) {
-                dB(n,k,j,i) = ZERO_F;
-              }
-            #endif
-            D_EXPAND( ez(k,j,i) = 0.0;    ,
-                                          ,
-                      ex(k,j,i) = 0.0;
-                      ey(k,j,i) = 0.0;    )
-          }
-        }
-    });
+             func);
 
   idfx::popRegion();
 }

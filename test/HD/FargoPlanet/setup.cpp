@@ -137,7 +137,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output)// : m_pl
   data.hydro->EnrollUserDefBoundary(&UserdefBoundary);
   data.gravity.EnrollPotential(&Potential);
   data.hydro->EnrollIsoSoundSpeed(&MySoundSpeed);
-  data.hydro->viscosity.EnrollViscousDiffusivity(&MyViscosity);
+  data.hydro->viscosity->EnrollViscousDiffusivity(&MyViscosity);
   if(data.haveFargo)
     data.fargo->EnrollVelocity(&FargoVelocity);
   sigma0Glob = input.Get<real>("Setup","sigma0",0);

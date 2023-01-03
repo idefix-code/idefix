@@ -113,7 +113,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   // Set the function for userdefboundary
   data.hydro->EnrollUserDefBoundary(&UserdefBoundary);
   data.hydro->EnrollIsoSoundSpeed(&MySoundSpeed);
-  data.hydro->viscosity.EnrollViscousDiffusivity(&MyViscosity);
+  data.hydro->viscosity->EnrollViscousDiffusivity(&MyViscosity);
   if(data.haveFargo)
     data.fargo->EnrollVelocity(&FargoVelocity);
   epsilonGlob = input.Get<real>("Setup","epsilon",0);

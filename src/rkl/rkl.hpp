@@ -555,21 +555,23 @@ void RKLegendre<Phys>::ResetStage() {
 
   IdefixArray4D<real> dU = this->dU;
   IdefixArray4D<real> Flux = hydro->FluxRiemann;
-  #if MHD == YES
+  [[maybe unused]] IdefixArray4D<real> dA, dB;
+  [[maybe unused]] IdefixArray3D<real> ex,ey,ez;
+  if constexpr(Phys::mhd) {
     #ifdef EVOLVE_VECTOR_POTENTIAL
-      IdefixArray4D<real> dA = this->dA;
+      dA = this->dA;
     #else
-      IdefixArray4D<real> dB = this->dB;
+      dB = this->dB;
     #endif
-    IdefixArray3D<real> ex = hydro->emf->ex;
-    IdefixArray3D<real> ey = hydro->emf->ey;
-    IdefixArray3D<real> ez = hydro->emf->ez;
-  #endif
+    ex = hydro->emf->ex;
+    ey = hydro->emf->ey;
+    ez = hydro->emf->ez;
+  }
   IdefixArray1D<int> vars = this->varList;
   IdefixArray3D<real> invDt = hydro->InvDt;
   int stage = this->stage;
   int nvar = this->nvarRKL;
-  bool haveVs=this->haveVs;
+  [[maybe_unused]] bool haveVs=this->haveVs;
 
   bool haveVc = this->haveVc || (this->stage ==1 );
 
@@ -587,23 +589,23 @@ void RKLegendre<Phys>::ResetStage() {
       }
       if(stage == 1)
         invDt(k,j,i) = ZERO_F;
-      #if MHD == YES
-      if(haveVs) {
-        #ifdef EVOLVE_VECTOR_POTENTIAL
-          for(int n=0; n < AX3e+1; n++) {
-            dA(n,k,j,i) = ZERO_F;
+        if constexpr(Phys::mhd) {
+          if(haveVs) {
+            #ifdef EVOLVE_VECTOR_POTENTIAL
+              for(int n=0; n < AX3e+1; n++) {
+                dA(n,k,j,i) = ZERO_F;
+              }
+            #else
+              for(int n=0; n < DIMENSIONS; n++) {
+                dB(n,k,j,i) = ZERO_F;
+              }
+            #endif
+            D_EXPAND( ez(k,j,i) = 0.0;    ,
+                                          ,
+                      ex(k,j,i) = 0.0;
+                      ey(k,j,i) = 0.0;    )
           }
-        #else
-          for(int n=0; n < DIMENSIONS; n++) {
-            dB(n,k,j,i) = ZERO_F;
-          }
-        #endif
-        D_EXPAND( ez(k,j,i) = 0.0;    ,
-                                      ,
-                  ex(k,j,i) = 0.0;
-                  ey(k,j,i) = 0.0;    )
-      }
-      #endif
+        }
     });
 
   idfx::popRegion();
@@ -851,9 +853,9 @@ void RKLegendre<Phys>::SetBoundaries(real t) {
   idfx::pushRegion("RKLegendre::SetBoundaries");
   if(data->haveGridCoarsening) {
     hydro->CoarsenFlow(hydro->Vc);
-    #if MHD==YES
+    if constexpr(Phys::mhd) {
       hydro->CoarsenMagField(hydro->Vs);
-    #endif
+    }
   }
 
   // set internal boundary conditions
@@ -881,20 +883,20 @@ void RKLegendre<Phys>::SetBoundaries(real t) {
     }
     #endif
     hydro->boundary->EnforceBoundaryDir(t, dir);
-    #if MHD == YES
+    if constexpr(Phys::mhd) {
       // Reconstruct the normal field component when using CT
       if(haveVs) {
         hydro->boundary->ReconstructNormalField(dir);
       }
-    #endif
+    }
   } // Loop on dimension ends
 
-#if MHD == YES
-  // Remake the cell-centered field.
-  if(haveVs) {
-    hydro->boundary->ReconstructVcField(hydro->Vc);
+  if constexpr(Phys::mhd) {
+    // Remake the cell-centered field.
+    if(haveVs) {
+      hydro->boundary->ReconstructVcField(hydro->Vc);
+    }
   }
-#endif
   idfx::popRegion();
 }
 

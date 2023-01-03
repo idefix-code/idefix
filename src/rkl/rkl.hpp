@@ -586,7 +586,7 @@ struct RKLegendre_ResetStageFunctor {
   int stage, nvar;
   bool haveVs, haveVc;
   
-  KOKKOS_INLINE_FUNCTION void operator() (const int k, const int j,  const int i) {
+  KOKKOS_INLINE_FUNCTION void operator() (const int k, const int j,  const int i) const {
     if(haveVc) {
       for(int n = 0 ; n < nvar ; n++) {
         const int nv = vars(n);

@@ -589,7 +589,7 @@ void RKLegendre<Phys>::ResetStage() {
       }
       if(stage == 1)
         invDt(k,j,i) = ZERO_F;
-        if constexpr(Phys::mhd) {
+        if (Phys::mhd) {
           if(haveVs) {
             #ifdef EVOLVE_VECTOR_POTENTIAL
               for(int n=0; n < AX3e+1; n++) {

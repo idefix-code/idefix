@@ -261,10 +261,10 @@ void Mpi::ExchangeX1(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   offset = end[IDIR];     // Distance between beginning of left and right ghosts
   jbeg   = beg[JDIR];
   jend   = end[JDIR];
-  ny     = jend - jbeg;
+
   kbeg   = beg[KDIR];
   kend   = end[KDIR];
-  nz     = kend - kbeg;
+
 
   BufferLeft.ResetPointer();
   BufferRight.ResetPointer();
@@ -444,14 +444,14 @@ void Mpi::ExchangeX2(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   // Coordinates of the ghost region which needs to be transfered
   ibeg   = 0;
   iend   = ntot[IDIR];
-  nx     = ntot[IDIR];  // Number of points in x
+
   jbeg   = 0;
   jend   = nghost[JDIR];
   offset = end[JDIR];     // Distance between beginning of left and right ghosts
   ny     = nghost[JDIR];
+
   kbeg   = beg[KDIR];
   kend   = end[KDIR];
-  nz     = kend - kbeg;
 
   BufferLeft.ResetPointer();
   BufferRight.ResetPointer();
@@ -627,10 +627,10 @@ void Mpi::ExchangeX3(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   // Coordinates of the ghost region which needs to be transfered
   ibeg   = 0;
   iend   = ntot[IDIR];
-  nx     = ntot[IDIR];  // Number of points in x
+
   jbeg   = 0;
   jend   = ntot[JDIR];
-  ny     = ntot[JDIR];
+
   kbeg   = 0;
   kend   = nghost[KDIR];
   offset = end[KDIR];     // Distance between beginning of left and right ghosts

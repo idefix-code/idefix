@@ -236,8 +236,7 @@ void Mpi::ExchangeX1(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   idfx::pushRegion("Mpi::ExchangeX1");
 
   // Load  the buffers with data
-  int ibeg,iend,jbeg,jend,kbeg,kend,offset;
-  int nx,ny,nz;
+  int ibeg,iend,jbeg,jend,kbeg,kend,offset,nx;
   Buffer BufferLeft = BufferSendX1[faceLeft];
   Buffer BufferRight = BufferSendX1[faceRight];
   IdefixArray1D<int> map = this->mapVars;
@@ -423,8 +422,7 @@ void Mpi::ExchangeX2(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   idfx::pushRegion("Mpi::ExchangeX2");
 
   // Load  the buffers with data
-  int ibeg,iend,jbeg,jend,kbeg,kend,offset;
-  int nx,ny,nz;
+  int ibeg,iend,jbeg,jend,kbeg,kend,offset,ny;
   Buffer BufferLeft=BufferSendX2[faceLeft];
   Buffer BufferRight=BufferSendX2[faceRight];
   IdefixArray1D<int> map = this->mapVars;
@@ -606,8 +604,7 @@ void Mpi::ExchangeX3(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
 
 
   // Load  the buffers with data
-  int ibeg,iend,jbeg,jend,kbeg,kend,offset;
-  int nx,ny,nz;
+  int ibeg,iend,jbeg,jend,kbeg,kend,offset,nz;
   Buffer BufferLeft=BufferSendX3[faceLeft];
   Buffer BufferRight=BufferSendX3[faceRight];
   IdefixArray1D<int> map = this->mapVars;

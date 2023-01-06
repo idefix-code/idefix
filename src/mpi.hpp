@@ -19,7 +19,7 @@ class DataBlock;
 class Buffer {
  public:
   Buffer() = default;
-  explicit Buffer(int size): pointer{0}, array{IdefixArray1D<real>("BufferArray",size)} { };
+  explicit Buffer(size_t size): pointer{0}, array{IdefixArray1D<real>("BufferArray",size)} { };
 
   void* data() {
     return(array.data());
@@ -177,7 +177,7 @@ class Buffer {
 
 
  private:
-  int pointer;
+  size_t pointer;
   IdefixArray1D<real> array;
 };
 

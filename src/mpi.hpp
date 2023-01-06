@@ -10,11 +10,176 @@
 
 #include <signal.h>
 #include <vector>
+#include <utility>
 #include "idefix.hpp"
 #include "grid.hpp"
 
 
 class DataBlock;
+class Buffer {
+ public:
+  Buffer() = default;
+  explicit Buffer(int size): pointer{0}, array{IdefixArray1D<real>("BufferArray",size)} { };
+
+  void* data() {
+    return(array.data());
+  }
+
+  int Size() {
+    return(array.size());
+  }
+
+  void ResetPointer() {
+    this->pointer = 0;
+  }
+
+  void Pack(IdefixArray3D<real>& in,
+       std::pair<int,int> ib,
+       std::pair<int,int> jb,
+       std::pair<int,int> kb) {
+    const int ni = ib.second-ib.first;
+    const int ninj = (jb.second-jb.first)*ni;
+    const int ninjnk = (kb.second-kb.first)*ninj;
+    const int ibeg = ib.first;
+    const int jbeg = jb.first;
+    const int kbeg = kb.first;
+    const int offset = this->pointer;
+
+    auto arr = this->array;
+    idefix_for("LoadBuffer3D",kb.first,kb.second,jb.first,jb.second,ib.first,ib.second,
+      KOKKOS_LAMBDA (int k, int j, int i) {
+      arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + pointer ) = in(k,j,i);
+    });
+
+    // Update pointer
+    this->pointer += ninjnk;
+  }
+
+  void Pack(IdefixArray4D<real>& in,
+       const int var,
+       std::pair<int,int> ib,
+       std::pair<int,int> jb,
+       std::pair<int,int> kb) {
+    const int ni = ib.second-ib.first;
+    const int ninj = (jb.second-jb.first)*ni;
+    const int ninjnk = (kb.second-kb.first)*ninj;
+    const int ibeg = ib.first;
+    const int jbeg = jb.first;
+    const int kbeg = kb.first;
+    const int offset = this->pointer;
+
+    auto arr = this->array;
+    idefix_for("LoadBuffer4D",kb.first,kb.second,jb.first,jb.second,ib.first,ib.second,
+      KOKKOS_LAMBDA (int k, int j, int i) {
+      arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + pointer ) = in(var, k,j,i);
+    });
+
+    // Update pointer
+    this->pointer += ninjnk;
+  }
+
+  void Pack(IdefixArray4D<real>& in,
+       IdefixArray1D<int>& map,
+       std::pair<int,int> ib,
+       std::pair<int,int> jb,
+       std::pair<int,int> kb) {
+    const int ni = ib.second-ib.first;
+    const int ninj = (jb.second-jb.first)*ni;
+    const int ninjnk = (kb.second-kb.first)*ninj;
+    const int ibeg = ib.first;
+    const int jbeg = jb.first;
+    const int kbeg = kb.first;
+    const int offset = this->pointer;
+    auto arr = this->array;
+
+    idefix_for("LoadBuffer4D",0,map.size(),
+                             kb.first,kb.second,
+                             jb.first,jb.second,
+                             ib.first,ib.second,
+      KOKKOS_LAMBDA (int n, int k, int j, int i) {
+      arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + n*ninjnk + pointer ) = in(map(n), k,j,i);
+    });
+
+    // Update pointer
+    this->pointer += ninjnk*map.size();
+  }
+
+  void Unpack(IdefixArray3D<real>& out,
+       std::pair<int,int> ib,
+       std::pair<int,int> jb,
+       std::pair<int,int> kb) {
+    const int ni = ib.second-ib.first;
+    const int ninj = (jb.second-jb.first)*ni;
+    const int ninjnk = (kb.second-kb.first)*ninj;
+    const int ibeg = ib.first;
+    const int jbeg = jb.first;
+    const int kbeg = kb.first;
+    const int offset = this->pointer;
+    auto arr = this->array;
+
+    idefix_for("LoadBuffer3D",kb.first,kb.second,jb.first,jb.second,ib.first,ib.second,
+      KOKKOS_LAMBDA (int k, int j, int i) {
+        out(k,j,i) = arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + pointer );
+    });
+
+    // Update pointer
+    this->pointer += ninjnk;
+  }
+
+  void Unpack(IdefixArray4D<real>& out,
+       const int var,
+       std::pair<int,int> ib,
+       std::pair<int,int> jb,
+       std::pair<int,int> kb) {
+    const int ni = ib.second-ib.first;
+    const int ninj = (jb.second-jb.first)*ni;
+    const int ninjnk = (kb.second-kb.first)*ninj;
+    const int ibeg = ib.first;
+    const int jbeg = jb.first;
+    const int kbeg = kb.first;
+    const int offset = this->pointer;
+
+    auto arr = this->array;
+    idefix_for("LoadBuffer3D",kb.first,kb.second,jb.first,jb.second,ib.first,ib.second,
+      KOKKOS_LAMBDA (int k, int j, int i) {
+        out(var,k,j,i) = arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + pointer );
+    });
+
+    // Update pointer
+    this->pointer += ninjnk;
+  }
+
+  void Unpack(IdefixArray4D<real>& out,
+       IdefixArray1D<int>& map,
+       std::pair<int,int> ib,
+       std::pair<int,int> jb,
+       std::pair<int,int> kb) {
+    const int ni = ib.second-ib.first;
+    const int ninj = (jb.second-jb.first)*ni;
+    const int ninjnk = (kb.second-kb.first)*ninj;
+    const int ibeg = ib.first;
+    const int jbeg = jb.first;
+    const int kbeg = kb.first;
+    const int offset = this->pointer;
+
+    auto arr = this->array;
+    idefix_for("LoadBuffer4D",0,map.size(),
+                              kb.first,kb.second,
+                              jb.first,jb.second,
+                              ib.first,ib.second,
+      KOKKOS_LAMBDA (int n, int k, int j, int i) {
+        out(map(n),k,j,i) = arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + n*ninjnk + pointer );
+    });
+
+    // Update pointer
+    this->pointer += ninjnk*map.size();
+  }
+
+
+ private:
+  int pointer;
+  IdefixArray1D<real> array;
+};
 
 class Mpi {
  public:
@@ -54,12 +219,12 @@ class Mpi {
   enum {faceRight, faceLeft};
 
   // Buffers for MPI calls
-  IdefixArray1D<real> BufferSendX1[2];
-  IdefixArray1D<real> BufferSendX2[2];
-  IdefixArray1D<real> BufferSendX3[2];
-  IdefixArray1D<real> BufferRecvX1[2];
-  IdefixArray1D<real> BufferRecvX2[2];
-  IdefixArray1D<real> BufferRecvX3[2];
+  Buffer BufferSendX1[2];
+  Buffer BufferSendX2[2];
+  Buffer BufferSendX3[2];
+  Buffer BufferRecvX1[2];
+  Buffer BufferRecvX2[2];
+  Buffer BufferRecvX3[2];
 
   IdefixArray1D<int>  mapVars;
   int mapNVars{0};

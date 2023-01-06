@@ -48,7 +48,7 @@ class Buffer {
     auto arr = this->array;
     idefix_for("LoadBuffer3D",kb.first,kb.second,jb.first,jb.second,ib.first,ib.second,
       KOKKOS_LAMBDA (int k, int j, int i) {
-      arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + pointer ) = in(k,j,i);
+      arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + offset ) = in(k,j,i);
     });
 
     // Update pointer
@@ -71,7 +71,7 @@ class Buffer {
     auto arr = this->array;
     idefix_for("LoadBuffer4D",kb.first,kb.second,jb.first,jb.second,ib.first,ib.second,
       KOKKOS_LAMBDA (int k, int j, int i) {
-      arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + pointer ) = in(var, k,j,i);
+      arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + offset ) = in(var, k,j,i);
     });
 
     // Update pointer
@@ -97,7 +97,7 @@ class Buffer {
                              jb.first,jb.second,
                              ib.first,ib.second,
       KOKKOS_LAMBDA (int n, int k, int j, int i) {
-      arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + n*ninjnk + pointer ) = in(map(n), k,j,i);
+      arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + n*ninjnk + offset ) = in(map(n), k,j,i);
     });
 
     // Update pointer
@@ -119,7 +119,7 @@ class Buffer {
 
     idefix_for("LoadBuffer3D",kb.first,kb.second,jb.first,jb.second,ib.first,ib.second,
       KOKKOS_LAMBDA (int k, int j, int i) {
-        out(k,j,i) = arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + pointer );
+        out(k,j,i) = arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + offset );
     });
 
     // Update pointer
@@ -142,7 +142,7 @@ class Buffer {
     auto arr = this->array;
     idefix_for("LoadBuffer3D",kb.first,kb.second,jb.first,jb.second,ib.first,ib.second,
       KOKKOS_LAMBDA (int k, int j, int i) {
-        out(var,k,j,i) = arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + pointer );
+        out(var,k,j,i) = arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + offset );
     });
 
     // Update pointer
@@ -168,7 +168,7 @@ class Buffer {
                               jb.first,jb.second,
                               ib.first,ib.second,
       KOKKOS_LAMBDA (int n, int k, int j, int i) {
-        out(map(n),k,j,i) = arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + n*ninjnk + pointer );
+        out(map(n),k,j,i) = arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + n*ninjnk + offset );
     });
 
     // Update pointer

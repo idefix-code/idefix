@@ -80,6 +80,7 @@ pages:
   script:
     - dir="public"
     - rm -rf $dir
+    - python -m pip install -r python-requirements.txt
     - sphinx-build -b html doc/source $dir
   artifacts:
     paths:

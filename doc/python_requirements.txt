@@ -1,0 +1,14 @@
+# Other requirements
+# Python >= 3.7
+# Doxygen https://www.doxygen.nl/download.html
+#
+# Install Sphinx and required plugins with the following command
+# python -m pip install -r python-requirements.txt
+
+wheel>=0.38.4 # help forward compatibility for pip with old sphinx plugins
+sphinx==4.5.0
+sphinx_rtd_theme==1.1.1
+sphinx_git==11.0.0
+breathe==4.34.0
+exhale==0.3.6
+m2r2==0.3.2

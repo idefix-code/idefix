@@ -87,7 +87,6 @@ pages:
   script:
     - dir="public"
     - rm -rf $dir
-    - python3 -m pip install -r doc/python-requirements.txt
     - sphinx-build -b html doc/source $dir
   artifacts:
     paths:

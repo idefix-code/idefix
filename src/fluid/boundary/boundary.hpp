@@ -313,6 +313,12 @@ template<typename Phys>
 void Boundary<Phys>::ReconstructNormalField(int dir) {
   idfx::pushRegion("Hydro::ReconstructNormalField");
 
+  const bool reconstructLeft  = !(data->lbound[dir]==periodic || data->lbound[dir]==internal);
+  const bool reconstructRight = !(data->rbound[dir]==periodic || data->rbound[dir]==internal);
+
+  // nothing to reconstruct in that direction!
+  if((!reconstructLeft) && (!reconstructRight)) return;
+
   // Reconstruct the field
   IdefixArray4D<real> Vs = fluid->Vs;
   // Coordinates
@@ -327,32 +333,34 @@ void Boundary<Phys>::ReconstructNormalField(int dir) {
   IdefixArray3D<real> Ax2=data->A[JDIR];
   IdefixArray3D<real> Ax3=data->A[KDIR];
 
-  int nstart, nend;
-  int nx1,nx2,nx3;
 
   // reconstruct BX1s
-  nstart = data->beg[IDIR]-1;
-  nend = data->end[IDIR];
+  int nstart = data->beg[IDIR]-1;
+  int nend = data->end[IDIR];
 
-  nx1=data->np_tot[IDIR];
-  nx2=data->np_tot[JDIR];
-  nx3=data->np_tot[KDIR];
+  const int nx1=data->np_tot[IDIR];
+  const int nx2=data->np_tot[JDIR];
+  const int nx3=data->np_tot[KDIR];
 
   if(dir==IDIR) {
     idefix_for("ReconstructBX1s",0,nx3,0,nx2,
       KOKKOS_LAMBDA (int k, int j) {
-        for(int i = nstart ; i>=0 ; i-- ) {
-          Vs(BX1s,k,j,i) = 1.0 / Ax1(k,j,i) * ( Ax1(k,j,i+1)*Vs(BX1s,k,j,i+1)
-                          +(D_EXPAND( ZERO_F                                                 ,
-                            + Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i) ,
-                            + Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i)  )));
+        if(reconstructLeft) {
+          for(int i = nstart ; i>=0 ; i-- ) {
+            Vs(BX1s,k,j,i) = 1.0 / Ax1(k,j,i) * ( Ax1(k,j,i+1)*Vs(BX1s,k,j,i+1)
+                            +(D_EXPAND( ZERO_F                                                 ,
+                              + Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i) ,
+                              + Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i)  )));
+          }
         }
 
-        for(int i = nend ; i<nx1 ; i++ ) {
-          Vs(BX1s,k,j,i+1) = 1.0 / Ax1(k,j,i+1) * ( Ax1(k,j,i)*Vs(BX1s,k,j,i)
-                            -(D_EXPAND(      ZERO_F                                           ,
-                             + Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i)  ,
-                             + Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i)  )));
+        if(reconstructRight) {
+          for(int i = nend ; i<nx1 ; i++ ) {
+            Vs(BX1s,k,j,i+1) = 1.0 / Ax1(k,j,i+1) * ( Ax1(k,j,i)*Vs(BX1s,k,j,i)
+                              -(D_EXPAND(      ZERO_F                                           ,
+                              + Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i)  ,
+                              + Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i)  )));
+          }
         }
       }
     );
@@ -365,17 +373,21 @@ void Boundary<Phys>::ReconstructNormalField(int dir) {
     if(!fluid->haveAxis) {
       idefix_for("ReconstructBX2s",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
         KOKKOS_LAMBDA (int k, int i) {
-          for(int j = nstart ; j>=0 ; j-- ) {
-            Vs(BX2s,k,j,i) = 1.0 / Ax2(k,j,i) * ( Ax2(k,j+1,i)*Vs(BX2s,k,j+1,i)
-                        +(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
-                                                                                                  ,
-                              + Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) )));
+          if(reconstructLeft) {
+            for(int j = nstart ; j>=0 ; j-- ) {
+              Vs(BX2s,k,j,i) = 1.0 / Ax2(k,j,i) * ( Ax2(k,j+1,i)*Vs(BX2s,k,j+1,i)
+                      +(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
+                                                                                                ,
+                            + Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) )));
+            }
           }
-          for(int j = nend ; j<nx2 ; j++ ) {
-            Vs(BX2s,k,j+1,i) = 1.0 / Ax2(k,j+1,i) * ( Ax2(k,j,i)*Vs(BX2s,k,j,i)
-                        -(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
-                                                                                                  ,
-                              + Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) )));
+          if(reconstructRight) {
+            for(int j = nend ; j<nx2 ; j++ ) {
+              Vs(BX2s,k,j+1,i) = 1.0 / Ax2(k,j+1,i) * ( Ax2(k,j,i)*Vs(BX2s,k,j,i)
+                       -(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
+                                                                                                ,
+                            + Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) )));
+            }
           }
         }
       );
@@ -393,15 +405,19 @@ void Boundary<Phys>::ReconstructNormalField(int dir) {
 
     idefix_for("ReconstructBX3s",0,data->np_tot[JDIR],0,data->np_tot[IDIR],
       KOKKOS_LAMBDA (int j, int i) {
-        for(int k = nstart ; k>=0 ; k-- ) {
-          Vs(BX3s,k,j,i) = 1.0 / Ax3(k,j,i) * ( Ax3(k+1,j,i)*Vs(BX3s,k+1,j,i)
-                          + ( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)
-                          + Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i) ));
+        if(reconstructLeft) {
+          for(int k = nstart ; k>=0 ; k-- ) {
+            Vs(BX3s,k,j,i) = 1.0 / Ax3(k,j,i) * ( Ax3(k+1,j,i)*Vs(BX3s,k+1,j,i)
+                            + ( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)
+                            + Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i) ));
+          }
         }
-        for(int k = nend ; k<nx3 ; k++ ) {
-          Vs(BX3s,k+1,j,i) = 1.0 / Ax3(k+1,j,i) * ( Ax3(k,j,i)*Vs(BX3s,k,j,i)
-                            - ( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)
-                            +  Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i) ));
+        if(reconstructRight) {
+          for(int k = nend ; k<nx3 ; k++ ) {
+            Vs(BX3s,k+1,j,i) = 1.0 / Ax3(k+1,j,i) * ( Ax3(k,j,i)*Vs(BX3s,k,j,i)
+                              - ( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)
+                              +  Ax2(k,j+1,i) * Vs(BX2s,k,j+1,i) - Ax2(k,j,i) * Vs(BX2s,k,j,i) ));
+          }
         }
       }
     );
@@ -963,4 +979,4 @@ inline void Boundary<Phys>::BoundaryForX3s(
 }
 
 
-#endif //  FLUID_BOUNDARY_BOUNDARY_HPP_
+#endif // FLUID_BOUNDARY_BOUNDARY_HPP_

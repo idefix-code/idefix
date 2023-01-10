@@ -93,3 +93,4 @@ pages:
       - public
   only:
   - master
+  - $DOCUMENTATION == "true"

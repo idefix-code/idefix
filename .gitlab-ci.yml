@@ -84,6 +84,5 @@ pages:
   artifacts:
     paths:
       - public
-  only:
-  - master
-  - $DOCUMENTATION == "true"
+  rules:
+  - if: $CI_COMMIT_BRANCH == "master" && $DOCUMENTATION == "true"

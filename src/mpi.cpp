@@ -815,7 +815,7 @@ void Mpi::ExchangeX3(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
 
     #if DIMENSIONS == 3
     BufferLeft.Unpack(Vs, BX3s, std::make_pair(ibeg, iend),
-                                std::make_pair(jbeg, jend+1),
+                                std::make_pair(jbeg, jend),
                                 std::make_pair(kbeg, kend));
 
     BufferRight.Unpack(Vs, BX3s,std::make_pair(ibeg       , iend),

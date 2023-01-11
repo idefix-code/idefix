@@ -473,11 +473,27 @@ void Boundary<Phys>::EnforcePeriodic(int dir, BoundarySide side ) {
 
   #if MHD==YES
     IdefixArray4D<real> Vs = fluid->Vs;
-    if(dir==JDIR || dir==KDIR) {
-      nxi = data->np_int[IDIR]+1;
-      nxj = data->np_int[JDIR];
-      nxk = data->np_int[KDIR];
-      BoundaryForX1s("BoundaryPeriodicX1s",dir,side,
+    BoundaryForX1s("BoundaryPeriodicX1s",dir,side,
+    KOKKOS_LAMBDA (int k, int j, int i) {
+      int iref, jref, kref;
+        // This hack takes care of cases where we have more ghost zones than active zones
+        if(dir==IDIR)
+          iref = ighost + (i+ighost*(nxi-1))%nxi;
+        else
+          iref = i;
+        if(dir==JDIR)
+          jref = jghost + (j+jghost*(nxj-1))%nxj;
+        else
+          jref = j;
+        if(dir==KDIR)
+          kref = kghost + (k+kghost*(nxk-1))%nxk;
+        else
+          kref = k;
+
+        Vs(BX1s,k,j,i) = Vs(BX1s,kref,jref,iref);
+    });
+    #if DIMENSIONS >=2
+      BoundaryForX2s("BoundaryPeriodicX2s",dir,side,
       KOKKOS_LAMBDA (int k, int j, int i) {
         int iref, jref, kref;
           // This hack takes care of cases where we have more ghost zones than active zones
@@ -494,60 +510,29 @@ void Boundary<Phys>::EnforcePeriodic(int dir, BoundarySide side ) {
           else
             kref = k;
 
-          Vs(BX1s,k,j,i) = Vs(BX1s,kref,jref,iref);
+          Vs(BX2s,k,j,i) = Vs(BX2s,kref,jref,iref);
       });
-    }
-    #if DIMENSIONS >=2
-      if(dir==IDIR || dir==KDIR) {
-        nxi = data->np_int[IDIR];
-        nxj = data->np_int[JDIR]+1;
-        nxk = data->np_int[KDIR];
-        BoundaryForX2s("BoundaryPeriodicX2s",dir,side,
-        KOKKOS_LAMBDA (int k, int j, int i) {
-          int iref, jref, kref;
-            // This hack takes care of cases where we have more ghost zones than active zones
-            if(dir==IDIR)
-              iref = ighost + (i+ighost*(nxi-1))%nxi;
-            else
-              iref = i;
-            if(dir==JDIR)
-              jref = jghost + (j+jghost*(nxj-1))%nxj;
-            else
-              jref = j;
-            if(dir==KDIR)
-              kref = kghost + (k+kghost*(nxk-1))%nxk;
-            else
-              kref = k;
-
-            Vs(BX2s,k,j,i) = Vs(BX2s,kref,jref,iref);
-        });
-      }
     #endif
     #if DIMENSIONS == 3
-      nxi = data->np_int[IDIR];
-      nxj = data->np_int[JDIR];
-      nxk = data->np_int[KDIR]+1;
-      if(dir==IDIR || dir==JDIR) {
-        BoundaryForX3s("BoundaryPeriodicX3s",dir,side,
-        KOKKOS_LAMBDA (int k, int j, int i) {
-          int iref, jref, kref;
-            // This hack takes care of cases where we have more ghost zones than active zones
-            if(dir==IDIR)
-              iref = ighost + (i+ighost*(nxi-1))%nxi;
-            else
-              iref = i;
-            if(dir==JDIR)
-              jref = jghost + (j+jghost*(nxj-1))%nxj;
-            else
-              jref = j;
-            if(dir==KDIR)
-              kref = kghost + (k+kghost*(nxk-1))%nxk;
-            else
-              kref = k;
+      BoundaryForX3s("BoundaryPeriodicX3s",dir,side,
+      KOKKOS_LAMBDA (int k, int j, int i) {
+        int iref, jref, kref;
+          // This hack takes care of cases where we have more ghost zones than active zones
+          if(dir==IDIR)
+            iref = ighost + (i+ighost*(nxi-1))%nxi;
+          else
+            iref = i;
+          if(dir==JDIR)
+            jref = jghost + (j+jghost*(nxj-1))%nxj;
+          else
+            jref = j;
+          if(dir==KDIR)
+            kref = kghost + (k+kghost*(nxk-1))%nxk;
+          else
+            kref = k;
 
-            Vs(BX3s,k,j,i) = Vs(BX3s,kref,jref,iref);
-        });
-      }
+          Vs(BX3s,k,j,i) = Vs(BX3s,kref,jref,iref);
+      });
     #endif
   #endif// MHD
 }

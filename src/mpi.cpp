@@ -77,6 +77,7 @@ void Mpi::Init(Grid *grid, std::vector<int> inputMap,
   bufferSizeX1 = nghost[IDIR] * nint[JDIR] * nint[KDIR] * mapNVars;
 
   if(haveVs) {
+    bufferSizeX1 += nghost[IDIR] * nint[JDIR] * nint[KDIR];
     #if DIMENSIONS>=2
     bufferSizeX1 += nghost[IDIR] * (nint[JDIR]+1) * nint[KDIR];
     #endif
@@ -98,6 +99,9 @@ void Mpi::Init(Grid *grid, std::vector<int> inputMap,
   if(haveVs) {
     // IDIR
     bufferSizeX2 += (ntot[IDIR]+1) * nghost[JDIR] * nint[KDIR];
+    #if DIMENSIONS>=2
+    bufferSizeX2 += ntot[IDIR] * nghost[JDIR] * nint[KDIR];
+    #endif
     #if DIMENSIONS==3
     bufferSizeX2 += ntot[IDIR] * nghost[JDIR] * (nint[KDIR]+1);
     #endif  // DIMENSIONS
@@ -118,6 +122,8 @@ void Mpi::Init(Grid *grid, std::vector<int> inputMap,
     bufferSizeX3 += (ntot[IDIR]+1) * ntot[JDIR] * nghost[KDIR];
     // JDIR
     bufferSizeX3 += ntot[IDIR] * (ntot[JDIR]+1) * nghost[KDIR];
+    // KDIR
+    bufferSizeX3 += ntot[IDIR] * ntot[JDIR] * nghost[KDIR];
   }
 
   BufferRecvX3[faceLeft ] = Buffer(bufferSizeX3);
@@ -278,13 +284,21 @@ void Mpi::ExchangeX1(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
 
   // Load face-centered field in the buffer
   if(haveVs) {
+    BufferLeft.Pack(Vs, BX1s,std::make_pair(ibeg+nx+1, iend+nx+1),
+                             std::make_pair(jbeg   , jend),
+                             std::make_pair(kbeg   , kend));
+
+    BufferRight.Pack(Vs, BX1s, std::make_pair(ibeg+offset-nx, iend+offset-nx),
+                               std::make_pair(jbeg   , jend),
+                               std::make_pair(kbeg   , kend));
+
     #if DIMENSIONS >= 2
 
-    BufferLeft.Pack(Vs, JDIR,std::make_pair(ibeg+nx, iend+nx),
+    BufferLeft.Pack(Vs, BX2s,std::make_pair(ibeg+nx, iend+nx),
                              std::make_pair(jbeg   , jend+1),
                              std::make_pair(kbeg   , kend));
 
-    BufferRight.Pack(Vs, JDIR, std::make_pair(ibeg+offset-nx, iend+offset-nx),
+    BufferRight.Pack(Vs, BX2s, std::make_pair(ibeg+offset-nx, iend+offset-nx),
                                std::make_pair(jbeg   , jend+1),
                                std::make_pair(kbeg   , kend));
 
@@ -292,11 +306,11 @@ void Mpi::ExchangeX1(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
 
     #if DIMENSIONS == 3
 
-    BufferLeft.Pack(Vs, KDIR,std::make_pair(ibeg+nx, iend+nx),
+    BufferLeft.Pack(Vs, BX3s,std::make_pair(ibeg+nx, iend+nx),
                              std::make_pair(jbeg   , jend),
                              std::make_pair(kbeg   , kend+1));
 
-    BufferRight.Pack(Vs, KDIR, std::make_pair(ibeg+offset-nx, iend+offset-nx),
+    BufferRight.Pack(Vs, BX3s, std::make_pair(ibeg+offset-nx, iend+offset-nx),
                                std::make_pair(jbeg   , jend),
                                std::make_pair(kbeg   , kend+1));
 
@@ -381,22 +395,30 @@ void Mpi::ExchangeX1(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   // We fill the ghost zones
 
   if(haveVs) {
+    BufferLeft.Unpack(Vs, BX1s, std::make_pair(ibeg, iend),
+                                std::make_pair(jbeg   , jend),
+                                std::make_pair(kbeg   , kend));
+
+    BufferRight.Unpack(Vs, BX1s, std::make_pair(ibeg+offset+1, iend+offset+1),
+                                std::make_pair(jbeg   , jend),
+                                std::make_pair(kbeg   , kend));
+
     #if DIMENSIONS >= 2
-    BufferLeft.Unpack(Vs, JDIR, std::make_pair(ibeg, iend),
+    BufferLeft.Unpack(Vs, BX2s, std::make_pair(ibeg, iend),
                                 std::make_pair(jbeg   , jend+1),
                                 std::make_pair(kbeg   , kend));
 
-    BufferRight.Unpack(Vs, JDIR, std::make_pair(ibeg+offset, iend+offset),
+    BufferRight.Unpack(Vs, BX2s, std::make_pair(ibeg+offset, iend+offset),
                                 std::make_pair(jbeg   , jend+1),
                                 std::make_pair(kbeg   , kend));
     #endif
 
     #if DIMENSIONS == 3
-    BufferLeft.Unpack(Vs, KDIR, std::make_pair(ibeg, iend),
+    BufferLeft.Unpack(Vs, BX3s, std::make_pair(ibeg, iend),
                                 std::make_pair(jbeg   , jend),
                                 std::make_pair(kbeg   , kend+1));
 
-    BufferRight.Unpack(Vs, KDIR, std::make_pair(ibeg+offset, iend+offset),
+    BufferRight.Unpack(Vs, BX3s, std::make_pair(ibeg+offset, iend+offset),
                                 std::make_pair(jbeg   , jend),
                                 std::make_pair(kbeg   , kend+1));
     #endif
@@ -464,21 +486,29 @@ void Mpi::ExchangeX2(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
 
   // Load face-centered field in the buffer
   if(haveVs) {
-    BufferLeft.Pack(Vs, IDIR,std::make_pair(ibeg , iend+1),
+    BufferLeft.Pack(Vs, BX1s,std::make_pair(ibeg , iend+1),
                           std::make_pair(jbeg+ny , jend+ny),
                           std::make_pair(kbeg    , kend));
 
-    BufferRight.Pack(Vs, IDIR, std::make_pair(ibeg        , iend+1),
+    BufferRight.Pack(Vs, BX1s, std::make_pair(ibeg        , iend+1),
                             std::make_pair(jbeg+offset-ny , jend+offset-ny),
                             std::make_pair(kbeg           , kend));
+    #if DIMENSIONS >= 2
+    BufferLeft.Pack(Vs, BX2s,std::make_pair(ibeg , iend),
+                             std::make_pair(jbeg+ny+1 , jend+ny+1),
+                             std::make_pair(kbeg    , kend));
 
+    BufferRight.Pack(Vs, BX2s, std::make_pair(ibeg        , iend),
+                            std::make_pair(jbeg+offset-ny , jend+offset-ny),
+                            std::make_pair(kbeg           , kend));
+    #endif
     #if DIMENSIONS == 3
 
-    BufferLeft.Pack(Vs, KDIR,std::make_pair(ibeg , iend),
+    BufferLeft.Pack(Vs, BX3s,std::make_pair(ibeg , iend),
                           std::make_pair(jbeg+ny , jend+ny),
                           std::make_pair(kbeg    , kend+1));
 
-    BufferRight.Pack(Vs, KDIR, std::make_pair(ibeg        , iend),
+    BufferRight.Pack(Vs, BX3s, std::make_pair(ibeg        , iend),
                             std::make_pair(jbeg+offset-ny , jend+offset-ny),
                             std::make_pair(kbeg           , kend+1));
 
@@ -564,20 +594,28 @@ void Mpi::ExchangeX2(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   // We fill the ghost zones
 
   if(haveVs) {
-    BufferLeft.Unpack(Vs, IDIR, std::make_pair(ibeg, iend+1),
+    BufferLeft.Unpack(Vs, BX1s, std::make_pair(ibeg, iend+1),
                                 std::make_pair(jbeg   , jend),
                                 std::make_pair(kbeg   , kend));
 
-    BufferRight.Unpack(Vs, IDIR, std::make_pair(ibeg, iend+1),
+    BufferRight.Unpack(Vs, BX1s, std::make_pair(ibeg, iend+1),
                                 std::make_pair(jbeg+offset   , jend+offset),
                                 std::make_pair(kbeg   , kend));
+    #if DIMENSIONS >= 2
+    BufferLeft.Unpack(Vs, BX2s, std::make_pair(ibeg, iend),
+                                std::make_pair(jbeg   , jend),
+                                std::make_pair(kbeg   , kend));
 
+    BufferRight.Unpack(Vs, BX2s, std::make_pair(ibeg, iend),
+                                std::make_pair(jbeg+offset+1, jend+offset+1),
+                                std::make_pair(kbeg   , kend));
+    #endif
     #if DIMENSIONS == 3
-    BufferLeft.Unpack(Vs, KDIR, std::make_pair(ibeg, iend),
+    BufferLeft.Unpack(Vs, BX3s, std::make_pair(ibeg, iend),
                                 std::make_pair(jbeg, jend),
                                 std::make_pair(kbeg, kend+1));
 
-    BufferRight.Unpack(Vs, KDIR,std::make_pair(ibeg      , iend),
+    BufferRight.Unpack(Vs, BX3s,std::make_pair(ibeg      , iend),
                                 std::make_pair(jbeg+offset, jend+offset),
                                 std::make_pair(kbeg       , kend+1));
     #endif
@@ -646,24 +684,34 @@ void Mpi::ExchangeX3(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
 
   // Load face-centered field in the buffer
   if(haveVs) {
-    BufferLeft.Pack(Vs, IDIR,std::make_pair(ibeg , iend+1),
+    BufferLeft.Pack(Vs, BX1s,std::make_pair(ibeg , iend+1),
                              std::make_pair(jbeg    , jend),
                              std::make_pair(kbeg+nz , kend+nz));
 
-    BufferRight.Pack(Vs, IDIR, std::make_pair(ibeg            , iend+1),
+    BufferRight.Pack(Vs, BX1s, std::make_pair(ibeg            , iend+1),
                                std::make_pair(jbeg            , jend),
                                std::make_pair(kbeg + offset-nz, kend+ offset-nz));
 
     #if DIMENSIONS >= 2
 
-    BufferLeft.Pack(Vs, JDIR,std::make_pair(ibeg    , iend),
+    BufferLeft.Pack(Vs, BX2s,std::make_pair(ibeg    , iend),
                              std::make_pair(jbeg    , jend+1),
                              std::make_pair(kbeg+nz , kend+nz));
 
-    BufferRight.Pack(Vs, JDIR, std::make_pair(ibeg            , iend),
+    BufferRight.Pack(Vs, BX2s, std::make_pair(ibeg            , iend),
                                std::make_pair(jbeg            , jend+1),
                                std::make_pair(kbeg + offset-nz, kend+ offset-nz));
 
+    #endif
+
+    #if DIMENSIONS == 3
+    BufferLeft.Pack(Vs, BX3s,std::make_pair(ibeg    , iend),
+                             std::make_pair(jbeg    , jend),
+                             std::make_pair(kbeg+nz+1 , kend+nz+1));
+
+    BufferRight.Pack(Vs, BX3s, std::make_pair(ibeg            , iend),
+                               std::make_pair(jbeg            , jend),
+                               std::make_pair(kbeg + offset-nz, kend+ offset-nz));
     #endif
   }
 
@@ -747,22 +795,32 @@ void Mpi::ExchangeX3(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   // We fill the ghost zones
 
   if(haveVs) {
-    BufferLeft.Unpack(Vs, IDIR, std::make_pair(ibeg, iend+1),
+    BufferLeft.Unpack(Vs, BX1s, std::make_pair(ibeg, iend+1),
                                 std::make_pair(jbeg   , jend),
                                 std::make_pair(kbeg   , kend));
 
-    BufferRight.Unpack(Vs, IDIR, std::make_pair(ibeg, iend+1),
+    BufferRight.Unpack(Vs, BX1s, std::make_pair(ibeg, iend+1),
                                 std::make_pair(jbeg          , jend),
                                 std::make_pair(kbeg+offset   , kend+offset));
 
     #if DIMENSIONS >=2
-    BufferLeft.Unpack(Vs, JDIR, std::make_pair(ibeg, iend),
+    BufferLeft.Unpack(Vs, BX2s, std::make_pair(ibeg, iend),
                                 std::make_pair(jbeg, jend+1),
                                 std::make_pair(kbeg, kend));
 
-    BufferRight.Unpack(Vs, JDIR,std::make_pair(ibeg       , iend),
+    BufferRight.Unpack(Vs, BX2s,std::make_pair(ibeg       , iend),
                                 std::make_pair(jbeg       , jend+1),
                                 std::make_pair(kbeg+offset, kend+offset));
+    #endif
+
+    #if DIMENSIONS == 3
+    BufferLeft.Unpack(Vs, BX3s, std::make_pair(ibeg, iend),
+                                std::make_pair(jbeg, jend+1),
+                                std::make_pair(kbeg, kend));
+
+    BufferRight.Unpack(Vs, BX3s,std::make_pair(ibeg       , iend),
+                                std::make_pair(jbeg       , jend),
+                                std::make_pair(kbeg+offset+1, kend+offset+1));
     #endif
   }
 

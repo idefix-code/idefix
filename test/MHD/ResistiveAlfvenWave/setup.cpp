@@ -19,7 +19,7 @@ void Analysis(DataBlock & data) {
               }, Kokkos::Sum<double>(etot));
 
   #ifdef WITH_MPI
-    MPI_Reduce(MPI_IN_LACE, &etot, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(MPI_IN_PLACE, &etot, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
   #endif
 
   if(idfx::prank == 0) {

@@ -32,40 +32,52 @@ echo $IDEFIX_DIR
 set -e
 options=$@
 
+function finish ()
+{
+  echo $1
+  echo "Cleaning directory $TMP_DIR"
+  cd $TEST_DIR
+  rm -rf $TMP_DIR
+  exit 1
+}
 
 # MHD tests
 for rep in $rep_MHD_list; do
-    cp -R $TEST_DIR/MHD/$rep $TMP_DIR
-    cd $TMP_DIR/$rep
+    cp -R $TEST_DIR/MHD/$rep/* $TMP_DIR
+    cd $TMP_DIR
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "Using $TMP_DIR/$rep as working directory"
     echo "***********************************************"
-    rm -f CMakeCache.txt
     def_files=$(ls definitions*.hpp)
     for def in $def_files; do
-        cmake $IDEFIX_DIR $options -DIdefix_DEFS=$def|| { echo "!!!! MHD $rep failed during configuration"; exit 1; }
+        cmake $IDEFIX_DIR $options -DIdefix_DEFS=$def|| finish "!!!! MHD $rep failed during configuration"
         echo "***********************************************"
         echo "Making  $rep with $def"
         echo "***********************************************"
-        make clean; make -j 10 || { echo "!!!! MHD $rep failed during compilation with $def"; exit 1; }
+        make -j 8 || finish "!!!! MHD $rep failed during compilation with $def"
 
         ini_files=$(ls *.ini)
         for ini in $ini_files; do
             echo "***********************************************"
             echo "Running  $rep with $ini"
             echo "***********************************************"
-            ./idefix -i $ini -nolog || { echo "!!!! MHD $rep failed running with $def and $ini"; exit 1; }
+            ./idefix -i $ini -nolog || finish "!!!! MHD $rep failed running with $def and $ini"
 
             cd python
             echo "***********************************************"
             echo "Testing  $rep with $ini and $def"
             echo "***********************************************"
-            python3 testidefix.py -noplot -i ../$ini || { echo "!!!! MHD $rep failed validation with $def and $ini"; exit 1; }
+            python3 testidefix.py -noplot -i ../$ini || finish "!!!! MHD $rep failed validation with $def and $ini"
             cd ..
         done
+        rm -f *.vtk *.dbl *.dmp
     done
+    echo "***********************************************"
+    echo "Cleaning  $TMP_DIR"
+    echo "***********************************************"
+   rm -rf *.vtk *.dbl *.dmp *.ini python CMakeLists.txt
 done
-
-echo "Cleaning temporary directory $TMP_DIR"
+echo "Test was successfull"
+cd $TEST_DIR
 rm -rf $TMP_DIR

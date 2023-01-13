@@ -8,32 +8,41 @@ workflow:
     - if: $CI_PIPELINE_SOURCE == 'web'     # execute jobs when created by using Run pipeline button in the GitLab UI, from the project’s CI/CD > Pipelines section.
 
 stages:
-    - checks
-    - deploy
+    - linter
+    - base_checks
+    - advanced_checks
+    - documentation
 
 lint:
-  stage: checks
+  stage: linter
   image: lesurg/idefix:latest
   script:
     - pre-commit install
     - pre-commit run --all-files
 
 HD tests:
-  stage: checks
+  stage: base_checks
   image: lesurg/idefix:latest
   script:
     - cd test
     - ./checks_hydro.sh $TEST_OPTIONS
 
 MHD tests:
-  stage: checks
+  stage: base_checks
   image: lesurg/idefix:latest
   script:
     - cd test
     - ./checks_mhd.sh $TEST_OPTIONS
 
+MPI tests:
+  stage: base_checks
+  image: lesurg/idefix:latest
+  script:
+    - cd test
+    - ./checks_mpi.sh $TEST_OPTIONS
+
 Vector potential tests:
-  stage: checks
+  stage: base_checks
   image: lesurg/idefix:latest
   script:
     - cd test
@@ -47,28 +56,28 @@ MPI tests:
     - ./checks_mpi.sh $TEST_OPTIONS
 
 HighOrder tests:
-  stage: checks
+  stage: advanced_checks
   image: lesurg/idefix:latest
   script:
     - cd test
     - ./checks_highorder.sh $TEST_OPTIONS
 
 SinglePrecision tests:
-  stage: checks
+  stage: advanced_checks
   image: lesurg/idefix:latest
   script:
     - cd test
     - ./checks_singleprecision.sh $TEST_OPTIONS
 
 Examples tests:
-  stage: checks
+  stage: advanced_checks
   image: lesurg/idefix:latest
   script:
     - cd test
     - ./checks_examples.sh $TEST_OPTIONS
 
 Utils tests:
-  stage: checks
+  stage: advanced_checks
   image: lesurg/idefix:latest
   script:
     - cd test
@@ -76,7 +85,7 @@ Utils tests:
 
 pages:
   image: lesurg/idefix-documentation:latest
-  stage: deploy
+  stage: documentation
   script:
     - dir="public"
     - rm -rf $dir

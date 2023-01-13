@@ -30,88 +30,96 @@ if [ -z ${var+IDEFIX_DIR} ] & [ -d "$IDEFIX_DIR" ] ; then
 fi
 
 export IDEFIX_DIR=$target_dir
-echo $IDEFIX_DIR
 
 set -e
 options=$@
 
+TMP_DIR="$(mktemp -d)"
+function finish ()
+{
+  echo $1
+  echo "Cleaning directory $TMP_DIR"
+  cd $TEST_DIR
+  rm -rf $TMP_DIR
+  exit 1
+}
+
 # High order tests
 for rep in $rep_list; do
-    TMP_DIR="$(mktemp -d)"
     cp -R $TEST_DIR/$rep/* $TMP_DIR
     cd $TMP_DIR
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "Using $TMP_DIR as working directory"
     echo "***********************************************"
-    rm -f CMakeCache.txt
     for order in $order_list; do
 
-        cmake $IDEFIX_DIR $options -DIdefix_RECONSTRUCTION=$order || { echo "!!!!$rep with $order failed during configuration"; exit 1; }
+        cmake $IDEFIX_DIR $options -DIdefix_RECONSTRUCTION=$order || finish "!!!!$rep with $order failed during configuration"
         echo "***********************************************"
         echo "Making  $rep with $order"
         echo "***********************************************"
-        make clean; make -j 10 || { echo "!!!! $rep with $order failed during compilation with"; exit 1; }
+        make -j 8 || finish "!!!! $rep with $order failed during compilation"
 
         ini_files=$(ls *.ini)
         for ini in $ini_files; do
             echo "***********************************************"
             echo "Running  $rep with $order and $ini"
             echo "***********************************************"
-            ./idefix -i $ini -nolog || { echo "!!!! $rep with $order failed running with $ini"; exit 1; }
+            ./idefix -i $ini -nolog || finish "!!!! $rep with $order failed running with $ini"
 
             cd python
             echo "***********************************************"
             echo "Testing  $rep with $order and $ini"
             echo "***********************************************"
-            python3 testidefix.py -noplot || { echo "!!!! $rep with $order failed validation with $ini"; exit 1; }
+            python3 testidefix.py -noplot || finish "!!!! $rep with $order failed validation with $ini"
             cd ..
         done
-        make clean
         rm -f *.vtk *.dbl *.dmp
     done
     echo "***********************************************"
     echo "Cleaning  $rep in $TMP_DIR"
     echo "***********************************************"
-    rm -rf $TMP_DIR
+   rm -rf *.vtk *.dbl *.dmp *.ini python CMakeLists.txt
 done
 
 #do it with MPI (only the default .ini files though)
 # High order tests
 for rep in $rep_MPI_list; do
-    TMP_DIR="$(mktemp -d)"
     cp -R $TEST_DIR/$rep/* $TMP_DIR
     cd $TMP_DIR
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "Using $TMP_DIR as working directory"
     echo "***********************************************"
-    rm -f CMakeCache.txt
+
     for order in $order_list; do
 
-        cmake $IDEFIX_DIR $options -DIdefix_RECONSTRUCTION=$order -DIdefix_MPI=ON || { echo "!!!!$rep with $order failed during configuration"; exit 1; }
+        cmake $IDEFIX_DIR $options -DIdefix_RECONSTRUCTION=$order -DIdefix_MPI=ON || finish "!!!!$rep with $order failed during configuration"
         echo "***********************************************"
         echo "Making  $rep with $order"
         echo "***********************************************"
-        make clean; make -j 10 || { echo "!!!! $rep with $order and MPI failed during compilation with"; exit 1; }
+        make -j 8 || finish "!!!! $rep with $order and MPI failed during compilation with"
 
         echo "***********************************************"
         echo "Running  $rep with $order and MPI"
         echo "***********************************************"
-        mpirun -np 4 ./idefix || { echo "!!!! $rep with $order and MPI failed running "; exit 1; }
+        mpirun -np 4 ./idefix || finish "!!!! $rep with $order and MPI failed running "
 
         cd python
         echo "***********************************************"
         echo "Testing  $rep with $order and MPI"
         echo "***********************************************"
-        python3 testidefix.py -noplot || { echo "!!!! $rep with $order and MPI failed validation"; exit 1; }
+        python3 testidefix.py -noplot || finish "!!!! $rep with $order and MPI failed validation"
         cd ..
 
-        make clean
         rm -f *.vtk *.dbl *.dmp
     done
     echo "***********************************************"
     echo "Cleaning  $rep in $TMP_DIR"
     echo "***********************************************"
-    rm -rf $TMP_DIR
+   rm -rf *.vtk *.dbl *.dmp *.ini python CMakeLists.txt
 done
+
+echo "Test was successfull"
+cd $TEST_DIR
+rm -rf $TMP_DIR

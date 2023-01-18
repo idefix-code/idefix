@@ -112,3 +112,14 @@ int DataBlock::CheckNan()  {
   idfx::popRegion();
   return(nanTot);
 }
+
+
+void DataBlock::Validate() {
+  idfx::pushRegion("DataBlock::Validate");
+
+  if(CheckNan()) {
+    IDEFIX_ERROR("Nans were found in your initial conditions.");
+  }
+
+  idfx::popRegion();
+}

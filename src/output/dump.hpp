@@ -62,6 +62,7 @@ class Dump {
   void ReadNextFieldProperties(IdfxFileHandler, int&, int*, DataType&, std::string&);
   void ReadSerial(IdfxFileHandler, int, int*, DataType, void*);
   void ReadDistributed(IdfxFileHandler, int, int*, int*, IdfxDataDescriptor&, void*);
+  void Skip(IdfxFileHandler, int, int *, DataType);
 };
 
 #endif // OUTPUT_DUMP_HPP_

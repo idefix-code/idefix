@@ -396,6 +396,26 @@ void Dump::ReadSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
   #endif
 }
 
+void Dump::Skip(IdfxFileHandler fileHdl, int ndim, int *dim,
+                            DataType type) {
+  int size;
+  int64_t ntot=1;
+  // Get total size
+  for(int i=0; i < ndim; i++) {
+    ntot=ntot*dim[i];
+  }
+  if(type == DoubleType) size=sizeof(double);
+  if(type == SingleType) size=sizeof(float);
+  if(type == IntegerType) size=sizeof(int);
+  if(type == BoolType) size=sizeof(bool);
+
+  #ifdef WITH_MPI
+    offset+= ntot*size;
+  #else
+    fseek(fileHdl, ntot*size, SEEK_CUR);
+  #endif
+}
+
 void Dump::ReadDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gdim,
                                  IdfxDataDescriptor &descriptor, void* data) {
   int64_t ntot=1;
@@ -497,9 +517,9 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
   // Coordinates are ok, load the bulk
   while(true) {
     ReadNextFieldProperties(fileHdl, ndim, nxglob, type, fieldName);
-    //idfx::cout << "Next field is " << fieldName << " with " << ndim << " dimensions and (";
-    //for(int i = 0 ; i < ndim ; i++) idfx::cout << nxglob[i] << " ";
-    //idfx::cout << ") points." << std::endl;
+    idfx::cout << "Next field is " << fieldName << " with " << ndim << " dimensions and (";
+    for(int i = 0 ; i < ndim ; i++) idfx::cout << nxglob[i] << " ";
+    idfx::cout << ") points." << std::endl;
 
     if(fieldName.compare(eof) == 0) {
       break;
@@ -608,6 +628,8 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
       #else
       IDEFIX_WARNING("Code configured without vector potential support. Vector potentials \
                         from the restart dump are skipped");
+      Skip(fileHdl, ndim, nxglob, type);
+
       #endif
     } else if(fieldName.compare("time") == 0) {
       ReadSerial(fileHdl, ndim, nxglob, type, &data.t);
@@ -630,7 +652,7 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
     } else if(fieldName.compare("centralMass")==0) {
       ReadSerial(fileHdl, ndim, nxglob, type, &data.gravity.centralMass);
     } else {
-      ReadSerial(fileHdl,ndim, nxglob, type, scrch);
+      Skip(fileHdl, ndim, nxglob, type);
       IDEFIX_WARNING("Unknown field "+fieldName+" in restart dump. Skipping.");
     }
   }

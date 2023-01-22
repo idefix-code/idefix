@@ -302,6 +302,32 @@ void Axis::FixBx2sAxis(int side) {
   #endif // DIMENSIONS
 }
 
+void Axis::FixBx2sAxisGhostAverage(int side) {
+  // This uses the same method as Athena (Stone+????) to enforce the BX2 value
+  // on the axis :
+  // average of BX2s on the left face of the last ghost cell and right face of
+  // the first active cell (for the left-side bondary, conversely for the
+  // right-side boundary)
+
+  #if DIMENSIONS == 3
+    IdefixArray4D<real> Vs = hydro->Vs;
+
+    int jaxis = 0;
+
+    if(side == left) {
+      jaxis = data->beg[JDIR];
+    }
+    if(side == right) {
+      jaxis = data->end[JDIR];
+    }
+
+    idefix_for("BHorizontal_averaging",data->beg[KDIR],data->end[KDIR],0,data->np_tot[IDIR],
+        KOKKOS_LAMBDA(int k,int i) {
+          Vs(BX2s,k,jaxis,i) = HALF_F*(Vs(BX2s,k,jaxis-1,i) + Vs(BX2s,k,jaxis+1,i));
+        });
+  #endif // DIMENSIONS
+}
+
 
 
 // enforce the boundary conditions on the ghost zone accross the axis
@@ -441,9 +467,13 @@ void Axis::ReconstructBx2s() {
     int jright = data->end[JDIR];
     int jleft = data->beg[JDIR];
     if(isTwoPi) {
-      if(haveleft) FixBx2sAxis(left);
-      if(haveright) FixBx2sAxis(right);
-
+      #ifdef AXIS_BX2S_USE_ATHENA_REGULARISATION
+        if(haveleft) FixBx2sAxisGhostAverage(left);
+        if(haveright) FixBx2sAxisGhostAverage(right);
+      #else
+        if(haveleft) FixBx2sAxis(left);
+        if(haveright) FixBx2sAxis(right);
+      #endif
     } else {
       idefix_for("Axis:BoundaryAvg",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
             KOKKOS_LAMBDA (int k, int i) {

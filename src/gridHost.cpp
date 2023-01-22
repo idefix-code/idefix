@@ -63,6 +63,7 @@ void GridHost::MakeGrid(Input &input) {
 
 
     if(dir<DIMENSIONS) {
+      // First, we fill cells for any non strecthed patch
       // Loop on all the patches
       int idxstart = nghost[dir];
       for(int patch = 0 ; patch < numPatch ; patch++) {
@@ -98,7 +99,32 @@ void GridHost::MakeGrid(Input &input) {
             dx[dir](i+idxstart) = xr[dir](i+idxstart) - xl[dir](i+idxstart);
             x[dir](i+idxstart)= 0.5*(xr[dir](i+idxstart) + xl[dir](i+idxstart));
           }
-        } else if((patchType.compare("s+")==0)||(patchType.compare("s-")==0)) {
+        } else if((patchType.compare("s+"))&&(patchType.compare("s-"))) {
+          std::stringstream msg;
+          msg << "GridHost::MakeGrid: Unknown grid type :" << patchType << std::endl;
+          IDEFIX_ERROR(msg);
+        }
+
+        // Increment offset
+        idxstart += patchSize;
+      }
+
+      // Second, we fill cells for stretched patch
+      // Loop on all the patches
+      idxstart = nghost[dir];
+      for(int patch = 0 ; patch < numPatch ; patch++) {
+        std::string patchType = input.Get<std::string>("Grid",label,3+patch*3);
+        real patchStart = input.Get<real>("Grid",label,1+patch*3);
+        real patchEnd = input.Get<real>("Grid",label,4+patch*3);
+        int patchSize = input.Get<int>("Grid",label,2+patch*3);
+
+        // If this is the first or last patch, also define ghost cells
+        int ghostStart = 0;
+        int ghostEnd = 0;
+        if(patch == 0) ghostStart = nghost[dir];
+        if(patch == numPatch-1) ghostEnd = nghost[dir];
+        // Define the grid depending on patch type
+        if((patchType.compare("s+")==0)||(patchType.compare("s-")==0)) {
           // Stretched grid
           // - means we take the initial dx on the left side, + on the right side
           // refPatch corresponds to the patch from which we compute the initial dx
@@ -116,16 +142,19 @@ void GridHost::MakeGrid(Input &input) {
             IDEFIX_ERROR("You're attempting to construct a stretched patch "
                          "from a non-existent patch");
           }
-          // Check that the reference patch is a uniform one
-          if(input.Get<std::string>("Grid",label,3+3*refPatch).compare("u")) {
-            IDEFIX_ERROR("You're attempting to construct a stretched patch "
-                         "from a non-uniform grid");
+          // Check that we build from a uniform patch or after a logarithmic one
+          std::string refPatchType = input.Get<std::string>("Grid",label,3+3*refPatch);
+          if(refPatchType.compare("u")) {
+            if((refPatchType.compare("l")) || (refPatch==patch+1)) {
+              IDEFIX_ERROR("You can only construct a stretched patch "
+                           "from a uniform grid "
+                           "or AFTER a logarithmic grid");
+            }
           }
-          // Ok, we have a well-behaved reference patch, compute dx from the reference patch
-          real refPatchStart = input.Get<real>("Grid",label,1+refPatch*3);
-          real refPatchEnd = input.Get<real>("Grid",label,4+refPatch*3);
-          int refPatchSize = input.Get<int>("Grid",label,2+refPatch*3);
-          double delta = (refPatchEnd-refPatchStart)/refPatchSize;
+
+          // Retrieve dx from the reference patch
+          int offset = (refPatch==patch+1) ? patchSize : -1;
+          double delta = dx[dir](idxstart+offset);
           double logdelta = log((patchEnd-patchStart)/delta);
 
           // Check that it is possible to make a stretch grid (bug report #28)
@@ -164,10 +193,6 @@ void GridHost::MakeGrid(Input &input) {
               x[dir](i+idxstart)= 0.5*(xr[dir](i+idxstart) + xl[dir](i+idxstart));
             }
           }
-        } else {
-          std::stringstream msg;
-          msg << "GridHost::MakeGrid: Unknown grid type :" << patchType << std::endl;
-          IDEFIX_ERROR(msg);
         }
 
         // Increment offset

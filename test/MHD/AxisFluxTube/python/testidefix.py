@@ -44,7 +44,7 @@ Brms_sim=np.sqrt(U.data['BX1']**2+U.data['BX2']**2+U.data['BX3']**2)
 error=np.mean(np.abs(Brms_ref-Brms_sim)*1e20,axis=(0,1,2))
 
 print("Error=%e"%error)
-if error<1e-5:
+if error<8e-5:
     print("SUCCESS!")
     sys.exit(0)
 else:

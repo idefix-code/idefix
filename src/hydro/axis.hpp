@@ -17,6 +17,9 @@
 class Hydro;
 class DataBlock;
 
+// Whether we use athena++ procedure to regularise BX2s
+#define AXIS_BX2S_USE_ATHENA_REGULARISATION
+
 class Axis {
  public:
   void Init(Grid &, Hydro *);  // Initialisation
@@ -31,6 +34,8 @@ class Axis {
   void RegularizeEx3side(int);         // Regularize Ex3 along the axis (internal method)
   void RegularizeCurrentSide(int);      // Regularize J along the axis (internal method)
   void FixBx2sAxis(int side);           // Fix BX2s on the axis using the field around it (internal)
+  void FixBx2sAxisGhostAverage(int side); //Fix BX2s on the axis using the average of neighbouring
+                                          // cell in theta direction (like Athena)
   void ExchangeMPI(int side);           // Function has to be public for GPU, but its technically
                                         // a private function
 

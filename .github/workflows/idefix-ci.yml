@@ -45,7 +45,7 @@ jobs:
           submodules: recursive
       # Manually do a git LFS https://github.com/actions/checkout/issues/270
       - run: git lfs pull
-      - name: Run Hydro test
+      - name: Run MHD test
         run: cd test && ./checks_mhd.sh $TEST_OPTIONS
 
   MPI:
@@ -59,7 +59,7 @@ jobs:
           submodules: recursive
       # Manually do a git LFS https://github.com/actions/checkout/issues/270
       - run: git lfs pull
-      - name: Run Hydro test
+      - name: Run MPI test
         run: cd test && ./checks_mpi.sh $TEST_OPTIONS
 
   VectorPotential:
@@ -73,7 +73,7 @@ jobs:
           submodules: recursive
       # Manually do a git LFS https://github.com/actions/checkout/issues/270
       - run: git lfs pull
-      - name: Run Hydro test
+      - name: Run Vector Potential test
         run: cd test && ./checks_vector_potential.sh $TEST_OPTIONS
 
   HighOrder:
@@ -87,7 +87,7 @@ jobs:
           submodules: recursive
       # Manually do a git LFS https://github.com/actions/checkout/issues/270
       - run: git lfs pull
-      - name: Run Hydro test
+      - name: Run high order test
         run: cd test && ./checks_highorder.sh $TEST_OPTIONS
 
   SinglePrecision:
@@ -101,7 +101,7 @@ jobs:
           submodules: recursive
       # Manually do a git LFS https://github.com/actions/checkout/issues/270
       - run: git lfs pull
-      - name: Run Hydro test
+      - name: Run single precision test
         run: cd test && ./checks_singleprecision.sh $TEST_OPTIONS
 
   Examples:
@@ -115,7 +115,7 @@ jobs:
           submodules: recursive
       # Manually do a git LFS https://github.com/actions/checkout/issues/270
       - run: git lfs pull
-      - name: Run Hydro test
+      - name: Run examples test
         run: cd test && ./checks_examples.sh $TEST_OPTIONS
 
   Utils:
@@ -129,5 +129,5 @@ jobs:
           submodules: recursive
       # Manually do a git LFS https://github.com/actions/checkout/issues/270
       - run: git lfs pull
-      - name: Run Hydro test
+      - name: Run utils test
         run: cd test && ./checks_utils.sh $TEST_OPTIONS

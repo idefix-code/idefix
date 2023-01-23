@@ -1,5 +1,4 @@
 name: Idefix CIs
-run-name: Idefix CIs
 on:
   workflow_dispatch:
   push:

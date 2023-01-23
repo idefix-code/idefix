@@ -27,6 +27,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           id: linter
+          name: Linter
           conclusion: ${{ steps.linter.outcome }}
           fail-on-error: true
 

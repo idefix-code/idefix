@@ -8,7 +8,18 @@ on:
   pull_request:
   
 jobs:
+  Linter:
+    runs-on: self-hosted
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          lfs: false
+      - run: pre-commit install
+      - run: pre-commit run --all-files 
+          
   Hydrodynamics:
+    needs: Linter
     runs-on: self-hosted
     steps:
       - name: Check out repo
@@ -16,6 +27,105 @@ jobs:
         with:
           lfs: true
           submodules: recursive
+      # Manually do a git LFS https://github.com/actions/checkout/issues/270
       - run: git lfs pull
       - name: Run Hydro test
         run: cd test && ./checks_hydro.sh $TEST_OPTIONS
+        
+  Magneto-Hydrodynamics:
+    needs: Linter
+    runs-on: self-hosted
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+          submodules: recursive
+      # Manually do a git LFS https://github.com/actions/checkout/issues/270
+      - run: git lfs pull
+      - name: Run Hydro test
+        run: cd test && ./checks_mhd.sh $TEST_OPTIONS
+
+  MPI:
+    needs: [Linter]
+    runs-on: self-hosted
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+          submodules: recursive
+      # Manually do a git LFS https://github.com/actions/checkout/issues/270
+      - run: git lfs pull
+      - name: Run Hydro test
+        run: cd test && ./checks_mpi.sh $TEST_OPTIONS
+    
+  VectorPotential:
+    needs: [Linter, MPI]
+    runs-on: self-hosted
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+          submodules: recursive
+      # Manually do a git LFS https://github.com/actions/checkout/issues/270
+      - run: git lfs pull
+      - name: Run Hydro test
+        run: cd test && ./checks_vector_potential.sh $TEST_OPTIONS
+        
+  HighOrder:
+    needs: [Linter, MPI]
+    runs-on: self-hosted
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+          submodules: recursive
+      # Manually do a git LFS https://github.com/actions/checkout/issues/270
+      - run: git lfs pull
+      - name: Run Hydro test
+        run: cd test && ./checks_highorder.sh $TEST_OPTIONS
+        
+  SinglePrecision:
+    needs: [Linter, MPI]
+    runs-on: self-hosted
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+          submodules: recursive
+      # Manually do a git LFS https://github.com/actions/checkout/issues/270
+      - run: git lfs pull
+      - name: Run Hydro test
+        run: cd test && ./checks_singleprecision.sh $TEST_OPTIONS
+        
+  Examples:
+    needs: [Linter, MPI]
+    runs-on: self-hosted
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+          submodules: recursive
+      # Manually do a git LFS https://github.com/actions/checkout/issues/270
+      - run: git lfs pull
+      - name: Run Hydro test
+        run: cd test && ./checks_examples.sh $TEST_OPTIONS
+        
+  Utils:
+    needs: [Linter, MPI]
+    runs-on: self-hosted
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+          submodules: recursive
+      # Manually do a git LFS https://github.com/actions/checkout/issues/270
+      - run: git lfs pull
+      - name: Run Hydro test
+        run: cd test && ./checks_utils.sh $TEST_OPTIONS

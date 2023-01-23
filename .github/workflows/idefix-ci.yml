@@ -16,5 +16,6 @@ jobs:
         with:
           lfs: true
           submodules: recursive
+      - run: git lfs pull
       - name: Run Hydro test
         run: cd test && ./checks_hydro.sh $TEST_OPTIONS

@@ -1,5 +1,5 @@
 name: Idefix CIs
-run-name: ${{ github.actor }} is learning GitHub Actions
+run-name: Idefix CIs
 on:
   workflow_dispatch:
   push:
@@ -10,7 +10,8 @@ on:
 jobs:
   Hydro:
     runs-on: self-hosted
-    uses: actions/checkout@v3
     steps:
+      - name: Check out repo
+      uses: actions/checkout@v3
       - run: cd test
       - run: ./checks_hydro.sh $TEST_OPTIONS

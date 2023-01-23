@@ -1,12 +1,14 @@
 name: Idefix CIs
 run-name: ${{ github.actor }} is learning GitHub Actions
-workflow_dispatch:
+on:
+  workflow_dispatch:
   push:
     branches:
       - main
   pull_request:
+  
 jobs:
-  check-bats-version:
+  Hydro:
     runs-on: self-hosted
     steps:
       - run: cd test

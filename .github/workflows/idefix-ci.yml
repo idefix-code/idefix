@@ -17,7 +17,18 @@ jobs:
         with:
           lfs: false
       - run: pre-commit install
-      - run: pre-commit run --all-files
+      - name: Run linter
+        id: linter
+        continue-on-error: true
+        run: pre-commit run --all-files
+      - name: Report linter conclusions
+        if: always()
+        uses: dflydev/check-runs-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          id: linter
+          conclusion: ${{ steps.linter.outcome }}
+          fail-on-error: true
 
   Hydrodynamics:
     needs: Linter

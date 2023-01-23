@@ -10,6 +10,7 @@ on:
 jobs:
   Hydro:
     runs-on: self-hosted
+    uses: actions/checkout
     steps:
       - run: cd test
       - run: ./checks_hydro.sh $TEST_OPTIONS

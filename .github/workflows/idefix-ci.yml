@@ -6,10 +6,8 @@ on:
       - main
   pull_request:
   
-permissions:
-  contents: read
-  packages: read
-  checks: write
+env:
+  TEST_OPTIONS: -DKokkos_ENABLE_CUDA=ON
   
 jobs:
   Linter:
@@ -24,14 +22,7 @@ jobs:
       - run: pre-commit install
       - name: Run linter
         id: linter
-        continue-on-error: true
         run: pre-commit run --all-files
-      - uses: LouisBrunner/checks-action@v1.5.0
-        if: always()
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          name: Linter checks
-          conclusion: ${{ job.status }}
 
   Hydrodynamics:
     needs: Linter

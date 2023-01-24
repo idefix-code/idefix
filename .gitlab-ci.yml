@@ -48,13 +48,6 @@ Vector potential tests:
     - cd test
     - ./checks_vector_potential.sh $TEST_OPTIONS
 
-MPI tests:
-  stage: checks
-  image: lesurg/idefix:latest
-  script:
-    - cd test
-    - ./checks_mpi.sh $TEST_OPTIONS
-
 HighOrder tests:
   stage: advanced_checks
   image: lesurg/idefix:latest

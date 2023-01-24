@@ -27,8 +27,6 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           name: Linter checks
           conclusion: ${{ job.status }}
-          output: |
-            {"summary":${{ steps.linter.outputs.summary }}}
 
   Hydrodynamics:
     needs: Linter

@@ -35,32 +35,45 @@ echo $IDEFIX_DIR
 set -e
 options=$@
 
-# HD tests
+
+TMP_DIR="$(mktemp -d)"
+function finish ()
+{
+  echo $1
+  echo "Cleaning directory $TMP_DIR"
+  cd $TEST_DIR
+  rm -rf $TMP_DIR
+  exit 1
+}
+
 for rep in $rep_example_list; do
-    TMP_DIR="$(mktemp -d)"
+
     cp -R $TEST_DIR/$rep/* $TMP_DIR
     cd $TMP_DIR
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "Using $TMP_DIR as working directory"
     echo "***********************************************"
-    rm -f CMakeCache.txt
 
-    cmake $IDEFIX_DIR $options || { echo "!!!! Example $rep failed during configuration"; exit 1; }
+    cmake $IDEFIX_DIR $options || finish "!!!! Example $rep failed during configuration"
     echo "***********************************************"
     echo "Making  $rep"
     echo "***********************************************"
-    make clean; make -j 10 || { echo "!!!! Example $rep failed during compilation"; exit 1; }
+    make -j 8 || finish  "!!!! Example $rep failed during compilation"
 
 
     echo "***********************************************"
     echo "Running  $rep"
     echo "***********************************************"
-    ./idefix -maxcycles 10 -nowrite -Werror || { echo "!!!! Example $rep failed running"; exit 1; }
+    ./idefix -maxcycles 10 -nowrite -Werror || finish "!!!! Example $rep failed running"
 
     echo "***********************************************"
     echo "Cleaning  $rep in $TMP_DIR"
     echo "***********************************************"
-    rm -rf $TMP_DIR
+   rm -rf *.vtk *.dbl *.dmp *.ini python CMakeLists.txt
 
 done
+
+echo "Test was successfull"
+cd $TEST_DIR
+rm -rf $TMP_DIR

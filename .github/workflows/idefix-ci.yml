@@ -3,8 +3,11 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - main
+      - master
   pull_request:
+
+env:
+  TEST_OPTIONS: -DKokkos_ENABLE_CUDA=ON
 
 jobs:
   Linter:
@@ -17,7 +20,9 @@ jobs:
         with:
           lfs: false
       - run: pre-commit install
-      - run: pre-commit run --all-files
+      - name: Run linter
+        id: linter
+        run: pre-commit run --all-files
 
   Hydrodynamics:
     needs: Linter

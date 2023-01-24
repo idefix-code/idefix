@@ -29,88 +29,91 @@ if [ -z ${var+IDEFIX_DIR} ] & [ -d "$IDEFIX_DIR" ] ; then
 fi
 
 export IDEFIX_DIR=$target_dir
-echo $IDEFIX_DIR
+
 
 set -e
 options=$@
 
+TMP_DIR="$(mktemp -d)"
+function finish ()
+{
+  echo $1
+  echo "Cleaning directory $TMP_DIR"
+  cd $TEST_DIR
+  rm -rf $TMP_DIR
+  exit 1
+}
+
 # High order tests
 for rep in $rep_list; do
-    TMP_DIR="$(mktemp -d)"
+
     cp -R $TEST_DIR/$rep/* $TMP_DIR
     cd $TMP_DIR
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "Using $TMP_DIR as working directory"
     echo "***********************************************"
-    rm -f CMakeCache.txt
-
-    cmake $IDEFIX_DIR $options -DIdefix_PRECISION=Single || { echo "!!!!$rep in single precision failed during configuration"; exit 1; }
+    cmake $IDEFIX_DIR $options -DIdefix_PRECISION=Single || finish "!!!!$rep in single precision failed during configuration"
     echo "***********************************************"
     echo "Making  $rep in single precision"
     echo "***********************************************"
-    make clean; make -j 10 || { echo "!!!! $rep in single precision failed during compilation with"; exit 1; }
+    make -j 8 || finish "!!!! $rep in single precision failed during compilation with"
 
     ini_files=$(ls *.ini)
     for ini in $ini_files; do
         echo "***********************************************"
         echo "Running  $rep in single precision and $ini"
         echo "***********************************************"
-        ./idefix -i $ini -nolog || { echo "!!!! $rep in single precision failed running with $ini"; exit 1; }
+        ./idefix -i $ini -nolog || finish "!!!! $rep in single precision failed running with $ini"
 
         cd python
         echo "***********************************************"
         echo "Testing  $rep in single precision and $ini"
         echo "***********************************************"
-        python3 testidefix.py -noplot || { echo "!!!! $rep in single precision failed validation with $ini"; exit 1; }
+        python3 testidefix.py -noplot || finish "!!!! $rep in single precision failed validation with $ini"
         cd ..
     done
-    make clean
-    rm -f *.vtk *.dbl *.dmp
 
     echo "***********************************************"
     echo "Cleaning  $rep in $TMP_DIR"
     echo "***********************************************"
-    rm -rf $TMP_DIR
+   rm -rf *.vtk *.dbl *.dmp *.ini python CMakeLists.txt
 done
 
 #do it with MPI (only the default .ini files though)
 # High order tests
 for rep in $rep_MPI_list; do
-    TMP_DIR="$(mktemp -d)"
     cp -R $TEST_DIR/$rep/* $TMP_DIR
     cd $TMP_DIR
     echo "***********************************************"
     echo "Configuring  $rep"
     echo "Using $TMP_DIR as working directory"
     echo "***********************************************"
-    rm -f CMakeCache.txt
-
-    cmake $IDEFIX_DIR $options -DIdefix_MPI=ON -DIdefix_PRECISION=Single || { echo "!!!!$rep in single precision failed during configuration"; exit 1; }
+    cmake $IDEFIX_DIR $options -DIdefix_MPI=ON -DIdefix_PRECISION=Single || finish "!!!!$rep in single precision failed during configuration"
     echo "***********************************************"
     echo "Making  $rep in single precision"
     echo "***********************************************"
-    make clean; make -j 10 || { echo "!!!! $rep in single precision and MPI failed during compilation with"; exit 1; }
+    make -j 8 || finish "!!!! $rep in single precision and MPI failed during compilation with"
 
     ini_files=$(ls *.ini)
     for ini in $ini_files; do
       echo "***********************************************"
       echo "Running  $rep in single precision, $ini and MPI"
       echo "***********************************************"
-      mpirun -np 4 ./idefix -i $ini -nolog || { echo "!!!! $rep in single precision and MPI failed running "; exit 1; }
+      mpirun -np 4 ./idefix -i $ini -nolog || finish "!!!! $rep in single precision and MPI failed running "
 
       cd python
       echo "***********************************************"
       echo "Testing  $rep in single precision and MPI"
       echo "***********************************************"
-      python3 testidefix.py -noplot || { echo "!!!! $rep in single precision and MPI failed validation"; exit 1; }
+      python3 testidefix.py -noplot || finish "!!!! $rep in single precision and MPI failed validation"
       cd ..
     done
-    make clean
-    rm -f *.vtk *.dbl *.dmp
-
     echo "***********************************************"
     echo "Cleaning  $rep in $TMP_DIR"
     echo "***********************************************"
-    rm -rf $TMP_DIR
+   rm -rf *.vtk *.dbl *.dmp *.ini python CMakeLists.txt
 done
+echo "Test was successfull"
+cd $TEST_DIR
+rm -rf $TMP_DIR

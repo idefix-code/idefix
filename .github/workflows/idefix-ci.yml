@@ -21,15 +21,14 @@ jobs:
         id: linter
         continue-on-error: true
         run: pre-commit run --all-files
-      - name: Report linter conclusions
+      - uses: LouisBrunner/checks-action@v1.1.1
         if: always()
-        uses: dflydev/check-runs-action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          id: linter
-          name: Linter
-          conclusion: ${{ steps.linter.outcome }}
-          fail-on-error: true
+          name: Linter checks
+          conclusion: ${{ job.status }}
+          output: |
+            {"summary":${{ steps.test.outputs.summary }}}
 
   Hydrodynamics:
     needs: Linter

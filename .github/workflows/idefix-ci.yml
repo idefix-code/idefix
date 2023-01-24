@@ -28,7 +28,7 @@ jobs:
           name: Linter checks
           conclusion: ${{ job.status }}
           output: |
-            {"summary":${{ steps.test.outputs.summary }}}
+            {"summary":${{ steps.linter.outputs.summary }}}
 
   Hydrodynamics:
     needs: Linter

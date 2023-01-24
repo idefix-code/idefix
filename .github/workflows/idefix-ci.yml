@@ -5,7 +5,11 @@ on:
     branches:
       - main
   pull_request:
-
+  
+permissions:
+  contents: read
+  packages: read
+  
 jobs:
   Linter:
     # Don't do this in forks

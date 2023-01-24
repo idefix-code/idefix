@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   push:
     branches:
-      - master    
+      - master
   pull_request:
 
 concurrency:
@@ -12,10 +12,10 @@ concurrency:
   # see https://docs.github.com/en/actions/learn-github-actions/contexts#github-context
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
-    
+
 env:
   TEST_OPTIONS: -DKokkos_ENABLE_CUDA=ON
-    
+
 jobs:
   Linter:
     # Don't do this in forks

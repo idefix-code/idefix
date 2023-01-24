@@ -22,14 +22,11 @@ jobs:
     if: github.repository == 'idefix-code/idefix'
     runs-on: self-hosted
     steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
         with:
           lfs: false
-      - run: pre-commit install
-      - name: Run linter
-        id: linter
-        run: pre-commit run --all-files
+      - uses: pre-commit-ci/lite-action@v1.0.0
+        if: always()
 
   Hydrodynamics:
     needs: Linter

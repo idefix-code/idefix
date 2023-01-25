@@ -5,7 +5,7 @@ on:
     branches:
       - master
   pull_request:
-     
+
 concurrency:
   # auto-cancel any concurrent job *in the same context*
   # see https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#concurrency
@@ -15,7 +15,7 @@ concurrency:
 
 env:
   TEST_OPTIONS: -DKokkos_ENABLE_CUDA=ON
-    
+
 jobs:
   Linter:
     # Don't do this in forks

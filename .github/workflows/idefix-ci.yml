@@ -20,16 +20,17 @@ jobs:
   Linter:
     # Don't do this in forks
     if: github.repository == 'idefix-code/idefix'
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
         with:
           lfs: false
-      - run: pre-commit install
-      - name: Run linter
-        id: linter
-        run: pre-commit run --all-files
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.x
+      - uses: pre-commit/action@v3.0.0
+      - uses: pre-commit-ci/lite-action@v1.0.0
+        if: always()
 
   Hydrodynamics:
     needs: Linter

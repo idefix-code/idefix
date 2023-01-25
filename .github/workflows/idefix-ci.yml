@@ -20,7 +20,7 @@ jobs:
   Linter:
     # Don't do this in forks
     if: github.repository == 'idefix-code/idefix'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
       - uses: actions/checkout@v3
         with:

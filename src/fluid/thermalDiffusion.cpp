@@ -13,42 +13,13 @@
 #include "dataBlock.hpp"
 #include "fluid.hpp"
 
-void ThermalDiffusion::Init(Input &input, Grid &grid, Hydro *hydroin) {
-  idfx::pushRegion("ThermalDiffusion::Init");
-  // Save the parent hydro object
-  this->hydro = hydroin;
 
-  if(input.CheckEntry("Hydro","TDiffusion")>=0) {
-    if(input.Get<std::string>("Hydro","TDiffusion",1).compare("constant") == 0) {
-        this->kappa = input.Get<real>("Hydro","TDiffusion",2);
-        this->haveThermalDiffusion = Constant;
-      } else if(input.Get<std::string>("Hydro","TDiffusion",1).compare("userdef") == 0) {
-        this->haveThermalDiffusion = UserDefFunction;
-        this->kappaArr = IdefixArray3D<real>("ThermalDiffusionKappaArray",hydro->data->np_tot[KDIR],
-                                                                 hydro->data->np_tot[JDIR],
-                                                                 hydro->data->np_tot[IDIR]);
-
-      } else {
-        IDEFIX_ERROR("Unknown thermal diffusion definition in idefix.ini. "
-                     "Can only be constant or userdef.");
-      }
-  } else {
-    IDEFIX_ERROR("I cannot create a ThermalDiffusion object without TDiffusion defined"
-                   "in the .ini file");
-  }
-
-  #ifdef ISOTHERMAL
-    IDEFIX_ERROR("Thermal diffusion is not compatible with the ISOTHERMAL approximation");
-  #endif
-
-  idfx::popRegion();
-}
 
 void ThermalDiffusion::ShowConfig() {
-  if(haveThermalDiffusion==Constant) {
+  if(status.status==Constant) {
     idfx::cout << "Thermal Diffusion: ENEABLED with constant diffusivity kappa="
                     << this->kappa << " ."<< std::endl;
-  } else if (haveThermalDiffusion==UserDefFunction) {
+  } else if (status.status==UserDefFunction) {
     idfx::cout << "Thermal Diffusion: ENABLED with user-defined diffusivity function."
                    << std::endl;
     if(!diffusivityFunc) {
@@ -57,9 +28,9 @@ void ThermalDiffusion::ShowConfig() {
   } else {
     IDEFIX_ERROR("Unknown thermal diffusion mode");
   }
-  if(hydro->thermalDiffusionStatus.isExplicit) {
+  if(status.isExplicit) {
     idfx::cout << "Thermal Diffusion: uses an explicit time integration." << std::endl;
-  } else if(hydro->thermalDiffusionStatus.isRKL) {
+  } else if(status.isRKL) {
     idfx::cout << "Thermal Diffusion: uses a Runge-Kutta-Legendre time integration."
                 << std::endl;
   } else {
@@ -68,43 +39,41 @@ void ThermalDiffusion::ShowConfig() {
 }
 
 void ThermalDiffusion::EnrollThermalDiffusivity(DiffusivityFunc myFunc) {
-  if(this->haveThermalDiffusion < UserDefFunction) {
+  if(this->status.status != UserDefFunction) {
     IDEFIX_WARNING("Thermal diffusivity enrollment requires Hydro/ThermalDiffusion "
                  "to be set to userdef in .ini file");
   }
   this->diffusivityFunc = myFunc;
-  idfx::cout << "ThermalDiffusion: User-defined thermal diffusion has been enrolled." << std::endl;
 }
 
 // This function computes the viscous flux and stores it in hydro->fluxRiemann
 // (this avoids an extra array)
 // Associated source terms, present in non-cartesian geometry are also computed
 // and stored in this->viscSrc for later use (in calcRhs).
-void ThermalDiffusion::AddDiffusiveFlux(int dir, const real t) {
+void ThermalDiffusion::AddDiffusiveFlux(int dir, const real t, const IdefixArray4D<real> &Flux) {
 #if HAVE_ENERGY == 1
   idfx::pushRegion("ThermalDiffusion::AddDiffusiveFlux");
-  IdefixArray4D<real> Vc = this->hydro->Vc;
-  IdefixArray4D<real> Flux = this->hydro->FluxRiemann;
-  IdefixArray3D<real> dMax = this->hydro->dMax;
+  IdefixArray4D<real> Vc = this->Vc;
+  IdefixArray3D<real> dMax = this->dMax;
   IdefixArray3D<real> kappaArr = this->kappaArr;
-  IdefixArray1D<real> dx = this->hydro->data->dx[dir];
+  IdefixArray1D<real> dx = this->data->dx[dir];
 
   #if GEOMETRY == POLAR
-    IdefixArray1D<real> x1 = this->hydro->data->x[IDIR];
+    IdefixArray1D<real> x1 = this->data->x[IDIR];
   #endif
   #if GEOMETRY == SPHERICAL
-    IdefixArray1D<real> rt   = this->hydro->data->rt;
-    IdefixArray1D<real> dmu  = this->hydro->data->dmu;
-    IdefixArray1D<real> dx2 = this->hydro->data->dx[JDIR];
+    IdefixArray1D<real> rt   = this->data->rt;
+    IdefixArray1D<real> dmu  = this->data->dmu;
+    IdefixArray1D<real> dx2 = this->data->dx[JDIR];
   #endif
 
-  HydroModuleStatus haveThermalDiffusion = this->haveThermalDiffusion;
+  HydroModuleStatus haveThermalDiffusion = this->status.status;
 
   // Compute thermal diffusion if needed
   if(haveThermalDiffusion == UserDefFunction && dir == IDIR) {
     if(diffusivityFunc) {
       idfx::pushRegion("UserDef::ThermalDiffusivityFunction");
-      diffusivityFunc(*this->hydro->data, t, kappaArr);
+      diffusivityFunc(*this->data, t, kappaArr);
       idfx::popRegion();
     } else {
       IDEFIX_ERROR("No user-defined thermal diffusion function has been enrolled");
@@ -113,15 +82,15 @@ void ThermalDiffusion::AddDiffusiveFlux(int dir, const real t) {
 
 
   int ibeg, iend, jbeg, jend, kbeg, kend;
-  ibeg = this->hydro->data->beg[IDIR];
-  iend = this->hydro->data->end[IDIR];
-  jbeg = this->hydro->data->beg[JDIR];
-  jend = this->hydro->data->end[JDIR];
-  kbeg = this->hydro->data->beg[KDIR];
-  kend = this->hydro->data->end[KDIR];
+  ibeg = this->data->beg[IDIR];
+  iend = this->data->end[IDIR];
+  jbeg = this->data->beg[JDIR];
+  jend = this->data->end[JDIR];
+  kbeg = this->data->beg[KDIR];
+  kend = this->data->end[KDIR];
 
   real kappaConstant = this->kappa;
-  real gamma = hydro->gamma;
+  real gamma = this->gamma;
 
   if(dir==IDIR) iend++;
   if(dir==JDIR) jend++;

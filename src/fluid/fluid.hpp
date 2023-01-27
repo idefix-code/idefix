@@ -37,6 +37,7 @@ template<typename Phys>
 class RiemannSolver;
 
 class Viscosity;
+class ThermalDiffusion;
 
 template<typename Phys>
 class Fluid {
@@ -88,7 +89,7 @@ class Fluid {
   std::unique_ptr<Viscosity> viscosity;
 
   // Thermal Diffusion object
-  ThermalDiffusion thermalDiffusion;
+  std::unique_ptr<ThermalDiffusion> thermalDiffusion;
 
   // Whether or not we have to treat the axis
   bool haveAxis{false};
@@ -155,14 +156,14 @@ class Fluid {
 
  private:
   friend class ConstrainedTransport<Phys>;
-  friend class Viscosity;
-  friend class ThermalDiffusion;
   friend class Fargo;
   friend class Axis<Phys>;
   friend class RKLegendre<Phys>;
   friend class Boundary<Phys>;
   friend class ShockFlattening;
   friend class RiemannSolver<Phys>;
+  friend class Viscosity;
+  friend class ThermalDiffusion;
 
   // Isothermal EOS parameters
   real isoSoundSpeed;
@@ -315,7 +316,8 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
       msg  << "Unknown integration type for thermal diffusion: " << opType;
       IDEFIX_ERROR(msg);
     }
-    this->thermalDiffusion.Init(input, grid, this);
+    this->thermalDiffusion = std::unique_ptr<ThermalDiffusion>
+                                      (new ThermalDiffusion(input, grid, this));
   }
 
 #if MHD == YES

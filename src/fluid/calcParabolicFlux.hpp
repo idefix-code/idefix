@@ -53,7 +53,7 @@ void Fluid<Phys>::CalcParabolicFlux(const real t) {
   // Add thermal diffusion
   if( (thermalDiffusionStatus.isExplicit && (!data->rklCycle))
     || (thermalDiffusionStatus.isRKL && data->rklCycle))  {
-    this->thermalDiffusion.AddDiffusiveFlux(dir,t);
+    this->thermalDiffusion->AddDiffusiveFlux(dir,t, this->FluxRiemann);
   }
 
   idfx::popRegion();

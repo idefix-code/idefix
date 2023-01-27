@@ -43,7 +43,7 @@ class ThermalDiffusion {
 
     
   // status of the module
-  ParabolicModuleStatus status;
+  ParabolicModuleStatus &status;
 
   DiffusivityFunc diffusivityFunc;
 

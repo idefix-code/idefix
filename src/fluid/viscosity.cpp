@@ -62,10 +62,10 @@ void Viscosity::InitArrays() {
                                                                 data->np_tot[IDIR]);
 }
 void Viscosity::ShowConfig() {
-  if(haveViscosity==Constant) {
+  if(status.status==Constant) {
     idfx::cout << "Viscosity: ENEABLED with constant viscosity eta1="
                     << this->eta1 << " and eta2=" << this->eta2 << " ."<< std::endl;
-  } else if (haveViscosity==UserDefFunction) {
+  } else if (status.status==UserDefFunction) {
     idfx::cout << "Viscosity: ENABLED with user-defined viscosity function."
                    << std::endl;
     if(!viscousDiffusivityFunc) {
@@ -85,7 +85,7 @@ void Viscosity::ShowConfig() {
 }
 
 void Viscosity::EnrollViscousDiffusivity(ViscousDiffusivityFunc myFunc) {
-  if(this->haveViscosity < UserDefFunction) {
+  if(this->status.status < UserDefFunction) {
     IDEFIX_WARNING("Viscous diffusivity enrollment requires Hydro/Viscosity "
                  "to be set to userdef in .ini file");
   }
@@ -122,7 +122,7 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
   #endif
 
 
-  HydroModuleStatus haveViscosity = this->haveViscosity;
+  HydroModuleStatus haveViscosity = this->status.status;
 
   // Compute viscosity if needed
   if(haveViscosity == UserDefFunction && dir == IDIR) {

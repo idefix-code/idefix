@@ -47,10 +47,9 @@ class Viscosity {
  private:
   DataBlock* data;
 
-  ParabolicModuleStatus status;
+  // Viscosity status
+  ParabolicModuleStatus &status;
 
-  // type of viscosity function
-  HydroModuleStatus haveViscosity{Disabled};
   ViscousDiffusivityFunc viscousDiffusivityFunc;
 
   IdefixArray4D<real> &Vc;
@@ -77,9 +76,9 @@ Viscosity::Viscosity(Input &input, Grid &grid, Fluid<Phys> *hydroin):
         this->eta1 = input.Get<real>("Hydro","viscosity",2);
         // second viscosity?
         this->eta2 = input.GetOrSet<real>("Hydro","viscosity",3, 0.0);
-        this->haveViscosity = Constant;
+        this->status.status = Constant;
       } else if(input.Get<std::string>("Hydro","viscosity",1).compare("userdef") == 0) {
-        this->haveViscosity = UserDefFunction;
+        this->status.status = UserDefFunction;
         this->eta1Arr = IdefixArray3D<real>("ViscosityEta1Array",data->np_tot[KDIR],
                                                                  data->np_tot[JDIR],
                                                                  data->np_tot[IDIR]);

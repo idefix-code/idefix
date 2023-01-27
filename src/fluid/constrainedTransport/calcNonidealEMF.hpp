@@ -5,6 +5,9 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#ifndef FLUID_CONSTRAINEDTRANSPORT_CALCNONIDEALEMF_HPP_
+#define FLUID_CONSTRAINEDTRANSPORT_CALCNONIDEALEMF_HPP_
+
 #include "fluid.hpp"
 #include "dataBlock.hpp"
 
@@ -171,3 +174,5 @@ void ConstrainedTransport<Phys>::CalcNonidealEMF(real t) {
 
   idfx::popRegion();
 }
+
+#endif //FLUID_CONSTRAINEDTRANSPORT_CALCNONIDEALEMF_HPP_

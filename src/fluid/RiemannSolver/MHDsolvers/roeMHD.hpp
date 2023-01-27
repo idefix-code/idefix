@@ -5,8 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef FLUID_MHDSOLVERS_ROEMHD_HPP_
-#define FLUID_MHDSOLVERS_ROEMHD_HPP_
+#ifndef FLUID_RIEMANNSOLVER_MHDSOLVERS_ROEMHD_HPP_
+#define FLUID_RIEMANNSOLVER_MHDSOLVERS_ROEMHD_HPP_
 
 #include "../idefix.hpp"
 #include "slopeLimiter.hpp"
@@ -657,4 +657,4 @@ void RiemannSolver<Phys>::RoeMHD(IdefixArray4D<real> &Flux) {
 
   idfx::popRegion();
 }
-#endif // FLUID_MHDSOLVERS_ROEMHD_HPP_
+#endif // FLUID_RIEMANNSOLVER_MHDSOLVERS_ROEMHD_HPP_

@@ -5,8 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef FLUID_MHDSOLVERS_STOREFLUX_HPP_
-#define FLUID_MHDSOLVERS_STOREFLUX_HPP_
+#ifndef FLUID_RIEMANNSOLVER_MHDSOLVERS_STOREFLUX_HPP_
+#define FLUID_RIEMANNSOLVER_MHDSOLVERS_STOREFLUX_HPP_
 
 #include "idefix.hpp"
 #include "fluid.hpp"
@@ -207,4 +207,4 @@ KOKKOS_FORCEINLINE_FUNCTION void K_StoreHLLD( const int i, const int j, const in
   #endif
 }
 
-#endif //FLUID_MHDSOLVERS_STOREFLUX_HPP_
+#endif //FLUID_RIEMANNSOLVER_MHDSOLVERS_STOREFLUX_HPP_

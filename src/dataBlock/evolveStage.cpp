@@ -12,7 +12,7 @@
 // Evolve one step forward in time of hydro
 void DataBlock::EvolveStage() {
   idfx::pushRegion("DataBlock::EvolveStage");
-  
+
   hydro->EvolveStage(this->t,this->dt);
 
   idfx::popRegion();

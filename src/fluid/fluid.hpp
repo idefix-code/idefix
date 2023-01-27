@@ -127,7 +127,7 @@ class Fluid {
   // Enroll user-defined isothermal sound speed
   void EnrollIsoSoundSpeed(IsoSoundSpeedFunc);
 
-  
+
 
   // Arrays required by the Hydro object
   IdefixArray4D<real> Vc;      // Main cell-centered primitive variables index
@@ -212,8 +212,6 @@ class Fluid {
 #include "riemannSolver.hpp"
 #include "viscosity.hpp"
 #include "dump.hpp"
-
-using Hydro = Fluid<Physics>;
 
 
 template<typename Phys>
@@ -439,7 +437,7 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
       #else // EVOLVE_VECTOR_POTENTIAL
         data->states["current"].PushArray(Vs, State::center, "FLUID_Vs");
       #endif // EVOLVE_VECTOR_POTENTIAL
-      
+
     }
 
   // Allocate sound speed array if needed

@@ -127,7 +127,7 @@ class Vtk {
 template<typename T>
 void Vtk::RegisterVariable(T& in, std::string name, int var) {
   // if var>0, the caller provided explicitely an index
-  if constexpr(std::is_same<T,IdefixArray3D<real>>::value || 
+  if constexpr(std::is_same<T,IdefixArray3D<real>>::value ||
                std::is_same<T,IdefixHostArray3D<real>>::value) {
     vtkScalarMap.emplace(name, VtkScalarField(in) );
   } else {

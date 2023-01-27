@@ -34,16 +34,16 @@ class DumpField {
   enum ArrayType {Device3D, Device4D, Host3D, Host4D};
   enum ArrayLocation {Center, Face, Edge};
 
-  DumpField(IdefixArray4D<real>& in, const int varnum, const ArrayLocation loc, const int dir): 
+  DumpField(IdefixArray4D<real>& in, const int varnum, const ArrayLocation loc, const int dir):
     d4Darray{in}, var{varnum}, arrayType{Device4D}, type{IdefixArray}, arrayLocation{loc}, direction{dir} {};
 
-  DumpField(IdefixHostArray4D<real>& in, const int varnum, const ArrayLocation loc, const int dir): 
+  DumpField(IdefixHostArray4D<real>& in, const int varnum, const ArrayLocation loc, const int dir):
     h4Darray{in}, var{varnum}, arrayType{Host4D}, type{IdefixArray}, arrayLocation{loc}, direction{dir} {};
 
-  DumpField(IdefixArray3D<real>& in, const ArrayLocation loc, const int dir): 
+  DumpField(IdefixArray3D<real>& in, const ArrayLocation loc, const int dir):
     d3Darray{in}, arrayType{Device3D}, type{IdefixArray}, arrayLocation{loc}, direction{dir} {};
 
-  DumpField(IdefixHostArray3D<real>& in, const ArrayLocation loc, const int dir): 
+  DumpField(IdefixHostArray3D<real>& in, const ArrayLocation loc, const int dir):
     h3Darray{in}, arrayType{Host3D}, type{IdefixArray}, arrayLocation{loc}, direction{dir} {};
 
   DumpField(int * in, const int size = 1 ):
@@ -59,7 +59,7 @@ class DumpField {
     rawData{static_cast<void*>(in)}, rawSize{size}, type{Bool} {};
 
 
-  
+
 
   template <typename T>
   T GetHostField() const {
@@ -160,32 +160,32 @@ class Dump {
   int Read(Output&, int);
 
   // Register IdefixArrays
-  void RegisterVariable(IdefixArray3D<real>&, 
-                        std::string, 
+  void RegisterVariable(IdefixArray3D<real>&,
+                        std::string,
                         int dir = -1,
                         DumpField::ArrayLocation loc = DumpField::ArrayLocation::Center );
 
-  void RegisterVariable(IdefixHostArray3D<real>&, 
-                        std::string, 
+  void RegisterVariable(IdefixHostArray3D<real>&,
+                        std::string,
                         int dir = -1,
                         DumpField::ArrayLocation loc = DumpField::ArrayLocation::Center );
 
-  void RegisterVariable(IdefixArray4D<real>&, 
-                        std::string, 
+  void RegisterVariable(IdefixArray4D<real>&,
+                        std::string,
                         int varnum,
                         int dir = -1,
                         DumpField::ArrayLocation loc = DumpField::ArrayLocation::Center );
 
-  void RegisterVariable(IdefixHostArray4D<real>&, 
-                        std::string, 
+  void RegisterVariable(IdefixHostArray4D<real>&,
+                        std::string,
                         int varnum,
                         int dir = -1,
                         DumpField::ArrayLocation loc = DumpField::ArrayLocation::Center );
 
   // Register any other fundamental type
   template<typename T>
-  void RegisterVariable(T*, 
-                        std::string, 
+  void RegisterVariable(T*,
+                        std::string,
                         int size = 1);
 
  private:

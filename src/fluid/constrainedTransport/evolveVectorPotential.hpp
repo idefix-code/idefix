@@ -5,6 +5,9 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#ifndef FLUID_CONSTRAINEDTRANSPORT_EVOLVEVECTORPOTENTIAL_HPP_
+#define FLUID_CONSTRAINEDTRANSPORT_EVOLVEVECTORPOTENTIAL_HPP_
+
 #include <string>
 
 #include "idefix.hpp"
@@ -159,3 +162,4 @@ void ConstrainedTransport<Phys>::ComputeMagFieldFromA(IdefixArray4D<real> &Vein,
   idfx::popRegion();
   #endif
 }
+#endif //FLUID_CONSTRAINEDTRANSPORT_EVOLVEVECTORPOTENTIAL_HPP_

@@ -5,8 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef FLUID_HDSOLVERS_HLLHD_HPP_
-#define FLUID_HDSOLVERS_HLLHD_HPP_
+#ifndef FLUID_RIEMANNSOLVER_HDSOLVERS_HLLHD_HPP_
+#define FLUID_RIEMANNSOLVER_HDSOLVERS_HLLHD_HPP_
 
 #include "../idefix.hpp"
 #include "fluid.hpp"
@@ -125,4 +125,4 @@ void RiemannSolver<Phys>::HllHD(IdefixArray4D<real> &Flux) {
   idfx::popRegion();
 }
 
-#endif // FLUID_HDSOLVERS_HLLHD_HPP_
+#endif // FFLUID_RIEMANNSOLVER_HDSOLVERS_HLLHD_HPP_

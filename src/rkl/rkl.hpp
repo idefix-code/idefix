@@ -8,7 +8,9 @@
 #ifndef RKL_RKL_HPP_
 #define RKL_RKL_HPP_
 
+#include <string>
 #include <vector>
+
 #include "idefix.hpp"
 #include "input.hpp"
 #include "dataBlock.hpp"
@@ -78,7 +80,6 @@ class RKLegendre {
   template<int> void LoopDir(real);   // Dimensional loop
 };
 
-#include "dataBlock.hpp"
 #include "fluid.hpp"
 #include "calcParabolicFlux.hpp"
 
@@ -556,7 +557,7 @@ void RKLegendre<Phys>::ResetFlux() {
 
 template<typename Phys>
 struct RKLegendre_ResetStageFunctor {
-  RKLegendre_ResetStageFunctor(RKLegendre<Phys> *rkl) {
+  explicit RKLegendre_ResetStageFunctor(RKLegendre<Phys> *rkl) {
     dU = rkl->dU;
     Flux = rkl->hydro->FluxRiemann;
     vars = rkl->varList;
@@ -585,7 +586,7 @@ struct RKLegendre_ResetStageFunctor {
   IdefixArray3D<real> invDt;
   int stage, nvar;
   bool haveVs, haveVc;
-  
+
   KOKKOS_INLINE_FUNCTION void operator() (const int k, const int j,  const int i) const {
     if(haveVc) {
       for(int n = 0 ; n < nvar ; n++) {
@@ -660,7 +661,7 @@ void RKLegendre<Phys>::ComputeDt() {
 }
 
 template<typename Phys>
-template<int dir> 
+template<int dir>
 void RKLegendre<Phys>::LoopDir(real t) {
     ResetFlux();
 

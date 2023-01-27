@@ -5,6 +5,9 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#ifndef FLUID_ENROLL_HPP_
+#define FLUID_ENROLL_HPP_
+
 #include "dataBlock.hpp"
 template<typename Phys>
 void Fluid<Phys>::EnrollIsoSoundSpeed(IsoSoundSpeedFunc myFunc) {
@@ -102,3 +105,5 @@ void Fluid<Phys>::ResetStage() {
 
   idfx::popRegion();
 }
+
+#endif //FLUID_ENROLL_HPP_

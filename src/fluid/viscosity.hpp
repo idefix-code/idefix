@@ -62,8 +62,8 @@ class Viscosity {
 #include "fluid.hpp"
 
 template<typename Phys>
-Viscosity::Viscosity(Input &input, Grid &grid, Fluid<Phys> *hydroin): 
-                      Vc{hydroin->Vc}, 
+Viscosity::Viscosity(Input &input, Grid &grid, Fluid<Phys> *hydroin):
+                      Vc{hydroin->Vc},
                       dMax{hydroin->dMax},
                       status{hydroin->viscosityStatus} {
 
@@ -96,7 +96,7 @@ Viscosity::Viscosity(Input &input, Grid &grid, Fluid<Phys> *hydroin):
   }
 
   InitArrays();
-  
+
   idfx::popRegion();
 }
 #endif // FLUID_VISCOSITY_HPP_

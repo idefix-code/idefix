@@ -11,6 +11,8 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <memory>
+
 #include "idefix.hpp"
 #include "grid.hpp"
 #include "gridHost.hpp"
@@ -137,12 +139,8 @@ class DataBlock {
   bool haveGravity{false};
   Gravity gravity;
 
-
-
  private:
-
   void WriteVariable(FILE* , int , int *, char *, void*);
-
   void ComputeGridCoarseningLevels();   ///< Call user defined function to define Coarsening levels
 };
 

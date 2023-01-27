@@ -5,8 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef FLUID_CALCRIEMANNFLUX_HPP_
-#define FLUID_CALCRIEMANNFLUX_HPP_
+#ifndef FLUID_RIEMANNSOLVER_CALCFLUX_HPP_
+#define FLUID_RIEMANNSOLVER_CALCFLUX_HPP_
 
 #if MHD == YES
 #include "hlldMHD.hpp"
@@ -29,7 +29,7 @@ void RiemannSolver<Phys>::CalcFlux(IdefixArray4D<real> &flux) {
     // enable shock flattening
     if(haveShockFlattening) shockFlattening.FindShock();
   }
-  
+
   if constexpr(Phys::mhd) {
     switch (mySolver) {
       case TVDLF_MHD:
@@ -68,4 +68,4 @@ void RiemannSolver<Phys>::CalcFlux(IdefixArray4D<real> &flux) {
 
   idfx::popRegion();
 }
-#endif // FLUID_CALCRIEMANNFLUX_HPP_
+#endif // FLUID_RIEMANNSOLVER_CALCFLUX_HPP_

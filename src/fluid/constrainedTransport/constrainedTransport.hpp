@@ -15,7 +15,7 @@
 // Forward declarations
 #include "physics.hpp"
 template <typename Phys> class Fluid;
-using Hydro = Fluid<Physics>;
+
 class DataBlock;
 
 template <typename Phys>
@@ -74,7 +74,7 @@ class ConstrainedTransport {
   // Range of existence
 
   // Init from Hydro class
-  ConstrainedTransport(Input &, Hydro *);
+  ConstrainedTransport(Input &, Fluid<Phys> *);
   ~ConstrainedTransport();
 
   void EvolveMagField(real, real, IdefixArray4D<real>&);
@@ -112,7 +112,7 @@ class ConstrainedTransport {
 
  private:
   DataBlock *data;
-  Hydro *hydro;
+  Fluid<Phys> *hydro;
 
 #ifdef WITH_MPI
   enum {faceRight, faceLeft};
@@ -151,7 +151,7 @@ class ConstrainedTransport {
 
 // Init the emf from a datablock pointer
 template<typename Phys>
-ConstrainedTransport<Phys>::ConstrainedTransport(Input &input, Hydro *hydro) {
+ConstrainedTransport<Phys>::ConstrainedTransport(Input &input, Fluid<Phys> *hydro) {
   idfx::pushRegion("ConstrainedTransport::Init");
 
   if(input.CheckEntry("Hydro","emf")>=0) {

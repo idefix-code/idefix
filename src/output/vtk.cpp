@@ -237,7 +237,7 @@ Vtk::Vtk(Input &input, DataBlock *datain) {
 
   // Register variables that are required in restart dumps
   data->dump->RegisterVariable(&vtkFileNumber, "vtkFileNumber");
-  
+
 }
 
 
@@ -516,4 +516,3 @@ T Vtk::BigEndian(T in_number) {
   }
   return(in_number);
 }
-

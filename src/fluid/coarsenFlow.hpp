@@ -5,6 +5,9 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#ifndef FLUID_COARSENFLOW_HPP_
+#define FLUID_COARSENFLOW_HPP_
+
 #include "fluid.hpp"
 #include "dataBlock.hpp"
 
@@ -404,3 +407,4 @@ void Fluid<Phys>::CoarsenVectorPotential() {
 
   #endif // MHD
 }
+#endif // FLUID_COARSENFLOW_HPP_

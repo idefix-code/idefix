@@ -5,6 +5,9 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#ifndef FLUID_SHOWCONFIG_HPP_
+#define FLUID_SHOWCONFIG_HPP_
+
 #include <string>
 
 #include "idefix.hpp"
@@ -46,7 +49,7 @@ void Fluid<Phys>::ShowConfig() {
       }
     }
   #endif// ISOTHERMAL
-  
+
   if(haveRotation) {
     idfx::cout << "Fluid: Rotation ENABLED with Omega=" << this->OmegaZ << std::endl;
   }
@@ -128,7 +131,7 @@ void Fluid<Phys>::ShowConfig() {
     idfx::cout << "Fluid: user-defined source terms ENABLED." << std::endl;
   }
   rSolver->ShowConfig();
-  
+
   #if MHD == YES
     emf->ShowConfig();
   #endif
@@ -145,3 +148,4 @@ void Fluid<Phys>::ShowConfig() {
     myAxis->ShowConfig();
   }
 }
+#endif //FLUID_SHOWCONFIG_HPP_

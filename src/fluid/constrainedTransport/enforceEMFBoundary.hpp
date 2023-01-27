@@ -5,6 +5,9 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#ifndef FLUID_CONSTRAINEDTRANSPORT_ENFORCEEMFBOUNDARY_HPP_
+#define FLUID_CONSTRAINEDTRANSPORT_ENFORCEEMFBOUNDARY_HPP_
+
 #include "constrainedTransport.hpp"
 #include "fluid.hpp"
 #include "dataBlock.hpp"
@@ -251,3 +254,4 @@ void ConstrainedTransport<Phys>::ExtrapolateEMFShearingBox(BoundarySide side,
           Eout(k,j) = Ein(k,jo) - eps*(Fr - Fl);
         });
 }
+#endif // FLUID_CONSTRAINEDTRANSPORT_ENFORCEEMFBOUNDARY_HPP_

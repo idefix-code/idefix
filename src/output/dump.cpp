@@ -19,37 +19,33 @@
 
 // Register a variable to be dumped (and read)
 
-void Dump::RegisterVariable(IdefixArray3D<real>& in, 
-                        std::string name, 
+void Dump::RegisterVariable(IdefixArray3D<real>& in,
+                        std::string name,
                         int dir,
                         DumpField::ArrayLocation loc) {
-
     dumpFieldMap.emplace(name, DumpField(in, loc, dir));
 }
 
-void  Dump::RegisterVariable(IdefixHostArray3D<real>& in, 
-                        std::string name, 
+void  Dump::RegisterVariable(IdefixHostArray3D<real>& in,
+                        std::string name,
                         int dir,
                         DumpField::ArrayLocation loc) {
-
     dumpFieldMap.emplace(name, DumpField(in, loc, dir));
 }
 
-void  Dump::RegisterVariable(IdefixArray4D<real>& in, 
-                        std::string name, 
+void  Dump::RegisterVariable(IdefixArray4D<real>& in,
+                        std::string name,
                         int varnum,
                         int dir,
                         DumpField::ArrayLocation loc) {
-
     dumpFieldMap.emplace(name, DumpField(in, varnum, loc, dir));
 }
 
-void  Dump::RegisterVariable(IdefixHostArray4D<real>& in, 
-                        std::string name, 
+void  Dump::RegisterVariable(IdefixHostArray4D<real>& in,
+                        std::string name,
                         int varnum,
                         int dir,
                         DumpField::ArrayLocation loc) {
-
     dumpFieldMap.emplace(name, DumpField(in, varnum, loc, dir));
 }
 
@@ -111,7 +107,6 @@ Dump::Dump(DataBlock *datain) {
     }
     // Dimensions for edge-centered field
     for(int nv = 0; nv < 3 ; nv++) {
-
       // load the array size
       for(int dir = 0; dir < 3 ; dir++) {
         size[2-dir] = grid->np_int[dir];
@@ -606,7 +601,6 @@ int Dump::Read(Output& output, int readNumber ) {
           void *ptr = scalar.GetHostField<void *>();
 
           ReadSerial(fileHdl, ndim, nxglob, type, ptr);
-
         }
       } else {
         Skip(fileHdl, ndim, nxglob, type);

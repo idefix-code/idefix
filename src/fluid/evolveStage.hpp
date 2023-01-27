@@ -9,7 +9,7 @@
 #include "fluid.hpp"
 #include "riemannSolver.hpp"
 template<typename Phys>
-template<int dir> 
+template<int dir>
 void Fluid<Phys>::LoopDir(const real t, const real dt) {
     // Step 2: compute the intercell flux with our Riemann solver, store the resulting InvDt
     this->rSolver->template CalcFlux<dir>(this->FluxRiemann);

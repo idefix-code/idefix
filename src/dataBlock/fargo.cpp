@@ -245,7 +245,7 @@ void Fargo::CheckMaxDisplacement() {
 
 void Fargo::AddVelocity(const real t) {
   idfx::pushRegion("Fargo::AddVelocity");
-  
+
   this->AddVelocityFluid(t, data->hydro.get());
 
   idfx::popRegion();
@@ -253,7 +253,7 @@ void Fargo::AddVelocity(const real t) {
 
 void Fargo::SubstractVelocity(const real t) {
   idfx::pushRegion("Fargo::SubstractVelocity");
-  
+
   this->SubstractVelocityFluid(t, data->hydro.get());
 
   idfx::popRegion();

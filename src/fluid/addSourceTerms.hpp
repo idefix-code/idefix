@@ -18,7 +18,7 @@ void Fluid<Phys>::AddSourceTerms(real t, real dt) {
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray1D<real> x1 = data->x[IDIR];
   IdefixArray1D<real> x2 = data->x[JDIR];
-  
+
 #ifdef ISOTHERMAL
   IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
 #endif

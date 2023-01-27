@@ -5,6 +5,9 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#ifndef FLUID_CHECKDIVB_HPP_
+#define FLUID_CHECKDIVB_HPP_
+
 #include "fluid.hpp"
 #include "dataBlock.hpp"
 
@@ -93,3 +96,5 @@ real Hydro::CheckDivB(DataBlock &data) {
   return(divB);
 }
 */
+
+#endif // FLUID_CHECKDIVB_HPP_

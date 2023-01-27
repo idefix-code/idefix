@@ -331,8 +331,6 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   idfx::popRegion();
 }
 
-
-
 int64_t TimeIntegrator::GetNCycles() {
   return(ncycles);
 }
@@ -384,5 +382,4 @@ void TimeIntegrator::ShowConfig() {
   if(maxRuntime>0) {
     idfx::cout << "TimeIntegrator: will stop after " << maxRuntime/3600 << " hours." << std::endl;
   }
-
 }

@@ -24,7 +24,7 @@ class RiemannSolver {
   enum Solver {TVDLF_MHD, HLL_MHD, HLLD_MHD, ROE_MHD, TVDLF, HLL, HLLC, ROE};
 
   RiemannSolver(Input &input, Fluid<Phys>* hydro);
-  
+
   template <int> void CalcFlux(IdefixArray4D<real> &);
 
   Solver GetSolver() {
@@ -66,13 +66,13 @@ class RiemannSolver {
 
   ShockFlattening shockFlattening;
   bool haveShockFlattening;
-  
+
 };
 
 template <typename Phys>
 RiemannSolver<Phys>::RiemannSolver(Input &input, Fluid<Phys>* hydro) : Vc{hydro->Vc},
-                                      Vs{hydro->Vs}, 
-                                      Flux{hydro->FluxRiemann}, 
+                                      Vs{hydro->Vs},
+                                      Flux{hydro->FluxRiemann},
                                       cMax{hydro->cMax},
                                       hydro{hydro},
                                       data{hydro->data}

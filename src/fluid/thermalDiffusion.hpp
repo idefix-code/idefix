@@ -8,6 +8,8 @@
 #ifndef FLUID_THERMALDIFFUSION_HPP_
 #define FLUID_THERMALDIFFUSION_HPP_
 
+#include <string>
+
 #include "idefix.hpp"
 #include "input.hpp"
 #include "grid.hpp"
@@ -38,15 +40,14 @@ class ThermalDiffusion {
   IdefixArray1D<real> one_dmu;
 
  private:
-
   DataBlock *data;
 
-    
   // status of the module
   ParabolicModuleStatus &status;
 
   DiffusivityFunc diffusivityFunc;
 
+  // helper array
   IdefixArray4D<real> &Vc;
   IdefixArray3D<real> &dMax;
 
@@ -54,8 +55,8 @@ class ThermalDiffusion {
   real kappa;
 
   // adiabatic exponent (required to get the heat capacity)
-  // TODO: generalize to any equation of state!
-  real gamma; 
+  // TODO(glesur): generalize to any equation of state!
+  real gamma;
 };
 
 #include "fluid.hpp"
@@ -63,7 +64,7 @@ class ThermalDiffusion {
 
 template <typename Phys>
 ThermalDiffusion::ThermalDiffusion(Input &input, Grid &grid, Fluid<Phys> *hydroin):
-                            Vc{hydroin->Vc}, 
+                            Vc{hydroin->Vc},
                             dMax{hydroin->dMax},
                             gamma{hydroin->GetGamma()},
                             data{hydroin->data},

@@ -24,9 +24,9 @@ struct Physics {
     static constexpr bool mhd{false};
     static constexpr int nvar{1+COMPONENTS  + (pressure?1:0)};
   #endif
-  
 
-  // prefix 
+
+  // prefix
   static constexpr std::string_view prefix = "Hydro";
 };
 

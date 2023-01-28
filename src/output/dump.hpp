@@ -160,7 +160,7 @@ class DumpField {
 class Dump {
   friend class DumpImage; // Allow dumpimag to have access to dump API
  public:
-  explict Dump(DataBlock *);               // Create Dump Object
+  explicit Dump(DataBlock *);               // Create Dump Object
   ~Dump();
 
   // Create a Dump file from the current state of the code

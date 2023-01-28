@@ -4,8 +4,8 @@
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
-#ifndef FLUID_SLOPELIMITER_HPP_
-#define FLUID_SLOPELIMITER_HPP_
+#ifndef FLUID_RIEMANNSOLVER_SLOPELIMITER_HPP_
+#define FLUID_RIEMANNSOLVER_SLOPELIMITER_HPP_
 
 #include "fluid.hpp"
 #include "dataBlock.hpp"
@@ -334,4 +334,4 @@ class SlopeLimiter {
 };
 
 
-#endif // FLUID_SLOPELIMITER_HPP_
+#endif // FLUID_RIEMANNSOLVER_SLOPELIMITER_HPP_

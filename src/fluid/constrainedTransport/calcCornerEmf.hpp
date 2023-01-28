@@ -4,6 +4,8 @@
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
+#ifndef FLUID_CONSTRAINEDTRANSPORT_CALCCORNEREMF_HPP_
+#define FLUID_CONSTRAINEDTRANSPORT_CALCCORNEREMF_HPP_
 
 #include "fluid.hpp"
 #include "dataBlock.hpp"
@@ -409,3 +411,4 @@ void ConstrainedTransport<Phys>::CalcContactAverage() {
 #endif // MHD
   idfx::popRegion();
 }
+#endif // FLUID_CONSTRAINEDTRANSPORT_CALCCORNEREMF_HPP_

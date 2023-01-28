@@ -47,6 +47,7 @@ class Fargo {
 
   template <typename Phys>
   void StoreToScratch(Fluid<Phys>*);
+
  private:
   friend Hydro;
   DataBlock *data;
@@ -515,10 +516,12 @@ void Fargo::ShiftFluid(const real t, const real dt, Fluid<Phys>* hydro) {
             } else {
               som1 = sbeg + modPositive(so-1-sbeg,n);
             }
-            ek(k,s,i) = FargoFlux(scrhVs, BX1s, k, j, i, som1, n, sbeg, eps, haveDomainDecomposition);
+            ek(k,s,i) = FargoFlux(scrhVs, BX1s, k, j, i, som1,
+                                  n, sbeg, eps, haveDomainDecomposition);
 
           } else {
-            ek(k,s,i) = FargoFlux(scrhVs, BX1s, k, j, i, so, n, sbeg, eps, haveDomainDecomposition);
+            ek(k,s,i) = FargoFlux(scrhVs, BX1s, k, j, i, so,
+                                  n, sbeg, eps, haveDomainDecomposition);
           }
           if(m>0) {
             for(int ss = s-m ; ss < s ; ss++) {
@@ -549,10 +552,12 @@ void Fargo::ShiftFluid(const real t, const real dt, Fluid<Phys>* hydro) {
             } else {
               som1 = sbeg + modPositive(so-1-sbeg,n);
             }
-            ek(s,j,i) = FargoFlux(scrhVs, BX1s, k, j, i, som1, n, sbeg, eps, haveDomainDecomposition);
+            ek(s,j,i) = FargoFlux(scrhVs, BX1s, k, j, i, som1,
+                                  n, sbeg, eps, haveDomainDecomposition);
 
           } else {
-            ek(s,j,i) = FargoFlux(scrhVs, BX1s, k, j, i, so, n, sbeg, eps, haveDomainDecomposition);
+            ek(s,j,i) = FargoFlux(scrhVs, BX1s, k, j, i, so,
+                                  n, sbeg, eps, haveDomainDecomposition);
           }
           if(m>0) {
             for(int ss = s-m ; ss < s ; ss++) {
@@ -641,9 +646,11 @@ void Fargo::ShiftFluid(const real t, const real dt, Fluid<Phys>* hydro) {
             } else {
               som1 = sbeg + modPositive(so-1-sbeg,n);
             }
-            ei(k,s,i) = FargoFlux(scrhVs, BX3s, k, j, i, som1, n, sbeg, eps, haveDomainDecomposition);
+            ei(k,s,i) = FargoFlux(scrhVs, BX3s, k, j, i, som1,
+                                  n, sbeg, eps, haveDomainDecomposition);
           } else {
-            ei(k,s,i) = FargoFlux(scrhVs, BX3s, k, j, i, so, n, sbeg, eps, haveDomainDecomposition);
+            ei(k,s,i) = FargoFlux(scrhVs, BX3s, k, j, i, so,
+                                  n, sbeg, eps, haveDomainDecomposition);
           }
           if(m>0) {
             for(int ss = s-m ; ss < s ; ss++) {
@@ -674,9 +681,11 @@ void Fargo::ShiftFluid(const real t, const real dt, Fluid<Phys>* hydro) {
           } else {
             som1 = sbeg + modPositive(so-1-sbeg,n);
           }
-          ei(s,j,i) = FargoFlux(scrhVs, BX2s, k, j, i, som1, n, sbeg, eps, haveDomainDecomposition);
+          ei(s,j,i) = FargoFlux(scrhVs, BX2s, k, j, i, som1,
+                                n, sbeg, eps, haveDomainDecomposition);
         } else {
-          ei(s,j,i) = FargoFlux(scrhVs, BX2s, k, j, i, so, n, sbeg, eps, haveDomainDecomposition);
+          ei(s,j,i) = FargoFlux(scrhVs, BX2s, k, j, i, so,
+                                n, sbeg, eps, haveDomainDecomposition);
         }
         if(m>0) {
           for(int ss = s-m ; ss < s ; ss++) {
@@ -776,8 +785,6 @@ void Fargo::ShiftFluid(const real t, const real dt, Fluid<Phys>* hydro) {
         });
 
     #endif // EVOLVE_VECTOR_POTENTIAL
-
-
   }
 #endif // GEOMETRY==CYLINDRICAL
 }

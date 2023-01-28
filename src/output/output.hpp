@@ -38,7 +38,6 @@ class Output {
   void EnrollUserDefVariables(UserDefVariablesFunc);
 
  private:
-
   bool forceNoWrite = false;    //< explicitely disable all writes
   bool vtkEnabled = false;
   real vtkPeriod = 0.0;   // periodicity of vtk outputs

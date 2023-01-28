@@ -81,8 +81,6 @@ class Axis {
   ConstrainedTransport<Phys> *emf;
 };
 
-
-#include <vector>
 #include "fluid.hpp"
 #include "dataBlock.hpp"
 
@@ -750,7 +748,7 @@ void Axis<Phys>::InitMPI() {
   // This is required since we skip some of the variables in Vc to limit the amount of data
   // being exchanged
   if constexpr(Phys::mhd) {
-    this->mapNVars = NVAR - DIMENSIONS; // We will not send magnetic field components which are in Vs
+    this->mapNVars = NVAR - DIMENSIONS; // We don't send magnetic field components (already in Vs)
   } else {
     this->mapNVars = NVAR;
   }

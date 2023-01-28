@@ -5,8 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef FLUID_CONSTRAINED_TRANSPORT_HPP_
-#define  FLUID_CONSTRAINED_TRANSPORT_HPP_
+#ifndef FLUID_CONSTRAINEDTRANSPORT_CONSTRAINEDTRANSPORT_HPP_
+#define FLUID_CONSTRAINEDTRANSPORT_CONSTRAINEDTRANSPORT_HPP_
 
 #include "idefix.hpp"
 #include "input.hpp"
@@ -147,7 +147,6 @@ class ConstrainedTransport {
 #include <string>
 #include "fluid.hpp"
 #include "dataBlock.hpp"
-#include "input.hpp"
 
 // Init the emf from a datablock pointer
 template<typename Phys>
@@ -253,7 +252,8 @@ ConstrainedTransport<Phys>::ConstrainedTransport(Input &input, Fluid<Phys> *hydr
                                 data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);  )
   }
   if(averaging==uct_hlld) {
-    if(hydro->rSolver->GetSolver() == RiemannSolver<Phys>::Solver::HLL_MHD || hydro->rSolver->GetSolver() == RiemannSolver<Phys>::Solver::TVDLF_MHD) {
+    if(   hydro->rSolver->GetSolver() == RiemannSolver<Phys>::Solver::HLL_MHD
+       || hydro->rSolver->GetSolver() == RiemannSolver<Phys>::Solver::TVDLF_MHD) {
       IDEFIX_ERROR("HLLD EMF reconstruction is only compatible with HLLD or ROE Riemann solvers");
     }
   }
@@ -452,4 +452,4 @@ void ConstrainedTransport<Phys>::ShowConfig() {
 #include "evolveMagField.hpp"
 #include "evolveVectorPotential.hpp"
 
-#endif // FLUID_ELECTROMOTIVEFORCE_ELECTROMOTIVEFORCE_HPP_
+#endif // FLUID_CONSTRAINEDTRANSPORT_CONSTRAINEDTRANSPORT_HPP_

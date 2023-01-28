@@ -125,4 +125,4 @@ void RiemannSolver<Phys>::HllHD(IdefixArray4D<real> &Flux) {
   idfx::popRegion();
 }
 
-#endif // FFLUID_RIEMANNSOLVER_HDSOLVERS_HLLHD_HPP_
+#endif // FLUID_RIEMANNSOLVER_HDSOLVERS_HLLHD_HPP_

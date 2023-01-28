@@ -10,6 +10,8 @@
 
 #include <string>
 #include <vector>
+#include <memory>
+
 #include "idefix.hpp"
 #include "grid.hpp"
 #include "output.hpp"
@@ -211,7 +213,6 @@ class Fluid {
 #include "rkl.hpp"
 #include "riemannSolver.hpp"
 #include "viscosity.hpp"
-#include "dump.hpp"
 
 
 template<typename Phys>
@@ -297,7 +298,7 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
       msg  << "Unknown integration type for viscosity: " << opType;
       IDEFIX_ERROR(msg);
     }
-    this->viscosity = std::unique_ptr<Viscosity>(new Viscosity(input, grid, this));
+    this->viscosity = std::make_unique<Viscosity>(input, grid, this);
   }
 
   // Check whether thermal diffusion is enabled, if so, init a thermal diffusion object
@@ -314,8 +315,7 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
       msg  << "Unknown integration type for thermal diffusion: " << opType;
       IDEFIX_ERROR(msg);
     }
-    this->thermalDiffusion = std::unique_ptr<ThermalDiffusion>
-                                      (new ThermalDiffusion(input, grid, this));
+    this->thermalDiffusion = std::make_unique<ThermalDiffusion>(input, grid, this);
   }
 
 #if MHD == YES
@@ -340,10 +340,12 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
         msg  << "Unknown integration type for resistivity: " << opType;
         IDEFIX_ERROR(msg);
       }
-      if(input.Get<std::string>(std::string(Phys::prefix),"resistivity",1).compare("constant") == 0) {
+      if(input.Get<std::string>(
+          std::string(Phys::prefix),"resistivity",1).compare("constant") == 0) {
         this->etaO = input.Get<real>(std::string(Phys::prefix),"resistivity",2);
         resistivityStatus.status = Constant;
-      } else if(input.Get<std::string>(std::string(Phys::prefix),"resistivity",1).compare("userdef") == 0) {
+      } else if(input.Get<std::string>(
+          std::string(Phys::prefix),"resistivity",1).compare("userdef") == 0) {
         resistivityStatus.status = UserDefFunction;
       } else {
         IDEFIX_ERROR("Unknown resistivity definition in idefix.ini. "
@@ -366,10 +368,12 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
         msg  << "Unknown integration type for ambipolar: " << opType;
         IDEFIX_ERROR(msg);
       }
-      if(input.Get<std::string>(std::string(Phys::prefix),"ambipolar",1).compare("constant") == 0) {
+      if(input.Get<std::string>(
+          std::string(Phys::prefix),"ambipolar",1).compare("constant") == 0) {
         this->xA = input.Get<real>(std::string(Phys::prefix),"ambipolar",2);
         ambipolarStatus.status = Constant;
-      } else if(input.Get<std::string>(std::string(Phys::prefix),"ambipolar",1).compare("userdef") == 0) {
+      } else if(input.Get<std::string>(
+                  std::string(Phys::prefix),"ambipolar",1).compare("userdef") == 0) {
         ambipolarStatus.status = UserDefFunction;
       } else {
         IDEFIX_ERROR("Unknown ambipolar definition in idefix.ini. "
@@ -392,7 +396,8 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
       if(input.Get<std::string>(std::string(Phys::prefix),"hall",1).compare("constant") == 0) {
         this->xH = input.Get<real>(std::string(Phys::prefix),"hall",2);
         hallStatus.status = Constant;
-      } else if(input.Get<std::string>(std::string(Phys::prefix),"hall",1).compare("userdef") == 0) {
+      } else if(input.Get<std::string>(
+                  std::string(Phys::prefix),"hall",1).compare("userdef") == 0) {
         hallStatus.status = UserDefFunction;
       } else {
         IDEFIX_ERROR("Unknown Hall definition in idefix.ini. Can only be constant or userdef.");
@@ -424,7 +429,7 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
 
     if constexpr(Phys::mhd) {
       Vs = IdefixArray4D<real>("FLUID_Vs", DIMENSIONS,
-                  data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
+                data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
       #ifdef EVOLVE_VECTOR_POTENTIAL
         #if DIMENSIONS == 1
           IDEFIX_ERROR("EVOLVE_VECTOR_POTENTIAL is not compatible with 1D MHD");
@@ -437,7 +442,6 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
       #else // EVOLVE_VECTOR_POTENTIAL
         data->states["current"].PushArray(Vs, State::center, "FLUID_Vs");
       #endif // EVOLVE_VECTOR_POTENTIAL
-
     }
 
   // Allocate sound speed array if needed
@@ -566,24 +570,24 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
   //*********************************************
 
     // Initialise Riemann Solver
-  this->rSolver = std::unique_ptr<RiemannSolver<Phys>> (new RiemannSolver(input, this));
+  this->rSolver = std::make_unique<RiemannSolver<Phys>>(input, this);
 
   if constexpr(Phys::mhd) {
-    this->emf = std::unique_ptr<ConstrainedTransport<Phys>>(new ConstrainedTransport<Phys>(input, this));
+    this->emf = std::make_unique<ConstrainedTransport<Phys>>(input, this);
   }
 
 
   // Do we have to take care of the axis?
   if(data->haveAxis) {
-    this->myAxis = std::unique_ptr<Axis<Phys>>(new Axis<Phys>(grid, this));
+    this->myAxis = std::make_unique<Axis<Phys>>(grid, this);
     this->haveAxis = true;
   }
 
   // Initialise boundary conditions
-  boundary = std::unique_ptr<Boundary<Phys>> (new Boundary<Phys>(input, grid, this));
+  boundary = std::make_unique<Boundary<Phys>>(input, grid, this);
 
   if(haveRKLParabolicTerms) {
-    this->rkl = std::unique_ptr<RKLegendre<Phys>> (new RKLegendre<Phys>(input,this));
+    this->rkl = std::make_unique<RKLegendre<Phys>>(input,this);
   }
 
   idfx::popRegion();

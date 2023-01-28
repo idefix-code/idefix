@@ -5,6 +5,9 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#ifndef FLUID_CONVERTCONSTOPRIM_HPP_
+#define FLUID_CONVERTCONSTOPRIM_HPP_
+
 #include "fluid.hpp"
 #include "dataBlock.hpp"
 
@@ -86,3 +89,4 @@ void Fluid<Phys>::ConvertPrimToCons() {
 
   idfx::popRegion();
 }
+#endif //FLUID_CONVERTCONSTOPRIM_HPP_

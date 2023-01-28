@@ -5,6 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#ifndef FLUID_EVOLVESTAGE_HPP_
+#define FLUID_EVOLVESTAGE_HPP_
 
 #include "fluid.hpp"
 #include "riemannSolver.hpp"
@@ -73,3 +75,4 @@ void Fluid<Phys>::EvolveStage(const real t, const real dt) {
 
   idfx::popRegion();
 }
+#endif //FLUID_EVOLVESTAGE_HPP_

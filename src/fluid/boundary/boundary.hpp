@@ -963,4 +963,4 @@ inline void Boundary<Phys>::BoundaryForX3s(
 }
 
 
-#endif // FLUID_BOUNDARY_HYDROBOUNDARY_HPP_
+#endif //  FLUID_BOUNDARY_BOUNDARY_HPP_

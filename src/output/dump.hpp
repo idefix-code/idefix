@@ -8,6 +8,8 @@
 #ifndef OUTPUT_DUMP_HPP_
 #define OUTPUT_DUMP_HPP_
 #include <string>
+#include <map>
+
 #include "idefix.hpp"
 #include "input.hpp"
 #include "dataBlock.hpp"
@@ -35,27 +37,31 @@ class DumpField {
   enum ArrayLocation {Center, Face, Edge};
 
   DumpField(IdefixArray4D<real>& in, const int varnum, const ArrayLocation loc, const int dir):
-    d4Darray{in}, var{varnum}, arrayType{Device4D}, type{IdefixArray}, arrayLocation{loc}, direction{dir} {};
+    d4Darray{in}, var{varnum}, arrayType{Device4D},
+    type{IdefixArray}, arrayLocation{loc}, direction{dir} {};
 
   DumpField(IdefixHostArray4D<real>& in, const int varnum, const ArrayLocation loc, const int dir):
-    h4Darray{in}, var{varnum}, arrayType{Host4D}, type{IdefixArray}, arrayLocation{loc}, direction{dir} {};
+    h4Darray{in}, var{varnum}, arrayType{Host4D},
+    type{IdefixArray}, arrayLocation{loc}, direction{dir} {};
 
   DumpField(IdefixArray3D<real>& in, const ArrayLocation loc, const int dir):
-    d3Darray{in}, arrayType{Device3D}, type{IdefixArray}, arrayLocation{loc}, direction{dir} {};
+    d3Darray{in}, arrayType{Device3D},
+    type{IdefixArray}, arrayLocation{loc}, direction{dir} {};
 
   DumpField(IdefixHostArray3D<real>& in, const ArrayLocation loc, const int dir):
-    h3Darray{in}, arrayType{Host3D}, type{IdefixArray}, arrayLocation{loc}, direction{dir} {};
+    h3Darray{in}, arrayType{Host3D},
+    type{IdefixArray}, arrayLocation{loc}, direction{dir} {};
 
-  DumpField(int * in, const int size = 1 ):
+  explicit DumpField(int * in, const int size = 1 ):
     rawData{static_cast<void*>(in)}, rawSize{size}, type{Int} {};
 
-  DumpField(float * in, const int size = 1 ):
+  explicit DumpField(float * in, const int size = 1 ):
     rawData{static_cast<void*>(in)}, rawSize{size}, type{Single} {};
 
-  DumpField(double * in, const int size = 1 ):
+  explicit DumpField(double * in, const int size = 1 ):
     rawData{static_cast<void*>(in)}, rawSize{size}, type{Double} {};
 
-  DumpField(bool * in, const int size = 1 ):
+  explicit DumpField(bool * in, const int size = 1 ):
     rawData{static_cast<void*>(in)}, rawSize{size}, type{Bool} {};
 
 
@@ -69,14 +75,16 @@ class DumpField {
       if(arrayType==Host3D) {
         return(h3Darray);
       } else if(arrayType==Host4D) {
-        IdefixHostArray3D<real> arr3D = Kokkos::subview(h4Darray, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
+        IdefixHostArray3D<real> arr3D = Kokkos::subview(
+                                        h4Darray, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
         return(arr3D);
       } else if(arrayType==Device3D) {
         IdefixHostArray3D<real> arr3D = Kokkos::create_mirror(d3Darray);
         Kokkos::deep_copy(arr3D,d3Darray);
         return(arr3D);
       } else if(arrayType==Device4D) {
-        IdefixArray3D<real> arrDev3D = Kokkos::subview(d4Darray, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
+        IdefixArray3D<real> arrDev3D = Kokkos::subview(
+                                       d4Darray, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
         IdefixHostArray3D<real> arr3D = Kokkos::create_mirror(arrDev3D);
         Kokkos::deep_copy(arr3D,arrDev3D);
         return(arr3D);
@@ -97,12 +105,14 @@ class DumpField {
       if(arrayType==Host3D) {
         Kokkos::deep_copy(h3Darray, in);
       } else if(arrayType==Host4D) {
-        IdefixHostArray3D<real> arr3D = Kokkos::subview(h4Darray, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
+        IdefixHostArray3D<real> arr3D = Kokkos::subview(
+                                        h4Darray, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
         Kokkos::deep_copy(arr3D, in);
       } else if(arrayType==Device3D) {
         Kokkos::deep_copy(d3Darray,in);
       } else if(arrayType==Device4D) {
-        IdefixArray3D<real> arrDev3D = Kokkos::subview(d4Darray, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
+        IdefixArray3D<real> arrDev3D = Kokkos::subview(
+                                       d4Darray, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
         Kokkos::deep_copy(arrDev3D,in);
       }
     }
@@ -145,13 +155,12 @@ class DumpField {
   ArrayLocation arrayLocation;
   ArrayType arrayType;
   Type type;
-
 };
 
 class Dump {
   friend class DumpImage; // Allow dumpimag to have access to dump API
  public:
-  Dump(DataBlock *);               // Create Dump Object
+  explict Dump(DataBlock *);               // Create Dump Object
   ~Dump();
 
   // Create a Dump file from the current state of the code

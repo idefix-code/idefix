@@ -5,8 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef FLUID_SHOCKFLATTENING_HPP_
-#define FLUID_SHOCKFLATTENING_HPP_
+#ifndef FLUID_RIEMANNSOLVER_SHOCKFLATTENING_HPP_
+#define FLUID_RIEMANNSOLVER_SHOCKFLATTENING_HPP_
 
 #include "fluid.hpp"
 #include "../physics.hpp"
@@ -26,4 +26,4 @@ class ShockFlattening {
   bool isActive{false};
   real smoothing{0};
 };
-#endif //FLUID_SHOCKFLATTENING_HPP_
+#endif // FLUID_RIEMANNSOLVER_SHOCKFLATTENING_HPP_

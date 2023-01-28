@@ -4,6 +4,8 @@
 // and other code contributors
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
+#ifndef FLUID_CALCCURRENT_HPP_
+#define FLUID_CALCCURRENT_HPP_
 
 #include "fluid.hpp"
 #include "dataBlock.hpp"
@@ -161,3 +163,4 @@ void Fluid<Phys>::CalcCurrent() {
 
   idfx::popRegion();
 }
+#endif //FLUID_CALCCURRENT_HPP_

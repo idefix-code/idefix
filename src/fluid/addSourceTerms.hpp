@@ -5,6 +5,9 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#ifndef FLUID_ADDSOURCETERMS_HPP_
+#define FLUID_ADDSOURCETERMS_HPP_
+
 #include "fluid.hpp"
 #include "dataBlock.hpp"
 #include "fargo.hpp"
@@ -190,3 +193,4 @@ void Fluid<Phys>::AddSourceTerms(real t, real dt) {
 
   idfx::popRegion();
 }
+#endif //FLUID_ADDSOURCETERMS_HPP_

@@ -8,6 +8,8 @@
 #ifndef FLUID_VISCOSITY_HPP_
 #define FLUID_VISCOSITY_HPP_
 
+#include <string>
+
 #include "idefix.hpp"
 #include "input.hpp"
 #include "grid.hpp"
@@ -25,10 +27,8 @@ using ViscousDiffusivityFunc = void (*) (DataBlock &, const real t,
 class Viscosity {
  public:
   template <typename Phys>
-  Viscosity(Input &, Grid &, Fluid<Phys> *); ;  // constructor
-
+  Viscosity(Input &, Grid &, Fluid<Phys> *);
   void ShowConfig();                    // print configuration
-
   void AddViscousFlux(int, const real, const IdefixArray4D<real> &);
 
   // Enroll user-defined viscous diffusivity
@@ -66,7 +66,6 @@ Viscosity::Viscosity(Input &input, Grid &grid, Fluid<Phys> *hydroin):
                       Vc{hydroin->Vc},
                       dMax{hydroin->dMax},
                       status{hydroin->viscosityStatus} {
-
   idfx::pushRegion("Viscosity::Viscosity");
   // Save the parent hydro object
   this->data = hydroin->data;

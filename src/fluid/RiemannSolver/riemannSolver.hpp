@@ -8,12 +8,11 @@
 #ifndef FLUID_RIEMANNSOLVER_RIEMANNSOLVER_HPP_
 #define FLUID_RIEMANNSOLVER_RIEMANNSOLVER_HPP_
 
+#include <string>
+
 #include "fluid.hpp"
 #include "input.hpp"
 #include "shockFlattening.hpp"
-#include "../physics.hpp"
-using Hydro = Fluid<Physics>;
-
 
 
 template <typename Phys>
@@ -29,12 +28,11 @@ class RiemannSolver {
 
   Solver GetSolver() {
     return(mySolver);
-  };
+  }
 
   void ShowConfig();
 
- // Riemann Solvers
-
+  // Riemann Solvers
   template<const int>
     void HlldMHD(IdefixArray4D<real> &);
   template<const int>
@@ -66,7 +64,6 @@ class RiemannSolver {
 
   ShockFlattening shockFlattening;
   bool haveShockFlattening;
-
 };
 
 template <typename Phys>
@@ -77,7 +74,6 @@ RiemannSolver<Phys>::RiemannSolver(Input &input, Fluid<Phys>* hydro) : Vc{hydro-
                                       hydro{hydro},
                                       data{hydro->data}
                                       {
-
   // read Solver from input file
   std::string solverString = input.Get<std::string>(std::string(Phys::prefix),"solver",0);
 
@@ -132,7 +128,8 @@ RiemannSolver<Phys>::RiemannSolver(Input &input, Fluid<Phys>* hydro) : Vc{hydro-
   this->haveShockFlattening = input.CheckEntry(std::string(Phys::prefix),"shockFlattening")>=0;
   // Init shock flattening
   if(haveShockFlattening) {
-    this->shockFlattening = ShockFlattening(hydro,input.Get<real>(std::string(Phys::prefix),"shockFlattening",0));
+    this->shockFlattening =
+      ShockFlattening(hydro,input.Get<real>(std::string(Phys::prefix),"shockFlattening",0));
   }
 }
 
@@ -171,9 +168,7 @@ void RiemannSolver<Phys>::ShowConfig() {
   if(haveShockFlattening) {
     idfx::cout << "Fluid: Shock Flattening ENABLED." << std::endl;
   }
-
 }
-
 #include "calcFlux.hpp"
 
 #endif //FLUID_RIEMANNSOLVER_RIEMANNSOLVER_HPP_

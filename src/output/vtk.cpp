@@ -237,7 +237,6 @@ Vtk::Vtk(Input &input, DataBlock *datain) {
 
   // Register variables that are required in restart dumps
   data->dump->RegisterVariable(&vtkFileNumber, "vtkFileNumber");
-
 }
 
 

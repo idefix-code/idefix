@@ -113,17 +113,17 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
   this->states["current"] = StateContainer();
 
   // Initialize the Dump object
-  this->dump = std::unique_ptr<Dump>(new Dump(this));
+  this->dump = std::make_unique<Dump>(this);
 
   // Initialize the VTK object
-  this->vtk = std::unique_ptr<Vtk>(new Vtk(input, this));
+  this->vtk = std::make_unique<Vtk>(input, this);
 
   // Initialize the hydro object attached to this datablock
-  this->hydro = std::shared_ptr<Hydro>(new Hydro(grid, input, this));
+  this->hydro = std::make_shared<Fluid<Physics>>(grid, input, this);
 
   // Initialise Fargo if needed
   if(input.CheckBlock("Fargo")) {
-    this->fargo = std::unique_ptr<Fargo>(new Fargo(input, Physics::nvar, this));
+    this->fargo = std::make_unique<Fargo>(input, Physics::nvar, this);
     this->haveFargo = true;
   }
 

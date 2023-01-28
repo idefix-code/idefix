@@ -1,5 +1,6 @@
 #include "analysis.hpp"
 #include "idefix.hpp"
+#include "fluid.hpp"
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -8,7 +9,7 @@ Analysis::Analysis(Input &input, Grid &grid, DataBlock &data, Output &output, st
       this->d = new DataBlockHost(data);
       this->grid = &grid;
       this->filename = filename;
-      this->shear = data.hydro.sbS;
+      this->shear = data.hydro->sbS;
       this->precision = 10;
 }
 

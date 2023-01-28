@@ -12,9 +12,11 @@
 #include "idefix.hpp"
 #include "dump.hpp"
 
+class DataBlock;
+
 class DumpImage {
  public:
-  DumpImage(std::string, Output &);
+  DumpImage(std::string, DataBlock *);
 
   int np_int[3];               // number of points in each direction
   int geometry;                // geometry of the dump

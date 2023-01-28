@@ -7,6 +7,7 @@
 
 #include "dataBlock.hpp"
 #include "dataBlockHost.hpp"
+#include "fluid.hpp"
 
 // Check if current datablock has nans
 
@@ -15,7 +16,7 @@ int DataBlock::CheckNan()  {
   int nanVc=0;
 
   idfx::pushRegion("DataBlock::CheckNan");
-  IdefixArray4D<real> Vc=this->hydro.Vc;
+  IdefixArray4D<real> Vc=this->hydro->Vc;
 
   idefix_reduce("checkNanVc",
     0, NVAR,
@@ -28,7 +29,7 @@ int DataBlock::CheckNan()  {
   );
 
   #if MHD == YES
-    IdefixArray4D<real> Vs=this->hydro.Vs;
+    IdefixArray4D<real> Vs=this->hydro->Vs;
     idefix_reduce("checkNanVs",
       0, DIMENSIONS,
       beg[KDIR], end[KDIR]+KOFFSET,
@@ -68,7 +69,7 @@ int DataBlock::CheckNan()  {
               if(std::isnan(dataHost.Vc(n,k,j,i)) && nerrormax>0) {
                 nerrormax--;
                 idfx::cout << "rank " << idfx::prank << ": Nan found  in variable "
-                  << this->hydro.VcName[n] << std::endl;
+                  << this->hydro->VcName[n] << std::endl;
 
                 idfx::cout << "      global (i,j,k) = (" << i-beg[IDIR]+gbeg[IDIR]-nghost[IDIR]
                   << ", " << j-beg[JDIR]+gbeg[JDIR]-nghost[JDIR] << ", "
@@ -90,7 +91,7 @@ int DataBlock::CheckNan()  {
               if(std::isnan(dataHost.Vs(n,k,j,i)) && nerrormax>0) {
                 nerrormax--;
                 idfx::cout << "rank " << idfx::prank << ": Nan found  in variable "
-                  << this->hydro.VsName[n] << std::endl;
+                  << this->hydro->VsName[n] << std::endl;
                 idfx::cout << "      global (i,j,k) = (" << i-beg[IDIR]+gbeg[IDIR]-nghost[IDIR]
                   << ", " << j-beg[JDIR]+gbeg[JDIR]-nghost[JDIR] << ", "
                   << k-beg[KDIR]+gbeg[KDIR]-nghost[KDIR] << ")" << std::endl;

@@ -11,11 +11,12 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <memory>
+
 #include "idefix.hpp"
 #include "grid.hpp"
 #include "gridHost.hpp"
-#include "hydro.hpp"
-#include "fargo.hpp"
+#include "output.hpp"
 #include "gravity.hpp"
 #include "stateContainer.hpp"
 
@@ -30,6 +31,14 @@
 
 // forward class declaration (used by enrollment functions)
 class DataBlock;
+class Vtk;
+class Dump;
+class Fargo;
+
+// Forward class hydro declaration
+#include "physics.hpp"
+template <typename Phys> class Fluid;
+using Hydro = Fluid<Physics>;
 
 using GridCoarseningFunc = void(*) (DataBlock &);
 
@@ -94,9 +103,13 @@ class DataBlock {
                                 ///< conservative state of the datablock
                                 ///< (contains references to dedicated objects)
 
-  Hydro hydro;                  ///< The Hydro object attached to this datablock
+  std::shared_ptr<Hydro> hydro;   ///< The Hydro object attached to this datablock
 
-  void InitFromGrid(Grid &, Input &); ///< init from a Grid object
+  std::unique_ptr<Vtk> vtk;
+  std::unique_ptr<Dump> dump;
+
+  DataBlock(Grid &, Input &);     ///< init from a Grid object
+
   void MakeGeometry();                ///< Compute geometrical terms
   void DumpToFile(std::string);   ///< Dump current datablock to a file for inspection
   void Validate();                ///< error out early in case problems are found in IC
@@ -105,7 +118,9 @@ class DataBlock {
   bool rklCycle{false};           ///<  // Set to true when we're inside a RKL call
 
   void EvolveStage();             ///< Evolve this DataBlock by dt
+  void EvolveRKLStage();          ///< Evolve this DataBlock by dt for terms impacted by RKL
   void SetBoundaries();       ///< Enforce boundary conditions to this datablock
+  void DeriveVectorPotential(); ///< Compute magnetic fields from vector potential where applicable
   void Coarsen();             ///< Coarsen this datablock and its objects
   void ShowConfig();              ///< Show the datablock's configuration
   real ComputeTimestep();         ///< compute maximum timestep from current state of affairs
@@ -115,22 +130,17 @@ class DataBlock {
   void EnrollGridCoarseningLevels(GridCoarseningFunc);
                                   ///< Enroll a user function to compute coarsening levels
   void CheckCoarseningLevels();   ///< Check that coarsening levels satisfy requirements
-  DataBlock() = default;
 
   // Do we use fargo-like scheme ? (orbital advection)
   bool haveFargo{false};
-  Fargo fargo;
+  std::unique_ptr<Fargo> fargo;
 
   // Do we have Gravity ?
   bool haveGravity{false};
   Gravity gravity;
 
-
-
  private:
   void WriteVariable(FILE* , int , int *, char *, void*);
-
-  template<int dir> void LoopDir();     ///< // recursive loop on dimensions
   void ComputeGridCoarseningLevels();   ///< Call user defined function to define Coarsening levels
 };
 

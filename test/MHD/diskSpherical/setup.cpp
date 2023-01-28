@@ -11,8 +11,8 @@ real densityFloorGlob;
 
 
 void MySourceTerm(DataBlock &data, const real t, const real dtin) {
-  IdefixArray4D<real> Vc = data.hydro.Vc;
-  IdefixArray4D<real> Uc = data.hydro.Uc;
+  IdefixArray4D<real> Vc = data.hydro->Vc;
+  IdefixArray4D<real> Uc = data.hydro->Uc;
   IdefixArray1D<real> x1=data.x[IDIR];
   IdefixArray1D<real> x2=data.x[JDIR];
   real epsilon = epsilonGlob;
@@ -59,8 +59,8 @@ void FargoVelocity(DataBlock &data, IdefixArray2D<real> &Vphi) {
 
 
 void InternalBoundary(DataBlock& data, const real t) {
-  IdefixArray4D<real> Vc = data.hydro.Vc;
-  IdefixArray4D<real> Vs = data.hydro.Vs;
+  IdefixArray4D<real> Vc = data.hydro->Vc;
+  IdefixArray4D<real> Vs = data.hydro->Vs;
   IdefixArray1D<real> x1=data.x[IDIR];
   IdefixArray1D<real> x2=data.x[JDIR];
 
@@ -96,8 +96,8 @@ void InternalBoundary(DataBlock& data, const real t) {
 void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 
     if( (dir==IDIR) && (side == left)) {
-        IdefixArray4D<real> Vc = data.hydro.Vc;
-        IdefixArray4D<real> Vs = data.hydro.Vs;
+        IdefixArray4D<real> Vc = data.hydro->Vc;
+        IdefixArray4D<real> Vs = data.hydro->Vs;
         IdefixArray1D<real> x1 = data.x[IDIR];
         IdefixArray1D<real> x2 = data.x[JDIR];
 
@@ -133,8 +133,8 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
     }
 
     if( dir==JDIR) {
-        IdefixArray4D<real> Vc = data.hydro.Vc;
-        IdefixArray4D<real> Vs = data.hydro.Vs;
+        IdefixArray4D<real> Vc = data.hydro->Vc;
+        IdefixArray4D<real> Vs = data.hydro->Vs;
         int jghost;
         int jbeg,jend;
         if(side == left) {
@@ -184,8 +184,8 @@ void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
   IdefixHostArray3D<real> Er  = variables["Er"];
   IdefixHostArray3D<real> Eth = variables["Eth"];
 
-    Kokkos::deep_copy(Er,data.hydro.emf.Ex1);
-    Kokkos::deep_copy(Eth,data.hydro.emf.Ex2);
+    Kokkos::deep_copy(Er,data.hydro->emf->Ex1);
+    Kokkos::deep_copy(Eth,data.hydro->emf->Ex2);
 
 
 }
@@ -194,14 +194,14 @@ void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   // Set the function for userdefboundary
-  data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
-  data.hydro.EnrollUserSourceTerm(&MySourceTerm);
-  data.hydro.EnrollInternalBoundary(&InternalBoundary);
+  data.hydro->EnrollUserDefBoundary(&UserdefBoundary);
+  data.hydro->EnrollUserSourceTerm(&MySourceTerm);
+  data.hydro->EnrollInternalBoundary(&InternalBoundary);
   if(data.haveFargo)
-    data.fargo.EnrollVelocity(&FargoVelocity);
+    data.fargo->EnrollVelocity(&FargoVelocity);
   output.EnrollUserDefVariables(&ComputeUserVars);
 
-  gammaGlob=data.hydro.GetGamma();
+  gammaGlob=data.hydro->GetGamma();
   epsilonGlob = input.Get<real>("Setup","epsilon",0);
   densityFloorGlob = input.Get<real>("Setup","densityFloor",0);
 }

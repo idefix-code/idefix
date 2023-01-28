@@ -33,8 +33,7 @@ class TimeIntegrator {
   bool isSilent{false};   // Whether the integration should proceed silently
 
  private:
-  // The RKL object attached to this datablock
-  RKLegendre rkl;
+  // Whether we have RKL
   bool haveRKL{false};
 
   int nstages;

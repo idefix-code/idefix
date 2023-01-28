@@ -31,7 +31,7 @@
 #include "input.hpp"
 #include "grid.hpp"
 #include "gridHost.hpp"
-#include "hydro.hpp"
+#include "fluid.hpp"
 #include "dataBlock.hpp"
 #include "timeIntegrator.hpp"
 #include "setup.hpp"
@@ -88,8 +88,7 @@ int main( int argc, char* argv[] ) {
     gridHost.SyncToDevice();
 
     // instantiate required objects.
-    DataBlock data;
-    data.InitFromGrid(grid, input);
+    DataBlock data(grid, input);
     TimeIntegrator Tint(input,data);
     Output output(input, data);
     Setup mysetup(input, grid, data, output);
@@ -121,9 +120,7 @@ int main( int argc, char* argv[] ) {
       idfx::pushRegion("Setup::Initflow");
       mysetup.InitFlow(data);
       idfx::popRegion();
-      #if MHD == YES && defined(EVOLVE_VECTOR_POTENTIAL)
-        data.hydro.emf.ComputeMagFieldFromA(data.hydro.Ve, data.hydro.Vs);
-      #endif
+      data.DeriveVectorPotential();   // This does something only when evolveVectorPotential is on
       data.SetBoundaries();
       output.CheckForWrites(data);
       data.Validate();

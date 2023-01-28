@@ -11,9 +11,11 @@
 #include "vtk.hpp"
 #include "gitversion.hpp"
 #include "idefix.hpp"
+#include "dataBlock.hpp"
 #include "dataBlockHost.hpp"
 #include "gridHost.hpp"
 #include "output.hpp"
+#include "fluid.hpp"
 
 #define VTK_RECTILINEAR_GRID    14
 #define VTK_STRUCTURED_GRID     35
@@ -75,14 +77,13 @@ void Vtk::WriteHeaderNodes(IdfxFileHandler fvtk) {
 }
 
 /*init the object */
-void Vtk::Init(Input &input, DataBlock &datain) {
+Vtk::Vtk(Input &input, DataBlock *datain) {
   // Initialize the output structure
   // Create a local datablock as an image of gridin
-  DataBlockHost data(datain);
-  data.SyncFromDevice();
+  this->data = datain;
 
   // Pointer to global grid
-  GridHost grid(*datain.mygrid);
+  GridHost grid(*(datain->mygrid));
   grid.SyncFromDevice();
 
   /* Note that there are two kinds of dimensions:
@@ -91,16 +92,16 @@ void Vtk::Init(Input &input, DataBlock &datain) {
   */
 
   for (int dir=0; dir<3; dir++) {
-    this->periodicity[dir] = (datain.mygrid->lbound[dir] == periodic);
+    this->periodicity[dir] = (datain->mygrid->lbound[dir] == periodic);
   }
   // Create the coordinate array required in VTK files
   this->nx1 = grid.np_int[IDIR];
   this->nx2 = grid.np_int[JDIR];
   this->nx3 = grid.np_int[KDIR];
 
-  this->nx1loc = data.np_int[IDIR];
-  this->nx2loc = data.np_int[JDIR];
-  this->nx3loc = data.np_int[KDIR];
+  this->nx1loc = data->np_int[IDIR];
+  this->nx2loc = data->np_int[JDIR];
+  this->nx3loc = data->np_int[KDIR];
 
   // Temporary storage on host for 3D arrays
   this->vect3D = new float[nx1loc*nx2loc*nx3loc];
@@ -138,9 +139,9 @@ void Vtk::Init(Input &input, DataBlock &datain) {
   int nodesubsize[4];
 
   for(int dir = 0; dir < 3 ; dir++) {
-    nodesize[2-dir] = datain.mygrid->np_int[dir];
-    nodestart[2-dir] = datain.gbeg[dir]-datain.nghost[dir];
-    nodesubsize[2-dir] = datain.np_int[dir];
+    nodesize[2-dir] = datain->mygrid->np_int[dir];
+    nodestart[2-dir] = datain->gbeg[dir]-datain->nghost[dir];
+    nodesubsize[2-dir] = datain->np_int[dir];
   }
 
   // In the 4th dimension, we always have the 3 components
@@ -155,9 +156,9 @@ void Vtk::Init(Input &input, DataBlock &datain) {
   nodesize[1] += JOFFSET;
   nodesize[0] += KOFFSET;
 
-  if(datain.mygrid->xproc[0] == datain.mygrid->nproc[0]-1) nodesubsize[2] += IOFFSET;
-  if(datain.mygrid->xproc[1] == datain.mygrid->nproc[1]-1) nodesubsize[1] += JOFFSET;
-  if(datain.mygrid->xproc[2] == datain.mygrid->nproc[2]-1) nodesubsize[0] += KOFFSET;
+  if(datain->mygrid->xproc[0] == datain->mygrid->nproc[0]-1) nodesubsize[2] += IOFFSET;
+  if(datain->mygrid->xproc[1] == datain->mygrid->nproc[1]-1) nodesubsize[1] += JOFFSET;
+  if(datain->mygrid->xproc[2] == datain->mygrid->nproc[2]-1) nodesubsize[0] += KOFFSET;
 
   // Build an MPI view if needed
   #ifdef WITH_MPI
@@ -180,9 +181,9 @@ void Vtk::Init(Input &input, DataBlock &datain) {
     for (int32_t j = 0; j < nodesubsize[1]; j++) {
       for (int32_t i = 0; i < nodesubsize[2]; i++) {
         // BigEndian allows us to get back to little endian when needed
-        D_EXPAND( x1 = data.xl[IDIR](i + grid.nghost[IDIR] );  ,
-                  x2 = data.xl[JDIR](j + grid.nghost[JDIR]);  ,
-                  x3 = data.xl[KDIR](k + grid.nghost[KDIR]);  )
+        D_EXPAND( x1 = grid.xl[IDIR](i + data->gbeg[IDIR]);  ,
+                  x2 = grid.xl[JDIR](j + data->gbeg[JDIR]);  ,
+                  x3 = grid.xl[KDIR](k + data->gbeg[KDIR]);  )
 
   #if (GEOMETRY == CARTESIAN) || (GEOMETRY == CYLINDRICAL)
         node_coord(k,j,i,0) = BigEndian(x1);
@@ -224,19 +225,22 @@ void Vtk::Init(Input &input, DataBlock &datain) {
 
   for(int dir = 0; dir < 3 ; dir++) {
     // VTK assumes Fortran array ordering, hence arrays dimensions are filled backwards
-    start[2-dir] = datain.gbeg[dir]-grid.nghost[dir];
+    start[2-dir] = data->gbeg[dir]-grid.nghost[dir];
     size[2-dir] = grid.np_int[dir];
-    subsize[2-dir] = datain.np_int[dir];
+    subsize[2-dir] = data->np_int[dir];
   }
 
   MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start, MPI_ORDER_C,
                                          MPI_FLOAT, &this->view));
   MPI_SAFE_CALL(MPI_Type_commit(&this->view));
 #endif
+
+  // Register variables that are required in restart dumps
+  data->dump->RegisterVariable(&vtkFileNumber, "vtkFileNumber");
 }
 
 
-int Vtk::Write(DataBlock &datain, Output &output) {
+int Vtk::Write() {
   idfx::pushRegion("Vtk::Write");
 
   IdfxFileHandler fileHdl;
@@ -247,7 +251,7 @@ int Vtk::Write(DataBlock &datain, Output &output) {
   timer.reset();
 
   // Create a copy of the dataBlock on Host, and sync it.
-  DataBlockHost data(datain);
+  DataBlockHost data(*(this->data));
   data.SyncFromDevice();
 
   std::stringstream ssfileName, ssvtkFileNum;
@@ -277,52 +281,21 @@ int Vtk::Write(DataBlock &datain, Output &output) {
   fileHdl = fopen(filename.c_str(),"wb");
 #endif
 
-  WriteHeader(fileHdl, datain.t);
+  WriteHeader(fileHdl, this->data->t);
 
   // Write field one by one
-  for(int nv = 0 ; nv < NVAR ; nv++) {
+  for(auto const& [name, scalar] : vtkScalarMap) {
+    auto Vcin = scalar.GetHostField();
     for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++ ) {
       for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++ ) {
         for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
           vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc + (k-data.beg[KDIR])*nx1loc*nx2loc]
-              = BigEndian(static_cast<float>(data.Vc(nv,k,j,i)));
+              = BigEndian(static_cast<float>(Vcin(k,j,i)));
         }
       }
     }
-    WriteScalar(fileHdl, vect3D, datain.hydro.VcName[nv]);
+    WriteScalar(fileHdl, vect3D, name);
   }
-  // Write user-defined variables (when required by output)
-  if(output.userDefVariablesEnabled) {
-    // Walk the map and make an output for each key of the map
-    // (and we thank c++11 for its cute way of doing this)
-    for(auto const &variable : output.userDefVariables) {
-      for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++ ) {
-        for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++ ) {
-          for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
-            vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc + (k-data.beg[KDIR])*nx1loc*nx2loc]
-                = BigEndian(static_cast<float>(variable.second(k,j,i)));
-          }
-        }
-      }
-      WriteScalar(fileHdl, vect3D, variable.first);
-    }
-  }
-
-  // Write vector potential if we're using this
-  #ifdef EVOLVE_VECTOR_POTENTIAL
-  for(int nv = 0 ; nv <= AX3e ; nv++) {
-    for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++ ) {
-      for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++ ) {
-        for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
-          vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc + (k-data.beg[KDIR])*nx1loc*nx2loc]
-              = BigEndian(static_cast<float>(data.Ve(nv,k,j,i)));
-        }
-      }
-    }
-    WriteScalar(fileHdl, vect3D, datain.hydro.VeName[nv]);
-  }
-  #endif
-
 
 #ifdef WITH_MPI
   MPI_SAFE_CALL(MPI_File_close(&fileHdl));

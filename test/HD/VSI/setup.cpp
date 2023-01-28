@@ -26,7 +26,7 @@ void MySoundSpeed(DataBlock &data, const real t, IdefixArray3D<real> &cs) {
 void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 
     if( (dir==IDIR) && (side == left)) {
-        IdefixArray4D<real> Vc = data.hydro.Vc;
+        IdefixArray4D<real> Vc = data.hydro->Vc;
         IdefixArray1D<real> x1 = data.x[IDIR];
         IdefixArray1D<real> x2 = data.x[JDIR];
 
@@ -46,7 +46,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
     }
 
     if( dir==JDIR) {
-        IdefixArray4D<real> Vc = data.hydro.Vc;
+        IdefixArray4D<real> Vc = data.hydro->Vc;
         int jghost;
         int jbeg,jend;
         if(side == left) {
@@ -78,8 +78,8 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   // Set the function for userdefboundary
-  data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
-  data.hydro.EnrollIsoSoundSpeed(&MySoundSpeed);
+  data.hydro->EnrollUserDefBoundary(&UserdefBoundary);
+  data.hydro->EnrollIsoSoundSpeed(&MySoundSpeed);
   epsilonGlob = input.Get<real>("Setup","epsilon",0);
 }
 

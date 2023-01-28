@@ -10,8 +10,8 @@ static real shear;
 // UserStep, here only gravity (vertical and radial)
 void UserStep(DataBlock &data, const real t, const real dt) {
     Kokkos::Profiling::pushRegion("Setup::UserStep");
-    IdefixArray4D<real> Uc = data.hydro.Uc;
-    IdefixArray4D<real> Vc = data.hydro.Vc;
+    IdefixArray4D<real> Uc = data.hydro->Uc;
+    IdefixArray4D<real> Vc = data.hydro->Vc;
     IdefixArray1D<real> x = data.x[IDIR];
     IdefixArray1D<real> z = data.x[KDIR];
 
@@ -35,14 +35,14 @@ void UserStep(DataBlock &data, const real t, const real dt) {
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
-    gammaIdeal=data.hydro.GetGamma();
+    gammaIdeal=data.hydro->GetGamma();
 
     // Get rotation rate along vertical axis
     omega=input.Get<real>("Hydro","rotation",0);
     shear=input.Get<real>("Hydro","shearingBox",0);
 
     // Add our userstep to the timeintegrator
-    data.hydro.EnrollUserSourceTerm(UserStep);
+    data.hydro->EnrollUserSourceTerm(UserStep);
 }
 
 // This routine initialize the flow

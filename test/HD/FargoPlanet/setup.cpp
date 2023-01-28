@@ -27,7 +27,7 @@ void MySoundSpeed(DataBlock &data, const real t, IdefixArray3D<real> &cs) {
 }
 
 void MyViscosity(DataBlock &data, const real t, IdefixArray3D<real> &eta1, IdefixArray3D<real> &eta2) {
-  IdefixArray4D<real> Vc=data.hydro.Vc;
+  IdefixArray4D<real> Vc=data.hydro->Vc;
   IdefixArray1D<real> x1=data.x[IDIR];
   real h0 = h0Glob;
   real alpha = alphaGlob;
@@ -43,7 +43,7 @@ void MyViscosity(DataBlock &data, const real t, IdefixArray3D<real> &eta1, Idefi
 
 // User-defined boundaries
 void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
-  IdefixArray4D<real> Vc = data.hydro.Vc;
+  IdefixArray4D<real> Vc = data.hydro->Vc;
   IdefixArray1D<real> x1 = data.x[IDIR];
   IdefixArray1D<real> x3 = data.x[KDIR];
   if(dir==IDIR) {
@@ -134,12 +134,12 @@ void FargoVelocity(DataBlock &data, IdefixArray2D<real> &Vphi) {
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output)// : m_planet(0)//, Planet &planet)
 {
   // Set the function for userdefboundary
-  data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
+  data.hydro->EnrollUserDefBoundary(&UserdefBoundary);
   data.gravity.EnrollPotential(&Potential);
-  data.hydro.EnrollIsoSoundSpeed(&MySoundSpeed);
-  data.hydro.viscosity.EnrollViscousDiffusivity(&MyViscosity);
+  data.hydro->EnrollIsoSoundSpeed(&MySoundSpeed);
+  data.hydro->viscosity->EnrollViscousDiffusivity(&MyViscosity);
   if(data.haveFargo)
-    data.fargo.EnrollVelocity(&FargoVelocity);
+    data.fargo->EnrollVelocity(&FargoVelocity);
   sigma0Glob = input.Get<real>("Setup","sigma0",0);
   sigmaSlopeGlob = input.Get<real>("Setup","sigmaSlope",0);
   h0Glob = input.Get<real>("Setup","h0",0);

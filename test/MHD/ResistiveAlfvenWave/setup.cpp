@@ -6,7 +6,7 @@
 // Analyse data to produce an output
 void Analysis(DataBlock & data) {
   double etot = 0;
-  IdefixArray4D<real> Vc = data.hydro.Vc;
+  IdefixArray4D<real> Vc = data.hydro->Vc;
 
   idefix_reduce("Analysis", data.beg[KDIR],data.end[KDIR],
                 data.beg[JDIR],data.end[JDIR],

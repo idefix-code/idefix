@@ -23,7 +23,6 @@ Output::Output(Input &input, DataBlock &data) {
       vtkEnabled = true;
     }
   }
-  vtk.Init(input,data); // Always initialised in case of emergency vtk output
 
   // intialise dump outputs
   if(input.CheckEntry("Output","dmp")>0) {
@@ -33,7 +32,6 @@ Output::Output(Input &input, DataBlock &data) {
     // Backwards compatibility: negative period means no dump
     if(dumpPeriod<0.0) dumpEnabled = false;
   }
-  dump.Init(input,data);  // Always initialised since it is required on restarts
 
   // initialise analysis outputs
   if(input.CheckEntry("Output","analysis")>0) {
@@ -53,9 +51,16 @@ Output::Output(Input &input, DataBlock &data) {
                                                                   data.np_tot[KDIR],
                                                                   data.np_tot[JDIR],
                                                                   data.np_tot[IDIR]);
+      data.vtk->RegisterVariable(userDefVariables[arrayName],arrayName);
     }
     userDefVariablesEnabled = true;
   }
+
+  // Register variables that are needed in restart dumps
+  data.dump->RegisterVariable(&dumpLast, "dumpLast");
+  data.dump->RegisterVariable(&analysisLast, "analysisLast");
+  data.dump->RegisterVariable(&vtkLast, "vtkLast");
+
   idfx::popRegion();
 }
 
@@ -73,7 +78,7 @@ int Output::CheckForWrites(DataBlock &data) {
     if(data.t >= dumpLast + dumpPeriod) {
       elapsedTime -= timer.seconds();
       dumpLast += dumpPeriod;
-      dump.Write(data,*this);
+      data.dump->Write(*this);
       nfiles++;
       elapsedTime += timer.seconds();
 
@@ -103,7 +108,7 @@ int Output::CheckForWrites(DataBlock &data) {
         }
       }
       vtkLast += vtkPeriod;
-      vtk.Write(data, *this);
+      data.vtk->Write();
       nfiles++;
       elapsedTime += timer.seconds();
 
@@ -150,7 +155,8 @@ int Output::CheckForWrites(DataBlock &data) {
 void Output::RestartFromDump(DataBlock &data, int readNumber) {
   idfx::pushRegion("Output::RestartFromDump");
 
-  dump.Read(data, *this, readNumber);
+  data.dump->Read(*this, readNumber);
+  data.DeriveVectorPotential();
 
   idfx::popRegion();
 }
@@ -158,7 +164,7 @@ void Output::RestartFromDump(DataBlock &data, int readNumber) {
 void Output::ForceWriteDump(DataBlock &data) {
   idfx::pushRegion("Output::ForceWriteDump");
 
-  if(!forceNoWrite) dump.Write(data,*this);
+  if(!forceNoWrite) data.dump->Write(*this);
 
   idfx::popRegion();
 }
@@ -179,7 +185,7 @@ void Output::ForceWriteVtk(DataBlock &data) {
         }
       }
       vtkLast += vtkPeriod;
-      vtk.Write(data, *this);
+      data.vtk->Write();
   }
   idfx::popRegion();
 }

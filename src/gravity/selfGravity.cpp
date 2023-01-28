@@ -12,7 +12,7 @@
 
 #include "selfGravity.hpp"
 #include "dataBlock.hpp"
-#include "hydro.hpp"
+#include "fluid.hpp"
 #include "vector.hpp"
 #include "bicgstab.hpp"
 #include "cg.hpp"
@@ -534,7 +534,7 @@ void SelfGravity::InitSolver() {
 
   // Loading needed attributes
   IdefixArray3D<real> density = this->density;
-  IdefixArray4D<real> Vc = data->hydro.Vc;
+  IdefixArray4D<real> Vc = data->hydro->Vc;
 
   // Initialise the density field
   // todo: check bounds

@@ -12,6 +12,7 @@
 #include "timeIntegrator.hpp"
 #include "input.hpp"
 #include "stateContainer.hpp"
+#include "fluid.hpp"
 
 
 TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
@@ -65,8 +66,7 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
   }
 
   // Init the RKL scheme if it's needed
-  if(data.hydro.haveRKLParabolicTerms) {
-    rkl.Init(input,data);
+  if(data.hydro->haveRKLParabolicTerms) {
     haveRKL = true;
   }
 
@@ -146,7 +146,7 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
 
 #if MHD == YES
   // Check divB
-  real divB =  data.hydro.CheckDivB();
+  real divB =  data.hydro->CheckDivB();
   idfx::cout << std::scientific;
   idfx::cout << " | " << std::setw(col_width) << divB;
 
@@ -157,7 +157,7 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
   }
 #endif
   if(haveRKL) {
-    idfx::cout << " | " << std::setw(col_width) << rkl.stage;
+    idfx::cout << " | " << std::setw(col_width) << data.hydro->rkl->stage;
   }
   if(data.gravity.haveSelfGravityPotential) {
     if(ncycles>=cyclePeriod) {
@@ -179,7 +179,7 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
 // Compute one full cycle of the time Integrator
 void TimeIntegrator::Cycle(DataBlock &data) {
   // Do one cycle
-  IdefixArray3D<real> InvDt = data.hydro.InvDt;
+  IdefixArray3D<real> InvDt = data.hydro->InvDt;
   real newdt;
 
   idfx::pushRegion("TimeIntegrator::Cycle");
@@ -187,7 +187,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   if(ncycles%cyclePeriod==0) ShowLog(data);
 
   if(haveRKL && (ncycles%2)==1) {    // Runge-Kutta-Legendre cycle
-    rkl.Cycle();
+    data.EvolveRKLStage();
   }
 
   // save t at the begining of the cycle
@@ -208,10 +208,10 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     data.SetBoundaries();
 
     // Remove Fargo velocity so that the integrator works on the residual
-    if(data.haveFargo) data.fargo.SubstractVelocity(data.t);
+    if(data.haveFargo) data.fargo->SubstractVelocity(data.t);
 
     // Convert current state into conservative variable and save it
-    data.hydro.ConvertPrimToCons();
+    data.hydro->ConvertPrimToCons();
 
     // Store (deep copy) initial stage for multi-stage time integrators
     if(nstages>1 && stage==0) {
@@ -261,7 +261,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     }
     // Shift solution according to fargo if this is our last stage
     if(data.haveFargo && stage==nstages-1) {
-      data.fargo.ShiftSolution(t0,data.dt);
+      data.fargo->ShiftSolution(t0,data.dt);
     }
 
     // Coarsen conservative variables once they have been evolved
@@ -270,10 +270,10 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     }
 
     // Back to using Vc
-    data.hydro.ConvertConsToPrim();
+    data.hydro->ConvertConsToPrim();
 
     // Add back fargo velocity so that boundary conditions are applied on the total V
-    if(data.haveFargo) data.fargo.AddVelocity(data.t);
+    if(data.haveFargo) data.fargo->AddVelocity(data.t);
   }
   /////////////////////////////////////////////////
   // END STAGES LOOP                             //
@@ -287,7 +287,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 #endif
 
   if(haveRKL && (ncycles%2)==0) {    // Runge-Kutta-Legendre cycle
-    rkl.Cycle();
+    data.EvolveRKLStage();
   }
 
   // Coarsen the grid
@@ -299,8 +299,8 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
   if(haveRKL) {
     // update next time step
-    real tt = newdt/rkl.dt;
-    newdt *= std::fmin(ONE_F, rkl.rmax_par/(tt));
+    real tt = newdt/data.hydro->rkl->dt;
+    newdt *= std::fmin(ONE_F, data.hydro->rkl->rmax_par/(tt));
   }
 
   // Next time step
@@ -330,8 +330,6 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
   idfx::popRegion();
 }
-
-
 
 int64_t TimeIntegrator::GetNCycles() {
   return(ncycles);
@@ -383,9 +381,5 @@ void TimeIntegrator::ShowConfig() {
   }
   if(maxRuntime>0) {
     idfx::cout << "TimeIntegrator: will stop after " << maxRuntime/3600 << " hours." << std::endl;
-  }
-
-  if(haveRKL) {
-    rkl.ShowConfig();
   }
 }

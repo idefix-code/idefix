@@ -786,7 +786,8 @@ void Fargo::ShiftFluid(const real t, const real dt, Fluid<Phys>* hydro) {
 
     #endif // EVOLVE_VECTOR_POTENTIAL
   }
-#endif // GEOMETRY==CYLINDRICAL
+  #endif // GEOMETRY==CYLINDRICAL
+  idfx::popRegion();
 }
 
 #endif // DATABLOCK_FARGO_HPP_

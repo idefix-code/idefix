@@ -70,7 +70,7 @@ for rep in $rep_example_list; do
     echo "***********************************************"
     echo "Cleaning  $rep in $TMP_DIR"
     echo "***********************************************"
-   rm -rf *.vtk *.dbl *.dmp *.ini python CMakeLists.txt
+   rm -rf *.vtk *.dbl *.dmp *.ini python CMakeLists.txt CMakeCache.txt
 
 done
 

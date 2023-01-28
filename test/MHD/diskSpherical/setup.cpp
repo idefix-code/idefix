@@ -184,8 +184,8 @@ void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
   IdefixHostArray3D<real> Er  = variables["Er"];
   IdefixHostArray3D<real> Eth = variables["Eth"];
 
-    Kokkos::deep_copy(Er,data.hydro->emf.Ex1);
-    Kokkos::deep_copy(Eth,data.hydro->emf.Ex2);
+    Kokkos::deep_copy(Er,data.hydro->emf->Ex1);
+    Kokkos::deep_copy(Eth,data.hydro->emf->Ex2);
 
 
 }

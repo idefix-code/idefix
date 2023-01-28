@@ -41,6 +41,14 @@ void Fluid<Phys>::EnrollInternalBoundary(InternalBoundaryFunc myFunc) {
 }
 
 template<typename Phys>
+void Fluid<Phys>::EnrollUserSourceTerm(SrcTermFunc myFunc) {
+  this->userSourceTerm = myFunc;
+  this->haveUserSourceTerm = true;
+  this->haveSourceTerms = true;
+}
+
+
+template<typename Phys>
 void Fluid<Phys>::EnrollEmfBoundary(EmfBoundaryFunc myFunc) {
   #if MHD == NO
     IDEFIX_ERROR("This function can only be used with the MHD solver.");

@@ -295,9 +295,9 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 }
 
 void EmfBoundary(DataBlock& data, const real t) {
-    IdefixArray3D<real> Ex1 = data.hydro->emf.ex;
-    IdefixArray3D<real> Ex2 = data.hydro->emf.ey;
-    IdefixArray3D<real> Ex3 = data.hydro->emf.ez;
+    IdefixArray3D<real> Ex1 = data.hydro->emf->ex;
+    IdefixArray3D<real> Ex2 = data.hydro->emf->ey;
+    IdefixArray3D<real> Ex3 = data.hydro->emf->ez;
     if(data.lbound[IDIR] == userdef) {
 
         int ighost = data.beg[IDIR];

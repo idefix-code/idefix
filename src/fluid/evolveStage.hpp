@@ -61,7 +61,7 @@ void Fluid<Phys>::EvolveStage(const real t, const real dt) {
       if(resistivityStatus.isExplicit || ambipolarStatus.isExplicit) {
         emf->CalcNonidealEMF(t);
       }
-      //emf->EnforceEMFBoundary();
+      emf->EnforceEMFBoundary();
       #ifdef EVOLVE_VECTOR_POTENTIAL
         emf->EvolveVectorPotential(dt, Ve);
         emf->ComputeMagFieldFromA(Ve, Vs);

@@ -18,7 +18,7 @@ class Hydro;
 class DataBlock;
 
 // Whether we use athena++ procedure to regularise BX2s
-#define AXIS_BX2S_USE_ATHENA_REGULARISATION
+//#define AXIS_BX2S_USE_ATHENA_REGULARISATION
 
 class Axis {
  public:

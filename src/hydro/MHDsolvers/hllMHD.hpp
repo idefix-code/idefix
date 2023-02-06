@@ -24,17 +24,23 @@ void Hydro::HllMHD() {
   constexpr int joffset = (DIR==JDIR) ? 1 : 0;
   constexpr int koffset = (DIR==KDIR) ? 1 : 0;
 
+  int perpExtension=1;
+  if (emf.averaging == ElectroMotiveForce::uct_hll
+      || emf.averaging == ElectroMotiveForce::uct_hlld) {
+        // Need two cells in the perp direction for these schemes
+        perpExtension=2;
+  }
   // extension in perp to the direction of integration, as required by CT.
-  constexpr int iextend = (DIR==IDIR) ? 0 : 1;
+  const int iextend = (DIR==IDIR) ? 0 : perpExtension;
   #if DIMENSIONS > 1
-    constexpr int jextend = (DIR==JDIR) ? 0 : 1;
+    const int jextend = (DIR==JDIR) ? 0 : perpExtension;
   #else
-    constexpr int jextend = 0;
+    const int jextend = 0;
   #endif
   #if DIMENSIONS > 2
-    constexpr int kextend = (DIR==KDIR) ? 0 : 1;
+    const int kextend = (DIR==KDIR) ? 0 : perpExtension;
   #else
-    constexpr int kextend = 0;
+    const int kextend = 0;
   #endif
 
   IdefixArray4D<real> Vc = this->Vc;

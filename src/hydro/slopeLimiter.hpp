@@ -218,22 +218,33 @@ class SlopeLimiter {
           real dvp = Vc(nv,k,j,i)-Vc(nv,k-koffset,j-joffset,i-ioffset);
 
           // Limo3 limiter
-          real dv = dvp * LimO3Lim(dvp, dvm, dx(index-1));
+          real dv;
+          if(shockFlattening) {
+            if(flags(k-koffset,j-joffset,i-ioffset) == FlagShock::Shock) {
+              // Force slope limiter to minmod
+              dv = MinModLim(dvp,dvm);
+            } else {
+              dv = dvp * LimO3Lim(dvp, dvm, dx(index-1));
+            }
+          } else { // No shock flattening
+              dv = dvp * LimO3Lim(dvp, dvm, dx(index-1));
+          }
+
           vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + HALF_F*dv;
 
           // Check positivity
           if(nv==RHO) {
-            // If face element is negative, revert to vanleer
+            // If face element is negative, revert to minmod
             if(vL[nv] <= 0.0) {
-              dv = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
+              dv = MinModLim(dvp,dvm);
               vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + HALF_F*dv;
             }
           }
           #if HAVE_ENERGY
             if(nv==PRS) {
-              // If face element is negative, revert to vanleer
+              // If face element is negative, revert to minmod
               if(vL[nv] <= 0.0) {
-                dv = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
+                dv = MinModLim(dvp,dvm);
                 vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + HALF_F*dv;
               }
             }
@@ -243,14 +254,24 @@ class SlopeLimiter {
           dvp = Vc(nv,k+koffset,j+joffset,i+ioffset) - Vc(nv,k,j,i);
 
           // Limo3 limiter
-          dv = dvm * LimO3Lim(dvm, dvp, dx(index));
+          if(shockFlattening) {
+            if(flags(k,j,i) == FlagShock::Shock) {
+              // Force slope limiter to minmod
+              dv = MinModLim(dvp,dvm);
+            } else {
+              dv = dvm * LimO3Lim(dvm, dvp, dx(index));
+            }
+          } else { // No shock flattening
+            dv = dvm * LimO3Lim(dvm, dvp, dx(index));
+          }
+
           vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
 
           // Check positivity
           if(nv==RHO) {
             // If face element is negative, revert to vanleer
             if(vR[nv] <= 0.0) {
-              dv = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
+              dv = MinModLim(dvp,dvm);
               vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
             }
           }
@@ -258,7 +279,7 @@ class SlopeLimiter {
             if(nv==PRS) {
               // If face element is negative, revert to vanleer
               if(vR[nv] <= 0.0) {
-                dv = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
+                dv = MinModLim(dvp,dvm);
                 vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
               }
             }

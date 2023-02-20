@@ -84,6 +84,9 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
 
   Kokkos::deep_copy(dV,data->dV);
 
+  this->haveplanetarySystem = data->haveplanetarySystem;
+  this->planetarySystem = data->planetarySystem;
+
   idfx::popRegion();
 }
 
@@ -117,6 +120,10 @@ void DataBlockHost::SyncToDevice() {
     }
   }
 
+  if(haveplanetarySystem) {
+    data->planetarySystem = this->planetarySystem;
+  }
+
   idfx::popRegion();
 }
 
@@ -145,6 +152,10 @@ void DataBlockHost::SyncFromDevice() {
         Kokkos::deep_copy(coarseningLevel[dir], data->coarseningLevel[dir]);
       }
     }
+  }
+
+  if(haveplanetarySystem) {
+    this->planetarySystem = data->planetarySystem;
   }
 
   idfx::popRegion();

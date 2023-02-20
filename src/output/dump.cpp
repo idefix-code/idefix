@@ -5,6 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include <vector>
 #include "dump.hpp"
 #include "gitversion.hpp"
 #include "dataBlockHost.hpp"
@@ -460,6 +461,18 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
   int ndim;
   IdfxFileHandler fileHdl;
 
+  int count_p{0};
+
+  std::vector<double> x_p (count_p);
+  std::vector<double> y_p (count_p);
+  std::vector<double> z_p (count_p);
+
+  std::vector<double> vx_p (count_p);
+  std::vector<double> vy_p (count_p);
+  std::vector<double> vz_p (count_p);
+
+  std::vector<double> q_p (count_p);
+
   idfx::pushRegion("Dump::Read");
 
   idfx::cout << "Dump: Reading restart file n " << readNumber << "..." << std::flush;
@@ -649,6 +662,28 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
       ReadSerial(fileHdl, ndim, nxglob, type, &this->geometry);
     } else if(fieldName.compare("periodicity")==0) {
       ReadSerial(fileHdl, ndim, nxglob, type, &this->periodicity);
+    } else if(fieldName.compare(0,3,"x_p") == 0) {
+      x_p.push_back(0.0);
+      ReadSerial(fileHdl, ndim, nxglob, type, &x_p[count_p]);
+    } else if(fieldName.compare(0,3,"y_p") == 0) {
+      y_p.push_back(0.0);
+      ReadSerial(fileHdl, ndim, nxglob, type, &y_p[count_p]);
+    } else if(fieldName.compare(0,3,"z_p") == 0) {
+      z_p.push_back(0.0);
+      ReadSerial(fileHdl, ndim, nxglob, type, &z_p[count_p]);
+    } else if(fieldName.compare(0,4,"vx_p") == 0) {
+      vx_p.push_back(0.0);
+      ReadSerial(fileHdl, ndim, nxglob, type, &vx_p[count_p]);
+    } else if(fieldName.compare(0,4,"vy_p") == 0) {
+      vy_p.push_back(0.0);
+      ReadSerial(fileHdl, ndim, nxglob, type, &vy_p[count_p]);
+    } else if(fieldName.compare(0,4,"vz_p") == 0) {
+      vz_p.push_back(0.0);
+      ReadSerial(fileHdl, ndim, nxglob, type, &vz_p[count_p]);
+    } else if(fieldName.compare(0,3,"q_p") == 0) {
+      q_p.push_back(0.0);
+      ReadSerial(fileHdl, ndim, nxglob, type, &q_p[count_p]);
+      count_p+=1;
     } else if(fieldName.compare("centralMass")==0) {
       ReadSerial(fileHdl, ndim, nxglob, type, &data.gravity.centralMass);
     } else {
@@ -662,6 +697,24 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
   #else
   fclose(fileHdl);
   #endif
+
+  idfx::cout << std::endl << count_p << " planets read at restart." << std::endl;
+  for(int ip=0; ip < count_p ; ip++) {
+    dataHost.planetarySystem.planet[ip].setMp(q_p[ip]);
+    dataHost.planetarySystem.planet[ip].setXp(x_p[ip]);
+    dataHost.planetarySystem.planet[ip].setYp(y_p[ip]);
+    dataHost.planetarySystem.planet[ip].setZp(z_p[ip]);
+    dataHost.planetarySystem.planet[ip].setVxp(vx_p[ip]);
+    dataHost.planetarySystem.planet[ip].setVyp(vy_p[ip]);
+    dataHost.planetarySystem.planet[ip].setVzp(vz_p[ip]);
+  }
+
+  if (count_p!=data.planetarySystem.nbp) {
+    // IDEFIX_ERROR("You added "+std::to_string(data.planetarySystem.nbp-count_p)+
+    //   " planet(s) not in the restart dump.");
+    idfx::cout << "You added "+std::to_string(data.planetarySystem.nbp-count_p)+
+     " planet(s) not in the restart dump." << std::endl;
+  }
 
   // Send to device
   dataHost.SyncToDevice();
@@ -872,6 +925,52 @@ int Dump::Write(DataBlock &data, Output& output) {
   nx[0] = 3;
   std::snprintf(fieldName,NAMESIZE, "periodicity");
   WriteSerial(fileHdl, 1, nx, IntegerType, fieldName, &this->periodicity);
+
+//  idfx::cout << "nbp : " << data.planetarySystem.nbp << std::endl;
+  std::vector<double> x_p (data.planetarySystem.nbp);
+  std::vector<double> y_p (data.planetarySystem.nbp);
+  std::vector<double> z_p (data.planetarySystem.nbp);
+
+  std::vector<double> vx_p (data.planetarySystem.nbp);
+  std::vector<double> vy_p (data.planetarySystem.nbp);
+  std::vector<double> vz_p (data.planetarySystem.nbp);
+
+  std::vector<double> q_p (data.planetarySystem.nbp);
+
+  if(data.planetarySystem.nbp>0) {
+    for(int ip=0; ip < data.planetarySystem.nbp ; ip++) {
+      x_p[ip] = data.planetarySystem.planet[ip].getXp();
+      y_p[ip] = data.planetarySystem.planet[ip].getYp();
+      z_p[ip] = data.planetarySystem.planet[ip].getZp();
+      vx_p[ip] = data.planetarySystem.planet[ip].getVxp();
+      vy_p[ip] = data.planetarySystem.planet[ip].getVyp();
+      vz_p[ip] = data.planetarySystem.planet[ip].getVzp();
+      q_p[ip] = data.planetarySystem.planet[ip].getMp();
+    }
+
+    for(int ip=0; ip < data.planetarySystem.nbp ; ip++) {
+      // Write planet's orbital properties
+      // POSITION
+      nx[0] = 1;
+      std::snprintf(fieldName,NAMESIZE, "x_p%d",ip);
+      WriteSerial(fileHdl, 1, nx, DoubleType, fieldName, &x_p[ip]);
+      std::snprintf(fieldName,NAMESIZE, "y_p%d",ip);
+      WriteSerial(fileHdl, 1, nx, DoubleType, fieldName, &y_p[ip]);
+      std::snprintf(fieldName,NAMESIZE, "z_p%d",ip);
+      WriteSerial(fileHdl, 1, nx, DoubleType, fieldName, &z_p[ip]);
+
+      // VELOCITY
+      std::snprintf(fieldName,NAMESIZE, "vx_p%d",ip);
+      WriteSerial(fileHdl, 1, nx, DoubleType, fieldName, &vx_p[ip]);
+      std::snprintf(fieldName,NAMESIZE, "vy_p%d",ip);
+      WriteSerial(fileHdl, 1, nx, DoubleType, fieldName, &vy_p[ip]);
+      std::snprintf(fieldName,NAMESIZE, "vz_p%d",ip);
+      WriteSerial(fileHdl, 1, nx, DoubleType, fieldName, &vz_p[ip]);
+
+      std::snprintf(fieldName,NAMESIZE, "q_p%d",ip);
+      WriteSerial(fileHdl, 1, nx, DoubleType, fieldName, &q_p[ip]);
+    }
+  }
 
   // Write end of file
   scrch[0] = 0.0;

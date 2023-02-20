@@ -67,6 +67,7 @@ class Gravity {
 
 
  private:
+  friend class PlanetarySystem;
   bool haveInitialisedPotential{false};     ///< whether a potential has already been initialised
   bool haveInitialisedBodyForce{false};     ///< whether a body force has already been initialised
   bool haveInitialisedSelfGravity{false};   ///< whether self-gravity has already been initialised

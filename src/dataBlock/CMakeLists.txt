@@ -1,3 +1,5 @@
+add_subdirectory(planetarySystem)
+
 target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/coarsen.cpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/dataBlock.cpp

@@ -55,6 +55,13 @@ SelfGravity tests:
     - cd test
     - ./checks_selfgravity.sh $TEST_OPTIONS
 
+Planet tests:
+  stage: advanced_checks
+  image: lesurg/idefix:latest
+  script:
+    - cd test
+    - ./checks_planet.sh $TEST_OPTIONS
+
 HighOrder tests:
   stage: advanced_checks
   image: lesurg/idefix:latest

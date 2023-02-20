@@ -15,6 +15,7 @@
 #include "grid.hpp"
 #include "gridHost.hpp"
 #include "hydro.hpp"
+#include "planetarySystem.hpp"
 #include "fargo.hpp"
 #include "gravity.hpp"
 #include "stateContainer.hpp"
@@ -101,6 +102,11 @@ class DataBlock {
   void DumpToFile(std::string);   ///< Dump current datablock to a file for inspection
   void Validate();                ///< error out early in case problems are found in IC
   int CheckNan();                 ///< Return the number of cells which have Nans
+
+  // The Planetary system
+  bool haveplanetarySystem{false};
+  PlanetarySystem planetarySystem;
+
 
   bool rklCycle{false};           ///<  // Set to true when we're inside a RKL call
 

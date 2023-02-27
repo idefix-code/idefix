@@ -20,66 +20,114 @@ lint:
     - pre-commit install
     - pre-commit run --all-files
 
-HD tests:
+Shocks Hydro:
   stage: base_checks
   image: lesurg/idefix:latest
   script:
-    - cd test
-    - ./checks_hydro.sh $TEST_OPTIONS
+    - export IDEFIX_DIR=${PWD}
+    - cd $IDEFIX_DIR/test/HD/sod
+    - ./testme.py -all $TESTME_OPTIONS
+    - cd $IDEFIX_DIR/test/HD/sod-iso
+    - ./testme.py -all $TESTME_OPTIONS
+    - cd $IDEFIX_DIR/test/HD/MachReflection
+    - ./testme.py -all $TESTME_OPTIONS
 
-MHD tests:
+Parabolic Hydro:
   stage: base_checks
   image: lesurg/idefix:latest
   script:
-    - cd test
-    - ./checks_mhd.sh $TEST_OPTIONS
+    - export IDEFIX_DIR=${PWD}
+    - cd $IDEFIX_DIR/test/HD/ViscousFlowPastCylinder
+    - ./testme.py -all $TESTME_OPTIONS
+    - cd $IDEFIX_DIR/test/HD/ViscousDisk
+    - ./testme.py -all $TESTME_OPTIONS
+    - cd $IDEFIX_DIR/test/HD/thermalDiffusion
+    - ./testme.py -all $TESTME_OPTIONS
 
-MPI tests:
+Shocks MHD:
   stage: base_checks
   image: lesurg/idefix:latest
   script:
-    - cd test
-    - ./checks_mpi.sh $TEST_OPTIONS
+    - export IDEFIX_DIR=${PWD}
+    - cd $IDEFIX_DIR/test/MHD/sod
+    - ./testme.py -all $TESTME_OPTIONS
+    - cd $IDEFIX_DIR/test/MHD/sod-iso
+    - ./testme.py -all $TESTME_OPTIONS
+    - cd $IDEFIX_DIR/test/MHD/OrszagTang
+    - ./testme.py -all $TESTME_OPTIONS
+    - cd $IDEFIX_DIR/test/MHD/OrszagTang3D
+    - ./testme.py -all $TESTME_OPTIONS
 
-Vector potential tests:
-  stage: base_checks
-  image: lesurg/idefix:latest
-  script:
-    - cd test
-    - ./checks_vector_potential.sh $TEST_OPTIONS
+Parabolic MHD:
+    stage: base_checks
+    image: lesurg/idefix:latest
+    script:
+      - export IDEFIX_DIR=${PWD}
+      - cd $IDEFIX_DIR/test/MHD/AmbipolarCshock
+      - ./testme.py -all $TESTME_OPTIONS
+      - cd $IDEFIX_DIR/test/MHD/AmbipolarCshock3D
+      - ./testme.py -all $TESTME_OPTIONS
+      - cd $IDEFIX_DIR/test/MHD/ResistiveAlfvenWave
+      - ./testme.py -all $TESTME_OPTIONS
+      - cd $IDEFIX_DIR/test/MHD/HallWhistler
+      - ./testme.py -all $TESTME_OPTIONS
 
-SelfGravity tests:
-  stage: base_checks
-  image: lesurg/idefix:latest
-  script:
-    - cd test
-    - ./checks_selfgravity.sh $TEST_OPTIONS
-
-Planet tests:
+Fargo:
   stage: advanced_checks
   image: lesurg/idefix:latest
   script:
-    - cd test
-    - ./checks_planet.sh $TEST_OPTIONS
+    - export IDEFIX_DIR=${PWD}
+    - cd $IDEFIX_DIR/test/HD/FargoPlanet
+    - ./testme.py -all $TESTME_OPTIONS
+    - cd $IDEFIX_DIR/test/MHD/FargoMHDSpherical
+    - ./testme.py -all $TESTME_OPTIONS
 
-HighOrder tests:
+ShearingBox:
   stage: advanced_checks
   image: lesurg/idefix:latest
   script:
-    - cd test
-    - ./checks_highorder.sh $TEST_OPTIONS
+    - export IDEFIX_DIR=${PWD}
+    - cd $IDEFIX_DIR/test/HD/ShearingBox
+    - ./testme.py -all $TESTME_OPTIONS
+    - cd $IDEFIX_DIR/test/HD/ShearingBox
+    - ./testme.py -all $TESTME_OPTIONS
 
-SinglePrecision tests:
+SelfGravity:
   stage: advanced_checks
   image: lesurg/idefix:latest
   script:
-    - cd test
-    - ./checks_singleprecision.sh $TEST_OPTIONS
+    - export IDEFIX_DIR=${PWD}
+    - cd $IDEFIX_DIR/test/SelfGravity/JeansInstability
+    - ./testme.py -all $TESTME_OPTIONS
+    - cd $IDEFIX_DIR/test/SelfGravity/RandomSphere
+    - ./testme.py -all $TESTME_OPTIONS
+    - cd $IDEFIX_DIR/test/SelfGravity/RandomSphereCartesian
+    - ./testme.py -all $TESTME_OPTIONS
+    - cd $IDEFIX_DIR/test/SelfGravity/UniformCollapse
+    - ./testme.py -all $TESTME_OPTIONS
+
+
+Planet:
+  stage: advanced_checks
+  image: lesurg/idefix:latest
+  script:
+    - export IDEFIX_DIR=${PWD}
+    - cd $IDEFIX_DIR/test/Planet/Planet3Body
+    - ./testme.py -all $TESTME_OPTIONS
+    - cd $IDEFIX_DIR/test/Planet/PlanetMigration2D
+    - ./testme.py -all $TESTME_OPTIONS
+    - cd $IDEFIX_DIR/test/Planet/PlanetPlanetRK42D
+    - ./testme.py -all $TESTME_OPTIONS
+    - cd $IDEFIX_DIR/test/Planet/PlanetSpiral2D
+    - ./testme.py -all $TESTME_OPTIONS
+    - cd $IDEFIX_DIR/test/Planet/PlanetTorque3D
+    - ./testme.py -all $TESTME_OPTIONS
 
 Examples tests:
   stage: advanced_checks
   image: lesurg/idefix:latest
   script:
+    - export IDEFIX_DIR=${PWD}
     - cd test
     - ./checks_examples.sh $TEST_OPTIONS
 
@@ -87,8 +135,11 @@ Utils tests:
   stage: advanced_checks
   image: lesurg/idefix:latest
   script:
-    - cd test
-    - ./checks_utils.sh $TEST_OPTIONS
+    - export IDEFIX_DIR=${PWD}
+    - cd $IDEFIX_DIR/test/utils/lookupTable
+    - ./testme.py -all $TESTME_OPTIONS
+    - cd $IDEFIX_DIR/test/utils/dumpImage
+    - ./testme.py -all $TESTME_OPTIONS
 
 pages:
   image: lesurg/idefix-documentation:latest

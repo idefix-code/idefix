@@ -203,6 +203,13 @@ void Setup::InitFlow(DataBlock &data) {
     // Create a host copy
     DataBlockHost d(data);
     real x,y,z;
+    IdefixHostArray4D<real> Ve;
+
+    #ifndef EVOLVE_VECTOR_POTENTIAL
+    Ve = IdefixHostArray4D<real>("Potential vector",3, d.np_tot[KDIR]+1, d.np_tot[JDIR]+1, d.np_tot[IDIR]+1);
+    #else
+    Ve = d.Ve;
+    #endif
 
     real B0=1.0/sqrt(4.0*M_PI);
 
@@ -218,24 +225,23 @@ void Setup::InitFlow(DataBlock &data) {
                 d.Vc(VX1,k,j,i) = -sin(2.0*M_PI*y);
                 d.Vc(VX2,k,j,i) = sin(2.0*M_PI*x)+cos(2.0*M_PI*z);
                 d.Vc(VX3,k,j,i) = cos(2.0*M_PI*x);
-                #ifdef EVOLVE_VECTOR_POTENTIAL
-                  real xl=d.xl[IDIR](i);
-                  real yl=d.xl[JDIR](j);
-                  real zl=d.xl[KDIR](k);
-                  d.Ve(AX1e,k,j,i) = B0/(2.0*M_PI)*(cos(2.0*M_PI*yl));
-                  d.Ve(AX2e,k,j,i) = B0/(2.0*M_PI)*sin(2.0*M_PI*xl);
-                  d.Ve(AX3e,k,j,i) = B0/(2.0*M_PI)*(
-                                      cos(2.0*M_PI*yl) + cos(4.0*M_PI*xl)/2.0);
-                #else
-                  d.Vs(BX1s,k,j,i) = -B0*sin(2.0*M_PI*y);
-                  d.Vs(BX2s,k,j,i) = B0*sin(4.0*M_PI*x);
-                  d.Vs(BX3s,k,j,i) = B0*(cos(2.0*M_PI*x)+sin(2.0*M_PI*y));
-                #endif
+
+                real xl=d.xl[IDIR](i);
+                real yl=d.xl[JDIR](j);
+                real zl=d.xl[KDIR](k);
+                Ve(IDIR,k,j,i) = B0/(2.0*M_PI)*(cos(2.0*M_PI*yl));
+                Ve(JDIR,k,j,i) = B0/(2.0*M_PI)*sin(2.0*M_PI*xl);
+                Ve(KDIR,k,j,i) = B0/(2.0*M_PI)*(
+                                    cos(2.0*M_PI*yl) + cos(4.0*M_PI*xl)/2.0);
+
 
             }
         }
     }
 
+    #ifndef EVOLVE_VECTOR_POTENTIAL
+    d.MakeVsFromAmag(Ve);
+    #endif
     // Send it all, if needed
     d.SyncToDevice();
 }

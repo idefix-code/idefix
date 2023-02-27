@@ -64,8 +64,8 @@ void Setup::InitFlow(DataBlock &data) {
                 // Flow past a cylinder
 
                 d.Vc(RHO,k,j,i) = ONE_F;
-                d.Vc(VX1,k,j,i) = COS(d.x[JDIR](j))+0.02*(idfx::randm()-0.5);
-                d.Vc(VX2,k,j,i) = -SIN(d.x[JDIR](j))+0.02*(idfx::randm()-0.5);
+                d.Vc(VX1,k,j,i) = COS(d.x[JDIR](j));
+                d.Vc(VX2,k,j,i) = -SIN(d.x[JDIR](j));
 
 #if HAVE_ENERGY
                 d.Vc(PRS,k,j,i) = ONE_F;

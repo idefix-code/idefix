@@ -236,9 +236,6 @@ the azimuthally averaged density
 prior to the torque evaluation (BM08 trick)
 */
 void Planet::computeForce(DataBlock& data, bool& isPlanet) {
-  [[maybe_unused]] real forceGlob[12];
-  [[maybe_unused]] real forceLoc[12];
-
   PlanetarySystem::SmoothingFunction smoothingFunction = pSys->myPlanetarySmoothing;
   real smoothingValue = pSys->smoothingValue;
   real smoothingExponent = pSys->smoothingExponent;
@@ -276,7 +273,6 @@ void Planet::computeForce(DataBlock& data, bool& isPlanet) {
     IDEFIX_ERROR("Planet::ComputeForce is not compatible with the GEOMETRY you intend to use");
   #endif
 
-  // CAREFUL! IN CYLINDRICAL COORDINATES FOR NOW
   Kokkos::parallel_reduce("ComputeForce",
     Kokkos::MDRangePolicy<Kokkos::Rank<3, Kokkos::Iterate::Right, Kokkos::Iterate::Right>>
     ({data.beg[KDIR],data.beg[JDIR],data.beg[IDIR]},
@@ -369,45 +365,49 @@ void Planet::computeForce(DataBlock& data, bool& isPlanet) {
       }
     }, this->m_force );
 
-  forceLoc[0] = this->m_force.f_inner[0];
-  forceLoc[1] = this->m_force.f_inner[1];
-  forceLoc[2] = this->m_force.f_inner[2];
-  forceLoc[3] = this->m_force.f_ex_inner[0];
-  forceLoc[4] = this->m_force.f_ex_inner[1];
-  forceLoc[5] = this->m_force.f_ex_inner[2];
-  forceLoc[6] = this->m_force.f_outer[0];
-  forceLoc[7] = this->m_force.f_outer[1];
-  forceLoc[8] = this->m_force.f_outer[2];
-  forceLoc[9] = this->m_force.f_ex_outer[0];
-  forceLoc[10] = this->m_force.f_ex_outer[1];
-  forceLoc[11] = this->m_force.f_ex_outer[2];
-
   if(pSys->halfdisk) {
     // Cancel vertical component
-    forceLoc[2] = 0;
-    forceLoc[5] = 0;
-    forceLoc[8] = 0;
-    forceLoc[11] = 0;
+    m_force.f_inner[2] = 0;
+    m_force.f_ex_inner[2] = 0;
+    m_force.f_outer[2] = 0;
+    m_force.f_ex_outer[2] = 0;
 
     // Multiply by 2 the remaining components
-    for(int i = 0 ; i < 12 ; i++) {
-      forceLoc[i] *= 2;
+    for(int i = 0 ; i < 2 ; i++) {
+      m_force.f_inner[i] *= 2;
+      m_force.f_ex_inner[i] *= 2;
+      m_force.f_outer[i] *= 2;
+      m_force.f_ex_outer[i] *= 2;
     }
   }
 
   #ifdef WITH_MPI
-  MPI_SAFE_CALL(MPI_Allreduce(&forceLoc, &forceGlob, 12, realMPI, MPI_SUM, MPI_COMM_WORLD));
-  this->m_force.f_inner[0] = forceGlob[0];
-  this->m_force.f_inner[1] = forceGlob[1];
-  this->m_force.f_inner[2] = forceGlob[2];
-  this->m_force.f_ex_inner[0] = forceGlob[3];
-  this->m_force.f_ex_inner[1] = forceGlob[4];
-  this->m_force.f_ex_inner[2] = forceGlob[5];
-  this->m_force.f_outer[0] = forceGlob[6];
-  this->m_force.f_outer[1] = forceGlob[7];
-  this->m_force.f_outer[2] = forceGlob[8];
-  this->m_force.f_ex_outer[0] = forceGlob[9];
-  this->m_force.f_ex_outer[1] = forceGlob[10];
-  this->m_force.f_ex_outer[2] = forceGlob[11];
+    real forceGlob[12];
+    real forceLoc[12];
+    forceLoc[0] = this->m_force.f_inner[0];
+    forceLoc[1] = this->m_force.f_inner[1];
+    forceLoc[2] = this->m_force.f_inner[2];
+    forceLoc[3] = this->m_force.f_ex_inner[0];
+    forceLoc[4] = this->m_force.f_ex_inner[1];
+    forceLoc[5] = this->m_force.f_ex_inner[2];
+    forceLoc[6] = this->m_force.f_outer[0];
+    forceLoc[7] = this->m_force.f_outer[1];
+    forceLoc[8] = this->m_force.f_outer[2];
+    forceLoc[9] = this->m_force.f_ex_outer[0];
+    forceLoc[10] = this->m_force.f_ex_outer[1];
+    forceLoc[11] = this->m_force.f_ex_outer[2];
+    MPI_SAFE_CALL(MPI_Allreduce(&forceLoc, &forceGlob, 12, realMPI, MPI_SUM, MPI_COMM_WORLD));
+    this->m_force.f_inner[0] = forceGlob[0];
+    this->m_force.f_inner[1] = forceGlob[1];
+    this->m_force.f_inner[2] = forceGlob[2];
+    this->m_force.f_ex_inner[0] = forceGlob[3];
+    this->m_force.f_ex_inner[1] = forceGlob[4];
+    this->m_force.f_ex_inner[2] = forceGlob[5];
+    this->m_force.f_outer[0] = forceGlob[6];
+    this->m_force.f_outer[1] = forceGlob[7];
+    this->m_force.f_outer[2] = forceGlob[8];
+    this->m_force.f_ex_outer[0] = forceGlob[9];
+    this->m_force.f_ex_outer[1] = forceGlob[10];
+    this->m_force.f_ex_outer[2] = forceGlob[11];
   #endif
 }

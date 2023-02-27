@@ -10,7 +10,6 @@ import os
 import sys
 import re
 sys.path.append(os.getenv("IDEFIX_DIR"))
-from pytools.vtk_io import readVTK
 import numpy as np
 
 def datafile(filename, *, directory=""):
@@ -51,11 +50,6 @@ tq1_tot = torque1[1]+torque1[2]
 error_t0=np.max(np.abs((tq0_tot-tq0_tot_ref)/tq0_tot_ref))
 error_t1=np.max(np.abs((tq1_tot-tq1_tot_ref)/tq1_tot_ref))
 
-V = readVTK("../data.0010.vtk", geometry="polar")
-U = readVTK("data.0010.ref.vtk", geometry="polar")
-
-# Compute the error on RHO
-error_rho = np.mean(np.abs((V.data['RHO']-U.data['RHO'])/U.data['RHO']),axis=(0,1))
 
 if plot:
     import matplotlib.pyplot as plt
@@ -76,17 +70,6 @@ if plot:
     ax2.set(xlabel="time")
     fig2.tight_layout()
     ax2.legend(frameon=False)
-    fig3, ax3 = plt.subplots(ncols=2, figsize=(12,6))
-    RR, PP = np.meshgrid(U.x, U.y%(2*np.pi)-np.pi, indexing="ij")
-    imref = ax3[0].pcolormesh(RR, PP, U.data["VX1"][:,:,0], cmap="RdBu_r")
-    ax3[0].set_title("ref")
-    cbarref = fig3.colorbar(imref, ax=ax3[0])
-    cbarref.set_label("VX1")
-    RR2, PP2 = np.meshgrid(V.x, V.y%(2*np.pi)-np.pi, indexing="ij")
-    imnew = ax3[1].pcolormesh(RR2, PP2, V.data["VX1"][:,:,0], cmap="RdBu_r")
-    ax3[1].set_title("new")
-    cbarnew = fig3.colorbar(imnew, ax=ax3[1])
-    cbarnew.set_label("VX1")
     plt.show()
 
 diff_torque0 = np.max(np.abs(tq0_tot-tq0_tot_ref))
@@ -97,9 +80,8 @@ print("Error_dist0=%e"%error_d0)
 # print("Error_torque0=%e"%error_t0)
 print("Error_dist1=%e"%error_d1)
 # print("Error_torque1=%e"%error_t1)
-print("Error_rho=%e"%error_rho)
 # if error_d0<5.0e-2 and error_t0<5.0e-2 and error_d1<5.0e-2 and error_t1<5.0e-2 and error_rho<5.0e-2:
-if error_d0<5.0e-2 and diff_torque0<1.0e-15 and error_d1<5.0e-2 and diff_torque1<1.0e-15 and error_rho<5.0e-2:
+if error_d0<5.0e-2 and diff_torque0<1.0e-15 and error_d1<5.0e-2 and diff_torque1<1.0e-15:
     print("SUCCESS!")
     sys.exit(0)
 else:

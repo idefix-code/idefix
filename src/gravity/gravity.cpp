@@ -62,7 +62,6 @@ void Gravity::Init(Input &input, DataBlock *datain) {
 
   // Allocate required arrays
   if(havePotential && (!haveInitialisedPotential)) {
-    idfx::cout << "Gravity:: Allocating gravitational potential PhiP" << std::endl;
     phiP = IdefixArray3D<real>("Gravity_PhiP",
                                 data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
     haveInitialisedPotential = true;
@@ -81,7 +80,6 @@ void Gravity::Init(Input &input, DataBlock *datain) {
 
   // Check SelfGravity object
   if(haveSelfGravityPotential) {
-    idfx::cout << "Gravity:: Init self-gravity." << std::endl;
     selfGravity.Init(input, this->data);
     haveInitialisedSelfGravity = true;
   }

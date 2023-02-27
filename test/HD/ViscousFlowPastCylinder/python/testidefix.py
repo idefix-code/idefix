@@ -15,7 +15,7 @@ import numpy as np
 V=readVTK('../data.0001.vtk', geometry='polar')
 U=readVTK('data.0001.ref.vtk', geometry='polar')
 
-# Compute the error on PRS
+# Compute the error on VX2 by comparing to PLUTO solution
 error=np.mean(np.abs(V.data['VX2']-U.data['vx2']),axis=(0,1))
 
 print("Error=%e"%error)

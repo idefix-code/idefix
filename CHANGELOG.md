@@ -15,6 +15,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fixed a bug in shock flattening that could lead to the breakup of conservation properties (!275)
 - fixed a bug in LookupTable that could lead to incorrect interpolation (!286)
 - fixed a bug that prevented to compile on HIP backend (!291)
+- fixed a bug that prevented idefix with vector potential to restart from dumps created with vector potential (!306)
+- fixed a bug that led to race condition when using GPU offloading, axis boundary condition and domain decomposition along X3 (!309)
+- fixed a bug that led to inconsistent results with MPI and UCT_HLLx EMF reconstruction schemes (!310)
+- The CI tests now include a "non-regression" test that validate the code outputs *at machine precision*. This comes in addition to the "standard" test that validate the code against known analytical solution (at truncation precision). Each test now contains a testme.py script that does the full validation (documentation will come, for now use testme -help). (!311)
 
 
 
@@ -25,6 +29,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - performance improvement on CPUs by cleaning loops and rewriting EMF reconstruction (!281)
 - The tolerance on div(B) allowed by the code can now be set at runtime (!292)
 - Nan detection is now performed every 100 integration loops by default so as mitigate performance impact on CPUs (!292)
+- It is now possible to build a stretch grid from a logarithmic grid section, and not only a uniform grid section (!304)
+- We now use git lfs to store reference file to validate the code (!301). Note that git lfs is not required to use the code.
+- G. Wafflard's planet module (planet migration, planet-planet integration) is now part of the main distro (!278)
+- Shock flattening can now be used in combination with LimO3 slope limiter (!312)
 
 
 ### Removed

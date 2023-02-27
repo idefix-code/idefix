@@ -45,6 +45,7 @@ class Hydro {
   real CheckDivB();
   void ResetStage();
   void ShowConfig();
+  IdefixArray4D<real> GetFlux() {return this->FluxRiemann;}
 
   // Our boundary conditions
   HydroBoundary boundary;

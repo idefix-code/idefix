@@ -25,6 +25,7 @@ class Planet {
     Planet& operator=(const Planet &p);
     //void Init(int &, Input &, DataBlock *, PlanetarySystem *);
     void displayPlanet() const;
+    void RegisterInDump();
     void ShowConfig();
     real getMp() const;
     real getXp() const;

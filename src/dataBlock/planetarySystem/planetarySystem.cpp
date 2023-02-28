@@ -64,7 +64,13 @@ void PlanetarySystem::Init(Input &input, DataBlock *datain) {
   if (this->nbp<0) this->nbp=0;
   if(this->nbp>0) {
     for(int ip = 0 ; ip < this->nbp ; ip++) {
-      this->planet.push_back(Planet(ip, input, this->data, this));
+      this->planet.emplace_back(ip, input, this->data, this);
+    }
+    // Now that we have initialised our planets, we register the variables for dump output
+    // We cannot do this in the first loop since emplace_back might do some hidden copies
+    // which then messes up the pointers used by dump i/O
+    for(int ip = 0 ; ip < this->nbp ; ip++) {
+      this->planet[ip].RegisterInDump();
     }
   } else {
     IDEFIX_ERROR("need to define a planet-to-primary mass ratio via planetToPrimary");

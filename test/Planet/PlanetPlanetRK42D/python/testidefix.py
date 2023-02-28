@@ -12,13 +12,27 @@ import re
 sys.path.append(os.getenv("IDEFIX_DIR"))
 import numpy as np
 
+def filter_index(t):
+    # get read of data previously generated (when the code was restarted)
+    tref=t[-1]
+    idx=np.array([2])
+    idx[0]=t.size-1
+    for i in range(t.size-2,0,-1):
+        if(t[i]<tref):
+            idxnew=np.insert(idx,0,i)
+            idx=idxnew
+            tref=t[i]
+    return(idx)
+
 def datafile(filename, *, directory=""):
     fullpath = os.path.join(directory, filename)
     with open(fullpath) as f1:
         data = f1.readlines()
     y = [[v for v in re.split(r"[\t ]+", r)] for r in data]
     columns = np.array(y, dtype="float64").T
-    return(columns)
+    # reorder
+    idx=filter_index(columns[0])
+    return(columns[:,idx])
 
 plot = False
 
@@ -27,10 +41,10 @@ planet0 = datafile("../planet0.dat")
 planet1_ref = datafile("planet1.ref.dat")
 planet1 = datafile("../planet1.dat")
 
-dist0_ref = np.sqrt(planet0_ref[1]**2+planet0_ref[2]**2+planet0_ref[3]**2)
-dist0 = np.sqrt(planet0[1]**2+planet0[2]**2+planet0[3]**2)
-dist1_ref = np.sqrt(planet1_ref[1]**2+planet1_ref[2]**2+planet1_ref[3]**2)
-dist1 = np.sqrt(planet1[1]**2+planet1[2]**2+planet1[3]**2)
+dist0_ref = np.sqrt(planet0_ref[2]**2+planet0_ref[3]**2+planet0_ref[4]**2)
+dist0 = np.sqrt(planet0[2]**2+planet0[3]**2+planet0[4]**2)
+dist1_ref = np.sqrt(planet1_ref[2]**2+planet1_ref[3]**2+planet1_ref[4]**2)
+dist1 = np.sqrt(planet1[2]**2+planet1[3]**2+planet1[4]**2)
 
 # Compute the error on the planet distance
 error_d0=np.max(np.abs((dist0-dist0_ref)/dist0_ref))
@@ -41,10 +55,10 @@ torque0 = datafile("../tqwk0.dat")
 torque1_ref = datafile("tqwk1.ref.dat")
 torque1 = datafile("../tqwk1.dat")
 
-tq0_tot_ref = torque0_ref[1]+torque0_ref[2]
-tq0_tot = torque0[1]+torque0[2]
-tq1_tot_ref = torque1_ref[1]+torque1_ref[2]
-tq1_tot = torque1[1]+torque1[2]
+tq0_tot_ref = torque0_ref[2]+torque0_ref[3]
+tq0_tot = torque0[2]+torque0[3]
+tq1_tot_ref = torque1_ref[2]+torque1_ref[3]
+tq1_tot = torque1[2]+torque1[3]
 
 # Compute the error on the planet torque
 error_t0=np.max(np.abs((tq0_tot-tq0_tot_ref)/tq0_tot_ref))

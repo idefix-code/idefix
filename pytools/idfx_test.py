@@ -198,7 +198,7 @@ class idfxTest:
         print("***************************************************"+bcolors.ENDC)
         raise e
 
-  def run(self, inputFile="", np=2, nowrite=False):
+  def run(self, inputFile="", np=2, nowrite=False, restart=-1):
       comm=["./idefix"]
       if inputFile:
           comm.append("-i")
@@ -219,6 +219,10 @@ class idfxTest:
 
       if nowrite:
           comm.append("-nowrite")
+
+      if restart>=0:
+        comm.append("-restart")
+        comm.append(str(restart))
 
       try:
           make=subprocess.run(comm)

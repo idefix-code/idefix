@@ -114,7 +114,7 @@ constructor which reads a parameter from the .ini file and enroll the user-defin
     Mass = input.Get<real>("Setup","mass",0);
 
     // Enroll the user-defined potential
-    data.hydro.EnrollGravPotential(&Potential);
+    data.gravity.EnrollGravPotential(&Potential);
   }
 
 
@@ -134,8 +134,8 @@ A typical user-defined boundary condition function looks like this:
 .. code-block:: c++
 
   void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
-    IdefixArray4D<real> Vc = data.hydro.Vc;
-    IdefixArray4D<real> Vs = data.hydro.Vs;
+    IdefixArray4D<real> Vc = data.hydro->Vc;
+    IdefixArray4D<real> Vs = data.hydro->Vs;
     if(dir==IDIR) {
       data.hydro.boundary->BoundaryFor("UserDefBoundary", dir, side,
         KOKKOS_LAMBDA (int k, int j, int i) {

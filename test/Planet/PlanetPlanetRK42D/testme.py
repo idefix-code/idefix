@@ -10,7 +10,7 @@ sys.path.append(os.getenv("IDEFIX_DIR"))
 
 import pytools.idfx_test as tst
 
-name="dump.0001.dmp"
+name="dump.0002.dmp"
 
 tolerance=1e-13
 
@@ -27,6 +27,10 @@ def testMe(test):
     test.standardTest()
     test.nonRegressionTest(filename=name,tolerance=tolerance)
 
+    # Test the restart option
+    test.run(inputFile=ini, restart=1)
+    test.standardTest()
+    test.nonRegressionTest(filename=name,tolerance=tolerance)
 
 test=tst.idfxTest()
 if not test.dec:

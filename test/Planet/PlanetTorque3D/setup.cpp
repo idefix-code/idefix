@@ -49,8 +49,8 @@ void MySoundSpeed(DataBlock &data, const real t, IdefixArray3D<real> &cs) {
 }
 
 void Damping(DataBlock &data, const real t, const real dtin) {
-  IdefixArray4D<real> Vc = data.hydro.Vc;
-  IdefixArray4D<real> Uc = data.hydro.Uc;
+  IdefixArray4D<real> Vc = data.hydro->Vc;
+  IdefixArray4D<real> Uc = data.hydro->Uc;
   IdefixArray1D<real> x1 = data.x[IDIR];
   IdefixArray1D<real> x2 = data.x[JDIR];
 
@@ -59,7 +59,7 @@ void Damping(DataBlock &data, const real t, const real dtin) {
   real sigmaSlope = sigmaSlopeGlob;
   real flaringIndex = flaringIndexGlob;
   real omega = omegaGlob;
-  real gamma = data.hydro.GetGamma();
+  real gamma = data.hydro->GetGamma();
   real pexp = -sigmaSlope-flaringIndex-1;
   real qexp = 2*flaringIndex-1;
   real dt = dtin;
@@ -145,7 +145,7 @@ void Damping(DataBlock &data, const real t, const real dtin) {
 
 // User-defined boundaries
 void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
-  IdefixArray4D<real> Vc = data.hydro.Vc;
+  IdefixArray4D<real> Vc = data.hydro->Vc;
   IdefixArray1D<real> x1 = data.x[IDIR];
   IdefixArray1D<real> x2 = data.x[JDIR];
   real h0=h0Glob;
@@ -193,7 +193,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
     }
 
     if( dir==JDIR) {
-        IdefixArray4D<real> Vc = data.hydro.Vc;
+        IdefixArray4D<real> Vc = data.hydro->Vc;
         int jghost;
         int jbeg,jend;
         // UPPER LAYER
@@ -337,14 +337,14 @@ void Analysis(DataBlock & data) {
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output)// : m_planet(0)//, Planet &planet)
 {
   // Set the function for userdefboundary
-  data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
-  data.hydro.EnrollUserSourceTerm(&Damping);
-//   data.hydro.EnrollUserSourceTerm(&MySourceTerm);
-  data.hydro.EnrollIsoSoundSpeed(&MySoundSpeed);
+  data.hydro->EnrollUserDefBoundary(&UserdefBoundary);
+  data.hydro->EnrollUserSourceTerm(&Damping);
+//   data.hydro->EnrollUserSourceTerm(&MySourceTerm);
+  data.hydro->EnrollIsoSoundSpeed(&MySoundSpeed);
   if(data.haveFargo)
-    data.fargo.EnrollVelocity(&FargoVelocity);
-  if(data.hydro.haveRotation) {
-    omegaGlob = data.hydro.OmegaZ;
+    data.fargo->EnrollVelocity(&FargoVelocity);
+  if(data.hydro->haveRotation) {
+    omegaGlob = data.hydro->OmegaZ;
   } else {
     omegaGlob = 0.0;
   }

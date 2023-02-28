@@ -47,7 +47,7 @@ void MySoundSpeed(DataBlock &data, const real t, IdefixArray3D<real> &cs) {
 }
 
 void MyViscosity(DataBlock &data, const real t, IdefixArray3D<real> &eta1, IdefixArray3D<real> &eta2) {
-  IdefixArray4D<real> Vc=data.hydro.Vc;
+  IdefixArray4D<real> Vc=data.hydro->Vc;
   IdefixArray1D<real> x1=data.x[IDIR];
   real h0 = h0Glob;
   real flaringIndex = flaringIndexGlob;
@@ -63,8 +63,8 @@ void MyViscosity(DataBlock &data, const real t, IdefixArray3D<real> &eta1, Idefi
 }
 
 void Damping(DataBlock &data, const real t, const real dtin) {
-  IdefixArray4D<real> Vc = data.hydro.Vc;
-  IdefixArray4D<real> Uc = data.hydro.Uc;
+  IdefixArray4D<real> Vc = data.hydro->Vc;
+  IdefixArray4D<real> Uc = data.hydro->Uc;
   IdefixArray1D<real> x1 = data.x[IDIR];
   IdefixArray1D<real> x2 = data.x[JDIR];
 
@@ -73,7 +73,7 @@ void Damping(DataBlock &data, const real t, const real dtin) {
   real sigmaSlope = sigmaSlopeGlob;
   real flaringIndex = flaringIndexGlob;
   real omega = omegaGlob;
-  real gamma = data.hydro.GetGamma();
+  real gamma = data.hydro->GetGamma();
   real dt = dtin;
   bool isFargo = data.haveFargo;
 
@@ -150,7 +150,7 @@ void Damping(DataBlock &data, const real t, const real dtin) {
 
 // User-defined boundaries
 void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
-  IdefixArray4D<real> Vc = data.hydro.Vc;
+  IdefixArray4D<real> Vc = data.hydro->Vc;
   IdefixArray1D<real> x1 = data.x[IDIR];
   real sigmaSlope=sigmaSlopeGlob;
   real omega = omegaGlob;
@@ -230,7 +230,7 @@ void Analysis(DataBlock & data) {
       std::ofstream f;
       f.open(planetName,std::ios::app);
       f.precision(10);
-      f << std::scientific << timeStep << "    " << xp << "    " << yp << "    " << zp << "    " << vxp << "    " << vyp << "    " << vzp << "    " << qp << "    " << time << std::endl;
+      f << std::scientific << time << "    " << timeStep << "    " << xp << "    " << yp << "    " << zp << "    " << vxp << "    " << vyp << "    " << vzp << "    " << qp << "    " << time << std::endl;
       f.close();
     }
 
@@ -268,7 +268,7 @@ void Analysis(DataBlock & data) {
       ft.open(tqwkName,std::ios::app);
       ft.precision(10);
       // ft << std::scientific << timeStep << "    " << fxi << "    " << fyi << "    " << fzi << "    " << fxo << "    " << fyo << "    " << fzo << "    " << fxhi << "    " << fyhi << "    " << fzhi << "    " << fxho << "    " << fyho << "    " << fzho << "    " << time << std::endl;
-      ft << std::scientific << timeStep << "    " << tq_inner << "    " << tq_outer << "    " << tq_ex_inner << "    " << tq_ex_outer << "    " << wk_inner << "    " << wk_outer << "    " << wk_ex_inner << "    " << wk_ex_outer << "    " << time << std::endl;
+      ft << std::scientific << time << "    " << timeStep << "    " << tq_inner << "    " << tq_outer << "    " << tq_ex_inner << "    " << tq_ex_outer << "    " << wk_inner << "    " << wk_outer << "    " << wk_ex_inner << "    " << wk_ex_outer << "    " << time << std::endl;
       ft.close();
     }
   }
@@ -306,20 +306,21 @@ void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output)// : m_planet(0)//, Planet &planet)
 {
   // Set the function for userdefboundary
-  data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
-  data.hydro.EnrollUserSourceTerm(&Damping);
-//   data.hydro.EnrollUserSourceTerm(&MySourceTerm);
-  data.hydro.EnrollIsoSoundSpeed(&MySoundSpeed);
+  data.hydro->EnrollUserDefBoundary(&UserdefBoundary);
+  data.hydro->EnrollUserSourceTerm(&Damping);
+//   data.hydro->EnrollUserSourceTerm(&MySourceTerm);
+  data.hydro->EnrollIsoSoundSpeed(&MySoundSpeed);
 
-  if(data.hydro.viscosityStatus.status)
+  if(data.hydro->viscosityStatus.status) {
     alphaGlob = input.Get<real>("Setup","alpha",0);
     idfx::cout << "alpha= " << alphaGlob << std::endl;
-    data.hydro.viscosity.EnrollViscousDiffusivity(&MyViscosity);
+    data.hydro->viscosity->EnrollViscousDiffusivity(&MyViscosity);
+  }
 
   if(data.haveFargo)
-    data.fargo.EnrollVelocity(&FargoVelocity);
-  if(data.hydro.haveRotation) {
-    omegaGlob = data.hydro.OmegaZ;
+    data.fargo->EnrollVelocity(&FargoVelocity);
+  if(data.hydro->haveRotation) {
+    omegaGlob = data.hydro->OmegaZ;
   } else {
     omegaGlob = 0.0;
   }

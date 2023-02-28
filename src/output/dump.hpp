@@ -235,6 +235,12 @@ class Dump {
 
 template<typename T>
 void Dump::RegisterVariable(T* in, std::string name, int size) {
+    if(dumpFieldMap.count(name)>0) {
+      std::stringstream msg;
+      msg << "Error while registering variable in Dump I/O: " << std::endl
+          << name << " has already been registered." << std::endl;
+      IDEFIX_ERROR(msg);
+    }
     dumpFieldMap.emplace(name, DumpField(in, size));
 }
 

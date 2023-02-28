@@ -542,8 +542,8 @@ int Dump::Read(Output& output, int readNumber ) {
   // Coordinates are ok, load the bulk
   while(true) {
     ReadNextFieldProperties(fileHdl, ndim, nxglob, type, fieldName);
-    /*
-    idfx::cout << "Next field is " << fieldName << " with " << ndim << " dimensions and (";
+
+    /*idfx::cout << "Next field is " << fieldName << " with " << ndim << " dimensions and (";
     for(int i = 0 ; i < ndim ; i++) idfx::cout << nxglob[i] << " ";
     idfx::cout << ") points." << std::endl;*/
 

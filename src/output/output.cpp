@@ -157,7 +157,6 @@ void Output::RestartFromDump(DataBlock &data, int readNumber) {
 
   data.dump->Read(*this, readNumber);
   data.DeriveVectorPotential();
-
   idfx::popRegion();
 }
 

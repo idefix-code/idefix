@@ -29,11 +29,14 @@ Planet::Planet(const Planet& p) :
     m_xp(state.x),
     m_yp(state.y),
     m_zp(state.z) {
+    idfx::pushRegion("Planet::Planet(Planet)");
     this->operator=(p);
+    idfx::popRegion();
 }
 
 // Assignement operator (required since we internally use references)
 Planet& Planet::operator=(const Planet &p) {
+  idfx::pushRegion("Planet::operator=");
   this->state = p.state;
   this->m_qp = p.m_qp;
   this->m_qpIni = p.m_qpIni;
@@ -42,7 +45,7 @@ Planet& Planet::operator=(const Planet &p) {
   this->m_ip = p.m_ip;
   this->pSys = p.pSys;
   this->data = p.data;
-
+  idfx::popRegion();
   return *this;
 }
 
@@ -112,6 +115,21 @@ m_vxp(state.vx), m_vyp(state.vy), m_vzp(state.vz), m_xp(state.x), m_yp(state.y),
     this->m_vyp += -this->data->hydro->OmegaZ * this->m_xp;
   }
   this->m_vzp = this->m_vyp*sin(inclination)/cos(inclination);
+
+  idfx::popRegion();
+}
+
+void Planet::RegisterInDump() {
+  idfx::pushRegion("Planet::RegisterInDump");
+  // Register variables for dump read/write
+  data->dump->RegisterVariable(&m_xp,std::string("x_p_")+std::to_string(m_ip));
+  data->dump->RegisterVariable(&m_yp,std::string("y_p_")+std::to_string(m_ip));
+  data->dump->RegisterVariable(&m_zp,std::string("z_p_")+std::to_string(m_ip));
+  data->dump->RegisterVariable(&m_vxp,std::string("vx_p_")+std::to_string(m_ip));
+  data->dump->RegisterVariable(&m_vyp,std::string("vy_p_")+std::to_string(m_ip));
+  data->dump->RegisterVariable(&m_vzp,std::string("vz_p_")+std::to_string(m_ip));
+  data->dump->RegisterVariable(&m_qp,std::string("q_p_")+std::to_string(m_ip));
+
   idfx::popRegion();
 }
 
@@ -125,6 +143,7 @@ void Planet::ShowConfig() {
 
 void Planet::displayPlanet() const {
   idfx::cout << "Planet: Init orbital parameters. " << std::endl;
+  idfx::cout << "mxp address:" << &this->m_xp << std::endl;
   idfx::cout << "xp = " << this->m_xp << std::endl;
   idfx::cout << "yp = " << this->m_yp << std::endl;
   idfx::cout << "zp = " << this->m_zp << std::endl;

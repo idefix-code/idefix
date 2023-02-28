@@ -9,3 +9,7 @@ test/MHD/OrszagTang3D/python/data.0001.ref.vtk filter=lfs diff=lfs merge=lfs -te
 test/MHD/sod/python/data.ref.vtk filter=lfs diff=lfs merge=lfs -text
 test/MHD/FargoMHDSpherical/python/data.0001.ref.vtk filter=lfs diff=lfs merge=lfs -text
 test/HD/MachReflection/python/data.0001.ref.vtk filter=lfs diff=lfs merge=lfs -text
+test/Planet/PlanetMigration2D/python/data.0010.ref.vtk filter=lfs diff=lfs merge=lfs -text
+test/Planet/PlanetPlanetRK42D/python/data.0010.ref.vtk filter=lfs diff=lfs merge=lfs -text
+test/Planet/PlanetTorque3D/python/data.0009.ref.vtk filter=lfs diff=lfs merge=lfs -text
+*.dmp filter=lfs diff=lfs merge=lfs -text

@@ -60,6 +60,7 @@ class Fluid {
   void EvolveStage(const real, const real);
   void ResetStage();
   void ShowConfig();
+  IdefixArray4D<real> GetFlux() {return this->FluxRiemann;}
 
   // Our boundary conditions
   std::unique_ptr<Boundary<Phys>> boundary;

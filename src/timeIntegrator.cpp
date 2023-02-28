@@ -11,6 +11,7 @@
 #include "idefix.hpp"
 #include "timeIntegrator.hpp"
 #include "input.hpp"
+#include "dataBlock.hpp"
 #include "stateContainer.hpp"
 #include "fluid.hpp"
 
@@ -290,10 +291,16 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     data.EvolveRKLStage();
   }
 
+  // Update planet position
+  if(data.haveplanetarySystem) {
+    data.planetarySystem.EvolveSystem(data, data.dt);
+  }
+
   // Coarsen the grid
   if(data.haveGridCoarsening) {
     data.Coarsen();
   }
+
   // Update current time (should have already been done, but this gets rid of roundoff errors)
   data.t=t0+data.dt;
 

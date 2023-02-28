@@ -150,6 +150,7 @@ target_include_directories(idefix PUBLIC
 target_include_directories(idefix PUBLIC
                            src/kokkos/core/src
                            src/dataBlock
+                           src/dataBlock/planetarySystem
                            src/fluid
                            src/fluid/boundary
                            src/fluid/constrainedTransport

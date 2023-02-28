@@ -193,6 +193,7 @@ void Axis<Phys>::SymmetrizeEx1Side(int jref) {
       });
     if(needMPIExchange) {
       #ifdef WITH_MPI
+        Kokkos::fence();
         // sum along all of the processes on the same r
         MPI_Allreduce(MPI_IN_PLACE, Ex1Avg.data(), data->np_tot[IDIR], realMPI,
                       MPI_SUM, data->mygrid->AxisComm);
@@ -237,60 +238,56 @@ void Axis<Phys>::RegularizeCurrentSide(int side) {
   // Compute the values of Jx, Jy and Jz that are consistent for all cells touching the axis
   #if DIMENSIONS == 3
     IdefixArray4D<real> J = hydro->J;
-    int jref = 0;
+    IdefixArray4D<real> Vs = hydro->Vs;
+    int js = 0;
+    int jc = 0;
     int sign = 0;
-
     if(side == left) {
-      jref = data->beg[JDIR];
+      js = data->beg[JDIR];
+      jc = data->beg[JDIR];
       sign = 1;
     }
     if(side == right) {
-      jref = data->end[JDIR];
+      js = data->end[JDIR];
+      jc = data->end[JDIR]-1;
       sign = -1;
     }
-    IdefixArray2D<real> JAvg = this->JAvg;
-    IdefixArray1D<real> phi = data->x[KDIR];
+    IdefixArray1D<real> BAvg = this->Ex1Avg;
+    IdefixArray1D<real> x2 = data->x[JDIR];
+    IdefixArray1D<real> x1 = data->x[IDIR];
+    IdefixArray1D<real> dx3 = data->dx[KDIR];
 
-
-
-    idefix_for("J_ini",0,data->np_tot[IDIR],0,3,
-          KOKKOS_LAMBDA(int i, int n) {
-            JAvg(i,n) = ZERO_F;
+    idefix_for("B_ini",0,data->np_tot[IDIR],
+          KOKKOS_LAMBDA(int i) {
+            BAvg(i) = ZERO_F;
     });
-    idefix_for("JHorizontal_compute",data->beg[KDIR],data->end[KDIR],0,data->np_tot[IDIR],
+    idefix_for("Compute_Bcirculation",data->beg[KDIR],data->end[KDIR],0,data->np_tot[IDIR],
         KOKKOS_LAMBDA(int k,int i) {
-          real Jthmid = sign*(J(JDIR,k  ,jref-1,i) +
-                              J(JDIR,k  ,jref  ,i) +
-                              J(JDIR,k+1,jref-1,i) +
-                              J(JDIR,k+1,jref  ,i)) / 4.0;
-
-          real Jphimid = J(KDIR,k, jref, i);
-
-          Kokkos::atomic_add(&JAvg(i,IDIR), Jthmid * cos(phi(k)) - Jphimid * sin(phi(k)));
-          Kokkos::atomic_add(&JAvg(i,JDIR), Jthmid * sin(phi(k)) + Jphimid * cos(phi(k)));
-          Kokkos::atomic_add(&JAvg(i,KDIR), J(IDIR,k,jref+sign,i)); // We pick up the radial current
-                                                                    // in the active zones
+          Kokkos::atomic_add(&BAvg(i), Vs(BX3s,k,jc,i)*dx3(k) ); // Compute the circulation of
+                                                                 // Bphi around the pole
     });
 
     if(needMPIExchange) {
       #ifdef WITH_MPI
+        Kokkos::fence();
         // sum along all of the processes on the same r
-        MPI_Allreduce(MPI_IN_PLACE, JAvg.data(), 3*data->np_tot[IDIR], realMPI,
+        MPI_Allreduce(MPI_IN_PLACE, BAvg.data(), data->np_tot[IDIR], realMPI,
                       MPI_SUM, data->mygrid->AxisComm);
       #endif
     }
 
     const int ncells=data->mygrid->np_int[KDIR];
 
+    real deltaPhi = data->mygrid->xend[KDIR] - data->mygrid->xbeg[KDIR];
+
+    // Use the circulation around the pole of Bphi to determine Jr on the pole:
+    // Delta phi r^2(1-cos theta) Jr = int r sin(theta) Bphi dphi
+
     idefix_for("fixJ",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
         KOKKOS_LAMBDA(int k,int i) {
-          real Jx = JAvg(i,IDIR) / ((real) ncells*sign);
-          real Jy = JAvg(i,JDIR) / ((real) ncells*sign);
-          real Jz = JAvg(i,KDIR) / ((real) ncells);
-
-          J(IDIR, k,jref,i) = Jz;
-          J(JDIR, k,jref,i) = cos(phi(k))*Jx + sin(phi(k))*Jy;
-          // There is nothing along KDIR since Jphi is never localised on the axis.
+          real th = x2(jc);
+          real fact = sign*sin(th)/(deltaPhi*x1(i)*(1-cos(th)));
+          J(IDIR, k,js,i) = BAvg(i)*fact;
         });
 
   #endif // DIMENSIONS
@@ -338,15 +335,21 @@ void Axis<Phys>::FixBx2sAxis(int side) {
     IdefixArray2D<real> BAvg = this->BAvg;
     IdefixArray1D<real> phi = data->x[KDIR];
 
-    int jref = 0;
+    int jin = 0;
+    int jout = 0;
+    int jaxe = 0;
     int sign = 0;
 
     if(side == left) {
-      jref = data->beg[JDIR];
+      jin = data->beg[JDIR];
+      jout = jin-1;
+      jaxe = jin;
       sign = 1;
     }
     if(side == right) {
-      jref = data->end[JDIR];
+      jin = data->end[JDIR]-1;
+      jout = jin+1;
+      jaxe = jout;
       sign = -1;
     }
 
@@ -356,8 +359,8 @@ void Axis<Phys>::FixBx2sAxis(int side) {
     });
     idefix_for("BHorizontal_compute",data->beg[KDIR],data->end[KDIR],0,data->np_tot[IDIR],
         KOKKOS_LAMBDA(int k,int i) {
-          real Bthmid = sign*HALF_F*(Vs(BX2s,k,jref-1,i) + Vs(BX2s,k,jref+1,i));
-          real Bphimid = HALF_F*(Vs(BX3s,k,jref-1,i) + Vs(BX3s,k,jref,i));
+          real Bthmid = sign*HALF_F*(Vs(BX2s,k,jaxe-1,i) + Vs(BX2s,k,jaxe+1,i));
+          real Bphimid = HALF_F*(Vs(BX3s,k,jin,i) + Vs(BX3s,k,jout,i));
           //Bthmid = 0.0;
           //Bphimid = 0.0;
 
@@ -365,6 +368,7 @@ void Axis<Phys>::FixBx2sAxis(int side) {
           Kokkos::atomic_add(&BAvg(i,JDIR), Bthmid * sin(phi(k)) + Bphimid * cos(phi(k)));
     });
     if(needMPIExchange) {
+      Kokkos::fence();
       #ifdef WITH_MPI
         // sum along all of the processes on the same r
         MPI_Allreduce(MPI_IN_PLACE, BAvg.data(), 2*data->np_tot[IDIR], realMPI,
@@ -375,10 +379,10 @@ void Axis<Phys>::FixBx2sAxis(int side) {
 
     idefix_for("fixBX2s",data->beg[KDIR],data->end[KDIR],0,data->np_tot[IDIR],
         KOKKOS_LAMBDA(int k,int i) {
-          real Bx = BAvg(i,IDIR) / ((real) ncells*sign);
-          real By = BAvg(i,JDIR) / ((real) ncells*sign);
+          real Bx = BAvg(i,IDIR) / ((real) ncells);
+          real By = BAvg(i,JDIR) / ((real) ncells);
 
-          Vs(BX2s,k,jref,i) = cos(phi(k))*Bx + sin(phi(k))*By;
+          Vs(BX2s,k,jaxe,i) = sign*(cos(phi(k))*Bx + sin(phi(k))*By);
         });
   #endif // DIMENSIONS
 }

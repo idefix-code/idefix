@@ -29,10 +29,22 @@ void Gravity::Init(Input &input, DataBlock *datain) {
         this->centralMass = input.GetOrSet<real>("Gravity","Mcentral",0, 1.0);
       } else if (potentialString.compare("selfgravity") == 0) {
         this->haveSelfGravityPotential = true;
+      } else if (potentialString.compare("planet") == 0) {
+        this->havePlanetsPotential = true;
+        if(!datain->haveplanetarySystem) {
+          IDEFIX_ERROR("You need to define a [Planet] block if"
+                        "you want to work with embedded planets");
+        }
       } else {
         IDEFIX_ERROR("Unknown type of gravitational potential in idefix.ini. ");
       }
     }
+  }
+
+  // Automatically enables gravity if a planetary system was initialised.
+  if(datain->haveplanetarySystem) {
+    this->havePlanetsPotential = true;
+    this->havePotential = true;
   }
 
   // Body Force
@@ -50,7 +62,6 @@ void Gravity::Init(Input &input, DataBlock *datain) {
 
   // Allocate required arrays
   if(havePotential && (!haveInitialisedPotential)) {
-    idfx::cout << "Gravity:: Allocating gravitational potential PhiP" << std::endl;
     phiP = IdefixArray3D<real>("Gravity_PhiP",
                                 data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
     haveInitialisedPotential = true;
@@ -69,7 +80,6 @@ void Gravity::Init(Input &input, DataBlock *datain) {
 
   // Check SelfGravity object
   if(haveSelfGravityPotential) {
-    idfx::cout << "Gravity:: Init self-gravity." << std::endl;
     selfGravity.Init(input, this->data);
     haveInitialisedSelfGravity = true;
   }
@@ -97,6 +107,9 @@ void Gravity::ShowConfig() {
     if(haveSelfGravityPotential) {
       idfx::cout << "Gravity: self-gravity ENABLED." << std::endl;
       selfGravity.ShowConfig();
+    }
+    if(havePlanetsPotential) {
+      idfx::cout << "Gravity: planet(s) potential ENABLED." << std::endl;
     }
     if(haveBodyForce) {
       idfx::cout << "Gravity: user-defined body force ENABLED." << std::endl;
@@ -129,7 +142,7 @@ void Gravity::ComputeGravity(int stepNumber) {
       AddCentralMassPotential();
     }
     if(havePlanetsPotential) {
-      IDEFIX_ERROR("Planet potential not implemented. Ask GWF.");
+      data->planetarySystem.AddPlanetsPotential(phiP, data->t);
     }
     if(haveSelfGravityPotential) {
       // Solving Poisson for the current gas density distribution

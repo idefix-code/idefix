@@ -5,6 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include <vector>
 #include "dump.hpp"
 #include "gitversion.hpp"
 #include "dataBlockHost.hpp"
@@ -488,6 +489,18 @@ int Dump::Read(Output& output, int readNumber ) {
   int ndim;
   IdfxFileHandler fileHdl;
 
+  int count_p{0};
+
+  std::vector<double> x_p (count_p);
+  std::vector<double> y_p (count_p);
+  std::vector<double> z_p (count_p);
+
+  std::vector<double> vx_p (count_p);
+  std::vector<double> vy_p (count_p);
+  std::vector<double> vz_p (count_p);
+
+  std::vector<double> q_p (count_p);
+
   idfx::pushRegion("Dump::Read");
 
   idfx::cout << "Dump: Reading restart file n " << readNumber << "..." << std::flush;
@@ -718,16 +731,67 @@ int Dump::Write(Output& output) {
         nxtot[i] = gridHost.np_int[i];
       }
 
-      if(scalar.GetLocation() == DumpField::ArrayLocation::Face) {
-        // If it is the last datablock of the dimension, increase the size by one to get the last
-        //active face of the staggered mesh.
-        if(data->mygrid->xproc[dir] == data->mygrid->nproc[dir] - 1  ) nx[dir]++;
-        nxtot[dir]++;
+    for(int k = 0; k < nx[KDIR]; k++) {
+      for(int j = 0 ; j < nx[JDIR]; j++) {
+        for(int i = 0; i < nx[IDIR]; i++) {
+          scrch[i + j*nx[IDIR] + k*nx[IDIR]*nx[JDIR]] = dataHost.Vc(nv,k+dataHost.beg[KDIR],
+                                                                       j+dataHost.beg[JDIR],
+                                                                       i+dataHost.beg[IDIR]);
+        }
       }
+    }
+    WriteDistributed(fileHdl, 3, nx, nxtot, fieldName, this->descC, scrch);
+  }
 
-      if(scalar.GetLocation() == DumpField::ArrayLocation::Edge) {
+  #if MHD == YES
+    // write staggered field components
+    for(int nv = 0 ; nv <DIMENSIONS ; nv++) {
+      std::snprintf(fieldName,NAMESIZE,"Vs-%s",data.hydro.VsName[nv].c_str());
+      // Load the active domain in the scratch space
+      for(int i = 0; i < 3 ; i++) {
+        nx[i] = dataHost.np_int[i];
+        nxtot[i] = gridHost.np_int[i];
+      }
+      // If it is the last datablock of the dimension, increase the size by one to get the last
+      //active face of the staggered mesh.
+      if(data.mygrid->xproc[nv] == data.mygrid->nproc[nv] - 1  ) nx[nv]++;
+      nxtot[nv]++;
+
+      for(int k = 0; k < nx[KDIR]; k++) {
+        for(int j = 0 ; j < nx[JDIR]; j++) {
+          for(int i = 0; i < nx[IDIR]; i++) {
+            scrch[i + j*nx[IDIR] + k*nx[IDIR]*nx[JDIR] ] = dataHost.Vs(nv,k+dataHost.beg[KDIR],
+                                                                          j+dataHost.beg[JDIR],
+                                                                          i+dataHost.beg[IDIR]);
+          }
+        }
+      }
+      WriteDistributed(fileHdl, 3, nx, nxtot, fieldName, this->descSW[nv], scrch);
+    }
+    #ifdef EVOLVE_VECTOR_POTENTIAL
+      // write edge field components
+      for(int nv = 0 ; nv <= AX3e ; nv++) {
+        std::snprintf(fieldName,NAMESIZE,"Ve-%s",data.hydro.VeName[nv].c_str());
+        int edge = 0;
+        #if DIMENSIONS == 2
+          if(nv==AX3e) {
+            edge = KDIR;
+          } else {
+            IDEFIX_ERROR("Wrong direction for vector potential");
+          }
+        #elif DIMENSIONS == 3
+          edge = nv;
+        #else
+          IDEFIX_ERROR("Cannot treat vector potential with that number of dimensions");
+        #endif
+        // Load the active domain in the scratch space
+        for(int i = 0; i < 3 ; i++) {
+          nx[i] = dataHost.np_int[i];
+          nxtot[i] = gridHost.np_int[i];
+        }
         // If it is the last datablock of the dimension, increase the size by one in the direction
         // perpendicular to the vector.
+
         for(int i = 0 ; i < DIMENSIONS ; i++) {
           if(i != dir) {
             if(data->mygrid->xproc[i] == data->mygrid->nproc[i] - 1) nx[i]++;
@@ -757,17 +821,27 @@ int Dump::Write(Output& output) {
         IDEFIX_ERROR("Unknown scalar type for dump write");
       }
 
-    } else {
-      // Scalar type if a fundamental type, not distributed
-      DataType thisType;
-      if(scalar.GetType()==DumpField::Type::Int) thisType = DataType::IntegerType;
-      if(scalar.GetType()==DumpField::Type::Single) thisType = DataType::SingleType;
-      if(scalar.GetType()==DumpField::Type::Double) thisType = DataType::DoubleType;
-      if(scalar.GetType()==DumpField::Type::Bool) thisType = DataType::BoolType;
+    for(int ip=0; ip < data.planetarySystem.nbp ; ip++) {
+      // Write planet's orbital properties
+      // POSITION
+      nx[0] = 1;
+      std::snprintf(fieldName,NAMESIZE, "x_p%d",ip);
+      WriteSerial(fileHdl, 1, nx, DoubleType, fieldName, &x_p[ip]);
+      std::snprintf(fieldName,NAMESIZE, "y_p%d",ip);
+      WriteSerial(fileHdl, 1, nx, DoubleType, fieldName, &y_p[ip]);
+      std::snprintf(fieldName,NAMESIZE, "z_p%d",ip);
+      WriteSerial(fileHdl, 1, nx, DoubleType, fieldName, &z_p[ip]);
 
-      nx[0] = scalar.GetSize();
+      // VELOCITY
+      std::snprintf(fieldName,NAMESIZE, "vx_p%d",ip);
+      WriteSerial(fileHdl, 1, nx, DoubleType, fieldName, &vx_p[ip]);
+      std::snprintf(fieldName,NAMESIZE, "vy_p%d",ip);
+      WriteSerial(fileHdl, 1, nx, DoubleType, fieldName, &vy_p[ip]);
+      std::snprintf(fieldName,NAMESIZE, "vz_p%d",ip);
+      WriteSerial(fileHdl, 1, nx, DoubleType, fieldName, &vz_p[ip]);
 
-      WriteSerial(fileHdl, 1, nx, thisType, fieldName, scalar.GetHostField<void*>());
+      std::snprintf(fieldName,NAMESIZE, "q_p%d",ip);
+      WriteSerial(fileHdl, 1, nx, DoubleType, fieldName, &q_p[ip]);
     }
   }
 

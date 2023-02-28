@@ -127,8 +127,14 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
     this->haveFargo = true;
   }
 
-  // Initialise gravity if needed
-  if(input.CheckBlock("Gravity")) {
+  // initialise planets if needed
+  if(input.CheckBlock("Planet")) {
+    planetarySystem.Init(input, this);
+    this->haveplanetarySystem = true;
+  }
+
+  // Initialise gravity if needed (automatically if planets are present)
+  if(input.CheckBlock("Gravity") || haveplanetarySystem) {
     gravity.Init(input, this);
     this->haveGravity = true; // TODO(mauxionj): why do it here and in init gravity ?
   }
@@ -169,6 +175,7 @@ void DataBlock::ShowConfig() {
   }
   hydro->ShowConfig();
   if(haveFargo) fargo->ShowConfig();
+  if(haveplanetarySystem) planetarySystem.ShowConfig();
   if(haveGravity) gravity.ShowConfig();
 }
 

@@ -143,7 +143,6 @@ void Planet::ShowConfig() {
 
 void Planet::displayPlanet() const {
   idfx::cout << "Planet: Init orbital parameters. " << std::endl;
-  idfx::cout << "mxp address:" << &this->m_xp << std::endl;
   idfx::cout << "xp = " << this->m_xp << std::endl;
   idfx::cout << "yp = " << this->m_yp << std::endl;
   idfx::cout << "zp = " << this->m_zp << std::endl;

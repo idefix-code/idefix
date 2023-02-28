@@ -104,7 +104,7 @@ class DataBlock {
                                 ///< conservative state of the datablock
                                 ///< (contains references to dedicated objects)
 
-  std::shared_ptr<Hydro> hydro;   ///< The Hydro object attached to this datablock
+  std::unique_ptr<Hydro> hydro;   ///< The Hydro object attached to this datablock
 
   std::unique_ptr<Vtk> vtk;
   std::unique_ptr<Dump> dump;

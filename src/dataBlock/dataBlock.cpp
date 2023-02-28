@@ -119,7 +119,7 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
   this->vtk = std::make_unique<Vtk>(input, this);
 
   // Initialize the hydro object attached to this datablock
-  this->hydro = std::make_shared<Fluid<Physics>>(grid, input, this);
+  this->hydro = std::make_unique<Fluid<Physics>>(grid, input, this);
 
   // Initialise Fargo if needed
   if(input.CheckBlock("Fargo")) {

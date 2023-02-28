@@ -52,7 +52,7 @@ void RiemannSolver<Phys>::TvdlfMHD(IdefixArray4D<real> &Flux) {
   IdefixArray3D<real> Eb;
   IdefixArray3D<real> Et;
 
-  const typename EMF::AveragingType emfAverage = hydro->emf->averaging;
+  const typename EMF::AveragingType emfAverage = emf->averaging;
 
   // Required by UCT_Contact
   IdefixArray3D<real> SV;
@@ -81,16 +81,16 @@ void RiemannSolver<Phys>::TvdlfMHD(IdefixArray4D<real> &Flux) {
 
                 sb = +ONE_F;  )
 
-      Et = hydro->emf->ezi;
-      Eb = hydro->emf->eyi;
+      Et = emf->ezi;
+      Eb = emf->eyi;
 
-      SV = hydro->emf->svx;
+      SV = emf->svx;
 
-      aL = hydro->emf->axL;
-      aR = hydro->emf->axR;
+      aL = emf->axL;
+      aR = emf->axR;
 
-      dL = hydro->emf->dxL;
-      dR = hydro->emf->dxR;
+      dL = emf->dxL;
+      dR = emf->dxR;
 
       break;
 #if DIMENSIONS >= 2
@@ -101,16 +101,16 @@ void RiemannSolver<Phys>::TvdlfMHD(IdefixArray4D<real> &Flux) {
 
                 sb = -ONE_F;  )
 
-      Et = hydro->emf->ezj;
-      Eb = hydro->emf->exj;
+      Et = emf->ezj;
+      Eb = emf->exj;
 
-      SV = hydro->emf->svy;
+      SV = emf->svy;
 
-      aL = hydro->emf->ayL;
-      aR = hydro->emf->ayR;
+      aL = emf->ayL;
+      aR = emf->ayR;
 
-      dL = hydro->emf->dyL;
-      dR = hydro->emf->dyR;
+      dL = emf->dyL;
+      dR = emf->dyR;
 
       break;
 #endif
@@ -123,16 +123,16 @@ void RiemannSolver<Phys>::TvdlfMHD(IdefixArray4D<real> &Flux) {
                   ,
                 sb = +ONE_F;  )
 
-      Et = hydro->emf->eyk;
-      Eb = hydro->emf->exk;
+      Et = emf->eyk;
+      Eb = emf->exk;
 
-      SV = hydro->emf->svz;
+      SV = emf->svz;
 
-      aL = hydro->emf->azL;
-      aR = hydro->emf->azR;
+      aL = emf->azL;
+      aR = emf->azR;
 
-      dL = hydro->emf->dzL;
-      dR = hydro->emf->dzR;
+      dL = emf->dzL;
+      dR = emf->dzR;
       break;
 #endif
     default:

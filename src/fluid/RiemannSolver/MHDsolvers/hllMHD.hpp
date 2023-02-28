@@ -28,8 +28,8 @@ void RiemannSolver<Phys>::HllMHD(IdefixArray4D<real> &Flux) {
   constexpr int koffset = (DIR==KDIR) ? 1 : 0;
 
   int perpExtension=1;
-  if (emf.averaging == ElectroMotiveForce::uct_hll
-      || emf.averaging == ElectroMotiveForce::uct_hlld) {
+  if (emf->averaging == EMF::uct_hll
+      || emf->averaging == EMF::uct_hlld) {
         // Need two cells in the perp direction for these schemes
         perpExtension=2;
   }

@@ -11,6 +11,7 @@
 #include "planet.hpp"
 #include "planetStructs.hpp"
 #include "dataBlock.hpp"
+#include "fluid.hpp"
 
 
 
@@ -206,8 +207,8 @@ void PlanetarySystem::IntegrateAnalytically(DataBlock& data, const real& dt) {
 //    real phipNew{phip + dt*omegap};
     real phipNew;
 
-    if(planet[ip].data->hydro.haveRotation) {
-      real omegaframe = planet[ip].data->hydro.OmegaZ;
+    if(planet[ip].data->hydro->haveRotation) {
+      real omegaframe = planet[ip].data->hydro->OmegaZ;
       phipNew = phip + dt*(omegap-omegaframe);
     } else {
       phipNew = phip + dt*omegap;
@@ -309,8 +310,8 @@ std::vector<PointSpeed> PlanetarySystem::ComputeRHS(real& t, std::vector<Planet>
             planet_update[ip].vz += coef*(planet[jp].m_zp-planet[ip].m_xp);
         }
     }
-    if(planet[ip].data->hydro.haveRotation) {
-      real omega = planet[ip].data->hydro.OmegaZ;
+    if(planet[ip].data->hydro->haveRotation) {
+      real omega = planet[ip].data->hydro->OmegaZ;
 
 
       // Add Coriolis and centrifugal forces

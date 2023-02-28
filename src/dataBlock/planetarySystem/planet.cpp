@@ -10,6 +10,7 @@
 #include "planet.hpp"
 #include "dataBlock.hpp"
 #include "planetarySystem.hpp"
+#include "fluid.hpp"
 /*
 Planet::Planet() :
     m_vxp(state.vx),
@@ -107,8 +108,8 @@ m_vxp(state.vx), m_vyp(state.vy), m_vzp(state.vz), m_xp(state.x), m_yp(state.y),
                   sqrt((ONE_F-eccentricity)/(ONE_F+eccentricity))*cos(inclination);
   }
   // Remove inertial rotating frame velocity if present
-  if(this->data->hydro.haveRotation) {
-    this->m_vyp += -this->data->hydro.OmegaZ * this->m_xp;
+  if(this->data->hydro->haveRotation) {
+    this->m_vyp += -this->data->hydro->OmegaZ * this->m_xp;
   }
   this->m_vzp = this->m_vyp*sin(inclination)/cos(inclination);
   idfx::popRegion();
@@ -244,7 +245,7 @@ void Planet::computeForce(DataBlock& data, bool& isPlanet) {
   IdefixArray1D<real> x2 = data.x[JDIR];
   IdefixArray1D<real> x3 = data.x[KDIR];
 
-  IdefixArray4D<real> Vc = data.hydro.Vc;
+  IdefixArray4D<real> Vc = data.hydro->Vc;
   IdefixArray3D<real> dV = data.dV;
 
   real xp;

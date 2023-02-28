@@ -30,8 +30,8 @@ void RiemannSolver<Phys>::HlldMHD(IdefixArray4D<real> &Flux) {
   constexpr int koffset = (DIR==KDIR) ? 1 : 0;
 
   int perpExtension=1;
-  if (emf->averaging == EMF::uct_hll
-      || emf->averaging == EMF::uct_hlld) {
+  if (hydro->emf->averaging == EMF::uct_hll
+      || hydro->emf->averaging == EMF::uct_hlld) {
         // Need two cells in the perp direction for these schemes
         perpExtension=2;
   }

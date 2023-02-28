@@ -59,7 +59,6 @@ class RiemannSolver {
   IdefixArray3D<real> cMax;
   Fluid<Phys>* hydro;
   DataBlock *data;
-  ConstrainedTransport<Phys> *emf;
 
   Solver mySolver;
 
@@ -73,8 +72,7 @@ RiemannSolver<Phys>::RiemannSolver(Input &input, Fluid<Phys>* hydro) : Vc{hydro-
                                       Flux{hydro->FluxRiemann},
                                       cMax{hydro->cMax},
                                       hydro{hydro},
-                                      data{hydro->data},
-                                      emf{hydro->emf.get()}
+                                      data{hydro->data}
                                       {
   // read Solver from input file
   std::string solverString = input.Get<std::string>(std::string(Phys::prefix),"solver",0);

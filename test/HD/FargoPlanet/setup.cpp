@@ -99,7 +99,6 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output)// : m_pl
 {
   // Set the function for userdefboundary
   data.hydro->EnrollUserDefBoundary(&UserdefBoundary);
-  data.gravity.EnrollPotential(&Potential);
   data.hydro->EnrollIsoSoundSpeed(&MySoundSpeed);
   data.hydro->viscosity->EnrollViscousDiffusivity(&MyViscosity);
   if(data.haveFargo)

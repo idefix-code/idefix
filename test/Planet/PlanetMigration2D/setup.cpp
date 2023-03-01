@@ -315,7 +315,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output)// : m_pl
     alphaGlob = input.Get<real>("Setup","alpha",0);
     data.hydro->viscosity->EnrollViscousDiffusivity(&MyViscosity);
   }
-  
+
   if(data.haveFargo)
     data.fargo->EnrollVelocity(&FargoVelocity);
   if(data.hydro->haveRotation) {

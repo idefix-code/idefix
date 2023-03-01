@@ -69,6 +69,9 @@ void Viscosity::Init(Input &input, Grid &grid, Hydro *hydroin) {
                    "in the .ini file");
   }
 
+  // Roll back to hydro the current status
+  hydro->viscosityStatus.status=haveViscosity;
+
   // Allocate and fill arrays when needed
   #if GEOMETRY != CARTESIAN
     one_dmu = IdefixArray1D<real>("Viscosity_1dmu", hydro->data->np_tot[JDIR]);

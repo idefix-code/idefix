@@ -27,6 +27,9 @@ def testMe(test):
     if test.init and not test.mpi:
       test.makeReference(filename="dump.0001.dmp")
 
+    if(test.single):
+      mytol=1e-5
+
     test.nonRegressionTest(filename="dump.0001.dmp",tolerance=mytol)
 
 

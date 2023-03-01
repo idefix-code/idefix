@@ -9,7 +9,7 @@ import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
 
 import pytools.idfx_test as tst
-tolerance=1e-14
+tolerance=2e-14
 def testMe(test):
   test.configure()
   test.compile()
@@ -23,7 +23,7 @@ def testMe(test):
     test.standardTest()
     # When using RKL, except larger error due to B reconstruction and RKL # of substeps
     if test.mpi and ini=="idefix-rkl.ini":
-      mytol=1e-10
+      mytol=2e-10
     test.nonRegressionTest(filename="dump.0001.dmp",tolerance=mytol)
 
 

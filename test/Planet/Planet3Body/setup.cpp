@@ -47,22 +47,6 @@ void MySoundSpeed(DataBlock &data, const real t, IdefixArray3D<real> &cs) {
               });
 }
 
-void MyViscosity(DataBlock &data, const real t, IdefixArray3D<real> &eta1, IdefixArray3D<real> &eta2) {
-  IdefixArray4D<real> Vc=data.hydro.Vc;
-  IdefixArray1D<real> x1=data.x[IDIR];
-  real h0 = h0Glob;
-  real flaringIndex = flaringIndexGlob;
-  real alpha = alphaGlob;
-  idefix_for("MyViscosity",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
-              KOKKOS_LAMBDA (int k, int j, int i) {
-                real R = x1(i);
-                real cs = h0*pow(R,flaringIndex-0.5);
-                eta1(k,j,i) = alpha*cs*h0*pow(R,flaringIndex+1)*Vc(RHO,k,j,i);
-                eta2(k,j,i) = ZERO_F;
-              });
-
-}
-
 void Damping(DataBlock &data, const real t, const real dtin) {
   IdefixArray4D<real> Vc = data.hydro.Vc;
   IdefixArray4D<real> Uc = data.hydro.Uc;
@@ -206,8 +190,6 @@ void Analysis(DataBlock & data) {
   // Sync it
   d.SyncFromDevice();
 
-//  data.DumpToFile("totou");
-
   for(int ip=0; ip < data.planetarySystem.nbp ; ip++) {
     // Get the orbital parameters
     real timeStep = data.dt;
@@ -311,11 +293,6 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output)// : m_pl
 //   data.hydro.EnrollUserSourceTerm(&MySourceTerm);
   data.hydro.EnrollIsoSoundSpeed(&MySoundSpeed);
 
-/*  if(data.hydro.viscosityStatus.status)
-    alphaGlob = input.Get<real>("Setup","alpha",0);
-    idfx::cout << "alpha= " << alphaGlob << std::endl;
-    data.hydro.viscosity.EnrollViscousDiffusivity(&MyViscosity);
-*/
   if(data.haveFargo)
     data.fargo.EnrollVelocity(&FargoVelocity);
   if(data.hydro.haveRotation) {

@@ -327,15 +327,10 @@ void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output)// : m_planet(0)//, Planet &planet)
 {
   // Set the function for userdefboundary
-  data.hydro->EnrollUserDefBoundary(&UserdefBoundary);
-  data.hydro->EnrollUserSourceTerm(&Damping);
-  //   data.hydro->EnrollUserSourceTerm(&MySourceTerm);
-  data.hydro->EnrollIsoSoundSpeed(&MySoundSpeed);
-
-  if(data.hydro->viscosityStatus.status)
-    alphaGlob = input.Get<real>("Setup","alpha",0);
-    idfx::cout << "alpha= " << alphaGlob << std::endl;
-    data.hydro->viscosity->EnrollViscousDiffusivity(&MyViscosity);
+  data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
+  data.hydro.EnrollUserSourceTerm(&Damping);
+  //   data.hydro.EnrollUserSourceTerm(&MySourceTerm);
+  data.hydro.EnrollIsoSoundSpeed(&MySoundSpeed);
 
   if(data.haveFargo)
     data.fargo->EnrollVelocity(&FargoVelocity);

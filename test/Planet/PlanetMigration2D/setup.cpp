@@ -311,11 +311,11 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output)// : m_pl
 //   data.hydro->EnrollUserSourceTerm(&MySourceTerm);
   data.hydro->EnrollIsoSoundSpeed(&MySoundSpeed);
 
-  if(data.hydro->viscosityStatus.status)
+  if(data.hydro->viscosityStatus.status) {
     alphaGlob = input.Get<real>("Setup","alpha",0);
-    idfx::cout << "alpha= " << alphaGlob << std::endl;
     data.hydro->viscosity->EnrollViscousDiffusivity(&MyViscosity);
-
+  }
+  
   if(data.haveFargo)
     data.fargo->EnrollVelocity(&FargoVelocity);
   if(data.hydro->haveRotation) {

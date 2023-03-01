@@ -114,7 +114,6 @@ int main( int argc, char* argv[] ) {
       idfx::cout << "Main: Restarting from dump file."  << std::endl;
       output.RestartFromDump(data,input.restartFileNumber);
       data.SetBoundaries();
-      output.CheckForWrites(data);
     } else {
       idfx::cout << "Main: Creating initial conditions." << std::endl;
       idfx::pushRegion("Setup::Initflow");
@@ -122,9 +121,9 @@ int main( int argc, char* argv[] ) {
       idfx::popRegion();
       data.DeriveVectorPotential();   // This does something only when evolveVectorPotential is on
       data.SetBoundaries();
-      output.CheckForWrites(data);
       data.Validate();
     }
+    output.CheckForWrites(data);
 
     ///////////////////////////////
     // Main Loop

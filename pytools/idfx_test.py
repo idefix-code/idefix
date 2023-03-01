@@ -422,7 +422,7 @@ class idfxTest:
     for fld in Vtest.data.keys():
       if(Vtest.data[fld].ndim==3):
         if fld in Vref.data.keys():
-          print("error in "+fld+" = "+str(np.sqrt(np.mean((Vref.data[fld]-Vtest.data[fld])**2))))
+          #print("error in "+fld+" = "+str(np.sqrt(np.mean((Vref.data[fld]-Vtest.data[fld])**2))))
           error = error+np.sqrt(np.mean((Vref.data[fld]-Vtest.data[fld])**2))
           ntested=ntested+1
 
@@ -454,8 +454,6 @@ class idfxTest:
             x3=np.zeros(Vref.data[fld].shape[2])
             x3[:-1]=Vref.x3l
             x3[-1]=Vref.x3r[-1]
-          print("showing "+fld)
-          print("x1.size:"+str(x1.size))
           plt.pcolor(x1, x2, Vref.data[fld][:,:,0].T-Vtest.data[fld][:,:,0].T,cmap='seismic')
           plt.xlabel("x1")
           plt.ylabel("x2")

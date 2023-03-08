@@ -27,17 +27,16 @@ class idfxTest:
     idefix_dir_env = os.getenv("IDEFIX_DIR")
 
     parser.add_argument("-noplot",
-                        default=False,
+                        dest="plot",
                         help="disable plotting in standard tests",
-                        action="store_true")
+                        action="store_false")
 
     parser.add_argument("-ploterr",
-                        default=False,
                         help="Enable plotting on error in regression tests",
                         action="store_true")
 
     parser.add_argument("-cmake",
-                        default="",
+                        default=[],
                         help="CMake options",
                         nargs='+')
 
@@ -51,27 +50,22 @@ class idfxTest:
                         nargs='+')
 
     parser.add_argument("-check",
-                        default=False,
                         help="Only perform regression tests without compilation",
                         action="store_true")
 
     parser.add_argument("-cuda",
-                        default=False,
                         help="Test on Nvidia GPU using CUDA",
                         action="store_true")
 
     parser.add_argument("-hip",
-                        default=False,
                         help="Test on AMD GPU using HIP",
                         action="store_true")
 
     parser.add_argument("-single",
-                        default=False,
                         help="Enable single precision",
                         action="store_true")
 
     parser.add_argument("-vectPot",
-                        default=False,
                         help="Enable vector potential formulation",
                         action="store_true")
 
@@ -85,43 +79,26 @@ class idfxTest:
                         help="Set directory for idefix source files (default $IDEFIX_DIR)")
 
     parser.add_argument("-mpi",
-                        default=False,
                         help="Enable MPI",
                         action="store_true")
 
     parser.add_argument("-all",
-                    default=False,
                     help="Do all test suite (otherwise, just do the test with the current configuration)",
                     action="store_true")
 
     parser.add_argument("-init",
-                    default=False,
                     help="Reinit reference files for non-regression tests (dangerous!)",
                     action="store_true")
 
     parser.add_argument("-Werror",
-                    default=False,
                     help="Consider warnings as errors",
                     action="store_true")
 
 
     args, unknown=parser.parse_known_args()
-    self.noplot = args.noplot
-    self.ploterr = args.ploterr
-    self.cmakeOpts = args.cmake
-    self.single = args.single
-    self.vectPot = args.vectPot
-    self.reconstruction = args.reconstruction
-    self.definitions = args.definitions
-    self.idefixDir = args.idefixDir
-    self.mpi = args.mpi
-    self.dec = args.dec
-    self.init = args.init
-    self.cuda = args.cuda
-    self.check = args.check
-    self.hip = args.hip
-    self.all = args.all
-    self.Werror = args.Werror
+
+    # transform all arguments from args into attributes of this instance
+    self.__dict__.update(vars(args))
     self.referenceDirectory = "reference"
 
   def configure(self,definitionFile=""):
@@ -129,9 +106,8 @@ class idfxTest:
     # add source directory
     comm.append(self.idefixDir)
     # add specific options
-    if(self.cmakeOpts):
-      for opt in self.cmakeOpts:
-        comm.append("-D"+opt)
+    for opt in self.cmake:
+      comm.append("-D"+opt)
 
     if self.cuda:
       comm.append("-DKokkos_ENABLE_CUDA=ON")
@@ -298,7 +274,7 @@ class idfxTest:
       os.chdir("python")
       comm = ["python3"]
       comm.append("testidefix.py")
-      if self.noplot:
+      if not self.plot:
         comm.append("-noplot")
 
       print(bcolors.OKCYAN+"Running standard test...")
@@ -374,7 +350,7 @@ class idfxTest:
       print("Nvidia Cuda enabled.")
     if self.hip:
       print("AMD HIP enabled.")
-    print("CMake Opts: " +" ".join(self.cmakeOpts))
+    print("CMake Opts: " +" ".join(self.cmake))
     print("Definitions file:"+self.definitions)
     print("Input File: "+self.inifile)
     if(self.single):

@@ -1,13 +1,14 @@
 import argparse
 import os
-import sys
-import subprocess
-import re
-sys.path.append(os.getenv("IDEFIX_DIR"))
-from pytools.dump_io import readDump
-import numpy as np
 import shutil
+import subprocess
+import sys
+import re
+
+import numpy as np
 import matplotlib.pyplot as plt
+
+from .dump_io import readDump
 
 class bcolors:
     HEADER = '\033[95m'

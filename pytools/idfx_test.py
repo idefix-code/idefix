@@ -233,9 +233,9 @@ class idfxTest:
           print("***************************************************"+bcolors.ENDC)
           raise e
 
-      self.__readLog()
+      self._readLog()
 
-  def __readLog(self):
+  def _readLog(self):
     if not os.path.exists('./idefix.0.log'):
       # When no idefix file is produced, we leave
       return
@@ -282,8 +282,8 @@ class idfxTest:
   def checkOnly(self, filename, tolerance=0):
     # Assumes the code has been run manually using some configuration, so we simply
     # do the test suite witout configure/compile/run
-    self.__readLog()
-    self.__showConfig()
+    self._readLog()
+    self._showConfig()
     if self.cuda or self.hip:
       print(bcolors.WARNING+"***********************************************")
       print("WARNING: Idefix guarantees floating point arithmetic accuracy")
@@ -317,7 +317,7 @@ class idfxTest:
     sys.stdout.flush()
 
   def nonRegressionTest(self, filename,tolerance=0):
-    fileref=self.referenceDirectory+"/"+self.__getReferenceFilename()
+    fileref=self.referenceDirectory+"/"+self._getReferenceFilename()
     if not(os.path.exists(fileref)):
       raise Exception("Reference file "+fileref+ " doesn't exist")
 
@@ -327,13 +327,13 @@ class idfxTest:
 
     Vref=readDump(fileref)
     Vtest=readDump(filetest)
-    error=self.__computeError(Vref,Vtest)
+    error=self._computeError(Vref,Vtest)
     if error > tolerance:
       print(bcolors.FAIL+"None-Regression test failed!")
-      self.__showConfig()
+      self._showConfig()
       print(bcolors.ENDC)
       if self.ploterr:
-        self.__plotDiff(Vref,Vtest)
+        self._plotDiff(Vref,Vtest)
       assert error <= tolerance, bcolors.FAIL+"Error (%e) above tolerance (%e)"%(error,tolerance)+bcolors.ENDC
     print(bcolors.OKGREEN+"Non-regression test succeeded with error=%e"%error+bcolors.ENDC)
     sys.stdout.flush()
@@ -341,23 +341,23 @@ class idfxTest:
   def compareDump(self, file1, file2,tolerance=0):
     Vref=readDump(file1)
     Vtest=readDump(file2)
-    error=self.__computeError(Vref,Vtest)
+    error=self._computeError(Vref,Vtest)
     if error > tolerance:
       print(bcolors.FAIL+"Files are different !")
       print(bcolors.ENDC)
 
-      self.__plotDiff(Vref,Vtest)
+      self._plotDiff(Vref,Vtest)
       assert error <= tolerance, bcolors.FAIL+"Error (%e) above tolerance (%e)"%(error,tolerance)+bcolors.ENDC
     print(bcolors.OKGREEN+"Files are identical up to error=%e"%error+bcolors.ENDC)
     sys.stdout.flush()
 
 
   def makeReference(self,filename):
-    self.__readLog()
+    self._readLog()
     if not os.path.exists(self.referenceDirectory):
       print("Creating reference directory")
       os.mkdir(self.referenceDirectory)
-    fileout = self.referenceDirectory+'/'+ self.__getReferenceFilename()
+    fileout = self.referenceDirectory+'/'+ self._getReferenceFilename()
     if(os.path.exists(fileout)):
       ans=input(bcolors.WARNING+"This will overwrite already existing reference file:\n"+fileout+"\nDo you confirm? (type yes to continue): "+bcolors.ENDC)
       if(ans != "yes"):
@@ -368,7 +368,7 @@ class idfxTest:
     print(bcolors.OKGREEN+"Reference file "+fileout+" created"+bcolors.ENDC)
     sys.stdout.flush()
 
-  def __showConfig(self):
+  def _showConfig(self):
     print("**************************************************************")
     if self.cuda:
       print("Nvidia Cuda enabled.")
@@ -398,7 +398,7 @@ class idfxTest:
 
     print("**************************************************************")
 
-  def __getReferenceFilename(self):
+  def _getReferenceFilename(self):
     strReconstruction="plm"
     if self.reconstruction == 3:
       strReconstruction = "limo3"
@@ -416,7 +416,7 @@ class idfxTest:
     fileref=fileref+'.dmp'
     return(fileref)
 
-  def __computeError(self,Vref,Vtest):
+  def _computeError(self,Vref,Vtest):
     ntested=0
     error=0
     for fld in Vtest.data.keys():
@@ -432,7 +432,7 @@ class idfxTest:
     error=error/ntested
     return(error)
 
-  def __plotDiff(self,Vref,Vtest):
+  def _plotDiff(self,Vref,Vtest):
 
     for fld in Vtest.data.keys():
       if(Vtest.data[fld].ndim==3):

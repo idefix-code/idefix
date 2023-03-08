@@ -11,7 +11,7 @@
   * [With MPI (gpu)](#with-mpi-gpu)
 - [Profiling](#profiling)
 - [Debugging](#debugging)
-- [Running tests](#running-tests)
+- [Code Validation](#code-validation)
 - [Contributing](#contributing)
 
 <!-- tocstop -->
@@ -26,6 +26,10 @@ cd idefix
 git submodule init
 git submodule update
 ```
+
+Note that code validation requires some large files that are handled by git-lfs. Make
+sure you have installed git-lfs and cloned the code before attempting to perform
+code validation (eg using the `testme.py` script).
 
 Installation:
 -------------
@@ -110,17 +114,26 @@ Debugging
 Add `-DIdefix_DEBUG=ON` when calling cmake, or activate the `Idefix_DEBUG` option in ccmake, and recompile.
 Note that this option triggers a lot of outputs and memory access checks which significantly slow down the code.
 
-Running tests
--------------------
+Code Validation
+---------------
+
+Most of tests provided in the `test/` directory can be validated against analytical solution (standard test)
+and/or pre-computed solutions (non-regression tests). Note that the validation relies on large reference
+files that are handled by `git-lfs`. Ensure that your system has `git-lfs` installed and that reference files
+were properly downloaded (in the reference/ directory of each test) before attempting to validate the code.
+
+In order to do a full validation of a particular test
+(with all of the possible combination of algorithms), use the script `testme.py`
+with the `-all` option, as in e.g.:
+```shell
+cd $IDEFIX_DIR/test/HD/sod
+./testme.py -all
+```
+
 Tests require Python 3 along with some third party dependencies to be installed.
 To install those deps, run
 ```shell
 pip install -r test/python_requirements.txt
-```
-
-The test suite itself is then run with
-```shell
-bash test/checks.sh
 ```
 
 Contributing

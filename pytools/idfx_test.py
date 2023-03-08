@@ -270,7 +270,7 @@ class idfxTest:
     self.nonRegressionTest(filename, tolerance)
 
   def standardTest(self):
-    if os.path.exists('python/testidefix.py'):
+    if os.path.exists(os.path.join('python', 'testidefix.py')):
       os.chdir("python")
       comm = ["python3"]
       comm.append("testidefix.py")
@@ -293,7 +293,7 @@ class idfxTest:
     sys.stdout.flush()
 
   def nonRegressionTest(self, filename,tolerance=0):
-    fileref=self.referenceDirectory+"/"+self._getReferenceFilename()
+    fileref=os.path.join(self.referenceDirectory, self._getReferenceFilename())
     if not(os.path.exists(fileref)):
       raise Exception("Reference file "+fileref+ " doesn't exist")
 
@@ -333,7 +333,7 @@ class idfxTest:
     if not os.path.exists(self.referenceDirectory):
       print("Creating reference directory")
       os.mkdir(self.referenceDirectory)
-    fileout = self.referenceDirectory+'/'+ self._getReferenceFilename()
+    fileout = os.path.join(self.referenceDirectory, self._getReferenceFilename())
     if(os.path.exists(fileout)):
       ans=input(bcolors.WARNING+"This will overwrite already existing reference file:\n"+fileout+"\nDo you confirm? (type yes to continue): "+bcolors.ENDC)
       if(ans != "yes"):

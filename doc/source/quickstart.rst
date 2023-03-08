@@ -33,7 +33,7 @@ The test problem are all located in the ``$IDEFIX_DIR/test`` directory of the di
 
     cd $IDEFIX_DIR/test/HD/sod
 
-From there, one sees 3 files and a directory:
+From there, one sees 4 files and a 2 directories:
 
 ``definitions.hpp``
     The configuration file. It contains C preprocessor directives for configuration options which require a re-compilation of the code. These are mostly
@@ -46,8 +46,15 @@ From there, one sees 3 files and a directory:
 ``idefix.ini``
     The input file. This file is read at runtime *only*. It defines most of the properties of the code: resolution, integrator, output, physical modules.
 
-``python`` directory
-    This directory is provided with most of the tests. Its content allows one to check that the code output is consistent with what is expected.
+``testme.py``
+    The validation script. It uses the python class ``idfx_test.py`` to validate the code outputs for that particular test. Use ``testme.py -help`` to find out the options.
+
+``python``
+    Directory that contains the standard test validation: i.e. comparison against an analytical solution
+
+``reference``
+    Directory that contains pre-computed results from previous versions of Idefix. This is used by CI/CD to check that the code is producing consistent results accross versions.
+
 
 For the time being, the files are already set up for the Sod test problem. The only thing lacking is a ``makefile`` to actually compile the code.
 In *Idefix* the makefile is created by `Cmake <https://cmake.org>`_ ,a tool to control code generation on diverse platforms. To configure *Idefix*,
@@ -66,14 +73,19 @@ Finally, we compile and run the code::
     make -j 8
     ./idefix
 
-This test being one dimensional, it runs very fast. We can check that the final solution match the prediction of the shock tube problem. To this end, we go to the ``python``
-subdirectory and run the test::
+This test being one dimensional, it runs very fast. We can check that the final solution match the prediction of the shock tube problem. To this end, we
+use the ``testme.py`` script:
 
-    cd python
-    python3 ./testidefix.py
+    ./testme.py -check
 
-If everything goes well, ``testidefix.py`` will load the latest output produced by idefix, display it, compare it with an analytical solution and tell you
-whether the error is acceptable or not.
+The ``-check`` option tells the test suite that the simulation has already run and we just need a validation of the result. Note that it's also
+possible to validate all of the possible combination of algorithms using the ``-all`` option. In that case, the script automatically
+configure, compile and validate a series of test with varying combination of algorithms.
+
+.. warning::
+    Note that the validation relies on large reference
+    files that are handled by ``git-lfs``. Ensure that your system has ``git-lfs`` installed and that reference files
+    were properly downloaded (in the reference/ directory of each test) before attempting to validate the code.
 
 
 Configure and run the Orszag-Tang test problem

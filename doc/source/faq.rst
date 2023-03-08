@@ -47,6 +47,13 @@ How can I stop the code without loosing the current calculation?
 I'm doing performance measures. How do I disable all outputs in *Idefix*?
   Add ``-nowrite`` when you call *Idefix* executable.
 
+Validation
+----------
+
+I get a "file not found" error when running the ``testme.py`` script in some test directory.
+  ``git-lfs`` is probably missing on your system. You should install/enable ``git-lfs`` and then
+  run ``git lfs pull`` in ``$IDEFIX_DIR``.
+
 Developement
 ------------
 

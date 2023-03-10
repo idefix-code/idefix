@@ -31,35 +31,6 @@
 // Whether of not we write the time in the VTK file
 #define WRITE_TIME
 
-void Vtk::WriteHeaderString(const char* header, IdfxFileHandler fvtk) {
-#ifdef WITH_MPI
-  MPI_Status status;
-  MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_BYTE,
-                                  MPI_CHAR, "native", MPI_INFO_NULL ));
-  if(idfx::prank==0) {
-    MPI_SAFE_CALL(MPI_File_write(fvtk, header, strlen(header), MPI_CHAR, &status));
-  }
-  offset=offset+strlen(header);
-#else
-  fprintf (fvtk, "%s", header);
-#endif
-}
-
-template <typename T>
-void Vtk::WriteHeaderBinary(T* buffer, int64_t nelem, IdfxFileHandler fvtk) {
-#ifdef WITH_MPI
-  MPI_Status status;
-  MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_BYTE, MPI_CHAR,
-                                  "native", MPI_INFO_NULL ));
-  if(idfx::prank==0) {
-    MPI_SAFE_CALL(MPI_File_write(fvtk, buffer, nelem*sizeof(T), MPI_CHAR, &status));
-  }
-  offset=offset+nelem*sizeof(T);
-#else
-  fwrite(buffer, sizeof(T), nelem, fvtk);
-#endif
-}
-
 void Vtk::WriteHeaderNodes(IdfxFileHandler fvtk) {
   int64_t size = node_coord.extent(0) *
              node_coord.extent(1) *
@@ -105,13 +76,6 @@ Vtk::Vtk(Input &input, DataBlock *datain) {
 
   // Temporary storage on host for 3D arrays
   this->vect3D = new float[nx1loc*nx2loc*nx3loc];
-
-  // Test endianness
-  int tmp1 = 1;
-  this->shouldSwapEndian = 0;
-  unsigned char *tmp2 = (unsigned char *) &tmp1;
-  if (*tmp2 != 0)
-    this->shouldSwapEndian = 1;
 
   // Store coordinates for later use
   this->xnode = new float[nx1+IOFFSET];
@@ -494,24 +458,4 @@ void Vtk::WriteScalar(IdfxFileHandler fvtk, float* Vin,  const std::string &var_
 #else
   fwrite(Vin,sizeof(float),nx1loc*nx2loc*nx3loc,fvtk);
 #endif
-}
-
-/* ****************************************************************************/
-/** Determines if the machine is little-endian.  If so,
-  it will force the data to be big-endian.
-@param in_number floating point number to be converted in big endian */
-/* *************************************************************************** */
-
-template <typename T>
-T Vtk::BigEndian(T in_number) {
-  if (shouldSwapEndian) {
-    unsigned char *bytes = (unsigned char*) &in_number;
-    unsigned char tmp = bytes[0];
-    bytes[0] = bytes[3];
-    bytes[3] = tmp;
-    tmp = bytes[1];
-    bytes[1] = bytes[2];
-    bytes[2] = tmp;
-  }
-  return(in_number);
 }

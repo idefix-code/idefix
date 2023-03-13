@@ -108,6 +108,7 @@ class DataBlock {
                                 ///< (contains references to dedicated objects)
 
   std::unique_ptr<Fluid<DefaultPhysics>> hydro;   ///< The Hydro object attached to this datablock
+  bool haveDust{false};
   std::vector<std::unique_ptr<Fluid<DustPhysics>>> dust; ///< Holder for zero pressure dust fluid
 
   std::unique_ptr<Vtk> vtk;

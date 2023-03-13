@@ -17,14 +17,18 @@
 template<typename Phys>
 void Fluid<Phys>::ShowConfig() {
   idfx::cout << Phys::prefix << ": ";
-  if constexpr(Phys::mhd) {
-    idfx::cout << "solving MHD equations." << std::endl;
-    #ifdef EVOLVE_VECTOR_POTENTIAL
-      idfx::cout << Phys::prefix << ": Using EXPERIMENTAL vector potential formulation for MHD."
-                 << std::endl;
-    #endif
+  if constexpr(!Phys::dust) {
+    if constexpr(Phys::mhd) {
+      idfx::cout << "solving MHD equations." << std::endl;
+      #ifdef EVOLVE_VECTOR_POTENTIAL
+        idfx::cout << Phys::prefix << ": Using EXPERIMENTAL vector potential formulation for MHD."
+                  << std::endl;
+      #endif
+    } else {
+      idfx::cout << "solving HD equations." << std::endl;
+    }
   } else {
-    idfx::cout << "solving HD equations." << std::endl;
+    idfx::cout << "solving pressure-less dust equations." << std::endl;
   }
   idfx::cout << Phys::prefix << ": Reconstruction: ";
   #if ORDER == 1

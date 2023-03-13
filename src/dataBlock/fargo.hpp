@@ -48,6 +48,8 @@ class Fargo {
   template <typename Phys>
   void StoreToScratch(Fluid<Phys>*);
 
+  void GetFargoVelocity(real);
+
   IdefixArray2D<real> meanVelocity;
   FargoType type{none};                 // By default, Fargo is disabled
 
@@ -70,7 +72,7 @@ class Fargo {
                                         //< when domain decomposition is enabled
   bool velocityHasBeenComputed{false};
   bool haveDomainDecomposition{false};
-  void GetFargoVelocity(real);
+
   FargoVelocityFunc fargoVelocityFunc{NULL};  // The user-defined fargo velocity function
 };
 

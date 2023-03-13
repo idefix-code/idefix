@@ -666,7 +666,7 @@ void RKLegendre<Phys>::LoopDir(real t) {
     ResetFlux();
 
     // CalcParabolicFlux
-    hydro->CalcParabolicFlux<dir>(t);
+    hydro->template CalcParabolicFlux<dir>(t);
 
     // Calc Right Hand Side
     CalcParabolicRHS<dir>(t);

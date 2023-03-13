@@ -1,6 +1,7 @@
 
 add_subdirectory(MHDsolvers)
 add_subdirectory(HDsolvers)
+add_subdirectory(Dustsolvers)
 
 
 target_sources(idefix

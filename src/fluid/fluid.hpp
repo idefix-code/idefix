@@ -48,7 +48,7 @@ class ThermalDiffusion;
 template<typename Phys>
 class Fluid {
  public:
-  Fluid( Grid &, Input&, DataBlock *);
+  Fluid( Grid &, Input&, DataBlock *, int n = 0);
   void ConvertConsToPrim();
   void ConvertPrimToCons();
   template <int> void CalcParabolicFlux(const real);
@@ -228,7 +228,7 @@ class Fluid {
 
 
 template<typename Phys>
-Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
+Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
   idfx::pushRegion("Fluid::Init");
   // Save the datablock to which we are attached from now on
   this->data = datain;
@@ -482,7 +482,10 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
   // Fill the names of the fields
   std::string outputPrefix("");
   if (Phys::prefix.compare("Hydro") != 0) {
-    outputPrefix=std::string(Phys::prefix)+"-";
+    outputPrefix = std::string(Phys::prefix);
+    // When dealing with dust, add the specie number
+    if(Phys::prefix.compare("Dust") == 0) outputPrefix += std::to_string(n);
+    outputPrefix += "-";
   }
 
   for(int i = 0 ; i < Phys::nvar ;  i++) {

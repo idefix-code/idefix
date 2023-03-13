@@ -267,6 +267,8 @@ void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
   // Sync it
   d.SyncFromDevice();
 
+  // The model being isothermal, we define ourselves PRS
+#undef PRS
   // Make references to the user-defined arrays (variables is a container of IdefixHostArray3D)
   // Note that the labels should match the variable names in the input file
   IdefixHostArray3D<real> PRS = variables["PRS"];

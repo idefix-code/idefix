@@ -9,12 +9,14 @@
 #define FLUID_RIEMANNSOLVER_RIEMANNSOLVER_HPP_
 
 #include <string>
+#include <memory>
 
 #include "fluid.hpp"
 #include "input.hpp"
-#include "shockFlattening.hpp"
 
-
+// Forward declaration
+template<typename Phys>
+class ShockFlattening;
 template <typename Phys>
 class RiemannSolver {
  public:
@@ -62,9 +64,11 @@ class RiemannSolver {
 
   Solver mySolver;
 
-  ShockFlattening shockFlattening;
+  std::unique_ptr<ShockFlattening<Phys>> shockFlattening;
   bool haveShockFlattening;
 };
+
+#include "shockFlattening.hpp"
 
 template <typename Phys>
 RiemannSolver<Phys>::RiemannSolver(Input &input, Fluid<Phys>* hydro) : Vc{hydro->Vc},
@@ -128,8 +132,8 @@ RiemannSolver<Phys>::RiemannSolver(Input &input, Fluid<Phys>* hydro) : Vc{hydro-
   this->haveShockFlattening = input.CheckEntry(std::string(Phys::prefix),"shockFlattening")>=0;
   // Init shock flattening
   if(haveShockFlattening) {
-    this->shockFlattening =
-      ShockFlattening(hydro,input.Get<real>(std::string(Phys::prefix),"shockFlattening",0));
+    this->shockFlattening = std::make_unique<ShockFlattening<Phys>>(
+                              hydro,input.Get<real>(std::string(Phys::prefix),"shockFlattening",0));
   }
 }
 
@@ -166,7 +170,7 @@ void RiemannSolver<Phys>::ShowConfig() {
   }
 
   if(haveShockFlattening) {
-    idfx::cout << "Fluid: Shock Flattening ENABLED." << std::endl;
+    idfx::cout << Phys::prefix << ": Shock Flattening ENABLED." << std::endl;
   }
 }
 #include "calcFlux.hpp"

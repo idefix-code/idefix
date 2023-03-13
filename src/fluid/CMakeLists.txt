@@ -14,11 +14,7 @@ target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/checkDivB.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/coarsenFlow.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/convertConsToPrim.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/convertConsToPrimHD.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/convertConsToPrimMHD.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/evolveStage.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/fluxHD.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/fluxMHD.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/fluid_defs.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/enroll.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/fluid.hpp

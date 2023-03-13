@@ -15,10 +15,10 @@ void Fluid<Phys>::EnrollIsoSoundSpeed(IsoSoundSpeedFunc myFunc) {
     IDEFIX_WARNING("Isothermal sound speed enrollment requires Hydro/csiso "
                  " to be set to userdef in .ini file");
   }
-  #if HAVE_ENERGY
+  if constexpr(!Phys::isothermal) {
     IDEFIX_ERROR("Isothermal sound speed enrollment requires ISOTHERMAL to be defined in"
                  "definitions.hpp");
-  #endif
+  }
   this->isoSoundSpeedFunc = myFunc;
 }
 
@@ -50,18 +50,18 @@ void Fluid<Phys>::EnrollUserSourceTerm(SrcTermFunc myFunc) {
 
 template<typename Phys>
 void Fluid<Phys>::EnrollEmfBoundary(EmfBoundaryFunc myFunc) {
-  #if MHD == NO
+  if constexpr(!Phys::mhd) {
     IDEFIX_ERROR("This function can only be used with the MHD solver.");
-  #endif
+  }
   this->emfBoundaryFunc = myFunc;
   this->haveEmfBoundary = true;
 }
 
 template<typename Phys>
 void Fluid<Phys>::EnrollOhmicDiffusivity(DiffusivityFunc myFunc) {
-  #if MHD == NO
+  if constexpr(!Phys::mhd) {
     IDEFIX_ERROR("This function can only be used with the MHD solver.");
-  #endif
+  }
   if(this->resistivityStatus.status < UserDefFunction) {
     IDEFIX_WARNING("Ohmic diffusivity enrollment requires Hydro/Resistivity "
                  "to be set to userdef in .ini file");
@@ -71,9 +71,9 @@ void Fluid<Phys>::EnrollOhmicDiffusivity(DiffusivityFunc myFunc) {
 
 template<typename Phys>
 void Fluid<Phys>::EnrollAmbipolarDiffusivity(DiffusivityFunc myFunc) {
-  #if MHD == NO
+  if constexpr(!Phys::mhd) {
     IDEFIX_ERROR("This function can only be used with the MHD solver.");
-  #endif
+  }
   if(this->ambipolarStatus.status < UserDefFunction) {
     IDEFIX_WARNING("Ambipolar diffusivity enrollment requires Hydro/Ambipolar "
                  "to be set to userdef in .ini file");
@@ -83,9 +83,9 @@ void Fluid<Phys>::EnrollAmbipolarDiffusivity(DiffusivityFunc myFunc) {
 
 template<typename Phys>
 void Fluid<Phys>::EnrollHallDiffusivity(DiffusivityFunc myFunc) {
-  #if MHD == NO
+  if constexpr(!Phys::mhd) {
     IDEFIX_ERROR("This function can only be used with the MHD solver.");
-  #endif
+  }
   if(this->hallStatus.status < UserDefFunction) {
     IDEFIX_WARNING("Hall diffusivity enrollment requires Hydro/Hall "
                  "to be set to userdef in .ini file");

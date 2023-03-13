@@ -17,6 +17,11 @@ struct Physics {
   #else
     static constexpr bool pressure{false};
   #endif
+  #ifdef ISOTHERMAL
+  static constexpr bool isothermal{true};
+  #else
+  static constexpr bool isothermal{false};
+  #endif
   #if MHD == YES
     static constexpr bool mhd{true};
     static constexpr int nvar{1+2*COMPONENTS  + (pressure?1:0)};
@@ -24,7 +29,6 @@ struct Physics {
     static constexpr bool mhd{false};
     static constexpr int nvar{1+COMPONENTS  + (pressure?1:0)};
   #endif
-
 
   // prefix
   static constexpr std::string_view prefix = "Hydro";

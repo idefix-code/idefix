@@ -11,11 +11,84 @@
 #include "fluid.hpp"
 #include "dataBlock.hpp"
 
-#if MHD == YES
-#include "convertConsToPrimMHD.hpp"
-#else
-#include "convertConsToPrimHD.hpp"
-#endif
+template <typename Phys>
+KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[], real gamma_m1) {
+  Vc[RHO] = Uc[RHO];
+
+  EXPAND( Vc[VX1] = Uc[MX1]/Uc[RHO];  ,
+          Vc[VX2] = Uc[MX2]/Uc[RHO];  ,
+          Vc[VX3] = Uc[MX3]/Uc[RHO];  )
+
+  if constexpr(Phys::mhd) {
+    EXPAND( Vc[BX1] = Uc[BX1];  ,
+            Vc[BX2] = Uc[BX2];  ,
+            Vc[BX3] = Uc[BX3];  )
+  }
+
+
+  if constexpr(Phys::pressure) {
+    real kin = HALF_F / Uc[RHO] * (EXPAND( Uc[MX1]*Uc[MX1]   ,
+                                    + Uc[MX2]*Uc[MX2]  ,
+                                    + Uc[MX3]*Uc[MX3]  ));
+
+    if constexpr(Phys::mhd) {
+      real mag = HALF_F * (EXPAND( Uc[BX1]*Uc[BX1]   ,
+                          + Uc[BX2]*Uc[BX2]  ,
+                          + Uc[BX3]*Uc[BX3]  ));
+
+      Vc[PRS] = gamma_m1 * (Uc[ENG] - kin - mag);
+
+      // Check pressure positivity
+      if(Vc[PRS]<= ZERO_F) {
+        #ifdef SMALL_PRESSURE_TEMPERATURE
+          Vc[PRS] = SMALL_PRESSURE_TEMPERATURE*Vc[RHO];
+        #else
+          Vc[PRS] = SMALL_PRESSURE_FIX;
+        #endif
+
+          Uc[ENG] = Vc[PRS]/gamma_m1+kin+mag;
+      }
+
+    } else { // Hydro case
+      Vc[PRS] = gamma_m1 * (Uc[ENG] - kin);
+    } // MHD
+  } // Have Energy
+}
+
+template <typename Phys>
+KOKKOS_INLINE_FUNCTION void K_PrimToCons(real Uc[], real Vc[], real gamma_m1) {
+  Uc[RHO] = Vc[RHO];
+
+  EXPAND( Uc[MX1] = Vc[VX1]*Vc[RHO];  ,
+          Uc[MX2] = Vc[VX2]*Vc[RHO];  ,
+          Uc[MX3] = Vc[VX3]*Vc[RHO];  )
+
+  if constexpr(Phys::mhd) {
+    EXPAND( Uc[BX1] = Vc[BX1];  ,
+            Uc[BX2] = Vc[BX2];  ,
+            Uc[BX3] = Vc[BX3];  )
+  }
+
+
+  if constexpr(Phys::pressure) {
+    if constexpr(Phys::mhd) {
+      Uc[ENG] = Vc[PRS] / gamma_m1
+                + HALF_F * Vc[RHO] * (EXPAND( Vc[VX1]*Vc[VX1]  ,
+                                            + Vc[VX2]*Vc[VX2]  ,
+                                            + Vc[VX3]*Vc[VX3]  ))
+                + HALF_F * (EXPAND( Uc[BX1]*Uc[BX1]  ,
+                                  + Uc[BX2]*Uc[BX2]  ,
+                                  + Uc[BX3]*Uc[BX3]  ));
+    } else {
+      Uc[ENG] = Vc[PRS] / gamma_m1
+                + HALF_F * Vc[RHO] * (EXPAND( Vc[VX1]*Vc[VX1]  ,
+                                            + Vc[VX2]*Vc[VX2]  ,
+                                            + Vc[VX3]*Vc[VX3]  ));
+    } //MHD
+  } // Energy
+}
+
+
 
 // Convect Conservative to Primitive variable
 template<typename Phys>
@@ -26,30 +99,30 @@ void Fluid<Phys>::ConvertConsToPrim() {
   IdefixArray4D<real> Uc = this->Uc;
   real gamma_m1=this->gamma-ONE_F;
 
-  #if MHD == YES
+  if constexpr(Phys::mhd) {
     #ifdef EVOLVE_VECTOR_POTENTIAL
       emf->ComputeMagFieldFromA(Ve,Vs);
     #endif
     boundary->ReconstructVcField(Uc);
-  #endif
+  }
 
   idefix_for("ConsToPrim",
              0,data->np_tot[KDIR],
              0,data->np_tot[JDIR],
              0,data->np_tot[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
-      real U[NVAR];
-      real V[NVAR];
+      real U[Phys::nvar];
+      real V[Phys::nvar];
 
 #pragma unroll
-      for(int nv = 0 ; nv < NVAR; nv++) {
+      for(int nv = 0 ; nv < Phys::nvar; nv++) {
         U[nv] = Uc(nv,k,j,i);
       }
 
-      K_ConsToPrim(V,U,gamma_m1);
+      K_ConsToPrim<Phys>(V,U,gamma_m1);
 
 #pragma unroll
-      for(int nv = 0 ; nv<NVAR; nv++) {
+      for(int nv = 0 ; nv<Phys::nvar; nv++) {
         Vc(nv,k,j,i) = V[nv];
       }
   });
@@ -71,22 +144,23 @@ void Fluid<Phys>::ConvertPrimToCons() {
              0,data->np_tot[JDIR],
              0,data->np_tot[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
-      real U[NVAR];
-      real V[NVAR];
+      real U[Phys::nvar];
+      real V[Phys::nvar];
 
 #pragma unroll
-      for(int nv = 0 ; nv < NVAR; nv++) {
+      for(int nv = 0 ; nv < Phys::nvar; nv++) {
         V[nv] = Vc(nv,k,j,i);
       }
 
-      K_PrimToCons(U,V,gamma_m1);
+      K_PrimToCons<Phys>(U,V,gamma_m1);
 
 #pragma unroll
-      for(int nv = 0 ; nv<NVAR; nv++) {
+      for(int nv = 0 ; nv<Phys::nvar; nv++) {
         Uc(nv,k,j,i) = U[nv];
       }
   });
 
   idfx::popRegion();
 }
+
 #endif //FLUID_CONVERTCONSTOPRIM_HPP_

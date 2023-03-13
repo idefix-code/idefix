@@ -21,7 +21,6 @@
 class DataBlock;
 #include "physics.hpp"
 template <typename Phys> class Fluid;
-using Hydro = Fluid<Physics>;
 
 template<typename Phys>
 class Boundary {
@@ -106,7 +105,7 @@ Boundary<Phys>::Boundary(Input & input, Grid &grid, Fluid<Phys>* fluid) {
 
   if(data->lbound[IDIR] == shearingbox || data->rbound[IDIR] == shearingbox) {
     sBArray = IdefixArray4D<real>("ShearingBoxArray",
-                                  NVAR,
+                                  Phys::nvar,
                                   data->np_tot[KDIR]+1,
                                   data->np_tot[JDIR]+1,
                                   data->nghost[IDIR]);
@@ -119,7 +118,7 @@ Boundary<Phys>::Boundary(Input & input, Grid &grid, Fluid<Phys>* fluid) {
   // The variable mapper list all of the variable which are exchanged in MPI boundary calls
   // This is required since we skip some of the variables in Vc to limit the amount of data
   // being exchanged
-  int mapNVars = NVAR;
+  int mapNVars = Phys::nvar;
   if constexpr(Phys::mhd) mapNVars -= DIMENSIONS;
 
   std::vector<int> mapVars;
@@ -455,7 +454,7 @@ void Boundary<Phys>::EnforcePeriodic(int dir, BoundarySide side ) {
           Vc(n,k,j,i) = Vc(n,kref,jref,iref);
         });
 
-  #if MHD==YES
+  if constexpr(Phys::mhd) {
     IdefixArray4D<real> Vs = fluid->Vs;
     if(dir==JDIR || dir==KDIR) {
       nxi = data->np_int[IDIR]+1;
@@ -533,7 +532,7 @@ void Boundary<Phys>::EnforcePeriodic(int dir, BoundarySide side ) {
         });
       }
     #endif
-  #endif// MHD
+  }// MHD
 }
 
 
@@ -561,7 +560,7 @@ void Boundary<Phys>::EnforceReflective(int dir, BoundarySide side ) {
           Vc(n,k,j,i) = sign * Vc(n,kref,jref,iref);
         });
 
-  #if MHD==YES
+  if constexpr(Phys::mhd) {
     IdefixArray4D<real> Vs = fluid->Vs;
     if(dir==JDIR || dir==KDIR) {
       BoundaryForX1s("BoundaryReflectiveX1s",dir,side,
@@ -599,7 +598,7 @@ void Boundary<Phys>::EnforceReflective(int dir, BoundarySide side ) {
           });
       }
     #endif
-  #endif// MHD
+  }// MHD
 }
 
 template<typename Phys>
@@ -632,7 +631,7 @@ void Boundary<Phys>::EnforceOutflow(int dir, BoundarySide side ) {
           }
         });
 
-  #if MHD==YES
+  if constexpr(Phys::mhd) {
     IdefixArray4D<real> Vs = fluid->Vs;
     if(dir==JDIR || dir==KDIR) {
       BoundaryForX1s("BoundaryOutflowX1s",dir,side,
@@ -669,7 +668,7 @@ void Boundary<Phys>::EnforceOutflow(int dir, BoundarySide side ) {
           });
       }
     #endif
-  #endif// MHD
+  }// MHD
 }
 
 template<typename Phys>
@@ -772,7 +771,7 @@ void Boundary<Phys>::EnforceShearingBox(real t, int dir, BoundarySide side) {
         });
 
   // Magnetised version of the same thing
-  #if MHD==YES
+  if constexpr(Phys::mhd) {
     IdefixArray4D<real> Vs = fluid->Vs;
     #if DIMENSIONS >= 2
       for(int component = BX2s ; component < DIMENSIONS ; component++) {
@@ -827,7 +826,7 @@ void Boundary<Phys>::EnforceShearingBox(real t, int dir, BoundarySide side) {
               });
       }// loop on components
     #endif// DIMENSIONS
-  #endif // MHD
+  } // MHD
 }
 
 template<typename Phys>
@@ -853,7 +852,7 @@ inline void Boundary<Phys>::BoundaryForAll(
     const int kbeg = (dir == KDIR) ? side*(kghost+nxk) : 0;
     const int kend = (dir == KDIR) ? kghost + side*(kghost+nxk) : data->np_tot[KDIR];
 
-    idefix_for(name, 0, NVAR, kbeg, kend, jbeg, jend, ibeg, iend, function);
+    idefix_for(name, 0, Phys::nvar, kbeg, kend, jbeg, jend, ibeg, iend, function);
 }
 
 template<typename Phys>

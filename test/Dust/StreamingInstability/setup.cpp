@@ -135,7 +135,7 @@ void Setup::InitFlow(DataBlock &data) {
                 // Equations 7a-7b of Youdin & Johansen (2007) with eta = epsilon/(2Omega Vk)
                 d.Vc(VX1,k,j,i) = chi * taus/((D*D+taus*taus))*epsilon/omega;
                 d.Vc(VX2,k,j,i) = -(1+ chi*taus*taus/(D*D+taus*taus))*epsilon/(2*D*omega);
-                d.Vc(VX1,k,j,i) += 1e-5*(idfx::randm()-0.5);
+                d.Vc(VX1,k,j,i) += 1e-1*(idfx::randm()-0.5);
                 d.Vc(VX2,k,j,i) += shear*x;
                 d.Vc(VX3,k,j,i) = 0.0;
 
@@ -144,7 +144,7 @@ void Setup::InitFlow(DataBlock &data) {
                 d.dustVc[0](VX1,k,j,i) = - taus/(D*D+taus*taus)*epsilon/omega;
                 d.dustVc[0](VX2,k,j,i) = - (1-taus*taus/(D*D+taus*taus))*epsilon/(2*D*omega);
 
-                d.dustVc[0](VX1,k,j,i) += 0*1e-5*(idfx::randm()-0.5);
+                d.dustVc[0](VX1,k,j,i) += 0*1e-1*(idfx::randm()-0.5);
                 d.dustVc[0](VX2,k,j,i) += shear*x;
                 d.dustVc[0](VX3,k,j,i) = 0.0;
 

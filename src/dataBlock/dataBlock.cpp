@@ -192,10 +192,15 @@ void DataBlock::SetBoundaries() {
     #if MHD==YES
       hydro->CoarsenMagField(hydro->Vs);
     #endif
+    if(haveDust) {
+      for(int i = 0 ; i < dust.size() ; i++) {
+        dust[i]->CoarsenFlow(hydro->Vc);
+      }
+    }
   }
   if(haveDust) {
     for(int i = 0 ; i < dust.size() ; i++) {
-      dust[i]->ConvertPrimToCons();
+      dust[i]->boundary->SetBoundaries(t);
     }
   }
   hydro->boundary->SetBoundaries(t);

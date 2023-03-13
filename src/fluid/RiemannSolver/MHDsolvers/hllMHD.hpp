@@ -10,8 +10,8 @@
 
 #include "../idefix.hpp"
 #include "slopeLimiter.hpp"
-#include "fluxMHD.hpp"
-#include "convertConsToPrimMHD.hpp"
+#include "flux.hpp"
+#include "convertConsToPrim.hpp"
 #include "storeFlux.hpp"
 #include "constrainedTransport.hpp"
 
@@ -81,7 +81,7 @@ void RiemannSolver<Phys>::HllMHD(IdefixArray4D<real> &Flux) {
   [[maybe_unused]] real csIso = hydro->isoSoundSpeed;
   [[maybe_unused]] HydroModuleStatus haveIsoCs = hydro->haveIsoSoundSpeed;
 
-  SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR],shockFlattening);
+  SlopeLimiter<Phys,DIR> slopeLim(Vc,data->dx[DIR],haveShockFlattening,shockFlattening.get());;
 
   // Define normal, tangent and bi-tanget indices
   // st and sb will be useful only when Hall is included
@@ -160,25 +160,22 @@ void RiemannSolver<Phys>::HllMHD(IdefixArray4D<real> &Flux) {
              data->beg[IDIR]-iextend,data->end[IDIR]+ioffset+iextend,
     KOKKOS_LAMBDA (int k, int j, int i) {
       // Init the directions (should be in the kernel for proper optimisation by the compilers)
-      EXPAND( const int Xn = DIR+MX1;                    ,
-              const int Xt = (DIR == IDIR ? MX2 : MX1);  ,
-              const int Xb = (DIR == KDIR ? MX2 : MX3);  )
-
+      const int Xn = DIR+MX1;
       EXPAND( const int BXn = DIR+BX1;                    ,
               const int BXt = (DIR == IDIR ? BX2 : BX1);  ,
               const int BXb = (DIR == KDIR ? BX2 : BX3);   )
 
       // Primitive variables
-      real vL[NVAR];
-      real vR[NVAR];
+      real vL[Phys::nvar];
+      real vR[Phys::nvar];
 
       // Conservative variables
-      real uL[NVAR];
-      real uR[NVAR];
+      real uL[Phys::nvar];
+      real uR[Phys::nvar];
 
       // Flux (left and right)
-      real fluxL[NVAR];
-      real fluxR[NVAR];
+      real fluxL[Phys::nvar];
+      real fluxR[Phys::nvar];
 
       // Signal speeds
       real cL, cR, cmax, c2Iso;
@@ -285,13 +282,13 @@ void RiemannSolver<Phys>::HllMHD(IdefixArray4D<real> &Flux) {
       cmax = FMAX(FABS(SLb), FABS(SRb));
 
       // 2-- Compute the conservative variables
-      K_PrimToCons(uL, vL, gamma_m1);
-      K_PrimToCons(uR, vR, gamma_m1);
+      K_PrimToCons<Phys>(uL, vL, gamma_m1);
+      K_PrimToCons<Phys>(uR, vR, gamma_m1);
 
 
 
 #pragma unroll
-      for(int nv = 0 ; nv < NVAR; nv++) {
+      for(int nv = 0 ; nv < Phys::nvar; nv++) {
         fluxL[nv] = uL[nv];
         fluxR[nv] = uR[nv];
       }
@@ -299,8 +296,8 @@ void RiemannSolver<Phys>::HllMHD(IdefixArray4D<real> &Flux) {
 
 
       // 3-- Compute the left and right fluxes
-      K_Flux(fluxL, vL, fluxL, c2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
-      K_Flux(fluxR, vR, fluxR, c2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
+      K_Flux<Phys,DIR>(fluxL, vL, fluxL, c2Iso);
+      K_Flux<Phys,DIR>(fluxR, vR, fluxR, c2Iso);
 
       // 4-- Compute the Hall flux
       if(haveHall) {
@@ -415,19 +412,29 @@ void RiemannSolver<Phys>::HllMHD(IdefixArray4D<real> &Flux) {
 
       if (SLb > 0) {
 #pragma unroll
-        for (int nv = BX1 ; nv < NFLX; nv++) {
+        for (int nv = BX1 ; nv < BX1+COMPONENTS; nv++) {
           Flux(nv,k,j,i) = fluxL[nv];
+        }
+        if constexpr(Phys::pressure) {
+          Flux(ENG,k,j,i) = fluxL[ENG];
         }
       } else if (SRb < 0) {
 #pragma unroll
-        for (int nv = BX1 ; nv < NFLX; nv++) {
+        for (int nv = BX1 ; nv < BX1+COMPONENTS; nv++) {
           Flux(nv,k,j,i) = fluxR[nv];
+        }
+        if constexpr(Phys::pressure) {
+          Flux(ENG,k,j,i) = fluxR[ENG];
         }
       } else {
 #pragma unroll
-        for(int nv = BX1 ; nv < NFLX; nv++) {
+        for(int nv = BX1 ; nv < BX1+COMPONENTS; nv++) {
           Flux(nv,k,j,i) = SLb*SRb*uR[nv] - SLb*SRb*uL[nv] + SRb*fluxL[nv] - SLb*fluxR[nv];
           Flux(nv,k,j,i) *= (1.0 / (SRb - SLb));
+        }
+        if constexpr(Phys::pressure) {
+          Flux(ENG,k,j,i) = SLb*SRb*uR[ENG] - SLb*SRb*uL[ENG] + SRb*fluxL[ENG] - SLb*fluxR[ENG];
+          Flux(ENG,k,j,i) *= (1.0 / (SRb - SLb));
         }
       }
 

@@ -48,12 +48,13 @@ class Fargo {
   template <typename Phys>
   void StoreToScratch(Fluid<Phys>*);
 
+  IdefixArray2D<real> meanVelocity;
+  FargoType type{none};                 // By default, Fargo is disabled
+
  private:
   friend Hydro;
   DataBlock *data;
-  FargoType type{none};                 // By default, Fargo is disabled
 
-  IdefixArray2D<real> meanVelocity;
   IdefixArray4D<real> scrhUc;
   IdefixArray4D<real> scrhVs;
 

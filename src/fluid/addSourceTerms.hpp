@@ -12,62 +12,84 @@
 #include "dataBlock.hpp"
 #include "fargo.hpp"
 
-// Add source terms
-template <typename Phys>
-void Fluid<Phys>::AddSourceTerms(real t, real dt) {
-  idfx::pushRegion("Hydro::AddSourceTerms");
+template<typename Phys>
+struct Fluid_AddSourceTermsFunctor {
+  /// @brief Functor for Add source terms
+  /// @param hydro
+  //*****************************************************************
+  // Functor constructor
+  //*****************************************************************
+  explicit Fluid_AddSourceTermsFunctor(Fluid<Phys> *hydro, real dt) {
+    Uc = hydro->Uc;
+    Vc = hydro->Vc;
+    x1 = hydro->data->x[IDIR];
+    x2 = hydro->data->x[JDIR];
 
-  IdefixArray4D<real> Uc = this->Uc;
-  IdefixArray4D<real> Vc = this->Vc;
-  IdefixArray1D<real> x1 = data->x[IDIR];
-  IdefixArray1D<real> x2 = data->x[JDIR];
-
-#ifdef ISOTHERMAL
-  IdefixArray3D<real> csIsoArr = this->isoSoundSpeedArray;
-#endif
-#if GEOMETRY == SPHERICAL
-  IdefixArray1D<real> sinx2  = data->sinx2;
-  IdefixArray1D<real> tanx2  = data->tanx2;
-  IdefixArray1D<real> rt = data->rt;
-#endif
-
-
-#ifdef ISOTHERMAL
-  [[maybe_unused]] real csIso = this->isoSoundSpeed;
-  [[maybe_unused]] HydroModuleStatus haveIsoCs = this->haveIsoSoundSpeed;
-#endif
-
-  bool haveRotation = this->haveRotation;
-  real OmegaZ = this->OmegaZ;
-
-  // Fargo
-  bool haveFargo  = data->haveFargo;
-  IdefixArray2D<real> fargoVelocity;
-  if(haveFargo) {
-    fargoVelocity = data->fargo->meanVelocity;
+    this->dt = dt;
+    #if GEOMETRY == SPHERICAL
+      sinx2  = hydro->data->sinx2;
+      tanx2  = hydro->data->tanx2;
+      rt = hydro->data->rt;
+    #endif
+    if constexpr(Phys::isothermal) {
+      csIsoArr = hydro->isoSoundSpeedArray;
+      csIso = hydro->isoSoundSpeed;
+      haveIsoCs = hydro->haveIsoSoundSpeed;
+    }
+    haveRotation = hydro->haveRotation;
+    OmegaZ = hydro->OmegaZ;
+    haveFargo = hydro->data->haveFargo;
+    if(haveFargo) {
+      fargoVelocity = hydro->data->fargo->meanVelocity;
+    }
+    // shearing box (only with fargo&cartesian)
+    sbS = hydro->sbS;
   }
 
+  //*****************************************************************
+  // Functor Variables
+  //*****************************************************************
+  IdefixArray4D<real> Uc;
+  IdefixArray4D<real> Vc;
+  IdefixArray1D<real> x1;
+  IdefixArray1D<real> x2;
+  IdefixArray3D<real> csIsoArr;
+
+  real dt;
+#if GEOMETRY == SPHERICAL
+  IdefixArray1D<real> sinx2;
+  IdefixArray1D<real> tanx2;
+  IdefixArray1D<real> rt;
+#endif
+
+  real csIso;
+  HydroModuleStatus haveIsoCs;
+
+  bool haveRotation;
+  real OmegaZ;
+
+  // Fargo
+  bool haveFargo;
+  IdefixArray2D<real> fargoVelocity;
+
   // shearing box (only with fargo&cartesian)
-  [[maybe_unused]] real sbS = this->sbS;
+  real sbS;
 
-  if(haveUserSourceTerm) userSourceTerm(*data, t, dt);
-
-  idefix_for("AddSourceTerms",
-             data->beg[KDIR],data->end[KDIR],
-             data->beg[JDIR],data->end[JDIR],
-             data->beg[IDIR],data->end[IDIR],
-    KOKKOS_LAMBDA (int k, int j, int i) {
-      #if GEOMETRY == CARTESIAN
-        // Manually add Coriolis force in cartesian geometry. Otherwise
-        // Coriolis is treated as a modification to the fluxes
-        if(haveRotation) {
-          Uc(MX1,k,j,i) +=   TWO_F * dt * Vc(RHO,k,j,i) * OmegaZ * Vc(VX2,k,j,i);
-          Uc(MX2,k,j,i) += - TWO_F * dt * Vc(RHO,k,j,i) * OmegaZ * Vc(VX1,k,j,i);
-        }
-        if(haveFargo) {
-          Uc(MX1,k,j,i) +=   TWO_F * dt * Vc(RHO,k,j,i) * OmegaZ * sbS * x1(i);
-        }
-      #endif
+  //*****************************************************************
+  // Functor Operator
+  //*****************************************************************
+  KOKKOS_INLINE_FUNCTION void operator() (const int k, const int j,  const int i) const {
+    #if GEOMETRY == CARTESIAN
+      // Manually add Coriolis force in cartesian geometry. Otherwise
+      // Coriolis is treated as a modification to the fluxes
+      if(haveRotation) {
+        Uc(MX1,k,j,i) +=   TWO_F * dt * Vc(RHO,k,j,i) * OmegaZ * Vc(VX2,k,j,i);
+        Uc(MX2,k,j,i) += - TWO_F * dt * Vc(RHO,k,j,i) * OmegaZ * Vc(VX1,k,j,i);
+      }
+      if(haveFargo) {
+        Uc(MX1,k,j,i) +=   TWO_F * dt * Vc(RHO,k,j,i) * OmegaZ * sbS * x1(i);
+      }
+    #endif
       // fetch fargo velocity when required
       [[maybe_unused]] real fargoV = ZERO_F;
       if(haveFargo) {
@@ -85,25 +107,25 @@ void Fluid<Phys>::AddSourceTerms(real t, real dt) {
       if(haveRotation) vphi += OmegaZ*x1(i);
       Sm = Vc(RHO,k,j,i) * vphi*vphi; // Centrifugal
       // Presure (because pressure is included in the flux, additional source terms arise)
-    #ifdef ISOTHERMAL
-      real c2Iso;
-      if(haveIsoCs == UserDefFunction) {
-        c2Iso = csIsoArr(k,j,i);
-        c2Iso = c2Iso*c2Iso;
-      } else {
-        c2Iso = csIso*csIso;
-      }
-      Sm += Vc(RHO,k,j,i)*c2Iso;
-    #else
-      Sm += Vc(PRS,k,j,i);
-    #endif // ISOTHERMAL
-    #if MHD==YES
-      Sm -=  Vc(iBPHI,k,j,i)*Vc(iBPHI,k,j,i); // Hoop stress
-      // Magnetic pressure
-      Sm += HALF_F*(EXPAND( Vc(BX1,k,j,i)*Vc(BX1,k,j,i)   ,
-                            +Vc(BX2,k,j,i)*Vc(BX2,k,j,i)  ,
-                            +Vc(BX3,k,j,i)*Vc(BX3,k,j,i)  ));
-    #endif // MHD
+      if constexpr(Phys::isothermal) {
+        real c2Iso;
+        if(haveIsoCs == UserDefFunction) {
+          c2Iso = csIsoArr(k,j,i);
+          c2Iso = c2Iso*c2Iso;
+        } else {
+          c2Iso = csIso*csIso;
+        }
+        Sm += Vc(RHO,k,j,i)*c2Iso;
+      } else if constexpr(Phys::pressure) {
+        Sm += Vc(PRS,k,j,i);
+      }  // Pressure
+      if constexpr(Phys::mhd) {
+        Sm -=  Vc(iBPHI,k,j,i)*Vc(iBPHI,k,j,i); // Hoop stress
+        // Magnetic pressure
+        Sm += HALF_F*(EXPAND( Vc(BX1,k,j,i)*Vc(BX1,k,j,i)   ,
+                              +Vc(BX2,k,j,i)*Vc(BX2,k,j,i)  ,
+                              +Vc(BX3,k,j,i)*Vc(BX3,k,j,i)  ));
+      } // MHD
       Uc(MX1,k,j,i) += dt * Sm / x1(i);
   #endif // COMPONENTS
 
@@ -114,25 +136,25 @@ void Fluid<Phys>::AddSourceTerms(real t, real dt) {
       Sm = Vc(RHO,k,j,i) * vphi*vphi;     // Centrifugal
       // Pressure (because we're including pressure in the flux,
       // we need that to get the radial pressure gradient)
-  #ifdef ISOTHERMAL
-      real c2Iso;
-      if(haveIsoCs == UserDefFunction) {
-        c2Iso = csIsoArr(k,j,i);
-        c2Iso = c2Iso*c2Iso;
-      } else {
-        c2Iso = csIso*csIso;
-      }
-      Sm += Vc(RHO,k,j,i)*c2Iso;
-  #else
-      Sm += Vc(PRS,k,j,i);
-  #endif // ISOTHERMAL
-  #if MHD==YES
-      Sm -=  Vc(iBPHI,k,j,i)*Vc(iBPHI,k,j,i); // Hoop stress
-      // Magnetic pressus
-      Sm += HALF_F*(EXPAND( Vc(BX1,k,j,i)*Vc(BX1,k,j,i)   ,
-                            +Vc(BX2,k,j,i)*Vc(BX2,k,j,i)  ,
-                            +Vc(BX3,k,j,i)*Vc(BX3,k,j,i)  ));
-  #endif // MHD
+      if constexpr(Phys::isothermal) {
+        real c2Iso;
+        if(haveIsoCs == UserDefFunction) {
+          c2Iso = csIsoArr(k,j,i);
+          c2Iso = c2Iso*c2Iso;
+        } else {
+          c2Iso = csIso*csIso;
+        }
+        Sm += Vc(RHO,k,j,i)*c2Iso;
+      } else if constexpr(Phys::pressure) {
+        Sm += Vc(PRS,k,j,i);
+      } // Pressure
+      if constexpr(Phys::mhd) {
+        Sm -=  Vc(iBPHI,k,j,i)*Vc(iBPHI,k,j,i); // Hoop stress
+        // Magnetic pressus
+        Sm += HALF_F*(EXPAND( Vc(BX1,k,j,i)*Vc(BX1,k,j,i)   ,
+                              +Vc(BX2,k,j,i)*Vc(BX2,k,j,i)  ,
+                              +Vc(BX3,k,j,i)*Vc(BX3,k,j,i)  ));
+      } // MHD
       Uc(MX1,k,j,i) += dt * Sm / x1(i);
 
 #elif GEOMETRY == SPHERICAL
@@ -142,54 +164,70 @@ void Fluid<Phys>::AddSourceTerms(real t, real dt) {
       // Centrifugal
       Sm = Vc(RHO,k,j,i) * (EXPAND( ZERO_F, + Vc(VX2,k,j,i)*Vc(VX2,k,j,i), + vphi*vphi));
       // Pressure curvature
-  #ifdef ISOTHERMAL
-      real c2Iso;
-      if(haveIsoCs == UserDefFunction) {
-        c2Iso = csIsoArr(k,j,i);
-        c2Iso = c2Iso*c2Iso;
-      } else {
-        c2Iso = csIso*csIso;
-      }
-      Sm += 2.0*Vc(RHO,k,j,i)*c2Iso;
-  #else
-      Sm += 2.0*Vc(PRS,k,j,i);
-  #endif // ISOTHERMAL
-  #if MHD == YES
-      // Hoop stress
-      Sm -= EXPAND( ZERO_F   ,
-                    + Vc(iBTH,k,j,i)*Vc(iBTH,k,j,i)    ,
-                    + Vc(iBPHI,k,j,i)*Vc(iBPHI,k,j,i)  );
-      // 2* mag pressure curvature
-      Sm += EXPAND( Vc(BX1,k,j,i)*Vc(BX1,k,j,i)   ,
-                    +Vc(BX2,k,j,i)*Vc(BX2,k,j,i)  ,
-                    +Vc(BX3,k,j,i)*Vc(BX3,k,j,i)  );
-  #endif
+      [[maybe_unused]] real c2Iso{0};
+      if constexpr(Phys::isothermal) {
+        if(haveIsoCs == UserDefFunction) {
+          c2Iso = csIsoArr(k,j,i);
+          c2Iso = c2Iso*c2Iso;
+        } else {
+          c2Iso = csIso*csIso;
+        }
+        Sm += 2.0*Vc(RHO,k,j,i)*c2Iso;
+      } else if constexpr(Phys::pressure) {
+        Sm += 2.0*Vc(PRS,k,j,i);
+      } // Pressure
+      if constexpr(Phys::mhd) {
+        // Hoop stress
+        Sm -= EXPAND( ZERO_F   ,
+                      + Vc(iBTH,k,j,i)*Vc(iBTH,k,j,i)    ,
+                      + Vc(iBPHI,k,j,i)*Vc(iBPHI,k,j,i)  );
+        // 2* mag pressure curvature
+        Sm += EXPAND( Vc(BX1,k,j,i)*Vc(BX1,k,j,i)   ,
+                      +Vc(BX2,k,j,i)*Vc(BX2,k,j,i)  ,
+                      +Vc(BX3,k,j,i)*Vc(BX3,k,j,i)  );
+      } //MHD
       Uc(MX1,k,j,i) += dt*Sm/x1(i);
   #if COMPONENTS >= 2
       real ct = 1.0/tanx2(j);
        // Centrifugal
       Sm = Vc(RHO,k,j,i) * (EXPAND( ZERO_F, - Vc(iVTH,k,j,i)*Vc(iVR,k,j,i), + ct*vphi*vphi));
       // Pressure curvature
-  #ifdef ISOTHERMAL
-      Sm += ct * c2Iso * Vc(RHO,k,j,i);
-  #else
-      Sm += ct * Vc(PRS,k,j,i);
-  #endif
-  #if MHD == YES
-      // Hoop stress
-      Sm += EXPAND( ZERO_F       ,
-                    + Vc(iBTH,k,j,i)*Vc(iBR,k,j,i)        ,
-                    - ct*Vc(iBPHI,k,j,i)*Vc(iBPHI,k,j,i)  );
-      // Magnetic pressure
-      Sm += HALF_F*ct*(EXPAND( Vc(BX1,k,j,i)*Vc(BX1,k,j,i)    ,
-                               +Vc(BX2,k,j,i)*Vc(BX2,k,j,i)   ,
-                               +Vc(BX3,k,j,i)*Vc(BX3,k,j,i))  );
-  #endif
+      if constexpr(Phys::isothermal) {
+        Sm += ct * c2Iso * Vc(RHO,k,j,i);
+      } else if constexpr(Phys::pressure) {
+        Sm += ct * Vc(PRS,k,j,i);
+      }
+      if constexpr(Phys::mhd) {
+        // Hoop stress
+        Sm += EXPAND( ZERO_F       ,
+                      + Vc(iBTH,k,j,i)*Vc(iBR,k,j,i)        ,
+                      - ct*Vc(iBPHI,k,j,i)*Vc(iBPHI,k,j,i)  );
+        // Magnetic pressure
+        Sm += HALF_F*ct*(EXPAND( Vc(BX1,k,j,i)*Vc(BX1,k,j,i)    ,
+                                +Vc(BX2,k,j,i)*Vc(BX2,k,j,i)   ,
+                                +Vc(BX3,k,j,i)*Vc(BX3,k,j,i))  );
+      } // MHD
       Uc(MX2,k,j,i) += dt*Sm / rt(i);
   #endif // COMPONENTS
 #endif
     }
-  );
+};
+
+
+// Add source terms
+template <typename Phys>
+void Fluid<Phys>::AddSourceTerms(real t, real dt) {
+  idfx::pushRegion("Hydro::AddSourceTerms");
+
+  if(haveUserSourceTerm) userSourceTerm(*data, t, dt);
+
+  auto func = Fluid_AddSourceTermsFunctor<Phys>(this,dt);
+
+  idefix_for("AddSourceTerms",
+             data->beg[KDIR],data->end[KDIR],
+             data->beg[JDIR],data->end[JDIR],
+             data->beg[IDIR],data->end[IDIR],
+            func);
 
   idfx::popRegion();
 }

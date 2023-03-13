@@ -13,12 +13,14 @@
 #include "hllMHD.hpp"
 #include "roeMHD.hpp"
 #include "tvdlfMHD.hpp"
-#else
+#endif
+
 #include "hllcHD.hpp"
 #include "hllHD.hpp"
 #include "tvdlfHD.hpp"
 #include "roeHD.hpp"
-#endif
+
+#include "shockFlattening.hpp"
 
 // Compute Riemann fluxes from states
 template <typename Phys>
@@ -27,7 +29,7 @@ void RiemannSolver<Phys>::CalcFlux(IdefixArray4D<real> &flux) {
   idfx::pushRegion("RiemannSolver::CalcFlux");
   if constexpr(dir == IDIR) {
     // enable shock flattening
-    if(haveShockFlattening) shockFlattening.FindShock();
+    if(haveShockFlattening) shockFlattening->FindShock();
   }
 
   if constexpr(Phys::mhd) {

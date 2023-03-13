@@ -11,8 +11,8 @@
 #include "../idefix.hpp"
 #include "fluid.hpp"
 #include "slopeLimiter.hpp"
-#include "fluxHD.hpp"
-#include "convertConsToPrimHD.hpp"
+#include "flux.hpp"
+#include "convertConsToPrim.hpp"
 
 // Compute Riemann fluxes from states using TVDLF solver
 template <typename Phys>
@@ -37,7 +37,7 @@ void RiemannSolver<Phys>::TvdlfHD(IdefixArray4D<real> &Flux) {
   [[maybe_unused]] real csIso = hydro->isoSoundSpeed;
   [[maybe_unused]] HydroModuleStatus haveIsoCs = hydro->haveIsoSoundSpeed;
 
-  SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR],shockFlattening);
+  SlopeLimiter<Phys,DIR> slopeLim(Vc,data->dx[DIR],haveShockFlattening,shockFlattening.get());;
 
   idefix_for("TVDLF_Kernel",
              data->beg[KDIR],data->end[KDIR]+koffset,
@@ -48,17 +48,17 @@ void RiemannSolver<Phys>::TvdlfHD(IdefixArray4D<real> &Flux) {
       constexpr int Xn = DIR+MX1;
 
       // Primitive variables
-      real vL[NVAR];
-      real vR[NVAR];
-      real vRL[NVAR];
+      real vL[Phys::nvar];
+      real vR[Phys::nvar];
+      real vRL[Phys::nvar];
 
       // Conservative variables
-      real uL[NVAR];
-      real uR[NVAR];
+      real uL[Phys::nvar];
+      real uR[Phys::nvar];
 
       // Flux (left and right)
-      real fluxL[NVAR];
-      real fluxR[NVAR];
+      real fluxL[Phys::nvar];
+      real fluxR[Phys::nvar];
 
       // Signal speeds
       real cRL, cmax;
@@ -67,7 +67,7 @@ void RiemannSolver<Phys>::TvdlfHD(IdefixArray4D<real> &Flux) {
       slopeLim.ExtrapolatePrimVar(i, j, k, vL, vR);
 
 #pragma unroll
-      for(int nv = 0 ; nv < NVAR; nv++) {
+      for(int nv = 0 ; nv < Phys::nvar; nv++) {
         vRL[nv] = HALF_F*(vL[nv]+vR[nv]);
       }
 
@@ -85,16 +85,16 @@ void RiemannSolver<Phys>::TvdlfHD(IdefixArray4D<real> &Flux) {
 
 
       // 3-- Compute the conservative variables
-      K_PrimToCons(uL, vL, gamma_m1);
-      K_PrimToCons(uR, vR, gamma_m1);
+      K_PrimToCons<Phys>(uL, vL, gamma_m1);
+      K_PrimToCons<Phys>(uR, vR, gamma_m1);
 
       // 4-- Compute the left and right fluxes
-      K_Flux(fluxL, vL, uL, cRL*cRL, Xn);
-      K_Flux(fluxR, vR, uR, cRL*cRL, Xn);
+      K_Flux<Phys,DIR>(fluxL, vL, uL, cRL*cRL);
+      K_Flux<Phys,DIR>(fluxR, vR, uR, cRL*cRL);
 
       // 5-- Compute the flux from the left and right states
 #pragma unroll
-      for(int nv = 0 ; nv < NVAR; nv++) {
+      for(int nv = 0 ; nv < Phys::nvar; nv++) {
         Flux(nv,k,j,i) = HALF_F*(fluxL[nv]+fluxR[nv] - cmax*(uR[nv]-uL[nv]));
       }
 

@@ -10,8 +10,8 @@
 
 #include "../idefix.hpp"
 #include "slopeLimiter.hpp"
-#include "fluxMHD.hpp"
-#include "convertConsToPrimMHD.hpp"
+#include "flux.hpp"
+#include "convertConsToPrim.hpp"
 #include "storeFlux.hpp"
 #include "constrainedTransport.hpp"
 
@@ -77,7 +77,7 @@ void RiemannSolver<Phys>::HlldMHD(IdefixArray4D<real> &Flux) {
   [[maybe_unused]] real csIso = hydro->isoSoundSpeed;
   [[maybe_unused]] HydroModuleStatus haveIsoCs = hydro->haveIsoSoundSpeed;
 
-  SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR],shockFlattening);
+  SlopeLimiter<Phys,DIR> slopeLim(Vc,data->dx[DIR],haveShockFlattening,shockFlattening.get());;
 
   // st and sb will be useful only when Hall is included
   real st = ONE_F, sb = ONE_F;
@@ -154,29 +154,29 @@ void RiemannSolver<Phys>::HlldMHD(IdefixArray4D<real> &Flux) {
              data->beg[IDIR]-iextend,data->end[IDIR]+ioffset+iextend,
     KOKKOS_LAMBDA (int k, int j, int i) {
       // Init the directions (should be in the kernel for proper optimisation by the compilers)
-      EXPAND( const int Xn = DIR+MX1;                    ,
-              const int Xt = (DIR == IDIR ? MX2 : MX1);  ,
-              const int Xb = (DIR == KDIR ? MX2 : MX3);  )
+      EXPAND( constexpr int Xn = DIR+MX1;                    ,
+              constexpr int Xt = (DIR == IDIR ? MX2 : MX1);  ,
+              constexpr int Xb = (DIR == KDIR ? MX2 : MX3);  )
 
-      EXPAND( const int BXn = DIR+BX1;                    ,
-              const int BXt = (DIR == IDIR ? BX2 : BX1);  ,
-              const int BXb = (DIR == KDIR ? BX2 : BX3);   )
+      EXPAND( constexpr int BXn = DIR+BX1;                    ,
+              constexpr int BXt = (DIR == IDIR ? BX2 : BX1);  ,
+              constexpr int BXb = (DIR == KDIR ? BX2 : BX3);   )
 
       // Primitive variables
-      real vL[NVAR];
-      real vR[NVAR];
+      real vL[Phys::nvar];
+      real vR[Phys::nvar];
 
       slopeLim.ExtrapolatePrimVar(i, j, k, vL, vR);
       vL[BXn] = Vs(DIR,k,j,i);
       vR[BXn] = vL[BXn];
 
       // Conservative variables
-      real uL[NVAR];
-      real uR[NVAR];
+      real uL[Phys::nvar];
+      real uR[Phys::nvar];
 
       // Flux (left and right)
-      real fluxL[NVAR];
-      real fluxR[NVAR];
+      real fluxL[Phys::nvar];
+      real fluxR[Phys::nvar];
 
       // Signal speeds
       real cL, cR, cmax, c2Iso;
@@ -244,18 +244,18 @@ void RiemannSolver<Phys>::HlldMHD(IdefixArray4D<real> &Flux) {
       cmax  = std::fmax(FABS(sl), FABS(sr));
 
       // 2-- Compute the conservative variables
-      K_PrimToCons(uL, vL, gamma_m1);
-      K_PrimToCons(uR, vR, gamma_m1);
+      K_PrimToCons<Phys>(uL, vL, gamma_m1);
+      K_PrimToCons<Phys>(uR, vR, gamma_m1);
 
       // 3-- Compute the left and right fluxes
 #pragma unroll
-      for(int nv = 0 ; nv < NVAR; nv++) {
+      for(int nv = 0 ; nv < Phys::nvar; nv++) {
         fluxL[nv] = uL[nv];
         fluxR[nv] = uR[nv];
       }
 
-      K_Flux(fluxL, vL, fluxL, c2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
-      K_Flux(fluxR, vR, fluxR, c2Iso, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
+      K_Flux<Phys,DIR>(fluxL, vL, fluxL, c2Iso);
+      K_Flux<Phys,DIR>(fluxR, vR, fluxR, c2Iso);
 
       [[maybe_unused]] int revert_to_hll = 0, revert_to_hllc = 0;
 
@@ -271,22 +271,22 @@ void RiemannSolver<Phys>::HlldMHD(IdefixArray4D<real> &Flux) {
       // 5-- Compute the flux from the left and right states
       if (sl > 0) {
 #pragma unroll
-        for (int nv = 0 ; nv < NFLX; nv++) {
+        for (int nv = 0 ; nv < Phys::nvar; nv++) {
           Flux(nv,k,j,i) = fluxL[nv];
         }
       } else if (sr < 0) {
 #pragma unroll
-        for (int nv = 0 ; nv < NFLX; nv++) {
+        for (int nv = 0 ; nv < Phys::nvar; nv++) {
           Flux(nv,k,j,i) = fluxR[nv];
         }
       } else {
-        real usL[NVAR];
-        real usR[NVAR];
+        real usL[Phys::nvar];
+        real usR[Phys::nvar];
 
         real scrh, scrhL, scrhR, duL, duR, sBx, Bx, SM, S1L, S1R;
 
 #if HAVE_ENERGY
-        real Uhll[NVAR];
+        real Uhll[Phys::nvar];
         real pts, sqrL, sqrR;
         [[maybe_unused]] real vsL, vsR, wsL, wsR;
 
@@ -332,7 +332,7 @@ void RiemannSolver<Phys>::HlldMHD(IdefixArray4D<real> &Flux) {
         if (revert_to_hllc) {
           scrh = ONE_F/(sr - sl);
 #pragma unroll
-          for(int nv = 0 ; nv < NVAR; nv++) {
+          for(int nv = 0 ; nv < Phys::nvar; nv++) {
             Uhll[nv]  = sr*uR[nv] - sl*uL[nv] + fluxL[nv] - fluxR[nv];
             Uhll[nv] *= scrh;
           }
@@ -393,19 +393,19 @@ void RiemannSolver<Phys>::HlldMHD(IdefixArray4D<real> &Flux) {
 
         if (S1L >= 0.0) {       //  ----  Region L*
 #pragma unroll
-          for(int nv = 0 ; nv < NVAR; nv++) {
+          for(int nv = 0 ; nv < Phys::nvar; nv++) {
             Flux(nv,k,j,i) = fluxL[nv] + sl*(usL[nv] - uL[nv]);
           }
         } else if (S1R <= 0.0) {    //  ----  Region R*
 #pragma unroll
-          for(int nv = 0 ; nv < NVAR; nv++) {
+          for(int nv = 0 ; nv < Phys::nvar; nv++) {
             Flux(nv,k,j,i) = fluxR[nv] + sr*(usR[nv] - uR[nv]);
           }
         } else {   // -- This state exists only if B_x != 0
           // Compute U**
           [[maybe_unused]]real vss, wss;
-          real ussl[NVAR];
-          real ussr[NVAR];
+          real ussl[Phys::nvar];
+          real ussr[Phys::nvar];
 
           ussl[RHO] = usL[RHO];
           ussr[RHO] = usR[RHO];
@@ -450,20 +450,20 @@ void RiemannSolver<Phys>::HlldMHD(IdefixArray4D<real> &Flux) {
 
           if (SM >= 0.0) { //  ----  Region L**
 #pragma unroll
-            for(int nv = 0 ; nv < NVAR; nv++) {
+            for(int nv = 0 ; nv < Phys::nvar; nv++) {
               Flux(nv,k,j,i) = fluxL[nv] + S1L*(ussl[nv]  - usL[nv])
                               + sl*(usL[nv] - uL[nv]);
               }
           } else {         //  ----  Region R**
 #pragma unroll
-            for(int nv = 0 ; nv < NVAR; nv++) {
+            for(int nv = 0 ; nv < Phys::nvar; nv++) {
               Flux(nv,k,j,i) = fluxR[nv] + S1R*(ussr[nv]  - usR[nv])
                               + sr*(usR[nv] - uR[nv]);
             }
           }
         }  // end if (S1L < 0 S1R > 0)
 #else // No ENERGY
-        real usc[NVAR];
+        real usc[Phys::nvar];
         real rho, sqrho;
 
         scrh = ONE_F/(sr - sl);
@@ -496,7 +496,7 @@ void RiemannSolver<Phys>::HlldMHD(IdefixArray4D<real> &Flux) {
         if (revert_to_hll) {
           scrh = ONE_F/(sr - sl);
 #pragma unroll
-          for(int nv = 0 ; nv < NVAR; nv++) {
+          for(int nv = 0 ; nv < Phys::nvar; nv++) {
             Flux(nv,k,j,i) = sl*sr*(uR[nv] - uL[nv])
                             + sr*fluxL[nv] - sl*fluxR[nv];
             Flux(nv,k,j,i) *= scrh;

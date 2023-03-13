@@ -112,3 +112,4 @@ if(err<0.06):
   sys.exit(0)
 else:
   print("FAILED")
+  sys.exit(1)

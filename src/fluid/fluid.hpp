@@ -38,8 +38,12 @@ class RKLegendre;
 template<typename Phys>
 class RiemannSolver;
 
+template<typename Phys>
+class ShockFlattening;
+
 class Viscosity;
 class ThermalDiffusion;
+
 
 template<typename Phys>
 class Fluid {
@@ -54,7 +58,6 @@ class Fluid {
   void AddSourceTerms(real, real );
   void CoarsenFlow(IdefixArray4D<real>&);
   void CoarsenMagField(IdefixArray4D<real>&);
-  void CoarsenVectorPotential();
   real GetGamma();
   real CheckDivB();
   void EvolveStage(const real, const real);
@@ -156,6 +159,7 @@ class Fluid {
 
   std::unique_ptr<RiemannSolver<Phys>> rSolver;
 
+  DataBlock *data;
 
  private:
   friend class ConstrainedTransport<Phys>;
@@ -163,10 +167,23 @@ class Fluid {
   friend class Axis<Phys>;
   friend class RKLegendre<Phys>;
   friend class Boundary<Phys>;
-  friend class ShockFlattening;
+  friend class ShockFlattening<Phys>;
   friend class RiemannSolver<Phys>;
   friend class Viscosity;
   friend class ThermalDiffusion;
+
+  template <typename P>
+  friend struct Fluid_AddSourceTermsFunctor;
+
+  template <typename P, int dir>
+  friend struct Fluid_CorrectFluxFunctor;
+
+  template <typename P, int dir>
+  friend struct Fluid_CalcRHSFunctor;
+
+  template<typename P>
+  friend struct ShockFlattening_FindShockFunctor;
+
 
   // Isothermal EOS parameters
   real isoSoundSpeed;
@@ -176,8 +193,6 @@ class Fluid {
 
   // Adiabatic EOS parameters
   real gamma;
-
-  DataBlock *data;
 
   // Emf boundary conditions
   bool haveEmfBoundary{false};
@@ -227,11 +242,11 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
   #endif
 
 
-  #if HAVE_ENERGY
+  if constexpr (Phys::pressure) {
     this->gamma = input.GetOrSet<real>(std::string(Phys::prefix),"gamma",0, 5.0/3.0);
-  #endif
+  }
 
-  #ifdef ISOTHERMAL
+  if constexpr(Phys::isothermal) {
     std::string isoString = input.Get<std::string>(std::string(Phys::prefix),"csiso",0);
     if(isoString.compare("constant") == 0) {
       this->haveIsoSoundSpeed = Constant;
@@ -241,10 +256,10 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
     } else {
       IDEFIX_ERROR("csiso admits only constant or userdef entries");
     }
-  #else
+  } else {
     // set the isothermal soundspeed, even though it will not be used
     this->isoSoundSpeed = -1.0;
-  #endif
+  }
 
   // Source terms (always activated when non-cartesian geometry because of curvature source terms)
 #if GEOMETRY == CARTESIAN
@@ -319,102 +334,102 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
     this->thermalDiffusion = std::make_unique<ThermalDiffusion>(input, grid, this);
   }
 
-#if MHD == YES
-  if(input.CheckEntry(std::string(Phys::prefix),"resistivity")>=0 ||
-     input.CheckEntry(std::string(Phys::prefix),"ambipolar")>=0 ||
-     input.CheckEntry(std::string(Phys::prefix),"hall")>=0 ) {
-    //
-    this->haveCurrent = true;
+  if constexpr(Phys::mhd) {
+    if(input.CheckEntry(std::string(Phys::prefix),"resistivity")>=0 ||
+      input.CheckEntry(std::string(Phys::prefix),"ambipolar")>=0 ||
+      input.CheckEntry(std::string(Phys::prefix),"hall")>=0 ) {
+      //
+      this->haveCurrent = true;
 
-    if(input.CheckEntry(std::string(Phys::prefix),"resistivity")>=0) {
-      std::string opType = input.Get<std::string>(std::string(Phys::prefix),"resistivity",0);
-      if(opType.compare("explicit") == 0 ) {
-        haveExplicitParabolicTerms = true;
-        resistivityStatus.isExplicit = true;
-        needExplicitCurrent = true;
-      } else if(opType.compare("rkl") == 0 ) {
-        haveRKLParabolicTerms = true;
-        resistivityStatus.isRKL = true;
-        needRKLCurrent = true;
-      } else {
-        std::stringstream msg;
-        msg  << "Unknown integration type for resistivity: " << opType;
-        IDEFIX_ERROR(msg);
+      if(input.CheckEntry(std::string(Phys::prefix),"resistivity")>=0) {
+        std::string opType = input.Get<std::string>(std::string(Phys::prefix),"resistivity",0);
+        if(opType.compare("explicit") == 0 ) {
+          haveExplicitParabolicTerms = true;
+          resistivityStatus.isExplicit = true;
+          needExplicitCurrent = true;
+        } else if(opType.compare("rkl") == 0 ) {
+          haveRKLParabolicTerms = true;
+          resistivityStatus.isRKL = true;
+          needRKLCurrent = true;
+        } else {
+          std::stringstream msg;
+          msg  << "Unknown integration type for resistivity: " << opType;
+          IDEFIX_ERROR(msg);
+        }
+        if(input.Get<std::string>(
+            std::string(Phys::prefix),"resistivity",1).compare("constant") == 0) {
+          this->etaO = input.Get<real>(std::string(Phys::prefix),"resistivity",2);
+          resistivityStatus.status = Constant;
+        } else if(input.Get<std::string>(
+            std::string(Phys::prefix),"resistivity",1).compare("userdef") == 0) {
+          resistivityStatus.status = UserDefFunction;
+        } else {
+          IDEFIX_ERROR("Unknown resistivity definition in idefix.ini. "
+                      "Can only be constant or userdef.");
+        }
       }
-      if(input.Get<std::string>(
-          std::string(Phys::prefix),"resistivity",1).compare("constant") == 0) {
-        this->etaO = input.Get<real>(std::string(Phys::prefix),"resistivity",2);
-        resistivityStatus.status = Constant;
-      } else if(input.Get<std::string>(
-          std::string(Phys::prefix),"resistivity",1).compare("userdef") == 0) {
-        resistivityStatus.status = UserDefFunction;
-      } else {
-        IDEFIX_ERROR("Unknown resistivity definition in idefix.ini. "
-                     "Can only be constant or userdef.");
+
+      if(input.CheckEntry(std::string(Phys::prefix),"ambipolar")>=0) {
+        std::string opType = input.Get<std::string>(std::string(Phys::prefix),"ambipolar",0);
+        if(opType.compare("explicit") == 0 ) {
+          haveExplicitParabolicTerms = true;
+          ambipolarStatus.isExplicit = true;
+          needExplicitCurrent = true;
+        } else if(opType.compare("rkl") == 0 ) {
+          haveRKLParabolicTerms = true;
+          ambipolarStatus.isRKL = true;
+          needRKLCurrent = true;
+        } else {
+          std::stringstream msg;
+          msg  << "Unknown integration type for ambipolar: " << opType;
+          IDEFIX_ERROR(msg);
+        }
+        if(input.Get<std::string>(
+            std::string(Phys::prefix),"ambipolar",1).compare("constant") == 0) {
+          this->xA = input.Get<real>(std::string(Phys::prefix),"ambipolar",2);
+          ambipolarStatus.status = Constant;
+        } else if(input.Get<std::string>(
+                    std::string(Phys::prefix),"ambipolar",1).compare("userdef") == 0) {
+          ambipolarStatus.status = UserDefFunction;
+        } else {
+          IDEFIX_ERROR("Unknown ambipolar definition in idefix.ini. "
+                      "Can only be constant or userdef.");
+        }
+      }
+
+      if(input.CheckEntry(std::string(Phys::prefix),"hall")>=0) {
+        std::string opType = input.Get<std::string>(std::string(Phys::prefix),"hall",0);
+        if(opType.compare("explicit") == 0 ) {
+          hallStatus.isExplicit = true;
+          needExplicitCurrent = true;
+        } else if(opType.compare("rkl") == 0 ) {
+          IDEFIX_ERROR("RKL inegration is incompatible with Hall");
+        } else {
+          std::stringstream msg;
+          msg  << "Unknown integration type for hall: " << opType;
+          IDEFIX_ERROR(msg);
+        }
+        if(input.Get<std::string>(std::string(Phys::prefix),"hall",1).compare("constant") == 0) {
+          this->xH = input.Get<real>(std::string(Phys::prefix),"hall",2);
+          hallStatus.status = Constant;
+        } else if(input.Get<std::string>(
+                    std::string(Phys::prefix),"hall",1).compare("userdef") == 0) {
+          hallStatus.status = UserDefFunction;
+        } else {
+          IDEFIX_ERROR("Unknown Hall definition in idefix.ini. Can only be constant or userdef.");
+        }
       }
     }
-
-    if(input.CheckEntry(std::string(Phys::prefix),"ambipolar")>=0) {
-      std::string opType = input.Get<std::string>(std::string(Phys::prefix),"ambipolar",0);
-      if(opType.compare("explicit") == 0 ) {
-        haveExplicitParabolicTerms = true;
-        ambipolarStatus.isExplicit = true;
-        needExplicitCurrent = true;
-      } else if(opType.compare("rkl") == 0 ) {
-        haveRKLParabolicTerms = true;
-        ambipolarStatus.isRKL = true;
-        needRKLCurrent = true;
-      } else {
-        std::stringstream msg;
-        msg  << "Unknown integration type for ambipolar: " << opType;
-        IDEFIX_ERROR(msg);
-      }
-      if(input.Get<std::string>(
-          std::string(Phys::prefix),"ambipolar",1).compare("constant") == 0) {
-        this->xA = input.Get<real>(std::string(Phys::prefix),"ambipolar",2);
-        ambipolarStatus.status = Constant;
-      } else if(input.Get<std::string>(
-                  std::string(Phys::prefix),"ambipolar",1).compare("userdef") == 0) {
-        ambipolarStatus.status = UserDefFunction;
-      } else {
-        IDEFIX_ERROR("Unknown ambipolar definition in idefix.ini. "
-                     "Can only be constant or userdef.");
-      }
-    }
-
-    if(input.CheckEntry(std::string(Phys::prefix),"hall")>=0) {
-      std::string opType = input.Get<std::string>(std::string(Phys::prefix),"hall",0);
-      if(opType.compare("explicit") == 0 ) {
-        hallStatus.isExplicit = true;
-        needExplicitCurrent = true;
-      } else if(opType.compare("rkl") == 0 ) {
-        IDEFIX_ERROR("RKL inegration is incompatible with Hall");
-      } else {
-        std::stringstream msg;
-        msg  << "Unknown integration type for hall: " << opType;
-        IDEFIX_ERROR(msg);
-      }
-      if(input.Get<std::string>(std::string(Phys::prefix),"hall",1).compare("constant") == 0) {
-        this->xH = input.Get<real>(std::string(Phys::prefix),"hall",2);
-        hallStatus.status = Constant;
-      } else if(input.Get<std::string>(
-                  std::string(Phys::prefix),"hall",1).compare("userdef") == 0) {
-        hallStatus.status = UserDefFunction;
-      } else {
-        IDEFIX_ERROR("Unknown Hall definition in idefix.ini. Can only be constant or userdef.");
-      }
-    }
-  }
-  #endif // MHD
+  } // MHD
 
   /////////////////////////////////////////
   //  ALLOCATION SECION ///////////////////
   /////////////////////////////////////////
 
   // We now allocate the fields required by the hydro solver
-  Vc = IdefixArray4D<real>("FLUID_Vc", NVAR,
+  Vc = IdefixArray4D<real>("FLUID_Vc", Phys::nvar,
                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  Uc = IdefixArray4D<real>("FLUID_Uc", NVAR,
+  Uc = IdefixArray4D<real>("FLUID_Uc", Phys::nvar,
                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
   data->states["current"].PushArray(Uc, State::center, "FLUID_Uc");
@@ -425,25 +440,25 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   dMax = IdefixArray3D<real>("FLUID_dMax",
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  FluxRiemann =  IdefixArray4D<real>("FLUID_FluxRiemann", NVAR,
+  FluxRiemann =  IdefixArray4D<real>("FLUID_FluxRiemann", Phys::nvar,
                                      data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
-    if constexpr(Phys::mhd) {
-      Vs = IdefixArray4D<real>("FLUID_Vs", DIMENSIONS,
-                data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
-      #ifdef EVOLVE_VECTOR_POTENTIAL
-        #if DIMENSIONS == 1
-          IDEFIX_ERROR("EVOLVE_VECTOR_POTENTIAL is not compatible with 1D MHD");
-        #else
-          Ve = IdefixArray4D<real>("FLUID_Ve", AX3e+1,
-                data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
+  if constexpr(Phys::mhd) {
+    Vs = IdefixArray4D<real>("FLUID_Vs", DIMENSIONS,
+              data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
+    #ifdef EVOLVE_VECTOR_POTENTIAL
+      #if DIMENSIONS == 1
+        IDEFIX_ERROR("EVOLVE_VECTOR_POTENTIAL is not compatible with 1D MHD");
+      #else
+        Ve = IdefixArray4D<real>("FLUID_Ve", AX3e+1,
+              data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
 
-          data->states["current"].PushArray(Ve, State::center, "FLUID_Ve");
-        #endif
-      #else // EVOLVE_VECTOR_POTENTIAL
-        data->states["current"].PushArray(Vs, State::center, "FLUID_Vs");
-      #endif // EVOLVE_VECTOR_POTENTIAL
-    }
+        data->states["current"].PushArray(Ve, State::center, "FLUID_Ve");
+      #endif
+    #else // EVOLVE_VECTOR_POTENTIAL
+      data->states["current"].PushArray(Vs, State::center, "FLUID_Vs");
+    #endif // EVOLVE_VECTOR_POTENTIAL
+  }
 
   // Allocate sound speed array if needed
   if(this->haveIsoSoundSpeed == UserDefFunction) {
@@ -469,50 +484,53 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
                                   data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
   // Fill the names of the fields
-  for(int i = 0 ; i < NVAR ;  i++) {
+  std::string outputPrefix("");
+  if (Phys::prefix.compare("Hydro") != 0) {
+    outputPrefix=std::string(Phys::prefix)+"-";
+  }
+
+  for(int i = 0 ; i < Phys::nvar ;  i++) {
     switch(i) {
       case RHO:
         VcName.push_back("RHO");
-        data->vtk->RegisterVariable(Vc, "RHO", RHO);
-        data->dump->RegisterVariable(Vc, "Vc-RHO", RHO);
+        data->vtk->RegisterVariable(Vc, outputPrefix+"RHO", RHO);
+        data->dump->RegisterVariable(Vc, outputPrefix+"Vc-RHO", RHO);
         break;
       case VX1:
         VcName.push_back("VX1");
-        data->vtk->RegisterVariable(Vc, "VX1", VX1);
-        data->dump->RegisterVariable(Vc, "Vc-VX1", VX1, IDIR);
+        data->vtk->RegisterVariable(Vc, outputPrefix+"VX1", VX1);
+        data->dump->RegisterVariable(Vc, outputPrefix+"Vc-VX1", VX1, IDIR);
         break;
       case VX2:
         VcName.push_back("VX2");
-        data->vtk->RegisterVariable(Vc, "VX2", VX2);
-        data->dump->RegisterVariable(Vc, "Vc-VX2", VX2, JDIR);
+        data->vtk->RegisterVariable(Vc, outputPrefix+"VX2", VX2);
+        data->dump->RegisterVariable(Vc, outputPrefix+"Vc-VX2", VX2, JDIR);
         break;
       case VX3:
         VcName.push_back("VX3");
-        data->vtk->RegisterVariable(Vc, "VX3", VX3);
-        data->dump->RegisterVariable(Vc, "Vc-VX3", VX3, KDIR);
+        data->vtk->RegisterVariable(Vc, outputPrefix+"VX3", VX3);
+        data->dump->RegisterVariable(Vc, outputPrefix+"Vc-VX3", VX3, KDIR);
         break;
       case BX1:
         VcName.push_back("BX1");
-        data->vtk->RegisterVariable(Vc, "BX1", BX1);
+        data->vtk->RegisterVariable(Vc, outputPrefix+"BX1", BX1);
         break;
       case BX2:
         VcName.push_back("BX2");
-        data->vtk->RegisterVariable(Vc, "BX2", BX2);
+        data->vtk->RegisterVariable(Vc, outputPrefix+"BX2", BX2);
         break;
       case BX3:
         VcName.push_back("BX3");
-        data->vtk->RegisterVariable(Vc, "BX3", BX3);
+        data->vtk->RegisterVariable(Vc, outputPrefix+"BX3", BX3);
         break;
-#if HAVE_ENERGY
       case PRS:
         VcName.push_back("PRS");
-        data->vtk->RegisterVariable(Vc, "PRS", PRS);
-        data->dump->RegisterVariable(Vc, "Vc-PRS", PRS);
+        data->vtk->RegisterVariable(Vc, outputPrefix+"PRS", PRS);
+        data->dump->RegisterVariable(Vc, outputPrefix+"Vc-PRS", PRS);
         break;
-#endif
       default:
         VcName.push_back("Vc-"+std::to_string(i));
-        data->vtk->RegisterVariable(Vc, "Vc-"+std::to_string(i), i);
+        data->vtk->RegisterVariable(Vc, outputPrefix+"Vc-"+std::to_string(i), i);
     }
   }
 
@@ -523,15 +541,18 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
         switch(i) {
           case 0:
             VsName.push_back("BX1s");
-            data->dump->RegisterVariable(Vs, "Vs-BX1s", BX1s, IDIR, DumpField::ArrayLocation::Face);
+            data->dump->RegisterVariable(Vs, outputPrefix+"Vs-BX1s",
+                                        BX1s, IDIR, DumpField::ArrayLocation::Face);
             break;
           case 1:
             VsName.push_back("BX2s");
-            data->dump->RegisterVariable(Vs, "Vs-BX2s", BX2s, JDIR, DumpField::ArrayLocation::Face);
+            data->dump->RegisterVariable(Vs, outputPrefix+"Vs-BX2s",
+                                        BX2s, JDIR, DumpField::ArrayLocation::Face);
             break;
           case 2:
             VsName.push_back("BX3s");
-            data->dump->RegisterVariable(Vs, "Vs-BX3s", BX3s, KDIR, DumpField::ArrayLocation::Face);
+            data->dump->RegisterVariable(Vs, outputPrefix+"Vs-BX3s",
+                                        BX3s, KDIR, DumpField::ArrayLocation::Face);
             break;
           default:
             VsName.push_back("Vs-"+std::to_string(i));
@@ -541,21 +562,25 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
     #else
       #if DIMENSIONS < 3
         VeName.push_back("AX3e");
-        data->dump->RegisterVariable(Ve, "Ve-AX3e", AX3e, KDIR, DumpField::ArrayLocation::Edge);
+        data->dump->RegisterVariable(Ve, outputPrefix+"Ve-AX3e",
+                                      AX3e, KDIR, DumpField::ArrayLocation::Edge);
       #else
         for(int i = 0 ; i < DIMENSIONS ; i++) {
         switch(i) {
           case 0:
             VeName.push_back("AX1e");
-            data->dump->RegisterVariable(Ve, "Ve-AX1e", AX1e, IDIR, DumpField::ArrayLocation::Edge);
+            data->dump->RegisterVariable(Ve, outputPrefix+"Ve-AX1e",
+                                        AX1e, IDIR, DumpField::ArrayLocation::Edge);
             break;
           case 1:
             VeName.push_back("AX2e");
-            data->dump->RegisterVariable(Ve, "Ve-AX2e", AX2e, JDIR, DumpField::ArrayLocation::Edge);
+            data->dump->RegisterVariable(Ve, outputPrefix+"Ve-AX2e",
+                                        AX2e, JDIR, DumpField::ArrayLocation::Edge);
             break;
           case 2:
             VeName.push_back("AX3e");
-            data->dump->RegisterVariable(Ve, "Ve-AX3e", AX3e, KDIR, DumpField::ArrayLocation::Edge);
+            data->dump->RegisterVariable(Ve, outputPrefix+"Ve-AX3e",
+                                        AX3e, KDIR, DumpField::ArrayLocation::Edge);
             break;
           default:
             VeName.push_back("Ve-"+std::to_string(i));

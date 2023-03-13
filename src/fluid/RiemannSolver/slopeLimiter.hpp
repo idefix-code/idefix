@@ -18,14 +18,18 @@
 // |       cell i-1               interface i          cell i
 // |-----------------------------------|------------------------------------||
 //          Vc(i-1)           PrimL(i)  PrimR(i)       Vc(i)
-template<const int dir,
-         const int nvmax,
+template<typename Phys,
+         const int dir,
          const Limiter limiter = Limiter::VanLeer,
          const int order = ORDER>
 class SlopeLimiter {
  public:
-  SlopeLimiter(IdefixArray4D<real> &Vc, IdefixArray1D<real> &dx, ShockFlattening &sf):
-        Vc(Vc), dx(dx), flags(sf.flagArray), shockFlattening(sf.isActive) {}
+  SlopeLimiter(IdefixArray4D<real> &Vc, IdefixArray1D<real> &dx,
+               bool haveSF, ShockFlattening<Phys> *sf): Vc(Vc), dx(dx), shockFlattening(haveSF) {
+          if(shockFlattening) {
+            flags = sf->flagArray;
+          }
+  }
 
   KOKKOS_FORCEINLINE_FUNCTION real MinModLim(const real dvp, const real dvm) const {
     real dq= 0.0;
@@ -173,7 +177,7 @@ class SlopeLimiter {
     constexpr int joffset = (dir==JDIR ? 1 : 0);
     constexpr int koffset = (dir==KDIR ? 1 : 0);
 
-    for(int nv = 0 ; nv < nvmax ; nv++) {
+    for(int nv = 0 ; nv < Phys::nvar ; nv++) {
       if constexpr(order == 1) {
         vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset);
         vR[nv] = Vc(nv,k,j,i);
@@ -240,7 +244,7 @@ class SlopeLimiter {
               vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + HALF_F*dv;
             }
           }
-          #if HAVE_ENERGY
+          if constexpr(Phys::pressure) {
             if(nv==PRS) {
               // If face element is negative, revert to minmod
               if(vL[nv] <= 0.0) {
@@ -248,7 +252,7 @@ class SlopeLimiter {
                 vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + HALF_F*dv;
               }
             }
-          #endif
+          }
 
           dvm = dvp;
           dvp = Vc(nv,k+koffset,j+joffset,i+ioffset) - Vc(nv,k,j,i);
@@ -275,7 +279,7 @@ class SlopeLimiter {
               vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
             }
           }
-          #if HAVE_ENERGY
+          if constexpr(Phys::pressure) {
             if(nv==PRS) {
               // If face element is negative, revert to vanleer
               if(vR[nv] <= 0.0) {
@@ -283,7 +287,7 @@ class SlopeLimiter {
                 vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
               }
             }
-          #endif
+          }
       } else if constexpr(order == 4) {
           // Reconstruction in cell i-1
           real vm2 = Vc(nv,k-3*koffset,j-3*joffset,i-3*ioffset);;
@@ -304,7 +308,7 @@ class SlopeLimiter {
               vr = v0+HALF_F*dv;
             }
           }
-          #if HAVE_ENERGY
+          if constexpr(Phys::pressure) {
             if(nv==PRS) {
               // If face element is negative, revert to vanleer
               if(vr <= 0.0) {
@@ -312,7 +316,7 @@ class SlopeLimiter {
                 vr = v0+HALF_F*dv;
               }
             }
-          #endif
+          }
 
           vL[nv] = vr;
           // Reconstruction in cell i
@@ -333,7 +337,7 @@ class SlopeLimiter {
               vl = v0-HALF_F*dv;
             }
           }
-          #if HAVE_ENERGY
+          if constexpr(Phys::pressure) {
             if(nv==PRS) {
               // If face element is negative, revert to vanleer
               if(vl <= 0.0) {
@@ -341,7 +345,7 @@ class SlopeLimiter {
                 vl = v0-HALF_F*dv;
               }
             }
-          #endif
+          }
 
           vR[nv] = vl;
       }

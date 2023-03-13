@@ -16,16 +16,17 @@
 
 template<typename Phys>
 void Fluid<Phys>::ShowConfig() {
-  idfx::cout << "Fluid: ";
-  #if MHD == YES
+  idfx::cout << Phys::prefix << ": ";
+  if constexpr(Phys::mhd) {
     idfx::cout << "solving MHD equations." << std::endl;
     #ifdef EVOLVE_VECTOR_POTENTIAL
-      idfx::cout << "Fluid: Using EXPERIMENTAL vector potential formulation for MHD." << std::endl;
+      idfx::cout << Phys::prefix << ": Using EXPERIMENTAL vector potential formulation for MHD."
+                 << std::endl;
     #endif
-  #else
+  } else {
     idfx::cout << "solving HD equations." << std::endl;
-  #endif
-  idfx::cout << "Fluid: Reconstruction: ";
+  }
+  idfx::cout << Phys::prefix << ": Reconstruction: ";
   #if ORDER == 1
     idfx::cout << "1st order (donor cell)" << std::endl;
   #elif ORDER == 2
@@ -36,34 +37,37 @@ void Fluid<Phys>::ShowConfig() {
     idfx::cout << "4th order (PPM)" << std::endl;
   #endif
 
-  #if HAVE_ENERGY
-    idfx::cout << "Fluid: EOS: ideal with gamma=" << this->gamma << std::endl;
-  #endif
-  #ifdef ISOTHERMAL
+  if constexpr(Phys::pressure) {
+    idfx::cout << Phys::prefix << ": EOS: ideal with gamma=" << this->gamma << std::endl;
+  }
+  if constexpr(Phys::isothermal) {
     if(haveIsoSoundSpeed == Constant) {
-      idfx::cout << "Fluid: EOS: isothermal with cs=" << isoSoundSpeed << "." << std::endl;
+      idfx::cout << Phys::prefix << ": EOS: isothermal with cs=" << isoSoundSpeed << "."
+                 << std::endl;
     } else if(haveIsoSoundSpeed == UserDefFunction) {
-      idfx::cout << "Fluid: EOS: isothermal with user-defined cs function." << std::endl;
+      idfx::cout << Phys::prefix << ": EOS: isothermal with user-defined cs function."
+                 << std::endl;
       if(!isoSoundSpeedFunc) {
         IDEFIX_ERROR("No user-defined isothermal sound speed function has been enrolled.");
       }
     }
-  #endif// ISOTHERMAL
+  }// ISOTHERMAL
 
   if(haveRotation) {
-    idfx::cout << "Fluid: Rotation ENABLED with Omega=" << this->OmegaZ << std::endl;
+    idfx::cout << Phys::prefix << ": Rotation ENABLED with Omega=" << this->OmegaZ << std::endl;
   }
   if(haveShearingBox) {
-    idfx::cout << "Fluid: ShearingBox ENABLED with shear rate= " << this->sbS
+    idfx::cout << Phys::prefix << ": ShearingBox ENABLED with shear rate= " << this->sbS
                << " and Lx= " << sbLx << std::endl;
   }
 
   if(resistivityStatus.status != Disabled) {
     if(resistivityStatus.status == Constant) {
-      idfx::cout << "Fluid: Ohmic resistivity ENABLED with constant resistivity eta="
+      idfx::cout << Phys::prefix << ": Ohmic resistivity ENABLED with constant resistivity eta="
                  << etaO << std::endl;
     } else if(resistivityStatus.status == UserDefFunction) {
-      idfx::cout << "Fluid: Ohmic resistivity ENABLED with user-defined resistivity function."
+      idfx::cout << Phys::prefix
+                 << ": Ohmic resistivity ENABLED with user-defined resistivity function."
                  << std::endl;
       if(!ohmicDiffusivityFunc) {
         IDEFIX_ERROR("No user-defined Ihmic resistivity function has been enrolled.");
@@ -72,9 +76,11 @@ void Fluid<Phys>::ShowConfig() {
       IDEFIX_ERROR("Unknown Ohmic resistivity mode");
     }
     if(resistivityStatus.isExplicit) {
-      idfx::cout << "Fluid: Ohmic resistivity uses an explicit time integration." << std::endl;
+      idfx::cout << Phys::prefix << ": Ohmic resistivity uses an explicit time integration."
+                 << std::endl;
     } else if(resistivityStatus.isRKL) {
-      idfx::cout << "Fluid: Ohmic resistivity uses a Runge-Kutta-Legendre time integration."
+      idfx::cout << Phys::prefix
+                 << ": Ohmic resistivity uses a Runge-Kutta-Legendre time integration."
                  << std::endl;
     } else {
       IDEFIX_ERROR("Unknown time integrator for Ohmic resistivity");
@@ -83,10 +89,11 @@ void Fluid<Phys>::ShowConfig() {
 
   if(ambipolarStatus.status != Disabled) {
     if(ambipolarStatus.status == Constant) {
-      idfx::cout << "Fluid: Ambipolar diffusion ENABLED with constant diffusivity xA="
+      idfx::cout << Phys::prefix << ": Ambipolar diffusion ENABLED with constant diffusivity xA="
                  << xA << std::endl;
     } else if(ambipolarStatus.status == UserDefFunction) {
-      idfx::cout << "Fluid: Ambipolar diffusion ENABLED with user-defined diffusivity function."
+      idfx::cout << Phys::prefix
+                 << ": Ambipolar diffusion ENABLED with user-defined diffusivity function."
                  << std::endl;
       if(!ambipolarDiffusivityFunc) {
         IDEFIX_ERROR("No user-defined ambipolar diffusion function has been enrolled.");
@@ -95,9 +102,11 @@ void Fluid<Phys>::ShowConfig() {
       IDEFIX_ERROR("Unknown Ambipolar diffusion mode");
     }
     if(ambipolarStatus.isExplicit) {
-      idfx::cout << "Fluid: Ambipolar diffusion uses an explicit time integration." << std::endl;
+      idfx::cout << Phys::prefix << ": Ambipolar diffusion uses an explicit time integration."
+                 << std::endl;
     } else if(ambipolarStatus.isRKL) {
-      idfx::cout << "Fluid: Ambipolar diffusion uses a Runge-Kutta-Legendre time integration."
+      idfx::cout << Phys::prefix
+                 << ": Ambipolar diffusion uses a Runge-Kutta-Legendre time integration."
                  << std::endl;
     } else {
       IDEFIX_ERROR("Unknown time integrator for ambipolar diffusion");
@@ -106,10 +115,10 @@ void Fluid<Phys>::ShowConfig() {
 
   if(hallStatus.status != Disabled) {
     if(hallStatus.status == Constant) {
-      idfx::cout << "Fluid: Hall effect ENABLED with constant diffusivity xH="
+      idfx::cout << Phys::prefix << ": Hall effect ENABLED with constant diffusivity xH="
                  << xH << std::endl;
     } else if(hallStatus.status == UserDefFunction) {
-      idfx::cout << "Fluid: Hall effect ENABLED with user-defined diffusivity function."
+      idfx::cout << Phys::prefix << ": Hall effect ENABLED with user-defined diffusivity function."
                  << std::endl;
       if(!hallDiffusivityFunc) {
         IDEFIX_ERROR("No user-defined Hall diffusivity function has been enrolled.");
@@ -118,23 +127,23 @@ void Fluid<Phys>::ShowConfig() {
       IDEFIX_ERROR("Unknown Hall effect mode");
     }
     if(hallStatus.isExplicit) {
-      idfx::cout << "Fluid: Hall effect uses an explicit time integration." << std::endl;
+      idfx::cout << Phys::prefix << ": Hall effect uses an explicit time integration." << std::endl;
     }  else {
       IDEFIX_ERROR("Unknown time integrator for Hall effect");
     }
   }
 
   if(emfBoundaryFunc) {
-    idfx::cout << "Fluid: user-defined EMF boundaries ENABLED." << std::endl;
+    idfx::cout << Phys::prefix << ": user-defined EMF boundaries ENABLED." << std::endl;
   }
   if(userSourceTerm) {
-    idfx::cout << "Fluid: user-defined source terms ENABLED." << std::endl;
+    idfx::cout << Phys::prefix << ": user-defined source terms ENABLED." << std::endl;
   }
   rSolver->ShowConfig();
 
-  #if MHD == YES
+  if constexpr(Phys::mhd) {
     emf->ShowConfig();
-  #endif
+  }
   if(haveRKLParabolicTerms) {
     rkl->ShowConfig();
   }

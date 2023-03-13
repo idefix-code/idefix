@@ -10,12 +10,13 @@
 
 #include "../idefix.hpp"
 #include "slopeLimiter.hpp"
-#include "fluxMHD.hpp"
-#include "convertConsToPrimMHD.hpp"
+#include "flux.hpp"
+#include "convertConsToPrim.hpp"
 #include "storeFlux.hpp"
 #include "constrainedTransport.hpp"
 
 #define ROE_AVERAGE 0
+#undef NMODES
 
 #define KFASTM 0
 #define KFASTP 1
@@ -107,7 +108,7 @@ void RiemannSolver<Phys>::RoeMHD(IdefixArray4D<real> &Flux) {
   // st and sb will be useful only when Hall is included
   real st = ONE_F, sb = ONE_F;
 
-  SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR],shockFlattening);
+  SlopeLimiter<Phys,DIR> slopeLim(Vc,data->dx[DIR],haveShockFlattening,shockFlattening.get());;
 
   switch(DIR) {
     case(IDIR):
@@ -190,21 +191,21 @@ void RiemannSolver<Phys>::RoeMHD(IdefixArray4D<real> &Flux) {
               const int BXb = (DIR == KDIR ? BX2 : BX3);   )
 
       // Primitive variables
-      real vL[NVAR];
-      real vR[NVAR];
-      real dV[NVAR];
+      real vL[Phys::nvar];
+      real vR[Phys::nvar];
+      real dV[Phys::nvar];
 
       // Conservative variables
-      real uL[NVAR];
-      real uR[NVAR];
-      [[maybe_unused]] real dU[NVAR];
+      real uL[Phys::nvar];
+      real uR[Phys::nvar];
+      [[maybe_unused]] real dU[Phys::nvar];
 
       // Flux (left and right)
-      real fluxL[NVAR];
-      real fluxR[NVAR];
+      real fluxL[Phys::nvar];
+      real fluxR[Phys::nvar];
 
       // Roe
-      real Rc[NVAR][NVAR];
+      real Rc[Phys::nvar][Phys::nvar];
 
 
       // 1-- Store the primitive variables on the left, right, and averaged states
@@ -213,13 +214,13 @@ void RiemannSolver<Phys>::RoeMHD(IdefixArray4D<real> &Flux) {
       vR[BXn] = vL[BXn];
 
 #pragma unroll
-      for(int nv = 0 ; nv < NVAR; nv++) {
+      for(int nv = 0 ; nv < Phys::nvar; nv++) {
         dV[nv] = vR[nv] - vL[nv];
       }
 
       // 2-- Compute the conservative variables
-      K_PrimToCons(uL, vL, gamma_m1);
-      K_PrimToCons(uR, vR, gamma_m1);
+      K_PrimToCons<Phys>(uL, vL, gamma_m1);
+      K_PrimToCons<Phys>(uR, vR, gamma_m1);
 
       // --- Compute the square of the sound speed
       real a, a2, a2L, a2R;
@@ -239,19 +240,19 @@ void RiemannSolver<Phys>::RoeMHD(IdefixArray4D<real> &Flux) {
 
       // 3-- Compute the left and right fluxes
 #pragma unroll
-      for(int nv = 0 ; nv < NVAR; nv++) {
+      for(int nv = 0 ; nv < Phys::nvar; nv++) {
         fluxL[nv] = uL[nv];
         fluxR[nv] = uR[nv];
         dU[nv] = uR[nv] - uL[nv];
       }
-      K_Flux(fluxL, vL, fluxL, a2L, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
-      K_Flux(fluxR, vR, fluxR, a2R, ARG_EXPAND(Xn, Xt, Xb), ARG_EXPAND(BXn, BXt, BXb));
+      K_Flux<Phys,DIR>(fluxL, vL, fluxL, a2L);
+      K_Flux<Phys,DIR>(fluxR, vR, fluxR, a2R);
 
       // 5. Set eigenvectors components Rc = 0 initially
 #pragma unroll
-      for(int nv1 = 0 ; nv1 < NVAR; nv1++) {
+      for(int nv1 = 0 ; nv1 < Phys::nvar; nv1++) {
 #pragma unroll
-        for(int nv2 = 0 ; nv2 < NVAR; nv2++) {
+        for(int nv2 = 0 ; nv2 < Phys::nvar; nv2++) {
           Rc[nv1][nv2] = 0;
         }
       }
@@ -606,7 +607,7 @@ void RiemannSolver<Phys>::RoeMHD(IdefixArray4D<real> &Flux) {
       sr = lambda[KFASTP];
 
 #pragma unroll
-      for(int nv = 0 ; nv < NVAR; nv++) {
+      for(int nv = 0 ; nv < Phys::nvar; nv++) {
           alambda[nv] = fabs(lambda[nv]);
       }
 
@@ -629,10 +630,10 @@ void RiemannSolver<Phys>::RoeMHD(IdefixArray4D<real> &Flux) {
 
       // 6j. Compute Roe numerical flux
 #pragma unroll
-      for(int nv1 = 0 ; nv1 < NFLX; nv1++) {
+      for(int nv1 = 0 ; nv1 < Phys::nvar; nv1++) {
         scrh = 0.0;
 #pragma unroll
-        for(int nv2 = 0 ; nv2 < NFLX; nv2++) {
+        for(int nv2 = 0 ; nv2 < Phys::nvar; nv2++) {
           scrh += alambda[nv2]*eta[nv2]*Rc[nv1][nv2];
         }
         Flux(nv1,k,j,i) = 0.5*(fluxL[nv1] + fluxR[nv1] - scrh);

@@ -16,10 +16,7 @@
 // Forward class hydro declaration
 #include "physics.hpp"
 template <typename Phys> class Fluid;
-using Hydro = Fluid<Physics>;
-
 template <typename Phys> class ConstrainedTransport;
-
 class DataBlock;
 
 // Whether we use athena++ procedure to regularise BX2s
@@ -116,10 +113,10 @@ Axis<Phys>::Axis(Grid &grid, Fluid<Phys> *h) {
   if(hydro->data->rbound[JDIR] == axis) axisRight = true;
 
   // Init the symmetry array (used to flip the signs of arrays accross the axis)
-  symmetryVc = IdefixArray1D<int>("Axis:SymmetryVc",NVAR);
+  symmetryVc = IdefixArray1D<int>("Axis:SymmetryVc",Phys::nvar);
   IdefixArray1D<int>::HostMirror symmetryVcHost = Kokkos::create_mirror_view(symmetryVc);
   // Init the array
-  for (int nv = 0; nv < NVAR; nv++) {
+  for (int nv = 0; nv < Phys::nvar; nv++) {
     symmetryVcHost(nv) = 1;
     if (nv == VX2)
       symmetryVcHost(nv) = -1;
@@ -450,7 +447,7 @@ void Axis<Phys>::EnforceAxisBoundary(int side) {
     if(needMPIExchange) {
       ExchangeMPI(side);
     } else { // no MPI exchange
-      idefix_for("BoundaryAxis",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+      idefix_for("BoundaryAxis",0,Phys::nvar,kbeg,kend,jbeg,jend,ibeg,iend,
               KOKKOS_LAMBDA (int n, int k, int j, int i) {
                 int kcomp = nghost_k + (( k - nghost_k + np_int_k/2) % np_int_k);
 
@@ -458,7 +455,7 @@ void Axis<Phys>::EnforceAxisBoundary(int side) {
               });
     }// MPI Exchange
   } else {  // not 2pi
-    idefix_for("BoundaryAxis",0,NVAR,kbeg,kend,jbeg,jend,ibeg,iend,
+    idefix_for("BoundaryAxis",0,Phys::nvar,kbeg,kend,jbeg,jend,ibeg,iend,
             KOKKOS_LAMBDA (int n, int k, int j, int i) {
               // kcomp = k by construction since we're doing a fraction of twopi
 
@@ -752,9 +749,9 @@ void Axis<Phys>::InitMPI() {
   // This is required since we skip some of the variables in Vc to limit the amount of data
   // being exchanged
   if constexpr(Phys::mhd) {
-    this->mapNVars = NVAR - DIMENSIONS; // We don't send magnetic field components (already in Vs)
+    this->mapNVars = Phys::nvar - DIMENSIONS; // We don't send B components (already in Vs)
   } else {
-    this->mapNVars = NVAR;
+    this->mapNVars = Phys::nvar;
   }
 
   std::vector<int> mapVars;

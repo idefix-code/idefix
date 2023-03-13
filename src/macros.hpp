@@ -14,24 +14,21 @@
 #if COMPONENTS == 1
   #define EXPAND(a,b,c) a
   #define SELECT(a,b,c) a
-  #define ARG_EXPAND(a,b,c) a
 #endif
 
 #if COMPONENTS == 2
   #define EXPAND(a,b,c) a b
   #define SELECT(a,b,c) b
-  #define ARG_EXPAND(a,b,c) a,b
 #endif
 
 #if COMPONENTS == 3
   #define EXPAND(a,b,c) a b c
   #define SELECT(a,b,c) c
-  #define ARG_EXPAND(a,b,c) a,b,c
+
 #endif
 
 #if DIMENSIONS == 1
   #define D_EXPAND(a,b,c)  a
-  #define ARG_DEXPAND(a,b,c) a
   #define D_SELECT(a,b,c)  a
   #define IOFFSET 1
   #define JOFFSET 0
@@ -40,7 +37,6 @@
 
 #if DIMENSIONS == 2
   #define D_EXPAND(a,b,c) a b
-  #define ARG_DEXPAND(a,b,c) a,b
   #define D_SELECT(a,b,c) b
   #define IOFFSET 1
   #define JOFFSET 1
@@ -49,7 +45,6 @@
 
 #if DIMENSIONS == 3
   #define D_EXPAND(a,b,c) a b c
-  #define ARG_DEXPAND(a,b,c) a,b,c
   #define D_SELECT(a,b,c) c
   #define IOFFSET 1
   #define JOFFSET 1

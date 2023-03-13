@@ -11,10 +11,11 @@
 #include "../idefix.hpp"
 #include "fluid.hpp"
 #include "slopeLimiter.hpp"
-#include "fluxHD.hpp"
-#include "convertConsToPrimHD.hpp"
+#include "flux.hpp"
+#include "convertConsToPrim.hpp"
 
 #define ROE_AVERAGE 0
+#undef NMODES
 
 #if HAVE_ENERGY
   #define I0 0
@@ -54,7 +55,7 @@ void RiemannSolver<Phys>::RoeHD(IdefixArray4D<real> &Flux) {
   [[maybe_unused]] real csIso = hydro->isoSoundSpeed;
   [[maybe_unused]] HydroModuleStatus haveIsoCs = hydro->haveIsoSoundSpeed;
 
-  SlopeLimiter<DIR,NVAR> slopeLim(Vc,data->dx[DIR],shockFlattening);
+  SlopeLimiter<Phys,DIR> slopeLim(Vc,data->dx[DIR],haveShockFlattening,shockFlattening.get());;
 
   idefix_for("ROE_Kernel",
              data->beg[KDIR],data->end[KDIR]+koffset,
@@ -66,26 +67,26 @@ void RiemannSolver<Phys>::RoeHD(IdefixArray4D<real> &Flux) {
               const int Xt = (DIR == IDIR ? MX2 : MX1);  ,
               const int Xb = (DIR == KDIR ? MX2 : MX3);  )
       // Primitive variables
-      real vL[NVAR];
-      real vR[NVAR];
-      real dv[NVAR];
+      real vL[Phys::nvar];
+      real vR[Phys::nvar];
+      real dv[Phys::nvar];
 
       // Conservative variables
-      real uL[NVAR];
-      real uR[NVAR];
+      real uL[Phys::nvar];
+      real uR[Phys::nvar];
 
       // Flux (left and right)
-      real fluxL[NVAR];
-      real fluxR[NVAR];
+      real fluxL[Phys::nvar];
+      real fluxR[Phys::nvar];
 
       // Roe
-      real Rc[NVAR][NVAR];
-      real um[NVAR];
+      real Rc[Phys::nvar][Phys::nvar];
+      real um[Phys::nvar];
 
       // 1-- Store the primitive variables on the left, right, and averaged states
       slopeLim.ExtrapolatePrimVar(i, j, k, vL, vR);
 #pragma unroll
-      for(int nv = 0 ; nv < NVAR; nv++) {
+      for(int nv = 0 ; nv < Phys::nvar; nv++) {
         dv[nv] = vR[nv] - vL[nv];
       }
 
@@ -107,12 +108,12 @@ void RiemannSolver<Phys>::RoeHD(IdefixArray4D<real> &Flux) {
 #endif
 
       // 2-- Compute the conservative variables
-      K_PrimToCons(uL, vL, gamma_m1);
-      K_PrimToCons(uR, vR, gamma_m1);
+      K_PrimToCons<Phys>(uL, vL, gamma_m1);
+      K_PrimToCons<Phys>(uR, vR, gamma_m1);
 
       // 3-- Compute the left and right fluxes
-      K_Flux(fluxL, vL, uL, a2L, Xn);
-      K_Flux(fluxR, vR, uR, a2R, Xn);
+      K_Flux<Phys,DIR>(fluxL, vL, uL, a2L);
+      K_Flux<Phys,DIR>(fluxR, vR, uR, a2R);
 
       //  ----  Define Wave Jumps  ----
 #if ROE_AVERAGE == YES
@@ -161,7 +162,7 @@ void RiemannSolver<Phys>::RoeHD(IdefixArray4D<real> &Flux) {
   #endif // HAVE_ENERGY
 #else
 #pragma unroll
-      for(int nv = 0 ; nv < NVAR; nv++) {
+      for(int nv = 0 ; nv < Phys::nvar; nv++) {
         um[nv] = HALF_F*(vR[nv]+vL[nv]);
       }
   #if HAVE_ENERGY
@@ -186,9 +187,9 @@ void RiemannSolver<Phys>::RoeHD(IdefixArray4D<real> &Flux) {
       real eta[NMODES];
 
 #pragma unroll
-      for(int nv1 = 0 ; nv1 < NVAR; nv1++) {
+      for(int nv1 = 0 ; nv1 < Phys::nvar; nv1++) {
 #pragma unroll
-        for(int nv2 = 0 ; nv2 < NVAR; nv2++) {
+        for(int nv2 = 0 ; nv2 < Phys::nvar; nv2++) {
           Rc[nv1][nv2] = 0;
         }
       }
@@ -292,15 +293,15 @@ void RiemannSolver<Phys>::RoeHD(IdefixArray4D<real> &Flux) {
 #endif
 
 /*#if CHECK_ROE_MATRIX == YES
-      for(int nv = 0 ; nv < NVAR; nv++) {
+      for(int nv = 0 ; nv < Phys::nvar; nv++) {
           um[nv] = ZERO_F;
-          for(int nv1 = 0 ; nv1 < NVAR; nv1++) {
-              for(int nv2 = 0 ; nv2 < NVAR; nv2++) {
+          for(int nv1 = 0 ; nv1 < Phys::nvar; nv1++) {
+              for(int nv2 = 0 ; nv2 < Phys::nvar; nv2++) {
                   um[nv] += Rc[nv][k]*(k==j)*lambda[k]*eta[j];
               }
           }
       }
-      for(int nv = 0 ; nv < NVAR; nv++) {
+      for(int nv = 0 ; nv < Phys::nvar; nv++) {
           scrh = fluxR[nv] - fluxL[nv] - um[nv];
           if (nv == Xn) scrh += pR - pL;
           if (FABS(scrh) > 1.e-6){
@@ -318,7 +319,7 @@ void RiemannSolver<Phys>::RoeHD(IdefixArray4D<real> &Flux) {
         bmax = FMAX(ZERO_F, lambda[1]);
         scrh1 = ONE_F/(bmax - bmin);
 #pragma unroll
-        for(int nv = 0 ; nv < NVAR; nv++) {
+        for(int nv = 0 ; nv < Phys::nvar; nv++) {
           Flux(nv,k,j,i)  = bmin*bmax*(uR[nv] - uL[nv])
                   +   bmax*fluxL[nv] - bmin*fluxR[nv];
           Flux(nv,k,j,i) *= scrh1;
@@ -330,7 +331,7 @@ void RiemannSolver<Phys>::RoeHD(IdefixArray4D<real> &Flux) {
         ----------------------------------------------------------- */
 
 #pragma unroll
-        for(int nv = 0 ; nv < NVAR; nv++) {
+        for(int nv = 0 ; nv < Phys::nvar; nv++) {
           alambda[nv]  = fabs(lambda[nv]);
         }
 
@@ -344,10 +345,10 @@ void RiemannSolver<Phys>::RoeHD(IdefixArray4D<real> &Flux) {
         }
 
 #pragma unroll
-        for(int nv = 0 ; nv < NVAR; nv++) {
+        for(int nv = 0 ; nv < Phys::nvar; nv++) {
           Flux(nv,k,j,i) = fluxL[nv] + fluxR[nv];
 #pragma unroll
-          for(int nv2 = 0 ; nv2 < NVAR; nv2++) {
+          for(int nv2 = 0 ; nv2 < Phys::nvar; nv2++) {
             Flux(nv,k,j,i) -= alambda[nv2]*eta[nv2]*Rc[nv][nv2];
           }
           Flux(nv,k,j,i) *= HALF_F;

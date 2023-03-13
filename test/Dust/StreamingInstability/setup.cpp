@@ -25,7 +25,7 @@ void DustFeedback(DataBlock &data, const real t, const real dt) {
                 dustUc(n,k,j,i) -= dp;
                 // Radial pressure gradient
                 if(n==MX1) {
-                  Uc(n,k,j,i) += epsilon*Vc(RHO,k,j,i)*dt;
+                  Uc(n,k,j,i) += eps*Vc(RHO,k,j,i)*dt;
                 }
               });
 }
@@ -95,14 +95,14 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   // Add our userstep to the timeintegrator
   data.gravity.EnrollBodyForce(BodyForce);
 
-  output.EnrollAnalysis(&Analysis);
-  if(!input.restartRequested) {
+/*  output.EnrollAnalysis(&Analysis);
+/  if(!input.restartRequested) {
       // Initialise the output file
       std::ofstream f;
       f.open(FILENAME,std::ios::trunc);
       f.close();
     }
-
+*/
 }
 
 // This routine initialize the flow

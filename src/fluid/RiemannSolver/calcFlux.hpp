@@ -19,6 +19,7 @@
 #include "hllHD.hpp"
 #include "tvdlfHD.hpp"
 #include "roeHD.hpp"
+#include "hllDust.hpp"
 
 #include "shockFlattening.hpp"
 
@@ -57,6 +58,9 @@ void RiemannSolver<Phys>::CalcFlux(IdefixArray4D<real> &flux) {
       case HLL:
         HllHD<dir>(flux);
         break;
+      case HLL_DUST:
+        HllDust<dir>(flux);
+        break;
       case HLLC:
         HllcHD<dir>(flux);
         break;
@@ -64,6 +68,7 @@ void RiemannSolver<Phys>::CalcFlux(IdefixArray4D<real> &flux) {
         RoeHD<dir>(flux);
         break;
       default: // do nothing
+        IDEFIX_ERROR("Internal error: Unknown solver");
         break;
     }
   }

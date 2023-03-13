@@ -159,6 +159,29 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
 
 void DataBlock::ResetStage() {
   this->hydro->ResetStage();
+  if(haveDust) {
+    for(int i = 0 ; i < dust.size() ; i++) {
+      dust[i]->ResetStage();
+    }
+  }
+}
+
+void DataBlock::ConsToPrim() {
+  this->hydro->ConvertConsToPrim();
+  if(haveDust) {
+    for(int i = 0 ; i < dust.size() ; i++) {
+      dust[i]->ConvertConsToPrim();
+    }
+  }
+}
+
+void DataBlock::PrimToCons() {
+  this->hydro->ConvertPrimToCons();
+  if(haveDust) {
+    for(int i = 0 ; i < dust.size() ; i++) {
+      dust[i]->ConvertPrimToCons();
+    }
+  }
 }
 
 // Set the boundaries of the data structures in this datablock
@@ -169,6 +192,11 @@ void DataBlock::SetBoundaries() {
     #if MHD==YES
       hydro->CoarsenMagField(hydro->Vs);
     #endif
+  }
+  if(haveDust) {
+    for(int i = 0 ; i < dust.size() ; i++) {
+      dust[i]->ConvertPrimToCons();
+    }
   }
   hydro->boundary->SetBoundaries(t);
 }

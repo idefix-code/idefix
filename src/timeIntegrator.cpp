@@ -216,7 +216,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     if(data.haveFargo) data.fargo->SubstractVelocity(data.t);
 
     // Convert current state into conservative variable and save it
-    data.hydro->ConvertPrimToCons();
+    data.PrimToCons();
 
     // Store (deep copy) initial stage for multi-stage time integrators
     if(nstages>1 && stage==0) {
@@ -275,7 +275,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     }
 
     // Back to using Vc
-    data.hydro->ConvertConsToPrim();
+    data.ConsToPrim();
 
     // Add back fargo velocity so that boundary conditions are applied on the total V
     if(data.haveFargo) data.fargo->AddVelocity(data.t);

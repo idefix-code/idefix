@@ -157,6 +157,7 @@ target_include_directories(idefix PUBLIC
                            src/fluid/RiemannSolver
                            src/fluid/RiemannSolver/HDsolvers
                            src/fluid/RiemannSolver/MHDsolvers
+                           src/fluid/RiemannSolver/Dustsolvers
                            src/output
                            src/rkl
                            src/gravity

@@ -67,8 +67,8 @@ void RiemannSolver<Phys>::HllDust(IdefixArray4D<real> &Flux) {
       cmax  = FMAX(FABS(SL), FABS(SR));
 
       // 3-- Compute the conservative variables: do this by extrapolation
-      K_PrimToCons<Phys>(uL, vL, gamma_m1);
-      K_PrimToCons<Phys>(uR, vR, gamma_m1);
+      K_PrimToCons<Phys>(uL, vL, 0.0); // Set gamma to 0 implicitly
+      K_PrimToCons<Phys>(uR, vR, 0.0);
 
       // 4-- Compute the left and right fluxes
       K_Flux<Phys,DIR>(fluxL, vL, uL, cL*cL);
@@ -86,10 +86,14 @@ void RiemannSolver<Phys>::HllDust(IdefixArray4D<real> &Flux) {
           Flux(nv,k,j,i) = fluxR[nv];
         }
       } else {
+        real dS = SR-SL;
+        if(std::abs(dS) < SMALL_NUMBER) {
+          dS = SMALL_NUMBER;
+        }
 #pragma unroll
         for(int nv = 0 ; nv < Phys::nvar; nv++) {
           Flux(nv,k,j,i) = SL*SR*uR[nv] - SL*SR*uL[nv] + SR*fluxL[nv] - SL*fluxR[nv];
-          Flux(nv,k,j,i) /= (SR - SL);
+          Flux(nv,k,j,i) /= dS;
         }
       }
 

@@ -233,6 +233,16 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
   // Save the datablock to which we are attached from now on
   this->data = datain;
 
+  // Create our own prefix
+  std::string prefix;
+  if (Phys::prefix.compare("Hydro") != 0) {
+    prefix = std::string(Phys::prefix);
+    // When dealing with dust, add the specie number
+    if(Phys::prefix.compare("Dust") == 0) prefix += std::to_string(n);
+  }
+
+
+
   #if ORDER < 1 || ORDER > 4
      IDEFIX_ERROR("Reconstruction at chosen order is not implemented. Check your definitions file");
   #endif
@@ -423,60 +433,60 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
   /////////////////////////////////////////
 
   // We now allocate the fields required by the hydro solver
-  Vc = IdefixArray4D<real>("FLUID_Vc", Phys::nvar,
+  Vc = IdefixArray4D<real>(prefix+"_Vc", Phys::nvar,
                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  Uc = IdefixArray4D<real>("FLUID_Uc", Phys::nvar,
+  Uc = IdefixArray4D<real>(prefix+"_Uc", Phys::nvar,
                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
-  data->states["current"].PushArray(Uc, State::center, "FLUID_Uc");
+  data->states["current"].PushArray(Uc, State::center, prefix+"_Uc");
 
-  InvDt = IdefixArray3D<real>("FLUID_InvDt",
+  InvDt = IdefixArray3D<real>(prefix+"_InvDt",
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  cMax = IdefixArray3D<real>("FLUID_cMax",
+  cMax = IdefixArray3D<real>(prefix+"_cMax",
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  dMax = IdefixArray3D<real>("FLUID_dMax",
+  dMax = IdefixArray3D<real>(prefix+"_dMax",
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  FluxRiemann =  IdefixArray4D<real>("FLUID_FluxRiemann", Phys::nvar,
+  FluxRiemann =  IdefixArray4D<real>(prefix+"_FluxRiemann", Phys::nvar,
                                      data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
   if constexpr(Phys::mhd) {
-    Vs = IdefixArray4D<real>("FLUID_Vs", DIMENSIONS,
+    Vs = IdefixArray4D<real>(prefix+"_Vs", DIMENSIONS,
               data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
     #ifdef EVOLVE_VECTOR_POTENTIAL
       #if DIMENSIONS == 1
         IDEFIX_ERROR("EVOLVE_VECTOR_POTENTIAL is not compatible with 1D MHD");
       #else
-        Ve = IdefixArray4D<real>("FLUID_Ve", AX3e+1,
+        Ve = IdefixArray4D<real>(prefix+"_Ve", AX3e+1,
               data->np_tot[KDIR]+KOFFSET, data->np_tot[JDIR]+JOFFSET, data->np_tot[IDIR]+IOFFSET);
 
-        data->states["current"].PushArray(Ve, State::center, "FLUID_Ve");
+        data->states["current"].PushArray(Ve, State::center, prefix+"_Ve");
       #endif
     #else // EVOLVE_VECTOR_POTENTIAL
-      data->states["current"].PushArray(Vs, State::center, "FLUID_Vs");
+      data->states["current"].PushArray(Vs, State::center, prefix+"_Vs");
     #endif // EVOLVE_VECTOR_POTENTIAL
   }
 
   // Allocate sound speed array if needed
   if(this->haveIsoSoundSpeed == UserDefFunction) {
-    this->isoSoundSpeedArray = IdefixArray3D<real>("FLUID_csIso",
+    this->isoSoundSpeedArray = IdefixArray3D<real>(prefix+"_csIso",
                                 data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   }
 
   if(this->haveCurrent) {
     // Allocate current (when hydro needs it)
-    J = IdefixArray4D<real>("FLUID_J", 3,
+    J = IdefixArray4D<real>(prefix+"_J", 3,
                             data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   }
 
   // Allocate nonideal MHD effects array when a user-defined function is used
   if(this->resistivityStatus.status ==  UserDefFunction)
-    etaOhmic = IdefixArray3D<real>("FLUID_etaOhmic",
+    etaOhmic = IdefixArray3D<real>(prefix+"_etaOhmic",
                                     data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   if(this->ambipolarStatus.status == UserDefFunction)
-    xAmbipolar = IdefixArray3D<real>("FLUID_xAmbipolar",
+    xAmbipolar = IdefixArray3D<real>(prefix+"_xAmbipolar",
                                      data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   if(this->hallStatus.status == UserDefFunction)
-    xHall = IdefixArray3D<real>("FLUID_xHall",
+    xHall = IdefixArray3D<real>(prefix+"_xHall",
                                   data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
   // Fill the names of the fields

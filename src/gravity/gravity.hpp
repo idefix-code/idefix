@@ -13,10 +13,6 @@
 #include "selfGravity.hpp"
 #include "planetarySystem.hpp"
 
-// Forward class hydro declaration
-#include "physics.hpp"
-template <typename Phys> class Fluid;
-using Hydro = Fluid<Physics>;
 class DataBlock;
 
 // Enrolled functions signature

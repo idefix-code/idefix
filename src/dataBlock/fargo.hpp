@@ -17,7 +17,7 @@
 // Forward class hydro declaration
 #include "physics.hpp"
 template <typename Phys> class Fluid;
-using Hydro = Fluid<Physics>;
+using Hydro = Fluid<DefaultPhysics>;
 class DataBlock;
 
 using FargoVelocityFunc = void (*) (DataBlock &, IdefixArray2D<real> &);

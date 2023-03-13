@@ -39,8 +39,6 @@ class PlanetarySystem;
 
 // Forward class hydro declaration
 #include "physics.hpp"
-template <typename Phys> class Fluid;
-using Hydro = Fluid<Physics>;
 
 using GridCoarseningFunc = void(*) (DataBlock &);
 
@@ -107,7 +105,8 @@ class DataBlock {
                                 ///< conservative state of the datablock
                                 ///< (contains references to dedicated objects)
 
-  std::unique_ptr<Hydro> hydro;   ///< The Hydro object attached to this datablock
+  std::unique_ptr<Fluid<DefaultPhysics>> hydro;   ///< The Hydro object attached to this datablock
+  std::vector<std::unique_ptr<Fluid<DustPhysics>>> dust; ///< Holder for zero pressure dust fluid
 
   std::unique_ptr<Vtk> vtk;
   std::unique_ptr<Dump> dump;

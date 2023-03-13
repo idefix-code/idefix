@@ -121,11 +121,11 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
   this->vtk = std::make_unique<Vtk>(input, this);
 
   // Initialize the hydro object attached to this datablock
-  this->hydro = std::make_unique<Fluid<Physics>>(grid, input, this);
+  this->hydro = std::make_unique<Fluid<DefaultPhysics>>(grid, input, this);
 
   // Initialise Fargo if needed
   if(input.CheckBlock("Fargo")) {
-    this->fargo = std::make_unique<Fargo>(input, Physics::nvar, this);
+    this->fargo = std::make_unique<Fargo>(input, DefaultPhysics::nvar, this);
     this->haveFargo = true;
   }
 
@@ -206,7 +206,7 @@ real DataBlock::ComputeTimestep() {
 
 // Recompute magnetic fields from vector potential in dedicated fluids
 void DataBlock::DeriveVectorPotential() {
-  if constexpr(Physics::mhd) {
+  if constexpr(DefaultPhysics::mhd) {
     #ifdef EVOLVE_VECTOR_POTENTIAL
       hydro->emf->ComputeMagFieldFromA(hydro->Ve, hydro->Vs);
     #endif

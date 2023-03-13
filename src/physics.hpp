@@ -11,7 +11,9 @@
 #include "idefix.hpp"
 
 // Physics type
-struct Physics {
+// The default Physics class
+struct DefaultPhysics {
+  static constexpr bool dust{false};
   #if HAVE_ENERGY == 1
     static constexpr bool pressure{true};
   #else
@@ -32,6 +34,19 @@ struct Physics {
 
   // prefix
   static constexpr std::string_view prefix = "Hydro";
+};
+
+// Some Dust
+struct DustPhysics {
+  static constexpr bool dust{true};
+  static constexpr bool pressure{false};
+  static constexpr bool isothermal{false};
+
+  static constexpr bool mhd{false};
+  static constexpr int nvar{1+COMPONENTS};
+
+  // prefix
+  static constexpr std::string_view prefix = "Dust";
 };
 
 #endif // PHYSICS_HPP_

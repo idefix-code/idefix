@@ -36,6 +36,8 @@ class Dump;
 class Fargo;
 class Gravity;
 class PlanetarySystem;
+template<typename Phys>
+class Fluid;
 
 // Forward class hydro declaration
 #include "physics.hpp"

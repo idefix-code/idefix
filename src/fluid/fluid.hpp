@@ -64,6 +64,7 @@ class Fluid {
   void ResetStage();
   void ShowConfig();
   IdefixArray4D<real> GetFlux() {return this->FluxRiemann;}
+  int CheckNan();
 
   // Our boundary conditions
   std::unique_ptr<Boundary<Phys>> boundary;
@@ -157,6 +158,8 @@ class Fluid {
 
   DataBlock *data;
 
+  std::string prefix;
+
  private:
   friend class ConstrainedTransport<Phys>;
   friend class Fargo;
@@ -225,6 +228,7 @@ class Fluid {
 #include "rkl.hpp"
 #include "riemannSolver.hpp"
 #include "viscosity.hpp"
+#include "checkNan.hpp"
 
 
 template<typename Phys>
@@ -234,14 +238,10 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
   this->data = datain;
 
   // Create our own prefix
-  std::string prefix;
-  if (Phys::prefix.compare("Hydro") != 0) {
-    prefix = std::string(Phys::prefix);
-    // When dealing with dust, add the specie number
-    if(Phys::prefix.compare("Dust") == 0) prefix += std::to_string(n);
-  }
+  prefix = std::string(Phys::prefix);
 
-
+  // When dealing with dust, add the specie number
+  if(Phys::prefix.compare("Dust") == 0) prefix += std::to_string(n);
 
   #if ORDER < 1 || ORDER > 4
      IDEFIX_ERROR("Reconstruction at chosen order is not implemented. Check your definitions file");
@@ -491,10 +491,11 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
 
   // Fill the names of the fields
   std::string outputPrefix("");
-  if (Phys::prefix.compare("Hydro") != 0) {
-    outputPrefix = std::string(Phys::prefix);
+  // If we have hydro, the output prefix is "" for backward compatibility
+  if(prefix.compare("Hydro") != 0) {
+    outputPrefix = prefix;
     // When dealing with dust, add the specie number
-    if(Phys::prefix.compare("Dust") == 0) outputPrefix += std::to_string(n);
+    if(Phys::dust) outputPrefix += std::to_string(n);
     outputPrefix += "-";
   }
 

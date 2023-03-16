@@ -75,7 +75,7 @@ int Fluid<Phys>::CheckNan()  {
       for(int k = data->beg[KDIR] ; k < data->end[KDIR] ; k++) {
         for(int j = data->beg[JDIR] ; j < data->end[JDIR] ; j++) {
           for(int i = data->beg[IDIR] ; i < data->end[IDIR] ; i++) {
-            for(int n = 0 ; n < NVAR ; n ++) {
+            for(int n = 0 ; n < Phys::nvar ; n ++) {
               if(std::isnan(VcHost(n,k,j,i)) && nerrormax>0) {
                 nerrormax--;
                 idfx::cout << "rank " << idfx::prank << ": Nan found  in variable "

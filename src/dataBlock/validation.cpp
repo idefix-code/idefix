@@ -9,13 +9,14 @@
 #include "fluid.hpp"
 
 int DataBlock::CheckNan() {
-  idfx::pushRegion("DataBlock::Validate");
+  idfx::pushRegion("DataBlock::Check");
   int nNans = hydro->CheckNan();
   if(haveDust) {
     for(int n = 0 ; n < dust.size() ; n++) {
       nNans += dust[n]->CheckNan();
     }
   }
+  idfx::popRegion();
   return(nNans);
 }
 

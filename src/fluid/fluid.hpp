@@ -494,8 +494,6 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
   // If we have hydro, the output prefix is "" for backward compatibility
   if(prefix.compare("Hydro") != 0) {
     outputPrefix = prefix;
-    // When dealing with dust, add the specie number
-    if(Phys::dust) outputPrefix += std::to_string(n);
     outputPrefix += "-";
   }
 

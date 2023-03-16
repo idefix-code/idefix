@@ -5,7 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#include "../idefix.hpp"
+#include <algorithm>
+#include "idefix.hpp"
 #include "dataBlock.hpp"
 #include "fluid.hpp"
 #include "gravity.hpp"
@@ -247,6 +248,21 @@ real DataBlock::ComputeTimestep() {
                   dtmin=FMIN(ONE_F/InvDt(k,j,i),dtmin);
               },
           Kokkos::Min<real>(dt));
+  if(haveDust) {
+    for(int n = 0 ; n < dust.size() ; n++) {
+      real dtDust;
+      auto InvDt = dust[n]->InvDt;
+      idefix_reduce("Timestep_reduction_dust",
+          beg[KDIR], end[KDIR],
+          beg[JDIR], end[JDIR],
+          beg[IDIR], end[IDIR],
+          KOKKOS_LAMBDA (int k, int j, int i, real &dtmin) {
+                  dtmin=FMIN(ONE_F/InvDt(k,j,i),dtmin);
+              },
+          Kokkos::Min<real>(dtDust));
+      dt = std::min(dt,dtDust);
+    }
+  }
   Kokkos::fence();
   return(dt);
 }

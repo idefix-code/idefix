@@ -28,7 +28,7 @@ void Hydro::HlldMHD() {
   if (emf.averaging == ElectroMotiveForce::uct_hll
       || emf.averaging == ElectroMotiveForce::uct_hlld) {
         // Need two cells in the perp direction for these schemes
-        perpExtension=2;
+        perpExtension= data->nghost[DIR];
   }
   // extension in perp to the direction of integration, as required by CT.
   const int iextend = (DIR==IDIR) ? 0 : perpExtension;

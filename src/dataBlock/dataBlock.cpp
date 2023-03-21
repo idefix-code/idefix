@@ -144,7 +144,6 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
 
   // Initialise dust grains if needed
   if(input.CheckBlock("Dust")) {
-    idfx::cout << "hey!" << std::endl;
     haveDust = true;
     int nSpecies = input.Get<int>("Dust","nSpecies",0);
     for(int i = 0 ; i < nSpecies ; i++) {
@@ -195,7 +194,7 @@ void DataBlock::SetBoundaries() {
     #endif
     if(haveDust) {
       for(int i = 0 ; i < dust.size() ; i++) {
-        dust[i]->CoarsenFlow(hydro->Vc);
+        dust[i]->CoarsenFlow(dust[i]->Vc);
       }
     }
   }

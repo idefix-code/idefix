@@ -247,6 +247,11 @@ void Fargo::AddVelocity(const real t) {
   idfx::pushRegion("Fargo::AddVelocity");
 
   this->AddVelocityFluid(t, data->hydro.get());
+  if(data->haveDust) {
+    for(int i = 0 ; i < data->dust.size() ; i++) {
+      this->AddVelocityFluid(t, data->dust[i].get());
+    }
+  }
 
   idfx::popRegion();
 }
@@ -255,6 +260,11 @@ void Fargo::SubstractVelocity(const real t) {
   idfx::pushRegion("Fargo::SubstractVelocity");
 
   this->SubstractVelocityFluid(t, data->hydro.get());
+  if(data->haveDust) {
+    for(int i = 0 ; i < data->dust.size() ; i++) {
+      this->SubstractVelocityFluid(t, data->dust[i].get());
+    }
+  }
 
   idfx::popRegion();
 }
@@ -263,6 +273,11 @@ void Fargo::ShiftSolution(const real t, const real dt) {
   idfx::pushRegion("Fargo::ShiftFluid");
 
   this->ShiftFluid(t,dt,data->hydro.get());
+  if(data->haveDust) {
+    for(int i = 0 ; i < data->dust.size() ; i++) {
+      this->ShiftFluid(t,dt,data->dust[i].get());
+    }
+  }
 
   idfx::popRegion();
 }

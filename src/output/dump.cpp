@@ -5,6 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include <unordered_set>
 #include "dump.hpp"
 #include "gitversion.hpp"
 #include "dataBlockHost.hpp"
@@ -539,6 +540,11 @@ int Dump::Read(Output& output, int readNumber ) {
     }
     // Todo: check that coordinates are identical
   }
+  std::unordered_set<std::string> notFound {};
+  for(auto it = dumpFieldMap.begin(); it != dumpFieldMap.end(); it++) {
+    notFound.insert(it->first);
+  }
+
   // Coordinates are ok, load the bulk
   while(true) {
     ReadNextFieldProperties(fileHdl, ndim, nxglob, type, fieldName);
@@ -553,6 +559,7 @@ int Dump::Read(Output& output, int readNumber ) {
     } else {
       if(auto it = dumpFieldMap.find(fieldName) ; it != dumpFieldMap.end()) {
         // This key has been registered
+        notFound.erase(fieldName);
         DumpField &scalar = it->second;
         if(scalar.GetType() == DumpField::Type::IdefixArray) {
           // Distributed idefix array
@@ -609,6 +616,14 @@ int Dump::Read(Output& output, int readNumber ) {
                        + " in current running code. Skipping.");
       }
     }
+  }
+  if (notFound.size() > 0) {
+    std::stringstream msg {};
+    msg << "The following fields were not found in " << filename << ": ";
+    for(auto it = notFound.begin(); it != notFound.end(); it++) {
+      msg << *it << ' ';
+    }
+    IDEFIX_WARNING(msg);
   }
   #ifdef WITH_MPI
   MPI_SAFE_CALL(MPI_File_close(&fileHdl));

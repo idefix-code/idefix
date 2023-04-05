@@ -5,14 +5,15 @@ real tauGlob;
 
 #define  FILENAME    "timevol.dat"
 
-// Default constructor
-void DustFeedback(DataBlock &data, const real t, const real dt) {
+// Dust feedback
+void DustFeedback(Fluid<DefaultPhysics> *hydro, const real t, const real dt) {
   real tau = tauGlob;
-  auto Uc = data.hydro->Uc;
-  auto Vc = data.hydro->Vc;
-  auto dustUc = data.dust[0]->Uc;
-  auto dustVc = data.dust[0]->Vc;
-  idefix_for("MySourceTerm",MX1,MX1+COMPONENTS,0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
+  auto data = hydro->data;
+  auto Uc = hydro->Uc;
+  auto Vc = hydro->Vc;
+  auto dustUc = data->dust[0]->Uc;
+  auto dustVc = data->dust[0]->Vc;
+  idefix_for("MySourceTerm",MX1,MX1+COMPONENTS,0,data->np_tot[KDIR],0,data->np_tot[JDIR],0,data->np_tot[IDIR],
               KOKKOS_LAMBDA (int n, int k, int j, int i) {
                 real dp = dt*dustVc(RHO,k,j,i) * (dustVc(n,k,j,i) - Vc(n,k,j,i)) / tau;
                 Uc(n,k,j,i) += dp;

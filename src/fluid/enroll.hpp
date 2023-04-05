@@ -44,8 +44,25 @@ void Fluid<Phys>::EnrollFluxBoundary(T myFunc) {
 }
 
 template<typename Phys>
-void Fluid<Phys>::EnrollUserSourceTerm(SrcTermFunc myFunc) {
+void Fluid<Phys>::EnrollUserSourceTerm(SrcTermFunc<Phys> myFunc) {
   this->userSourceTerm = myFunc;
+  this->haveUserSourceTerm = true;
+  this->haveSourceTerms = true;
+}
+
+// Deprecated enrollment function
+template<typename Phys>
+void Fluid<Phys>::EnrollUserSourceTerm(SrcTermFuncOld myFunc) {
+  std::stringstream msg;
+  msg << "The old signature for user-defined source terms " << std::endl
+      << "(DataBlock &, const real t, const real dt)" << std::endl
+      << "is deprecated. You should now use "<< std::endl
+      << "(Fluid<Phys> *,  const real t, const real dt)" << std::endl
+      << "With the Phys of your choice (DefaultPhysics, DustPhysics...)" << std::endl;
+
+  IDEFIX_WARNING(msg);
+
+  this->userSourceTermOld = myFunc;
   this->haveUserSourceTerm = true;
   this->haveSourceTerms = true;
 }

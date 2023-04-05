@@ -124,7 +124,8 @@ class Fluid {
   void EnrollEmfBoundary(EmfBoundaryFunc);
 
   // Add some user source terms
-  void EnrollUserSourceTerm(SrcTermFunc);
+  void EnrollUserSourceTerm(SrcTermFunc<Phys>);
+  void EnrollUserSourceTerm(SrcTermFuncOld); // Deprecated
 
   // Enroll user-defined ohmic, ambipolar and Hall diffusivities
   void EnrollOhmicDiffusivity(DiffusivityFunc);
@@ -133,12 +134,6 @@ class Fluid {
 
   // Enroll user-defined isothermal sound speed
   void EnrollIsoSoundSpeed(IsoSoundSpeedFunc);
-
-  // TODO(lesurg): clean this up
-  // Deprecated Enrollment functions (kept for backward compatibility with V1.0)
-  void EnrollUserDefBoundary(UserDefBoundaryFuncOld);
-  void EnrollFluxBoundary(UserDefBoundaryFuncOld);
-
 
 
   // Arrays required by the Hydro object
@@ -167,7 +162,9 @@ class Fluid {
 
   DataBlock *data;
 
+  // Data related to current instance of the Fluid object
   std::string prefix;
+  int instanceNumber;
 
  private:
   friend class ConstrainedTransport<Phys>;
@@ -207,7 +204,8 @@ class Fluid {
   EmfBoundaryFunc emfBoundaryFunc{NULL};
 
   // User defined source term
-  SrcTermFunc userSourceTerm{NULL};
+  SrcTermFunc<Phys> userSourceTerm{NULL};
+  SrcTermFuncOld    userSourceTermOld{NULL};
   bool haveUserSourceTerm{false};
 
   real etaO, xH, xA;  // Ohmic resistivity, Hall, ambipolar (when constant)
@@ -251,6 +249,9 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
 
   // When dealing with dust, add the specie number
   if(Phys::prefix.compare("Dust") == 0) prefix += std::to_string(n);
+
+  // Keep the instance # for later use
+  instanceNumber = n;
 
   #if ORDER < 1 || ORDER > 4
      IDEFIX_ERROR("Reconstruction at chosen order is not implemented. Check your definitions file");

@@ -219,7 +219,14 @@ template <typename Phys>
 void Fluid<Phys>::AddSourceTerms(real t, real dt) {
   idfx::pushRegion("Hydro::AddSourceTerms");
 
-  if(haveUserSourceTerm) userSourceTerm(*data, t, dt);
+  if(haveUserSourceTerm) {
+    if(userSourceTerm != NULL) {
+      userSourceTerm(this, t, dt);
+    } else {
+      // Deprecated version
+      userSourceTermOld(*data, t, dt);
+    }
+  }
 
   auto func = Fluid_AddSourceTermsFunctor<Phys>(this,dt);
 

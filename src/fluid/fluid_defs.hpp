@@ -43,7 +43,8 @@ using GravPotentialFunc = void (*) (DataBlock &, const real t, IdefixArray1D<rea
 
 using BodyForceFunc = void (*) (DataBlock &, const real t, IdefixArray4D<real>&);
 
-using SrcTermFunc = void (*) (DataBlock &, const real t, const real dt);
+template<typename Phys>
+using SrcTermFunc = void (*) (Fluid<Phys> *, const real t, const real dt);
 
 
 using EmfBoundaryFunc = void (*) (DataBlock &, const real t);
@@ -51,8 +52,7 @@ using DiffusivityFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real>
 using IsoSoundSpeedFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
 
 // Deprecated signatures
-using UserDefBoundaryFuncOld = void (*) (DataBlock &, int dir, BoundarySide side,
-                                      const real t);
+using SrcTermFuncOld = void (*) (DataBlock &, const real t, const real dt);
 
 
 #endif //FLUID_FLUID_DEFS_HPP_

@@ -113,12 +113,15 @@ class Fluid {
   real sbLx;
 
 
-  // Enroll user-defined boundary conditions
-  void EnrollUserDefBoundary(UserDefBoundaryFunc<Phys>);
+  // Enroll user-defined boundary conditions (proxies for boundary class functions)
+  template <typename T>
+  void EnrollUserDefBoundary(T);
+  template <typename T>
+  void EnrollInternalBoundary(T);
+  template <typename T>
+  void EnrollFluxBoundary(T);
 
-  void EnrollInternalBoundary(InternalBoundaryFunc);
   void EnrollEmfBoundary(EmfBoundaryFunc);
-  void EnrollFluxBoundary(UserDefBoundaryFunc<Phys>);
 
   // Add some user source terms
   void EnrollUserSourceTerm(SrcTermFunc);

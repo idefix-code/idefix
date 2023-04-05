@@ -22,6 +22,16 @@ class DataBlock;
 #include "physics.hpp"
 template <typename Phys> class Fluid;
 
+// User-defined boundary conditions signature
+template<typename Phys>
+using UserDefBoundaryFunc = void (*) (Fluid<Phys> *, int dir, BoundarySide side, const real t);
+using UserDefBoundaryFuncOld = void (*) (DataBlock &, int dir, BoundarySide side, const real t);
+  // This last one is deprecated
+
+template <typename Phys>
+using InternalBoundaryFunc = void (*) (Fluid<Phys> *, const real t);
+using InternalBoundaryFuncOld = void (*) (DataBlock &, const real t); // DEPRECATED
+
 template<typename Phys>
 class Boundary {
  public:
@@ -35,7 +45,8 @@ class Boundary {
 
   void EnrollUserDefBoundary(UserDefBoundaryFuncOld); ///< Deprecated
   void EnrollUserDefBoundary(UserDefBoundaryFunc<Phys>); ///< User-defined boundary condition
-  void EnrollInternalBoundary(InternalBoundaryFunc);
+  void EnrollInternalBoundary(InternalBoundaryFuncOld); ///< Deprecated
+  void EnrollInternalBoundary(InternalBoundaryFunc<Phys>); ///< User-defined internal boundary
   void EnrollFluxBoundary(UserDefBoundaryFuncOld);
 
   void EnforcePeriodic(int, BoundarySide ); ///< Enforce periodic BC in direction and side
@@ -54,7 +65,8 @@ class Boundary {
 
   // Internal boundary function
   bool haveInternalBoundary{false};
-  InternalBoundaryFunc internalBoundaryFunc{NULL};
+  InternalBoundaryFuncOld internalBoundaryFuncOld{NULL};
+  InternalBoundaryFunc<Phys> internalBoundaryFunc{NULL};
 
   // Flux boundary function
   bool haveFluxBoundary{false};
@@ -178,7 +190,13 @@ template<typename Phys>
 void Boundary<Phys>::SetBoundaries(real t) {
   idfx::pushRegion("HydroBoundary::SetBoundaries");
   // set internal boundary conditions
-  if(haveInternalBoundary) internalBoundaryFunc(*data, t);
+  if(haveInternalBoundary) {
+    if(internalBoundaryFunc != NULL) {
+      internalBoundaryFunc(fluid, t);
+    } else {
+      internalBoundaryFuncOld(*data, t);
+    }
+  }
   for(int dir=0 ; dir < DIMENSIONS ; dir++ ) {
       // MPI Exchange data when needed
     #ifdef WITH_MPI
@@ -473,7 +491,21 @@ void Boundary<Phys>::EnrollUserDefBoundary(UserDefBoundaryFunc<Phys> myFunc) {
 
 
 template<typename Phys>
-void Boundary<Phys>::EnrollInternalBoundary(InternalBoundaryFunc myFunc) {
+void Boundary<Phys>::EnrollInternalBoundary(InternalBoundaryFuncOld myFunc) {
+  std::stringstream msg;
+  msg << "The old signature for internal boundary condition " << std::endl
+      << "(DataBlock &, const real t)" << std::endl
+      << "is deprecated. You should now use "<< std::endl
+      << "(Fluid<Phys> *, const real t)" << std::endl
+      << "With the Phys of your choice (DefaultPhysics, DustPhysics...)" << std::endl;
+
+  IDEFIX_WARNING(msg);
+  this->internalBoundaryFuncOld = myFunc;
+  this->haveInternalBoundary = true;
+}
+
+template<typename Phys>
+void Boundary<Phys>::EnrollInternalBoundary(InternalBoundaryFunc<Phys> myFunc) {
   this->internalBoundaryFunc = myFunc;
   this->haveInternalBoundary = true;
 }

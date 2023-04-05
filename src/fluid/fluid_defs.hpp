@@ -35,12 +35,7 @@ struct ParabolicModuleStatus {
 };
 
 
-using UserDefBoundaryFuncOld = void (*) (DataBlock &, int dir, BoundarySide side,
-                                      const real t);
 
-template<typename Phys>
-using UserDefBoundaryFunc = void (*) (Fluid<Phys> *, int dir, BoundarySide side,
-                                      const real t);
 
 using GravPotentialFunc = void (*) (DataBlock &, const real t, IdefixArray1D<real>&,
                                     IdefixArray1D<real>&, IdefixArray1D<real>&,
@@ -49,9 +44,15 @@ using GravPotentialFunc = void (*) (DataBlock &, const real t, IdefixArray1D<rea
 using BodyForceFunc = void (*) (DataBlock &, const real t, IdefixArray4D<real>&);
 
 using SrcTermFunc = void (*) (DataBlock &, const real t, const real dt);
-using InternalBoundaryFunc = void (*) (DataBlock &, const real t);
+
+
 using EmfBoundaryFunc = void (*) (DataBlock &, const real t);
 using DiffusivityFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
 using IsoSoundSpeedFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
+
+// Deprecated signatures
+using UserDefBoundaryFuncOld = void (*) (DataBlock &, int dir, BoundarySide side,
+                                      const real t);
+
 
 #endif //FLUID_FLUID_DEFS_HPP_

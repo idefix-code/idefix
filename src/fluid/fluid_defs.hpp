@@ -16,6 +16,9 @@
 // forward class declaration
 class DataBlock;
 
+template<typename Phys>
+class Fluid;
+
 #define     SMALL_PRESSURE_FIX      (1.0e-5)
 #define     eps_UCT_CONTACT         (1.0e-6)
 
@@ -32,8 +35,13 @@ struct ParabolicModuleStatus {
 };
 
 
-using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side,
+using UserDefBoundaryFuncOld = void (*) (DataBlock &, int dir, BoundarySide side,
                                       const real t);
+
+template<typename Phys>
+using UserDefBoundaryFunc = void (*) (Fluid<Phys> *, int dir, BoundarySide side,
+                                      const real t);
+
 using GravPotentialFunc = void (*) (DataBlock &, const real t, IdefixArray1D<real>&,
                                     IdefixArray1D<real>&, IdefixArray1D<real>&,
                                     IdefixArray3D<real> &);

@@ -51,28 +51,36 @@ void RiemannSolver<Phys>::CalcFlux(IdefixArray4D<real> &flux) {
         break;
     }
   } else {
-    switch (mySolver) {
-      case TVDLF:
-        TvdlfHD<dir>(flux);
-        break;
-      case HLL:
-        HllHD<dir>(flux);
-        break;
-      case HLL_DUST:
-        HllDust<dir>(flux);
-        break;
-      case HLLC:
-        HllcHD<dir>(flux);
-        break;
-      case ROE:
-        RoeHD<dir>(flux);
-        break;
-      default: // do nothing
-        IDEFIX_ERROR("Internal error: Unknown solver");
-        break;
-    }
+    if constexpr(Phys::dust) {
+      switch (mySolver) {
+        case HLL_DUST:
+          HllDust<dir>(flux);
+          break;
+        default: // do nothing
+          IDEFIX_ERROR("Internal error: Unknown solver");
+          break;
+      }
+    } else {
+      // Default hydro solvers
+      switch (mySolver) {
+        case TVDLF:
+          TvdlfHD<dir>(flux);
+          break;
+        case HLL:
+          HllHD<dir>(flux);
+          break;
+        case HLLC:
+          HllcHD<dir>(flux);
+          break;
+        case ROE:
+          RoeHD<dir>(flux);
+          break;
+        default: // do nothing
+          IDEFIX_ERROR("Internal error: Unknown solver");
+          break;
+      }
+    }// Dust
   }
-
   idfx::popRegion();
 }
 #endif // FLUID_RIEMANNSOLVER_CALCFLUX_HPP_

@@ -22,22 +22,23 @@ void Fluid<Phys>::EnrollIsoSoundSpeed(IsoSoundSpeedFunc myFunc) {
   this->isoSoundSpeedFunc = myFunc;
 }
 
+// Deprecated enrollment
 template<typename Phys>
-void Fluid<Phys>::EnrollUserDefBoundary(UserDefBoundaryFunc myFunc) {
+void Fluid<Phys>::EnrollUserDefBoundary(UserDefBoundaryFuncOld myFunc) {
   // This is a proxy for userdef enrollment
   boundary->EnrollUserDefBoundary(myFunc);
 }
 
 template<typename Phys>
-void Fluid<Phys>::EnrollFluxBoundary(UserDefBoundaryFunc myFunc) {
+void Fluid<Phys>::EnrollUserDefBoundary(UserDefBoundaryFunc<Phys> myFunc) {
   // This is a proxy for userdef enrollment
-  boundary->EnrollFluxBoundary(myFunc);
+  boundary->EnrollUserDefBoundary(myFunc);
 }
 
 template<typename Phys>
-void Fluid<Phys>::EnrollInternalBoundary(InternalBoundaryFunc myFunc) {
+void Fluid<Phys>::EnrollFluxBoundary(UserDefBoundaryFuncOld myFunc) {
   // This is a proxy for userdef enrollment
-  boundary->EnrollInternalBoundary(myFunc);
+  boundary->EnrollFluxBoundary(myFunc);
 }
 
 template<typename Phys>

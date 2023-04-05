@@ -114,10 +114,11 @@ class Fluid {
 
 
   // Enroll user-defined boundary conditions
-  void EnrollUserDefBoundary(UserDefBoundaryFunc);
+  void EnrollUserDefBoundary(UserDefBoundaryFunc<Phys>);
+
   void EnrollInternalBoundary(InternalBoundaryFunc);
   void EnrollEmfBoundary(EmfBoundaryFunc);
-  void EnrollFluxBoundary(UserDefBoundaryFunc);
+  void EnrollFluxBoundary(UserDefBoundaryFunc<Phys>);
 
   // Add some user source terms
   void EnrollUserSourceTerm(SrcTermFunc);
@@ -129,6 +130,11 @@ class Fluid {
 
   // Enroll user-defined isothermal sound speed
   void EnrollIsoSoundSpeed(IsoSoundSpeedFunc);
+
+  // TODO(lesurg): clean this up
+  // Deprecated Enrollment functions (kept for backward compatibility with V1.0)
+  void EnrollUserDefBoundary(UserDefBoundaryFuncOld);
+  void EnrollFluxBoundary(UserDefBoundaryFuncOld);
 
 
 

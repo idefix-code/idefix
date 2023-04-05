@@ -2,13 +2,13 @@
 #include "setup.hpp"
 
 // User-defined boundaries
-void UserdefBoundary(DataBlock & data, int dir, BoundarySide side, const real t) {
+void UserdefBoundary(Hydro* hydro, int dir, BoundarySide side, const real t) {
     const real alpha = 60./180.*M_PI;
 
     if( (dir==IDIR) && (side == left)) {
-        IdefixArray4D<real> Vc = data.hydro->Vc;
-        int ighost = data.nghost[IDIR];
-        idefix_for("UserDefBoundaryX1Beg",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,ighost,
+        IdefixArray4D<real> Vc = hydro->Vc;
+        int ighost = hydro->data->nghost[IDIR];
+        hydro->boundary->BoundaryFor("UserDefBoundaryX1Beg", dir, side,
                     KOKKOS_LAMBDA (int k, int j, int i) {
 
                         Vc(RHO,k,j,i) = 8.0;
@@ -19,14 +19,14 @@ void UserdefBoundary(DataBlock & data, int dir, BoundarySide side, const real t)
     }
 
     if(dir==JDIR) {
-        IdefixArray4D<real> Vc = data.hydro->Vc;
-        IdefixArray1D<real> x1 = data.x[IDIR];
-        IdefixArray1D<real> x2 = data.x[JDIR];
+        IdefixArray4D<real> Vc = hydro->Vc;
+        IdefixArray1D<real> x1 = hydro->data->x[IDIR];
+        IdefixArray1D<real> x2 = hydro->data->x[JDIR];
         int jbeg,jend;
         if(side == left) {
             jbeg = 0;
-            jend = data.beg[JDIR];
-            idefix_for("UserDefBoundaryX2Beg",0,data.np_tot[KDIR],jbeg,jend,0,data.np_tot[IDIR],
+            jend = hydro->data->beg[JDIR];
+            hydro->boundary->BoundaryFor("UserDefBoundaryX2Beg", dir, side,
                         KOKKOS_LAMBDA (int k, int j, int i) {
                             if(x1(i) < 1.0/6.0) {
                               Vc(RHO,k,j,i) = 8.0;
@@ -43,11 +43,11 @@ void UserdefBoundary(DataBlock & data, int dir, BoundarySide side, const real t)
                         });
             //return;
         } else if(side==right) {
-            jbeg=data.end[JDIR];
-            jend=data.np_tot[JDIR];
+            jbeg=hydro->data->end[JDIR];
+            jend=hydro->data->np_tot[JDIR];
             real xs = 10.0*t/sin(alpha) + 1.0/6.0 + 1.0/tan(alpha);
 
-            idefix_for("UserDefBoundaryX2End",0,data.np_tot[KDIR],jbeg,jend,0,data.np_tot[IDIR],
+            hydro->boundary->BoundaryFor("UserDefBoundaryX2End", dir, side,
                         KOKKOS_LAMBDA (int k, int j, int i) {
                             if(x1(i) < xs) {
                               Vc(RHO,k,j,i) = 8.0;

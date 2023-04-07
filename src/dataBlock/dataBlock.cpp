@@ -226,6 +226,7 @@ void DataBlock::ShowConfig() {
   if(haveUserStepLast) idfx::cout << "DataBlock: User's last step has been enrolled."
                                   << std::endl;
   if(haveDust) {
+    idfx::cout << "DataBlock: evolving " << dust.size() << " dust species." << std::endl;
     // Only show the config the first dust specie
     dust[0]->ShowConfig();
     /*

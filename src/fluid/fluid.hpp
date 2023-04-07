@@ -504,7 +504,7 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
   // If we have hydro, the output prefix is "" for backward compatibility
   if(prefix.compare("Hydro") != 0) {
     outputPrefix = prefix;
-    outputPrefix += "-";
+    outputPrefix += "_";
   }
 
   for(int i = 0 ; i < Phys::nvar ;  i++) {

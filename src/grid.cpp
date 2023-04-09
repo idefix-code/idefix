@@ -11,13 +11,19 @@
 #include "gridHost.hpp"
 #include "grid.hpp"
 
+Grid::Grid(SubGrid * subgrid) {
+  idfx::pushRegion("Grid::Grid(SubGrid)");
+  // Copy data from parent
+  xbeg = subgrid->parentGrid->xbeg;
+  xend = subgrid->parentGrid->xend;
+
+
+  idfx::popRegion();
+}
+
 Grid::Grid(Input &input) {
   idfx::pushRegion("Grid::Grid(Input)");
 
-  xbeg = std::vector<real>(3);
-  xend = std::vector<real>(3);
-
-  nghost = std::vector<int>(3);
 
   // Get grid size from input file, block [Grid]
   int npoints[3];
@@ -39,11 +45,6 @@ Grid::Grid(Input &input) {
       }
     }
   }
-
-  np_tot = std::vector<int>(3);
-  np_int = std::vector<int>(3);
-  lbound = std::vector<BoundaryType>(3);
-  rbound = std::vector<BoundaryType>(3);
 
   for(int dir = 0 ; dir < 3 ; dir++) {
     np_tot[dir] = npoints[dir] + 2*nghost[dir];
@@ -104,10 +105,6 @@ Grid::Grid(Input &input) {
   }
 
   // Allocate the grid structure on device. Initialisation will come from GridHost
-  x = std::vector<IdefixArray1D<real>>(3);
-  xr = std::vector<IdefixArray1D<real>>(3);
-  xl = std::vector<IdefixArray1D<real>>(3);
-  dx = std::vector<IdefixArray1D<real>>(3);
   for(int dir = 0 ; dir < 3 ; dir++) {
     x[dir] = IdefixArray1D<real>("Grid_x",np_tot[dir]);
     xr[dir] = IdefixArray1D<real>("Grid_xr",np_tot[dir]);
@@ -116,8 +113,6 @@ Grid::Grid(Input &input) {
   }
 
   // Allocate proc structure (by default: one proc in each direction, size one)
-  nproc = std::vector<int> (3);
-  xproc = std::vector<int> (3);
   for(int i=0 ; i < 3; i++) {
     nproc[i] = 1;
     xproc[i] = 0;
@@ -210,7 +205,8 @@ Grid::Grid(Input &input) {
       msg << "Grid coarsening can only be static or dynamic. I got: " << coarsenType;
       IDEFIX_ERROR(msg);
     }
-    this->coarseningDirection = std::vector<bool>(3, false);
+    this->coarseningDirection = {false, false, false};
+
     int directions = input.CheckEntry("Grid","coarsening");
     for(int i = 1 ; i < directions ; i++) {
       std::string dirname = input.Get<std::string>("Grid","coarsening",i);

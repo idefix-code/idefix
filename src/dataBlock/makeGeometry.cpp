@@ -43,7 +43,6 @@ void DataBlock::MakeGeometry() {
   if(mygrid->haveGridCoarsening != GridCoarsening::disabled) {
     this->haveGridCoarsening = mygrid->haveGridCoarsening;
     this->coarseningDirection = mygrid->coarseningDirection;
-    this->coarseningLevel = std::vector<IdefixArray2D<int>>(3);
 
     for(int dir = 0 ; dir < 3 ; dir++) {
       if(coarseningDirection[dir]) {

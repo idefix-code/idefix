@@ -25,13 +25,13 @@
 class DataBlockHost {
  public:
   // Local grid information
-  std::vector<IdefixArray1D<real>::HostMirror> x;   ///< geometrical central points
-  std::vector<IdefixArray1D<real>::HostMirror> xr;  ///< cell right interface
-  std::vector<IdefixArray1D<real>::HostMirror> xl;  ///< cell left interface
-  std::vector<IdefixArray1D<real>::HostMirror> dx;  ///< cell width
+  std::array<IdefixArray1D<real>::HostMirror,3> x;   ///< geometrical central points
+  std::array<IdefixArray1D<real>::HostMirror,3> xr;  ///< cell right interface
+  std::array<IdefixArray1D<real>::HostMirror,3> xl;  ///< cell left interface
+  std::array<IdefixArray1D<real>::HostMirror,3> dx;  ///< cell width
 
   IdefixArray3D<real>::HostMirror dV;     ///< cell volume
-  std::vector<IdefixArray3D<real>::HostMirror> A;   ///< cell right interface area
+  std::array<IdefixArray3D<real>::HostMirror,3> A;   ///< cell right interface area
 
   IdefixArray4D<real>::HostMirror Vc;     ///< Main cell-centered primitive variables index
 
@@ -51,29 +51,29 @@ class DataBlockHost {
   IdefixArray4D<real>::HostMirror Uc;     ///< Main cell-centered conservative variables
   IdefixArray3D<real>::HostMirror InvDt;  ///< Inverse of maximum timestep in each cell
 
-  std::vector<IdefixArray2D<int>::HostMirror> coarseningLevel; ///< Grid coarsening level
+  std::array<IdefixArray2D<int>::HostMirror,3> coarseningLevel; ///< Grid coarsening level
                                                      ///< (only defined when coarsening
                                                      ///< is enabled)
 
-  std::vector<bool> coarseningDirection;         ///< whether a coarsening is used in each direction
+  std::array<bool,3> coarseningDirection;       ///< whether a coarsening is used in each direction
 
 
-  std::vector<real> xbeg;                        ///> Beginning of dataBlock
-  std::vector<real> xend;                        ///> End of dataBlock
+  std::array<real,3> xbeg;                      ///> Beginning of dataBlock
+  std::array<real,3> xend;                      ///> End of dataBlock
 
-  std::vector<int> np_tot;                  ///< total number of grid points
-  std::vector<int> np_int;                  ///< internal number of grid points
+  std::array<int,3> np_tot;                  ///< total number of grid points
+  std::array<int,3> np_int;                  ///< internal number of grid points
 
-  std::vector<int> nghost;                  ///< number of ghost cells
+  std::array<int,3> nghost;                  ///< number of ghost cells
 
-  std::vector<BoundaryType> lbound;           ///< Boundary condition to the left
-  std::vector<BoundaryType> rbound;           ///< Boundary condition to the right
+  std::array<BoundaryType,3> lbound;           ///< Boundary condition to the left
+  std::array<BoundaryType,3> rbound;           ///< Boundary condition to the right
 
-  std::vector<int> beg;                       ///< Begining of internal indices
-  std::vector<int> end;                       ///< End of internal indices
+  std::array<int,3> beg;                       ///< Begining of internal indices
+  std::array<int,3> end;                       ///< End of internal indices
 
-  std::vector<int> gbeg;                      ///< Begining of local block in the grid (internal)
-  std::vector<int> gend;                      ///< End of local block in the grid (internal)
+  std::array<int,3> gbeg;                      ///< Begining of local block in the grid (internal)
+  std::array<int,3> gend;                      ///< End of local block in the grid (internal)
 
   explicit DataBlockHost(DataBlock &);        ///< Constructor from a device datablock
                                               ///< (NB: does not sync any data)

@@ -64,9 +64,9 @@ class Fargo {
   Mpi mpi;                      // Fargo-specific MPI layer
 #endif
 
-  std::vector<int> beg;
-  std::vector<int> end;
-  std::vector<int> nghost;
+  std::array<int,3> beg;
+  std::array<int,3> end;
+  std::array<int,3> nghost;
   int maxShift;                         //< maximum number of cells along which we plan to shift.
   real dtMax{0};                        //< Maximum allowable dt for a given Fargo velocity
                                         //< when domain decomposition is enabled

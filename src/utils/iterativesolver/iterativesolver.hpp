@@ -38,9 +38,9 @@ class IterativeSolver {
   bool convStatus;    // Convergence status
   bool restart{false};
 
-  std::vector<int> beg;
-  std::vector<int> end;
-  std::vector<int> ntot;
+  std::array<int,3> beg;
+  std::array<int,3> end;
+  std::array<int,3> ntot;
 
   IdefixArray3D<real> solution;
   IdefixArray3D<real> rhs;

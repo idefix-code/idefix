@@ -89,9 +89,6 @@ class BaseVtk {
     {CYLINDRICAL, 3},
   };
 
-  // List of variables to be written to vtk files
-  std::map<std::string, VtkScalarField> vtkScalarMap;
-
   int vtkFileNumber = 0;
   int geometry{VTKGeometryFlags[GEOMETRY]};
   int periodicity[3];
@@ -164,6 +161,9 @@ class Vtk : public BaseVtk {
   void RegisterVariable(T&, std::string, int var = -1);
 
  private:
+  // List of variables to be written to vtk files
+  std::map<std::string, VtkScalarField> vtkScalarMap;
+
   // dimensions
   int64_t nx1,nx2,nx3;
   int64_t nx1loc,nx2loc,nx3loc;

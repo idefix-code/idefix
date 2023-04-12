@@ -97,6 +97,9 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
   dmu = IdefixArray1D<real>("DataBlock_dmu",np_tot[JDIR]);
 #endif
 
+  // Initialize our sub-domain
+  this->ExtractSubdomain();
+
   // Initialize the geometry
   this->MakeGeometry();
 
@@ -110,7 +113,7 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
   this->dump = std::make_unique<Dump>(input, this);
 
   // Initialize the VTK object
-  this->vtk = std::make_unique<Vtk>(input, this);
+  this->vtk = std::make_unique<Vtk>(this, "data");
 
   // Init XDMF objects for HDF5 outputs
   #ifdef WITH_HDF5
@@ -151,6 +154,94 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
   dump->RegisterVariable(&t, "time");
   dump->RegisterVariable(&dt, "dt");
 
+  idfx::popRegion();
+}
+
+/**
+ * @brief Construct a new Data Block as a subgrid
+ *
+ * @param subgrid : subgrid from which the local datablock should be extracted from
+ */
+DataBlock::DataBlock(SubGrid *subgrid) {
+  idfx::pushRegion("DataBlock:DataBlock(SubGrid)");
+  Grid *grid = subgrid->parentGrid;
+  this->mygrid = subgrid->grid.get();
+
+  // Make a local copy of the grid for future usage.
+  GridHost gridHost(*grid);
+  gridHost.SyncFromDevice();
+
+
+  // Get the number of points from the parent grid object
+  for(int dir = 0 ; dir < 3 ; dir++) {
+    nghost[dir] = grid->nghost[dir];
+    // Domain decomposition: decompose the full domain size in grid by the number of processes
+    // in that direction
+    np_int[dir] = grid->np_int[dir]/grid->nproc[dir];
+    np_tot[dir] = np_int[dir]+2*nghost[dir];
+
+    // Boundary conditions
+    if (grid->xproc[dir]==0) {
+      lbound[dir] = grid->lbound[dir];
+      if(lbound[dir]==axis) this->haveAxis = true;
+    } else {
+      lbound[dir] = internal;
+    }
+
+    if (grid->xproc[dir] == grid->nproc[dir]-1) {
+      rbound[dir] = grid->rbound[dir];
+      if(rbound[dir]==axis) this->haveAxis = true;
+    } else {
+      rbound[dir] = internal;
+    }
+
+    beg[dir] = grid->nghost[dir];
+    end[dir] = grid->nghost[dir]+np_int[dir];
+
+    // Where does this datablock starts and end in the grid?
+    // This assumes even distribution of points between procs
+    gbeg[dir] = grid->nghost[dir] + grid->xproc[dir]*np_int[dir];
+    gend[dir] = grid->nghost[dir] + (grid->xproc[dir]+1)*np_int[dir];
+
+    // Local start and end of current datablock
+    xbeg[dir] = gridHost.xl[dir](gbeg[dir]);
+    xend[dir] = gridHost.xr[dir](gend[dir]-1);
+  }
+
+  // Next we erase the info the slice direction
+  int refdir = subgrid->direction;
+  nghost[refdir] = 0;
+  np_int[refdir] = 1;
+  np_tot[refdir] = 1;
+  beg[refdir] = 0;
+  end[refdir] = 1;
+  gbeg[refdir] = subgrid->index;
+  gend[refdir] = subgrid->index+1;
+  xbeg[refdir] = gridHost.x[refdir](subgrid->index);
+  xend[refdir] = gridHost.x[refdir](subgrid->index);
+
+  // Allocate the required fields (only a limited set for a datablock from a subgrid)
+  std::string label;
+  for(int dir = 0 ; dir < 3 ; dir++) {
+    label = "DataBlock_x" + std::to_string(dir);
+    x[dir] = IdefixArray1D<real>(label, np_tot[dir]);
+
+    label = "DataBlock_xr" + std::to_string(dir);
+    xr[dir] = IdefixArray1D<real>(label,np_tot[dir]);
+
+    label = "DataBlock_xl" + std::to_string(dir);
+    xl[dir] = IdefixArray1D<real>(label,np_tot[dir]);
+
+    label = "DataBlock_dx" + std::to_string(dir);
+    dx[dir] = IdefixArray1D<real>(label,np_tot[dir]);
+  }
+
+  // Initialize our sub-domain
+  this->ExtractSubdomain();
+
+  // Reset gbeg/gend so that they don't refer anymore to the parent grid
+  gbeg[refdir] = 0;
+  gend[refdir] = 1;
   idfx::popRegion();
 }
 

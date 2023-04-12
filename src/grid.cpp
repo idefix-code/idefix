@@ -14,9 +14,30 @@
 Grid::Grid(SubGrid * subgrid) {
   idfx::pushRegion("Grid::Grid(SubGrid)");
   // Copy data from parent
+  x = subgrid->parentGrid->x;
+  xr = subgrid->parentGrid->xr;
+  xl = subgrid->parentGrid->xl;
+  dx = subgrid->parentGrid->dx;
+
   xbeg = subgrid->parentGrid->xbeg;
   xend = subgrid->parentGrid->xend;
 
+  np_tot = subgrid->parentGrid->np_tot;
+  np_int = subgrid->parentGrid->np_int;
+
+  nghost = subgrid->parentGrid->nghost;
+
+  lbound = subgrid->parentGrid->lbound;
+  rbound = subgrid->parentGrid->rbound;
+
+  haveGridCoarsening = subgrid->parentGrid->haveGridCoarsening;
+  coarseningDirection = subgrid->parentGrid->coarseningDirection;
+
+  nproc = subgrid->parentGrid->nproc;
+  xproc = subgrid->parentGrid->xproc;
+
+  // Now slice if along the chosen direction
+  SliceMe(subgrid);
 
   idfx::popRegion();
 }
@@ -375,4 +396,49 @@ void Grid::ShowConfig() {
     }
     idfx::cout << std::endl;
   }
+}
+
+void Grid::SliceMe(SubGrid *subgrid) {
+  // Slice this grid along the direction in subgrid
+  int dir = subgrid->direction;
+
+  auto x = IdefixArray1D<real>("Grid_x",1);
+  auto xr = IdefixArray1D<real>("Grid_xr",1);
+  auto xl = IdefixArray1D<real>("Grid_xl",1);
+  auto dx = IdefixArray1D<real>("Grid_dx",1);
+
+  auto xorigin = subgrid->parentGrid->x[dir];
+  auto xrorigin = subgrid->parentGrid->xr[dir];
+  auto xlorigin = subgrid->parentGrid->xl[dir];
+  auto dxorigin = subgrid->parentGrid->dx[dir];
+
+  idefix_for("Slice_grid", subgrid->index, subgrid->index+1,
+              KOKKOS_LAMBDA(int i) {
+                x(0) = xorigin(i);
+                xr(0) = xrorigin(i);
+                xl(0) = xlorigin(i);
+                dx(0) = dxorigin(i);
+  });
+
+  // Replace the arrays in the current subgrid
+  this->x[dir] = x;
+  this->xr[dir] = xr;
+  this->xl[dir] = xl;
+  this->dx[dir] = dx;
+
+  this->nghost[dir] = 0;
+  this->np_tot[dir] = 1;
+  this->np_int[dir] = 1;
+  this->xbeg[dir] = subgrid->x0;
+  this->xend[dir] = subgrid->x0;
+
+  // Slice the MPI communicator
+  #ifdef WITH_MPI
+    int remainDims[3] = {true, true, true};
+    remainDims[dir] = false;
+    MPI_Cart_sub(subgrid->parentGrid->CartComm, remainDims, &this->CartComm);
+    nproc[dir] = 1;
+    xproc[dir] = 0;
+  #endif
+  idfx::cout << "Comm: " << this->CartComm;
 }

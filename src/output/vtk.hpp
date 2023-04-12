@@ -32,6 +32,8 @@ class BaseVtk {
     unsigned char *tmp2 = (unsigned char *) &tmp1;
     if (*tmp2 == 0)
       this->shouldSwapEndian = false;
+    // Initialise the root tag (used for MPI non-collective I/Os)
+    this->isRoot = idfx::prank == 0;
   }
 
   // File offset
@@ -51,6 +53,7 @@ class BaseVtk {
   int geometry{VTKGeometryFlags[GEOMETRY]};
   int periodicity[3];
 
+  bool isRoot;  // Whether this process is our root process for the current
   // Timer
   Kokkos::Timer timer;
 
@@ -82,7 +85,7 @@ class BaseVtk {
     MPI_Status status;
     MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_BYTE,
                                     MPI_CHAR, "native", MPI_INFO_NULL ));
-    if(idfx::prank==0) {
+    if(this->isRoot) {
       MPI_SAFE_CALL(MPI_File_write(fvtk, header, strlen(header), MPI_CHAR, &status));
     }
     offset=offset+strlen(header);
@@ -97,7 +100,7 @@ class BaseVtk {
     MPI_Status status;
     MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_BYTE, MPI_CHAR,
                                     "native", MPI_INFO_NULL ));
-    if(idfx::prank==0) {
+    if(this->isRoot) {
       MPI_SAFE_CALL(MPI_File_write(fvtk, buffer, nelem*sizeof(T), MPI_CHAR, &status));
     }
     offset=offset+nelem*sizeof(T);
@@ -112,7 +115,7 @@ class Vtk : public BaseVtk {
   friend class Dump;
 
  public:
-  Vtk(Input &, DataBlock *);   // init VTK object
+  explicit Vtk(DataBlock *, std::string filebase = "data");   // init VTK object
   int Write();     // Create a VTK from the current DataBlock
 
   template<typename T>
@@ -129,6 +132,9 @@ class Vtk : public BaseVtk {
   // number of ghost zones
   int64_t ngx1,ngx2,ngx3;
 
+  // offset in each direction (used by the vtk grid)
+  int ioffset, joffset, koffset;
+
   // Coordinates needed by VTK outputs
   float *xnode, *ynode, *znode;
 
@@ -137,10 +143,14 @@ class Vtk : public BaseVtk {
   // Array designed to store the temporary vector array
   float *vect3D;
 
+  // File name
+  std::string filebase;
+
   // File offset
 #ifdef WITH_MPI
   MPI_Datatype view;
   MPI_Datatype nodeView;
+  MPI_Comm comm;
 #endif
 
   void WriteHeader(IdfxFileHandler, real);

@@ -14,7 +14,6 @@
 
 #include "idefix.hpp"
 #include "grid.hpp"
-#include "output.hpp"
 #include "fluid_defs.hpp"
 #include "thermalDiffusion.hpp"
 #include "bragThermalDiffusion.hpp"

@@ -17,6 +17,7 @@
 #include "grid.hpp"
 #include "gridHost.hpp"
 #include "output.hpp"
+#include "planetarySystem.hpp"
 #include "gravity.hpp"
 #include "stateContainer.hpp"
 
@@ -39,6 +40,7 @@ class Gravity;
 class PlanetarySystem;
 template<typename Phys>
 class Fluid;
+class SubGrid;
 
 // Forward class hydro declaration
 #include "physics.hpp"
@@ -120,8 +122,10 @@ class DataBlock {
 
 
   DataBlock(Grid &, Input &);     ///< init from a Grid object
+  explicit DataBlock(SubGrid *);           ///< init a minimal datablock for a subgrid
 
-  void MakeGeometry();                ///< Compute geometrical terms
+  void ExtractSubdomain();        ///< initialise datablock sub-domain according to domain decomp.
+  void MakeGeometry();            ///< Compute geometrical terms
   void DumpToFile(std::string);   ///< Dump current datablock to a file for inspection
   void Validate();                ///< error out early in case problems are found in IC
   int CheckNan();                 ///< Return the number of cells which have Nans

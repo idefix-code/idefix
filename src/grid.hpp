@@ -61,6 +61,8 @@ class Grid {
 
   void ShowConfig();
 
+  void SliceMe(SubGrid *);       ///< Slice this grid according to the subgrid (internal function)
+
   Grid() = default;
 
  private:
@@ -75,10 +77,9 @@ class Grid {
  */
 class SubGrid {
  public:
-  enum class Type {Slice, Average};
-
-  SubGrid(Grid * grid, Type type, int d, real x0):
+  SubGrid(Grid * grid, SliceType type, int d, real x0):
           parentGrid(grid), type(type), direction(d) {
+            idfx::pushRegion("SubGrid::SubGrid()");
             // Find the index of the current subgrid.
             auto x = Kokkos::create_mirror_view(parentGrid->x[direction]);
             Kokkos::deep_copy(x,parentGrid->x[direction]);
@@ -106,12 +107,13 @@ class SubGrid {
             this->x0 = x(iref);
 
             this->grid = std::make_unique<Grid>(this);
+            idfx::popRegion();
   }
 
-  const Grid *parentGrid;
+  Grid *parentGrid;
   std::unique_ptr<Grid> grid;
 
-  const Type type;
+  const SliceType type;
   const int direction;
   real x0;   ///< Cell center coordinate of the slice/average
   int index; ///< index in parent grid of the slice/average

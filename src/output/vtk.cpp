@@ -12,7 +12,6 @@
 #include "gitversion.hpp"
 #include "idefix.hpp"
 #include "dataBlock.hpp"
-#include "dataBlockHost.hpp"
 #include "gridHost.hpp"
 #include "output.hpp"
 #include "fluid.hpp"
@@ -214,10 +213,6 @@ int Vtk::Write() {
 
   timer.reset();
 
-  // Create a copy of the dataBlock on Host, and sync it.
-  DataBlockHost data(*(this->data));
-  data.SyncFromDevice();
-
   std::stringstream ssfileName, ssvtkFileNum;
   ssvtkFileNum << std::setfill('0') << std::setw(4) << vtkFileNumber;
   ssfileName << "data." << ssvtkFileNum.str() << ".vtk";
@@ -250,10 +245,10 @@ int Vtk::Write() {
   // Write field one by one
   for(auto const& [name, scalar] : vtkScalarMap) {
     auto Vcin = scalar.GetHostField();
-    for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++ ) {
-      for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++ ) {
-        for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
-          vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc + (k-data.beg[KDIR])*nx1loc*nx2loc]
+    for(int k = data->beg[KDIR]; k < data->end[KDIR] ; k++ ) {
+      for(int j = data->beg[JDIR]; j < data->end[JDIR] ; j++ ) {
+        for(int i = data->beg[IDIR]; i < data->end[IDIR] ; i++ ) {
+          vect3D[i-data->beg[IDIR] + (j-data->beg[JDIR])*nx1loc + (k-data->beg[KDIR])*nx1loc*nx2loc]
               = BigEndian(static_cast<float>(Vcin(k,j,i)));
         }
       }

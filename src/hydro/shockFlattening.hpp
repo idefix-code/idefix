@@ -12,6 +12,8 @@
 
 enum class FlagShock{None, Shock};
 
+using UserShockFunc = void (*) (DataBlock &, const real t, IdefixArray3D<FlagShock>&);
+
 class ShockFlattening {
  public:
   ShockFlattening(Hydro*, real);
@@ -23,5 +25,9 @@ class ShockFlattening {
   IdefixArray3D<FlagShock> flagArray;
   bool isActive{false};
   real smoothing{0};
+
+  void EnrollUserShockFlag(UserShockFunc);
+  bool haveUserShockFlag{false};
+  UserShockFunc userShockFunc{NULL};
 };
 #endif //HYDRO_SHOCKFLATTENING_HPP_

@@ -193,6 +193,9 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 |                |                         | | limiter when strong shocks are detected. The entry parameter is the threshold above which |
 |                |                         | | a shock is considered "strong", in units of :math:`|\nabla P /P|`. A low value hence tends|
 |                |                         | | to increase the code numerical diffusivity. Typical values are 1 to 10.                   |
+|                |                         | | Note that it is possible to enroll a user-defined function to flag specific cells for     |
+|                |                         | | shock flattening, in addition to the default flag. This user function can be enrolled     |
+|                |                         | | with ``Hydro.shockFlattening.EnrollUserShockFlag(UserShockFunc)`` .                       |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 
 

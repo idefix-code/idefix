@@ -20,6 +20,7 @@ ShockFlattening::ShockFlattening(Hydro *h, real smoothing) {
 
 void ShockFlattening::FindShock() {
   idfx::pushRegion("ShockFlattening::FindShock");
+
   auto flags = flagArray;
   auto Vc = hydro->Vc;
   real smoothing = this->smoothing;
@@ -123,5 +124,14 @@ void ShockFlattening::FindShock() {
                 }
               }
             });
+
+  if (haveUserShockFlag) {
+    userShockFunc(*this->hydro->data, this->hydro->data->t, this->flagArray);
+  }
   idfx::popRegion();
+}
+
+void ShockFlattening::EnrollUserShockFlag(UserShockFunc myFunc) {
+  this->haveUserShockFlag = true;
+  this->userShockFunc = myFunc;
 }

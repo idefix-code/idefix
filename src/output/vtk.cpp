@@ -290,7 +290,6 @@ int Vtk::Write() {
         for(int i = data->beg[IDIR]; i < data->end[IDIR] ; i++ ) {
           vect3D[i-data->beg[IDIR] + (j-data->beg[JDIR])*nx1loc + (k-data->beg[KDIR])*nx1loc*nx2loc]
               = BigEndian(static_cast<float>(Vcin(k,j,i)));
-             // = BigEndian(static_cast<float>(idfx::prank+1));
         }
       }
     }
@@ -481,7 +480,6 @@ void Vtk::WriteScalar(IdfxFileHandler fvtk, float* Vin,  const std::string &var_
 
   WriteHeaderString(header.c_str(), fvtk);
 
-  MPI_Barrier(this->comm);
 #ifdef WITH_MPI
   MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_FLOAT, this->view,
                                   "native", MPI_INFO_NULL));

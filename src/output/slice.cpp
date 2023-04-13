@@ -40,7 +40,13 @@ Slice::Slice(DataBlock & data, int nSlice, SliceType type, int direction, real x
                                  sliceData->np_tot[IDIR]);
 
   vtk->RegisterVariable(Vc, "RHO", RHO);
-  //vtk->RegisterVariable(Vc, "VX1", VX1);
+  vtk->RegisterVariable(Vc, "VX1", VX1);
+
+  #if MHD == YES
+  vtk->RegisterVariable(Vc, "BX1", BX1);
+  vtk->RegisterVariable(Vc, "BX2", BX2);
+  vtk->RegisterVariable(Vc, "BX3", BX3);
+  #endif
   idfx::popRegion();
 }
 
@@ -48,7 +54,6 @@ void Slice::CheckForWrite(DataBlock &data) {
   idfx::pushRegion("Slice:CheckForWrite");
   // Take the slice (warning with MPI: more work is needed)
   if(data.t >= sliceLast + slicePeriod) {
-    idfx::cout << "Go johnny" << std::endl;
     auto Vcin=data.hydro->Vc;
     auto Vcout=this->Vc;
     if(containsX0) {

@@ -440,5 +440,4 @@ void Grid::SliceMe(SubGrid *subgrid) {
     nproc[dir] = 1;
     xproc[dir] = 0;
   #endif
-  idfx::cout << "Comm: " << this->CartComm;
 }

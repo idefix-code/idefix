@@ -24,11 +24,17 @@ template<typename Phys,
          const int order = ORDER>
 class SlopeLimiter {
  public:
-  SlopeLimiter(IdefixArray4D<real> &Vc, IdefixArray1D<real> &dx,
-               bool haveSF, ShockFlattening<Phys> *sf): Vc(Vc), dx(dx), shockFlattening(haveSF) {
-          if(shockFlattening) {
-            flags = sf->flagArray;
-          }
+  explicit SlopeLimiter(RiemannSolver<Phys> *rSolver):
+          Vc(rSolver->hydro->Vc),
+          dx(rSolver->hydro->data->dx[dir]),
+          shockFlattening(rSolver->haveShockFlattening),
+          isRegularGrid(rSolver->hydro->data->mygrid->isRegularCartesian) {
+            if(shockFlattening) {
+              flags = rSolver->shockFlattening->flagArray;
+            }
+  }
+
+  void ComputePLMweights(DataBlock *data) {
   }
 
   KOKKOS_FORCEINLINE_FUNCTION static real MinModLim(const real dvp, const real dvm) {
@@ -366,6 +372,7 @@ class SlopeLimiter {
   IdefixArray4D<real> Vc;
   IdefixArray1D<real> dx;
   IdefixArray3D<FlagShock> flags;
+  bool isRegularGrid{true};
   bool shockFlattening{false};
 };
 

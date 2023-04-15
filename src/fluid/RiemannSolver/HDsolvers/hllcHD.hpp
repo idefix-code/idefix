@@ -30,7 +30,7 @@ void RiemannSolver<Phys>::HllcHD(IdefixArray4D<real> &Flux) {
 
   EquationOfState eos = *(hydro->eos.get());
 
-  SlopeLimiter<Phys,DIR> slopeLim(Vc,data->dx[DIR],haveShockFlattening,shockFlattening.get());
+  SlopeLimiter<Phys,DIR> slopeLim = *this->GetSlopeLimiter<DIR>();
 
   idefix_for("HLLC_Kernel",
              data->beg[KDIR],data->end[KDIR]+koffset,

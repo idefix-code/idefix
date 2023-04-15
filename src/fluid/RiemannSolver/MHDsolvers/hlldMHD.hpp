@@ -73,7 +73,7 @@ void RiemannSolver<Phys>::HlldMHD(IdefixArray4D<real> &Flux) {
 
   EquationOfState eos = *(hydro->eos.get());
 
-  SlopeLimiter<Phys,DIR> slopeLim(Vc,data->dx[DIR],haveShockFlattening,shockFlattening.get());;
+  SlopeLimiter<Phys,DIR> slopeLim = *this->GetSlopeLimiter<DIR>();
 
   // st and sb will be useful only when Hall is included
   real st = ONE_F, sb = ONE_F;

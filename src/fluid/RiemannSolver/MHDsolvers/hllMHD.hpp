@@ -78,7 +78,7 @@ void RiemannSolver<Phys>::HllMHD(IdefixArray4D<real> &Flux) {
 
   [[maybe_unused]] real xHConstant = hydro->xH;
 
-  SlopeLimiter<Phys,DIR> slopeLim(Vc,data->dx[DIR],haveShockFlattening,shockFlattening.get());;
+  SlopeLimiter<Phys,DIR> slopeLim = *this->GetSlopeLimiter<DIR>();
 
   // Define normal, tangent and bi-tanget indices
   // st and sb will be useful only when Hall is included

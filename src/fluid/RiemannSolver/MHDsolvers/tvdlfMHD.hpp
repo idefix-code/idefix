@@ -64,7 +64,7 @@ void RiemannSolver<Phys>::TvdlfMHD(IdefixArray4D<real> &Flux) {
 
   EquationOfState eos = *(hydro->eos.get());
 
-  SlopeLimiter<Phys,DIR> slopeLim(Vc,data->dx[DIR],haveShockFlattening,shockFlattening.get());;
+  SlopeLimiter<Phys,DIR> slopeLim = *this->GetSlopeLimiter<DIR>();
   // Define normal, tangent and bi-tanget indices
   // st and sb will be useful only when Hall is included
   real st = ONE_F, sb = ONE_F;

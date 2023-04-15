@@ -104,7 +104,7 @@ void RiemannSolver<Phys>::RoeMHD(IdefixArray4D<real> &Flux) {
   // st and sb will be useful only when Hall is included
   real st = ONE_F, sb = ONE_F;
 
-  SlopeLimiter<Phys,DIR> slopeLim(Vc,data->dx[DIR],haveShockFlattening,shockFlattening.get());;
+  SlopeLimiter<Phys,DIR> slopeLim = *this->GetSlopeLimiter<DIR>();
 
   switch(DIR) {
     case(IDIR):

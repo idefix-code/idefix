@@ -32,9 +32,33 @@ class SlopeLimiter {
             if(shockFlattening) {
               flags = rSolver->shockFlattening->flagArray;
             }
+            if(!isRegularGrid) {
+              ComputePLMweights(rSolver->hydro->data);
+            }
   }
 
   void ComputePLMweights(DataBlock *data) {
+    // Allocate weight arrays
+    cpArray = IdefixArray1D<real>("SlopeLimiter_cp",data->np_tot[dir]);
+    cmArray = IdefixArray1D<real>("SlopeLimiter_cm",data->np_tot[dir]);
+    dpArray = IdefixArray1D<real>("SlopeLimiter_dp",data->np_tot[dir]);
+    dmArray = IdefixArray1D<real>("SlopeLimiter_dm",data->np_tot[dir]);
+    wpArray = IdefixArray1D<real>("SlopeLimiter_wp",data->np_tot[dir]);
+    wmArray = IdefixArray1D<real>("SlopeLimiter_wm",data->np_tot[dir]);
+
+    auto dx = data->dx[dir];
+    auto xgc = data->xgc[dir];
+    auto xr = data->xr[dir];
+
+    idefix_for("ComputePLMweights",1,data->np_tot[dir]-1,
+                KOKKOS_LAMBDA(const int i) {
+                  wpArray(i) = dx(i) / (xgc(i+1) - xgc(i));
+                  wmArray(i) = dx(i) / (xgc(i) - xgc(i-1));
+                  cpArray(i) = (xgc(i+1) - xgc(i)) / (xr(i) - xgc(i));
+                  cmArray(i) = (xgc(i) - xgc(i-1)) / (xgc(i) - xr(i-1));
+                  dpArray(i) = (xr(i) - xgc(i)) / dx(i);
+                  dmArray(i) = (xgc(i) - xr(i-1)) / dx(i);
+                });
   }
 
   KOKKOS_FORCEINLINE_FUNCTION static real MinModLim(const real dvp, const real dvm) {
@@ -76,16 +100,55 @@ class SlopeLimiter {
   }
 
   KOKKOS_FORCEINLINE_FUNCTION static real VanLeerLim(const real dvp, const real dvm) {
-    real dq= 0.0;
-    dq = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
+    real dq = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
     return(dq);
   }
 
-  KOKKOS_FORCEINLINE_FUNCTION static real McLim(const real dvp, const real dvm) {
+  // Generalize vanleer for non-homogeneous grids
+  KOKKOS_FORCEINLINE_FUNCTION static real VanLeerLim(const real dvp, const real dvm,
+                                              const real cp , const real cm) const {
+    real dq = (dvp*dvm > 0.0 ? dvp*dvm*(cp*dvm + cm*dvp)
+                       /(dvp*dvp + dvm*dvm + (cp + cm - 2.0)*dvp*dvm) : 0.0);
+    return dq;
+  }
+
+  // Generalize vanleer for non-homogeneous grids
+  KOKKOS_FORCEINLINE_FUNCTION static real VanLeerLim(const real dvp, const real dvm,
+                                              const real cp , const real cm) const {
+    real dq = (dvp*dvm > 0.0 ? dvp*dvm*(cp*dvm + cm*dvp)
+                       /(dvp*dvp + dvm*dvm + (cp + cm - 2.0)*dvp*dvm) : 0.0);
+    return dq;
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION static static real McLim(const real dvp, const real dvm) {
     real dq = 0;
     if(dvp*dvm >0.0) {
       real dqc = 0.5*(dvp+dvm);
       real d2q = 2.0*( fabs(dvp) < fabs(dvm) ? dvp : dvm);
+      dq= fabs(d2q) < fabs(dqc) ? d2q : dqc;
+    }
+    return(dq);
+  }
+
+  // Generalized McLimiter for non-homogeneous grid
+  KOKKOS_FORCEINLINE_FUNCTION static real McLim(const real dvp, const real dvm,
+                                          const real cp , const real cm) const {
+    real dq = 0;
+    if(dvp*dvm >0.0) {
+      real dqc = 0.5*(dvp+dvm);
+      real d2q =  fabs(dvp*cp) < fabs(dvm*cm) ? dvp*cp : dvm*cm;
+      dq= fabs(d2q) < fabs(dqc) ? d2q : dqc;
+    }
+    return(dq);
+  }
+
+  // Generalized McLimiter for non-homogeneous grid
+  KOKKOS_FORCEINLINE_FUNCTION static real McLim(const real dvp, const real dvm,
+                                          const real cp , const real cm) const {
+    real dq = 0;
+    if(dvp*dvm >0.0) {
+      real dqc = 0.5*(dvp+dvm);
+      real d2q =  fabs(dvp*cp) < fabs(dvm*cm) ? dvp*cp : dvm*cm;
       dq= fabs(d2q) < fabs(dqc) ? d2q : dqc;
     }
     return(dq);
@@ -96,6 +159,15 @@ class SlopeLimiter {
     if constexpr(limiter == Limiter::McLim) return(McLim(dvp,dvm));
     if constexpr(limiter == Limiter::MinMod) return(MinModLim(dvp,dvm));
   }
+
+  // Overlad of PLM limiter for irregular grids
+  KOKKOS_FORCEINLINE_FUNCTION real PLMLim(const real dvp, const real dvm,
+                                          const real cp, const real cm) const {
+    if constexpr(limiter == Limiter::VanLeer) return(VanLeerLim(dvp,dvm,cp,cm));
+    if constexpr(limiter == Limiter::McLim) return(McLim(dvp,dvm,cp,cm));
+    if constexpr(limiter == Limiter::MinMod) return(MinModLim(dvp,dvm));
+  }
+
 
   template <typename T>
   KOKKOS_FORCEINLINE_FUNCTION static int sign(T val) {
@@ -199,38 +271,90 @@ class SlopeLimiter {
         vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset);
         vR[nv] = Vc(nv,k,j,i);
       } else if constexpr(order == 2) {
-        real dvm = Vc(nv,k-koffset,j-joffset,i-ioffset)
-                  -Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset);
-        real dvp = Vc(nv,k,j,i)-Vc(nv,k-koffset,j-joffset,i-ioffset);
+        if(isRegularGrid) {
+          /////////////////////////////////////
+          // Regular Grid, PLM reconstruction
+          /////////////////////////////////////
+          real dvm = Vc(nv,k-koffset,j-joffset,i-ioffset)
+                    -Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset);
+          real dvp = Vc(nv,k,j,i)-Vc(nv,k-koffset,j-joffset,i-ioffset);
 
-        real dv;
-        if(shockFlattening) {
-          if(flags(k-koffset,j-joffset,i-ioffset) == FlagShock::Shock) {
-            // Force slope limiter to minmod
-            dv = MinModLim(dvp,dvm);
-          } else {
+          real dv;
+          if(shockFlattening) {
+            if(flags(k-koffset,j-joffset,i-ioffset) == FlagShock::Shock) {
+              // Force slope limiter to minmod
+              dv = MinModLim(dvp,dvm);
+            } else {
+              dv = PLMLim(dvp,dvm);
+            }
+          } else { // No shock flattening
             dv = PLMLim(dvp,dvm);
           }
-        } else { // No shock flattening
-          dv = PLMLim(dvp,dvm);
-        }
 
-        vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + HALF_F*dv;
+          vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + HALF_F*dv;
 
-        dvm = dvp;
-        dvp = Vc(nv,k+koffset,j+joffset,i+ioffset) - Vc(nv,k,j,i);
+          dvm = dvp;
+          dvp = Vc(nv,k+koffset,j+joffset,i+ioffset) - Vc(nv,k,j,i);
 
-        if(shockFlattening) {
-          if(flags(k,j,i) == FlagShock::Shock) {
-            dv = MinModLim(dvp,dvm);
-          } else {
+          if(shockFlattening) {
+            if(flags(k,j,i) == FlagShock::Shock) {
+              dv = MinModLim(dvp,dvm);
+            } else {
+              dv = PLMLim(dvp,dvm);
+            }
+          } else { // No shock flattening
             dv = PLMLim(dvp,dvm);
           }
-        } else { // No shock flattening
-          dv = PLMLim(dvp,dvm);
-        }
 
-        vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
+          vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
+        } else {
+          /////////////////////////////////////
+          // Irregular Grid, PLM reconstruction
+          /////////////////////////////////////
+          const int index = ioffset*i + joffset*j + koffset*k;
+
+          real dvm = Vc(nv,k-koffset,j-joffset,i-ioffset)
+                    -Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset);
+          real dvp = Vc(nv,k,j,i)-Vc(nv,k-koffset,j-joffset,i-ioffset);
+
+          dvm *= wmArray(index-1);
+          dvp *= wpArray(index-1);
+          real cp = cpArray(index-1);
+          real cm = cmArray(index-1);
+
+          real dv;
+          if(shockFlattening) {
+            if(flags(k-koffset,j-joffset,i-ioffset) == FlagShock::Shock) {
+              // Force slope limiter to minmod
+              dv = MinModLim(dvp,dvm);
+            } else {
+              dv = PLMLim(dvp,dvm,cp,cm);
+            }
+          } else { // No shock flattening
+            dv = PLMLim(dvp,dvm,cp,cm);
+          }
+
+          vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + dpArray(index-1)*dv;
+
+          dvm = Vc(nv,k,j,i)-Vc(nv,k-koffset,j-joffset,i-ioffset);
+          dvp = Vc(nv,k+koffset,j+joffset,i+ioffset) - Vc(nv,k,j,i);
+          dvm *= wmArray(index);
+          dvp *= wpArray(index);
+          cp = cpArray(index);
+          cm = cmArray(index);
+
+          if(shockFlattening) {
+            if(flags(k,j,i) == FlagShock::Shock) {
+              dv = MinModLim(dvp,dvm);
+            } else {
+              dv = PLMLim(dvp,dvm,cp,cm);
+            }
+          } else { // No shock flattening
+            dv = PLMLim(dvp,dvm,cp,cm);
+          }
+          vR[nv] = Vc(nv,k,j,i) - dmArray(index)*dv;
+        } // Regular grid
+
       } else if constexpr(order == 3) {
           // 1D index along the chosen direction
           const int index = ioffset*i + joffset*j + koffset*k;
@@ -372,6 +496,14 @@ class SlopeLimiter {
   IdefixArray4D<real> Vc;
   IdefixArray1D<real> dx;
   IdefixArray3D<FlagShock> flags;
+
+  IdefixArray1D<real> cpArray;
+  IdefixArray1D<real> cmArray;
+  IdefixArray1D<real> dpArray;
+  IdefixArray1D<real> dmArray;
+  IdefixArray1D<real> wpArray;
+  IdefixArray1D<real> wmArray;
+
   bool isRegularGrid{true};
   bool shockFlattening{false};
 };

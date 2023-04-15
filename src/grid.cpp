@@ -19,6 +19,9 @@ Grid::Grid(Input &input) {
 
   nghost = std::vector<int>(3);
 
+  #if GEOMETRY != CARTESIAN
+  isRegularCartesian = false;
+  #endif
   // Get grid size from input file, block [Grid]
   int npoints[3];
   for(int dir = 0 ; dir < 3 ; dir++) {

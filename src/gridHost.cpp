@@ -28,6 +28,8 @@ GridHost::GridHost(Grid &grid) {
 
   haveAxis = grid.haveAxis;
 
+  isRegularCartesian = grid.isRegularCartesian;
+
   // Create mirrors on host
   x = std::vector<IdefixArray1D<real>::HostMirror> (3);
   xr = std::vector<IdefixArray1D<real>::HostMirror> (3);
@@ -88,7 +90,7 @@ void GridHost::MakeGrid(Input &input) {
           }
         } else if(patchType.compare("l")==0) {
           // log-increasing patch
-
+          isRegularCartesian = false;
           double alpha = (patchEnd + fabs(patchStart) - patchStart)/fabs(patchStart);
 
           for(int i = 0 - ghostStart ; i < patchSize + ghostEnd ; i++) {
@@ -125,6 +127,7 @@ void GridHost::MakeGrid(Input &input) {
         if(patch == numPatch-1) ghostEnd = nghost[dir];
         // Define the grid depending on patch type
         if((patchType.compare("s+")==0)||(patchType.compare("s-")==0)) {
+          isRegularCartesian = false;
           // Stretched grid
           // - means we take the initial dx on the left side, + on the right side
           // refPatch corresponds to the patch from which we compute the initial dx
@@ -262,6 +265,7 @@ void GridHost::SyncFromDevice() {
 
   xbeg = grid->xbeg;
   xend = grid->xend;
+  isRegularCartesian = grid->isRegularCartesian;
 
   idfx::popRegion();
 }
@@ -279,6 +283,7 @@ void GridHost::SyncToDevice() {
 
   grid->xbeg = xbeg;
   grid->xend = xend;
+  grid->isRegularCartesian = isRegularCartesian;
 
   idfx::popRegion();
 }

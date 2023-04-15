@@ -49,15 +49,21 @@ class SlopeLimiter {
     auto dx = data->dx[dir];
     auto xgc = data->xgc[dir];
     auto xr = data->xr[dir];
+    auto wp = wpArray;
+    auto wm = wmArray;
+    auto cp = cpArray;
+    auto cm = cmArray;
+    auto dp = dpArray;
+    auto dm = dmArray;
 
     idefix_for("ComputePLMweights",1,data->np_tot[dir]-1,
                 KOKKOS_LAMBDA(const int i) {
-                  wpArray(i) = dx(i) / (xgc(i+1) - xgc(i));
-                  wmArray(i) = dx(i) / (xgc(i) - xgc(i-1));
-                  cpArray(i) = (xgc(i+1) - xgc(i)) / (xr(i) - xgc(i));
-                  cmArray(i) = (xgc(i) - xgc(i-1)) / (xgc(i) - xr(i-1));
-                  dpArray(i) = (xr(i) - xgc(i)) / dx(i);
-                  dmArray(i) = (xgc(i) - xr(i-1)) / dx(i);
+                  wp(i) = dx(i) / (xgc(i+1) - xgc(i));
+                  wm(i) = dx(i) / (xgc(i) - xgc(i-1));
+                  cp(i) = (xgc(i+1) - xgc(i)) / (xr(i) - xgc(i));
+                  cm(i) = (xgc(i) - xgc(i-1)) / (xgc(i) - xr(i-1));
+                  dp(i) = (xr(i) - xgc(i)) / dx(i);
+                  dm(i) = (xgc(i) - xr(i-1)) / dx(i);
                 });
   }
 

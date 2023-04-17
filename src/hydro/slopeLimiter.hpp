@@ -27,7 +27,7 @@ class SlopeLimiter {
   SlopeLimiter(IdefixArray4D<real> &Vc, IdefixArray1D<real> &dx, ShockFlattening &sf):
         Vc(Vc), dx(dx), flags(sf.flagArray), shockFlattening(sf.isActive) {}
 
-  KOKKOS_FORCEINLINE_FUNCTION real MinModLim(const real dvp, const real dvm) const {
+  KOKKOS_FORCEINLINE_FUNCTION static real MinModLim(const real dvp, const real dvm) {
     real dq= 0.0;
     // MinMod
     if(dvp*dvm >0.0) {
@@ -36,7 +36,7 @@ class SlopeLimiter {
     return(dq);
   }
 
-  KOKKOS_FORCEINLINE_FUNCTION real LimO3Lim(const real dvp, const real dvm, const real dx) const {
+  KOKKOS_FORCEINLINE_FUNCTION real static LimO3Lim(const real dvp, const real dvm, const real dx) {
     real r = 0.1;
     real a,b,c,q, th, lim;
     real eta, psi, eps = 1.e-12;
@@ -65,13 +65,13 @@ class SlopeLimiter {
     return (lim);
   }
 
-  KOKKOS_FORCEINLINE_FUNCTION real VanLeerLim(const real dvp, const real dvm) const {
+  KOKKOS_FORCEINLINE_FUNCTION static real VanLeerLim(const real dvp, const real dvm) {
     real dq= 0.0;
     dq = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
     return(dq);
   }
 
-  KOKKOS_FORCEINLINE_FUNCTION real McLim(const real dvp, const real dvm) const {
+  KOKKOS_FORCEINLINE_FUNCTION static real McLim(const real dvp, const real dvm) {
     real dq = 0;
     if(dvp*dvm >0.0) {
       real dqc = 0.5*(dvp+dvm);
@@ -81,48 +81,59 @@ class SlopeLimiter {
     return(dq);
   }
 
-  KOKKOS_FORCEINLINE_FUNCTION real PLMLim(const real dvp, const real dvm) const {
+  KOKKOS_FORCEINLINE_FUNCTION static real PLMLim(const real dvp, const real dvm) {
     if constexpr(limiter == Limiter::VanLeer) return(VanLeerLim(dvp,dvm));
     if constexpr(limiter == Limiter::McLim) return(McLim(dvp,dvm));
     if constexpr(limiter == Limiter::MinMod) return(MinModLim(dvp,dvm));
   }
 
   template <typename T>
-  KOKKOS_FORCEINLINE_FUNCTION int sign(T val) const {
+  KOKKOS_FORCEINLINE_FUNCTION static int sign(T val) {
     return (T(0) < val) - (val < T(0));
-}
+  }
 
-  KOKKOS_FORCEINLINE_FUNCTION void limitPPMFaceValues(const real vm1, const real v0, const real vp1,
-                                                      const real vp2, real &vph) const {
+  // PPM limiter, inspired from
+  // PH13: Peterson, J. L. & Hammett, G. W. Positivity Preservation and Advection Algorithms
+  //       with Applications to Edge Plasma Turbulence. SIAM J. Sci. Comput. 35, B576–B605 (2013).
+  // CD11: Colella, P., Dorr, M. R., Hittinger, J. A. F. & Martin, D. F. High-order,
+  //       finite-volume methods in mapped coordinates. Journal of Computational Physics 230,
+  //       2952–2976 (2011).
+  // CS08: Colella, P. & Sekora, M. D. A limiter for PPM that preserves accuracy at smooth extrema.
+  //       Journal of Computational Physics 227, 7069–7076 (2008).
+  // FS18: Felker, K. G. & Stone, J. M. A fourth-order accurate finite volume method for ideal MHD
+  //       via upwind constrained transport. Journal of Computational Physics 375, 1365–1400 (2018).
+
+  KOKKOS_FORCEINLINE_FUNCTION static void limitPPMFaceValues(const real vm1, const real v0,
+                                                      const real vp1, const real vp2, real &vph) {
     // if local extremum, then use limited curvature estimate
     if( (vp1-vph)*(vph-v0) < 0.0) {
-      // Collela, eqns. 85
+      // CD11, eqns. 85
       const real deltaL = (vm1-2*v0+vp1);
       const real deltaC = 3*(v0-2*vph+vp1);
       const real deltaR = (v0-2*vp1+vp2);
       // Compute limited curvature estimate
       real delta = 0.0;
 
+      // CS08 eq. 18 with corrections from FS18 section. 2.2.2
       if(sign(deltaL) == sign(deltaC) && sign(deltaR) == sign(deltaC)) {
         const real C = 1.25;
         delta = C * FMIN(FABS(deltaL), FABS(deltaR));
         delta = sign(deltaC) * FMIN(delta, FABS(deltaC));
       }
-      vph = 0.5*(v0+vp1) - delta / 6.0;
+      vph = 0.5*(v0+vp1) - delta / 6.0; // CD11 eq. 88 (correction of CS08, eq. 19)
     }
   }
 
-  // This implementation follows the PPM4 scheme of Peterson & Hammet (PH13)
-  // SIAM J. Sci Comput (2013)
-
-  KOKKOS_FORCEINLINE_FUNCTION void getPPMStates(const real vm2, const real vm1, const real v0,
-                                                const real vp1, const real vp2, real &vl, real &vr)
-                                                const {
+  KOKKOS_FORCEINLINE_FUNCTION static void getPPMStates(const real vm2, const real vm1,
+                                                      const real v0, const real vp1, const real vp2,
+                                                      real &vl, real &vr) {
     const int n = 2;
 
+    // 1: unlimited left and right interpolant (PH13 3.26-3.27)
     vr = 7.0/12.0*(v0+vp1) - 1.0/12.0*(vm1+vp2);
     vl = 7.0/12.0*(vm1+v0) - 1.0/12.0*(vm2+vp1);
 
+    // 2: limit interpolated face values (CD11 4.3.1)
     limitPPMFaceValues(vm2,vm1,v0,vp1,vl);
     limitPPMFaceValues(vm1,v0,vp1,vp2,vr);
 

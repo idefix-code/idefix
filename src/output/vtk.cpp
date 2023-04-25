@@ -27,8 +27,6 @@
   #endif
 #endif
 
-// Whether of not we write the time in the VTK file
-#define WRITE_TIME
 
 void Vtk::WriteHeaderNodes(IdfxFileHandler fvtk) {
   int64_t size = node_coord.extent(0) *
@@ -313,11 +311,8 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
 #elif VTK_FORMAT == VTK_STRUCTURED_GRID
   ssheader << "DATASET STRUCTURED_GRID" << std::endl;
 #endif
-  // One field for the geometry, another for periodicity
-  int nfields = 2;
-  #ifdef WRITE_TIME
-    nfields ++;
-  #endif
+  // fields: geometry, periodicity, time
+  int nfields = 3;
 
   // Write grid geometry in the VTK file
   ssheader << "FIELD FieldData " << nfields << std::endl;
@@ -353,21 +348,19 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
   // Done, add cariage return for next ascii write
   ssheader << std::endl;
 
-  #ifdef WRITE_TIME
-    ssheader << "TIME 1 1 float" << std::endl;
-    // Flush the ascii header
-    header = ssheader.str();
-    WriteHeaderString(header.c_str(), fvtk);
-    // reset the string stream
-    ssheader.str(std::string());
+  ssheader << "TIME 1 1 float" << std::endl;
+  // Flush the ascii header
+  header = ssheader.str();
+  WriteHeaderString(header.c_str(), fvtk);
+  // reset the string stream
+  ssheader.str(std::string());
 
-    // convert time to single precision big endian
-    float timeBE = BigEndian(static_cast<float>(time));
+  // convert time to single precision big endian
+  float timeBE = BigEndian(static_cast<float>(time));
 
-    WriteHeaderBinary(&timeBE, 1, fvtk);
-    // Done, add cariage return for next ascii write
-    ssheader << std::endl;
-  #endif
+  WriteHeaderBinary(&timeBE, 1, fvtk);
+  // Done, add cariage return for next ascii write
+  ssheader << std::endl;
 
 
 

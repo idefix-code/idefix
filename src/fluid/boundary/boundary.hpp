@@ -686,11 +686,9 @@ void Boundary<Phys>::EnforceShearingBox(real t, int dir, BoundarySide side) {
 
   const int nxi = data->np_int[IDIR];
   const int nxj = data->np_int[JDIR];
-  const int nxk = data->np_int[KDIR];
 
   const int ighost = data->nghost[IDIR];
   const int jghost = data->nghost[JDIR];
-  const int kghost = data->nghost[KDIR];
 
   // Where does the boundary starts along x1?
   const int istart = side*(ighost+nxi);

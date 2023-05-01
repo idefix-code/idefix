@@ -143,7 +143,7 @@ class DataBlock {
 
   // Do we have Gravity ?
   bool haveGravity{false};
-  Gravity gravity;
+  std::unique_ptr<Gravity> gravity;
 
  private:
   void WriteVariable(FILE* , int , int *, char *, void*);

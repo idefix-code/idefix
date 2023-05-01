@@ -9,13 +9,13 @@ real inx0, iny0, inz0, inr0;
 void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
   // Force compute the gravity field
   idfx::cout << "ComputeUserVars: Computing total gravity field..." << std::endl;
-  data.gravity.ComputeGravity(0);
+  data.gravity->ComputeGravity(0);
   idfx::cout << "ComputeUserVars: Done." << std::endl;
 
   // Make references to the user-defined arrays (variables is a container of IdefixHostArray3D)
   // Note that the labels should match the variable names in the input file
   // Storing into variables
-  Kokkos::deep_copy(variables["phiP"],data.gravity.phiP);
+  Kokkos::deep_copy(variables["phiP"],data.gravity->phiP);
 }
 
 

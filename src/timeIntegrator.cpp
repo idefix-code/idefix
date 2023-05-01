@@ -93,10 +93,10 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
   lastMpiLog = idfx::mpiCallsTimer;
 #endif
   double sgOverhead;
-  if(data.gravity.haveSelfGravityPotential) {
-    double sgCycleTime = data.gravity.selfGravity.elapsedTime - lastSGLog;
+  if(data.haveGravity && data.gravity->haveSelfGravityPotential) {
+    double sgCycleTime = data.gravity->selfGravity.elapsedTime - lastSGLog;
     sgOverhead = 100.0 * sgCycleTime / (timer.seconds() - lastLog);
-    lastSGLog = data.gravity.selfGravity.elapsedTime;
+    lastSGLog = data.gravity->selfGravity.elapsedTime;
   }
 
   lastLog = timer.seconds();
@@ -118,7 +118,7 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
     if(haveRKL) {
       idfx::cout << " | " << std::setw(col_width) << "RKL stages";
     }
-    if(data.gravity.haveSelfGravityPotential) {
+    if(data.haveGravity && data.gravity->haveSelfGravityPotential) {
       idfx::cout << " | " << std::setw(col_width) << "SG iterations";
       idfx::cout << " | " << std::setw(col_width) << "SG error";
       idfx::cout << " | " << std::setw(col_width) << "SG overhead (%)";
@@ -160,11 +160,11 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
   if(haveRKL) {
     idfx::cout << " | " << std::setw(col_width) << data.hydro->rkl->stage;
   }
-  if(data.gravity.haveSelfGravityPotential) {
+  if(data.haveGravity && data.gravity->haveSelfGravityPotential) {
     if(ncycles>=cyclePeriod) {
-      idfx::cout << " | " << std::setw(col_width) << data.gravity.selfGravity.nsteps;
+      idfx::cout << " | " << std::setw(col_width) << data.gravity->selfGravity.nsteps;
       idfx::cout << std::scientific;
-      idfx::cout << " | " << std::setw(col_width) << data.gravity.selfGravity.currentError;
+      idfx::cout << " | " << std::setw(col_width) << data.gravity->selfGravity.currentError;
       idfx::cout << std::fixed;
       idfx::cout << " | " << std::setw(col_width) << sgOverhead;
     } else {
@@ -220,7 +220,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     }
     // If gravity is needed, update it
     if(data.haveGravity) {
-      if(ncycles % data.gravity.skipGravity == 0) data.gravity.ComputeGravity(ncycles);
+      if(ncycles % data.gravity->skipGravity == 0) data.gravity->ComputeGravity(ncycles);
     }
 
     // Update Uc & Vs

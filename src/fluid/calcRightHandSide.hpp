@@ -228,13 +228,15 @@ struct Fluid_CalcRHSFunctor {
       coarseningLevel = hydro->data->coarseningLevel[dir];
     }
 
-    // Gravitational potential
-    phiP = hydro->data->gravity.phiP;
-    needPotential = hydro->data->gravity.havePotential;
+    if(hydro->data->haveGravity) {
+      // Gravitational potential
+      phiP = hydro->data->gravity->phiP;
+      needPotential = hydro->data->gravity->havePotential;
 
-    // BodyForce
-    bodyForce = hydro->data->gravity.bodyForceVector;
-    needBodyForce = hydro->data->gravity.haveBodyForce;
+      // BodyForce
+      bodyForce = hydro->data->gravity->bodyForceVector;
+      needBodyForce = hydro->data->gravity->haveBodyForce;
+    }
 
     // parabolic terms
     haveParabolicTerms = hydro->haveExplicitParabolicTerms;

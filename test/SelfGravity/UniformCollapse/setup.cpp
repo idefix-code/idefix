@@ -9,7 +9,7 @@ real internalAreaGlob;
 // Analyse data to produce an ascii output
 void Analysis(DataBlock & data) {
   // Get the usefull parameters
-  real centralMass = data.gravity.centralMass;
+  real centralMass = data.gravity->centralMass;
   real time = data.t;
 
   if(time==0.){
@@ -34,7 +34,7 @@ void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
   // Make references to the user-defined arrays (variables is a container of IdefixHostArray3D)
   // Note that the labels should match the variable names in the input file
   IdefixHostArray3D<real> phiP = variables["phiP"];
-  Kokkos::deep_copy(phiP, data.gravity.phiP);
+  Kokkos::deep_copy(phiP, data.gravity->phiP);
 }
 
 // User-defined boundaries
@@ -92,8 +92,7 @@ void FluxBoundary(DataBlock & data, int dir, BoundarySide side, const real t) {
 
       // We normalize by the considered totalA then extrapolate to the whole
       // sphere at given radius (cause we're only 1D)
-      data.gravity.centralMass = data.gravity.centralMass
-                               - fluxTotMass*halfDt*4.*M_PI*rin*rin/internalArea;
+      data.gravity->centralMass -= fluxTotMass*halfDt*4.*M_PI*rin*rin/internalArea;
     }
 }
 

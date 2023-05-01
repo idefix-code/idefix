@@ -11,7 +11,8 @@
 #include "dataBlock.hpp"
 #include "input.hpp"
 
-void Gravity::Init(Input &input, DataBlock *datain) {
+Gravity::Gravity(Input &input, DataBlock *datain) {
+  idfx::pushRegion("Gravity::Gravity");
   this->data = datain;
   data->haveGravity = true;
   // Gravitational constant G
@@ -88,6 +89,7 @@ void Gravity::Init(Input &input, DataBlock *datain) {
   if(skipGravity<1) {
     IDEFIX_ERROR("[Gravity]:skip should be a strictly positive integer");
   }
+  idfx::popRegion();
 }
 
 void Gravity::ShowConfig() {

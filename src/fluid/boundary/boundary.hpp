@@ -104,6 +104,8 @@ Boundary<Phys>::Boundary(Input & input, Grid &grid, Fluid<Phys>* fluid) {
   this->data = fluid->data;
 
   if(data->lbound[IDIR] == shearingbox || data->rbound[IDIR] == shearingbox) {
+    // using np_tot[...]+1 points to allow this buffer to represent
+    // fields that are defined on faces
     sBArray = IdefixArray4D<real>("ShearingBoxArray",
                                   Phys::nvar,
                                   data->np_tot[KDIR]+1,

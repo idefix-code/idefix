@@ -137,7 +137,7 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
   // Initialise gravity if needed (automatically if planets are present)
   if(input.CheckBlock("Gravity") || haveplanetarySystem) {
     this->gravity = std::make_unique<Gravity>(input, this);
-    this->haveGravity = true; // TODO(mauxionj): why do it here and in init gravity ?
+    this->haveGravity = true;
   }
 
   // Register variables that need to be saved in case of restart dump

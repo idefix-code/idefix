@@ -17,7 +17,7 @@
 #include "grid.hpp"
 #include "gridHost.hpp"
 #include "output.hpp"
-#include "planetarySystem.hpp"
+#include "gravity.hpp"
 #include "stateContainer.hpp"
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -35,6 +35,7 @@ class Vtk;
 class Dump;
 class Fargo;
 class Gravity;
+class PlanetarySystem;
 
 // Forward class hydro declaration
 #include "physics.hpp"
@@ -118,7 +119,8 @@ class DataBlock {
 
   // The Planetary system
   bool haveplanetarySystem{false};
-  PlanetarySystem planetarySystem;
+  // Host and device share ownership
+  std::unique_ptr<PlanetarySystem> planetarySystem;
 
 
   bool rklCycle{false};           ///<  // Set to true when we're inside a RKL call

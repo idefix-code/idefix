@@ -9,6 +9,7 @@
 #include "dataBlock.hpp"
 #include "fluid.hpp"
 #include "gravity.hpp"
+#include "planetarySystem.hpp"
 #include "vtk.hpp"
 #include "dump.hpp"
 
@@ -130,7 +131,7 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
 
   // initialise planets if needed
   if(input.CheckBlock("Planet")) {
-    planetarySystem.Init(input, this);
+    this->planetarySystem = std::make_unique<PlanetarySystem>(input, this);
     this->haveplanetarySystem = true;
   }
 
@@ -176,7 +177,7 @@ void DataBlock::ShowConfig() {
   }
   hydro->ShowConfig();
   if(haveFargo) fargo->ShowConfig();
-  if(haveplanetarySystem) planetarySystem.ShowConfig();
+  if(haveplanetarySystem) planetarySystem->ShowConfig();
   if(haveGravity) gravity->ShowConfig();
 }
 

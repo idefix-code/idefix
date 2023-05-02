@@ -191,16 +191,16 @@ void Analysis(DataBlock & data) {
 
 //  data.DumpToFile("totou");
 
-  for(int ip=0; ip < data.planetarySystem.nbp ; ip++) {
+  for(int ip=0; ip < data.planetarySystem->nbp ; ip++) {
     // Get the orbital parameters
     real timeStep = data.dt;
-    real xp = data.planetarySystem.planet[ip].getXp();
-    real yp = data.planetarySystem.planet[ip].getYp();
-    real zp = data.planetarySystem.planet[ip].getZp();
-    real vxp = data.planetarySystem.planet[ip].getVxp();
-    real vyp = data.planetarySystem.planet[ip].getVyp();
-    real vzp = data.planetarySystem.planet[ip].getVzp();
-    real qp = data.planetarySystem.planet[ip].getMp();
+    real xp = data.planetarySystem->planet[ip].getXp();
+    real yp = data.planetarySystem->planet[ip].getYp();
+    real zp = data.planetarySystem->planet[ip].getZp();
+    real vxp = data.planetarySystem->planet[ip].getVxp();
+    real vyp = data.planetarySystem->planet[ip].getVyp();
+    real vzp = data.planetarySystem->planet[ip].getVzp();
+    real qp = data.planetarySystem->planet[ip].getMp();
     real time = data.t;
 
     std::string planetName, tqwkName;
@@ -219,9 +219,9 @@ void Analysis(DataBlock & data) {
     }
 
     // Force force = {{0.0,0.0,0.0},{0.0,0.0,0.0},{0.0,0.0,0.0},{0.0,0.0,0.0}};
-    Force &force = data.planetarySystem.planet[ip].m_force;
+    Force &force = data.planetarySystem->planet[ip].m_force;
     bool isp = true;
-    data.planetarySystem.planet[ip].computeForce(data,isp);
+    data.planetarySystem->planet[ip].computeForce(data,isp);
 
     // Get the torque and work
     // real fxi = force.f_inner[0];
@@ -317,7 +317,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output)// : m_pl
   flaringIndexGlob = input.Get<real>("Setup","flaringIndex",0);
   densityFloorGlob = input.Get<real>("Setup","densityFloor",0);
   // delete file planet0.dat at initialization if we do not restart the simulation.
-  for(int ip=0; ip < data.planetarySystem.nbp ; ip++) {
+  for(int ip=0; ip < data.planetarySystem->nbp ; ip++) {
     std::string planetName, tqwkName;
     std::stringstream pName, tName;
     pName << "planet" << ip << ".dat";

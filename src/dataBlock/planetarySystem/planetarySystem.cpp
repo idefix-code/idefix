@@ -15,11 +15,7 @@
 #include "gravity.hpp"
 
 
-PlanetarySystem::PlanetarySystem() {
-  // Do nothing !
-}
-
-void PlanetarySystem::Init(Input &input, DataBlock *datain) {
+PlanetarySystem::PlanetarySystem(Input &input, DataBlock *datain) {
   idfx::pushRegion("PlanetarySystem::Init");
   this->data = datain;
   this->feelDisk = input.Get<bool>("Planet","feelDisk",0);

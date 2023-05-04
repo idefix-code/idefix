@@ -8,7 +8,6 @@
 #ifndef DATABLOCK_DATABLOCKHOST_HPP_
 #define DATABLOCK_DATABLOCKHOST_HPP_
 
-#include <memory>
 #include <vector>
 
 #include "idefix.hpp"

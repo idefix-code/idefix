@@ -18,7 +18,6 @@
 #include "gridHost.hpp"
 #include "output.hpp"
 #include "planetarySystem.hpp"
-#include "gravity.hpp"
 #include "stateContainer.hpp"
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -35,6 +34,7 @@ class DataBlock;
 class Vtk;
 class Dump;
 class Fargo;
+class Gravity;
 
 // Forward class hydro declaration
 #include "physics.hpp"

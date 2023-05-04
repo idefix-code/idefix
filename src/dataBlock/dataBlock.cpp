@@ -8,6 +8,7 @@
 #include "../idefix.hpp"
 #include "dataBlock.hpp"
 #include "fluid.hpp"
+#include "gravity.hpp"
 #include "vtk.hpp"
 #include "dump.hpp"
 

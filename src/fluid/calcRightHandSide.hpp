@@ -10,6 +10,7 @@
 
 #include "fluid.hpp"
 #include "dataBlock.hpp"
+#include "gravity.hpp"
 
 template<typename Phys, int dir>
 struct Fluid_CorrectFluxFunctor {

@@ -12,8 +12,7 @@
 #include "planetStructs.hpp"
 #include "dataBlock.hpp"
 #include "fluid.hpp"
-
-
+#include "gravity.hpp"
 
 
 PlanetarySystem::PlanetarySystem() {

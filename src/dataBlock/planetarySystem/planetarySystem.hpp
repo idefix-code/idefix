@@ -30,8 +30,7 @@ class PlanetarySystem {
     enum Integrator {RK4=1, ANALYTICAL};
     enum SmoothingFunction {PLUMMER=1, POLYNOMIAL};
 
-    PlanetarySystem();
-    void Init(Input &, DataBlock *);
+    PlanetarySystem(Input&, DataBlock*);
     void EvolveSystem(DataBlock&, const real& );
     void IntegrateAnalytically(DataBlock&, const real&);
     void IntegrateRK4(DataBlock&, const real&);

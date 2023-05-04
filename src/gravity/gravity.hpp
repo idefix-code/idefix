@@ -11,6 +11,7 @@
 #include "idefix.hpp"
 #include "input.hpp"
 #include "selfGravity.hpp"
+#include "planetarySystem.hpp"
 
 // Forward class hydro declaration
 #include "physics.hpp"

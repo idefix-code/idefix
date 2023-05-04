@@ -12,7 +12,6 @@
 
 #include "idefix.hpp"
 #include "dataBlock.hpp"
-#include "planetarySystem.hpp"
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 /// The DataBlockHost class is designed to store most of the information coming from an associated
@@ -79,7 +78,7 @@ class DataBlockHost {
 
   // The Planetary system (actually a copy from the dataBlock)
   bool haveplanetarySystem{false};
-  PlanetarySystem planetarySystem;
+  PlanetarySystem* planetarySystem;
 
 
   void MakeVsFromAmag(IdefixHostArray4D<real> &); ///< Compute a face-centered mag. field in Vs from

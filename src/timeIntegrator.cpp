@@ -14,6 +14,7 @@
 #include "dataBlock.hpp"
 #include "stateContainer.hpp"
 #include "fluid.hpp"
+#include "planetarySystem.hpp"
 
 
 TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
@@ -293,7 +294,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
   // Update planet position
   if(data.haveplanetarySystem) {
-    data.planetarySystem.EvolveSystem(data, data.dt);
+    data.planetarySystem->EvolveSystem(data, data.dt);
   }
 
   // Coarsen the grid

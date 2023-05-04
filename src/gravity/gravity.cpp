@@ -8,6 +8,7 @@
 #include <string>
 
 #include "gravity.hpp"
+#include "planetarySystem.hpp"
 #include "dataBlock.hpp"
 #include "input.hpp"
 
@@ -144,7 +145,7 @@ void Gravity::ComputeGravity(int stepNumber) {
       AddCentralMassPotential();
     }
     if(havePlanetsPotential) {
-      data->planetarySystem.AddPlanetsPotential(phiP, data->t);
+      data->planetarySystem->AddPlanetsPotential(phiP, data->t);
     }
     if(haveSelfGravityPotential) {
       // Solving Poisson for the current gas density distribution

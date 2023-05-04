@@ -119,7 +119,6 @@ class DataBlock {
 
   // The Planetary system
   bool haveplanetarySystem{false};
-  // Host and device share ownership
   std::unique_ptr<PlanetarySystem> planetarySystem;
 
 

@@ -78,7 +78,6 @@ class DataBlockHost {
 
   // The Planetary system (actually a copy from the dataBlock)
   bool haveplanetarySystem{false};
-  // Host and device share ownership
   PlanetarySystem* planetarySystem;
 
 

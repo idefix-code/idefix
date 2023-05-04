@@ -8,6 +8,7 @@
 #include "../idefix.hpp"
 #include "dataBlock.hpp"
 #include "fluid.hpp"
+#include "gravity.hpp"
 #include "vtk.hpp"
 #include "dump.hpp"
 
@@ -135,7 +136,7 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
 
   // Initialise gravity if needed (automatically if planets are present)
   if(input.CheckBlock("Gravity") || haveplanetarySystem) {
-    gravity.Init(input, this);
+    this->gravity = std::make_unique<Gravity>(input, this);
     this->haveGravity = true; // TODO(mauxionj): why do it here and in init gravity ?
   }
 
@@ -176,7 +177,7 @@ void DataBlock::ShowConfig() {
   hydro->ShowConfig();
   if(haveFargo) fargo->ShowConfig();
   if(haveplanetarySystem) planetarySystem.ShowConfig();
-  if(haveGravity) gravity.ShowConfig();
+  if(haveGravity) gravity->ShowConfig();
 }
 
 

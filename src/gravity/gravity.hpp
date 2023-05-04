@@ -28,7 +28,7 @@ using BodyForceFunc = void (*) (DataBlock &, const real t, IdefixArray4D<real>&)
 
 class Gravity {
  public:
-  void Init(Input &, DataBlock*);  ///< Initialisation
+  Gravity(Input&, DataBlock*);
   void ComputeGravity(int );           ///< compute gravitational field at current time t
 
   void EnrollPotential(GravPotentialFunc);

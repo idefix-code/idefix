@@ -52,7 +52,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   shear=input.Get<real>("Hydro","shearingBox",0);
 
   // Add our userstep to the timeintegrator
-  data.gravity.EnrollBodyForce(BodyForce);
+  data.gravity->EnrollBodyForce(BodyForce);
 
   analysis = new Analysis(input, grid, data, output,std::string("timevol.dat"));
   output.EnrollAnalysis(&AnalysisFunction);

@@ -1204,7 +1204,7 @@ void SelfGravity::AddSelfGravityPotential(IdefixArray3D<real> &phiP) {
   // Loading needed data
   IdefixArray3D<real> localPot = phiP;
   IdefixArray3D<real> potential = this->potential;
-  real gravCst = this->data->gravity.gravCst;
+  real gravCst = this->data->gravity->gravCst;
 
   // Updating ghost cells before to return potential
   this->SetBoundaries(potential);

@@ -15,7 +15,7 @@
 Gravity::Gravity(Input &input, DataBlock *datain) {
   idfx::pushRegion("Gravity::Gravity");
   this->data = datain;
-  data->haveGravity = true;
+
   // Gravitational constant G
   this->gravCst = input.GetOrSet<real>("Gravity","gravCst",0, 1.0);
   // Gravitational potential

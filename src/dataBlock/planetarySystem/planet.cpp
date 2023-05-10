@@ -84,7 +84,7 @@ m_vxp(state.vx), m_vyp(state.vy), m_vzp(state.vz), m_xp(state.x), m_yp(state.y),
   if (this->m_tOffset == ZERO_F) {
     this->m_isActive = true;
   } else {
-    this->m_isActive = false;    
+    this->m_isActive = false;
   }
 
   // @GL: We need to discuss with GI Jonah in order to be able to add the gas indirect term if SG

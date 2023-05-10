@@ -64,12 +64,13 @@ void PlanetarySystem::Init(Input &input, DataBlock *datain) {
   this->nbp = input.CheckEntry("Planet","planetToPrimary");
   if (this->nbp<0) this->nbp=0;
 
-  if ((this->nbp>1) 
-    && ((this->myPlanetaryIntegrator == Integrator::RK4) || (this->myPlanetaryIntegrator == Integrator::RK5)) 
-    && (!(this->feelPlanets)) 
+  if ((this->nbp>1)
+    && ((this->myPlanetaryIntegrator == Integrator::RK4)
+      || (this->myPlanetaryIntegrator == Integrator::RK5))
+    && (!(this->feelPlanets))
     && (this->indirectPlanetsTerm)) {
-    IDEFIX_WARNING("Careful, the results are not physical if Runge-Kutta with\n\
-indirect term and multiple planets that do not feel each others.");
+    IDEFIX_WARNING("Careful, the results are unphysical if Runge-Kutta with\n\
+indirect term, with multiple planets that don't feel each others.");
   }
 
   if(this->nbp>0) {
@@ -289,12 +290,14 @@ void PlanetarySystem::IntegrateRK5(DataBlock& data, const real& dt) {
   std::vector<PointSpeed> f3 = ComputeRHS(t3, k3);
   t4 = data.t + dt;
   for(int ip=0; ip<this->nbp; ip++) {
-      k4[ip].state = ki[ip].state + 439*dt*f0[ip]/216 - 8*dt*f1[ip] + 3680*dt*f2[ip]/513 - 845*dt*f3[ip]/4104;
+      k4[ip].state = ki[ip].state + 439*dt*f0[ip]/216 - 8*dt*f1[ip] +
+      3680*dt*f2[ip]/513 - 845*dt*f3[ip]/4104;
   }
 
   std::vector<PointSpeed> f4 = ComputeRHS(t4, k4);
   for(int ip=0; ip<this->nbp; ip++) {
-      kf[ip].state = ki[ip].state + dt * ( 25*f0[ip]/216 + 1408*f2[ip]/2565 + 2197*f3[ip]/4104 - f4[ip]/5);
+      kf[ip].state = ki[ip].state + dt * ( 25*f0[ip]/216 + 1408*f2[ip]/2565 +
+      2197*f3[ip]/4104 - f4[ip]/5);
   }
 
   planet = kf;
@@ -353,7 +356,7 @@ std::vector<PointSpeed> PlanetarySystem::ComputeRHS(real& t, std::vector<Planet>
     planet_update[ip].vz = ZERO_F;
 
     if (!(planet[ip].m_isActive)) continue;
-    /*    
+    /*
     idfx::cout << "isactive:ComputeRHS: " << planet[ip].m_isActive << std::endl;
     idfx::cout << "ip:ComputeRHS: " << ip << std::endl;
     */

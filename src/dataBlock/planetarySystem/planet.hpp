@@ -33,6 +33,7 @@ class Planet {
     real getVxp() const;
     real getVyp() const;
     real getVzp() const;
+    bool getIsActive() const;
     int getIndex() const;
     void setMp(real qp);
     void setXp(real xp);
@@ -42,6 +43,7 @@ class Planet {
     void setVyp(real vyp);
     void setVzp(real vzp);
     void updateMp(const real);
+    void activatePlanet(const real);
     // refresh the force
     Point computeAccel(DataBlock&, bool&);
     void computeForce(DataBlock&, bool&);
@@ -57,6 +59,7 @@ class Planet {
     real &m_vxp;
     real &m_vyp;
     real &m_vzp;
+    bool m_isActive;
     real m_qp;
     real m_qpIni;
     real m_tOffset;

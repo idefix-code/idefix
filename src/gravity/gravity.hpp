@@ -11,6 +11,7 @@
 #include "idefix.hpp"
 #include "input.hpp"
 #include "selfGravity.hpp"
+#include "planetarySystem.hpp"
 
 // Forward class hydro declaration
 #include "physics.hpp"
@@ -28,7 +29,7 @@ using BodyForceFunc = void (*) (DataBlock &, const real t, IdefixArray4D<real>&)
 
 class Gravity {
  public:
-  void Init(Input &, DataBlock*);  ///< Initialisation
+  Gravity(Input&, DataBlock*);
   void ComputeGravity(int );           ///< compute gravitational field at current time t
 
   void EnrollPotential(GravPotentialFunc);

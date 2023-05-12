@@ -46,7 +46,7 @@ void Potential(DataBlock& data, const real t, IdefixArray1D<real>& x1, IdefixArr
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     // Set the function for userdefboundary
     data.hydro->EnrollUserDefBoundary(&UserdefBoundary);
-    data.gravity.EnrollPotential(&Potential);
+    data.gravity->EnrollPotential(&Potential);
 }
 
 // This routine initialize the flow

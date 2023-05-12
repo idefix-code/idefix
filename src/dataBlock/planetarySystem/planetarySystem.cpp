@@ -12,15 +12,10 @@
 #include "planetStructs.hpp"
 #include "dataBlock.hpp"
 #include "fluid.hpp"
+#include "gravity.hpp"
 
 
-
-
-PlanetarySystem::PlanetarySystem() {
-  // Do nothing !
-}
-
-void PlanetarySystem::Init(Input &input, DataBlock *datain) {
+PlanetarySystem::PlanetarySystem(Input &input, DataBlock *datain) {
   idfx::pushRegion("PlanetarySystem::Init");
   this->data = datain;
   this->feelDisk = input.Get<bool>("Planet","feelDisk",0);
@@ -350,7 +345,7 @@ void PlanetarySystem::AddPlanetsPotential(IdefixArray3D<real> &phiP, real t) {
 
     real distPlanet = sqrt(xp*xp+yp*yp+zp*zp);
     real smoothing = smoothingValue * pow(distPlanet,1.0+smoothingExponent);
-    real Mcentral = this->data->gravity.centralMass;
+    real Mcentral = this->data->gravity->centralMass;
 
     idefix_for("PlanetPotential",
       0,this->data->np_tot[KDIR],

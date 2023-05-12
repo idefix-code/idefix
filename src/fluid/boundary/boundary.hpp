@@ -104,6 +104,8 @@ Boundary<Phys>::Boundary(Input & input, Grid &grid, Fluid<Phys>* fluid) {
   this->data = fluid->data;
 
   if(data->lbound[IDIR] == shearingbox || data->rbound[IDIR] == shearingbox) {
+    // using np_tot[...]+1 points to allow this buffer to represent
+    // fields that are defined on faces
     sBArray = IdefixArray4D<real>("ShearingBoxArray",
                                   Phys::nvar,
                                   data->np_tot[KDIR]+1,
@@ -686,11 +688,9 @@ void Boundary<Phys>::EnforceShearingBox(real t, int dir, BoundarySide side) {
 
   const int nxi = data->np_int[IDIR];
   const int nxj = data->np_int[JDIR];
-  const int nxk = data->np_int[KDIR];
 
   const int ighost = data->nghost[IDIR];
   const int jghost = data->nghost[JDIR];
-  const int kghost = data->nghost[KDIR];
 
   // Where does the boundary starts along x1?
   const int istart = side*(ighost+nxi);

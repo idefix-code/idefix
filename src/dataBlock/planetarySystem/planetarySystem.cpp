@@ -166,7 +166,6 @@ void PlanetarySystem::AdvancePlanetFromDisk(DataBlock& data, const real& dt) {
   idfx::pushRegion("PlanetarySystem::AdvancePlanetFromDisk");
   for(int ip=0; ip< this->nbp ; ip++) {
     if (!(planet[ip].m_isActive)) continue;
-    // idfx::cout << "ip:AdvancePlanetFromDisk: " << ip << std::endl;
     Point gamma;
     bool isp = true;
 
@@ -218,9 +217,7 @@ void PlanetarySystem::IntegrateAnalytically(DataBlock& data, const real& dt) {
   idfx::pushRegion("PlanetarySystem::IntegrateAnalytically");
   for(int ip=0; ip<this->nbp ; ip++) {
     if (!(planet[ip].m_isActive)) continue;
-    /*
-    // idfx::cout << "ip:IntegrateAnalytically: " << ip << std::endl;
-    */
+
     real qp = planet[ip].m_qp;
     real xp = planet[ip].m_xp;
     real yp = planet[ip].m_yp;
@@ -356,10 +353,6 @@ std::vector<PointSpeed> PlanetarySystem::ComputeRHS(real& t, std::vector<Planet>
     planet_update[ip].vz = ZERO_F;
 
     if (!(planet[ip].m_isActive)) continue;
-    /*
-    idfx::cout << "isactive:ComputeRHS: " << planet[ip].m_isActive << std::endl;
-    idfx::cout << "ip:ComputeRHS: " << ip << std::endl;
-    */
 
     real dist;
     real coef;
@@ -428,11 +421,8 @@ void PlanetarySystem::AddPlanetsPotential(IdefixArray3D<real> &phiP, real t) {
     p.updateMp(t);
     p.activatePlanet(t);
 
-    bool isActive = p.getIsActive(); ////
+    bool isActive = p.getIsActive();
     if (!(isActive)) continue;
-    /*
-    idfx::cout << "isactive:AddPlanetsPotential: " << isActive << std::endl;
-    */
 
     real qp = p.getMp();
     real xp = p.getXp();

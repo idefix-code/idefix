@@ -27,7 +27,7 @@ class DataBlock;
 
 class PlanetarySystem {
  public:
-    enum Integrator {RK4=1, ANALYTICAL};
+    enum Integrator {RK4=1, ANALYTICAL, RK5};
     enum SmoothingFunction {PLUMMER=1, POLYNOMIAL};
 
     PlanetarySystem();
@@ -35,6 +35,7 @@ class PlanetarySystem {
     void EvolveSystem(DataBlock&, const real& );
     void IntegrateAnalytically(DataBlock&, const real&);
     void IntegrateRK4(DataBlock&, const real&);
+    void IntegrateRK5(DataBlock&, const real&);
     void ShowConfig();
     void AddPlanetsPotential(IdefixArray3D<real> &, real);
     std::vector<PointSpeed> ComputeRHS(real&, std::vector<Planet>);

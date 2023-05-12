@@ -38,6 +38,7 @@ Planet& Planet::operator=(const Planet &p) {
   this->m_qpIni = p.m_qpIni;
   this->m_force = p.m_force;
   this->m_tOffset = p.m_tOffset;
+  this->m_isActive = p.m_isActive;
   this->m_ip = p.m_ip;
   this->pSys = p.pSys;
   this->data = p.data;
@@ -67,18 +68,24 @@ m_vxp(state.vx), m_vyp(state.vy), m_vzp(state.vz), m_xp(state.x), m_yp(state.y),
         "planet "+std::to_string(ip)
         +": no planet eccentricity yet\n\
         if analytical orbit. Try initialEccentricity = 0.0.\n\
-          You can also change integrator to rk4.");
+          You can also change integrator.");
     }
     if (inclination != ZERO_F) {
       IDEFIX_ERROR("planet "+std::to_string(ip)
         +": no planet inclination yet\n\
         if analytical orbit. Try initialInclination = 0.0.\n\
-          You can also change integrator to rk4.");
+          You can also change integrator.");
     }
   }
 
   this->m_qpIni = input.Get<real>("Planet","planetToPrimary",ip);
   this->m_tOffset = input.GetOrSet<real>("Planet","tOffset",ip, ZERO_F);
+
+  if (this->m_tOffset == ZERO_F) {
+    this->m_isActive = true;
+  } else {
+    this->m_isActive = false;
+  }
 
   // @GL: We need to discuss with GI Jonah in order to be able to add the gas indirect term if SG
 
@@ -161,6 +168,10 @@ real Planet::getVzp() const {
   return this->m_vzp;
 }
 
+bool Planet::getIsActive() const {
+  return this->m_isActive;
+}
+
 int Planet::getIndex() const {
   return(this->m_ip);
 }
@@ -193,6 +204,14 @@ void Planet::setVzp(real vzp) {
   this->m_vzp = vzp;
 }
 
+
+void Planet::activatePlanet(const real t) {
+  if (t >= this->m_tOffset) {
+    this->m_isActive = true;
+  } else {
+    this->m_isActive = false;
+  }
+}
 
 
 void Planet::updateMp(const real t) {

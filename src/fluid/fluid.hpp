@@ -121,10 +121,6 @@ class Fluid {
   // Add some user source terms
   void EnrollUserSourceTerm(SrcTermFunc);
 
-  // DEPRECATED gravity enrollment
-  void EnrollGravPotential(GravPotentialFunc);
-  void EnrollBodyForce(BodyForceFunc);
-
   // Enroll user-defined ohmic, ambipolar and Hall diffusivities
   void EnrollOhmicDiffusivity(DiffusivityFunc);
   void EnrollAmbipolarDiffusivity(DiffusivityFunc);

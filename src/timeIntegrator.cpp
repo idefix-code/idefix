@@ -188,6 +188,9 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
   if(ncycles%cyclePeriod==0) ShowLog(data);
 
+  // Launch user step before everything
+  data.LaunchUserStepFirst();
+
   if(haveRKL && (ncycles%2)==1) {    // Runge-Kutta-Legendre cycle
     data.EvolveRKLStage();
   }
@@ -301,6 +304,9 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   if(data.haveGridCoarsening) {
     data.Coarsen();
   }
+
+  // Launch user step last
+  data.LaunchUserStepLast();
 
   // Update current time (should have already been done, but this gets rid of roundoff errors)
   data.t=t0+data.dt;

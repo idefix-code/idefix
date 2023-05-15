@@ -44,6 +44,8 @@ using Hydro = Fluid<Physics>;
 
 using GridCoarseningFunc = void(*) (DataBlock &);
 
+using StepFunc = void (*) (DataBlock &, const real t, const real dt);
+
 class DataBlock {
  public:
   // Local grid information
@@ -146,9 +148,23 @@ class DataBlock {
   bool haveGravity{false};
   std::unique_ptr<Gravity> gravity;
 
+  // User step functions (before or after the main integrator step)
+  void LaunchUserStepFirst();     ///< perform user-defined step before main integration step
+  void LaunchUserStepLast();      ///< Perform user-defined step after main integration step
+
+  void EnrollUserStepFirst(StepFunc);
+  void EnrollUserStepLast(StepFunc);
+
  private:
   void WriteVariable(FILE* , int , int *, char *, void*);
   void ComputeGridCoarseningLevels();   ///< Call user defined function to define Coarsening levels
+
+  // User Steps (either before or after the main integration loop)
+  bool haveUserStepFirst{false};
+  bool haveUserStepLast{false};
+
+  StepFunc userStepFirst{nullptr};
+  StepFunc userStepLast{nullptr};
 };
 
 #endif // DATABLOCK_DATABLOCK_HPP_

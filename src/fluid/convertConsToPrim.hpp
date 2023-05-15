@@ -51,6 +51,16 @@ KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[], real gamma_m1) {
 
     } else { // Hydro case
       Vc[PRS] = gamma_m1 * (Uc[ENG] - kin);
+      // Check pressure positivity
+      if(Vc[PRS]<= ZERO_F) {
+        #ifdef SMALL_PRESSURE_TEMPERATURE
+          Vc[PRS] = SMALL_PRESSURE_TEMPERATURE*Vc[RHO];
+        #else
+          Vc[PRS] = SMALL_PRESSURE_FIX;
+        #endif
+
+          Uc[ENG] = Vc[PRS]/gamma_m1+kin;
+      }
     } // MHD
   } // Have Energy
 }

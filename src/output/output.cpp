@@ -17,7 +17,6 @@ Output::Output(Input &input, DataBlock &data) {
   }
   // Initialise vtk outputs
   if(input.CheckEntry("Output","vtk")>0) {
-    idfx::cout << "VTK will be called" << std::endl;
     vtkPeriod = input.Get<real>("Output","vtk",0);
     if(vtkPeriod>=0.0) {  // backward compatibility (negative value means no file)
       vtkLast = data.t - vtkPeriod; // write something in the next CheckForWrite()
@@ -28,7 +27,6 @@ Output::Output(Input &input, DataBlock &data) {
 
   // Initialise xdmf outputs
   if(input.CheckEntry("Output","xdmf")>0) {
-    idfx::cout << "XDMF will be called" << std::endl;
     xdmfPeriod = input.Get<real>("Output","xdmf",0);
     if(xdmfPeriod>=0.0) {  // backward compatibility (negative value means no file)
       xdmfLast = data.t - xdmfPeriod; // write something in the next CheckForWrite()

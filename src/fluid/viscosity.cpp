@@ -139,12 +139,14 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
     }
   }
 
-  haveFargo = this->data->haveFargo;
-  if(haveFargo) {
-    fargoVelocity = data->fargo->meanVelocity;
-    fargoType = data->fargo->type;
-  }
-  real sbS = this->sbS;
+  #if HAVE_ENERGY
+    haveFargo = this->data->haveFargo;
+    if(haveFargo) {
+      fargoVelocity = data->fargo->meanVelocity;
+      fargoType = data->fargo->type;
+    }
+    real sbS = this->sbS;
+  #endif
 
 
   int ibeg, iend, jbeg, jend, kbeg, kend;

@@ -13,6 +13,7 @@
 #include "input.hpp"
 #include "dataBlock.hpp"
 #include "vtk.hpp"
+#include "xdmf.hpp"
 #include "dump.hpp"
 
 
@@ -25,6 +26,7 @@ using UserDefVariablesFunc = void (*) (DataBlock &, UserDefVariablesContainer &)
 class Output {
   friend class Dump;    // Allow dump to have R/W access to private variables
   friend class Vtk;     // Allow VTK to have access to user-defined variables
+  friend class Xdmf;    // Allow XDMF to have access to user-defined variables
   friend class DumpImage; // Allow dumpimag to have access to dump API
  public:
   Output(Input &, DataBlock &);           // Create Output Object
@@ -32,6 +34,7 @@ class Output {
   void RestartFromDump(DataBlock &, int);  // Restart from a dump file.
   void ForceWriteDump(DataBlock &);            // Force write dumps (needed during an abort)
   void ForceWriteVtk(DataBlock &);            // Force write vtks
+  void ForceWriteXdmf(DataBlock &);          // Force write xdmfs
   void ResetTimer();                      // Reset internal timer
   double GetTimer();
   void EnrollAnalysis(AnalysisFunc);
@@ -40,6 +43,7 @@ class Output {
  private:
   Vtk vtk;          // local instance of Vtk class
   Dump dump;        // local instance of Dump class
+  Xdmf xdmf;        // local instance of Xdmf class
 
   bool forceNoWrite = false;    //< explicitely disable all writes
   bool vtkEnabled = false;
@@ -49,6 +53,10 @@ class Output {
   bool dumpEnabled = false;
   real dumpPeriod = 0.0;
   real dumpLast = 0.0;
+
+  bool xdmfEnabled = false;
+  real xdmfPeriod = 0.0;   // periodicity of xdmf outputs
+  real xdmfLast = 0.0;
 
   bool analysisEnabled = false;
   real analysisPeriod = 0.0;

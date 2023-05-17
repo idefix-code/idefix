@@ -17,6 +17,7 @@ Output::Output(Input &input, DataBlock &data) {
   }
   // Initialise vtk outputs
   if(input.CheckEntry("Output","vtk")>0) {
+    idfx::cout << "VTK will be called" << std::endl;
     vtkPeriod = input.Get<real>("Output","vtk",0);
     if(vtkPeriod>=0.0) {  // backward compatibility (negative value means no file)
       vtkLast = data.t - vtkPeriod; // write something in the next CheckForWrite()
@@ -24,6 +25,17 @@ Output::Output(Input &input, DataBlock &data) {
     }
   }
   vtk.Init(input,data); // Always initialised in case of emergency vtk output
+
+  // Initialise xdmf outputs
+  if(input.CheckEntry("Output","xdmf")>0) {
+    idfx::cout << "XDMF will be called" << std::endl;
+    xdmfPeriod = input.Get<real>("Output","xdmf",0);
+    if(xdmfPeriod>=0.0) {  // backward compatibility (negative value means no file)
+      xdmfLast = data.t - xdmfPeriod; // write something in the next CheckForWrite()
+      xdmfEnabled = true;
+    }
+  }
+  xdmf.Init(input,data); // Always initialised in case of emergency xdmf output
 
   // intialise dump outputs
   if(input.CheckEntry("Output","dmp")>0) {
@@ -117,6 +129,36 @@ int Output::CheckForWrites(DataBlock &data) {
     }
   }
 
+  // Do we need a XDMF output?
+  if(xdmfEnabled) {
+    if(data.t >= xdmfLast + xdmfPeriod) {
+      elapsedTime -= timer.seconds();
+      if(userDefVariablesEnabled) {
+        if(haveUserDefVariablesFunc) {
+          // Call user-def function to fill the userdefined variable arrays
+          idfx::pushRegion("UserDef::User-defined variables function");
+          userDefVariablesFunc(data, userDefVariables);
+          idfx::popRegion();
+        } else {
+          IDEFIX_ERROR("Cannot output user-defined variables without "
+                        "enrollment of your user-defined variables function");
+        }
+      }
+      xdmfLast += xdmfPeriod;
+      xdmf.Write(data, *this);
+      nfiles++;
+      elapsedTime += timer.seconds();
+
+      // Check if our next predicted output should already have happened
+      if((xdmfLast+xdmfPeriod <= data.t) && xdmfPeriod>0.0) {
+        // Move forward xdmfLast
+        while(xdmfLast <= data.t - xdmfPeriod) {
+          xdmfLast += xdmfPeriod;
+        }
+      }
+    }
+  }
+
   // Do we need an analysis ?
   if(analysisEnabled) {
     if(data.t >= analysisLast + analysisPeriod) {
@@ -180,6 +222,27 @@ void Output::ForceWriteVtk(DataBlock &data) {
       }
       vtkLast += vtkPeriod;
       vtk.Write(data, *this);
+  }
+  idfx::popRegion();
+}
+
+void Output::ForceWriteXdmf(DataBlock &data) {
+  idfx::pushRegion("Output::ForceWriteXdmf");
+
+  if(!forceNoWrite) {
+    if(userDefVariablesEnabled) {
+        if(haveUserDefVariablesFunc) {
+          // Call user-def function to fill the userdefined variable arrays
+          idfx::pushRegion("UserDef::User-defined variables function");
+          userDefVariablesFunc(data, userDefVariables);
+          idfx::popRegion();
+        } else {
+          IDEFIX_ERROR("Cannot output user-defined variables without "
+                        "enrollment of your user-defined variables function");
+        }
+      }
+      xdmfLast += xdmfPeriod;
+      xdmf.Write(data, *this);
   }
   idfx::popRegion();
 }

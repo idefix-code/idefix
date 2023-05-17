@@ -13,6 +13,7 @@
 #include "viscosity.hpp"
 #include "dataBlock.hpp"
 #include "fluid.hpp"
+#include "fargo.hpp"
 
 
 #define D_DX_I(q,n)  (q(n,k,j,i) - q(n,k,j,i - 1))
@@ -114,6 +115,11 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
   IdefixArray1D<real> dx2 = this->data->dx[JDIR];
   IdefixArray1D<real> dx3 = this->data->dx[KDIR];
 
+  // Fargo variables
+  IdefixArray2D<real> fargoVelocity;
+  Fargo::FargoType fargoType;
+  bool haveFargo;
+
   #if GEOMETRY == SPHERICAL
   IdefixArray1D<real> sinx2 = this->data->sinx2;
   IdefixArray1D<real> tanx2 = this->data->tanx2;
@@ -132,6 +138,13 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
       IDEFIX_ERROR("No user-defined viscosity function has been enrolled");
     }
   }
+
+  haveFargo = this->data->haveFargo;
+  if(haveFargo) {
+    fargoVelocity = data->fargo->meanVelocity;
+    fargoType = data->fargo->type;
+  }
+  real sbS = this->sbS;
 
 
   int ibeg, iend, jbeg, jend, kbeg, kend;
@@ -340,9 +353,30 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
                 Flux(MX3, k, j, i) -= tau_xz; )
 
         #if HAVE_ENERGY
-          Flux(ENG, k, j, i) -= EXPAND(   0.5*(Vc(VX1,k,j,i) + Vc(VX1,k,j,i-1))*tau_xx  ,
-                                        + 0.5*(Vc(VX2,k,j,i) + Vc(VX2,k,j,i-1))*tau_xy  ,
-                                        + 0.5*(Vc(VX3,k,j,i) + Vc(VX3,k,j,i-1))*tau_xz);
+          EXPAND( real vx1 = 0.5*(Vc(VX1,k,j,i) + Vc(VX1,k,j,i-1)); ,
+                  real vx2 = 0.5*(Vc(VX2,k,j,i) + Vc(VX2,k,j,i-1)); ,
+                  real vx3 = 0.5*(Vc(VX3,k,j,i) + Vc(VX3,k,j,i-1)); )
+
+          if(haveFargo) {
+            // fetch fargo velocity when required and substract from vxj since
+            // energy equation is computed for the deviations
+            real meanV = 0.0;
+            #if (GEOMETRY == POLAR || GEOMETRY == CARTESIAN) && DIMENSIONS >=2
+              if(fargoType==Fargo::userdef) {
+                meanV = HALF_F*(fargoVelocity(k,i-1)+fargoVelocity(k,i));
+              } else if(fargoType==Fargo::shearingbox) {
+                meanV = sbS * x1l(i);
+              }
+              vx2 = vx2 - meanV;
+            #elif GEOMETRY == SPHERICAL && DIMENSIONS ==3
+              meanV = fargoVelocity(j,i);
+              vx3 = vx3 - meanV;
+            #endif
+          }
+
+          Flux(ENG, k, j, i) -= EXPAND(   vx1*tau_xx  ,
+                                        + vx2*tau_xy  ,
+                                        + vx3*tau_xz);
         #endif
 
         real locdmax = (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k,j,i-1)));
@@ -530,9 +564,31 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
               Flux(MX3, k, j, i) -= tau_yz; )
 
       #if HAVE_ENERGY
-        Flux(ENG, k, j, i) -= EXPAND(   0.5*(Vc(VX1,k,j,i) + Vc(VX1,k,j-1,i))*tau_xy  ,
-                                      + 0.5*(Vc(VX2,k,j,i) + Vc(VX2,k,j-1,i))*tau_yy  ,
-                                      + 0.5*(Vc(VX3,k,j,i) + Vc(VX3,k,j-1,i))*tau_yz);
+
+      EXPAND( real vx1 = 0.5*(Vc(VX1,k,j-1,i) + Vc(VX1,k,j,i)); ,
+                  real vx2 = 0.5*(Vc(VX2,k,j-1,i) + Vc(VX2,k,j,i)); ,
+                  real vx3 = 0.5*(Vc(VX3,k,j-1,i) + Vc(VX3,k,j,i)); )
+
+          if(haveFargo) {
+            // fetch fargo velocity when required and substract from vxj since
+            // energy equation is computed for the deviations
+            real meanV = 0.0;
+            #if (GEOMETRY == POLAR || GEOMETRY == CARTESIAN) && DIMENSIONS >=2
+              if(fargoType==Fargo::userdef) {
+                meanV = fargoVelocity(k,i);
+              } else if(fargoType==Fargo::shearingbox) {
+                meanV = sbS * x1(i);
+              }
+              vx2 = vx2 - meanV;
+            #elif GEOMETRY == SPHERICAL && DIMENSIONS ==3
+              meanV = HALF_F*(fargoVelocity(j,i)+fargoVelocity(j-1,i);
+              vx3 = vx3 - meanV;
+            #endif
+          }
+
+          Flux(ENG, k, j, i) -= EXPAND(   vx1*tau_xy  ,
+                                        + vx2*tau_yy  ,
+                                        + vx3*tau_yz);
       #endif
 
       real locdmax = (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k,j-1,i)));
@@ -652,9 +708,31 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
               Flux(MX3, k, j, i) -= tau_zz; )
 
       #if HAVE_ENERGY
-        Flux(ENG, k, j, i) -= EXPAND(   0.5*(Vc(VX1,k,j,i) + Vc(VX1,k-1,j,i))*tau_xz  ,
-                                      + 0.5*(Vc(VX2,k,j,i) + Vc(VX2,k-1,j,i))*tau_yz  ,
-                                      + 0.5*(Vc(VX3,k,j,i) + Vc(VX3,k-1,j,i))*tau_zz);
+
+        EXPAND( real vx1 = 0.5*(Vc(VX1,k-1,j,i) + Vc(VX1,k,j,i)); ,
+                real vx2 = 0.5*(Vc(VX2,k-1,j,i) + Vc(VX2,k,j,i)); ,
+                real vx3 = 0.5*(Vc(VX3,k-1,j,i) + Vc(VX3,k,j,i)); )
+
+          if(haveFargo) {
+            // fetch fargo velocity when required and substract from vxj since
+            // energy equation is computed for the deviations
+            real meanV = 0.0;
+            #if (GEOMETRY == POLAR || GEOMETRY == CARTESIAN) && DIMENSIONS >=2
+              if(fargoType==Fargo::userdef) {
+                meanV = HALF_F*(fargoVelocity(k-1,i)+fargoVelocity(k,i));
+              } else if(fargoType==Fargo::shearingbox) {
+                meanV = sbS * x1l(i);
+              }
+              vx2 = vx2 - meanV;
+            #elif GEOMETRY == SPHERICAL && DIMENSIONS ==3
+              meanV = fargoVelocity(j,i);
+              vx3 = vx3 - meanV;
+            #endif
+          }
+
+          Flux(ENG, k, j, i) -= EXPAND(   vx1*tau_xz  ,
+                                        + vx2*tau_yz  ,
+                                        + vx3*tau_zz);
       #endif
 
       real locdmax = (FMAX(eta1,eta2))/(0.5*(Vc(RHO,k,j,i)+Vc(RHO,k-1,j,i)));

@@ -115,10 +115,12 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
   IdefixArray1D<real> dx2 = this->data->dx[JDIR];
   IdefixArray1D<real> dx3 = this->data->dx[KDIR];
 
-  // Fargo variables
-  IdefixArray2D<real> fargoVelocity;
-  Fargo::FargoType fargoType;
-  bool haveFargo;
+  // Fargo variables use to correct energy fluxes
+  #if HAVE_ENERGY
+    IdefixArray2D<real> fargoVelocity;
+    Fargo::FargoType fargoType;
+    bool haveFargo;
+  #endif
 
   #if GEOMETRY == SPHERICAL
   IdefixArray1D<real> sinx2 = this->data->sinx2;

@@ -585,7 +585,7 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
               }
               vx2 = vx2 - meanV;
             #elif GEOMETRY == SPHERICAL && DIMENSIONS ==3
-              meanV = HALF_F*(fargoVelocity(j,i)+fargoVelocity(j-1,i);
+              meanV = HALF_F*(fargoVelocity(j,i)+fargoVelocity(j-1,i));
               vx3 = vx3 - meanV;
             #endif
           }

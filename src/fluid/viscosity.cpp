@@ -117,8 +117,8 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
 
   // Fargo variables use to correct energy fluxes
   #if HAVE_ENERGY
-    IdefixArray2D<real> fargoVelocity;
-    Fargo::FargoType fargoType;
+    [[maybe_unused]] IdefixArray2D<real> fargoVelocity;
+    [[maybe_unused]] Fargo::FargoType fargoType;
     bool haveFargo;
   #endif
 
@@ -147,7 +147,7 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
       fargoVelocity = data->fargo->meanVelocity;
       fargoType = data->fargo->type;
     }
-    real sbS = this->sbS;
+    [[maybe_unused]] real sbS = this->sbS;
   #endif
 
 
@@ -364,7 +364,7 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
           if(haveFargo) {
             // fetch fargo velocity when required and substract from vxj since
             // energy equation is computed for the deviations
-            real meanV = 0.0;
+            [[maybe_unused]] real meanV = 0.0;
             #if (GEOMETRY == POLAR || GEOMETRY == CARTESIAN) && DIMENSIONS >=2
               if(fargoType==Fargo::userdef) {
                 meanV = HALF_F*(fargoVelocity(k,i-1)+fargoVelocity(k,i));
@@ -576,7 +576,7 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
           if(haveFargo) {
             // fetch fargo velocity when required and substract from vxj since
             // energy equation is computed for the deviations
-            real meanV = 0.0;
+            [[maybe_unused]] real meanV = 0.0;
             #if (GEOMETRY == POLAR || GEOMETRY == CARTESIAN) && DIMENSIONS >=2
               if(fargoType==Fargo::userdef) {
                 meanV = fargoVelocity(k,i);
@@ -720,7 +720,7 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
           if(haveFargo) {
             // fetch fargo velocity when required and substract from vxj since
             // energy equation is computed for the deviations
-            real meanV = 0.0;
+            [[maybe_unused]] real meanV = 0.0;
             #if (GEOMETRY == POLAR || GEOMETRY == CARTESIAN) && DIMENSIONS >=2
               if(fargoType==Fargo::userdef) {
                 meanV = HALF_F*(fargoVelocity(k-1,i)+fargoVelocity(k,i));

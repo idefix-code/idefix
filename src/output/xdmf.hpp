@@ -56,7 +56,7 @@ class Xdmf {
   // IdefixHostArray3D<DUMP_DATATYPE> field_data;
 
   // Array designed to store the temporary vector array
-  float *vect3D;
+  DUMP_DATATYPE *vect3D;
 
   // Timer
   Kokkos::Timer timer;

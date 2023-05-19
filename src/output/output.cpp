@@ -30,10 +30,18 @@ Output::Output(Input &input, DataBlock &data) {
     xdmfPeriod = input.Get<real>("Output","xdmf",0);
     if(xdmfPeriod>=0.0) {  // backward compatibility (negative value means no file)
       xdmfLast = data.t - xdmfPeriod; // write something in the next CheckForWrite()
+      #ifdef USE_HDF5
       xdmfEnabled = true;
+      #else
+      xdmfEnabled = false;
+      idfx::cout << "Attention: HDF5 library not linkied when building Idefix. ";
+      idfx::cout << "Cannot make this data dump!" << std::endl;
+      #endif
     }
   }
+  #ifdef USE_HDF5
   xdmf.Init(input,data); // Always initialised in case of emergency xdmf output
+  #endif
 
   // intialise dump outputs
   if(input.CheckEntry("Output","dmp")>0) {

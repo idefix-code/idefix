@@ -17,8 +17,6 @@
 #include "gridHost.hpp"
 #include "output.hpp"
 
-// using namespace HighFive;
-
 // Whether or not we write the time in the XDMF file
 #define WRITE_TIME
 
@@ -50,8 +48,17 @@ void Xdmf::Init(Input &input, DataBlock &datain) {
   this->nx2loc = data.np_int[JDIR];
   this->nx3loc = data.np_int[KDIR];
 
-  // Temporary storage on host for 3D arrays
-  this->vect3D = new DUMP_DATATYPE[nx1loc*nx2loc*nx3loc];
+  this->nx1tot = grid.np_tot[IDIR];
+  this->nx2tot = grid.np_tot[JDIR];
+  this->nx3tot = grid.np_tot[KDIR];
+
+  this->nx1loctot = data.np_tot[IDIR];
+  this->nx2loctot = data.np_tot[JDIR];
+  this->nx3loctot = data.np_tot[KDIR];
+
+  this->ngx1 = grid.nghost[IDIR];
+  this->ngx2 = grid.nghost[JDIR];
+  this->ngx3 = grid.nghost[KDIR];
 
   // Store coordinates for later use
   this->xnode = new DUMP_DATATYPE[nx1+IOFFSET];
@@ -127,6 +134,14 @@ void Xdmf::Init(Input &input, DataBlock &datain) {
                                                                  cellsubsize[1],
                                                                  cellsubsize[2],
                                                                  cellsubsize[3]);
+  /*
+  field_data = IdefixHostArray3D<DUMP_DATATYPE>("XdmfFieldData", cellsubsize[1],
+                                                                 cellsubsize[2],
+                                                                 cellsubsize[3]);
+  */
+  // Temporary storage on host for 3D arrays
+  this->vect3D = new float[nx1loc*nx2loc*nx3loc];
+
   // fill the node_coord array
   DUMP_DATATYPE x1 = 0.0;
   [[maybe_unused]] DUMP_DATATYPE x2 = 0.0;
@@ -206,9 +221,9 @@ void Xdmf::Init(Input &input, DataBlock &datain) {
     // XDMF assumes Fortran array ordering, hence arrays dimensions are filled backwards
     // So ordering is Z-Y-X
     // offset in the destination array
-    this->mpi_data_start[2-dir] = datain.gbeg[dir]-grid.nghost[dir];
-    this->mpi_data_size[2-dir] = grid.np_int[dir];
-    this->mpi_data_subsize[2-dir] = datain.np_int[dir];
+    this->mpi_data_start[dir] = datain.gbeg[2-dir]-grid.nghost[2-dir];
+    this->mpi_data_size[dir] = grid.np_int[2-dir];
+    this->mpi_data_subsize[dir] = datain.np_int[2-dir];
   }
   #endif
 }
@@ -217,6 +232,7 @@ int Xdmf::Write(DataBlock &datain, Output &output) {
   idfx::pushRegion("Xdmf::Write");
   std::string filename;
   std::string filename_xmf;
+  hid_t err;
 
   idfx::cout << "Xdmf: Write file n " << xdmfFileNumber << "..." << std::flush;
 
@@ -238,36 +254,73 @@ int Xdmf::Write(DataBlock &datain, Output &output) {
   filename = ssfileName.str();
   filename_xmf = ssfileNameXmf.str();
 
-  // Open file and write header
-#ifdef WITH_MPI
-  // MPI-IO requires informing HDF5 that we want something other than
-  // the default behaviour. This is done through property lists. We
-  // need a file access property list.
-  HighFive::FileAccessProps fapl;
-  // We tell HDF5 to use MPI-IO
-  fapl.add(HighFive::MPIOFileAccess{MPI_COMM_WORLD, MPI_INFO_NULL});
-  // We also specify that we want all meta-data related operations
-  // to use MPI collective operations. This implies that all MPI ranks
-  // in the communicator must participate in any HDF5 operation that
-  // reads or writes metadata. Essentially, this is safe if all MPI ranks
-  // participate in all HDF5 operations.
-  fapl.add(HighFive::MPIOCollectiveMetadata{});
+  #ifdef WITH_MPI
+  hid_t file_access = H5Pcreate(H5P_FILE_ACCESS);
+  // #if MPI_POSIX == YES
+  // H5Pset_fapl_mpiposix(file_access, MPI_COMM_WORLD, 1);
+  // #else
+  H5Pset_fapl_mpio(file_access,  MPI_COMM_WORLD, MPI_INFO_NULL);
+  // #endif
+  hid_t fileHdf = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, file_access);
+  H5Pclose(file_access);
+  #else
+  hid_t fileHdf = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+  #endif
 
-  // Now we can create the file as usual.
-  HighFive::File fileHdf(filename, HighFive::File::ReadWrite | HighFive::File::Truncate, fapl);
-
-#else
-  // Open a file
-  File fileHdf(filename, HighFive::File::ReadWrite | HighFive::File::Truncate);
-#endif
-
-  WriteHeader(fileHdf, filename, filename_xmf, datain.t);
-
+  hid_t group_fields; // = static_cast<hid_t *>(malloc(sizeof(hid_t)));
   std::stringstream ssgroup_name;
-  ssgroup_name << "/Timestep_" << xdmfFileNumber << "/vars";
+  ssgroup_name << "/Timestep_" << xdmfFileNumber;
+  hid_t timestep = H5Gcreate(fileHdf, ssgroup_name.str().c_str(), 0);
 
-  // We can create a group as usual.
-  HighFive::Group group_fields = fileHdf.createGroup(ssgroup_name.str());
+  WriteHeader(fileHdf, filename, filename_xmf, datain.t, timestep, group_fields);
+
+  /* ------------------------------------
+      write cell-centered field data
+   ------------------------------------ */
+
+  // doesn't affect serial io
+  hid_t plist_id_mpiio = 0; /* for collective MPI I/O */
+  #ifdef WITH_MPI
+  plist_id_mpiio = H5Pcreate(H5P_DATASET_XFER);
+  H5Pset_dxpl_mpio(plist_id_mpiio,H5FD_MPIO_COLLECTIVE);
+  #endif
+
+  // Layout of the field data in memory
+  hsize_t field_data_size[3], field_data_start[3], field_data_subsize[3], stride[3];
+  #ifdef WITH_MPI
+  for(int dir = 0; dir < 3 ; dir++) {
+    field_data_size[dir] = static_cast<hsize_t>(this->mpi_data_size[dir]);
+    field_data_subsize[dir] = static_cast<hsize_t>(this->mpi_data_subsize[dir]);
+    field_data_start[dir] = static_cast<hsize_t>(this->mpi_data_start[dir]);
+    stride[dir] = 1;
+  }
+  #else
+  field_data_size[0] = static_cast<hsize_t>(this->nx3);
+  field_data_size[1] = static_cast<hsize_t>(this->nx2);
+  field_data_size[2] = static_cast<hsize_t>(this->nx1);
+  field_data_subsize[0] = static_cast<hsize_t>(this->nx3loc);
+  field_data_subsize[1] = static_cast<hsize_t>(this->nx2loc);
+  field_data_subsize[2] = static_cast<hsize_t>(this->nx1loc);
+  for(int dir = 0; dir < 3 ; dir++) {
+    field_data_start[dir] = static_cast<hsize_t>(0);
+    stride[dir] = static_cast<hsize_t>(1);
+  }
+  #endif
+
+  int rank = DIMENSIONS;
+  hsize_t dimens[3], offset[3];
+  hid_t dataspace = H5Screate_simple(rank, field_data_size, NULL);
+  #ifdef WITH_MPI
+  err = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET,
+                            field_data_start, stride,
+                            field_data_subsize, NULL);
+  #endif
+
+  dimens[0] = nx3loc; dimens[1] = nx2loc; dimens[2] = nx1loc;
+  hid_t memspace = H5Screate_simple(rank, dimens, NULL);
+
+  offset[0] = 0; offset[1] = 0; offset[2] = 0;
+  err = H5Sselect_hyperslab(memspace, H5S_SELECT_SET, offset, stride, field_data_subsize, NULL);
 
   // Write field one by one
   for(int nv = 0 ; nv < NVAR ; nv++) {
@@ -276,10 +329,13 @@ int Xdmf::Write(DataBlock &datain, Output &output) {
         for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
           vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc + (k-data.beg[KDIR])*nx1loc*nx2loc]
               = static_cast<DUMP_DATATYPE>(data.Vc(nv,k,j,i));
+          /* field_data(i-data.beg[IDIR],j-data.beg[JDIR],k-data.beg[KDIR])
+               = static_cast<DUMP_DATATYPE>(data.Vc(nv,k,j,i)); */
         }
       }
     }
-    WriteScalar(vect3D, datain.hydro.VcName[nv], data, filename, filename_xmf, group_fields);
+    WriteScalar(vect3D, datain.hydro.VcName[nv], field_data_size, filename, filename_xmf,
+                memspace, dataspace, plist_id_mpiio, static_cast<hid_t&>(group_fields));
   }
   // Write user-defined variables (when required by output)
   if(output.userDefVariablesEnabled) {
@@ -290,11 +346,14 @@ int Xdmf::Write(DataBlock &datain, Output &output) {
         for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++ ) {
           for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
             vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc + (k-data.beg[KDIR])*nx1loc*nx2loc]
-                = static_cast<DUMP_DATATYPE>(variable.second(k,j,i));
+              = static_cast<DUMP_DATATYPE>(variable.second(k,j,i));
+            /* field_data(i-data.beg[IDIR],j-data.beg[JDIR],k-data.beg[KDIR])
+                 = static_cast<DUMP_DATATYPE>(variable.second(k,j,i)); */
           }
         }
       }
-      WriteScalar(vect3D, variable.first, data, filename, filename_xmf, group_fields);
+      WriteScalar(vect3D, variable.first, field_data_size, filename, filename_xmf,
+                  memspace, dataspace, plist_id_mpiio, static_cast<hid_t&>(group_fields));
     }
   }
 
@@ -306,19 +365,29 @@ int Xdmf::Write(DataBlock &datain, Output &output) {
         for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
           vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc + (k-data.beg[KDIR])*nx1loc*nx2loc]
               = static_cast<DUMP_DATATYPE>(data.Ve(nv,k,j,i));
+          /* field_data(i-data.beg[IDIR],j-data.beg[JDIR],k-data.beg[KDIR])
+               = static_cast<DUMP_DATATYPE>(data.Ve(nv,k,j,i)); */
         }
       }
     }
-    WriteScalar(vect3D, datain.hydro.VeName[nv], data, filename, filename_xmf, group_fields);
+    WriteScalar(vect3D, datain.hydro.VeName[nv], field_data_size, filename, filename_xmf,
+                memspace, dataspace, plist_id_mpiio, static_cast<hid_t&>(group_fields));
   }
   #endif
-  WriteFooter(fileHdf, filename, filename_xmf);
+  WriteFooter(filename, filename_xmf);
 
-  fileHdf.flush();
+  #ifdef WITH_MPI
+  H5Pclose(plist_id_mpiio);
+  #endif
+  H5Sclose(memspace);
+  H5Sclose(dataspace);
+  H5Gclose(group_fields); // Close group "vars"
+  H5Gclose(timestep);
+  H5Fclose(fileHdf);
+
   xdmfFileNumber++;
   // Make file number
   idfx::cout << "done in " << timer.seconds() << " s." << std::endl;
-
   idfx::popRegion();
   // One day, we will have a return code.
   return(0);
@@ -327,10 +396,12 @@ int Xdmf::Write(DataBlock &datain, Output &output) {
 
 /* ********************************************************************* */
 void Xdmf::WriteHeader(
-                       HighFive::File fileHdf,
+                       hid_t fileHdf,
                        const std::string filename,
                        const std::string filename_xmf,
-                       real time) {
+                       real time,
+                       hid_t &timestep,
+                       hid_t &group_fields) {
 /*!
 * Write XDMF header in parallel or serial mode.
 *
@@ -341,94 +412,189 @@ void Xdmf::WriteHeader(
 *
 *********************************************************************** */
 
-  std::string header;
   std::stringstream ssheader;
-  //std::stringstream ssgroup_name;
-
-  /* -------------------------------------------
-  1. Header
-  ------------------------------------------- */
-  // Create a dummy dataset of one single integer that will hold some metadata as attributes
-  auto info_dataset = fileHdf.createDataSet("info",
-                                            HighFive::DataSpace(1),
-                                            HighFive::create_datatype<int>());
-  ssheader << "Idefix " << GITVERSION << " XDMF Data";
-  info_dataset.createAttribute<std::string>("version", ssheader.str());
-
-  /* ------------------------------------------
-  2. File format
-  ------------------------------------------ */
-
-  #ifndef XDMF_DOUBLE
-  info_dataset.createAttribute<std::string>("dtype", "float");
-  #else
-  info_dataset.createAttribute<std::string>("dtype", "double");
-  #endif
-
-  #ifdef WRITE_TIME
-  info_dataset.createAttribute("time", time);
-  #endif
-
-  // We can create groups as usual.
-  HighFive::Group group_cells  = fileHdf.createGroup("cell_coords");
-  HighFive::Group group_nodes  = fileHdf.createGroup("node_coords");
-
-  // We define the dataset.
-  std::vector<size_t> dims_nodes(3), offset_nodes(3), count_nodes(3);
-  std::vector<size_t> dims_cells(3), offset_cells(3), count_cells(3);
+  int rank;
   std::vector<std::string> directions{"X", "Y", "Z"};
 
-  for(int dir = 0; dir < 3 ; dir++) {
-    dims_nodes[dir] = std::size_t(this->nodesize[dir+1]);
-    offset_nodes[dir] = std::size_t(this->nodestart[dir+1]);
-    count_nodes[dir] = std::size_t(this->nodesubsize[dir+1]);
+  hid_t dataspace, memspace, dataset;
+  hid_t strspace, stratt, string_type;
+  hid_t tspace, tattr;
+  hid_t group;
+  hid_t file_access = 0;
+  #ifdef WITH_MPI
+  hid_t plist_id_mpiio = 0; /* for collective MPI I/O */
+  #endif
+  hid_t err;
 
-    dims_cells[dir] = std::size_t(this->cellsize[dir+1]);
-    offset_cells[dir] = std::size_t(this->cellstart[dir+1]);
-    count_cells[dir] = std::size_t(this->cellsubsize[dir+1]);
+  hsize_t dimstr;
+  hsize_t dimens[DIMENSIONS];
+  hsize_t start[DIMENSIONS];
+  hsize_t stride[DIMENSIONS];
+  hsize_t count[DIMENSIONS];
+
+  #ifdef WRITE_TIME
+  tspace  = H5Screate(H5S_SCALAR);
+  tattr   = H5Acreate(timestep, "Time", H5T_NATIVE_DOUBLE, tspace, H5P_DEFAULT);
+  err = H5Awrite(tattr, H5T_NATIVE_DOUBLE, &time);
+  H5Aclose(tattr);
+  H5Sclose(tspace);
+  #endif
+  dimstr = 1;
+  ssheader << "Idefix " << GITVERSION << " XDMF Data";
+  strspace = H5Screate_simple(1, &dimstr, NULL);
+  string_type = H5Tcopy(H5T_C_S1);
+  H5Tset_size(string_type, strlen( ssheader.str().c_str() ));
+  H5Tset_strpad(string_type, H5T_STR_SPACEPAD);
+  stratt = H5Acreate(timestep, "version", string_type, strspace, H5P_DEFAULT);
+  err = H5Awrite(stratt, string_type, ssheader.str().c_str());
+  H5Aclose(stratt);
+  H5Sclose(strspace);
+
+  #ifndef XDMF_DOUBLE
+  std::string datatype = "float";
+  #else
+  std::string datatype = "double";
+  #endif
+  strspace = H5Screate_simple(1, &dimstr, NULL);
+  string_type = H5Tcopy(H5T_C_S1);
+  H5Tset_size(string_type, strlen( datatype.c_str() ));
+  H5Tset_strpad(string_type, H5T_STR_SPACEPAD);
+  stratt = H5Acreate(timestep, "dump_datatype", string_type, strspace, H5P_DEFAULT);
+  err = H5Awrite(stratt, string_type, datatype.c_str());
+  H5Aclose(stratt);
+  H5Sclose(strspace);
+
+  /* Create group_fields "vars" (cell-centered vars) */
+  group_fields = H5Gcreate(timestep, "vars", 0);
+
+  /* Define "coords" attribute of group_fields "vars" */
+  dimstr = 3;
+  std::string coords_label = "/cell_coords/X /cell_coords/Y /cell_coords/Z ";
+  strspace = H5Screate_simple(1, &dimstr, NULL);
+  string_type = H5Tcopy(H5T_C_S1);
+  H5Tset_size( string_type, strlen("/cell_coords/X ") );
+  H5Tset_strpad(string_type, H5T_STR_SPACEPAD);
+  stratt = H5Acreate(group_fields, "coords", string_type, strspace, H5P_DEFAULT);
+  err = H5Awrite(stratt, string_type, coords_label.c_str());
+  H5Aclose(stratt);
+  H5Sclose(strspace);
+
+  /* Create group "cell_coords" (centered mesh) */
+  group = H5Gcreate(fileHdf, "cell_coords", 0);
+
+  for (int dir = 0; dir < DIMENSIONS; dir++) {
+    dimens[dir] = this->cellsize[dir+1];
+  }
+  rank   = DIMENSIONS;
+  dataspace = H5Screate_simple(rank, dimens, NULL);
+
+  #ifdef WITH_MPI
+  for (int dir = 0; dir < DIMENSIONS; dir++) {
+    start[dir]  = this->cellstart[dir+1];
+    stride[dir] = 1;
+    count[dir]  = this->cellsubsize[dir+1];
+  }
+  err = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET,
+                            start, stride, count, NULL);
+  #endif
+
+  memspace = H5Screate_simple(rank,count,NULL);
+
+  /* ------------------------------------
+       write cell centered mesh
+   ------------------------------------ */
+
+  #ifdef WITH_MPI
+  plist_id_mpiio = H5Pcreate(H5P_DATASET_XFER);
+  H5Pset_dxpl_mpio(plist_id_mpiio, H5FD_MPIO_COLLECTIVE);
+  #endif
+
+  DUMP_DATATYPE *cell_mesh;
+  for (int dir = 0; dir < 3; dir++) {
+    dataset = H5Dcreate(group, directions[dir].c_str(), H5_DUMP_DATATYPE, dataspace, H5P_DEFAULT);
+    cell_mesh = Kokkos::subview (this->cell_coord,
+                                            dir,
+                                            Kokkos::ALL(),
+                                            Kokkos::ALL(),
+                                            Kokkos::ALL()).data();
+    #ifdef WITH_MPI
+    err = H5Dwrite(dataset, H5_DUMP_DATATYPE, memspace,
+                   dataspace, plist_id_mpiio, cell_mesh);
+    #else
+    err = H5Dwrite(dataset, H5_DUMP_DATATYPE, memspace,
+                   dataspace, H5P_DEFAULT, cell_mesh);
+    #endif
+    H5Dclose(dataset);
   }
 
-  // We create the dataset for the nodes and cells
-  HighFive::DataSet *dataset_nodes = static_cast<HighFive::DataSet *>
-                                     ( malloc(3*sizeof(HighFive::DataSet)) );
-  HighFive::DataSet *dataset_cells = static_cast<HighFive::DataSet *>
-                                     ( malloc(3*sizeof(HighFive::DataSet)) );
+  #ifdef WITH_MPI
+  H5Pclose(plist_id_mpiio);
+  #endif
+  H5Sclose(memspace);
+  H5Sclose(dataspace);
+  H5Gclose(group); /* Close group "cell_coords" */
 
-  for(int dir = 0; dir < 3 ; dir++) {
-    dataset_nodes[dir] = group_nodes.createDataSet<DUMP_DATATYPE>
-                                     (directions[dir], HighFive::DataSpace(dims_nodes));
-    dataset_cells[dir] = group_cells.createDataSet<DUMP_DATATYPE>
-                                     (directions[dir], HighFive::DataSpace(dims_cells));
+  /* Create group "node_coords" (node mesh) */
+  group = H5Gcreate(fileHdf, "node_coords", 0);
+
+  for (int dir = 0; dir < DIMENSIONS; dir++) {
+    dimens[dir] = this->nodesize[dir+1];
   }
 
-#ifdef WITH_MPI
-  auto xfer_props = HighFive::DataTransferProps{};
-  xfer_props.add(HighFive::UseCollectiveIO{});
+  dataspace = H5Screate_simple(rank, dimens, NULL);
 
-  for(int dir = 0; dir < 3 ; dir++) {
-    dataset_nodes[dir].select(offset_nodes, count_nodes).write_raw(
-                       Kokkos::subview (this->node_coord,
-                                        dir,
-                                        Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()).data(),
-                                        xfer_props);
-    dataset_cells[dir].select(offset_cells, count_cells).write_raw(
-                       Kokkos::subview (this->cell_coord,
-                                        dir,
-                                        Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()).data(),
-                                        xfer_props);
+  #ifdef WITH_MPI
+  for (int dir = 0; dir < DIMENSIONS; dir++) {
+    start[dir]  = this->nodestart[dir+1];
+    stride[dir] = 1;
+    count[dir]  = this->nodesubsize[dir+1];
+    // if (grid->rbound[dir] != 0) count[nd] += 1;
   }
-#else
-  for(int dir = 0; dir < 3 ; dir++) {
-    dataset_nodes[dir].write_raw(
-                       Kokkos::subview (this->node_coord,
-                                        dir,
-                                        Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()).data() );
-    dataset_cells[dir].write_raw(
-                       Kokkos::subview (this->cell_coord,
-                                        dir,
-                                        Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL()).data() );
+
+  err = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET,
+                            start, stride, count, NULL);
+  #endif
+
+  // for (int dir = 0; dir < DIMENSIONS; dir++) {
+  //  dimens[dir] = this->nodesubsize[dir+1];
+    // if (grid->rbound[nr] != 0) dimens[nd] += 1;
+  // }
+  memspace = H5Screate_simple(rank,count,NULL);
+
+/* ------------------------------------
+          write node centered mesh
+   ------------------------------------ */
+
+  #ifdef WITH_MPI
+  plist_id_mpiio = H5Pcreate(H5P_DATASET_XFER);
+  H5Pset_dxpl_mpio(plist_id_mpiio, H5FD_MPIO_COLLECTIVE );
+  #endif
+
+  for (int dir = 0; dir < 3; dir++) {
+    dataset = H5Dcreate(group, directions[dir].c_str(), H5_DUMP_DATATYPE, dataspace, H5P_DEFAULT);
+
+    DUMP_DATATYPE *node_mesh = Kokkos::subview (this->node_coord,
+                                              dir,
+                                              Kokkos::ALL(),
+                                              Kokkos::ALL(),
+                                              Kokkos::ALL()).data();
+    #ifdef WITH_MPI
+    err = H5Dwrite(dataset, H5_DUMP_DATATYPE, memspace,
+                   dataspace, plist_id_mpiio, node_mesh);
+    #else
+    err = H5Dwrite(dataset, H5_DUMP_DATATYPE, memspace,
+                   dataspace, H5P_DEFAULT, node_mesh);
+    #endif
+    H5Dclose(dataset);
   }
-#endif
+
+  #ifdef WITH_MPI
+  H5Pclose(plist_id_mpiio);
+  #endif
+  H5Sclose(memspace);
+  H5Sclose(dataspace);
+  H5Gclose(group); /* Close group "node_coords" */
+
   if (idfx::prank==0) {
     std::stringstream ssxmfcontent;
     /*      XMF file generation      */
@@ -517,10 +683,13 @@ void Xdmf::WriteHeader(
 void Xdmf::WriteScalar(
                        DUMP_DATATYPE* Vin,
                        const std::string &var_name,
-                       DataBlockHost data,
+                       const hsize_t *dims,
                        const std::string filename,
                        const std::string filename_xmf,
-                       HighFive::Group group_fields) {
+                       hid_t &memspace,
+                       hid_t &dataspace,
+                       hid_t &plist_id_mpiio,
+                       hid_t &group_fields) {
 /*!
 * Write HDF5 scalar field.
 *
@@ -534,37 +703,22 @@ void Xdmf::WriteScalar(
   dataset_name = var_name.c_str();
   std::string dataset_label = dataset_name.c_str();
   std::transform(dataset_label.begin(), dataset_label.end(), dataset_label.begin(), ::tolower);
+  hid_t err, dataset;
 
-  // We define the dataset.
-  std::vector<size_t> dims(3);
-#ifdef WITH_MPI
-  for(int dir = 0; dir < 3 ; dir++)
-    dims[dir] = std::size_t(this->mpi_data_size[dir]);
-#else
-  dims[0] = std::size_t(this->nx3loc);
-  dims[1] = std::size_t(this->nx2loc);
-  dims[2] = std::size_t(this->nx1loc);
-#endif
+  // We define the dataset that contain the fields.
 
-  // We create the dataset for the scalar
-  HighFive::DataSet dataset = group_fields.createDataSet<DUMP_DATATYPE>
-                              ( dataset_name, HighFive::DataSpace(dims) );
+  dataset = H5Dcreate(group_fields, var_name.c_str(), H5_DUMP_DATATYPE,
+                        dataspace, H5P_DEFAULT);
+  #ifdef WITH_MPI
+  err = H5Dwrite(dataset, H5_DUMP_DATATYPE, memspace, dataspace,
+                 plist_id_mpiio, Vin);
+  #else
+  err = H5Dwrite(dataset, H5_DUMP_DATATYPE, memspace, dataspace,
+                 H5P_DEFAULT, Vin);
+  #endif
 
-#ifdef WITH_MPI
-  auto xfer_props = HighFive::DataTransferProps{};
-  xfer_props.add(HighFive::UseCollectiveIO{});
+  H5Dclose(dataset);
 
-  // Each MPI rank writes a non-overlapping part of the array.
-  std::vector<std::size_t> offset(3), count(3);
-
-  for(int dir = 0; dir < 3 ; dir++) {
-    offset[dir] = std::size_t(this->mpi_data_start[dir]);
-    count[dir]  = std::size_t(this->mpi_data_subsize[dir]);
-  }
-  dataset.select(offset, count).write_raw(Vin, xfer_props);
-#else
-  dataset.write_raw(Vin);
-#endif
   if (idfx::prank == 0) {
     std::stringstream ssxmfcontent;
     ssxmfcontent << "     <Attribute Name=\"" << dataset_label;
@@ -615,14 +769,12 @@ void Xdmf::WriteScalar(
 
 /* ********************************************************************* */
 void Xdmf::WriteFooter(
-                       HighFive::File fileHdf,
                        const std::string filename,
                        const std::string filename_xmf
                       ) {
 /*!
-* Write XDMF header in parallel or serial mode.
+* Write XDMF footer.
 *
-* \param [in]  fileHdf  pointer to file
 * \param [in]  filename  hdf5 filename
 * \param [in]  filename_xmf  xmf filename
 *

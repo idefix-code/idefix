@@ -12,16 +12,16 @@
 #include "input.hpp"
 #include "dataBlock.hpp"
 #include "dataBlockHost.hpp"
-#include "highfive/H5DataSet.hpp"
-#include "highfive/H5DataSpace.hpp"
-#include "highfive/H5File.hpp"
-#include "highfive/H5PropertyList.hpp"
-#include "highfive/H5Attribute.hpp"
+
+#define H5_USE_16_API
+#include "hdf5.h"
 
 #ifndef XDMF_DOUBLE
 #define DUMP_DATATYPE float
+#define H5_DUMP_DATATYPE H5T_NATIVE_FLOAT
 #else
 #define DUMP_DATATYPE double
+#define H5_DUMP_DATATYPE H5T_NATIVE_DOUBLE
 #endif
 
 // Forward class declaration
@@ -41,6 +41,8 @@ class Xdmf {
   // dimensions
   int64_t nx1,nx2,nx3;
   int64_t nx1loc,nx2loc,nx3loc;
+  int64_t nx1tot,nx2tot,nx3tot;
+  int64_t nx1loctot,nx2loctot,nx3loctot;
 
   // number of ghost zones
   int64_t ngx1,ngx2,ngx3;
@@ -51,9 +53,10 @@ class Xdmf {
 
   IdefixHostArray4D<DUMP_DATATYPE> node_coord;
   IdefixHostArray4D<DUMP_DATATYPE> cell_coord;
+  // IdefixHostArray3D<DUMP_DATATYPE> field_data;
 
   // Array designed to store the temporary vector array
-  DUMP_DATATYPE *vect3D;
+  float *vect3D;
 
   // Timer
   Kokkos::Timer timer;
@@ -67,7 +70,6 @@ class Xdmf {
   int cellsize[4];
   int cellsubsize[4];
 
-  HighFive::Group *group_fields;
 
 #ifdef WITH_MPI
   int mpi_data_start[3];
@@ -75,10 +77,26 @@ class Xdmf {
   int mpi_data_subsize[3];
 #endif
 
-  void WriteHeader(HighFive::File , const std::string , const std::string , real );
-  void WriteFooter(HighFive::File , const std::string , const std::string );
-  void WriteScalar(DUMP_DATATYPE* , const std::string &, DataBlockHost ,
-                                    const std::string , const std::string, HighFive::Group );
+  void WriteHeader(
+                       hid_t ,
+                       const std::string ,
+                       const std::string ,
+                       real,
+                       hid_t & ,
+                       hid_t & );
+  void WriteFooter(
+                       const std::string ,
+                       const std::string );
+  void WriteScalar(
+                       DUMP_DATATYPE* ,
+                       const std::string &,
+                       const hsize_t * ,
+                       const std::string ,
+                       const std::string ,
+                       hid_t & ,
+                       hid_t & ,
+                       hid_t & ,
+                       hid_t & );
 };
 
 #endif // OUTPUT_XDMF_HPP_

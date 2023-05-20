@@ -419,6 +419,7 @@ void Xdmf::WriteHeader(
   hid_t dataspace, memspace, dataset;
   hid_t strspace, stratt, string_type;
   hid_t tspace, tattr;
+  hid_t unit_info, unit_attr;
   hid_t group;
   hid_t file_access = 0;
   #ifdef WITH_MPI
@@ -434,11 +435,66 @@ void Xdmf::WriteHeader(
 
   #ifdef WRITE_TIME
   tspace  = H5Screate(H5S_SCALAR);
-  tattr   = H5Acreate(timestep, "Time", H5T_NATIVE_DOUBLE, tspace, H5P_DEFAULT);
+  tattr   = H5Acreate(timestep, "time", H5T_NATIVE_DOUBLE, tspace, H5P_DEFAULT);
   err = H5Awrite(tattr, H5T_NATIVE_DOUBLE, &time);
   H5Aclose(tattr);
   H5Sclose(tspace);
   #endif
+
+  unit_info = H5Screate(H5S_SCALAR);
+  double unit;
+  #if defined(UNIT_DENSITY) || defined(UNIT_MASS)
+  #ifdef UNIT_DENSITY
+  unit_attr   = H5Acreate(timestep, "density_unit", H5T_NATIVE_DOUBLE, unit_info, H5P_DEFAULT);
+  unit = UNIT_DENSITY;
+  err = H5Awrite(unit_attr, H5T_NATIVE_DOUBLE, &unit);
+  #endif
+  #ifdef UNIT_MASS
+  unit_attr   = H5Acreate(timestep, "mass_unit", H5T_NATIVE_DOUBLE, unit_info, H5P_DEFAULT);
+  unit = UNIT_MASS;
+  err = H5Awrite(unit_attr, H5T_NATIVE_DOUBLE, &unit);
+  #endif
+  #else
+  unit_attr   = H5Acreate(timestep, "density_unit", H5T_NATIVE_DOUBLE, unit_info, H5P_DEFAULT);
+  unit = 1.0;
+  err = H5Awrite(unit_attr, H5T_NATIVE_DOUBLE, &unit);
+  #endif
+  H5Aclose(unit_attr);
+  H5Sclose(unit_info);
+
+  unit_info = H5Screate(H5S_SCALAR);
+  #if defined(UNIT_VELOCITY) || defined(UNIT_TIME)
+  #ifdef UNIT_VELOCITY
+  unit_attr   = H5Acreate(timestep, "velocity_unit", H5T_NATIVE_DOUBLE, unit_info, H5P_DEFAULT);
+  unit = UNIT_VELOCITY;
+  err = H5Awrite(unit_attr, H5T_NATIVE_DOUBLE, &unit);
+  #endif
+  #ifdef UNIT_TIME
+  unit_attr   = H5Acreate(timestep, "time_unit", H5T_NATIVE_DOUBLE, unit_info, H5P_DEFAULT);
+  unit = UNIT_TIME;
+  err = H5Awrite(unit_attr, H5T_NATIVE_DOUBLE, &unit);
+  #endif
+  #else
+  unit_attr   = H5Acreate(timestep, "velocity_unit", H5T_NATIVE_DOUBLE, unit_info, H5P_DEFAULT);
+  unit = 1.0;
+  err = H5Awrite(unit_attr, H5T_NATIVE_DOUBLE, &unit);
+  #endif
+  H5Aclose(unit_attr);
+  H5Sclose(unit_info);
+
+  unit_info = H5Screate(H5S_SCALAR);
+  #ifdef UNIT_LENGTH
+  unit_attr   = H5Acreate(timestep, "length_unit", H5T_NATIVE_DOUBLE, unit_info, H5P_DEFAULT);
+  unit = UNIT_LENGTH;
+  err = H5Awrite(unit_attr, H5T_NATIVE_DOUBLE, &unit);
+  #else
+  unit_attr   = H5Acreate(timestep, "length_unit", H5T_NATIVE_DOUBLE, unit_info, H5P_DEFAULT);
+  unit = 1.0;
+  err = H5Awrite(unit_attr, H5T_NATIVE_DOUBLE, &unit);
+  #endif
+  H5Aclose(unit_attr);
+  H5Sclose(unit_info);
+
   dimstr = 1;
   ssheader << "Idefix " << GITVERSION << " XDMF Data";
   strspace = H5Screate_simple(1, &dimstr, NULL);
@@ -461,6 +517,24 @@ void Xdmf::WriteHeader(
   H5Tset_strpad(string_type, H5T_STR_SPACEPAD);
   stratt = H5Acreate(timestep, "dump_datatype", string_type, strspace, H5P_DEFAULT);
   err = H5Awrite(stratt, string_type, datatype.c_str());
+  H5Aclose(stratt);
+  H5Sclose(strspace);
+
+  #if GEOMETRY == CARTESIAN
+  std::string geometry = "cartesian";
+  #elif GEOMETRY == CYLINDRICAL
+  std::string geometry = "cylindrical";
+  #elif GEOMETRY == POLAR
+  std::string geometry = "polar";
+  #elif GEOMETRY == SPHERICAL
+  std::string geometry = "spherical";
+  #endif
+  strspace = H5Screate_simple(1, &dimstr, NULL);
+  string_type = H5Tcopy(H5T_C_S1);
+  H5Tset_size(string_type, strlen( geometry.c_str() ));
+  H5Tset_strpad(string_type, H5T_STR_SPACEPAD);
+  stratt = H5Acreate(timestep, "geometry", string_type, strspace, H5P_DEFAULT);
+  err = H5Awrite(stratt, string_type, geometry.c_str());
   H5Aclose(stratt);
   H5Sclose(strspace);
 

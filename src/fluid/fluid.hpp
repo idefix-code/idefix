@@ -531,8 +531,6 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
   }
 
   if constexpr(Phys::mhd) {
-    #ifndef EVOLVE_VECTOR_POTENTIAL
-
       for(int i = 0 ; i < DIMENSIONS ; i++) {
         switch(i) {
           case 0:
@@ -555,7 +553,7 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain) {
         }
       }
 
-    #else
+    #ifdef EVOLVE_VECTOR_POTENTIAL
       #if DIMENSIONS < 3
         VeName.push_back("AX3e");
         data->dump->RegisterVariable(Ve, outputPrefix+"Ve-AX3e",

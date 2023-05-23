@@ -562,7 +562,6 @@ void Xdmf::WriteHeader(
   rank   = DIMENSIONS;
   dataspace = H5Screate_simple(rank, dimens, NULL);
 
-  #ifdef WITH_MPI
   for (int dir = 0; dir < DIMENSIONS; dir++) {
     start[dir]  = this->cellstart[dir+1];
     stride[dir] = 1;
@@ -570,7 +569,6 @@ void Xdmf::WriteHeader(
   }
   err = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET,
                             start, stride, count, NULL);
-  #endif
 
   memspace = H5Screate_simple(rank,count,NULL);
 
@@ -617,7 +615,6 @@ void Xdmf::WriteHeader(
 
   dataspace = H5Screate_simple(rank, dimens, NULL);
 
-  #ifdef WITH_MPI
   for (int dir = 0; dir < DIMENSIONS; dir++) {
     start[dir]  = this->nodestart[dir+1];
     stride[dir] = 1;
@@ -627,7 +624,6 @@ void Xdmf::WriteHeader(
 
   err = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET,
                             start, stride, count, NULL);
-  #endif
 
   // for (int dir = 0; dir < DIMENSIONS; dir++) {
   //  dimens[dir] = this->nodesubsize[dir+1];
@@ -790,7 +786,6 @@ void Xdmf::WriteScalar(
   err = H5Dwrite(dataset, H5_DUMP_DATATYPE, memspace, dataspace,
                  H5P_DEFAULT, Vin);
   #endif
-
   H5Dclose(dataset);
 
   if (idfx::prank == 0) {

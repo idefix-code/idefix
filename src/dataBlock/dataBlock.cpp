@@ -179,6 +179,10 @@ void DataBlock::ShowConfig() {
   if(haveFargo) fargo->ShowConfig();
   if(haveplanetarySystem) planetarySystem->ShowConfig();
   if(haveGravity) gravity->ShowConfig();
+  if(haveUserStepFirst) idfx::cout << "DataBlock: User's first step has been enrolled."
+                                   << std::endl;
+  if(haveUserStepLast) idfx::cout << "DataBlock: User's last step has been enrolled."
+                                  << std::endl;
 }
 
 
@@ -207,4 +211,36 @@ void DataBlock::DeriveVectorPotential() {
       hydro->emf->ComputeMagFieldFromA(hydro->Ve, hydro->Vs);
     #endif
   }
+}
+
+void DataBlock::LaunchUserStepLast() {
+  if(haveUserStepLast) {
+    idfx::pushRegion("User::UserStepLast");
+    if(userStepLast != nullptr)
+      userStepLast(*this, this->t, this->dt);
+    else
+      IDEFIX_ERROR("UserStepLast not properly initialized");
+    idfx::popRegion();
+  }
+}
+
+void DataBlock::LaunchUserStepFirst() {
+  if(haveUserStepFirst) {
+    idfx::pushRegion("User::UserStepFirst");
+    if(userStepFirst != nullptr)
+      userStepFirst(*this, this->t, this->dt);
+    else
+      IDEFIX_ERROR("UserStepLast not properly initialized");
+    idfx::popRegion();
+  }
+}
+
+void DataBlock::EnrollUserStepLast(StepFunc func) {
+  haveUserStepLast = true;
+  userStepLast = func;
+}
+
+void DataBlock::EnrollUserStepFirst(StepFunc func) {
+  haveUserStepFirst = true;
+  userStepFirst = func;
 }

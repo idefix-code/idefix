@@ -57,6 +57,9 @@ class Viscosity {
 
   // constant diffusion coefficient (when needed)
   real eta1, eta2;
+
+  // Shearing box
+  real sbS;
 };
 
 #include "fluid.hpp"
@@ -69,6 +72,7 @@ Viscosity::Viscosity(Input &input, Grid &grid, Fluid<Phys> *hydroin):
   idfx::pushRegion("Viscosity::Viscosity");
   // Save the parent hydro object
   this->data = hydroin->data;
+  this->sbS = hydroin->sbS;
 
   if(input.CheckEntry("Hydro","viscosity")>=0) {
     if(input.Get<std::string>("Hydro","viscosity",1).compare("constant") == 0) {

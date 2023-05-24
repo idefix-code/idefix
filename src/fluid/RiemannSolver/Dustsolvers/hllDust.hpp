@@ -53,8 +53,6 @@ void RiemannSolver<Phys>::HllDust(IdefixArray4D<real> &Flux) {
       real fluxL[Phys::nvar];
       real fluxR[Phys::nvar];
 
-      // Signal speeds
-      real cL, cR, cmax;
 
       // 1-- Store the primitive variables on the left, right, and averaged states
       slopeLim.ExtrapolatePrimVar(i, j, k, vL, vR);
@@ -64,15 +62,15 @@ void RiemannSolver<Phys>::HllDust(IdefixArray4D<real> &Flux) {
       real SL = vL[Xn];
       real SR = vR[Xn];
 
-      cmax  = FMAX(FABS(SL), FABS(SR));
+      real cmax  = FMAX(FABS(SL), FABS(SR));
 
       // 3-- Compute the conservative variables: do this by extrapolation
       K_PrimToCons<Phys>(uL, vL, 0.0); // Set gamma to 0 implicitly
       K_PrimToCons<Phys>(uR, vR, 0.0);
 
       // 4-- Compute the left and right fluxes
-      K_Flux<Phys,DIR>(fluxL, vL, uL, cL*cL);
-      K_Flux<Phys,DIR>(fluxR, vR, uR, cR*cR);
+      K_Flux<Phys,DIR>(fluxL, vL, uL, 0.0);
+      K_Flux<Phys,DIR>(fluxR, vR, uR, 0.0);
 
       // 5-- Compute the flux from the left and right states
       if (SL > 0) {

@@ -37,15 +37,15 @@ void Drag::AddDragForce(const real dt) {
         real cs;
         // Assume a fixed size, hence for both Epstein or Stokes, gamma~1/rho_g/cs
         // Get the sound speed
-        if constexpr(DefaultPhysics::pressure) {
+        #if HAVE_ENERGY == 1
           cs = std::sqrt(gamma_ad*VcGas(PRS,k,j,i)/VcGas(RHO,k,j,i));
-        } else {
+        #else
           if(haveIsoCs == UserDefFunction) {
             cs = csIsoArr(k,j,i);
           } else {
             cs = csIso;
           }
-        }
+        #endif
         gamma = 1/(dragCoeff*VcGas(RHO,k,j,i)*cs);
       }
 

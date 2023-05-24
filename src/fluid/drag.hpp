@@ -67,8 +67,8 @@ Drag::Drag(Input &input, Fluid<Phys> *hydroin):
     IDEFIX_ERROR("Drag is currently implemented only for dusty fuids");
   }
 
-  if(input.CheckEntry("Drag","type")>=0) {
-    std::string dragType = input.Get<std::string>("Drag","type",0);
+  if(input.CheckEntry(BlockName,"drag")>=0) {
+    std::string dragType = input.Get<std::string>(BlockName,"drag",0);
     if(dragType.compare("gamma") == 0) {
       this->type = Type::Gamma;
     } else if(dragType.compare("tau") == 0) {
@@ -88,10 +88,10 @@ Drag::Drag(Input &input, Fluid<Phys> *hydroin):
     // If not userdef, then fetch the drag coefficient for the current specie.
     if(this->type != Type::Userdef) {
       const int n = hydroin->instanceNumber;
-      this->dragCoeff = input.Get<real>(BlockName,"drag",n);
+      this->dragCoeff = input.Get<real>(BlockName,"drag",n+1);
     }
     // Feedback is true by default, but can be switched off.
-    this->feedback = input.GetOrSet<bool>("Drag","feedback",0,true);
+    this->feedback = input.GetOrSet<bool>(BlockName,"drag_feedback",0,true);
   } else {
     IDEFIX_ERROR("A [Drag] block is required in your input file to define the drag force.");
   }

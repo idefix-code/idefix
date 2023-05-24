@@ -81,7 +81,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   omega=input.Get<real>("Hydro","rotation",0);
   shear=input.Get<real>("Hydro","shearingBox",0);
 
-  tauGlob = input.Get<real>("Dust","drag",0);
+  tauGlob = input.Get<real>("Dust","drag",1);
   epsilon = input.Get<real>("Setup","epsilon",0);
   chi = input.Get<real>("Setup","chi",0);
   data.hydro->EnrollUserSourceTerm(&PressureGradient);

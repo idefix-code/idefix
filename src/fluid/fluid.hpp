@@ -43,6 +43,7 @@ class ShockFlattening;
 
 class Viscosity;
 class ThermalDiffusion;
+class Drag;
 
 
 template<typename Phys>
@@ -97,6 +98,10 @@ class Fluid {
 
   // Thermal Diffusion object
   std::unique_ptr<ThermalDiffusion> thermalDiffusion;
+
+  // Drag object
+  bool haveDrag{false};
+  std::unique_ptr<Drag> drag;
 
   // Whether or not we have to treat the axis
   bool haveAxis{false};
@@ -176,6 +181,7 @@ class Fluid {
   friend class RiemannSolver<Phys>;
   friend class Viscosity;
   friend class ThermalDiffusion;
+  friend class Drag;
 
   template <typename P>
   friend struct Fluid_AddSourceTermsFunctor;
@@ -235,6 +241,7 @@ class Fluid {
 #include "rkl.hpp"
 #include "riemannSolver.hpp"
 #include "viscosity.hpp"
+#include "drag.hpp"
 #include "checkNan.hpp"
 
 
@@ -348,6 +355,10 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
       IDEFIX_ERROR(msg);
     }
     this->thermalDiffusion = std::make_unique<ThermalDiffusion>(input, grid, this);
+  }
+
+  if(input.CheckEntry(std::string(Phys::prefix),"drag")>=0) {
+    haveDrag = true;
   }
 
   if constexpr(Phys::mhd) {
@@ -630,6 +641,11 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
 
   if(haveRKLParabolicTerms) {
     this->rkl = std::make_unique<RKLegendre<Phys>>(input,this);
+  }
+
+  // Drag force when needed
+  if(haveDrag) {
+    this->drag = std::make_unique<Drag>(input, this);
   }
 
   idfx::popRegion();

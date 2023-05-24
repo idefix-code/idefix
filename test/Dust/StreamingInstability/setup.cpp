@@ -3,30 +3,23 @@
 
 static real omega;
 static real shear;
-real tauGlob;
 real epsilon;
 real chi;
+real tauGlob;
 
 
 #define  FILENAME    "timevol.dat"
 
 //#define STRATIFIED
-void DustFeedback(DataBlock &data, const real t, const real dt) {
-  real tau = tauGlob;
-  auto Uc = data.hydro->Uc;
-  auto Vc = data.hydro->Vc;
-  auto dustUc = data.dust[0]->Uc;
-  auto dustVc = data.dust[0]->Vc;
+void PressureGradient(Hydro *hydro, const real t, const real dt) {
+  auto Uc = hydro->Uc;
+  auto Vc = hydro->Vc;
+  DataBlock *data = hydro->data;
   real eps = epsilon;
-  idefix_for("MySourceTerm",MX1,MX1+COMPONENTS,0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
-              KOKKOS_LAMBDA (int n, int k, int j, int i) {
-                real dp = dt*dustVc(RHO,k,j,i) * (dustVc(n,k,j,i) - Vc(n,k,j,i)) / tau;
-                Uc(n,k,j,i) += dp;
-                dustUc(n,k,j,i) -= dp;
+  idefix_for("MySourceTerm",0,data->np_tot[KDIR],0,data->np_tot[JDIR],0,data->np_tot[IDIR],
+              KOKKOS_LAMBDA (int k, int j, int i) {
                 // Radial pressure gradient
-                if(n==MX1) {
-                  Uc(n,k,j,i) += eps*Vc(RHO,k,j,i)*dt;
-                }
+                  Uc(MX1,k,j,i) += eps*Vc(RHO,k,j,i)*dt;
               });
 }
 
@@ -88,12 +81,12 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   omega=input.Get<real>("Hydro","rotation",0);
   shear=input.Get<real>("Hydro","shearingBox",0);
 
-  tauGlob = input.Get<real>("Setup","tau",0);
+  tauGlob = input.Get<real>("Dust","drag",0);
   epsilon = input.Get<real>("Setup","epsilon",0);
   chi = input.Get<real>("Setup","chi",0);
-  data.hydro->EnrollUserSourceTerm(&DustFeedback);
+  data.hydro->EnrollUserSourceTerm(&PressureGradient);
   // Add our userstep to the timeintegrator
-  data.gravity.EnrollBodyForce(BodyForce);
+  data.gravity->EnrollBodyForce(BodyForce);
 
 /*  output.EnrollAnalysis(&Analysis);
 /  if(!input.restartRequested) {
@@ -113,7 +106,6 @@ void Setup::InitFlow(DataBlock &data) {
     // Create a host copy
     DataBlockHost d(data);
     real x,y,z;
-
 
     real taus = tauGlob*omega;
     real D = 1+chi;

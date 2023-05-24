@@ -53,8 +53,8 @@ void Analysis(DataBlock & data) {
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   // stopping time
-  tauGlob = input.Get<real>("Setup","tau",0);
-  data.hydro->EnrollUserSourceTerm(&DustFeedback);
+  // tauGlob = input.Get<real>("Setup","tau",0);
+  // data.hydro->EnrollUserSourceTerm(&DustFeedback);
   output.EnrollAnalysis(&Analysis);
   if(!input.restartRequested) {
       // Initialise the output file

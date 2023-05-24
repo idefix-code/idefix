@@ -160,5 +160,8 @@ void Fluid<Phys>::ShowConfig() {
   if(haveAxis) {
     myAxis->ShowConfig();
   }
+  if(haveDrag) {
+    drag->ShowConfig();
+  }
 }
 #endif //FLUID_SHOWCONFIG_HPP_

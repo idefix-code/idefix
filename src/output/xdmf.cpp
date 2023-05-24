@@ -92,7 +92,7 @@ void Xdmf::Init(Input &input, DataBlock &datain) {
   }
 
   /* -- Allocate memory for node_coord which is later used -- */
-  /* -- Data order that is saved is Z-Y-X -- */
+  /* -- Data order that is saved is 3D/1D: Z-Y-X and 2D: Y-X-Z -- */
   for(int dir = 0; dir < 3 ; dir++) {
     this->nodesize[3-dir] = datain.mygrid->np_int[dir];
     this->nodestart[3-dir] = datain.gbeg[dir]-datain.nghost[dir];
@@ -217,14 +217,33 @@ void Xdmf::Init(Input &input, DataBlock &datain) {
 
   // Create MPI view when using MPI I/O
   #ifdef WITH_MPI
+  #if (DIMENSIONS == 1) || (DIMENSIONS == 3)
   for(int dir = 0; dir < 3 ; dir++) {
     // XDMF assumes Fortran array ordering, hence arrays dimensions are filled backwards
-    // So ordering is Z-Y-X
+    // So ordering is 3D/1D: Z-Y-X and 2D: Y-X-Z
     // offset in the destination array
     this->mpi_data_start[dir] = datain.gbeg[2-dir]-grid.nghost[2-dir];
     this->mpi_data_size[dir] = grid.np_int[2-dir];
     this->mpi_data_subsize[dir] = datain.np_int[2-dir];
   }
+  #elif (DIMENSIONS == 2)
+  for(int dir = 0; dir < DIMENSIONS ; dir++) {
+    // XDMF assumes Fortran array ordering, hence arrays dimensions are filled backwards
+    // So ordering is 3D/1D: Z-Y-X and 2D: Y-X-Z
+    // offset in the destination array
+    this->mpi_data_start[dir] = datain.gbeg[DIMENSIONS-dir-1]-grid.nghost[DIMENSIONS-dir-1];
+    this->mpi_data_size[dir] = grid.np_int[DIMENSIONS-dir-1];
+    this->mpi_data_subsize[dir] = datain.np_int[DIMENSIONS-dir-1];
+  }
+  for(int dir = DIMENSIONS; dir < 3 ; dir++) {
+    // XDMF assumes Fortran array ordering, hence arrays dimensions are filled backwards
+    // So ordering is 3D/1D: Z-Y-X and 2D: Y-X-Z
+    // offset in the destination array
+    this->mpi_data_start[dir] = datain.gbeg[dir]-grid.nghost[dir];
+    this->mpi_data_size[dir] = grid.np_int[dir];
+    this->mpi_data_subsize[dir] = datain.np_int[dir];
+  }
+  #endif
   #endif
 }
 
@@ -242,6 +261,14 @@ int Xdmf::Write(DataBlock &datain, Output &output) {
   DataBlockHost data(datain);
   data.SyncFromDevice();
 
+  #if DIMENSIONS == 1
+  int tot_dim = 1;
+  #elif DIMENSIONS == 2
+  int tot_dim = 2;
+  #elif DIMENSIONS == 3
+  int tot_dim = 3;
+  #endif
+
   std::stringstream ssfileName, ssfileNameXmf, ssxdmfFileNum;
   #ifndef XDMF_DOUBLE
   std::string extension = ".flt";
@@ -249,8 +276,8 @@ int Xdmf::Write(DataBlock &datain, Output &output) {
   std::string extension = ".dbl";
   #endif
   ssxdmfFileNum << std::setfill('0') << std::setw(4) << xdmfFileNumber;
-  ssfileName << "data." << ssxdmfFileNum.str() << extension << ".h5";
-  ssfileNameXmf << "data." << ssxdmfFileNum.str() << extension << ".xmf";
+  ssfileName << "./data." << ssxdmfFileNum.str() << extension << ".h5";
+  ssfileNameXmf << "./data." << ssxdmfFileNum.str() << extension << ".xmf";
   filename = ssfileName.str();
   filename_xmf = ssfileNameXmf.str();
 
@@ -292,15 +319,24 @@ int Xdmf::Write(DataBlock &datain, Output &output) {
     field_data_size[dir] = static_cast<hsize_t>(this->mpi_data_size[dir]);
     field_data_subsize[dir] = static_cast<hsize_t>(this->mpi_data_subsize[dir]);
     field_data_start[dir] = static_cast<hsize_t>(this->mpi_data_start[dir]);
-    stride[dir] = 1;
+    stride[dir] = static_cast<hsize_t>(1);
   }
   #else
+  #if (DIMENSIONS == 1) || (DIMENSIONS == 3)
   field_data_size[0] = static_cast<hsize_t>(this->nx3);
   field_data_size[1] = static_cast<hsize_t>(this->nx2);
   field_data_size[2] = static_cast<hsize_t>(this->nx1);
   field_data_subsize[0] = static_cast<hsize_t>(this->nx3loc);
   field_data_subsize[1] = static_cast<hsize_t>(this->nx2loc);
   field_data_subsize[2] = static_cast<hsize_t>(this->nx1loc);
+  #elif DIMENSIONS == 2
+  field_data_size[0] = static_cast<hsize_t>(this->nx2);
+  field_data_size[1] = static_cast<hsize_t>(this->nx1);
+  field_data_size[2] = static_cast<hsize_t>(this->nx3);
+  field_data_subsize[0] = static_cast<hsize_t>(this->nx2loc);
+  field_data_subsize[1] = static_cast<hsize_t>(this->nx1loc);
+  field_data_subsize[2] = static_cast<hsize_t>(this->nx3loc);
+  #endif
   for(int dir = 0; dir < 3 ; dir++) {
     field_data_start[dir] = static_cast<hsize_t>(0);
     stride[dir] = static_cast<hsize_t>(1);
@@ -316,7 +352,11 @@ int Xdmf::Write(DataBlock &datain, Output &output) {
                             field_data_subsize, NULL);
   #endif
 
+  #if (DIMENSIONS == 1) || (DIMENSIONS == 3)
   dimens[0] = nx3loc; dimens[1] = nx2loc; dimens[2] = nx1loc;
+  #elif DIMENSIONS == 2
+  dimens[0] = nx2loc; dimens[1] = nx1loc; dimens[2] = nx3loc;
+  #endif
   hid_t memspace = H5Screate_simple(rank, dimens, NULL);
 
   offset[0] = 0; offset[1] = 0; offset[2] = 0;
@@ -428,10 +468,6 @@ void Xdmf::WriteHeader(
   hid_t err;
 
   hsize_t dimstr;
-  hsize_t dimens[DIMENSIONS];
-  hsize_t start[DIMENSIONS];
-  hsize_t stride[DIMENSIONS];
-  hsize_t count[DIMENSIONS];
 
   #ifdef WRITE_TIME
   tspace  = H5Screate(H5S_SCALAR);
@@ -553,20 +589,39 @@ void Xdmf::WriteHeader(
   H5Aclose(stratt);
   H5Sclose(strspace);
 
+  hsize_t dimens[DIMENSIONS];
+  hsize_t start[DIMENSIONS];
+  hsize_t stride[DIMENSIONS];
+  hsize_t count[DIMENSIONS];
+
   /* Create group "cell_coords" (centered mesh) */
   group = H5Gcreate(fileHdf, "cell_coords", 0);
 
+  #if (DIMENSIONS == 1) || (DIMENSIONS == 3)
   for (int dir = 0; dir < DIMENSIONS; dir++) {
     dimens[dir] = this->cellsize[dir+1];
   }
+  #elif DIMENSIONS == 2
+  for (int dir = 0; dir < DIMENSIONS; dir++) {
+    dimens[dir] = this->cellsize[DIMENSIONS+dir];
+  }
+  #endif
   rank   = DIMENSIONS;
   dataspace = H5Screate_simple(rank, dimens, NULL);
 
+  #if (DIMENSIONS == 1) || (DIMENSIONS == 3)
   for (int dir = 0; dir < DIMENSIONS; dir++) {
     start[dir]  = this->cellstart[dir+1];
     stride[dir] = 1;
     count[dir]  = this->cellsubsize[dir+1];
   }
+  #elif DIMENSIONS == 2
+  for (int dir = 0; dir < DIMENSIONS; dir++) {
+    start[dir]  = this->cellstart[DIMENSIONS+dir];
+    stride[dir] = 1;
+    count[dir]  = this->cellsubsize[DIMENSIONS+dir];
+  }
+  #endif
   err = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET,
                             start, stride, count, NULL);
 
@@ -575,7 +630,6 @@ void Xdmf::WriteHeader(
   /* ------------------------------------
        write cell centered mesh
    ------------------------------------ */
-
   #ifdef WITH_MPI
   plist_id_mpiio = H5Pcreate(H5P_DATASET_XFER);
   H5Pset_dxpl_mpio(plist_id_mpiio, H5FD_MPIO_COLLECTIVE);
@@ -609,18 +663,33 @@ void Xdmf::WriteHeader(
   /* Create group "node_coords" (node mesh) */
   group = H5Gcreate(fileHdf, "node_coords", 0);
 
+  #if (DIMENSIONS == 1) || (DIMENSIONS == 3)
   for (int dir = 0; dir < DIMENSIONS; dir++) {
     dimens[dir] = this->nodesize[dir+1];
   }
+  #elif DIMENSIONS == 2
+  for (int dir = 0; dir < DIMENSIONS; dir++) {
+    dimens[dir] = this->nodesize[DIMENSIONS+dir];
+  }
+  #endif
 
   dataspace = H5Screate_simple(rank, dimens, NULL);
 
+  #if (DIMENSIONS == 1) || (DIMENSIONS == 3)
   for (int dir = 0; dir < DIMENSIONS; dir++) {
     start[dir]  = this->nodestart[dir+1];
     stride[dir] = 1;
     count[dir]  = this->nodesubsize[dir+1];
     // if (grid->rbound[dir] != 0) count[nd] += 1;
   }
+  #elif DIMENSIONS == 2
+  for (int dir = 0; dir < DIMENSIONS; dir++) {
+    start[dir]  = this->nodestart[DIMENSIONS+dir];
+    stride[dir] = 1;
+    count[dir]  = this->nodesubsize[DIMENSIONS+dir];
+    // if (grid->rbound[dir] != 0) count[nd] += 1;
+  }
+  #endif
 
   err = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET,
                             start, stride, count, NULL);
@@ -666,6 +735,7 @@ void Xdmf::WriteHeader(
   H5Gclose(group); /* Close group "node_coords" */
 
   if (idfx::prank==0) {
+    std::vector<std::string> directions {"X", "Y", "Z"};
     std::stringstream ssxmfcontent;
     /*      XMF file generation      */
     /* -------------------------------------------
@@ -676,56 +746,34 @@ void Xdmf::WriteHeader(
     ssxmfcontent << "<!DOCTYPE Xdmf SYSTEM \"Xdmf.dtd\" []>" << std::endl;
     ssxmfcontent << "<Xdmf Version=\"2.0\">" << std::endl;
     ssxmfcontent << " <Domain>" << std::endl;
-    ssxmfcontent << "  <Grid Name=\"node_mesh\" GridType=\"Uniform\">" << std::endl;
+    ssxmfcontent << "   <Grid Name=\"node_mesh\" GridType=\"Uniform\">" << std::endl;
     ssxmfcontent << "    <Time Value=\"" << time << "\"/>" << std::endl;
     #if DIMENSIONS == 1
     ssxmfcontent << "     <Topology TopologyType=\"1DSMesh\" NumberOfElements=\"";
-    ssxmfcontent << this->nodesize[1] << "\"/>" << std::endl;
-    ssxmfcontent << "     <Geometry GeometryType=\"X\">" << std::endl;
-    ssxmfcontent << "       <DataItem Dimensions=\"" << this->nodesize[1];
-    #ifndef XDMF_DOUBLE
-    ssxmfcontent << "\" NumberType=\"Float\" Precision=\"4\" Format=\"HDF\">" << std::endl;
-    #else
-    ssxmfcontent << "\" NumberType=\"Float\" Precision=\"8\" Format=\"HDF\">" << std::endl;
-    #endif
-    ssxmfcontent << "        ./" << filename << ":/node_coords/" << directions[0] << std::endl;
-    ssxmfcontent << "       </DataItem>" << std::endl;
+    int tot_dim = 1;
     #elif DIMENSIONS == 2
     ssxmfcontent << "     <Topology TopologyType=\"2DSMesh\" NumberOfElements=\"";
-    for (int dir = 0; dir < 2; dir++) {
-      ssxmfcontent << this->nodesize[dir+1];
-      if (dir<1)
-        ssxmfcontent << " ";
-    }
-    ssxmfcontent << "\"/>" << std::endl;
-    ssxmfcontent << "     <Geometry GeometryType=\"X_Y\">" << std::endl;
-    for (int dir = 0; dir < 2; dir++) {
-      ssxmfcontent << "       <DataItem Dimensions=\"";
-      for (int tmp_dir = 0; tmp_dir < 2; tmp_dir++) {
-        ssxmfcontent << this->nodesize[tmp_dir+1];
-        if (tmp_dir<1)
-          ssxmfcontent << " ";
-      }
-      #ifndef XDMF_DOUBLE
-      ssxmfcontent << "\" NumberType=\"Float\" Precision=\"4\" Format=\"HDF\">" << std::endl;
-      #else
-      ssxmfcontent << "\" NumberType=\"Float\" Precision=\"8\" Format=\"HDF\">" << std::endl;
-      #endif
-      ssxmfcontent << "        ./" << filename << ":/node_coords/" << directions[dir] << std::endl;
-      ssxmfcontent << "       </DataItem>" << std::endl;
-    }
+    int tot_dim = 2;
     #elif DIMENSIONS == 3
     ssxmfcontent << "     <Topology TopologyType=\"3DSMesh\" NumberOfElements=\"";
-    for (int dir = 0; dir < 3; dir++) {
+    int tot_dim = 3;
+    #endif
+    for (int dir = 3-tot_dim; dir < 3; dir++) {
       ssxmfcontent << this->nodesize[dir+1];
       if (dir<2)
         ssxmfcontent << " ";
     }
     ssxmfcontent << "\"/>" << std::endl;
-    ssxmfcontent << "     <Geometry GeometryType=\"X_Y_Z\">" << std::endl;
-    for (int dir = 0; dir < 3; dir++) {
+    ssxmfcontent << "     <Geometry GeometryType=\"";
+    for (int dir = 0; dir < tot_dim; dir++) {
+      ssxmfcontent << directions[dir];
+      if (dir<(tot_dim-1))
+        ssxmfcontent << "_";
+    }
+    ssxmfcontent << "\">" << std::endl;
+    for (int dir=0; dir<tot_dim; dir++) {
       ssxmfcontent << "       <DataItem Dimensions=\"";
-      for (int tmp_dir = 0; tmp_dir < 3; tmp_dir++) {
+      for (int tmp_dir = 3-tot_dim; tmp_dir < 3; tmp_dir++) {
         ssxmfcontent << this->nodesize[tmp_dir+1];
         if (tmp_dir<2)
           ssxmfcontent << " ";
@@ -735,10 +783,9 @@ void Xdmf::WriteHeader(
       #else
       ssxmfcontent << "\" NumberType=\"Float\" Precision=\"8\" Format=\"HDF\">" << std::endl;
       #endif
-      ssxmfcontent << "        ./" << filename << ":/node_coords/" << directions[dir] << std::endl;
+      ssxmfcontent << "        " << filename << ":/node_coords/" << directions[dir] << std::endl;
       ssxmfcontent << "       </DataItem>" << std::endl;
     }
-    #endif
     ssxmfcontent << "     </Geometry>" << std::endl;
 
     std::ofstream xmfFile(filename_xmf, std::ios::trunc);
@@ -792,40 +839,20 @@ void Xdmf::WriteScalar(
     std::stringstream ssxmfcontent;
     ssxmfcontent << "     <Attribute Name=\"" << dataset_label;
     ssxmfcontent << "\" AttributeType=\"Scalar\" Center=\"Cell\">" << std::endl;
-    #if DIMENSIONS == 1
-    #ifndef XDMF_DOUBLE
-    ssxmfcontent << "       <DataItem Dimensions=\"" << dims[0];
-    ssxmfcontent << "\" NumberType=\"Float\" Precision=\"4\" Format=\"HDF\">" << std::endl;
-    #else
-    ssxmfcontent << "       <DataItem Dimensions=\"" << dims[0];
-    ssxmfcontent << "\" NumberType=\"Float\" Precision=\"8\" Format=\"HDF\">" << std::endl;
-    #endif
-    #elif DIMENSIONS == 2
+
     ssxmfcontent << "       <DataItem Dimensions=\"";
-    for (int dir = 0; dir < 2; dir++) {
+    for (int dir = 0; dir < DIMENSIONS; dir++) {
      ssxmfcontent << dims[dir];
-     if (dir<1)
+     if (dir<(DIMENSIONS-1))
        ssxmfcontent << " ";
     }
+
     #ifndef XDMF_DOUBLE
     ssxmfcontent << "\" NumberType=\"Float\" Precision=\"4\" Format=\"HDF\">" << std::endl;
     #else
     ssxmfcontent << "\" NumberType=\"Float\" Precision=\"8\" Format=\"HDF\">" << std::endl;
     #endif
-    #elif DIMENSIONS == 3
-    ssxmfcontent << "       <DataItem Dimensions=\"";
-    for (int dir = 0; dir < 3; dir++) {
-     ssxmfcontent << dims[dir];
-     if (dir<2)
-       ssxmfcontent << " ";
-    }
-    #ifndef XDMF_DOUBLE
-    ssxmfcontent << "\" NumberType=\"Float\" Precision=\"4\" Format=\"HDF\">" << std::endl;
-    #else
-    ssxmfcontent << "\" NumberType=\"Float\" Precision=\"8\" Format=\"HDF\">" << std::endl;
-    #endif
-    #endif
-    ssxmfcontent << "        ./" << filename << ":";
+    ssxmfcontent << "        " << filename << ":";
     ssxmfcontent << ssgroup_name.str() << dataset_name << std::endl;
     ssxmfcontent << "       </DataItem>" << std::endl;
     ssxmfcontent << "     </Attribute>" << std::endl;
@@ -868,13 +895,13 @@ void Xdmf::WriteFooter(
     int tot_dim = 3;
     #endif
 
-    for(int dir = 0; dir < 3 ; dir++) {
+    for(int dir = 0; dir < tot_dim ; dir++) {
       ssxmfcontent << "     <Attribute Name=\"" << directions[dir];
       ssxmfcontent << "\" AttributeType=\"Scalar\" Center=\"Cell\">" << std::endl;
       ssxmfcontent << "       <DataItem Dimensions=\"";
-      for (int tmp_dir = 0; tmp_dir < 3; tmp_dir++) {
-        ssxmfcontent << dims_cells[dir];
-        if (tmp_dir < (tot_dim-1))
+      for (int tmp_dir = 3-tot_dim; tmp_dir < 3; tmp_dir++) {
+        ssxmfcontent << dims_cells[tmp_dir];
+        if (tmp_dir < 2)
           ssxmfcontent << " ";
       }
       #ifndef XDMF_DOUBLE

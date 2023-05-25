@@ -40,11 +40,8 @@ void BodyForce(DataBlock &data, const real t, IdefixArray4D<real> &force) {
 
                 force(IDIR,k,j,i) = -2.0*omegaLocal*shearLocal*x(i);
                 force(JDIR,k,j,i) = ZERO_F;
-                #ifdef STRATIFIED
-                  force(KDIR,k,j,i) = - omegaLocal*omegaLocal*z(k);
-                #else
-                  force(KDIR,k,j,i) = ZERO_F;
-                #endif
+                force(KDIR,k,j,i) = ZERO_F;
+
       });
 
 
@@ -88,14 +85,6 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   // Add our userstep to the timeintegrator
   data.gravity->EnrollBodyForce(BodyForce);
 
-/*  output.EnrollAnalysis(&Analysis);
-/  if(!input.restartRequested) {
-      // Initialise the output file
-      std::ofstream f;
-      f.open(FILENAME,std::ios::trunc);
-      f.close();
-    }
-*/
 }
 
 // This routine initialize the flow
@@ -110,8 +99,6 @@ void Setup::InitFlow(DataBlock &data) {
     real taus = tauGlob*omega;
     real D = 1+chi;
 
-
-
     for(int k = 0; k < d.np_tot[KDIR] ; k++) {
         for(int j = 0; j < d.np_tot[JDIR] ; j++) {
             for(int i = 0; i < d.np_tot[IDIR] ; i++) {
@@ -119,11 +106,8 @@ void Setup::InitFlow(DataBlock &data) {
                 y=d.x[JDIR](j);
                 z=d.x[KDIR](k);
 
-#ifdef STRATIFIED
-                d.Vc(RHO,k,j,i) = 1.0*exp(-z*z/(2.0));
-#else
+
                 d.Vc(RHO,k,j,i) = 1.0;
-#endif
                 // Equations 7a-7b of Youdin & Johansen (2007) with eta = epsilon/(2Omega Vk)
                 d.Vc(VX1,k,j,i) = chi * taus/((D*D+taus*taus))*epsilon/omega;
                 d.Vc(VX2,k,j,i) = -(1+ chi*taus*taus/(D*D+taus*taus))*epsilon/(2*D*omega);

@@ -22,10 +22,7 @@ void UserdefBoundary(Hydro* hydro, int dir, BoundarySide side, const real t) {
         IdefixArray4D<real> Vc = hydro->Vc;
         IdefixArray1D<real> x1 = hydro->data->x[IDIR];
         IdefixArray1D<real> x2 = hydro->data->x[JDIR];
-        int jbeg,jend;
         if(side == left) {
-            jbeg = 0;
-            jend = hydro->data->beg[JDIR];
             hydro->boundary->BoundaryFor("UserDefBoundaryX2Beg", dir, side,
                         KOKKOS_LAMBDA (int k, int j, int i) {
                             if(x1(i) < 1.0/6.0) {
@@ -43,8 +40,6 @@ void UserdefBoundary(Hydro* hydro, int dir, BoundarySide side, const real t) {
                         });
             //return;
         } else if(side==right) {
-            jbeg=hydro->data->end[JDIR];
-            jend=hydro->data->np_tot[JDIR];
             real xs = 10.0*t/sin(alpha) + 1.0/6.0 + 1.0/tan(alpha);
 
             hydro->boundary->BoundaryFor("UserDefBoundaryX2End", dir, side,

@@ -71,10 +71,10 @@ The drag parameter :math:`\beta_i` above sets the functional form of :math:`\gam
 Using the dust module
 ---------------------
 
-Several examples are provided in the :file:`test/Dust` directory. Each dust specie is considered in Idefix as a instance of the `Fluid`` class, hence
-one can apply the technics used for the gas to each dust specie. Because *Idefix* can handle an arbitrarily number of dust specie, each specie is stored
-in an instance of `Fluid` and stored in a container :code:`std::vector dust` in the `DataBlock`. The same is true for the mirror `DataBlockHost`: the
-dust primitive variable are all stored in the :code:`std::vector dustVc` . For instance, initialising
+Several examples are provided in the :file:`test/Dust` directory. Each dust specie is considered in Idefix as a instance of the `Fluid` class, hence
+one can apply the technics used for the gas to each dust specie. Because *Idefix* can handle an arbitrarily number of dust species, each specie is stored
+in an instance of `Fluid` and stored in a container (:code:`std::vector dust`) in the `DataBlock`. The same is true for the mirror `DataBlockHost`: the
+dust primitive variable are all stored in :code:`std::vector dustVc` . For instance, initialising
 a single dust specie is done as follow:
 
 .. code-block:: c++
@@ -88,8 +88,8 @@ a single dust specie is done as follow:
           for(int j = 0; j < d.np_tot[JDIR] ; j++) {
               for(int i = 0; i < d.np_tot[IDIR] ; i++) {
 
-                  d.Vc(RHO,k,j,i) = 1.0;            // Set the gas density to 0
-                  d.dustVc[0](RHO,k,j,i) = 1.0;     // Set first dust specie density to 0
+                  d.Vc(RHO,k,j,i) = 1.0;            // Set the gas density to 1
+                  d.dustVc[0](RHO,k,j,i) = 1.0;     // Set first dust specie density to 1
 
                   d.Vc(VX1,k,j,i) = 1;              // Set the gas velocity to 1
                   d.dustVc[0](VX1,k,j,i) = 0.0;     // Set the dust velocity to 0

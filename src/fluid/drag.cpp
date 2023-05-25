@@ -46,7 +46,7 @@ void Drag::AddDragForce(const real dt) {
             cs = csIso;
           }
         #endif
-        gamma = 1/(dragCoeff*VcGas(RHO,k,j,i)*cs);
+        gamma = 1/(dragCoeff*cs);
       }
 
       real dp = dt * gamma * VcDust(RHO,k,j,i) * VcGas(RHO,k,j,i);
@@ -56,7 +56,10 @@ void Drag::AddDragForce(const real dt) {
         if(feedback) UcGas(n,k,j,i) += dp*dv;
         // TODO(glesur): add friction heating
       }
-      InvDt(k,j,i) += gamma*(VcDust(RHO,k,j,i) + VcGas(RHO,k,j,i));
+      // Cfl constraint
+      real idt = gamma*VcGas(RHO,k,j,i);
+      if(feedback) idt += gamma*VcDust(RHO,k,j,i);
+      InvDt(k,j,i) += idt;
     });
   idfx::popRegion();
 }

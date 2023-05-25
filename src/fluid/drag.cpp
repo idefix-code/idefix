@@ -58,11 +58,10 @@ void Drag::AddDragForce(const real dt) {
           // We add back the energy dissipated for the dust which is not accounted for
           // (since there is no energy equation for dust grains)
 
-          // todo(GL): this should be disabled in the case of a true multifluid system where
+          // TODO(GL): this should be disabled in the case of a true multifluid system where
           // both fluids have a proper energy equation
           UcGas(ENG,k,j,i) += dp*dv*VcDust(n,k,j,i);
         #endif
-        // TODO(glesur): add friction heating
       }
       // Cfl constraint
       real idt = gamma*VcGas(RHO,k,j,i);

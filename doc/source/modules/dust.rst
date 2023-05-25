@@ -52,7 +52,7 @@ The dust module can be enabled adding a block `[Dust]` in your input .ini file. 
 |                |                         | | The remaining parameters gives the drag parameter :math:`\beta_i` for each dust specie.   |
 |                |                         | | (see below). *Idefix* expect to have as many drag parameters as there are dust species.   |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| feedback       | bool                    | | (optionnal) whether the gas feedback is enabled (default true).                           |
+| drag_feedback  | bool                    | | (optionnal) whether the gas feedback is enabled (default true).                           |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 
 The drag parameter :math:`\beta_i` above sets the functional form of :math:`\gamma_i(\rho, \rho_i, c_s)` depending on the drag type:

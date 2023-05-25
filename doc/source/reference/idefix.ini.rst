@@ -404,5 +404,5 @@ This section describes the dust fields computed using a zero pressure gas approx
 |                |                         | | (see :ref:`dustModule`). *Idefix* expects to have as many drag parameters as there are    |
 |                |                         | | dust species.                                                                             |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| feedback       | bool                    | | (optionnal) whether the gas feedback is enabled (default true).                           |
+| drag_feedback  | bool                    | | (optionnal) whether the gas feedback is enabled (default true).                           |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+

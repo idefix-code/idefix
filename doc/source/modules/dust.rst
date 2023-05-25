@@ -1,6 +1,6 @@
 .. _dustModule:
 
-The dust fluid module
+Dust fluid module
 =========================
 
 Equations
@@ -15,8 +15,8 @@ The dust module is designed to treat dust grains as a zero-pressure gas coupled 
     \partial_t \rho_i \mathbf{v}_i + \nabla\cdot \rho \mathbf{v}_i\mathbf{v}_i&=\gamma_i \rho_i \rho (\mathbf{v}-\mathbf{v}_i)-\rho_i\mathbf{\nabla}\psi_G-\rho_i\mathbf{g}
 
 
-where :math:`\rho_i` is the dust specie density,, :math:`\mathbf{v}_i` is the dust specie velocity and :math:`\gamma_i` is the drag coefficient
-between the drag specie and the gas. Note that by construction, all of the source terms (gavity, rotation, shearing box) of the gas are also automatically applied to each dust specie.
+where :math:`\rho_i` and :math:`\rho` are the dust and gas densities, :math:`\mathbf{v}_i` and :math:`\mathbf{v}` are the dust and gas velocities and :math:`\gamma_i` is the drag coefficient
+between the dust and the gas. Note that by construction, all of the source terms (gravity, rotation, shearing box) of the gas are also automatically applied to each dust specie.
 
 When the drag feedback is enabled (default behaviour), the gas is subject to an additional drag force
 
@@ -62,7 +62,7 @@ The drag parameter :math:`\beta_i` above sets the functional form of :math:`\gam
 ``tau``:
   This sets :math:`\gamma_i=1/(\rho \beta_i)` so that :math:`\beta_i` is the (constant) stopping time :math:`\tau_i` of the dust grains.
 ``size``:
-  This sets :math:`\gamma_i=1/(c_s \beta_i)` so that :math:`\tau_i=(\rho \gamma_i)^{-1}=\beta_i/(c_s\rho)` where :mathm:`c_s` is the gas sound speed.
+  This sets :math:`\gamma_i=1/(c_s \beta_i)` so that :math:`\tau_i=(\rho \gamma_i)^{-1}=\beta_i/(c_s\rho)` where :math:`c_s` is the gas sound speed.
   It designed to reproduce the behaviour of a fixed size dust grain of constant density that follows either Epstein or Stokes drag law.
 
 .. warning::

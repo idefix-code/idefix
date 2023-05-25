@@ -1,25 +1,7 @@
 #include "idefix.hpp"
 #include "setup.hpp"
 
-real tauGlob;
-
 #define  FILENAME    "timevol.dat"
-
-// Dust feedback
-void DustFeedback(Fluid<DefaultPhysics> *hydro, const real t, const real dt) {
-  real tau = tauGlob;
-  auto data = hydro->data;
-  auto Uc = hydro->Uc;
-  auto Vc = hydro->Vc;
-  auto dustUc = data->dust[0]->Uc;
-  auto dustVc = data->dust[0]->Vc;
-  idefix_for("MySourceTerm",MX1,MX1+COMPONENTS,0,data->np_tot[KDIR],0,data->np_tot[JDIR],0,data->np_tot[IDIR],
-              KOKKOS_LAMBDA (int n, int k, int j, int i) {
-                real dp = dt*dustVc(RHO,k,j,i) * (dustVc(n,k,j,i) - Vc(n,k,j,i)) / tau;
-                Uc(n,k,j,i) += dp;
-                dustUc(n,k,j,i) -= dp;
-              });
-}
 
 // Analyse data to produce an output
 void Analysis(DataBlock & data) {
@@ -52,9 +34,7 @@ void Analysis(DataBlock & data) {
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
-  // stopping time
-  // tauGlob = input.Get<real>("Setup","tau",0);
-  // data.hydro->EnrollUserSourceTerm(&DustFeedback);
+
   output.EnrollAnalysis(&Analysis);
   if(!input.restartRequested) {
       // Initialise the output file

@@ -17,7 +17,6 @@ template<typename Phys>
 int Fluid<Phys>::CheckNan()  {
   int nanVs=0;
   int nanVc=0;
-  int nanDust=0;
 
   idfx::pushRegion("Fluid::CheckNan");
   IdefixArray4D<real> Vc=this->Vc;

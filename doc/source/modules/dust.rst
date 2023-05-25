@@ -62,7 +62,7 @@ The drag parameter :math:`\beta_i` above sets the functional form of :math:`\gam
 ``tau``:
   This sets :math:`\gamma_i=1/(\rho \beta_i)` so that :math:`\beta_i` is the (constant) stopping time :math:`\tau_i` of the dust grains.
 ``size``:
-  This sets :math:`\gamma_i=1/(c_s \beta_i)` so that :math:`\tau_i=(\rho \gamma_i)^{-1}=\beta_i/(c_s\rho)` where :math:`c_s` is the gas sound speed.
+  This sets :math:`\gamma_i=1/(c_s \beta_i)` so that :math:`\tau_i=(\rho \gamma_i)^{-1}=c_s \beta_i/\rho` where :math:`c_s` is the gas sound speed.
   It designed to reproduce the behaviour of a fixed size dust grain of constant density that follows either Epstein or Stokes drag law.
 
 .. warning::

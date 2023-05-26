@@ -34,6 +34,10 @@ class DataBlockHost {
   std::vector<IdefixArray3D<real>::HostMirror> A;   ///< cell right interface area
 
   IdefixArray4D<real>::HostMirror Vc;     ///< Main cell-centered primitive variables index
+
+  bool haveDust{false};
+  std::vector<IdefixHostArray4D<real>> dustVc; ///< Cell-centered primitive variables index for dust
+
   #if MHD == YES
   IdefixArray4D<real>::HostMirror Vs;     ///< Main face-centered primitive variables index
   IdefixArray4D<real>::HostMirror Ve;     ///< Main edge-centered primitive variables index

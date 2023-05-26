@@ -22,6 +22,16 @@ class DataBlock;
 #include "physics.hpp"
 template <typename Phys> class Fluid;
 
+// User-defined boundary conditions signature
+template<typename Phys>
+using UserDefBoundaryFunc = void (*) (Fluid<Phys> *, int dir, BoundarySide side, const real t);
+using UserDefBoundaryFuncOld = void (*) (DataBlock &, int dir, BoundarySide side, const real t);
+  // This last one is deprecated
+
+template <typename Phys>
+using InternalBoundaryFunc = void (*) (Fluid<Phys> *, const real t);
+using InternalBoundaryFuncOld = void (*) (DataBlock &, const real t); // DEPRECATED
+
 template<typename Phys>
 class Boundary {
  public:
@@ -33,9 +43,11 @@ class Boundary {
 
   void EnforceFluxBoundaries(int dir);        ///< Apply boundary condition conditions to the fluxes
 
-  void EnrollUserDefBoundary(UserDefBoundaryFunc);
-  void EnrollInternalBoundary(InternalBoundaryFunc);
-  void EnrollFluxBoundary(UserDefBoundaryFunc);
+  void EnrollUserDefBoundary(UserDefBoundaryFuncOld); ///< Deprecated
+  void EnrollUserDefBoundary(UserDefBoundaryFunc<Phys>); ///< User-defined boundary condition
+  void EnrollInternalBoundary(InternalBoundaryFuncOld); ///< Deprecated
+  void EnrollInternalBoundary(InternalBoundaryFunc<Phys>); ///< User-defined internal boundary
+  void EnrollFluxBoundary(UserDefBoundaryFuncOld);
 
   void EnforcePeriodic(int, BoundarySide ); ///< Enforce periodic BC in direction and side
   void EnforceReflective(int, BoundarySide ); ///< Enforce reflective BC in direction and side
@@ -47,16 +59,18 @@ class Boundary {
   #endif
 
     // User defined Boundary conditions
-  UserDefBoundaryFunc userDefBoundaryFunc{NULL};
+  UserDefBoundaryFuncOld userDefBoundaryFuncOld{NULL};
+  UserDefBoundaryFunc<Phys> userDefBoundaryFunc{NULL};
   bool haveUserDefBoundary{false};
 
   // Internal boundary function
   bool haveInternalBoundary{false};
-  InternalBoundaryFunc internalBoundaryFunc{NULL};
+  InternalBoundaryFuncOld internalBoundaryFuncOld{NULL};
+  InternalBoundaryFunc<Phys> internalBoundaryFunc{NULL};
 
   // Flux boundary function
   bool haveFluxBoundary{false};
-  UserDefBoundaryFunc fluxBoundaryFunc{NULL};
+  UserDefBoundaryFuncOld fluxBoundaryFunc{NULL};
 
   // specific for loops on ghost cells
   template <typename Function>
@@ -151,7 +165,7 @@ Boundary<Phys>::Boundary(Input & input, Grid &grid, Fluid<Phys>* fluid) {
 }
 
 template<typename Phys>
-void Boundary<Phys>::EnrollFluxBoundary(UserDefBoundaryFunc myFunc) {
+void Boundary<Phys>::EnrollFluxBoundary(UserDefBoundaryFuncOld myFunc) {
   this->haveFluxBoundary = true;
   this->fluxBoundaryFunc = myFunc;
 }
@@ -176,7 +190,13 @@ template<typename Phys>
 void Boundary<Phys>::SetBoundaries(real t) {
   idfx::pushRegion("HydroBoundary::SetBoundaries");
   // set internal boundary conditions
-  if(haveInternalBoundary) internalBoundaryFunc(*data, t);
+  if(haveInternalBoundary) {
+    if(internalBoundaryFunc != NULL) {
+      internalBoundaryFunc(fluid, t);
+    } else {
+      internalBoundaryFuncOld(*data, t);
+    }
+  }
   for(int dir=0 ; dir < DIMENSIONS ; dir++ ) {
       // MPI Exchange data when needed
     #ifdef WITH_MPI
@@ -242,10 +262,19 @@ void Boundary<Phys>::EnforceBoundaryDir(real t, int dir) {
       fluid->myAxis->EnforceAxisBoundary(left);
       break;
     case userdef:
-      if(this->haveUserDefBoundary)
-        this->userDefBoundaryFunc(*data, dir, left, t);
-      else
-        IDEFIX_ERROR("No function has been enrolled to define your own boundary conditions");
+      if(this->haveUserDefBoundary) {
+        if(this->userDefBoundaryFunc != NULL) {
+          this->userDefBoundaryFunc(fluid, dir, left, t);
+        } else {
+          // Revert to deprecated Boundary condition
+          this->userDefBoundaryFuncOld(*data, dir, left, t);
+        }
+      } else {
+        std::stringstream msg;
+        msg << "No function has been enrolled to define your own boundary conditions" << std::endl
+            << "for the fluid " << fluid->prefix << "." << std::endl;
+        IDEFIX_ERROR(msg);
+      }
       break;
 
     default:
@@ -277,10 +306,19 @@ void Boundary<Phys>::EnforceBoundaryDir(real t, int dir) {
       fluid->myAxis->EnforceAxisBoundary(right);
       break;
     case userdef:
-      if(this->haveUserDefBoundary)
-        this->userDefBoundaryFunc(*data, dir, right, t);
-      else
-        IDEFIX_ERROR("No function has been enrolled to define your own boundary conditions");
+      if(this->haveUserDefBoundary) {
+        if(this->userDefBoundaryFunc != NULL) {
+          this->userDefBoundaryFunc(fluid, dir, right, t);
+        } else {
+          // Revert to deprecated Boundary condition
+          this->userDefBoundaryFuncOld(*data, dir, right, t);
+        }
+      } else {
+        std::stringstream msg;
+        msg << "No function has been enrolled to define your own boundary conditions" << std::endl
+            << "for the fluid " << fluid->prefix << "." << std::endl;
+        IDEFIX_ERROR(msg);
+      }
       break;
     default:
       std::stringstream msg("Boundary condition type is not yet implemented");
@@ -430,13 +468,44 @@ void Boundary<Phys>::ReconstructNormalField(int dir) {
 
 
 template<typename Phys>
-void Boundary<Phys>::EnrollUserDefBoundary(UserDefBoundaryFunc myFunc) {
-  this->userDefBoundaryFunc = myFunc;
+void Boundary<Phys>::EnrollUserDefBoundary(UserDefBoundaryFuncOld myFunc) {
+  std::stringstream msg;
+  msg << "The old signature for user-defined boundary condition " << std::endl
+      << "(DataBlock &, int dir, BoundarySide side, const real t)" << std::endl
+      << "is deprecated. You should now use "<< std::endl
+      << "(Fluid<Phys> *, int dir, BoundarySide side, const real t)" << std::endl
+      << "With the Phys of your choice (DefaultPhysics, DustPhysics...)" << std::endl;
+
+  IDEFIX_WARNING(msg);
+  this->userDefBoundaryFuncOld = myFunc;
   this->haveUserDefBoundary = true;
 }
 
 template<typename Phys>
-void Boundary<Phys>::EnrollInternalBoundary(InternalBoundaryFunc myFunc) {
+void Boundary<Phys>::EnrollUserDefBoundary(UserDefBoundaryFunc<Phys> myFunc) {
+  std::stringstream msg;
+
+  this->userDefBoundaryFunc = myFunc;
+  this->haveUserDefBoundary = true;
+}
+
+
+template<typename Phys>
+void Boundary<Phys>::EnrollInternalBoundary(InternalBoundaryFuncOld myFunc) {
+  std::stringstream msg;
+  msg << "The old signature for internal boundary condition " << std::endl
+      << "(DataBlock &, const real t)" << std::endl
+      << "is deprecated. You should now use "<< std::endl
+      << "(Fluid<Phys> *, const real t)" << std::endl
+      << "With the Phys of your choice (DefaultPhysics, DustPhysics...)" << std::endl;
+
+  IDEFIX_WARNING(msg);
+  this->internalBoundaryFuncOld = myFunc;
+  this->haveInternalBoundary = true;
+}
+
+template<typename Phys>
+void Boundary<Phys>::EnrollInternalBoundary(InternalBoundaryFunc<Phys> myFunc) {
   this->internalBoundaryFunc = myFunc;
   this->haveInternalBoundary = true;
 }

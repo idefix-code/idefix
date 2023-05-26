@@ -39,6 +39,7 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
   end = data->end;
   gbeg = data->gbeg;
   gend = data->gend;
+  haveDust = data->haveDust;
 
     // TO BE COMPLETED...
 
@@ -62,6 +63,12 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
             Ex1 = Kokkos::create_mirror_view(data->hydro->emf->ex);
             Ex2 = Kokkos::create_mirror_view(data->hydro->emf->ey);  )
 #endif
+  if(haveDust) {
+    dustVc = std::vector<IdefixHostArray4D<real>>(data->dust.size());
+    for(int i = 0 ; i < data->dust.size() ; i++) {
+      dustVc[i] = Kokkos::create_mirror_view(data->dust[i]->Vc);
+    }
+  }
 
   // if grid coarsening is enabled
   if(data->haveGridCoarsening) {
@@ -110,6 +117,11 @@ void DataBlockHost::SyncToDevice() {
             Kokkos::deep_copy(data->hydro->emf->ex,Ex1);
             Kokkos::deep_copy(data->hydro->emf->ey,Ex2);  )
 #endif
+  if(haveDust) {
+    for(int i = 0 ; i < dustVc.size() ; i++) {
+      Kokkos::deep_copy(data->dust[i]->Vc, dustVc[i]);
+    }
+  }
 
   Kokkos::deep_copy(data->hydro->Uc,Uc);
 
@@ -142,6 +154,12 @@ void DataBlockHost::SyncFromDevice() {
 #endif
 
   Kokkos::deep_copy(Uc,data->hydro->Uc);
+
+  if(haveDust) {
+    for(int i = 0 ; i < dustVc.size() ; i++) {
+      Kokkos::deep_copy(dustVc[i], data->dust[i]->Vc);
+    }
+  }
 
   if(haveGridCoarsening) {
     for(int dir = 0 ; dir < 3 ; dir++) {

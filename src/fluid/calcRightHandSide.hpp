@@ -341,16 +341,17 @@ struct Fluid_CalcRHSFunctor {
         #ifdef iMPHI
           rhs[iMPHI] = rhs[iMPHI] / x1(i);
         #endif
+        if constexpr(Phys::mhd) {
+          #if (GEOMETRY == POLAR || GEOMETRY == CYLINDRICAL) &&  (defined iBPHI)
+            rhs[iBPHI] = - dt / dx(i) * (Flux(iBPHI, k, j, i+1) - Flux(iBPHI, k, j, i) );
 
-        #if (GEOMETRY == POLAR || GEOMETRY == CYLINDRICAL) &&  (defined iBPHI) && (MHD == YES)
-          rhs[iBPHI] = - dt / dx(i) * (Flux(iBPHI, k, j, i+1) - Flux(iBPHI, k, j, i) );
-
-        #elif (GEOMETRY == SPHERICAL) && (MHD == YES)
-          real q = dt / (x1(i)*dx(i));
-          EXPAND(                                                                       ,
-                rhs[iBTH]  = -q * ((Flux(iBTH, k, j, i+1)  - Flux(iBTH, k, j, i) ));  ,
-                rhs[iBPHI] = -q * ((Flux(iBPHI, k, j, i+1) - Flux(iBPHI, k, j, i) )); )
-        #endif
+          #elif (GEOMETRY == SPHERICAL)
+            real q = dt / (x1(i)*dx(i));
+            EXPAND(                                                                       ,
+                  rhs[iBTH]  = -q * ((Flux(iBTH, k, j, i+1)  - Flux(iBTH, k, j, i) ));  ,
+                  rhs[iBPHI] = -q * ((Flux(iBPHI, k, j, i+1) - Flux(iBPHI, k, j, i) )); )
+          #endif
+        } // MHD
       } else if constexpr(dir==JDIR) {
         #if (GEOMETRY == SPHERICAL) && (COMPONENTS == 3)
           rhs[iMPHI] /= FABS(sinx2(j));

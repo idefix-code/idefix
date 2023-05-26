@@ -23,26 +23,46 @@ void Fluid<Phys>::EnrollIsoSoundSpeed(IsoSoundSpeedFunc myFunc) {
 }
 
 template<typename Phys>
-void Fluid<Phys>::EnrollUserDefBoundary(UserDefBoundaryFunc myFunc) {
+template<typename T>
+void Fluid<Phys>::EnrollUserDefBoundary(T myFunc) {
   // This is a proxy for userdef enrollment
   boundary->EnrollUserDefBoundary(myFunc);
 }
 
 template<typename Phys>
-void Fluid<Phys>::EnrollFluxBoundary(UserDefBoundaryFunc myFunc) {
+template<typename T>
+void Fluid<Phys>::EnrollInternalBoundary(T myFunc) {
+  // This is a proxy for internal boundary enrollment
+  boundary->EnrollInternalBoundary(myFunc);
+}
+
+template<typename Phys>
+template<typename T>
+void Fluid<Phys>::EnrollFluxBoundary(T myFunc) {
   // This is a proxy for userdef enrollment
   boundary->EnrollFluxBoundary(myFunc);
 }
 
 template<typename Phys>
-void Fluid<Phys>::EnrollInternalBoundary(InternalBoundaryFunc myFunc) {
-  // This is a proxy for userdef enrollment
-  boundary->EnrollInternalBoundary(myFunc);
+void Fluid<Phys>::EnrollUserSourceTerm(SrcTermFunc<Phys> myFunc) {
+  this->userSourceTerm = myFunc;
+  this->haveUserSourceTerm = true;
+  this->haveSourceTerms = true;
 }
 
+// Deprecated enrollment function
 template<typename Phys>
-void Fluid<Phys>::EnrollUserSourceTerm(SrcTermFunc myFunc) {
-  this->userSourceTerm = myFunc;
+void Fluid<Phys>::EnrollUserSourceTerm(SrcTermFuncOld myFunc) {
+  std::stringstream msg;
+  msg << "The old signature for user-defined source terms " << std::endl
+      << "(DataBlock &, const real t, const real dt)" << std::endl
+      << "is deprecated. You should now use "<< std::endl
+      << "(Fluid<Phys> *,  const real t, const real dt)" << std::endl
+      << "With the Phys of your choice (DefaultPhysics, DustPhysics...)" << std::endl;
+
+  IDEFIX_WARNING(msg);
+
+  this->userSourceTermOld = myFunc;
   this->haveUserSourceTerm = true;
   this->haveSourceTerms = true;
 }

@@ -36,11 +36,11 @@ class Dump;
 class Fargo;
 class Gravity;
 class PlanetarySystem;
+template<typename Phys>
+class Fluid;
 
 // Forward class hydro declaration
 #include "physics.hpp"
-template <typename Phys> class Fluid;
-using Hydro = Fluid<Physics>;
 
 using GridCoarseningFunc = void(*) (DataBlock &);
 
@@ -107,7 +107,9 @@ class DataBlock {
                                 ///< conservative state of the datablock
                                 ///< (contains references to dedicated objects)
 
-  std::unique_ptr<Hydro> hydro;   ///< The Hydro object attached to this datablock
+  std::unique_ptr<Fluid<DefaultPhysics>> hydro;   ///< The Hydro object attached to this datablock
+  bool haveDust{false};
+  std::vector<std::unique_ptr<Fluid<DustPhysics>>> dust; ///< Holder for zero pressure dust fluid
 
   std::unique_ptr<Vtk> vtk;
   std::unique_ptr<Dump> dump;
@@ -129,6 +131,8 @@ class DataBlock {
   void EvolveStage();             ///< Evolve this DataBlock by dt
   void EvolveRKLStage();          ///< Evolve this DataBlock by dt for terms impacted by RKL
   void SetBoundaries();       ///< Enforce boundary conditions to this datablock
+  void ConsToPrim();       ///< Convert conservative to primitive variables
+  void PrimToCons();       ///< Convert primitive to conservative variables
   void DeriveVectorPotential(); ///< Compute magnetic fields from vector potential where applicable
   void Coarsen();             ///< Coarsen this datablock and its objects
   void ShowConfig();              ///< Show the datablock's configuration

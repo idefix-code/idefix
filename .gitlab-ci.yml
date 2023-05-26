@@ -123,6 +123,16 @@ Planet:
     - cd $IDEFIX_DIR/test/Planet/PlanetTorque3D
     - ./testme.py -all $TESTME_OPTIONS
 
+Dust:
+  stage: advanced_checks
+  image: lesurg/idefix:latest
+  script:
+    - export IDEFIX_DIR=${PWD}
+    - cd $IDEFIX_DIR/test/Dust/DustEnergy
+    - ./testme.py -all $TESTME_OPTIONS
+    - cd $IDEFIX_DIR/test/Dust/DustyWave
+    - ./testme.py -all $TESTME_OPTIONS
+
 Examples tests:
   stage: advanced_checks
   image: lesurg/idefix:latest

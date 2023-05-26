@@ -16,6 +16,9 @@
 // forward class declaration
 class DataBlock;
 
+template<typename Phys>
+class Fluid;
+
 #define     SMALL_PRESSURE_FIX      (1.0e-5)
 #define     eps_UCT_CONTACT         (1.0e-6)
 
@@ -32,18 +35,24 @@ struct ParabolicModuleStatus {
 };
 
 
-using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side,
-                                      const real t);
+
+
 using GravPotentialFunc = void (*) (DataBlock &, const real t, IdefixArray1D<real>&,
                                     IdefixArray1D<real>&, IdefixArray1D<real>&,
                                     IdefixArray3D<real> &);
 
 using BodyForceFunc = void (*) (DataBlock &, const real t, IdefixArray4D<real>&);
 
-using SrcTermFunc = void (*) (DataBlock &, const real t, const real dt);
-using InternalBoundaryFunc = void (*) (DataBlock &, const real t);
+template<typename Phys>
+using SrcTermFunc = void (*) (Fluid<Phys> *, const real t, const real dt);
+
+
 using EmfBoundaryFunc = void (*) (DataBlock &, const real t);
 using DiffusivityFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
 using IsoSoundSpeedFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
+
+// Deprecated signatures
+using SrcTermFuncOld = void (*) (DataBlock &, const real t, const real dt);
+
 
 #endif //FLUID_FLUID_DEFS_HPP_

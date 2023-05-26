@@ -1,7 +1,7 @@
 .. _planetModule:
 
-The Planet module
-=================
+Planet module
+==============
 
 The planet module allows one to model one or several planets interacting with the gas and other planets. One can force the planet to be on a fixed orbit (in which case
 migration and planet-planet interaction are ignored) or on the contrary integrate the equation of motion of the planet(s) simulatenously with the gas. All of the parameters

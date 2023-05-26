@@ -22,7 +22,7 @@ class RiemannSolver {
  public:
   // Riemann Solver type
 
-  enum Solver {TVDLF_MHD, HLL_MHD, HLLD_MHD, ROE_MHD, TVDLF, HLL, HLLC, ROE};
+  enum Solver {TVDLF_MHD, HLL_MHD, HLLD_MHD, ROE_MHD, TVDLF, HLL, HLLC, ROE, HLL_DUST};
 
   RiemannSolver(Input &input, Fluid<Phys>* hydro);
 
@@ -53,6 +53,8 @@ class RiemannSolver {
   template<const int>
     void TvdlfHD(IdefixArray4D<real> &);
 
+  template<const int>
+    void HllDust(IdefixArray4D<real> &);
 
  private:
   IdefixArray4D<real> Vc;
@@ -79,54 +81,59 @@ RiemannSolver<Phys>::RiemannSolver(Input &input, Fluid<Phys>* hydro) : Vc{hydro-
                                       data{hydro->data}
                                       {
   // read Solver from input file
-  std::string solverString = input.Get<std::string>(std::string(Phys::prefix),"solver",0);
-
-  if (solverString.compare("tvdlf") == 0) {
-    if constexpr(Phys::mhd) {
-      mySolver = TVDLF_MHD;
+  if(!Phys::dust) {
+    std::string solverString = input.Get<std::string>(std::string(Phys::prefix),"solver",0);
+    if (solverString.compare("tvdlf") == 0) {
+      if constexpr(Phys::mhd) {
+        mySolver = TVDLF_MHD;
+      } else {
+        mySolver = TVDLF;
+      }
+    } else if (solverString.compare("hll") == 0) {
+      if constexpr(Phys::mhd) {
+        mySolver = HLL_MHD;
+      } else {
+        mySolver = HLL;
+      }
+    } else if (solverString.compare("hlld") == 0) {
+      if constexpr(Phys::mhd) {
+      mySolver = HLLD_MHD;
+      } else {
+        IDEFIX_ERROR("hlld Riemann solver requires a MHD fluid");
+      }
+    } else if (solverString.compare("hllc") == 0) {
+      if constexpr(Phys::mhd) {
+        IDEFIX_ERROR("hllc Riemann solver requires a HD fluid");
+      } else {
+          mySolver = HLLC;
+      }
+    } else if (solverString.compare("roe") == 0) {
+      if constexpr(Phys::mhd) {
+        mySolver = ROE_MHD;
+      } else {
+        mySolver = ROE;
+      }
     } else {
-      mySolver = TVDLF;
+      std::stringstream msg;
+      if constexpr(Phys::mhd) {
+        msg << "Unknown MHD solver type " << solverString;
+      } else {
+        msg << "Unknown HD solver type " << solverString;
+      }
+      IDEFIX_ERROR(msg);
     }
-  } else if (solverString.compare("hll") == 0) {
-    if constexpr(Phys::mhd) {
-      mySolver = HLL_MHD;
-    } else {
-      mySolver = HLL;
-    }
-  } else if (solverString.compare("hlld") == 0) {
-    if constexpr(Phys::mhd) {
-     mySolver = HLLD_MHD;
-    } else {
-      IDEFIX_ERROR("hlld Riemann solver requires a MHD fluid");
-    }
-  } else if (solverString.compare("hllc") == 0) {
-    if constexpr(Phys::mhd) {
-      IDEFIX_ERROR("hllc Riemann solver requires a HD fluid");
-    } else {
-        mySolver = HLLC;
-    }
-  } else if (solverString.compare("roe") == 0) {
-    if constexpr(Phys::mhd) {
-      mySolver = ROE_MHD;
-    } else {
-      mySolver = ROE;
+    // Check if Hall is enabled
+    if(input.CheckEntry(std::string(Phys::prefix),"hall")>=0) {
+        // Check consistency
+        if(mySolver != HLL_MHD )
+          IDEFIX_ERROR("Hall effect is only compatible with HLL Riemann solver.");
     }
   } else {
-    std::stringstream msg;
-    if constexpr(Phys::mhd) {
-      msg << "Unknown MHD solver type " << solverString;
-    } else {
-      msg << "Unknown HD solver type " << solverString;
-    }
-    IDEFIX_ERROR(msg);
+    // We're dealing with dust grains
+    mySolver = HLL_DUST;
   }
 
-  // Check if Hall is enabled
-  if(input.CheckEntry(std::string(Phys::prefix),"hall")>=0) {
-      // Check consistency
-      if(mySolver != HLL_MHD )
-        IDEFIX_ERROR("Hall effect is only compatible with HLL Riemann solver.");
-  }
+
 
   // Shock flattening
   this->haveShockFlattening = input.CheckEntry(std::string(Phys::prefix),"shockFlattening")>=0;
@@ -164,6 +171,9 @@ void RiemannSolver<Phys>::ShowConfig() {
       break;
     case ROE_MHD:
       idfx::cout << "roe (MHD)." << std::endl;
+      break;
+    case HLL_DUST:
+      idfx::cout << "HLL (Dust)." << std::endl;
       break;
     default:
       IDEFIX_ERROR("Unknown Riemann solver");

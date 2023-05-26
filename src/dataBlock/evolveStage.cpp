@@ -15,6 +15,12 @@ void DataBlock::EvolveStage() {
 
   hydro->EvolveStage(this->t,this->dt);
 
+  if(haveDust) {
+    for(int i = 0 ; i < dust.size() ; i++) {
+      dust[i]->EvolveStage(this->t,this->dt);
+    }
+  }
+
   idfx::popRegion();
 }
 

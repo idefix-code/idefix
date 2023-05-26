@@ -384,3 +384,25 @@ This section describes the outputs *Idefix* produces. For more details about eac
 .. note::
     Even if dumps are not mentionned in your input file (and are therefore disabled), dump files are still produced when *Idefix* captures a signal
     (see :ref:`signalHandling`) or when ``max_runtime`` is set and reached.
+
+
+.. _dustSection:
+
+``Dust`` section
+----------------------
+
+This section describes the dust fields computed using a zero pressure gas approximation (see :ref:`dustModule`).
+
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+|  Entry name    | Parameter type          | Comment                                                                                     |
++================+=========================+=============================================================================================+
+| nSpecies       | integer                 | | Number of dust species to solve                                                           |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| drag           | string, float, ...      | | The first parameter describe the drag type. Possible values are: ``gamma``, ``tau``,      |
+|                |                         | | ``size`` and ``userdef``.                                                                 |
+|                |                         | | The remaining parameters give the drag parameter :math:`\beta_i` for each dust specie.    |
+|                |                         | | (see :ref:`dustModule`). *Idefix* expects to have as many drag parameters as there are    |
+|                |                         | | dust species.                                                                             |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| drag_feedback  | bool                    | | (optionnal) whether the gas feedback is enabled (default true).                           |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+

@@ -54,6 +54,10 @@ void Fluid<Phys>::EvolveStage(const real t, const real dt) {
 
   // Step 4: add source terms to the conserved variables (curvature, rotation, etc)
   if(haveSourceTerms) AddSourceTerms(t, dt);
+
+  // Step 5: add drag when needed
+  if(haveDrag) drag->AddDragForce(dt);
+
   if constexpr(Phys::mhd) {
     #if DIMENSIONS >= 2
       // Compute the field evolution according to CT

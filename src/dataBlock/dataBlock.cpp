@@ -5,7 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#include "../idefix.hpp"
+#include <algorithm>
+#include "idefix.hpp"
 #include "dataBlock.hpp"
 #include "fluid.hpp"
 #include "gravity.hpp"
@@ -121,11 +122,11 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
   this->vtk = std::make_unique<Vtk>(input, this);
 
   // Initialize the hydro object attached to this datablock
-  this->hydro = std::make_unique<Fluid<Physics>>(grid, input, this);
+  this->hydro = std::make_unique<Fluid<DefaultPhysics>>(grid, input, this);
 
   // Initialise Fargo if needed
   if(input.CheckBlock("Fargo")) {
-    this->fargo = std::make_unique<Fargo>(input, Physics::nvar, this);
+    this->fargo = std::make_unique<Fargo>(input, DefaultPhysics::nvar, this);
     this->haveFargo = true;
   }
 
@@ -141,6 +142,14 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
     this->haveGravity = true;
   }
 
+  // Initialise dust grains if needed
+  if(input.CheckBlock("Dust")) {
+    haveDust = true;
+    int nSpecies = input.Get<int>("Dust","nSpecies",0);
+    for(int i = 0 ; i < nSpecies ; i++) {
+      dust.emplace_back(std::make_unique<Fluid<DustPhysics>>(grid, input, this, i));
+    }
+  }
   // Register variables that need to be saved in case of restart dump
   dump->RegisterVariable(&t, "time");
   dump->RegisterVariable(&dt, "dt");
@@ -150,6 +159,29 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
 
 void DataBlock::ResetStage() {
   this->hydro->ResetStage();
+  if(haveDust) {
+    for(int i = 0 ; i < dust.size() ; i++) {
+      dust[i]->ResetStage();
+    }
+  }
+}
+
+void DataBlock::ConsToPrim() {
+  this->hydro->ConvertConsToPrim();
+  if(haveDust) {
+    for(int i = 0 ; i < dust.size() ; i++) {
+      dust[i]->ConvertConsToPrim();
+    }
+  }
+}
+
+void DataBlock::PrimToCons() {
+  this->hydro->ConvertPrimToCons();
+  if(haveDust) {
+    for(int i = 0 ; i < dust.size() ; i++) {
+      dust[i]->ConvertPrimToCons();
+    }
+  }
 }
 
 // Set the boundaries of the data structures in this datablock
@@ -160,6 +192,16 @@ void DataBlock::SetBoundaries() {
     #if MHD==YES
       hydro->CoarsenMagField(hydro->Vs);
     #endif
+    if(haveDust) {
+      for(int i = 0 ; i < dust.size() ; i++) {
+        dust[i]->CoarsenFlow(dust[i]->Vc);
+      }
+    }
+  }
+  if(haveDust) {
+    for(int i = 0 ; i < dust.size() ; i++) {
+      dust[i]->boundary->SetBoundaries(t);
+    }
   }
   hydro->boundary->SetBoundaries(t);
 }
@@ -183,6 +225,15 @@ void DataBlock::ShowConfig() {
                                    << std::endl;
   if(haveUserStepLast) idfx::cout << "DataBlock: User's last step has been enrolled."
                                   << std::endl;
+  if(haveDust) {
+    idfx::cout << "DataBlock: evolving " << dust.size() << " dust species." << std::endl;
+    // Only show the config the first dust specie
+    dust[0]->ShowConfig();
+    /*
+    for(int i = 0 ; i < dust.size() ; i++) {
+      dust[i]->ShowConfig();
+    }*/
+  }
 }
 
 
@@ -200,13 +251,28 @@ real DataBlock::ComputeTimestep() {
                   dtmin=FMIN(ONE_F/InvDt(k,j,i),dtmin);
               },
           Kokkos::Min<real>(dt));
+  if(haveDust) {
+    for(int n = 0 ; n < dust.size() ; n++) {
+      real dtDust;
+      auto InvDt = dust[n]->InvDt;
+      idefix_reduce("Timestep_reduction_dust",
+          beg[KDIR], end[KDIR],
+          beg[JDIR], end[JDIR],
+          beg[IDIR], end[IDIR],
+          KOKKOS_LAMBDA (int k, int j, int i, real &dtmin) {
+                  dtmin=FMIN(ONE_F/InvDt(k,j,i),dtmin);
+              },
+          Kokkos::Min<real>(dtDust));
+      dt = std::min(dt,dtDust);
+    }
+  }
   Kokkos::fence();
   return(dt);
 }
 
 // Recompute magnetic fields from vector potential in dedicated fluids
 void DataBlock::DeriveVectorPotential() {
-  if constexpr(Physics::mhd) {
+  if constexpr(DefaultPhysics::mhd) {
     #ifdef EVOLVE_VECTOR_POTENTIAL
       hydro->emf->ComputeMagFieldFromA(hydro->Ve, hydro->Vs);
     #endif

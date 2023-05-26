@@ -11,6 +11,9 @@ In this section, you will find a more detailed documentation about each module t
 :ref:`planetModule`
   The planet module, which treats the planet-disk interaction and planet-planet interaction.
 
+:ref:`dustModule`
+  The dust module, modeling dust grains as a zero-pressure gas.
+
 :ref:`selfGravityModule`
   The self-gravity computation module, handles the impact of the gas distribution on its own dynamic when massive
   enough (as in a core collapse).
@@ -25,5 +28,6 @@ In this section, you will find a more detailed documentation about each module t
 
    modules/fargo.rst
    modules/planet.rst
+   modules/dust.rst
    modules/selfGravity.rst
    modules/gridCoarsening.rst

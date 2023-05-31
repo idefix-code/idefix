@@ -5,7 +5,6 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifdef USE_HDF5
 #ifndef OUTPUT_XDMF_HPP_
 #define OUTPUT_XDMF_HPP_
 #include <string>
@@ -99,5 +98,4 @@ class Xdmf {
                        hid_t & ,
                        hid_t & );
 };
-#endif
 #endif // OUTPUT_XDMF_HPP_

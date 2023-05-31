@@ -13,7 +13,9 @@
 #include "input.hpp"
 #include "dataBlock.hpp"
 #include "vtk.hpp"
+#ifdef USE_HDF5
 #include "xdmf.hpp"
+#endif
 #include "dump.hpp"
 
 
@@ -73,6 +75,4 @@ class Output {
   Kokkos::Timer timer;
   double elapsedTime{0.0};
 };
-
-
 #endif // OUTPUT_OUTPUT_HPP_

@@ -5,6 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#ifdef USE_HDF5
 #include <string>
 #include <sstream>
 #include <vector>
@@ -922,3 +923,4 @@ void Xdmf::WriteFooter(
     xmfFile.close();
   }
 }
+#endif

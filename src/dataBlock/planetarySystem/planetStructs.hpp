@@ -55,6 +55,17 @@ static PointSpeed operator+(PointSpeed a, PointSpeed const &b ) {
     return(a);
   }
 
+// Substraction
+static PointSpeed operator-(PointSpeed a, PointSpeed const &b ) {
+    a.x -= b.x;
+    a.y -= b.y;
+    a.z -= b.z;
+    a.vx -= b.vx;
+    a.vy -= b.vy;
+    a.vz -= b.vz;
+    return(a);
+  }
+
 // product
 template<typename T>
 static PointSpeed operator*(PointSpeed a, T const &b ) {

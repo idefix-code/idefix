@@ -13,6 +13,8 @@
 
 enum class FlagShock{None, Shock};
 
+using UserShockFunc = void (*) (DataBlock &, const real t, IdefixArray3D<FlagShock>&);
+
 template<typename Phys>
 class ShockFlattening {
  public:
@@ -25,6 +27,10 @@ class ShockFlattening {
   IdefixArray3D<FlagShock> flagArray;
   bool isActive{false};
   real smoothing{0};
+
+  void EnrollUserShockFlag(UserShockFunc);
+  bool haveUserShockFlag{false};
+  UserShockFunc userShockFunc{NULL};
 };
 
 template<typename Phys>
@@ -177,6 +183,10 @@ void ShockFlattening<Phys>::FindShock() {
              beg[JDIR]-JOFFSET, end[JDIR]+JOFFSET,
              beg[IDIR]-IOFFSET, end[IDIR]+IOFFSET,
              func);
+
+  if (haveUserShockFlag) {
+    userShockFunc(*this->hydro->data, this->hydro->data->t, this->flagArray);
+  }
   idfx::popRegion();
 }
 

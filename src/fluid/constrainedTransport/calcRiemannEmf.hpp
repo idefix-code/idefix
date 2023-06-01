@@ -11,11 +11,12 @@
 #include "fluid.hpp"
 #include "dataBlock.hpp"
 #include "slopeLimiter.hpp" // Contains the main slope limiters called in this function
+#include "physics.hpp"
 
 // A shortcut for the slopelimiter template parameters
 // Note that we do not use the full class, so the template parameters are meaningless
 // here
-using SL = SlopeLimiter<0,NVAR>;
+using SL = SlopeLimiter<DefaultPhysics,0>;
 
 template<typename Phys>
 void ConstrainedTransport<Phys>::CalcRiemannAverage() {

@@ -190,5 +190,10 @@ void ShockFlattening<Phys>::FindShock() {
   idfx::popRegion();
 }
 
+template<typename Phys>
+void ShockFlattening<Phys>::EnrollUserShockFlag(UserShockFunc myFunc) {
+  this->haveUserShockFlag = true;
+  this->userShockFunc = myFunc;
+}
 
 #endif // FLUID_RIEMANNSOLVER_SHOCKFLATTENING_HPP_

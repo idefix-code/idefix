@@ -36,7 +36,9 @@ class Output {
   void RestartFromDump(DataBlock &, int);  // Restart from a dump file.
   void ForceWriteDump(DataBlock &);            // Force write dumps (needed during an abort)
   void ForceWriteVtk(DataBlock &);            // Force write vtks
+  #ifdef USE_HDF5
   void ForceWriteXdmf(DataBlock &);          // Force write xdmfs
+  #endif
   void ResetTimer();                      // Reset internal timer
   double GetTimer();
   void EnrollAnalysis(AnalysisFunc);
@@ -45,8 +47,9 @@ class Output {
  private:
   Vtk vtk;          // local instance of Vtk class
   Dump dump;        // local instance of Dump class
+  #ifdef USE_HDF5
   Xdmf xdmf;        // local instance of Xdmf class
-
+  #endif
   bool forceNoWrite = false;    //< explicitely disable all writes
   bool vtkEnabled = false;
   real vtkPeriod = 0.0;   // periodicity of vtk outputs
@@ -55,11 +58,13 @@ class Output {
   bool dumpEnabled = false;
   real dumpPeriod = 0.0;
   real dumpLast = 0.0;
-
+  
+  #ifdef USE_HDF5
   bool xdmfEnabled = false;
   real xdmfPeriod = 0.0;   // periodicity of xdmf outputs
   real xdmfLast = 0.0;
-
+  #endif
+  
   bool analysisEnabled = false;
   real analysisPeriod = 0.0;
   real analysisLast = 0.0;

@@ -134,7 +134,7 @@ int Output::CheckForWrites(DataBlock &data) {
       }
     }
   }
-
+  #ifdef USE_HDF5
   // Do we need a XDMF output?
   if(xdmfEnabled) {
     if(data.t >= xdmfLast + xdmfPeriod) {
@@ -164,6 +164,7 @@ int Output::CheckForWrites(DataBlock &data) {
       }
     }
   }
+  #endif
 
   // Do we need an analysis ?
   if(analysisEnabled) {
@@ -232,6 +233,7 @@ void Output::ForceWriteVtk(DataBlock &data) {
   idfx::popRegion();
 }
 
+#ifdef USE_HDF5
 void Output::ForceWriteXdmf(DataBlock &data) {
   idfx::pushRegion("Output::ForceWriteXdmf");
 
@@ -252,6 +254,7 @@ void Output::ForceWriteXdmf(DataBlock &data) {
   }
   idfx::popRegion();
 }
+#endif
 
 void Output::EnrollAnalysis(AnalysisFunc myFunc) {
   idfx::pushRegion("Output::EnrollAnalysis");

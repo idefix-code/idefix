@@ -133,8 +133,9 @@ void Damping(DataBlock &data, const real t, const real dtin) {
 }
 
 // User-defined boundaries
-void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
-  IdefixArray4D<real> Vc = data.hydro->Vc;
+void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
+  DataBlock &data = *hydro->data;
+  IdefixArray4D<real> Vc = hydro->Vc;
   IdefixArray1D<real> x1 = data.x[IDIR];
   real sigmaSlope=sigmaSlopeGlob;
   real omega = omegaGlob;
@@ -191,18 +192,18 @@ void Analysis(DataBlock & data) {
 
 //  data.DumpToFile("totou");
 
-  for(int ip=0; ip < data.planetarySystem.nbp ; ip++) {
+  for(int ip=0; ip < data.planetarySystem->nbp ; ip++) {
     // Get the orbital parameters
     real timeStep = data.dt;
-    real xp = data.planetarySystem.planet[ip].getXp();
-    real yp = data.planetarySystem.planet[ip].getYp();
-    real zp = data.planetarySystem.planet[ip].getZp();
-    real vxp = data.planetarySystem.planet[ip].getVxp();
-    real vyp = data.planetarySystem.planet[ip].getVyp();
-    real vzp = data.planetarySystem.planet[ip].getVzp();
-    real qp = data.planetarySystem.planet[ip].getMp();
+    real xp = data.planetarySystem->planet[ip].getXp();
+    real yp = data.planetarySystem->planet[ip].getYp();
+    real zp = data.planetarySystem->planet[ip].getZp();
+    real vxp = data.planetarySystem->planet[ip].getVxp();
+    real vyp = data.planetarySystem->planet[ip].getVyp();
+    real vzp = data.planetarySystem->planet[ip].getVzp();
+    real qp = data.planetarySystem->planet[ip].getMp();
     real time = data.t;
-    bool isActive = data.planetarySystem.planet[ip].getIsActive();
+    bool isActive = data.planetarySystem->planet[ip].getIsActive();
     // idfx::cout << "isactive: " << isActive << std::endl;
 
     std::string isActiveName;
@@ -234,9 +235,9 @@ void Analysis(DataBlock & data) {
     }
 
     // Force force = {{0.0,0.0,0.0},{0.0,0.0,0.0},{0.0,0.0,0.0},{0.0,0.0,0.0}};
-    Force &force = data.planetarySystem.planet[ip].m_force;
+    Force &force = data.planetarySystem->planet[ip].m_force;
     bool isp = true;
-    data.planetarySystem.planet[ip].computeForce(data,isp);
+    data.planetarySystem->planet[ip].computeForce(data,isp);
 
     // Get the torque and work
     // real fxi = force.f_inner[0];
@@ -286,14 +287,14 @@ void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
 
   // Make references to the user-defined arrays (variables is a container of IdefixHostArray3D)
   // Note that the labels should match the variable names in the input file
-  IdefixHostArray3D<real> PRS = variables["PRS"];
+  IdefixHostArray3D<real> press = variables["PRS"];
 
   for(int k = 0; k < d.np_tot[KDIR] ; k++) {
     for(int j = 0; j < d.np_tot[JDIR] ; j++) {
       for(int i = 0; i < d.np_tot[IDIR] ; i++) {
         real R = d.x[IDIR](i);
         real cs2 = h0*h0*pow(R,2*flaringIndex-1.);
-        PRS(k,j,i) = cs2*d.Vc(RHO,k,j,i);
+        press(k,j,i) = cs2*d.Vc(RHO,k,j,i);
       }
     }
   }
@@ -311,7 +312,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output)// : m_pl
   data.hydro->EnrollIsoSoundSpeed(&MySoundSpeed);
 
   if(data.haveFargo)
-    data.fargo.EnrollVelocity(&FargoVelocity);
+    data.fargo->EnrollVelocity(&FargoVelocity);
   if(data.hydro->haveRotation) {
     omegaGlob = data.hydro->OmegaZ;
   } else {
@@ -330,7 +331,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output)// : m_pl
   flaringIndexGlob = input.Get<real>("Setup","flaringIndex",0);
   densityFloorGlob = input.Get<real>("Setup","densityFloor",0);
   // delete file planet0.dat at initialization if we do not restart the simulation.
-  for(int ip=0; ip < data.planetarySystem.nbp ; ip++) {
+  for(int ip=0; ip < data.planetarySystem->nbp ; ip++) {
     std::string planetName, tqwkName, isActiveName;
     std::stringstream pName, tName, iaName;
     pName << "planet" << ip << ".dat";

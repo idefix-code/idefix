@@ -122,6 +122,9 @@ Planet:
     - ./testme.py -all $TESTME_OPTIONS
     - cd $IDEFIX_DIR/test/Planet/PlanetTorque3D
     - ./testme.py -all $TESTME_OPTIONS
+    - cd $IDEFIX_DIR/test/Planet/PlanetsIsActiveRK52D
+    - ./testme.py -all $TESTME_OPTIONS
+
 
 Dust:
   stage: advanced_checks

@@ -275,7 +275,7 @@ class idfxTest:
       os.chdir("python")
       comm = ["python3"]
       comm.append("testidefix.py")
-      if not self.plot:
+      if self.noplot:
         comm.append("-noplot")
 
       print(bcolors.OKCYAN+"Running standard test...")

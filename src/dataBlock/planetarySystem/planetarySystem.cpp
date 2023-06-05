@@ -26,10 +26,12 @@ PlanetarySystem::PlanetarySystem(Input &input, DataBlock *datain) {
     this->myPlanetaryIntegrator = Integrator::ANALYTICAL;
     if ((this->feelDisk) || (this->feelPlanets)) {
       IDEFIX_ERROR("No feelDisk nor feelPlanets if analytical orbit.\n\
-        Change integrator to rk4. You can also change feelDisk/feelPlanets.");
+        Change integrator. You can also change feelDisk/feelPlanets.");
     }
   } else if (pintegratorString.compare("rk4") == 0) {
     this->myPlanetaryIntegrator = Integrator::RK4;
+  } else if (pintegratorString.compare("rk5") == 0) {
+    this->myPlanetaryIntegrator = Integrator::RK5;
   } else {
     std::stringstream msg;
     msg << "Unknown planet integrator type " << pintegratorString;
@@ -57,6 +59,16 @@ PlanetarySystem::PlanetarySystem(Input &input, DataBlock *datain) {
   // Initialize the planet object attached to this datablock
   this->nbp = input.CheckEntry("Planet","planetToPrimary");
   if (this->nbp<0) this->nbp=0;
+
+  if ((this->nbp>1)
+    && ((this->myPlanetaryIntegrator == Integrator::RK4)
+      || (this->myPlanetaryIntegrator == Integrator::RK5))
+    && (!(this->feelPlanets))
+    && (this->indirectPlanetsTerm)) {
+    IDEFIX_WARNING("Careful, the results are unphysical if Runge-Kutta with\n\
+indirect term, with multiple planets that don't feel each others.");
+  }
+
   if(this->nbp>0) {
     for(int ip = 0 ; ip < this->nbp ; ip++) {
       this->planet.emplace_back(ip, input, this->data, this);
@@ -99,6 +111,9 @@ void PlanetarySystem::ShowConfig() {
       break;
     case RK4:
       idfx::cout << "PlanetarySystem: uses RK4 integration for planet location." << std::endl;
+      break;
+    case RK5:
+      idfx::cout << "PlanetarySystem: uses RK5 integration for planet location." << std::endl;
       break;
     default:
       IDEFIX_ERROR("Unknown time integrator for planets");
@@ -152,6 +167,7 @@ void PlanetarySystem::EvolveSystem(DataBlock& data, const real& dt) {
 void PlanetarySystem::AdvancePlanetFromDisk(DataBlock& data, const real& dt) {
   idfx::pushRegion("PlanetarySystem::AdvancePlanetFromDisk");
   for(int ip=0; ip< this->nbp ; ip++) {
+    if (!(planet[ip].m_isActive)) continue;
     Point gamma;
     bool isp = true;
 
@@ -186,6 +202,14 @@ void PlanetarySystem::IntegratePlanets(DataBlock& data, const real& dt) {
               IntegrateRK4(data, 1.0/(static_cast<double>(subcycling))*dt);
             break;
           }
+        case RK5:
+          {
+            int subcycling = 1;
+            int i;
+            for (i = 0; i < subcycling; i++)
+              IntegrateRK5(data, 1.0/(static_cast<double>(subcycling))*dt);
+            break;
+          }
         default: // do nothing
           break;
     }
@@ -194,6 +218,8 @@ void PlanetarySystem::IntegratePlanets(DataBlock& data, const real& dt) {
 void PlanetarySystem::IntegrateAnalytically(DataBlock& data, const real& dt) {
   idfx::pushRegion("PlanetarySystem::IntegrateAnalytically");
   for(int ip=0; ip<this->nbp ; ip++) {
+    if (!(planet[ip].m_isActive)) continue;
+
     real qp = planet[ip].m_qp;
     real xp = planet[ip].m_xp;
     real yp = planet[ip].m_yp;
@@ -225,6 +251,55 @@ void PlanetarySystem::IntegrateAnalytically(DataBlock& data, const real& dt) {
     planet[ip].m_vyp = vxp_tmp*sin(phipNew)+vyp_tmp*cos(phipNew);
     planet[ip].m_vzp = ZERO_F;
   }
+  idfx::popRegion();
+}
+
+void PlanetarySystem::IntegrateRK5(DataBlock& data, const real& dt) {
+  idfx::pushRegion("PlanetarySystem::IntegrateRK5");
+  std::vector<Planet> &ki = planet;
+
+  real t1, t2, t3, t4;
+  std::vector<Planet> k0 = ki;
+  std::vector<Planet> k1 = ki;
+  std::vector<Planet> k2 = ki;
+  std::vector<Planet> k3 = ki;
+  std::vector<Planet> k4 = ki;
+  std::vector<Planet> kf = ki;
+
+  // No need to copy since we already copied when instantiating k0
+
+  std::vector<PointSpeed> f0 = ComputeRHS(data.t, k0);
+  t1 = data.t + dt/4.0;
+  for(int ip=0; ip<this->nbp; ip++) {
+      k1[ip].state = ki[ip].state + dt*f0[ip]/4;
+  }
+
+  std::vector<PointSpeed> f1 = ComputeRHS(t1, k1);
+  t2 = data.t + 3*dt/8.0;
+  for(int ip=0; ip<this->nbp; ip++) {
+      k2[ip].state = ki[ip].state + 3*dt*f0[ip]/32 + 9*dt*f1[ip]/32;
+  }
+
+  std::vector<PointSpeed> f2 = ComputeRHS(t2, k2);
+  t3 = data.t + 12*dt/13.0;
+  for(int ip=0; ip<this->nbp; ip++) {
+      k3[ip].state = ki[ip].state + 1932*dt*f0[ip]/2197 - 7200*dt*f1[ip]/2197 + 7296*dt*f2[ip]/2197;
+  }
+
+  std::vector<PointSpeed> f3 = ComputeRHS(t3, k3);
+  t4 = data.t + dt;
+  for(int ip=0; ip<this->nbp; ip++) {
+      k4[ip].state = ki[ip].state + 439*dt*f0[ip]/216 - 8*dt*f1[ip] +
+      3680*dt*f2[ip]/513 - 845*dt*f3[ip]/4104;
+  }
+
+  std::vector<PointSpeed> f4 = ComputeRHS(t4, k4);
+  for(int ip=0; ip<this->nbp; ip++) {
+      kf[ip].state = ki[ip].state + dt * ( 25*f0[ip]/216 + 1408*f2[ip]/2565 +
+      2197*f3[ip]/4104 - f4[ip]/5);
+  }
+
+  planet = kf;
   idfx::popRegion();
 }
 
@@ -272,6 +347,15 @@ std::vector<PointSpeed> PlanetarySystem::ComputeRHS(real& t, std::vector<Planet>
   std::vector<PointSpeed> planet_update(this->nbp);
 
   for(int ip=0; ip<this->nbp; ip++) {
+    planet_update[ip].x = ZERO_F;
+    planet_update[ip].y = ZERO_F;
+    planet_update[ip].z = ZERO_F;
+    planet_update[ip].vx = ZERO_F;
+    planet_update[ip].vy = ZERO_F;
+    planet_update[ip].vz = ZERO_F;
+
+    if (!(planet[ip].m_isActive)) continue;
+
     real dist;
     real coef;
     dist = sqrt(
@@ -287,7 +371,7 @@ std::vector<PointSpeed> PlanetarySystem::ComputeRHS(real& t, std::vector<Planet>
     planet_update[ip].vz = -planet[ip].m_zp/dist/dist/dist;
 
     for(int jp=0; jp<this->nbp; jp++) {
-        if(this->indirectPlanetsTerm) {
+        if(this->indirectPlanetsTerm && planet[jp].m_isActive) {
             dist = sqrt(
               planet[jp].m_xp*planet[jp].m_xp +
               planet[jp].m_yp*planet[jp].m_yp +
@@ -299,7 +383,7 @@ std::vector<PointSpeed> PlanetarySystem::ComputeRHS(real& t, std::vector<Planet>
             planet_update[ip].vz -= coef*planet[jp].m_zp;
         }
 
-        if((jp != ip) && this->feelPlanets) {
+        if((jp != ip) && this->feelPlanets && planet[jp].m_isActive) {
             dist = sqrt(
               (planet[ip].m_xp-planet[jp].m_xp)*(planet[ip].m_xp-planet[jp].m_xp) +
               (planet[ip].m_yp-planet[jp].m_yp)*(planet[ip].m_yp-planet[jp].m_yp) +
@@ -307,8 +391,8 @@ std::vector<PointSpeed> PlanetarySystem::ComputeRHS(real& t, std::vector<Planet>
             );
             coef = planet[jp].m_qp/dist/dist/dist;
             planet_update[ip].vx += coef*(planet[jp].m_xp-planet[ip].m_xp);
-            planet_update[ip].vy += coef*(planet[jp].m_yp-planet[ip].m_xp);
-            planet_update[ip].vz += coef*(planet[jp].m_zp-planet[ip].m_xp);
+            planet_update[ip].vy += coef*(planet[jp].m_yp-planet[ip].m_yp);
+            planet_update[ip].vz += coef*(planet[jp].m_zp-planet[ip].m_zp);
         }
     }
     if(planet[ip].data->hydro->haveRotation) {
@@ -337,6 +421,10 @@ void PlanetarySystem::AddPlanetsPotential(IdefixArray3D<real> &phiP, real t) {
   for(Planet& p : this->planet) {
     // update mass according to mass taper
     p.updateMp(t);
+    p.activatePlanet(t);
+
+    bool isActive = p.getIsActive();
+    if (!(isActive)) continue;
 
     real qp = p.getMp();
     real xp = p.getXp();

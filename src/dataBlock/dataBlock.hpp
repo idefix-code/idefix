@@ -16,7 +16,6 @@
 #include "idefix.hpp"
 #include "grid.hpp"
 #include "gridHost.hpp"
-#include "output.hpp"
 #include "planetarySystem.hpp"
 #include "gravity.hpp"
 #include "stateContainer.hpp"
@@ -41,6 +40,8 @@ class PlanetarySystem;
 template<typename Phys>
 class Fluid;
 class SubGrid;
+class Vtk;
+class Dump;
 
 // Forward class hydro declaration
 #include "physics.hpp"

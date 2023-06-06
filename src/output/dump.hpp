@@ -9,6 +9,7 @@
 #define OUTPUT_DUMP_HPP_
 #include <string>
 #include <map>
+#include <filesystem>
 
 #include "idefix.hpp"
 #include "input.hpp"
@@ -166,7 +167,7 @@ class Dump {
   // Create a Dump file from the current state of the code
   int Write(Output&);
   // Read and load a dump file as current state of the code
-  int Read(Output&, int);
+  bool Read(Output&, int);
 
   // Register IdefixArrays
   void RegisterVariable(IdefixArray3D<real>&,
@@ -229,6 +230,9 @@ class Dump {
   void ReadSerial(IdfxFileHandler, int, int*, DataType, void*);
   void ReadDistributed(IdfxFileHandler, int, int*, int*, IdfxDataDescriptor&, void*);
   void Skip(IdfxFileHandler, int, int *, DataType);
+  int GetLastDumpInDirectory(std::filesystem::path &);
+
+  std::filesystem::path outputDirectory;
 };
 
 

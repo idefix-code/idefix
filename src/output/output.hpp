@@ -29,7 +29,7 @@ class Output {
  public:
   Output(Input &, DataBlock &);           // Create Output Object
   int CheckForWrites(DataBlock &);        // Check if outputs are needed at this stage
-  void RestartFromDump(DataBlock &, int);  // Restart from a dump file.
+  bool RestartFromDump(DataBlock &, int);  // Restart from a dump file.
   void ForceWriteDump(DataBlock &);            // Force write dumps (needed during an abort)
   void ForceWriteVtk(DataBlock &);            // Force write vtks
   void ResetTimer();                      // Reset internal timer

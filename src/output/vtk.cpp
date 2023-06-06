@@ -8,6 +8,7 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <filesystem>
 #include "vtk.hpp"
 #include "gitversion.hpp"
 #include "idefix.hpp"
@@ -53,6 +54,25 @@ Vtk::Vtk(Input &input, DataBlock *datain) {
   // Pointer to global grid
   GridHost grid(*(datain->mygrid));
   grid.SyncFromDevice();
+
+  // initialize output path
+  outputDirectory = ".";
+
+  // Add "vtk" to the output directory
+  outputDirectory = outputDirectory/"vtk";
+  if(idfx::prank==0) {
+    if(!std::filesystem::is_directory(outputDirectory)) {
+      if(!std::filesystem::create_directory(outputDirectory)) {
+        std::stringstream msg;
+        msg << "Cannot create directory " << outputDirectory << std::endl;
+        IDEFIX_ERROR(msg);
+      }
+    }
+  }
+  #ifdef WITH_MPI
+  MPI_Barrier(MPI_COMM_WORLD);
+  #endif
+
 
   /* Note that there are two kinds of dimensions:
      - nx1, nx2, nx3, derived from the grid, which are the global dimensions
@@ -205,7 +225,7 @@ int Vtk::Write() {
   idfx::pushRegion("Vtk::Write");
 
   IdfxFileHandler fileHdl;
-  std::string filename;
+  std::filesystem::path filename;
 
   idfx::cout << "Vtk: Write file n " << vtkFileNumber << "..." << std::flush;
 
@@ -214,7 +234,7 @@ int Vtk::Write() {
   std::stringstream ssfileName, ssvtkFileNum;
   ssvtkFileNum << std::setfill('0') << std::setw(4) << vtkFileNumber;
   ssfileName << "data." << ssvtkFileNum.str() << ".vtk";
-  filename = ssfileName.str();
+  filename = outputDirectory/ssfileName.str();
 
   // Open file and write header
 #ifdef WITH_MPI

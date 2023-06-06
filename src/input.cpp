@@ -147,37 +147,11 @@ void Input::ParseCommandLine(int argc, char **argv) {
         sirestart = std::string(argv[++i]);
       } else {
         // implicitly restart from the latest existing dumpfile
-        // implementation detail: we look for the existing dumpfile with the highest
-        // number, not necessarilly the latest timestamp !
-        const std::vector<std::string> files = Input::getDirectoryFiles();
-        int ifile{-1};
-        int irestart{-1};
-
-        for (const auto& file : files) {
-          if (Input::getFileExtension(file).compare("dmp") != 0) continue;
-          // parse the dumpfile number from filename "dump.????.dmp"
-          if(file.substr(0,5) != "dump.") continue;
-          try {
-            ifile = std::stoi(file.substr(5, 4));
-          } catch (...) {
-            // woops, pattern doesn't match!
-            ifile = -1;
-          }
-          irestart = std::max(irestart, ifile);
-        }
-        sirestart = std::to_string(irestart);
-        if(irestart==-1) {
-          IDEFIX_WARNING("cannot find a valid restart dump file in current directory");
-        }
+        sirestart = "-1";
       }
-      int restartn = std::stoi(sirestart);
-      if(restartn>=0) {
-        inputParameters["CommandLine"]["restart"].push_back(sirestart);
-        this->restartRequested = true;
-        this->restartFileNumber = restartn;
-      } else {
-        IDEFIX_WARNING("Invalid -restart option, I will ignore it.");
-      }
+      inputParameters["CommandLine"]["restart"].push_back(sirestart);
+      this->restartRequested = true;
+      this->restartFileNumber = std::stoi(sirestart);
     } else if(std::string(argv[i]) == "-i") {
       // Loop on dimensions
       if((++i) >= argc) IDEFIX_ERROR(

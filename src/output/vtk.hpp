@@ -188,6 +188,9 @@ class Vtk : public BaseVtk {
   void WriteHeader(IdfxFileHandler, real);
   void WriteScalar(IdfxFileHandler, float*,  const std::string &);
   void WriteHeaderNodes(IdfxFileHandler);
+
+  // output directory
+  std::filesystem::path outputDirectory;
 };
 
 template<typename T>

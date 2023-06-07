@@ -46,7 +46,7 @@ void Drag::AddDragForce(const real dt) {
             cs = csIso;
           }
         #endif
-        gamma = 1/(dragCoeff*cs);
+        gamma = cs/dragCoeff;
       }
 
       real dp = dt * gamma * VcDust(RHO,k,j,i) * VcGas(RHO,k,j,i);

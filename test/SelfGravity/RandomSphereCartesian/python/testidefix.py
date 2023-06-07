@@ -48,7 +48,7 @@ parser.add_argument("-noplot",
 args=parser.parse_args()
 
 # Read vtk
-V=readVTK('../data.0000.vtk')
+V=readVTK('../vtk/data.0000.vtk')
 
 
 

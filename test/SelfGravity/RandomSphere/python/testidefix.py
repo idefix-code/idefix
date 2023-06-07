@@ -26,7 +26,7 @@ parser.add_argument("-noplot",
 args=parser.parse_args()
 
 # Read vtk
-V=readVTK('../data.0000.vtk')
+V=readVTK('../vtk/data.0000.vtk')
 
 # Spherical coordinates
 nr, nth, nphi = np.squeeze(V.nx), np.squeeze(V.ny), np.squeeze(V.nz)

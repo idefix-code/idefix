@@ -12,7 +12,7 @@ sys.path.append(os.getenv("IDEFIX_DIR"))
 from pytools.vtk_io import readVTK
 import numpy as np
 
-V=readVTK('../data.0001.vtk', geometry='polar')
+V=readVTK('../vtk/data.0001.vtk', geometry='polar')
 U=readVTK('data.0001.ref.vtk', geometry='polar')
 
 # Compute the error on VX2 by comparing to PLUTO solution

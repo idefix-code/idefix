@@ -66,8 +66,8 @@ Dump::Dump(DataBlock *datain) {
   outputDirectory = ".";
 
   // Add "dump" to the output directory
+  outputDirectory = outputDirectory/"dump";
   if(idfx::prank==0) {
-    outputDirectory = outputDirectory/"dump";
     if(!std::filesystem::is_directory(outputDirectory)) {
       if(!std::filesystem::create_directory(outputDirectory)) {
         std::stringstream msg;
@@ -76,9 +76,6 @@ Dump::Dump(DataBlock *datain) {
       }
     }
   }
-  #ifdef WITH_MPI
-  MPI_Barrier(MPI_COMM_WORLD);
-  #endif
 
   // Allocate scratch Array
   this->scrch = new real[ (data->np_int[IDIR]+IOFFSET)*
@@ -504,17 +501,14 @@ int Dump::GetLastDumpInDirectory(std::filesystem::path &directory) {
   for (const auto & entry : std::filesystem::directory_iterator(directory)) {
       // Check file extension
       std::filesystem::file_time_type youngFileTime;
-      idfx::cout << "Checking " << entry.path() << std::endl;
       if(entry.path().extension().string().compare(".dmp")==0) {
         auto fileTime = std::filesystem::last_write_time(entry.path());
-        //idfx::cout << "   is a dump file modified in " << fileTime << std::endl;
         // Check which one is the most recent
         if(fileTime>youngFileTime) {
           // Ours is more recent, extract the dump file number
           try {
             num = std::stoi(entry.path().filename().string().substr(5,4));
             youngFileTime = fileTime;
-            idfx::cout << "        num="<<num << std::endl;
           } catch (...) {
             // We do nothing here
           }
@@ -546,14 +540,11 @@ bool Dump::Read(Output& output, int readNumber ) {
       readDir = ".";
       readNumber = GetLastDumpInDirectory(readDir);
       if(readNumber<0) {
-        IDEFIX_WARNING("cannot find a valid restart dump file in current directory");
+        IDEFIX_WARNING("cannot find a valid restart dump.");
         return(false);
       }
     }
   }
-
-  idfx::cout << "Dump: Reading restart file n " << readNumber << " in "
-             << readDir << "..." << std::flush;
 
   // Reset timer
   timer.reset();
@@ -564,6 +555,7 @@ bool Dump::Read(Output& output, int readNumber ) {
   ssFileName << "dump." << ssdumpFileNum.str() << ".dmp";
   filename = readDir/ssFileName.str();
 
+  idfx::cout << "Dump: Reading " << filename << "..." << std::flush;
   // open file
 #ifdef WITH_MPI
   MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
@@ -735,24 +727,31 @@ int Dump::Write(Output& output) {
 
   dumpFileNumber++;   // For next one
 
+  // Check if file exists, if yes, delete it
+  if(idfx::prank==0) {
+    if(std::filesystem::exists(filename)) {
+      std::filesystem::remove(filename);
+    }
+  }
+
   // open file
 #ifdef WITH_MPI
-// Open file for creating, return error if file already exists.
+  MPI_Barrier(MPI_COMM_WORLD);
+  // Open file for creating, return error if file already exists.
   int err = MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
                               MPI_MODE_CREATE | MPI_MODE_RDWR
                               | MPI_MODE_EXCL | MPI_MODE_UNIQUE_OPEN,
                               MPI_INFO_NULL, &fileHdl);
   if (err != MPI_SUCCESS)  {
-    // File exists, delete it before reopening
-    if(idfx::prank == 0) {
-      MPI_File_delete(filename.c_str(),MPI_INFO_NULL);
-    }
-    MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
-                              MPI_MODE_CREATE | MPI_MODE_RDWR
-                              | MPI_MODE_EXCL | MPI_MODE_UNIQUE_OPEN,
-                              MPI_INFO_NULL, &fileHdl));
+    char *errorMessageChar;
+    int errorLength;
+    MPI_Error_string(err, errorMessageChar, &errorLength);
+    std::string errorMessage(errorMessageChar,errorLength);
+    std::stringstream msg;
+    msg << "Cannot open dump file. MPI returned the following message:" << std::endl
+        << errorMessage;
+    IDEFIX_ERROR(msg);
   }
-
   this->offset = 0;
 #else
   fileHdl = fopen(filename.c_str(),"wb");

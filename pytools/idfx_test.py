@@ -298,9 +298,9 @@ class idfxTest:
     if not(os.path.exists(fileref)):
       raise Exception("Reference file "+fileref+ " doesn't exist")
 
-    filetest=filename
+    filetest="dump/"+filename
     if not(os.path.exists(filetest)):
-      raise Exception("Test file "+fileref+ " doesn't exist")
+      raise Exception("Test file "+filetest+ " doesn't exist")
 
     Vref=readDump(fileref)
     Vtest=readDump(filetest)

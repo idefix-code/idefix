@@ -356,7 +356,10 @@ void Boundary<Phys>::ReconstructNormalField(int dir) {
   const bool reconstructRight = !(data->rbound[dir]==periodic || data->rbound[dir]==internal);
 
   // nothing to reconstruct in that direction!
-  if((!reconstructLeft) && (!reconstructRight)) return;
+  if((!reconstructLeft) && (!reconstructRight)) {
+    idfx::popRegion();
+    return;
+  }
 
   // Reconstruct the field
   IdefixArray4D<real> Vs = fluid->Vs;

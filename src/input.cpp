@@ -282,32 +282,6 @@ bool Input::CheckForAbort() {
 #endif
 }
 
-std::vector<std::string> Input::getDirectoryFiles() {
-  // List files in the current directory
-  // adapted from
-  // http://www.codebind.com/cpp-tutorial/cpp-program-list-files-directory-windows-linux/
-  const std::string& dir = std::string(".");
-  std::vector<std::string> files;
-  std::shared_ptr<DIR> directory_ptr(opendir(dir.c_str()), [](DIR* dir){ dir && closedir(dir); });
-  struct dirent *dirent_ptr;
-  if (!directory_ptr) {
-    idfx::cout << "Error opening : " << std::strerror(errno) << dir << std::endl;
-    return files;
-  }
-
-  while ((dirent_ptr = readdir(directory_ptr.get())) != nullptr) {
-    files.push_back(std::string(dirent_ptr->d_name));
-  }
-  return files;
-}
-
-
-std::string Input::getFileExtension(const std::string file_name) {
-  int position = file_name.find_last_of(".");
-  std::string ext = file_name.substr(position+1);
-  return ext;
-}
-
 // Get a string in a block, parameter, position of the file
 std::string Input::GetString(std::string blockName, std::string paramName, int num) {
   IDEFIX_DEPRECATED("Input::GetString is deprecated. Use Input::Get<std::string> instead");

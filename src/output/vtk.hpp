@@ -9,6 +9,7 @@
 #define OUTPUT_VTK_HPP_
 #include <string>
 #include <map>
+#include <filesystem>
 #include "idefix.hpp"
 #include "input.hpp"
 #include "dataBlock.hpp"

@@ -137,6 +137,11 @@ void Fluid<Phys>::ShowConfig() {
     }
   }
 
+  if(haveTracer) {
+    idfx::cout << Phys::prefix << ": " << this->nTracer << " tracers ENABLED for this fluid."
+               << std::endl;
+  }
+
   if(emfBoundaryFunc) {
     idfx::cout << Phys::prefix << ": user-defined EMF boundaries ENABLED." << std::endl;
   }
@@ -158,7 +163,7 @@ void Fluid<Phys>::ShowConfig() {
     thermalDiffusion->ShowConfig();
   }
   if(haveAxis) {
-    myAxis->ShowConfig();
+    boundary->axis->ShowConfig();
   }
   if(haveDrag) {
     drag->ShowConfig();

@@ -1,13 +1,12 @@
 add_subdirectory(boundary)
 add_subdirectory(constrainedTransport)
 add_subdirectory(RiemannSolver)
-
+add_subdirectory(tracer)
 
 
 target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/addNonIdealMHDFlux.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/addSourceTerms.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/axis.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/calcCurrent.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/calcParabolicFlux.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/calcRightHandSide.hpp

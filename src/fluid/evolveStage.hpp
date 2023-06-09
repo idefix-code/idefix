@@ -19,8 +19,16 @@ void Fluid<Phys>::LoopDir(const real t, const real dt) {
     // Step 2.5: compute intercell parabolic flux when needed
     if(haveExplicitParabolicTerms) CalcParabolicFlux<dir>(t);
 
+    // If we have tracers, compute the tracer intercell flux
+    if(haveTracer) {
+      this->tracer->template CalcFlux<dir, Phys>(this->FluxRiemann);
+    }
+
     // Step 3: compute the resulting evolution of the conserved variables, stored in Uc
     CalcRightHandSide<dir>(t,dt);
+    if(haveTracer) {
+      this->tracer->template CalcRightHandSide<dir, Phys>(this->FluxRiemann,t ,dt);
+    }
 
     // Recursive: do next dimension
     if constexpr (dir+1 < DIMENSIONS) LoopDir<dir+1>(t, dt);

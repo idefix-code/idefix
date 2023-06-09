@@ -27,9 +27,6 @@ template<typename Phys>
 class Boundary;
 
 template<typename Phys>
-class Axis;
-
-template<typename Phys>
 class ConstrainedTransport;
 
 template<typename Phys>
@@ -44,6 +41,7 @@ class ShockFlattening;
 class Viscosity;
 class ThermalDiffusion;
 class Drag;
+class Tracer;
 
 
 template<typename Phys>
@@ -105,7 +103,6 @@ class Fluid {
 
   // Whether or not we have to treat the axis
   bool haveAxis{false};
-  std::unique_ptr<Axis<Phys>> myAxis;
 
   // Rotation vector
   bool haveRotation{false};
@@ -116,6 +113,11 @@ class Fluid {
   real sbS;
   // Box width for shearing box problems
   real sbLx;
+
+  // Tracers treatment
+  std::unique_ptr<Tracer> tracer;
+  bool haveTracer{false};
+  int nTracer{0};
 
 
   // Enroll user-defined boundary conditions (proxies for boundary class functions)
@@ -174,7 +176,6 @@ class Fluid {
  private:
   friend class ConstrainedTransport<Phys>;
   friend class Fargo;
-  friend class Axis<Phys>;
   friend class RKLegendre<Phys>;
   friend class Boundary<Phys>;
   friend class ShockFlattening<Phys>;
@@ -233,7 +234,7 @@ class Fluid {
   void LoopDir(const real, const real);
 };
 
-#include "../physics.hpp"
+#include "physics.hpp"
 #include "dataBlock.hpp"
 #include "boundary.hpp"
 #include "constrainedTransport.hpp"
@@ -243,6 +244,7 @@ class Fluid {
 #include "viscosity.hpp"
 #include "drag.hpp"
 #include "checkNan.hpp"
+#include "tracer.hpp"
 
 
 template<typename Phys>
@@ -317,6 +319,14 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
     this->sbLx = grid.xend[IDIR] - grid.xbeg[IDIR];
   }
 
+  // Passive tracers
+  if(input.CheckEntry(std::string(Phys::prefix),"tracer")>=0) {
+    this->haveTracer = true;
+    // nTracer is initialised before instanciation of the Tracer object
+    // Because we need to know the number of tracers to allocate Vc, Uc and Flux.
+    this->nTracer = input.Get<int>(std::string(Phys::prefix),"tracer",0);
+  }
+
   // If we are not the primary hydro object, we copy the properties of the primary hydro object
   // so that we solve for consistant physics
   if(prefix.compare("Hydro") != 0) {
@@ -327,6 +337,8 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
     this->sbS = data->hydro->sbS;
     this->sbLx = data->hydro->sbLx;
   }
+
+
 
 
   ///////////////////////
@@ -465,7 +477,7 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
   /////////////////////////////////////////
 
   // We now allocate the fields required by the hydro solver
-  Vc = IdefixArray4D<real>(prefix+"_Vc", Phys::nvar,
+  Vc = IdefixArray4D<real>(prefix+"_Vc", Phys::nvar+nTracer,
                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   Uc = IdefixArray4D<real>(prefix+"_Uc", Phys::nvar,
                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
@@ -478,7 +490,7 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   dMax = IdefixArray3D<real>(prefix+"_dMax",
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  FluxRiemann =  IdefixArray4D<real>(prefix+"_FluxRiemann", Phys::nvar,
+  FluxRiemann =  IdefixArray4D<real>(prefix+"_FluxRiemann", Phys::nvar+nTracer,
                                      data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
   if constexpr(Phys::mhd) {
@@ -529,7 +541,7 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
     outputPrefix += "_";
   }
 
-  for(int i = 0 ; i < Phys::nvar ;  i++) {
+  for(int i = 0 ; i < Phys::nvar+nTracer ;  i++) {
     switch(i) {
       case RHO:
         VcName.push_back("RHO");
@@ -569,8 +581,15 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
         data->dump->RegisterVariable(Vc, outputPrefix+"Vc-PRS", PRS);
         break;
       default:
-        VcName.push_back("Vc-"+std::to_string(i));
-        data->vtk->RegisterVariable(Vc, outputPrefix+"Vc-"+std::to_string(i), i);
+        if(i>=Phys::nvar) {
+          std::string tracerLabel = std::string("TR")+std::to_string(i-Phys::nvar); // ="TRn"
+          VcName.push_back(tracerLabel);
+          data->vtk->RegisterVariable(Vc, outputPrefix+tracerLabel, i);
+          data->dump->RegisterVariable(Vc, outputPrefix+"Vc-"+tracerLabel, i);
+        } else {
+          VcName.push_back("Vc-"+std::to_string(i));
+          data->vtk->RegisterVariable(Vc, outputPrefix+"Vc-"+std::to_string(i), i);
+        }
     }
   }
 
@@ -640,15 +659,9 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
     this->emf = std::make_unique<ConstrainedTransport<Phys>>(input, this);
   }
 
-
-  // Do we have to take care of the axis?
-  if(data->haveAxis) {
-    this->myAxis = std::make_unique<Axis<Phys>>(grid, this);
-    this->haveAxis = true;
-  }
-
   // Initialise boundary conditions
-  boundary = std::make_unique<Boundary<Phys>>(input, grid, this);
+  boundary = std::make_unique<Boundary<Phys>>(this);
+  this->haveAxis = data->haveAxis;
 
   if(haveRKLParabolicTerms) {
     this->rkl = std::make_unique<RKLegendre<Phys>>(input,this);
@@ -657,6 +670,11 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
   // Drag force when needed
   if(haveDrag) {
     this->drag = std::make_unique<Drag>(input, this);
+  }
+
+  // Tracers when needed
+  if(haveTracer) {
+    this->tracer= std::make_unique<Tracer>(this, nTracer);
   }
 
   idfx::popRegion();

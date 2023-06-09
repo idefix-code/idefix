@@ -325,6 +325,9 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
     // nTracer is initialised before instanciation of the Tracer object
     // Because we need to know the number of tracers to allocate Vc, Uc and Flux.
     this->nTracer = input.Get<int>(std::string(Phys::prefix),"tracer",0);
+    if(this->nTracer < 1) {
+      IDEFIX_ERROR("The number of passive tracers should be >= 1");
+    }
   }
 
   // If we are not the primary hydro object, we copy the properties of the primary hydro object
@@ -479,7 +482,7 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
   // We now allocate the fields required by the hydro solver
   Vc = IdefixArray4D<real>(prefix+"_Vc", Phys::nvar+nTracer,
                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  Uc = IdefixArray4D<real>(prefix+"_Uc", Phys::nvar,
+  Uc = IdefixArray4D<real>(prefix+"_Uc", Phys::nvar+nTracer,
                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
 
   data->states["current"].PushArray(Uc, State::center, prefix+"_Uc");

@@ -18,8 +18,8 @@ def testMe(test):
             "idefix-hlld-hll.ini",
             "idefix-hlld-hlld.ini",
             "idefix-hlld-uct0.ini",
-            "idefix-hlld.ini","idefix-tvdlf.ini"
-            ]
+            "idefix-hlld.ini","idefix-tvdlf.ini"]
+
   for ini in inifiles:
     mytol=tolerance
 

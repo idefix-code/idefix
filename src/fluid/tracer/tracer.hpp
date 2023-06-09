@@ -47,6 +47,7 @@ Tracer::Tracer(Fluid<Phys> *fluid, int n) {
   Uc = fluid->Uc;
   data = fluid->data;
   nVar = Phys::nvar;
+  idfx::cout << "nvar=" << nVar << std::endl;
 }
 
 #include "slopeLimiter.hpp"
@@ -72,7 +73,7 @@ void Tracer::CalcFlux(IdefixArray4D<real> &Flux) {
              data->beg[IDIR],data->end[IDIR]+ioffset,
     KOKKOS_LAMBDA (int nv, int k, int j, int i) {
       real vface;
-      if(Flux(RHO,k,j,i) < 0) {
+      if(Flux(RHO,k,j,i) > 0) {
         // Interpolate from the left
         real dvm = Vc(nv,k-koffset,j-joffset,i-ioffset)
                   -Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset);
@@ -81,7 +82,6 @@ void Tracer::CalcFlux(IdefixArray4D<real> &Flux) {
         real dv = slopeLim.PLMLim(dvp,dvm);
 
         vface = Vc(nv,k-koffset,j-joffset,i-ioffset) + HALF_F*dv;
-
       } else {
         // interpolation from the right
         real dvm = Vc(nv,k,j,i)
@@ -104,7 +104,7 @@ void Tracer::CalcRightHandSide(IdefixArray4D<real> &Flux, real t, real dt) {
   idfx::pushRegion("Tracer::ComputeRHS");
 
   IdefixArray4D<real> Uc = this->Uc;
-  IdefixArray3D<real> dV    = data->dV;
+  IdefixArray3D<real> dV  = data->dV;
 
   constexpr int ioffset = (dir==IDIR ? 1 : 0);
   constexpr int joffset = (dir==JDIR ? 1 : 0);
@@ -116,7 +116,7 @@ void Tracer::CalcRightHandSide(IdefixArray4D<real> &Flux, real t, real dt) {
              data->beg[JDIR],data->end[JDIR],
              data->beg[IDIR],data->end[IDIR],
     KOKKOS_LAMBDA (int nv, int k, int j, int i) {
-      Uc(nv,k,j,i) = dt / dV(k,j,i) * (Flux(nv,k+koffset,j+joffset,i+ioffset) - Flux(nv,k,j,i));
+      Uc(nv,k,j,i) += -dt / dV(k,j,i) * (Flux(nv,k+koffset,j+joffset,i+ioffset) - Flux(nv,k,j,i));
   });
 
   idfx::popRegion();

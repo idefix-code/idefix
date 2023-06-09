@@ -109,7 +109,7 @@ class Boundary {
   IdefixArray4D<real> Vc; ///< reference to cell-centered array that we should sync
   IdefixArray4D<real> Vs; ///< reference to face-centered array that we should sync
   std::unique_ptr<Axis> axis; ///< Axis object, initialised if needed.
-  bool haveAxis;
+  bool haveAxis{false};
 
  private:
   friend class Axis;

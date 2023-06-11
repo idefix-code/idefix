@@ -63,10 +63,26 @@ The drag parameter :math:`\beta_i` above sets the functional form of :math:`\gam
   This sets :math:`\gamma_i=1/(\rho \beta_i)` so that :math:`\beta_i` is the (constant) stopping time :math:`\tau_i` of the dust grains.
 ``size``:
   This sets :math:`\gamma_i=c_s/\beta_i` so that :math:`\tau_i=(\rho \gamma_i)^{-1}=\beta_i/(\rho c_s)` where :math:`c_s` is the gas sound speed.
-  It designed to reproduce the behaviour of a fixed size dust grain of constant density that follows either Epstein or Stokes drag law.
+  It designed to reproduce the behaviour of a fixed size dust grain of constant density that follows either Epstein or Stokes drag law:
+
+    Epstein drag:
+      In the Epstein regime, :math:`\beta_i=\rho_s a` where :math:`\rho_s` is the solid density and :math:`a` is the solid size.
+    Stokes drag:
+      In the Stokes regime, :math:`\beta_i=4\rho_s a^2/(9\lambda_\mathrm{mfp})` where :math:`\lambda_\mathrm{mfp}` is the gas mean free path.
+
+``userdef``:
+  This allows the user to define a specialized drag law, that is a function :math:`\gamma_i(\rho, \rho_i, c_s, \beta_i)`. In this case, a user-defined
+  function should be enrolled by each drag instance (see the example in `test/Dust/FargoPlanet`). Note that the entry ``drag`` in your
+  input file should still contain a list of :math:`\beta_i`.
+
 
 .. warning::
-  The ``userdef`` drag type is not yet implemented.
+  The drag force assumes that the gas density field ``hydro->Vc(RHO...)`` is a volumic density. For 2D problems assuming
+  a razor-thin geometry, this assumption is incorrect since ``hydro->Vc(RHO...)`` is a surface density. In this case,
+  the user has to define a specific drag law since *Idefix* has no way to guess how to convert the surface density to
+  the volumic density (see example in `test/Dust/FargoPlanet`).
+
+
 
 Using the dust module
 ---------------------

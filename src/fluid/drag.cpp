@@ -22,6 +22,17 @@ void Drag::AddDragForce(const real dt) {
   [[maybe_unused]] real csIso = this->csIso;
   [[maybe_unused]] HydroModuleStatus haveIsoCs = this->haveIsoCs;
   [[maybe_unused]] IdefixArray3D<real> csIsoArr = this->csIsoArr;
+
+  auto userGammai = this->gammai;
+  if(type == Type::Userdef) {
+    if(userDrag != NULL) {
+      idfx::pushRegion("Drag::UserDrag");
+      userDrag(data, dragCoeff, userGammai);
+      idfx::popRegion();
+    } else {
+      IDEFIX_ERROR("No User-defined drag function has been enrolled");
+    }
+  }
   // Compute a drag force fd = - gamma*rhod*rhog*(vd-vg)
   // Where gamma is computed according to the choice of drag type
   idefix_for("DragForce",0,data->np_tot[KDIR],0,data->np_tot[JDIR],0,data->np_tot[IDIR],
@@ -47,6 +58,8 @@ void Drag::AddDragForce(const real dt) {
           }
         #endif
         gamma = cs/dragCoeff;
+      } else if(type == Type::Userdef) {
+        gamma = userGammai(k,j,i);
       }
 
       real dp = dt * gamma * VcDust(RHO,k,j,i) * VcGas(RHO,k,j,i);
@@ -94,4 +107,11 @@ void Drag::ShowConfig() {
   } else {
     idfx::cout << " without feedback." << std::endl;
   }
+}
+
+void Drag::EnrollUserDrag(UserDefDragFunc func) {
+  if(type != Type::Userdef) {
+    IDEFIX_ERROR("User-defined drag function requires drag entry to be set to \"userdef\"");
+  }
+  this->userDrag = func;
 }

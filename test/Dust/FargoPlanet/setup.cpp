@@ -20,6 +20,33 @@ void MySoundSpeed(DataBlock &data, const real t, IdefixArray3D<real> &cs) {
               });
 }
 
+// drag coefficient assuming vertical hydrostatic equilirbium
+// And using the fact that Vc(RHO) is the surface density
+// This assumes that tau_s = beta * sqrt(2pi) h / (cs*Sigma)
+// So that the Stokes number St = Omega tau_s = sqrt(2pi) * beta / Sigma
+
+// In this setup, we assume rho_mid(R=1)=1, so that Sigma(R=1)=sqrt(2pi)*h0
+// hence beta = h0 * St(R=1)
+
+// Assuming Epstein drag, the particle size is related to St through:
+// a = 20 cm *  St * (Sigma/100 g.cm^-2) / (rho_s / 2 g.cm^-3)
+
+void MyDrag(DataBlock *data, real beta, IdefixArray3D<real> &gamma) {
+  // Compute the drag coefficient gamma from the input beta
+  real h0 = h0Glob;
+  auto x1 = data->x[IDIR];
+
+  idefix_for("MyDrag",0,data->np_tot[KDIR],0,data->np_tot[JDIR],0,data->np_tot[IDIR],
+    KOKKOS_LAMBDA (int k, int j, int i) {
+      real R = x1(i);
+      real h = h0*R;
+      real cs = h0/sqrt(R);
+
+
+      gamma(k,j,i) = cs/(beta*sqrt(2.0*M_PI)*h);
+
+    });
+}
 
 // User-defined boundaries
 void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
@@ -129,6 +156,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output)// : m_pl
     int nSpecies = data.dust.size();
     for(int n = 0 ; n < nSpecies ; n++) {
       data.dust[n]->EnrollUserDefBoundary(&UserdefBoundaryDust);
+      data.dust[n]->drag->EnrollUserDrag(&MyDrag);
     }
   }
 

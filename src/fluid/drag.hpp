@@ -12,6 +12,9 @@
 #include "input.hpp"
 #include "fluid_defs.hpp"
 
+using UserDefDragFunc = void (*) (DataBlock *, real beta, IdefixArray3D<real> &gammai);
+
+
 class Drag {
  public:
   enum class Type{Gamma, Tau, Size, Userdef};
@@ -20,18 +23,22 @@ class Drag {
   Drag(Input &, Fluid<Phys> *);
   void ShowConfig();                    // print configuration
   void AddDragForce(const real);
+  void EnrollUserDrag(UserDefDragFunc);   // User defined drag function enrollment
 
   IdefixArray4D<real> UcDust;  // Dust conservative quantities
   IdefixArray4D<real> UcGas;  // Gas conservative quantities
   IdefixArray4D<real> VcDust;  // Gas primitive quantities
   IdefixArray4D<real> VcGas;  // Gas primitive quantities
   IdefixArray3D<real> InvDt;  // The InvDt of current dust specie
+  IdefixArray3D<real> gammai; // the drag coefficient (only used for user-defined dust grains)
   Type type;
 
  private:
   DataBlock* data;
   real dragCoeff;
   bool feedback{false};
+
+  UserDefDragFunc userDrag{NULL};
 
   // Sound speed computation
   real gamma;
@@ -77,6 +84,10 @@ Drag::Drag(Input &input, Fluid<Phys> *hydroin):
       this->type = Type::Size;
     } else if(dragType.compare("userdef") == 0) {
       this->type = Type::Userdef;
+      this->gammai = IdefixArray3D<real>("UserDrag",
+                                  data->np_tot[KDIR],
+                                  data->np_tot[JDIR],
+                                  data->np_tot[IDIR]);
     } else {
       std::stringstream msg;
       msg << "Unknown drag type \"" <<  dragType
@@ -85,11 +96,10 @@ Drag::Drag(Input &input, Fluid<Phys> *hydroin):
 
       IDEFIX_ERROR(msg);
     }
-    // If not userdef, then fetch the drag coefficient for the current specie.
-    if(this->type != Type::Userdef) {
-      const int n = hydroin->instanceNumber;
-      this->dragCoeff = input.Get<real>(BlockName,"drag",n+1);
-    }
+    // Fetch the drag coefficient for the current specie.
+    const int n = hydroin->instanceNumber;
+    this->dragCoeff = input.Get<real>(BlockName,"drag",n+1);
+
     // Feedback is true by default, but can be switched off.
     this->feedback = input.GetOrSet<bool>(BlockName,"drag_feedback",0,true);
   } else {

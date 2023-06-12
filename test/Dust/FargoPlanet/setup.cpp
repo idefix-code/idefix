@@ -44,7 +44,6 @@ void MySoundSpeed(DataBlock &data, const real t, IdefixArray3D<real> &cs) {
 
 void MyDrag(DataBlock *data, real beta, IdefixArray3D<real> &gamma) {
   // Compute the drag coefficient gamma from the input beta
-  real h0 = h0Glob;
   auto x1 = data->x[IDIR];
   real sigma0 = sigma0Glob;
 

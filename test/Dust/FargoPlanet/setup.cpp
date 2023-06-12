@@ -3,6 +3,7 @@
 #include "setup.hpp"
 
 real sigmaSlopeGlob;
+real sigma0Glob;
 real h0Glob;
 real HidealGlob;
 real gammaGlob;
@@ -21,30 +22,36 @@ void MySoundSpeed(DataBlock &data, const real t, IdefixArray3D<real> &cs) {
 }
 
 // drag coefficient assuming vertical hydrostatic equilirbium
-// And using the fact that Vc(RHO) is the surface density
-// This assumes that tau_s = beta * sqrt(2pi) h / (cs*Sigma)
-// So that the Stokes number St = Omega tau_s = sqrt(2pi) * beta / Sigma
+// And using the fact that Vc(RHO) is the surface density Sigma
 
-// In this setup, we assume rho_mid(R=1)=1, so that Sigma(R=1)=sqrt(2pi)*h0
-// hence beta = h0 * St(R=1)
+// Here, we start from the definition of the stopping time (see doc):
+// gamma_i = 1 / (tau_s * Sigma) = Omega / (St * Sigma)
+// by definition of the Stokes number (assuming Epstein)
+// St = Omega * taus = Omega * rho_s * a / (rho_mid * c_s)
+// Using the vertical equilibrium: rho_mid = Sigma/(sqrt(2pi)*h)
+// St = sqrt(2*pi) * rho_s a / Sigma
+// Hence the product St*Sigma is a constant for each specie.
+// We are free to define beta = St*Sigma/sigma0 so that gamma_i = Omega/(beta_i*sigma0)
 
-// Assuming Epstein drag, the particle size is related to St through:
-// a = 20 cm *  St * (Sigma/100 g.cm^-2) / (rho_s / 2 g.cm^-3)
+// In this setup, we assume Sigma = sigma0 @ R=1, so that St(R=1) = beta
+// Note that in this setup, sigma0 is entirely scale-free because there is no
+// gravitational interraction due to the gas.
+
+// Assuming Epstein drag and a disk with physical surface density Sigma_phys,
+// the particle size is related to beta through:
+// a = 20 cm *  beta * (Sigma_phys/100 g.cm^-2) / (rho_s / 2 g.cm^-3)
+// NB: checked against A. Johansen+ (2007)
 
 void MyDrag(DataBlock *data, real beta, IdefixArray3D<real> &gamma) {
   // Compute the drag coefficient gamma from the input beta
   real h0 = h0Glob;
   auto x1 = data->x[IDIR];
+  real sigma0 = sigma0Glob;
 
   idefix_for("MyDrag",0,data->np_tot[KDIR],0,data->np_tot[JDIR],0,data->np_tot[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
-      real R = x1(i);
-      real h = h0*R;
-      real cs = h0/sqrt(R);
-
-
-      gamma(k,j,i) = cs/(beta*sqrt(2.0*M_PI)*h);
-
+      real Omega = pow(x1(i),-1.5);
+      gamma(k,j,i) = Omega / (beta*sigma0);
     });
 }
 
@@ -164,6 +171,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output)// : m_pl
   if(data.haveFargo)
     data.fargo->EnrollVelocity(&FargoVelocity);
   sigmaSlopeGlob = input.Get<real>("Setup","sigmaSlope",0);
+  sigma0Glob = input.Get<real>("Setup","sigma0",0);
   h0Glob = input.Get<real>("Setup","h0",0);
 }
 
@@ -176,6 +184,7 @@ void Setup::InitFlow(DataBlock &data) {
     DataBlockHost d(data);
     real h0=h0Glob;
     real sigmaSlope = sigmaSlopeGlob;
+    real sigma0 = sigma0Glob;
 
     for(int k = 0; k < d.np_tot[KDIR] ; k++) {
         for(int j = 0; j < d.np_tot[JDIR] ; j++) {
@@ -186,7 +195,7 @@ void Setup::InitFlow(DataBlock &data) {
 
                 real cs2=(h0*Vk)*(h0*Vk);
 
-                d.Vc(RHO,k,j,i) = pow(R,-sigmaSlope-1) * exp(1.0/ (cs2) * (1.0/sqrt(R*R+z*z)-1.0/R)) ;
+                d.Vc(RHO,k,j,i) = sigma0*pow(R,-sigmaSlope-1) * exp(1.0/ (cs2) * (1.0/sqrt(R*R+z*z)-1.0/R)) ;
                 d.Vc(VX1,k,j,i) = 0.0;//+sin(8*d.x[JDIR](j));
                 d.Vc(VX3,k,j,i) = 0.0;
                 d.Vc(VX2,k,j,i) = Vk*sqrt( R / sqrt(R*R + z*z) -(2.0+sigmaSlope)*h0*h0);

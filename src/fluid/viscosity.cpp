@@ -509,6 +509,7 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
 
         // tau_xy is initially cell centered since it is involved in the source term
         tau_xy = etaC1*( 0.5*(Vc(VX1,k,j+1,i)-Vc(VX1,k,j-1,i))/x1(i)/dx2(j)
+                        +0.5*(Vc(VX2,k,j,i+1)-Vc(VX2,k,j,i-1))/dx1(i)
                             - Vc(VX2,k,j,i)/x1(i));
         tau_yy = 2.0*eta1*(dVyj/x1(i) + vx1i/x1(i)) + (eta2 - (2.0/3.0)*eta1)*divV;
 

@@ -10,6 +10,7 @@
 
 #include "fluid.hpp"
 #include "dataBlock.hpp"
+#include "tracer.hpp"
 
 template <typename Phys>
 KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[], real gamma_m1) {
@@ -137,6 +138,10 @@ void Fluid<Phys>::ConvertConsToPrim() {
       }
   });
 
+  if(haveTracer) {
+    tracer->ConvertConsToPrim();
+  }
+
   idfx::popRegion();
 }
 
@@ -169,6 +174,10 @@ void Fluid<Phys>::ConvertPrimToCons() {
         Uc(nv,k,j,i) = U[nv];
       }
   });
+
+  if(haveTracer) {
+    tracer->ConvertPrimToCons();
+  }
 
   idfx::popRegion();
 }

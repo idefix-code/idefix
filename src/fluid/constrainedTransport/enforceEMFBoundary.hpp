@@ -30,7 +30,7 @@ void ConstrainedTransport<Phys>::EnforceEMFBoundary() {
     this->data->hydro->emfBoundaryFunc(*data, data->t);
 
   if(this->data->hydro->haveAxis) {
-    this->data->hydro->myAxis->RegularizeEMFs();
+    this->data->hydro->boundary->axis->RegularizeEMFs();
   }
 
   #ifdef ENFORCE_EMF_CONSISTENCY

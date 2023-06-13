@@ -158,7 +158,7 @@ void Fluid<Phys>::CalcCurrent() {
   // Regularize the current along the axis in cases where an axis is present.
   // This feature is not yet ready, so it is commented out
   if(this->haveAxis) {
-    this->myAxis->RegularizeCurrent();
+    boundary->axis->RegularizeCurrent();
   }
 
   idfx::popRegion();

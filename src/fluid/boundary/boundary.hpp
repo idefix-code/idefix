@@ -9,6 +9,7 @@
 #define FLUID_BOUNDARY_BOUNDARY_HPP_
 #include <string>
 #include <vector>
+#include <memory>
 #include "idefix.hpp"
 #include "fluid_defs.hpp"
 #include "grid.hpp"
@@ -21,6 +22,7 @@
 class DataBlock;
 #include "physics.hpp"
 template <typename Phys> class Fluid;
+class Axis;
 
 // User-defined boundary conditions signature
 template<typename Phys>
@@ -35,7 +37,7 @@ using InternalBoundaryFuncOld = void (*) (DataBlock &, const real t); // DEPRECA
 template<typename Phys>
 class Boundary {
  public:
-  Boundary(Input &, Grid &, Fluid<Phys>* );
+  explicit Boundary(Fluid<Phys>*);
   void SetBoundaries(real);                         ///< Set the ghost zones in all directions
   void EnforceBoundaryDir(real, int);             ///< write in the ghost zone in specific direction
   void ReconstructVcField(IdefixArray4D<real> &);  ///< reconstruct cell-centered magnetic field
@@ -104,24 +106,43 @@ class Boundary {
                             Function );
   IdefixArray4D<real> sBArray;    ///< Array use by shearingbox boundary conditions
 
+  IdefixArray4D<real> Vc; ///< reference to cell-centered array that we should sync
+  IdefixArray4D<real> Vs; ///< reference to face-centered array that we should sync
+  std::unique_ptr<Axis> axis; ///< Axis object, initialised if needed.
+  bool haveAxis{false};
+
  private:
+  friend class Axis;
   Fluid<Phys> *fluid;    // pointer to parent hydro object
   DataBlock *data;  // pointer to parent datablock
+  int nVar;         // # of variables involved in the boundary conditions
 };
 
 #include "fluid.hpp"
+#include "axis.hpp"
 
 template<typename Phys>
-Boundary<Phys>::Boundary(Input & input, Grid &grid, Fluid<Phys>* fluid) {
-  idfx::pushRegion("HydroBoundary::Init");
+Boundary<Phys>::Boundary(Fluid<Phys>* fluid) {
+  idfx::pushRegion("Boundary::Boundary(Fluid)");
   this->fluid = fluid;
   this->data = fluid->data;
+  this->Vc = fluid->Vc;
+  this->Vs = fluid->Vs;
+  this->nVar = Phys::nvar;
+  if(fluid->haveTracer) this->nVar += fluid->nTracer;
+
+  // Do we have to take care of the axis?
+  if(data->haveAxis) {
+    this->axis = std::make_unique<Axis>(this);
+    this->haveAxis = true;
+  }
+
 
   if(data->lbound[IDIR] == shearingbox || data->rbound[IDIR] == shearingbox) {
     // using np_tot[...]+1 points to allow this buffer to represent
     // fields that are defined on faces
     sBArray = IdefixArray4D<real>("ShearingBoxArray",
-                                  Phys::nvar,
+                                  nVar,
                                   data->np_tot[KDIR]+1,
                                   data->np_tot[JDIR]+1,
                                   data->nghost[IDIR]);
@@ -134,8 +155,8 @@ Boundary<Phys>::Boundary(Input & input, Grid &grid, Fluid<Phys>* fluid) {
   // The variable mapper list all of the variable which are exchanged in MPI boundary calls
   // This is required since we skip some of the variables in Vc to limit the amount of data
   // being exchanged
-  int mapNVars = Phys::nvar;
-  if constexpr(Phys::mhd) mapNVars -= DIMENSIONS;
+  int mapNVars = nVar;
+  if(Phys::mhd) mapNVars -= DIMENSIONS;
 
   std::vector<int> mapVars;
 
@@ -144,7 +165,7 @@ Boundary<Phys>::Boundary(Input & input, Grid &grid, Fluid<Phys>* fluid) {
   for(int n = 0 ; n < mapNVars ; n++) {
     mapVars.push_back(ntarget);
     ntarget++;
-    if constexpr(Phys::mhd) {
+    if(Phys::mhd) {
       // Skip centered field components if they are also defined in Vs
       #if DIMENSIONS >= 1
         if(ntarget==BX1) ntarget++;
@@ -161,6 +182,7 @@ Boundary<Phys>::Boundary(Input & input, Grid &grid, Fluid<Phys>* fluid) {
   mpi.Init(data->mygrid, mapVars, data->nghost.data(), data->np_int.data(), Phys::mhd);
 
 #endif // MPI
+  idfx::popRegion();
   idfx::popRegion();
 }
 
@@ -203,13 +225,13 @@ void Boundary<Phys>::SetBoundaries(real t) {
     if(data->mygrid->nproc[dir]>1) {
       switch(dir) {
         case 0:
-          mpi.ExchangeX1(fluid->Vc, fluid->Vs);
+          mpi.ExchangeX1(this->Vc, this->Vs);
           break;
         case 1:
-          mpi.ExchangeX2(fluid->Vc, fluid->Vs);
+          mpi.ExchangeX2(this->Vc, this->Vs);
           break;
         case 2:
-          mpi.ExchangeX3(fluid->Vc, fluid->Vs);
+          mpi.ExchangeX3(this->Vc, this->Vs);
           break;
       }
     }
@@ -223,7 +245,7 @@ void Boundary<Phys>::SetBoundaries(real t) {
 
   if constexpr(Phys::mhd) {
     // Remake the cell-centered field.
-    ReconstructVcField(fluid->Vc);
+    ReconstructVcField(this->Vc);
   }
 
   idfx::popRegion();
@@ -238,30 +260,30 @@ void Boundary<Phys>::EnforceBoundaryDir(real t, int dir) {
   // left boundary
 
   switch(data->lbound[dir]) {
-    case internal:
+    case BoundaryType::internal:
       // internal is used for MPI-enforced boundary conditions. Nothing to be done here.
       break;
 
-    case periodic:
+    case BoundaryType::periodic:
       if(data->mygrid->nproc[dir] > 1) break; // Periodicity already enforced by MPI calls
       EnforcePeriodic(dir,left);
       break;
 
-    case reflective:
+    case BoundaryType::reflective:
       EnforceReflective(dir,left);
       break;
 
-    case outflow:
+    case BoundaryType::outflow:
       EnforceOutflow(dir,left);
       break;
 
-    case shearingbox:
+    case BoundaryType::shearingbox:
       EnforceShearingBox(t,dir,left);
       break;
-    case axis:
-      fluid->myAxis->EnforceAxisBoundary(left);
+    case BoundaryType::axis:
+      axis->EnforceAxisBoundary(left);
       break;
-    case userdef:
+    case BoundaryType::userdef:
       if(this->haveUserDefBoundary) {
         if(this->userDefBoundaryFunc != NULL) {
           this->userDefBoundaryFunc(fluid, dir, left, t);
@@ -285,27 +307,27 @@ void Boundary<Phys>::EnforceBoundaryDir(real t, int dir) {
   // right boundary
 
   switch(data->rbound[dir]) {
-    case internal:
+    case BoundaryType::internal:
       // internal is used for MPI-enforced boundary conditions. Nothing to be done here.
       break;
 
-    case periodic:
+    case BoundaryType::periodic:
       if(data->mygrid->nproc[dir] > 1) break; // Periodicity already enforced by MPI calls
       EnforcePeriodic(dir,right);
       break;
-    case reflective:
+    case BoundaryType::reflective:
       EnforceReflective(dir,right);
       break;
-    case outflow:
+    case BoundaryType::outflow:
       EnforceOutflow(dir,right);
       break;
-    case shearingbox:
+    case BoundaryType::shearingbox:
       EnforceShearingBox(t,dir,right);
       break;
-    case axis:
-      fluid->myAxis->EnforceAxisBoundary(right);
+    case BoundaryType::axis:
+      axis->EnforceAxisBoundary(right);
       break;
-    case userdef:
+    case BoundaryType::userdef:
       if(this->haveUserDefBoundary) {
         if(this->userDefBoundaryFunc != NULL) {
           this->userDefBoundaryFunc(fluid, dir, right, t);
@@ -333,7 +355,7 @@ template<typename Phys>
 void Boundary<Phys>::ReconstructVcField(IdefixArray4D<real> &Vc) {
   idfx::pushRegion("Hydro::ReconstructVcField");
 
-  IdefixArray4D<real> Vs=fluid->Vs;
+  IdefixArray4D<real> Vs=this->Vs;
 
   // Reconstruct cell average field when using CT
   idefix_for("ReconstructVcMagField",0,data->np_tot[KDIR],0,data->np_tot[JDIR],0,data->np_tot[IDIR],
@@ -356,10 +378,13 @@ void Boundary<Phys>::ReconstructNormalField(int dir) {
   const bool reconstructRight = !(data->rbound[dir]==periodic || data->rbound[dir]==internal);
 
   // nothing to reconstruct in that direction!
-  if((!reconstructLeft) && (!reconstructRight)) return;
+  if((!reconstructLeft) && (!reconstructRight)) {
+    idfx::popRegion();
+    return;
+  }
 
   // Reconstruct the field
-  IdefixArray4D<real> Vs = fluid->Vs;
+  IdefixArray4D<real> Vs = this->Vs;
   // Coordinates
   IdefixArray1D<real> x1=data->x[IDIR];
   IdefixArray1D<real> x2=data->x[JDIR];
@@ -409,7 +434,7 @@ void Boundary<Phys>::ReconstructNormalField(int dir) {
   if(dir==JDIR) {
     nstart = data->beg[JDIR]-1;
     nend = data->end[JDIR];
-    if(!fluid->haveAxis) {
+    if(!this->haveAxis) {
       idefix_for("ReconstructBX2s",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
         KOKKOS_LAMBDA (int k, int i) {
           if(reconstructLeft) {
@@ -432,7 +457,7 @@ void Boundary<Phys>::ReconstructNormalField(int dir) {
       );
     } else {
       // We have an axis, ask myAxis to do that job for us
-      fluid->myAxis->ReconstructBx2s();
+      axis->ReconstructBx2s();
     }
   }
 #endif
@@ -512,7 +537,7 @@ void Boundary<Phys>::EnrollInternalBoundary(InternalBoundaryFunc<Phys> myFunc) {
 
 template<typename Phys>
 void Boundary<Phys>::EnforcePeriodic(int dir, BoundarySide side ) {
-  IdefixArray4D<real> Vc = fluid->Vc;
+  IdefixArray4D<real> Vc = this->Vc;
   int nxi = data->np_int[IDIR];
   int nxj = data->np_int[JDIR];
   int nxk = data->np_int[KDIR];
@@ -542,7 +567,7 @@ void Boundary<Phys>::EnforcePeriodic(int dir, BoundarySide side ) {
         });
 
   if constexpr(Phys::mhd) {
-    IdefixArray4D<real> Vs = fluid->Vs;
+    IdefixArray4D<real> Vs = this->Vs;
     BoundaryForX1s("BoundaryPeriodicX1s",dir,side,
     KOKKOS_LAMBDA (int k, int j, int i) {
       int iref, jref, kref;
@@ -610,7 +635,7 @@ void Boundary<Phys>::EnforcePeriodic(int dir, BoundarySide side ) {
 
 template<typename Phys>
 void Boundary<Phys>::EnforceReflective(int dir, BoundarySide side ) {
-  IdefixArray4D<real> Vc = fluid->Vc;
+  IdefixArray4D<real> Vc = this->Vc;
   const int nxi = data->np_int[IDIR];
   const int nxj = data->np_int[JDIR];
   const int nxk = data->np_int[KDIR];
@@ -633,7 +658,7 @@ void Boundary<Phys>::EnforceReflective(int dir, BoundarySide side ) {
         });
 
   if constexpr(Phys::mhd) {
-    IdefixArray4D<real> Vs = fluid->Vs;
+    IdefixArray4D<real> Vs = this->Vs;
     if(dir==JDIR || dir==KDIR) {
       BoundaryForX1s("BoundaryReflectiveX1s",dir,side,
         KOKKOS_LAMBDA (int k, int j, int i) {
@@ -675,7 +700,7 @@ void Boundary<Phys>::EnforceReflective(int dir, BoundarySide side ) {
 
 template<typename Phys>
 void Boundary<Phys>::EnforceOutflow(int dir, BoundarySide side ) {
-  IdefixArray4D<real> Vc = fluid->Vc;
+  IdefixArray4D<real> Vc = this->Vc;
   const int nxi = data->np_int[IDIR];
   const int nxj = data->np_int[JDIR];
   const int nxk = data->np_int[KDIR];
@@ -704,7 +729,7 @@ void Boundary<Phys>::EnforceOutflow(int dir, BoundarySide side ) {
         });
 
   if constexpr(Phys::mhd) {
-    IdefixArray4D<real> Vs = fluid->Vs;
+    IdefixArray4D<real> Vs = this->Vs;
     if(dir==JDIR || dir==KDIR) {
       BoundaryForX1s("BoundaryOutflowX1s",dir,side,
         KOKKOS_LAMBDA (int k, int j, int i) {
@@ -754,7 +779,7 @@ void Boundary<Phys>::EnforceShearingBox(real t, int dir, BoundarySide side) {
   if(data->mygrid->nproc[dir] == 1) EnforcePeriodic(dir, side);
 
   IdefixArray4D<real> scrh = sBArray;
-  IdefixArray4D<real> Vc = fluid->Vc;
+  IdefixArray4D<real> Vc = this->Vc;
 
   const int nxi = data->np_int[IDIR];
   const int nxj = data->np_int[JDIR];
@@ -842,7 +867,7 @@ void Boundary<Phys>::EnforceShearingBox(real t, int dir, BoundarySide side) {
 
   // Magnetised version of the same thing
   if constexpr(Phys::mhd) {
-    IdefixArray4D<real> Vs = fluid->Vs;
+    IdefixArray4D<real> Vs = this->Vs;
     #if DIMENSIONS >= 2
       for(int component = BX2s ; component < DIMENSIONS ; component++) {
         BoundaryFor("BoundaryShearingBoxBXs", dir, side,
@@ -922,7 +947,7 @@ inline void Boundary<Phys>::BoundaryForAll(
     const int kbeg = (dir == KDIR) ? side*(kghost+nxk) : 0;
     const int kend = (dir == KDIR) ? kghost + side*(kghost+nxk) : data->np_tot[KDIR];
 
-    idefix_for(name, 0, Phys::nvar, kbeg, kend, jbeg, jend, ibeg, iend, function);
+    idefix_for(name, 0, this->nVar, kbeg, kend, jbeg, jend, ibeg, iend, function);
 }
 
 template<typename Phys>

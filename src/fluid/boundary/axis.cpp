@@ -5,161 +5,10 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef FLUID_AXIS_HPP_
-#define FLUID_AXIS_HPP_
+#include "axis.hpp"
+#include "boundary.hpp"
 
-#include <vector>
-#include "idefix.hpp"
-#include "grid.hpp"
-#include "constrainedTransport.hpp"
-
-// Forward class hydro declaration
-#include "physics.hpp"
-template <typename Phys> class Fluid;
-template <typename Phys> class ConstrainedTransport;
-class DataBlock;
-
-// Whether we use athena++ procedure to regularise BX2s
-#define AXIS_BX2S_USE_ATHENA_REGULARISATION
-
-
-template<typename Phys>
-class Axis {
- public:
-  Axis(Grid &, Fluid<Phys> *);  // Initialisation
-  void RegularizeEMFs();                 // Regularize the EMF sitting on the axis
-  void RegularizeCurrent();             // Regularize the currents along the axis
-  void EnforceAxisBoundary(int side);   // Enforce the boundary conditions (along X2)
-  void ReconstructBx2s();               // Reconstruct BX2s in the ghost zone using divB=0
-  void ShowConfig();
-
-
-  void SymmetrizeEx1Side(int);         // Symmetrize on a specific side (internal method)
-  void RegularizeEx3side(int);         // Regularize Ex3 along the axis (internal method)
-  void RegularizeCurrentSide(int);      // Regularize J along the axis (internal method)
-  void FixBx2sAxis(int side);           // Fix BX2s on the axis using the field around it (internal)
-  void FixBx2sAxisGhostAverage(int side); //Fix BX2s on the axis using the average of neighbouring
-                                          // cell in theta direction (like Athena)
-  void ExchangeMPI(int side);           // Function has to be public for GPU, but its technically
-                                        // a private function
-
-
- private:
-  bool isTwoPi = false;
-  bool axisRight = false;
-  bool axisLeft = false;
-  bool needMPIExchange = false;
-
-  enum {faceTop, faceBot};
-#ifdef WITH_MPI
-  MPI_Request sendRequest;
-  MPI_Request recvRequest;
-
-  IdefixArray1D<real> bufferSend;
-  IdefixArray1D<real> bufferRecv;
-
-  int bufferSize;
-
-  IdefixArray1D<int>  mapVars;
-  int mapNVars{0};
-
-#endif
-  void InitMPI();
-
-  IdefixArray1D<real> Ex1Avg;
-  IdefixArray2D<real> BAvg;
-  IdefixArray2D<real> JAvg;
-  IdefixArray1D<int> symmetryVc;
-  IdefixArray1D<int> symmetryVs;
-
-
-  Fluid<Phys> *hydro;
-  DataBlock *data;
-  ConstrainedTransport<Phys> *emf;
-};
-
-#include "fluid.hpp"
-#include "dataBlock.hpp"
-
-template<typename Phys>
-Axis<Phys>::Axis(Grid &grid, Fluid<Phys> *h) {
-  this->hydro = h;
-  this->data = this->hydro->data;
-  this->emf = this->hydro->emf.get();
-
-  #if GEOMETRY != SPHERICAL
-    IDEFIX_ERROR("Axis boundary conditions are only designed to handle spherical geometry");
-  #endif
-
-
-  if(fabs((grid.xend[KDIR] - grid.xbeg[KDIR] -2.0*M_PI)) < 1e-10) {
-    this->isTwoPi = true;
-    #ifdef WITH_MPI
-      // Check that there is a domain decomposition in phi
-      if(data->mygrid->nproc[KDIR]>1) {
-        if(data->mygrid->nproc[KDIR]%2==1) {
-          IDEFIX_ERROR("The numbre of processes in the phi direction should"
-                        " be even for axis decomposition");
-        }
-        needMPIExchange = true;
-      }
-    #endif
-  } else {
-    this->isTwoPi = false;
-  }
-
-  // Check where the axis is lying.
-  if(hydro->data->lbound[JDIR] == axis) axisLeft = true;
-  if(hydro->data->rbound[JDIR] == axis) axisRight = true;
-
-  // Init the symmetry array (used to flip the signs of arrays accross the axis)
-  symmetryVc = IdefixArray1D<int>("Axis:SymmetryVc",Phys::nvar);
-  IdefixArray1D<int>::HostMirror symmetryVcHost = Kokkos::create_mirror_view(symmetryVc);
-  // Init the array
-  for (int nv = 0; nv < Phys::nvar; nv++) {
-    symmetryVcHost(nv) = 1;
-    if (nv == VX2)
-      symmetryVcHost(nv) = -1;
-    if (nv == VX3)
-      symmetryVcHost(nv) = -1;
-    if (nv == BX2)
-      symmetryVcHost(nv) = -1;
-    if (nv == BX3)
-      symmetryVcHost(nv) = -1;
-  }
-  Kokkos::deep_copy(symmetryVc, symmetryVcHost);
-
-  if constexpr(Phys::mhd) {
-    idfx::cout << "Phys MHD" << std::endl;
-    symmetryVs = IdefixArray1D<int>("Axis:SymmetryVs",DIMENSIONS);
-    IdefixArray1D<int>::HostMirror symmetryVsHost = Kokkos::create_mirror_view(symmetryVs);
-    // Init the array
-    for(int nv = 0; nv < DIMENSIONS; nv++) {
-      symmetryVsHost(nv) = 1;
-      if (nv == BX2s)
-        symmetryVsHost(nv) = -1;
-      if (nv == BX3s)
-        symmetryVsHost(nv) = -1;
-    }
-    Kokkos::deep_copy(symmetryVs, symmetryVsHost);
-
-    this->Ex1Avg = IdefixArray1D<real>("Axis:Ex1Avg",hydro->data->np_tot[IDIR]);
-    this->BAvg = IdefixArray2D<real>("Axis:BxAvg",hydro->data->np_tot[IDIR],2);
-    if(hydro->haveCurrent) {
-      this->JAvg = IdefixArray2D<real>("Axis:JAvg",hydro->data->np_tot[IDIR],3);
-    }
-  }
-
-  #ifdef WITH_MPI
-    if(needMPIExchange) {
-      // Make MPI exchange datatypes
-      InitMPI();
-    }
-  #endif
-}
-
-template<typename Phys>
-void Axis<Phys>::ShowConfig() {
+void Axis::ShowConfig() {
   idfx::cout << "Axis: Axis regularisation ENABLED." << std::endl;
   if(isTwoPi) {
     idfx::cout << "Axis: Full 2pi regularisation around the axis." << std::endl;
@@ -171,11 +20,11 @@ void Axis<Phys>::ShowConfig() {
   }
 }
 
-template<typename Phys>
-void Axis<Phys>::SymmetrizeEx1Side(int jref) {
+
+void Axis::SymmetrizeEx1Side(int jref) {
 #if DIMENSIONS == 3
 
-  IdefixArray3D<real> Ex1 = emf->ex;
+  IdefixArray3D<real> Ex1 = this->ex;
   IdefixArray1D<real> Ex1Avg = this->Ex1Avg;
 
   if(isTwoPi) {
@@ -220,9 +69,9 @@ void Axis<Phys>::SymmetrizeEx1Side(int jref) {
 // in Ve(AX3e...), leading potentially numerical instabilities in that region.
 // Hence, we enforce a regularisation of Ex3 for consistancy.
 
-template<typename Phys>
-void Axis<Phys>::RegularizeEx3side(int jref) {
-  IdefixArray3D<real> Ex3 = emf->ez;
+
+void Axis::RegularizeEx3side(int jref) {
+  IdefixArray3D<real> Ex3 = this->ez;
 
   idefix_for("Ex3_Regularise",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
     KOKKOS_LAMBDA(int k,int i) {
@@ -230,12 +79,12 @@ void Axis<Phys>::RegularizeEx3side(int jref) {
     });
 }
 
-template<typename Phys>
-void Axis<Phys>::RegularizeCurrentSide(int side) {
+
+void Axis::RegularizeCurrentSide(int side) {
   // Compute the values of Jx, Jy and Jz that are consistent for all cells touching the axis
   #if DIMENSIONS == 3
-    IdefixArray4D<real> J = hydro->J;
-    IdefixArray4D<real> Vs = hydro->Vs;
+    IdefixArray4D<real> J = this->J;
+    IdefixArray4D<real> Vs = this->Vs;
     int js = 0;
     int jc = 0;
     int sign = 0;
@@ -291,17 +140,17 @@ void Axis<Phys>::RegularizeCurrentSide(int side) {
 }
 
 // Average the Emf component along the axis
-template<typename Phys>
-void Axis<Phys>::RegularizeEMFs() {
+
+void Axis::RegularizeEMFs() {
   idfx::pushRegion("Axis::RegularizeEMFs");
 
   if(this->axisLeft) {
-    int jref = hydro->data->beg[JDIR];
+    int jref = data->beg[JDIR];
     SymmetrizeEx1Side(jref);
     RegularizeEx3side(jref);
   }
   if(this->axisRight) {
-    int jref = hydro->data->end[JDIR];
+    int jref = data->end[JDIR];
     SymmetrizeEx1Side(jref);
     RegularizeEx3side(jref);
   }
@@ -310,8 +159,8 @@ void Axis<Phys>::RegularizeEMFs() {
 }
 
 // Average the Emf component along the axis
-template<typename Phys>
-void Axis<Phys>::RegularizeCurrent() {
+
+void Axis::RegularizeCurrent() {
   idfx::pushRegion("Axis::RegularizeCurrent");
 
   if(this->axisLeft) {
@@ -324,11 +173,11 @@ void Axis<Phys>::RegularizeCurrent() {
   idfx::popRegion();
 }
 
-template<typename Phys>
-void Axis<Phys>::FixBx2sAxis(int side) {
+
+void Axis::FixBx2sAxis(int side) {
   // Compute the values of Bx and By that are consistent with BX2 along the axis
   #if DIMENSIONS == 3
-    IdefixArray4D<real> Vs = hydro->Vs;
+    IdefixArray4D<real> Vs = this->Vs;
     IdefixArray2D<real> BAvg = this->BAvg;
     IdefixArray1D<real> phi = data->x[KDIR];
 
@@ -384,8 +233,8 @@ void Axis<Phys>::FixBx2sAxis(int side) {
   #endif // DIMENSIONS
 }
 
-template<typename Phys>
-void Axis<Phys>::FixBx2sAxisGhostAverage(int side) {
+
+void Axis::FixBx2sAxisGhostAverage(int side) {
   // This uses the same method as Athena (Stone+????) to enforce the BX2 value
   // on the axis :
   // average of BX2s on the left face of the last ghost cell and right face of
@@ -393,7 +242,7 @@ void Axis<Phys>::FixBx2sAxisGhostAverage(int side) {
   // right-side boundary)
 
   #if DIMENSIONS == 3
-    IdefixArray4D<real> Vs = hydro->Vs;
+    IdefixArray4D<real> Vs = this->Vs;
 
     int jaxis = 0;
 
@@ -415,10 +264,10 @@ void Axis<Phys>::FixBx2sAxisGhostAverage(int side) {
 
 
 // enforce the boundary conditions on the ghost zone accross the axis
-template<typename Phys>
-void Axis<Phys>::EnforceAxisBoundary(int side) {
+
+void Axis::EnforceAxisBoundary(int side) {
   idfx::pushRegion("Axis::EnforceAxisBoundary");
-  IdefixArray4D<real> Vc = hydro->Vc;
+  IdefixArray4D<real> Vc = this->Vc;
   IdefixArray1D<int> sVc = this->symmetryVc;
 
   int ibeg = 0;
@@ -447,7 +296,7 @@ void Axis<Phys>::EnforceAxisBoundary(int side) {
     if(needMPIExchange) {
       ExchangeMPI(side);
     } else { // no MPI exchange
-      idefix_for("BoundaryAxis",0,Phys::nvar,kbeg,kend,jbeg,jend,ibeg,iend,
+      idefix_for("BoundaryAxis",0,this->nVar,kbeg,kend,jbeg,jend,ibeg,iend,
               KOKKOS_LAMBDA (int n, int k, int j, int i) {
                 int kcomp = nghost_k + (( k - nghost_k + np_int_k/2) % np_int_k);
 
@@ -455,7 +304,7 @@ void Axis<Phys>::EnforceAxisBoundary(int side) {
               });
     }// MPI Exchange
   } else {  // not 2pi
-    idefix_for("BoundaryAxis",0,Phys::nvar,kbeg,kend,jbeg,jend,ibeg,iend,
+    idefix_for("BoundaryAxis",0,this->nVar,kbeg,kend,jbeg,jend,ibeg,iend,
             KOKKOS_LAMBDA (int n, int k, int j, int i) {
               // kcomp = k by construction since we're doing a fraction of twopi
 
@@ -463,8 +312,8 @@ void Axis<Phys>::EnforceAxisBoundary(int side) {
             });
   }
 
-  if constexpr(Phys::mhd) {
-    IdefixArray4D<real> Vs = hydro->Vs;
+  if(haveMHD) {
+    IdefixArray4D<real> Vs = this->Vs;
     IdefixArray1D<int> sVs = this->symmetryVs;
 
     for(int component=0; component<DIMENSIONS; component++) {
@@ -507,11 +356,11 @@ void Axis<Phys>::EnforceAxisBoundary(int side) {
 }
 
 // Reconstruct Bx2s taking care of the sides where an axis is lying
-template<typename Phys>
-void Axis<Phys>::ReconstructBx2s() {
+
+void Axis::ReconstructBx2s() {
   idfx::pushRegion("Axis::ReconstructBx2s");
 #if DIMENSIONS >= 2 && MHD == YES
-  IdefixArray4D<real> Vs = hydro->Vs;
+  IdefixArray4D<real> Vs = this->Vs;
   IdefixArray3D<real> Ax1=data->A[IDIR];
   IdefixArray3D<real> Ax2=data->A[JDIR];
   IdefixArray3D<real> Ax3=data->A[KDIR];
@@ -578,8 +427,8 @@ void Axis<Phys>::ReconstructBx2s() {
 
 
 
-template<typename Phys>
-void Axis<Phys>::ExchangeMPI(int side) {
+
+void Axis::ExchangeMPI(int side) {
   idfx::pushRegion("Axis::ExchangeMPI");
   #ifdef WITH_MPI
   // Load  the buffers with data
@@ -587,8 +436,8 @@ void Axis<Phys>::ExchangeMPI(int side) {
   int nx,ny,nz;
   auto bufferSend = this->bufferSend;
   IdefixArray1D<int> map = this->mapVars;
-  IdefixArray4D<real> Vc = hydro->Vc;
-  IdefixArray4D<real> Vs = hydro->Vs;
+  IdefixArray4D<real> Vc = this->Vc;
+  IdefixArray4D<real> Vs = this->Vs;
 
 // If MPI Persistent, start receiving even before the buffers are filled
 
@@ -617,7 +466,7 @@ void Axis<Phys>::ExchangeMPI(int side) {
                                                           Vc(map(n),k,j+ny,i);
       }
     );
-    if constexpr(Phys::mhd) {
+    if (haveMHD) {
       int VsIndex = mapNVars*nx*ny*nz;
       idefix_for("LoadBufferX2IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
         KOKKOS_LAMBDA (int k, int j, int i) {
@@ -642,7 +491,7 @@ void Axis<Phys>::ExchangeMPI(int side) {
     );
 
     // Load face-centered field in the buffer
-     if constexpr(Phys::mhd) {
+     if (haveMHD) {
       int VsIndex = mapNVars*nx*ny*nz;
       idefix_for("LoadBufferX2IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
         KOKKOS_LAMBDA (int k, int j, int i) {
@@ -681,7 +530,7 @@ void Axis<Phys>::ExchangeMPI(int side) {
     );
 
     // Load face-centered field in the buffer
-    if constexpr(Phys::mhd) {
+    if (haveMHD) {
       int VsIndex = mapNVars*nx*ny*nz;
       auto sVs = this->symmetryVs;
       idefix_for("StoreBufferX2IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
@@ -709,7 +558,7 @@ void Axis<Phys>::ExchangeMPI(int side) {
     );
 
     // Load face-centered field in the buffer
-    if constexpr(Phys::mhd) {
+    if (haveMHD) {
       int VsIndex = mapNVars*nx*ny*nz;
       auto sVs = this->symmetryVs;
       idefix_for("StoreBufferX2IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
@@ -738,8 +587,8 @@ void Axis<Phys>::ExchangeMPI(int side) {
   idfx::popRegion();
 }
 
-template<typename Phys>
-void Axis<Phys>::InitMPI() {
+
+void Axis::InitMPI() {
   idfx::pushRegion("Axis::InitMPI");
   #ifdef WITH_MPI
 
@@ -748,10 +597,10 @@ void Axis<Phys>::InitMPI() {
   // The variable mapper list all of the variable which are exchanged in MPI boundary calls
   // This is required since we skip some of the variables in Vc to limit the amount of data
   // being exchanged
-  if constexpr(Phys::mhd) {
-    this->mapNVars = Phys::nvar - DIMENSIONS; // We don't send B components (already in Vs)
+  if (haveMHD) {
+    this->mapNVars = this->nVar - DIMENSIONS; // We don't send B components (already in Vs)
   } else {
-    this->mapNVars = Phys::nvar;
+    this->mapNVars = this->nVar;
   }
 
   std::vector<int> mapVars;
@@ -760,7 +609,7 @@ void Axis<Phys>::InitMPI() {
   for(int n = 0 ; n < mapNVars ; n++) {
     mapVars.push_back(ntarget);
     ntarget++;
-    if constexpr(Phys::mhd) {
+    if (haveMHD) {
       // Skip centered field components if they are also defined in Vs
       #if DIMENSIONS >= 1
         if(ntarget==BX1) ntarget++;
@@ -777,7 +626,7 @@ void Axis<Phys>::InitMPI() {
   this->mapVars = idfx::ConvertVectorToIdefixArray(mapVars);
 
   this->bufferSize = data->np_tot[IDIR] * data->nghost[JDIR] * data->np_int[KDIR] * mapNVars;
-  if constexpr(Phys::mhd) {
+  if (haveMHD) {
     // IDIR
     bufferSize += (data->np_tot[IDIR]+1) * data->nghost[JDIR] * data->np_int[KDIR];
     #if DIMENSIONS==3
@@ -805,6 +654,3 @@ void Axis<Phys>::InitMPI() {
   #endif
   idfx::popRegion();
 }
-
-
-#endif // FLUID_AXIS_HPP_

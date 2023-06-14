@@ -241,20 +241,10 @@ int Vtk::Write() {
 #ifdef WITH_MPI
   MPI_Barrier(MPI_COMM_WORLD);
   // Open file for creating, return error if file already exists.
-  int err = MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
+  MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
                               MPI_MODE_CREATE | MPI_MODE_RDWR
                               | MPI_MODE_EXCL | MPI_MODE_UNIQUE_OPEN,
-                              MPI_INFO_NULL, &fileHdl);
-  if (err != MPI_SUCCESS)  {
-    char *errorMessageChar;
-    int errorLength;
-    MPI_Error_string(err, errorMessageChar, &errorLength);
-    std::string errorMessage(errorMessageChar,errorLength);
-    std::stringstream msg;
-    msg << "Cannot open dump file. MPI returned the following message:" << std::endl
-        << errorMessage;
-    IDEFIX_ERROR(msg);
-  }
+                              MPI_INFO_NULL, &fileHdl));
   this->offset = 0;
 #else
   fileHdl = fopen(filename.c_str(),"wb");

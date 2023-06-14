@@ -52,9 +52,8 @@ void  Dump::RegisterVariable(IdefixHostArray4D<real>& in,
 }
 
 
-
-Dump::Dump(DataBlock *datain) {
-  // Init the output period
+void Dump::Init(DataBlock *datain) {
+  idfx::pushRegion("Dump::Init");
   this->data = datain;
 
   for (int dir=0; dir<3; dir++) {
@@ -62,11 +61,6 @@ Dump::Dump(DataBlock *datain) {
   }
   this->dumpFileNumber = 0;
 
-
-  outputDirectory = ".";
-
-  // Add "dump" to the output directory
-  outputDirectory = outputDirectory/"dump";
   if(idfx::prank==0) {
     if(!std::filesystem::is_directory(outputDirectory)) {
       if(!std::filesystem::create_directory(outputDirectory)) {
@@ -163,6 +157,25 @@ Dump::Dump(DataBlock *datain) {
   this->RegisterVariable(&dumpFileNumber, "dumpFileNumber");
   this->RegisterVariable(&geometry, "geometry");
   this->RegisterVariable(periodicity, "periodicity", 3);
+
+  idfx::popRegion();
+}
+
+
+Dump::Dump(Input &input, DataBlock *datain) {
+  // Constructor with an input object, in which case,
+  // We use the outputdirectory provided in the input
+
+  outputDirectory = input.GetOrSet<std::string>("output","dmp_dir",0, "./");
+  Init(datain);
+}
+
+Dump::Dump(DataBlock *datain) {
+  // Constructor without an input object, in which case,
+  // We use the default output directory
+
+  outputDirectory = "./";
+  Init(datain);
 }
 
 Dump::~Dump() {

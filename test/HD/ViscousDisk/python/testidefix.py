@@ -24,7 +24,7 @@ parser.add_argument("-noplot",
 args, unknown=parser.parse_known_args()
 
 
-V=readVTK('../vtk/data.0001.vtk', geometry='spherical')
+V=readVTK('../data.0001.vtk', geometry='spherical')
 
 
 iref=32

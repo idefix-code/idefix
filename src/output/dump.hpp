@@ -161,7 +161,8 @@ class DumpField {
 class Dump {
   friend class DumpImage; // Allow dumpimag to have access to dump API
  public:
-  explicit Dump(DataBlock *);               // Create Dump Object
+  explicit Dump(Input &, DataBlock *);               // Create Dump Object
+  explicit Dump(DataBlock *);               // Create a dump object independent of input
   ~Dump();
 
   // Create a Dump file from the current state of the code
@@ -199,6 +200,7 @@ class Dump {
                         int size = 1);
 
  private:
+  void Init(DataBlock*);
   DataBlock *data;
   int dumpFileNumber;
   int geometry{GEOMETRY};

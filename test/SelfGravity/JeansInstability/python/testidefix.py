@@ -25,8 +25,8 @@ lbdJ = np.sqrt(cs02*np.pi/(gravCst*rho_bg)) # Jean's wavelength
 kJ = 2*np.pi/lbdJ # Jean's wavevector
 
 # Collect vtk files (we ignore those before vtkRef)
-Vmax=readVTK('../vtk/data.0004.vtk') # Best time vtk (for gr fitting)
-Vref=readVTK('../vtk/data.0003.vtk') # Ref vtk (after unwanted modes are quenched)
+Vmax=readVTK('../data.0004.vtk') # Best time vtk (for gr fitting)
+Vref=readVTK('../data.0003.vtk') # Ref vtk (after unwanted modes are quenched)
 
 # Collect data
 x1 = np.squeeze(Vref.x)

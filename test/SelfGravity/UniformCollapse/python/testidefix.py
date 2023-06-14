@@ -20,7 +20,7 @@ rho0 = 1e-3 # initial density
 tff = np.sqrt(3.*np.pi/(32.*rho0*gravCst)) # Theoretical free-fall time to achieve collapse
 
 # Collecting data
-V=readVTK('../vtk/data.0005.vtk')
+V=readVTK('../data.0005.vtk')
 time = V.t[0]
 rho = np.squeeze(V.data['RHO'])
 

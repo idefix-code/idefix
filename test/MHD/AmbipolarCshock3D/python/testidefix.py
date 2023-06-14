@@ -41,7 +41,7 @@ def f(x,D):
     return(diff)
 
 # load solution
-V=readVTK('../vtk/data.0001.vtk', geometry='cartesian')
+V=readVTK('../data.0001.vtk', geometry='cartesian')
 
 
 if(V.y.size>V.x.size):

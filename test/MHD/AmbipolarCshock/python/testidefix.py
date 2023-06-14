@@ -41,7 +41,7 @@ def f(x,D):
     return(diff)
 
 # load solution
-V=readVTK('../vtk/data.0001.vtk', geometry='cartesian')
+V=readVTK('../data.0001.vtk', geometry='cartesian')
 
 DSim=V.data['RHO'].flatten()
 if(V.y.size>V.x.size):

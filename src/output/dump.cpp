@@ -63,9 +63,16 @@ void Dump::Init(DataBlock *datain) {
 
   if(idfx::prank==0) {
     if(!std::filesystem::is_directory(outputDirectory)) {
-      if(!std::filesystem::create_directory(outputDirectory)) {
+      try {
+        if(!std::filesystem::create_directory(outputDirectory)) {
+          std::stringstream msg;
+          msg << "Cannot create directory " << outputDirectory << std::endl;
+          IDEFIX_ERROR(msg);
+        }
+      } catch(std::exception &e) {
         std::stringstream msg;
         msg << "Cannot create directory " << outputDirectory << std::endl;
+        msg << e.what();
         IDEFIX_ERROR(msg);
       }
     }
@@ -166,7 +173,12 @@ Dump::Dump(Input &input, DataBlock *datain) {
   // Constructor with an input object, in which case,
   // We use the outputdirectory provided in the input
 
-  outputDirectory = input.GetOrSet<std::string>("output","dmp_dir",0, "./");
+    // initialize output path
+  if(input.CheckEntry("Output","dmp_dir")>=0) {
+    outputDirectory = input.Get<std::string>("Output","dmp_dir",0);
+  } else {
+    outputDirectory = "./";
+  }
   Init(datain);
 }
 

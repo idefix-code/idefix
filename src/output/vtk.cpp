@@ -56,13 +56,24 @@ Vtk::Vtk(Input &input, DataBlock *datain) {
   grid.SyncFromDevice();
 
   // initialize output path
-  outputDirectory = input.GetOrSet<std::string>("output","vtk_dir",0, "./");
+  if(input.CheckEntry("Output","vtk_dir")>=0) {
+    outputDirectory = input.Get<std::string>("Output","vtk_dir",0);
+  } else {
+    outputDirectory = "./";
+  }
 
   if(idfx::prank==0) {
     if(!std::filesystem::is_directory(outputDirectory)) {
-      if(!std::filesystem::create_directory(outputDirectory)) {
+      try {
+        if(!std::filesystem::create_directory(outputDirectory)) {
+          std::stringstream msg;
+          msg << "Cannot create directory " << outputDirectory << std::endl;
+          IDEFIX_ERROR(msg);
+        }
+      } catch(std::exception &e) {
         std::stringstream msg;
         msg << "Cannot create directory " << outputDirectory << std::endl;
+        msg << e.what();
         IDEFIX_ERROR(msg);
       }
     }

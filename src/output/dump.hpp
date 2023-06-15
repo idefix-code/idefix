@@ -178,11 +178,12 @@ class Dump {
   explicit Dump(Input &, DataBlock *);               // Create Dump Object
   explicit Dump(DataBlock *);               // Create a dump object independent of input
   ~Dump();
+  void SetFilename(std::string);
 
   // Create a Dump file from the current state of the code
-  int Write(Output&);
+  int Write();
   // Read and load a dump file as current state of the code
-  bool Read(Output&, int);
+  bool Read(int);
 
   // Register IdefixArrays
   void RegisterVariable(IdefixArray3D<real>&,
@@ -219,7 +220,7 @@ class Dump {
   int dumpFileNumber;
   int geometry{GEOMETRY};
   int periodicity[3];
-
+  std::string filebase;                 // Default filename base
   real *scrch;                            // Scratch array in host space
 
   std::map<std::string, DumpField> dumpFieldMap;

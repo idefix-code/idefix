@@ -245,7 +245,6 @@ double TimeIntegrator::ComputeBalance() {
 // Compute one full cycle of the time Integrator
 void TimeIntegrator::Cycle(DataBlock &data) {
   // Do one cycle
-  IdefixArray3D<real> InvDt = data.hydro->InvDt;
   real newdt;
 
   idfx::pushRegion("TimeIntegrator::Cycle");

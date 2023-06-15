@@ -71,6 +71,9 @@ void Dump::Init(DataBlock *datain) {
   }
   this->dumpFileNumber = 0;
 
+  // Default filename base
+  this->filebase = "dump";
+
   if(idfx::prank==0) {
     if(!fs::is_directory(outputDirectory)) {
       try {
@@ -209,6 +212,10 @@ Dump::Dump(DataBlock *datain) {
 
 Dump::~Dump() {
   delete scrch;
+}
+
+void Dump::SetFilename(std::string filename) {
+  this->filebase = filename;
 }
 
 void Dump::WriteString(IdfxFileHandler fileHdl, char *str, int size) {
@@ -615,7 +622,7 @@ bool Dump::Read(Output& output, int readNumber ) {
   // Set filename
   std::stringstream ssdumpFileNum,ssFileName;
   ssdumpFileNum << std::setfill('0') << std::setw(4) << readNumber;
-  ssFileName << "dump." << ssdumpFileNum.str() << ".dmp";
+  ssFileName << this->filebase << "." << ssdumpFileNum.str() << ".dmp";
   filename = readDir/ssFileName.str();
 
   idfx::cout << "Dump: Reading " << filename << "..." << std::flush;
@@ -785,7 +792,7 @@ int Dump::Write(Output& output) {
   // Set filenames
   std::stringstream ssdumpFileNum,ssFileName;
   ssdumpFileNum << std::setfill('0') << std::setw(4) << dumpFileNumber;
-  ssFileName << "dump." << ssdumpFileNum.str() << ".dmp";
+  ssFileName << this->filebase << "." << ssdumpFileNum.str() << ".dmp";
   filename = outputDirectory/ssFileName.str();
 
   dumpFileNumber++;   // For next one

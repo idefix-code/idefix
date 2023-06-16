@@ -8,31 +8,25 @@ Created on Tue Dec  21 12:04:41 2021
 
 import os
 import sys
-import re
 sys.path.append(os.getenv("IDEFIX_DIR"))
 import numpy as np
 
 def filter_index(t):
-    # get read of data previously generated (when the code was restarted)
-    tref=t[-1]
-    idx=np.array([2])
-    idx[0]=t.size-1
-    for i in range(t.size-2,0,-1):
+    # get rid of data previously generated (when the code was restarted)
+    idx = [len(t) - 1]
+    tref = t[idx[0]]
+    for i in range(len(t)-2, -1, -1):
         if(t[i]<tref):
-            idxnew=np.insert(idx,0,i)
-            idx=idxnew
-            tref=t[i]
-    return(idx)
+            idx.append(i)
+            tref = t[i]
+    return idx[::-1]
 
-def datafile(filename, *, directory=""):
-    fullpath = os.path.join(directory, filename)
-    with open(fullpath) as f1:
-        data = f1.readlines()
-    y = [[v for v in re.split(r"[\t ]+", r)] for r in data]
-    columns = np.array(y, dtype="float64").T
+
+def datafile(filename):
+    data = np.loadtxt(filename, dtype="float64").T
     # reorder
-    idx=filter_index(columns[0])
-    return(columns[:,idx])
+    idx=filter_index(data[0])
+    return(data[:,idx])
 
 plot = False
 

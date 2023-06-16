@@ -62,8 +62,6 @@ if plot_orbit:
 
 rpl0_sim = np.sqrt(planet0[1]**2 + planet0[2]**2)
 rpl1_sim = np.sqrt(planet1[1]**2 + planet1[2]**2)
-(rpl0-rpl0_sim)/rpl0
-(rpl1-rpl1_sim)/rpl1
 
 mean0 = np.mean(100*(rpl0-rpl0_sim)/rpl0)
 mean1 = np.mean(100*(rpl1-rpl1_sim)/rpl1)

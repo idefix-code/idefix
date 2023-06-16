@@ -8,25 +8,31 @@ Created on Tue Dec  21 12:04:41 2021
 
 import os
 import sys
+import re
 sys.path.append(os.getenv("IDEFIX_DIR"))
 import numpy as np
 
 def filter_index(t):
-    # get rid of data previously generated (when the code was restarted)
-    idx = [len(t) - 1]
-    tref = t[idx[0]]
-    for i in range(len(t)-2, -1, -1):
+    # get read of data previously generated (when the code was restarted)
+    tref=t[-1]
+    idx=np.array([2])
+    idx[0]=t.size-1
+    for i in range(t.size-2,0,-1):
         if(t[i]<tref):
-            idx.append(i)
-            tref = t[i]
-    return idx[::-1]
+            idxnew=np.insert(idx,0,i)
+            idx=idxnew
+            tref=t[i]
+    return(idx)
 
-
-def datafile(filename):
-    data = np.loadtxt(filename, dtype="float64").T
+def datafile(filename, *, directory=""):
+    fullpath = os.path.join(directory, filename)
+    with open(fullpath) as f1:
+        data = f1.readlines()
+    y = [[v for v in re.split(r"[\t ]+", r)] for r in data]
+    columns = np.array(y, dtype="float64").T
     # reorder
-    idx=filter_index(data[0])
-    return(data[:,idx])
+    idx=filter_index(columns[0])
+    return(columns[:,idx])
 
 plot = False
 
@@ -35,10 +41,12 @@ planet0 = datafile("../planet0.dat")
 planet1_ref = datafile("planet1.ref.dat")
 planet1 = datafile("../planet1.dat")
 
-dist0_ref = np.sqrt(planet0_ref[2]**2+planet0_ref[3]**2+planet0_ref[4]**2)
-dist0 = np.sqrt(planet0[2]**2+planet0[3]**2+planet0[4]**2)
-dist1_ref = np.sqrt(planet1_ref[2]**2+planet1_ref[3]**2+planet1_ref[4]**2)
-dist1 = np.sqrt(planet1[2]**2+planet1[3]**2+planet1[4]**2)
+def distance_to_origin(log):
+    return np.sqrt(log[1]**2 + log[2]**2 + log[3]**2)
+
+dist0_ref, dist0, dist1_ref, dist1 = map(
+    distance_to_origin, (planet0_ref, planet0, planet1_ref, planet1)
+)
 
 # Compute the error on the planet distance
 error_d0=np.max(np.abs((dist0-dist0_ref)/dist0_ref))

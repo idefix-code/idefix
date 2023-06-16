@@ -9,6 +9,7 @@
 #define OUTPUT_DUMP_HPP_
 #include <string>
 #include <map>
+#include <filesystem>
 
 #include "idefix.hpp"
 #include "input.hpp"
@@ -160,13 +161,14 @@ class DumpField {
 class Dump {
   friend class DumpImage; // Allow dumpimag to have access to dump API
  public:
-  explicit Dump(DataBlock *);               // Create Dump Object
+  explicit Dump(Input &, DataBlock *);               // Create Dump Object
+  explicit Dump(DataBlock *);               // Create a dump object independent of input
   ~Dump();
 
   // Create a Dump file from the current state of the code
   int Write(Output&);
   // Read and load a dump file as current state of the code
-  int Read(Output&, int);
+  bool Read(Output&, int);
 
   // Register IdefixArrays
   void RegisterVariable(IdefixArray3D<real>&,
@@ -198,6 +200,7 @@ class Dump {
                         int size = 1);
 
  private:
+  void Init(DataBlock*);
   DataBlock *data;
   int dumpFileNumber;
   int geometry{GEOMETRY};
@@ -229,6 +232,9 @@ class Dump {
   void ReadSerial(IdfxFileHandler, int, int*, DataType, void*);
   void ReadDistributed(IdfxFileHandler, int, int*, int*, IdfxDataDescriptor&, void*);
   void Skip(IdfxFileHandler, int, int *, DataType);
+  int GetLastDumpInDirectory(std::filesystem::path &);
+
+  std::filesystem::path outputDirectory;
 };
 
 

@@ -112,9 +112,15 @@ int main( int argc, char* argv[] ) {
     // Are we restarting?
     if(input.restartRequested) {
       idfx::cout << "Main: Restarting from dump file."  << std::endl;
-      output.RestartFromDump(data,input.restartFileNumber);
-      data.SetBoundaries();
-    } else {
+      bool restartSuccess = output.RestartFromDump(data,input.restartFileNumber);
+      if(!restartSuccess) {
+        idfx::cout << "Main: restart aborted." << std::endl;
+        input.restartRequested = false;
+      } else {
+        data.SetBoundaries();
+      }
+    }
+    if(!input.restartRequested) {
       idfx::cout << "Main: Creating initial conditions." << std::endl;
       idfx::pushRegion("Setup::Initflow");
       mysetup.InitFlow(data);

@@ -369,8 +369,14 @@ This section describes the outputs *Idefix* produces. For more details about eac
 | dmp            | float                   | | Time interval between dump outputs, in code units.                                             |
 |                |                         | | If negative, periodic dump outputs are disabled.                                               |
 +----------------+-------------------------+--------------------------------------------------------------------------------------------------+
+| dmp_dir        | string                  | | directory for dump file outputs. Default to "./"                                               |
+|                |                         | | The directory is automatically created if it does not exist.                                   |
++----------------+-------------------------+--------------------------------------------------------------------------------------------------+
 | vtk            | float                   | | Time interval between vtk outputs, in code units.                                              |
 |                |                         | | If negative, periodic vtk outputs are disabled.                                                |
++----------------+-------------------------+--------------------------------------------------------------------------------------------------+
+| vtk_dir        | string                  | | directory for vtk file outputs. Default to "./"                                                |
+|                |                         | | The directory is automatically created if it does not exist.                                   |
 +----------------+-------------------------+--------------------------------------------------------------------------------------------------+
 | analysis       | float                   | | Time interval between analysis outputs, in code units.                                         |
 |                |                         | | If negative, periodic analysis outputs are disabled.                                           |

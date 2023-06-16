@@ -6,6 +6,7 @@
 // ***********************************************************************************
 
 #include <unordered_set>
+#include <filesystem>
 #include "dump.hpp"
 #include "gitversion.hpp"
 #include "dataBlockHost.hpp"
@@ -51,15 +52,31 @@ void  Dump::RegisterVariable(IdefixHostArray4D<real>& in,
 }
 
 
-
-Dump::Dump(DataBlock *datain) {
-  // Init the output period
+void Dump::Init(DataBlock *datain) {
+  idfx::pushRegion("Dump::Init");
   this->data = datain;
 
   for (int dir=0; dir<3; dir++) {
     this->periodicity[dir] = (data->mygrid->lbound[dir] == periodic);
   }
   this->dumpFileNumber = 0;
+
+  if(idfx::prank==0) {
+    if(!std::filesystem::is_directory(outputDirectory)) {
+      try {
+        if(!std::filesystem::create_directory(outputDirectory)) {
+          std::stringstream msg;
+          msg << "Cannot create directory " << outputDirectory << std::endl;
+          IDEFIX_ERROR(msg);
+        }
+      } catch(std::exception &e) {
+        std::stringstream msg;
+        msg << "Cannot create directory " << outputDirectory << std::endl;
+        msg << e.what();
+        IDEFIX_ERROR(msg);
+      }
+    }
+  }
 
   // Allocate scratch Array
   this->scrch = new real[ (data->np_int[IDIR]+IOFFSET)*
@@ -147,6 +164,30 @@ Dump::Dump(DataBlock *datain) {
   this->RegisterVariable(&dumpFileNumber, "dumpFileNumber");
   this->RegisterVariable(&geometry, "geometry");
   this->RegisterVariable(periodicity, "periodicity", 3);
+
+  idfx::popRegion();
+}
+
+
+Dump::Dump(Input &input, DataBlock *datain) {
+  // Constructor with an input object, in which case,
+  // We use the outputdirectory provided in the input
+
+    // initialize output path
+  if(input.CheckEntry("Output","dmp_dir")>=0) {
+    outputDirectory = input.Get<std::string>("Output","dmp_dir",0);
+  } else {
+    outputDirectory = "./";
+  }
+  Init(datain);
+}
+
+Dump::Dump(DataBlock *datain) {
+  // Constructor without an input object, in which case,
+  // We use the default output directory
+
+  outputDirectory = "./";
+  Init(datain);
 }
 
 Dump::~Dump() {
@@ -479,8 +520,30 @@ void Dump::ReadDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gdi
   #endif
 }
 
-int Dump::Read(Output& output, int readNumber ) {
-  char filename[FILENAMESIZE];
+int Dump::GetLastDumpInDirectory(std::filesystem::path &directory) {
+  int num = -1;
+
+  for (const auto & entry : std::filesystem::directory_iterator(directory)) {
+      // Check file extension
+      std::filesystem::file_time_type youngFileTime;
+      if(entry.path().extension().string().compare(".dmp")==0) {
+        auto fileTime = std::filesystem::last_write_time(entry.path());
+        // Check which one is the most recent
+        if(fileTime>youngFileTime) {
+          // Ours is more recent, extract the dump file number
+          try {
+            num = std::stoi(entry.path().filename().string().substr(5,4));
+            youngFileTime = fileTime;
+          } catch (...) {
+            // We do nothing here
+          }
+        }
+      }
+  }
+  return(num);
+}
+bool Dump::Read(Output& output, int readNumber ) {
+  std::filesystem::path filename;
   int nx[3];
   int nxglob[3];
   std::string fieldName;
@@ -491,21 +554,41 @@ int Dump::Read(Output& output, int readNumber ) {
 
   idfx::pushRegion("Dump::Read");
 
-  idfx::cout << "Dump: Reading restart file n " << readNumber << "..." << std::flush;
+  std::filesystem::path readDir = this->outputDirectory;
+
+  if(readNumber<0) {
+    // We actually don't know which file we're supposed to read, so let's guess
+    readNumber = GetLastDumpInDirectory(readDir);
+    if(readNumber < 0) {
+      idfx::cout << "Dump: cannot find a valid dump in " << this->outputDirectory << std::endl;
+      idfx::cout << "Dump: reverting to the current directory." << std::endl;
+      readDir = ".";
+      readNumber = GetLastDumpInDirectory(readDir);
+      if(readNumber<0) {
+        IDEFIX_WARNING("cannot find a valid restart dump.");
+        return(false);
+      }
+    }
+  }
 
   // Reset timer
   timer.reset();
 
   // Set filename
-  std::snprintf (filename, FILENAMESIZE, "dump.%04d.dmp", readNumber);
+  std::stringstream ssdumpFileNum,ssFileName;
+  ssdumpFileNum << std::setfill('0') << std::setw(4) << readNumber;
+  ssFileName << "dump." << ssdumpFileNum.str() << ".dmp";
+  filename = readDir/ssFileName.str();
 
+  idfx::cout << "Dump: Reading " << filename << "..." << std::flush;
   // open file
 #ifdef WITH_MPI
-  MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_RDONLY | MPI_MODE_UNIQUE_OPEN,
+  MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
+                              MPI_MODE_RDONLY | MPI_MODE_UNIQUE_OPEN,
                               MPI_INFO_NULL, &fileHdl));
   this->offset = 0;
 #else
-  fileHdl = fopen(filename,"rb");
+  fileHdl = fopen(filename.c_str(),"rb");
   if(fileHdl == NULL) {
     std::stringstream msg;
     msg << "Failed to open dump file: " << std::string(filename) << std::endl;
@@ -636,12 +719,12 @@ int Dump::Read(Output& output, int readNumber ) {
 
   idfx::popRegion();
 
-  return(0);
+  return(true);
 }
 
 
 int Dump::Write(Output& output) {
-  char filename[FILENAMESIZE];
+  std::filesystem::path filename;
   char fieldName[NAMESIZE+1]; // +1 is just in case
   int nx[3];
   int nxtot[3];
@@ -660,31 +743,33 @@ int Dump::Write(Output& output) {
   // Reset timer
   timer.reset();
 
-  // Set filename
-  std::snprintf(filename, FILENAMESIZE, "dump.%04d.dmp", dumpFileNumber);
+
+  // Set filenames
+  std::stringstream ssdumpFileNum,ssFileName;
+  ssdumpFileNum << std::setfill('0') << std::setw(4) << dumpFileNumber;
+  ssFileName << "dump." << ssdumpFileNum.str() << ".dmp";
+  filename = outputDirectory/ssFileName.str();
+
   dumpFileNumber++;   // For next one
+
+  // Check if file exists, if yes, delete it
+  if(idfx::prank==0) {
+    if(std::filesystem::exists(filename)) {
+      std::filesystem::remove(filename);
+    }
+  }
 
   // open file
 #ifdef WITH_MPI
-// Open file for creating, return error if file already exists.
-  int err = MPI_File_open(MPI_COMM_WORLD, filename,
-                              MPI_MODE_CREATE | MPI_MODE_RDWR
-                              | MPI_MODE_EXCL | MPI_MODE_UNIQUE_OPEN,
-                              MPI_INFO_NULL, &fileHdl);
-  if (err != MPI_SUCCESS)  {
-    // File exists, delete it before reopening
-    if(idfx::prank == 0) {
-      MPI_File_delete(filename,MPI_INFO_NULL);
-    }
-    MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename,
+  MPI_Barrier(MPI_COMM_WORLD);
+  // Open file for creating, return error if file already exists.
+  MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
                               MPI_MODE_CREATE | MPI_MODE_RDWR
                               | MPI_MODE_EXCL | MPI_MODE_UNIQUE_OPEN,
                               MPI_INFO_NULL, &fileHdl));
-  }
-
   this->offset = 0;
 #else
-  fileHdl = fopen(filename,"wb");
+  fileHdl = fopen(filename.c_str(),"wb");
 #endif
   // File is open
   // First thing we need are coordinates: init a host mirror and sync it

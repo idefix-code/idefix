@@ -8,6 +8,7 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <filesystem>
 #include "vtk.hpp"
 #include "gitversion.hpp"
 #include "idefix.hpp"
@@ -53,6 +54,30 @@ Vtk::Vtk(Input &input, DataBlock *datain) {
   // Pointer to global grid
   GridHost grid(*(datain->mygrid));
   grid.SyncFromDevice();
+
+  // initialize output path
+  if(input.CheckEntry("Output","vtk_dir")>=0) {
+    outputDirectory = input.Get<std::string>("Output","vtk_dir",0);
+  } else {
+    outputDirectory = "./";
+  }
+
+  if(idfx::prank==0) {
+    if(!std::filesystem::is_directory(outputDirectory)) {
+      try {
+        if(!std::filesystem::create_directory(outputDirectory)) {
+          std::stringstream msg;
+          msg << "Cannot create directory " << outputDirectory << std::endl;
+          IDEFIX_ERROR(msg);
+        }
+      } catch(std::exception &e) {
+        std::stringstream msg;
+        msg << "Cannot create directory " << outputDirectory << std::endl;
+        msg << e.what();
+        IDEFIX_ERROR(msg);
+      }
+    }
+  }
 
   /* Note that there are two kinds of dimensions:
      - nx1, nx2, nx3, derived from the grid, which are the global dimensions
@@ -205,7 +230,7 @@ int Vtk::Write() {
   idfx::pushRegion("Vtk::Write");
 
   IdfxFileHandler fileHdl;
-  std::string filename;
+  std::filesystem::path filename;
 
   idfx::cout << "Vtk: Write file n " << vtkFileNumber << "..." << std::flush;
 
@@ -214,25 +239,23 @@ int Vtk::Write() {
   std::stringstream ssfileName, ssvtkFileNum;
   ssvtkFileNum << std::setfill('0') << std::setw(4) << vtkFileNumber;
   ssfileName << "data." << ssvtkFileNum.str() << ".vtk";
-  filename = ssfileName.str();
+  filename = outputDirectory/ssfileName.str();
+
+  // Check if file exists, if yes, delete it
+  if(idfx::prank==0) {
+    if(std::filesystem::exists(filename)) {
+      std::filesystem::remove(filename);
+    }
+  }
 
   // Open file and write header
 #ifdef WITH_MPI
+  MPI_Barrier(MPI_COMM_WORLD);
   // Open file for creating, return error if file already exists.
-  int err = MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
-                              MPI_MODE_CREATE | MPI_MODE_RDWR
-                              | MPI_MODE_EXCL | MPI_MODE_UNIQUE_OPEN,
-                              MPI_INFO_NULL, &fileHdl);
-  if (err != MPI_SUCCESS)  {
-    // File exists, delete it before reopening
-    if(idfx::prank == 0) {
-      MPI_File_delete(filename.c_str(),MPI_INFO_NULL);
-    }
-    MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
+  MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
                               MPI_MODE_CREATE | MPI_MODE_RDWR
                               | MPI_MODE_EXCL | MPI_MODE_UNIQUE_OPEN,
                               MPI_INFO_NULL, &fileHdl));
-  }
   this->offset = 0;
 #else
   fileHdl = fopen(filename.c_str(),"wb");

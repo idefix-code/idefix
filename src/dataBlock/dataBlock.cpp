@@ -116,7 +116,7 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
   this->states["current"] = StateContainer();
 
   // Initialize the Dump object
-  this->dump = std::make_unique<Dump>(this);
+  this->dump = std::make_unique<Dump>(input, this);
 
   // Initialize the VTK object
   this->vtk = std::make_unique<Vtk>(input, this);

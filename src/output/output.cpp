@@ -5,6 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include <filesystem>
 #include "output.hpp"
 
 
@@ -152,12 +153,14 @@ int Output::CheckForWrites(DataBlock &data) {
   return(nfiles);
 }
 
-void Output::RestartFromDump(DataBlock &data, int readNumber) {
+bool Output::RestartFromDump(DataBlock &data, int readNumber) {
   idfx::pushRegion("Output::RestartFromDump");
 
-  data.dump->Read(*this, readNumber);
-  data.DeriveVectorPotential();
+  bool result = data.dump->Read(*this, readNumber);
+  if(result) data.DeriveVectorPotential();
+
   idfx::popRegion();
+  return(result);
 }
 
 void Output::ForceWriteDump(DataBlock &data) {

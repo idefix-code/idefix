@@ -9,6 +9,7 @@
 #define OUTPUT_VTK_HPP_
 #include <string>
 #include <map>
+#include <filesystem>
 #include "idefix.hpp"
 #include "input.hpp"
 #include "dataBlock.hpp"
@@ -188,6 +189,9 @@ class Vtk : public BaseVtk {
   void WriteHeader(IdfxFileHandler, real);
   void WriteScalar(IdfxFileHandler, float*,  const std::string &);
   void WriteHeaderNodes(IdfxFileHandler);
+
+  // output directory
+  std::filesystem::path outputDirectory;
 };
 
 template<typename T>

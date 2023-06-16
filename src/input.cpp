@@ -147,37 +147,11 @@ void Input::ParseCommandLine(int argc, char **argv) {
         sirestart = std::string(argv[++i]);
       } else {
         // implicitly restart from the latest existing dumpfile
-        // implementation detail: we look for the existing dumpfile with the highest
-        // number, not necessarilly the latest timestamp !
-        const std::vector<std::string> files = Input::getDirectoryFiles();
-        int ifile{-1};
-        int irestart{-1};
-
-        for (const auto& file : files) {
-          if (Input::getFileExtension(file).compare("dmp") != 0) continue;
-          // parse the dumpfile number from filename "dump.????.dmp"
-          if(file.substr(0,5) != "dump.") continue;
-          try {
-            ifile = std::stoi(file.substr(5, 4));
-          } catch (...) {
-            // woops, pattern doesn't match!
-            ifile = -1;
-          }
-          irestart = std::max(irestart, ifile);
-        }
-        sirestart = std::to_string(irestart);
-        if(irestart==-1) {
-          IDEFIX_WARNING("cannot find a valid restart dump file in current directory");
-        }
+        sirestart = "-1";
       }
-      int restartn = std::stoi(sirestart);
-      if(restartn>=0) {
-        inputParameters["CommandLine"]["restart"].push_back(sirestart);
-        this->restartRequested = true;
-        this->restartFileNumber = restartn;
-      } else {
-        IDEFIX_WARNING("Invalid -restart option, I will ignore it.");
-      }
+      inputParameters["CommandLine"]["restart"].push_back(sirestart);
+      this->restartRequested = true;
+      this->restartFileNumber = std::stoi(sirestart);
     } else if(std::string(argv[i]) == "-i") {
       // Loop on dimensions
       if((++i) >= argc) IDEFIX_ERROR(
@@ -306,32 +280,6 @@ bool Input::CheckForAbort() {
   idfx::popRegion();
   return(abortRequested);
 #endif
-}
-
-std::vector<std::string> Input::getDirectoryFiles() {
-  // List files in the current directory
-  // adapted from
-  // http://www.codebind.com/cpp-tutorial/cpp-program-list-files-directory-windows-linux/
-  const std::string& dir = std::string(".");
-  std::vector<std::string> files;
-  std::shared_ptr<DIR> directory_ptr(opendir(dir.c_str()), [](DIR* dir){ dir && closedir(dir); });
-  struct dirent *dirent_ptr;
-  if (!directory_ptr) {
-    idfx::cout << "Error opening : " << std::strerror(errno) << dir << std::endl;
-    return files;
-  }
-
-  while ((dirent_ptr = readdir(directory_ptr.get())) != nullptr) {
-    files.push_back(std::string(dirent_ptr->d_name));
-  }
-  return files;
-}
-
-
-std::string Input::getFileExtension(const std::string file_name) {
-  int position = file_name.find_last_of(".");
-  std::string ext = file_name.substr(position+1);
-  return ext;
 }
 
 // Get a string in a block, parameter, position of the file

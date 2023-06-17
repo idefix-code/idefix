@@ -23,16 +23,20 @@ void MySoundSpeed(DataBlock &data, const real t, IdefixArray3D<real> &cs) {
 
 
 // User-defined boundaries
-void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
+void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
+    auto *data = hydro->data;
 
     if( (dir==IDIR) && (side == left)) {
-        IdefixArray4D<real> Vc = data.hydro->Vc;
-        IdefixArray1D<real> x1 = data.x[IDIR];
-        IdefixArray1D<real> x2 = data.x[JDIR];
+        IdefixArray4D<real> Vc = hydro->Vc;
+        IdefixArray1D<real> x1 = data->x[IDIR];
+        IdefixArray1D<real> x2 = data->x[JDIR];
 
-        int ighost = data.nghost[IDIR];
+        int ighost = data->nghost[IDIR];
         real Omega=1.0;
-        idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,ighost,
+        idefix_for("UserDefBoundary",
+          0, data->np_tot[KDIR],
+          0, data->np_tot[JDIR],
+          0, ighost,
                     KOKKOS_LAMBDA (int k, int j, int i) {
                         real R=x1(i)*sin(x2(j));
                         real z=x1(i)*cos(x2(j));
@@ -46,23 +50,26 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
     }
 
     if( dir==JDIR) {
-        IdefixArray4D<real> Vc = data.hydro->Vc;
+        IdefixArray4D<real> Vc = hydro->Vc;
         int jghost;
         int jbeg,jend;
         if(side == left) {
-            jghost = data.beg[JDIR];
+            jghost = data->beg[JDIR];
             jbeg = 0;
-            jend = data.beg[JDIR];
+            jend = data->beg[JDIR];
             //return;
         }
         else if(side==right) {
-            jghost = data.end[JDIR]-1;
-            jbeg=data.end[JDIR];
-            jend=data.np_tot[JDIR];
+            jghost = data->end[JDIR]-1;
+            jbeg=data->end[JDIR];
+            jend=data->np_tot[JDIR];
         }
 
 
-        idefix_for("UserDefBoundary",0,data.np_tot[KDIR],jbeg,jend,0,data.np_tot[IDIR],
+        idefix_for("UserDefBoundary",
+          0, data->np_tot[KDIR],
+          jbeg, jend,
+          0, data->np_tot[IDIR],
                     KOKKOS_LAMBDA (int k, int j, int i) {
                         Vc(RHO,k,j,i) = Vc(RHO,k,jghost,i);
                         Vc(VX1,k,j,i) = ZERO_F;

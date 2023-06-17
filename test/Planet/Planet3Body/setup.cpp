@@ -134,30 +134,34 @@ void Damping(DataBlock &data, const real t, const real dtin) {
 }
 
 // User-defined boundaries
-void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
-  IdefixArray4D<real> Vc = data.hydro->Vc;
-  IdefixArray1D<real> x1 = data.x[IDIR];
+void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
+  auto *data = hydro->data;
+  IdefixArray4D<real> Vc = hydro->Vc;
+  IdefixArray1D<real> x1 = data->x[IDIR];
   real sigmaSlope=sigmaSlopeGlob;
   real omega = omegaGlob;
 
     if(dir==IDIR) {
         int ighost,ibeg,iend,sign;
         if(side == left) {
-            ighost = data.beg[IDIR];
+            ighost = data->beg[IDIR];
             ibeg = 0;
-            iend = data.beg[IDIR];
+            iend = data->beg[IDIR];
             sign=-1;
             //return;
         }
         else if(side==right) {
-            ighost = data.end[IDIR]-1;
-            ibeg=data.end[IDIR];
-            iend=data.np_tot[IDIR];
+            ighost = data->end[IDIR]-1;
+            ibeg=data->end[IDIR];
+            iend=data->np_tot[IDIR];
             sign=1;
         }
 
 
-        idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],ibeg,iend,
+        idefix_for("UserDefBoundary",
+          0, data->np_tot[KDIR],
+          0, data->np_tot[JDIR],
+          ibeg, iend,
                     KOKKOS_LAMBDA (int k, int j, int i) {
                         real R=x1(i);
                         real R0=x1(ighost);

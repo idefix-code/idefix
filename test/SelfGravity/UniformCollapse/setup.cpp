@@ -38,13 +38,17 @@ void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
 }
 
 // User-defined boundaries
-void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
+void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
+    auto *data = hydro->data;
     if((dir==IDIR) && (side == left)) {
-        IdefixArray4D<real> Vc = data.hydro->Vc;
-        int ighost = data.nghost[IDIR];
-        IdefixArray1D<real> r = data.x[IDIR];
+        IdefixArray4D<real> Vc = hydro->Vc;
+        int ighost = data->nghost[IDIR];
+        IdefixArray1D<real> r = data->x[IDIR];
 
-        idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,ighost,
+        idefix_for("UserDefBoundary",
+          0, data->np_tot[KDIR],
+          0, data->np_tot[JDIR],
+          0, ighost,
                     KOKKOS_LAMBDA (int k, int j, int i) {
                         Vc(RHO,k,j,i) = Vc(RHO,k,j,ighost);
                         // We cap radial velocity at zero following Xu & Kunz 2021 I.

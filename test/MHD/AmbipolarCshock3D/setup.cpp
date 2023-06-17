@@ -24,13 +24,17 @@ void AmbipolarFunction(DataBlock &data, real t, IdefixArray3D<real> &xAin ) {
 
 }
 // User-defined boundaries
-void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
+void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
+    auto *data = hydro->data;
     if( (dir==IDIR) && (side == left)) {
-        IdefixArray4D<real> Vc = data.hydro->Vc;
-        IdefixArray4D<real> Vs = data.hydro->Vs;
+        IdefixArray4D<real> Vc = hydro->Vc;
+        IdefixArray4D<real> Vs = hydro->Vs;
 
-        int ighost = data.nghost[IDIR];
-        idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,ighost,
+        int ighost = data->nghost[IDIR];
+        idefix_for("UserDefBoundary",
+          0, data->np_tot[KDIR],
+          0, data->np_tot[JDIR],
+          0, ighost,
                     KOKKOS_LAMBDA (int k, int j, int i) {
                         Vc(RHO,k,j,i) = Vc(RHO,k,j,ighost);
                         #if HAVE_ENERGY
@@ -49,11 +53,14 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
         });
     }
     if( (dir==IDIR) && (side == right)) {
-            IdefixArray4D<real> Vc = data.hydro->Vc;
-            IdefixArray4D<real> Vs = data.hydro->Vs;
+            IdefixArray4D<real> Vc = hydro->Vc;
+            IdefixArray4D<real> Vs = hydro->Vs;
 
-            int ighost = data.end[IDIR]-1;
-        idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],data.end[IDIR],data.np_tot[IDIR],
+            int ighost = data->end[IDIR]-1;
+        idefix_for("UserDefBoundary",
+          0, data->np_tot[KDIR],
+          0, data->np_tot[JDIR],
+          data->end[IDIR], data->np_tot[IDIR],
                         KOKKOS_LAMBDA (int k, int j, int i) {
                                 Vc(RHO,k,j,i) = Vc(RHO,k,j,2*ighost-i+1);
                                 #if HAVE_ENERGY

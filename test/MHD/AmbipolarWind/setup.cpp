@@ -206,15 +206,15 @@ void InternalBoundary(DataBlock& data, const real t) {
 
 }
 // User-defined boundaries
-void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
-
+void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
+    auto *data = hydro->data;
     if( (dir==IDIR) && (side == left)) {
-        IdefixArray4D<real> Vc = data.hydro->Vc;
-        IdefixArray4D<real> Vs = data.hydro->Vs;
-        IdefixArray1D<real> x1 = data.x[IDIR];
-        IdefixArray1D<real> x2 = data.x[JDIR];
+        IdefixArray4D<real> Vc = hydro->Vc;
+        IdefixArray4D<real> Vs = hydro->Vs;
+        IdefixArray1D<real> x1 = data->x[IDIR];
+        IdefixArray1D<real> x2 = data->x[JDIR];
 
-        int ighost = data.nghost[IDIR];
+        int ighost = data->nghost[IDIR];
         real Omega=1.0;
         real Rin = 1.0;
         real csdisk = epsilonGlob/sqrt(Rin);
@@ -222,7 +222,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
         real densityFloor0 = densityFloorGlob;
         real epsilon=epsilonGlob;
 
-        data.hydro->boundary->BoundaryFor("UserDefX1",dir,side,
+        hydro->boundary->BoundaryFor("UserDefX1",dir,side,
             KOKKOS_LAMBDA (int k, int j, int i) {
                 real R=x1(i)*sin(x2(j));
                 real z=x1(i)*cos(x2(j));
@@ -247,7 +247,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                 //Vc(BX3,k,j,i) = Vc(BX3,k,j,ighost);
 
             });
-      data.hydro->boundary->BoundaryForX2s("UserDefX1",dir,side,
+      hydro->boundary->BoundaryForX2s("UserDefX1",dir,side,
         KOKKOS_LAMBDA (int k, int j, int i) {
             Vs(BX2s,k,j,i) = Vs(BX2s,k,j,ighost);
           });
@@ -255,17 +255,17 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
     }
 
     if( (dir==IDIR) && (side == right)) {
-        IdefixArray4D<real> Vc = data.hydro->Vc;
-        IdefixArray4D<real> Vs = data.hydro->Vs;
-        IdefixArray1D<real> x1 = data.x[IDIR];
-        IdefixArray1D<real> x2 = data.x[JDIR];
+        IdefixArray4D<real> Vc = hydro->Vc;
+        IdefixArray4D<real> Vs = hydro->Vs;
+        IdefixArray1D<real> x1 = data->x[IDIR];
+        IdefixArray1D<real> x2 = data->x[JDIR];
 
-        int ighost = data.end[IDIR]-1;
+        int ighost = data->end[IDIR]-1;
         real Rin = 1.0;
         real csdisk = epsilonGlob/sqrt(Rin);
         real cscorona = epsilonTopGlob/sqrt(Rin);
 
-        data.hydro->boundary->BoundaryFor("UserDefX1",dir,side,
+        hydro->boundary->BoundaryFor("UserDefX1",dir,side,
             KOKKOS_LAMBDA (int k, int j, int i) {
                 real R=x1(i)*sin(x2(j));
                 real z=x1(i)*cos(x2(j));
@@ -284,7 +284,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                 //Vc(BX3,k,j,i) = Vc(BX3,k,j,ighost);
 
             });
-      data.hydro->boundary->BoundaryForX2s("UserDefX1",dir,side,
+      hydro->boundary->BoundaryForX2s("UserDefX1",dir,side,
         KOKKOS_LAMBDA (int k, int j, int i) {
             Vs(BX2s,k,j,i) = Vs(BX2s,k,j,ighost);
           });

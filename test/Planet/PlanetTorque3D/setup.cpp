@@ -144,10 +144,11 @@ void Damping(DataBlock &data, const real t, const real dtin) {
 }
 
 // User-defined boundaries
-void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
-  IdefixArray4D<real> Vc = data.hydro->Vc;
-  IdefixArray1D<real> x1 = data.x[IDIR];
-  IdefixArray1D<real> x2 = data.x[JDIR];
+void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
+  auto *data = hydro->data;
+  IdefixArray4D<real> Vc = hydro->Vc;
+  IdefixArray1D<real> x1 = data->x[IDIR];
+  IdefixArray1D<real> x2 = data->x[JDIR];
   real h0=h0Glob;
   real flaringIndex=flaringIndexGlob;
   real sigmaSlope=sigmaSlopeGlob;
@@ -158,19 +159,22 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
     if(dir==IDIR) {
         int ighost,ibeg,iend;
         if(side == left) {
-            ighost = data.beg[IDIR];
+            ighost = data->beg[IDIR];
             ibeg = 0;
-            iend = data.beg[IDIR];
+            iend = data->beg[IDIR];
             //return;
         }
         else if(side==right) {
-            ighost = data.end[IDIR]-1;
-            ibeg=data.end[IDIR];
-            iend=data.np_tot[IDIR];
+            ighost = data->end[IDIR]-1;
+            ibeg=data->end[IDIR];
+            iend=data->np_tot[IDIR];
         }
 
 
-        idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],ibeg,iend,
+        idefix_for("UserDefBoundary",
+          0, data->np_tot[KDIR],
+          0, data->np_tot[JDIR],
+          ibeg, iend,
                     KOKKOS_LAMBDA (int k, int j, int i) {
                         real r = x1(i);
                         real rghost = x1(ighost);
@@ -193,16 +197,19 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
     }
 
     if( dir==JDIR) {
-        IdefixArray4D<real> Vc = data.hydro->Vc;
+        IdefixArray4D<real> Vc = hydro->Vc;
         int jghost;
         int jbeg,jend;
         // UPPER LAYER
         if(side == left) {
-            jghost = data.beg[JDIR];
+            jghost = data->beg[JDIR];
             jbeg = 0;
-            jend = data.beg[JDIR];
+            jend = data->beg[JDIR];
             //return;
-            idefix_for("UserDefBoundary",0,data.np_tot[KDIR],jbeg,jend,0,data.np_tot[IDIR],
+            idefix_for("UserDefBoundary",
+              0, data->np_tot[KDIR],
+              jbeg, jend,
+              0, data->np_tot[IDIR],
                         KOKKOS_LAMBDA (int k, int j, int i) {
                             real r = x1(i);
                             real R = x1(i)*sin(x2(j));
@@ -219,10 +226,13 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
         }
         // MIDPLANE
         else if(side==right) {
-            jghost = data.end[JDIR]-1;
-            jbeg = data.end[JDIR];
-            jend = data.np_tot[JDIR];
-            idefix_for("UserDefBoundary",0,data.np_tot[KDIR],jbeg,jend,0,data.np_tot[IDIR],
+            jghost = data->end[JDIR]-1;
+            jbeg = data->end[JDIR];
+            jend = data->np_tot[JDIR];
+            idefix_for("UserDefBoundary",
+              0, data->np_tot[KDIR],
+              jbeg, jend,
+              0, data->np_tot[IDIR],
                         KOKKOS_LAMBDA (int k, int j, int i) {
                           real r = x1(i);
                           real R = x1(i)*sin(x2(j));

@@ -1,14 +1,19 @@
 #include "idefix.hpp"
 #include "setup.hpp"
 
+
 // User-defined boundaries
-void UserdefBoundary(DataBlock & data, int dir, BoundarySide side, const real t) {
+void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, const real t) {
+    auto *data = hydro->data;
     if(dir==IDIR) {
-        IdefixArray4D<real> Vc = data.hydro->Vc;
-        IdefixArray1D<real> th = data.x[JDIR];
+        IdefixArray4D<real> Vc = hydro->Vc;
+        IdefixArray1D<real> th = data->x[JDIR];
         if(side==right) {
-          int ighost = data.end[IDIR]-1;
-          idefix_for("UserDefBoundaryX1End",0,data.np_tot[KDIR],0,data.np_tot[JDIR],data.end[IDIR],data.np_tot[IDIR],
+          int ighost = data->end[IDIR]-1;
+          idefix_for("UserDefBoundaryX1End",
+            0, data->np_tot[KDIR],
+            0, data->np_tot[JDIR],
+            data->end[IDIR], data->np_tot[IDIR],
                       KOKKOS_LAMBDA (int k, int j, int i) {
                           if((th(j)>M_PI/2.0) && th(j)<3.0*M_PI/2) {
                             // Incoming flow
@@ -27,8 +32,11 @@ void UserdefBoundary(DataBlock & data, int dir, BoundarySide side, const real t)
                           }
                         });
       } else if(side==left) {
-        int ighost = data.beg[IDIR];
-        idefix_for("UserDefBoundaryX1Beg",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,ighost,
+        int ighost = data->beg[IDIR];
+        idefix_for("UserDefBoundaryX1Beg",
+          0, data->np_tot[KDIR],
+          0, data->np_tot[JDIR],
+          0, ighost,
                     KOKKOS_LAMBDA (int k, int j, int i) {
                       // Central cylinder
                       Vc(RHO,k,j,i) = ONE_F;

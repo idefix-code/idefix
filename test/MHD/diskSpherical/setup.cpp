@@ -93,17 +93,20 @@ void InternalBoundary(DataBlock& data, const real t) {
 
 }
 // User-defined boundaries
-void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
-
+void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
+    auto *data = hydro->data;
     if( (dir==IDIR) && (side == left)) {
-        IdefixArray4D<real> Vc = data.hydro->Vc;
-        IdefixArray4D<real> Vs = data.hydro->Vs;
-        IdefixArray1D<real> x1 = data.x[IDIR];
-        IdefixArray1D<real> x2 = data.x[JDIR];
+        IdefixArray4D<real> Vc = hydro->Vc;
+        IdefixArray4D<real> Vs = hydro->Vs;
+        IdefixArray1D<real> x1 = data->x[IDIR];
+        IdefixArray1D<real> x2 = data->x[JDIR];
 
-        int ighost = data.nghost[IDIR];
+        int ighost = data->nghost[IDIR];
         real Omega=1.0;
-        idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,ighost,
+        idefix_for("UserDefBoundary",
+          0, data->np_tot[KDIR],
+          0, data->np_tot[JDIR],
+          0, ighost,
                     KOKKOS_LAMBDA (int k, int j, int i) {
                         real R=x1(i)*sin(x2(j));
                         real z=x1(i)*cos(x2(j));
@@ -116,7 +119,10 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                         Vc(VX3,k,j,i) = R*Omega;
                     });
 
-          idefix_for("UserDefBoundaryX1S",0,data.np_tot[KDIR],0,data.np_tot[JDIR]+1,0,ighost,
+        idefix_for("UserDefBoundaryX1S",
+          0, data->np_tot[KDIR],
+          0, data->np_tot[JDIR]+1,
+          0, ighost,
                       KOKKOS_LAMBDA (int k, int j, int i) {
 
                           Vs(BX2s,k,j,i) = ZERO_F;
@@ -124,7 +130,10 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 
                       });
 
-          idefix_for("UserDefBoundaryX3S",0,data.np_tot[KDIR]+1,0,data.np_tot[JDIR],0,ighost,
+        idefix_for("UserDefBoundaryX3S",
+          0, data->np_tot[KDIR]+1,
+          0, data->np_tot[JDIR],
+          0, ighost,
                       KOKKOS_LAMBDA (int k, int j, int i) {
                           Vs(BX3s,k,j,i) = ZERO_F;
 
@@ -133,24 +142,27 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
     }
 
     if( dir==JDIR) {
-        IdefixArray4D<real> Vc = data.hydro->Vc;
-        IdefixArray4D<real> Vs = data.hydro->Vs;
+        IdefixArray4D<real> Vc = hydro->Vc;
+        IdefixArray4D<real> Vs = hydro->Vs;
         int jghost;
         int jbeg,jend;
         if(side == left) {
-            jghost = data.beg[JDIR];
+            jghost = data->beg[JDIR];
             jbeg = 0;
-            jend = data.beg[JDIR];
+            jend = data->beg[JDIR];
             //return;
         }
         else if(side==right) {
-            jghost = data.end[JDIR]-1;
-            jbeg=data.end[JDIR];
-            jend=data.np_tot[JDIR];
+            jghost = data->end[JDIR]-1;
+            jbeg=data->end[JDIR];
+            jend=data->np_tot[JDIR];
         }
 
 
-        idefix_for("UserDefBoundary",0,data.np_tot[KDIR],jbeg,jend,0,data.np_tot[IDIR],
+        idefix_for("UserDefBoundary",
+          0, data->np_tot[KDIR],
+          jbeg, jend,
+          0, data->np_tot[IDIR],
                     KOKKOS_LAMBDA (int k, int j, int i) {
                         Vc(RHO,k,j,i) = Vc(RHO,k,jghost,i);
                         Vc(PRS,k,j,i) = Vc(PRS,k,jghost,i);
@@ -160,12 +172,18 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 
                     });
 
-        idefix_for("UserDefBoundary_X1s",0,data.np_tot[KDIR],jbeg,jend,0,data.np_tot[IDIR]+1,
+        idefix_for("UserDefBoundary_X1s",
+          0, data->np_tot[KDIR],
+          jbeg, jend,
+          0, data->np_tot[IDIR]+1,
                     KOKKOS_LAMBDA (int k, int j, int i) {
                         Vs(BX1s,k,j,i) = ZERO_F;
                     });
 
-        idefix_for("UserDefBoundary_X3s",0,data.np_tot[KDIR]+1,jbeg,jend,0,data.np_tot[IDIR],
+        idefix_for("UserDefBoundary_X3s",
+          0, data->np_tot[KDIR]+1,
+          jbeg, jend,
+          0, data->np_tot[IDIR],
                     KOKKOS_LAMBDA (int k, int j, int i) {
                         Vs(BX3s,k,j,i) = ZERO_F;
                     });

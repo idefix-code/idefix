@@ -48,29 +48,33 @@ void MySoundSpeed(DataBlock &data, const real t, IdefixArray3D<real> &cs) {
               });
 }
 
-void Damping(DataBlock &data, const real t, const real dtin) {
-  IdefixArray4D<real> Vc = data.hydro->Vc;
-  IdefixArray4D<real> Uc = data.hydro->Uc;
-  IdefixArray1D<real> x1 = data.x[IDIR];
-  IdefixArray1D<real> x2 = data.x[JDIR];
+void Damping(Hydro *hydro, const real t, const real dtin) {
+  auto *data = hydro->data;
+  IdefixArray4D<real> Vc = hydro->Vc;
+  IdefixArray4D<real> Uc = hydro->Uc;
+  IdefixArray1D<real> x1 = data->x[IDIR];
+  IdefixArray1D<real> x2 = data->x[JDIR];
 
   real h0 = h0Glob;
   real sigma0 = sigma0Glob;
   real sigmaSlope = sigmaSlopeGlob;
   real flaringIndex = flaringIndexGlob;
   real omega = omegaGlob;
-  real gamma = data.hydro->GetGamma();
+  real gamma = hydro->GetGamma();
   real pexp = -sigmaSlope-flaringIndex-1;
   real qexp = 2*flaringIndex-1;
   real dt = dtin;
-  bool isFargo = data.haveFargo;
+  bool isFargo = data->haveFargo;
 
-  real rmin{data.mygrid->xbeg[0]};
+  real rmin{data->mygrid->xbeg[0]};
   real wkzMin{wkzMinGlob};
-  real rmax{data.mygrid->xend[0]};
+  real rmax{data->mygrid->xend[0]};
   real wkzMax{wkzMaxGlob};
   real wkzDamping{wkzDampingGlob};
-  idefix_for("MySourceTerm",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
+  idefix_for("Damping",
+    0, data->np_tot[KDIR],
+    0, data->np_tot[JDIR],
+    0, data->np_tot[IDIR],
               KOKKOS_LAMBDA (int k, int j, int i) {
                 real r = x1(i);
                 real th = x2(j);
@@ -349,7 +353,6 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output)// : m_pl
   // Set the function for userdefboundary
   data.hydro->EnrollUserDefBoundary(&UserdefBoundary);
   data.hydro->EnrollUserSourceTerm(&Damping);
-//   data.hydro->EnrollUserSourceTerm(&MySourceTerm);
   data.hydro->EnrollIsoSoundSpeed(&MySoundSpeed);
   if(data.haveFargo)
     data.fargo->EnrollVelocity(&FargoVelocity);

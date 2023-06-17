@@ -95,11 +95,12 @@ void Resistivity(DataBlock& data, real t, IdefixArray3D<real> &etain) {
 
 }
 
-void MySourceTerm(DataBlock &data, const real t, const real dtin) {
-  IdefixArray4D<real> Vc = data.hydro->Vc;
-  IdefixArray4D<real> Uc = data.hydro->Uc;
-  IdefixArray1D<real> x1=data.x[IDIR];
-  IdefixArray1D<real> x2=data.x[JDIR];
+void MySourceTerm(Hydro *hydro, const real t, const real dtin) {
+  auto *data = hydro->data;
+  IdefixArray4D<real> Vc = hydro->Vc;
+  IdefixArray4D<real> Uc = hydro->Uc;
+  IdefixArray1D<real> x1=data->x[IDIR];
+  IdefixArray1D<real> x2=data->x[JDIR];
   real epsilonTop = epsilonTopGlob;
   real epsilon = epsilonGlob;
   real tauGlob=0.1;
@@ -109,7 +110,10 @@ void MySourceTerm(DataBlock &data, const real t, const real dtin) {
   real Rin=1.0;
   real trSmoothing = trSmoothingGlob;
 
-  idefix_for("MySourceTerm",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
+  idefix_for("MySourceTerm",
+    0, data->np_tot[KDIR],
+    0, data->np_tot[JDIR],
+    0, data->np_tot[IDIR],
               KOKKOS_LAMBDA (int k, int j, int i) {
                 real r=x1(i);
                 real th=x2(j);

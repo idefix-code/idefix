@@ -305,7 +305,7 @@ class idfxTest:
     Vtest=readDump(filetest)
     error=self._computeError(Vref,Vtest)
     if error > tolerance:
-      print(bcolors.FAIL+"None-Regression test failed!")
+      print(bcolors.FAIL+"Non-Regression test failed!")
       self._showConfig()
       print(bcolors.ENDC)
       if self.ploterr:

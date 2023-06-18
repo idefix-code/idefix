@@ -62,15 +62,19 @@ void FargoVelocity(DataBlock &data, IdefixArray2D<real> &Vphi) {
 }
 
 
-void InternalBoundary(DataBlock& data, const real t) {
-  IdefixArray4D<real> Vc = data.hydro->Vc;
-  IdefixArray4D<real> Vs = data.hydro->Vs;
-  IdefixArray1D<real> x1=data.x[IDIR];
-  IdefixArray1D<real> x2=data.x[JDIR];
+void InternalBoundary(Hydro *hydro, const real t) {
+  auto *data = hydro->data;
+  IdefixArray4D<real> Vc = hydro->Vc;
+  IdefixArray4D<real> Vs = hydro->Vs;
+  IdefixArray1D<real> x1=data->x[IDIR];
+  IdefixArray1D<real> x2=data->x[JDIR];
 
   real vAmax=10.0;
   real densityFloor = densityFloorGlob;
-  idefix_for("InternalBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
+  idefix_for("InternalBoundary",
+    0, data->np_tot[KDIR],
+    0, data->np_tot[JDIR],
+    0, data->np_tot[IDIR],
               KOKKOS_LAMBDA (int k, int j, int i) {
                 real b2=EXPAND(Vc(BX1,k,j,i)*Vc(BX1,k,j,i) , +Vc(BX2,k,j,i)*Vc(BX2,k,j,i), +Vc(BX3,k,j,i)*Vc(BX3,k,j,i) ) ;
                 real va2=b2/Vc(RHO,k,j,i);

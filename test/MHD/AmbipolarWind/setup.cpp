@@ -166,18 +166,22 @@ void MySourceTerm(Hydro *hydro, const real t, const real dtin) {
 
 
 
-void InternalBoundary(DataBlock& data, const real t) {
-  IdefixArray4D<real> Vc = data.hydro->Vc;
-  IdefixArray4D<real> Vs = data.hydro->Vs;
-  IdefixArray1D<real> x1=data.x[IDIR];
-  IdefixArray1D<real> x2=data.x[JDIR];
+void InternalBoundary(Hydro *hydro, const real t) {
+  auto *data = hydro->data;
+  IdefixArray4D<real> Vc = hydro->Vc;
+  IdefixArray4D<real> Vs = hydro->Vs;
+  IdefixArray1D<real> x1=data->x[IDIR];
+  IdefixArray1D<real> x2=data->x[JDIR];
 
   real vAmax=computeVaMax(4.0,50.0,8.0,t);
   real densityFloor0 = densityFloorGlob;
   real Rin = 1.0;
   real epsilon=epsilonGlob;
 
-  idefix_for("InternalBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
+  idefix_for("InternalBoundary",
+    0, data->np_tot[KDIR],
+    0, data->np_tot[JDIR],
+    0, data->np_tot[IDIR],
               KOKKOS_LAMBDA (int k, int j, int i) {
                 real R=x1(i)*sin(x2(j));
                 real z=x1(i)*cos(x2(j));

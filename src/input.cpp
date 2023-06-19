@@ -184,6 +184,10 @@ void Input::ParseCommandLine(int argc, char **argv) {
     } else if(std::string(argv[i]) == "-help" || std::string(argv[i]) == "-h") {
       PrintOptions();
       idfx::safeExit(0);
+    } else if(std::string(argv[i]) == "-makeres") {
+      inputParameters["CommandLine"]["makeres"].push_back(std::string("true"));
+    } else if(std::string(argv[i]) == "-useres") {
+      inputParameters["CommandLine"]["useres"].push_back(std::string("true"));
     } else {
       PrintOptions();
       msg << "Unknown option " << argv[i];

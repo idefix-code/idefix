@@ -274,7 +274,7 @@ int Output::CheckForWrites(DataBlock &data) {
 bool Output::RestartFromDump(DataBlock &data, int readNumber) {
   idfx::pushRegion("Output::RestartFromDump");
 
-  bool result = data.dump->Read(*this, readNumber);
+  bool result = data.dump->Read(readNumber);
   if(result) data.DeriveVectorPotential();
 
   idfx::popRegion();
@@ -284,7 +284,7 @@ bool Output::RestartFromDump(DataBlock &data, int readNumber) {
 void Output::ForceWriteDump(DataBlock &data) {
   idfx::pushRegion("Output::ForceWriteDump");
 
-  if(!forceNoWrite) data.dump->Write(*this);
+  if(!forceNoWrite) data.dump->Write();
 
   idfx::popRegion();
 }

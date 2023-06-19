@@ -8,12 +8,17 @@
 #include "../idefix.hpp"
 #include "dataBlock.hpp"
 #include "fluid.hpp"
+#include "balancedScheme.hpp"
 
 // Evolve one step forward in time of hydro
 void DataBlock::EvolveStage() {
   idfx::pushRegion("DataBlock::EvolveStage");
 
   hydro->EvolveStage(this->t,this->dt);
+
+  if(useBalance) {
+    this->balancedScheme->SubstractBalance(hydro.get(), this->dt);
+  }
 
   if(haveDust) {
     for(int i = 0 ; i < dust.size() ; i++) {

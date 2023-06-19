@@ -11,34 +11,38 @@
 #include "dump.hpp"
 #include "balancedScheme.hpp"
 
-BalancedScheme::BalancedScheme(DataBlock &data) {
+BalancedScheme::BalancedScheme(DataBlock *d) {
+  DataBlock &data = *d;
+
   if(data.haveDust) {
     IDEFIX_WARNING("The balanced scheme does not apply to dust fields");
   }
   auto Uc = data.hydro->Uc;
-  IdefixArray4D<real> dUc("Balance::dUc",
+  this->dUc = IdefixArray4D<real>("Balance::dUc",
                           Uc.extent(0),
                           Uc.extent(1),
                           Uc.extent(2),
                           Uc.extent(3));
 }
 
-void BalancedScheme::ComputeResidual(DataBlock &data) {
-  data.ResetStage();
-  data.SetBoundaries();
-  if(data.haveFargo) data.fargo->SubstractVelocity(data.t);
-  data.PrimToCons();
+void BalancedScheme::ComputeResidual(DataBlock *data) {
+  idfx::pushRegion("BalancedScheme::ComputeResidual");
+  data->ResetStage();
+  data->SetBoundaries();
+  if(data->haveFargo) data->fargo->SubstractVelocity(data->t);
+  data->PrimToCons();
   // Backup initial state
-  Kokkos::deep_copy(UcInit,data.hydro->Uc):
+  Kokkos::deep_copy(dUc,data->hydro->Uc);
 
   // Evolve the stage by one timeStep
-  if(data.haveGravity) {
-    data.gravity->ComputeGravity(ncycles);
+  if(data->haveGravity) {
+    data->gravity->ComputeGravity(0);
   }
-  data.EvolveStage();
+  data->EvolveStage();
 
   // Compute the variation of conserved quantities
-  real dt = data.dt;
+  real dt = data->dt;
+  auto Uc = data->hydro->Uc;
 
   idefix_for("delta U", 0,Uc.extent(0),
                         0,Uc.extent(1),
@@ -48,32 +52,32 @@ void BalancedScheme::ComputeResidual(DataBlock &data) {
         dUc(n,k,j,i) = (Uc(n,k,j,i) - dUc(n,k,j,i))/dt;
       });
 
-  Dump dump(&data);
+  Dump dump(data);
 
   // Register all of the variables
   for(int i = 0 ; i < dUc.extent(0) ;  i++) {
-    dump->RegisterVariable(dUc,std::string("Res")+std::to_string(i),i);
+    dump.RegisterVariable(dUc,std::string("Res")+std::to_string(i),i);
   }
   dump.SetFilename("residual");
-  dump.write()
+  dump.Write();
+
+  idfx::popRegion();
 }
 
 
-void BalancedScheme::LoadResidual(DataBlock &data) {
-  if(data.haveDust) {
+void BalancedScheme::LoadResidual(DataBlock *data) {
+  idfx::pushRegion("BalancedScheme::LoadResidual");
+  if(data->haveDust) {
     IDEFIX_WARNING("The balanced scheme does not apply to dust fields");
   }
 
-  Dump dump(&data);
+  Dump dump(data);
 
   // Register all of the variables
   for(int i = 0 ; i < dUc.extent(0) ;  i++) {
-    dump->RegisterVariable(dUc,std::string("Res")+std::to_string(i),i);
+    dump.RegisterVariable(dUc,std::string("Res")+std::to_string(i),i);
   }
   dump.SetFilename("residual");
-  dump.read()
-}
-
-IdefixArray4D<real> BalancedScheme::GetResidual() {
-  return this->dUc;
+  dump.Read(0);
+  idfx::popRegion();
 }

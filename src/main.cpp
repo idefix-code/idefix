@@ -36,6 +36,7 @@
 #include "timeIntegrator.hpp"
 #include "setup.hpp"
 #include "output.hpp"
+#include "balancedScheme.hpp"
 #ifdef WITH_MPI
 #include "mpi.hpp"
 #endif
@@ -142,6 +143,7 @@ int main( int argc, char* argv[] ) {
       output.CheckForWrites(data);
     }
 
+
     ///////////////////////////////
     // Main Loop
     ///////////////////////////////
@@ -151,6 +153,14 @@ int main( int argc, char* argv[] ) {
     output.ResetTimer();
 
     real tstop = input.Get<real>("TimeIntegrator","tstop",0);
+
+    if(data.computeBalance) {
+      // We are required to compute the balance of a single timestep
+      data.balancedScheme->ComputeResidual(&data);
+      idfx::cout << "Main: Residual for the balanced scheme computed successfully." << std::endl;
+      // Do not perform the integration loop
+      tstop=-1.0;
+    }
 
     while(data.t < tstop) {
       if(tstop-data.t < data.dt) data.dt = tstop-data.t;

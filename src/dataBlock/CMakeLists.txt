@@ -1,6 +1,8 @@
 add_subdirectory(planetarySystem)
 
 target_sources(idefix
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/balancedScheme.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/balancedScheme.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/coarsen.cpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/dataBlock.cpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/dataBlock.hpp

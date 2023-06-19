@@ -42,6 +42,7 @@ class Fluid;
 class SubGrid;
 class Vtk;
 class Dump;
+class BalancedScheme;
 
 // Forward class hydro declaration
 #include "physics.hpp"
@@ -121,6 +122,11 @@ class DataBlock {
   std::unique_ptr<Xdmf> xdmf;
   #endif
 
+
+  bool isBalanced{false};
+  bool computeBalance{false};
+  bool useBalance{false};
+  std::unique_ptr<BalancedScheme> balancedScheme;
 
   DataBlock(Grid &, Input &);     ///< init from a Grid object
   explicit DataBlock(SubGrid *);           ///< init a minimal datablock for a subgrid

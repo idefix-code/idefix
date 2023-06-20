@@ -74,24 +74,6 @@ int Output::CheckForWrites(DataBlock &data) {
     idfx::popRegion();
     return(0);
   }
-  // Do we need a restart dump?
-  if(dumpEnabled) {
-    if(data.t >= dumpLast + dumpPeriod) {
-      elapsedTime -= timer.seconds();
-      dumpLast += dumpPeriod;
-      data.dump->Write(*this);
-      nfiles++;
-      elapsedTime += timer.seconds();
-
-      // Check if our next predicted output should already have happened
-      if((dumpLast+dumpPeriod <= data.t) && dumpPeriod>0.0) {
-        // Move forward dumpLast
-        while(dumpLast <= data.t - dumpPeriod) {
-          dumpLast += dumpPeriod;
-        }
-      }
-    }
-  }
 
   // Do we need a VTK output?
   if(vtkEnabled) {
@@ -148,6 +130,26 @@ int Output::CheckForWrites(DataBlock &data) {
     }
   }
 
+  // Do we need a restart dump?
+  if(dumpEnabled) {
+    // Dumps contain metadata about the most recent outputs of other types,
+    // so it's important that this part happens last.
+    if(data.t >= dumpLast + dumpPeriod) {
+      elapsedTime -= timer.seconds();
+      dumpLast += dumpPeriod;
+      data.dump->Write(*this);
+      nfiles++;
+      elapsedTime += timer.seconds();
+
+      // Check if our next predicted output should already have happened
+      if((dumpLast+dumpPeriod <= data.t) && dumpPeriod>0.0) {
+        // Move forward dumpLast
+        while(dumpLast <= data.t - dumpPeriod) {
+          dumpLast += dumpPeriod;
+        }
+      }
+    }
+  }
   idfx::popRegion();
 
   return(nfiles);

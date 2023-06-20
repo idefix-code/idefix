@@ -197,6 +197,9 @@ class idfxTest:
       if nowrite:
           comm.append("-nowrite")
 
+      if self.Werror:
+        comm.append("-Werror")
+
       if restart>=0:
         comm.append("-restart")
         comm.append(str(restart))

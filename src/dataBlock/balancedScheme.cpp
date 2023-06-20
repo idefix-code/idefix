@@ -43,6 +43,7 @@ void BalancedScheme::ComputeResidual(DataBlock *data) {
   // Compute the variation of conserved quantities
   real dt = data->dt;
   auto Uc = data->hydro->Uc;
+  auto dUc = this->dUc;
 
   idefix_for("delta U", 0,Uc.extent(0),
                         0,Uc.extent(1),

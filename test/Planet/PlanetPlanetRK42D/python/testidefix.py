@@ -41,10 +41,12 @@ planet0 = datafile("../planet0.dat")
 planet1_ref = datafile("planet1.ref.dat")
 planet1 = datafile("../planet1.dat")
 
-dist0_ref = np.sqrt(planet0_ref[2]**2+planet0_ref[3]**2+planet0_ref[4]**2)
-dist0 = np.sqrt(planet0[2]**2+planet0[3]**2+planet0[4]**2)
-dist1_ref = np.sqrt(planet1_ref[2]**2+planet1_ref[3]**2+planet1_ref[4]**2)
-dist1 = np.sqrt(planet1[2]**2+planet1[3]**2+planet1[4]**2)
+def distance_to_origin(log):
+    return np.sqrt(log[1]**2 + log[2]**2 + log[3]**2)
+
+dist0_ref, dist0, dist1_ref, dist1 = map(
+    distance_to_origin, (planet0_ref, planet0, planet1_ref, planet1)
+)
 
 # Compute the error on the planet distance
 error_d0=np.max(np.abs((dist0-dist0_ref)/dist0_ref))

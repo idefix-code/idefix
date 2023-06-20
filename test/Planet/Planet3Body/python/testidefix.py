@@ -8,22 +8,16 @@ Created on Tue Dec  21 12:04:41 2021
 
 import os
 import sys
-import re
 sys.path.append(os.getenv("IDEFIX_DIR"))
 import numpy as np
 
-def separation(*, Rref=1.0, resonance="5:3"):
+def separation(resonance):
     a = int(resonance[-1])
     b = int(resonance[0])
     return pow(a/b,2/3)
 
-def datafile(filename, *, directory=""):
-    fullpath = os.path.join(directory, filename)
-    with open(fullpath) as f1:
-        data = f1.readlines()
-    y = [[v for v in re.split(r"[\t ]+", r)] for r in data]
-    columns = np.array(y, dtype="float64").T
-    return(columns)
+def datafile(filename):
+    return np.loadtxt(filename, dtype="float64").T
 
 planet0 = datafile("../planet0.dat")
 planet1 = datafile("../planet1.dat")
@@ -39,7 +33,7 @@ xpl1 = rpl1*np.cos(theta1)
 ypl1 = rpl1*np.sin(theta1)
 
 theta0 = np.arctan2(planet0[2],planet0[1])
-apl0 = separation(resonance=resonance)
+apl0 = separation(resonance)
 ecc0 = 0.2
 rpl0 = (apl0*(1-ecc0**2)/(1+ecc0*np.cos(theta0)))
 xpl0 = rpl0*np.cos(theta0)
@@ -68,8 +62,6 @@ if plot_orbit:
 
 rpl0_sim = np.sqrt(planet0[1]**2 + planet0[2]**2)
 rpl1_sim = np.sqrt(planet1[1]**2 + planet1[2]**2)
-(rpl0-rpl0_sim)/rpl0
-(rpl1-rpl1_sim)/rpl1
 
 mean0 = np.mean(100*(rpl0-rpl0_sim)/rpl0)
 mean1 = np.mean(100*(rpl1-rpl1_sim)/rpl1)

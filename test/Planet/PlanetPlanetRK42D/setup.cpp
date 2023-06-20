@@ -214,7 +214,7 @@ void Analysis(DataBlock & data) {
       std::ofstream f;
       f.open(planetName,std::ios::app);
       f.precision(10);
-      f << std::scientific << time << "    " << timeStep << "    " << xp << "    " << yp << "    " << zp << "    " << vxp << "    " << vyp << "    " << vzp << "    " << qp << "    " << time << std::endl;
+      f << std::scientific << timeStep << "    " << xp << "    " << yp << "    " << zp << "    " << vxp << "    " << vyp << "    " << vzp << "    " << qp << "    " << time << std::endl;
       f.close();
     }
 

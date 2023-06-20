@@ -8,7 +8,6 @@ Created on Tue Dec  21 12:04:41 2021
 
 import os
 import sys
-import re
 sys.path.append(os.getenv("IDEFIX_DIR"))
 import numpy as np
 
@@ -17,16 +16,11 @@ def find_nearest(array, value):
     idx = (np.abs(array - value)).argmin()
     return idx
 
-def datafile(filename, *, directory=""):
-    fullpath = os.path.join(directory, filename)
-    with open(fullpath) as f1:
-        data = f1.readlines()
-    y = [[v for v in re.split(r"[\t ]+", r)] for r in data]
-    columns = np.array(y, dtype="float64").T
-    return(columns)
+def datafile(filename):
+    return np.loadtxt(filename, dtype="float64").T
 
-def time_dist(filename, *, directory=""):
-    columns = datafile(filename, directory=directory)
+def time_dist(filename):
+    columns = datafile(filename)
     return(columns[-1], np.sqrt(columns[1]**2+columns[2]**2+columns[3]**2))
 
 plot = False

@@ -28,9 +28,15 @@ def testMe(test):
     test.nonRegressionTest(filename=name,tolerance=tolerance)
 
     # Test the restart option
+    dump_mtime = os.path.getmtime("dump.0001.dmp")
+    vtk_mtime = os.path.getmtime("data.0005.vtk")
+
     test.run(inputFile=ini, restart=1)
     test.standardTest()
     test.nonRegressionTest(filename=name,tolerance=tolerance)
+
+    assert dump_mtime == os.path.getmtime("dump.0001.dmp"), "Dump was overwritten on restart"
+    assert vtk_mtime == os.path.getmtime("data.0005.vtk"), "VTK file was overwritten on restart"
 
 test=tst.idfxTest()
 if not test.dec:

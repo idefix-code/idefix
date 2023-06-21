@@ -59,11 +59,9 @@ class Output {
   real dumpPeriod = 0.0;
   real dumpLast = 0.0;
 
-  #ifdef USE_HDF5
   bool xdmfEnabled = false;
   real xdmfPeriod = 0.0;   // periodicity of xdmf outputs
   real xdmfLast = 0.0;
-  #endif
 
   bool analysisEnabled = false;
   real analysisPeriod = 0.0;

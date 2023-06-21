@@ -7,7 +7,6 @@
 
 #include "output.hpp"
 
-
 Output::Output(Input &input, DataBlock &data) {
   idfx::pushRegion("Output::Output");
   // initialise the output objects for each format

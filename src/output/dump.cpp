@@ -522,7 +522,9 @@ void Dump::ReadDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gdi
 
 // Helper function to convert filesystem::file_time into std::time_t
 // see https://stackoverflow.com/questions/56788745/
-
+// This conversion "hack" is required in C++17 as no proper conversion bewteen
+// std::filesystem::last_write_time and std::time_t
+// exists in the standard library until C++20
 template <typename TP>
 std::time_t to_time_t(TP tp) {
     auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>

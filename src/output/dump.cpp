@@ -520,16 +520,37 @@ void Dump::ReadDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gdi
   #endif
 }
 
+// Helper function to convert filesystem::file_time into std::time_t
+// see https://stackoverflow.com/questions/56788745/
+// This conversion "hack" is required in C++17 as no proper conversion bewteen
+// std::filesystem::last_write_time and std::time_t
+// exists in the standard library until C++20
+template <typename TP>
+std::time_t to_time_t(TP tp) {
+    auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>
+                (tp - TP::clock::now() + std::chrono::system_clock::now());
+    return std::chrono::system_clock::to_time_t(sctp);
+}
+
 int Dump::GetLastDumpInDirectory(std::filesystem::path &directory) {
   int num = -1;
 
+  std::time_t youngFileTime;
+  bool first = true;
   for (const auto & entry : std::filesystem::directory_iterator(directory)) {
       // Check file extension
-      std::filesystem::file_time_type youngFileTime;
       if(entry.path().extension().string().compare(".dmp")==0) {
-        auto fileTime = std::filesystem::last_write_time(entry.path());
+        auto fileTime = to_time_t(std::filesystem::last_write_time(entry.path()));
+        if(first) {
+          first=false;
+          youngFileTime = fileTime;
+        }
         // Check which one is the most recent
         if(fileTime>youngFileTime) {
+          // std::tm *gmt = std::gmtime(&fileTime);
+          // idfx::cout << "file " << entry.path() << "is the most recent with "
+          //            << std::put_time(gmt, "%d %B %Y %H:%M:%S") << std::endl;
+
           // Ours is more recent, extract the dump file number
           try {
             num = std::stoi(entry.path().filename().string().substr(5,4));

@@ -533,17 +533,21 @@ std::time_t to_time_t(TP tp) {
 int Dump::GetLastDumpInDirectory(std::filesystem::path &directory) {
   int num = -1;
 
+  std::time_t youngFileTime;
+  bool first = true;
   for (const auto & entry : std::filesystem::directory_iterator(directory)) {
       // Check file extension
-      std::time_t youngFileTime;
       if(entry.path().extension().string().compare(".dmp")==0) {
         auto fileTime = to_time_t(std::filesystem::last_write_time(entry.path()));
-
+        if(first) {
+          first=false;
+          youngFileTime = fileTime;
+        }
         // Check which one is the most recent
         if(fileTime>youngFileTime) {
           // std::tm *gmt = std::gmtime(&fileTime);
           // idfx::cout << "file " << entry.path() << "is the most recent with "
-          //           << std::put_time(gmt, "%d %B %Y %H:%M:%S") << std::endl;
+          //            << std::put_time(gmt, "%d %B %Y %H:%M:%S") << std::endl;
 
           // Ours is more recent, extract the dump file number
           try {

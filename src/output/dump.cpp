@@ -541,12 +541,8 @@ int Dump::GetLastDumpInDirectory(std::filesystem::path &directory) {
       // Check file extension
       if(entry.path().extension().string().compare(".dmp")==0) {
         auto fileTime = to_time_t(std::filesystem::last_write_time(entry.path()));
-        if(first) {
-          first=false;
-          youngFileTime = fileTime;
-        }
         // Check which one is the most recent
-        if(fileTime>youngFileTime) {
+        if(first || fileTime>youngFileTime) {
           // std::tm *gmt = std::gmtime(&fileTime);
           // idfx::cout << "file " << entry.path() << "is the most recent with "
           //            << std::put_time(gmt, "%d %B %Y %H:%M:%S") << std::endl;
@@ -554,9 +550,11 @@ int Dump::GetLastDumpInDirectory(std::filesystem::path &directory) {
           // Ours is more recent, extract the dump file number
           try {
             num = std::stoi(entry.path().filename().string().substr(5,4));
+            first = false;
             youngFileTime = fileTime;
           } catch (...) {
-            // We do nothing here
+            // the file name does not follow the convention "filebase.xxxx.dmp"
+            // ->We skip it
           }
         }
       }
@@ -582,9 +580,11 @@ bool Dump::Read(Output& output, int readNumber ) {
     readNumber = GetLastDumpInDirectory(readDir);
     if(readNumber < 0) {
       idfx::cout << "Dump: cannot find a valid dump in " << this->outputDirectory << std::endl;
-      idfx::cout << "Dump: reverting to the current directory." << std::endl;
-      readDir = ".";
-      readNumber = GetLastDumpInDirectory(readDir);
+      if(outputDirectory.compare("./")!=0) {
+        idfx::cout << "Dump: reverting to the current directory." << std::endl;
+        readDir = ".";
+        readNumber = GetLastDumpInDirectory(readDir);
+      }
       if(readNumber<0) {
         IDEFIX_WARNING("cannot find a valid restart dump.");
         return(false);

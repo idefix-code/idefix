@@ -39,17 +39,21 @@ void MyViscosity(DataBlock &data, const real t, IdefixArray3D<real> &eta1, Idefi
 }
 
 // User-defined boundaries
-void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
-  IdefixArray4D<real> Vc = data.hydro->Vc;
-  IdefixArray1D<real> x1 = data.x[IDIR];
-  IdefixArray1D<real> x3 = data.x[KDIR];
+void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
+  IdefixArray4D<real> Vc = hydro->Vc;
+  auto *data = hydro->data;
+  IdefixArray1D<real> x1 = data->x[IDIR];
+  IdefixArray1D<real> x3 = data->x[KDIR];
   if(dir==IDIR) {
     int ighost,ibeg,iend;
     if(side == left) {
-      ighost = data.beg[IDIR];
+      ighost = data->beg[IDIR];
       ibeg = 0;
-      iend = data.beg[IDIR];
-      idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],ibeg,iend,
+      iend = data->beg[IDIR];
+      idefix_for("UserDefBoundary",
+        0, data->np_tot[KDIR],
+        0, data->np_tot[JDIR],
+        ibeg, iend,
         KOKKOS_LAMBDA (int k, int j, int i) {
           real R=x1(i);
           real z=x3(k);
@@ -62,10 +66,13 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
         });
     }
     else if(side==right) {
-      ighost = data.end[IDIR]-1;
-      ibeg=data.end[IDIR];
-      iend=data.np_tot[IDIR];
-      idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],ibeg,iend,
+      ighost = data->end[IDIR]-1;
+      ibeg=data->end[IDIR];
+      iend=data->np_tot[IDIR];
+      idefix_for("UserDefBoundary",
+        0, data->np_tot[KDIR],
+        0, data->np_tot[JDIR],
+        ibeg, iend,
         KOKKOS_LAMBDA (int k, int j, int i) {
           real R=x1(i);
           real z=x3(k);

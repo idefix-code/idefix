@@ -62,27 +62,31 @@ void MyViscosity(DataBlock &data, const real t, IdefixArray3D<real> &eta1, Idefi
 
 }
 
-void Damping(DataBlock &data, const real t, const real dtin) {
-  IdefixArray4D<real> Vc = data.hydro->Vc;
-  IdefixArray4D<real> Uc = data.hydro->Uc;
-  IdefixArray1D<real> x1 = data.x[IDIR];
-  IdefixArray1D<real> x2 = data.x[JDIR];
+void Damping(Hydro *hydro, const real t, const real dtin) {
+  auto *data = hydro->data;
+  IdefixArray4D<real> Vc = hydro->Vc;
+  IdefixArray4D<real> Uc = hydro->Uc;
+  IdefixArray1D<real> x1 = data->x[IDIR];
+  IdefixArray1D<real> x2 = data->x[JDIR];
 
   real h0 = h0Glob;
   real sigma0 = sigma0Glob;
   real sigmaSlope = sigmaSlopeGlob;
   real flaringIndex = flaringIndexGlob;
   real omega = omegaGlob;
-  real gamma = data.hydro->GetGamma();
+  real gamma = hydro->GetGamma();
   real dt = dtin;
-  bool isFargo = data.haveFargo;
+  bool isFargo = data->haveFargo;
 
-  real rmin{data.mygrid->xbeg[0]};
+  real rmin{data->mygrid->xbeg[0]};
   real wkzMin{wkzMinGlob};
-  real rmax{data.mygrid->xend[0]};
+  real rmax{data->mygrid->xend[0]};
   real wkzMax{wkzMaxGlob};
   real wkzDamping{wkzDampingGlob};
-  idefix_for("MySourceTerm",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
+  idefix_for("MySourceTerm",
+    0, data->np_tot[KDIR],
+    0, data->np_tot[JDIR],
+    0, data->np_tot[IDIR],
               KOKKOS_LAMBDA (int k, int j, int i) {
                 real R = x1(i);
                 real Vk = 1.0/sqrt(R);
@@ -149,30 +153,34 @@ void Damping(DataBlock &data, const real t, const real dtin) {
 }
 
 // User-defined boundaries
-void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
-  IdefixArray4D<real> Vc = data.hydro->Vc;
-  IdefixArray1D<real> x1 = data.x[IDIR];
+void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
+  auto *data = hydro->data;
+  IdefixArray4D<real> Vc = hydro->Vc;
+  IdefixArray1D<real> x1 = data->x[IDIR];
   real sigmaSlope=sigmaSlopeGlob;
   real omega = omegaGlob;
 
     if(dir==IDIR) {
         int ighost,ibeg,iend,sign;
         if(side == left) {
-            ighost = data.beg[IDIR];
+            ighost = data->beg[IDIR];
             ibeg = 0;
-            iend = data.beg[IDIR];
+            iend = data->beg[IDIR];
             sign=-1;
             //return;
         }
         else if(side==right) {
-            ighost = data.end[IDIR]-1;
-            ibeg=data.end[IDIR];
-            iend=data.np_tot[IDIR];
+            ighost = data->end[IDIR]-1;
+            ibeg=data->end[IDIR];
+            iend=data->np_tot[IDIR];
             sign=1;
         }
 
 
-        idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],ibeg,iend,
+        idefix_for("UserDefBoundary",
+          0, data->np_tot[KDIR],
+          0, data->np_tot[JDIR],
+          ibeg, iend,
                     KOKKOS_LAMBDA (int k, int j, int i) {
                         real R=x1(i);
                         real R0=x1(ighost);
@@ -309,7 +317,6 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output)// : m_pl
   // Set the function for userdefboundary
   data.hydro->EnrollUserDefBoundary(&UserdefBoundary);
   data.hydro->EnrollUserSourceTerm(&Damping);
-//   data.hydro->EnrollUserSourceTerm(&MySourceTerm);
   data.hydro->EnrollIsoSoundSpeed(&MySoundSpeed);
 
   if(data.hydro->viscosityStatus.status) {

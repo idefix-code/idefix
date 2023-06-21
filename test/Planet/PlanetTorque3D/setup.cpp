@@ -48,29 +48,33 @@ void MySoundSpeed(DataBlock &data, const real t, IdefixArray3D<real> &cs) {
               });
 }
 
-void Damping(DataBlock &data, const real t, const real dtin) {
-  IdefixArray4D<real> Vc = data.hydro->Vc;
-  IdefixArray4D<real> Uc = data.hydro->Uc;
-  IdefixArray1D<real> x1 = data.x[IDIR];
-  IdefixArray1D<real> x2 = data.x[JDIR];
+void Damping(Hydro *hydro, const real t, const real dtin) {
+  auto *data = hydro->data;
+  IdefixArray4D<real> Vc = hydro->Vc;
+  IdefixArray4D<real> Uc = hydro->Uc;
+  IdefixArray1D<real> x1 = data->x[IDIR];
+  IdefixArray1D<real> x2 = data->x[JDIR];
 
   real h0 = h0Glob;
   real sigma0 = sigma0Glob;
   real sigmaSlope = sigmaSlopeGlob;
   real flaringIndex = flaringIndexGlob;
   real omega = omegaGlob;
-  real gamma = data.hydro->GetGamma();
+  real gamma = hydro->GetGamma();
   real pexp = -sigmaSlope-flaringIndex-1;
   real qexp = 2*flaringIndex-1;
   real dt = dtin;
-  bool isFargo = data.haveFargo;
+  bool isFargo = data->haveFargo;
 
-  real rmin{data.mygrid->xbeg[0]};
+  real rmin{data->mygrid->xbeg[0]};
   real wkzMin{wkzMinGlob};
-  real rmax{data.mygrid->xend[0]};
+  real rmax{data->mygrid->xend[0]};
   real wkzMax{wkzMaxGlob};
   real wkzDamping{wkzDampingGlob};
-  idefix_for("MySourceTerm",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
+  idefix_for("Damping",
+    0, data->np_tot[KDIR],
+    0, data->np_tot[JDIR],
+    0, data->np_tot[IDIR],
               KOKKOS_LAMBDA (int k, int j, int i) {
                 real r = x1(i);
                 real th = x2(j);
@@ -144,10 +148,11 @@ void Damping(DataBlock &data, const real t, const real dtin) {
 }
 
 // User-defined boundaries
-void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
-  IdefixArray4D<real> Vc = data.hydro->Vc;
-  IdefixArray1D<real> x1 = data.x[IDIR];
-  IdefixArray1D<real> x2 = data.x[JDIR];
+void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
+  auto *data = hydro->data;
+  IdefixArray4D<real> Vc = hydro->Vc;
+  IdefixArray1D<real> x1 = data->x[IDIR];
+  IdefixArray1D<real> x2 = data->x[JDIR];
   real h0=h0Glob;
   real flaringIndex=flaringIndexGlob;
   real sigmaSlope=sigmaSlopeGlob;
@@ -158,19 +163,22 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
     if(dir==IDIR) {
         int ighost,ibeg,iend;
         if(side == left) {
-            ighost = data.beg[IDIR];
+            ighost = data->beg[IDIR];
             ibeg = 0;
-            iend = data.beg[IDIR];
+            iend = data->beg[IDIR];
             //return;
         }
         else if(side==right) {
-            ighost = data.end[IDIR]-1;
-            ibeg=data.end[IDIR];
-            iend=data.np_tot[IDIR];
+            ighost = data->end[IDIR]-1;
+            ibeg=data->end[IDIR];
+            iend=data->np_tot[IDIR];
         }
 
 
-        idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],ibeg,iend,
+        idefix_for("UserDefBoundary",
+          0, data->np_tot[KDIR],
+          0, data->np_tot[JDIR],
+          ibeg, iend,
                     KOKKOS_LAMBDA (int k, int j, int i) {
                         real r = x1(i);
                         real rghost = x1(ighost);
@@ -193,16 +201,19 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
     }
 
     if( dir==JDIR) {
-        IdefixArray4D<real> Vc = data.hydro->Vc;
+        IdefixArray4D<real> Vc = hydro->Vc;
         int jghost;
         int jbeg,jend;
         // UPPER LAYER
         if(side == left) {
-            jghost = data.beg[JDIR];
+            jghost = data->beg[JDIR];
             jbeg = 0;
-            jend = data.beg[JDIR];
+            jend = data->beg[JDIR];
             //return;
-            idefix_for("UserDefBoundary",0,data.np_tot[KDIR],jbeg,jend,0,data.np_tot[IDIR],
+            idefix_for("UserDefBoundary",
+              0, data->np_tot[KDIR],
+              jbeg, jend,
+              0, data->np_tot[IDIR],
                         KOKKOS_LAMBDA (int k, int j, int i) {
                             real r = x1(i);
                             real R = x1(i)*sin(x2(j));
@@ -219,10 +230,13 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
         }
         // MIDPLANE
         else if(side==right) {
-            jghost = data.end[JDIR]-1;
-            jbeg = data.end[JDIR];
-            jend = data.np_tot[JDIR];
-            idefix_for("UserDefBoundary",0,data.np_tot[KDIR],jbeg,jend,0,data.np_tot[IDIR],
+            jghost = data->end[JDIR]-1;
+            jbeg = data->end[JDIR];
+            jend = data->np_tot[JDIR];
+            idefix_for("UserDefBoundary",
+              0, data->np_tot[KDIR],
+              jbeg, jend,
+              0, data->np_tot[IDIR],
                         KOKKOS_LAMBDA (int k, int j, int i) {
                           real r = x1(i);
                           real R = x1(i)*sin(x2(j));
@@ -339,7 +353,6 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output)// : m_pl
   // Set the function for userdefboundary
   data.hydro->EnrollUserDefBoundary(&UserdefBoundary);
   data.hydro->EnrollUserSourceTerm(&Damping);
-//   data.hydro->EnrollUserSourceTerm(&MySourceTerm);
   data.hydro->EnrollIsoSoundSpeed(&MySoundSpeed);
   if(data.haveFargo)
     data.fargo->EnrollVelocity(&FargoVelocity);

@@ -47,23 +47,24 @@ void FargoVelocity(DataBlock &data, IdefixArray2D<real> &Vphi) {
 }
 
 // User-defined boundaries
-void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
-  IdefixArray4D<real> Vc = data.hydro->Vc;
-  IdefixArray1D<real> x1 = data.x[IDIR];
-  IdefixArray1D<real> x2 = data.x[JDIR];
+void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
+  auto *data = hydro->data;
+  IdefixArray4D<real> Vc = hydro->Vc;
+  IdefixArray1D<real> x1 = data->x[IDIR];
+  IdefixArray1D<real> x2 = data->x[JDIR];
   real epsilon=epsilonGlob;
     if(dir==IDIR) {
 
 
         int ighost;
         if(side == left) {
-            ighost = data.beg[IDIR];
+            ighost = data->beg[IDIR];
         }
         else if(side==right) {
-            ighost = data.end[IDIR]-1;
+            ighost = data->end[IDIR]-1;
         }
 
-        data.hydro->boundary->BoundaryFor("UserDefBoundary", dir, side,
+        hydro->boundary->BoundaryFor("UserDefBoundary", dir, side,
           KOKKOS_LAMBDA (int k, int j, int i) {
               real R=x1(i)*sin(x2(j));
               real z=x1(i)*cos(x2(j));
@@ -80,14 +81,14 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
     if( dir==JDIR) {
         int jghost;
         if(side == left) {
-            jghost = data.beg[JDIR];
+            jghost = data->beg[JDIR];
         }
         else if(side==right) {
-            jghost = data.end[JDIR]-1;
+            jghost = data->end[JDIR]-1;
         }
 
 
-        data.hydro->boundary->BoundaryFor("UserDefBoundary", dir, side,
+        hydro->boundary->BoundaryFor("UserDefBoundary", dir, side,
             KOKKOS_LAMBDA (int k, int j, int i) {
               real R=x1(i)*sin(x2(j));
               real z=x1(i)*cos(x2(j));

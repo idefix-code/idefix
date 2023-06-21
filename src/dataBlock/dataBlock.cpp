@@ -156,7 +156,7 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
   dump->RegisterVariable(&dt, "dt");
 
   // Initialise the balanced scheme
-  if(input.CheckEntry("CommandLine","makeres")>=0 || input.CheckEntry("CommandLine","useres")) {
+  if(input.CheckEntry("CommandLine","makeres")>=0 || input.CheckEntry("CommandLine","useres")>=0) {
     isBalanced = true;
     if(input.CheckEntry("CommandLine","makeres")>=0) computeBalance = true;
     if(input.CheckEntry("CommandLine","useres")>=0) useBalance = true;

@@ -128,8 +128,8 @@ int main( int argc, char* argv[] ) {
       data.DeriveVectorPotential();   // This does something only when evolveVectorPotential is on
       data.SetBoundaries();
       data.Validate();
+      output.CheckForWrites(data);
     }
-    output.CheckForWrites(data);
 
     ///////////////////////////////
     // Main Loop

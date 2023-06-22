@@ -173,7 +173,14 @@ void Input::ParseCommandLine(int argc, char **argv) {
       enableLogs = false;
     } else if(std::string(argv[i]) == "-Werror") {
       idfx::warningsAreErrors = true;
+    } else if(std::string(argv[i]) == "-v") {
+      PrintVersion();
+      idfx::safeExit(0);
+    } else if(std::string(argv[i]) == "-h") {
+      PrintOptions();
+      idfx::safeExit(0);
     } else {
+      PrintOptions();
       msg << "Unknown option " << argv[i];
       IDEFIX_ERROR(msg);
     }
@@ -367,5 +374,40 @@ void Input::PrintLogo() {
   idfx::cout << std::endl;
   idfx::cout << std::endl;
   idfx::cout << std::endl;
-  idfx::cout << "       This is Idefix " << GITVERSION << std::endl;
+  PrintVersion();
+}
+
+void Input::PrintOptions() {
+  idfx::cout << "List of valid arguments:" << std::endl << std::endl;
+  #ifdef WITH_MPI
+    idfx::cout << " -dec "
+    D_SELECT(<< " nx1 ",
+             << " nx1 nx2",
+             << " nx1 nx2 nx3")
+            << std::endl;
+    idfx::cout << "         Force an mpi domain decomposition with n processes in each direction"
+               << std::endl;
+  #endif
+  idfx::cout << " -restart n" << std::endl;
+  idfx::cout << "         Restart from dumpfile n. If n is ommited, Idefix restart from the latest"
+             << " generated dump file." << std::endl;
+  idfx::cout << " -i xxx" << std::endl;
+  idfx::cout << "         Use the input file xxx instead of the default idefix.ini" << std::endl;
+  idfx::cout << " -maxcycles n" << std::endl;
+  idfx::cout << "         Perform at most n integration cycles." << std::endl;
+  idfx::cout << " -nowrite" << std::endl;
+  idfx::cout << "         Do not generate any output file." << std::endl;
+  idfx::cout << " -nolog" << std::endl;
+  idfx::cout << "         Do not write any log file." << std::endl;
+  idfx::cout << " -Werror" << std::endl;
+  idfx::cout << "         Consider warnings as errors." << std::endl;
+  idfx::cout << " -v" << std::endl;
+  idfx::cout << "         Show Idefix and kokkos version." << std::endl;
+  idfx::cout << " -h" << std::endl;
+  idfx::cout << "         Show this message." << std::endl;
+}
+
+void Input::PrintVersion() {
+  idfx::cout << "              Idefix version " << GITVERSION << std::endl;
+  idfx::cout << "              Built against Kokkos " << KOKKOS_VERSION << std::endl;
 }

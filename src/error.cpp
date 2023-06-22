@@ -10,12 +10,7 @@
 #include "idefix.hpp"
 #include "error.hpp"
 
-void _safeExit() {
-  #ifdef WITH_MPI
-  MPI_Abort(MPI_COMM_WORLD,1);
-  #endif
-  exit(1);
-}
+
 
 void ErrorHandler(const int ErrorType,
                   std::stringstream &ErrorMessage,
@@ -33,7 +28,7 @@ void ErrorHandler(const int ErrorType,
                << std::endl;
     if(idfx::warningsAreErrors) {
       idfx::cerr << "Warnings are considered as errors" << std::endl;
-      _safeExit();
+      idfx::safeExit(1);
     }
   } else if (ErrorType == ERROR_DEPRECATED) {
     idfx::cerr << std::endl
@@ -47,7 +42,7 @@ void ErrorHandler(const int ErrorType,
                << std::endl;
     if(idfx::warningsAreErrors) {
       idfx::cerr << "Warnings are considered as errors" << std::endl;
-      _safeExit();
+      idfx::safeExit(1);
     }
   } else {
     idfx::cerr << std::endl
@@ -58,7 +53,7 @@ void ErrorHandler(const int ErrorType,
     idfx::cerr << ErrorMessage.str() << std::endl;
     idfx::cerr << "------------------------------------------------------------------------------"
                << std::endl;
-    _safeExit();
+    idfx::safeExit(1);
   }
 }
 
@@ -78,7 +73,7 @@ void ErrorHandler(const int ErrorType,
                << std::endl;
     if(idfx::warningsAreErrors) {
       idfx::cerr << "Warnings are considered as errors" << std::endl;
-      _safeExit();
+      idfx::safeExit(1);
     }
   } else if (ErrorType == ERROR_DEPRECATED) {
     idfx::cerr << std::endl
@@ -92,7 +87,7 @@ void ErrorHandler(const int ErrorType,
                << std::endl;
     if(idfx::warningsAreErrors) {
       idfx::cerr << "Warnings are considered as errors" << std::endl;
-      _safeExit();
+      idfx::safeExit(1);
     }
   } else {
     idfx::cerr << std::endl
@@ -103,9 +98,6 @@ void ErrorHandler(const int ErrorType,
     idfx::cerr << ErrorMessage << std::endl;
     idfx::cerr << "------------------------------------------------------------------------------"
                << std::endl;
-    #ifdef WITH_MPI
-    MPI_Abort(MPI_COMM_WORLD,1);
-    #endif
-    exit(1);
+    idfx::safeExit(1);
   }
 }

@@ -52,6 +52,8 @@ class Input {
 
   Input();
   void PrintLogo();
+  void PrintOptions();
+  void PrintVersion();
 
   bool restartRequested{false};       //< Should we restart?
   int  restartFileNumber;             //< if yes, from which file?

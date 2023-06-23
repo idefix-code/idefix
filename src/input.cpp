@@ -18,7 +18,7 @@
 
 #include "idefix.hpp"
 #include "input.hpp"
-#include "gitversion.hpp"
+#include "version.hpp"
 
 // Flag will be set if a signal has been received
 bool Input::abortRequested = false;
@@ -408,6 +408,6 @@ void Input::PrintOptions() {
 }
 
 void Input::PrintVersion() {
-  idfx::cout << "              Idefix version " << GITVERSION << std::endl;
+  idfx::cout << "              Idefix version " << IDEFIX_VERSION << std::endl;
   idfx::cout << "              Built against Kokkos " << KOKKOS_VERSION << std::endl;
 }

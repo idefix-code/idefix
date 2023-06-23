@@ -12,7 +12,7 @@ doc/source/xml/*
 
 # generated files
 *.log
-src/gitversion.hpp
+src/version.hpp
 **/libkokkos.a
 **/KokkosCore_config.h
 build

@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.16)
 set(CMAKE_BUILD_TYPE Release)
 set (CMAKE_CXX_STANDARD 17)
 
+set(Idefix_VERSION_MAJOR 2)
+set(Idefix_VERSION_MINOR 0)
+set(Idefix_VERSION_PATCH 00)
+
 project (idefix VERSION 1.0.0)
 option(Idefix_MHD "enable MHD" OFF)
 option(Idefix_MPI "enable Message Passing Interface parallelisation" OFF)
@@ -96,7 +100,12 @@ if(Idefix_EVOLVE_VECTOR_POTENTIAL)
 endif()
 #update gitversion.hpp if possible
 git_describe(GIT_SHA1)
-write_file(${CMAKE_SOURCE_DIR}/src/gitversion.hpp "#define GITVERSION \"${GIT_SHA1}\"")
+file(WRITE ${CMAKE_SOURCE_DIR}/src/version.hpp "#define IDEFIX_GIT_COMMIT \"${GIT_SHA1}\"\n")
+file(APPEND ${CMAKE_SOURCE_DIR}/src/version.hpp "#define IDEFIX_VERSION_MAJOR \"${Idefix_VERSION_MAJOR}\"\n")
+file(APPEND ${CMAKE_SOURCE_DIR}/src/version.hpp "#define IDEFIX_VERSION_MINOR \"${Idefix_VERSION_MINOR}\"\n")
+file(APPEND ${CMAKE_SOURCE_DIR}/src/version.hpp "#define IDEFIX_VERSION_PATCH \"${Idefix_VERSION_PATCH}\"\n")
+file(APPEND ${CMAKE_SOURCE_DIR}/src/version.hpp "#define IDEFIX_VERSION \"${Idefix_VERSION_MAJOR}.${Idefix_VERSION_MINOR}.${Idefix_VERSION_PATCH}.${GIT_SHA1}\"\n")
+
 
 if(NOT ${Idefix_DEFS} STREQUAL "definitions.hpp")
   add_compile_definitions("DEFINITIONS_FILE=\"${Idefix_DEFS}\"")

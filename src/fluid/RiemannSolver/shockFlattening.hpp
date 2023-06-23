@@ -95,7 +95,7 @@ struct ShockFlattening_FindShockFunctor {
     #endif
 
     if(divV<ZERO_F) {
-      real pmin, gradP;
+      [[maybe_unused]] real pmin, gradP;
       if constexpr(Phys::isothermal) {
         if(haveIsoCs == UserDefFunction) {
           pmin = Vc(RHO,k,j,i)*cs(k,j,i)*cs(k,j,i);

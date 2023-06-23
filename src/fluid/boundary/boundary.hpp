@@ -212,11 +212,13 @@ void Boundary<Phys>::SetBoundaries(real t) {
   idfx::pushRegion("Boundary::SetBoundaries");
   // set internal boundary conditions
   if(haveInternalBoundary) {
+    idfx::pushRegion("Boundary::UserDefInternalBoundary");
     if(internalBoundaryFunc != NULL) {
       internalBoundaryFunc(fluid, t);
     } else {
       internalBoundaryFuncOld(*data, t);
     }
+    idfx::popRegion();
   }
   for(int dir=0 ; dir < DIMENSIONS ; dir++ ) {
       // MPI Exchange data when needed
@@ -284,12 +286,14 @@ void Boundary<Phys>::EnforceBoundaryDir(real t, int dir) {
       break;
     case BoundaryType::userdef:
       if(this->haveUserDefBoundary) {
+        idfx::pushRegion("Boundary::UserDefBoundary");
         if(this->userDefBoundaryFunc != NULL) {
           this->userDefBoundaryFunc(fluid, dir, left, t);
         } else {
           // Revert to deprecated Boundary condition
           this->userDefBoundaryFuncOld(*data, dir, left, t);
         }
+        idfx::popRegion();
       } else {
         std::stringstream msg;
         msg << "No function has been enrolled to define your own boundary conditions" << std::endl
@@ -328,12 +332,14 @@ void Boundary<Phys>::EnforceBoundaryDir(real t, int dir) {
       break;
     case BoundaryType::userdef:
       if(this->haveUserDefBoundary) {
+        idfx::pushRegion("Boundary::UserDefBoundary");
         if(this->userDefBoundaryFunc != NULL) {
           this->userDefBoundaryFunc(fluid, dir, right, t);
         } else {
           // Revert to deprecated Boundary condition
           this->userDefBoundaryFuncOld(*data, dir, right, t);
         }
+        idfx::popRegion();
       } else {
         std::stringstream msg;
         msg << "No function has been enrolled to define your own boundary conditions" << std::endl
@@ -536,6 +542,7 @@ void Boundary<Phys>::EnrollInternalBoundary(InternalBoundaryFunc<Phys> myFunc) {
 
 template<typename Phys>
 void Boundary<Phys>::EnforcePeriodic(int dir, BoundarySide side ) {
+  idfx::pushRegion("Boundary::EnforcePeriodic");
   IdefixArray4D<real> Vc = this->Vc;
   int nxi = data->np_int[IDIR];
   int nxj = data->np_int[JDIR];
@@ -629,11 +636,13 @@ void Boundary<Phys>::EnforcePeriodic(int dir, BoundarySide side ) {
       });
     #endif
   }// MHD
+  idfx::popRegion();
 }
 
 
 template<typename Phys>
 void Boundary<Phys>::EnforceReflective(int dir, BoundarySide side ) {
+  idfx::pushRegion("Boundary::EnforceReflective");
   IdefixArray4D<real> Vc = this->Vc;
   const int nxi = data->np_int[IDIR];
   const int nxj = data->np_int[JDIR];
@@ -695,10 +704,12 @@ void Boundary<Phys>::EnforceReflective(int dir, BoundarySide side ) {
       }
     #endif
   }// MHD
+  idfx::popRegion();
 }
 
 template<typename Phys>
 void Boundary<Phys>::EnforceOutflow(int dir, BoundarySide side ) {
+  idfx::pushRegion("Boundary::EnforceOutflow");
   IdefixArray4D<real> Vc = this->Vc;
   const int nxi = data->np_int[IDIR];
   const int nxj = data->np_int[JDIR];
@@ -765,10 +776,12 @@ void Boundary<Phys>::EnforceOutflow(int dir, BoundarySide side ) {
       }
     #endif
   }// MHD
+  idfx::popRegion();
 }
 
 template<typename Phys>
 void Boundary<Phys>::EnforceShearingBox(real t, int dir, BoundarySide side) {
+  idfx::pushRegion("Boundary::EnforceShearingBox");
   if(dir != IDIR)
     IDEFIX_ERROR("Shearing box boundaries can only be applied along the X1 direction");
   if(data->mygrid->nproc[JDIR]>1)
@@ -921,6 +934,7 @@ void Boundary<Phys>::EnforceShearingBox(real t, int dir, BoundarySide side) {
       }// loop on components
     #endif// DIMENSIONS
   } // MHD
+  idfx::popRegion();
 }
 
 template<typename Phys>

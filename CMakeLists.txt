@@ -98,13 +98,13 @@ endif()
 if(Idefix_EVOLVE_VECTOR_POTENTIAL)
   add_compile_definitions("EVOLVE_VECTOR_POTENTIAL")
 endif()
-#update gitversion.hpp if possible
+#update version.hpp if possible
 git_describe(GIT_SHA1)
 file(WRITE ${CMAKE_SOURCE_DIR}/src/version.hpp "#define IDEFIX_GIT_COMMIT \"${GIT_SHA1}\"\n")
 file(APPEND ${CMAKE_SOURCE_DIR}/src/version.hpp "#define IDEFIX_VERSION_MAJOR \"${Idefix_VERSION_MAJOR}\"\n")
 file(APPEND ${CMAKE_SOURCE_DIR}/src/version.hpp "#define IDEFIX_VERSION_MINOR \"${Idefix_VERSION_MINOR}\"\n")
 file(APPEND ${CMAKE_SOURCE_DIR}/src/version.hpp "#define IDEFIX_VERSION_PATCH \"${Idefix_VERSION_PATCH}\"\n")
-file(APPEND ${CMAKE_SOURCE_DIR}/src/version.hpp "#define IDEFIX_VERSION \"${Idefix_VERSION_MAJOR}.${Idefix_VERSION_MINOR}.${Idefix_VERSION_PATCH}.${GIT_SHA1}\"\n")
+file(APPEND ${CMAKE_SOURCE_DIR}/src/version.hpp "#define IDEFIX_VERSION \"${Idefix_VERSION_MAJOR}.${Idefix_VERSION_MINOR}.${Idefix_VERSION_PATCH}-${GIT_SHA1}\"\n")
 
 
 if(NOT ${Idefix_DEFS} STREQUAL "definitions.hpp")

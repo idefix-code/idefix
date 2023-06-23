@@ -173,10 +173,10 @@ void Input::ParseCommandLine(int argc, char **argv) {
       enableLogs = false;
     } else if(std::string(argv[i]) == "-Werror") {
       idfx::warningsAreErrors = true;
-    } else if(std::string(argv[i]) == "-v") {
+    } else if(std::string(argv[i]) == "-version" || std::string(argv[i]) == "-v") {
       PrintVersion();
       idfx::safeExit(0);
-    } else if(std::string(argv[i]) == "-h") {
+    } else if(std::string(argv[i]) == "-help" || std::string(argv[i]) == "-h") {
       PrintOptions();
       idfx::safeExit(0);
     } else {
@@ -401,9 +401,9 @@ void Input::PrintOptions() {
   idfx::cout << "         Do not write any log file." << std::endl;
   idfx::cout << " -Werror" << std::endl;
   idfx::cout << "         Consider warnings as errors." << std::endl;
-  idfx::cout << " -v" << std::endl;
+  idfx::cout << " -v/-version" << std::endl;
   idfx::cout << "         Show Idefix and kokkos version." << std::endl;
-  idfx::cout << " -h" << std::endl;
+  idfx::cout << " -h/-help" << std::endl;
   idfx::cout << "         Show this message." << std::endl;
 }
 

@@ -372,9 +372,9 @@ void Input::PrintLogo() {
   idfx::cout << "                          `'''4x.dX  +^ `''MMMMHM?L.."<< std::endl;
   idfx::cout << "                                ``'           `'`'`'`"<< std::endl;
   idfx::cout << std::endl;
-  idfx::cout << std::endl;
-  idfx::cout << std::endl;
   PrintVersion();
+  idfx::cout << std::endl;
+  idfx::cout << std::endl;
 }
 
 void Input::PrintOptions() {

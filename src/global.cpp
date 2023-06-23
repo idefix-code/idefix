@@ -124,4 +124,18 @@ real randm(void) {
     return static_cast<real>(static_cast<double>(q) / static_cast<double>(m));
 }
 
+void safeExit(int retCode) {
+  if(retCode != 0) {
+    #ifdef WITH_MPI
+    MPI_Abort(MPI_COMM_WORLD,retCode);
+    #endif
+  } else {
+    Kokkos::finalize();
+    #ifdef WITH_MPI
+    MPI_Finalize();
+    #endif
+  }
+  exit(retCode);
+}
+
 } // namespace idfx

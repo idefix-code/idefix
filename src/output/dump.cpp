@@ -8,7 +8,7 @@
 #include <unordered_set>
 #include <filesystem>
 #include "dump.hpp"
-#include "gitversion.hpp"
+#include "version.hpp"
 #include "dataBlockHost.hpp"
 #include "gridHost.hpp"
 #include "output.hpp"
@@ -808,7 +808,8 @@ int Dump::Write(Output& output) {
   }
 
   char header[HEADERSIZE];
-  std::snprintf(header, HEADERSIZE, "Idefix %s Dump Data %s endian", GITVERSION, endian.c_str());
+  std::snprintf(header, HEADERSIZE, "Idefix %s Dump Data %s endian",
+                IDEFIX_VERSION, endian.c_str());
   WriteString(fileHdl, header, HEADERSIZE);
 
   for(int dir = 0; dir < 3 ; dir++) {

@@ -10,7 +10,7 @@
 #include <iomanip>
 #include <filesystem>
 #include "vtk.hpp"
-#include "gitversion.hpp"
+#include "version.hpp"
 #include "idefix.hpp"
 #include "dataBlock.hpp"
 #include "gridHost.hpp"
@@ -317,7 +317,7 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
   2. Header
   ------------------------------------------- */
 
-  ssheader << "Idefix " << GITVERSION << " VTK Data" << std::endl;
+  ssheader << "Idefix " << IDEFIX_VERSION << " VTK Data" << std::endl;
 
   /* ------------------------------------------
   3. File format

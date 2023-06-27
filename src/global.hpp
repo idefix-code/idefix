@@ -5,21 +5,6 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-// ***********************************************************************************
-// Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
-// and other code contributors
-// Licensed under CeCILL 2.1 License, see COPYING for more information
-// ***********************************************************************************
-
-// ***********************************************************************************
-// Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
-// and other code contributors
-// Licensed under CeCILL 2.1 License, see COPYING for more information
-// ***********************************************************************************
-
 #ifndef GLOBAL_HPP_
 #define GLOBAL_HPP_
 #include <string>

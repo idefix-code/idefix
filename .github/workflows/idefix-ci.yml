@@ -1,0 +1,145 @@
+name: Idefix CIs
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+  pull_request:
+
+concurrency:
+  # auto-cancel any concurrent job *in the same context*
+  # see https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#concurrency
+  # see https://docs.github.com/en/actions/learn-github-actions/contexts#github-context
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TEST_OPTIONS: -DKokkos_ENABLE_CUDA=ON
+
+jobs:
+  Linter:
+    # Don't do this in forks
+    if: github.repository == 'idefix-code/idefix'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          lfs: false
+      - uses: actions/setup-python@v4
+        with:
+          python-version: 3.x
+      - uses: pre-commit/action@v3.0.0
+      - uses: pre-commit-ci/lite-action@v1.0.0
+        if: always()
+
+  Hydrodynamics:
+    needs: Linter
+    runs-on: self-hosted
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+          submodules: recursive
+      # Manually do a git LFS https://github.com/actions/checkout/issues/270
+      - run: git lfs pull
+      - name: Run Hydro test
+        run: cd test && ./checks_hydro.sh $TEST_OPTIONS
+
+  Magneto-Hydrodynamics:
+    needs: Linter
+    runs-on: self-hosted
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+          submodules: recursive
+      # Manually do a git LFS https://github.com/actions/checkout/issues/270
+      - run: git lfs pull
+      - name: Run MHD test
+        run: cd test && ./checks_mhd.sh $TEST_OPTIONS
+
+  MPI:
+    needs: Linter
+    runs-on: self-hosted
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+          submodules: recursive
+      # Manually do a git LFS https://github.com/actions/checkout/issues/270
+      - run: git lfs pull
+      - name: Run MPI test
+        run: cd test && ./checks_mpi.sh $TEST_OPTIONS
+
+  VectorPotential:
+    needs: [Linter, Hydrodynamics, Magneto-Hydrodynamics, MPI]
+    runs-on: self-hosted
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+          submodules: recursive
+      # Manually do a git LFS https://github.com/actions/checkout/issues/270
+      - run: git lfs pull
+      - name: Run Vector Potential test
+        run: cd test && ./checks_vector_potential.sh $TEST_OPTIONS
+
+  HighOrder:
+    needs: [Linter, Hydrodynamics, Magneto-Hydrodynamics, MPI]
+    runs-on: self-hosted
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+          submodules: recursive
+      # Manually do a git LFS https://github.com/actions/checkout/issues/270
+      - run: git lfs pull
+      - name: Run high order test
+        run: cd test && ./checks_highorder.sh $TEST_OPTIONS
+
+  SinglePrecision:
+    needs: [Linter, Hydrodynamics, Magneto-Hydrodynamics, MPI]
+    runs-on: self-hosted
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+          submodules: recursive
+      # Manually do a git LFS https://github.com/actions/checkout/issues/270
+      - run: git lfs pull
+      - name: Run single precision test
+        run: cd test && ./checks_singleprecision.sh $TEST_OPTIONS
+
+  Examples:
+    needs: [VectorPotential, HighOrder,SinglePrecision]
+    runs-on: self-hosted
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+          submodules: recursive
+      # Manually do a git LFS https://github.com/actions/checkout/issues/270
+      - run: git lfs pull
+      - name: Run examples test
+        run: cd test && ./checks_examples.sh $TEST_OPTIONS
+
+  Utils:
+    needs: [VectorPotential, HighOrder,SinglePrecision]
+    runs-on: self-hosted
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          lfs: true
+          submodules: recursive
+      # Manually do a git LFS https://github.com/actions/checkout/issues/270
+      - run: git lfs pull
+      - name: Run utils test
+        run: cd test && ./checks_utils.sh $TEST_OPTIONS

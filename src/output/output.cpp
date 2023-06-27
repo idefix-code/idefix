@@ -24,6 +24,7 @@ Output::Output(Input &input, DataBlock &data) {
       vtkEnabled = true;
     }
   }
+  vtk.Init(input,data); // Always initialised in case of emergency vtk output
 
   // intialise dump outputs
   if(input.CheckEntry("Output","dmp")>0) {

@@ -1,0 +1,12 @@
+name: Question
+description: Ask a question
+title: "<Please write a comprehensive title>"
+labels: [question]
+
+body:
+- type: markdown
+  attributes:
+    placeholder: |
+       << your question here >>
+  validations:
+    required: true

@@ -5,6 +5,8 @@ on:
     branches:
       - master
   pull_request:
+    paths-ignore:
+      - '.github/ISSUE_TEMPLATE/*'
 
 concurrency:
   # auto-cancel any concurrent job *in the same context*

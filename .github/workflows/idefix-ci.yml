@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  TEST_OPTIONS: -DKokkos_ENABLE_CUDA=ON
+  TESTME_OPTIONS: -cuda -Werror
 
 jobs:
   Linter:
@@ -32,7 +32,7 @@ jobs:
       - uses: pre-commit-ci/lite-action@v1.0.0
         if: always()
 
-  Hydrodynamics:
+  ShocksHydro:
     needs: Linter
     runs-on: self-hosted
     steps:
@@ -43,8 +43,18 @@ jobs:
           submodules: recursive
       # Manually do a git LFS https://github.com/actions/checkout/issues/270
       - run: git lfs pull
-      - name: Run Hydro test
-        run: cd test && ./checks_hydro.sh $TEST_OPTIONS
+      - name: Sod test
+        run: cd $GITHUB_WORKSPACE/test/HD/sod && ./testme.py -all $TESTME_OPTIONS
+        env:
+          IDEFIX_DIR : ${GITHUB_WORKSPACE}
+      - name: Isothermal Sod test
+        run: cd $GITHUB_WORKSPACE/test/HD/sod-iso && ./testme.py -all $TESTME_OPTIONS
+        env:
+          IDEFIX_DIR : ${GITHUB_WORKSPACE}
+      - name: Mach reflection test
+        run: cd $GITHUB_WORKSPACE/test/HD/MachReflection && ./testme.py -all $TESTME_OPTIONS
+        env:
+          IDEFIX_DIR : ${GITHUB_WORKSPACE}
 
   Magneto-Hydrodynamics:
     needs: Linter

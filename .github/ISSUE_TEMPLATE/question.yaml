@@ -6,7 +6,7 @@ labels: [question]
 body:
 - type: markdown
   attributes:
-    placeholder: |
-       << your question here >>
+    value: >
+      Thank you for taking the time to file your question.
   validations:
     required: true

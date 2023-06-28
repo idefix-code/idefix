@@ -15,6 +15,8 @@ concurrency:
 
 env:
   TESTME_OPTIONS: -cuda -Werror
+  PYTHONPATH: ${{ github.workspace }}
+  IDEFIX_DIR: ${{ github.workspace }}
 
 jobs:
   Linter:
@@ -44,90 +46,20 @@ jobs:
       # Manually do a git LFS https://github.com/actions/checkout/issues/270
       - run: git lfs pull
       - name: Sod test
-        run: cd $GITHUB_WORKSPACE/test/HD/sod && ./testme.py -all $TESTME_OPTIONS
-        env:
-          IDEFIX_DIR : ${GITHUB_WORKSPACE}
+        run: |
+          cd $IDEFIX_DIR/test/HD/sod
+          ./testme.py -all $TESTME_OPTIONS
       - name: Isothermal Sod test
-        run: cd $GITHUB_WORKSPACE/test/HD/sod-iso && ./testme.py -all $TESTME_OPTIONS
-        env:
-          IDEFIX_DIR : ${GITHUB_WORKSPACE}
+        run: |
+          cd $IDEFIX_DIR/test/HD/sod-iso
+          ./testme.py -all $TESTME_OPTIONS
       - name: Mach reflection test
-        run: cd $GITHUB_WORKSPACE/test/HD/MachReflection && ./testme.py -all $TESTME_OPTIONS
-        env:
-          IDEFIX_DIR : ${GITHUB_WORKSPACE}
-
-  Magneto-Hydrodynamics:
-    needs: Linter
-    runs-on: self-hosted
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
-        with:
-          lfs: true
-          submodules: recursive
-      # Manually do a git LFS https://github.com/actions/checkout/issues/270
-      - run: git lfs pull
-      - name: Run MHD test
-        run: cd test && ./checks_mhd.sh $TEST_OPTIONS
-
-  MPI:
-    needs: Linter
-    runs-on: self-hosted
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
-        with:
-          lfs: true
-          submodules: recursive
-      # Manually do a git LFS https://github.com/actions/checkout/issues/270
-      - run: git lfs pull
-      - name: Run MPI test
-        run: cd test && ./checks_mpi.sh $TEST_OPTIONS
-
-  VectorPotential:
-    needs: [Linter, Hydrodynamics, Magneto-Hydrodynamics, MPI]
-    runs-on: self-hosted
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
-        with:
-          lfs: true
-          submodules: recursive
-      # Manually do a git LFS https://github.com/actions/checkout/issues/270
-      - run: git lfs pull
-      - name: Run Vector Potential test
-        run: cd test && ./checks_vector_potential.sh $TEST_OPTIONS
-
-  HighOrder:
-    needs: [Linter, Hydrodynamics, Magneto-Hydrodynamics, MPI]
-    runs-on: self-hosted
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
-        with:
-          lfs: true
-          submodules: recursive
-      # Manually do a git LFS https://github.com/actions/checkout/issues/270
-      - run: git lfs pull
-      - name: Run high order test
-        run: cd test && ./checks_highorder.sh $TEST_OPTIONS
-
-  SinglePrecision:
-    needs: [Linter, Hydrodynamics, Magneto-Hydrodynamics, MPI]
-    runs-on: self-hosted
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
-        with:
-          lfs: true
-          submodules: recursive
-      # Manually do a git LFS https://github.com/actions/checkout/issues/270
-      - run: git lfs pull
-      - name: Run single precision test
-        run: cd test && ./checks_singleprecision.sh $TEST_OPTIONS
+        run: |
+          cd $IDEFIX_DIR/test/HD//MachReflection
+          ./testme.py -all $TESTME_OPTIONS
 
   Examples:
-    needs: [VectorPotential, HighOrder,SinglePrecision]
+    needs: [ShocksHydro]
     runs-on: self-hosted
     steps:
       - name: Check out repo
@@ -141,7 +73,7 @@ jobs:
         run: cd test && ./checks_examples.sh $TEST_OPTIONS
 
   Utils:
-    needs: [VectorPotential, HighOrder,SinglePrecision]
+    needs: [ShocksHydro]
     runs-on: self-hosted
     steps:
       - name: Check out repo

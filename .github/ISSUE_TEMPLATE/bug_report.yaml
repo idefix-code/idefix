@@ -23,7 +23,7 @@ body:
     description: >
       Please include the full error message, if any.
       If relevant, show us the log obtained in debug mode
-      (see https://discs.gricad-pages.univ-grenoble-alpes.fr/idefix/programmingguide.html#debugging-and-profiling)
+      (see https://idefix.readthedocs.io/en/latest/programmingguide.html#debugging-and-profiling)
       If you are reporting a segfault please include a GDB traceback
     placeholder: |
       << Full traceback starting from `Traceback: ...` >>

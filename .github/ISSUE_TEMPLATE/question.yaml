@@ -6,6 +6,7 @@ labels: [question]
 body:
 - type: textarea
   attributes:
+    label: "Question"
     value: >
       Thank you for taking the time to file your question.
   validations:

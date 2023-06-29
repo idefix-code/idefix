@@ -33,8 +33,7 @@ Output::Output(Input &input, DataBlock &data) {
       xdmfEnabled = true;
       #else
       xdmfEnabled = false;
-      idfx::cout << "Attention: HDF5 library not linkied when building Idefix. ";
-      idfx::cout << "Cannot make this data dump!" << std::endl;
+      IDEFIX_ERROR("Attention: HDF5 library not linked when building Idefix!");
       #endif
     }
   }

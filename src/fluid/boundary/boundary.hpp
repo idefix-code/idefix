@@ -123,7 +123,7 @@ class Boundary {
 
 template<typename Phys>
 Boundary<Phys>::Boundary(Fluid<Phys>* fluid) {
-  idfx::pushRegion("Boundary::Boundary(Fluid)");
+  idfx::pushRegion("Boundary::Boundary");
   this->fluid = fluid;
   this->data = fluid->data;
   this->Vc = fluid->Vc;
@@ -182,7 +182,6 @@ Boundary<Phys>::Boundary(Fluid<Phys>* fluid) {
   mpi.Init(data->mygrid, mapVars, data->nghost.data(), data->np_int.data(), Phys::mhd);
 
 #endif // MPI
-  idfx::popRegion();
   idfx::popRegion();
 }
 
@@ -255,7 +254,7 @@ void Boundary<Phys>::SetBoundaries(real t) {
 // Enforce boundary conditions by writing into ghost zones
 template<typename Phys>
 void Boundary<Phys>::EnforceBoundaryDir(real t, int dir) {
-  idfx::pushRegion("Hydro::EnforceBoundaryDir");
+  idfx::pushRegion("Boundary::EnforceBoundaryDir");
 
   // left boundary
 
@@ -353,7 +352,7 @@ void Boundary<Phys>::EnforceBoundaryDir(real t, int dir) {
 
 template<typename Phys>
 void Boundary<Phys>::ReconstructVcField(IdefixArray4D<real> &Vc) {
-  idfx::pushRegion("Hydro::ReconstructVcField");
+  idfx::pushRegion("Boundary::ReconstructVcField");
 
   IdefixArray4D<real> Vs=this->Vs;
 
@@ -372,7 +371,7 @@ void Boundary<Phys>::ReconstructVcField(IdefixArray4D<real> &Vc) {
 
 template<typename Phys>
 void Boundary<Phys>::ReconstructNormalField(int dir) {
-  idfx::pushRegion("Hydro::ReconstructNormalField");
+  idfx::pushRegion("Boundary::ReconstructNormalField");
 
   const bool reconstructLeft  = !(data->lbound[dir]==periodic || data->lbound[dir]==internal);
   const bool reconstructRight = !(data->rbound[dir]==periodic || data->rbound[dir]==internal);

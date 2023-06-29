@@ -18,7 +18,7 @@ KOKKOS_INLINE_FUNCTION int Kmax(int n, int m) {
 
 template<typename Phys>
 void Fluid<Phys>::CoarsenFlow(IdefixArray4D<real> &Vi) {
-  idfx::pushRegion("Hydro::CoarsenFlow");
+  idfx::pushRegion("Fluid::CoarsenFlow");
 
   IdefixArray3D<real> dV   = data->dV;
   for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
@@ -82,7 +82,7 @@ void Fluid<Phys>::CoarsenFlow(IdefixArray4D<real> &Vi) {
 template<typename Phys>
 void Fluid<Phys>::CoarsenMagField(IdefixArray4D<real> &Vsin) {
   if constexpr(Phys::mhd) {
-    idfx::pushRegion("Hydro::CoarsenMagField");
+    idfx::pushRegion("Fluid::CoarsenMagField");
     #if DIMENSIONS >= 2
     /**********************************
      * MHD Part                       *

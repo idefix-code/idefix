@@ -538,7 +538,7 @@ struct Fluid_CalcRHSFunctor {
 template<typename Phys>
 template<int dir>
 void Fluid<Phys>::CalcRightHandSide(real t, real dt) {
-  idfx::pushRegion("Hydro::CalcRightHandSide");
+  idfx::pushRegion("Fluid::CalcRightHandSide");
 
   // Update fargo velocity when needed
   if(data->haveFargo && data->fargo->type == Fargo::userdef) {

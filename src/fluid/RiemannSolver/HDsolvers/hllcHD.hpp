@@ -18,7 +18,7 @@
 template <typename Phys>
 template<const int DIR>
 void RiemannSolver<Phys>::HllcHD(IdefixArray4D<real> &Flux) {
-  idfx::pushRegion("Hydro::HLLC_Solver");
+  idfx::pushRegion("RiemannSolver::HLLC_Solver");
 
   constexpr int ioffset = (DIR==IDIR) ? 1 : 0;
   constexpr int joffset = (DIR==JDIR) ? 1 : 0;

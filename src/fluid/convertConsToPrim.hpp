@@ -104,7 +104,7 @@ KOKKOS_INLINE_FUNCTION void K_PrimToCons(real Uc[], real Vc[], real gamma_m1) {
 // Convect Conservative to Primitive variable
 template<typename Phys>
 void Fluid<Phys>::ConvertConsToPrim() {
-  idfx::pushRegion("Hydro::ConvertConsToPrim");
+  idfx::pushRegion("Fluid::ConvertConsToPrim");
 
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Uc = this->Uc;
@@ -148,7 +148,7 @@ void Fluid<Phys>::ConvertConsToPrim() {
 // Convert Primitive to conservative variables
 template<typename Phys>
 void Fluid<Phys>::ConvertPrimToCons() {
-  idfx::pushRegion("Hydro::ConvertPrimToCons");
+  idfx::pushRegion("Fluid::ConvertPrimToCons");
 
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Uc = this->Uc;

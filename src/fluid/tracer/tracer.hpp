@@ -42,12 +42,13 @@ class Tracer {
 
 template <typename Phys>
 Tracer::Tracer(Fluid<Phys> *fluid, int n) {
+  idfx::pushRegion("Tracer::Tracer");
   nTracer = n;
   Vc = fluid->Vc;
   Uc = fluid->Uc;
   data = fluid->data;
   nVar = Phys::nvar;
-  idfx::cout << "nvar=" << nVar << std::endl;
+  idfx::popRegion();
 }
 
 #include "slopeLimiter.hpp"

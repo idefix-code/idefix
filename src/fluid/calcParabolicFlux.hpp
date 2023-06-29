@@ -16,7 +16,7 @@
 template <typename Phys>
 template <int dir>
 void Fluid<Phys>::CalcParabolicFlux(const real t) {
-  idfx::pushRegion("Hydro::CalcParabolicFlux");
+  idfx::pushRegion("Fluid::CalcParabolicFlux");
 
   IdefixArray3D<real> dMax = this->dMax;
 

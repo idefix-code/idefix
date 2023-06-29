@@ -18,7 +18,7 @@
 template <typename Phys>
 template<const int DIR>
 void RiemannSolver<Phys>::TvdlfHD(IdefixArray4D<real> &Flux) {
-  idfx::pushRegion("Hydro::TVDLF_Solver");
+  idfx::pushRegion("RiemannSolver::TVDLF_Solver");
 
   constexpr int ioffset = (DIR==IDIR) ? 1 : 0;
   constexpr int joffset = (DIR==JDIR) ? 1 : 0;

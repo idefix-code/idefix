@@ -123,7 +123,7 @@ class Boundary {
 
 template<typename Phys>
 Boundary<Phys>::Boundary(Fluid<Phys>* fluid) {
-  idfx::pushRegion("Boundary::Boundary(Fluid)");
+  idfx::pushRegion("Boundary::Boundary");
   this->fluid = fluid;
   this->data = fluid->data;
   this->Vc = fluid->Vc;
@@ -183,7 +183,6 @@ Boundary<Phys>::Boundary(Fluid<Phys>* fluid) {
 
 #endif // MPI
   idfx::popRegion();
-  idfx::popRegion();
 }
 
 template<typename Phys>
@@ -194,7 +193,7 @@ void Boundary<Phys>::EnrollFluxBoundary(UserDefBoundaryFuncOld myFunc) {
 
 template<typename Phys>
 void Boundary<Phys>::EnforceFluxBoundaries(int dir) {
-  idfx::pushRegion("HydroBoundary::EnforceFluxBoundaries");
+  idfx::pushRegion("Boundary::EnforceFluxBoundaries");
   if(haveFluxBoundary) {
     if(data->lbound[dir] != internal) {
       fluxBoundaryFunc(*data, dir, left, data->t);
@@ -210,7 +209,7 @@ void Boundary<Phys>::EnforceFluxBoundaries(int dir) {
 
 template<typename Phys>
 void Boundary<Phys>::SetBoundaries(real t) {
-  idfx::pushRegion("HydroBoundary::SetBoundaries");
+  idfx::pushRegion("Boundary::SetBoundaries");
   // set internal boundary conditions
   if(haveInternalBoundary) {
     if(internalBoundaryFunc != NULL) {
@@ -255,7 +254,7 @@ void Boundary<Phys>::SetBoundaries(real t) {
 // Enforce boundary conditions by writing into ghost zones
 template<typename Phys>
 void Boundary<Phys>::EnforceBoundaryDir(real t, int dir) {
-  idfx::pushRegion("Hydro::EnforceBoundaryDir");
+  idfx::pushRegion("Boundary::EnforceBoundaryDir");
 
   // left boundary
 
@@ -353,7 +352,7 @@ void Boundary<Phys>::EnforceBoundaryDir(real t, int dir) {
 
 template<typename Phys>
 void Boundary<Phys>::ReconstructVcField(IdefixArray4D<real> &Vc) {
-  idfx::pushRegion("Hydro::ReconstructVcField");
+  idfx::pushRegion("Boundary::ReconstructVcField");
 
   IdefixArray4D<real> Vs=this->Vs;
 
@@ -372,7 +371,7 @@ void Boundary<Phys>::ReconstructVcField(IdefixArray4D<real> &Vc) {
 
 template<typename Phys>
 void Boundary<Phys>::ReconstructNormalField(int dir) {
-  idfx::pushRegion("Hydro::ReconstructNormalField");
+  idfx::pushRegion("Boundary::ReconstructNormalField");
 
   const bool reconstructLeft  = !(data->lbound[dir]==periodic || data->lbound[dir]==internal);
   const bool reconstructRight = !(data->rbound[dir]==periodic || data->rbound[dir]==internal);

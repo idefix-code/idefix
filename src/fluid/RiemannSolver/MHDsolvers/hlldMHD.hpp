@@ -21,7 +21,7 @@
 template <typename Phys>
 template<const int DIR>
 void RiemannSolver<Phys>::HlldMHD(IdefixArray4D<real> &Flux) {
-  idfx::pushRegion("Hydro::HLLD_MHD");
+  idfx::pushRegion("RiemannSolver::HLLD_MHD");
 
   using EMF = ConstrainedTransport<Phys>;
 

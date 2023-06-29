@@ -13,7 +13,7 @@
 // Compute the electrical current on faces
 template <typename Phys>
 void Fluid<Phys>::CalcCurrent() {
-  idfx::pushRegion("Hydro::CalcCurrent");
+  idfx::pushRegion("Fluid::CalcCurrent");
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Vs = this->Vs;
   IdefixArray4D<real> J = this->J;

@@ -53,7 +53,7 @@ real Fluid<Phys>::CheckDivB() {
 
 
 /*
-real Hydro::CheckDivB(DataBlock &data) {
+real Fluid::CheckDivB(DataBlock &data) {
   real divB=0;
   IdefixArray4D<real> Vs = this->Vs;
   IdefixArray3D<real> Ax1 = data->A[IDIR];

@@ -193,7 +193,7 @@ void Boundary<Phys>::EnrollFluxBoundary(UserDefBoundaryFuncOld myFunc) {
 
 template<typename Phys>
 void Boundary<Phys>::EnforceFluxBoundaries(int dir) {
-  idfx::pushRegion("Boundary::::EnforceFluxBoundaries");
+  idfx::pushRegion("Boundary::EnforceFluxBoundaries");
   if(haveFluxBoundary) {
     if(data->lbound[dir] != internal) {
       fluxBoundaryFunc(*data, dir, left, data->t);
@@ -209,7 +209,7 @@ void Boundary<Phys>::EnforceFluxBoundaries(int dir) {
 
 template<typename Phys>
 void Boundary<Phys>::SetBoundaries(real t) {
-  idfx::pushRegion("Boundary::::SetBoundaries");
+  idfx::pushRegion("Boundary::SetBoundaries");
   // set internal boundary conditions
   if(haveInternalBoundary) {
     if(internalBoundaryFunc != NULL) {

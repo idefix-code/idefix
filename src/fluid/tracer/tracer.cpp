@@ -13,7 +13,7 @@ using SL = SlopeLimiter<DefaultPhysics,0>;
 
 // Convect Conservative to Primitive variable
 void Tracer::ConvertConsToPrim() {
-  idfx::pushRegion("Scalar::ConvertConsToPrim");
+  idfx::pushRegion("Tracer::ConvertConsToPrim");
 
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Uc = this->Uc;
@@ -34,7 +34,7 @@ void Tracer::ConvertConsToPrim() {
 
 // Convect Conservative to Primitive variable
 void Tracer::ConvertPrimToCons() {
-  idfx::pushRegion("Scalar::ConvertPrimToCons");
+  idfx::pushRegion("Tracer::ConvertPrimToCons");
 
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Uc = this->Uc;

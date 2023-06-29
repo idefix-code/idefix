@@ -1,0 +1,13 @@
+name: Question
+description: Ask a question
+title: "<Please write a comprehensive title>"
+labels: [question]
+
+body:
+- type: textarea
+  attributes:
+    label: "Question"
+    value: >
+      Thank you for taking the time to file your question.
+  validations:
+    required: true

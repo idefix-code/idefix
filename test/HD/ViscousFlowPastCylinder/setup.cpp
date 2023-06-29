@@ -1,7 +1,6 @@
 #include "idefix.hpp"
 #include "setup.hpp"
 
-
 // User-defined boundaries
 void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, const real t) {
     auto *data = hydro->data;

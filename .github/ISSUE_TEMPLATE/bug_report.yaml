@@ -1,0 +1,40 @@
+name: Bug report
+description: Report a bug.
+title: "BUG: <Please write a comprehensive title after the 'BUG: ' prefix>"
+labels: [bug]
+
+body:
+- type: markdown
+  attributes:
+    value: >
+      Thank you for taking the time to file a report.
+
+- type: textarea
+  attributes:
+    label: "Describe the issue:"
+    description: >
+      Please describe what's happening in detail.
+  validations:
+    required: true
+
+- type: textarea
+  attributes:
+    label: "Error message:"
+    description: >
+      Please include the full error message, if any.
+      If relevant, show us the log obtained in debug mode
+      (see https://idefix.readthedocs.io/en/latest/programmingguide.html#debugging-and-profiling)
+      If you are reporting a segfault please include a GDB traceback
+    placeholder: |
+      << Full traceback starting from `Traceback: ...` >>
+    render: shell
+
+- type: textarea
+  attributes:
+    label: "runtime information:"
+    description: >
+      Please tell us what version (git tag, hash, branch) of idefix you are working with,
+      and what platform(s)/architecture(s) you are seeing the issue on.
+      If relevant, please include your MPI implementation and version, and Kokkos version.
+  validations:
+    required: true

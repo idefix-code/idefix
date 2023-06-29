@@ -279,7 +279,12 @@ jobs:
         with:
           lfs: true
           submodules: recursive
-      # Manually do a git LFS https://github.com/actions/checkout/issues/270
       - run: git lfs pull
-      - name: Run utils test
-        run: cd test && ./checks_utils.sh $TEST_OPTIONS
+      - name: Lookup table
+        run: |
+          cd $IDEFIX_DIR/test/utils/lookupTable
+          ./testme.py -all $TESTME_OPTIONS
+      - name: Dump Image
+        run: |
+          cd $IDEFIX_DIR/test/utils/dumpImage
+          ./testme.py -all $TESTME_OPTIONS

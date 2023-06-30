@@ -293,9 +293,9 @@ specific to this subprocess, in contrast to ``Grid``). Here is the full API for 
 
 .. _hydroClass:
 
-``Hydro`` class
+``Fluid`` class
 ---------------------
-The ``Hydro`` class (and its sub-classes) contains all of the fields and methods specific to (magneto) hydrodynamics. While
+The ``Fluid`` class (and its sub-classes) contains all of the fields and methods specific to (magneto) hydrodynamics. While
 interested users may want to read in details the implementation of this class, we provide below a list of the most important
 members
 
@@ -325,6 +325,21 @@ These aliases are defined in ``idefix.hpp``
 Because the code uses contrained transport, the field defined on cell faces is stored in the ``Vs``
 array. Just like for ``Vc``, there are aliases, with "s" suffixes defined to simplify the adressing
 of the magnetic field components, as ``Vs(BX2s,k,j,i)``.
+
+It is important to realise that the ``Fluid`` class is a class template, that depends on the type of
+fluid that is modelled (encoded in a ``Physics`` class). By default, *Idefix* always instantiates
+one "default" fluid that contains the "default" physics requested by the user.
+This default fluid is, for compatibility reasons with *Idefix* v1, called `hydro` and is accessible
+from the ``dataBlock`` class as a pointer. It is defined as
+
+.. code-block:: c++
+
+  Fluid<DefaultPhysics> hydro;
+
+
+Additional fluids can be instantiated by *Idefix* for some problems, such as pressureless fluids
+to model dust grains (see :ref:`dustModule:`).
+
 
 .. _datablockhostClass:
 
@@ -535,25 +550,18 @@ will throw an error each time one tries to access an array out of its allocated 
 debugging features induce a large overhead, and should therefore not be activated in production runs.
 
 It is also possible to use `Kokkos-tools <https://github.com/kokkos/kokkos-tools>`_ to debug and profile the code.
-For instance, on the fly profiling, can be enabled with the Kokkos ``space-time-stack`` module. To use it, simply clone
-``Kokkos-tools`` to the directory of your choice (say ``$KOKKOS_TOOLS``), then ``cd`` to
-``$KOKKOS_TOOLS/profiling/space-time-stack`` and compile the module with ``make``.
-
-Once the profiling module is compiled, you can use it by setting the environement variable ``KOKKOS_PROFILE_LIBRARY``.
-For instance, in bash:
+For instance, on the fly profiling, can be enabled with the Kokkos ``space-time-stack`` tool. To use it, simply clone
+``Kokkos-tools`` to the directory of your choice, create a ``bin`` directory, configure the tools in the ``bin`` directory using
+cmake and compile it. It we assume that the path to the ``bin`` directory just created is ``<kokkos-tools-bin>`` then you can enable
+profiling by setting the environement variable ``KOKKOS_TOOLS_LIBS`` as:
 
 .. code-block:: bash
 
-  export KOKKOS_PROFILE_LIBRARY=$KOKKOS_TOOLS/profiling/space-time-stack/kp_space_time_stack.so
+  export KOKKOS_TOOLS_LIBS=<kokkos-tools-bin>/profiling/space-time-stack/libkp_space_time_stack.so
 
 Once this environement variable is set, *Idefix* automatically logs profiling informations when it ends (recompilation of *Idefix*
 is not needed).
 
-.. tip::
-
-  By default, ``Kokkos-tools`` assumes the user code is using MPI. If one wants to perform profiling in serial, one should disable MPI before
-  compling the ``space-time-stack`` module. This is done by editing the makefile in ``$KOKKOS_TOOLS/profiling/space-time-stack``
-  changing the compiler ``CXX`` to a valid serial compiler, and adding ``-DUSE_MPI=0`` to ``CFLAGS``.
 
 Minimal skeleton
 ================

@@ -130,6 +130,8 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | gamma          | float                   | Adiabatic index when ISOTHERMAL is not defined. Default to 5/3 if not set.                  |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| tracer         | integer                 | Number of passive tracers associated to the fluid. Default to 0 if not set.                 |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | resistivity    | string, string, (float) | | Switches on Ohmic diffusion.                                                              |
 |                |                         | | The first parameter can be ``explicit`` or ``rkl``. When ``explicit``, diffusion is       |
 |                |                         | | integrated in the main integration loop with the usual cfl restriction.  If ``rkl``,      |

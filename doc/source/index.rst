@@ -20,18 +20,42 @@ algorithm is essentially the same (but with some major modification to its struc
 ================
 Requirements
 ================
-*Idefix* is written is standard C++17 and does not rely on any external library in serial (non MPI). *Idefix* requires a C++17 compatible compiler. It has been tested successfully with GCC (>8), Intel compiler suite (>2018) and
-Clang on both Intel and AMD CPUs. *Idefix* has also been tested on NVIDIA GPUs (Pascal, Volta and Ampere architectures) using the nvcc (>10) compiler, and on AMD GPUs (Radeon Mi50) using the hipcc compiler.
-*Idefix* relies internally on the `Kokkos <https://github.com/kokkos/kokkos>`_ library, which is bundled with *Idefix* as a git submodule and compiled on the fly, hence no external installation is required.
-When using MPI parallelisation, *Idefix* relies on an external MPI library. *Idefix* has been tested successfully with OpenMPI and IntelMPI libraries. When used on GPU architectures, *Idefix* assumes that
-the MPI library is GPU-Aware. If unsure, check this last point with your system administrator.
+*Idefix* is written is standard C++17 and does not rely on any external library in serial (non MPI).
+
+Compiler
+  *Idefix* requires a C++17 compatible compiler. It has been tested successfully with GCC (>8), Intel compiler suite (>2018) and
+  Clang on both Intel and AMD CPUs. *Idefix* has also been tested on NVIDIA GPUs (Pascal, Volta and Ampere architectures) using the nvcc (>10) compiler, and on AMD GPUs (Radeon Mi50, Mi210, Mi250) using the hipcc compiler.
+
+Kokkos library
+  *Idefix* relies internally on the `Kokkos <https://github.com/kokkos/kokkos>`_ library, which is bundled with *Idefix* as a git submodule and compiled on the fly, hence no external installation is required.
+
+MPI library
+  When using MPI parallelisation, *Idefix* relies on an external MPI library. *Idefix* has been tested successfully with OpenMPI and IntelMPI libraries. When used on GPU architectures, *Idefix* assumes that
+  the MPI library is GPU-Aware. If unsure, check this last point with your system administrator.
+
+================
+Features
+================
+* Compressible hydrodynamics in 1D, 2D, 3D
+* Compressible magnetohydrodynamics using constrained transport in 1D, 2D, 3D
+* Multiple geometry (cartesian, polar, spherical)
+* Variable mesh spacing
+* Multiple parallelisation strategies (OpenMP, MPI, GPU offloading, etc...)
+* Full non-ideal MHD (Ohmic, ambipolar, Hall)
+* Viscosity and thermal diffusion
+* Super-timestepping for all parabolic terms
+* Orbital advection (Fargo-like)
+* Self-gravity
+* Multi dust species modelled as pressureless fluids
+* Multiple planets interraction
 
 
 ===========================
 Terms and condition of Use
 ===========================
 *Idefix* is distributed freely under the `CeCILL license <https://en.wikipedia.org/wiki/CeCILL>`_, a free software license adapted to both international and French legal matters, in the spirit of and retaining
-compatibility with the GNU General Public License (GPL). We expect *Idefix* to be referenced and acknowledeged by authors in their publications.
+compatibility with the GNU General Public License (GPL). We expect *Idefix* to be referenced and acknowledeged by authors in their publications. At the minimum, the authors
+should cite the *Idefix* `method paper <https://ui.adsabs.harvard.edu/abs/2023arXiv230413746L/abstract>`_.
 
 *Idefix* data structure and algorithm are derived from Andrea Mignone's `PLUTO code <http://plutocode.ph.unito.it/>`_, released under the GPL license.
 *Idefix* also relies on the `Kokkos <https://github.com/kokkos/kokkos>`_ performance portability programming ecosystem released under the terms

@@ -338,7 +338,7 @@ from the ``dataBlock`` class as a pointer. It is defined as
 
 
 Additional fluids can be instantiated by *Idefix* for some problems, such as pressureless fluids
-to model dust grains (see :ref:`dustModule:`).
+to model dust grains (see :ref:`dustModule`).
 
 
 .. _datablockhostClass:

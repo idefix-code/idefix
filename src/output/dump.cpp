@@ -7,6 +7,7 @@
 
 #include <unordered_set>
 #include <filesystem>
+#include <iomanip>
 #include "dump.hpp"
 #include "version.hpp"
 #include "dataBlockHost.hpp"

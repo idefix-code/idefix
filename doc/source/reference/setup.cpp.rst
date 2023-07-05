@@ -157,7 +157,7 @@ A typical user-defined boundary condition function looks like this:
 
 .. code-block:: c++
 
-  void UserdefBoundary(Hydro &hydro, int dir, BoundarySide side, real t) {
+  void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
     IdefixArray4D<real> Vc = hydro->Vc;
     IdefixArray4D<real> Vs = hydro->Vs;
     if(dir==IDIR) {

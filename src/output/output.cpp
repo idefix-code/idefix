@@ -29,7 +29,7 @@ Output::Output(Input &input, DataBlock &data) {
     xdmfPeriod = input.Get<real>("Output","xdmf",0);
     if(xdmfPeriod>=0.0) {  // backward compatibility (negative value means no file)
       xdmfLast = data.t - xdmfPeriod; // write something in the next CheckForWrite()
-      #ifdef USE_HDF5
+      #ifdef WITH_HDF5
       xdmfEnabled = true;
       #else
       xdmfEnabled = false;
@@ -37,7 +37,7 @@ Output::Output(Input &input, DataBlock &data) {
       #endif
     }
   }
-  #ifdef USE_HDF5
+  #ifdef WITH_HDF5
   xdmf.Init(input,data); // Always initialised in case of emergency xdmf output
   #endif
 
@@ -132,7 +132,7 @@ int Output::CheckForWrites(DataBlock &data) {
       }
     }
   }
-  #ifdef USE_HDF5
+  #ifdef WITH_HDF5
   // Do we need a XDMF output?
   if(xdmfEnabled) {
     if(data.t >= xdmfLast + xdmfPeriod) {
@@ -231,7 +231,7 @@ void Output::ForceWriteVtk(DataBlock &data) {
   idfx::popRegion();
 }
 
-#ifdef USE_HDF5
+#ifdef WITH_HDF5
 void Output::ForceWriteXdmf(DataBlock &data) {
   idfx::pushRegion("Output::ForceWriteXdmf");
 

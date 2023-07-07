@@ -13,7 +13,7 @@
 #include "input.hpp"
 #include "dataBlock.hpp"
 #include "vtk.hpp"
-#ifdef USE_HDF5
+#ifdef WITH_HDF5
 #include "xdmf.hpp"
 #endif
 #include "dump.hpp"
@@ -28,7 +28,9 @@ using UserDefVariablesFunc = void (*) (DataBlock &, UserDefVariablesContainer &)
 class Output {
   friend class Dump;    // Allow dump to have R/W access to private variables
   friend class Vtk;     // Allow VTK to have access to user-defined variables
+  #ifdef WITH_HDF5
   friend class Xdmf;    // Allow XDMF to have access to user-defined variables
+  #endif
   friend class DumpImage; // Allow dumpimag to have access to dump API
  public:
   Output(Input &, DataBlock &);           // Create Output Object
@@ -36,7 +38,7 @@ class Output {
   void RestartFromDump(DataBlock &, int);  // Restart from a dump file.
   void ForceWriteDump(DataBlock &);            // Force write dumps (needed during an abort)
   void ForceWriteVtk(DataBlock &);            // Force write vtks
-  #ifdef USE_HDF5
+  #ifdef WITH_HDF5
   void ForceWriteXdmf(DataBlock &);          // Force write xdmfs
   #endif
   void ResetTimer();                      // Reset internal timer
@@ -47,7 +49,7 @@ class Output {
  private:
   Vtk vtk;          // local instance of Vtk class
   Dump dump;        // local instance of Dump class
-  #ifdef USE_HDF5
+  #ifdef WITH_HDF5
   Xdmf xdmf;        // local instance of Xdmf class
   #endif
   bool forceNoWrite = false;    //< explicitely disable all writes

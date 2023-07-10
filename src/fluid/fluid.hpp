@@ -569,14 +569,23 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
       case BX1:
         VcName.push_back("BX1");
         data->vtk->RegisterVariable(Vc, outputPrefix+"BX1", BX1);
+        #if DIMENSIONS == 1
+          data->dump->RegisterVariable(Vc, outputPrefix+"Vc-BX3", BX1, IDIR);
+        #endif
         break;
       case BX2:
         VcName.push_back("BX2");
         data->vtk->RegisterVariable(Vc, outputPrefix+"BX2", BX2);
+        #if DIMENSIONS < 2
+          data->dump->RegisterVariable(Vc, outputPrefix+"Vc-BX2", BX2, JDIR);
+        #endif
         break;
       case BX3:
         VcName.push_back("BX3");
         data->vtk->RegisterVariable(Vc, outputPrefix+"BX3", BX3);
+        #if DIMENSIONS < 3
+          data->dump->RegisterVariable(Vc, outputPrefix+"Vc-BX3", BX3, KDIR);
+        #endif
         break;
       case PRS:
         VcName.push_back("PRS");

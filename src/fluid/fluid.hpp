@@ -569,9 +569,6 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
       case BX1:
         VcName.push_back("BX1");
         data->vtk->RegisterVariable(Vc, outputPrefix+"BX1", BX1);
-        #if DIMENSIONS == 1
-          data->dump->RegisterVariable(Vc, outputPrefix+"Vc-BX1", BX1, IDIR);
-        #endif
         break;
       case BX2:
         VcName.push_back("BX2");

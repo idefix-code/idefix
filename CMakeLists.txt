@@ -8,6 +8,7 @@ set(Idefix_VERSION_PATCH 00)
 
 project (idefix VERSION 1.0.0)
 option(Idefix_MHD "enable MHD" OFF)
+option(Idefix_BRAG "enable Braginskii-MHD" OFF)
 option(Idefix_MPI "enable Message Passing Interface parallelisation" OFF)
 option(Idefix_HIGH_ORDER_FARGO "Force Fargo to use a PPM reconstruction scheme" OFF)
 option(Idefix_DEBUG "Enable Idefix debug features (makes the code very slow)" OFF)
@@ -61,7 +62,6 @@ endif()
 # before adding source files via "target_sources"
 # create target binary "idefix"
 add_executable(idefix)
-add_subdirectory(src build)
 
 if(EXISTS ${PROJECT_BINARY_DIR}/setup.cpp)
   target_sources(idefix PUBLIC ${PROJECT_BINARY_DIR}/setup.cpp)
@@ -76,6 +76,7 @@ if(EXISTS ${PROJECT_BINARY_DIR}/CMakeLists.txt)
   add_subdirectory(${PROJECT_BINARY_DIR} build/setup)
 endif()
 
+add_subdirectory(src build)
 
 
 if(Idefix_MHD)
@@ -194,6 +195,7 @@ if(Idefix_EVOLVE_VECTOR_POTENTIAL)
 else()
   message(STATUS "    MHD: ${Idefix_MHD}")
 endif()
+message(STATUS "    BRAG: ${Idefix_BRAG}")
 message(STATUS "    MPI: ${Idefix_MPI}")
 message(STATUS "    Reconstruction: ${Idefix_RECONSTRUCTION}")
 message(STATUS "    Precision: ${Idefix_PRECISION}")

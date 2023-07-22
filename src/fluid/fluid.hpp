@@ -18,7 +18,7 @@
 #include "fluid_defs.hpp"
 #include "thermalDiffusion.hpp"
 #if BRAG == YES
-  #include "braginskii/bragThermalDiffusion.hpp"
+  #include "bragThermalDiffusion.hpp"
 #endif
 #include "selfGravity.hpp"
 #include "vtk.hpp"
@@ -261,7 +261,7 @@ class Fluid {
 #include "riemannSolver.hpp"
 #include "viscosity.hpp"
 #if BRAG == YES
-  #include "braginskii/bragViscosity.hpp"
+  #include "bragViscosity.hpp"
 #endif
 #include "drag.hpp"
 #include "checkNan.hpp"

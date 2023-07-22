@@ -5,8 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef FLUID_VISCOSITY_HPP_
-#define FLUID_VISCOSITY_HPP_
+#ifndef FLUID_BRAG_VISCOSITY_HPP_
+#define FLUID_BRAG_VISCOSITY_HPP_
 
 #include <string>
 
@@ -132,4 +132,4 @@ BragViscosity::BragViscosity(Input &input, Grid &grid, Fluid<Phys> *hydroin):
 
   idfx::popRegion();
 }
-#endif // FLUID_VISCOSITY_HPP_
+#endif // FLUID_BRAG_VISCOSITY_HPP_

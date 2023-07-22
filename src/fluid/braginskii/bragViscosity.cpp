@@ -77,7 +77,7 @@
 void BragViscosity::InitArrays() {
   // Allocate and fill arrays when needed
   #if GEOMETRY != CARTESIAN
-    one_dmu = IdefixArray1D<real>("Viscosity_1dmu", data->np_tot[JDIR]);
+    one_dmu = IdefixArray1D<real>("BragViscosity_1dmu", data->np_tot[JDIR]);
     IdefixArray1D<real> dmu = one_dmu;
     IdefixArray1D<real> th = data->x[JDIR];
     idefix_for("ViscousInitGeometry",1,data->np_tot[JDIR],

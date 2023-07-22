@@ -93,10 +93,10 @@ void BragViscosity::InitArrays() {
 }
 void BragViscosity::ShowConfig() {
   if(status.status==Constant) {
-    idfx::cout << "BragViscosity: ENEABLED with constant braginskii viscosity etaBrag="
+    idfx::cout << "Braginskii Viscosity: ENEABLED with constant braginskii viscosity etaBrag="
                     << this->etaBrag << " ."<< std::endl;
   } else if (status.status==UserDefFunction) {
-    idfx::cout << "BragViscosity: ENABLED with user-defined braginskiiviscosity function."
+    idfx::cout << "Braginskii Viscosity: ENABLED with user-defined braginskii viscosity function."
                    << std::endl;
     if(!bragViscousDiffusivityFunc) {
       IDEFIX_ERROR("No braginskii viscosity function has been enrolled");
@@ -105,12 +105,15 @@ void BragViscosity::ShowConfig() {
     IDEFIX_ERROR("Unknown braginskii viscosity mode");
   }
   if(this->status.isExplicit) {
-    idfx::cout << "BragViscosity: uses an explicit time integration." << std::endl;
+    idfx::cout << "Braginskii Viscosity: uses an explicit time integration." << std::endl;
   } else if(this->status.isRKL) {
-    idfx::cout << "BragViscosity: uses a Runge-Kutta-Legendre time integration."
+    idfx::cout << "Braginskii Viscosity: uses a Runge-Kutta-Legendre time integration."
                 << std::endl;
   } else {
     IDEFIX_ERROR("Unknown time integrator for braginskii viscosity.");
+  }
+  if(haveSlopeLimiter) {
+    idfx::cout << "Braginskii Viscosity: uses a slope limiter." << std::endl;
   }
 }
 

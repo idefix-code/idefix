@@ -86,7 +86,7 @@
 
 void BragThermalDiffusion::ShowConfig() {
   if(status.status==Constant) {
-    idfx::cout << "Braginskii Thermal Diffusion: ENEABLED with constant diffusivity kpar="
+    idfx::cout << "Braginskii Thermal Diffusion: ENEBLED with constant diffusivity kpar="
                     << this->kpar << " and knor=" << this->knor << " ."<< std::endl;
   } else if (status.status==UserDefFunction) {
     idfx::cout << "Braginskii Thermal Diffusion: ENABLED with user-defined diffusivity function."
@@ -104,6 +104,9 @@ void BragThermalDiffusion::ShowConfig() {
                 << std::endl;
   } else {
     IDEFIX_ERROR("Unknown time integrator for braginskii thermal diffusion.");
+  }
+  if(haveSlopeLimiter) {
+    idfx::cout << "Braginskii Thermal Diffusion: uses a slope limiter." << std::endl;
   }
 }
 

@@ -3,6 +3,9 @@ add_subdirectory(constrainedTransport)
 add_subdirectory(eos)
 add_subdirectory(RiemannSolver)
 add_subdirectory(tracer)
+if(Idefix_BRAG)
+  add_subdirectory(braginskii)
+endif()
 
 
 target_sources(idefix
@@ -27,11 +30,3 @@ target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/thermalDiffusion.cpp
   )
 
-if(Idefix_BRAG)
-  target_sources(idefix
-    PUBLIC ${CMAKE_CURRENT_LIST_DIR}/bragViscosity.hpp
-    PUBLIC ${CMAKE_CURRENT_LIST_DIR}/bragViscosity.cpp
-    PUBLIC ${CMAKE_CURRENT_LIST_DIR}/bragThermalDiffusion.hpp
-    PUBLIC ${CMAKE_CURRENT_LIST_DIR}/bragThermalDiffusion.cpp
-  )
-endif()

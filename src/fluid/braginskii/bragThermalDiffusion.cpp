@@ -535,27 +535,27 @@ void BragThermalDiffusion::AddDiffusiveFlux(int dir, const real t, const IdefixA
 #endif // HAVE_ENERGY
 }
 
-//real minmodTh(const real dvp, const real dvm) {
-//  real dq= 0.0;
-//  if(dvp*dvm >0.0) {
-//    real dq = ( fabs(dvp) < fabs(dvm) ? dvp : dvm);
-//  }   
-//  return(dq);
-//}
-//
-//real monotonizedCentralTh(const real dvp, const real dvm) {
-//  real dq = 0;
-//  if(dvp*dvm >0.0) {
-//    real dqc = 0.5*(dvp+dvm);
-//    real d2q = 2.0*( fabs(dvp) < fabs(dvm) ? dvp : dvm);
-//    dq= fabs(d2q) < fabs(dqc) ? d2q : dqc;
-//  }
-//  return(dq);
-//}
-//
-//real vanLeerTh(const real dvp, const real dvm) {
-//  real dq= 0.0;
-//  dq = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
-//  return(dq);
-//}
+real minmodTh(const real dvp, const real dvm) {
+  real dq= 0.0;
+  if(dvp*dvm >0.0) {
+    real dq = ( fabs(dvp) < fabs(dvm) ? dvp : dvm);
+  }   
+  return(dq);
+}
+
+real monotonizedCentralTh(const real dvp, const real dvm) {
+  real dq = 0;
+  if(dvp*dvm >0.0) {
+    real dqc = 0.5*(dvp+dvm);
+    real d2q = 2.0*( fabs(dvp) < fabs(dvm) ? dvp : dvm);
+    dq= fabs(d2q) < fabs(dqc) ? d2q : dqc;
+  }
+  return(dq);
+}
+
+real vanLeerTh(const real dvp, const real dvm) {
+  real dq= 0.0;
+  dq = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
+  return(dq);
+}
 

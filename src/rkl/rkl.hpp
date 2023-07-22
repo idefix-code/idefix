@@ -15,6 +15,9 @@
 #include "input.hpp"
 #include "dataBlock.hpp"
 #include "viscosity.hpp"
+#if BRAG == YES
+  #include "bragViscosity.hpp"
+#endif
 #ifdef WITH_MPI
 #include "mpi.hpp"
 #endif
@@ -147,6 +150,15 @@ RKLegendre<Phys>::RKLegendre(Input &input, Fluid<Phys>* hydroin) {
     EXPAND( AddVariable(MX1, varListHost);   ,
             AddVariable(MX2, varListHost);   ,
             AddVariable(MX3, varListHost);   )
+  // BragViscosity
+  #if BRAG == YES
+    if(!hydro->viscosityStatus.isRKL && hydro->bragViscosityStatus.isRKL) {
+      haveVc = true;
+      EXPAND( AddVariable(MX1, varListHost);   ,
+              AddVariable(MX2, varListHost);   ,
+              AddVariable(MX3, varListHost);   )
+    }
+  #endif
 
     #if HAVE_ENERGY
       AddVariable(ENG, varListHost);
@@ -158,6 +170,13 @@ RKLegendre<Phys>::RKLegendre(Input &input, Fluid<Phys>* hydroin) {
       haveVc = true;
       AddVariable(ENG, varListHost);
     }
+    // Braginskii Thermal diffusion
+    #if BRAG == YES
+      if(!hydro->thermalDiffusionStatus.isRKL & hydro->bragThermalDiffusionStatus.isRKL) {
+        haveVc = true;
+        AddVariable(ENG, varListHost);
+      }
+    #endif
   #endif
   // Ambipolar diffusion
   if(hydro->ambipolarStatus.isRKL || hydro->resistivityStatus.isRKL) {
@@ -726,6 +745,10 @@ void RKLegendre<Phys>::CalcParabolicRHS(real t) {
 
   bool haveViscosity = hydro->viscosityStatus.isRKL;
   if(haveViscosity) viscSrc = hydro->viscosity->viscSrc;
+  #if BRAG == YES
+    bool haveBragViscosity = hydro->bragViscosityStatus.isRKL;
+    if(haveBragViscosity) viscSrc = hydro->bragViscosity->viscSrc;
+  #endif
 
   int ioffset,joffset,koffset;
   ioffset=joffset=koffset=0;
@@ -792,6 +815,12 @@ void RKLegendre<Phys>::CalcParabolicRHS(real t) {
       if( haveViscosity && (nv-VX1 < COMPONENTS) && (nv-VX1>=0)) {
         rhs += viscSrc(nv-VX1,k,j,i);
       }
+      // Braginskii Viscosity source terms
+      #if BRAG == YES
+        if(!haveViscosity && haveBragViscosity && (nv-VX1 < COMPONENTS) && (nv-VX1>=0)) {
+          rhs += viscSrc(nv-VX1,k,j,i);
+        }
+      #endif
 
 #if GEOMETRY != CARTESIAN
   #ifdef iMPHI

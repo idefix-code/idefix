@@ -27,5 +27,10 @@ target_sources(idefix
   )
 
 if(Idefix_BRAG)
-  add_subdirectory(braginskii)
+  target_sources(idefix
+    PUBLIC ${CMAKE_CURRENT_LIST_DIR}/bragViscosity.hpp
+    PUBLIC ${CMAKE_CURRENT_LIST_DIR}/bragViscosity.cpp
+    PUBLIC ${CMAKE_CURRENT_LIST_DIR}/bragThermalDiffusion.hpp
+    PUBLIC ${CMAKE_CURRENT_LIST_DIR}/bragThermalDiffusion.cpp
+  )
 endif()

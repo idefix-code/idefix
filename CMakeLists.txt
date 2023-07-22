@@ -81,6 +81,12 @@ else()
   add_compile_definitions("MHD=NO")
 endif()
 
+if(Idefix_BRAG)
+  add_compile_definitions("BRAG=YES")
+else()
+  add_compile_definitions("BRAG=NO")
+endif()
+
 if(Idefix_MPI)
   add_compile_definitions("WITH_MPI")
   find_package(MPI REQUIRED)

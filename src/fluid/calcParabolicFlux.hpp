@@ -56,6 +56,20 @@ void Fluid<Phys>::CalcParabolicFlux(const real t) {
     this->thermalDiffusion->AddDiffusiveFlux(dir,t, this->FluxRiemann);
   }
 
+  #if BRAG ==  YES
+    if( (bragViscosityStatus.isExplicit && (!data->rklCycle))
+      || (bragViscosityStatus.isRKL && data->rklCycle))  {
+        // Add fargo velocity if using fargo
+      this->bragViscosity->AddViscousFlux(dir,t, this->FluxRiemann);
+    }
+
+    // Add braginskii thermal diffusion
+    if( (bragThermalDiffusionStatus.isExplicit && (!data->rklCycle))
+      || (bragThermalDiffusionStatus.isRKL && data->rklCycle))  {
+      this->bragThermalDiffusion->AddDiffusiveFlux(dir,t, this->FluxRiemann);
+    }
+  #endif
+
   idfx::popRegion();
 }
 

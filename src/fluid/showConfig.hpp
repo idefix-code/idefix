@@ -162,6 +162,14 @@ void Fluid<Phys>::ShowConfig() {
   if(thermalDiffusionStatus.status != Disabled) {
     thermalDiffusion->ShowConfig();
   }
+  #if BRAG == YES
+    if(bragViscosityStatus.isExplicit || bragViscosityStatus.isRKL) {
+      bragViscosity->ShowConfig();
+    }
+    if(bragThermalDiffusionStatus.status != Disabled) {
+      bragThermalDiffusion->ShowConfig();
+    }
+  #endif
   if(haveAxis) {
     boundary->axis->ShowConfig();
   }

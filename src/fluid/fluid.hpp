@@ -17,6 +17,9 @@
 #include "output.hpp"
 #include "fluid_defs.hpp"
 #include "thermalDiffusion.hpp"
+#if BRAG == YES
+  #include "braginskii/bragThermalDiffusion.hpp"
+#endif
 #include "selfGravity.hpp"
 #include "vtk.hpp"
 #include "dump.hpp"
@@ -40,6 +43,10 @@ class ShockFlattening;
 
 class Viscosity;
 class ThermalDiffusion;
+#if BRAG == YES
+  class BragViscosity;
+  class BragThermalDiffusion;
+#endif
 class Drag;
 class Tracer;
 
@@ -96,6 +103,20 @@ class Fluid {
 
   // Thermal Diffusion object
   std::unique_ptr<ThermalDiffusion> thermalDiffusion;
+
+  #if BRAG == YES
+    // Whether or not we have braginskii viscosity
+    ParabolicModuleStatus bragViscosityStatus;
+
+    // Whether or not we have thermal diffusion
+    ParabolicModuleStatus bragThermalDiffusionStatus;
+
+    // BragViscosity object
+    std::unique_ptr<BragViscosity> bragViscosity;
+  
+    // Braginskii Thermal Diffusion object
+    std::unique_ptr<BragThermalDiffusion> bragThermalDiffusion;
+   #endif
 
   // Drag object
   bool haveDrag{false};
@@ -182,6 +203,10 @@ class Fluid {
   friend class RiemannSolver<Phys>;
   friend class Viscosity;
   friend class ThermalDiffusion;
+  #if BRAG == YES
+    friend class BragViscosity;
+    friend class BragThermalDiffusion;
+  #endif
   friend class Drag;
 
   template <typename P>
@@ -242,6 +267,9 @@ class Fluid {
 #include "rkl.hpp"
 #include "riemannSolver.hpp"
 #include "viscosity.hpp"
+#if BRAG == YES
+  #include "braginskii/bragViscosity.hpp"
+#endif
 #include "drag.hpp"
 #include "checkNan.hpp"
 #include "tracer.hpp"
@@ -382,6 +410,42 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
     }
     this->thermalDiffusion = std::make_unique<ThermalDiffusion>(input, grid, this);
   }
+
+  #if BRAG == YES
+    // Check whether braginskii viscosity is enabled, if so, init a braginskii viscosity object
+    if(input.CheckEntry(std::string(Phys::prefix),"bragViscosity")>=0) {
+      std::string opType = input.Get<std::string>(std::string(Phys::prefix),"bragViscosity",0);
+      if(opType.compare("explicit") == 0 ) {
+        haveExplicitParabolicTerms = true;
+        bragViscosityStatus.isExplicit = true;
+      } else if(opType.compare("rkl") == 0 ) {
+        haveRKLParabolicTerms = true;
+        bragViscosityStatus.isRKL = true;
+      } else {
+        std::stringstream msg;
+        msg  << "Unknown integration type for braginskii viscosity: " << opType;
+        IDEFIX_ERROR(msg);
+      }
+      this->bragViscosity = std::make_unique<BragViscosity>(input, grid, this);
+    }
+  
+    // Check whether braginskii thermal diffusion is enabled, if so, init a braginskii thermal diffusion object
+    if(input.CheckEntry(std::string(Phys::prefix),"bragTDiffusion")>=0) {
+      std::string opType = input.Get<std::string>(std::string(Phys::prefix),"bragTDiffusion",0);
+      if(opType.compare("explicit") == 0 ) {
+        haveExplicitParabolicTerms = true;
+        bragThermalDiffusionStatus.isExplicit = true;
+      } else if(opType.compare("rkl") == 0 ) {
+        haveRKLParabolicTerms = true;
+        bragThermalDiffusionStatus.isRKL = true;
+      } else {
+        std::stringstream msg;
+        msg  << "Unknown integration type for braginskii thermal diffusion: " << opType;
+        IDEFIX_ERROR(msg);
+      }
+      this->bragThermalDiffusion = std::make_unique<BragThermalDiffusion>(input, grid, this);
+    }
+  #endif //BRAG
 
   if(input.CheckEntry(std::string(Phys::prefix),"drag")>=0) {
     haveDrag = true;

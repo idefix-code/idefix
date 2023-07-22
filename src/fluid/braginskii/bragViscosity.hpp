@@ -80,7 +80,7 @@ BragViscosity::BragViscosity(Input &input, Grid &grid, Fluid<Phys> *hydroin):
                       Vc{hydroin->Vc},
                       Vs{hydroin->Vs},
                       dMax{hydroin->dMax},
-                      status{hydroin->viscosityStatus} {
+                      status{hydroin->bragViscosityStatus} {
   idfx::pushRegion("BragViscosity::BragViscosity");
   // Save the parent hydro object
   this->data = hydroin->data;

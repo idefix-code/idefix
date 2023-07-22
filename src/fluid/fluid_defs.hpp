@@ -49,7 +49,9 @@ using SrcTermFunc = void (*) (Fluid<Phys> *, const real t, const real dt);
 
 using EmfBoundaryFunc = void (*) (DataBlock &, const real t);
 using DiffusivityFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
-using BragDiffusivityFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &, IdefixArray3D<real> &);
+#if BRAG == YES
+  using BragDiffusivityFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &, IdefixArray3D<real> &);
+#endif
 using SlopeLimiterFunc = real (*) (real, real);
 using IsoSoundSpeedFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
 

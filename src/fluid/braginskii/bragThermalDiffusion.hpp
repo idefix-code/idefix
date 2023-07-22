@@ -93,7 +93,7 @@ BragThermalDiffusion::BragThermalDiffusion(Input &input, Grid &grid, Fluid<Phys>
       this->kpar = input.Get<real>("Hydro","bragTDiffusion",2);
       this->knor = input.Get<real>("Hydro","bragTDiffusion",2);
       this->status.status = Constant;
-      } else if(input.Get<std::string>("Hydro","bragTDiffusion",1).compare("userdef") == 0) {
+    } else if(input.Get<std::string>("Hydro","bragTDiffusion",1).compare("userdef") == 0) {
       this->haveSlopeLimiter = false;
       this->status.status = UserDefFunction;
       this->kparArr = IdefixArray3D<real>("BragThermalDiffusionKparArray",data->np_tot[KDIR],
@@ -102,27 +102,37 @@ BragThermalDiffusion::BragThermalDiffusion(Input &input, Grid &grid, Fluid<Phys>
       this->knorArr = IdefixArray3D<real>("BragThermalDiffusionKnorArray",data->np_tot[KDIR],
                                                                data->np_tot[JDIR],
                                                                data->np_tot[IDIR]);
+    } else if (input.Get<std::string>("Hydro","bragTDiffusion",1).compare("limiter") == 0) {
+      this->haveSlopeLimiter = true;
+      if(input.Get<std::string>("Hydro","bragTDiffusion",2).compare("minmod") == 0) {
+        slopeLimiter = minmodTh;
+      } else if(input.Get<std::string>("Hydro","bragTDiffusion",2).compare("vanleer") == 0) {
+        slopeLimiter = vanLeerTh;
+      } else if(input.Get<std::string>("Hydro","bragTDiffusion",2).compare("mc") == 0) {
+        slopeLimiter = monotonizedCentralTh;
       } else {
-        IDEFIX_ERROR("Unknown thermal diffusion definition in idefix.ini. "
+        IDEFIX_ERROR("Unknown braginskii thermal diffusion limiter in idefix.ini. "
+                     "Can only be minmod, vanleer or mc.");
+      }
+      if(input.Get<std::string>("Hydro","bragTDiffusion",3).compare("constant") == 0) {
+          this->kpar = input.Get<real>("Hydro","bragTDiffusion",4);
+          this->knor = input.Get<real>("Hydro","bragTDiffusion",4);
+          this->status.status = Constant;
+      } else if(input.Get<std::string>("Hydro","bragTDiffusion",3).compare("userdef") == 0) {
+          this->status.status = UserDefFunction;
+          this->kparArr = IdefixArray3D<real>("BragThermalDiffusionKparArray",data->np_tot[KDIR],
+                                                                   data->np_tot[JDIR],
+                                                                   data->np_tot[IDIR]);
+          this->knorArr = IdefixArray3D<real>("BragThermalDiffusionKnorArray",data->np_tot[KDIR],
+                                                                   data->np_tot[JDIR],
+                                                                   data->np_tot[IDIR]);
+      } else {
+        IDEFIX_ERROR("Unknown braginskii thermal diffusion definition in idefix.ini. "
                      "Can only be constant or userdef.");
       }
-  } else if (input.Get<std::string>("Hydro","bragTDiffusion",1).compare("limiter") == 0) {
-    this->haveSlopeLimiter = true;
-    if(input.Get<std::string>("Hydro","bragTDiffusion",2).compare("minmod") == 0) {
-      slopeLimiter = minmodTh;
-    }
-    if(input.Get<std::string>("Hydro","bragTDiffusion",3).compare("constant") == 0) {
-        this->kpar = input.Get<real>("Hydro","bragTDiffusion",4);
-        this->knor = input.Get<real>("Hydro","bragTDiffusion",4);
-        this->status.status = Constant;
-    } else if(input.Get<std::string>("Hydro","bragTDiffusion",3).compare("userdef") == 0) {
-        this->status.status = UserDefFunction;
-        this->kparArr = IdefixArray3D<real>("BragThermalDiffusionKparArray",data->np_tot[KDIR],
-                                                                 data->np_tot[JDIR],
-                                                                 data->np_tot[IDIR]);
-        this->knorArr = IdefixArray3D<real>("BragThermalDiffusionKnorArray",data->np_tot[KDIR],
-                                                                 data->np_tot[JDIR],
-                                                                 data->np_tot[IDIR]);
+    } else {
+      IDEFIX_ERROR("Unknown braginskii thermal diffusion definition in idefix.ini. "
+                   "Can only be constant or userdef.");
     }
   } else {
     IDEFIX_ERROR("I cannot create a BragThermalDiffusion object without bragTDiffusion defined"

@@ -532,7 +532,8 @@ void BragThermalDiffusion::AddDiffusiveFlux(int dir, const real t, const IdefixA
 
       Flux(ENG, k, j, i) -= q;
 
-      dMax(k,j,i) += FMAX(dMax(k,j,i),locdmax);
+//      dMax(k,j,i) += FMAX(dMax(k,j,i),locdmax);
+      dMax(k,j,i) = FMAX(dMax(k,j,i),locdmax);
     });
   idfx::popRegion();
 #endif // HAVE_ENERGY

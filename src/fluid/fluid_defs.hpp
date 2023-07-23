@@ -51,8 +51,8 @@ using EmfBoundaryFunc = void (*) (DataBlock &, const real t);
 using DiffusivityFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
 #if BRAG == YES
   using BragDiffusivityFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &, IdefixArray3D<real> &);
+  using SlopeLimiterFunc = real (*) (real, real);
 #endif
-using SlopeLimiterFunc = real (*) (real, real);
 using IsoSoundSpeedFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
 
 // Deprecated signatures

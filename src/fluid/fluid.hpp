@@ -108,7 +108,7 @@ class Fluid {
     // Whether or not we have braginskii viscosity
     ParabolicModuleStatus bragViscosityStatus;
 
-    // Whether or not we have thermal diffusion
+    // Whether or not we have braginskii thermal diffusion
     ParabolicModuleStatus bragThermalDiffusionStatus;
 
     // BragViscosity object

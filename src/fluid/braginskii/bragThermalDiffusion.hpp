@@ -5,8 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef FLUID_BRAGTHERMALDIFFUSION_HPP_
-#define FLUID_BRAGTHERMALDIFFUSION_HPP_
+#ifndef FLUID_BRAGINSKII_BRAGTHERMALDIFFUSION_HPP_
+#define FLUID_BRAGINSKII_BRAGTHERMALDIFFUSION_HPP_
 
 #include <string>
 
@@ -31,7 +31,7 @@ class BragThermalDiffusion {
 
   void ShowConfig(); // display configuration
 
-  void AddDiffusiveFlux(int, const real, const IdefixArray4D<real> &);
+  void AddBragDiffusiveFlux(int, const real, const IdefixArray4D<real> &);
 
   // Enroll user-defined thermal conductivity
   void EnrollBragThermalDiffusivity(BragDiffusivityFunc);
@@ -155,4 +155,4 @@ BragThermalDiffusion::BragThermalDiffusion(Input &input, Grid &grid, Fluid<Phys>
 //                                        // normal and parralel conductivities
 //using SlopeLimiterFunc = real (*) (const real, const real);
 
-#endif // FLUID_BRAGTHERMALDIFFUSION_HPP_
+#endif // FLUID_BRAGINSKII_BRAGTHERMALDIFFUSION_HPP_

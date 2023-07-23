@@ -87,13 +87,13 @@ void BragViscosity::InitArrays() {
         dmu(j) = 1.0/scrch;
       });
   #endif
-  viscSrc = IdefixArray4D<real>("BragViscosity_source", COMPONENTS, data->np_tot[KDIR],
+  bragViscSrc = IdefixArray4D<real>("BragViscosity_source", COMPONENTS, data->np_tot[KDIR],
                                                                 data->np_tot[JDIR],
                                                                 data->np_tot[IDIR]);
 }
 void BragViscosity::ShowConfig() {
   if(status.status==Constant) {
-    idfx::cout << "Braginskii Viscosity: ENEABLED with constant braginskii viscosity etaBrag="
+    idfx::cout << "Braginskii Viscosity: ENABLED with constant braginskii viscosity etaBrag="
                     << this->etaBrag << " ."<< std::endl;
   } else if (status.status==UserDefFunction) {
     idfx::cout << "Braginskii Viscosity: ENABLED with user-defined braginskii viscosity function."
@@ -129,11 +129,11 @@ void BragViscosity::EnrollBragViscousDiffusivity(DiffusivityFunc myFunc) {
 // (this avoids an extra array)
 // Associated source terms, present in non-cartesian geometry are also computed
 // and stored in this->viscSrc for later use (in calcRhs).
-void BragViscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> &Flux) {
-  idfx::pushRegion("BragViscosity::AddViscousFlux");
+void BragViscosity::AddBragViscousFlux(int dir, const real t, const IdefixArray4D<real> &Flux) {
+  idfx::pushRegion("BragViscosity::AddBragViscousFlux");
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Vs = this->Vs;
-  IdefixArray4D<real> viscSrc = this->viscSrc;
+  IdefixArray4D<real> bragViscSrc = this->bragViscSrc;
   IdefixArray3D<real> dMax = this->dMax;
   IdefixArray3D<real> etaBragArr = this->etaBragArr;
   IdefixArray1D<real> one_dmu = this->one_dmu;
@@ -331,8 +331,10 @@ void BragViscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<re
             dVxj = slopeLimiter(dVxj, slopeLimiter(SL_DY(Vc,VX1,k,j,i)/dx2(j), SL_DY(Vc,VX1,k,j,i - 1)/dx2(j)));
             dVyj = slopeLimiter(SL_DY(Vc,VX2,k,j + 1,i)/dx2(j+1), SL_DY(Vc,VX2,k,j + 1,i - 1)/dx2(j+1));
             dVyj = slopeLimiter(dVyj, slopeLimiter(SL_DY(Vc,VX2,k,j,i)/dx2(j), SL_DY(Vc,VX2,k,j,i - 1)/dx2(j)));
-            dVzj = slopeLimiter(SL_DY(Vc,VX3,k,j + 1,i)/dx2(j+1), SL_DY(Vc,VX3,k,j + 1,i - 1)/dx2(j+1));
-            dVzj = slopeLimiter(dVzj, slopeLimiter(SL_DY(Vc,VX3,k,j,i)/dx2(j), SL_DY(Vc,VX3,k,j,i - 1)/dx2(j)));
+            #if DIMENSIONS == 3
+              dVzj = slopeLimiter(SL_DY(Vc,VX3,k,j + 1,i)/dx2(j+1), SL_DY(Vc,VX3,k,j + 1,i - 1)/dx2(j+1));
+              dVzj = slopeLimiter(dVzj, slopeLimiter(SL_DY(Vc,VX3,k,j,i)/dx2(j), SL_DY(Vc,VX3,k,j,i - 1)/dx2(j)));
+            #endif
           } else {
             EXPAND(  dVxj = D_DY_I(Vc,VX1)/dx2(j); ,
                      dVyj = D_DY_I(Vc,VX2)/dx2(j); ,
@@ -414,9 +416,9 @@ void BragViscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<re
           tau_yyC = Pnor_parC*(bjC*bjC - 1./3.);
           tau_zzC = Pnor_parC*(bkC*bkC - 1./3.);
 
-          EXPAND( viscSrc(IDIR,k,j,i) =  -(tau_yyC + tau_zzC)/x1(i);  ,
-                  viscSrc(JDIR,k,j,i) = ZERO_F;          ,
-                  viscSrc(KDIR,k,j,i) = ZERO_F;          )
+          EXPAND( bragViscSrc(IDIR,k,j,i) =  -(tau_yyC + tau_zzC)/x1(i);  ,
+                  bragViscSrc(JDIR,k,j,i) = ZERO_F;          ,
+                  bragViscSrc(KDIR,k,j,i) = ZERO_F;          )
         #endif
 
 
@@ -454,10 +456,14 @@ void BragViscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<re
         if (haveSlopeLimiter) {
           dVxi = slopeLimiter(SL_DX(Vc,VX1,k,j,i + 1)/dx1(i+1), SL_DX(Vc,VX1,k,j - 1,i + 1)/dx1(i+1));
           dVxi = slopeLimiter(dVxi, slopeLimiter(SL_DX(Vc,VX1,k,j,i)/dx1(i), SL_DX(Vc,VX1,k,j - 1,i)/dx1(i)));
-          dVyi = slopeLimiter(SL_DX(Vc,VX2,k,j,i + 1)/dx1(i+1), SL_DX(Vc,VX2,k,j - 1,i + 1)/dx1(i+1));
-          dVyi = slopeLimiter(dVyi, slopeLimiter(SL_DX(Vc,VX2,k,j,i)/dx1(i), SL_DX(Vc,VX2,k,j - 1,i)/dx1(i)));
-          dVzi = slopeLimiter(SL_DX(Vc,VX3,k,j,i + 1)/dx1(i+1), SL_DX(Vc,VX3,k,j - 1,i + 1)/dx1(i+1));
-          dVzi = slopeLimiter(dVzi, slopeLimiter(SL_DX(Vc,VX3,k,j,i)/dx1(i), SL_DX(Vc,VX3,k,j - 1,i)/dx1(i)));
+          #if DIMENSIONS >= 2
+            dVyi = slopeLimiter(SL_DX(Vc,VX2,k,j,i + 1)/dx1(i+1), SL_DX(Vc,VX2,k,j - 1,i + 1)/dx1(i+1));
+            dVyi = slopeLimiter(dVyi, slopeLimiter(SL_DX(Vc,VX2,k,j,i)/dx1(i), SL_DX(Vc,VX2,k,j - 1,i)/dx1(i)));
+            #if DIMENSIONS == 3
+              dVzi = slopeLimiter(SL_DX(Vc,VX3,k,j,i + 1)/dx1(i+1), SL_DX(Vc,VX3,k,j - 1,i + 1)/dx1(i+1));
+              dVzi = slopeLimiter(dVzi, slopeLimiter(SL_DX(Vc,VX3,k,j,i)/dx1(i), SL_DX(Vc,VX3,k,j - 1,i)/dx1(i)));
+            #endif
+          #endif
         } else {
         EXPAND(  dVxi = D_DX_J(Vc,VX1)/dx1(i); ,
                  dVyi = D_DX_J(Vc,VX2)/dx1(i); ,
@@ -574,9 +580,9 @@ void BragViscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<re
           tau_xyC = Pnor_parC*biC*bjC;
           tau_zzC = Pnor_parC*(bkC*bkC - 1./3.);
 
-          EXPAND( viscSrc(IDIR,k,j,i) = ZERO_F;  ,
-                  viscSrc(JDIR,k,j,i) = (tau_xyC - tau_zzC*tan_1)/x1(i);  ,
-                  viscSrc(KDIR,k,j,i) = ZERO_F;  )
+          EXPAND( bragViscSrc(IDIR,k,j,i) = ZERO_F;  ,
+                  bragViscSrc(JDIR,k,j,i) = (tau_xyC - tau_zzC*tan_1)/x1(i);  ,
+                  bragViscSrc(KDIR,k,j,i) = ZERO_F;  )
         #endif
 
 
@@ -720,4 +726,28 @@ void BragViscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<re
       }
   });
   idfx::popRegion();
+}
+
+real minmodV(const real dvp, const real dvm) {
+  real dq= 0.0;
+  if(dvp*dvm >0.0) {
+    real dq = ( fabs(dvp) < fabs(dvm) ? dvp : dvm);
+  }   
+  return(dq);
+}
+
+real monotonizedCentralV(const real dvp, const real dvm) {
+  real dq = 0;
+  if(dvp*dvm >0.0) {
+    real dqc = 0.5*(dvp+dvm);
+    real d2q = 2.0*( fabs(dvp) < fabs(dvm) ? dvp : dvm);
+    dq= fabs(d2q) < fabs(dqc) ? d2q : dqc;
+  }
+  return(dq);
+}
+
+real vanLeerV(const real dvp, const real dvm) {
+  real dq= 0.0;
+  dq = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
+  return(dq);
 }

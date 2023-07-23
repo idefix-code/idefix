@@ -17,7 +17,7 @@
 
 void ThermalDiffusion::ShowConfig() {
   if(status.status==Constant) {
-    idfx::cout << "Thermal Diffusion: ENEABLED with constant diffusivity kappa="
+    idfx::cout << "Thermal Diffusion: ENABLED with constant diffusivity kappa="
                     << this->kappa << " ."<< std::endl;
   } else if (status.status==UserDefFunction) {
     idfx::cout << "Thermal Diffusion: ENABLED with user-defined diffusivity function."

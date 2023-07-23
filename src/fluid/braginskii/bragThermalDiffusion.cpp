@@ -120,9 +120,9 @@ void BragThermalDiffusion::EnrollBragThermalDiffusivity(BragDiffusivityFunc myFu
 
 // This function computes the thermal Flux and stores it in hydro->fluxRiemann
 // (this avoids an extra array)
-void BragThermalDiffusion::AddDiffusiveFlux(int dir, const real t, const IdefixArray4D<real> &Flux) {
+void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t, const IdefixArray4D<real> &Flux) {
 #if HAVE_ENERGY == 1
-  idfx::pushRegion("BragThermalDiffusion::AddThermalFlux");
+  idfx::pushRegion("BragThermalDiffusion::AddBragDiffusiveFlux");
 
   real gamma_m1 = this->gamma - ONE_F;
   IdefixArray4D<real> Vc = this->Vc;
@@ -186,7 +186,7 @@ void BragThermalDiffusion::AddDiffusiveFlux(int dir, const real t, const IdefixA
     }
   }
 
-  idefix_for("BragThermalFlux",kbeg, kend, jbeg, jend, ibeg, iend,
+  idefix_for("BragDiffusiveFlux",kbeg, kend, jbeg, jend, ibeg, iend,
     KOKKOS_LAMBDA (int k, int j, int i) {
       real knor, kpar;
       real bgradT, Bmag, bn;

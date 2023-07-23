@@ -249,7 +249,7 @@ struct Fluid_CalcRHSFunctor {
     #if BRAG ==  YES
       // BragViscosity  (source term only when non-cartesian geometry)
       haveBragViscosity = hydro->bragViscosityStatus.isExplicit;
-      if(haveBragViscosity) bragViscSrc = hydro->bragViscosity->viscSrc;
+      if(haveBragViscosity) bragViscSrc = hydro->bragViscosity->bragViscSrc;
     #endif
 
     // Fargo

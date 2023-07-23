@@ -5,8 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef FLUID_BRAG_VISCOSITY_HPP_
-#define FLUID_BRAG_VISCOSITY_HPP_
+#ifndef FLUID_BRAGINSKII_BRAGVISCOSITY_HPP_
+#define FLUID_BRAGINSKII_BRAGVISCOSITY_HPP_
 
 #include <string>
 
@@ -15,22 +15,20 @@
 #include "grid.hpp"
 #include "fluid_defs.hpp"
 
-real minmodTh(const real, const real); 
-real vanLeerTh(const real, const real);
-real monotonizedCentralTh(const real, const real); 
+real minmodV(const real, const real); 
+real vanLeerV(const real, const real);
+real monotonizedCentralV(const real, const real); 
 
 // Forward class hydro declaration
 template <typename Phys> class Fluid;
 class DataBlock;
-
-using SlopeLimiterFunc = real (*) (const real, const real);
 
 class BragViscosity {
  public:
   template <typename Phys>
   BragViscosity(Input &, Grid &, Fluid<Phys> *);
   void ShowConfig();                    // print configuration
-  void AddViscousFlux(int, const real, const IdefixArray4D<real> &);
+  void AddBragViscousFlux(int, const real, const IdefixArray4D<real> &);
 
   // Enroll user-defined viscous diffusivity
   void EnrollBragViscousDiffusivity(DiffusivityFunc);
@@ -38,7 +36,7 @@ class BragViscosity {
   // Function for internal use (but public to allow for Cuda lambda capture)
   void InitArrays();
 
-  IdefixArray4D<real> viscSrc;  // Source terms of the viscous operator
+  IdefixArray4D<real> bragViscSrc;  // Source terms of the viscous operator
   IdefixArray3D<real> etaBragArr;
 
 
@@ -98,11 +96,11 @@ BragViscosity::BragViscosity(Input &input, Grid &grid, Fluid<Phys> *hydroin):
     } else if (input.Get<std::string>("Hydro","bragViscosity",1).compare("limiter") == 0) {
       this->haveSlopeLimiter = true;
       if(input.Get<std::string>("Hydro","bragViscosity",2).compare("minmod") == 0) {
-        slopeLimiter = minmodTh;
+        slopeLimiter = minmodV;
       } else if(input.Get<std::string>("Hydro","bragViscosity",2).compare("vanleer") == 0) {
-        slopeLimiter = vanLeerTh;
+        slopeLimiter = vanLeerV;
       } else if(input.Get<std::string>("Hydro","bragViscosity",2).compare("mc") == 0) {
-        slopeLimiter = monotonizedCentralTh;
+        slopeLimiter = monotonizedCentralV;
       } else {
         IDEFIX_ERROR("Unknown braginskii viscosity limiter in idefix.ini. "
                      "Can only be minmod, vanleer or mc.");
@@ -132,4 +130,4 @@ BragViscosity::BragViscosity(Input &input, Grid &grid, Fluid<Phys> *hydroin):
 
   idfx::popRegion();
 }
-#endif // FLUID_BRAG_VISCOSITY_HPP_
+#endif // FLUID_BRAGINSKII_BRAGVISCOSITY_HPP_

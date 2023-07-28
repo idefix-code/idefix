@@ -5,6 +5,7 @@ add_subdirectory(RiemannSolver)
 add_subdirectory(tracer)
 if(Idefix_BRAG)
   add_subdirectory(braginskii)
+  target_include_directories(idefix PUBLIC braginskii)
 endif()
 
 

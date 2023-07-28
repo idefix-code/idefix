@@ -16,8 +16,7 @@
 #include "dataBlock.hpp"
 #include "viscosity.hpp"
 #if BRAG == YES
-  #include "braginskii/bragViscosity.hpp"
-//  #include "bragViscosity.hpp"
+  #include "bragViscosity.hpp"
 #endif
 #ifdef WITH_MPI
 #include "mpi.hpp"

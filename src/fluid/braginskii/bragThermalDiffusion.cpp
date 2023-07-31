@@ -152,7 +152,6 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t, const Ide
   #if GEOMETRY == SPHERICAL
     IdefixArray1D<real> rt   = this->data->rt;
     IdefixArray1D<real> dmu  = this->data->dmu;
-    IdefixArray1D<real> dx2 = this->data->dx[JDIR];
   #endif
 
   IdefixArray1D<real> x1 = this->data->x[IDIR];

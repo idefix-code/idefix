@@ -15,9 +15,7 @@
 #include "input.hpp"
 #include "dataBlock.hpp"
 #include "viscosity.hpp"
-#if BRAG == YES
-  #include "bragViscosity.hpp"
-#endif
+#include "bragViscosity.hpp"
 #ifdef WITH_MPI
 #include "mpi.hpp"
 #endif
@@ -156,18 +154,15 @@ RKLegendre<Phys>::RKLegendre(Input &input, Fluid<Phys>* hydroin) {
     #endif
   }
   // BragViscosity
-  #if BRAG == YES
-    if(hydro->bragViscosityStatus.isRKL) {
-//    if(!hydro->viscosityStatus.isRKL && hydro->bragViscosityStatus.isRKL) {
-      haveVc = true;
-      EXPAND( AddVariable(MX1, varListHost);   ,
-              AddVariable(MX2, varListHost);   ,
-              AddVariable(MX3, varListHost);   )
-      #if HAVE_ENERGY
-        AddVariable(ENG, varListHost);
-      #endif
-    }
-  #endif
+  if(hydro->bragViscosityStatus.isRKL) {
+    haveVc = true;
+    EXPAND( AddVariable(MX1, varListHost);   ,
+            AddVariable(MX2, varListHost);   ,
+            AddVariable(MX3, varListHost);   )
+    #if HAVE_ENERGY
+      AddVariable(ENG, varListHost);
+    #endif
+  }
 
   // Thermal diffusion
   #if HAVE_ENERGY
@@ -176,13 +171,10 @@ RKLegendre<Phys>::RKLegendre(Input &input, Fluid<Phys>* hydroin) {
       AddVariable(ENG, varListHost);
     }
     // Braginskii Thermal diffusion
-    #if BRAG == YES
-      if(hydro->bragThermalDiffusionStatus.isRKL) {
-//      if(!hydro->thermalDiffusionStatus.isRKL & hydro->bragThermalDiffusionStatus.isRKL) {
-        haveVc = true;
-        AddVariable(ENG, varListHost);
-      }
-    #endif
+    if(hydro->bragThermalDiffusionStatus.isRKL) {
+      haveVc = true;
+      AddVariable(ENG, varListHost);
+    }
   #endif
   // Ambipolar diffusion
   if(hydro->ambipolarStatus.isRKL || hydro->resistivityStatus.isRKL) {
@@ -751,11 +743,9 @@ void RKLegendre<Phys>::CalcParabolicRHS(real t) {
 
   bool haveViscosity = hydro->viscosityStatus.isRKL;
   if(haveViscosity) viscSrc = hydro->viscosity->viscSrc;
-  #if BRAG == YES
-    IdefixArray4D<real> bragViscSrc;
-    bool haveBragViscosity = hydro->bragViscosityStatus.isRKL;
-    if(haveBragViscosity) bragViscSrc = hydro->bragViscosity->bragViscSrc;
-  #endif
+  IdefixArray4D<real> bragViscSrc;
+  bool haveBragViscosity = hydro->bragViscosityStatus.isRKL;
+  if(haveBragViscosity) bragViscSrc = hydro->bragViscosity->bragViscSrc;
 
   int ioffset,joffset,koffset;
   ioffset=joffset=koffset=0;
@@ -823,11 +813,9 @@ void RKLegendre<Phys>::CalcParabolicRHS(real t) {
         rhs += viscSrc(nv-VX1,k,j,i);
       }
       // Braginskii Viscosity source terms
-      #if BRAG == YES
-        if (haveBragViscosity && (nv-VX1 < COMPONENTS) && (nv-VX1>=0)) {
-          rhs += bragViscSrc(nv-VX1,k,j,i);
-        }
-      #endif
+      if (haveBragViscosity && (nv-VX1 < COMPONENTS) && (nv-VX1>=0)) {
+        rhs += bragViscSrc(nv-VX1,k,j,i);
+      }
 
 #if GEOMETRY != CARTESIAN
   #ifdef iMPHI

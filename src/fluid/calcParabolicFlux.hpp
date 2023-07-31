@@ -56,18 +56,16 @@ void Fluid<Phys>::CalcParabolicFlux(const real t) {
     this->thermalDiffusion->AddDiffusiveFlux(dir,t, this->FluxRiemann);
   }
 
-  #if BRAG ==  YES
-    if( (bragViscosityStatus.isExplicit && (!data->rklCycle))
-      || (bragViscosityStatus.isRKL && data->rklCycle))  {
-      this->bragViscosity->AddBragViscousFlux(dir,t, this->FluxRiemann);
-    }
+  if( (bragViscosityStatus.isExplicit && (!data->rklCycle))
+    || (bragViscosityStatus.isRKL && data->rklCycle))  {
+    this->bragViscosity->AddBragViscousFlux(dir,t, this->FluxRiemann);
+  }
 
-    // Add braginskii thermal diffusion
-    if( (bragThermalDiffusionStatus.isExplicit && (!data->rklCycle))
-      || (bragThermalDiffusionStatus.isRKL && data->rklCycle))  {
-      this->bragThermalDiffusion->AddBragDiffusiveFlux(dir,t, this->FluxRiemann);
-    }
-  #endif
+  // Add braginskii thermal diffusion
+  if( (bragThermalDiffusionStatus.isExplicit && (!data->rklCycle))
+    || (bragThermalDiffusionStatus.isRKL && data->rklCycle))  {
+    this->bragThermalDiffusion->AddBragDiffusiveFlux(dir,t, this->FluxRiemann);
+  }
 
   idfx::popRegion();
 }

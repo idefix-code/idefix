@@ -43,7 +43,7 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
         with:
-          lfs: true
+          lfs: false
           submodules: recursive
       # Manually do a git LFS https://github.com/actions/checkout/issues/270
       - run: git lfs pull

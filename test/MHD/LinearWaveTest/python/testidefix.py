@@ -7,7 +7,6 @@ import sys
 import math
 sys.path.append(os.getenv("IDEFIX_DIR"))
 from pytools.dump_io import readDump
-import numpy as np
 import matplotlib.pyplot as plt
 import argparse
 

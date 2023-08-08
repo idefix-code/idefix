@@ -44,7 +44,7 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
         with:
-          lfs: true
+          lfs: false
           submodules: recursive
       # Manually do a git LFS https://github.com/actions/checkout/issues/270
       - run: git lfs pull
@@ -68,7 +68,7 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
         with:
-          lfs: true
+          lfs: false
           submodules: recursive
       # Manually do a git LFS https://github.com/actions/checkout/issues/270
       - run: git lfs pull
@@ -92,7 +92,7 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
         with:
-          lfs: true
+          lfs: false
           submodules: recursive
       - run: git lfs pull
       - name: MHD Sod test
@@ -120,7 +120,7 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
         with:
-          lfs: true
+          lfs: false
           submodules: recursive
       - run: git lfs pull
       - name: Ambipolar C Shock
@@ -147,7 +147,7 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
         with:
-          lfs: true
+          lfs: false
           submodules: recursive
       - run: git lfs pull
       - name: Fargo + planet
@@ -166,7 +166,7 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
         with:
-          lfs: true
+          lfs: false
           submodules: recursive
       - run: git lfs pull
       - name: Hydro shearing box
@@ -185,7 +185,7 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
         with:
-          lfs: true
+          lfs: false
           submodules: recursive
       - run: git lfs pull
       - name: Jeans Instability
@@ -212,7 +212,7 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
         with:
-          lfs: true
+          lfs: false
           submodules: recursive
       - run: git lfs pull
       - name: 3 body
@@ -247,7 +247,7 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
         with:
-          lfs: true
+          lfs: false
           submodules: recursive
       - run: git lfs pull
       - name: Energy conservation
@@ -266,7 +266,7 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
         with:
-          lfs: true
+          lfs: false
           submodules: recursive
       # Manually do a git LFS https://github.com/actions/checkout/issues/270
       - run: git lfs pull
@@ -280,7 +280,7 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
         with:
-          lfs: true
+          lfs: false
           submodules: recursive
       - run: git lfs pull
       - name: Lookup table

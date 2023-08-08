@@ -1,4 +1,5 @@
-
+[![Documentation Status](https://readthedocs.org/projects/idefix/badge/?version=latest)](https://idefix.readthedocs.io/en/latest/?badge=latest)
+[![Idefix CIs](https://github.com/idefix-code/idefix/actions/workflows/idefix-ci.yml/badge.svg?branch=master)](https://github.com/idefix-code/idefix/actions/workflows/idefix-ci.yml)
 
 <!-- toc -->
 

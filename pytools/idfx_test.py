@@ -102,7 +102,7 @@ class idfxTest:
     self.__dict__.update(vars(args))
     self.referenceDirectory = os.path.join(idefix_dir_env,"reference")
     # current directory relative to $IDEFIX_DIR/test (used to retrieve the path ot reference files)
-    self.thisDir=os.path.relpath(os.curdir,os.path.join(idefix_dir_env,"test"))
+    self.testDir=os.path.relpath(os.curdir,os.path.join(idefix_dir_env,"test"))
 
   def configure(self,definitionFile=""):
     comm=["cmake"]

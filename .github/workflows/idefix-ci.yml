@@ -28,8 +28,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-        with:
-          lfs: false
       - uses: actions/setup-python@v4
         with:
           python-version: 3.x
@@ -44,10 +42,7 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
         with:
-          lfs: false
           submodules: recursive
-      # Manually do a git LFS https://github.com/actions/checkout/issues/270
-      - run: git lfs pull
       - name: Sod test
         run: |
           cd $IDEFIX_DIR/test/HD/sod
@@ -68,10 +63,7 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
         with:
-          lfs: false
           submodules: recursive
-      # Manually do a git LFS https://github.com/actions/checkout/issues/270
-      - run: git lfs pull
       - name: Viscous flow past cylinder
         run: |
           cd $IDEFIX_DIR/test/HD/ViscousFlowPastCylinder
@@ -92,9 +84,7 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
         with:
-          lfs: false
           submodules: recursive
-      - run: git lfs pull
       - name: MHD Sod test
         run: |
           cd $IDEFIX_DIR/test/MHD/sod
@@ -120,9 +110,7 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
         with:
-          lfs: false
           submodules: recursive
-      - run: git lfs pull
       - name: Ambipolar C Shock
         run: |
           cd $IDEFIX_DIR/test/MHD/AmbipolarCshock
@@ -147,9 +135,7 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
         with:
-          lfs: false
           submodules: recursive
-      - run: git lfs pull
       - name: Fargo + planet
         run: |
           cd $IDEFIX_DIR/test/HD/FargoPlanet
@@ -166,9 +152,7 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
         with:
-          lfs: false
           submodules: recursive
-      - run: git lfs pull
       - name: Hydro shearing box
         run: |
           cd $IDEFIX_DIR/test/HD/ShearingBox
@@ -185,9 +169,7 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
         with:
-          lfs: false
           submodules: recursive
-      - run: git lfs pull
       - name: Jeans Instability
         run: |
           cd $IDEFIX_DIR/test/SelfGravity/JeansInstability
@@ -212,9 +194,7 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
         with:
-          lfs: false
           submodules: recursive
-      - run: git lfs pull
       - name: 3 body
         run: |
           cd $IDEFIX_DIR/test/Planet/Planet3Body
@@ -247,9 +227,7 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
         with:
-          lfs: false
           submodules: recursive
-      - run: git lfs pull
       - name: Energy conservation
         run: |
           cd $IDEFIX_DIR/test/Dust/DustEnergy
@@ -266,10 +244,7 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
         with:
-          lfs: false
           submodules: recursive
-      # Manually do a git LFS https://github.com/actions/checkout/issues/270
-      - run: git lfs pull
       - name: Run examples test
         run: cd test && ./checks_examples.sh $TEST_OPTIONS
 
@@ -280,9 +255,7 @@ jobs:
       - name: Check out repo
         uses: actions/checkout@v3
         with:
-          lfs: false
           submodules: recursive
-      - run: git lfs pull
       - name: Lookup table
         run: |
           cd $IDEFIX_DIR/test/utils/lookupTable

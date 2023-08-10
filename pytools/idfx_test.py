@@ -299,7 +299,7 @@ class idfxTest:
 
   def nonRegressionTest(self, filename,tolerance=0):
 
-    fileref=os.path.join(self.referenceDirectory, self.thisDir, self._getReferenceFilename())
+    fileref=os.path.join(self.referenceDirectory, self.testDir, self._getReferenceFilename())
     if not(os.path.exists(fileref)):
       raise Exception("Reference file "+fileref+ " doesn't exist")
 

@@ -100,7 +100,9 @@ class idfxTest:
 
     # transform all arguments from args into attributes of this instance
     self.__dict__.update(vars(args))
-    self.referenceDirectory = "reference"
+    self.referenceDirectory = os.path.join(idefix_dir_env,"reference")
+    # current directory relative to $IDEFIX_DIR/test (used to retrieve the path ot reference files)
+    self.thisDir=os.path.relpath(os.curdir,os.path.join(idefix_dir_env,"test"))
 
   def configure(self,definitionFile=""):
     comm=["cmake"]
@@ -296,7 +298,8 @@ class idfxTest:
     sys.stdout.flush()
 
   def nonRegressionTest(self, filename,tolerance=0):
-    fileref=os.path.join(self.referenceDirectory, self._getReferenceFilename())
+    
+    fileref=os.path.join(self.referenceDirectory, self.thisDir, self._getReferenceFilename())
     if not(os.path.exists(fileref)):
       raise Exception("Reference file "+fileref+ " doesn't exist")
 
@@ -333,10 +336,11 @@ class idfxTest:
 
   def makeReference(self,filename):
     self._readLog()
-    if not os.path.exists(self.referenceDirectory):
+    targetDir = os.path.join(self.referenceDirectory,self.thisDir)
+    if not os.path.exists(targetDir):
       print("Creating reference directory")
-      os.mkdir(self.referenceDirectory)
-    fileout = os.path.join(self.referenceDirectory, self._getReferenceFilename())
+      os.makedirs(targetDir, exist_ok=True)
+    fileout = os.path.join(targetDir, self._getReferenceFilename())
     if(os.path.exists(fileout)):
       ans=input(bcolors.WARNING+"This will overwrite already existing reference file:\n"+fileout+"\nDo you confirm? (type yes to continue): "+bcolors.ENDC)
       if(ans != "yes"):

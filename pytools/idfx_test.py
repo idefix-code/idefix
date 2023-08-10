@@ -336,7 +336,7 @@ class idfxTest:
 
   def makeReference(self,filename):
     self._readLog()
-    targetDir = os.path.join(self.referenceDirectory,self.thisDir)
+    targetDir = os.path.join(self.referenceDirectory,self.testDir)
     if not os.path.exists(targetDir):
       print("Creating reference directory")
       os.makedirs(targetDir, exist_ok=True)

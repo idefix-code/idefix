@@ -12,6 +12,8 @@ repos:
       - id: check-yaml
       - id: check-executables-have-shebangs
       - id: check-shebang-scripts-are-executable
+      - id: check-added-large-files
+        args: ['--maxkb=100'] ## prevent files larger than 100kB from being commited (exclude git lfs files)
 
   - repo: https://github.com/Lucas-C/pre-commit-hooks-nodejs
     rev: v1.1.2

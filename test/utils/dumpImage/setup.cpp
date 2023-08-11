@@ -26,7 +26,7 @@ void Analysis(DataBlock& data) {
   // Create a dumpImage from the created dump
   char filename[20];
   std::snprintf(filename, 20, "dump.%04d.dmp", outnum);
-  DumpImage image(filename,*myOutput);
+  DumpImage image(filename,&data);
 
   // Check that whetever is in the image matches the current state
   DataBlockHost d(data);
@@ -40,23 +40,31 @@ void Analysis(DataBlock& data) {
   idfx::cout << "Analysis: checking dumpImage consistency with current state..." << std::flush;
   // Check that the save/load routines have left everything unchanged.
   char fieldName[20];
-  for(int n = 0; n < NVAR ; n++) {
-    std::snprintf(fieldName,20,"Vc-%s",data.hydro.VcName[n].c_str());
-    for(int k = d.beg[KDIR]; k < d.end[KDIR] ; k++) {
-      for(int j = d.beg[JDIR]; j < d.end[JDIR] ; j++) {
-        for(int i = d.beg[IDIR]; i < d.end[IDIR] ; i++) {
-          if(image.arrays[fieldName](k-d.beg[KDIR], j-d.beg[JDIR], i-d.beg[IDIR]) != d.Vc(n,k,j,i)) {
-            errornum++;
-            idfx::cout << "-----------------------------------------" << std::endl
-                       << " Error in Vc at (i,j,k,n) = ( " << i << ", " << j << ", " << k << ", " << n << ")" << std::endl
-                       << " Coordinates (x1,x2,x3)   = ( " << d.x[IDIR](i) << ", " << d.x[JDIR](j) << ", " << d.x[KDIR](k) << ")" << std::endl;
-          }
+  for(auto const& [name, arr] : image.arrays) {
+    idfx::cout << "Array: " << name;
+    idfx::cout << " ; size: " << arr.extent(0) << " " << arr.extent(1) << " " << arr.extent(2) << std::endl;
 
+  }
+  for(int n = 0; n < NVAR ; n++) {
+    std::snprintf(fieldName,20,"Vc-%s",data.hydro->VcName[n].c_str());
+    if(auto it = image.arrays.find(std::string(fieldName)) ; it !=  image.arrays.end()) {
+      idfx::cout << "doing " << std::string(fieldName) << std::endl;
+      IdefixHostArray3D<real> arr = it->second;
+        for(int k = d.beg[KDIR]; k < d.end[KDIR] ; k++) {
+          for(int j = d.beg[JDIR]; j < d.end[JDIR] ; j++) {
+            for(int i = d.beg[IDIR]; i < d.end[IDIR] ; i++) {
+            if(arr(k-d.beg[KDIR], j-d.beg[JDIR], i-d.beg[IDIR]) != d.Vc(n,k,j,i)) {
+              errornum++;
+              idfx::cout << "-----------------------------------------" << std::endl
+                        << " Error in Vc at (i,j,k,n) = ( " << i << ", " << j << ", " << k << ", " << n << ")" << std::endl
+                        << " Coordinates (x1,x2,x3)   = ( " << d.x[IDIR](i) << ", " << d.x[JDIR](j) << ", " << d.x[KDIR](k) << ")" << std::endl;
+            }
+          }
         }
       }
     }
   }
-  std::snprintf(fieldName,20,"Vs-%s",data.hydro.VsName[0].c_str());
+  std::snprintf(fieldName,20,"Vs-%s",data.hydro->VsName[0].c_str());
   for(int k = d.beg[KDIR]; k < d.end[KDIR] ; k++) {
     for(int j = d.beg[JDIR]; j < d.end[JDIR] ; j++) {
       for(int i = d.beg[IDIR]; i < d.end[IDIR]+IOFFSET ; i++) {
@@ -70,7 +78,7 @@ void Analysis(DataBlock& data) {
       }
     }
   }
-  std::snprintf(fieldName,20,"Vs-%s",data.hydro.VsName[1].c_str());
+  std::snprintf(fieldName,20,"Vs-%s",data.hydro->VsName[1].c_str());
   for(int k = d.beg[KDIR]; k < d.end[KDIR] ; k++) {
     for(int j = d.beg[JDIR]; j < d.end[JDIR]+JOFFSET ; j++) {
       for(int i = d.beg[IDIR]; i < d.end[IDIR] ; i++) {
@@ -84,7 +92,7 @@ void Analysis(DataBlock& data) {
       }
     }
   }
-  std::snprintf(fieldName,20,"Vs-%s",data.hydro.VsName[2].c_str());
+  std::snprintf(fieldName,20,"Vs-%s",data.hydro->VsName[2].c_str());
   for(int k = d.beg[KDIR]; k < d.end[KDIR]+KOFFSET ; k++) {
     for(int j = d.beg[JDIR]; j < d.end[JDIR] ; j++) {
       for(int i = d.beg[IDIR]; i < d.end[IDIR] ; i++) {

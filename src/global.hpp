@@ -14,6 +14,7 @@
 namespace idfx {
 int initialize();   // Initialisation routine for idefix
 real randm();      // Custom random number generator
+void safeExit(int );       // Exit the code
 class IdefixOutStream;
 class IdefixErrStream;
 class Profiler;

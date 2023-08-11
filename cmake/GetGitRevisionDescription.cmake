@@ -201,7 +201,8 @@ function(git_describe _var)
     #message(STATUS "Arguments to execute_process: ${ARGN}")
 
     execute_process(
-        COMMAND "${GIT_EXECUTABLE}" describe --tags --always ${hash} ${ARGN}
+        #COMMAND "${GIT_EXECUTABLE}" describe --tags --always ${hash} ${ARGN}
+        COMMAND "${GIT_EXECUTABLE}" rev-parse --short HEAD
         WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         RESULT_VARIABLE res
         OUTPUT_VARIABLE out
@@ -209,6 +210,8 @@ function(git_describe _var)
     if(NOT res EQUAL 0)
         set(out "${out}-${res}-NOTFOUND")
     endif()
+
+    #set(out "${hash}")
 
     set(${_var}
         "${out}"

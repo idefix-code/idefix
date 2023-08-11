@@ -5,11 +5,17 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#include "../idefix.hpp"
+#include <algorithm>
+#include "idefix.hpp"
 #include "dataBlock.hpp"
+#include "fluid.hpp"
+#include "gravity.hpp"
+#include "planetarySystem.hpp"
+#include "vtk.hpp"
+#include "dump.hpp"
 
-void DataBlock::InitFromGrid(Grid &grid, Input &input) {
-  idfx::pushRegion("DataBlock::InitFromGrid");
+DataBlock::DataBlock(Grid &grid, Input &input) {
+  idfx::pushRegion("DataBlock::DataBlock");
 
   this->mygrid=&grid;
 
@@ -100,58 +106,6 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
   dmu = IdefixArray1D<real>("DataBlock_dmu",np_tot[JDIR]);
 #endif
 
-
-
-  // Copy the relevant part of the coordinate system to the datablock
-  for(int dir = 0 ; dir < 3 ; dir++) {
-    int offset=gbeg[dir]-beg[dir];
-
-    IdefixArray1D<real> x_input = grid.x[dir];
-    IdefixArray1D<real> x_output= x[dir];
-    IdefixArray1D<real> xr_input = grid.xr[dir];
-    IdefixArray1D<real> xr_output= xr[dir];
-    IdefixArray1D<real> xl_input = grid.xl[dir];
-    IdefixArray1D<real> xl_output= xl[dir];
-    IdefixArray1D<real> dx_input = grid.dx[dir];
-    IdefixArray1D<real> dx_output= dx[dir];
-
-    idefix_for("coordinates",0,np_tot[dir],
-      KOKKOS_LAMBDA (int i) {
-        x_output(i)  = x_input(i+offset);
-        xr_output(i) = xr_input(i+offset);
-        xl_output(i) = xl_input(i+offset);
-        dx_output(i) = dx_input(i+offset);
-      }
-    );
-  }
-
-  // Initialize grid coarsening if needed
-  if(grid.haveGridCoarsening != GridCoarsening::disabled) {
-    this->haveGridCoarsening = grid.haveGridCoarsening;
-    this->coarseningDirection = grid.coarseningDirection;
-    this->coarseningLevel = std::vector<IdefixArray2D<int>>(3);
-
-    for(int dir = 0 ; dir < 3 ; dir++) {
-      if(coarseningDirection[dir]) {
-        const int Xt = (dir == IDIR ? JDIR : IDIR);
-        const int Xb = (dir == KDIR ? JDIR : KDIR);
-
-        // Allocate coarsening level arrays
-        coarseningLevel[dir] = IdefixArray2D<int>(
-                                  "DataBlock_corseLevel",
-                                  np_tot[Xb],
-                                  np_tot[Xt]);
-        // Make a local reference
-        IdefixArray2D<int> coarseInit = coarseningLevel[dir];
-        // Init coarsening level array to one everywhere
-        idefix_for("init_coarsening", 0, np_tot[Xb], 0, np_tot[Xt],
-                KOKKOS_LAMBDA(int j, int i) {
-                  coarseInit(j,i) = 1;
-                });
-      }
-    }
-  }
-
   // Iniaitlize the geometry
   this->MakeGeometry();
 
@@ -161,38 +115,95 @@ void DataBlock::InitFromGrid(Grid &grid, Input &input) {
 
   this->states["current"] = StateContainer();
 
+  // Initialize the Dump object
+  this->dump = std::make_unique<Dump>(input, this);
+
+  // Initialize the VTK object
+  this->vtk = std::make_unique<Vtk>(input, this);
+
   // Initialize the hydro object attached to this datablock
-  this->hydro.Init(input, grid, this);
+  this->hydro = std::make_unique<Fluid<DefaultPhysics>>(grid, input, this);
 
   // Initialise Fargo if needed
   if(input.CheckBlock("Fargo")) {
-    fargo.Init(input, this);
+    this->fargo = std::make_unique<Fargo>(input, DefaultPhysics::nvar, this);
     this->haveFargo = true;
   }
 
-  // Initialise gravity if needed
-  if(input.CheckBlock("Gravity")) {
-    gravity.Init(input, this);
+  // initialise planets if needed
+  if(input.CheckBlock("Planet")) {
+    this->planetarySystem = std::make_unique<PlanetarySystem>(input, this);
+    this->haveplanetarySystem = true;
+  }
+
+  // Initialise gravity if needed (automatically if planets are present)
+  if(input.CheckBlock("Gravity") || haveplanetarySystem) {
+    this->gravity = std::make_unique<Gravity>(input, this);
     this->haveGravity = true;
   }
+
+  // Initialise dust grains if needed
+  if(input.CheckBlock("Dust")) {
+    haveDust = true;
+    int nSpecies = input.Get<int>("Dust","nSpecies",0);
+    for(int i = 0 ; i < nSpecies ; i++) {
+      dust.emplace_back(std::make_unique<Fluid<DustPhysics>>(grid, input, this, i));
+    }
+  }
+  // Register variables that need to be saved in case of restart dump
+  dump->RegisterVariable(&t, "time");
+  dump->RegisterVariable(&dt, "dt");
 
   idfx::popRegion();
 }
 
 void DataBlock::ResetStage() {
-  this->hydro.ResetStage();
+  this->hydro->ResetStage();
+  if(haveDust) {
+    for(int i = 0 ; i < dust.size() ; i++) {
+      dust[i]->ResetStage();
+    }
+  }
+}
+
+void DataBlock::ConsToPrim() {
+  this->hydro->ConvertConsToPrim();
+  if(haveDust) {
+    for(int i = 0 ; i < dust.size() ; i++) {
+      dust[i]->ConvertConsToPrim();
+    }
+  }
+}
+
+void DataBlock::PrimToCons() {
+  this->hydro->ConvertPrimToCons();
+  if(haveDust) {
+    for(int i = 0 ; i < dust.size() ; i++) {
+      dust[i]->ConvertPrimToCons();
+    }
+  }
 }
 
 // Set the boundaries of the data structures in this datablock
 void DataBlock::SetBoundaries() {
   if(haveGridCoarsening) {
     ComputeGridCoarseningLevels();
-    hydro.CoarsenFlow(hydro.Vc);
+    hydro->CoarsenFlow(hydro->Vc);
     #if MHD==YES
-      hydro.CoarsenMagField(hydro.Vs);
+      hydro->CoarsenMagField(hydro->Vs);
     #endif
+    if(haveDust) {
+      for(int i = 0 ; i < dust.size() ; i++) {
+        dust[i]->CoarsenFlow(dust[i]->Vc);
+      }
+    }
   }
-  hydro.boundary.SetBoundaries(t);
+  if(haveDust) {
+    for(int i = 0 ; i < dust.size() ; i++) {
+      dust[i]->boundary->SetBoundaries(t);
+    }
+  }
+  hydro->boundary->SetBoundaries(t);
 }
 
 
@@ -206,9 +217,23 @@ void DataBlock::ShowConfig() {
         << "...." << xend[dir] << std::endl;
     }
   }
-  hydro.ShowConfig();
-  if(haveFargo) fargo.ShowConfig();
-  if(haveGravity) gravity.ShowConfig();
+  hydro->ShowConfig();
+  if(haveFargo) fargo->ShowConfig();
+  if(haveplanetarySystem) planetarySystem->ShowConfig();
+  if(haveGravity) gravity->ShowConfig();
+  if(haveUserStepFirst) idfx::cout << "DataBlock: User's first step has been enrolled."
+                                   << std::endl;
+  if(haveUserStepLast) idfx::cout << "DataBlock: User's last step has been enrolled."
+                                  << std::endl;
+  if(haveDust) {
+    idfx::cout << "DataBlock: evolving " << dust.size() << " dust species." << std::endl;
+    // Only show the config the first dust specie
+    dust[0]->ShowConfig();
+    /*
+    for(int i = 0 ; i < dust.size() ; i++) {
+      dust[i]->ShowConfig();
+    }*/
+  }
 }
 
 
@@ -216,7 +241,7 @@ real DataBlock::ComputeTimestep() {
   // Compute the timestep using all of the enabled modules in the current dataBlock
 
   // First with the hydro block
-  auto InvDt = hydro.InvDt;
+  auto InvDt = hydro->InvDt;
   real dt;
   idefix_reduce("Timestep_reduction",
           beg[KDIR], end[KDIR],
@@ -226,6 +251,62 @@ real DataBlock::ComputeTimestep() {
                   dtmin=FMIN(ONE_F/InvDt(k,j,i),dtmin);
               },
           Kokkos::Min<real>(dt));
+  if(haveDust) {
+    for(int n = 0 ; n < dust.size() ; n++) {
+      real dtDust;
+      auto InvDt = dust[n]->InvDt;
+      idefix_reduce("Timestep_reduction_dust",
+          beg[KDIR], end[KDIR],
+          beg[JDIR], end[JDIR],
+          beg[IDIR], end[IDIR],
+          KOKKOS_LAMBDA (int k, int j, int i, real &dtmin) {
+                  dtmin=FMIN(ONE_F/InvDt(k,j,i),dtmin);
+              },
+          Kokkos::Min<real>(dtDust));
+      dt = std::min(dt,dtDust);
+    }
+  }
   Kokkos::fence();
   return(dt);
+}
+
+// Recompute magnetic fields from vector potential in dedicated fluids
+void DataBlock::DeriveVectorPotential() {
+  if constexpr(DefaultPhysics::mhd) {
+    #ifdef EVOLVE_VECTOR_POTENTIAL
+      hydro->emf->ComputeMagFieldFromA(hydro->Ve, hydro->Vs);
+    #endif
+  }
+}
+
+void DataBlock::LaunchUserStepLast() {
+  if(haveUserStepLast) {
+    idfx::pushRegion("User::UserStepLast");
+    if(userStepLast != nullptr)
+      userStepLast(*this, this->t, this->dt);
+    else
+      IDEFIX_ERROR("UserStepLast not properly initialized");
+    idfx::popRegion();
+  }
+}
+
+void DataBlock::LaunchUserStepFirst() {
+  if(haveUserStepFirst) {
+    idfx::pushRegion("User::UserStepFirst");
+    if(userStepFirst != nullptr)
+      userStepFirst(*this, this->t, this->dt);
+    else
+      IDEFIX_ERROR("UserStepLast not properly initialized");
+    idfx::popRegion();
+  }
+}
+
+void DataBlock::EnrollUserStepLast(StepFunc func) {
+  haveUserStepLast = true;
+  userStepLast = func;
+}
+
+void DataBlock::EnrollUserStepFirst(StepFunc func) {
+  haveUserStepFirst = true;
+  userStepFirst = func;
 }

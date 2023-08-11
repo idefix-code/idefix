@@ -5,6 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include <filesystem>
 #include "output.hpp"
 
 
@@ -23,7 +24,6 @@ Output::Output(Input &input, DataBlock &data) {
       vtkEnabled = true;
     }
   }
-  vtk.Init(input,data); // Always initialised in case of emergency vtk output
 
   // intialise dump outputs
   if(input.CheckEntry("Output","dmp")>0) {
@@ -33,7 +33,6 @@ Output::Output(Input &input, DataBlock &data) {
     // Backwards compatibility: negative period means no dump
     if(dumpPeriod<0.0) dumpEnabled = false;
   }
-  dump.Init(input,data);  // Always initialised since it is required on restarts
 
   // initialise analysis outputs
   if(input.CheckEntry("Output","analysis")>0) {
@@ -53,9 +52,16 @@ Output::Output(Input &input, DataBlock &data) {
                                                                   data.np_tot[KDIR],
                                                                   data.np_tot[JDIR],
                                                                   data.np_tot[IDIR]);
+      data.vtk->RegisterVariable(userDefVariables[arrayName],arrayName);
     }
     userDefVariablesEnabled = true;
   }
+
+  // Register variables that are needed in restart dumps
+  data.dump->RegisterVariable(&dumpLast, "dumpLast");
+  data.dump->RegisterVariable(&analysisLast, "analysisLast");
+  data.dump->RegisterVariable(&vtkLast, "vtkLast");
+
   idfx::popRegion();
 }
 
@@ -67,24 +73,6 @@ int Output::CheckForWrites(DataBlock &data) {
   if(forceNoWrite) {
     idfx::popRegion();
     return(0);
-  }
-  // Do we need a restart dump?
-  if(dumpEnabled) {
-    if(data.t >= dumpLast + dumpPeriod) {
-      elapsedTime -= timer.seconds();
-      dumpLast += dumpPeriod;
-      dump.Write(data,*this);
-      nfiles++;
-      elapsedTime += timer.seconds();
-
-      // Check if our next predicted output should already have happened
-      if((dumpLast+dumpPeriod <= data.t) && dumpPeriod>0.0) {
-        // Move forward dumpLast
-        while(dumpLast <= data.t - dumpPeriod) {
-          dumpLast += dumpPeriod;
-        }
-      }
-    }
   }
 
   // Do we need a VTK output?
@@ -103,7 +91,7 @@ int Output::CheckForWrites(DataBlock &data) {
         }
       }
       vtkLast += vtkPeriod;
-      vtk.Write(data, *this);
+      data.vtk->Write();
       nfiles++;
       elapsedTime += timer.seconds();
 
@@ -142,23 +130,45 @@ int Output::CheckForWrites(DataBlock &data) {
     }
   }
 
+  // Do we need a restart dump?
+  if(dumpEnabled) {
+    // Dumps contain metadata about the most recent outputs of other types,
+    // so it's important that this part happens last.
+    if(data.t >= dumpLast + dumpPeriod) {
+      elapsedTime -= timer.seconds();
+      dumpLast += dumpPeriod;
+      data.dump->Write(*this);
+      nfiles++;
+      elapsedTime += timer.seconds();
+
+      // Check if our next predicted output should already have happened
+      if((dumpLast+dumpPeriod <= data.t) && dumpPeriod>0.0) {
+        // Move forward dumpLast
+        while(dumpLast <= data.t - dumpPeriod) {
+          dumpLast += dumpPeriod;
+        }
+      }
+    }
+  }
   idfx::popRegion();
 
   return(nfiles);
 }
 
-void Output::RestartFromDump(DataBlock &data, int readNumber) {
+bool Output::RestartFromDump(DataBlock &data, int readNumber) {
   idfx::pushRegion("Output::RestartFromDump");
 
-  dump.Read(data, *this, readNumber);
+  bool result = data.dump->Read(*this, readNumber);
+  if(result) data.DeriveVectorPotential();
 
   idfx::popRegion();
+  return(result);
 }
 
 void Output::ForceWriteDump(DataBlock &data) {
   idfx::pushRegion("Output::ForceWriteDump");
 
-  if(!forceNoWrite) dump.Write(data,*this);
+  if(!forceNoWrite) data.dump->Write(*this);
 
   idfx::popRegion();
 }
@@ -179,7 +189,7 @@ void Output::ForceWriteVtk(DataBlock &data) {
         }
       }
       vtkLast += vtkPeriod;
-      vtk.Write(data, *this);
+      data.vtk->Write();
   }
   idfx::popRegion();
 }

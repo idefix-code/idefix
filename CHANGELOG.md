@@ -4,31 +4,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Upcoming
+## Upcoming in v2.0
 ### Changed
+- Reorganisation of class instances embedded in datablocks to allow for multi-fluid problems using a generalised template class "Fluid" that replaces "Hydro". Most instances (like data.hydro.Vc) have been replaced by pointers (e.g data.hydro->Vc) (!307).
 - RKL scheme now correctly takes into account grid coarsening when estimating the timestep of parabolic terms (!254)
 - fixed a bug in the evaluation of gravitational forces from the gradient of the potential in regions where grid coarsening is enabled (!267)
+- The CI tests now include a "non-regression" test that validate the code outputs *at machine precision*. This comes in addition to the "standard" test that validate the code against known analytical solution (at truncation precision). Each test now contains a testme.py script that does the full validation (documentation will come, for now use testme -help). (!311)
+- use PPM reconstruction for 2D Riemann solvers in Emf Computation when PPM is required.
+- the MPI routines have been refactored to guarantee reproductibility at machine precision independently of the domain decomposition. This implies that normal B field component are now exchanged between neighbouring processes. (!308)
+- allow the user to specify a particular output directory for vtk and dmp files (!339)
+- the -restart option without any number now loads the latest generated dump file, and not the last dump in the directory (!353)
 - fixed a bug that resulted in erroneous momentum and energy fluxes when using the combination of Fargo and Viscosity in non-cartesian geometries. (!267)
 - fixed a bug in shock flattening that resulted in loss of conservative properties when using periodic boundaries and/or MPI domain decomposition (!275)
+- fixed a bug due to a missing curvature term in the viscosity stress tensor in spherical geometry (!343)
+- fixed a bug that led to an incorrect heating rate when both fargo and viscosity were enabled (!333)
 - fixed a bug in emergency vtk outputs that could lead to an MPI deadlock when the user did not enable VTK outputs (!274)
 - fixed a bug that could result in MPI deadlocks when an exception is thrown by a single MPI process in the integration loop (!266)
 - fixed a bug in shock flattening that could lead to the breakup of conservation properties (!275)
 - fixed a bug in LookupTable that could lead to incorrect interpolation (!286)
 - fixed a bug that prevented to compile on HIP backend (!291)
-
-
+- fixed a bug that prevented idefix with vector potential to restart from dumps created with vector potential (!306)
+- fixed a bug that led to race condition when using GPU offloading, axis boundary condition and domain decomposition along X3 (!309)
+- fixed a bug that led to inconsistent results with MPI and UCT_HLLx EMF reconstruction schemes (!310)
+- fixed a bug that could result in .dmp file duplication on restart (!354)
 
 ### Added
 - Self-gravity (!186)
+- Multi-dust species as pressureless fluids (!336)
+- Passive tracers (!341)
+- Planet module (planet migration, planet-planet integration) (!278)
 - Check that the MPI library is GPU-aware when using a GPU backend (!262)
 - An optional user-defined Setup destructor can now be defined (!260)
 - performance improvement on CPUs by cleaning loops and rewriting EMF reconstruction (!281)
 - The tolerance on div(B) allowed by the code can now be set at runtime (!292)
 - Nan detection is now performed every 100 integration loops by default so as mitigate performance impact on CPUs (!292)
+- It is now possible to build a stretch grid from a logarithmic grid section, and not only a uniform grid section (!304)
+- We now use git lfs to store reference file to validate the code (!301). Note that git lfs is not required to use the code.
+- Shock flattening can now be used in combination with LimO3 slope limiter (!312)
+- -v and -h options to show version and list of accepted arguments
 
 
 ### Removed
 - auto-tuning was removed as it was preventing auto-vectorisation on Intel compilers. Loop tuning are now set at compile time (!281)
+
 
 ## [1.1.0] 2022-09-07
 ### Changed

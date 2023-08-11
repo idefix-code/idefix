@@ -1,3 +1,6 @@
 [submodule "src/kokkos"]
     path = src/kokkos
     url = https://github.com/kokkos/kokkos.git
+[submodule "reference"]
+	path = reference
+	url = https://github.com/idefix-code/reference

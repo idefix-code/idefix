@@ -34,6 +34,10 @@ class DataBlockHost {
   std::vector<IdefixArray3D<real>::HostMirror> A;   ///< cell right interface area
 
   IdefixArray4D<real>::HostMirror Vc;     ///< Main cell-centered primitive variables index
+
+  bool haveDust{false};
+  std::vector<IdefixHostArray4D<real>> dustVc; ///< Cell-centered primitive variables index for dust
+
   #if MHD == YES
   IdefixArray4D<real>::HostMirror Vs;     ///< Main face-centered primitive variables index
   IdefixArray4D<real>::HostMirror Ve;     ///< Main edge-centered primitive variables index
@@ -75,6 +79,11 @@ class DataBlockHost {
                                               ///< (NB: does not sync any data)
 
   DataBlockHost() = default;                  ///< Default constructor
+
+  // The Planetary system (actually a copy from the dataBlock)
+  bool haveplanetarySystem{false};
+  PlanetarySystem* planetarySystem;
+
 
   void MakeVsFromAmag(IdefixHostArray4D<real> &); ///< Compute a face-centered mag. field in Vs from
                                                   ///< potential vector in argument

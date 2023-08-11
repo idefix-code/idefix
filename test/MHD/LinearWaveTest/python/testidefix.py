@@ -28,7 +28,7 @@ def getError(rep):
         return math.nan
 
     keylist=[]
-    keylist=['Vc-RHO','Vc-VX1','Vc-VX2','Vc-VX3','Vc-BX1','Vc-BX2','Vc-BX3','Vc-PRS']
+    keylist=['Vc-RHO','Vc-VX1','Vc-VX2','Vc-VX3','Vs-BX1s','Vs-BX2s','Vs-BX3s','Vc-PRS']
 
     err = 0.0
     for key in keylist:

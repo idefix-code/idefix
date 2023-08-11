@@ -11,11 +11,12 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <memory>
+
 #include "idefix.hpp"
 #include "grid.hpp"
 #include "gridHost.hpp"
-#include "hydro.hpp"
-#include "fargo.hpp"
+#include "output.hpp"
 #include "gravity.hpp"
 #include "stateContainer.hpp"
 
@@ -30,8 +31,20 @@
 
 // forward class declaration (used by enrollment functions)
 class DataBlock;
+class Vtk;
+class Dump;
+class Fargo;
+class Gravity;
+class PlanetarySystem;
+template<typename Phys>
+class Fluid;
+
+// Forward class hydro declaration
+#include "physics.hpp"
 
 using GridCoarseningFunc = void(*) (DataBlock &);
+
+using StepFunc = void (*) (DataBlock &, const real t, const real dt);
 
 class DataBlock {
  public:
@@ -60,7 +73,7 @@ class DataBlock {
   std::vector<real> xend;             ///< End of active domain in datablock
 
   IdefixArray3D<real> dV;                ///< cell volume
-  std::vector<IdefixArray3D<real>> A;    ///< cell right interface area
+  std::vector<IdefixArray3D<real>> A;    ///< cell left interface area
 
   std::vector<int> np_tot;        ///< total number of grid points in datablock
   std::vector<int> np_int;        ///< active number of grid points in datablock (excl. ghost cells)
@@ -94,18 +107,33 @@ class DataBlock {
                                 ///< conservative state of the datablock
                                 ///< (contains references to dedicated objects)
 
-  Hydro hydro;                  ///< The Hydro object attached to this datablock
+  std::unique_ptr<Fluid<DefaultPhysics>> hydro;   ///< The Hydro object attached to this datablock
+  bool haveDust{false};
+  std::vector<std::unique_ptr<Fluid<DustPhysics>>> dust; ///< Holder for zero pressure dust fluid
 
-  void InitFromGrid(Grid &, Input &); ///< init from a Grid object
+  std::unique_ptr<Vtk> vtk;
+  std::unique_ptr<Dump> dump;
+
+  DataBlock(Grid &, Input &);     ///< init from a Grid object
+
   void MakeGeometry();                ///< Compute geometrical terms
   void DumpToFile(std::string);   ///< Dump current datablock to a file for inspection
   void Validate();                ///< error out early in case problems are found in IC
   int CheckNan();                 ///< Return the number of cells which have Nans
 
+  // The Planetary system
+  bool haveplanetarySystem{false};
+  std::unique_ptr<PlanetarySystem> planetarySystem;
+
+
   bool rklCycle{false};           ///<  // Set to true when we're inside a RKL call
 
   void EvolveStage();             ///< Evolve this DataBlock by dt
+  void EvolveRKLStage();          ///< Evolve this DataBlock by dt for terms impacted by RKL
   void SetBoundaries();       ///< Enforce boundary conditions to this datablock
+  void ConsToPrim();       ///< Convert conservative to primitive variables
+  void PrimToCons();       ///< Convert primitive to conservative variables
+  void DeriveVectorPotential(); ///< Compute magnetic fields from vector potential where applicable
   void Coarsen();             ///< Coarsen this datablock and its objects
   void ShowConfig();              ///< Show the datablock's configuration
   real ComputeTimestep();         ///< compute maximum timestep from current state of affairs
@@ -115,21 +143,32 @@ class DataBlock {
   void EnrollGridCoarseningLevels(GridCoarseningFunc);
                                   ///< Enroll a user function to compute coarsening levels
   void CheckCoarseningLevels();   ///< Check that coarsening levels satisfy requirements
-  DataBlock() = default;
 
   // Do we use fargo-like scheme ? (orbital advection)
   bool haveFargo{false};
-  Fargo fargo;
+  std::unique_ptr<Fargo> fargo;
 
   // Do we have Gravity ?
   bool haveGravity{false};
-  Gravity gravity;
+  std::unique_ptr<Gravity> gravity;
+
+  // User step functions (before or after the main integrator step)
+  void LaunchUserStepFirst();     ///< perform user-defined step before main integration step
+  void LaunchUserStepLast();      ///< Perform user-defined step after main integration step
+
+  void EnrollUserStepFirst(StepFunc);
+  void EnrollUserStepLast(StepFunc);
 
  private:
   void WriteVariable(FILE* , int , int *, char *, void*);
-
-  template<int dir> void LoopDir();     ///< // recursive loop on dimensions
   void ComputeGridCoarseningLevels();   ///< Call user defined function to define Coarsening levels
+
+  // User Steps (either before or after the main integration loop)
+  bool haveUserStepFirst{false};
+  bool haveUserStepLast{false};
+
+  StepFunc userStepFirst{nullptr};
+  StepFunc userStepLast{nullptr};
 };
 
 #endif // DATABLOCK_DATABLOCK_HPP_

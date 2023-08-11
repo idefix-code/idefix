@@ -29,7 +29,7 @@ class Output {
  public:
   Output(Input &, DataBlock &);           // Create Output Object
   int CheckForWrites(DataBlock &);        // Check if outputs are needed at this stage
-  void RestartFromDump(DataBlock &, int);  // Restart from a dump file.
+  bool RestartFromDump(DataBlock &, int);  // Restart from a dump file.
   void ForceWriteDump(DataBlock &);            // Force write dumps (needed during an abort)
   void ForceWriteVtk(DataBlock &);            // Force write vtks
   void ResetTimer();                      // Reset internal timer
@@ -38,9 +38,6 @@ class Output {
   void EnrollUserDefVariables(UserDefVariablesFunc);
 
  private:
-  Vtk vtk;          // local instance of Vtk class
-  Dump dump;        // local instance of Dump class
-
   bool forceNoWrite = false;    //< explicitely disable all writes
   bool vtkEnabled = false;
   real vtkPeriod = 0.0;   // periodicity of vtk outputs

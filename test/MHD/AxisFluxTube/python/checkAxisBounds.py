@@ -8,13 +8,13 @@ Created on Tue Jan 26 15:52:44 2021
 import os
 import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
-from pytools.idfx_io import read_idfx
+from pytools.idfx_io import readIdfxFile
 import matplotlib.pyplot as plt
 
 rep="../"
 
-d=read_idfx(rep+"analysis.16.0.idfx")
-
+idfx=readIdfxFile(rep+"analysis.99.0.idfx")
+d=idfx.data
 Bx1s=d['Vs'][0,:-1,:-1,:]
 Bx2s=d['Vs'][1,:-1,:,:-1]
 Bx3s=d['Vs'][2,:,:-1,:-1]
@@ -25,10 +25,10 @@ Bx2slice=Bx2s[:,:,nxhalf]
 Bx3slice=Bx3s[:,:,nxhalf]
 
 
-plt.figure()
 plt.matshow(Bx1slice,cmap='RdBu_r')
 plt.colorbar()
 plt.title("Bx1")
+
 plt.matshow(Bx2slice,cmap='RdBu_r')
 plt.colorbar()
 plt.title("Bx2")
@@ -46,7 +46,7 @@ Vx1slice=d['Vc'][1,:,:5,nxhalf]
 Vx2slice=d['Vc'][2,:,:5,nxhalf]
 Vx3slice=d['Vc'][3,:,:5,nxhalf]
 
-plt.figure()
+
 plt.matshow(Bx1slice,cmap='RdBu_r')
 plt.colorbar()
 plt.title("Bx1")
@@ -57,7 +57,6 @@ plt.matshow(Bx3slice,cmap='RdBu_r')
 plt.colorbar()
 plt.title("Bx3")
 
-plt.figure()
 plt.matshow(Vx1slice,cmap='RdBu_r')
 plt.colorbar()
 plt.title("Vx1")
@@ -67,3 +66,5 @@ plt.title("Vx2")
 plt.matshow(Vx3slice,cmap='RdBu_r')
 plt.colorbar()
 plt.title("Vx3")
+
+plt.show()

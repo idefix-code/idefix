@@ -18,7 +18,7 @@
 
 #include "idefix.hpp"
 #include "input.hpp"
-#include "gitversion.hpp"
+#include "version.hpp"
 
 // Flag will be set if a signal has been received
 bool Input::abortRequested = false;
@@ -147,37 +147,11 @@ void Input::ParseCommandLine(int argc, char **argv) {
         sirestart = std::string(argv[++i]);
       } else {
         // implicitly restart from the latest existing dumpfile
-        // implementation detail: we look for the existing dumpfile with the highest
-        // number, not necessarilly the latest timestamp !
-        const std::vector<std::string> files = Input::getDirectoryFiles();
-        int ifile{-1};
-        int irestart{-1};
-
-        for (const auto& file : files) {
-          if (Input::getFileExtension(file).compare("dmp") != 0) continue;
-          // parse the dumpfile number from filename "dump.????.dmp"
-          if(file.substr(0,5) != "dump.") continue;
-          try {
-            ifile = std::stoi(file.substr(5, 4));
-          } catch (...) {
-            // woops, pattern doesn't match!
-            ifile = -1;
-          }
-          irestart = std::max(irestart, ifile);
-        }
-        sirestart = std::to_string(irestart);
-        if(irestart==-1) {
-          IDEFIX_WARNING("cannot find a valid restart dump file in current directory");
-        }
+        sirestart = "-1";
       }
-      int restartn = std::stoi(sirestart);
-      if(restartn>=0) {
-        inputParameters["CommandLine"]["restart"].push_back(sirestart);
-        this->restartRequested = true;
-        this->restartFileNumber = restartn;
-      } else {
-        IDEFIX_WARNING("Invalid -restart option, I will ignore it.");
-      }
+      inputParameters["CommandLine"]["restart"].push_back(sirestart);
+      this->restartRequested = true;
+      this->restartFileNumber = std::stoi(sirestart);
     } else if(std::string(argv[i]) == "-i") {
       // Loop on dimensions
       if((++i) >= argc) IDEFIX_ERROR(
@@ -199,7 +173,14 @@ void Input::ParseCommandLine(int argc, char **argv) {
       enableLogs = false;
     } else if(std::string(argv[i]) == "-Werror") {
       idfx::warningsAreErrors = true;
+    } else if(std::string(argv[i]) == "-version" || std::string(argv[i]) == "-v") {
+      PrintVersion();
+      idfx::safeExit(0);
+    } else if(std::string(argv[i]) == "-help" || std::string(argv[i]) == "-h") {
+      PrintOptions();
+      idfx::safeExit(0);
     } else {
+      PrintOptions();
       msg << "Unknown option " << argv[i];
       IDEFIX_ERROR(msg);
     }
@@ -308,32 +289,6 @@ bool Input::CheckForAbort() {
 #endif
 }
 
-std::vector<std::string> Input::getDirectoryFiles() {
-  // List files in the current directory
-  // adapted from
-  // http://www.codebind.com/cpp-tutorial/cpp-program-list-files-directory-windows-linux/
-  const std::string& dir = std::string(".");
-  std::vector<std::string> files;
-  std::shared_ptr<DIR> directory_ptr(opendir(dir.c_str()), [](DIR* dir){ dir && closedir(dir); });
-  struct dirent *dirent_ptr;
-  if (!directory_ptr) {
-    idfx::cout << "Error opening : " << std::strerror(errno) << dir << std::endl;
-    return files;
-  }
-
-  while ((dirent_ptr = readdir(directory_ptr.get())) != nullptr) {
-    files.push_back(std::string(dirent_ptr->d_name));
-  }
-  return files;
-}
-
-
-std::string Input::getFileExtension(const std::string file_name) {
-  int position = file_name.find_last_of(".");
-  std::string ext = file_name.substr(position+1);
-  return ext;
-}
-
 // Get a string in a block, parameter, position of the file
 std::string Input::GetString(std::string blockName, std::string paramName, int num) {
   IDEFIX_DEPRECATED("Input::GetString is deprecated. Use Input::Get<std::string> instead");
@@ -417,7 +372,42 @@ void Input::PrintLogo() {
   idfx::cout << "                          `'''4x.dX  +^ `''MMMMHM?L.."<< std::endl;
   idfx::cout << "                                ``'           `'`'`'`"<< std::endl;
   idfx::cout << std::endl;
+  PrintVersion();
   idfx::cout << std::endl;
   idfx::cout << std::endl;
-  idfx::cout << "       This is Idefix " << GITVERSION << std::endl;
+}
+
+void Input::PrintOptions() {
+  idfx::cout << "List of valid arguments:" << std::endl << std::endl;
+  #ifdef WITH_MPI
+    idfx::cout << " -dec "
+    D_SELECT(<< " nx1 ",
+             << " nx1 nx2",
+             << " nx1 nx2 nx3")
+            << std::endl;
+    idfx::cout << "         Force an mpi domain decomposition with n processes in each direction"
+               << std::endl;
+  #endif
+  idfx::cout << " -restart n" << std::endl;
+  idfx::cout << "         Restart from dumpfile n. If n is ommited, Idefix restart from the latest"
+             << " generated dump file." << std::endl;
+  idfx::cout << " -i xxx" << std::endl;
+  idfx::cout << "         Use the input file xxx instead of the default idefix.ini" << std::endl;
+  idfx::cout << " -maxcycles n" << std::endl;
+  idfx::cout << "         Perform at most n integration cycles." << std::endl;
+  idfx::cout << " -nowrite" << std::endl;
+  idfx::cout << "         Do not generate any output file." << std::endl;
+  idfx::cout << " -nolog" << std::endl;
+  idfx::cout << "         Do not write any log file." << std::endl;
+  idfx::cout << " -Werror" << std::endl;
+  idfx::cout << "         Consider warnings as errors." << std::endl;
+  idfx::cout << " -v/-version" << std::endl;
+  idfx::cout << "         Show Idefix and kokkos version." << std::endl;
+  idfx::cout << " -h/-help" << std::endl;
+  idfx::cout << "         Show this message." << std::endl;
+}
+
+void Input::PrintVersion() {
+  idfx::cout << "              Idefix version " << IDEFIX_VERSION << std::endl;
+  idfx::cout << "              Built against Kokkos " << KOKKOS_VERSION << std::endl;
 }

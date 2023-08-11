@@ -12,7 +12,7 @@ doc/source/xml/*
 
 # generated files
 *.log
-src/gitversion.hpp
+src/version.hpp
 **/libkokkos.a
 **/KokkosCore_config.h
 build
@@ -32,6 +32,7 @@ test/**/Makefile
 test/**/KokkosCore*
 test/**/*.csv
 test/**/*.pyc
+test/**/*.dat
 
 # machine specific cache and hidden files
 .*

@@ -39,18 +39,18 @@ void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
   }
 }
 
-void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
-
+void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
+    auto *data = hydro->data;
     if( (dir==IDIR) && (side == right)) {
-        IdefixArray4D<real> Vc = data.hydro.Vc;
-        IdefixArray4D<real> Vs = data.hydro.Vs;
-        IdefixArray1D<real> x1Arr = data.x[IDIR];
-        IdefixArray1D<real> x2Arr = data.x[JDIR];
-        IdefixArray1D<real> x3Arr = data.x[KDIR];
+        IdefixArray4D<real> Vc = hydro->Vc;
+        IdefixArray4D<real> Vs = hydro->Vs;
+        IdefixArray1D<real> x1Arr = data->x[IDIR];
+        IdefixArray1D<real> x2Arr = data->x[JDIR];
+        IdefixArray1D<real> x3Arr = data->x[KDIR];
 
         const real sq2 = sqrt(2);
 
-        data.hydro.boundary.BoundaryFor("UserDefX1",dir,side,
+        hydro->boundary->BoundaryFor("UserDefX1",dir,side,
             KOKKOS_LAMBDA (int k, int j, int i) {
                 real x1 = x1Arr(i);
                 real x2 = x2Arr(j);
@@ -74,11 +74,11 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                 Vc(VX3,k,j,i) = (ex_p+ey_p)/sq2;
 
             });
-      data.hydro.boundary.BoundaryForX2s("UserDefX2s",dir,side,
+      hydro->boundary->BoundaryForX2s("UserDefX2s",dir,side,
         KOKKOS_LAMBDA (int k, int j, int i) {
             Vs(BX2s,k,j,i) = ZERO_F;
           });
-      data.hydro.boundary.BoundaryForX3s("UserDefX2s",dir,side,
+      hydro->boundary->BoundaryForX3s("UserDefX2s",dir,side,
         KOKKOS_LAMBDA (int k, int j, int i) {
             Vs(BX3s,k,j,i) = ZERO_F;
           });
@@ -87,7 +87,7 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 
 void Analysis(DataBlock & data) {
   // Mirror data on Host
-  data.hydro.boundary.SetBoundaries(data.t);
+  data.hydro->boundary->SetBoundaries(data.t);
   data.DumpToFile("analysis");
 }
 
@@ -111,8 +111,8 @@ void CoarsenFunction(DataBlock &data) {
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   output.EnrollUserDefVariables(&ComputeUserVars);
-  data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
-  //output.EnrollAnalysis(&Analysis);
+  data.hydro->EnrollUserDefBoundary(&UserdefBoundary);
+  output.EnrollAnalysis(&Analysis);
   Rtorus = input.Get<real>("Setup","Rtorus",0);
   Ztorus = input.Get<real>("Setup","Ztorus",0);
   Rin = input.Get<real>("Setup","Rin",0);

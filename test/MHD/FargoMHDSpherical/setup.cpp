@@ -14,17 +14,20 @@ void FargoVelocity(DataBlock &data, IdefixArray2D<real> &Vphi) {
 
 
 // User-defined boundaries
-void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
-
+void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
+    auto *data = hydro->data;
     if( (dir==IDIR) && (side == left)) {
-        IdefixArray4D<real> Vc = data.hydro.Vc;
-        IdefixArray4D<real> Vs = data.hydro.Vs;
-        IdefixArray1D<real> x1 = data.x[IDIR];
-        IdefixArray1D<real> x2 = data.x[JDIR];
+        IdefixArray4D<real> Vc = hydro->Vc;
+        IdefixArray4D<real> Vs = hydro->Vs;
+        IdefixArray1D<real> x1 = data->x[IDIR];
+        IdefixArray1D<real> x2 = data->x[JDIR];
 
-        int ighost = data.nghost[IDIR];
+        int ighost = data->nghost[IDIR];
         real Omega=1.0;
-        idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,ighost,
+        idefix_for("UserDefBoundary",
+          0, data->np_tot[KDIR],
+          0, data->np_tot[JDIR],
+          0, ighost,
                     KOKKOS_LAMBDA (int k, int j, int i) {
                         real R=x1(i)*sin(x2(j));
                         real z=x1(i)*cos(x2(j));
@@ -37,7 +40,10 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
                         Vc(VX3,k,j,i) = R*Omega;
                     });
 
-          idefix_for("UserDefBoundaryX1S",0,data.np_tot[KDIR],0,data.np_tot[JDIR]+1,0,ighost,
+        idefix_for("UserDefBoundaryX1S",
+          0, data->np_tot[KDIR],
+          0, data->np_tot[JDIR]+1,
+          0, ighost,
                       KOKKOS_LAMBDA (int k, int j, int i) {
 
                           Vs(BX2s,k,j,i) = Vs(BX2s,k,j,ighost);
@@ -45,7 +51,10 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 
                       });
 
-          idefix_for("UserDefBoundaryX3S",0,data.np_tot[KDIR]+1,0,data.np_tot[JDIR],0,ighost,
+        idefix_for("UserDefBoundaryX3S",
+          0, data->np_tot[KDIR]+1,
+          0, data->np_tot[JDIR],
+          0, ighost,
                       KOKKOS_LAMBDA (int k, int j, int i) {
                           Vs(BX3s,k,j,i) = Vs(BX3s,k,j,ighost);
 
@@ -69,10 +78,10 @@ void Potential(DataBlock& data, const real t, IdefixArray1D<real>& x1, IdefixArr
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   // Set the function for userdefboundary
-  data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
-  data.gravity.EnrollPotential(&Potential);
+  data.hydro->EnrollUserDefBoundary(&UserdefBoundary);
+  data.gravity->EnrollPotential(&Potential);
   if(data.haveFargo)
-    data.fargo.EnrollVelocity(&FargoVelocity);
+    data.fargo->EnrollVelocity(&FargoVelocity);
 }
 
 // This routine initialize the flow

@@ -130,6 +130,8 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | gamma          | float                   | Adiabatic index when ISOTHERMAL is not defined. Default to 5/3 if not set.                  |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| tracer         | integer                 | Number of passive tracers associated to the fluid. Default to 0 if not set.                 |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | resistivity    | string, string, (float) | | Switches on Ohmic diffusion.                                                              |
 |                |                         | | The first parameter can be ``explicit`` or ``rkl``. When ``explicit``, diffusion is       |
 |                |                         | | integrated in the main integration loop with the usual cfl restriction.  If ``rkl``,      |
@@ -193,6 +195,9 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 |                |                         | | limiter when strong shocks are detected. The entry parameter is the threshold above which |
 |                |                         | | a shock is considered "strong", in units of :math:`|\nabla P /P|`. A low value hence tends|
 |                |                         | | to increase the code numerical diffusivity. Typical values are 1 to 10.                   |
+|                |                         | | Note that it is possible to enroll a user-defined function to flag specific cells for     |
+|                |                         | | shock flattening, in addition to the default flag. This user function can be enrolled     |
+|                |                         | | with ``Hydro.shockFlattening.EnrollUserShockFlag(UserShockFunc)`` .                       |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 
 
@@ -227,10 +232,19 @@ This section enables the orbital advection algorithm provided in *Idefix*. More 
 |                |                         | | Default: 10                                                                               |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 
+.. _gravitySection:
+
 ``Gravity`` section
 --------------------
 
-This section enables gravity in the form of a gravitational potential and/or an acceleration vector
+This section enables gravity in the form of a gravitational potential and/or an acceleration vector. The gravitational potential used by the code
+reads
+
+:math:`\psi=-G_c M_{\rm central}/R+\psi_{SG}+\psi_{\rm userdef}`
+
+where :math:`G_c` is the gravitational constant, :math:`M_{\rm central}` is the mass of a central object, :math:`\psi_{SG}` is the
+self-gravitational potential and :math:`\psi_{\rm userdef}` is a user-defined potential. Each term can be enabled individually in the gravity
+section as followed:
 
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 |  Entry name    | Parameter type          | Comment                                                                                     |
@@ -239,21 +253,62 @@ This section enables gravity in the form of a gravitational potential and/or an 
 |                |                         | | total potential used by *Idefix*.                                                         |
 |                |                         | |                                                                                           |
 |                |                         | | * ``userdef`` allows the user to give *Idefix* a user-defined potential function. In this |
-|                |                         | | ``Gravity`` class expects a user-defined potential function to be enrolled with           |
+|                |                         | | case, ``Gravity`` class expects a user-defined potential function to be enrolled with     |
 |                |                         | | ``Gavity::EnrollPotential(GravPotentialFunc)``  (see :ref:`functionEnrollment`)           |
 |                |                         | | * ``central`` allows the user to automatically add the potential of a central point mass. |
 |                |                         | | In this case, the central mass is assumed to be 1 in code units. This can be modified     |
 |                |                         | | using the Mcentral parameter, or using the ``Gravity::SetCentralMass(real)`` method.      |
 |                |                         | | * ``selfgravity`` enables the potential computed from solving Poisson equation with the   |
-|                |                         | | density distribution                                                                      |
+|                |                         | | density distribution (see :ref:`selfGravitySection` and :ref:`selfGravityModule`).        |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | Mcentral       | real                    | | Mass of the central object when a central potential is enabled (see above). Default is 1. |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| gravCst        | real                    | | Set the value of the gravitational constant :math:`G_c` used by the central               |
+|                |                         | | mass potential and self-gravitational potential (when enabled) ). Default is 1.           |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | bodyForce      | string                  | | Adds an acceleration vector to each cell of the domain. The only value allowed            |
 |                |                         | | is ``userdef``. The ``Gravity`` class then expects a user-defined bodyforce function to   |
 |                |                         | | be enrolled via ``Gavity::EnrollBodyForce(BodyForceFunc)`` (see :ref:`functionEnrollment`)|
 |                |                         | | See the shearing box tests for examples of using bodyForce.                               |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| skip           | int                     | | Set the number of integration cycles between each computation of the gravity potential.   |
+|                |                         | | Default is 1 (i.e. gravity is computed at every cycle).                                   |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+
+
+
+.. _selfGravitySection:
+
+``SelfGravity`` section
+-----------------------
+
+This section describes the method used to compute the self-gravitating potential :math:`\psi_{SG}`. More details on the algorithm may be found in the dedicated
+:ref:`selfGravityModule` documentation. For this module to be used, self-gravity must be enabled as a source
+of gravitational potential in the ``Gravity`` section (see :ref:`gravitySection` above).
+
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+|  Entry name    | Parameter type          | Comment                                                                                     |
++================+=========================+=============================================================================================+
+| solver         | string                  | | Specifies which solver should be used. Can be ``Jacobi``, ``BICGSTAB`` or ``PBICGSTAB``   |
+|                |                         | | for the left preconditionned BICGSTAB solve.                                              |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| targetError    | real                    | | Set the error allowed in the residual :math:`r=\Delta\psi_G/(4\pi G_c)-\rho`. The error   |
+|                |                         | | computation is based on a L2 norm. Default is 1e-2.                                       |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| maxIter        | int                     | | Set the maximum number of iterations allowed to the solver to reach convergence. Default  |
+|                |                         | | is 1000.                                                                                  |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| boundary-Xn-dir| string                  | | Boundary condition applied to the potential field computed by self-gravity                |
+|                |                         | | ``n`` can be 1, 2 or 3 and is the direction for the boundary condition. ``dir`` can be    |
+|                |                         | | ``beg`` or ``end`` and indicates the side of the boundary.                                |
+|                |                         | | The boundary conditions allowed by the self-gravity solver are described in               |
+|                |                         | | :ref:`selfGravityModule`                                                                  |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| skip           | int                     | | Set the number of integration cycles between each computation of self-gravity potential.  |
+|                |                         | | Default is 1 (i.e. self-gravity is computed at every cycle).                              |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+
+
 
 ``RKL`` section
 ------------------
@@ -265,6 +320,8 @@ this block is simply ignored.
 |  Entry name    | Parameter type     | Comment                                                                                                   |
 +================+====================+===========================================================================================================+
 | cfl            | float              | CFL number for the RKL sub-step. Should be <0.5 for stability. Set by default to 0.5 if not provided      |
++----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
+| rmax_par       | float              | Maximum ratio between the hyperbolic timestep and the parabolic (RKL) timestep. Set to 100.0 by default.  |
 +----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
 | check_nan      | bool               | Whether RKL should check the solution when running. This option affects performances. Default false.      |
 +----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
@@ -314,8 +371,14 @@ This section describes the outputs *Idefix* produces. For more details about eac
 | dmp            | float                   | | Time interval between dump outputs, in code units.                                             |
 |                |                         | | If negative, periodic dump outputs are disabled.                                               |
 +----------------+-------------------------+--------------------------------------------------------------------------------------------------+
+| dmp_dir        | string                  | | directory for dump file outputs. Default to "./"                                               |
+|                |                         | | The directory is automatically created if it does not exist.                                   |
++----------------+-------------------------+--------------------------------------------------------------------------------------------------+
 | vtk            | float                   | | Time interval between vtk outputs, in code units.                                              |
 |                |                         | | If negative, periodic vtk outputs are disabled.                                                |
++----------------+-------------------------+--------------------------------------------------------------------------------------------------+
+| vtk_dir        | string                  | | directory for vtk file outputs. Default to "./"                                                |
+|                |                         | | The directory is automatically created if it does not exist.                                   |
 +----------------+-------------------------+--------------------------------------------------------------------------------------------------+
 | analysis       | float                   | | Time interval between analysis outputs, in code units.                                         |
 |                |                         | | If negative, periodic analysis outputs are disabled.                                           |
@@ -332,3 +395,25 @@ This section describes the outputs *Idefix* produces. For more details about eac
 .. note::
     Even if dumps are not mentionned in your input file (and are therefore disabled), dump files are still produced when *Idefix* captures a signal
     (see :ref:`signalHandling`) or when ``max_runtime`` is set and reached.
+
+
+.. _dustSection:
+
+``Dust`` section
+----------------------
+
+This section describes the dust fields computed using a zero pressure gas approximation (see :ref:`dustModule`).
+
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+|  Entry name    | Parameter type          | Comment                                                                                     |
++================+=========================+=============================================================================================+
+| nSpecies       | integer                 | | Number of dust species to solve                                                           |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| drag           | string, float, ...      | | The first parameter describe the drag type. Possible values are: ``gamma``, ``tau``,      |
+|                |                         | | ``size`` and ``userdef``.                                                                 |
+|                |                         | | The remaining parameters give the drag parameter :math:`\beta_i` for each dust specie.    |
+|                |                         | | (see :ref:`dustModule`). *Idefix* expects to have as many drag parameters as there are    |
+|                |                         | | dust species.                                                                             |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| drag_feedback  | bool                    | | (optionnal) whether the gas feedback is enabled (default true).                           |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+

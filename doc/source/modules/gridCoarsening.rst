@@ -1,6 +1,6 @@
 .. _gridCoarseningModule:
 
-The Grid coarsening module
+Grid coarsening module
 ==========================
 
 About grid coarsening

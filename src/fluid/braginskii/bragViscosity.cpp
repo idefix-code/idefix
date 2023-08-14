@@ -244,15 +244,15 @@ void BragViscosity::AddBragViscousFlux(int dir, const real t, const IdefixArray4
         dVziC = dVzjC = dVzkC = ZERO_F;
   
         //Compute values at the center of the cells, no slope limiter are used at this stage
-        EXPAND(  dVxiC = HALF_F*(Vc(VX1,k,j,i + 1) - Vc(VX1,k,j,i - 1))/dx1(i); ,
-                 dVyiC = HALF_F*(Vc(VX2,k,j,i + 1) - Vc(VX2,k,j,i - 1))/dx1(i); ,
-                 dVziC = HALF_F*(Vc(VX3,k,j,i + 1) - Vc(VX3,k,j,i - 1))/dx1(i); )
-        EXPAND(  dVxjC = HALF_F*(Vc(VX1,k,j + 1,i) - Vc(VX1,k,j - 1,i))/dx2(j); ,
-                 dVyjC = HALF_F*(Vc(VX2,k,j + 1,i) - Vc(VX2,k,j - 1,i))/dx2(j); ,
-                 dVzjC = HALF_F*(Vc(VX3,k,j + 1,i) - Vc(VX3,k,j - 1,i))/dx2(j); )
-        EXPAND (  dVxkC = HALF_F*(Vc(VX1,k + 1,j,i) - Vc(VX1,k - 1,j,i))/dx3(k); ,
-                  dVykC = HALF_F*(Vc(VX2,k + 1,j,i) - Vc(VX2,k - 1,j,i))/dx3(k); ,
-                  dVzkC = HALF_F*(Vc(VX3,k + 1,j,i) - Vc(VX3,k - 1,j,i))/dx3(k); )
+        D_EXPAND( EXPAND(  dVxiC = HALF_F*(Vc(VX1,k,j,i + 1) - Vc(VX1,k,j,i - 1))/dx1(i); ,
+                           dVyiC = HALF_F*(Vc(VX2,k,j,i + 1) - Vc(VX2,k,j,i - 1))/dx1(i); ,
+                           dVziC = HALF_F*(Vc(VX3,k,j,i + 1) - Vc(VX3,k,j,i - 1))/dx1(i); )  ,
+                  EXPAND(  dVxjC = HALF_F*(Vc(VX1,k,j + 1,i) - Vc(VX1,k,j - 1,i))/dx2(j); ,
+                           dVyjC = HALF_F*(Vc(VX2,k,j + 1,i) - Vc(VX2,k,j - 1,i))/dx2(j); ,
+                           dVzjC = HALF_F*(Vc(VX3,k,j + 1,i) - Vc(VX3,k,j - 1,i))/dx2(j); )  ,
+                  EXPAND (  dVxkC = HALF_F*(Vc(VX1,k + 1,j,i) - Vc(VX1,k - 1,j,i))/dx3(k); ,
+                            dVykC = HALF_F*(Vc(VX2,k + 1,j,i) - Vc(VX2,k - 1,j,i))/dx3(k); ,
+                            dVzkC = HALF_F*(Vc(VX3,k + 1,j,i) - Vc(VX3,k - 1,j,i))/dx3(k); ) )
 
         EXPAND(  biC = Vc(BX1,k,j,i); ,
                  bjC = Vc(BX2,k,j,i); ,
@@ -273,12 +273,12 @@ void BragViscosity::AddBragViscousFlux(int dir, const real t, const IdefixArray4
 
       #if GEOMETRY == CYLINDRICAL
         bbgradVC = D_EXPAND(
-                     biC*biC*dVxiC + biC*bjC*dVyiC + biC*bkC*(dVziC  - Vc(VX3,k,j,i)/x1(i)),
-                     bjC*biC*dVxjC + bjC*bjC*dVyjC + bjC*bkC*dVzjC + bkC*bkC*Vc(VX1,k,j,i)/x1(i),
+                     biC*biC*dVxiC + biC*bjC*dVyiC + biC*bkC*(dVziC  - Vc(VX3,k,j,i)/x1(i)) ,
+                   + bjC*biC*dVxjC + bjC*bjC*dVyjC + bjC*bkC*dVzjC + bkC*bkC*Vc(VX1,k,j,i)/x1(i) ,
                      );
 
         divVC = D_EXPAND(dVxiC + Vc(VX1,k,j,i)/x1(i) ,
-                          + dVyjC ,
+                       + dVyjC ,
                            );
         // No cylindrical geometry in 3D!
       #elif GEOMETRY == POLAR
@@ -410,11 +410,11 @@ void BragViscosity::AddBragViscousFlux(int dir, const real t, const IdefixArray4
         #if GEOMETRY == CYLINDRICAL
           bbgradV = D_EXPAND(
                        bi*bi*dVxi + bi*bj*dVyi + bi*bk*(dVzi  - vx3i/x1l(i)),
-                       bj*bi*dVxj + bj*bj*dVyj + bj*bk*dVzj + bk*bk*vx1i/x1l(i),
+                     + bj*bi*dVxj + bj*bj*dVyj + bj*bk*dVzj + bk*bk*vx1i/x1l(i),
                        );
   
           divV = D_EXPAND(dVxi + vx1i/x1l(i) ,
-                            + dVyj ,
+                        + dVyj ,
                              );
           // No cylindrical geometry in 3D!
 
@@ -582,7 +582,7 @@ void BragViscosity::AddBragViscousFlux(int dir, const real t, const IdefixArray4
         #if GEOMETRY == CYLINDRICAL
           bbgradV = D_EXPAND(
                        bi*bi*dVxi + bi*bj*dVyi + bi*bk*(dVzi  - vx3i/x1(i)),
-                       bj*bi*dVxj + bj*bj*dVyj + bj*bk*dVzj + bk*bk*vx1i/x1(i),
+                     + bj*bi*dVxj + bj*bj*dVyj + bj*bk*dVzj + bk*bk*vx1i/x1(i),
                        );
   
           divV = D_EXPAND(dVxi + vx1i/x1(i) ,
@@ -775,7 +775,7 @@ void BragViscosity::AddBragViscousFlux(int dir, const real t, const IdefixArray4
         #if GEOMETRY == CYLINDRICAL
           bbgradV = D_EXPAND(
                        bi*bi*dVxi + bi*bj*dVyi + bi*bk*(dVzi  - vx3i/x1(i)),
-                       bj*bi*dVxj + bj*bj*dVyj + bj*bk*dVzj + bk*bk*vx1i/x1(i),
+                     + bj*bi*dVxj + bj*bj*dVyj + bj*bk*dVzj + bk*bk*vx1i/x1(i),
                        );
   
           divV = D_EXPAND(dVxi + vx1i/x1(i) ,

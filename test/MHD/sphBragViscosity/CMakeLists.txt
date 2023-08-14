@@ -1,0 +1,3 @@
+set_idefix_property(Idefix_RECONSTRUCTION LimO3)
+enable_idefix_property(Idefix_MHD)
+replace_idefix_source(fluid/braginskii/bragViscosity.cpp noDivBragViscosity.cpp)

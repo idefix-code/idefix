@@ -1,0 +1,2 @@
+set_idefix_property(Idefix_RECONSTRUCTION LimO3)
+enable_idefix_property(Idefix_MHD)

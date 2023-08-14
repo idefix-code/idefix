@@ -115,11 +115,6 @@ void BragViscosity::ShowConfig() {
   if(haveSlopeLimiter) {
     idfx::cout << "Braginskii Viscosity: uses a slope limiter." << std::endl;
   }
-
-  #if GEOMETRY == CYLINDRICAL || GEOMETRY == POLAR
-    IDEFIX_WARNING("Braginskii viscosity in cylindrical and polar coordinates "
-                   "has been implemented but never tested so far.");
-  #endif
 }
 
 void BragViscosity::EnrollBragViscousDiffusivity(DiffusivityFunc myFunc) {
@@ -171,6 +166,11 @@ void BragViscosity::AddBragViscousFlux(int dir, const real t, const IdefixArray4
     }
   }
 
+  #if GEOMETRY == CYLINDRICAL || GEOMETRY == POLAR
+    IDEFIX_WARNING("Braginskii viscosity in cylindrical and polar coordinates "
+                   "has been implemented but never tested so far.");
+  #endif
+
   int ibeg, iend, jbeg, jend, kbeg, kend;
   ibeg = this->data->beg[IDIR];
   iend = this->data->end[IDIR];
@@ -214,8 +214,6 @@ void BragViscosity::AddBragViscousFlux(int dir, const real t, const IdefixArray4
       dVzi = dVzj = dVzk = ZERO_F;
 
       real etaBrag;
-      real etaBragC;
-
 
       //Cell-centered values to compute source terms
       #if GEOMETRY != CARTESIAN
@@ -243,6 +241,8 @@ void BragViscosity::AddBragViscousFlux(int dir, const real t, const IdefixArray4
         dVyiC = dVyjC = dVykC = ZERO_F;
         dVziC = dVzjC = dVzkC = ZERO_F;
   
+        real etaBragC;
+
         //Compute values at the center of the cells, no slope limiter are used at this stage
         EXPAND(  dVxiC = HALF_F*(Vc(VX1,k,j,i + 1) - Vc(VX1,k,j,i - 1))/dx1(i); ,
                  dVyiC = HALF_F*(Vc(VX2,k,j,i + 1) - Vc(VX2,k,j,i - 1))/dx1(i); ,
@@ -288,7 +288,7 @@ void BragViscosity::AddBragViscousFlux(int dir, const real t, const IdefixArray4
                   + biC*bjC*(dVyiC - Vc(VX2,k,j,i)/x1(i)) + bjC*bjC*(1./x1(i)*dVyjC + Vc(VX1,k,j,i)/x1(i))
                                                                                 + bkC*bjC*dVykC,
                   + biC*bkC*dVziC                         + bjC*bkC*1./x1(i)*dVzjC
-                                                                                + bkC*bkC*dVzkC
+                                                                                + bkC*bkC*dVzkC,
                   );
                   
         divVC = D_EXPAND(dVxiC + Vc(VX1,k,j,i)/x1(i) ,
@@ -322,6 +322,7 @@ void BragViscosity::AddBragViscousFlux(int dir, const real t, const IdefixArray4
         divVC = EXPAND(2.*Vc(VX1,k,j,i)/x1(i) + dVxiC,
                         + dVyjC/x1(i) + tan_1*Vc(VX2,k,j,i)/x1(i),
                         + dVzkC/x1(i)*s_1 );
+        divVC = 0.;
       #endif
 
       ///////////////////////////////////////////
@@ -428,11 +429,11 @@ void BragViscosity::AddBragViscousFlux(int dir, const real t, const IdefixArray4
         #elif GEOMETRY == POLAR
           bbgradV = EXPAND(
                       bi*bi*dVxi                         + bj*bi*1./x1l(i)*dVxj  
-                                                                                  + bk*bi*dVxk,
+                                                                                  + bk*bi*s_1/x(i)*dVxk,
                     + bi*bj*(dVyi - vx2i/x1l(i)) + bj*bj*(1./x1l(i)*dVyj + vx1i/x1l(i))
                                                                                   + bk*bj*dVyk,
                     + bi*bk*dVzi                         + bj*bk*1./x1l(i)*dVzj
-                                                                                  + bk*bk*dVzk
+                                                                                  + bk*bk*dVzk,
                     );
                     
           divV = D_EXPAND(dVxi + vx1i/x1l(i) ,
@@ -457,6 +458,7 @@ void BragViscosity::AddBragViscousFlux(int dir, const real t, const IdefixArray4
           divV = EXPAND(2.0*vx1i/x1l(i) + dVxi,
                           + dVyj/x1l(i) + tan_1*vx2i/x1l(i),
                           + dVzk/x1l(i)*s_1 );
+          divV = 0.;
 
           //cell-centered values for source terms
           tau_yyC = Pnor_parC*(bjC*bjC - 1./3.);
@@ -596,11 +598,11 @@ void BragViscosity::AddBragViscousFlux(int dir, const real t, const IdefixArray4
         #elif GEOMETRY == POLAR
           bbgradV = EXPAND(
                       bi*bi*dVxi                         + bj*bi*1./x1(i)*dVxj  
-                                                                                  + bk*bi*dVxk,
+                                                                                  + bk*bi*s_1/x(i)*dVxk,
                     + bi*bj*(dVyi - vx2i/x1(i)) + bj*bj*(1./x1(i)*dVyj + vx1i/x1(i))
                                                                                   + bk*bj*dVyk,
                     + bi*bk*dVzi                         + bj*bk*1./x1(i)*dVzj
-                                                                                  + bk*bk*dVzk
+                                                                                  + bk*bk*dVzk,
                     );
                     
           divV = D_EXPAND(dVxi + vx1i/x1(i) ,
@@ -645,6 +647,7 @@ void BragViscosity::AddBragViscousFlux(int dir, const real t, const IdefixArray4
                           +(SIN(x2(j))*Vc(VX2,k,j,i) - FABS(SIN(x2(j-1)))*Vc(VX2,k,j-1,i))/x1(i)
                            *one_dmu(j) ,
                           + dVzk/x1(i)*s_1 );
+          divV = 0.;
 
           //Cell-centered values for the source terms
           tan_1 = tanx2(j);
@@ -789,11 +792,11 @@ void BragViscosity::AddBragViscousFlux(int dir, const real t, const IdefixArray4
         #elif GEOMETRY == POLAR
           bbgradV = EXPAND(
                       bi*bi*dVxi                         + bj*bi*1./x1(i)*dVxj  
-                                                                                  + bk*bi*dVxk,
+                                                                                  + bk*bi*s_1/x(i)*dVxk,
                     + bi*bj*(dVyi - vx2i/x1(i)) + bj*bj*(1./x1(i)*dVyj + vx1i/x1(i))
                                                                                   + bk*bj*dVyk,
                     + bi*bk*dVzi                         + bj*bk*1./x1(i)*dVzj
-                                                                                  + bk*bk*dVzk
+                                                                                  + bk*bk*dVzk,
                     );
                     
           divV = D_EXPAND(dVxi + vx1i/x1(i) ,
@@ -813,6 +816,7 @@ void BragViscosity::AddBragViscousFlux(int dir, const real t, const IdefixArray4
                                         + bk*bk*(s_1/x1(i)*dVzk + vx1i/x1(i) + tan_1/x1(i)*vx2i));
 
           divV = 2.0*vx1i/x1(i) + dVxi + dVyj/x1(i) + tan_1*vx2i/x1(i) + dVzk/x1(i)*s_1;
+          divV = 0.;
 
           bragViscSrc(IDIR,k,j,i) = ZERO_F;
           bragViscSrc(JDIR,k,j,i) = ZERO_F;

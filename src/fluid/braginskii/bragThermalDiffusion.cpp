@@ -146,9 +146,6 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t, const Ide
 
   IdefixArray1D<real> dx = this->data->dx[dir];
 
-  #if GEOMETRY == POLAR
-    IdefixArray1D<real> x1 = this->data->x[IDIR];
-  #endif
   #if GEOMETRY == SPHERICAL
     IdefixArray1D<real> rt   = this->data->rt;
     IdefixArray1D<real> dmu  = this->data->dmu;
@@ -189,7 +186,6 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t, const Ide
     KOKKOS_LAMBDA (int k, int j, int i) {
       real knor, kpar;
       real bgradT, Bmag, bn;
-      real dT_mag;
       real q;
       real Bi, Bj, Bk, Bn = 0;
 
@@ -213,20 +209,9 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t, const Ide
           kpar = kparConstant;
         }
 
-        #if DIMENSIONS == 3
         EXPAND( Bi = BX_I; ,
                 Bj = BY_I; ,
                 Bk = BZ_I; )
-        #elif DIMENSIONS == 2
-        EXPAND( Bi = BX_I; ,
-                Bj = BY_I; ,
-                Bk = ZERO_F;)
-        #elif DIMENSIONS == 1
-        EXPAND( Bi = BX_I; ,
-                Bj = ZERO_F; ,
-                Bk = ZERO_F;)
-        #endif
-
         Bn = BX_I;
 
         #if GEOMETRY == CARTESIAN
@@ -325,16 +310,9 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t, const Ide
           kpar = kparConstant;
         }
 
-        #if DIMENSIONS == 3
         EXPAND( Bi = BX_J; ,
                 Bj = BY_J; ,
                 Bk = BZ_J; )
-        #elif DIMENSIONS == 2
-        EXPAND( Bi = BX_J; ,
-                Bj = BY_J; ,
-                Bk = ZERO_F;)
-        #endif
-
         Bn = BY_J;
 
         #if GEOMETRY == CARTESIAN
@@ -377,7 +355,6 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t, const Ide
               dTk = slopeLimiter(dTk, slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx3(k),SL_DX_tmp(Vc,PRS,RHO,k+1,j,i)/dx3(k+1)));
             } else {
               dTk = D_DZ_J_tmp(Vc,PRS,RHO)/dx3(k);
-#                dTk = D_DZ_J_tmp(0,RHO)/dx3(k);
             }
           #endif
         #elif GEOMETRY == SPHERICAL
@@ -446,7 +423,6 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t, const Ide
         Bi = BX_K;
         Bj = BY_K;
         Bk = BZ_K;
-
         Bn = Bk;
 
         #if GEOMETRY == CARTESIAN
@@ -503,22 +479,8 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t, const Ide
       }
       // From here, gradients and normal have been computed, so we just need to get the fluxes
 
-      dT_mag  = D_EXPAND(   dTi*dTi,
-                        +   dTj*dTj,
-                        +   dTk*dTk);
-
-      dT_mag = sqrt(dT_mag) + 0.01*SMALL_NUMBER;
-
-      #if DIMENSIONS == 3
       bgradT = EXPAND( Bi*dTi , + Bj*dTj, +Bk*dTk);
       Bmag = EXPAND( Bi*Bi , + Bj*Bj, + Bk*Bk);
-      #elif DIMENSIONS == 2
-      bgradT = EXPAND( Bi*dTi , + Bj*dTj, +0);
-      Bmag = EXPAND( Bi*Bi , + Bj*Bj, + 0);
-      #elif DIMENSIONS == 1
-      bgradT = EXPAND( Bi*dTi , + 0, +0);
-      Bmag = EXPAND( Bi*Bi , + 0, + 0);
-      #endif
       Bmag = sqrt(Bmag);
       Bmag = FMAX(1e-6*SMALL_NUMBER,Bmag);
 
@@ -526,12 +488,9 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t, const Ide
 
       bn = Bn/Bmag; /* -- unit vector component -- */
       q = kpar*bgradT*bn + knor*(dTn - bn*bgradT);
-      //qi_mag = sqrt(  (kpar*kpar - knor*knor)*bgradT*bgradT
-      //  + knor*knor*dT_mag*dT_mag);
 
       Flux(ENG, k, j, i) -= q;
 
-//      dMax(k,j,i) += FMAX(dMax(k,j,i),locdmax);
       dMax(k,j,i) = FMAX(dMax(k,j,i),locdmax);
     });
   idfx::popRegion();

@@ -279,7 +279,7 @@ class idfxTest:
     if os.path.exists(os.path.join('python', 'testidefix.py')):
       os.chdir("python")
       comm = [sys.executable, "testidefix.py"]
-      if self.noplot:
+      if not self.plot:
         comm.append("-noplot")
 
       print(bcolors.OKCYAN+"Running standard test...")
@@ -437,8 +437,12 @@ class idfxTest:
             x3=np.zeros(Vref.data[fld].shape[2])
             x3[:-1]=Vref.x3l
             x3[-1]=Vref.x3r[-1]
-          plt.pcolor(x1, x2, Vref.data[fld][:,:,0].T-Vtest.data[fld][:,:,0].T,cmap='seismic')
-          plt.xlabel("x1")
-          plt.ylabel("x2")
-          plt.colorbar()
+          if Vref.data[fld].shape[1]>1:
+            plt.pcolor(x1, x2, Vref.data[fld][:,:,0].T-Vtest.data[fld][:,:,0].T,cmap='seismic')
+            plt.xlabel("x1")
+            plt.ylabel("x2")
+            plt.colorbar()
+          else:
+            plt.plot(x1, Vref.data[fld][:,0,0]-Vtest.data[fld][:,0,0])
+            plt.xlabel("x1")
     plt.show()

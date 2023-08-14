@@ -29,15 +29,15 @@ class EquationOfState {
 
   KOKKOS_INLINE_FUNCTION 
   real GetWaveSpeed(real P, real rho) const {
-    return std::sqrt(gamma*P/rho);
+    return std::sqrt(gamma*(P/rho));
   }
   KOKKOS_INLINE_FUNCTION 
   real GetInternalEnergy(real P, real rho) const {
-    return P/(gamma-1);
+    return P/(gamma-1.0);
   };
   KOKKOS_INLINE_FUNCTION 
   real GetPressure(real Eint, real rho) const {
-    return Eint * (gamma-1);
+    return Eint * (gamma-1.0);
   };
 
  private:

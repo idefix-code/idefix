@@ -15,9 +15,9 @@
 #include "grid.hpp"
 #include "fluid_defs.hpp"
 
-real minmodTh(const real, const real); 
+real minmodTh(const real, const real);
 real vanLeerTh(const real, const real);
-real monotonizedCentralTh(const real, const real); 
+real monotonizedCentralTh(const real, const real);
 
 // Forward class hydro declaration
 template <typename Phys> class Fluid;
@@ -143,16 +143,11 @@ BragThermalDiffusion::BragThermalDiffusion(Input &input, Grid &grid, Fluid<Phys>
     IDEFIX_ERROR("Braginskii Thermal diffusion requires MHD");
   #endif
   #ifdef ISOTHERMAL
-    IDEFIX_ERROR("Braginskii Thermal diffusion is not compatible with the ISOTHERMAL approximation");
+    IDEFIX_ERROR("Braginskii Thermal diffusion is not compatible"
+                 "with the ISOTHERMAL approximation");
   #endif
 
   idfx::popRegion();
 }
-
-//using ThermalConductivityFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
-//using BragThermalConductivityFunc = void (*) (DataBlock &, const real t,
-//                                        IdefixArray3D<real> &, IdefixArray3D<real> &);
-//                                        // normal and parralel conductivities
-//using SlopeLimiterFunc = real (*) (const real, const real);
 
 #endif // FLUID_BRAGINSKII_BRAGTHERMALDIFFUSION_HPP_

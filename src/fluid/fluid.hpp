@@ -409,7 +409,8 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
     this->bragViscosity = std::make_unique<BragViscosity>(input, grid, this);
   }
 
-  // Check whether braginskii thermal diffusion is enabled, if so, init a braginskii thermal diffusion object
+  // Check whether braginskii thermal diffusion is enabled,
+  // if so, init a braginskii thermal diffusion object
   if(input.CheckEntry(std::string(Phys::prefix),"bragTDiffusion")>=0) {
     std::string opType = input.Get<std::string>(std::string(Phys::prefix),"bragTDiffusion",0);
     if(opType.compare("explicit") == 0 ) {

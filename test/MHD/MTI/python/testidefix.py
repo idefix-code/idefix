@@ -49,7 +49,6 @@ def dispMTI(wcond, k, Pr):
     k_2 = k**2
     ksi = 2.5/k_2/cosk_2*wcond
     kx_2 = k_2*cosk_2
-    kz_2 = k_2 - kx_2
     K = kx_2/k_2
 
     bk_2 = k_2*cosk_2
@@ -73,4 +72,3 @@ if np.abs(np.log(sigma_analytic/sigma_num)/np.log(sigma_num)) >= 0.1:
 else:
     print("SUCCESS")
     sys.exit(0)
-

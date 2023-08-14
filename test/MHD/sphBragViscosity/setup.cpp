@@ -28,13 +28,13 @@ void UserDefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
     }
     idefix_for("InnerBoundary", 0, data->np_tot[KDIR], 0, data->np_tot[JDIR], ibeg, iend,
           KOKKOS_LAMBDA (int k, int j, int i) {
-          Vc(RHO,k,j,i) = 1.; 
+          Vc(RHO,k,j,i) = 1.;
 
           Vc(VX1,k,j,i) = -Vc(VX1,k,j,iref);
           Vc(VX2,k,j,i) = ZERO_F;
           Vc(VX3,k,j,i) = ZERO_F;
     });
-  }   
+  }
 }
 
 // Initialisation routine. Can be used to allocate
@@ -80,4 +80,3 @@ void Setup::InitFlow(DataBlock &data) {
   // Send it all, if needed
   d.SyncToDevice();
 }
-

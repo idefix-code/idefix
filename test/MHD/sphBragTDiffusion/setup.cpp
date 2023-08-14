@@ -11,11 +11,11 @@ void InternalBoundary(DataBlock& data, const real t) {
   idefix_for("InternalBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
               KOKKOS_LAMBDA (int k, int j, int i) {
                 // Cancel any motion that could be happening
-	        Vc(VX1,k,j,i) = 0.0;
+            Vc(VX1,k,j,i) = 0.0;
                 Vc(VX2,k,j,i) = 0.0;
                 Vc(VX3,k,j,i) = 0.0;
               });
-} 
+}
 
 void UserDefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
   auto *data = hydro->data;
@@ -40,8 +40,8 @@ void UserDefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
                  Vc(PRS,k,j,i) = 1.;
                  Vc(VX1,k,j,i) = ZERO_F;
 
-                 Vs(BX1s,k,j,i) = ZERO_F; 
-                 Vs(BX2s,k,j,i) = ZERO_F; 
+                 Vs(BX1s,k,j,i) = ZERO_F;
+                 Vs(BX2s,k,j,i) = ZERO_F;
                  Vs(BX3s,k,j,i) = B0*SIN(x2(j));
       });
     }
@@ -55,8 +55,8 @@ void UserDefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
                  Vc(PRS,k,j,i) = 1.;
                  Vc(VX1,k,j,i) = ZERO_F;
 
-                 Vs(BX1s,k,j,i) = ZERO_F; 
-                 Vs(BX2s,k,j,i) = ZERO_F; 
+                 Vs(BX1s,k,j,i) = ZERO_F;
+                 Vs(BX2s,k,j,i) = ZERO_F;
                  Vs(BX3s,k,j,i) = B0*SIN(x2(j));
       });
     }
@@ -104,8 +104,8 @@ void Setup::InitFlow(DataBlock &data) {
           d.Vc(VX3,k,j,i) = ZERO_F;
           d.Vc(PRS,k,j,i) = 1.0;
 
-          d.Vs(BX1s,k,j,i) = ZERO_F; 
-          d.Vs(BX2s,k,j,i) = ZERO_F; 
+          d.Vs(BX1s,k,j,i) = ZERO_F;
+          d.Vs(BX2s,k,j,i) = ZERO_F;
           d.Vs(BX3s,k,j,i) = B0*SIN(x2(j));
       }
     }
@@ -114,4 +114,3 @@ void Setup::InitFlow(DataBlock &data) {
   // Send it all, if needed
   d.SyncToDevice();
 }
-

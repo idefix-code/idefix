@@ -27,4 +27,3 @@ target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/thermalDiffusion.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/thermalDiffusion.cpp
   )
-

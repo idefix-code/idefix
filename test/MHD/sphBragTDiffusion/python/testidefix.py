@@ -10,8 +10,6 @@ import os
 import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
 from pytools.vtk_io import readVTK
-import argparse
-from math import pi, sqrt, exp
 import numpy as np
 import inifix
 
@@ -25,7 +23,7 @@ nfile = 6
 list_time = [round(i*time_step, 3) for i in range(nfile)]
 list_VTK = list()
 for k in range(nfile):
-    if k >= 10: 
+    if k >= 10:
         current_number = str(k)
     else:
         current_number = '0' + str(k)
@@ -92,4 +90,3 @@ for it,t in enumerate(list_time):
 if success:
    print("SUCCESS")
    sys.exit(0)
-

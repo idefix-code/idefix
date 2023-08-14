@@ -240,7 +240,6 @@ class Fluid {
 #include "drag.hpp"
 #include "checkNan.hpp"
 #include "tracer.hpp"
-#include "eos.hpp"
 
 
 template<typename Phys>

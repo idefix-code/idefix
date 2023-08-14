@@ -41,7 +41,7 @@ void Fluid<Phys>::ShowConfig() {
     idfx::cout << "4th order (PPM)" << std::endl;
   #endif
 
-  
+
 
   if(haveRotation) {
     idfx::cout << Phys::prefix << ": Rotation ENABLED with Omega=" << this->OmegaZ << std::endl;

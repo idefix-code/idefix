@@ -32,9 +32,7 @@ struct Fluid_AddSourceTermsFunctor {
       rt = hydro->data->rt;
     #endif
     if constexpr(Phys::isothermal) {
-      csIsoArr = hydro->isoSoundSpeedArray;
-      csIso = hydro->isoSoundSpeed;
-      haveIsoCs = hydro->haveIsoSoundSpeed;
+      eos = *(hydro->eos.get());
     }
     haveRotation = hydro->haveRotation;
     OmegaZ = hydro->OmegaZ;
@@ -62,8 +60,7 @@ struct Fluid_AddSourceTermsFunctor {
   IdefixArray1D<real> rt;
 #endif
 
-  real csIso;
-  HydroModuleStatus haveIsoCs;
+  EquationOfState eos;
 
   bool haveRotation;
   real OmegaZ;
@@ -108,13 +105,9 @@ struct Fluid_AddSourceTermsFunctor {
       Sm = Vc(RHO,k,j,i) * vphi*vphi; // Centrifugal
       // Presure (because pressure is included in the flux, additional source terms arise)
       if constexpr(Phys::isothermal) {
-        real c2Iso;
-        if(haveIsoCs == UserDefFunction) {
-          c2Iso = csIsoArr(k,j,i);
-          c2Iso = c2Iso*c2Iso;
-        } else {
-          c2Iso = csIso*csIso;
-        }
+        real c2Iso = eos.GetWaveSpeed(k,j,i);
+        c2Iso *= c2Iso;
+
         Sm += Vc(RHO,k,j,i)*c2Iso;
       } else if constexpr(Phys::pressure) {
         Sm += Vc(PRS,k,j,i);
@@ -137,13 +130,8 @@ struct Fluid_AddSourceTermsFunctor {
       // Pressure (because we're including pressure in the flux,
       // we need that to get the radial pressure gradient)
       if constexpr(Phys::isothermal) {
-        real c2Iso;
-        if(haveIsoCs == UserDefFunction) {
-          c2Iso = csIsoArr(k,j,i);
-          c2Iso = c2Iso*c2Iso;
-        } else {
-          c2Iso = csIso*csIso;
-        }
+        real c2Iso = eos.GetWaveSpeed(k,j,i);
+        c2Iso *= c2Iso;
         Sm += Vc(RHO,k,j,i)*c2Iso;
       } else if constexpr(Phys::pressure) {
         Sm += Vc(PRS,k,j,i);
@@ -166,12 +154,8 @@ struct Fluid_AddSourceTermsFunctor {
       // Pressure curvature
       [[maybe_unused]] real c2Iso{0};
       if constexpr(Phys::isothermal) {
-        if(haveIsoCs == UserDefFunction) {
-          c2Iso = csIsoArr(k,j,i);
-          c2Iso = c2Iso*c2Iso;
-        } else {
-          c2Iso = csIso*csIso;
-        }
+        c2Iso = eos.GetWaveSpeed(k,j,i);
+        c2Iso *= c2Iso;
         Sm += 2.0*Vc(RHO,k,j,i)*c2Iso;
       } else if constexpr(Phys::pressure) {
         Sm += 2.0*Vc(PRS,k,j,i);

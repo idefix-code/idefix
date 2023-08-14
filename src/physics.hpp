@@ -43,7 +43,7 @@ struct DustPhysics {
   static constexpr bool pressure{false};
   static constexpr bool isothermal{false};
   static constexpr bool eos{false};
-  
+
   static constexpr bool mhd{false};
   static constexpr int nvar{1+COMPONENTS};
 

@@ -48,9 +48,9 @@ void RiemannSolver<Phys>::RoeHD(IdefixArray4D<real> &Flux) {
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Vs = this->Vs;
   IdefixArray3D<real> cMax = this->cMax;
-  
+
   EquationOfState eos = *(hydro->eos.get());
-  
+
   SlopeLimiter<Phys,DIR> slopeLim(Vc,data->dx[DIR],haveShockFlattening,shockFlattening.get());;
 
   idefix_for("ROE_Kernel",

@@ -21,4 +21,4 @@
   #include EOS_FILE
 #endif
 
-#endif // FLUID_EOS_EOS_HPP
+#endif // FLUID_EOS_EOS_HPP_

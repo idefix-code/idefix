@@ -54,7 +54,7 @@ void Analysis::WriteField(double data) {
  *    *
  *     **************************************************************** */
   if(idfx::prank==0) {
-    int col_width = precision + 10; 
+    int col_width = precision + 10;
     this->file << std::scientific << std::setw(col_width) << data;
   }
   return ;

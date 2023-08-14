@@ -23,9 +23,12 @@
 #define D_DY_J_tmp(q,n,m)  (q(n,k,j,i)/q(m,k,j,i) - q(n,k,j - 1,i)/q(m,k,j - 1,i))
 #define D_DZ_K_tmp(q,n,m)  (q(n,k,j,i)/q(m,k,j,i) - q(n,k - 1,j,i)/q(m,k - 1,j,i))
 
-#define SL_DX_tmp(q,n,m,iz,iy,ix)  (q(n,iz,iy,ix)/q(m,iz,iy,ix) - q(n,iz,iy,ix - 1)/q(m,iz,iy,ix - 1))
-#define SL_DY_tmp(q,n,m,iz,iy,ix)  (q(n,iz,iy,ix)/q(m,iz,iy,ix) - q(n,iz,iy - 1,ix)/q(m,iz,iy - 1,ix))
-#define SL_DZ_tmp(q,n,m,iz,iy,ix)  (q(n,iz,iy,ix)/q(m,iz,iy,ix) - q(n,iz - 1,iy,ix)/q(m,iz - 1,iy,ix))
+#define SL_DX_tmp(q,n,m,iz,iy,ix)  (q(n,iz,iy,ix)/q(m,iz,iy,ix)           \
+                                        - q(n,iz,iy,ix - 1)/q(m,iz,iy,ix - 1))
+#define SL_DY_tmp(q,n,m,iz,iy,ix)  (q(n,iz,iy,ix)/q(m,iz,iy,ix)            \
+                                        - q(n,iz,iy - 1,ix)/q(m,iz,iy - 1,ix))
+#define SL_DZ_tmp(q,n,m,iz,iy,ix)  (q(n,iz,iy,ix)/q(m,iz,iy,ix)            \
+                                        - q(n,iz - 1,iy,ix)/q(m,iz - 1,iy,ix))
 
 #define D_DY_I_tmp(q,n,m)  (  0.25*(q(n,k,j + 1,i    ) / q(m,k,j + 1,i)          \
                                   + q(n,k,j + 1,i - 1) / q(m,k,j + 1,i - 1))     \
@@ -120,7 +123,8 @@ void BragThermalDiffusion::EnrollBragThermalDiffusivity(BragDiffusivityFunc myFu
 
 // This function computes the thermal Flux and stores it in hydro->fluxRiemann
 // (this avoids an extra array)
-void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t, const IdefixArray4D<real> &Flux) {
+void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t,
+                                                const IdefixArray4D<real> &Flux) {
 #if HAVE_ENERGY == 1
   idfx::pushRegion("BragThermalDiffusion::AddBragDiffusiveFlux");
 
@@ -218,15 +222,21 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t, const Ide
           dTi = D_DX_I_tmp(Vc,PRS,RHO)/dx1(i);
           #if DIMENSIONS >= 2
             if (haveSlopeLimiter) {
-              dTj = slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k,j,i-1)/dx2(j),SL_DY_tmp(Vc,PRS,RHO,k,j+1,i-1)/dx2(j+1));
-              dTj = slopeLimiter(dTj, slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k,j,i)/dx2(j),SL_DY_tmp(Vc,PRS,RHO,k,j+1,i)/dx2(j+1)));
+              dTj = slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k,j,i-1)/dx2(j),
+                                 SL_DY_tmp(Vc,PRS,RHO,k,j+1,i-1)/dx2(j+1));
+              dTj = slopeLimiter(dTj,
+                                 slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k,j,i)/dx2(j),
+                                              SL_DY_tmp(Vc,PRS,RHO,k,j+1,i)/dx2(j+1)));
             } else {
               dTj = D_DY_I_tmp(Vc,PRS,RHO)/dx2(j);
             }
             #if DIMENSIONS == 3
               if (haveSlopeLimiter) {
-                dTk = slopeLimiter(SL_DZ_tmp(Vc,PRS,RHO,k,j,i-1)/dx3(k),SL_DZ_tmp(Vc,PRS,RHO,k+1,j,i-1)/dx3(k+1));
-                dTk = slopeLimiter(dTk, slopeLimiter(SL_DZ_tmp(Vc,PRS,RHO,k,j,i)/dx3(k),SL_DZ_tmp(Vc,PRS,RHO,k+1,j,i)/dx3(k+1)));
+                dTk = slopeLimiter(SL_DZ_tmp(Vc,PRS,RHO,k,j,i-1)/dx3(k),
+                                   SL_DZ_tmp(Vc,PRS,RHO,k+1,j,i-1)/dx3(k+1));
+                dTk = slopeLimiter(dTk,
+                                   slopeLimiter(SL_DZ_tmp(Vc,PRS,RHO,k,j,i)/dx3(k),
+                                                SL_DZ_tmp(Vc,PRS,RHO,k+1,j,i)/dx3(k+1)));
               } else {
                 dTk = D_DZ_I_tmp(Vc,PRS,RHO)/dx3(k);
               }
@@ -236,8 +246,11 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t, const Ide
           dTi = D_DX_I_tmp(Vc,PRS,RHO)/dx1(i);
           #if DIMENSIONS >= 2
             if (haveSlopeLimiter) {
-              dTj = slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k,j,i-1)/dx2(j),SL_DY_tmp(Vc,PRS,RHO,k,j+1,i-1)/dx2(j+1));
-              dTj = slopeLimiter(dTj, slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k,j,i)/dx2(j),SL_DY_tmp(Vc,PRS,RHO,k,j+1,i)/dx2(j+1)));
+              dTj = slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k,j,i-1)/dx2(j),
+                                 SL_DY_tmp(Vc,PRS,RHO,k,j+1,i-1)/dx2(j+1));
+              dTj = slopeLimiter(dTj,
+                                 slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k,j,i)/dx2(j),
+                                              SL_DY_tmp(Vc,PRS,RHO,k,j+1,i)/dx2(j+1)));
             } else {
               dTj = D_DY_I_tmp(Vc,PRS,RHO)/dx2(j);
             }
@@ -247,15 +260,21 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t, const Ide
           dTi = D_DX_I_tmp(Vc,PRS,RHO)/dx1(i);
           #if DIMENSIONS >= 2
             if (haveSlopeLimiter) {
-              dTj = 1./x1(i-1)*slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k,j,i-1)/dx2(j),SL_DY_tmp(Vc,PRS,RHO,k,j+1,i-1)/dx2(j+1));
-              dTj = slopeLimiter(dTj, 1./x1(i)*slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k,j,i)/dx2(j),SL_DY_tmp(Vc,PRS,RHO,k,j+1,i)/dx2(j+1)));
+              dTj = 1./x1(i-1)*slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k,j,i-1)/dx2(j),
+                                            SL_DY_tmp(Vc,PRS,RHO,k,j+1,i-1)/dx2(j+1));
+              dTj = slopeLimiter(dTj,
+                                 1./x1(i)*slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k,j,i)/dx2(j),
+                                                       SL_DY_tmp(Vc,PRS,RHO,k,j+1,i)/dx2(j+1)));
             } else {
               dTj = 1./x1l(i)*D_DY_I_tmp(Vc,PRS,RHO)/dx2(j); // 1/r dTj/dxj
             }
             #if DIMENSIONS == 3
               if (haveSlopeLimiter) {
-                dTk = slopeLimiter(SL_DZ_tmp(Vc,PRS,RHO,k,j,i-1)/dx3(k),SL_DZ_tmp(Vc,PRS,RHO,k+1,j,i-1)/dx3(k+1));
-                dTk = slopeLimiter(dTk, slopeLimiter(SL_DZ_tmp(Vc,PRS,RHO,k,j,i)/dx3(k),SL_DZ_tmp(Vc,PRS,RHO,k+1,j,i)/dx3(k+1)));
+                dTk = slopeLimiter(SL_DZ_tmp(Vc,PRS,RHO,k,j,i-1)/dx3(k),
+                                   SL_DZ_tmp(Vc,PRS,RHO,k+1,j,i-1)/dx3(k+1));
+                dTk = slopeLimiter(dTk,
+                                   slopeLimiter(SL_DZ_tmp(Vc,PRS,RHO,k,j,i)/dx3(k),
+                                                SL_DZ_tmp(Vc,PRS,RHO,k+1,j,i)/dx3(k+1)));
               } else {
                 dTk = D_DZ_I_tmp(Vc,PRS,RHO)/dx3(k);
               }
@@ -274,15 +293,21 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t, const Ide
           dTi = D_DX_I_tmp(Vc,PRS,RHO)/dx1(i);
           #if DIMENSIONS >= 2
             if (haveSlopeLimiter) {
-              dTj = 1./x1(i-1)*slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k,j,i-1)/dx2(j),SL_DY_tmp(Vc,PRS,RHO,k,j+1,i-1)/dx2(j+1));
-              dTj = slopeLimiter(dTj, 1./x1(i)*slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k,j,i)/dx2(j),SL_DY_tmp(Vc,PRS,RHO,k,j+1,i)/dx2(j+1)));
+              dTj = 1./x1(i-1)*slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k,j,i-1)/dx2(j),
+                                            SL_DY_tmp(Vc,PRS,RHO,k,j+1,i-1)/dx2(j+1));
+              dTj = slopeLimiter(dTj,
+                    1./x1(i)*slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k,j,i)/dx2(j),
+                                          SL_DY_tmp(Vc,PRS,RHO,k,j+1,i)/dx2(j+1)));
             } else {
               dTj = 1./x1l(i)*D_DY_I_tmp(Vc,PRS,RHO)/dx2(j); // 1/r dTj/dxj
             }
             #if DIMENSIONS == 3
               if (haveSlopeLimiter) {
-                dTk = s_1/x1(i-1)*slopeLimiter(SL_DZ_tmp(Vc,PRS,RHO,k,j,i-1)/dx3(k),SL_DZ_tmp(Vc,PRS,RHO,k+1,j,i-1)/dx3(k+1));
-                dTk = slopeLimiter(dTk, s_1/x1(i)*slopeLimiter(SL_DZ_tmp(Vc,PRS,RHO,k,j,i)/dx3(k),SL_DZ_tmp(Vc,PRS,RHO,k+1,j,i)/dx3(k+1)));
+                dTk = s_1/x1(i-1)*slopeLimiter(SL_DZ_tmp(Vc,PRS,RHO,k,j,i-1)/dx3(k),
+                                               SL_DZ_tmp(Vc,PRS,RHO,k+1,j,i-1)/dx3(k+1));
+                dTk = slopeLimiter(dTk,
+                                   s_1/x1(i)*slopeLimiter(SL_DZ_tmp(Vc,PRS,RHO,k,j,i)/dx3(k),
+                                                          SL_DZ_tmp(Vc,PRS,RHO,k+1,j,i)/dx3(k+1)));
               } else {
                 dTk = s_1/x1l(i)*D_DZ_I_tmp(Vc,PRS,RHO)/dx3(k);
               }
@@ -317,24 +342,33 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t, const Ide
 
         #if GEOMETRY == CARTESIAN
           if (haveSlopeLimiter) {
-            dTi = slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j-1,i)/dx1(i),SL_DX_tmp(Vc,PRS,RHO,k,j-1,i+1)/dx1(i+1));
-            dTi = slopeLimiter(dTi, slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx1(i),SL_DX_tmp(Vc,PRS,RHO,k,j,i+1)/dx1(i+1)));
+            dTi = slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j-1,i)/dx1(i),
+                              SL_DX_tmp(Vc,PRS,RHO,k,j-1,i+1)/dx1(i+1));
+            dTi = slopeLimiter(dTi,
+                               slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx1(i),
+                                            SL_DX_tmp(Vc,PRS,RHO,k,j,i+1)/dx1(i+1)));
           } else {
             dTi = D_DX_J_tmp(Vc,PRS,RHO)/dx1(i);
           }
           dTj = D_DY_J_tmp(Vc,PRS,RHO)/dx2(j);
           #if DIMENSIONS == 3
             if (haveSlopeLimiter) {
-              dTk = slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j-1,i)/dx3(k),SL_DX_tmp(Vc,PRS,RHO,k+1,j-1,i)/dx3(k+1));
-              dTk = slopeLimiter(dTk, slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx3(k),SL_DX_tmp(Vc,PRS,RHO,k+1,j,i)/dx3(k+1)));
+              dTk = slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j-1,i)/dx3(k),
+                                 SL_DX_tmp(Vc,PRS,RHO,k+1,j-1,i)/dx3(k+1));
+              dTk = slopeLimiter(dTk,
+                                 slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx3(k),
+                                              SL_DX_tmp(Vc,PRS,RHO,k+1,j,i)/dx3(k+1)));
             } else {
               dTk = D_DZ_J_tmp(Vc,PRS,RHO)/dx3(k);
             }
           #endif
         #elif GEOMETRY == CYLINDRICAL
           if (haveSlopeLimiter) {
-            dTi = slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j-1,i)/dx1(i),SL_DX_tmp(Vc,PRS,RHO,k,j-1,i+1)/dx1(i+1));
-            dTi = slopeLimiter(dTi, slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx1(i),SL_DX_tmp(Vc,PRS,RHO,k,j,i+1)/dx1(i+1)));
+            dTi = slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j-1,i)/dx1(i),
+                               SL_DX_tmp(Vc,PRS,RHO,k,j-1,i+1)/dx1(i+1));
+            dTi = slopeLimiter(dTi,
+                               slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx1(i),
+                                            SL_DX_tmp(Vc,PRS,RHO,k,j,i+1)/dx1(i+1)));
           } else {
             dTi = D_DX_J_tmp(Vc,PRS,RHO)/dx1(i);
           }
@@ -343,24 +377,33 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t, const Ide
         #elif GEOMETRY == POLAR
           //gradT = ... + 1/r dT/dtheta + ...
           if (haveSlopeLimiter) {
-            dTi = slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j-1,i)/dx1(i),SL_DX_tmp(Vc,PRS,RHO,k,j-1,i+1)/dx1(i+1));
-            dTi = slopeLimiter(dTi, slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx1(i),SL_DX_tmp(Vc,PRS,RHO,k,j,i+1)/dx1(i+1)));
+            dTi = slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j-1,i)/dx1(i),
+                               SL_DX_tmp(Vc,PRS,RHO,k,j-1,i+1)/dx1(i+1));
+            dTi = slopeLimiter(dTi,
+                               slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx1(i),
+                                            SL_DX_tmp(Vc,PRS,RHO,k,j,i+1)/dx1(i+1)));
           } else {
             dTi = D_DX_J_tmp(Vc,PRS,RHO)/dx1(i);
           }
           dTj = 1./x1(i)*D_DY_J_tmp(Vc,PRS,RHO)/dx2(j);
           #if DIMENSIONS == 3
             if (haveSlopeLimiter) {
-              dTk = slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j-1,i)/dx3(k),SL_DX_tmp(Vc,PRS,RHO,k+1,j-1,i)/dx3(k+1));
-              dTk = slopeLimiter(dTk, slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx3(k),SL_DX_tmp(Vc,PRS,RHO,k+1,j,i)/dx3(k+1)));
+              dTk = slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j-1,i)/dx3(k),
+                                 SL_DX_tmp(Vc,PRS,RHO,k+1,j-1,i)/dx3(k+1));
+              dTk = slopeLimiter(dTk,
+                                 slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx3(k),
+                                              SL_DX_tmp(Vc,PRS,RHO,k+1,j,i)/dx3(k+1)));
             } else {
               dTk = D_DZ_J_tmp(Vc,PRS,RHO)/dx3(k);
             }
           #endif
         #elif GEOMETRY == SPHERICAL
           if (haveSlopeLimiter) {
-            dTi = slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j-1,i)/dx1(i),SL_DX_tmp(Vc,PRS,RHO,k,j-1,i+1)/dx1(i+1));
-            dTi = slopeLimiter(dTi, slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx1(i),SL_DX_tmp(Vc,PRS,RHO,k,j,i+1)/dx1(i+1)));
+            dTi = slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j-1,i)/dx1(i),
+                               SL_DX_tmp(Vc,PRS,RHO,k,j-1,i+1)/dx1(i+1));
+            dTi = slopeLimiter(dTi,
+                               slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx1(i),
+                                            SL_DX_tmp(Vc,PRS,RHO,k,j,i+1)/dx1(i+1)));
           } else {
             dTi = D_DX_J_tmp(Vc,PRS,RHO)/dx1(i);
           }
@@ -375,7 +418,8 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t, const Ide
               } else {
                 s_1 = ONE_F/s_1;
               }
-              dTk = s_1/x1(i)*slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j-1,i)/dx3(k),SL_DX_tmp(Vc,PRS,RHO,k+1,j-1,i)/dx3(k+1));
+              dTk = s_1/x1(i)*slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j-1,i)/dx3(k),
+                                           SL_DX_tmp(Vc,PRS,RHO,k+1,j-1,i)/dx3(k+1));
 
               s_1 = sinx2(j);
 
@@ -385,7 +429,9 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t, const Ide
               } else {
                 s_1 = ONE_F/s_1;
               }
-              dTk = s_1/x1(i)*slopeLimiter(dTk, slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx3(k),SL_DX_tmp(Vc,PRS,RHO,k+1,j,i)/dx3(k+1)));
+              dTk = s_1/x1(i)*slopeLimiter(dTk,
+                                           slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx3(k),
+                                                        SL_DX_tmp(Vc,PRS,RHO,k+1,j,i)/dx3(k+1)));
             } else {
               real s_1 = sinx2m(j);
 
@@ -427,10 +473,16 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t, const Ide
 
         #if GEOMETRY == CARTESIAN
           if (haveSlopeLimiter) {
-            dTi = slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k-1,j,i)/dx1(i),SL_DX_tmp(Vc,PRS,RHO,k-1,j,i+1)/dx1(i+1));
-            dTi = slopeLimiter(dTi, slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx1(i),SL_DX_tmp(Vc,PRS,RHO,k,j,i+1)/dx1(i+1)));
-            dTj = slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k-1,j,i)/dx2(j),SL_DY_tmp(Vc,PRS,RHO,k-1,j+1,i)/dx2(j+1));
-            dTj = slopeLimiter(dTj, slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k,j,i)/dx2(j),SL_DY_tmp(Vc,PRS,RHO,k,j+1,i)/dx2(j+1)));
+            dTi = slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k-1,j,i)/dx1(i),
+                               SL_DX_tmp(Vc,PRS,RHO,k-1,j,i+1)/dx1(i+1));
+            dTi = slopeLimiter(dTi,
+                               slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx1(i),
+                                            SL_DX_tmp(Vc,PRS,RHO,k,j,i+1)/dx1(i+1)));
+            dTj = slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k-1,j,i)/dx2(j),
+                               SL_DY_tmp(Vc,PRS,RHO,k-1,j+1,i)/dx2(j+1));
+            dTj = slopeLimiter(dTj,
+                               slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k,j,i)/dx2(j),
+                                            SL_DY_tmp(Vc,PRS,RHO,k,j+1,i)/dx2(j+1)));
           } else {
             dTi = D_DX_K_tmp(Vc,PRS,RHO)/dx1(i);
             dTj = D_DY_K_tmp(Vc,PRS,RHO)/dx2(j);
@@ -439,10 +491,16 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t, const Ide
         // No cylindrical geometry in 3D!
         #elif GEOMETRY == POLAR
           if (haveSlopeLimiter) {
-            dTi = slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k-1,j,i)/dx1(i),SL_DX_tmp(Vc,PRS,RHO,k-1,j,i+1)/dx1(i+1));
-            dTi = slopeLimiter(dTi, slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx1(i),SL_DX_tmp(Vc,PRS,RHO,k,j,i+1)/dx1(i+1)));
-            dTj = slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k-1,j,i)/dx2(j),SL_DY_tmp(Vc,PRS,RHO,k-1,j+1,i)/dx2(j+1));
-            dTj = slopeLimiter(dTj, slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k,j,i)/dx2(j),SL_DY_tmp(Vc,PRS,RHO,k,j+1,i)/dx2(j+1)));
+            dTi = slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k-1,j,i)/dx1(i),
+                               SL_DX_tmp(Vc,PRS,RHO,k-1,j,i+1)/dx1(i+1));
+            dTi = slopeLimiter(dTi,
+                               slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx1(i),
+                                            SL_DX_tmp(Vc,PRS,RHO,k,j,i+1)/dx1(i+1)));
+            dTj = slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k-1,j,i)/dx2(j),
+                               SL_DY_tmp(Vc,PRS,RHO,k-1,j+1,i)/dx2(j+1));
+            dTj = slopeLimiter(dTj,
+                               slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k,j,i)/dx2(j),
+                                            SL_DY_tmp(Vc,PRS,RHO,k,j+1,i)/dx2(j+1)));
             dTj *= 1./x1(i);
           } else {
             dTi = D_DX_K_tmp(Vc,PRS,RHO)/dx1(i);
@@ -460,10 +518,16 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t, const Ide
           }
 
           if (haveSlopeLimiter) {
-            dTi = slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k-1,j,i)/dx1(i),SL_DX_tmp(Vc,PRS,RHO,k-1,j,i+1)/dx1(i+1));
-            dTi = slopeLimiter(dTi, slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx1(i),SL_DX_tmp(Vc,PRS,RHO,k,j,i+1)/dx1(i+1)));
-            dTj = slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k-1,j,i)/dx2(j),SL_DY_tmp(Vc,PRS,RHO,k-1,j+1,i)/dx2(j+1));
-            dTj = slopeLimiter(dTj, slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k,j,i)/dx2(j),SL_DY_tmp(Vc,PRS,RHO,k,j+1,i)/dx2(j+1)));
+            dTi = slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k-1,j,i)/dx1(i),
+                               SL_DX_tmp(Vc,PRS,RHO,k-1,j,i+1)/dx1(i+1));
+            dTi = slopeLimiter(dTi,
+                               slopeLimiter(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx1(i),
+                                            SL_DX_tmp(Vc,PRS,RHO,k,j,i+1)/dx1(i+1)));
+            dTj = slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k-1,j,i)/dx2(j),
+                               SL_DY_tmp(Vc,PRS,RHO,k-1,j+1,i)/dx2(j+1));
+            dTj = slopeLimiter(dTj,
+                               slopeLimiter(SL_DY_tmp(Vc,PRS,RHO,k,j,i)/dx2(j),
+                                            SL_DY_tmp(Vc,PRS,RHO,k,j+1,i)/dx2(j+1)));
             dTj *= 1./x1(i);
           } else {
             dTi = D_DX_K_tmp(Vc,PRS,RHO)/dx1(i);
@@ -501,7 +565,7 @@ real minmodTh(const real dvp, const real dvm) {
   real dq= 0.0;
   if(dvp*dvm >0.0) {
     real dq = ( fabs(dvp) < fabs(dvm) ? dvp : dvm);
-  }   
+  }
   return(dq);
 }
 
@@ -520,4 +584,3 @@ real vanLeerTh(const real dvp, const real dvm) {
   dq = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
   return(dq);
 }
-

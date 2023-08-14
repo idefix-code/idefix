@@ -417,8 +417,7 @@ struct Fluid_CalcRHSFunctor {
         for(int nv = 0 ; nv < COMPONENTS ; nv++) {
           rhs[nv + VX1] += dt*viscSrc(nv,k,j,i);
         }
-      }
-      else if(haveBragViscosity) {
+      } else if(haveBragViscosity) {
         #pragma unroll
         for(int nv = 0 ; nv < COMPONENTS ; nv++) {
           rhs[nv + VX1] += dt*bragViscSrc(nv,k,j,i);

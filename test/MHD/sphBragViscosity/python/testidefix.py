@@ -3,8 +3,6 @@ import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
 from pytools.vtk_io import readVTK
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy.special import spherical_jn
 import inifix
 from scipy.special import jn
 
@@ -18,7 +16,7 @@ list_VTK = list()
 for k in range(nfile):
     current_VTK = readVTK('../data.00{0:02d}.vtk'.format(k), 'spherical')
     list_VTK.append(current_VTK)
- 
+
 list_VX = list()
 list_VY = list()
 list_VZ = list()
@@ -40,7 +38,7 @@ Z = VTK.phi
 
 mu = conf["Hydro"]["bragViscosity"][-1]
 
-def analytic_sol(r, th, phi, t): 
+def analytic_sol(r, th, phi, t):
     lambd2 = 2.
     return amplitude*jn(1,r)/r*np.exp(-t*lambd2*mu)
 
@@ -59,4 +57,3 @@ for k, Vx in enumerate(list_VX):
 
 print("SUCCESS")
 sys.exit(0)
-

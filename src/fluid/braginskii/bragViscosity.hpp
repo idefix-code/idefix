@@ -15,9 +15,9 @@
 #include "grid.hpp"
 #include "fluid_defs.hpp"
 
-real minmodV(const real, const real); 
+real minmodV(const real, const real);
 real vanLeerV(const real, const real);
-real monotonizedCentralV(const real, const real); 
+real monotonizedCentralV(const real, const real);
 
 // Forward class hydro declaration
 template <typename Phys> class Fluid;

@@ -20,6 +20,7 @@
 #include "selfGravity.hpp"
 #include "vtk.hpp"
 #include "dump.hpp"
+#include "eos.hpp"
 
 // forward class declaration
 class DataBlock;
@@ -197,14 +198,8 @@ class Fluid {
   friend struct ShockFlattening_FindShockFunctor;
 
 
-  // Isothermal EOS parameters
-  real isoSoundSpeed;
-  HydroModuleStatus haveIsoSoundSpeed{Disabled};
-  IdefixArray3D<real> isoSoundSpeedArray;
-  IsoSoundSpeedFunc isoSoundSpeedFunc{NULL};
-
-  // Adiabatic EOS parameters
-  real gamma;
+  // EOS
+  std::unique_ptr<EquationOfState> eos;
 
   // Emf boundary conditions
   bool haveEmfBoundary{false};
@@ -245,6 +240,7 @@ class Fluid {
 #include "drag.hpp"
 #include "checkNan.hpp"
 #include "tracer.hpp"
+#include "eos.hpp"
 
 
 template<typename Phys>
@@ -265,26 +261,6 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
   #if ORDER < 1 || ORDER > 4
      IDEFIX_ERROR("Reconstruction at chosen order is not implemented. Check your definitions file");
   #endif
-
-
-  if constexpr (Phys::pressure) {
-    this->gamma = input.GetOrSet<real>(std::string(Phys::prefix),"gamma",0, 5.0/3.0);
-  }
-
-  if constexpr(Phys::isothermal) {
-    std::string isoString = input.Get<std::string>(std::string(Phys::prefix),"csiso",0);
-    if(isoString.compare("constant") == 0) {
-      this->haveIsoSoundSpeed = Constant;
-      this->isoSoundSpeed = input.Get<real>(std::string(Phys::prefix),"csiso",1);
-    } else if(isoString.compare("userdef") == 0) {
-      this->haveIsoSoundSpeed = UserDefFunction;
-    } else {
-      IDEFIX_ERROR("csiso admits only constant or userdef entries");
-    }
-  } else {
-    // set the isothermal soundspeed, even though it will not be used
-    this->isoSoundSpeed = -1.0;
-  }
 
   // Source terms (always activated when non-cartesian geometry because of curvature source terms)
 #if GEOMETRY == CARTESIAN
@@ -513,12 +489,6 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
     #endif // EVOLVE_VECTOR_POTENTIAL
   }
 
-  // Allocate sound speed array if needed
-  if(this->haveIsoSoundSpeed == UserDefFunction) {
-    this->isoSoundSpeedArray = IdefixArray3D<real>(prefix+"_csIso",
-                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  }
-
   if(this->haveCurrent) {
     // Allocate current (when hydro needs it)
     J = IdefixArray4D<real>(prefix+"_J", 3,
@@ -666,6 +636,11 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
 
   if constexpr(Phys::mhd) {
     this->emf = std::make_unique<ConstrainedTransport<Phys>>(input, this);
+  }
+
+  // Initialise the EOS
+  if constexpr(Phys::eos) {
+    this->eos = std::make_unique<EquationOfState>(input, data, this->prefix);
   }
 
   // Initialise boundary conditions

@@ -48,13 +48,9 @@ void RiemannSolver<Phys>::RoeHD(IdefixArray4D<real> &Flux) {
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Vs = this->Vs;
   IdefixArray3D<real> cMax = this->cMax;
-  IdefixArray3D<real> csIsoArr = hydro->isoSoundSpeedArray;
-
-  [[maybe_unused]] real gamma = hydro->gamma;
-  [[maybe_unused]] real gamma_m1 = hydro->gamma - ONE_F;
-  [[maybe_unused]] real csIso = hydro->isoSoundSpeed;
-  [[maybe_unused]] HydroModuleStatus haveIsoCs = hydro->haveIsoSoundSpeed;
-
+  
+  EquationOfState eos = *(hydro->eos.get());
+  
   SlopeLimiter<Phys,DIR> slopeLim(Vc,data->dx[DIR],haveShockFlattening,shockFlattening.get());;
 
   idefix_for("ROE_Kernel",
@@ -93,27 +89,32 @@ void RiemannSolver<Phys>::RoeHD(IdefixArray4D<real> &Flux) {
       // --- Compute the square of the sound speed
       real a, a2, a2L, a2R;
 #if HAVE_ENERGY
-      a2L = gamma * vL[PRS] / vL[RHO];
-      a2R = gamma * vR[PRS] / vR[RHO];
+      a2L = eos.GetWaveSpeed(vL[PRS],vL[RHO]);
+      a2R = eos.GetWaveSpeed(vR[PRS],vR[RHO]);
       real h, vel2;
 #else
-      if(haveIsoCs == UserDefFunction) {
-        a2L = HALF_F*(csIsoArr(k,j,i)+csIsoArr(k-koffset,j-joffset,i-ioffset));
-      } else {
-        a2L = csIso;
-      }
-      // Take the square
-      a2L = a2L*a2L;
+      a2L = HALF_F*(eos.GetWaveSpeed(k,j,i)
+                    +eos.GetWaveSpeed(k-koffset,j-joffset,i-ioffset));
       a2R = a2L;
 #endif
+      // Take the square
+      a2L = a2L*a2L;
+      a2R = a2R*a2R;
 
       // 2-- Compute the conservative variables
-      K_PrimToCons<Phys>(uL, vL, gamma_m1);
-      K_PrimToCons<Phys>(uR, vR, gamma_m1);
+      K_PrimToCons<Phys>(uL, vL, &eos);
+      K_PrimToCons<Phys>(uR, vR, &eos);
 
       // 3-- Compute the left and right fluxes
       K_Flux<Phys,DIR>(fluxL, vL, uL, a2L);
       K_Flux<Phys,DIR>(fluxR, vR, uR, a2R);
+
+      // Compute gamma of this interface
+      // todo(glesur): check that it's not the internal energy that should be used there instead
+      #if HAVE_ENERGY
+      real gamma = eos.GetGamma(0.5*(vL[PRS]+vR[PRS]), 0.5*(vL[RHO]+vR[RHO]));
+      real gamma_m1 = gamma-1;
+      #endif
 
       //  ----  Define Wave Jumps  ----
 #if ROE_AVERAGE == YES

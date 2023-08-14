@@ -11,15 +11,14 @@
 #include "dataBlock.hpp"
 template<typename Phys>
 void Fluid<Phys>::EnrollIsoSoundSpeed(IsoSoundSpeedFunc myFunc) {
-  if(this->haveIsoSoundSpeed != UserDefFunction) {
-    IDEFIX_WARNING("Isothermal sound speed enrollment requires Hydro/csiso "
-                 " to be set to userdef in .ini file");
-  }
   if constexpr(!Phys::isothermal) {
     IDEFIX_ERROR("Isothermal sound speed enrollment requires ISOTHERMAL to be defined in"
                  "definitions.hpp");
+  } else {
+    #ifdef ISOTHERMAL
+    eos->EnrollIsoSoundSpeed(myFunc);
+    #endif
   }
-  this->isoSoundSpeedFunc = myFunc;
 }
 
 template<typename Phys>
@@ -111,11 +110,6 @@ void Fluid<Phys>::EnrollHallDiffusivity(DiffusivityFunc myFunc) {
                  "to be set to userdef in .ini file");
   }
   this->hallDiffusivityFunc = myFunc;
-}
-
-template<typename Phys>
-real Fluid<Phys>::GetGamma() {
-  return(this->gamma);
 }
 
 template<typename Phys>

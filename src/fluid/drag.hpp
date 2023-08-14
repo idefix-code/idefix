@@ -11,6 +11,7 @@
 #include "idefix.hpp"
 #include "input.hpp"
 #include "fluid_defs.hpp"
+#include "eos.hpp"
 
 using UserDefDragFunc = void (*) (DataBlock *, real beta, IdefixArray3D<real> &gammai);
 
@@ -41,10 +42,7 @@ class Drag {
   UserDefDragFunc userDrag{NULL};
 
   // Sound speed computation
-  real gamma;
-  real csIso;
-  HydroModuleStatus haveIsoCs;
-  IdefixArray3D<real> csIsoArr;
+  EquationOfState *eos;
 };
 
 #include "fluid.hpp"
@@ -60,11 +58,7 @@ Drag::Drag(Input &input, Fluid<Phys> *hydroin):
   // Save the parent hydro object
 
   this->data = hydroin->data;
-  this->gamma = data->hydro->GetGamma();
-  this->csIso = data->hydro->isoSoundSpeed;
-  this->haveIsoCs = data->hydro->haveIsoSoundSpeed;
-  this->csIsoArr = data->hydro->isoSoundSpeedArray;
-
+  this->eos = hydroin->eos.get();
 
   // Check in which block we should fetch our information
   std::string BlockName;

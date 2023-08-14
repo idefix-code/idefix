@@ -14,6 +14,7 @@
 #include "input.hpp"
 #include "grid.hpp"
 #include "fluid_defs.hpp"
+#include "eos.hpp"
 
 
 // Forward class hydro declaration
@@ -54,9 +55,8 @@ class ThermalDiffusion {
   // constant diffusion coefficient (when needed)
   real kappa;
 
-  // adiabatic exponent (required to get the heat capacity)
-  // TODO(glesur): generalize to any equation of state!
-  real gamma;
+  // equation of state (required to get the heat capacity)
+  EquationOfState *eos;
 };
 
 #include "fluid.hpp"
@@ -66,7 +66,7 @@ template <typename Phys>
 ThermalDiffusion::ThermalDiffusion(Input &input, Grid &grid, Fluid<Phys> *hydroin):
                             Vc{hydroin->Vc},
                             dMax{hydroin->dMax},
-                            gamma{hydroin->GetGamma()},
+                            eos{hydroin->eos.get()},
                             data{hydroin->data},
                             status{hydroin->thermalDiffusionStatus} {
   idfx::pushRegion("ThermalDiffusion::ThermalDiffusion");

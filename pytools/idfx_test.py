@@ -279,7 +279,7 @@ class idfxTest:
     if os.path.exists(os.path.join('python', 'testidefix.py')):
       os.chdir("python")
       comm = [sys.executable, "testidefix.py"]
-      if not self.plot:
+      if self.noplot:
         comm.append("-noplot")
 
       print(bcolors.OKCYAN+"Running standard test...")

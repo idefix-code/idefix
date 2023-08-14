@@ -27,15 +27,10 @@ void RiemannSolver<Phys>::HllHD(IdefixArray4D<real> &Flux) {
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Vs = this->Vs;
   IdefixArray3D<real> cMax = this->cMax;
-  IdefixArray3D<real> csIsoArr = hydro->isoSoundSpeedArray;
+  EquationOfState eos = *(hydro->eos.get());
 
   // Required for high order interpolations
   IdefixArray1D<real> dx = this->data->dx[DIR];
-
-  [[maybe_unused]] real gamma = hydro->gamma;
-  [[maybe_unused]] real gamma_m1 = gamma - ONE_F;
-  [[maybe_unused]] real csIso = hydro->isoSoundSpeed;
-  [[maybe_unused]] HydroModuleStatus haveIsoCs = hydro->haveIsoSoundSpeed;
 
   SlopeLimiter<Phys,DIR> slopeLim(Vc,data->dx[DIR],haveShockFlattening,shockFlattening.get());;
 
@@ -67,14 +62,11 @@ void RiemannSolver<Phys>::HllHD(IdefixArray4D<real> &Flux) {
 
       // 2-- Get the wave speed
       #if HAVE_ENERGY
-        cL = std::sqrt( gamma *(vL[PRS]/vL[RHO]) );
-        cR = std::sqrt( gamma *(vR[PRS]/vR[RHO]) );
+        cL = eos.GetWaveSpeed(vL[PRS],vL[RHO]);
+        cR = eos.GetWaveSpeed(vR[PRS],vR[RHO]);
       #else
-        if(haveIsoCs == UserDefFunction) {
-          cL = HALF_F*(csIsoArr(k,j,i)+csIsoArr(k-koffset,j-joffset,i-ioffset));
-        } else {
-          cL = csIso;
-        }
+        cL = HALF_F*(eos.GetWaveSpeed(k,j,i)
+                    +eos.GetWaveSpeed(k-koffset,j-joffset,i-ioffset));
         cR = cL;
       #endif
 
@@ -91,8 +83,8 @@ void RiemannSolver<Phys>::HllHD(IdefixArray4D<real> &Flux) {
       cmax  = FMAX(FABS(SL), FABS(SR));
 
       // 2-- Compute the conservative variables: do this by extrapolation
-      K_PrimToCons<Phys>(uL, vL, gamma_m1);
-      K_PrimToCons<Phys>(uR, vR, gamma_m1);
+      K_PrimToCons<Phys>(uL, vL, &eos);
+      K_PrimToCons<Phys>(uR, vR, &eos);
 
       // 3-- Compute the left and right fluxes
       K_Flux<Phys,DIR>(fluxL, vL, uL, cL*cL);

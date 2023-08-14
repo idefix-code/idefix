@@ -41,21 +41,7 @@ void Fluid<Phys>::ShowConfig() {
     idfx::cout << "4th order (PPM)" << std::endl;
   #endif
 
-  if constexpr(Phys::pressure) {
-    idfx::cout << Phys::prefix << ": EOS: ideal with gamma=" << this->gamma << std::endl;
-  }
-  if constexpr(Phys::isothermal) {
-    if(haveIsoSoundSpeed == Constant) {
-      idfx::cout << Phys::prefix << ": EOS: isothermal with cs=" << isoSoundSpeed << "."
-                 << std::endl;
-    } else if(haveIsoSoundSpeed == UserDefFunction) {
-      idfx::cout << Phys::prefix << ": EOS: isothermal with user-defined cs function."
-                 << std::endl;
-      if(!isoSoundSpeedFunc) {
-        IDEFIX_ERROR("No user-defined isothermal sound speed function has been enrolled.");
-      }
-    }
-  }// ISOTHERMAL
+  
 
   if(haveRotation) {
     idfx::cout << Phys::prefix << ": Rotation ENABLED with Omega=" << this->OmegaZ << std::endl;
@@ -147,6 +133,10 @@ void Fluid<Phys>::ShowConfig() {
   }
   if(userSourceTerm) {
     idfx::cout << Phys::prefix << ": user-defined source terms ENABLED." << std::endl;
+  }
+
+  if constexpr(Phys::eos) {
+    eos->ShowConfig();
   }
   rSolver->ShowConfig();
 

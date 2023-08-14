@@ -12,6 +12,7 @@
 #include "thermalDiffusion.hpp"
 #include "dataBlock.hpp"
 #include "fluid.hpp"
+#include "eos.hpp"
 
 
 
@@ -58,6 +59,7 @@ void ThermalDiffusion::AddDiffusiveFlux(int dir, const real t, const IdefixArray
   IdefixArray3D<real> kappaArr = this->kappaArr;
   IdefixArray1D<real> dx = this->data->dx[dir];
 
+  EquationOfState eos = *(this->eos);
   #if GEOMETRY == POLAR
     IdefixArray1D<real> x1 = this->data->x[IDIR];
   #endif
@@ -90,7 +92,6 @@ void ThermalDiffusion::AddDiffusiveFlux(int dir, const real t, const IdefixArray
   kend = this->data->end[KDIR];
 
   real kappaConstant = this->kappa;
-  real gamma = this->gamma;
 
   if(dir==IDIR) iend++;
   if(dir==JDIR) jend++;
@@ -139,6 +140,8 @@ void ThermalDiffusion::AddDiffusiveFlux(int dir, const real t, const IdefixArray
         Flux(ENG,k,j,i) += -kappa*gradT;
 
         // Compute total diffusion coefficient
+        real gamma = eos.GetGamma(Vc(PRS,k,j,i),Vc(RHO,k,j,i));
+
         real locdmax = kappa * (gamma-ONE_F) /
                         (HALF_F * ( Vc(RHO,k,j,i) + Vc(RHO,k-koffset,j-joffset,i-ioffset)));
         dMax(k,j,i) = FMAX(dMax(k,j,i) , locdmax);

@@ -24,6 +24,7 @@ struct DefaultPhysics {
   #else
   static constexpr bool isothermal{false};
   #endif
+  static constexpr bool eos = isothermal || pressure; // whether we have a eos
   #if MHD == YES
     static constexpr bool mhd{true};
     static constexpr int nvar{1+2*COMPONENTS  + (pressure?1:0)};
@@ -41,7 +42,8 @@ struct DustPhysics {
   static constexpr bool dust{true};
   static constexpr bool pressure{false};
   static constexpr bool isothermal{false};
-
+  static constexpr bool eos{false};
+  
   static constexpr bool mhd{false};
   static constexpr int nvar{1+COMPONENTS};
 

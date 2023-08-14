@@ -18,10 +18,8 @@ void Drag::AddDragForce(const real dt) {
   const Type type = this->type;
   real dragCoeff = this->dragCoeff;
   bool feedback = this->feedback;
-  [[maybe_unused]] real gamma_ad = this->gamma;
-  [[maybe_unused]] real csIso = this->csIso;
-  [[maybe_unused]] HydroModuleStatus haveIsoCs = this->haveIsoCs;
-  [[maybe_unused]] IdefixArray3D<real> csIsoArr = this->csIsoArr;
+
+  EquationOfState eos = *(this->eos);
 
   auto userGammai = this->gammai;
   if(type == Type::Userdef) {
@@ -49,13 +47,9 @@ void Drag::AddDragForce(const real dt) {
         // Assume a fixed size, hence for both Epstein or Stokes, gamma~1/rho_g/cs
         // Get the sound speed
         #if HAVE_ENERGY == 1
-          cs = std::sqrt(gamma_ad*VcGas(PRS,k,j,i)/VcGas(RHO,k,j,i));
+          cs = eos.GetWaveSpeed(VcGas(PRS,k,j,i),VcGas(RHO,k,j,i));
         #else
-          if(haveIsoCs == UserDefFunction) {
-            cs = csIsoArr(k,j,i);
-          } else {
-            cs = csIso;
-          }
+          cs = eos.GetWaveSpeed(k,j,i);
         #endif
         gamma = cs/dragCoeff;
       } else if(type == Type::Userdef) {

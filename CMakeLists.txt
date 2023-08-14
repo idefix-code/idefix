@@ -164,6 +164,7 @@ target_include_directories(idefix PUBLIC
                            src/fluid
                            src/fluid/boundary
                            src/fluid/constrainedTransport
+                           src/fluid/eos
                            src/fluid/RiemannSolver
                            src/fluid/RiemannSolver/HDsolvers
                            src/fluid/RiemannSolver/MHDsolvers

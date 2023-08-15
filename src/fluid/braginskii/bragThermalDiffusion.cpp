@@ -198,7 +198,7 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t,
 
       [[maybe_unused]] real dTi, dTj, dTk, dTn;
       dTi = dTj = dTk = dTn = ZERO_F;
-  
+
       real locdmax = 0;
       ///////////////////////////////////////////
       // IDIR sweep                            //

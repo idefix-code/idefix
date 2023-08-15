@@ -134,6 +134,8 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t,
   IdefixArray3D<real> dMax = this->dMax;
 
   HydroModuleStatus haveThermalDiffusion = this->status.status;
+  bool haveSlopeLimiter = this->haveSlopeLimiter;
+  SlopeLimiterFunc slopeLimiter = this->slopeLimiter;
 
   int ibeg, iend, jbeg, jend, kbeg, kend;
   ibeg = this->data->beg[IDIR];
@@ -191,11 +193,13 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t,
       real knor, kpar;
       real bgradT, Bmag, bn;
       real q;
-      real Bi, Bj, Bk, Bn = 0;
+      [[maybe_unused]] real Bi, Bj, Bk, Bn;
+      Bi = Bj = Bk = Bn = ZERO_F;
 
-      real dTi, dTj, dTk, dTn = 0;
+      [[maybe_unused]] real dTi, dTj, dTk, dTn;
+      dTi = dTj = dTk = dTn = ZERO_F;
+  
       real locdmax = 0;
-
       ///////////////////////////////////////////
       // IDIR sweep                            //
       ///////////////////////////////////////////

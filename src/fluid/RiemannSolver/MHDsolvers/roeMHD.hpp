@@ -75,7 +75,6 @@ void RiemannSolver<Phys>::RoeMHD(IdefixArray4D<real> &Flux) {
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Vs = this->Vs;
   IdefixArray3D<real> cMax = this->cMax;
-  IdefixArray3D<real> csIsoArr = hydro->isoSoundSpeedArray;
 
   // Required for high order interpolations
   IdefixArray1D<real> dx = this->data->dx[DIR];
@@ -96,10 +95,7 @@ void RiemannSolver<Phys>::RoeMHD(IdefixArray4D<real> &Flux) {
   IdefixArray3D<real> dL;
   IdefixArray3D<real> dR;
 
-  real gamma = hydro->gamma;
-  [[maybe_unused]] real gamma_m1=gamma-ONE_F;
-  [[maybe_unused]] real csIso = hydro->isoSoundSpeed;
-  [[maybe_unused]] HydroModuleStatus haveIsoCs = hydro->haveIsoSoundSpeed;
+  EquationOfState eos = *(hydro->eos.get());
 
   // TODO(baghdads) what is this delta?
   real delta    = 1.e-6;
@@ -219,8 +215,8 @@ void RiemannSolver<Phys>::RoeMHD(IdefixArray4D<real> &Flux) {
       }
 
       // 2-- Compute the conservative variables
-      K_PrimToCons<Phys>(uL, vL, gamma_m1);
-      K_PrimToCons<Phys>(uR, vR, gamma_m1);
+      K_PrimToCons<Phys>(uL, vL, &eos);
+      K_PrimToCons<Phys>(uR, vR, &eos);
 
       // --- Compute the square of the sound speed
       real a, a2, a2L, a2R;
@@ -228,14 +224,12 @@ void RiemannSolver<Phys>::RoeMHD(IdefixArray4D<real> &Flux) {
         // These are actually not used, but are initialised to avoid warnings
         a2L = ONE_F;
         a2R = ONE_F;
+        real gamma = eos.GetGamma(0.5*(vL[RHO]+vR[RHO]),0.5*(vL[PRS]+vR[PRS]));
       #else
-        if(haveIsoCs == UserDefFunction) {
-          a2L = HALF_F*(csIsoArr(k,j,i)+csIsoArr(k-koffset,j-joffset,i-ioffset));
-      } else {
-          a2L = csIso;
-      }
-      a2L = a2L*a2L;
-      a2R = a2L;
+        a2L = HALF_F*(eos.GetWaveSpeed(k,j,i)
+                    +eos.GetWaveSpeed(k-koffset,j-joffset,i-ioffset));
+        a2L = a2L*a2L;
+        a2R = a2L;
       #endif
 
       // 3-- Compute the left and right fluxes
@@ -316,7 +310,7 @@ void RiemannSolver<Phys>::RoeMHD(IdefixArray4D<real> &Flux) {
       BdB = EXPAND(Bx*dU[BXn], + By*dU[BXt], + Bz*dU[BXb]);
 
       vel2    = EXPAND(u*u, + v*v, + w*w);
-      dV[PRS] = gamma_m1*((0.5*vel2 - X)*dV[RHO] - vdm + dU[ENG] - BdB);
+      dV[PRS] = (gamma-1.0)*((0.5*vel2 - X)*dV[RHO] - vdm + dU[ENG] - BdB);
 
       HL   = (uL[ENG] + pL)/vL[RHO];
       HR   = (uR[ENG] + pR)/vR[RHO];
@@ -324,7 +318,7 @@ void RiemannSolver<Phys>::RoeMHD(IdefixArray4D<real> &Flux) {
 
       Hgas = H - b2;         // gas enthalpy
 
-      a2 = (2.0 - gamma)*X + gamma_m1*(Hgas - 0.5*vel2);
+      a2 = (2.0 - gamma)*X + (gamma-1.0)*(Hgas - 0.5*vel2);
       if (a2 < 0.0) {
           //IDEFIX_ERROR("! Roe_Solver(): a2 < 0.0 !! \n");
       }
@@ -480,7 +474,7 @@ void RiemannSolver<Phys>::RoeMHD(IdefixArray4D<real> &Flux) {
       EXPAND( Rc[Xn][kk] = u;  ,
               Rc[Xt][kk] = v;  ,
               Rc[Xb][kk] = w;  )
-      Rc[ENG][kk] = 0.5*vel2 + (gamma - 2.0)/gamma_m1*X;
+      Rc[ENG][kk] = 0.5*vel2 + (gamma - 2.0)/(gamma-1.0)*X;
 
       eta[kk] = ((a2 - X)*dV[RHO] - dV[PRS])/a2;
 #endif

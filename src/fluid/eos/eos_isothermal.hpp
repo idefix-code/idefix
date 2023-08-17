@@ -47,7 +47,9 @@ class EquationOfState {
     }
   }
 
-  real GetGamma(real P, real rho) const { // The gamma of this EOS
+  // In the isothermal EOS, gamma does not depend on the gas state,
+  // So we add default values to 0 here so that GetGamma can be called without any argument
+  real GetGamma(real P = 0.0, real rho = 0.0) const {
     return 1.0;
   }
 

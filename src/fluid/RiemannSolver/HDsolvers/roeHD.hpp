@@ -89,8 +89,8 @@ void RiemannSolver<Phys>::RoeHD(IdefixArray4D<real> &Flux) {
       // --- Compute the square of the sound speed
       real a, a2, a2L, a2R;
 #if HAVE_ENERGY
-      a2L = eos.GetWaveSpeed(vL[PRS],vL[RHO]);
-      a2R = eos.GetWaveSpeed(vR[PRS],vR[RHO]);
+      a2L = std::sqrt(eos.GetGamma(vL[PRS],vL[RHO])*(vL[PRS]/vL[RHO]));
+      a2R = std::sqrt(eos.GetGamma(vR[PRS],vR[RHO])*(vR[PRS]/vR[RHO]));
       real h, vel2;
 #else
       a2L = HALF_F*(eos.GetWaveSpeed(k,j,i)

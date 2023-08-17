@@ -29,8 +29,9 @@ class EquationOfState {
   void Refresh(DataBlock &, real) {}  // Refresh the eos (recompute coefficients and tables)
 
   KOKKOS_INLINE_FUNCTION
-  real GetWaveSpeed(real P, real rho) const {
-    return std::sqrt(gamma*(P/rho));
+  real GetWaveSpeed(int k, int j, int i) const {
+    Kokkos::abort("GetWaveSpeed should be used only for isothermal EOS");
+    return 0;
   }
   KOKKOS_INLINE_FUNCTION
   real GetInternalEnergy(real P, real rho) const {

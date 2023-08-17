@@ -62,8 +62,8 @@ void RiemannSolver<Phys>::HllHD(IdefixArray4D<real> &Flux) {
 
       // 2-- Get the wave speed
       #if HAVE_ENERGY
-        cL = eos.GetWaveSpeed(vL[PRS],vL[RHO]);
-        cR = eos.GetWaveSpeed(vR[PRS],vR[RHO]);
+        cL = std::sqrt(eos.GetGamma(vL[PRS],vL[RHO])*(vL[PRS]/vL[RHO]));
+        cR = std::sqrt(eos.GetGamma(vR[PRS],vR[RHO])*(vR[PRS]/vR[RHO]));
       #else
         cL = HALF_F*(eos.GetWaveSpeed(k,j,i)
                     +eos.GetWaveSpeed(k-koffset,j-joffset,i-ioffset));

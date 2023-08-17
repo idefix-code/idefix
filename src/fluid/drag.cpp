@@ -47,7 +47,8 @@ void Drag::AddDragForce(const real dt) {
         // Assume a fixed size, hence for both Epstein or Stokes, gamma~1/rho_g/cs
         // Get the sound speed
         #if HAVE_ENERGY == 1
-          cs = eos.GetWaveSpeed(VcGas(PRS,k,j,i),VcGas(RHO,k,j,i));
+          cs = std::sqrt(eos.GetGamma(VcGas(PRS,k,j,i),VcGas(RHO,k,j,i)
+                         *VcGas(PRS,k,j,i)/VcGas(RHO,k,j,i)));
         #else
           cs = eos.GetWaveSpeed(k,j,i);
         #endif

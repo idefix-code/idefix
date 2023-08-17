@@ -65,10 +65,6 @@ class EquationOfState {
     idfx::popRegion();
   }
 
-  KOKKOS_INLINE_FUNCTION real GetWaveSpeed(real P, real rho) const {
-    Kokkos::abort("Wave speed as a function of pressure is not defined in the isothermal EOS");
-  }
-
   KOKKOS_INLINE_FUNCTION real GetWaveSpeed(const int k, const int j, const int i) const {
     if(haveIsoSoundSpeed == UserDefFunction) {
       return isoSoundSpeedArray(k,j,i);

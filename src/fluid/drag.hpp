@@ -58,7 +58,8 @@ Drag::Drag(Input &input, Fluid<Phys> *hydroin):
   // Save the parent hydro object
 
   this->data = hydroin->data;
-  this->eos = hydroin->eos.get();
+  // We use the EOS of the basic fluid instance, as there is no EOS for dust!
+  this->eos = hydroin->data->hydro->eos.get();
 
   // Check in which block we should fetch our information
   std::string BlockName;

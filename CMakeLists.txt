@@ -14,6 +14,10 @@ option(Idefix_DEBUG "Enable Idefix debug features (makes the code very slow)" OF
 option(Idefix_WERROR "Treat compiler warnings as errors" OFF)
 set(Idefix_CXX_FLAGS "" CACHE STRING "Additional compiler/linker flag")
 set(Idefix_DEFS "definitions.hpp" CACHE FILEPATH "Problem definition header file")
+option(Idefix_CUSTOM_EOS "Use custom equation of state" OFF)
+if(Idefix_CUSTOM_EOS)
+  set(Idefix_EOS_FILE "eos_custom.hpp" CACHE FILEPATH "Custom equation of state source file")
+endif()
 set(Idefix_RECONSTRUCTION "Linear" CACHE STRING "Type of cell reconstruction scheme")
 if(Idefix_MHD)
   option(Idefix_EVOLVE_VECTOR_POTENTIAL "Evolve the vector potential instead of the field (helps reducing div(B) in long runs)" OFF)
@@ -110,6 +114,10 @@ file(APPEND ${CMAKE_SOURCE_DIR}/src/version.hpp "#define IDEFIX_VERSION \"${Idef
 
 if(NOT ${Idefix_DEFS} STREQUAL "definitions.hpp")
   add_compile_definitions("DEFINITIONS_FILE=\"${Idefix_DEFS}\"")
+endif()
+
+if(Idefix_CUSTOM_EOS)
+  add_compile_definitions("EOS_FILE=\"${Idefix_EOS_FILE}\"")
 endif()
 
 # Order of the scheme

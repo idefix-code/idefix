@@ -355,7 +355,16 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
       msg  << "Unknown integration type for thermal diffusion: " << opType;
       IDEFIX_ERROR(msg);
     }
-    this->thermalDiffusion = std::make_unique<ThermalDiffusion>(input, grid, this);
+    if(input.Get<std::string>(std::string(Phys::prefix),"TDiffusion",1).compare("constant") == 0) {
+        thermalDiffusionStatus.status = Constant;
+      } else if(input.Get<std::string>(std::string(Phys::prefix),
+                                      "TDiffusion",1).compare("userdef") == 0) {
+       thermalDiffusionStatus.status = UserDefFunction;
+
+      } else {
+        IDEFIX_ERROR("Unknown thermal diffusion definition in idefix.ini. "
+                     "Can only be constant or userdef.");
+      }
   }
 
   if(input.CheckEntry(std::string(Phys::prefix),"drag")>=0) {
@@ -648,6 +657,11 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
 
   if(haveRKLParabolicTerms) {
     this->rkl = std::make_unique<RKLegendre<Phys>>(input,this);
+  }
+
+  // Thermal diffusion
+  if(thermalDiffusionStatus.status != Disabled ) {
+    this->thermalDiffusion = std::make_unique<ThermalDiffusion>(input, grid, this);
   }
 
   // Drag force when needed

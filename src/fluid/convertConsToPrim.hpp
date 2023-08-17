@@ -108,7 +108,10 @@ void Fluid<Phys>::ConvertConsToPrim() {
 
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Uc = this->Uc;
-  EquationOfState eos = *(this->eos.get());
+  EquationOfState eos;
+  if constexpr(Phys::eos) {
+    eos = *(this->eos.get());
+  }
 
   if constexpr(Phys::mhd) {
     #ifdef EVOLVE_VECTOR_POTENTIAL
@@ -152,7 +155,10 @@ void Fluid<Phys>::ConvertPrimToCons() {
 
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Uc = this->Uc;
-  EquationOfState eos = *(this->eos.get());
+  EquationOfState eos;
+  if constexpr(Phys::eos) {
+    eos = *(this->eos.get());
+  }
 
   idefix_for("ConvertPrimToCons",
              0,data->np_tot[KDIR],

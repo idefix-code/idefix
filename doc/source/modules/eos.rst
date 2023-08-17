@@ -7,9 +7,9 @@ About
 ---------
 
 By default, *Idefix* can handle either isothermal equation of states (in which case the pressure is never computed, and the code
-works with a prescribed sound speed function), or an ideal adiabatic equation of state (assuming a constant adiabatic exponent :math:`gamma`).
+works with a prescribed sound speed function), or an ideal adiabatic equation of state (assuming a constant adiabatic exponent :math:`\gamma`).
 
-If one wants to compute the dynamics of more complex fluids (e.g. multiphase flows, partial ionisation, etc.), then the idal adiabatic equation of
+If one wants to compute the dynamics of more complex fluids (e.g. multiphase flows, partial ionisation, etc.), then the ideal adiabatic equation of
 state is not sufficient and one needs to code a *custom* equation of state. This is done by implementing the class ``EquationOfState`` with the functions
 required by *Idefix* algorithm.
 
@@ -17,7 +17,7 @@ Functions needed
 -----------------
 
 *Idefix* requires the definition of 3 functions that are called during the integration loop: a function to compute the first adiabatic exponent :math:`\Gamma_1`, and
-the functions needed to convert pressure to internal energy and *vice-versa*.
+the functions needed to convert pressure to internal energy and *vice-versa*. The definition for these function is:
 
 .. code-block:: c++
 

@@ -338,7 +338,16 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
       msg  << "Unknown integration type for viscosity: " << opType;
       IDEFIX_ERROR(msg);
     }
-    this->viscosity = std::make_unique<Viscosity>(input, grid, this);
+    if(input.Get<std::string>(std::string(Phys::prefix),"viscosity",1)
+                              .compare("constant") == 0) {
+      viscosityStatus.status = Constant;
+    } else if(input.Get<std::string>(std::string(Phys::prefix),"viscosity",1)
+                                      .compare("userdef") == 0) {
+        viscosityStatus.status = UserDefFunction;
+    } else {
+        IDEFIX_ERROR("Unknown viscosity definition in idefix.ini. "
+                     "Can only be constant or userdef.");
+    }
   }
 
   // Check whether thermal diffusion is enabled, if so, init a thermal diffusion object
@@ -663,6 +672,12 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
   if(thermalDiffusionStatus.status != Disabled ) {
     this->thermalDiffusion = std::make_unique<ThermalDiffusion>(input, grid, this);
   }
+
+  // Viscosity
+  if(viscosityStatus.status != Disabled) {
+    this->viscosity = std::make_unique<Viscosity>(input, grid, this);
+  }
+
 
   // Drag force when needed
   if(haveDrag) {

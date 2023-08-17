@@ -39,7 +39,7 @@ void UserStep(Hydro *hydro, const real t, const real dt) {
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
-    gammaIdeal=data.hydro->GetGamma();
+    gammaIdeal=data.hydro->eos->GetGamma();
 
     // Get rotation rate along vertical axis
     omega=input.Get<real>("Hydro","rotation",0);

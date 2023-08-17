@@ -25,7 +25,9 @@ class EquationOfState {
     idfx::cout << "EquationOfState: ideal with gamma=" << this->gamma << std::endl;
   }
 
-  KOKKOS_INLINE_FUNCTION real GetGamma(real P, real rho) const {return gamma;}
+  // First adiabatic exponent. In the ideal EOS, gamma does not depend on the gas state,
+  // So we add default values to 0 here so that GetGamma can be called without any argument
+  KOKKOS_INLINE_FUNCTION real GetGamma(real P = 0.0, real rho = 0.0) const {return gamma;}
   void Refresh(DataBlock &, real) {}  // Refresh the eos (recompute coefficients and tables)
 
   KOKKOS_INLINE_FUNCTION

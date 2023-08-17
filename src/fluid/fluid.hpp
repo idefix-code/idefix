@@ -58,7 +58,6 @@ class Fluid {
   void AddSourceTerms(real, real );
   void CoarsenFlow(IdefixArray4D<real>&);
   void CoarsenMagField(IdefixArray4D<real>&);
-  real GetGamma();
   real CheckDivB();
   void EvolveStage(const real, const real);
   void ResetStage();
@@ -68,6 +67,9 @@ class Fluid {
 
   // Our boundary conditions
   std::unique_ptr<Boundary<Phys>> boundary;
+
+  // EOS
+  std::unique_ptr<EquationOfState> eos;
 
   // Source terms
   bool haveSourceTerms{false};
@@ -196,10 +198,6 @@ class Fluid {
 
   template<typename P>
   friend struct ShockFlattening_FindShockFunctor;
-
-
-  // EOS
-  std::unique_ptr<EquationOfState> eos;
 
   // Emf boundary conditions
   bool haveEmfBoundary{false};

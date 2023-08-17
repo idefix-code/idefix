@@ -10,7 +10,7 @@ void Analysis(DataBlock & data) {
   auto Vc=data.hydro->Vc;
   auto Vcd=data.dust[0]->Vc;
   real Ekg,Ekd, Etherm;
-  real gamma = data.hydro->GetGamma();
+  real gamma = data.hydro->eos->GetGamma();
 
   idefix_reduce("Ek",data.beg[KDIR],data.end[KDIR],data.beg[JDIR],data.end[JDIR],data.beg[IDIR],data.end[IDIR],
               KOKKOS_LAMBDA (int k, int j, int i, real &vx2) {

@@ -57,6 +57,9 @@ cmake $IDEFIX_DIR
 
 Several options can be enabled from the command line (a complete list is available with `cmake $IDEFIX_DIR -LH`). For instance: `-DIdefix_RECONSTRUCTION=Parabolic` (enable PPM reconstruction), `-DIdefix_MPI=ON` (enable mpi), `-DKokkos_ENABLE_OPENMP=ON` (enable openmp parallelisation), etc... For more complex target architectures, it is recommended to use cmake GUI launching `ccmake $IDEFIX_DIR` in place of `cmake` and then switching on the required options.
 
+Optional xdmf(hdf5+xmf) file dumping feature has been added to `Idefix`. This uses either serial or parallel implementation of `hdf5` library which needs to be made available. These xdmf file pairs can be easily visualized in `ParaView` or `VisIt` by loading the `xmf` files. The `hdf5` files can also be loaded easily in `python` (using `h5py`) for post-processing and post-run analysis. One can turn on `xdmf` data dumps by using `-DIdefix_HDF5=ON`. The `[Output]` block of `.ini` file is checked during runtime for a `xdmf` entry whih controls the frequency of xdmf file dumps during code execution.
+<!-- TODO: HDF5 Chunking and Compression filters -->
+
 One can then compile the code:
 
 ```shell

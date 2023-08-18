@@ -25,6 +25,8 @@ Makefile.local
 # test artifacts
 test/**/*.o
 test/**/*.vtk
+test/**/*.h5
+test/**/*.xmf
 test/**/*.dmp
 test/**/*.idfx
 test/**/*.tmp

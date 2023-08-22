@@ -20,6 +20,7 @@
 #include "selfGravity.hpp"
 #include "vtk.hpp"
 #include "dump.hpp"
+#include "eos.hpp"
 
 // forward class declaration
 class DataBlock;
@@ -57,7 +58,6 @@ class Fluid {
   void AddSourceTerms(real, real );
   void CoarsenFlow(IdefixArray4D<real>&);
   void CoarsenMagField(IdefixArray4D<real>&);
-  real GetGamma();
   real CheckDivB();
   void EvolveStage(const real, const real);
   void ResetStage();
@@ -67,6 +67,9 @@ class Fluid {
 
   // Our boundary conditions
   std::unique_ptr<Boundary<Phys>> boundary;
+
+  // EOS
+  std::unique_ptr<EquationOfState> eos;
 
   // Source terms
   bool haveSourceTerms{false};
@@ -196,16 +199,6 @@ class Fluid {
   template<typename P>
   friend struct ShockFlattening_FindShockFunctor;
 
-
-  // Isothermal EOS parameters
-  real isoSoundSpeed;
-  HydroModuleStatus haveIsoSoundSpeed{Disabled};
-  IdefixArray3D<real> isoSoundSpeedArray;
-  IsoSoundSpeedFunc isoSoundSpeedFunc{NULL};
-
-  // Adiabatic EOS parameters
-  real gamma;
-
   // Emf boundary conditions
   bool haveEmfBoundary{false};
   EmfBoundaryFunc emfBoundaryFunc{NULL};
@@ -265,26 +258,6 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
   #if ORDER < 1 || ORDER > 4
      IDEFIX_ERROR("Reconstruction at chosen order is not implemented. Check your definitions file");
   #endif
-
-
-  if constexpr (Phys::pressure) {
-    this->gamma = input.GetOrSet<real>(std::string(Phys::prefix),"gamma",0, 5.0/3.0);
-  }
-
-  if constexpr(Phys::isothermal) {
-    std::string isoString = input.Get<std::string>(std::string(Phys::prefix),"csiso",0);
-    if(isoString.compare("constant") == 0) {
-      this->haveIsoSoundSpeed = Constant;
-      this->isoSoundSpeed = input.Get<real>(std::string(Phys::prefix),"csiso",1);
-    } else if(isoString.compare("userdef") == 0) {
-      this->haveIsoSoundSpeed = UserDefFunction;
-    } else {
-      IDEFIX_ERROR("csiso admits only constant or userdef entries");
-    }
-  } else {
-    // set the isothermal soundspeed, even though it will not be used
-    this->isoSoundSpeed = -1.0;
-  }
 
   // Source terms (always activated when non-cartesian geometry because of curvature source terms)
 #if GEOMETRY == CARTESIAN
@@ -363,7 +336,16 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
       msg  << "Unknown integration type for viscosity: " << opType;
       IDEFIX_ERROR(msg);
     }
-    this->viscosity = std::make_unique<Viscosity>(input, grid, this);
+    if(input.Get<std::string>(std::string(Phys::prefix),"viscosity",1)
+                              .compare("constant") == 0) {
+      viscosityStatus.status = Constant;
+    } else if(input.Get<std::string>(std::string(Phys::prefix),"viscosity",1)
+                                      .compare("userdef") == 0) {
+        viscosityStatus.status = UserDefFunction;
+    } else {
+        IDEFIX_ERROR("Unknown viscosity definition in idefix.ini. "
+                     "Can only be constant or userdef.");
+    }
   }
 
   // Check whether thermal diffusion is enabled, if so, init a thermal diffusion object
@@ -380,7 +362,16 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
       msg  << "Unknown integration type for thermal diffusion: " << opType;
       IDEFIX_ERROR(msg);
     }
-    this->thermalDiffusion = std::make_unique<ThermalDiffusion>(input, grid, this);
+    if(input.Get<std::string>(std::string(Phys::prefix),"TDiffusion",1).compare("constant") == 0) {
+        thermalDiffusionStatus.status = Constant;
+      } else if(input.Get<std::string>(std::string(Phys::prefix),
+                                      "TDiffusion",1).compare("userdef") == 0) {
+       thermalDiffusionStatus.status = UserDefFunction;
+
+      } else {
+        IDEFIX_ERROR("Unknown thermal diffusion definition in idefix.ini. "
+                     "Can only be constant or userdef.");
+      }
   }
 
   if(input.CheckEntry(std::string(Phys::prefix),"drag")>=0) {
@@ -511,12 +502,6 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
     #else // EVOLVE_VECTOR_POTENTIAL
       data->states["current"].PushArray(Vs, State::center, prefix+"_Vs");
     #endif // EVOLVE_VECTOR_POTENTIAL
-  }
-
-  // Allocate sound speed array if needed
-  if(this->haveIsoSoundSpeed == UserDefFunction) {
-    this->isoSoundSpeedArray = IdefixArray3D<real>(prefix+"_csIso",
-                                data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   }
 
   if(this->haveCurrent) {
@@ -668,6 +653,11 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
     this->emf = std::make_unique<ConstrainedTransport<Phys>>(input, this);
   }
 
+  // Initialise the EOS
+  if constexpr(Phys::eos) {
+    this->eos = std::make_unique<EquationOfState>(input, data, this->prefix);
+  }
+
   // Initialise boundary conditions
   boundary = std::make_unique<Boundary<Phys>>(this);
   this->haveAxis = data->haveAxis;
@@ -675,6 +665,17 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
   if(haveRKLParabolicTerms) {
     this->rkl = std::make_unique<RKLegendre<Phys>>(input,this);
   }
+
+  // Thermal diffusion
+  if(thermalDiffusionStatus.status != Disabled ) {
+    this->thermalDiffusion = std::make_unique<ThermalDiffusion>(input, grid, this);
+  }
+
+  // Viscosity
+  if(viscosityStatus.status != Disabled) {
+    this->viscosity = std::make_unique<Viscosity>(input, grid, this);
+  }
+
 
   // Drag force when needed
   if(haveDrag) {

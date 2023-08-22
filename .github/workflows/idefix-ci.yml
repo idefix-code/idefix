@@ -24,7 +24,7 @@ env:
 jobs:
   Linter:
     # Don't do this in forks
-    if: github.repository == 'idefix-code/idefix'
+    if: ${{ github.repository == 'idefix-code/idefix' || github.repository == 'glesur/idefix' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

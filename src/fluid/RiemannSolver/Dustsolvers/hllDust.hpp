@@ -65,12 +65,12 @@ void RiemannSolver<Phys>::HllDust(IdefixArray4D<real> &Flux) {
       real cmax  = FMAX(FABS(SL), FABS(SR));
 
       // 3-- Compute the conservative variables: do this by extrapolation
-      K_PrimToCons<Phys>(uL, vL, 0.0); // Set gamma to 0 implicitly
-      K_PrimToCons<Phys>(uR, vR, 0.0);
+      K_PrimToCons<Phys>(uL, vL, NULL); // Set gamma to 0 implicitly
+      K_PrimToCons<Phys>(uR, vR, NULL);
 
-      // 4-- Compute the left and right fluxes
-      K_Flux<Phys,DIR>(fluxL, vL, uL, 0.0);
-      K_Flux<Phys,DIR>(fluxR, vR, uR, 0.0);
+      // 4-- Compute the left and right fluxes (wave speed is null)
+      K_Flux<Phys,DIR>(fluxL, vL, uL, 0);
+      K_Flux<Phys,DIR>(fluxR, vR, uR, 0);
 
       // 5-- Compute the flux from the left and right states
       if (SL > 0) {

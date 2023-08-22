@@ -227,7 +227,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     data.fargo->EnrollVelocity(&FargoVelocity);
   output.EnrollUserDefVariables(&ComputeUserVars);
 
-  gammaGlob=data.hydro->GetGamma();
+  gammaGlob=data.hydro->eos->GetGamma();
   epsilonGlob = input.Get<real>("Setup","epsilon",0);
   densityFloorGlob = input.Get<real>("Setup","densityFloor",0);
 }

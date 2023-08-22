@@ -14,6 +14,7 @@
 #include "input.hpp"
 #include "grid.hpp"
 #include "fluid_defs.hpp"
+#include "eos.hpp"
 
 
 // Forward class hydro declaration
@@ -54,9 +55,8 @@ class ThermalDiffusion {
   // constant diffusion coefficient (when needed)
   real kappa;
 
-  // adiabatic exponent (required to get the heat capacity)
-  // TODO(glesur): generalize to any equation of state!
-  real gamma;
+  // equation of state (required to get the heat capacity)
+  EquationOfState *eos;
 };
 
 #include "fluid.hpp"
@@ -66,29 +66,22 @@ template <typename Phys>
 ThermalDiffusion::ThermalDiffusion(Input &input, Grid &grid, Fluid<Phys> *hydroin):
                             Vc{hydroin->Vc},
                             dMax{hydroin->dMax},
-                            gamma{hydroin->GetGamma()},
+                            eos{hydroin->eos.get()},
                             data{hydroin->data},
                             status{hydroin->thermalDiffusionStatus} {
   idfx::pushRegion("ThermalDiffusion::ThermalDiffusion");
 
-  if(input.CheckEntry("Hydro","TDiffusion")>=0) {
-    if(input.Get<std::string>("Hydro","TDiffusion",1).compare("constant") == 0) {
-        this->kappa = input.Get<real>("Hydro","TDiffusion",2);
-        this->status.status = Constant;
-      } else if(input.Get<std::string>("Hydro","TDiffusion",1).compare("userdef") == 0) {
-        this->status.status = UserDefFunction;
-        this->kappaArr = IdefixArray3D<real>("ThermalDiffusionKappaArray",data->np_tot[KDIR],
+  if(status.status == Constant) {
+    this->kappa = input.Get<real>(std::string(Phys::prefix),"TDiffusion",2);
+  } else if(status.status == UserDefFunction) {
+    this->kappaArr = IdefixArray3D<real>("ThermalDiffusionKappaArray",data->np_tot[KDIR],
                                                                  data->np_tot[JDIR],
                                                                  data->np_tot[IDIR]);
-
-      } else {
-        IDEFIX_ERROR("Unknown thermal diffusion definition in idefix.ini. "
-                     "Can only be constant or userdef.");
-      }
   } else {
-    IDEFIX_ERROR("I cannot create a ThermalDiffusion object without TDiffusion defined"
-                   "in the .ini file");
+    IDEFIX_ERROR("Unknown thermal diffusion definition in idefix.ini. "
+                  "Can only be constant or userdef.");
   }
+
 
   #ifdef ISOTHERMAL
     IDEFIX_ERROR("Thermal diffusion is not compatible with the ISOTHERMAL approximation");

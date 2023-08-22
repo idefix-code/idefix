@@ -60,7 +60,7 @@ void Damping(Hydro *hydro, const real t, const real dtin) {
   real sigmaSlope = sigmaSlopeGlob;
   real flaringIndex = flaringIndexGlob;
   real omega = omegaGlob;
-  real gamma = hydro->GetGamma();
+  real gamma = hydro->eos->GetGamma();
   real pexp = -sigmaSlope-flaringIndex-1;
   real qexp = 2*flaringIndex-1;
   real dt = dtin;

@@ -128,7 +128,9 @@ This section is used by the hydrodynamics class of *Idefix*. It defines the hydr
 |                |                         | | to be enrolled with   ``EnrollIsoSoundSpeed(IsoSoundSpeedFunc)``                          |
 |                |                         | | (see :ref:`functionEnrollment`). In this case, the second parameter is not used.          |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| gamma          | float                   | Adiabatic index when ISOTHERMAL is not defined. Default to 5/3 if not set.                  |
+| gamma          | float                   | | Adiabatic index when ISOTHERMAL is not defined. Default to 5/3 if not set.                |
+|                |                         | | NB: this parameter is used only by the default equation of state implemented in *Idefix*  |
+|                |                         | | Custom equation of states (:ref:`eosModule`) ignore this parameter                        |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | tracer         | integer                 | Number of passive tracers associated to the fluid. Default to 0 if not set.                 |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+

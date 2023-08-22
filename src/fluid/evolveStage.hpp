@@ -50,11 +50,8 @@ void Fluid<Phys>::EvolveStage(const real t, const real dt) {
       IDEFIX_ERROR("No user-defined Hall diffusivity function has been enrolled");
   }
 
-  if(haveIsoSoundSpeed == UserDefFunction) {
-    if(isoSoundSpeedFunc)
-      isoSoundSpeedFunc(*data, t, isoSoundSpeedArray);
-    else
-      IDEFIX_ERROR("No user-defined isothermal sound speed function has been enrolled");
+  if constexpr(Phys::eos) {
+    eos->Refresh(*data, t);
   }
 
   // Loop on all of the directions

@@ -404,7 +404,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     data.hydro->EnrollEmfBoundary(&EmfBoundary);
     //data.hydro->EnrollFluxBoundary(&FluxBoundary);
     output.EnrollUserDefVariables(&ComputeUserVars);
-    gammaGlob=data.hydro->GetGamma();
+    gammaGlob=data.hydro->eos->GetGamma();
     epsilonGlob = input.Get<real>("Setup","epsilon",0);
     epsilonTopGlob = input.Get<real>("Setup","epsilonTop",0);
     betaGlob = input.Get<real>("Setup","beta",0);

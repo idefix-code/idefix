@@ -81,6 +81,10 @@ if(Idefix_MPI)
   add_compile_definitions("WITH_MPI")
   find_package(MPI REQUIRED)
   target_link_libraries(idefix MPI::MPI_CXX)
+  target_sources(idefix
+    PUBLIC src/mpi.cpp
+    PUBLIC src/mpi.hpp
+  )
 endif()
 
 if(Idefix_HDF5)
@@ -88,6 +92,10 @@ if(Idefix_HDF5)
   if(Idefix_MPI)
     set(HDF5_PREFER_PARALLEL TRUE)
   endif()
+  target_sources(idefix
+    PUBLIC src/output/xdmf.cpp
+    PUBLIC src/output/xdmf.hpp
+  )
   find_package(HDF5 REQUIRED)
   target_link_libraries(idefix "${HDF5_LIBRARIES}")
   target_include_directories(idefix PUBLIC "${HDF5_INCLUDE_DIRS}")

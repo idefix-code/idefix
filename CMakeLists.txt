@@ -11,6 +11,7 @@ option(Idefix_WERROR "Treat compiler warnings as errors" OFF)
 set(Idefix_CXX_FLAGS "" CACHE STRING "Additional compiler/linker flag")
 set(Idefix_DEFS "definitions.hpp" CACHE FILEPATH "Problem definition header file")
 set(Idefix_RECONSTRUCTION "Linear" CACHE STRING "Type of cell reconstruction scheme")
+option(Idefix_HDF5 "Enable HDF5 I/O (requires HDF5 library)" OFF)
 if(Idefix_MHD)
   option(Idefix_EVOLVE_VECTOR_POTENTIAL "Evolve the vector potential instead of the field (helps reducing div(B) in long runs)" OFF)
 endif()
@@ -80,6 +81,10 @@ if(Idefix_MPI)
   add_compile_definitions("WITH_MPI")
   find_package(MPI REQUIRED)
   target_link_libraries(idefix MPI::MPI_CXX)
+  target_sources(idefix
+    PUBLIC src/mpi.cpp
+    PUBLIC src/mpi.hpp
+  )
 endif()
 
 if(Idefix_HDF5)
@@ -87,6 +92,10 @@ if(Idefix_HDF5)
   if(Idefix_MPI)
     set(HDF5_PREFER_PARALLEL TRUE)
   endif()
+  target_sources(idefix
+    PUBLIC src/output/xdmf.cpp
+    PUBLIC src/output/xdmf.hpp
+  )
   find_package(HDF5 REQUIRED)
   target_link_libraries(idefix "${HDF5_LIBRARIES}")
   target_include_directories(idefix PUBLIC "${HDF5_INCLUDE_DIRS}")

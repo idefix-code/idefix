@@ -17,6 +17,7 @@
 #include "bragThermalDiffusion.hpp"
 #include "dataBlock.hpp"
 #include "fluid.hpp"
+#include "eos.hpp"
 
 //ADAPTED TO GET TEMPERATURE DERIVATIVES
 #define D_DX_I_tmp(q,n,m)  (q(n,k,j,i)/q(m,k,j,i) - q(n,k,j,i - 1)/q(m,k,j,i - 1))
@@ -76,17 +77,6 @@
 #define BY_K (0.25*(Vs(BX2s,k,j,i) + Vs(BX2s,k,j + 1,i) \
              + Vs(BX2s,k - 1,j,i) + Vs(BX2s,k - 1,j + 1,i)))
 
-////or what should be the exact equivalent, but some reason isn't, maybe ask Geoffroy why:
-//#define   BX_I 0.5*(Vc(BX1,k,j,i) + Vc(BX1,k,j,i - 1))
-//#define   BY_J 0.5*(Vc(BX2,k,j,i) + Vc(BX2,k,j - 1,i))
-//#define   BZ_K 0.5*(Vc(BX3,k,j,i) + Vc(BX3,k - 1,j,i))
-//#define   BY_I 0.5*(Vc(BX2,k,j,i) + Vc(BX2,k,j,i - 1))
-//#define   BZ_I 0.5*(Vc(BX3,k,j,i) + Vc(BX3,k,j,i - 1))
-//#define   BX_J 0.5*(Vc(BX1,k,j,i) + Vc(BX1,k,j - 1,i))
-//#define   BZ_J 0.5*(Vc(BX3,k,j,i) + Vc(BX3,k,j - 1,i))
-//#define   BX_K 0.5*(Vc(BX1,k,j,i) + Vc(BX1,k - 1,j,i))
-//#define   BY_K 0.5*(Vc(BX2,k,j,i) + Vc(BX2,k - 1,j,i))
-
 void BragThermalDiffusion::ShowConfig() {
   if(status.status==Constant) {
     idfx::cout << "Braginskii Thermal Diffusion: ENEBLED with constant diffusivity kpar="
@@ -128,10 +118,10 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t,
 #if HAVE_ENERGY == 1
   idfx::pushRegion("BragThermalDiffusion::AddBragDiffusiveFlux");
 
-  real gamma_m1 = this->gamma - ONE_F;
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Vs = this->Vs;
   IdefixArray3D<real> dMax = this->dMax;
+  EquationOfState eos = *(this->eos);
 
   HydroModuleStatus haveThermalDiffusion = this->status.status;
   bool haveSlopeLimiter = this->haveSlopeLimiter;
@@ -319,6 +309,8 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t,
           #endif
         #endif // GEOMETRY
 
+        real gamma_m1 = eos.GetGamma(Vc(PRS,k,j,i),Vc(RHO,k,j,i)) - ONE_F;
+
         locdmax = FMAX(kpar,knor)/(0.5*(Vc(RHO,k,j,i) + Vc(RHO,k,j,i - 1)))*gamma_m1;
 
         dTn = dTi;
@@ -451,6 +443,8 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t,
           #endif
         #endif // GEOMETRY
 
+        real gamma_m1 = eos.GetGamma(Vc(PRS,k,j,i),Vc(RHO,k,j,i)) - ONE_F;
+
         locdmax = FMAX(kpar,knor)/(0.5*(Vc(RHO,k,j,i) + Vc(RHO,k,j - 1,i)))*gamma_m1;
 
         dTn = dTj;
@@ -540,6 +534,8 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t,
           dTk = s_1/x1(i)*D_DZ_K_tmp(Vc,PRS,RHO)/dx3(k);
           //gradT = ... + ... + 1/(r*sin(theta)) dTphi/dphi
         #endif // GEOMETRY
+
+        real gamma_m1 = eos.GetGamma(Vc(PRS,k,j,i),Vc(RHO,k,j,i)) - ONE_F;
 
         locdmax = FMAX(kpar,knor)/(0.5*(Vc(RHO,k,j,i) + Vc(RHO,k-1,j,i)))*gamma_m1;
 

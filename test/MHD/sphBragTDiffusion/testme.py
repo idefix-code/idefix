@@ -20,13 +20,14 @@ def testMe(test):
   for ini in inifiles:
     test.run(inputFile=ini)
     test.standardTest()
+    test.nonRegressionTest(filename="dump.0001.dmp")
 
 
 test=tst.idfxTest()
 
 if not test.all:
   if(test.check):
-    test.standardTest()
+    test.checkOnly(filename="dump.0001.dmp")
   else:
     testMe(test)
 else:

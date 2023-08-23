@@ -427,6 +427,10 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
     this->bragThermalDiffusion = std::make_unique<BragThermalDiffusion>(input, grid, this);
   }
 
+  if(input.CheckEntry(std::string(Phys::prefix),"drag")>=0) {
+    haveDrag = true;
+  }
+
   if constexpr(Phys::mhd) {
     if(input.CheckEntry(std::string(Phys::prefix),"resistivity")>=0 ||
       input.CheckEntry(std::string(Phys::prefix),"ambipolar")>=0 ||

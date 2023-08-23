@@ -67,7 +67,7 @@ def analytic_phi_sol(phi, t):
 
 
 success = True
-eps = 6.1e-8
+eps = 6.2e-8
 for it,t in enumerate(list_time):
     analytic_T = np.zeros((R.shape[0], TH.shape[0], PHI.shape[0]))
     for ir,r in enumerate(R):

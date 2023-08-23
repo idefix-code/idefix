@@ -561,15 +561,7 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t,
 #endif // HAVE_ENERGY
 }
 
-real minmodTh(const real dvp, const real dvm) {
-  real dq= 0.0;
-  if(dvp*dvm >0.0) {
-    real dq = ( fabs(dvp) < fabs(dvm) ? dvp : dvm);
-  }
-  return(dq);
-}
-
-real monotonizedCentralTh(const real dvp, const real dvm) {
+real monotonizedCentralBrag(const real dvp, const real dvm) {
   real dq = 0;
   if(dvp*dvm >0.0) {
     real dqc = 0.5*(dvp+dvm);
@@ -579,8 +571,9 @@ real monotonizedCentralTh(const real dvp, const real dvm) {
   return(dq);
 }
 
-real vanLeerTh(const real dvp, const real dvm) {
+real vanLeerBrag(const real dvp, const real dvm) {
   real dq= 0.0;
   dq = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
   return(dq);
 }
+

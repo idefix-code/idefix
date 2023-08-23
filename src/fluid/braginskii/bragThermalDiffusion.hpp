@@ -16,9 +16,8 @@
 #include "fluid_defs.hpp"
 #include "eos.hpp"
 
-real minmodTh(const real, const real);
-real vanLeerTh(const real, const real);
-real monotonizedCentralTh(const real, const real);
+real vanLeerBrag(const real, const real);
+real monotonizedCentralBrag(const real, const real);
 
 // Forward class hydro declaration
 template <typename Phys> class Fluid;
@@ -98,15 +97,13 @@ BragThermalDiffusion::BragThermalDiffusion(Input &input, Grid &grid, Fluid<Phys>
                                                                data->np_tot[IDIR]);
     } else if (input.Get<std::string>("Hydro","bragTDiffusion",1).compare("limiter") == 0) {
       this->haveSlopeLimiter = true;
-      if(input.Get<std::string>("Hydro","bragTDiffusion",2).compare("minmod") == 0) {
-        slopeLimiter = minmodTh;
-      } else if(input.Get<std::string>("Hydro","bragTDiffusion",2).compare("vanleer") == 0) {
-        slopeLimiter = vanLeerTh;
+      if(input.Get<std::string>("Hydro","bragTDiffusion",2).compare("vanleer") == 0) {
+        slopeLimiter = vanLeerBrag;
       } else if(input.Get<std::string>("Hydro","bragTDiffusion",2).compare("mc") == 0) {
-        slopeLimiter = monotonizedCentralTh;
+        slopeLimiter = monotonizedCentralBrag;
       } else {
         IDEFIX_ERROR("Unknown braginskii thermal diffusion limiter in idefix.ini. "
-                     "Can only be minmod, vanleer or mc.");
+                     "Can only be vanleer or mc.");
       }
       if(input.Get<std::string>("Hydro","bragTDiffusion",3).compare("constant") == 0) {
           this->kpar = input.Get<real>("Hydro","bragTDiffusion",4);
@@ -143,5 +140,4 @@ BragThermalDiffusion::BragThermalDiffusion(Input &input, Grid &grid, Fluid<Phys>
 
   idfx::popRegion();
 }
-
 #endif // FLUID_BRAGINSKII_BRAGTHERMALDIFFUSION_HPP_

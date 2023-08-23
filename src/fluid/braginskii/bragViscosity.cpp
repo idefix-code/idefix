@@ -900,26 +900,3 @@ void BragViscosity::AddBragViscousFlux(int dir, const real t, const IdefixArray4
   idfx::popRegion();
 }
 
-real minmodV(const real dvp, const real dvm) {
-  real dq= 0.0;
-  if(dvp*dvm >0.0) {
-    real dq = ( fabs(dvp) < fabs(dvm) ? dvp : dvm);
-  }
-  return(dq);
-}
-
-real monotonizedCentralV(const real dvp, const real dvm) {
-  real dq = 0;
-  if(dvp*dvm >0.0) {
-    real dqc = 0.5*(dvp+dvm);
-    real d2q = 2.0*( fabs(dvp) < fabs(dvm) ? dvp : dvm);
-    dq= fabs(d2q) < fabs(dqc) ? d2q : dqc;
-  }
-  return(dq);
-}
-
-real vanLeerV(const real dvp, const real dvm) {
-  real dq= 0.0;
-  dq = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
-  return(dq);
-}

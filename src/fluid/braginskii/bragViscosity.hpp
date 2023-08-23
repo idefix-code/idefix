@@ -15,10 +15,6 @@
 #include "grid.hpp"
 #include "fluid_defs.hpp"
 
-real minmodV(const real, const real);
-real vanLeerV(const real, const real);
-real monotonizedCentralV(const real, const real);
-
 // Forward class hydro declaration
 template <typename Phys> class Fluid;
 class DataBlock;
@@ -95,15 +91,13 @@ BragViscosity::BragViscosity(Input &input, Grid &grid, Fluid<Phys> *hydroin):
                                                                  data->np_tot[IDIR]);
     } else if (input.Get<std::string>("Hydro","bragViscosity",1).compare("limiter") == 0) {
       this->haveSlopeLimiter = true;
-      if(input.Get<std::string>("Hydro","bragViscosity",2).compare("minmod") == 0) {
-        slopeLimiter = minmodV;
-      } else if(input.Get<std::string>("Hydro","bragViscosity",2).compare("vanleer") == 0) {
-        slopeLimiter = vanLeerV;
+      if(input.Get<std::string>("Hydro","bragViscosity",2).compare("vanleer") == 0) {
+        slopeLimiter = vanLeerBrag;
       } else if(input.Get<std::string>("Hydro","bragViscosity",2).compare("mc") == 0) {
-        slopeLimiter = monotonizedCentralV;
+        slopeLimiter = monotonizedCentralBrag;
       } else {
         IDEFIX_ERROR("Unknown braginskii viscosity limiter in idefix.ini. "
-                     "Can only be minmod, vanleer or mc.");
+                     "Can only be vanleer or mc.");
       }
       if(input.Get<std::string>("Hydro","bragViscosity",3).compare("constant") == 0) {
           this->etaBrag = input.Get<real>("Hydro","bragViscosity",4);

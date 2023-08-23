@@ -899,4 +899,3 @@ void BragViscosity::AddBragViscousFlux(int dir, const real t, const IdefixArray4
   });
   idfx::popRegion();
 }
-

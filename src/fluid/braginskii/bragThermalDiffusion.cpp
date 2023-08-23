@@ -576,4 +576,3 @@ real vanLeerBrag(const real dvp, const real dvm) {
   dq = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
   return(dq);
 }
-

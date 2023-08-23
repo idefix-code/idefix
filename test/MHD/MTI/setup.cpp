@@ -110,7 +110,6 @@ void Setup::InitFlow(DataBlock &data) {
   // Create a host copy
   DataBlockHost d(data);
 
-  real gamma = data.hydro->GetGamma();
   for(int k = 0; k < d.np_tot[KDIR] ; k++) {
     for(int j = 0; j < d.np_tot[JDIR] ; j++) {
       real x2 = d.x[JDIR](j);

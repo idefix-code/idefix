@@ -19,7 +19,9 @@ def testMe(test):
   # loop on all the ini files for this test
   for ini in inifiles:
     test.run(inputFile=ini)
-    test.standardTest()
+## The current test is not physics, but merely a non-regression check
+## The physical test needs to have the divergence of the velocity field artifiacially set to zero
+#    test.standardTest()
     test.nonRegressionTest(filename="dump.0001.dmp")
 
 
@@ -28,10 +30,8 @@ test=tst.idfxTest()
 if not test.all:
   if(test.check):
     test.checkOnly(filename="dump.0001.dmp")
-## The current test is not physics, but merely a non-regression check
-## The physical test needs to have the divergence of the velocity field artifiacially set to zero
-#  else:
-#    testMe(test)
+  else:
+    testMe(test)
 else:
   test.noplot = True
   test.vectPot=False

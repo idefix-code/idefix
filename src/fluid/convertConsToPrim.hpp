@@ -13,7 +13,7 @@
 #include "tracer.hpp"
 
 template <typename Phys>
-KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[], real gamma_m1) {
+KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[], const EquationOfState *eos) {
   Vc[RHO] = Uc[RHO];
 
   EXPAND( Vc[VX1] = Uc[MX1]/Uc[RHO];  ,
@@ -37,7 +37,7 @@ KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[], real gamma_m1) {
                           + Uc[BX2]*Uc[BX2]  ,
                           + Uc[BX3]*Uc[BX3]  ));
 
-      Vc[PRS] = gamma_m1 * (Uc[ENG] - kin - mag);
+      Vc[PRS] = eos->GetPressure(Uc[ENG] - kin - mag, Uc[RHO]);
 
       // Check pressure positivity
       if(Vc[PRS]<= ZERO_F) {
@@ -47,11 +47,11 @@ KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[], real gamma_m1) {
           Vc[PRS] = SMALL_PRESSURE_FIX;
         #endif
 
-          Uc[ENG] = Vc[PRS]/gamma_m1+kin+mag;
+          Uc[ENG] = eos->GetInternalEnergy(Vc[PRS],Vc[RHO]) + kin + mag;
       }
 
     } else { // Hydro case
-      Vc[PRS] = gamma_m1 * (Uc[ENG] - kin);
+      Vc[PRS] = eos->GetPressure(Uc[ENG] - kin, Uc[RHO]);
       // Check pressure positivity
       if(Vc[PRS]<= ZERO_F) {
         #ifdef SMALL_PRESSURE_TEMPERATURE
@@ -60,14 +60,14 @@ KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[], real gamma_m1) {
           Vc[PRS] = SMALL_PRESSURE_FIX;
         #endif
 
-          Uc[ENG] = Vc[PRS]/gamma_m1+kin;
+          Uc[ENG] = eos->GetInternalEnergy(Vc[PRS],Vc[RHO]) + kin;
       }
     } // MHD
   } // Have Energy
 }
 
 template <typename Phys>
-KOKKOS_INLINE_FUNCTION void K_PrimToCons(real Uc[], real Vc[], real gamma_m1) {
+KOKKOS_INLINE_FUNCTION void K_PrimToCons(real Uc[], real Vc[], const EquationOfState *eos) {
   Uc[RHO] = Vc[RHO];
 
   EXPAND( Uc[MX1] = Vc[VX1]*Vc[RHO];  ,
@@ -83,7 +83,7 @@ KOKKOS_INLINE_FUNCTION void K_PrimToCons(real Uc[], real Vc[], real gamma_m1) {
 
   if constexpr(Phys::pressure) {
     if constexpr(Phys::mhd) {
-      Uc[ENG] = Vc[PRS] / gamma_m1
+      Uc[ENG] = eos->GetInternalEnergy(Vc[PRS],Vc[RHO])
                 + HALF_F * Vc[RHO] * (EXPAND( Vc[VX1]*Vc[VX1]  ,
                                             + Vc[VX2]*Vc[VX2]  ,
                                             + Vc[VX3]*Vc[VX3]  ))
@@ -91,7 +91,7 @@ KOKKOS_INLINE_FUNCTION void K_PrimToCons(real Uc[], real Vc[], real gamma_m1) {
                                   + Uc[BX2]*Uc[BX2]  ,
                                   + Uc[BX3]*Uc[BX3]  ));
     } else {
-      Uc[ENG] = Vc[PRS] / gamma_m1
+      Uc[ENG] = eos->GetInternalEnergy(Vc[PRS],Vc[RHO])
                 + HALF_F * Vc[RHO] * (EXPAND( Vc[VX1]*Vc[VX1]  ,
                                             + Vc[VX2]*Vc[VX2]  ,
                                             + Vc[VX3]*Vc[VX3]  ));
@@ -108,7 +108,10 @@ void Fluid<Phys>::ConvertConsToPrim() {
 
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Uc = this->Uc;
-  real gamma_m1=this->gamma-ONE_F;
+  EquationOfState eos;
+  if constexpr(Phys::eos) {
+    eos = *(this->eos.get());
+  }
 
   if constexpr(Phys::mhd) {
     #ifdef EVOLVE_VECTOR_POTENTIAL
@@ -130,7 +133,7 @@ void Fluid<Phys>::ConvertConsToPrim() {
         U[nv] = Uc(nv,k,j,i);
       }
 
-      K_ConsToPrim<Phys>(V,U,gamma_m1);
+      K_ConsToPrim<Phys>(V,U,&eos);
 
 #pragma unroll
       for(int nv = 0 ; nv<Phys::nvar; nv++) {
@@ -152,7 +155,10 @@ void Fluid<Phys>::ConvertPrimToCons() {
 
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Uc = this->Uc;
-  real gamma_m1=this->gamma-ONE_F;
+  EquationOfState eos;
+  if constexpr(Phys::eos) {
+    eos = *(this->eos.get());
+  }
 
   idefix_for("ConvertPrimToCons",
              0,data->np_tot[KDIR],
@@ -167,7 +173,7 @@ void Fluid<Phys>::ConvertPrimToCons() {
         V[nv] = Vc(nv,k,j,i);
       }
 
-      K_PrimToCons<Phys>(U,V,gamma_m1);
+      K_PrimToCons<Phys>(U,V,&eos);
 
 #pragma unroll
       for(int nv = 0 ; nv<Phys::nvar; nv++) {

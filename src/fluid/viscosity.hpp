@@ -74,28 +74,20 @@ Viscosity::Viscosity(Input &input, Grid &grid, Fluid<Phys> *hydroin):
   this->data = hydroin->data;
   this->sbS = hydroin->sbS;
 
-  if(input.CheckEntry("Hydro","viscosity")>=0) {
-    if(input.Get<std::string>("Hydro","viscosity",1).compare("constant") == 0) {
-        this->eta1 = input.Get<real>("Hydro","viscosity",2);
-        // second viscosity?
-        this->eta2 = input.GetOrSet<real>("Hydro","viscosity",3, 0.0);
-        this->status.status = Constant;
-      } else if(input.Get<std::string>("Hydro","viscosity",1).compare("userdef") == 0) {
-        this->status.status = UserDefFunction;
-        this->eta1Arr = IdefixArray3D<real>("ViscosityEta1Array",data->np_tot[KDIR],
-                                                                 data->np_tot[JDIR],
-                                                                 data->np_tot[IDIR]);
-        this->eta2Arr = IdefixArray3D<real>("ViscosityEta1Array",data->np_tot[KDIR],
-                                                                 data->np_tot[JDIR],
-                                                                 data->np_tot[IDIR]);
-
-      } else {
+  if(status.status == Constant) {
+    this->eta1 = input.Get<real>(std::string(Phys::prefix),"viscosity",2);
+    // second viscosity?
+    this->eta2 = input.GetOrSet<real>(std::string(Phys::prefix),"viscosity",3, 0.0);
+  } else if(status.status == UserDefFunction) {
+    this->eta1Arr = IdefixArray3D<real>("ViscosityEta1Array",data->np_tot[KDIR],
+                                                              data->np_tot[JDIR],
+                                                              data->np_tot[IDIR]);
+    this->eta2Arr = IdefixArray3D<real>("ViscosityEta1Array",data->np_tot[KDIR],
+                                                              data->np_tot[JDIR],
+                                                              data->np_tot[IDIR]);
+  } else {
         IDEFIX_ERROR("Unknown viscosity definition in idefix.ini. "
                      "Can only be constant or userdef.");
-      }
-  } else {
-    IDEFIX_ERROR("I cannot create a Viscosity object without viscosity defined"
-                   "in the .ini file");
   }
 
   InitArrays();

@@ -123,7 +123,7 @@ void BragViscosity::ShowConfig() {
 }
 
 void BragViscosity::EnrollBragViscousDiffusivity(DiffusivityFunc myFunc) {
-  if(this->status.status < UserDefFunction) {
+  if(this->status.status != UserDefFunction) {
     IDEFIX_WARNING("Braginskii viscous diffusivity enrollment requires Hydro/BragViscosity "
                  "to be set to userdef in .ini file");
   }
@@ -651,16 +651,10 @@ void BragViscosity::AddBragViscousFlux(int dir, const real t, const IdefixArray4
                            + 1./x1(i)*dVyj ,
                            + dVzk);
 
-          // See Geoffroy's trick for curvature source terms in cylindrical/polar coordinates
+          // See Geoffroy's trick for curvature source terms in curvilinear coordinates
           EXPAND( bragViscSrc(IDIR,k,j,i) = ZERO_F;  ,
                   bragViscSrc(JDIR,k,j,i) = ZERO_F;  ,
                   bragViscSrc(KDIR,k,j,i) = ZERO_F;  )
-//          //cell-centered values for source terms
-//          tau_xyC = Pnor_parC*biC*bjC;
-//
-//          EXPAND( bragViscSrc(IDIR,k,j,i) = ZERO_F;  ,
-//                  bragViscSrc(JDIR,k,j,i) = tau_xyC/x1(i);  ,
-//                  bragViscSrc(KDIR,k,j,i) = ZERO_F;  )
 
         #elif GEOMETRY == SPHERICAL
           tan_1 = tanx2m(j);

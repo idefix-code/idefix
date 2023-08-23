@@ -49,7 +49,6 @@ void RiemannSolver<Phys>::HllMHD(IdefixArray4D<real> &Flux) {
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Vs = this->Vs;
   IdefixArray3D<real> cMax = this->cMax;
-  IdefixArray3D<real> csIsoArr = hydro->isoSoundSpeedArray;
 
   HydroModuleStatus haveHall = hydro->hallStatus.status;
   IdefixArray4D<real> J = hydro->J;
@@ -75,11 +74,9 @@ void RiemannSolver<Phys>::HllMHD(IdefixArray4D<real> &Flux) {
   IdefixArray3D<real> dL;
   IdefixArray3D<real> dR;
 
-  real gamma = hydro->gamma;
+  EquationOfState eos = *(hydro->eos.get());
+
   [[maybe_unused]] real xHConstant = hydro->xH;
-  [[maybe_unused]] real gamma_m1=gamma-ONE_F;
-  [[maybe_unused]] real csIso = hydro->isoSoundSpeed;
-  [[maybe_unused]] HydroModuleStatus haveIsoCs = hydro->haveIsoSoundSpeed;
 
   SlopeLimiter<Phys,DIR> slopeLim(Vc,data->dx[DIR],haveShockFlattening,shockFlattening.get());;
 
@@ -191,14 +188,12 @@ void RiemannSolver<Phys>::HllMHD(IdefixArray4D<real> &Flux) {
       real gpr, b1, b2, b3, Btmag2, Bmag2;
       real xH;
 #if HAVE_ENERGY
+      real gamma = eos.GetGamma(0.5*(vL[PRS]+vR[PRS]),0.5*(vL[RHO]+vR[RHO]));
       gpr = gamma*vL[PRS];
 #else
-      if(haveIsoCs == UserDefFunction) {
-        c2Iso = HALF_F*(csIsoArr(k,j,i)+csIsoArr(k-koffset,j-joffset,i-ioffset));
-        c2Iso = c2Iso*c2Iso;
-      } else {
-        c2Iso = csIso*csIso;
-      }
+      c2Iso = HALF_F*(eos.GetWaveSpeed(k,j,i)
+                    +eos.GetWaveSpeed(k-koffset,j-joffset,i-ioffset));
+      c2Iso *= c2Iso;
 
       gpr = c2Iso*vL[RHO];
 #endif
@@ -282,8 +277,8 @@ void RiemannSolver<Phys>::HllMHD(IdefixArray4D<real> &Flux) {
       cmax = FMAX(FABS(SLb), FABS(SRb));
 
       // 2-- Compute the conservative variables
-      K_PrimToCons<Phys>(uL, vL, gamma_m1);
-      K_PrimToCons<Phys>(uR, vR, gamma_m1);
+      K_PrimToCons<Phys>(uL, vL, &eos);
+      K_PrimToCons<Phys>(uR, vR, &eos);
 
 
 

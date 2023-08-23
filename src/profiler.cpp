@@ -6,6 +6,7 @@
 // ***********************************************************************************
 
 #include <mutex>    // NOLINT [build/c++11]
+#include <string>
 #include "idefix.hpp"
 #include "profiler.hpp"
 
@@ -66,9 +67,21 @@ void idfx::Profiler::Init() {
 void idfx::Profiler::Show() {
   idfx::pushRegion("Profiler::Show");
 
+  double usedMemory{-1};
+
+  // follow ISO/IEC 80000
+  constexpr int nUnits = 5;
+  const std::array<std::string,nUnits> units {"B", "KB", "MB", "GB", "TB"};
+
   for(int i=0; i < this->numSpaces ; i++) {
-    idfx::cout << "Profiler: maximum memory usage for " << this->spaceName[i] << " memory space: "
-               <<  this->spaceMax[i]/(1024.0*1024.0) << " MB." << std::endl;
+    usedMemory = this->spaceMax[i];
+    int count{0};
+    while(count < nUnits && usedMemory/1024 >= 1) {
+      usedMemory /= 1024;
+      ++count;
+    }
+    idfx::cout << "Profiler: maximum memory usage for " << this->spaceName[i];
+    idfx::cout << " memory space: " << usedMemory << " " << units[count] << std::endl;
   }
   idfx::popRegion();
 }

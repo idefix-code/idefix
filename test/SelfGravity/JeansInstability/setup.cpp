@@ -18,7 +18,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
 
   // Parameters of the physical setup
   rho0 = 3.0; // Background density
-  gammaGlob=data.hydro->GetGamma(); // Input gamma
+  gammaGlob=data.hydro->eos->GetGamma(); // Input gamma
   prs0 = 1.0/gammaGlob; // Background pressure
   A = 0.0001; // Perturbation amplitude
 }

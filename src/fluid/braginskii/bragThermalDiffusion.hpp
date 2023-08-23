@@ -14,6 +14,7 @@
 #include "input.hpp"
 #include "grid.hpp"
 #include "fluid_defs.hpp"
+#include "eos.hpp"
 
 real minmodTh(const real, const real);
 real vanLeerTh(const real, const real);
@@ -61,16 +62,9 @@ class BragThermalDiffusion {
   // constant diffusion coefficient (when needed)
   real knor, kpar;
 
-  // adiabatic exponent (required to get the heat capacity)
-  // TODO(glesur): generalize to any equation of state!
-  real gamma;
+  // equation of state (required to get the heat capacity)
+  EquationOfState *eos;
 
-//  // type of thermal conductivity function
-//  bool haveBraginskiiConductivity;
-//  bool haveSlopeLimiter;
-//  HydroModuleStatus haveThConductivity;
-//  ThermalConductivityFunc thermalConductivityFunc;
-//  BragThermalConductivityFunc bragThermalConductivityFunc;
   SlopeLimiterFunc slopeLimiter;
 };
 
@@ -82,7 +76,7 @@ BragThermalDiffusion::BragThermalDiffusion(Input &input, Grid &grid, Fluid<Phys>
                             Vc{hydroin->Vc},
                             Vs{hydroin->Vs},
                             dMax{hydroin->dMax},
-                            gamma{hydroin->GetGamma()},
+                            eos{hydroin->eos.get()},
                             data{hydroin->data},
                             status{hydroin->bragThermalDiffusionStatus} {
   idfx::pushRegion("BragThermalDiffusion::BragThermalDiffusion");

@@ -10,6 +10,7 @@
 
 #include "fluid.hpp"
 #include "../physics.hpp"
+#include "eos.hpp"
 
 enum class FlagShock{None, Shock};
 
@@ -24,6 +25,7 @@ class ShockFlattening {
   void FindShock();
 
   Fluid<Phys> *hydro;
+  EquationOfState *eos;
   IdefixArray3D<FlagShock> flagArray;
   bool isActive{false};
   real smoothing{0};
@@ -54,9 +56,7 @@ struct ShockFlattening_FindShockFunctor {
       dV  = sf->hydro->data->dV;
     #endif
     if constexpr(Phys::isothermal) {
-      cs = sf->hydro->isoSoundSpeedArray;
-      haveIsoCs = sf->hydro->haveIsoSoundSpeed;
-      csIso = sf->hydro->isoSoundSpeed;
+      eos = *(sf->hydro->eos.get());
     }
   }
   //*****************************************************************
@@ -71,11 +71,9 @@ struct ShockFlattening_FindShockFunctor {
     IdefixArray3D<real> Ax1,Ax2,Ax3, dV;
   #endif
 
-  IdefixArray3D<real> cs;
-  HydroModuleStatus haveIsoCs;;
-  real csIso;
+  EquationOfState eos;
 
-    //*****************************************************************
+  //*****************************************************************
   // Functor Operator
   //*****************************************************************
   KOKKOS_INLINE_FUNCTION void operator() (const int k, const int j,  const int i) const {
@@ -97,43 +95,39 @@ struct ShockFlattening_FindShockFunctor {
     if(divV<ZERO_F) {
       [[maybe_unused]] real pmin, gradP;
       if constexpr(Phys::isothermal) {
-        if(haveIsoCs == UserDefFunction) {
-          pmin = Vc(RHO,k,j,i)*cs(k,j,i)*cs(k,j,i);
-          pmin = FMIN(pmin,Vc(RHO,k,j,i+1)*cs(k,j,i+1)*cs(k,j,i+1));
-          pmin = FMIN(pmin,Vc(RHO,k,j,i-1)*cs(k,j,i-1)*cs(k,j,i-1));
-          gradP = FABS(Vc(RHO,k,j,i+1)*cs(k,j,i+1)*cs(k,j,i+1) -
-                        Vc(RHO,k,j,i-1)*cs(k,j,i-1)*cs(k,j,i-1));
-          #if DIMENSIONS >= 2
-            pmin = FMIN(pmin,Vc(RHO,k,j+1,i)*cs(k,j+1,i)*cs(k,j+1,i));
-            pmin = FMIN(pmin,Vc(RHO,k,j-1,i)*cs(k,j-1,i)*cs(k,j-1,i));
-            gradP += FABS(Vc(RHO,k,j+1,i)*cs(k,j+1,i)*cs(k,j+1,i) -
-                          Vc(RHO,k,j-1,i)*cs(k,j-1,i)*cs(k,j-1,i));
-          #endif
-          #if DIMENSIONS == 3
-            pmin = FMIN(pmin,Vc(RHO,k+1,j,i)*cs(k+1,j,i)*cs(k+1,j,i));
-            pmin = FMIN(pmin,Vc(RHO,k-1,j,i)*cs(k-1,j,i)*cs(k-1,j,i));
-            gradP += FABS(Vc(RHO,k+1,j,i)*cs(k+1,j,i)*cs(k+1,j,i) -
-                          Vc(RHO,k-1,j,i)*cs(k-1,j,i)*cs(k-1,j,i));
-          #endif
-        } else {
-          pmin = Vc(RHO,k,j,i)*csIso*csIso;
-          pmin = FMIN(pmin,Vc(RHO,k,j,i+1)*csIso*csIso);
-          pmin = FMIN(pmin,Vc(RHO,k,j,i-1)*csIso*csIso);
-          gradP = FABS(Vc(RHO,k,j,i+1)*csIso*csIso -
-                        Vc(RHO,k,j,i-1)*csIso*csIso);
-          #if DIMENSIONS >= 2
-            pmin = FMIN(pmin,Vc(RHO,k,j+1,i)*csIso*csIso);
-            pmin = FMIN(pmin,Vc(RHO,k,j-1,i)*csIso*csIso);
-            gradP += FABS(Vc(RHO,k,j+1,i)*csIso*csIso -
-                          Vc(RHO,k,j-1,i)*csIso*csIso);
-          #endif
-          #if DIMENSIONS == 3
-            pmin = FMIN(pmin,Vc(RHO,k+1,j,i)*csIso*csIso);
-            pmin = FMIN(pmin,Vc(RHO,k-1,j,i)*csIso*csIso);
-            gradP += FABS(Vc(RHO,k+1,j,i)*csIso*csIso -
-                          Vc(RHO,k-1,j,i)*csIso*csIso);
-          #endif
-        }
+        real cs = eos.GetWaveSpeed(k,j,i);
+        pmin = Vc(RHO,k,j,i)*cs*cs;
+        cs = eos.GetWaveSpeed(k,j,i+1);
+        real pR = Vc(RHO,k,j,i+1)*cs*cs;
+        cs = eos.GetWaveSpeed(k,j,i-1);
+        real pL = Vc(RHO,k,j,i-1)*cs*cs;
+
+        pmin = FMIN(pmin,pL);
+        pmin = FMIN(pmin,pR);
+
+        gradP = FABS(pR - pL);
+        #if DIMENSIONS >= 2
+          cs = eos.GetWaveSpeed(k,j+1,i);
+          pR = Vc(RHO,k,j+1,i)*cs*cs;
+          cs = eos.GetWaveSpeed(k,j-1,i);
+          pL = Vc(RHO,k,j-1,i)*cs*cs;
+
+          pmin = FMIN(pmin,pL);
+          pmin = FMIN(pmin,pR);
+
+          gradP += FABS(pR - pL);
+        #endif
+        #if DIMENSIONS == 3
+          cs = eos.GetWaveSpeed(k+1,j,i);
+          pR = Vc(RHO,k+1,j,i)*cs*cs;
+          cs = eos.GetWaveSpeed(k-1,j,i);
+          pL = Vc(RHO,k-1,j,i)*cs*cs;
+
+          pmin = FMIN(pmin,pL);
+          pmin = FMIN(pmin,pR);
+
+          gradP += FABS(pR - pL);
+        #endif
       } else if constexpr(Phys::pressure) {
         pmin = Vc(PRS,k,j,i);
         pmin = FMIN(pmin,Vc(PRS,k,j,i+1));

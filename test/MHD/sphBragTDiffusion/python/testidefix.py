@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Apr 27 14:00:41 2021
-
-@author: jmkempf
-"""
-
 import os
 import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
@@ -41,6 +33,7 @@ for VTK in list_VTK:
     list_PRS.append(VTK.data['PRS'])
     list_K.append(VTK.data['PRS']/(VTK.data['RHO']**gamma))
     list_T.append(VTK.data['PRS']/VTK.data['RHO'])
+VTK = list_VTK[-1]
 R = VTK.r
 TH = VTK.theta
 PHI = VTK.phi

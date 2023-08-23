@@ -27,12 +27,8 @@ void RiemannSolver<Phys>::HllcHD(IdefixArray4D<real> &Flux) {
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Vs = this->Vs;
   IdefixArray3D<real> cMax = this->cMax;
-  IdefixArray3D<real> csIsoArr = hydro->isoSoundSpeedArray;
 
-  [[maybe_unused]] real gamma = hydro->gamma;
-  [[maybe_unused]] real gamma_m1 = hydro->gamma - ONE_F;
-  [[maybe_unused]] real csIso = hydro->isoSoundSpeed;
-  [[maybe_unused]] HydroModuleStatus haveIsoCs = hydro->haveIsoSoundSpeed;
+  EquationOfState eos = *(hydro->eos.get());
 
   SlopeLimiter<Phys,DIR> slopeLim(Vc,data->dx[DIR],haveShockFlattening,shockFlattening.get());
 
@@ -65,17 +61,14 @@ void RiemannSolver<Phys>::HllcHD(IdefixArray4D<real> &Flux) {
       slopeLim.ExtrapolatePrimVar(i, j, k, vL, vR);
 
       // 2-- Get the wave speed
-#if HAVE_ENERGY
-      cL = std::sqrt( gamma *(vL[PRS]/vL[RHO]) );
-      cR = std::sqrt( gamma *(vR[PRS]/vR[RHO]) );
-#else
-      if(haveIsoCs == UserDefFunction) {
-        cL = HALF_F*(csIsoArr(k,j,i)+csIsoArr(k-koffset,j-joffset,i-ioffset));
-      } else {
-        cL = csIso;
-      }
-      cR = cL;
-#endif
+      #if HAVE_ENERGY
+        cL = std::sqrt(eos.GetGamma(vL[PRS],vL[RHO])*(vL[PRS]/vL[RHO]));
+        cR = std::sqrt(eos.GetGamma(vR[PRS],vR[RHO])*(vR[PRS]/vR[RHO]));
+      #else
+        cL = HALF_F*(eos.GetWaveSpeed(k,j,i)
+                    +eos.GetWaveSpeed(k-koffset,j-joffset,i-ioffset));
+        cR = cL;
+      #endif
 
       real cminL = vL[Xn] - cL;
       real cmaxL = vL[Xn] + cL;
@@ -89,8 +82,8 @@ void RiemannSolver<Phys>::HllcHD(IdefixArray4D<real> &Flux) {
       cmax  = FMAX(FABS(SL), FABS(SR));
 
       // 3-- Compute the conservative variables
-      K_PrimToCons<Phys>(uL, vL, gamma_m1);
-      K_PrimToCons<Phys>(uR, vR, gamma_m1);
+      K_PrimToCons<Phys>(uL, vL, &eos);
+      K_PrimToCons<Phys>(uR, vR, &eos);
 
       // 4-- Compute the left and right fluxes
       K_Flux<Phys,DIR>(fluxL, vL, uL, cL*cL);

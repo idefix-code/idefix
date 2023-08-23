@@ -35,13 +35,13 @@ struct ParabolicModuleStatus {
 };
 
 
-
-
 using GravPotentialFunc = void (*) (DataBlock &, const real t, IdefixArray1D<real>&,
                                     IdefixArray1D<real>&, IdefixArray1D<real>&,
                                     IdefixArray3D<real> &);
 
 using BodyForceFunc = void (*) (DataBlock &, const real t, IdefixArray4D<real>&);
+
+using IsoSoundSpeedFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
 
 template<typename Phys>
 using SrcTermFunc = void (*) (Fluid<Phys> *, const real t, const real dt);

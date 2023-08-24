@@ -579,7 +579,7 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
     }
     data->vtk->RegisterVariable(Vc, outputPrefix+VcName[i], i);
     #ifdef WITH_HDF5
-      data->xdmf->RegisterVariable(Vc, outputPrefix+VcName[i], VX2);
+      data->xdmf->RegisterVariable(Vc, outputPrefix+VcName[i], i);
     #endif
 
   }

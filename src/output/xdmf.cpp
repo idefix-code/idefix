@@ -321,7 +321,7 @@ int Xdmf::Write() {
   ssgroup_name << "/Timestep_" << xdmfFileNumber;
   hid_t timestep = H5Gcreate(fileHdf, ssgroup_name.str().c_str(), 0);
 
-  WriteHeader(fileHdf, filename, filename_xmf, data->t, timestep, group_fields);
+  WriteHeader(fileHdf, ssfileName.str(), filename_xmf, data->t, timestep, group_fields);
 
   /* ------------------------------------
       write cell-centered field data
@@ -397,10 +397,10 @@ int Xdmf::Write() {
         }
       }
     }
-    WriteScalar(vect3D, name, field_data_size, filename, filename_xmf,
+    WriteScalar(vect3D, name, field_data_size, ssfileName.str(), filename_xmf,
                 memspace, dataspace, plist_id_mpiio, static_cast<hid_t&>(group_fields));
   }
-  WriteFooter(filename, filename_xmf);
+  WriteFooter(ssfileName.str(), filename_xmf);
 
   #ifdef WITH_MPI
   H5Pclose(plist_id_mpiio);

@@ -17,12 +17,16 @@ def testMe(test):
   inifiles=["idefix.ini"]
 
   # loop on all the ini files for this test
+  name = "dump.0001.dmp"
   for ini in inifiles:
     test.run(inputFile=ini)
 ## The current test is not physics, but merely a non-regression check
 ## The physical test needs to have the divergence of the velocity field artifiacially set to zero
 #    test.standardTest()
-    test.nonRegressionTest(filename="dump.0001.dmp")
+    if test.init:
+      test.makeReference(filename=name)
+
+    test.nonRegressionTest(filename=name)
 
 
 test=tst.idfxTest()

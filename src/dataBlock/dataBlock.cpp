@@ -126,7 +126,7 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
 
   // Init XDMF objects for HDF5 outputs
   #ifdef WITH_HDF5
-    this->xdmf= std::make_unique<Xdmf>(input,this); 
+    this->xdmf= std::make_unique<Xdmf>(input,this);
   #endif
 
 

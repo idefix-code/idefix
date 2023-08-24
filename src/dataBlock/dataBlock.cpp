@@ -13,6 +13,9 @@
 #include "planetarySystem.hpp"
 #include "vtk.hpp"
 #include "dump.hpp"
+#ifdef WITH_HDF5
+#include "xdmf.hpp"
+#endif
 
 DataBlock::DataBlock(Grid &grid, Input &input) {
   idfx::pushRegion("DataBlock::DataBlock");
@@ -106,7 +109,7 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
   dmu = IdefixArray1D<real>("DataBlock_dmu",np_tot[JDIR]);
 #endif
 
-  // Iniaitlize the geometry
+  // Initialize the geometry
   this->MakeGeometry();
 
   // Initialise the state containers
@@ -120,6 +123,12 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
 
   // Initialize the VTK object
   this->vtk = std::make_unique<Vtk>(input, this);
+
+  // Init XDMF objects for HDF5 outputs
+  #ifdef WITH_HDF5
+    this->xdmf= std::make_unique<Xdmf>(input,this); 
+  #endif
+
 
   // Initialize the hydro object attached to this datablock
   this->hydro = std::make_unique<Fluid<DefaultPhysics>>(grid, input, this);

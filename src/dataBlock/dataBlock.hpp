@@ -33,6 +33,7 @@
 class DataBlock;
 class Vtk;
 class Dump;
+class Xdmf;
 class Fargo;
 class Gravity;
 class PlanetarySystem;

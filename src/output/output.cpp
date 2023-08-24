@@ -37,9 +37,7 @@ Output::Output(Input &input, DataBlock &data) {
       #endif
     }
   }
-  #ifdef WITH_HDF5
-  xdmf.Init(input,data); // Always initialised in case of emergency xdmf output
-  #endif
+
 
   // intialise dump outputs
   if(input.CheckEntry("Output","dmp")>0) {
@@ -137,7 +135,7 @@ int Output::CheckForWrites(DataBlock &data) {
         }
       }
       xdmfLast += xdmfPeriod;
-      xdmf.Write(data, *this);
+      data.xdmf->Write();
       nfiles++;
       elapsedTime += timer.seconds();
 
@@ -258,7 +256,7 @@ void Output::ForceWriteXdmf(DataBlock &data) {
         }
       }
       xdmfLast += xdmfPeriod;
-      xdmf.Write(data, *this);
+      data.xdmf->Write();
   }
   idfx::popRegion();
 }

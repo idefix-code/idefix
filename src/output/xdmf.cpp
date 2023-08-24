@@ -11,7 +11,7 @@
 #include <algorithm>
 #include <iomanip>
 #include "xdmf.hpp"
-#include "gitversion.hpp"
+#include "version.hpp"
 #include "idefix.hpp"
 #include "dataBlockHost.hpp"
 #include "gridHost.hpp"
@@ -20,16 +20,40 @@
 // Whether or not we write the time in the XDMF file
 #define WRITE_TIME
 
-/*init the object */
-void Xdmf::Init(Input &input, DataBlock &datain) {
+/*constructor*/
+Xdmf::Xdmf(Input &input, DataBlock *datain) {
   // Initialize the output structure
   // Create a local datablock as an image of gridin
-  DataBlockHost data(datain);
-  data.SyncFromDevice();
+
+  this->data = datain;
 
   // Pointer to global grid
-  GridHost grid(*datain.mygrid);
+  GridHost grid(*(data->mygrid));
   grid.SyncFromDevice();
+
+  // initialize output path
+  if(input.CheckEntry("Output","xdmf_dir")>=0) {
+    outputDirectory = input.Get<std::string>("Output","xdmf_dir",0);
+  } else {
+    outputDirectory = "./";
+  }
+
+  if(idfx::prank==0) {
+    if(!std::filesystem::is_directory(outputDirectory)) {
+      try {
+        if(!std::filesystem::create_directory(outputDirectory)) {
+          std::stringstream msg;
+          msg << "Cannot create directory " << outputDirectory << std::endl;
+          IDEFIX_ERROR(msg);
+        }
+      } catch(std::exception &e) {
+        std::stringstream msg;
+        msg << "Cannot create directory " << outputDirectory << std::endl;
+        msg << e.what();
+        IDEFIX_ERROR(msg);
+      }
+    }
+  }
 
   /* Note that there are two kinds of dimensions:
      - nx1, nx2, nx3, derived from the grid, which are the global dimensions
@@ -37,24 +61,24 @@ void Xdmf::Init(Input &input, DataBlock &datain) {
   */
 
   for (int dir=0; dir<3; dir++) {
-    this->periodicity[dir] = (datain.mygrid->lbound[dir] == periodic);
+    this->periodicity[dir] = (data->mygrid->lbound[dir] == periodic);
   }
   // Create the coordinate array required in XDMF files
   this->nx1 = grid.np_int[IDIR];
   this->nx2 = grid.np_int[JDIR];
   this->nx3 = grid.np_int[KDIR];
 
-  this->nx1loc = data.np_int[IDIR];
-  this->nx2loc = data.np_int[JDIR];
-  this->nx3loc = data.np_int[KDIR];
+  this->nx1loc = data->np_int[IDIR];
+  this->nx2loc = data->np_int[JDIR];
+  this->nx3loc = data->np_int[KDIR];
 
   this->nx1tot = grid.np_tot[IDIR];
   this->nx2tot = grid.np_tot[JDIR];
   this->nx3tot = grid.np_tot[KDIR];
 
-  this->nx1loctot = data.np_tot[IDIR];
-  this->nx2loctot = data.np_tot[JDIR];
-  this->nx3loctot = data.np_tot[KDIR];
+  this->nx1loctot = data->np_tot[IDIR];
+  this->nx2loctot = data->np_tot[JDIR];
+  this->nx3loctot = data->np_tot[KDIR];
 
   this->ngx1 = grid.nghost[IDIR];
   this->ngx2 = grid.nghost[JDIR];
@@ -94,13 +118,13 @@ void Xdmf::Init(Input &input, DataBlock &datain) {
   /* -- Allocate memory for node_coord which is later used -- */
   /* -- Data order that is saved is 3D/1D: Z-Y-X and 2D: Y-X-Z -- */
   for(int dir = 0; dir < 3 ; dir++) {
-    this->nodesize[3-dir] = datain.mygrid->np_int[dir];
-    this->nodestart[3-dir] = datain.gbeg[dir]-datain.nghost[dir];
-    this->nodesubsize[3-dir] = datain.np_int[dir];
+    this->nodesize[3-dir] = data->mygrid->np_int[dir];
+    this->nodestart[3-dir] = data->gbeg[dir]-data->nghost[dir];
+    this->nodesubsize[3-dir] = data->np_int[dir];
 
-    this->cellsize[3-dir] = datain.mygrid->np_int[dir];
-    this->cellstart[3-dir] = datain.gbeg[dir]-datain.nghost[dir];
-    this->cellsubsize[3-dir] = datain.np_int[dir];
+    this->cellsize[3-dir] = data->mygrid->np_int[dir];
+    this->cellstart[3-dir] = data->gbeg[dir]-data->nghost[dir];
+    this->cellsubsize[3-dir] = data->np_int[dir];
   }
 
   // In the 0th dimension, we always have the 3 components
@@ -120,9 +144,9 @@ void Xdmf::Init(Input &input, DataBlock &datain) {
   this->nodesize[2] += JOFFSET;
   this->nodesize[1] += KOFFSET;
 
-  if(datain.mygrid->xproc[0] == datain.mygrid->nproc[0]-1) this->nodesubsize[3] += IOFFSET;
-  if(datain.mygrid->xproc[1] == datain.mygrid->nproc[1]-1) this->nodesubsize[2] += JOFFSET;
-  if(datain.mygrid->xproc[2] == datain.mygrid->nproc[2]-1) this->nodesubsize[1] += KOFFSET;
+  if(data->mygrid->xproc[0] == data->mygrid->nproc[0]-1) this->nodesubsize[3] += IOFFSET;
+  if(data->mygrid->xproc[1] == data->mygrid->nproc[1]-1) this->nodesubsize[2] += JOFFSET;
+  if(data->mygrid->xproc[2] == data->mygrid->nproc[2]-1) this->nodesubsize[1] += KOFFSET;
 
   // Allocate a node and cell views on the host
   node_coord = IdefixHostArray4D<DUMP_DATATYPE>("XdmfNodeCoord", nodesubsize[0],
@@ -153,13 +177,13 @@ void Xdmf::Init(Input &input, DataBlock &datain) {
   for (int32_t k = 0; k < nodesubsize[1]; k++) {
     for (int32_t j = 0; j < nodesubsize[2]; j++) {
       for (int32_t i = 0; i < nodesubsize[3]; i++) {
-        D_EXPAND( x1 = data.xl[IDIR](i + grid.nghost[IDIR] );  ,
-                  x2 = data.xl[JDIR](j + grid.nghost[JDIR]);  ,
-                  x3 = data.xl[KDIR](k + grid.nghost[KDIR]);  )
+        D_EXPAND( x1 = grid.xl[IDIR](i + data->gbeg[IDIR]);  ,
+                  x2 = grid.xl[JDIR](j + data->gbeg[JDIR]);  ,
+                  x3 = grid.xl[KDIR](k + data->gbeg[KDIR]);  )
         if ( (k<(cellsubsize[1])) && (j<(cellsubsize[2])) && (i<(cellsubsize[3])) ) {
-          D_EXPAND( x1_cell = data.x[IDIR](i + grid.nghost[IDIR] );  ,
-                    x2_cell = data.x[JDIR](j + grid.nghost[JDIR]);  ,
-                    x3_cell = data.x[KDIR](k + grid.nghost[KDIR]);  )
+          D_EXPAND( x1_cell = grid.x[IDIR](i + data->gbeg[IDIR]);  ,
+                    x2_cell = grid.x[JDIR](j + data->gbeg[JDIR]);  ,
+                    x3_cell = grid.x[KDIR](k + data->gbeg[KDIR]);  )
         }
         #if (GEOMETRY == CARTESIAN) || (GEOMETRY == CYLINDRICAL)
         node_coord(0,k,j,i) = x1;
@@ -222,35 +246,35 @@ void Xdmf::Init(Input &input, DataBlock &datain) {
     // XDMF assumes Fortran array ordering, hence arrays dimensions are filled backwards
     // So ordering is 3D/1D: Z-Y-X and 2D: Y-X-Z
     // offset in the destination array
-    this->mpi_data_start[dir] = datain.gbeg[2-dir]-grid.nghost[2-dir];
+    this->mpi_data_start[dir] = data->gbeg[2-dir]-grid.nghost[2-dir];
     this->mpi_data_size[dir] = grid.np_int[2-dir];
-    this->mpi_data_subsize[dir] = datain.np_int[2-dir];
+    this->mpi_data_subsize[dir] = data->np_int[2-dir];
   }
   #elif (DIMENSIONS == 2)
   for(int dir = 0; dir < DIMENSIONS ; dir++) {
     // XDMF assumes Fortran array ordering, hence arrays dimensions are filled backwards
     // So ordering is 3D/1D: Z-Y-X and 2D: Y-X-Z
     // offset in the destination array
-    this->mpi_data_start[dir] = datain.gbeg[DIMENSIONS-dir-1]-grid.nghost[DIMENSIONS-dir-1];
+    this->mpi_data_start[dir] = data->gbeg[DIMENSIONS-dir-1]-grid.nghost[DIMENSIONS-dir-1];
     this->mpi_data_size[dir] = grid.np_int[DIMENSIONS-dir-1];
-    this->mpi_data_subsize[dir] = datain.np_int[DIMENSIONS-dir-1];
+    this->mpi_data_subsize[dir] = data->np_int[DIMENSIONS-dir-1];
   }
   for(int dir = DIMENSIONS; dir < 3 ; dir++) {
     // XDMF assumes Fortran array ordering, hence arrays dimensions are filled backwards
     // So ordering is 3D/1D: Z-Y-X and 2D: Y-X-Z
     // offset in the destination array
-    this->mpi_data_start[dir] = datain.gbeg[dir]-grid.nghost[dir];
+    this->mpi_data_start[dir] = data->gbeg[dir]-grid.nghost[dir];
     this->mpi_data_size[dir] = grid.np_int[dir];
-    this->mpi_data_subsize[dir] = datain.np_int[dir];
+    this->mpi_data_subsize[dir] = data->np_int[dir];
   }
   #endif
   #endif
 }
 
-int Xdmf::Write(DataBlock &datain, Output &output) {
+int Xdmf::Write() {
   idfx::pushRegion("Xdmf::Write");
-  std::string filename;
-  std::string filename_xmf;
+  std::filesystem::path filename;
+  std::filesystem::path filename_xmf;
   hid_t err;
 
   idfx::cout << "Xdmf: Write file n " << xdmfFileNumber << "..." << std::flush;
@@ -258,8 +282,6 @@ int Xdmf::Write(DataBlock &datain, Output &output) {
   timer.reset();
 
   // Create a copy of the dataBlock on Host, and sync it.
-  DataBlockHost data(datain);
-  data.SyncFromDevice();
 
   #if DIMENSIONS == 1
   int tot_dim = 1;
@@ -276,10 +298,10 @@ int Xdmf::Write(DataBlock &datain, Output &output) {
   std::string extension = ".dbl";
   #endif
   ssxdmfFileNum << std::setfill('0') << std::setw(4) << xdmfFileNumber;
-  ssfileName << "./data." << ssxdmfFileNum.str() << extension << ".h5";
-  ssfileNameXmf << "./data." << ssxdmfFileNum.str() << extension << ".xmf";
-  filename = ssfileName.str();
-  filename_xmf = ssfileNameXmf.str();
+  ssfileName << "data." << ssxdmfFileNum.str() << extension << ".h5";
+  ssfileNameXmf << "data." << ssxdmfFileNum.str() << extension << ".xmf";
+  filename = outputDirectory/ssfileName.str();
+  filename_xmf = outputDirectory/ssfileNameXmf.str();
 
   #ifdef WITH_MPI
   hid_t file_access = H5Pcreate(H5P_FILE_ACCESS);
@@ -299,7 +321,7 @@ int Xdmf::Write(DataBlock &datain, Output &output) {
   ssgroup_name << "/Timestep_" << xdmfFileNumber;
   hid_t timestep = H5Gcreate(fileHdf, ssgroup_name.str().c_str(), 0);
 
-  WriteHeader(fileHdf, filename, filename_xmf, datain.t, timestep, group_fields);
+  WriteHeader(fileHdf, filename, filename_xmf, data->t, timestep, group_fields);
 
   /* ------------------------------------
       write cell-centered field data
@@ -363,57 +385,21 @@ int Xdmf::Write(DataBlock &datain, Output &output) {
   err = H5Sselect_hyperslab(memspace, H5S_SELECT_SET, offset, stride, field_data_subsize, NULL);
 
   // Write field one by one
-  for(int nv = 0 ; nv < NVAR ; nv++) {
-    for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++ ) {
-      for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++ ) {
-        for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
-          vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc + (k-data.beg[KDIR])*nx1loc*nx2loc]
-              = static_cast<DUMP_DATATYPE>(data.Vc(nv,k,j,i));
+  for(auto const& [name, scalar] : xdmfScalarMap) {
+    auto Vcin = scalar.GetHostField();
+    for(int k = data->beg[KDIR]; k < data->end[KDIR] ; k++ ) {
+      for(int j = data->beg[JDIR]; j < data->end[JDIR] ; j++ ) {
+        for(int i = data->beg[IDIR]; i < data->end[IDIR] ; i++ ) {
+          vect3D[i-data->beg[IDIR] + (j-data->beg[JDIR])*nx1loc + (k-data->beg[KDIR])*nx1loc*nx2loc]
+              = static_cast<DUMP_DATATYPE>(Vcin(k,j,i));
           /* field_data(i-data.beg[IDIR],j-data.beg[JDIR],k-data.beg[KDIR])
                = static_cast<DUMP_DATATYPE>(data.Vc(nv,k,j,i)); */
         }
       }
     }
-    WriteScalar(vect3D, datain.hydro.VcName[nv], field_data_size, filename, filename_xmf,
+    WriteScalar(vect3D, name, field_data_size, filename, filename_xmf,
                 memspace, dataspace, plist_id_mpiio, static_cast<hid_t&>(group_fields));
   }
-  // Write user-defined variables (when required by output)
-  if(output.userDefVariablesEnabled) {
-    // Walk the map and make an output for each key of the map
-    // (and we thank c++11 for its cute way of doing this)
-    for(auto const &variable : output.userDefVariables) {
-      for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++ ) {
-        for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++ ) {
-          for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
-            vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc + (k-data.beg[KDIR])*nx1loc*nx2loc]
-              = static_cast<DUMP_DATATYPE>(variable.second(k,j,i));
-            /* field_data(i-data.beg[IDIR],j-data.beg[JDIR],k-data.beg[KDIR])
-                 = static_cast<DUMP_DATATYPE>(variable.second(k,j,i)); */
-          }
-        }
-      }
-      WriteScalar(vect3D, variable.first, field_data_size, filename, filename_xmf,
-                  memspace, dataspace, plist_id_mpiio, static_cast<hid_t&>(group_fields));
-    }
-  }
-
-  // Write vector potential if we're using this
-  #ifdef EVOLVE_VECTOR_POTENTIAL
-  for(int nv = 0 ; nv <= AX3e ; nv++) {
-    for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++ ) {
-      for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++ ) {
-        for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++ ) {
-          vect3D[i-data.beg[IDIR] + (j-data.beg[JDIR])*nx1loc + (k-data.beg[KDIR])*nx1loc*nx2loc]
-              = static_cast<DUMP_DATATYPE>(data.Ve(nv,k,j,i));
-          /* field_data(i-data.beg[IDIR],j-data.beg[JDIR],k-data.beg[KDIR])
-               = static_cast<DUMP_DATATYPE>(data.Ve(nv,k,j,i)); */
-        }
-      }
-    }
-    WriteScalar(vect3D, datain.hydro.VeName[nv], field_data_size, filename, filename_xmf,
-                memspace, dataspace, plist_id_mpiio, static_cast<hid_t&>(group_fields));
-  }
-  #endif
   WriteFooter(filename, filename_xmf);
 
   #ifdef WITH_MPI
@@ -532,7 +518,7 @@ void Xdmf::WriteHeader(
   H5Sclose(unit_info);
 
   dimstr = 1;
-  ssheader << "Idefix " << GITVERSION << " XDMF Data";
+  ssheader << "Idefix " << IDEFIX_VERSION << " XDMF Data";
   strspace = H5Screate_simple(1, &dimstr, NULL);
   string_type = H5Tcopy(H5T_C_S1);
   H5Tset_size(string_type, strlen( ssheader.str().c_str() ));

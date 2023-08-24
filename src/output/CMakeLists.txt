@@ -3,6 +3,7 @@ target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/dump.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/output.cpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/output.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/scalarField.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/vtk.cpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/vtk.hpp
   )

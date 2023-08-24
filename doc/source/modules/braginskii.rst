@@ -9,22 +9,23 @@ Equations solved and method
 The ``Braginskii`` module implements the anisotropic heat and momentum fluxes specific
 to weakly collisional, magnetised plasma like the intracluster medium
 for which this module was originally designed.
-Physically, it computes the modified Fourier law :math:`\vec{q}_'mathrm{B}` and
-the modified viscous stress tensor :math:`\vec{\PI_\mathrm{B}}`:
+Physically, it computes the modified Fourier law :math:`q_\mathrm{B}` and
+the modified viscous stress tensor :math:`\Pi_\mathrm{B}`:
 
-:math:`\vec{q}_'mathrm{B} = \kappa_\parralel \left(\hat{vec{b}}\cdot\vec{\nabla}T\right) \hat{vec{b}`, 
-:math:`\vec{\Pi}_'mathrm{B} = - \left( p_\perp - p_\parallel \right)  \left( \hatb \hatb - \frac{1}{3} \vec{I} \right)`,
-(where :math:`'kappa_\parallel` is the parallel thermal conductivity in code units.
+:math:`q_\mathrm{B} = \kappa_\parallel \left(\hat{b}\cdot \nabla T\right) \hat{b}`
+:math:`\Pi_\mathrm{B} = - \left( p_\perp - p_\parallel \right)  \left( \hat{b} \hat{b} - \frac{1}{3} \vec{I} \right)`
+
+(where :math:`\kappa_\parallel` is the parallel thermal conductivity in code units.
 The pressure anisotropy can be computed from the following closure:
-:math:`p_\perp - p_\parallel = 3\mu_\mathrm{B} \left(\hatb\hatb:\vnabla\vec{v} - \frac{1}{3} \vnabla\cdo     t\vec{v}\right)`.
+:math:`p_\perp - p_\parallel = 3\mu_\mathrm{B} \left(\hat{b}\hat{b}:\nabla v - \frac{1}{3} \nabla\cdot v \right)`.
 
-The ``SelfGravity`` module implemented in *Idefix* follows the algorithm of the BIConjugate Gradient
-STABilized (BICGSTAB) method, a common iterative method designed to solve sparse linear systems (see for example
-Saad, Y. (2003). Iterative methods for sparse linear systems. Society for Industrial and Applied Mathematics.).
-This specific method allows to solve the Poisson equation in any dimensions and any geometries.
+The anisotropic heat flux from the ``Braginskii`` module is implemented in *Idefix*
+according to the centered asymmetric scheme described in Sharma & Hammet (2007, Section 2.1).
+The Braginskii viscous stress tensor is implemented with the same scheme,
+though adapated to vector quantities.
 
 .. note::
-    By default, the selfGravity module uses the BICGSTAB method to invert the Poisson equation.
+    By default, the Braginskii module
     However, an optional preconditionning feature (PBICGSTAB) is
     implemented to handle particularly irregular and inhomogeneous grids, that may prevent the
     convergence of the classic BICGSTAB. Note also that a simpler (yet very slow) Jacobi method
@@ -98,5 +99,5 @@ The boundary conditions can be following
     Hence, make sure to specify all self-gravity boundary conditions as periodic for such setups, otherwise the solver will
     fail to converge.
 
-The selfGravity module in *Idefix* is fully parallelised. This means that one can have a MPI domain decomposition in any spatial direction
+The Braginskii module in *Idefix* is fully parallelised. This means that one can have a MPI domain decomposition in any spatial direction
 either on CPU or GPU.

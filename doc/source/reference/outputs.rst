@@ -7,7 +7,7 @@ Output formats
 --------------
 
 *Idefix* uses several types of outputs you may want for your setup. By default, *Idefix* allows
-for 3 kinds of outputs:
+for 4 kinds of outputs:
 
 * logs which essentially tells the user what *Idefix* is currently doing. When running in serial, logs are sent to stdout, but when
   MPI is enabled, only the logs of the rank 0 process is sent to stdout, and each process (including rank 0) simultaneously writes a
@@ -17,6 +17,8 @@ for 3 kinds of outputs:
 * VTK files (.vtk) are Visualation Toolkit files, which are easily readable by visualisation softwares such as `Paraview <https://www.paraview.org/>`_
   or `Visit <https://wci.llnl.gov/simulation/computer-codes/visit>`_. A set of python methods is also provided to read vtk file from your
   python scripts in the `pytools` directory.
+* XDMF files (eXtensible Data Model and Format) is a common format used in many HPC codes, which is easily readable by visualisation softwares such as `Paraview <https://www.paraview.org/>`_
+  or `Visit <https://wci.llnl.gov/simulation/computer-codes/visit>`_. The XDMF format relies on the HDF5 format and therefore requires *Idefix* to be configured with HDF5 support.
 * user-defined analysis files. These are totally left to the user. They usually consist of ascii tables defined by the user, but they can
   be anything.
 

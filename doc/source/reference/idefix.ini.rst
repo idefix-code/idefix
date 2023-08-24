@@ -382,6 +382,12 @@ This section describes the outputs *Idefix* produces. For more details about eac
 | vtk_dir        | string                  | | directory for vtk file outputs. Default to "./"                                                |
 |                |                         | | The directory is automatically created if it does not exist.                                   |
 +----------------+-------------------------+--------------------------------------------------------------------------------------------------+
+| xdmf           | float                   | | Time interval between xdmf outputs, in code units (requires Idefix to be configured with HDF5) |
+|                |                         | | If negative, periodic xdmf outputs are disabled.                                               |
++----------------+-------------------------+--------------------------------------------------------------------------------------------------+
+| xdmf_dir       | string                  | | directory for xdmf file outputs. Default to "./"                                               |
+|                |                         | | The directory is automatically created if it does not exist.                                   |
++----------------+-------------------------+--------------------------------------------------------------------------------------------------+
 | analysis       | float                   | | Time interval between analysis outputs, in code units.                                         |
 |                |                         | | If negative, periodic analysis outputs are disabled.                                           |
 |                |                         | | When this entry is set, *Idefix* expects a user-defined analysis function to be                |
@@ -391,7 +397,7 @@ This section describes the outputs *Idefix* produces. For more details about eac
 |                |                         | | When this list is present in the input file, *Idefix* expects a user-defined                   |
 |                |                         | | function to be enrolled with ``Output::EnrollUserDefVariables(UserDefVariablesFunc)``          |
 |                |                         | | (see :ref:`functionEnrollment`). The user-defined variables defined by this function           |
-|                |                         | | are then written as new variables in vtk  outputs.                                             |
+|                |                         | | are then written as new variables in vtk and/or xdmf  outputs.                                 |
 +----------------+-------------------------+--------------------------------------------------------------------------------------------------+
 
 .. note::

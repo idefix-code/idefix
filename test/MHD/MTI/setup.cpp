@@ -3,23 +3,22 @@
 #include "analysis.hpp"
 
 // Definition of the constants and parameters of the problem
-real T0 = 1.;
-real H = 3.;
-real L = 0.1;
-real g0 = 1.;
-real t0 = 1./sqrt(T0);
-
-real beta0 = 1e12;
-real rho0 = 1.; //initial density
-real P0 = rho0*T0; //initial pressure
-real B0 = 100.*sqrt(1./beta0);
-
-real vth0 = 1.;
-
-real n = 1.;
-real kn = 2.*n*M_PI/L;
-real ksiGlob;
-real prGlob;
+static real T0 = 1.;
+static real H = 3.;
+static real L = 0.1;
+static real g0 = 1.;
+ 
+static real beta0 = 1e12;
+static real rho0 = 1.; //initial density
+static real P0 = rho0*T0; //initial pressure
+static real B0 = 100.*sqrt(1./beta0);
+ 
+static real vth0 = 1.;
+ 
+static real n = 1.;
+static real kn = 2.*n*M_PI/L;
+static real ksiGlob;
+static real prGlob;
 
 Analysis *analysis;
 
@@ -29,6 +28,7 @@ void AnalysisFunction(DataBlock &data) {
 
 // Implement uniform gravitationnal field
 void Potential(DataBlock& data, const real t, IdefixArray1D<real>& x1, IdefixArray1D<real>& x2, IdefixArray1D<real>& x3, IdefixArray3D<real>& phi) {
+  real g0 = 1.;
   idefix_for("Potential", 0, data.np_tot[KDIR], 0, data.np_tot[JDIR], 0, data.np_tot[IDIR],
       KOKKOS_LAMBDA (int k, int j, int i) {
           phi(k,j,i) = g0*x2(j);
@@ -62,6 +62,11 @@ void MyViscosity(DataBlock &data, const real t, IdefixArray3D<real> &etaBrag) {
 // Define our own boundary conditions. Basically, homogene Neummann (i.e. symmetry) on polar and azimuthal velocity, Dirichlet on the thermo fields.
 void UserDefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
   auto *data = hydro->data;
+  real T0 = 1.;
+  real H = 3.;
+  real g0 = 1.;
+  real rho0 = 1.; //initial density
+  real P0 = rho0*T0; //initial pressure
   IdefixArray4D<real> Vc = hydro->Vc;
   IdefixArray4D<real> Vs = hydro->Vs;
   IdefixArray1D<real> x1 = data->x[IDIR];

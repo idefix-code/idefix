@@ -1,7 +1,7 @@
 #include "idefix.hpp"
 #include "setup.hpp"
 
-real B0 = 1e-5;
+static real B0 = 1e-5;
 
 // Default constructor
 

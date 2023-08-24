@@ -1,7 +1,6 @@
 #include "idefix.hpp"
 #include "setup.hpp"
 
-real B0 = 0.01;
 
 // Default constructor
 
@@ -19,6 +18,7 @@ void InternalBoundary(DataBlock& data, const real t) {
 
 void UserDefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
   auto *data = hydro->data;
+  real B0 = 0.01;
   IdefixArray4D<real> Vc = data->hydro->Vc;
   IdefixArray4D<real> Vs = data->hydro->Vs;
   IdefixArray1D<real> x1 = data->x[IDIR];
@@ -29,11 +29,10 @@ void UserDefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
   IdefixArray1D<real> x2l = data->xl[JDIR];
   IdefixArray1D<real> x3l = data->xl[KDIR];
   if (dir==IDIR) {
-    int ibeg, iend, iref;
+    int ibeg, iend;
     if (side == left) {
       ibeg = 0;
       iend = data->beg[IDIR];
-      iref = data->beg[IDIR];
       idefix_for("InnerBoundary", 0, data->np_tot[KDIR], 0, data->np_tot[JDIR], ibeg, iend,
              KOKKOS_LAMBDA (int k, int j, int i) {
                  Vc(RHO,k,j,i) = 1.;
@@ -48,7 +47,6 @@ void UserDefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
     if (side == right) {
       ibeg = data->end[IDIR];
       iend = data->np_tot[IDIR];
-      iref = data->end[IDIR] - 1;
       idefix_for("InnerBoundary", 0, data->np_tot[KDIR], 0, data->np_tot[JDIR], ibeg, iend,
              KOKKOS_LAMBDA (int k, int j, int i) {
                  Vc(RHO,k,j,i) = 1.;
@@ -79,6 +77,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
 void Setup::InitFlow(DataBlock &data) {
   // Create a host copy
   DataBlockHost d(data);
+  real B0 = 0.01;
   IdefixArray4D<real> Vc = data.hydro->Vc;
   IdefixArray4D<real> Vs = data.hydro->Vs;
   IdefixArray1D<real> x1 = data.x[IDIR];

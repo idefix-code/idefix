@@ -17,10 +17,13 @@ def testMe(test):
   inifiles=["idefix.ini","idefix-rkl.ini","idefix-sl.ini"]
 
   # loop on all the ini files for this test
+  name="dump.0001.dmp"
   for ini in inifiles:
     test.run(inputFile=ini)
     test.standardTest()
-    test.nonRegressionTest(filename="dump.0001.dmp")
+    if test.init:
+      test.makeReference(filename=name)
+    test.nonRegressionTest(filename=name)
 
 
 test=tst.idfxTest()

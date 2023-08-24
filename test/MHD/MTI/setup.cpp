@@ -7,14 +7,14 @@ static real T0 = 1.;
 static real H = 3.;
 static real L = 0.1;
 static real g0 = 1.;
- 
+
 static real beta0 = 1e12;
 static real rho0 = 1.; //initial density
 static real P0 = rho0*T0; //initial pressure
 static real B0 = 100.*sqrt(1./beta0);
- 
+
 static real vth0 = 1.;
- 
+
 static real n = 1.;
 static real kn = 2.*n*M_PI/L;
 static real ksiGlob;

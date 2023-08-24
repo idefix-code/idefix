@@ -113,6 +113,10 @@ class DataBlock {
 
   std::unique_ptr<Vtk> vtk;
   std::unique_ptr<Dump> dump;
+  #ifdef WITH_HDF5
+  std::unique_ptr<Xdmf> xdmf; 
+  #endif
+
 
   DataBlock(Grid &, Input &);     ///< init from a Grid object
 

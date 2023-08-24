@@ -581,7 +581,6 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
     #ifdef WITH_HDF5
       data->xdmf->RegisterVariable(Vc, outputPrefix+VcName[i], i);
     #endif
-
   }
 
   if constexpr(Phys::mhd) {

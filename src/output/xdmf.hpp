@@ -9,6 +9,7 @@
 #define OUTPUT_XDMF_HPP_
 #include <string>
 #include <filesystem>
+#include <map>
 #include "idefix.hpp"
 #include "input.hpp"
 #include "scalarField.hpp"

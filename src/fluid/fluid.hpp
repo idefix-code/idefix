@@ -533,58 +533,54 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
     switch(i) {
       case RHO:
         VcName.push_back("RHO");
-        data->vtk->RegisterVariable(Vc, outputPrefix+"RHO", RHO);
         data->dump->RegisterVariable(Vc, outputPrefix+"Vc-RHO", RHO);
         break;
       case VX1:
         VcName.push_back("VX1");
-        data->vtk->RegisterVariable(Vc, outputPrefix+"VX1", VX1);
         data->dump->RegisterVariable(Vc, outputPrefix+"Vc-VX1", VX1, IDIR);
         break;
       case VX2:
         VcName.push_back("VX2");
-        data->vtk->RegisterVariable(Vc, outputPrefix+"VX2", VX2);
         data->dump->RegisterVariable(Vc, outputPrefix+"Vc-VX2", VX2, JDIR);
         break;
       case VX3:
         VcName.push_back("VX3");
-        data->vtk->RegisterVariable(Vc, outputPrefix+"VX3", VX3);
         data->dump->RegisterVariable(Vc, outputPrefix+"Vc-VX3", VX3, KDIR);
         break;
       case BX1:
         VcName.push_back("BX1");
-        data->vtk->RegisterVariable(Vc, outputPrefix+"BX1", BX1);
+        // never save cell-centered BX1 in dumps
         break;
       case BX2:
         VcName.push_back("BX2");
-        data->vtk->RegisterVariable(Vc, outputPrefix+"BX2", BX2);
         #if DIMENSIONS < 2
           data->dump->RegisterVariable(Vc, outputPrefix+"Vc-BX2", BX2, JDIR);
         #endif
         break;
       case BX3:
         VcName.push_back("BX3");
-        data->vtk->RegisterVariable(Vc, outputPrefix+"BX3", BX3);
         #if DIMENSIONS < 3
           data->dump->RegisterVariable(Vc, outputPrefix+"Vc-BX3", BX3, KDIR);
         #endif
         break;
       case PRS:
         VcName.push_back("PRS");
-        data->vtk->RegisterVariable(Vc, outputPrefix+"PRS", PRS);
         data->dump->RegisterVariable(Vc, outputPrefix+"Vc-PRS", PRS);
         break;
       default:
         if(i>=Phys::nvar) {
           std::string tracerLabel = std::string("TR")+std::to_string(i-Phys::nvar); // ="TRn"
           VcName.push_back(tracerLabel);
-          data->vtk->RegisterVariable(Vc, outputPrefix+tracerLabel, i);
           data->dump->RegisterVariable(Vc, outputPrefix+"Vc-"+tracerLabel, i);
         } else {
           VcName.push_back("Vc-"+std::to_string(i));
           data->vtk->RegisterVariable(Vc, outputPrefix+"Vc-"+std::to_string(i), i);
         }
     }
+    data->vtk->RegisterVariable(Vc, outputPrefix+VcName[i], i);
+    #ifdef WITH_HDF5
+      data->xdmf->RegisterVariable(Vc, outputPrefix+VcName[i], i);
+    #endif
   }
 
   if constexpr(Phys::mhd) {

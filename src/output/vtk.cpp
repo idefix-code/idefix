@@ -203,7 +203,7 @@ Vtk::Vtk(Input &input, DataBlock *datain) {
 
 #endif
 
-  // Creat MPI view when using MPI I/O
+  // Create MPI view when using MPI I/O
 #ifdef WITH_MPI
   int start[3];
   int size[3];
@@ -299,7 +299,7 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
 * Write VTK header in parallel or serial mode.
 *
 * \param [in]  fvtk  pointer to file
-* \param [in]  grid  pointer to an array of Grid structures
+* \param [in]  time  time of the simulation in code units
 *
 * \todo  Write the grid using several processors.
 *********************************************************************** */

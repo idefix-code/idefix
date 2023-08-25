@@ -40,6 +40,9 @@ Several options can be enabled from the command line (or are accessible with ``c
     Enable debug options in *Idefix*. This triggers a lot of outputs, and automatic bound checks of array accesses. As a result, this
     option makes the code very slow.
 
+``-D Idefix_HDF5=ON``
+    Enable HDF5 outputs. Requires the HDF5 library on the target system. Required for *Idefix* XDMF outputs.
+
 ``-D Idefix_RECONSTRUCTION=x``
     Specify the type of reconstruction scheme (replaces the old "ORDER" parameter in ``definitions.hpp``). Accepted values for ``x`` are:
       + ``Constant``: first order, donor cell reconstruction,

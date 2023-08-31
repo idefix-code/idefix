@@ -66,6 +66,9 @@ template <typename Function>
 inline void idefix_for(const std::string & NAME,
                        const int & IB, const int & IE,
                        Function function) {
+  #ifdef DEBUG
+  idfx::pushRegion("idefix_for("+NAME+")");
+  #endif
   const int NI = IE - IB;
   Kokkos::parallel_for(NAME, NI,
     KOKKOS_LAMBDA (const int& IDX) {
@@ -73,6 +76,10 @@ inline void idefix_for(const std::string & NAME,
       i += IB;
       function(i);
   });
+  #ifdef DEBUG
+  Kokkos::fence();
+  idfx::popRegion();
+  #endif
 }
 
 
@@ -82,6 +89,9 @@ inline void idefix_for(const std::string & NAME,
                        const int & JB, const int & JE,
                        const int & IB, const int & IE,
                        Function function) {
+  #ifdef DEBUG
+  idfx::pushRegion("idefix_for("+NAME+")");
+  #endif
   // Kokkos 1D Range
   if constexpr(defaultLoop == LoopPattern::RANGE) {
     const int NJ = JE - JB;
@@ -123,6 +133,10 @@ inline void idefix_for(const std::string & NAME,
   } else {
     throw std::runtime_error("Unknown/undefined LoopPattern used.");
   }
+  #ifdef DEBUG
+  Kokkos::fence();
+  idfx::popRegion();
+  #endif
 }
 
 
@@ -133,6 +147,9 @@ inline void idefix_for(const std::string & NAME,
                        const int & JB, const int & JE,
                        const int & IB, const int & IE,
                        Function function) {
+  #ifdef DEBUG
+  idfx::pushRegion("idefix_for("+NAME+")");
+  #endif
   // Kokkos 1D Range
   if constexpr(defaultLoop == LoopPattern::RANGE) {
     const int NK = KE - KB;
@@ -201,6 +218,10 @@ inline void idefix_for(const std::string & NAME,
   } else {
     throw std::runtime_error("Unknown/undefined LoopPattern used.");
   }
+  #ifdef DEBUG
+  Kokkos::fence();
+  idfx::popRegion();
+  #endif
 }
 
 // 4D loop
@@ -211,6 +232,9 @@ inline void idefix_for(const std::string & NAME,
                        const int JB, const int JE,
                        const int IB, const int IE,
                        Function function) {
+  #ifdef DEBUG
+  idfx::pushRegion("idefix_for("+NAME+")");
+  #endif
   // Kokkos 1D Range
   if constexpr(defaultLoop == LoopPattern::RANGE) {
     const int NN = (NE) - (NB);
@@ -293,6 +317,10 @@ inline void idefix_for(const std::string & NAME,
   } else {
     throw std::runtime_error("Unknown/undefined LoopPattern used.");
   }
+  #ifdef DEBUG
+  Kokkos::fence();
+  idfx::popRegion();
+  #endif
 }
 
 #endif // LOOP_HPP_

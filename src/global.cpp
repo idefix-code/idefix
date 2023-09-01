@@ -62,7 +62,10 @@ int initialize() {
 
 void pushRegion(const std::string& kName) {
   Kokkos::Profiling::pushRegion(kName);
-
+  if(prof.perfEnabled) {
+    prof.currentRegion = prof.currentRegion->GetChild(kName);
+    prof.currentRegion->Start();
+  }
 #ifdef DEBUG
   regionIndent=regionIndent+4;
   for(int i=0; i < regionIndent ; i++) {
@@ -74,6 +77,10 @@ void pushRegion(const std::string& kName) {
 
 void popRegion() {
   Kokkos::Profiling::popRegion();
+  if(prof.perfEnabled) {
+    prof.currentRegion->Stop();
+    prof.currentRegion = prof.currentRegion->parent;
+  }
 #ifdef DEBUG
   for(int i=0; i < regionIndent ; i++) {
     cout << "-";

@@ -437,7 +437,7 @@ finished working with it. An example is provided in :ref:`setupInitDump`.
 .. _LookupTableClass:
 
 ``LookupTable`` class
------------------
+---------------------
 
 The ``LookupTable`` class allows one to read and interpolate elements from a coma-separated value (CSV) file or a numpy file
 (generated from ``numpy.save`` in python).
@@ -539,28 +539,33 @@ The ``Get`` and ``GetHost`` functions expect a C array of size ``nDim`` and retu
 .. note::
   Usage examples are provided in `test/utils/lookupTable`.
 
+
+.. _debugging:
+
 Debugging and profiling
 =======================
 
-The easiest way to trigger debugging in ``Idefix`` is to switch on ``Idefix_DEBUG`` in cmake (for instance
+The easiest way to trigger debugging in *Idefix* is to switch on ``Idefix_DEBUG`` in cmake (for instance
 adding ``-DIdefix_DEBUG=ON`` when calling cmake). This forces the code to log each time a function is called or
 returned (this is achieved thanks to the ``idfx::pushRegion(std::string)`` and ``idfx::popRegion()`` which are
-found at the beginning and end of each function). In addition, ``Idefix_DEBUG`` enables Kokkos array bound checks, which
-will throw an error each time one tries to access an array out of its allocated memory space. Note that all of these
+found at the beginning and end of each function). In addition, ``Idefix_DEBUG`` will force *Idefix* to wait for each
+``idefix_for`` to finish before continuing to the next instruction (otherwise, ``idefix_for`` are asynchronous when using
+an accelerator). This simplifies the detection and identification of bugs in ``idefix_for`` loops. Note that all of these
 debugging features induce a large overhead, and should therefore not be activated in production runs.
 
-It is also possible to use `Kokkos-tools <https://github.com/kokkos/kokkos-tools>`_ to debug and profile the code.
-For instance, on the fly profiling, can be enabled with the Kokkos ``space-time-stack`` tool. To use it, simply clone
-``Kokkos-tools`` to the directory of your choice, create a ``bin`` directory, configure the tools in the ``bin`` directory using
-cmake and compile it. It we assume that the path to the ``bin`` directory just created is ``<kokkos-tools-bin>`` then you can enable
-profiling by setting the environement variable ``KOKKOS_TOOLS_LIBS`` as:
+If you suspect an out-of-bound access, it may be worth enabling additionaly ``Kokkos_ENABLE_BOUNDS_CHECK`` that will check
+that you are not trying to access an array outside of its bounds.
+
+If you want to profile the code, the simplest way is to use the embedded profiling tool in *Idefix*, adding ``-profile`` to the command line
+when calling the code. This will produce a simplified profiling report when the *Idefix* finishes.
+
+It is also possible to use `Kokkos-tools <https://github.com/kokkos/kokkos-tools>`_ for more advanced profiling/debbugging. To use it,
+you must compile Kokkos tools in the directory of your choice and enable your favourite tool
+by setting the environement variable ``KOKKOS_TOOLS_LIBS`` to the tool path, for instance:
 
 .. code-block:: bash
 
   export KOKKOS_TOOLS_LIBS=<kokkos-tools-bin>/profiling/space-time-stack/libkp_space_time_stack.so
-
-Once this environement variable is set, *Idefix* automatically logs profiling informations when it ends (recompilation of *Idefix*
-is not needed).
 
 
 Minimal skeleton

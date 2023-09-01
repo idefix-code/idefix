@@ -104,14 +104,11 @@ mpirun -np 8 ./idefix -dec 1 2 4 --kokkos-num-devices=4
 
 Profiling
 -------------------
-use the kokkos profiler tool, which can be downloaded from kokkos-tools (on github)
-Then set the environement variable:
+use the embedded profiling tool by adding "-profile" when calling idefix (no need to recompile)
 
 ```shell
-export KOKKOS_PROFILE_LIBRARY=kokkos-tools/src/tools/space-time-stack/kp_space_time_stack.so
-````
-
-and then simply run the code (no need to recompile)
+./idefix -profile
+```
 
 Debugging
 -------------------

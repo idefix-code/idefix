@@ -25,6 +25,8 @@ Several options can be provided at command line when running the code. These are
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+
 | -nowrite           |   disable all writes (useful for raw performance measures or for tests). This option implies ``-nolog``                 |
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+
+| -profile           |   Enable on-the-fly performance profiling (a final text report is automatically generated).                             |
++--------------------+-------------------------------------------------------------------------------------------------------------------------+
 | -Werror            |   warning messages are considered as errors and stop the code with a non-zero exit code.                                |
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+
 

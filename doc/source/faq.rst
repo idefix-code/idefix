@@ -58,7 +58,7 @@ Developement
 ------------
 
 I have a serious bug (e.g. segmentation fault), in my setup, how do I proceed?
-  Add ``-DIdefix_DEBUG=ON`` to ``cmake`` and recompile to find out exactly where the code crashes.
+  Add ``-DIdefix_DEBUG=ON`` to ``cmake`` and recompile to find out exactly where the code crashes (see :ref:`debugging`).
 
 I want to test a modification to *Idefix* source code specific to my problem without modifying files in `$IDEFIX_DIR`. How can I proceed?
   Add a ``CmakeLists.txt`` in your problem directory and use the function `replace_idefix_source` (see :ref:`customSourceFiles`).

@@ -6,6 +6,7 @@
 // ***********************************************************************************
 
 #include <algorithm>
+#include <iomanip>
 #include <mutex>    // NOLINT [build/c++11]
 #include <string>
 #include <vector>

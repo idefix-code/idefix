@@ -19,6 +19,7 @@
 #include "idefix.hpp"
 #include "input.hpp"
 #include "version.hpp"
+#include "profiler.hpp"
 
 // Flag will be set if a signal has been received
 bool Input::abortRequested = false;
@@ -171,6 +172,8 @@ void Input::ParseCommandLine(int argc, char **argv) {
       enableLogs = false;
     } else if(std::string(argv[i]) == "-nolog") {
       enableLogs = false;
+    } else if(std::string(argv[i]) == "-profile") {
+      idfx::prof.EnablePerformanceProfiling();
     } else if(std::string(argv[i]) == "-Werror") {
       idfx::warningsAreErrors = true;
     } else if(std::string(argv[i]) == "-version" || std::string(argv[i]) == "-v") {
@@ -399,6 +402,8 @@ void Input::PrintOptions() {
   idfx::cout << "         Do not generate any output file." << std::endl;
   idfx::cout << " -nolog" << std::endl;
   idfx::cout << "         Do not write any log file." << std::endl;
+  idfx::cout << " -profile" << std::endl;
+  idfx::cout << "         Enable on-the-fly performance profiling." << std::endl;
   idfx::cout << " -Werror" << std::endl;
   idfx::cout << "         Consider warnings as errors." << std::endl;
   idfx::cout << " -v/-version" << std::endl;

@@ -1,9 +1,6 @@
 #include "idefix.hpp"
 #include "setup.hpp"
 
-static real B0 = 1e-5;
-
-// Default constructor
 
 real amplitude;
 void UserDefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
@@ -53,25 +50,25 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
 void Setup::InitFlow(DataBlock &data) {
   // Create a host copy
   DataBlockHost d(data);
-  IdefixArray4D<real> Vc = data.hydro->Vc;
-  IdefixArray4D<real> Vs = data.hydro->Vs;
-  IdefixArray1D<real> x1 = data.x[IDIR];
-  IdefixArray1D<real> x2 = data.x[JDIR];
-  IdefixArray1D<real> x3 = data.x[KDIR];
-
-  IdefixArray1D<real> x1l = data.xl[IDIR];
-  IdefixArray1D<real> x2l = data.xl[JDIR];
-  IdefixArray1D<real> x3l = data.xl[KDIR];
+  real B0 = 1e-5;
 
   for(int k = 0; k < d.np_tot[KDIR] ; k++) {
+    real x3 = d.x[KDIR](k);
+    real x3l = d.xl[KDIR](k);
     for(int j = 0; j < d.np_tot[JDIR] ; j++) {
+      real x2 = d.x[JDIR](j);
+      real x2l = d.xl[JDIR](j);
       for(int i = 0; i < d.np_tot[IDIR] ; i++) {
+        real x1=d.x[IDIR](i);
+        real x1l=d.xl[IDIR](i);
+
         d.Vc(RHO,k,j,i) = 1.0;
-        d.Vc(VX1,k,j,i) = amplitude*std::cyl_bessel_j(1, x1(i))/x1(i);
+        d.Vc(VX1,k,j,i) = amplitude*std::cyl_bessel_j(1, x1)/x1;
+//        d.Vc(VX1,k,j,i) = amplitude;
         d.Vc(VX2,k,j,i) = 0.0;
         d.Vc(VX3,k,j,i) = 0.0;
 
-        d.Vs(BX1s,k,j,i) = B0/pow(x1l(i),2.);
+        d.Vs(BX1s,k,j,i) = B0/pow(x1l,2.);
         d.Vs(BX2s,k,j,i) = 0.0;
         d.Vs(BX3s,k,j,i) = 0.0;
       }

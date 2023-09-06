@@ -78,8 +78,10 @@ for it,t in enumerate(list_time):
     if np.mean(np.fabs(TEMP - analytic_T)) > eps:
         success = False
         print("Failed")
+        print("Error: {0}".format(np.mean(np.fabs(TEMP - analytic_T))))
         sys.exit(1)
 
 if success:
    print("SUCCESS")
+   print("Error: {0}".format(np.mean(np.fabs(TEMP - analytic_T))))
    sys.exit(0)

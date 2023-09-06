@@ -28,9 +28,6 @@ git submodule init
 git submodule update
 ```
 
-Note that code validation requires some large files that are handled by git-lfs. Make
-sure you have installed git-lfs and cloned the code before attempting to perform
-code validation (eg using the `testme.py` script).
 
 Installation:
 -------------
@@ -120,8 +117,10 @@ Code Validation
 
 Most of tests provided in the `test/` directory can be validated against analytical solution (standard test)
 and/or pre-computed solutions (non-regression tests). Note that the validation relies on large reference
-files that are handled by `git-lfs`. Ensure that your system has `git-lfs` installed and that reference files
-were properly downloaded (in the reference/ directory of each test) before attempting to validate the code.
+files that are stored in the separate `idefix-code/reference` repository that is cloned as a submodule.
+
+Ensure that reference files
+were properly downloaded (in the reference/ directory of the root of idefix) before attempting to validate the code.
 
 In order to do a full validation of a particular test
 (with all of the possible combination of algorithms), use the script `testme.py`

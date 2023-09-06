@@ -84,8 +84,8 @@ configure, compile and validate a series of test with varying combination of alg
 
 .. warning::
     Note that the validation relies on large reference
-    files that are handled by ``git-lfs``. Ensure that your system has ``git-lfs`` installed and that reference files
-    were properly downloaded (in the reference/ directory of each test) before attempting to validate the code.
+    files that are stored in the separate `idefix-code/reference` repository that is
+    cloned as a submodule along with Kokkos if you follow the above procedure.
 
 
 Configure and run the Orszag-Tang test problem

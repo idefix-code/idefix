@@ -116,7 +116,11 @@ The last line being there to guarantee the link to the HIP library and the acces
 C++17 <filesystem> functions.
 
 Finally, *Idefix* can be configured to run on Mi250 by enabling HIP and the desired architecture with the following options to ccmake:
-``-DKokkos_ENABLE_HIP=ON -DKokkos_ENABLE_HIP_MULTIPLE_KERNEL_INSTANTIATION=ON -DKokkos_ARCH_VEGA90A=ON``
+
+.. code-block:: bash
+
+    -DKokkos_ENABLE_HIP=ON -DKokkos_ENABLE_HIP_MULTIPLE_KERNEL_INSTANTIATION=ON -DKokkos_ARCH_VEGA90A=ON``
+
 
 MPI (multi-GPU) can be enabled by adding ``-DIdefix_MPI=ON`` as usual.
 
@@ -134,10 +138,15 @@ We recommend the following modules and environement variables on Jean Zay:
 
 *Idefix* can then be configured to run on Nvidia V100 with the following options to ccmake:
 
-``-DKokkos_ENABLE_CUDA=ON -DKokkos_ENABLE_VOLTA70=ON``
+.. code-block:: bash
+
+    -DKokkos_ENABLE_CUDA=ON -DKokkos_ENABLE_VOLTA70=ON
 
 While Ampere A100 GPUs are enabled with
-``-DKokkos_ENABLE_CUDA=ON -DKokkos_ENABLE_AMPERE80=ON``
+
+.. code-block:: bash
+
+    -DKokkos_ENABLE_CUDA=ON -DKokkos_ENABLE_AMPERE80=ON
 
 MPI (multi-GPU) can be enabled by adding ``-DIdefix_MPI=ON`` as usual.
 

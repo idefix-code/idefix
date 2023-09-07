@@ -8,7 +8,7 @@ Download and install *Idefix*
 One first need to download *Idefix* from the public git. Say you want to install *Idefix* in the directory ``~/src/idefix``, you need to run::
 
     cd ~/src
-    git clone https://<yourFavouriteIdefixRepo> idefix
+    git clone https://github.com/idefix-code/idefix.git idefix
     cd idefix
     git submodule init
     git submodule update
@@ -29,11 +29,11 @@ install directory of *Idefix*. We therefore conclude the installation with::
 
 Configure and run the SOD tube test problem
 ===========================================
-The test problem are all located in the ``$IDEFIX_DIR/test`` directory of the distribution. To access the Sod shock tube test, one go to::
+The test problem are all located in the ``$IDEFIX_DIR/test`` directory of the distribution. To access the Sod shock tube test, one goes to::
 
     cd $IDEFIX_DIR/test/HD/sod
 
-From there, one sees 4 files and a 2 directories:
+From there, one sees 4 files and a directories:
 
 ``definitions.hpp``
     The configuration file. It contains C preprocessor directives for configuration options which require a re-compilation of the code. These are mostly
@@ -50,14 +50,11 @@ From there, one sees 4 files and a 2 directories:
     The validation script. It uses the python class ``idfx_test.py`` to validate the code outputs for that particular test. Use ``testme.py -help`` to find out the options.
 
 ``python``
-    Directory that contains the standard test validation: i.e. comparison against an analytical solution
-
-``reference``
-    Directory that contains pre-computed results from previous versions of Idefix. This is used by CI/CD to check that the code is producing consistent results accross versions.
+    Directory that contains the standard test validation: i.e. comparison against an analytical solution (when it exists)
 
 
 For the time being, the files are already set up for the Sod test problem. The only thing lacking is a ``makefile`` to actually compile the code.
-In *Idefix* the makefile is created by `Cmake <https://cmake.org>`_ ,a tool to control code generation on diverse platforms. To configure *Idefix*,
+In *Idefix* the makefile is created by `cmake <https://cmake.org>`_ ,a tool to control code generation on diverse platforms. To configure *Idefix*,
 you need Cmake version >=3.16 installed on your machine. For this quickstart, let us configure the code to run on
 the cpu in serial (default behaviour). Assuming a ``cmake`` is in the PATH, we simply type in::
 
@@ -84,7 +81,7 @@ configure, compile and validate a series of test with varying combination of alg
 
 .. warning::
     Note that the validation relies on large reference
-    files that are stored in the separate `idefix-code/reference` repository that is
+    files that are stored in the separate `idefix-code/reference` repository that is automatically
     cloned as a submodule along with Kokkos if you follow the above procedure.
 
 

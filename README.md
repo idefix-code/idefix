@@ -20,9 +20,10 @@
 Download:
 ---------
 
-using either ssh or https url as `<address>`
+Assuming you want to use https to get idefix (easiest option):
+
 ```shell
-git clone <address> idefix
+git clone https://github.com/idefix-code/idefix.git idefix
 cd idefix
 git submodule init
 git submodule update

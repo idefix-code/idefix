@@ -24,6 +24,9 @@ How do I use my favourite XXXXX compiler?
 I have a complex setup, and have written some functions in separate .cpp files. How can I add these files to *Idefix* build tree?
   Add a ``CmakeLists.txt`` in your problem directory and use the function `add_idefix_source` (see :ref:`customSourceFiles`).
 
+I want to run on the GPUs of xxx machine, how do I proceed?
+  Check the examples in :ref:`setupExamples`
+
 Compilation
 -----------
 
@@ -47,12 +50,6 @@ How can I stop the code without loosing the current calculation?
 I'm doing performance measures. How do I disable all outputs in *Idefix*?
   Add ``-nowrite`` when you call *Idefix* executable.
 
-Validation
-----------
-
-I get a "file not found" error when running the ``testme.py`` script in some test directory.
-  ``git-lfs`` is probably missing on your system. You should install/enable ``git-lfs`` and then
-  run ``git lfs pull`` in ``$IDEFIX_DIR``.
 
 Developement
 ------------

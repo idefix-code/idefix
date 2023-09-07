@@ -37,7 +37,8 @@ extensions = [
     'sphinx_git',
     "breathe",
     "exhale",
-    "m2r2"
+    "m2r2",
+    "sphinx_copybutton"
     ]
 
 source_suffix = [".rst", ".md"]

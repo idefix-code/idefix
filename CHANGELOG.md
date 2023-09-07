@@ -27,20 +27,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fixed a bug that led to race condition when using GPU offloading, axis boundary condition and domain decomposition along X3 (!309)
 - fixed a bug that led to inconsistent results with MPI and UCT_HLLx EMF reconstruction schemes (!310)
 - fixed a bug that could result in .dmp file duplication on restart (!354)
+- fixed a bug in v2.0 developement branch that resulted in broekn dump files when MHD was enabled with DIMENSIONS<3 (#174)
+- IDEFIX_Debug now automatically introduce Kokkos::fence at the end of each idefix_for, enforcing synchronisation between host and device when debugging (#188)
+- Moving developement onto github.com. Some references to merge requests will likely be lost.
+- Do not use git lfs anymore due to bandwidth restrictions imposed by github (#183)
 
 ### Added
 - Self-gravity (!186)
 - Multi-dust species as pressureless fluids (!336)
 - Passive tracers (!341)
 - Planet module (planet migration, planet-planet integration) (!278)
+- Custom equation of states (#185)
 - Check that the MPI library is GPU-aware when using a GPU backend (!262)
 - An optional user-defined Setup destructor can now be defined (!260)
 - performance improvement on CPUs by cleaning loops and rewriting EMF reconstruction (!281)
 - The tolerance on div(B) allowed by the code can now be set at runtime (!292)
 - Nan detection is now performed every 100 integration loops by default so as mitigate performance impact on CPUs (!292)
 - It is now possible to build a stretch grid from a logarithmic grid section, and not only a uniform grid section (!304)
-- We now use git lfs to store reference file to validate the code (!301). Note that git lfs is not required to use the code.
 - Shock flattening can now be used in combination with LimO3 slope limiter (!312)
+- XDMF output format (optional, requires HDF5 library on the host machine) (#13)
+- new -profile option to perform on-the-fly profiling without requiring Kokkos Tools (#188)
 - -v and -h options to show version and list of accepted arguments
 
 

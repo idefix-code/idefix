@@ -405,7 +405,7 @@ The ``DumpImage`` class definition is
 
   class DumpImage {
   public:
-    DumpImage(std::string, Output &);   // constructor with dump filename and output object as parameters
+    DumpImage(std::string, DataBlock *);   // constructor with dump filename and output object as parameters
 
     int np_int[3];               // number of points in each direction
     int geometry;                // geometry of the dump
@@ -418,7 +418,7 @@ The ``DumpImage`` class definition is
   };
 
 
-Typically, a ``DumpImage`` object is constructed invoking the ``DumpImage(filename, output)`` constructor,
+Typically, a ``DumpImage`` object is constructed invoking the ``DumpImage(filename, data)`` constructor,
 which essentially opens, allocate and load the dump file in memory (when running with MPI, each processor
 have access to the full domain covered by the dump, so try to avoid loading very large dumps!).
 The user can then have access to the dump content using the variable members of the object

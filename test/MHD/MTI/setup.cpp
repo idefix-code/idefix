@@ -1,6 +1,7 @@
 #include "idefix.hpp"
 #include "setup.hpp"
 #include "analysis.hpp"
+#include "dumpImage.hpp"
 
 // Definition of the constants and parameters of the problem
 static real T0 = 1.;
@@ -21,6 +22,8 @@ static real ksiGlob;
 static real prGlob;
 
 Analysis *analysis;
+
+bool fromDump;
 
 void AnalysisFunction(DataBlock &data) {
   analysis->PerformAnalysis(data);
@@ -83,10 +86,11 @@ void UserDefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
           Vc(VX2,k,j,i) = -Vc(VX2,k,jref,i);
       });
 
-  hydro->boundary->BoundaryForX2s("UserDefBoundaryBX2s", dir, side,
+  hydro->boundary->BoundaryForX1s("UserDefBoundaryBX1s", dir, side,
       KOKKOS_LAMBDA (int k, int j, int i) {
-          int jref = (side == left) ? 2*jend - j -1 : jbeg + jend -j - 3;
-          Vs(BX2s,k,j,i) = Vs(BX2s,k,jref,i);
+          //int jref = (side == left) ? 2*jend - j -1 : jbeg + jend -j - 3;
+          int jref = (side == left) ? 2*jend - j -1 : 2*jbeg -j -1;
+          Vs(BX1s,k,j,i) = Vs(BX1s,k,jref,i);
   });
 }
 
@@ -105,6 +109,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   data.hydro->bragViscosity->EnrollBragViscousDiffusivity(&MyViscosity);
   ksiGlob = input.Get<real>("Setup","ksi",0);
   prGlob = input.Get<real>("Setup","pr",0);
+  fromDump = input.GetOrSet<bool>("Setup","fromDump",0,false);  // Whether we build our own initial condition or we use the pre-defined one
 }
 
 // This routine initializes the flow
@@ -115,22 +120,58 @@ void Setup::InitFlow(DataBlock &data) {
   // Create a host copy
   DataBlockHost d(data);
 
-  for(int k = 0; k < d.np_tot[KDIR] ; k++) {
-    for(int j = 0; j < d.np_tot[JDIR] ; j++) {
-      real x2 = d.x[JDIR](j);
-      real x2s = d.xl[JDIR](j);
-      for(int i = 0; i < d.np_tot[IDIR] ; i++) {
-        real x1=d.x[IDIR](i);
-        real x1s=d.xl[IDIR](i);
+  if(fromDump) {
+    DumpImage image("init.dmp",&data);
 
-        d.Vc(PRS,k,j,i) = P0*pow(1.-x2/H, H*g0/T0);
-        d.Vc(RHO,k,j,i) = rho0*pow(1.-x2/H, H*g0/T0-1.);
+    for(int k = d.beg[KDIR]; k < d.end[KDIR] ; k++) {
+      for(int j = d.beg[JDIR]; j < d.end[JDIR] ; j++) {
+        for(int i = d.beg[IDIR]; i < d.end[IDIR] ; i++) {
 
-        d.Vc(VX1,k,j,i) = -1e-4*SIN(kn*x1)*COS(kn*x2)*vth0;
-        d.Vc(VX2,k,j,i) = 1e-4*COS(kn*x1)*SIN(kn*x2)*vth0;
+          // Note that the restart dump array only contains the full (global) active domain
+          // (i.e. it excludes the boundaries, but it is not decomposed accross MPI procs)
+          int iglob=i-2*d.beg[IDIR]+d.gbeg[IDIR];
+          int jglob=j-2*d.beg[JDIR]+d.gbeg[JDIR];
+          int kglob=k-2*d.beg[KDIR]+d.gbeg[KDIR];
 
-        d.Vs(BX1s,k,j,i) = B0;
-        d.Vs(BX2s,k,j,i) = 0.;
+          d.Vc(RHO,k,j,i) = image.arrays["Vc-RHO"](kglob,jglob,iglob);
+          d.Vc(PRS,k,j,i) = image.arrays["Vc-PRS"](kglob,jglob,iglob);
+          d.Vc(VX1,k,j,i) = image.arrays["Vc-VX1"](kglob,jglob,iglob);
+          d.Vc(VX2,k,j,i) = image.arrays["Vc-VX2"](kglob,jglob,iglob);
+        }}}
+    for(int k = d.beg[KDIR]; k < d.end[KDIR] ; k++) {
+      for(int j = d.beg[JDIR]; j < d.end[JDIR] ; j++) {
+        for(int i = d.beg[IDIR]; i < d.end[IDIR]+1 ; i++) {
+          int iglob=i-2*d.beg[IDIR]+d.gbeg[IDIR];
+          int jglob=j-2*d.beg[JDIR]+d.gbeg[JDIR];
+          int kglob=k-2*d.beg[KDIR]+d.gbeg[KDIR];
+          d.Vs(BX1s,k,j,i) = image.arrays["Vs-BX1s"](kglob,jglob,iglob);
+    }}}
+    for(int k = d.beg[KDIR]; k < d.end[KDIR] ; k++) {
+      for(int j = d.beg[JDIR]; j < d.end[JDIR]+1 ; j++) {
+        for(int i = d.beg[IDIR]; i < d.end[IDIR] ; i++) {
+          int iglob=i-2*d.beg[IDIR]+d.gbeg[IDIR];
+          int jglob=j-2*d.beg[JDIR]+d.gbeg[JDIR];
+          int kglob=k-2*d.beg[KDIR]+d.gbeg[KDIR];
+          d.Vs(BX2s,k,j,i) = image.arrays["Vs-BX2s"](kglob,jglob,iglob);
+    }}}
+  } else {
+    for(int k = 0; k < d.np_tot[KDIR] ; k++) {
+      for(int j = 0; j < d.np_tot[JDIR] ; j++) {
+        real x2 = d.x[JDIR](j);
+        real x2s = d.xl[JDIR](j);
+        for(int i = 0; i < d.np_tot[IDIR] ; i++) {
+          real x1=d.x[IDIR](i);
+          real x1s=d.xl[IDIR](i);
+
+          d.Vc(PRS,k,j,i) = P0*pow(1.-x2/H, H*g0/T0);
+          d.Vc(RHO,k,j,i) = rho0*pow(1.-x2/H, H*g0/T0-1.);
+
+          d.Vc(VX1,k,j,i) = -1e-4*std::sin(kn*x1)*std::cos(kn*x2)*vth0;
+          d.Vc(VX2,k,j,i) = 1e-4*std::cos(kn*x1)*std::sin(kn*x2)*vth0;
+
+          d.Vs(BX1s,k,j,i) = B0;
+          d.Vs(BX2s,k,j,i) = 0.;
+        }
       }
     }
   }

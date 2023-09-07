@@ -24,6 +24,9 @@ How do I use my favourite XXXXX compiler?
 I have a complex setup, and have written some functions in separate .cpp files. How can I add these files to *Idefix* build tree?
   Add a ``CmakeLists.txt`` in your problem directory and use the function `add_idefix_source` (see :ref:`customSourceFiles`).
 
+I want to run on the GPUs of xxx machine, how do I proceed?
+  Check the examples in :ref:`setupExamples`
+
 Compilation
 -----------
 

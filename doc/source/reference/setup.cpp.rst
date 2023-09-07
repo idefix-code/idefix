@@ -182,6 +182,12 @@ A typical user-defined boundary condition function looks like this:
     }
   }
 
+.. warning::
+
+  Only the tangential field components should be initialised by user-defined boundary conditions.
+  *Idefix* automatically reconstruct (and overwrite!) the normal field component from the
+  divergence-free condition on B and the user-defined tangential magnetic field components.
+
 
 
 .. _setupInitflow:

@@ -330,24 +330,21 @@ a new initial condition by extrapolating or extanding a restart dump (such as in
 test or a dimension change). In this case, one should use the ``DumpImage`` class which provides
 all the tools needed to read a restart dump (see also :ref:`dumpImageClass`).
 
-One typically first construct an instance of ``DumpImage`` in the ``Setup`` constructor, and then
-use this instance to initialise the flow in ``Setup::InitFlow``. The procedure is examplified below,
+One typically first construct an instance of ``DumpImage`` in ``Setup::InitFlow``, and then
+use this instance to initialise the flow. The procedure is examplified below,
 assuming we want to create a dump from ``mydump.dmp``:
 
 .. code-block:: c++
 
-  DumpImage *image;       // Global pointer to our DumpImage
-
-  // Setup constructor
-  Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
-    image = new DumpImage("mydump.dmp",output);   // load the dump file and store it in a DumpImage
-  }
+  #include "dumpImage.hpp"
 
   // Flow initialisation, read directly from the DumpImage
   void Setup::InitFlow(DataBlock &data) {
 
     // Create a host copy
     DataBlockHost d(data);
+
+    DumpImage image("mydump.dmp", &data);
 
     for(int k = d.beg[KDIR]; k < d.end[KDIR] ; k++) {
       for(int j = d.beg[JDIR]; j < d.end[JDIR] ; j++) {
@@ -359,9 +356,9 @@ assuming we want to create a dump from ``mydump.dmp``:
           int jglob=j-2*d.beg[JDIR]+d.gbeg[JDIR];
           int kglob=k-2*d.beg[KDIR]+d.gbeg[KDIR];
 
-          d.Vc(RHO,k,j,i) = image->arrays["Vc-RHO"](kglob,jglob,iglob);
-          d.Vc(PRS,k,j,i) = image->arrays["Vc-PRS"](kglob,jglob,iglob);
-          d.Vc(VX1,k,j,i) = image->arrays["Vc-VX1"](kglob,jglob,iglob);
+          d.Vc(RHO,k,j,i) = image.arrays["Vc-RHO"](kglob,jglob,iglob);
+          d.Vc(PRS,k,j,i) = image.arrays["Vc-PRS"](kglob,jglob,iglob);
+          d.Vc(VX1,k,j,i) = image.arrays["Vc-VX1"](kglob,jglob,iglob);
   }}}
 
     // For magnetic variable, we should fill the entire active domain, hence an additional

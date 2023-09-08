@@ -68,7 +68,7 @@ class BragViscosity {
 //  HydroModuleStatus haveViscosity{Disabled};
 //  ViscousDiffusivityFunc viscousDiffusivityFunc;
 //  BragViscousDiffusivityFunc bragViscousDiffusivityFunc;
-  Limiter limiter;
+  Limiter limiter{Limiter::VanLeer};
 };
 
 #include "fluid.hpp"

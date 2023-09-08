@@ -51,7 +51,7 @@ class BragViscosity {
 
   DiffusivityFunc bragViscousDiffusivityFunc;
 
-  bool haveSlopeLimiter;
+  bool haveSlopeLimiter{false};
 
   IdefixArray4D<real> &Vc;
   IdefixArray4D<real> &Vs;

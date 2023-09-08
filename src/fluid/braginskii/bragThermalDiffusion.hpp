@@ -52,7 +52,7 @@ class BragThermalDiffusion {
 
   BragDiffusivityFunc diffusivityFunc;
 
-  bool haveSlopeLimiter;
+  bool haveSlopeLimiter{false};
 
   // helper array
   IdefixArray4D<real> &Vc;
@@ -83,12 +83,10 @@ BragThermalDiffusion::BragThermalDiffusion(Input &input, Grid &grid, Fluid<Phys>
 
   if(input.CheckEntry("Hydro","bragTDiffusion")>=0) {
     if(input.Get<std::string>("Hydro","bragTDiffusion",1).compare("constant") == 0) {
-      this->haveSlopeLimiter = false;
       this->kpar = input.Get<real>("Hydro","bragTDiffusion",2);
       this->knor = input.GetOrSet<real>("Hydro","bragTDiffusion",3,0.);
       this->status.status = Constant;
     } else if(input.Get<std::string>("Hydro","bragTDiffusion",1).compare("userdef") == 0) {
-      this->haveSlopeLimiter = false;
       this->status.status = UserDefFunction;
       this->kparArr = IdefixArray3D<real>("BragThermalDiffusionKparArray",data->np_tot[KDIR],
                                                                data->np_tot[JDIR],

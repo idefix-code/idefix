@@ -65,7 +65,7 @@ class BragThermalDiffusion {
   // equation of state (required to get the heat capacity)
   EquationOfState *eos;
 
-  Limiter limiter;
+  Limiter limiter{Limiter::VanLeer};
 };
 
 #include "fluid.hpp"

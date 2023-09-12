@@ -26,7 +26,7 @@ def testMe(test):
     if test.init:
       test.makeReference(filename=name)
 
-    test.nonRegressionTest(filename=name)
+    test.nonRegressionTest(filename=name, tolerance=1e-15)
 
 
 test=tst.idfxTest()

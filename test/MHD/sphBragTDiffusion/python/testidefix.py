@@ -86,4 +86,3 @@ else:
     print("Failed")
     print("Error: {0}".format(np.mean(np.fabs(TEMP - analytic_T))))
     sys.exit(1)
-

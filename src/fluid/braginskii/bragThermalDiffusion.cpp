@@ -73,4 +73,3 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t,
   }
   idfx::popRegion();
 }
-

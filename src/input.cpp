@@ -167,6 +167,8 @@ void Input::ParseCommandLine(int argc, char **argv) {
       }
       this->maxCycles = std::stoi(std::string(argv[++i]));
       inputParameters["CommandLine"]["maxCycles"].push_back(std::to_string(maxCycles));
+    } else if(std::string(argv[i]) == "-force_init") {
+      this->forceInitRequested = true;
     } else if(std::string(argv[i]) == "-nowrite") {
       this->forceNoWrite = true;
       enableLogs = false;
@@ -398,6 +400,9 @@ void Input::PrintOptions() {
   idfx::cout << "         Use the input file xxx instead of the default idefix.ini" << std::endl;
   idfx::cout << " -maxcycles n" << std::endl;
   idfx::cout << "         Perform at most n integration cycles." << std::endl;
+  idfx::cout << " -force_init" << std::endl;
+  idfx::cout << "         Call initial conditions before reading dump file ";
+  idfx::cout << "(this has no effect if -restart is not also passed)" << std::endl;
   idfx::cout << " -nowrite" << std::endl;
   idfx::cout << "         Do not generate any output file." << std::endl;
   idfx::cout << " -nolog" << std::endl;

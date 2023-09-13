@@ -57,6 +57,7 @@ class Input {
 
   bool restartRequested{false};       //< Should we restart?
   int  restartFileNumber;             //< if yes, from which file?
+  bool forceInitRequested{false};     // call DataBlock::InitFlow even on restarts ?
 
   static bool abortRequested;         //< Did we receive an abort signal (USR2) from the system?
 

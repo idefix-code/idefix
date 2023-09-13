@@ -140,48 +140,56 @@ BragThermalDiffusion::BragThermalDiffusion(Input &input, Grid &grid, Fluid<Phys>
   idfx::popRegion();
 }
 
-//ADAPTED TO GET TEMPERATURE DERIVATIVES
-#define D_DX_I_tmp(q,n,m)  (q(n,k,j,i)/q(m,k,j,i) - q(n,k,j,i - 1)/q(m,k,j,i - 1))
-#define D_DY_J_tmp(q,n,m)  (q(n,k,j,i)/q(m,k,j,i) - q(n,k,j - 1,i)/q(m,k,j - 1,i))
-#define D_DZ_K_tmp(q,n,m)  (q(n,k,j,i)/q(m,k,j,i) - q(n,k - 1,j,i)/q(m,k - 1,j,i))
+//We now define spatial derivative macros for the temperature field.
+//    The temperature is not a primitive variable
+//    and therefore not available as such in the DataBlock.
+//    It is rather defined as PRS/RHO.
+//    Special spatial derivative macros are therefore needed and defined here
+//    directly at the right cell interface according to the direciton of the flux.
+#define D_DX_I_T(q)  (q(PRS,k,j,i)/q(RHO,k,j,i) - q(PRS,k,j,i - 1)/q(RHO,k,j,i - 1))
+#define D_DY_J_T(q)  (q(PRS,k,j,i)/q(RHO,k,j,i) - q(PRS,k,j - 1,i)/q(RHO,k,j - 1,i))
+#define D_DZ_K_T(q)  (q(PRS,k,j,i)/q(RHO,k,j,i) - q(PRS,k - 1,j,i)/q(RHO,k - 1,j,i))
 
-#define SL_DX_tmp(q,n,m,iz,iy,ix)  (q(n,iz,iy,ix)/q(m,iz,iy,ix)           \
-                                        - q(n,iz,iy,ix - 1)/q(m,iz,iy,ix - 1))
-#define SL_DY_tmp(q,n,m,iz,iy,ix)  (q(n,iz,iy,ix)/q(m,iz,iy,ix)            \
-                                        - q(n,iz,iy - 1,ix)/q(m,iz,iy - 1,ix))
-#define SL_DZ_tmp(q,n,m,iz,iy,ix)  (q(n,iz,iy,ix)/q(m,iz,iy,ix)            \
-                                        - q(n,iz - 1,iy,ix)/q(m,iz - 1,iy,ix))
+#define SL_DX_T(q,k,j,i)  (q(PRS,k,j,i)/q(RHO,k,j,i)           \
+                                        - q(PRS,k,j,i - 1)/q(RHO,k,j,i - 1))
+#define SL_DY_T(q,k,j,i)  (q(PRS,k,j,i)/q(RHO,k,j,i)            \
+                                        - q(PRS,k,j - 1,i)/q(RHO,k,j - 1,i))
+#define SL_DZ_T(q,k,j,i)  (q(PRS,k,j,i)/q(RHO,k,j,i)            \
+                                        - q(PRS,k - 1,j,i)/q(RHO,k - 1,j,i))
 
-#define D_DY_I_tmp(q,n,m)  (  0.25*(q(n,k,j + 1,i    ) / q(m,k,j + 1,i)          \
-                                  + q(n,k,j + 1,i - 1) / q(m,k,j + 1,i - 1))     \
-                            - 0.25*(q(n,k,j - 1,i)     / q(m,k,j - 1,i)          \
-                                  + q(n,k,j - 1,i - 1) / q(m,k,j - 1,i - 1)))
+#define D_DY_I_T(q)  (  0.25*(q(PRS,k,j + 1,i    ) / q(RHO,k,j + 1,i)          \
+                                  + q(PRS,k,j + 1,i - 1) / q(RHO,k,j + 1,i - 1))     \
+                            - 0.25*(q(PRS,k,j - 1,i)     / q(RHO,k,j - 1,i)          \
+                                  + q(PRS,k,j - 1,i - 1) / q(RHO,k,j - 1,i - 1)))
 
-#define D_DZ_I_tmp(q,n,m)  (  0.25*(q(n,k + 1,j,i)     / q(m,k + 1,j,i)       \
-                                  + q(n,k + 1,j,i - 1) / q(m,k + 1,j,i - 1))  \
-                            - 0.25*(q(n,k - 1,j,i)     / q(m,k - 1,j,i)       \
-                                  + q(n,k - 1,j,i - 1) / q(m,k - 1,j,i - 1)))
+#define D_DZ_I_T(q)  (  0.25*(q(PRS,k + 1,j,i)     / q(RHO,k + 1,j,i)       \
+                                  + q(PRS,k + 1,j,i - 1) / q(RHO,k + 1,j,i - 1))  \
+                            - 0.25*(q(PRS,k - 1,j,i)     / q(RHO,k - 1,j,i)       \
+                                  + q(PRS,k - 1,j,i - 1) / q(RHO,k - 1,j,i - 1)))
 
-#define D_DX_J_tmp(q,n,m)  (  0.25*(q(n,k,j,i + 1)     / q(m,k,j,i + 1)      \
-                                  + q(n,k,j - 1,i + 1) / q(m,k,j - 1,i + 1)) \
-                            - 0.25*(q(n,k,j,i - 1)     / q(m,k,j,i - 1)      \
-                                  + q(n,k,j - 1,i - 1) / q(m,k,j - 1,i - 1)))
+#define D_DX_J_T(q)  (  0.25*(q(PRS,k,j,i + 1)     / q(RHO,k,j,i + 1)      \
+                                  + q(PRS,k,j - 1,i + 1) / q(RHO,k,j - 1,i + 1)) \
+                            - 0.25*(q(PRS,k,j,i - 1)     / q(RHO,k,j,i - 1)      \
+                                  + q(PRS,k,j - 1,i - 1) / q(RHO,k,j - 1,i - 1)))
 
-#define D_DZ_J_tmp(q,n,m)  (  0.25*(q(n,k + 1,j,i)     / q(m,k + 1,j,i)       \
-                                  + q(n,k + 1,j - 1,i) / q(m,k + 1,j - 1,i))  \
-                            - 0.25*(q(n,k - 1,j,i)     / q(m,k - 1,j,i)       \
-                                  + q(n,k - 1,j - 1,i) / q(m,k - 1,j - 1,i)))
+#define D_DZ_J_T(q)  (  0.25*(q(PRS,k + 1,j,i)     / q(RHO,k + 1,j,i)       \
+                                  + q(PRS,k + 1,j - 1,i) / q(RHO,k + 1,j - 1,i))  \
+                            - 0.25*(q(PRS,k - 1,j,i)     / q(RHO,k - 1,j,i)       \
+                                  + q(PRS,k - 1,j - 1,i) / q(RHO,k - 1,j - 1,i)))
 
-#define D_DX_K_tmp(q,n,m)  (  0.25*(q(n,k,j,i + 1)     / q(m,k,j,i + 1)      \
-                                  + q(n,k - 1,j,i + 1) / q(m,k - 1,j,i + 1)) \
-                            - 0.25*(q(n,k,j,i - 1)     / q(m,k,j,i - 1)      \
-                                  + q(n,k - 1,j,i - 1) / q(m,k - 1,j,i - 1)))
+#define D_DX_K_T(q)  (  0.25*(q(PRS,k,j,i + 1)     / q(RHO,k,j,i + 1)      \
+                                  + q(PRS,k - 1,j,i + 1) / q(RHO,k - 1,j,i + 1)) \
+                            - 0.25*(q(PRS,k,j,i - 1)     / q(RHO,k,j,i - 1)      \
+                                  + q(PRS,k - 1,j,i - 1) / q(RHO,k - 1,j,i - 1)))
 
-#define D_DY_K_tmp(q,n,m)  (  0.25*(q(n,k,j + 1,i)     / q(m,k,j + 1,i)       \
-                                  + q(n,k - 1,j + 1,i) / q(m,k - 1,j + 1,i))  \
-                            - 0.25*(q(n,k,j - 1,i)     / q(m,k,j - 1,i)       \
-                                  + q(n,k - 1,j - 1,i) / q(m,k - 1,j - 1,i))) \
+#define D_DY_K_T(q)  (  0.25*(q(PRS,k,j + 1,i)     / q(RHO,k,j + 1,i)       \
+                                  + q(PRS,k - 1,j + 1,i) / q(RHO,k - 1,j + 1,i))  \
+                            - 0.25*(q(PRS,k,j - 1,i)     / q(RHO,k,j - 1,i)       \
+                                  + q(PRS,k - 1,j - 1,i) / q(RHO,k - 1,j - 1,i))) \
 
+//We now define spatial average macros for the magnetic field.
+//    The magnetic field appears in the expression of the Braginskii heat flux.
+//    It is therefore needed at the right cell interface according to the direction of the flux.
 #define BX_I  Vs(BX1s,k,j,i)
 #define BY_J  Vs(BX2s,k,j,i)
 #define BZ_K  Vs(BX3s,k,j,i)
@@ -199,12 +207,10 @@ BragThermalDiffusion::BragThermalDiffusion(Input &input, Grid &grid, Fluid<Phys>
              + Vs(BX2s,k - 1,j,i) + Vs(BX2s,k - 1,j + 1,i)))
 
 
-// This function computes the thermal Flux and stores it in hydro->fluxRiemann
 // (this avoids an extra array)
 template <Limiter limTemplate>
 void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
                                                 const IdefixArray4D<real> &Flux) {
-#if HAVE_ENERGY == 1
   idfx::pushRegion("BragThermalDiffusion::AddBragDiffusiveFluxLim");
 
   IdefixArray4D<real> Vc = this->Vc;
@@ -302,64 +308,64 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
         Bn = BX_I;
 
         #if GEOMETRY == CARTESIAN
-          dTi = D_DX_I_tmp(Vc,PRS,RHO)/dx1(i);
+          dTi = D_DX_I_T(Vc)/dx1(i);
           #if DIMENSIONS >= 2
             if (haveSlopeLimiter) {
-              dTj = SL::Lim(SL_DY_tmp(Vc,PRS,RHO,k,j,i-1)/dx2(j),
-                                 SL_DY_tmp(Vc,PRS,RHO,k,j+1,i-1)/dx2(j+1));
+              dTj = SL::Lim(SL_DY_T(Vc,k,j,i-1)/dx2(j),
+                                 SL_DY_T(Vc,k,j+1,i-1)/dx2(j+1));
               dTj = SL::Lim(dTj,
-                                 SL::Lim(SL_DY_tmp(Vc,PRS,RHO,k,j,i)/dx2(j),
-                                              SL_DY_tmp(Vc,PRS,RHO,k,j+1,i)/dx2(j+1)));
+                                 SL::Lim(SL_DY_T(Vc,k,j,i)/dx2(j),
+                                              SL_DY_T(Vc,k,j+1,i)/dx2(j+1)));
             } else {
-              dTj = D_DY_I_tmp(Vc,PRS,RHO)/dx2(j);
+              dTj = D_DY_I_T(Vc)/dx2(j);
             }
             #if DIMENSIONS == 3
               if (haveSlopeLimiter) {
-                dTk = SL::Lim(SL_DZ_tmp(Vc,PRS,RHO,k,j,i-1)/dx3(k),
-                                   SL_DZ_tmp(Vc,PRS,RHO,k+1,j,i-1)/dx3(k+1));
+                dTk = SL::Lim(SL_DZ_T(Vc,k,j,i-1)/dx3(k),
+                                   SL_DZ_T(Vc,k+1,j,i-1)/dx3(k+1));
                 dTk = SL::Lim(dTk,
-                                   SL::Lim(SL_DZ_tmp(Vc,PRS,RHO,k,j,i)/dx3(k),
-                                                SL_DZ_tmp(Vc,PRS,RHO,k+1,j,i)/dx3(k+1)));
+                                   SL::Lim(SL_DZ_T(Vc,k,j,i)/dx3(k),
+                                                SL_DZ_T(Vc,k+1,j,i)/dx3(k+1)));
               } else {
-                dTk = D_DZ_I_tmp(Vc,PRS,RHO)/dx3(k);
+                dTk = D_DZ_I_T(Vc)/dx3(k);
               }
             #endif
           #endif
         #elif GEOMETRY == CYLINDRICAL
-          dTi = D_DX_I_tmp(Vc,PRS,RHO)/dx1(i);
+          dTi = D_DX_I_T(Vc)/dx1(i);
           #if DIMENSIONS >= 2
             if (haveSlopeLimiter) {
-              dTj = SL::Lim(SL_DY_tmp(Vc,PRS,RHO,k,j,i-1)/dx2(j),
-                                 SL_DY_tmp(Vc,PRS,RHO,k,j+1,i-1)/dx2(j+1));
+              dTj = SL::Lim(SL_DY_T(Vc,k,j,i-1)/dx2(j),
+                                 SL_DY_T(Vc,k,j+1,i-1)/dx2(j+1));
               dTj = SL::Lim(dTj,
-                                 SL::Lim(SL_DY_tmp(Vc,PRS,RHO,k,j,i)/dx2(j),
-                                              SL_DY_tmp(Vc,PRS,RHO,k,j+1,i)/dx2(j+1)));
+                                 SL::Lim(SL_DY_T(Vc,k,j,i)/dx2(j),
+                                              SL_DY_T(Vc,k,j+1,i)/dx2(j+1)));
             } else {
-              dTj = D_DY_I_tmp(Vc,PRS,RHO)/dx2(j);
+              dTj = D_DY_I_T(Vc)/dx2(j);
             }
           #endif
           // No cylindrical geometry in 3D!
         #elif GEOMETRY == POLAR
-          dTi = D_DX_I_tmp(Vc,PRS,RHO)/dx1(i);
+          dTi = D_DX_I_T(Vc)/dx1(i);
           #if DIMENSIONS >= 2
             if (haveSlopeLimiter) {
-              dTj = 1./x1(i-1)*SL::Lim(SL_DY_tmp(Vc,PRS,RHO,k,j,i-1)/dx2(j),
-                                            SL_DY_tmp(Vc,PRS,RHO,k,j+1,i-1)/dx2(j+1));
+              dTj = 1./x1(i-1)*SL::Lim(SL_DY_T(Vc,k,j,i-1)/dx2(j),
+                                            SL_DY_T(Vc,k,j+1,i-1)/dx2(j+1));
               dTj = SL::Lim(dTj,
-                                 1./x1(i)*SL::Lim(SL_DY_tmp(Vc,PRS,RHO,k,j,i)/dx2(j),
-                                                       SL_DY_tmp(Vc,PRS,RHO,k,j+1,i)/dx2(j+1)));
+                                 1./x1(i)*SL::Lim(SL_DY_T(Vc,k,j,i)/dx2(j),
+                                                       SL_DY_T(Vc,k,j+1,i)/dx2(j+1)));
             } else {
-              dTj = 1./x1l(i)*D_DY_I_tmp(Vc,PRS,RHO)/dx2(j); // 1/r dTj/dxj
+              dTj = 1./x1l(i)*D_DY_I_T(Vc)/dx2(j); // 1/r dTj/dxj
             }
             #if DIMENSIONS == 3
               if (haveSlopeLimiter) {
-                dTk = SL::Lim(SL_DZ_tmp(Vc,PRS,RHO,k,j,i-1)/dx3(k),
-                                   SL_DZ_tmp(Vc,PRS,RHO,k+1,j,i-1)/dx3(k+1));
+                dTk = SL::Lim(SL_DZ_T(Vc,k,j,i-1)/dx3(k),
+                                   SL_DZ_T(Vc,k+1,j,i-1)/dx3(k+1));
                 dTk = SL::Lim(dTk,
-                                   SL::Lim(SL_DZ_tmp(Vc,PRS,RHO,k,j,i)/dx3(k),
-                                                SL_DZ_tmp(Vc,PRS,RHO,k+1,j,i)/dx3(k+1)));
+                                   SL::Lim(SL_DZ_T(Vc,k,j,i)/dx3(k),
+                                                SL_DZ_T(Vc,k+1,j,i)/dx3(k+1)));
               } else {
-                dTk = D_DZ_I_tmp(Vc,PRS,RHO)/dx3(k);
+                dTk = D_DZ_I_T(Vc)/dx3(k);
               }
             #endif
           #endif
@@ -373,26 +379,26 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
               s_1 = ONE_F/s_1;
             }
 
-          dTi = D_DX_I_tmp(Vc,PRS,RHO)/dx1(i);
+          dTi = D_DX_I_T(Vc)/dx1(i);
           #if DIMENSIONS >= 2
             if (haveSlopeLimiter) {
-              dTj = 1./x1(i-1)*SL::Lim(SL_DY_tmp(Vc,PRS,RHO,k,j,i-1)/dx2(j),
-                                            SL_DY_tmp(Vc,PRS,RHO,k,j+1,i-1)/dx2(j+1));
+              dTj = 1./x1(i-1)*SL::Lim(SL_DY_T(Vc,k,j,i-1)/dx2(j),
+                                            SL_DY_T(Vc,k,j+1,i-1)/dx2(j+1));
               dTj = SL::Lim(dTj,
-                    1./x1(i)*SL::Lim(SL_DY_tmp(Vc,PRS,RHO,k,j,i)/dx2(j),
-                                          SL_DY_tmp(Vc,PRS,RHO,k,j+1,i)/dx2(j+1)));
+                    1./x1(i)*SL::Lim(SL_DY_T(Vc,k,j,i)/dx2(j),
+                                          SL_DY_T(Vc,k,j+1,i)/dx2(j+1)));
             } else {
-              dTj = 1./x1l(i)*D_DY_I_tmp(Vc,PRS,RHO)/dx2(j); // 1/r dTj/dxj
+              dTj = 1./x1l(i)*D_DY_I_T(Vc)/dx2(j); // 1/r dTj/dxj
             }
             #if DIMENSIONS == 3
               if (haveSlopeLimiter) {
-                dTk = s_1/x1(i-1)*SL::Lim(SL_DZ_tmp(Vc,PRS,RHO,k,j,i-1)/dx3(k),
-                                               SL_DZ_tmp(Vc,PRS,RHO,k+1,j,i-1)/dx3(k+1));
+                dTk = s_1/x1(i-1)*SL::Lim(SL_DZ_T(Vc,k,j,i-1)/dx3(k),
+                                               SL_DZ_T(Vc,k+1,j,i-1)/dx3(k+1));
                 dTk = SL::Lim(dTk,
-                                   s_1/x1(i)*SL::Lim(SL_DZ_tmp(Vc,PRS,RHO,k,j,i)/dx3(k),
-                                                          SL_DZ_tmp(Vc,PRS,RHO,k+1,j,i)/dx3(k+1)));
+                                   s_1/x1(i)*SL::Lim(SL_DZ_T(Vc,k,j,i)/dx3(k),
+                                                          SL_DZ_T(Vc,k+1,j,i)/dx3(k+1)));
               } else {
-                dTk = s_1/x1l(i)*D_DZ_I_tmp(Vc,PRS,RHO)/dx3(k);
+                dTk = s_1/x1l(i)*D_DZ_I_T(Vc)/dx3(k);
               }
             #endif
           #endif
@@ -427,72 +433,72 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
 
         #if GEOMETRY == CARTESIAN
           if (haveSlopeLimiter) {
-            dTi = SL::Lim(SL_DX_tmp(Vc,PRS,RHO,k,j-1,i)/dx1(i),
-                              SL_DX_tmp(Vc,PRS,RHO,k,j-1,i+1)/dx1(i+1));
+            dTi = SL::Lim(SL_DX_T(Vc,k,j-1,i)/dx1(i),
+                              SL_DX_T(Vc,k,j-1,i+1)/dx1(i+1));
             dTi = SL::Lim(dTi,
-                               SL::Lim(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx1(i),
-                                            SL_DX_tmp(Vc,PRS,RHO,k,j,i+1)/dx1(i+1)));
+                               SL::Lim(SL_DX_T(Vc,k,j,i)/dx1(i),
+                                            SL_DX_T(Vc,k,j,i+1)/dx1(i+1)));
           } else {
-            dTi = D_DX_J_tmp(Vc,PRS,RHO)/dx1(i);
+            dTi = D_DX_J_T(Vc)/dx1(i);
           }
-          dTj = D_DY_J_tmp(Vc,PRS,RHO)/dx2(j);
+          dTj = D_DY_J_T(Vc)/dx2(j);
           #if DIMENSIONS == 3
             if (haveSlopeLimiter) {
-              dTk = SL::Lim(SL_DX_tmp(Vc,PRS,RHO,k,j-1,i)/dx3(k),
-                                 SL_DX_tmp(Vc,PRS,RHO,k+1,j-1,i)/dx3(k+1));
+              dTk = SL::Lim(SL_DX_T(Vc,k,j-1,i)/dx3(k),
+                                 SL_DX_T(Vc,k+1,j-1,i)/dx3(k+1));
               dTk = SL::Lim(dTk,
-                                 SL::Lim(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx3(k),
-                                              SL_DX_tmp(Vc,PRS,RHO,k+1,j,i)/dx3(k+1)));
+                                 SL::Lim(SL_DX_T(Vc,k,j,i)/dx3(k),
+                                              SL_DX_T(Vc,k+1,j,i)/dx3(k+1)));
             } else {
-              dTk = D_DZ_J_tmp(Vc,PRS,RHO)/dx3(k);
+              dTk = D_DZ_J_T(Vc)/dx3(k);
             }
           #endif
         #elif GEOMETRY == CYLINDRICAL
           if (haveSlopeLimiter) {
-            dTi = SL::Lim(SL_DX_tmp(Vc,PRS,RHO,k,j-1,i)/dx1(i),
-                               SL_DX_tmp(Vc,PRS,RHO,k,j-1,i+1)/dx1(i+1));
+            dTi = SL::Lim(SL_DX_T(Vc,k,j-1,i)/dx1(i),
+                               SL_DX_T(Vc,k,j-1,i+1)/dx1(i+1));
             dTi = SL::Lim(dTi,
-                               SL::Lim(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx1(i),
-                                            SL_DX_tmp(Vc,PRS,RHO,k,j,i+1)/dx1(i+1)));
+                               SL::Lim(SL_DX_T(Vc,k,j,i)/dx1(i),
+                                            SL_DX_T(Vc,k,j,i+1)/dx1(i+1)));
           } else {
-            dTi = D_DX_J_tmp(Vc,PRS,RHO)/dx1(i);
+            dTi = D_DX_J_T(Vc)/dx1(i);
           }
-          dTj = D_DY_J_tmp(Vc,PRS,RHO)/dx2(j);
+          dTj = D_DY_J_T(Vc)/dx2(j);
           // No cylindrical geometry in 3D!
         #elif GEOMETRY == POLAR
           //gradT = ... + 1/r dT/dtheta + ...
           if (haveSlopeLimiter) {
-            dTi = SL::Lim(SL_DX_tmp(Vc,PRS,RHO,k,j-1,i)/dx1(i),
-                               SL_DX_tmp(Vc,PRS,RHO,k,j-1,i+1)/dx1(i+1));
+            dTi = SL::Lim(SL_DX_T(Vc,k,j-1,i)/dx1(i),
+                               SL_DX_T(Vc,k,j-1,i+1)/dx1(i+1));
             dTi = SL::Lim(dTi,
-                               SL::Lim(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx1(i),
-                                            SL_DX_tmp(Vc,PRS,RHO,k,j,i+1)/dx1(i+1)));
+                               SL::Lim(SL_DX_T(Vc,k,j,i)/dx1(i),
+                                            SL_DX_T(Vc,k,j,i+1)/dx1(i+1)));
           } else {
-            dTi = D_DX_J_tmp(Vc,PRS,RHO)/dx1(i);
+            dTi = D_DX_J_T(Vc)/dx1(i);
           }
-          dTj = 1./x1(i)*D_DY_J_tmp(Vc,PRS,RHO)/dx2(j);
+          dTj = 1./x1(i)*D_DY_J_T(Vc)/dx2(j);
           #if DIMENSIONS == 3
             if (haveSlopeLimiter) {
-              dTk = SL::Lim(SL_DX_tmp(Vc,PRS,RHO,k,j-1,i)/dx3(k),
-                                 SL_DX_tmp(Vc,PRS,RHO,k+1,j-1,i)/dx3(k+1));
+              dTk = SL::Lim(SL_DX_T(Vc,k,j-1,i)/dx3(k),
+                                 SL_DX_T(Vc,k+1,j-1,i)/dx3(k+1));
               dTk = SL::Lim(dTk,
-                                 SL::Lim(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx3(k),
-                                              SL_DX_tmp(Vc,PRS,RHO,k+1,j,i)/dx3(k+1)));
+                                 SL::Lim(SL_DX_T(Vc,k,j,i)/dx3(k),
+                                              SL_DX_T(Vc,k+1,j,i)/dx3(k+1)));
             } else {
-              dTk = D_DZ_J_tmp(Vc,PRS,RHO)/dx3(k);
+              dTk = D_DZ_J_T(Vc)/dx3(k);
             }
           #endif
         #elif GEOMETRY == SPHERICAL
           if (haveSlopeLimiter) {
-            dTi = SL::Lim(SL_DX_tmp(Vc,PRS,RHO,k,j-1,i)/dx1(i),
-                               SL_DX_tmp(Vc,PRS,RHO,k,j-1,i+1)/dx1(i+1));
+            dTi = SL::Lim(SL_DX_T(Vc,k,j-1,i)/dx1(i),
+                               SL_DX_T(Vc,k,j-1,i+1)/dx1(i+1));
             dTi = SL::Lim(dTi,
-                               SL::Lim(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx1(i),
-                                            SL_DX_tmp(Vc,PRS,RHO,k,j,i+1)/dx1(i+1)));
+                               SL::Lim(SL_DX_T(Vc,k,j,i)/dx1(i),
+                                            SL_DX_T(Vc,k,j,i+1)/dx1(i+1)));
           } else {
-            dTi = D_DX_J_tmp(Vc,PRS,RHO)/dx1(i);
+            dTi = D_DX_J_T(Vc)/dx1(i);
           }
-          dTj = 1./x1(i)*D_DY_J_tmp(Vc,PRS,RHO)/dx2(j);
+          dTj = 1./x1(i)*D_DY_J_T(Vc)/dx2(j);
           #if DIMENSIONS == 3
             if (haveSlopeLimiter) {
               real s_1 = sinx2(j-1);
@@ -503,8 +509,8 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
               } else {
                 s_1 = ONE_F/s_1;
               }
-              dTk = s_1/x1(i)*SL::Lim(SL_DX_tmp(Vc,PRS,RHO,k,j-1,i)/dx3(k),
-                                           SL_DX_tmp(Vc,PRS,RHO,k+1,j-1,i)/dx3(k+1));
+              dTk = s_1/x1(i)*SL::Lim(SL_DX_T(Vc,k,j-1,i)/dx3(k),
+                                           SL_DX_T(Vc,k+1,j-1,i)/dx3(k+1));
 
               s_1 = sinx2(j);
 
@@ -515,8 +521,8 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
                 s_1 = ONE_F/s_1;
               }
               dTk = s_1/x1(i)*SL::Lim(dTk,
-                                           SL::Lim(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx3(k),
-                                                        SL_DX_tmp(Vc,PRS,RHO,k+1,j,i)/dx3(k+1)));
+                                           SL::Lim(SL_DX_T(Vc,k,j,i)/dx3(k),
+                                                        SL_DX_T(Vc,k+1,j,i)/dx3(k+1)));
             } else {
               real s_1 = sinx2m(j);
 
@@ -527,7 +533,7 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
                 s_1 = ONE_F/s_1;
               }
 
-              dTk = s_1/x1(i)*D_DZ_J_tmp(Vc,PRS,RHO)/dx3(k);
+              dTk = s_1/x1(i)*D_DZ_J_T(Vc)/dx3(k);
             }
           #endif
         #endif // GEOMETRY
@@ -560,40 +566,40 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
 
         #if GEOMETRY == CARTESIAN
           if (haveSlopeLimiter) {
-            dTi = SL::Lim(SL_DX_tmp(Vc,PRS,RHO,k-1,j,i)/dx1(i),
-                               SL_DX_tmp(Vc,PRS,RHO,k-1,j,i+1)/dx1(i+1));
+            dTi = SL::Lim(SL_DX_T(Vc,k-1,j,i)/dx1(i),
+                               SL_DX_T(Vc,k-1,j,i+1)/dx1(i+1));
             dTi = SL::Lim(dTi,
-                               SL::Lim(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx1(i),
-                                            SL_DX_tmp(Vc,PRS,RHO,k,j,i+1)/dx1(i+1)));
-            dTj = SL::Lim(SL_DY_tmp(Vc,PRS,RHO,k-1,j,i)/dx2(j),
-                               SL_DY_tmp(Vc,PRS,RHO,k-1,j+1,i)/dx2(j+1));
+                               SL::Lim(SL_DX_T(Vc,k,j,i)/dx1(i),
+                                            SL_DX_T(Vc,k,j,i+1)/dx1(i+1)));
+            dTj = SL::Lim(SL_DY_T(Vc,k-1,j,i)/dx2(j),
+                               SL_DY_T(Vc,k-1,j+1,i)/dx2(j+1));
             dTj = SL::Lim(dTj,
-                               SL::Lim(SL_DY_tmp(Vc,PRS,RHO,k,j,i)/dx2(j),
-                                            SL_DY_tmp(Vc,PRS,RHO,k,j+1,i)/dx2(j+1)));
+                               SL::Lim(SL_DY_T(Vc,k,j,i)/dx2(j),
+                                            SL_DY_T(Vc,k,j+1,i)/dx2(j+1)));
           } else {
-            dTi = D_DX_K_tmp(Vc,PRS,RHO)/dx1(i);
-            dTj = D_DY_K_tmp(Vc,PRS,RHO)/dx2(j);
+            dTi = D_DX_K_T(Vc)/dx1(i);
+            dTj = D_DY_K_T(Vc)/dx2(j);
           }
-          dTk = D_DZ_K_tmp(Vc,PRS,RHO)/dx3(k);
+          dTk = D_DZ_K_T(Vc)/dx3(k);
         // No cylindrical geometry in 3D!
         #elif GEOMETRY == POLAR
           if (haveSlopeLimiter) {
-            dTi = SL::Lim(SL_DX_tmp(Vc,PRS,RHO,k-1,j,i)/dx1(i),
-                               SL_DX_tmp(Vc,PRS,RHO,k-1,j,i+1)/dx1(i+1));
+            dTi = SL::Lim(SL_DX_T(Vc,k-1,j,i)/dx1(i),
+                               SL_DX_T(Vc,k-1,j,i+1)/dx1(i+1));
             dTi = SL::Lim(dTi,
-                               SL::Lim(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx1(i),
-                                            SL_DX_tmp(Vc,PRS,RHO,k,j,i+1)/dx1(i+1)));
-            dTj = SL::Lim(SL_DY_tmp(Vc,PRS,RHO,k-1,j,i)/dx2(j),
-                               SL_DY_tmp(Vc,PRS,RHO,k-1,j+1,i)/dx2(j+1));
+                               SL::Lim(SL_DX_T(Vc,k,j,i)/dx1(i),
+                                            SL_DX_T(Vc,k,j,i+1)/dx1(i+1)));
+            dTj = SL::Lim(SL_DY_T(Vc,k-1,j,i)/dx2(j),
+                               SL_DY_T(Vc,k-1,j+1,i)/dx2(j+1));
             dTj = SL::Lim(dTj,
-                               SL::Lim(SL_DY_tmp(Vc,PRS,RHO,k,j,i)/dx2(j),
-                                            SL_DY_tmp(Vc,PRS,RHO,k,j+1,i)/dx2(j+1)));
+                               SL::Lim(SL_DY_T(Vc,k,j,i)/dx2(j),
+                                            SL_DY_T(Vc,k,j+1,i)/dx2(j+1)));
             dTj *= 1./x1(i);
           } else {
-            dTi = D_DX_K_tmp(Vc,PRS,RHO)/dx1(i);
-            dTj = 1./x1(i)*D_DY_K_tmp(Vc,PRS,RHO)/dx2(j); // 1/r dTj/dxj
+            dTi = D_DX_K_T(Vc)/dx1(i);
+            dTj = 1./x1(i)*D_DY_K_T(Vc)/dx2(j); // 1/r dTj/dxj
           }
-          dTk = D_DZ_K_tmp(Vc,PRS,RHO)/dx3(k);
+          dTk = D_DZ_K_T(Vc)/dx3(k);
         #elif GEOMETRY == SPHERICAL
             real s_1 = sinx2(j);
 
@@ -605,22 +611,22 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
           }
 
           if (haveSlopeLimiter) {
-            dTi = SL::Lim(SL_DX_tmp(Vc,PRS,RHO,k-1,j,i)/dx1(i),
-                               SL_DX_tmp(Vc,PRS,RHO,k-1,j,i+1)/dx1(i+1));
+            dTi = SL::Lim(SL_DX_T(Vc,k-1,j,i)/dx1(i),
+                               SL_DX_T(Vc,k-1,j,i+1)/dx1(i+1));
             dTi = SL::Lim(dTi,
-                               SL::Lim(SL_DX_tmp(Vc,PRS,RHO,k,j,i)/dx1(i),
-                                            SL_DX_tmp(Vc,PRS,RHO,k,j,i+1)/dx1(i+1)));
-            dTj = SL::Lim(SL_DY_tmp(Vc,PRS,RHO,k-1,j,i)/dx2(j),
-                               SL_DY_tmp(Vc,PRS,RHO,k-1,j+1,i)/dx2(j+1));
+                               SL::Lim(SL_DX_T(Vc,k,j,i)/dx1(i),
+                                            SL_DX_T(Vc,k,j,i+1)/dx1(i+1)));
+            dTj = SL::Lim(SL_DY_T(Vc,k-1,j,i)/dx2(j),
+                               SL_DY_T(Vc,k-1,j+1,i)/dx2(j+1));
             dTj = SL::Lim(dTj,
-                               SL::Lim(SL_DY_tmp(Vc,PRS,RHO,k,j,i)/dx2(j),
-                                            SL_DY_tmp(Vc,PRS,RHO,k,j+1,i)/dx2(j+1)));
+                               SL::Lim(SL_DY_T(Vc,k,j,i)/dx2(j),
+                                            SL_DY_T(Vc,k,j+1,i)/dx2(j+1)));
             dTj *= 1./x1(i);
           } else {
-            dTi = D_DX_K_tmp(Vc,PRS,RHO)/dx1(i);
-            dTj = 1./x1(i)*D_DY_K_tmp(Vc,PRS,RHO)/dx2(j); // 1/r dTj/dxj
+            dTi = D_DX_K_T(Vc)/dx1(i);
+            dTj = 1./x1(i)*D_DY_K_T(Vc)/dx2(j); // 1/r dTj/dxj
           }
-          dTk = s_1/x1(i)*D_DZ_K_tmp(Vc,PRS,RHO)/dx3(k);
+          dTk = s_1/x1(i)*D_DZ_K_T(Vc)/dx3(k);
           //gradT = ... + ... + 1/(r*sin(theta)) dTphi/dphi
         #endif // GEOMETRY
 
@@ -647,21 +653,20 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
       dMax(k,j,i) = FMAX(dMax(k,j,i),locdmax);
     });
   idfx::popRegion();
-#endif // HAVE_ENERGY
 }
 
-#undef D_DX_I_tmp
-#undef D_DY_J_tmp
-#undef D_DZ_K_tmp
-#undef SL_DX_tmp
-#undef SL_DY_tmp
-#undef SL_DZ_tmp
-#undef D_DY_I_tmp
-#undef D_DZ_I_tmp
-#undef D_DX_J_tmp
-#undef D_DZ_J_tmp
-#undef D_DX_K_tmp
-#undef D_DY_K_tmp
+#undef D_DX_I_T
+#undef D_DY_J_T
+#undef D_DZ_K_T
+#undef SL_DX_T
+#undef SL_DY_T
+#undef SL_DZ_T
+#undef D_DY_I_T
+#undef D_DZ_I_T
+#undef D_DX_J_T
+#undef D_DZ_J_T
+#undef D_DX_K_T
+#undef D_DY_K_T
 #undef BX_I
 #undef BX_J
 #undef BX_K

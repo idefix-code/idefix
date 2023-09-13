@@ -60,14 +60,6 @@ class BragViscosity {
   // constant diffusion coefficient (when needed)
   real etaBrag;
 
-  // Shearing box
-  real sbS;
-//  // type of viscosity function
-//  bool haveBraginskiiViscosity;
-//  bool haveSlopeLimiter;
-//  HydroModuleStatus haveViscosity{Disabled};
-//  ViscousDiffusivityFunc viscousDiffusivityFunc;
-//  BragViscousDiffusivityFunc bragViscousDiffusivityFunc;
   Limiter limiter{Limiter::VanLeer};
 };
 
@@ -82,7 +74,6 @@ BragViscosity::BragViscosity(Input &input, Grid &grid, Fluid<Phys> *hydroin):
   idfx::pushRegion("BragViscosity::BragViscosity");
   // Save the parent hydro object
   this->data = hydroin->data;
-  this->sbS = hydroin->sbS;
 
   if(input.CheckEntry("Hydro","bragViscosity")>=0) {
     if(input.Get<std::string>("Hydro","bragViscosity",1).compare("constant") == 0) {
@@ -130,13 +121,15 @@ BragViscosity::BragViscosity(Input &input, Grid &grid, Fluid<Phys> *hydroin):
 }
 
 
+//We now define spatial derivative macros for the velocity field.
+//    They are directly computed at the right cell interface according to the direciton of the flux.
 #define D_DX_I(q,n)  (q(n,k,j,i) - q(n,k,j,i - 1))
 #define D_DY_J(q,n)  (q(n,k,j,i) - q(n,k,j - 1,i))
 #define D_DZ_K(q,n)  (q(n,k,j,i) - q(n,k - 1,j,i))
 
-#define SL_DX(q,n,iz,iy,ix)  (q(n,iz,iy,ix) - q(n,iz,iy,ix - 1))
-#define SL_DY(q,n,iz,iy,ix)  (q(n,iz,iy,ix) - q(n,iz,iy - 1,ix))
-#define SL_DZ(q,n,iz,iy,ix)  (q(n,iz,iy,ix) - q(n,iz - 1,iy,ix))
+#define SL_DX(q,n,k,j,i)  (q(n,k,j,i) - q(n,k,j,i - 1))
+#define SL_DY(q,n,k,j,i)  (q(n,k,j,i) - q(n,k,j - 1,i))
+#define SL_DZ(q,n,k,j,i)  (q(n,k,j,i) - q(n,k - 1,j,i))
 
 #define D_DY_I(q,n)  (  0.25*(q(n,k,j + 1,i) + q(n,k,j + 1,i - 1)) \
                     - 0.25*(q(n,k,j - 1,i) + q(n,k,j - 1,i - 1)))
@@ -156,8 +149,9 @@ BragViscosity::BragViscosity(Input &input, Grid &grid, Fluid<Phys> *hydroin):
 #define D_DY_K(q,n)  (  0.25*(q(n,k,j + 1,i) + q(n,k - 1,j + 1,i)) \
                     - 0.25*(q(n,k,j - 1,i) + q(n,k - 1,j - 1,i)))
 
-
-
+//We now define spatial average macros for the magnetic field.
+//    The magnetic field appears in the expression of the Braginskii heat flux.
+//    It is therefore needed at the right cell interface according to the direction of the flux.
 #define BX_I  Vs(BX1s,k,j,i)
 #define BY_J  Vs(BX2s,k,j,i)
 #define BZ_K  Vs(BX3s,k,j,i)
@@ -175,13 +169,10 @@ BragViscosity::BragViscosity(Input &input, Grid &grid, Fluid<Phys> *hydroin):
              + Vs(BX2s,k - 1,j,i) + Vs(BX2s,k - 1,j + 1,i)))
 
 
-
-
-
-// This function computes the viscous flux and stores it in hydro->fluxRiemann
+// This function computes the Braginskii viscous flux and stores it in hydro->fluxRiemann
 // (this avoids an extra array)
 // Associated source terms, present in non-cartesian geometry are also computed
-// and stored in this->viscSrc for later use (in calcRhs).
+// and stored in this->bragViscSrc for later use (in calcRhs).
 template <Limiter limTemplate>
 void BragViscosity::AddBragViscousFluxLim(int dir, const real t, const IdefixArray4D<real> &Flux) {
   idfx::pushRegion("BragViscosity::AddBragViscousFlux");

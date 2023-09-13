@@ -15,6 +15,7 @@ def testMe(test):
   test.configure()
   test.compile()
   inifiles=["idefix.ini","idefix-rkl.ini","idefix-sl.ini"]
+#  inifiles=["idefix-rkl.ini","idefix-sl.ini"]
 
   # loop on all the ini files for this test
   name="dump.0001.dmp"

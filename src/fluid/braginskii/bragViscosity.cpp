@@ -20,19 +20,6 @@
 
 
 
-
-////or what should be the exact equivalent, but for some reason isn't, maybe ask Geoffroy why:
-//#define   BX_I 0.5*(Vc(BX1,k,j,i) + Vc(BX1,k,j,i - 1))
-//#define   BY_J 0.5*(Vc(BX2,k,j,i) + Vc(BX2,k,j - 1,i))
-//#define   BZ_K 0.5*(Vc(BX3,k,j,i) + Vc(BX3,k - 1,j,i))
-//#define   BY_I 0.5*(Vc(BX2,k,j,i) + Vc(BX2,k,j,i - 1))
-//#define   BZ_I 0.5*(Vc(BX3,k,j,i) + Vc(BX3,k,j,i - 1))
-//#define   BX_J 0.5*(Vc(BX1,k,j,i) + Vc(BX1,k,j - 1,i))
-//#define   BZ_J 0.5*(Vc(BX3,k,j,i) + Vc(BX3,k,j - 1,i))
-//#define   BX_K 0.5*(Vc(BX1,k,j,i) + Vc(BX1,k - 1,j,i))
-//#define   BY_K 0.5*(Vc(BX2,k,j,i) + Vc(BX2,k - 1,j,i))
-
-
 void BragViscosity::InitArrays() {
   // Allocate and fill arrays when needed
   #if GEOMETRY != CARTESIAN
@@ -104,6 +91,9 @@ void BragViscosity::AddBragViscousFlux(int dir, const real t, const IdefixArray4
       break;
     case Limiter::MinMod:
       this->AddBragViscousFluxLim<Limiter::MinMod>(dir,t,Flux);
+      break;
+    default:
+      IDEFIX_ERROR("The slope limiter for the Braginskii viscosity is not defined.");
       break;
   }
   idfx::popRegion();

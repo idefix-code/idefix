@@ -11,7 +11,6 @@
 // Implementation of monotonicity-preserving heat flux following Sharma & Hammett 2007,
 // Jour. of Comp. Physics
 
-
 #include <string>
 
 #include "bragThermalDiffusion.hpp"
@@ -68,6 +67,10 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t,
     case Limiter::MinMod:
       this->AddBragDiffusiveFluxLim<Limiter::MinMod>(dir,t,Flux);
       break;
+    default:
+      IDEFIX_ERROR("The slope limiter for the Braginskii heat flux is not defined.");
+      break;
   }
   idfx::popRegion();
 }
+

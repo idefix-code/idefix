@@ -170,13 +170,13 @@ target_include_directories(idefix PUBLIC
                            src/dataBlock/planetarySystem
                            src/fluid
                            src/fluid/boundary
+                           src/fluid/braginskii
                            src/fluid/constrainedTransport
                            src/fluid/eos
                            src/fluid/RiemannSolver
                            src/fluid/RiemannSolver/HDsolvers
                            src/fluid/RiemannSolver/MHDsolvers
                            src/fluid/RiemannSolver/Dustsolvers
-                           src/fluid/braginskii
                            src/fluid/tracer
                            src/output
                            src/rkl

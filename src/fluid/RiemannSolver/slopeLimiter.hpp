@@ -7,7 +7,7 @@
 #ifndef FLUID_RIEMANNSOLVER_SLOPELIMITER_HPP_
 #define FLUID_RIEMANNSOLVER_SLOPELIMITER_HPP_
 
-//#include "fluid.hpp"
+#include "fluid.hpp"
 #include "dataBlock.hpp"
 #include "shockFlattening.hpp"
 

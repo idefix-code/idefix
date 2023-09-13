@@ -8,13 +8,9 @@
 #ifndef FLUID_RIEMANNSOLVER_SHOCKFLATTENING_HPP_
 #define FLUID_RIEMANNSOLVER_SHOCKFLATTENING_HPP_
 
-
+#include "fluid.hpp"
 #include "../physics.hpp"
-
-
-class EquationOfState;
-template <typename Phys>
-class Fluid;
+#include "eos.hpp"
 
 enum class FlagShock{None, Shock};
 
@@ -38,9 +34,6 @@ class ShockFlattening {
   bool haveUserShockFlag{false};
   UserShockFunc userShockFunc{NULL};
 };
-
-#include "eos.hpp"
-#include "fluid.hpp"
 
 template<typename Phys>
 struct ShockFlattening_FindShockFunctor {

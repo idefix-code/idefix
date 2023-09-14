@@ -162,9 +162,8 @@ For instance, a sum over all of the elements would be done through:
 In the above example, ``localSum`` is the temporary variable *on the device* over which portions of the reduction
 are performed, while ``mySum`` is the final variable, *on the host* where the result is stored.
 
-It is possible to do other reduction operations
-like findining minimum, maximum etc (see
-`Kokkos custom reductions <https://github.com/kokkos/kokkos/wiki/Custom-Reductions%3A-Built-In-Reducers>`_
+It is possible to do other reduction operations like findining minimum, maximum etc (see
+`Kokkos custom reductions <https://kokkos.github.io/kokkos-core-wiki/API/core/builtin_reducers.html>`_
 for a list). For instance, the minimum value is obtained with the following code
 snippet:
 

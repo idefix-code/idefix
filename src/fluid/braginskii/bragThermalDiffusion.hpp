@@ -82,11 +82,27 @@ BragThermalDiffusion::BragThermalDiffusion(Input &input, Grid &grid, Fluid<Phys>
   idfx::pushRegion("BragThermalDiffusion::BragThermalDiffusion");
 
   if(input.CheckEntry("Hydro","bragTDiffusion")>=0) {
-    if(input.Get<std::string>("Hydro","bragTDiffusion",1).compare("constant") == 0) {
-      this->kpar = input.Get<real>("Hydro","bragTDiffusion",2);
-      this->knor = input.GetOrSet<real>("Hydro","bragTDiffusion",3,0.);
+    if(input.Get<std::string>("Hydro","bragTDiffusion",1).compare("mc") == 0) {
+      this->haveSlopeLimiter = true;
+      limiter = Limiter::McLim;
+    } else if(input.Get<std::string>("Hydro","bragTDiffusion",1).compare("vanleer") == 0) {
+      this->haveSlopeLimiter = true;
+      limiter = Limiter::VanLeer;
+    } else if(input.Get<std::string>("Hydro","bragTDiffusion",1).compare("minmod") == 0) {
+      IDEFIX_ERROR("The minmod slope limiter is not available because it has been "
+                   "found to be too diffusive.");
+    } else if(input.Get<std::string>("Hydro","bragTDiffusion",1).compare("nolimiter") == 0) {
+      this->haveSlopeLimiter = false;
+//      limiter = Limiter::VanLeer;
+    } else {
+      IDEFIX_ERROR("Unknown braginskii thermal diffusion limiter in idefix.ini. "
+                   "Can only be vanleer, mc or nolimiter.");
+    }
+    if(input.Get<std::string>("Hydro","bragTDiffusion",2).compare("constant") == 0) {
+      this->kpar = input.Get<real>("Hydro","bragTDiffusion",3);
+      this->knor = input.GetOrSet<real>("Hydro","bragTDiffusion",4,0.);
       this->status.status = Constant;
-    } else if(input.Get<std::string>("Hydro","bragTDiffusion",1).compare("userdef") == 0) {
+    } else if(input.Get<std::string>("Hydro","bragTDiffusion",2).compare("userdef") == 0) {
       this->status.status = UserDefFunction;
       this->kparArr = IdefixArray3D<real>("BragThermalDiffusionKparArray",data->np_tot[KDIR],
                                                                data->np_tot[JDIR],
@@ -94,32 +110,6 @@ BragThermalDiffusion::BragThermalDiffusion(Input &input, Grid &grid, Fluid<Phys>
       this->knorArr = IdefixArray3D<real>("BragThermalDiffusionKnorArray",data->np_tot[KDIR],
                                                                data->np_tot[JDIR],
                                                                data->np_tot[IDIR]);
-    } else if (input.Get<std::string>("Hydro","bragTDiffusion",1).compare("limiter") == 0) {
-      this->haveSlopeLimiter = true;
-      if(input.Get<std::string>("Hydro","bragTDiffusion",2).compare("vanleer") == 0) {
-        limiter = Limiter::VanLeer;
-      } else if(input.Get<std::string>("Hydro","bragTDiffusion",2).compare("mc") == 0) {
-        limiter = Limiter::McLim;
-      } else {
-        IDEFIX_ERROR("Unknown braginskii thermal diffusion limiter in idefix.ini. "
-                     "Can only be vanleer or mc.");
-      }
-      if(input.Get<std::string>("Hydro","bragTDiffusion",3).compare("constant") == 0) {
-          this->kpar = input.Get<real>("Hydro","bragTDiffusion",4);
-          this->knor = input.Get<real>("Hydro","bragTDiffusion",4);
-          this->status.status = Constant;
-      } else if(input.Get<std::string>("Hydro","bragTDiffusion",3).compare("userdef") == 0) {
-          this->status.status = UserDefFunction;
-          this->kparArr = IdefixArray3D<real>("BragThermalDiffusionKparArray",data->np_tot[KDIR],
-                                                                   data->np_tot[JDIR],
-                                                                   data->np_tot[IDIR]);
-          this->knorArr = IdefixArray3D<real>("BragThermalDiffusionKnorArray",data->np_tot[KDIR],
-                                                                   data->np_tot[JDIR],
-                                                                   data->np_tot[IDIR]);
-      } else {
-        IDEFIX_ERROR("Unknown braginskii thermal diffusion definition in idefix.ini. "
-                     "Can only be constant or userdef.");
-      }
     } else {
       IDEFIX_ERROR("Unknown braginskii thermal diffusion definition in idefix.ini. "
                    "Can only be constant or userdef.");

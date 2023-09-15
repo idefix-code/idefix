@@ -76,36 +76,27 @@ BragViscosity::BragViscosity(Input &input, Grid &grid, Fluid<Phys> *hydroin):
   this->data = hydroin->data;
 
   if(input.CheckEntry("Hydro","bragViscosity")>=0) {
-    if(input.Get<std::string>("Hydro","bragViscosity",1).compare("constant") == 0) {
-        this->etaBrag = input.Get<real>("Hydro","bragViscosity",2);
+    if(input.Get<std::string>("Hydro","bragViscosity",1).compare("vanleer") == 0) {
+      this->haveSlopeLimiter = true;
+      limiter = Limiter::VanLeer;
+    } else if(input.Get<std::string>("Hydro","bragViscosity",1).compare("mc") == 0) {
+      this->haveSlopeLimiter = true;
+      limiter = Limiter::McLim;
+    } else if (input.Get<std::string>("Hydro","bragViscosity",1).compare("nolimiter") == 0) {
+      this->haveSlopeLimiter = false;
+//      limiter = Limiter::VanLeer;
+    } else {
+      IDEFIX_ERROR("Unknown braginskii viscosity limiter in idefix.ini. "
+                   "Can only be vanleer, mc or nolimiter.");
+    }
+    if(input.Get<std::string>("Hydro","bragViscosity",2).compare("constant") == 0) {
+        this->etaBrag = input.Get<real>("Hydro","bragViscosity",3);
         this->status.status = Constant;
-    } else if(input.Get<std::string>("Hydro","bragViscosity",1).compare("userdef") == 0) {
+    } else if(input.Get<std::string>("Hydro","bragViscosity",2).compare("userdef") == 0) {
         this->status.status = UserDefFunction;
         this->etaBragArr = IdefixArray3D<real>("BragViscosityEtaArray",data->np_tot[KDIR],
                                                                  data->np_tot[JDIR],
                                                                  data->np_tot[IDIR]);
-    } else if (input.Get<std::string>("Hydro","bragViscosity",1).compare("limiter") == 0) {
-      this->haveSlopeLimiter = true;
-      if(input.Get<std::string>("Hydro","bragViscosity",2).compare("vanleer") == 0) {
-        limiter = Limiter::VanLeer;
-      } else if(input.Get<std::string>("Hydro","bragViscosity",2).compare("mc") == 0) {
-        limiter = Limiter::McLim;
-      } else {
-        IDEFIX_ERROR("Unknown braginskii viscosity limiter in idefix.ini. "
-                     "Can only be vanleer or mc.");
-      }
-      if(input.Get<std::string>("Hydro","bragViscosity",3).compare("constant") == 0) {
-          this->etaBrag = input.Get<real>("Hydro","bragViscosity",4);
-          this->status.status = Constant;
-      } else if(input.Get<std::string>("Hydro","bragViscosity",3).compare("userdef") == 0) {
-          this->status.status = UserDefFunction;
-          this->etaBragArr = IdefixArray3D<real>("BragViscosityEtaArray",data->np_tot[KDIR],
-                                                                   data->np_tot[JDIR],
-                                                                   data->np_tot[IDIR]);
-      } else {
-        IDEFIX_ERROR("Unknown braginskii viscosity definition in idefix.ini. "
-                     "Can only be constant or userdef.");
-      }
     } else {
       IDEFIX_ERROR("Unknown braginskii viscosity definition in idefix.ini. "
                    "Can only be constant or userdef.");

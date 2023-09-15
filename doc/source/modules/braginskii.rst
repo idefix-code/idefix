@@ -35,10 +35,10 @@ cell interface by a simple arithmetic average
 (Eq. (6)-(7) from Sharma & Hammett 2007).
 However in the same paper, the authors showed that this implementation can lead to
 unphysical heat flux from high to low temperature regions.
-We therefore implemented slope limiters for the computation of these transverse fluxes,
+We therefore implemented slope limiters for the computation of these transverse heat fluxes,
 as described in Eq. (17) from Sharma & Hammett (2007).
 Only the van Leer and the Monotonized Central (MC) limiters are available
-since minmod has been found to be too diffusive.
+since the minmod limiter has been found to be too diffusive.
 Transverse viscous fluxes are limited in the same manner,
 as described by ZuHone et al. (2015) in their fifth footnote.
 
@@ -63,18 +63,21 @@ as described by ZuHone et al. (2015) in their fifth footnote.
     (see section :ref:`braginskiiParameterSection`),
     but perpendicular viscous flux cannot in the current implementation.
     However, both Braginskii operators can be used *in addition* to the classical
-    Fourier law and viscosity, which should be equivalent to having different
+    Fourier law and viscosity. Modeling both isotropic and anisotropic diffusion
+    should be equivalent to having different
     parallel and perpendicular diffusivities.
 
-The main output of the ``Braginskii`` module is the addition of the anisotropic heat and/or 
+The main output of the ``Braginskii`` module is the addition of the anisotropic heat and/or
 momentum flux terms to the other various fluxes.
 The computational cost of the ``Braginskii`` module is one of a parabolic term, meaning that
-the associated Courant-Friedrichs-Lewy condition can be stiff in case of very diffusive plasma.
-However, as other parabolic operators in *Idefix*, a Runge-Kutta-Legendre scheme is available
-to speed-up the computation (with respect to an explicit integration)
+the associated Courant-Friedrichs-Lewy (CFL)
+condition can be stiff in case of very diffusive plasma.
+However, as other parabolic operators in *Idefix*, a Runge-Kutta-Legendre super time-stepping
+scheme is available to speed-up the computation (with respect to a fully explicit integration)
 of the Braginskii heat flux and viscosity.
-Please refer to Section 2.8 from Lesur et al.
-for more details on the this super time-stepping scheme.
+..
+  Please refer to Section 2.8 from Lesur et al.
+  for more details on the this super time-stepping scheme.
 
 .. _braginskiiParameterSection:
 Main parameters of the module
@@ -101,7 +104,7 @@ associated to the activation of the Braginskii module:
   +================+=========================+=============================================================================================+
   0 | bragTDiffusion         | string                  | | Activate Braginskii heat diffusion. |
   +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-  1 | explicit/rkl           | string                  | | 
+  1 | explicit/rkl           | string                  | |
   +----------------+-------------------------+---------------------------------------------------------------------------------------------+
   | maxIter        | int                     | | Set the maximum number of iterations allowed to the solver to reach convergence. Default  |
   |                |                         | | is 1000.                                                                                  |

@@ -22,7 +22,7 @@
 
 void BragThermalDiffusion::ShowConfig() {
   if(status.status==Constant) {
-    idfx::cout << "Braginskii Thermal Diffusion: ENEBLED with constant diffusivity kpar="
+    idfx::cout << "Braginskii Thermal Diffusion: ENABLED with constant diffusivity kpar="
                     << this->kpar << " and knor=" << this->knor << " ."<< std::endl;
   } else if (status.status==UserDefFunction) {
     idfx::cout << "Braginskii Thermal Diffusion: ENABLED with user-defined diffusivity function."

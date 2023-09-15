@@ -23,7 +23,7 @@ In this section, you will find a more detailed documentation about each module t
 
 :ref:`braginskiiModule`
   The Braginskii module, models the anisotropic flux of heat and momentum
-  taking place in weakly collisional, magnetised fluid (like the ICM).
+  taking place in weakly collisional, magnetised plasma (like the intracluster medium).
 
 :ref:`gridCoarseningModule`
   The grid coarsening module, that allows to derefine the grid in particular locations to speed up the computation.

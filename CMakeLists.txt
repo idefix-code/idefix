@@ -78,7 +78,6 @@ if(EXISTS ${PROJECT_BINARY_DIR}/CMakeLists.txt)
 endif()
 
 
-
 if(Idefix_MHD)
   add_compile_definitions("MHD=YES")
 else()
@@ -193,6 +192,7 @@ target_include_directories(idefix PUBLIC
                            src/dataBlock/planetarySystem
                            src/fluid
                            src/fluid/boundary
+                           src/fluid/braginskii
                            src/fluid/constrainedTransport
                            src/fluid/eos
                            src/fluid/RiemannSolver

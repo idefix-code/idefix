@@ -21,6 +21,10 @@ In this section, you will find a more detailed documentation about each module t
   The self-gravity computation module, handles the impact of the gas distribution on its own dynamic when massive
   enough (as in a core collapse).
 
+:ref:`braginskiiModule`
+  The Braginskii module, models the anisotropic flux of heat and momentum
+  taking place in weakly collisional, magnetised plasma (like the intracluster medium).
+
 :ref:`gridCoarseningModule`
   The grid coarsening module, that allows to derefine the grid in particular locations to speed up the computation.
 
@@ -34,4 +38,5 @@ In this section, you will find a more detailed documentation about each module t
    modules/dust.rst
    modules/eos.rst
    modules/selfGravity.rst
+   modules/braginskii.rst
    modules/gridCoarsening.rst

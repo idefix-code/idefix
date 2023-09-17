@@ -237,6 +237,27 @@ jobs:
           cd $IDEFIX_DIR/test/Dust/DustyWave
           ./testme.py -all $TESTME_OPTIONS
 
+  Braginskii:
+    needs: [Linter, ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
+    runs-on: self-hosted
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: MTI
+        run: |
+          cd $IDEFIX_DIR/test/MHD/MTI
+          ./testme.py -all $TESTME_OPTIONS
+      - name: Spherical anisotropic diffusion
+        run: |
+          cd $IDEFIX_DIR/test/MHD/sphBragTDiffusion
+          ./testme.py -all $TESTME_OPTIONS
+      - name: Spherical anisotropic viscosity
+        run: |
+          cd $IDEFIX_DIR/test/MHD/sphBragViscosity
+          ./testme.py -all $TESTME_OPTIONS
+
   Examples:
     needs: [Fargo, Dust, Planet, ShearingBox, SelfGravity]
     runs-on: self-hosted

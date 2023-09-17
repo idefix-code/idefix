@@ -246,6 +246,10 @@ struct Fluid_CalcRHSFunctor {
     haveViscosity = hydro->viscosityStatus.isExplicit;
     if(haveViscosity) viscSrc = hydro->viscosity->viscSrc;
 
+    // BragViscosity  (source term only when non-cartesian geometry)
+    haveBragViscosity = hydro->bragViscosityStatus.isExplicit;
+    if(haveBragViscosity) bragViscSrc = hydro->bragViscosity->bragViscSrc;
+
     // Fargo
     haveFargo  = hydro->data->haveFargo;
     if(haveFargo) {
@@ -303,6 +307,10 @@ struct Fluid_CalcRHSFunctor {
 
   // Viscosity  (source term only when non-cartesian geometry)
   bool haveViscosity{false};
+
+  // BragViscosity  (source term only when non-cartesian geometry)
+  IdefixArray4D<real> bragViscSrc;
+  bool haveBragViscosity{false};
 
   // Fargo
   IdefixArray2D<real> fargoVelocity;
@@ -408,6 +416,11 @@ struct Fluid_CalcRHSFunctor {
         #pragma unroll
         for(int nv = 0 ; nv < COMPONENTS ; nv++) {
           rhs[nv + VX1] += dt*viscSrc(nv,k,j,i);
+        }
+      } else if(haveBragViscosity) {
+        #pragma unroll
+        for(int nv = 0 ; nv < COMPONENTS ; nv++) {
+          rhs[nv + VX1] += dt*bragViscSrc(nv,k,j,i);
         }
       }
     #endif // GEOMETRY != CARTESIAN

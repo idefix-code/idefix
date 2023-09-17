@@ -1,4 +1,5 @@
 add_subdirectory(boundary)
+add_subdirectory(braginskii)
 add_subdirectory(constrainedTransport)
 add_subdirectory(eos)
 add_subdirectory(RiemannSolver)

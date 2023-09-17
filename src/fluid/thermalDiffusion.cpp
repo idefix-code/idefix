@@ -18,7 +18,7 @@
 
 void ThermalDiffusion::ShowConfig() {
   if(status.status==Constant) {
-    idfx::cout << "Thermal Diffusion: ENEABLED with constant diffusivity kappa="
+    idfx::cout << "Thermal Diffusion: ENABLED with constant diffusivity kappa="
                     << this->kappa << " ."<< std::endl;
   } else if (status.status==UserDefFunction) {
     idfx::cout << "Thermal Diffusion: ENABLED with user-defined diffusivity function."
@@ -52,7 +52,6 @@ void ThermalDiffusion::EnrollThermalDiffusivity(DiffusivityFunc myFunc) {
 // Associated source terms, present in non-cartesian geometry are also computed
 // and stored in this->viscSrc for later use (in calcRhs).
 void ThermalDiffusion::AddDiffusiveFlux(int dir, const real t, const IdefixArray4D<real> &Flux) {
-#if HAVE_ENERGY == 1
   idfx::pushRegion("ThermalDiffusion::AddDiffusiveFlux");
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray3D<real> dMax = this->dMax;
@@ -147,5 +146,4 @@ void ThermalDiffusion::AddDiffusiveFlux(int dir, const real t, const IdefixArray
         dMax(k,j,i) = FMAX(dMax(k,j,i) , locdmax);
       });
   idfx::popRegion();
-#endif // HAVE_ENERGY
 }

@@ -64,7 +64,7 @@ void Viscosity::InitArrays() {
 }
 void Viscosity::ShowConfig() {
   if(status.status==Constant) {
-    idfx::cout << "Viscosity: ENEABLED with constant viscosity eta1="
+    idfx::cout << "Viscosity: ENABLED with constant viscosity eta1="
                     << this->eta1 << " and eta2=" << this->eta2 << " ."<< std::endl;
   } else if (status.status==UserDefFunction) {
     idfx::cout << "Viscosity: ENABLED with user-defined viscosity function."

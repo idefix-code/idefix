@@ -15,6 +15,7 @@
 #include "input.hpp"
 #include "dataBlock.hpp"
 #include "viscosity.hpp"
+#include "bragViscosity.hpp"
 #ifdef WITH_MPI
 #include "mpi.hpp"
 #endif
@@ -152,9 +153,25 @@ RKLegendre<Phys>::RKLegendre(Input &input, Fluid<Phys>* hydroin) {
       AddVariable(ENG, varListHost);
     #endif
   }
+  // BragViscosity
+  if(hydro->bragViscosityStatus.isRKL) {
+    haveVc = true;
+    EXPAND( AddVariable(MX1, varListHost);   ,
+            AddVariable(MX2, varListHost);   ,
+            AddVariable(MX3, varListHost);   )
+    #if HAVE_ENERGY
+      AddVariable(ENG, varListHost);
+    #endif
+  }
+
   // Thermal diffusion
   #if HAVE_ENERGY
     if(hydro->thermalDiffusionStatus.isRKL) {
+      haveVc = true;
+      AddVariable(ENG, varListHost);
+    }
+    // Braginskii Thermal diffusion
+    if(hydro->bragThermalDiffusionStatus.isRKL) {
       haveVc = true;
       AddVariable(ENG, varListHost);
     }
@@ -726,6 +743,9 @@ void RKLegendre<Phys>::CalcParabolicRHS(real t) {
 
   bool haveViscosity = hydro->viscosityStatus.isRKL;
   if(haveViscosity) viscSrc = hydro->viscosity->viscSrc;
+  IdefixArray4D<real> bragViscSrc;
+  bool haveBragViscosity = hydro->bragViscosityStatus.isRKL;
+  if(haveBragViscosity) bragViscSrc = hydro->bragViscosity->bragViscSrc;
 
   int ioffset,joffset,koffset;
   ioffset=joffset=koffset=0;
@@ -791,6 +811,10 @@ void RKLegendre<Phys>::CalcParabolicRHS(real t) {
       // Viscosity source terms
       if( haveViscosity && (nv-VX1 < COMPONENTS) && (nv-VX1>=0)) {
         rhs += viscSrc(nv-VX1,k,j,i);
+      }
+      // Braginskii Viscosity source terms
+      if (haveBragViscosity && (nv-VX1 < COMPONENTS) && (nv-VX1>=0)) {
+        rhs += bragViscSrc(nv-VX1,k,j,i);
       }
 
 #if GEOMETRY != CARTESIAN

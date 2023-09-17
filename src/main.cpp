@@ -111,6 +111,12 @@ int main( int argc, char* argv[] ) {
     ///////////////////////////////
     // Are we restarting?
     if(input.restartRequested) {
+      if(input.forceInitRequested) {
+        idfx::pushRegion("Setup::Initflow");
+        mysetup.InitFlow(data);
+        data.DeriveVectorPotential();
+        idfx::popRegion();
+      }
       idfx::cout << "Main: Restarting from dump file."  << std::endl;
       bool restartSuccess = output.RestartFromDump(data,input.restartFileNumber);
       if(!restartSuccess) {

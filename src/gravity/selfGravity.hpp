@@ -58,6 +58,7 @@ class SelfGravity {
   void AddSelfGravityPotential(IdefixArray3D<real> &);
   void EnrollUserDefBoundary(UserDefBoundaryFunc);  // Enroll user-defined boundary conditions
   void InitPreconditionner();   // For preconditionning versions
+  void PreComputeLaplacian();   // For faster Laplacian computation
 
   // real gravCst; // 4*pi*G
 
@@ -124,6 +125,9 @@ class SelfGravity {
                            // Warning : might differ from (M)HD solver !
 
   IdefixArray3D<real> precond; // Diagonal preconditionner
+  IdefixArray4D<real> Lx1; //< Laplacian operator in x1
+  IdefixArray4D<real> Lx2; //< Laplacian operator in x2
+  IdefixArray4D<real> Lx3; //< Laplacian operator in x3
 
   #ifdef WITH_MPI
   IdefixArray4D<real> arr4D; // Intermediate array for boundary handling

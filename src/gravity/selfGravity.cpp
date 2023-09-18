@@ -232,6 +232,8 @@ void SelfGravity::Init(Input &input, DataBlock *datain) {
   if(havePreconditioner) {
     InitPreconditionner();
   }
+  // Initialise the Laplacian coefficients
+  PreComputeLaplacian();
 
   // Arrays initialisation
   this->density = IdefixArray3D<real> ("Density", this->np_tot[KDIR],
@@ -392,6 +394,9 @@ void SelfGravity::InitInternalGrid() {
       Ax3(k,j,i) = D_EXPAND(x1(i)*dx1(i), *dx2(j), *ONE_F);   // = r*dr*dth
     }
   );
+
+
+  
 
   idfx::popRegion();
 }
@@ -781,76 +786,38 @@ void SelfGravity::SubstractMeanDensity() {
 }
 
 
+void SelfGravity::PreComputeLaplacian() {
+  idfx::pushRegion("SelfGravity::PreComputeLaplacian");
+   // Precompute Laplacian Factor
 
-void SelfGravity::ComputeLaplacian(IdefixArray3D<real> array, IdefixArray3D<real> laplacian) {
-  idfx::pushRegion("SelfGravity::ComputeLaplacian");
+  // Allocate Laplacian factors
+  this->Lx1 = IdefixArray4D<real>("SelfGravity_Lx1",2, 
+                                                    this->np_tot[KDIR], 
+                                                    this->np_tot[JDIR],
+                                                    this->np_tot[IDIR]);
+  #if DIMENSIONS > 1
+    this->Lx2 = IdefixArray4D<real>("SelfGravity_Lx2",2, 
+                                                      this->np_tot[KDIR], 
+                                                      this->np_tot[JDIR],
+                                                      this->np_tot[IDIR]);
 
-  int ibeg, iend, jbeg, jend, kbeg, kend;
-  ibeg = this->beg[IDIR];
-  iend = this->end[IDIR];
-  jbeg = this->beg[JDIR];
-  jend = this->end[JDIR];
-  kbeg = this->beg[KDIR];
-  kend = this->end[KDIR];
+    #if DIMENSIONS > 2
+      this->Lx3 = IdefixArray4D<real>("SelfGravity_Lx3",2, 
+                                                        this->np_tot[KDIR], 
+                                                        this->np_tot[JDIR],
+                                                        this->np_tot[IDIR]);
+    #endif
+  #endif
+
+
+  // Local copy of Laplacian arrays
+  IdefixArray4D<real> Lx1 = this->Lx1; // X stride
+  IdefixArray4D<real> Lx2 = this->Lx2; // Y stride
+  IdefixArray4D<real> Lx3 = this->Lx3; // Z stride
+
+
   IdefixArray3D<real> P = this->precond;
   bool havePreconditioner = this->havePreconditioner;
-
-  // Handling boundaries before laplacian calculation
-  this->SetBoundaries(array);
-
-  #if DIMENSIONS == 1
-  IdefixArray1D<real> dx1 = this->dx[IDIR];
-  IdefixArray3D<real> Ax1 = this->A[IDIR];
-  IdefixArray3D<real> dV = this->dV;
-
-  // No change in 1D regarding the geometry as the curvature terms are always one
-  idefix_for("FiniteDifference", kbeg, kend, jbeg, jend, ibeg, iend,
-    KOKKOS_LAMBDA (int k, int j, int i) {
-      real gxm, gxp;
-      gxm =  2. * (array(k, j, i) - array(k, j, i-1)) / (dx1(i) + dx1(i-1));
-      gxp =  2. * (array(k, j, i+1) - array(k, j, i)) / (dx1(i) + dx1(i+1));
-      real Delta = (gxp * Ax1(k, j, i+1) - gxm * Ax1(k, j, i)) / dV(k, j, i);
-      if(havePreconditioner) {
-        Delta=Delta/P(k,j,i);
-      }
-      laplacian(k, j, i) = Delta;
-    });
-
-  #elif DIMENSIONS == 2
-  IdefixArray1D<real> dx1 = this->dx[IDIR];
-  IdefixArray1D<real> dx2 = this->dx[JDIR];
-  IdefixArray3D<real> Ax1 = this->A[IDIR];
-  IdefixArray3D<real> Ax2 = this->A[JDIR];
-  IdefixArray3D<real> dV = this->dV;
-    #if (GEOMETRY == POLAR || GEOMETRY == SPHERICAL)
-    IdefixArray1D<real> r = this->x[IDIR];
-    #endif
-
-  idefix_for("FiniteDifference", kbeg, kend, jbeg, jend, ibeg, iend,
-    KOKKOS_LAMBDA (int k, int j, int i) {
-      real h1, h2;
-      #if (GEOMETRY == CARTESIAN || GEOMETRY == CYLINDRICAL)
-      h1 = 1.;
-      h2 = 1.;
-      #else
-      h1 = 1.;
-      h2 = r(i);
-      #endif
-      real gxm, gxp, gym, gyp;
-      gxm =  2. / h1 * (array(k, j, i) - array(k, j, i-1)) / (dx1(i) + dx1(i-1));
-      gxp =  2. / h1 * (array(k, j, i+1) - array(k, j, i)) / (dx1(i) + dx1(i+1));
-      gym =  2. / h2 * (array(k, j, i) - array(k, j-1, i)) / (dx2(j) + dx2(j-1));
-      gyp =  2. / h2 * (array(k, j+1, i) - array(k, j, i)) / (dx2(j) + dx2(j+1));
-      real Delta = (gxp * Ax1(k, j, i+1) - gxm * Ax1(k, j, i)
-                           + gyp * Ax2(k, j+1, i) - gym * Ax2(k, j, i))
-                           / dV(k, j, i);
-      if(havePreconditioner) {
-        Delta=Delta/P(k,j,i);
-      }
-      laplacian(k, j, i) = Delta;
-    });
-
-  #else
   IdefixArray1D<real> dx1 = this->dx[IDIR];
   IdefixArray1D<real> dx2 = this->dx[JDIR];
   IdefixArray1D<real> dx3 = this->dx[KDIR];
@@ -858,15 +825,17 @@ void SelfGravity::ComputeLaplacian(IdefixArray3D<real> array, IdefixArray3D<real
   IdefixArray3D<real> Ax2 = this->A[JDIR];
   IdefixArray3D<real> Ax3 = this->A[KDIR];
   IdefixArray3D<real> dV = this->dV;
-    #if GEOMETRY == POLAR
-    IdefixArray1D<real> r = this->x[IDIR];
-    #elif GEOMETRY == SPHERICAL
-    IdefixArray1D<real> r = this->x[IDIR];
-    IdefixArray1D<real> sinth = this->sinx2;
-    #endif
+  #if GEOMETRY == POLAR
+  IdefixArray1D<real> r = this->x[IDIR];
+  #elif GEOMETRY == SPHERICAL
+  IdefixArray1D<real> r = this->x[IDIR];
+  IdefixArray1D<real> sinth = this->sinx2;
+  #endif
 
-  idefix_for("FiniteDifference", kbeg, kend, jbeg, jend, ibeg, iend,
-    KOKKOS_LAMBDA (int k, int j, int i) {
+  idefix_for("L_Factor",KOFFSET,this->np_tot[KDIR]-KOFFSET,
+                        JOFFSET,this->np_tot[JDIR]-JOFFSET,
+                        IOFFSET,this->np_tot[IDIR]-JOFFSET,
+    KOKKOS_LAMBDA(int k, int j,int i) {
       real h1, h2, h3;
       #if GEOMETRY == CARTESIAN
       h1 = 1.;
@@ -881,24 +850,85 @@ void SelfGravity::ComputeLaplacian(IdefixArray3D<real> array, IdefixArray3D<real
       h2 = r(i);
       h3 = r(i) * sinth(j);
       #endif
-      real gxm, gxp, gym, gyp, gzm, gzp;
-      gxm =  2. / h1 * (array(k, j, i) - array(k, j, i-1)) / (dx1(i) + dx1(i-1));
-      gxp =  2. / h1 * (array(k, j, i+1) - array(k, j, i)) / (dx1(i) + dx1(i+1));
-      gym =  2. / h2 * (array(k, j, i) - array(k, j-1, i)) / (dx2(j) + dx2(j-1));
-      gyp =  2. / h2 * (array(k, j+1, i) - array(k, j, i)) / (dx2(j) + dx2(j+1));
-      gzm =  2. / h3 * (array(k, j, i) - array(k-1, j, i)) / (dx3(k) + dx3(k-1));
-      gzp =  2. / h3 * (array(k+1, j, i) - array(k, j, i)) / (dx3(k) + dx3(k+1));
-      real Delta = (gxp * Ax1(k, j, i+1) - gxm * Ax1(k, j, i)
-                           + gyp * Ax2(k, j+1, i) - gym * Ax2(k, j, i)
-                           + gzp * Ax3(k+1, j, i) - gzm * Ax3(k, j, i))
-                           / dV(k, j, i);
+
+      // i-1 coefficient
+      Lx1(0,k,j,i) = 2.0 * Ax1(k, j, i) / h1 / (dx1(i) + dx1(i-1)) / dV(k,j,i);
+      // i+1 coefficient
+      Lx1(1,k,j,i) = 2.0 * Ax1(k, j, i+1) / h1 / (dx1(i+1) + dx1(1)) / dV(k,j,i);
       if(havePreconditioner) {
-        Delta=Delta/P(k,j,i);
+        Lx1(0,k,j,i) /= P(k,j,i);
+        Lx1(1,k,j,i) /= P(k,j,i);
       }
+      #if DIMENSIONS > 1
+        Lx2(0,k,j,i) = 2.0 * Ax2(k, j, i) / h2 / (dx2(j) + dx2(j-1)) / dV(k,j,i);
+        Lx2(1,k,j,i) = 2.0 * Ax2(k, j+1, i) / h2 / (dx2(j+1) + dx2(j)) / dV(k,j,i);
+        if(havePreconditioner) {
+          Lx2(0,k,j,i) /= P(k,j,i);
+          Lx2(1,k,j,i) /= P(k,j,i);
+        }
+        #if DIMENSIONS > 2
+          Lx3(0,k,j,i) = 2.0 * Ax3(k, j, i) / h3 / (dx3(k) + dx3(k-1)) / dV(k,j,i);
+          Lx3(1,k,j,i) = 2.0 * Ax3(k+1, j, i) / h3 / (dx3(k+1) + dx3(k)) / dV(k,j,i);
+          if(havePreconditioner) {
+            Lx3(0,k,j,i) /= P(k,j,i);
+            Lx3(1,k,j,i) /= P(k,j,i);
+          }
+        #endif
+      #endif
+      
+    });
+  idfx::popRegion();
+}
+
+
+void SelfGravity::ComputeLaplacian(IdefixArray3D<real> array, IdefixArray3D<real> laplacian) {
+  idfx::pushRegion("SelfGravity::ComputeLaplacian");
+
+  int ibeg, iend, jbeg, jend, kbeg, kend;
+  ibeg = this->beg[IDIR];
+  iend = this->end[IDIR];
+  jbeg = this->beg[JDIR];
+  jend = this->end[JDIR];
+  kbeg = this->beg[KDIR];
+  kend = this->end[KDIR];
+  IdefixArray4D<real> Lx1 = this->Lx1;
+  #if DIMENSIONS > 1
+  IdefixArray4D<real> Lx2 = this->Lx2;
+  #if DIMENSIONS > 2
+  IdefixArray4D<real> Lx3 = this->Lx3;
+  #endif
+  #endif
+
+  // Handling boundaries before laplacian calculation
+  this->SetBoundaries(array);
+
+  idefix_for("FiniteDifference", kbeg, kend, jbeg, jend, ibeg, iend,
+    KOKKOS_LAMBDA (int k, int j, int i) {
+      real gc = 0;
+      real Delta = 0;
+      real Lm, Lr;
+      #if DIMENSIONS > 2
+      Lm = Lx3(0,k,j,i);
+      Lr = Lx3(1,k,j,i);
+      gc += Lm + Lr;
+      Delta += array(k-1,j,i)*Lm + array(k+1,j,i)*Lr;
+      #endif
+      #if DIMENSIONS > 1
+        Lm = Lx2(0,k,j,i);
+        Lr = Lx2(1,k,j,i);
+        gc += Lm + Lr;
+        Delta += array(k,j-1,i)*Lm + array(k,j+1,i)*Lr;
+      #endif
+      Lm = Lx1(0,k,j,i);
+      Lr = Lx1(1,k,j,i);
+      gc += Lm + Lr;
+      Delta += array(k,j,i-1)*Lm + array(k,j,i+1)*Lr;
+
+      Delta -= gc * array(k,j,i);
 
       laplacian(k, j, i) = Delta;
     });
-  #endif
+
 
 
   idfx::popRegion();

@@ -884,9 +884,6 @@ void SelfGravity::PreComputeLaplacian() {
 void SelfGravity::ComputeLaplacian(IdefixArray3D<real> array, IdefixArray3D<real> laplacian) {
   idfx::pushRegion("SelfGravity::ComputeLaplacian");
 
-  // Tilling factor
-  constexpr int m = 4;
-
   int ibeg, iend, jbeg, jend, kbeg, kend;
   ibeg = this->beg[IDIR];
   iend = this->end[IDIR];
@@ -894,11 +891,6 @@ void SelfGravity::ComputeLaplacian(IdefixArray3D<real> array, IdefixArray3D<real
   jend = this->end[JDIR];
   kbeg = this->beg[KDIR];
   kend = this->end[KDIR];
-
-  // Renormalize by tilling factor
-  int jendTile = jbeg + (jend-jbeg)/m;
-  
-
   IdefixArray4D<real> Lx1 = this->Lx1;
   #if DIMENSIONS > 1
   IdefixArray4D<real> Lx2 = this->Lx2;
@@ -909,120 +901,34 @@ void SelfGravity::ComputeLaplacian(IdefixArray3D<real> array, IdefixArray3D<real
 
   // Handling boundaries before laplacian calculation
   this->SetBoundaries(array);
-  // Init the array to constants
-  /*
-  idefix_for("Init", 0, this->np_tot[KDIR], 
-                                 0, this->np_tot[JDIR], 
-                                 0, this->np_tot[IDIR],
+
+  idefix_for("FiniteDifference", kbeg, kend, jbeg, jend, ibeg, iend,
     KOKKOS_LAMBDA (int k, int j, int i) {
-        array(k,j,i) = 1.0;
-    });*/
-
-
-  idefix_for("FiniteDifference", kbeg, kend, jbeg, jendTile, ibeg, iend,
-    KOKKOS_LAMBDA (int k, int jtile, int i) {
-      int js = jbeg + (jtile-jbeg)*m;
-      // Abord if outside of till
-      if(js>=jend) return;
-
-      real Lc[m];
-      real center[m];
-      real Delta[m];
-      for(int n = 0 ; n < m; n++) {
-        Lc[n] = 0;
-        Delta[n] = 0;
-      }
-      real L;
-
-
+      real gc = 0;
+      real Delta = 0;
+      real Lm, Lr;
       #if DIMENSIONS > 2
-        for(int n = 0 ; n < m; n++) {
-          if(js+n<jend) {
-            real L = Lx3(0,k,js+n,i);
-            Lc[n] += L;
-            Delta[n] += array(k-1,js+n,i)*L;
-          }
-        }
+      Lm = Lx3(0,k,j,i);
+      Lr = Lx3(1,k,j,i);
+      gc += Lm + Lr;
+      Delta += array(k-1,j,i)*Lm + array(k+1,j,i)*Lr;
       #endif
-
-      // y=0
       #if DIMENSIONS > 1
-      L = Lx2(0,k,js,i);
-      Lc[0] += L;
-      Delta[0] += array(k,js-1,i) * L;
-      # endif
-
-      // x loop
-      for(int n = 0 ; n < m; n++) {
-        // i-1
-        if(js+n<jend) {
-          real L = Lx1(0,k,js+n,i);
-          Lc[n] += L;
-          Delta[n] += array(k,js+n,i-1)*L;
-
-          // i = 0
-          center[n] = array(k,js+n,i);
-
-          // i+1
-          L = Lx1(1,k,js+n,i);
-          Lc[n] += L;
-          Delta[n] += array(k,js+n,i+1)*L;
-
-          #if DIMENSIONS > 1
-            if(n>0) {
-              //j+1 value
-              real L = Lx2(1,k,js+n-1,i);
-              Lc[n-1] += L;
-              Delta[n-1] += center[n] * L;
-            }
-            if(n < m-1) {
-              // j-1 value
-              real L = Lx2(0,k,js+n+1,i);
-              Lc[n+1] += L;
-              Delta[n+1] += center[n] * L;
-            }
-          #endif
-        }
-      }
-
-      // Last y loop
-      #if DIMENSIONS > 1
-        if(js+m-1<=jend) {
-          L = Lx2(1,k,js+m-1,i);
-          Lc[m-1] += L;
-          Delta[m-1] += array(k,js+m,i) * L;
-        }
-      # endif
-
-      // Last z loop
-      #if DIMENSIONS > 2
-      for(int n = 0 ; n < m; n++) {
-        if(js+n<jend) {
-          L = Lx3(1,k,js+n,i);
-          Lc[n] += L;
-          Delta[n] += array(k+1,js+n,i)*L;
-        }
-      }
+        Lm = Lx2(0,k,j,i);
+        Lr = Lx2(1,k,j,i);
+        gc += Lm + Lr;
+        Delta += array(k,j-1,i)*Lm + array(k,j+1,i)*Lr;
       #endif
+      Lm = Lx1(0,k,j,i);
+      Lr = Lx1(1,k,j,i);
+      gc += Lm + Lr;
+      Delta += array(k,j,i-1)*Lm + array(k,j,i+1)*Lr;
 
-      for(int n = 0 ; n < m; n++) {
-        // Substract middle values
-        if(js+n<jend) {
-          laplacian(k, js+n, i) = Delta[n] - Lc[n] * center[n];
-        }
-      }
+      Delta -= gc * array(k,j,i);
 
+      laplacian(k, j, i) = Delta;
     });
-/*
-  idfx::cout << "FYI jbeg=" << jbeg << " ; jend=" << jend << std::endl;
-  idefix_for("Finish", kbeg, kend, jbeg, jend, ibeg, iend,
-    KOKKOS_LAMBDA (int k, int j, int i) {
-        if(fabs(laplacian(k,j,i) > 1e-7)) {
-          idfx::cout << "error at (" << i << "," << j << "," << k << ")=" << laplacian(k,j,i) << std::endl; 
-        }
-    });*/
 
-  //IDEFIX_ERROR("bloup");
 
 
   idfx::popRegion();

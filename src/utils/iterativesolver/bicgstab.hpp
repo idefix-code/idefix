@@ -13,12 +13,10 @@
 #include "iterativesolver.hpp"
 
 // The bicgstab derives from the iterativesolver class
-template <class C>
-class Bicgstab : public IterativeSolver<C> {
-  using LinearFunction = void(C::*) (IdefixArray3D<real> in, IdefixArray3D<real> out);
-
+template <class T>
+class Bicgstab : public IterativeSolver<T> {
  public:
-  Bicgstab(C *parent, LinearFunction func, real error, int maxIter,
+  Bicgstab(T *parent, LinearFunction func, real error, int maxIter,
            std::vector<int> ntot, std::vector<int> beg, std::vector<int> end);
 
   int Solve(IdefixArray3D<real> &guess, IdefixArray3D<real> &rhs);
@@ -40,10 +38,10 @@ class Bicgstab : public IterativeSolver<C> {
   IdefixArray3D<real> work3; // work array
 };
 
-template <class C>
-Bicgstab<C>::Bicgstab(C *p, LinearFunction f, real error, int maxiter,
+template <class T>
+Bicgstab<C>::Bicgstab(T *p, real error, int maxiter,
             std::vector<int> ntot, std::vector<int> beg, std::vector<int> end) :
-            IterativeSolver<C>(p, f, error, maxiter, ntot, beg, end) {
+            IterativeSolver<T>(p, error, maxiter, ntot, beg, end) {
   // BICGSTAB scalars initialisation
   this->rho = 1.0;
   this->alpha = 1.0;

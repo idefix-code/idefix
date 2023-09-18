@@ -12,12 +12,11 @@
 #include "idefix.hpp"
 #include "vector.hpp"
 
-template <class C>
+template <class T>
 class IterativeSolver {
  public:
-  using LinearFunction = void(C::*) (IdefixArray3D<real> in, IdefixArray3D<real> out);
 
-  IterativeSolver(C *parent, LinearFunction func, real error, int maxIter,
+  IterativeSolver(T *op, real error, int maxIter,
                   std::vector<int> ntot, std::vector<int> beg, std::vector<int> end);
 
   real GetError();  // return the current error of the solver
@@ -33,10 +32,9 @@ class IterativeSolver {
   real ComputeDotProduct(IdefixArray3D<real> mat1, IdefixArray3D<real> mat2);
 
  protected:
-  LinearFunction myFunc;
+  T * linearOperator;
   real currentError;
   real targetError;
-  C *parent;          // parent class
   int maxiter;        // Maximum iteration allowed to achieve convergence
   bool convStatus;    // Convergence status
   bool restart{false};

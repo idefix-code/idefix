@@ -400,7 +400,7 @@ void SelfGravity::PreComputeLaplacian() {
 }
 
 
-void SelfGravity::ComputeLaplacian(IdefixArray3D<real> array, IdefixArray3D<real> laplacian) {
+void SelfGravity::operator()(IdefixArray3D<real> array, IdefixArray3D<real> laplacian) {
   idfx::pushRegion("SelfGravity::ComputeLaplacian");
 
   int ibeg, iend, jbeg, jend, kbeg, kend;
@@ -451,7 +451,7 @@ void SelfGravity::ComputeLaplacian(IdefixArray3D<real> array, IdefixArray3D<real
   idfx::popRegion();
 }
 
-void Laplacian::EnforceBoundary(int dir, BoundarySide side, GravityBoundaryType type,
+void Laplacian::EnforceBoundary(int dir, BoundarySide side, LaplacianBoundaryType type,
                                   IdefixArray3D<real> &arr) {
   idfx::pushRegion("SelfGravity::EnforceBoundary");
 

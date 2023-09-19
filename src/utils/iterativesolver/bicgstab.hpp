@@ -16,7 +16,7 @@
 template <class T>
 class Bicgstab : public IterativeSolver<T> {
  public:
-  Bicgstab(T *parent, LinearFunction func, real error, int maxIter,
+  Bicgstab(T &op, LinearFunction func, real error, int maxIter,
            std::vector<int> ntot, std::vector<int> beg, std::vector<int> end);
 
   int Solve(IdefixArray3D<real> &guess, IdefixArray3D<real> &rhs);
@@ -39,9 +39,9 @@ class Bicgstab : public IterativeSolver<T> {
 };
 
 template <class T>
-Bicgstab<C>::Bicgstab(T *p, real error, int maxiter,
+Bicgstab<T>::Bicgstab(T &op, real error, int maxiter,
             std::vector<int> ntot, std::vector<int> beg, std::vector<int> end) :
-            IterativeSolver<T>(p, error, maxiter, ntot, beg, end) {
+            IterativeSolver<T>(op, error, maxiter, ntot, beg, end) {
   // BICGSTAB scalars initialisation
   this->rho = 1.0;
   this->alpha = 1.0;
@@ -70,8 +70,8 @@ Bicgstab<C>::Bicgstab(T *p, real error, int maxiter,
                                                       this->ntot[IDIR]);
 }
 
-template <class C>
-int Bicgstab<C>::Solve(IdefixArray3D<real> &guess, IdefixArray3D<real> &rhs) {
+template <class T>
+int Bicgstab<T>::Solve(IdefixArray3D<real> &guess, IdefixArray3D<real> &rhs) {
   idfx::pushRegion("Bicgstab::Solve");
   this->solution = guess;
   this->rhs = rhs;
@@ -107,15 +107,15 @@ int Bicgstab<C>::Solve(IdefixArray3D<real> &guess, IdefixArray3D<real> &rhs) {
   return(n);
 }
 
-template <class C>
-void Bicgstab<C>::InitSolver() {
+template <class T>
+void Bicgstab<T>::InitSolver() {
   idfx::pushRegion("Bicgstab::InitSolver");
   // Residual initialisation
   this->SetRes();
 
   Kokkos::deep_copy(this->res0, this->res); // (Re)setting reference residual
   Kokkos::deep_copy(this->dir, this->res); // (Re)setting initial searching direction
-  (this->parent->*(this->myFunc))(this->dir, this->work1); // (Re)setting associated laplacian
+  linearOperator(this->dir, this->work1); // (Re)setting associated laplacian
 
   // // Resetting parameters
   // this->rho = 1.0;
@@ -125,8 +125,8 @@ void Bicgstab<C>::InitSolver() {
   idfx::popRegion();
 }
 
-template <class C>
-void Bicgstab<C>::PerformIter() {
+template <class T>
+void Bicgstab<T>::PerformIter() {
   idfx::pushRegion("Bicgstab::PerformIter");
 
   // Loading needed attributes
@@ -191,7 +191,7 @@ void Bicgstab<C>::PerformIter() {
   // From now dir is updated
 
   // ***** Step 4.
-  (this->parent->*(this->myFunc))(dir, v);
+  linearOperator(dir, v);
 
   // from now v is updated (laplacian of dir)
 
@@ -241,7 +241,7 @@ void Bicgstab<C>::PerformIter() {
     // From here s is updated
 
     // ************** Step 9.
-    (this->parent->*(this->myFunc))(s, t);
+    linearOperator(s, t);
 
     // From here t is updated
 
@@ -306,8 +306,8 @@ void Bicgstab<C>::PerformIter() {
 
 
 
-template <class C>
-void Bicgstab<C>::ShowConfig() {
+template <class T>
+void Bicgstab<T>::ShowConfig() {
   idfx::pushRegion("Bicgstab::ShowConfig");
   idfx::cout << "Bicgstab: TargetError: " << this->targetError << std::endl;
   idfx::cout << "Bicgstab: Maximum iterations: " << this->maxiter << std::endl;

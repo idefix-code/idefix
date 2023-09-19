@@ -16,7 +16,7 @@ template <class T>
 class IterativeSolver {
  public:
 
-  IterativeSolver(T *op, real error, int maxIter,
+  IterativeSolver(T &op, real error, int maxIter,
                   std::vector<int> ntot, std::vector<int> beg, std::vector<int> end);
 
   real GetError();  // return the current error of the solver
@@ -32,7 +32,7 @@ class IterativeSolver {
   real ComputeDotProduct(IdefixArray3D<real> mat1, IdefixArray3D<real> mat2);
 
  protected:
-  T * linearOperator;
+  T & linearOperator;
   real currentError;
   real targetError;
   int maxiter;        // Maximum iteration allowed to achieve convergence
@@ -48,10 +48,10 @@ class IterativeSolver {
   IdefixArray3D<real> res; // Residual
 };
 
-template <class C>
-IterativeSolver<C>::IterativeSolver(C *p, LinearFunction f, real error, int maxiter,
-            std::vector<int> ntot, std::vector<int> beg, std::vector<int> end) {
-  this->myFunc = f;
+template <class T>
+IterativeSolver<T>::IterativeSolver(T &op, real error, int maxiter,
+            std::vector<int> ntot, std::vector<int> beg, std::vector<int> end)
+              : linearOperator(op) {
   this->targetError = error;
   this->maxiter = maxiter;
   this->beg = beg;
@@ -65,8 +65,8 @@ IterativeSolver<C>::IterativeSolver(C *p, LinearFunction f, real error, int maxi
                                               this->ntot[IDIR]);
 }
 
-template <class C>
-void IterativeSolver<C>::TestErrorL1() {
+template <class T>
+void IterativeSolver<T>::TestErrorL1() {
   idfx::pushRegion("IterativeSolver::TestErrorL1");
 
   // Loading needed attributes
@@ -123,8 +123,8 @@ void IterativeSolver<C>::TestErrorL1() {
   idfx::popRegion();
 }
 
-template <class C>
-void IterativeSolver<C>::TestErrorL2() {
+template <class T>
+void IterativeSolver<T>::TestErrorL2() {
   idfx::pushRegion("IterativeSolver::TestErrorL2");
 
   // Loading needed attributes
@@ -181,8 +181,8 @@ void IterativeSolver<C>::TestErrorL2() {
   idfx::popRegion();
 }
 
-template <class C>
-void IterativeSolver<C>::TestErrorLINF() {
+template <class T>
+void IterativeSolver<T>::TestErrorLINF() {
   idfx::pushRegion("IterativeSolver::TestErrorLINF");
 
   // Loading needed attributes
@@ -246,8 +246,8 @@ void IterativeSolver<C>::TestErrorLINF() {
   idfx::popRegion();
 }
 
-template <class C>
-void IterativeSolver<C>::SetRes() {
+template <class T>
+void IterativeSolver<T>::SetRes() {
   idfx::pushRegion("IterativeSolver::SetRes");
 
   // Loading needed attributes
@@ -275,8 +275,8 @@ void IterativeSolver<C>::SetRes() {
   idfx::popRegion();
 }
 
-template <class C>
-real IterativeSolver<C>::ComputeDotProduct(IdefixArray3D<real> mat1, IdefixArray3D<real> mat2) {
+template <class T>
+real IterativeSolver<T>::ComputeDotProduct(IdefixArray3D<real> mat1, IdefixArray3D<real> mat2) {
   idfx::pushRegion("IterativeSolver::ComputeDotProduct");
 
   int ibeg, iend, jbeg, jend, kbeg, kend;
@@ -309,8 +309,8 @@ real IterativeSolver<C>::ComputeDotProduct(IdefixArray3D<real> mat1, IdefixArray
 }
 
 
-template <class C>
-real IterativeSolver<C>::GetError() {
+template <class T>
+real IterativeSolver<T>::GetError() {
   return(currentError);
 }
 

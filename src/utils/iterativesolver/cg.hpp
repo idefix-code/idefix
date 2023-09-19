@@ -17,7 +17,7 @@ template <class T>
 class Cg : public IterativeSolver<T> {
 
  public:
-  Cg(C *parent, real error, int maxIter,
+  Cg(T &op, real error, int maxIter,
            std::vector<int> ntot, std::vector<int> beg, std::vector<int> end);
 
   int Solve(IdefixArray3D<real> &guess, IdefixArray3D<real> &rhs);
@@ -32,9 +32,9 @@ class Cg : public IterativeSolver<T> {
 };
 
 template <class T>
-Cg<T>::Cg(T *p, real error, int maxiter,
+Cg<T>::Cg(T &op, real error, int maxiter,
             std::vector<int> ntot, std::vector<int> beg, std::vector<int> end) :
-            IterativeSolver<T>(p, f, error, maxiter, ntot, beg, end) {
+            IterativeSolver<T>(op, error, maxiter, ntot, beg, end) {
   // CG scalars initialisation
 
   this->p1 = IdefixArray3D<real> ("p1", this->ntot[KDIR],
@@ -105,7 +105,7 @@ void Cg<T>::PerformIter() {
   kend = this->end[KDIR];
 
   // ***** Step 1.
-  (this->parent->*(this->myFunc))(p1, s1);
+  linearOperator(p1, s1);
 
   real rr = this->ComputeDotProduct(r,r);
   //idfx::cout << "rr=" << rr << std::endl;

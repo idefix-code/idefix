@@ -174,28 +174,28 @@ void SelfGravity::Init(Input &input, DataBlock *datain) {
   }
 
   // Make the Laplacian operator
-  laplacian = std::make_unique<Laplacian>(data, lbound, rbound, this->havePreconditioner );
+  laplacian = Laplacian(data, lbound, rbound, this->havePreconditioner );
   
-  np_tot = laplacian->np_tot;
+  np_tot = laplacian.np_tot;
   
   // Instantiate the bicgstab solver
   if(solver == BICGSTAB || solver == PBICGSTAB) {
     iterativeSolver = new Bicgstab<SelfGravity>(this, laplacian,
                                                 targetError, maxiter,
-                                                laplacian->np_tot, laplacian->beg, laplacian->end);
+                                                laplacian.np_tot, laplacian.beg, laplacian.end);
   } else if(solver == CG || solver == PCG) {
     iterativeSolver = new Cg<SelfGravity>(this, laplacian,
                                                 targetError, maxiter,
-                                                laplacian->np_tot, laplacian->beg, laplacian->end);
+                                                laplacian.np_tot, laplacian.beg, laplacian.end);
   } else if(solver == MINRES || solver == PMINRES) {
     iterativeSolver = new Minres<SelfGravity>(this, laplacian,
                                                 targetError, maxiter,
-                                                laplacian->np_tot, laplacian->beg, laplacian->end);
+                                                laplacian.np_tot, laplacian.beg, laplacian.end);
   } else {
       real step = ComputeJacobiCFL();
       iterativeSolver = new Jacobi<SelfGravity>(this, laplacian,
                                                 targetError, maxiter, step,
-                                                laplacian->np_tot, laplacian->beg, laplacian->end);
+                                                laplacian.np_tot, laplacian.beg, laplacian.end);
   }
 
 
@@ -527,7 +527,7 @@ void SelfGravity::SubstractMeanDensity() {
 
 
 void SelfGravity::EnrollUserDefBoundary(UserDefBoundaryFunc myFunc) {
-  laplacian->EnrollUserDefBoundary(myFunc);
+  laplacian.EnrollUserDefBoundary(myFunc);
   idfx::cout << "SelfGravity:: User-defined boundary condition has been enrolled" << std::endl;
 }
 

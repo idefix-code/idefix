@@ -41,7 +41,8 @@ class SelfGravity {
 
   IterativeSolver<Laplacian> *iterativeSolver;
 
-  std::unique_ptr<Laplacian> laplacian;
+  // The linear operator involved in Poisson equation
+  Laplacian laplacian;
 
   #ifdef DEBUG_GRAVITY
   // Used to get fields usefull for debugging

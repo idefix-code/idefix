@@ -353,7 +353,7 @@ void Laplacian::PreComputeLaplacian() {
                         JOFFSET,this->np_tot[JDIR]-JOFFSET,
                         IOFFSET,this->np_tot[IDIR]-JOFFSET,
     KOKKOS_LAMBDA(int k, int j,int i) {
-      real h1, h2, h3;
+      [[maybe_unused]] real h1, h2, h3;
       #if GEOMETRY == CARTESIAN
       h1 = 1.;
       h2 = 1.;

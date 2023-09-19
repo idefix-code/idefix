@@ -15,7 +15,6 @@
 // The conjugate gradient derives from the iterativesolver class
 template <class T>
 class Cg : public IterativeSolver<T> {
-
  public:
   Cg(T &op, real error, int maxIter,
            std::vector<int> ntot, std::vector<int> beg, std::vector<int> end);
@@ -105,7 +104,7 @@ void Cg<T>::PerformIter() {
   kend = this->end[KDIR];
 
   // ***** Step 1.
-  linearOperator(p1, s1);
+  this->linearOperator(p1, s1);
 
   real rr = this->ComputeDotProduct(r,r);
   //idfx::cout << "rr=" << rr << std::endl;

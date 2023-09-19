@@ -8,15 +8,20 @@
 #ifndef GRAVITY_LAPLACIAN_HPP_
 #define GRAVITY_LAPLACIAN_HPP_
 
+#include <vector>
 #include "idefix.hpp"
 
+class DataBlock;
 
 class Laplacian {
  public:
-  Lapacian(DataBlock &, LaplacianBoundaryType &, LaplacianBoundaryType &, bool );
-
   // Types of boundary which can be treated
   enum LaplacianBoundaryType {internalgrav, periodic, nullgrad, nullpot, userdef, axis, origin};
+
+  Laplacian() = default;
+  Laplacian(DataBlock *, std::array<LaplacianBoundaryType,3>,
+                         std::array<LaplacianBoundaryType,3>, bool );
+
   void InitPreconditionner();   // For preconditionning versions
   void PreComputeLaplacian();   // For faster Laplacian computation
 
@@ -24,7 +29,7 @@ class Laplacian {
 
   void SetBoundaries(IdefixArray3D<real> &);  // Set the proper boundaries for the given array
 
-  void EnrollUserDefBoundary(UserDefBoundaryFunc);  // Enroll user-defined boundary conditions
+  real ComputeCFL(); // Compute the CFL associated to the Laplacian operator (for explicit schemes)
 
   // The main laplacian operator
   void operator() (IdefixArray3D<real> in,  IdefixArray3D<real> laplacian);
@@ -32,9 +37,12 @@ class Laplacian {
   // Handling userdef boundary.
   using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side,
                                        const real t, IdefixArray3D<real> &arr);
-  void EnforceBoundary(int dir, BoundarySide side, GravityBoundaryType type,
+  void EnforceBoundary(int dir, BoundarySide side, LaplacianBoundaryType type,
                        IdefixArray3D<real> &);
   bool haveUserDefBoundary{false};
+
+  void EnrollUserDefBoundary(UserDefBoundaryFunc);  // Enroll user-defined boundary conditions
+
   // User defined Boundary conditions
   UserDefBoundaryFunc userDefBoundaryFunc{NULL};
 
@@ -64,7 +72,7 @@ class Laplacian {
   std::array<LaplacianBoundaryType,3> rbound;  // Boundary condition to the right
                            // Warning : might differ from (M)HD solver !
 
-  IdefixArray3D<real> precond; // Diagonal preconditionner
+  IdefixArray3D<real> precond; //< Diagonal preconditionner
   IdefixArray4D<real> Lx1; //< Laplacian operator in x1
   IdefixArray4D<real> Lx2; //< Laplacian operator in x2
   IdefixArray4D<real> Lx3; //< Laplacian operator in x3
@@ -73,6 +81,8 @@ class Laplacian {
   bool havePreconditioner{false}; // Use of preconditionner (or not)
 
 
+  DataBlock *data;
+
   #ifdef WITH_MPI
   Mpi mpi;  // Mpi object when WITH_MPI is set
   IdefixArray4D<real> arr4D; // Intermediate array for boundary handling
@@ -80,4 +90,4 @@ class Laplacian {
 };
 
 
-#endif
+#endif // GRAVITY_LAPLACIAN_HPP_

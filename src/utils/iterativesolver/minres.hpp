@@ -15,7 +15,6 @@
 // The conjugate gradient derives from the iterativesolver class
 template <class T>
 class Minres : public IterativeSolver<T> {
-
  public:
   Minres(T &op, real error, int maxIter,
            std::vector<int> ntot, std::vector<int> beg, std::vector<int> end);
@@ -113,7 +112,7 @@ void Minres<T>::InitSolver() {
   this->SetRes();
 
   Kokkos::deep_copy(this->p0, this->res); // (Re)setting reference residual
-  (this->parent->*(this->myFunc))(this->p0, this->s0); // (Re)setting associated laplacian
+  this->linearOperator(this->p0, this->s0); // (Re)setting associated laplacian
   //Kokkos::deep_copy(this->p1, this->p0);
   //Kokkos::deep_copy(this->s1, this->s0);
 
@@ -172,7 +171,7 @@ void Minres<T>::PerformIter() {
   if(this->currentError/this->previousError>0.999) {
     this->firstStep = true;
     Kokkos::deep_copy(p0,r);
-    (this->parent->*(this->myFunc))(this->p0, this->s0);
+    this->linearOperator(this->p0, this->s0);
     idfx::cout << "Reset" << std::endl;
     idfx::popRegion();
     return;
@@ -181,7 +180,7 @@ void Minres<T>::PerformIter() {
   this->previousError = this->currentError;
   Kokkos::deep_copy(p0, s1);
 
-  (this->parent->*(this->myFunc))(s1, s0);
+  this->linearOperator(s1, s0);
 
   real beta1 = this->ComputeDotProduct(s0,s1) / this->ComputeDotProduct(s1,s1);
 

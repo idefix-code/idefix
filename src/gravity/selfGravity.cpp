@@ -20,12 +20,6 @@
 #include "jacobi.hpp"
 
 
-
-
-SelfGravity::SelfGravity() {
-  // Default constructor
-}
-
 void SelfGravity::Init(Input &input, DataBlock *datain) {
   idfx::pushRegion("SelfGravity::Init");
 
@@ -175,27 +169,24 @@ void SelfGravity::Init(Input &input, DataBlock *datain) {
 
   // Make the Laplacian operator
   laplacian = Laplacian(data, lbound, rbound, this->havePreconditioner );
-  
+
   np_tot = laplacian.np_tot;
-  
+
   // Instantiate the bicgstab solver
   if(solver == BICGSTAB || solver == PBICGSTAB) {
-    iterativeSolver = new Bicgstab<SelfGravity>(this, laplacian,
-                                                targetError, maxiter,
-                                                laplacian.np_tot, laplacian.beg, laplacian.end);
+    iterativeSolver = new Bicgstab(laplacian, targetError, maxiter,
+                                              laplacian.np_tot, laplacian.beg, laplacian.end);
   } else if(solver == CG || solver == PCG) {
-    iterativeSolver = new Cg<SelfGravity>(this, laplacian,
-                                                targetError, maxiter,
-                                                laplacian.np_tot, laplacian.beg, laplacian.end);
+    iterativeSolver = new Cg(laplacian, targetError, maxiter,
+                                        laplacian.np_tot, laplacian.beg, laplacian.end);
   } else if(solver == MINRES || solver == PMINRES) {
-    iterativeSolver = new Minres<SelfGravity>(this, laplacian,
-                                                targetError, maxiter,
-                                                laplacian.np_tot, laplacian.beg, laplacian.end);
+    iterativeSolver = new Minres(laplacian,
+                                  targetError, maxiter,
+                                  laplacian.np_tot, laplacian.beg, laplacian.end);
   } else {
-      real step = ComputeJacobiCFL();
-      iterativeSolver = new Jacobi<SelfGravity>(this, laplacian,
-                                                targetError, maxiter, step,
-                                                laplacian.np_tot, laplacian.beg, laplacian.end);
+      real step = laplacian.ComputeCFL();
+      iterativeSolver = new Jacobi(laplacian, targetError, maxiter, step,
+                                              laplacian.np_tot, laplacian.beg, laplacian.end);
   }
 
 
@@ -217,7 +208,7 @@ void SelfGravity::Init(Input &input, DataBlock *datain) {
                                                       this->np_tot[JDIR],
                                                       this->np_tot[IDIR]);
 
-  
+
   idfx::popRegion();
 }
 
@@ -260,9 +251,9 @@ void SelfGravity::ShowConfig() {
               << " re-normalisation." << std::endl;
   }
 
-  if(this->lbound[IDIR] == origin) {
-    idfx::cout << "SelfGravity: using origin boundary with " << loffset[IDIR] << " additional "
-               << "radial points." << std::endl;
+  if(this->lbound[IDIR] == Laplacian::LaplacianBoundaryType::origin) {
+    idfx::cout << "SelfGravity: using origin boundary with " << laplacian.loffset[IDIR]
+               << " additional radial points." << std::endl;
   }
 
   if(this->skipSelfGravity>1) {
@@ -283,9 +274,9 @@ void SelfGravity::InitSolver() {
 
   // Initialise the density field
   // todo: check bounds
-  int ioffset = this->loffset[IDIR];
-  int joffset = this->loffset[JDIR];
-  int koffset = this->loffset[KDIR];
+  int ioffset = laplacian.loffset[IDIR];
+  int joffset = laplacian.loffset[JDIR];
+  int koffset = laplacian.loffset[KDIR];
 
   idefix_for("InitDensity", data->beg[KDIR], data->end[KDIR],
                             data->beg[JDIR], data->end[JDIR],
@@ -302,13 +293,13 @@ void SelfGravity::InitSolver() {
   // divide density by preconditionner if we're doing the preconditionned version
   if(havePreconditioner) {
     int ibeg, iend, jbeg, jend, kbeg, kend;
-    ibeg = this->beg[IDIR];
-    iend = this->end[IDIR];
-    jbeg = this->beg[JDIR];
-    jend = this->end[JDIR];
-    kbeg = this->beg[KDIR];
-    kend = this->end[KDIR];
-    IdefixArray3D<real> P = this->precond;
+    ibeg = laplacian.beg[IDIR];
+    iend = laplacian.end[IDIR];
+    jbeg = laplacian.beg[JDIR];
+    jend = laplacian.end[JDIR];
+    kbeg = laplacian.beg[KDIR];
+    kend = laplacian.end[KDIR];
+    IdefixArray3D<real> P = laplacian.precond;
     idefix_for("Precond density", kbeg, kend, jbeg, jend, ibeg, iend,
     KOKKOS_LAMBDA (int k, int j, int i) {
       density(k, j, i) = density(k,j,i) / P(k,j,i);
@@ -340,151 +331,21 @@ void SelfGravity::InitSolver() {
   idfx::popRegion();
 }
 
-real SelfGravity::ComputeJacobiCFL() {
-  idfx::pushRegion("SelfGravity::ComputeCFL");
-
-  int ibeg = this->beg[IDIR];
-  int iend = this->end[IDIR];
-  int jbeg = this->beg[JDIR];
-  int jend = this->end[JDIR];
-  int kbeg = this->beg[KDIR];
-  int kend = this->end[KDIR];
-
-  #if DIMENSIONS == 1
-  IdefixArray1D<real> dx1 = this->dx[IDIR];
-  real dx1min2;
-
-  idefix_reduce("GetMin1",
-                kbeg, kend,
-                jbeg, jend,
-                ibeg, iend,
-                KOKKOS_LAMBDA (int k, int j, int i, real &localMin) {
-                  localMin = std::fmin(dx1(i) * dx1(i), localMin);
-                },
-                Kokkos::Min<real>(dx1min2));
-
-    // Reduction on the whole grid
-    #ifdef WITH_MPI
-    MPI_Allreduce(MPI_IN_PLACE, &dx1min2, 1, realMPI, MPI_MIN, MPI_COMM_WORLD);
-    #endif
-
-  real dtmax = 1. / 2. * dx1min2;
-
-  #elif DIMENSIONS == 2
-  IdefixArray1D<real> dx1 = this->dx[IDIR];
-  IdefixArray1D<real> dx2 = this->dx[JDIR];
-  real dx1min2, dx2min2;
-    #if (GEOMETRY == POLAR || GEOMETRY == SPHERICAL)
-    IdefixArray1D<real> r = this->x[IDIR];
-    #endif
-
-  idefix_reduce("GetMin1",
-                kbeg, kend,
-                jbeg, jend,
-                ibeg, iend,
-                KOKKOS_LAMBDA (int k, int j, int i, real &localMin) {
-                  localMin = std::fmin(dx1(i) * dx1(i), localMin);
-                },
-                Kokkos::Min<real>(dx1min2));
-
-  idefix_reduce("GetMin2",
-                kbeg, kend,
-                jbeg, jend,
-                ibeg, iend,
-                KOKKOS_LAMBDA (int k, int j, int i, real &localMin) {
-                  real dl = dx2(j);
-                  #if (GEOMETRY == POLAR || GEOMETRY == SPHERICAL)
-                  dl = dl * r(i);
-                  #endif
-                  localMin = std::fmin(dl * dl, localMin);
-                },
-                Kokkos::Min<real>(dx2min2));
-
-    // Reduction on the whole grid
-    #ifdef WITH_MPI
-    MPI_Allreduce(MPI_IN_PLACE, &dx1min2, 1, realMPI, MPI_MIN, MPI_COMM_WORLD);
-    MPI_Allreduce(MPI_IN_PLACE, &dx2min2, 1, realMPI, MPI_MIN, MPI_COMM_WORLD);
-    #endif
-
-  real dtmax = 1. / 2. * 1. / ( 1. / dx1min2 + 1. / dx2min2);
-
-  #else
-  IdefixArray1D<real> dx1 = this->dx[IDIR];
-  IdefixArray1D<real> dx2 = this->dx[JDIR];
-  IdefixArray1D<real> dx3 = this->dx[KDIR];
-  real dx1min2, dx2min2, dx3min2;
-    #if GEOMETRY == POLAR
-    IdefixArray1D<real> r = x[IDIR];
-    #elif GEOMETRY == SPHERICAL
-    IdefixArray1D<real> r = x[IDIR];
-    IdefixArray1D<real> sinth = sinx2;
-    #endif
-
-  idefix_reduce("GetMin1",
-                kbeg, kend,
-                jbeg, jend,
-                ibeg, iend,
-                KOKKOS_LAMBDA (int k, int j, int i, real &localMin) {
-                  localMin = std::fmin(dx1(i) * dx1(i), localMin);
-                },
-                Kokkos::Min<real>(dx1min2));
-
-  idefix_reduce("GetMin2",
-                kbeg, kend,
-                jbeg, jend,
-                ibeg, iend,
-                KOKKOS_LAMBDA (int k, int j, int i, real &localMin) {
-                  real dl = dx2(j);
-                  #if (GEOMETRY == POLAR || GEOMETRY == SPHERICAL)
-                  dl = dl * r(i);
-                  #endif
-                  localMin = std::fmin(dl * dl, localMin);
-                },
-                Kokkos::Min<real>(dx2min2));
-
-  idefix_reduce("GetMin3",  // Cylindrical not taken into account as it shouldn't be used in 3D
-                kbeg, kend,
-                jbeg, jend,
-                ibeg, iend,
-                KOKKOS_LAMBDA (int k, int j, int i, real &localMin) {
-                  real dl = dx3(k);
-                  #if GEOMETRY == SPHERICAL
-                  dl = dl * r(i) * sinth(j);
-                  #endif
-                  localMin = std::fmin(dl * dl, localMin);
-                },
-                Kokkos::Min<real>(dx3min2));
-
-    // Reduction on the whole grid
-    #ifdef WITH_MPI
-    MPI_Allreduce(MPI_IN_PLACE, &dx1min2, 1, realMPI, MPI_MIN, MPI_COMM_WORLD);
-    MPI_Allreduce(MPI_IN_PLACE, &dx2min2, 1, realMPI, MPI_MIN, MPI_COMM_WORLD);
-    MPI_Allreduce(MPI_IN_PLACE, &dx3min2, 1, realMPI, MPI_MIN, MPI_COMM_WORLD);
-    #endif
-
-  real dtmax = 1. / 2. * 1. / ( 1. / dx1min2 + 1. / dx2min2 + 1. / dx3min2);
-  #endif
-
-  idfx::popRegion();
-
-  return(0.95 * dtmax); // Taking a percentage to avoid dt=dtmax leading to a breakup
-}
-
 
 void SelfGravity::SubstractMeanDensity() {
   idfx::pushRegion("SelfGravity::SubstractMeanDensity");
 
   // Loading needed attributes
   IdefixArray3D<real> density = this->density;
-  IdefixArray3D<real> dV = this->dV;
+  IdefixArray3D<real> dV = laplacian.dV;
 
   int ibeg, iend, jbeg, jend, kbeg, kend;
-  ibeg = this->beg[IDIR];
-  iend = this->end[IDIR];
-  jbeg = this->beg[JDIR];
-  jend = this->end[JDIR];
-  kbeg = this->beg[KDIR];
-  kend = this->end[KDIR];
+  ibeg = laplacian.beg[IDIR];
+  iend = laplacian.end[IDIR];
+  jbeg = laplacian.beg[JDIR];
+  jend = laplacian.end[JDIR];
+  kbeg = laplacian.beg[KDIR];
+  kend = laplacian.end[KDIR];
 
   // Do the reduction on a vector
   MyVector meanDensityVector;
@@ -525,10 +386,8 @@ void SelfGravity::SubstractMeanDensity() {
   idfx::popRegion();
 }
 
-
-void SelfGravity::EnrollUserDefBoundary(UserDefBoundaryFunc myFunc) {
+void SelfGravity::EnrollUserDefBoundary(Laplacian::UserDefBoundaryFunc myFunc) {
   laplacian.EnrollUserDefBoundary(myFunc);
-  idfx::cout << "SelfGravity:: User-defined boundary condition has been enrolled" << std::endl;
 }
 
 
@@ -633,12 +492,12 @@ void SelfGravity::AddSelfGravityPotential(IdefixArray3D<real> &phiP) {
   real gravCst = this->data->gravity->gravCst;
 
   // Updating ghost cells before to return potential
-  this->SetBoundaries(potential);
+  laplacian.SetBoundaries(potential);
 
   // Adding self-gravity contribution
-  int ioffset = this->loffset[IDIR];
-  int joffset = this->loffset[JDIR];
-  int koffset = this->loffset[KDIR];
+  int ioffset = laplacian.loffset[IDIR];
+  int joffset = laplacian.loffset[JDIR];
+  int koffset = laplacian.loffset[KDIR];
   idefix_for("AddSelfGravityPotential", 0, data->np_tot[KDIR],
                                         0, data->np_tot[JDIR],
                                         0, data->np_tot[IDIR],

@@ -16,7 +16,7 @@
 template <class T>
 class Bicgstab : public IterativeSolver<T> {
  public:
-  Bicgstab(T &op, LinearFunction func, real error, int maxIter,
+  Bicgstab(T &op, real error, int maxIter,
            std::vector<int> ntot, std::vector<int> beg, std::vector<int> end);
 
   int Solve(IdefixArray3D<real> &guess, IdefixArray3D<real> &rhs);
@@ -115,7 +115,7 @@ void Bicgstab<T>::InitSolver() {
 
   Kokkos::deep_copy(this->res0, this->res); // (Re)setting reference residual
   Kokkos::deep_copy(this->dir, this->res); // (Re)setting initial searching direction
-  linearOperator(this->dir, this->work1); // (Re)setting associated laplacian
+  this->linearOperator(this->dir, this->work1); // (Re)setting associated laplacian
 
   // // Resetting parameters
   // this->rho = 1.0;
@@ -191,7 +191,7 @@ void Bicgstab<T>::PerformIter() {
   // From now dir is updated
 
   // ***** Step 4.
-  linearOperator(dir, v);
+  this->linearOperator(dir, v);
 
   // from now v is updated (laplacian of dir)
 
@@ -241,7 +241,7 @@ void Bicgstab<T>::PerformIter() {
     // From here s is updated
 
     // ************** Step 9.
-    linearOperator(s, t);
+    this->linearOperator(s, t);
 
     // From here t is updated
 

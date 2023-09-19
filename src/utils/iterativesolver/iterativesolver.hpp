@@ -15,7 +15,6 @@
 template <class T>
 class IterativeSolver {
  public:
-
   IterativeSolver(T &op, real error, int maxIter,
                   std::vector<int> ntot, std::vector<int> beg, std::vector<int> end);
 
@@ -58,7 +57,6 @@ IterativeSolver<T>::IterativeSolver(T &op, real error, int maxiter,
   this->end = end;
   this->ntot = ntot;
   this->restart = false;
-  this->parent = p;
   this->currentError = 0;
   this->res = IdefixArray3D<real> ("Residual", this->ntot[KDIR],
                                               this->ntot[JDIR],
@@ -255,8 +253,8 @@ void IterativeSolver<T>::SetRes() {
   IdefixArray3D<real> solution = this->solution;
   IdefixArray3D<real> res = this->res;
 
-  // Computing laplacian
-  (parent->*myFunc)(solution, res); // We store function output in res to spare workRes array
+  // Computing operator
+  this->linearOperator(solution, res); // We store function output in res to spare workRes array
 
   int ibeg, iend, jbeg, jend, kbeg, kend;
   ibeg = this->beg[IDIR];

@@ -26,10 +26,8 @@ class DataBlock;
 
 class SelfGravity {
  public:
-
   enum GravitySolver {JACOBI, BICGSTAB, PBICGSTAB, PCG, CG, PMINRES, MINRES};
 
-  SelfGravity();  // Default (empty) constructor
   void Init(Input &, DataBlock *);  // Initialisation of the class attributes
   void ShowConfig();                // display current configuration
   void InitSolver(); // (Re)initialisation of the solver for a given density distribution
@@ -38,6 +36,8 @@ class SelfGravity {
 
   void SolvePoisson(); // Solve Poisson equation
   void AddSelfGravityPotential(IdefixArray3D<real> &);
+
+  void EnrollUserDefBoundary(Laplacian::UserDefBoundaryFunc myFunc);  // User-defined boundary
 
   IterativeSolver<Laplacian> *iterativeSolver;
 
@@ -65,13 +65,15 @@ class SelfGravity {
   IdefixArray3D<real> potential;  // Gravitational potential
   IdefixArray3D<real> density;  // Density
   real dt;  // CFL timestep
-  
+
   // Local potential array size
   std::vector<int> np_tot;
 
   std::array<Laplacian::LaplacianBoundaryType,3> lbound;  // Boundary condition to the left
   std::array<Laplacian::LaplacianBoundaryType,3> rbound;  // Boundary condition to the right
 
+  bool isPeriodic;
+  bool havePreconditioner{false};
   GravitySolver solver; // The solver  used to solve Poisson
 };
 

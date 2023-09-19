@@ -14,11 +14,11 @@
 #include "dataBlock.hpp"
 
 
-Laplacian::Laplacian(DataBlock &datain, std::array<LaplacianBoundaryType,3> leftBound, 
+Laplacian::Laplacian(DataBlock *datain, std::array<LaplacianBoundaryType,3> leftBound,
                                         std::array<LaplacianBoundaryType,3> rightBound,
                                         bool havePreconditionnerIn) {
   // Save the parents data objects
-  this->data = &datain;
+  this->data = datain;
   this->havePreconditioner = havePreconditionnerIn;
 
   // init the grid elements using the parent datablock
@@ -36,11 +36,11 @@ Laplacian::Laplacian(DataBlock &datain, std::array<LaplacianBoundaryType,3> left
   this->roffset = std::vector<int>(3,0);
 
   this->lbound = leftBound;
-  this->rBound = rightBound;
+  this->rbound = rightBound;
 
   isPeriodic = true;
   for(int dir = 0 ; dir < 3 ; dir++) {
-    if(lbound[dir] != LaplacianBoundaryType::periodic && 
+    if(lbound[dir] != LaplacianBoundaryType::periodic &&
        lbound[dir] != LaplacianBoundaryType::internalgrav) isPeriodic = false;
     if(rbound[dir] != LaplacianBoundaryType::periodic &&
        rbound[dir] != LaplacianBoundaryType::internalgrav) isPeriodic = false;
@@ -56,7 +56,7 @@ Laplacian::Laplacian(DataBlock &datain, std::array<LaplacianBoundaryType,3> left
     #ifdef WITH_MPI
       // Check that there is no domain decomposition in phi
       if(data->mygrid->nproc[KDIR]>1) {
-        IDEFIX_ERROR("SelfGravity:: Axis boundaries are not compatible with "
+        IDEFIX_ERROR("Laplacian:: Axis boundaries are not compatible with "
                      "MPI domain decomposition in X3");
       }
     #endif
@@ -87,12 +87,10 @@ Laplacian::Laplacian(DataBlock &datain, std::array<LaplacianBoundaryType,3> left
   }
   // Initialise the Laplacian coefficients
   PreComputeLaplacian();
-
-
 }
 
 void Laplacian::InitInternalGrid() {
-  idfx::pushRegion("SelfGravity::InitInternalGrid");
+  idfx::pushRegion("Laplacian::InitInternalGrid");
   // Extend the grid so that the inner radius will be 1/10 of the initial inner radius
   GridHost gh(*data->mygrid);
   gh.SyncFromDevice();
@@ -222,7 +220,7 @@ void Laplacian::InitInternalGrid() {
 }
 
 void Laplacian::InitPreconditionner() {
-  idfx::pushRegion("SelfGravity::InitPreconditioner");
+  idfx::pushRegion("Laplacian::InitPreconditioner");
   IdefixArray3D<real> P = IdefixArray3D<real> ("Preconditionner", this->np_tot[KDIR],
                                                                   this->np_tot[JDIR],
                                                                   this->np_tot[IDIR]);
@@ -305,24 +303,24 @@ void Laplacian::InitPreconditionner() {
   idfx::popRegion();
 }
 
-void SelfGravity::PreComputeLaplacian() {
-  idfx::pushRegion("SelfGravity::PreComputeLaplacian");
-   // Precompute Laplacian Factor
+void Laplacian::PreComputeLaplacian() {
+  idfx::pushRegion("Laplacian::PreComputeLaplacian");
+  // Precompute Laplacian Factor
 
   // Allocate Laplacian factors
-  this->Lx1 = IdefixArray4D<real>("SelfGravity_Lx1",2, 
-                                                    this->np_tot[KDIR], 
+  this->Lx1 = IdefixArray4D<real>("SelfGravity_Lx1",2,
+                                                    this->np_tot[KDIR],
                                                     this->np_tot[JDIR],
                                                     this->np_tot[IDIR]);
   #if DIMENSIONS > 1
-    this->Lx2 = IdefixArray4D<real>("SelfGravity_Lx2",2, 
-                                                      this->np_tot[KDIR], 
+    this->Lx2 = IdefixArray4D<real>("SelfGravity_Lx2",2,
+                                                      this->np_tot[KDIR],
                                                       this->np_tot[JDIR],
                                                       this->np_tot[IDIR]);
 
     #if DIMENSIONS > 2
-      this->Lx3 = IdefixArray4D<real>("SelfGravity_Lx3",2, 
-                                                        this->np_tot[KDIR], 
+      this->Lx3 = IdefixArray4D<real>("SelfGravity_Lx3",2,
+                                                        this->np_tot[KDIR],
                                                         this->np_tot[JDIR],
                                                         this->np_tot[IDIR]);
     #endif
@@ -394,14 +392,13 @@ void SelfGravity::PreComputeLaplacian() {
           }
         #endif
       #endif
-      
     });
   idfx::popRegion();
 }
 
 
-void SelfGravity::operator()(IdefixArray3D<real> array, IdefixArray3D<real> laplacian) {
-  idfx::pushRegion("SelfGravity::ComputeLaplacian");
+void Laplacian::operator()(IdefixArray3D<real> array, IdefixArray3D<real> laplacian) {
+  idfx::pushRegion("Laplacian::ComputeLaplacian");
 
   int ibeg, iend, jbeg, jend, kbeg, kend;
   ibeg = this->beg[IDIR];
@@ -453,7 +450,7 @@ void SelfGravity::operator()(IdefixArray3D<real> array, IdefixArray3D<real> lapl
 
 void Laplacian::EnforceBoundary(int dir, BoundarySide side, LaplacianBoundaryType type,
                                   IdefixArray3D<real> &arr) {
-  idfx::pushRegion("SelfGravity::EnforceBoundary");
+  idfx::pushRegion("Laplacian::EnforceBoundary");
 
   IdefixArray3D<real> localVar = arr;
 
@@ -512,7 +509,7 @@ void Laplacian::EnforceBoundary(int dir, BoundarySide side, LaplacianBoundaryTyp
         // specifies the array for which boundaries are to be handled
         this->userDefBoundaryFunc(*data, dir, side, data->t, arr);
       } else {
-        IDEFIX_ERROR("SelfGravity:: No function enrolled to define your own boundary conditions");
+        IDEFIX_ERROR("Laplacian:: No function enrolled to define your own boundary conditions");
       }
       break;
     }
@@ -601,7 +598,7 @@ void Laplacian::EnforceBoundary(int dir, BoundarySide side, LaplacianBoundaryTyp
     }
 
     default: {
-      std::stringstream msg ("SelfGravity:: Boundary condition type is not yet implemented");
+      std::stringstream msg ("Laplacian:: Boundary condition type is not yet implemented");
       IDEFIX_ERROR(msg);
     }
   }
@@ -647,4 +644,134 @@ void Laplacian::SetBoundaries(IdefixArray3D<real> &arr) {
   }
 
   idfx::popRegion();
+}
+
+real Laplacian::ComputeCFL() {
+  idfx::pushRegion("Laplacian::ComputeCFL");
+
+  int ibeg = this->beg[IDIR];
+  int iend = this->end[IDIR];
+  int jbeg = this->beg[JDIR];
+  int jend = this->end[JDIR];
+  int kbeg = this->beg[KDIR];
+  int kend = this->end[KDIR];
+
+  #if DIMENSIONS == 1
+  IdefixArray1D<real> dx1 = this->dx[IDIR];
+  real dx1min2;
+
+  idefix_reduce("GetMin1",
+                kbeg, kend,
+                jbeg, jend,
+                ibeg, iend,
+                KOKKOS_LAMBDA (int k, int j, int i, real &localMin) {
+                  localMin = std::fmin(dx1(i) * dx1(i), localMin);
+                },
+                Kokkos::Min<real>(dx1min2));
+
+    // Reduction on the whole grid
+    #ifdef WITH_MPI
+    MPI_Allreduce(MPI_IN_PLACE, &dx1min2, 1, realMPI, MPI_MIN, MPI_COMM_WORLD);
+    #endif
+
+  real dtmax = 1. / 2. * dx1min2;
+
+  #elif DIMENSIONS == 2
+  IdefixArray1D<real> dx1 = this->dx[IDIR];
+  IdefixArray1D<real> dx2 = this->dx[JDIR];
+  real dx1min2, dx2min2;
+    #if (GEOMETRY == POLAR || GEOMETRY == SPHERICAL)
+    IdefixArray1D<real> r = this->x[IDIR];
+    #endif
+
+  idefix_reduce("GetMin1",
+                kbeg, kend,
+                jbeg, jend,
+                ibeg, iend,
+                KOKKOS_LAMBDA (int k, int j, int i, real &localMin) {
+                  localMin = std::fmin(dx1(i) * dx1(i), localMin);
+                },
+                Kokkos::Min<real>(dx1min2));
+
+  idefix_reduce("GetMin2",
+                kbeg, kend,
+                jbeg, jend,
+                ibeg, iend,
+                KOKKOS_LAMBDA (int k, int j, int i, real &localMin) {
+                  real dl = dx2(j);
+                  #if (GEOMETRY == POLAR || GEOMETRY == SPHERICAL)
+                  dl = dl * r(i);
+                  #endif
+                  localMin = std::fmin(dl * dl, localMin);
+                },
+                Kokkos::Min<real>(dx2min2));
+
+    // Reduction on the whole grid
+    #ifdef WITH_MPI
+    MPI_Allreduce(MPI_IN_PLACE, &dx1min2, 1, realMPI, MPI_MIN, MPI_COMM_WORLD);
+    MPI_Allreduce(MPI_IN_PLACE, &dx2min2, 1, realMPI, MPI_MIN, MPI_COMM_WORLD);
+    #endif
+
+  real dtmax = 1. / 2. * 1. / ( 1. / dx1min2 + 1. / dx2min2);
+
+  #else
+  IdefixArray1D<real> dx1 = this->dx[IDIR];
+  IdefixArray1D<real> dx2 = this->dx[JDIR];
+  IdefixArray1D<real> dx3 = this->dx[KDIR];
+  real dx1min2, dx2min2, dx3min2;
+    #if GEOMETRY == POLAR
+    IdefixArray1D<real> r = x[IDIR];
+    #elif GEOMETRY == SPHERICAL
+    IdefixArray1D<real> r = x[IDIR];
+    IdefixArray1D<real> sinth = sinx2;
+    #endif
+
+  idefix_reduce("GetMin1",
+                kbeg, kend,
+                jbeg, jend,
+                ibeg, iend,
+                KOKKOS_LAMBDA (int k, int j, int i, real &localMin) {
+                  localMin = std::fmin(dx1(i) * dx1(i), localMin);
+                },
+                Kokkos::Min<real>(dx1min2));
+
+  idefix_reduce("GetMin2",
+                kbeg, kend,
+                jbeg, jend,
+                ibeg, iend,
+                KOKKOS_LAMBDA (int k, int j, int i, real &localMin) {
+                  real dl = dx2(j);
+                  #if (GEOMETRY == POLAR || GEOMETRY == SPHERICAL)
+                  dl = dl * r(i);
+                  #endif
+                  localMin = std::fmin(dl * dl, localMin);
+                },
+                Kokkos::Min<real>(dx2min2));
+
+  idefix_reduce("GetMin3",  // Cylindrical not taken into account as it shouldn't be used in 3D
+                kbeg, kend,
+                jbeg, jend,
+                ibeg, iend,
+                KOKKOS_LAMBDA (int k, int j, int i, real &localMin) {
+                  real dl = dx3(k);
+                  #if GEOMETRY == SPHERICAL
+                  dl = dl * r(i) * sinth(j);
+                  #endif
+                  localMin = std::fmin(dl * dl, localMin);
+                },
+                Kokkos::Min<real>(dx3min2));
+
+    // Reduction on the whole grid
+    #ifdef WITH_MPI
+    MPI_Allreduce(MPI_IN_PLACE, &dx1min2, 1, realMPI, MPI_MIN, MPI_COMM_WORLD);
+    MPI_Allreduce(MPI_IN_PLACE, &dx2min2, 1, realMPI, MPI_MIN, MPI_COMM_WORLD);
+    MPI_Allreduce(MPI_IN_PLACE, &dx3min2, 1, realMPI, MPI_MIN, MPI_COMM_WORLD);
+    #endif
+
+  real dtmax = 1. / 2. * 1. / ( 1. / dx1min2 + 1. / dx2min2 + 1. / dx3min2);
+  #endif
+
+  idfx::popRegion();
+
+  return(0.95 * dtmax); // Taking a percentage to avoid dt=dtmax leading to a breakup
 }

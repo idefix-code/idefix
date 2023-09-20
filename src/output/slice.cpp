@@ -12,8 +12,9 @@
 #include "dataBlock.hpp"
 #include "fluid.hpp"
 #include "vtk.hpp"
+#include "input.hpp"
 
-Slice::Slice(DataBlock & data, int nSlice, SliceType type, int direction, real x0, real period) {
+Slice::Slice(Input &input, DataBlock & data, int nSlice, SliceType type, int direction, real x0, real period) {
   idfx::pushRegion("Slice::Slice");
   std::string prefix = "slice"+std::to_string(nSlice);
   this->slicePeriod = period;
@@ -31,7 +32,7 @@ Slice::Slice(DataBlock & data, int nSlice, SliceType type, int direction, real x
                      && (data.xend[direction] >= x0);
 
   // Initialize the vtk routines
-  this->vtk = std::make_unique<Vtk>(sliceData.get(),prefix);
+  this->vtk = std::make_unique<Vtk>(input, sliceData.get(),prefix);
 
   // Allocate array to compute the slice
   this->Vc = IdefixArray4D<real>("Slice_Vc", NVAR,

@@ -113,7 +113,7 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
   this->dump = std::make_unique<Dump>(input, this);
 
   // Initialize the VTK object
-  this->vtk = std::make_unique<Vtk>(this, "data");
+  this->vtk = std::make_unique<Vtk>(input, this, "data");
 
   // Init XDMF objects for HDF5 outputs
   #ifdef WITH_HDF5

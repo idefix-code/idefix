@@ -7,6 +7,8 @@
 
 #include <filesystem>
 #include "output.hpp"
+#include "dataBlock.hpp"
+#include "fluid.hpp"
 #include "slice.hpp"
 
 Output::Output(Input &input, DataBlock &data) {
@@ -43,7 +45,7 @@ Output::Output(Input &input, DataBlock &data) {
       } else {
         IDEFIX_ERROR("Unknown slice type "+typeStr);
       }
-      slices.emplace_back(std::make_unique<Slice>(data, n, type, direction, x0, period));
+      slices.emplace_back(std::make_unique<Slice>(input, data, n, type, direction, x0, period));
       // Next iteration
       n++;
     }

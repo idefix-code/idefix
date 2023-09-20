@@ -115,7 +115,7 @@ class Vtk : public BaseVtk {
   friend class Dump;
 
  public:
-  explicit Vtk(DataBlock *, std::string filebase = "data");   // init VTK object
+  explicit Vtk(Input &, DataBlock *, std::string filebase = "data");   // init VTK object
   int Write();     // Create a VTK from the current DataBlock
 
   template<typename T>

@@ -12,6 +12,7 @@
 #include <memory>
 #include "idefix.hpp"
 #include "dataBlock.hpp"
+#include "input.hpp"
 
 class Grid;
 class SubGrid;
@@ -20,7 +21,7 @@ class Vtk;
 
 class Slice {
  public:
-  Slice(DataBlock &, int, SliceType, int, real, real);
+  Slice(Input &, DataBlock &, int, SliceType, int, real, real);
   void CheckForWrite(DataBlock &);
   real slicePeriod = 0.0;
   real sliceLast = 0.0;

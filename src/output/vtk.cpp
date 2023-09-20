@@ -250,14 +250,14 @@ int Vtk::Write() {
   IdfxFileHandler fileHdl;
   std::filesystem::path filename;
 
-  idfx::cout << "Vtk: Write file " << filename << "..." << std::flush;
-
   timer.reset();
 
   std::stringstream ssfileName, ssvtkFileNum;
   ssvtkFileNum << std::setfill('0') << std::setw(4) << vtkFileNumber;
   ssfileName << filebase << "." << ssvtkFileNum.str() << ".vtk";
   filename = outputDirectory/ssfileName.str();
+
+  idfx::cout << "Vtk: Write file " << ssfileName.str() << "..." << std::flush;
 
   // Check if file exists, if yes, delete it
   if(this->isRoot) {
@@ -269,9 +269,9 @@ int Vtk::Write() {
 
   // Open file and write header
 #ifdef WITH_MPI
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(this->comm);
   // Open file for creating, return error if file already exists.
-  MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
+  MPI_SAFE_CALL(MPI_File_open(this->comm, filename.c_str(),
                               MPI_MODE_CREATE | MPI_MODE_RDWR
                               | MPI_MODE_EXCL | MPI_MODE_UNIQUE_OPEN,
                               MPI_INFO_NULL, &fileHdl));

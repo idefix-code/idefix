@@ -40,6 +40,10 @@ Several options can be enabled from the command line (or are accessible with ``c
     Enable debug options in *Idefix*. This triggers a lot of outputs, and automatic bound checks of array accesses. As a result, this
     option makes the code very slow.
 
+``-D Idefix_RUNTIME_CHECKS=ON``
+    Include (potentially expensive) runtime sanity checks implemented with ``RUNTIME_CHECK_HOST`` and ``RUNTIME_CHECK_KERNEL``.
+    See :ref:`defensiveProgramming`.
+
 ``-D Idefix_HDF5=ON``
     Enable HDF5 outputs. Requires the HDF5 library on the target system. Required for *Idefix* XDMF outputs.
 

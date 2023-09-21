@@ -567,6 +567,79 @@ by setting the environement variable ``KOKKOS_TOOLS_LIBS`` to the tool path, for
   export KOKKOS_TOOLS_LIBS=<kokkos-tools-bin>/profiling/space-time-stack/libkp_space_time_stack.so
 
 
+.. _defensiveProgramming::
+
+Defensive Programming
+~~~~~~~~~~~~~~~~~~~~~
+
+``idefix.hpp`` defines useful function-like macros to program defensively and create
+informative error messages and warnings.
+
+First and foremost, ``IDEFIX_ERROR`` and ``IDEFIX_WARNING`` can be used in host space.
+
+.. code-block:: c++
+
+  #include "idefix.hpp"
+
+  #ifdef HAVE_ENERGY
+  IDEFIX_WARNING("This setup is not tested with HAVE_ENERGY defined");
+  #endif
+
+  real boxSize {-1};
+
+  // ... determine boxSize at runtime from parameter file
+
+  if(boxSize<1e-5) {
+    IDEFIX_ERROR("This setup requires a minimal box size of 1e-5");
+  }
+
+
+``idefix.hpp`` also defines the more advanced ``RUNTIME_CHECK_HOST`` and
+``RUNTIME_CHECK_KERNEL`` macros, which are useful to define arbitrary sanity checks at
+runtime in host space and within kernels respectively, together with a nicely formatted
+error message.
+
+Both macros take a condition (a boolean expression that *should* evaluate to ``true`` at
+runtime), and an error message. Additional arguments may be supplemented to the error
+message using string interpolation. Note however that this only works on CPU, so
+``RUNTIME_CHECK_KERNEL`` also expects a default error message that'll be used when
+running on GPUs.
+
+As an illustrative example, here's how they can be used to verify some assumptions at
+runtime.
+
+.. code-block:: c++
+
+  #include "idefix.hpp"
+
+  const int MAX_NPARTICLES = 1024;
+  const int NPARTICLES = 128;
+  const real lightSpeed = 1.0;
+  auto particleSpeed = IdefixArray1D<real>("particleSpeed", NPARTICLES);
+
+  RUNTIME_CHECK_HOST(
+    NPARTICLES<=MAX_NPARTICLES,
+    "The number of particles requested (%i) is too high (max is %i)",
+    NPARTICLES, MAX_NPARTICLES
+  );
+
+  idefix_for("check particle speeds",
+    0, NPARTICLES,
+    KOKKOS_LAMBDA(int idx) {
+      RUNTIME_CHECK_KERNEL(
+        particleSpeed(idx) < lightSpeed,
+        "Speeding particle(s) detected !", // this default error message is used on GPUs
+        "Particle at index %i has speed %.16e, which is greater than light speed (%.16e)",
+        idx, particleSpeed(idx), lightSpeed
+      );
+    }
+  );
+
+
+``RUNTIME_CHECK_HOST`` and ``RUNTIME_CHECK_KERNEL`` are considered debug-only tools, so
+are by default excluded at compilation, and do not impact performance in production.
+To enable them, use the `-D Idefix_RUNTIME_CHECKS=ON` configuration flag.
+
 Minimal skeleton
 ================
 

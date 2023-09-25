@@ -74,12 +74,6 @@ void SelfGravity::Init(Input &input, DataBlock *datain) {
       if(dir != IDIR) {
         IDEFIX_ERROR("Origin boundary conditions are meaningful only on the X1 direction");
       }
-      #ifdef WITH_MPI
-        // create communicator for spherical radius
-        int remainDims[3] = {false, true, true};
-        MPI_SAFE_CALL(MPI_Cart_sub(data->mygrid->CartComm, remainDims, &originComm));
-      #endif
-
     } else {
       std::stringstream msg;
       msg << "SelfGravity:: Unknown boundary type " << boundary;
@@ -116,11 +110,11 @@ void SelfGravity::Init(Input &input, DataBlock *datain) {
   #ifdef WITH_MPI
   for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
     if(data->mygrid->nproc[dir]>1) {
-      if(this->data->lbound[dir]==internal) {
-        this->lbound[dir] = internalgrav;
+      if(this->data->lbound[dir]==internal ) {
+        this->lbound[dir] = Laplacian::internalgrav;
       }
       if(this->data->rbound[dir]==internal) {
-        this->rbound[dir] = internalgrav;
+        this->rbound[dir] = Laplacian::internalgrav;
       }
     }
   }

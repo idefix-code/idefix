@@ -46,6 +46,15 @@ Laplacian::Laplacian(DataBlock *datain, std::array<LaplacianBoundaryType,3> left
        rbound[dir] != LaplacianBoundaryType::internalgrav) isPeriodic = false;
   }
 
+  #ifdef WITH_MPI
+    if(lbound[IDIR] == origin) {
+      // create communicator for spherical radius
+      int remainDims[3] = {false, true, true};
+      MPI_SAFE_CALL(MPI_Cart_sub(data->mygrid->CartComm, remainDims, &originComm));
+    }
+  #endif
+
+
   #if GEOMETRY == SPHERICAL
     if ((this->rbound[JDIR]==axis) || (this->lbound[JDIR]==axis)) {
       // Check wether the x3 spherical axis is full two pi

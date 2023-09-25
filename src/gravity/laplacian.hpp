@@ -89,6 +89,9 @@ class Laplacian {
   #ifdef WITH_MPI
   Mpi mpi;  // Mpi object when WITH_MPI is set
   IdefixArray4D<real> arr4D; // Intermediate array for boundary handling
+
+  MPI_Comm originComm;                  ///< MPI communicator used by the origin boundary condition
+
   #endif
 };
 

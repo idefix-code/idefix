@@ -94,14 +94,14 @@ void Slice::CheckForWrite(DataBlock &data) {
       int beg = data.beg[direction];
       int end = data.end[direction];
       int ntot = data.mygrid->np_int[direction];
-
+      const int dir = direction;
       idefix_for("average",0,NVAR,data.beg[KDIR],data.end[KDIR],
                                   data.beg[JDIR],data.end[JDIR],
                                   data.beg[IDIR],data.end[IDIR],
                   KOKKOS_LAMBDA(int n,int k,int j, int i) {
-                    const int it = (direction == IDIR ? 0 : i);
-                    const int jt = (direction == JDIR ? 0 : j);
-                    const int kt = (direction == KDIR ? 0 : k);
+                    const int it = (dir == IDIR ? 0 : i);
+                    const int jt = (dir == JDIR ? 0 : j);
+                    const int kt = (dir == KDIR ? 0 : k);
 
                     Kokkos::atomic_add(&Vcout(n,kt,jt,it) , Vcin(n,k,j,i)/ntot);
                   });

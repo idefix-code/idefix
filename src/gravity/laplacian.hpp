@@ -10,6 +10,9 @@
 
 #include <vector>
 #include "idefix.hpp"
+#ifdef WITH_MPI
+#include "mpi.hpp"
+#endif
 
 class DataBlock;
 

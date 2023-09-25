@@ -380,7 +380,7 @@ void Laplacian::PreComputeLaplacian() {
       // i-1 coefficient
       Lx1(0,k,j,i) = 2.0 * Ax1(k, j, i) / h1 / (dx1(i) + dx1(i-1)) / dV(k,j,i);
       // i+1 coefficient
-      Lx1(1,k,j,i) = 2.0 * Ax1(k, j, i+1) / h1 / (dx1(i+1) + dx1(1)) / dV(k,j,i);
+      Lx1(1,k,j,i) = 2.0 * Ax1(k, j, i+1) / h1 / (dx1(i+1) + dx1(i)) / dV(k,j,i);
       if(havePreconditioner) {
         Lx1(0,k,j,i) /= P(k,j,i);
         Lx1(1,k,j,i) /= P(k,j,i);

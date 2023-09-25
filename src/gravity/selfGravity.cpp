@@ -285,6 +285,19 @@ void SelfGravity::InitSolver() {
       density(k+koffset, j+joffset, i+ioffset) = Vc(RHO, k, j, i);
     });
 
+  // Make sure that dust mass contributes to the self-gravitating field
+  if(data->haveDust) {
+    for(int i = 0 ; i < data->dust.size() ; i++) {
+      IdefixArray4D<real> VcDust = data->dust[i]->Vc;
+      idefix_for("InitDustDensity", data->beg[KDIR], data->end[KDIR],
+                                    data->beg[JDIR], data->end[JDIR],
+                                    data->beg[IDIR], data->end[IDIR],
+        KOKKOS_LAMBDA (int k, int j, int i) {
+          density(k+koffset, j+joffset, i+ioffset) += VcDust(RHO, k, j, i);
+      });
+    }
+  }
+
   // Deal with the mean issue for periodic density distribution
   if(this->isPeriodic == true) {
     SubstractMeanDensity();  // Remove density mean

@@ -12,9 +12,9 @@
 #include "dataBlock.hpp"
 #include "fluid.hpp"
 #include "vtk.hpp"
-#include "input.hpp"
 
-Slice::Slice(Input &input, DataBlock & data, int nSlice, SliceType type, int direction, real x0, real period) {
+Slice::Slice(Input &input, DataBlock & data, int nSlice, SliceType type,
+             int direction, real x0, real period) {
   idfx::pushRegion("Slice::Slice");
   std::string prefix = "slice"+std::to_string(nSlice);
   this->slicePeriod = period;

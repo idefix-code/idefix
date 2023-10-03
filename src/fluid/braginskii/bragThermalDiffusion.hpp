@@ -15,7 +15,7 @@
 #include "grid.hpp"
 #include "fluid_defs.hpp"
 #include "eos.hpp"
-#include "bragLimiter.hpp"
+#include "slopeLimiter.hpp"
 
 // Forward class hydro declaration
 template <typename Phys> class Fluid;
@@ -31,7 +31,7 @@ class BragThermalDiffusion {
 
   void AddBragDiffusiveFlux(int, const real, const IdefixArray4D<real> &);
 
-  template<const Limiter>
+  template<const PLMLimiter>
   void AddBragDiffusiveFluxLim(int, const real, const IdefixArray4D<real> &);
 
   // Enroll user-defined thermal conductivity
@@ -65,7 +65,7 @@ class BragThermalDiffusion {
   // equation of state (required to get the heat capacity)
   EquationOfState *eos;
 
-  Limiter limiter{Limiter::VanLeer};
+  PLMLimiter limiter{PLMLimiter::VanLeer};
 };
 
 #include "fluid.hpp"
@@ -84,16 +84,16 @@ BragThermalDiffusion::BragThermalDiffusion(Input &input, Grid &grid, Fluid<Phys>
   if(input.CheckEntry("Hydro","bragTDiffusion")>=0) {
     if(input.Get<std::string>("Hydro","bragTDiffusion",1).compare("mc") == 0) {
       this->haveSlopeLimiter = true;
-      limiter = Limiter::McLim;
+      limiter = PLMLimiter::McLim;
     } else if(input.Get<std::string>("Hydro","bragTDiffusion",1).compare("vanleer") == 0) {
       this->haveSlopeLimiter = true;
-      limiter = Limiter::VanLeer;
+      limiter = PLMLimiter::VanLeer;
     } else if(input.Get<std::string>("Hydro","bragTDiffusion",1).compare("minmod") == 0) {
       IDEFIX_ERROR("The minmod slope limiter is not available because it has been "
                    "found to be too diffusive.");
     } else if(input.Get<std::string>("Hydro","bragTDiffusion",1).compare("nolimiter") == 0) {
       this->haveSlopeLimiter = false;
-//      limiter = Limiter::VanLeer;
+//      limiter = PLMLimiter::VanLeer;
     } else {
       IDEFIX_ERROR("Unknown braginskii thermal diffusion limiter in idefix.ini. "
                    "Can only be vanleer, mc or nolimiter.");
@@ -198,7 +198,7 @@ BragThermalDiffusion::BragThermalDiffusion(Input &input, Grid &grid, Fluid<Phys>
 
 
 // (this avoids an extra array)
-template <Limiter limTemplate>
+template <PLMLimiter limTemplate>
 void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
                                                 const IdefixArray4D<real> &Flux) {
   idfx::pushRegion("BragThermalDiffusion::AddBragDiffusiveFluxLim");
@@ -210,7 +210,7 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
 
   HydroModuleStatus haveThermalDiffusion = this->status.status;
   bool haveSlopeLimiter = this->haveSlopeLimiter;
-  using SL = BragLimiter<limTemplate>;
+  using SL = SlopeLimiter<limTemplate>;
 
   int ibeg, iend, jbeg, jend, kbeg, kend;
   ibeg = this->data->beg[IDIR];
@@ -301,20 +301,20 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
           dTi = D_DX_I_T(Vc)/dx1(i);
           #if DIMENSIONS >= 2
             if (haveSlopeLimiter) {
-              dTj = SL::Lim(SL_DY_T(Vc,k,j,i-1)/dx2(j),
+              dTj = SL::PLMLim(SL_DY_T(Vc,k,j,i-1)/dx2(j),
                                  SL_DY_T(Vc,k,j+1,i-1)/dx2(j+1));
-              dTj = SL::Lim(dTj,
-                                 SL::Lim(SL_DY_T(Vc,k,j,i)/dx2(j),
+              dTj = SL::PLMLim(dTj,
+                                 SL::PLMLim(SL_DY_T(Vc,k,j,i)/dx2(j),
                                               SL_DY_T(Vc,k,j+1,i)/dx2(j+1)));
             } else {
               dTj = D_DY_I_T(Vc)/dx2(j);
             }
             #if DIMENSIONS == 3
               if (haveSlopeLimiter) {
-                dTk = SL::Lim(SL_DZ_T(Vc,k,j,i-1)/dx3(k),
+                dTk = SL::PLMLim(SL_DZ_T(Vc,k,j,i-1)/dx3(k),
                                    SL_DZ_T(Vc,k+1,j,i-1)/dx3(k+1));
-                dTk = SL::Lim(dTk,
-                                   SL::Lim(SL_DZ_T(Vc,k,j,i)/dx3(k),
+                dTk = SL::PLMLim(dTk,
+                                   SL::PLMLim(SL_DZ_T(Vc,k,j,i)/dx3(k),
                                                 SL_DZ_T(Vc,k+1,j,i)/dx3(k+1)));
               } else {
                 dTk = D_DZ_I_T(Vc)/dx3(k);
@@ -325,10 +325,10 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
           dTi = D_DX_I_T(Vc)/dx1(i);
           #if DIMENSIONS >= 2
             if (haveSlopeLimiter) {
-              dTj = SL::Lim(SL_DY_T(Vc,k,j,i-1)/dx2(j),
+              dTj = SL::PLMLim(SL_DY_T(Vc,k,j,i-1)/dx2(j),
                                  SL_DY_T(Vc,k,j+1,i-1)/dx2(j+1));
-              dTj = SL::Lim(dTj,
-                                 SL::Lim(SL_DY_T(Vc,k,j,i)/dx2(j),
+              dTj = SL::PLMLim(dTj,
+                                 SL::PLMLim(SL_DY_T(Vc,k,j,i)/dx2(j),
                                               SL_DY_T(Vc,k,j+1,i)/dx2(j+1)));
             } else {
               dTj = D_DY_I_T(Vc)/dx2(j);
@@ -339,20 +339,20 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
           dTi = D_DX_I_T(Vc)/dx1(i);
           #if DIMENSIONS >= 2
             if (haveSlopeLimiter) {
-              dTj = 1./x1(i-1)*SL::Lim(SL_DY_T(Vc,k,j,i-1)/dx2(j),
+              dTj = 1./x1(i-1)*SL::PLMLim(SL_DY_T(Vc,k,j,i-1)/dx2(j),
                                             SL_DY_T(Vc,k,j+1,i-1)/dx2(j+1));
-              dTj = SL::Lim(dTj,
-                                 1./x1(i)*SL::Lim(SL_DY_T(Vc,k,j,i)/dx2(j),
+              dTj = SL::PLMLim(dTj,
+                                 1./x1(i)*SL::PLMLim(SL_DY_T(Vc,k,j,i)/dx2(j),
                                                        SL_DY_T(Vc,k,j+1,i)/dx2(j+1)));
             } else {
               dTj = 1./x1l(i)*D_DY_I_T(Vc)/dx2(j); // 1/r dTj/dxj
             }
             #if DIMENSIONS == 3
               if (haveSlopeLimiter) {
-                dTk = SL::Lim(SL_DZ_T(Vc,k,j,i-1)/dx3(k),
+                dTk = SL::PLMLim(SL_DZ_T(Vc,k,j,i-1)/dx3(k),
                                    SL_DZ_T(Vc,k+1,j,i-1)/dx3(k+1));
-                dTk = SL::Lim(dTk,
-                                   SL::Lim(SL_DZ_T(Vc,k,j,i)/dx3(k),
+                dTk = SL::PLMLim(dTk,
+                                   SL::PLMLim(SL_DZ_T(Vc,k,j,i)/dx3(k),
                                                 SL_DZ_T(Vc,k+1,j,i)/dx3(k+1)));
               } else {
                 dTk = D_DZ_I_T(Vc)/dx3(k);
@@ -372,20 +372,20 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
           dTi = D_DX_I_T(Vc)/dx1(i);
           #if DIMENSIONS >= 2
             if (haveSlopeLimiter) {
-              dTj = 1./x1(i-1)*SL::Lim(SL_DY_T(Vc,k,j,i-1)/dx2(j),
+              dTj = 1./x1(i-1)*SL::PLMLim(SL_DY_T(Vc,k,j,i-1)/dx2(j),
                                             SL_DY_T(Vc,k,j+1,i-1)/dx2(j+1));
-              dTj = SL::Lim(dTj,
-                    1./x1(i)*SL::Lim(SL_DY_T(Vc,k,j,i)/dx2(j),
+              dTj = SL::PLMLim(dTj,
+                    1./x1(i)*SL::PLMLim(SL_DY_T(Vc,k,j,i)/dx2(j),
                                           SL_DY_T(Vc,k,j+1,i)/dx2(j+1)));
             } else {
               dTj = 1./x1l(i)*D_DY_I_T(Vc)/dx2(j); // 1/r dTj/dxj
             }
             #if DIMENSIONS == 3
               if (haveSlopeLimiter) {
-                dTk = s_1/x1(i-1)*SL::Lim(SL_DZ_T(Vc,k,j,i-1)/dx3(k),
+                dTk = s_1/x1(i-1)*SL::PLMLim(SL_DZ_T(Vc,k,j,i-1)/dx3(k),
                                                SL_DZ_T(Vc,k+1,j,i-1)/dx3(k+1));
-                dTk = SL::Lim(dTk,
-                                   s_1/x1(i)*SL::Lim(SL_DZ_T(Vc,k,j,i)/dx3(k),
+                dTk = SL::PLMLim(dTk,
+                                   s_1/x1(i)*SL::PLMLim(SL_DZ_T(Vc,k,j,i)/dx3(k),
                                                           SL_DZ_T(Vc,k+1,j,i)/dx3(k+1)));
               } else {
                 dTk = s_1/x1l(i)*D_DZ_I_T(Vc)/dx3(k);
@@ -423,10 +423,10 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
 
         #if GEOMETRY == CARTESIAN
           if (haveSlopeLimiter) {
-            dTi = SL::Lim(SL_DX_T(Vc,k,j-1,i)/dx1(i),
+            dTi = SL::PLMLim(SL_DX_T(Vc,k,j-1,i)/dx1(i),
                               SL_DX_T(Vc,k,j-1,i+1)/dx1(i+1));
-            dTi = SL::Lim(dTi,
-                               SL::Lim(SL_DX_T(Vc,k,j,i)/dx1(i),
+            dTi = SL::PLMLim(dTi,
+                               SL::PLMLim(SL_DX_T(Vc,k,j,i)/dx1(i),
                                             SL_DX_T(Vc,k,j,i+1)/dx1(i+1)));
           } else {
             dTi = D_DX_J_T(Vc)/dx1(i);
@@ -434,10 +434,10 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
           dTj = D_DY_J_T(Vc)/dx2(j);
           #if DIMENSIONS == 3
             if (haveSlopeLimiter) {
-              dTk = SL::Lim(SL_DX_T(Vc,k,j-1,i)/dx3(k),
+              dTk = SL::PLMLim(SL_DX_T(Vc,k,j-1,i)/dx3(k),
                                  SL_DX_T(Vc,k+1,j-1,i)/dx3(k+1));
-              dTk = SL::Lim(dTk,
-                                 SL::Lim(SL_DX_T(Vc,k,j,i)/dx3(k),
+              dTk = SL::PLMLim(dTk,
+                                 SL::PLMLim(SL_DX_T(Vc,k,j,i)/dx3(k),
                                               SL_DX_T(Vc,k+1,j,i)/dx3(k+1)));
             } else {
               dTk = D_DZ_J_T(Vc)/dx3(k);
@@ -445,10 +445,10 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
           #endif
         #elif GEOMETRY == CYLINDRICAL
           if (haveSlopeLimiter) {
-            dTi = SL::Lim(SL_DX_T(Vc,k,j-1,i)/dx1(i),
+            dTi = SL::PLMLim(SL_DX_T(Vc,k,j-1,i)/dx1(i),
                                SL_DX_T(Vc,k,j-1,i+1)/dx1(i+1));
-            dTi = SL::Lim(dTi,
-                               SL::Lim(SL_DX_T(Vc,k,j,i)/dx1(i),
+            dTi = SL::PLMLim(dTi,
+                               SL::PLMLim(SL_DX_T(Vc,k,j,i)/dx1(i),
                                             SL_DX_T(Vc,k,j,i+1)/dx1(i+1)));
           } else {
             dTi = D_DX_J_T(Vc)/dx1(i);
@@ -458,10 +458,10 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
         #elif GEOMETRY == POLAR
           //gradT = ... + 1/r dT/dtheta + ...
           if (haveSlopeLimiter) {
-            dTi = SL::Lim(SL_DX_T(Vc,k,j-1,i)/dx1(i),
+            dTi = SL::PLMLim(SL_DX_T(Vc,k,j-1,i)/dx1(i),
                                SL_DX_T(Vc,k,j-1,i+1)/dx1(i+1));
-            dTi = SL::Lim(dTi,
-                               SL::Lim(SL_DX_T(Vc,k,j,i)/dx1(i),
+            dTi = SL::PLMLim(dTi,
+                               SL::PLMLim(SL_DX_T(Vc,k,j,i)/dx1(i),
                                             SL_DX_T(Vc,k,j,i+1)/dx1(i+1)));
           } else {
             dTi = D_DX_J_T(Vc)/dx1(i);
@@ -469,10 +469,10 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
           dTj = 1./x1(i)*D_DY_J_T(Vc)/dx2(j);
           #if DIMENSIONS == 3
             if (haveSlopeLimiter) {
-              dTk = SL::Lim(SL_DX_T(Vc,k,j-1,i)/dx3(k),
+              dTk = SL::PLMLim(SL_DX_T(Vc,k,j-1,i)/dx3(k),
                                  SL_DX_T(Vc,k+1,j-1,i)/dx3(k+1));
-              dTk = SL::Lim(dTk,
-                                 SL::Lim(SL_DX_T(Vc,k,j,i)/dx3(k),
+              dTk = SL::PLMLim(dTk,
+                                 SL::PLMLim(SL_DX_T(Vc,k,j,i)/dx3(k),
                                               SL_DX_T(Vc,k+1,j,i)/dx3(k+1)));
             } else {
               dTk = D_DZ_J_T(Vc)/dx3(k);
@@ -480,10 +480,10 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
           #endif
         #elif GEOMETRY == SPHERICAL
           if (haveSlopeLimiter) {
-            dTi = SL::Lim(SL_DX_T(Vc,k,j-1,i)/dx1(i),
+            dTi = SL::PLMLim(SL_DX_T(Vc,k,j-1,i)/dx1(i),
                                SL_DX_T(Vc,k,j-1,i+1)/dx1(i+1));
-            dTi = SL::Lim(dTi,
-                               SL::Lim(SL_DX_T(Vc,k,j,i)/dx1(i),
+            dTi = SL::PLMLim(dTi,
+                               SL::PLMLim(SL_DX_T(Vc,k,j,i)/dx1(i),
                                             SL_DX_T(Vc,k,j,i+1)/dx1(i+1)));
           } else {
             dTi = D_DX_J_T(Vc)/dx1(i);
@@ -499,7 +499,7 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
               } else {
                 s_1 = ONE_F/s_1;
               }
-              dTk = s_1/x1(i)*SL::Lim(SL_DX_T(Vc,k,j-1,i)/dx3(k),
+              dTk = s_1/x1(i)*SL::PLMLim(SL_DX_T(Vc,k,j-1,i)/dx3(k),
                                            SL_DX_T(Vc,k+1,j-1,i)/dx3(k+1));
 
               s_1 = sinx2(j);
@@ -510,8 +510,8 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
               } else {
                 s_1 = ONE_F/s_1;
               }
-              dTk = s_1/x1(i)*SL::Lim(dTk,
-                                           SL::Lim(SL_DX_T(Vc,k,j,i)/dx3(k),
+              dTk = s_1/x1(i)*SL::PLMLim(dTk,
+                                           SL::PLMLim(SL_DX_T(Vc,k,j,i)/dx3(k),
                                                         SL_DX_T(Vc,k+1,j,i)/dx3(k+1)));
             } else {
               real s_1 = sinx2m(j);
@@ -556,15 +556,15 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
 
         #if GEOMETRY == CARTESIAN
           if (haveSlopeLimiter) {
-            dTi = SL::Lim(SL_DX_T(Vc,k-1,j,i)/dx1(i),
+            dTi = SL::PLMLim(SL_DX_T(Vc,k-1,j,i)/dx1(i),
                                SL_DX_T(Vc,k-1,j,i+1)/dx1(i+1));
-            dTi = SL::Lim(dTi,
-                               SL::Lim(SL_DX_T(Vc,k,j,i)/dx1(i),
+            dTi = SL::PLMLim(dTi,
+                               SL::PLMLim(SL_DX_T(Vc,k,j,i)/dx1(i),
                                             SL_DX_T(Vc,k,j,i+1)/dx1(i+1)));
-            dTj = SL::Lim(SL_DY_T(Vc,k-1,j,i)/dx2(j),
+            dTj = SL::PLMLim(SL_DY_T(Vc,k-1,j,i)/dx2(j),
                                SL_DY_T(Vc,k-1,j+1,i)/dx2(j+1));
-            dTj = SL::Lim(dTj,
-                               SL::Lim(SL_DY_T(Vc,k,j,i)/dx2(j),
+            dTj = SL::PLMLim(dTj,
+                               SL::PLMLim(SL_DY_T(Vc,k,j,i)/dx2(j),
                                             SL_DY_T(Vc,k,j+1,i)/dx2(j+1)));
           } else {
             dTi = D_DX_K_T(Vc)/dx1(i);
@@ -574,15 +574,15 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
         // No cylindrical geometry in 3D!
         #elif GEOMETRY == POLAR
           if (haveSlopeLimiter) {
-            dTi = SL::Lim(SL_DX_T(Vc,k-1,j,i)/dx1(i),
+            dTi = SL::PLMLim(SL_DX_T(Vc,k-1,j,i)/dx1(i),
                                SL_DX_T(Vc,k-1,j,i+1)/dx1(i+1));
-            dTi = SL::Lim(dTi,
-                               SL::Lim(SL_DX_T(Vc,k,j,i)/dx1(i),
+            dTi = SL::PLMLim(dTi,
+                               SL::PLMLim(SL_DX_T(Vc,k,j,i)/dx1(i),
                                             SL_DX_T(Vc,k,j,i+1)/dx1(i+1)));
-            dTj = SL::Lim(SL_DY_T(Vc,k-1,j,i)/dx2(j),
+            dTj = SL::PLMLim(SL_DY_T(Vc,k-1,j,i)/dx2(j),
                                SL_DY_T(Vc,k-1,j+1,i)/dx2(j+1));
-            dTj = SL::Lim(dTj,
-                               SL::Lim(SL_DY_T(Vc,k,j,i)/dx2(j),
+            dTj = SL::PLMLim(dTj,
+                               SL::PLMLim(SL_DY_T(Vc,k,j,i)/dx2(j),
                                             SL_DY_T(Vc,k,j+1,i)/dx2(j+1)));
             dTj *= 1./x1(i);
           } else {
@@ -601,15 +601,15 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
           }
 
           if (haveSlopeLimiter) {
-            dTi = SL::Lim(SL_DX_T(Vc,k-1,j,i)/dx1(i),
+            dTi = SL::PLMLim(SL_DX_T(Vc,k-1,j,i)/dx1(i),
                                SL_DX_T(Vc,k-1,j,i+1)/dx1(i+1));
-            dTi = SL::Lim(dTi,
-                               SL::Lim(SL_DX_T(Vc,k,j,i)/dx1(i),
+            dTi = SL::PLMLim(dTi,
+                               SL::PLMLim(SL_DX_T(Vc,k,j,i)/dx1(i),
                                             SL_DX_T(Vc,k,j,i+1)/dx1(i+1)));
-            dTj = SL::Lim(SL_DY_T(Vc,k-1,j,i)/dx2(j),
+            dTj = SL::PLMLim(SL_DY_T(Vc,k-1,j,i)/dx2(j),
                                SL_DY_T(Vc,k-1,j+1,i)/dx2(j+1));
-            dTj = SL::Lim(dTj,
-                               SL::Lim(SL_DY_T(Vc,k,j,i)/dx2(j),
+            dTj = SL::PLMLim(dTj,
+                               SL::PLMLim(SL_DY_T(Vc,k,j,i)/dx2(j),
                                             SL_DY_T(Vc,k,j+1,i)/dx2(j+1)));
             dTj *= 1./x1(i);
           } else {

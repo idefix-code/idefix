@@ -9,7 +9,7 @@
 #define FLUID_RIEMANNSOLVER_MHDSOLVERS_HLLDMHD_HPP_
 
 #include "../idefix.hpp"
-#include "slopeLimiter.hpp"
+#include "extrapolateToFaces.hpp"
 #include "flux.hpp"
 #include "convertConsToPrim.hpp"
 #include "storeFlux.hpp"
@@ -73,7 +73,7 @@ void RiemannSolver<Phys>::HlldMHD(IdefixArray4D<real> &Flux) {
 
   EquationOfState eos = *(hydro->eos.get());
 
-  SlopeLimiter<Phys,DIR> slopeLim = *this->GetSlopeLimiter<DIR>();
+  ExtrapolateToFaces<Phys,DIR> extrapol = *this->GetExtrapolator<DIR>();
 
   // st and sb will be useful only when Hall is included
   real st = ONE_F, sb = ONE_F;
@@ -162,7 +162,7 @@ void RiemannSolver<Phys>::HlldMHD(IdefixArray4D<real> &Flux) {
       real vL[Phys::nvar];
       real vR[Phys::nvar];
 
-      slopeLim.ExtrapolatePrimVar(i, j, k, vL, vR);
+      extrapol.ExtrapolatePrimVar(i, j, k, vL, vR);
       vL[BXn] = Vs(DIR,k,j,i);
       vR[BXn] = vL[BXn];
 

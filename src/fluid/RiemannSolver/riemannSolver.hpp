@@ -18,7 +18,7 @@
 template<typename Phys>
 class ShockFlattening;
 
-#include "slopeLimiter.hpp"
+#include "extrapolateToFaces.hpp"
 
 template <typename Phys>
 class RiemannSolver {
@@ -60,11 +60,11 @@ class RiemannSolver {
     void HllDust(IdefixArray4D<real> &);
   // Get the right slope limiter
   template<int dir>
-  SlopeLimiter<Phys, dir>* GetSlopeLimiter();
+  ExtrapolateToFaces<Phys, dir>* GetExtrapolator();
 
  private:
-  template <typename P, int dir, Limiter L, int O>
-  friend class SlopeLimiter;
+  template <typename P, int dir, PLMLimiter L, int O>
+  friend class ExtrapolateToFaces;
 
   IdefixArray4D<real> Vc;
   IdefixArray4D<real> Vs;
@@ -78,9 +78,9 @@ class RiemannSolver {
   std::unique_ptr<ShockFlattening<Phys>> shockFlattening;
 
   // Because each direction is a different template, we can't use
-  std::unique_ptr<SlopeLimiter<Phys,IDIR>> slopeLimIDIR;
-  std::unique_ptr<SlopeLimiter<Phys,JDIR>> slopeLimJDIR;
-  std::unique_ptr<SlopeLimiter<Phys,KDIR>> slopeLimKDIR;
+  std::unique_ptr<ExtrapolateToFaces<Phys,IDIR>> slopeLimIDIR;
+  std::unique_ptr<ExtrapolateToFaces<Phys,JDIR>> slopeLimJDIR;
+  std::unique_ptr<ExtrapolateToFaces<Phys,KDIR>> slopeLimKDIR;
 
   bool haveShockFlattening;
 };
@@ -159,12 +159,12 @@ RiemannSolver<Phys>::RiemannSolver(Input &input, Fluid<Phys>* hydro) : Vc{hydro-
   }
 
   // init slope limiters
-  slopeLimIDIR = std::make_unique<SlopeLimiter<Phys,IDIR>>(this);
+  slopeLimIDIR = std::make_unique<ExtrapolateToFaces<Phys,IDIR>>(this);
   #if DIMENSIONS >= 2
-  slopeLimJDIR = std::make_unique<SlopeLimiter<Phys,JDIR>>(this);
+  slopeLimJDIR = std::make_unique<ExtrapolateToFaces<Phys,JDIR>>(this);
   #endif
   #if DIMENSIONS == 3
-  slopeLimKDIR = std::make_unique<SlopeLimiter<Phys,KDIR>>(this);
+  slopeLimKDIR = std::make_unique<ExtrapolateToFaces<Phys,KDIR>>(this);
   #endif
 }
 
@@ -210,7 +210,7 @@ void RiemannSolver<Phys>::ShowConfig() {
 
 template <typename Phys>
 template<const int dir>
-SlopeLimiter<Phys, dir>* RiemannSolver<Phys>::GetSlopeLimiter() {
+ExtrapolateToFaces<Phys, dir>* RiemannSolver<Phys>::GetExtrapolator() {
   if constexpr(dir==IDIR) {
     return(this->slopeLimIDIR.get());
   } else if constexpr(dir==JDIR) {

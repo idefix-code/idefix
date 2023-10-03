@@ -10,6 +10,7 @@
 
 #include <string>
 #include "idefix.hpp"
+#include "slopeLimiter.hpp"
 
 // Forward class hydro declaration
 template <typename Phys> class Fluid;
@@ -51,7 +52,7 @@ Tracer::Tracer(Fluid<Phys> *fluid, int n) {
   idfx::popRegion();
 }
 
-#include "slopeLimiter.hpp"
+
 // Compute the upwinded flux
 template <int dir, typename Phys>
 void Tracer::CalcFlux(IdefixArray4D<real> &Flux) {
@@ -60,8 +61,6 @@ void Tracer::CalcFlux(IdefixArray4D<real> &Flux) {
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Uc = this->Uc;
   IdefixArray3D<real> A    = data->A[dir];
-
-  SlopeLimiter<Phys,dir> slopeLim(Vc,data->dx[dir],false,NULL); // No shock flattening for scalars
 
   constexpr int ioffset = (dir==IDIR ? 1 : 0);
   constexpr int joffset = (dir==JDIR ? 1 : 0);
@@ -80,7 +79,7 @@ void Tracer::CalcFlux(IdefixArray4D<real> &Flux) {
                   -Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset);
         real dvp = Vc(nv,k,j,i)-Vc(nv,k-koffset,j-joffset,i-ioffset);
 
-        real dv = slopeLim.PLMLim(dvp,dvm);
+        real dv = SlopeLimiter<>::PLMLim(dvp,dvm);
 
         vface = Vc(nv,k-koffset,j-joffset,i-ioffset) + HALF_F*dv;
       } else {
@@ -89,7 +88,7 @@ void Tracer::CalcFlux(IdefixArray4D<real> &Flux) {
                   -Vc(nv,k-koffset,j-joffset,i-ioffset);
         real dvp = Vc(nv,k+koffset,j+joffset,i+ioffset) - Vc(nv,k,j,i);
 
-        real dv = slopeLim.PLMLim(dvp,dvm);
+        real dv = SlopeLimiter<>::PLMLim(dvp,dvm);
 
         vface =  Vc(nv,k,j,i) - HALF_F*dv;
       }

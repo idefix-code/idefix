@@ -10,7 +10,7 @@
 
 #include "../idefix.hpp"
 #include "fluid.hpp"
-#include "slopeLimiter.hpp"
+#include "extrapolateToFaces.hpp"
 #include "flux.hpp"
 #include "convertConsToPrim.hpp"
 
@@ -32,7 +32,7 @@ void RiemannSolver<Phys>::TvdlfHD(IdefixArray4D<real> &Flux) {
   // Required for high order interpolations
   IdefixArray1D<real> dx = this->data->dx[DIR];
 
-  SlopeLimiter<Phys,DIR> slopeLim = *this->GetSlopeLimiter<DIR>();
+  ExtrapolateToFaces<Phys,DIR> extrapol = *this->GetExtrapolator<DIR>();
 
   idefix_for("TVDLF_Kernel",
              data->beg[KDIR],data->end[KDIR]+koffset,
@@ -59,7 +59,7 @@ void RiemannSolver<Phys>::TvdlfHD(IdefixArray4D<real> &Flux) {
       real cRL, cmax;
 
       // 1-- Read primitive variables
-      slopeLim.ExtrapolatePrimVar(i, j, k, vL, vR);
+      extrapol.ExtrapolatePrimVar(i, j, k, vL, vR);
 
 #pragma unroll
       for(int nv = 0 ; nv < Phys::nvar; nv++) {

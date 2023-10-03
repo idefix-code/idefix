@@ -10,7 +10,7 @@
 
 #include "../idefix.hpp"
 #include "fluid.hpp"
-#include "slopeLimiter.hpp"
+#include "extrapolateToFaces.hpp"
 #include "flux.hpp"
 #include "convertConsToPrim.hpp"
 
@@ -30,7 +30,7 @@ void RiemannSolver<Phys>::HllcHD(IdefixArray4D<real> &Flux) {
 
   EquationOfState eos = *(hydro->eos.get());
 
-  SlopeLimiter<Phys,DIR> slopeLim = *this->GetSlopeLimiter<DIR>();
+  ExtrapolateToFaces<Phys,DIR> extrapol = *this->GetExtrapolator<DIR>();
 
   idefix_for("HLLC_Kernel",
              data->beg[KDIR],data->end[KDIR]+koffset,
@@ -58,7 +58,7 @@ void RiemannSolver<Phys>::HllcHD(IdefixArray4D<real> &Flux) {
       real cL, cR, cmax;
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-      slopeLim.ExtrapolatePrimVar(i, j, k, vL, vR);
+      extrapol.ExtrapolatePrimVar(i, j, k, vL, vR);
 
       // 2-- Get the wave speed
       #if HAVE_ENERGY

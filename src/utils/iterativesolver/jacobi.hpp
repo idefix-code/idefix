@@ -13,12 +13,10 @@
 #include "iterativesolver.hpp"
 
 // The jacobi derives from the iterativesolver class
-template <class C>
-class Jacobi : public IterativeSolver<C> {
-  using LinearFunction = void(C::*) (IdefixArray3D<real> in, IdefixArray3D<real> out);
-
+template <class T>
+class Jacobi : public IterativeSolver<T> {
  public:
-  Jacobi(C *parent, LinearFunction func, real error, int maxIter, real step,
+  Jacobi(T &op, real error, int maxIter, real step,
            std::vector<int> ntot, std::vector<int> beg, std::vector<int> end);
 
   int Solve(IdefixArray3D<real> &guess, IdefixArray3D<real> &rhs);
@@ -29,15 +27,15 @@ class Jacobi : public IterativeSolver<C> {
   real dt;
 };
 
-template <class C>
-Jacobi<C>::Jacobi(C *p, LinearFunction f, real error, int maxIter, real step,
+template <class T>
+Jacobi<T>::Jacobi(T &op, real error, int maxIter, real step,
            std::vector<int> ntot, std::vector<int> beg, std::vector<int> end) :
-            IterativeSolver<C>(p, f, error, maxIter, ntot, beg, end), dt(step) {
+            IterativeSolver<T>(op, error, maxIter, ntot, beg, end), dt(step) {
               // do nothing
             }
 
-template <class C>
-int Jacobi<C>::Solve(IdefixArray3D<real> &guess, IdefixArray3D<real> &rhs) {
+template <class T>
+int Jacobi<T>::Solve(IdefixArray3D<real> &guess, IdefixArray3D<real> &rhs) {
   idfx::pushRegion("Jacobi::Solve");
   this->solution = guess;
   this->rhs = rhs;
@@ -61,8 +59,8 @@ int Jacobi<C>::Solve(IdefixArray3D<real> &guess, IdefixArray3D<real> &rhs) {
   return(n);
 }
 
-template <class C>
-void Jacobi<C>::PerformIter() {
+template <class T>
+void Jacobi<T>::PerformIter() {
   idfx::pushRegion("Jacobi::PerformIter");
 
   // Loading needed attributes
@@ -93,8 +91,8 @@ void Jacobi<C>::PerformIter() {
   idfx::popRegion();
 }
 
-template <class C>
-void Jacobi<C>::ShowConfig() {
+template <class T>
+void Jacobi<T>::ShowConfig() {
   idfx::cout << "Jacobi: TargetError: " << this->targetError << std::endl;
   idfx::cout << "Jacobi: Maximum iterations: " << this->maxiter << std::endl;
   idfx::cout << "Jacobi: step: " << this->dt << std::endl;

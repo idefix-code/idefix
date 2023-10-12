@@ -13,12 +13,10 @@
 #include "iterativesolver.hpp"
 
 // The conjugate gradient derives from the iterativesolver class
-template <class C>
-class Cg : public IterativeSolver<C> {
-  using LinearFunction = void(C::*) (IdefixArray3D<real> in, IdefixArray3D<real> out);
-
+template <class T>
+class Cg : public IterativeSolver<T> {
  public:
-  Cg(C *parent, LinearFunction func, real error, int maxIter,
+  Cg(T &op, real error, int maxIter,
            std::vector<int> ntot, std::vector<int> beg, std::vector<int> end);
 
   int Solve(IdefixArray3D<real> &guess, IdefixArray3D<real> &rhs);
@@ -32,10 +30,10 @@ class Cg : public IterativeSolver<C> {
   IdefixArray3D<real> s1; // Search direction for gradient descent
 };
 
-template <class C>
-Cg<C>::Cg(C *p, LinearFunction f, real error, int maxiter,
+template <class T>
+Cg<T>::Cg(T &op, real error, int maxiter,
             std::vector<int> ntot, std::vector<int> beg, std::vector<int> end) :
-            IterativeSolver<C>(p, f, error, maxiter, ntot, beg, end) {
+            IterativeSolver<T>(op, error, maxiter, ntot, beg, end) {
   // CG scalars initialisation
 
   this->p1 = IdefixArray3D<real> ("p1", this->ntot[KDIR],
@@ -48,8 +46,8 @@ Cg<C>::Cg(C *p, LinearFunction f, real error, int maxiter,
                                                 this->ntot[IDIR]);
 }
 
-template <class C>
-int Cg<C>::Solve(IdefixArray3D<real> &guess, IdefixArray3D<real> &rhs) {
+template <class T>
+int Cg<T>::Solve(IdefixArray3D<real> &guess, IdefixArray3D<real> &rhs) {
   idfx::pushRegion("Cg::Solve");
   this->solution = guess;
   this->rhs = rhs;
@@ -76,8 +74,8 @@ int Cg<C>::Solve(IdefixArray3D<real> &guess, IdefixArray3D<real> &rhs) {
   return(n);
 }
 
-template <class C>
-void Cg<C>::InitSolver() {
+template <class T>
+void Cg<T>::InitSolver() {
   idfx::pushRegion("Cg::InitSolver");
   // Residual initialisation
   this->SetRes();
@@ -87,8 +85,8 @@ void Cg<C>::InitSolver() {
   idfx::popRegion();
 }
 
-template <class C>
-void Cg<C>::PerformIter() {
+template <class T>
+void Cg<T>::PerformIter() {
   idfx::pushRegion("Cg::PerformIter");
 
   // Loading needed attributes
@@ -106,7 +104,7 @@ void Cg<C>::PerformIter() {
   kend = this->end[KDIR];
 
   // ***** Step 1.
-  (this->parent->*(this->myFunc))(p1, s1);
+  this->linearOperator(p1, s1);
 
   real rr = this->ComputeDotProduct(r,r);
   //idfx::cout << "rr=" << rr << std::endl;
@@ -150,8 +148,8 @@ void Cg<C>::PerformIter() {
 
 
 
-template <class C>
-void Cg<C>::ShowConfig() {
+template <class T>
+void Cg<T>::ShowConfig() {
   idfx::pushRegion("Cg::ShowConfig");
   idfx::cout << "Cg: TargetError: " << this->targetError << std::endl;
   idfx::cout << "Cg: Maximum iterations: " << this->maxiter << std::endl;

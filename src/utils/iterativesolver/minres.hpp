@@ -13,12 +13,10 @@
 #include "iterativesolver.hpp"
 
 // The conjugate gradient derives from the iterativesolver class
-template <class C>
-class Minres : public IterativeSolver<C> {
-  using LinearFunction = void(C::*) (IdefixArray3D<real> in, IdefixArray3D<real> out);
-
+template <class T>
+class Minres : public IterativeSolver<T> {
  public:
-  Minres(C *parent, LinearFunction func, real error, int maxIter,
+  Minres(T &op, real error, int maxIter,
            std::vector<int> ntot, std::vector<int> beg, std::vector<int> end);
 
   int Solve(IdefixArray3D<real> &guess, IdefixArray3D<real> &rhs);
@@ -45,10 +43,10 @@ class Minres : public IterativeSolver<C> {
   IdefixArray3D<real> work3; // work array
 };
 
-template <class C>
-Minres<C>::Minres(C *p, LinearFunction f, real error, int maxiter,
+template <class T>
+Minres<T>::Minres(T &op, real error, int maxiter,
             std::vector<int> ntot, std::vector<int> beg, std::vector<int> end) :
-            IterativeSolver<C>(p, f, error, maxiter, ntot, beg, end) {
+            IterativeSolver<T>(op, error, maxiter, ntot, beg, end) {
   // MINRES scalars initialisation
   this->alpha = 1.0;
   this->beta = 1.0;
@@ -76,8 +74,8 @@ Minres<C>::Minres(C *p, LinearFunction f, real error, int maxiter,
                                                 this->ntot[IDIR]);
 }
 
-template <class C>
-int Minres<C>::Solve(IdefixArray3D<real> &guess, IdefixArray3D<real> &rhs) {
+template <class T>
+int Minres<T>::Solve(IdefixArray3D<real> &guess, IdefixArray3D<real> &rhs) {
   idfx::pushRegion("Minres::Solve");
   this->solution = guess;
   this->rhs = rhs;
@@ -107,22 +105,22 @@ int Minres<C>::Solve(IdefixArray3D<real> &guess, IdefixArray3D<real> &rhs) {
   return(n);
 }
 
-template <class C>
-void Minres<C>::InitSolver() {
+template <class T>
+void Minres<T>::InitSolver() {
   idfx::pushRegion("Minres::InitSolver");
   // Residual initialisation
   this->SetRes();
 
   Kokkos::deep_copy(this->p0, this->res); // (Re)setting reference residual
-  (this->parent->*(this->myFunc))(this->p0, this->s0); // (Re)setting associated laplacian
+  this->linearOperator(this->p0, this->s0); // (Re)setting associated laplacian
   //Kokkos::deep_copy(this->p1, this->p0);
   //Kokkos::deep_copy(this->s1, this->s0);
 
   idfx::popRegion();
 }
 
-template <class C>
-void Minres<C>::PerformIter() {
+template <class T>
+void Minres<T>::PerformIter() {
   idfx::pushRegion("Minres::PerformIter");
 
   // Loading needed attributes
@@ -173,7 +171,7 @@ void Minres<C>::PerformIter() {
   if(this->currentError/this->previousError>0.999) {
     this->firstStep = true;
     Kokkos::deep_copy(p0,r);
-    (this->parent->*(this->myFunc))(this->p0, this->s0);
+    this->linearOperator(this->p0, this->s0);
     idfx::cout << "Reset" << std::endl;
     idfx::popRegion();
     return;
@@ -182,7 +180,7 @@ void Minres<C>::PerformIter() {
   this->previousError = this->currentError;
   Kokkos::deep_copy(p0, s1);
 
-  (this->parent->*(this->myFunc))(s1, s0);
+  this->linearOperator(s1, s0);
 
   real beta1 = this->ComputeDotProduct(s0,s1) / this->ComputeDotProduct(s1,s1);
 
@@ -215,8 +213,8 @@ void Minres<C>::PerformIter() {
 
 
 
-template <class C>
-void Minres<C>::ShowConfig() {
+template <class T>
+void Minres<T>::ShowConfig() {
   idfx::pushRegion("Minres::ShowConfig");
   idfx::cout << "Minres: TargetError: " << this->targetError << std::endl;
   idfx::cout << "Minres: Maximum iterations: " << this->maxiter << std::endl;

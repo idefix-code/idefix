@@ -17,7 +17,7 @@ template <class T>
 class Jacobi : public IterativeSolver<T> {
  public:
   Jacobi(T &op, real error, int maxIter, real step,
-           std::vector<int> ntot, std::vector<int> beg, std::vector<int> end);
+           std::array<int,3> ntot, std::array<int,3> beg, std::array<int,3> end);
 
   int Solve(IdefixArray3D<real> &guess, IdefixArray3D<real> &rhs);
   void ShowConfig();
@@ -29,7 +29,7 @@ class Jacobi : public IterativeSolver<T> {
 
 template <class T>
 Jacobi<T>::Jacobi(T &op, real error, int maxIter, real step,
-           std::vector<int> ntot, std::vector<int> beg, std::vector<int> end) :
+           std::array<int,3> ntot, std::array<int,3> beg, std::array<int,3> end) :
             IterativeSolver<T>(op, error, maxIter, ntot, beg, end), dt(step) {
               // do nothing
             }

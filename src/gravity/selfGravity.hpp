@@ -67,7 +67,7 @@ class SelfGravity {
   real dt;  // CFL timestep
 
   // Local potential array size
-  std::vector<int> np_tot;
+  std::array<int,3> np_tot;
 
   std::array<Laplacian::LaplacianBoundaryType,3> lbound;  // Boundary condition to the left
   std::array<Laplacian::LaplacianBoundaryType,3> rbound;  // Boundary condition to the right

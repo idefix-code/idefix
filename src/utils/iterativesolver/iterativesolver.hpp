@@ -16,7 +16,7 @@ template <class T>
 class IterativeSolver {
  public:
   IterativeSolver(T &op, real error, int maxIter,
-                  std::vector<int> ntot, std::vector<int> beg, std::vector<int> end);
+                  std::array<int,3> ntot, std::array<int,3> beg, std::array<int,3> end);
 
   real GetError();  // return the current error of the solver
 
@@ -49,7 +49,7 @@ class IterativeSolver {
 
 template <class T>
 IterativeSolver<T>::IterativeSolver(T &op, real error, int maxiter,
-            std::vector<int> ntot, std::vector<int> beg, std::vector<int> end)
+            std::array<int,3> ntot, std::array<int,3> beg, std::array<int,3> end)
               : linearOperator(op) {
   this->targetError = error;
   this->maxiter = maxiter;

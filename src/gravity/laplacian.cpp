@@ -32,8 +32,8 @@ Laplacian::Laplacian(DataBlock *datain, std::array<LaplacianBoundaryType,3> left
   this->sinx2 = data->sinx2;
   this->dV = data->dV;
   this->A = data->A;
-  this->loffset = std::vector<int>(3,0);
-  this->roffset = std::vector<int>(3,0);
+  this->loffset = {0,0,0};
+  this->roffset = {0,0,0};
 
   this->lbound = leftBound;
   this->rbound = rightBound;

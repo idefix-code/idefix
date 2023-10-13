@@ -17,7 +17,7 @@ template <class T>
 class Cg : public IterativeSolver<T> {
  public:
   Cg(T &op, real error, int maxIter,
-           std::vector<int> ntot, std::vector<int> beg, std::vector<int> end);
+           std::array<int,3> ntot, std::array<int,3> beg, std::array<int,3> end);
 
   int Solve(IdefixArray3D<real> &guess, IdefixArray3D<real> &rhs);
 
@@ -32,7 +32,7 @@ class Cg : public IterativeSolver<T> {
 
 template <class T>
 Cg<T>::Cg(T &op, real error, int maxiter,
-            std::vector<int> ntot, std::vector<int> beg, std::vector<int> end) :
+            std::array<int,3> ntot, std::array<int,3> beg, std::array<int,3> end) :
             IterativeSolver<T>(op, error, maxiter, ntot, beg, end) {
   // CG scalars initialisation
 

@@ -17,7 +17,7 @@ template <class T>
 class Minres : public IterativeSolver<T> {
  public:
   Minres(T &op, real error, int maxIter,
-           std::vector<int> ntot, std::vector<int> beg, std::vector<int> end);
+           std::array<int,3> ntot, std::array<int,3> beg, std::array<int,3> end);
 
   int Solve(IdefixArray3D<real> &guess, IdefixArray3D<real> &rhs);
 
@@ -45,7 +45,7 @@ class Minres : public IterativeSolver<T> {
 
 template <class T>
 Minres<T>::Minres(T &op, real error, int maxiter,
-            std::vector<int> ntot, std::vector<int> beg, std::vector<int> end) :
+            std::array<int,3> ntot, std::array<int,3> beg, std::array<int,3> end) :
             IterativeSolver<T>(op, error, maxiter, ntot, beg, end) {
   // MINRES scalars initialisation
   this->alpha = 1.0;

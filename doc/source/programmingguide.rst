@@ -567,10 +567,10 @@ by setting the environement variable ``KOKKOS_TOOLS_LIBS`` to the tool path, for
   export KOKKOS_TOOLS_LIBS=<kokkos-tools-bin>/profiling/space-time-stack/libkp_space_time_stack.so
 
 
-.. _defensiveProgramming::
+.. _defensiveProgramming:
 
 Defensive Programming
-~~~~~~~~~~~~~~~~~~~~~
+---------------------
 
 ``idefix.hpp`` defines useful function-like macros to program defensively and create
 informative error messages and warnings.

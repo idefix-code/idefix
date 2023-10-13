@@ -16,34 +16,11 @@
 void DataBlock::MakeGeometry() {
   idfx::pushRegion("DataBlock::MakeGeometry()");
 
-  // Copy the relevant part of the coordinate system to the datablock
-  for(int dir = 0 ; dir < 3 ; dir++) {
-    int offset=gbeg[dir]-beg[dir];
-
-    IdefixArray1D<real> x_input = mygrid->x[dir];
-    IdefixArray1D<real> x_output= x[dir];
-    IdefixArray1D<real> xr_input = mygrid->xr[dir];
-    IdefixArray1D<real> xr_output= xr[dir];
-    IdefixArray1D<real> xl_input = mygrid->xl[dir];
-    IdefixArray1D<real> xl_output= xl[dir];
-    IdefixArray1D<real> dx_input = mygrid->dx[dir];
-    IdefixArray1D<real> dx_output= dx[dir];
-
-    idefix_for("coordinates",0,np_tot[dir],
-      KOKKOS_LAMBDA (int i) {
-        x_output(i)  = x_input(i+offset);
-        xr_output(i) = xr_input(i+offset);
-        xl_output(i) = xl_input(i+offset);
-        dx_output(i) = dx_input(i+offset);
-      }
-    );
-  }
 
   // Initialize grid coarsening if needed
   if(mygrid->haveGridCoarsening != GridCoarsening::disabled) {
     this->haveGridCoarsening = mygrid->haveGridCoarsening;
     this->coarseningDirection = mygrid->coarseningDirection;
-    this->coarseningLevel = std::vector<IdefixArray2D<int>>(3);
 
     for(int dir = 0 ; dir < 3 ; dir++) {
       if(coarseningDirection[dir]) {
@@ -235,6 +212,34 @@ void DataBlock::MakeGeometry() {
   #endif
     }
   );
+
+  idfx::popRegion();
+}
+
+void DataBlock::ExtractSubdomain() {
+  idfx::pushRegion("DataBlock::ExtractSubdomain");
+  // Copy the relevant part of the coordinate system to the datablock
+  for(int dir = 0 ; dir < 3 ; dir++) {
+    int offset=gbeg[dir]-beg[dir];
+
+    IdefixArray1D<real> x_input = mygrid->x[dir];
+    IdefixArray1D<real> x_output= x[dir];
+    IdefixArray1D<real> xr_input = mygrid->xr[dir];
+    IdefixArray1D<real> xr_output= xr[dir];
+    IdefixArray1D<real> xl_input = mygrid->xl[dir];
+    IdefixArray1D<real> xl_output= xl[dir];
+    IdefixArray1D<real> dx_input = mygrid->dx[dir];
+    IdefixArray1D<real> dx_output= dx[dir];
+
+    idefix_for("coordinates",0,np_tot[dir],
+      KOKKOS_LAMBDA (int i) {
+        x_output(i)  = x_input(i+offset);
+        xr_output(i) = xr_input(i+offset);
+        xl_output(i) = xl_input(i+offset);
+        dx_output(i) = dx_input(i+offset);
+      }
+    );
+  }
 
   idfx::popRegion();
 }

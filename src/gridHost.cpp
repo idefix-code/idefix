@@ -29,10 +29,6 @@ GridHost::GridHost(Grid &grid) {
   haveAxis = grid.haveAxis;
 
   // Create mirrors on host
-  x = std::vector<IdefixArray1D<real>::HostMirror> (3);
-  xr = std::vector<IdefixArray1D<real>::HostMirror> (3);
-  xl = std::vector<IdefixArray1D<real>::HostMirror> (3);
-  dx = std::vector<IdefixArray1D<real>::HostMirror> (3);
   for(int dir = 0 ; dir < 3 ; dir++) {
     x[dir] = Kokkos::create_mirror_view(grid.x[dir]);
     xr[dir] = Kokkos::create_mirror_view(grid.xr[dir]);

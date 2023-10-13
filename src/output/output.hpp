@@ -9,6 +9,8 @@
 #define OUTPUT_OUTPUT_HPP_
 #include <string>
 #include <map>
+#include <vector>
+#include <memory>
 #include "idefix.hpp"
 #include "input.hpp"
 #include "dataBlock.hpp"
@@ -17,7 +19,10 @@
 #include "xdmf.hpp"
 #endif
 #include "dump.hpp"
+#include "slice.hpp"
 
+class Vtk;
+class Dump;
 
 using AnalysisFunc = void (*) (DataBlock &);
 
@@ -71,6 +76,9 @@ class Output {
   bool haveUserDefVariablesFunc = false;
   UserDefVariablesFunc userDefVariablesFunc;
   UserDefVariablesContainer userDefVariables;
+
+  bool sliceEnabled = false;
+  std::vector<std::unique_ptr<Slice>> slices;
 
   Kokkos::Timer timer;
   double elapsedTime{0.0};

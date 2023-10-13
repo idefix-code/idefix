@@ -7,6 +7,9 @@
 
 #include <filesystem>
 #include "output.hpp"
+#include "dataBlock.hpp"
+#include "fluid.hpp"
+#include "slice.hpp"
 
 Output::Output(Input &input, DataBlock &data) {
   idfx::pushRegion("Output::Output");
@@ -21,6 +24,30 @@ Output::Output(Input &input, DataBlock &data) {
     if(vtkPeriod>=0.0) {  // backward compatibility (negative value means no file)
       vtkLast = data.t - vtkPeriod; // write something in the next CheckForWrite()
       vtkEnabled = true;
+    }
+  }
+
+  // Look for slice outputs (in the form of VTK files)
+  if(input.CheckEntry("Output","vtkSlice1")>0) {
+    sliceEnabled = true;
+    int n = 1;
+    while(input.CheckEntry("Output","vtkSlice"+std::to_string(n))>0) {
+      std::string sliceStr = "vtkSlice"+std::to_string(n);
+      real period = input.Get<real>("Output", sliceStr,0);
+      int direction = input.Get<int>("Output", sliceStr,1);
+      real x0 = input.Get<real>("Output", sliceStr, 2);
+      std::string typeStr = input.Get<std::string>("Output",sliceStr,3);
+      SliceType type;
+      if(typeStr.compare("cut")==0) {
+        type = SliceType::Cut;
+      } else if(typeStr.compare("average")==0) {
+        type = SliceType::Average;
+      } else {
+        IDEFIX_ERROR("Unknown slice type "+typeStr);
+      }
+      slices.emplace_back(std::make_unique<Slice>(input, data, n, type, direction, x0, period));
+      // Next iteration
+      n++;
     }
   }
 
@@ -175,6 +202,11 @@ int Output::CheckForWrites(DataBlock &data) {
     }
   }
 
+  if(sliceEnabled) {
+    for(int i = 0 ; i < slices.size() ; i++) {
+      slices[i]->CheckForWrite(data);
+    }
+  }
   // Do we need a restart dump?
   if(dumpEnabled) {
     // Dumps contain metadata about the most recent outputs of other types,

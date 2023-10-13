@@ -382,6 +382,17 @@ This section describes the outputs *Idefix* produces. For more details about eac
 | vtk_dir        | string                  | | directory for vtk file outputs. Default to "./"                                                |
 |                |                         | | The directory is automatically created if it does not exist.                                   |
 +----------------+-------------------------+--------------------------------------------------------------------------------------------------+
+| vtk_sliceN     | float, int, float,      | | Create VTK files that contain a slice (cut or average) of the full domain.                     |
+|                | string                  | | the "N" of the entry name is an integer that identify each slice, starting from n=1            |
+|                |                         | | 1st parameter: Time interval between each slice vtk file                                       |
+|                |                         | | 2nd parameter: plane of the slice. 0=(x2,x3) slice, 1=(x1,x3), 2=(x1,x2)                       |
+|                |                         | | 3rd parameter: localisation of the slice (when the slice is an average, this parameter only    |
+|                |                         | |                affect the localisation of the slice in the produced vtk file                   |
+|                |                         | | 4th parameter: slice type. Can be "cut" (for a slice of the full domain) or "average" (for an  |
+|                |                         | | average along the direction given by the second parameter). NB: "average" performs a naive     |
+|                |                         | | point average, without any consideration on the cell volumes/areas.                            |
+|                |                         | | NB2: this feature is in beta, and sometimes fail with some MPI implementations.                |
++----------------+-------------------------+--------------------------------------------------------------------------------------------------+
 | xdmf           | float                   | | Time interval between xdmf outputs, in code units (requires Idefix to be configured with HDF5) |
 |                |                         | | If negative, periodic xdmf outputs are disabled.                                               |
 +----------------+-------------------------+--------------------------------------------------------------------------------------------------+

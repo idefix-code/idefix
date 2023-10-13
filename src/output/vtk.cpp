@@ -39,17 +39,19 @@ void Vtk::WriteHeaderNodes(IdfxFileHandler fvtk) {
   MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_FLOAT, this->nodeView,
                                   "native", MPI_INFO_NULL));
   MPI_SAFE_CALL(MPI_File_write_all(fvtk, node_coord.data(), size, MPI_FLOAT, MPI_STATUS_IGNORE));
-  this->offset += sizeof(float)*(nx1+IOFFSET)*(nx2+JOFFSET)*(nx3+KOFFSET)*3;
+  this->offset += sizeof(float)*(nx1+ioffset)*(nx2+joffset)*(nx3+koffset)*3;
 #else
   fwrite(node_coord.data(),sizeof(float),size,fvtk);
 #endif
 }
 
 /*init the object */
-Vtk::Vtk(Input &input, DataBlock *datain) {
+Vtk::Vtk(Input &input, DataBlock *datain, std::string filebase) {
   // Initialize the output structure
   // Create a local datablock as an image of gridin
   this->data = datain;
+
+  this->filebase = filebase;
 
   // Pointer to global grid
   GridHost grid(*(datain->mygrid));
@@ -96,23 +98,33 @@ Vtk::Vtk(Input &input, DataBlock *datain) {
   this->nx2loc = data->np_int[JDIR];
   this->nx3loc = data->np_int[KDIR];
 
+  this->ioffset = datain->mygrid->np_tot[IDIR] == 1 ? 0 : 1;
+  this->joffset = datain->mygrid->np_tot[JDIR] == 1 ? 0 : 1;
+  this->koffset = datain->mygrid->np_tot[KDIR] == 1 ? 0 : 1;
+
   // Temporary storage on host for 3D arrays
   this->vect3D = new float[nx1loc*nx2loc*nx3loc];
 
   // Store coordinates for later use
-  this->xnode = new float[nx1+IOFFSET];
-  this->ynode = new float[nx2+JOFFSET];
-  this->znode = new float[nx3+KOFFSET];
+  this->xnode = new float[nx1+ioffset];
+  this->ynode = new float[nx2+joffset];
+  this->znode = new float[nx3+koffset];
 
-  for (int32_t i = 0; i < nx1 + IOFFSET; i++) {
-    xnode[i] = BigEndian(static_cast<float>(grid.xl[IDIR](i + grid.nghost[IDIR])));
+  for (int32_t i = 0; i < nx1 + ioffset; i++) {
+    if(grid.np_tot[IDIR] == 1) // only one dimension in this direction
+      xnode[i] = BigEndian(static_cast<float>(grid.x[IDIR](i)));
+    else
+      xnode[i] = BigEndian(static_cast<float>(grid.xl[IDIR](i + grid.nghost[IDIR])));
   }
-  for (int32_t j = 0; j < nx2 + JOFFSET; j++)    {
-    ynode[j] = BigEndian(static_cast<float>(grid.xl[JDIR](j + grid.nghost[JDIR])));
+  for (int32_t j = 0; j < nx2 + joffset; j++)    {
+    if(grid.np_tot[JDIR] == 1) // only one dimension in this direction
+      ynode[j] = BigEndian(static_cast<float>(grid.x[JDIR](j)));
+    else
+      ynode[j] = BigEndian(static_cast<float>(grid.xl[JDIR](j + grid.nghost[JDIR])));
   }
-  for (int32_t k = 0; k < nx3 + KOFFSET; k++) {
-    if(DIMENSIONS==2)
-      znode[k] = BigEndian(static_cast<float>(0.0));
+  for (int32_t k = 0; k < nx3 + koffset; k++) {
+    if(grid.np_tot[KDIR] == 1)
+      znode[k] = BigEndian(static_cast<float>(grid.x[KDIR](k)));
     else
       znode[k] = BigEndian(static_cast<float>(grid.xl[KDIR](k + grid.nghost[KDIR])));
   }
@@ -138,16 +150,17 @@ Vtk::Vtk(Input &input, DataBlock *datain) {
   // Since we use cell-defined vtk variables,
   // we add one cell in each direction when we're looking at the last
   // sub-domain in each direction
-  nodesize[2] += IOFFSET;
-  nodesize[1] += JOFFSET;
-  nodesize[0] += KOFFSET;
+  nodesize[2] += ioffset;
+  nodesize[1] += joffset;
+  nodesize[0] += koffset;
 
-  if(datain->mygrid->xproc[0] == datain->mygrid->nproc[0]-1) nodesubsize[2] += IOFFSET;
-  if(datain->mygrid->xproc[1] == datain->mygrid->nproc[1]-1) nodesubsize[1] += JOFFSET;
-  if(datain->mygrid->xproc[2] == datain->mygrid->nproc[2]-1) nodesubsize[0] += KOFFSET;
+  if(datain->mygrid->xproc[0] == datain->mygrid->nproc[0]-1) nodesubsize[2] += ioffset;
+  if(datain->mygrid->xproc[1] == datain->mygrid->nproc[1]-1) nodesubsize[1] += joffset;
+  if(datain->mygrid->xproc[2] == datain->mygrid->nproc[2]-1) nodesubsize[0] += koffset;
 
   // Build an MPI view if needed
   #ifdef WITH_MPI
+    // Keep communicator for later use
     MPI_SAFE_CALL(MPI_Type_create_subarray(4, nodesize, nodesubsize, nodestart,
                                           MPI_ORDER_C, MPI_FLOAT, &this->nodeView));
     MPI_SAFE_CALL(MPI_Type_commit(&this->nodeView));
@@ -167,9 +180,9 @@ Vtk::Vtk(Input &input, DataBlock *datain) {
     for (int32_t j = 0; j < nodesubsize[1]; j++) {
       for (int32_t i = 0; i < nodesubsize[2]; i++) {
         // BigEndian allows us to get back to little endian when needed
-        D_EXPAND( x1 = grid.xl[IDIR](i + data->gbeg[IDIR]);  ,
-                  x2 = grid.xl[JDIR](j + data->gbeg[JDIR]);  ,
-                  x3 = grid.xl[KDIR](k + data->gbeg[KDIR]);  )
+          x1 = grid.xl[IDIR](i + data->gbeg[IDIR]);
+          x2 = grid.xl[JDIR](j + data->gbeg[JDIR]);
+          x3 = grid.xl[KDIR](k + data->gbeg[KDIR]);
 
   #if (GEOMETRY == CARTESIAN) || (GEOMETRY == CYLINDRICAL)
         node_coord(k,j,i,0) = BigEndian(x1);
@@ -201,7 +214,7 @@ Vtk::Vtk(Input &input, DataBlock *datain) {
     }
   }
 
-#endif
+#endif // VTK_FORMAT == VTK_STRUCTURED_GRID
 
   // Create MPI view when using MPI I/O
 #ifdef WITH_MPI
@@ -219,10 +232,15 @@ Vtk::Vtk(Input &input, DataBlock *datain) {
   MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start, MPI_ORDER_C,
                                          MPI_FLOAT, &this->view));
   MPI_SAFE_CALL(MPI_Type_commit(&this->view));
+  this->comm = datain->mygrid->CartComm;
+  this->isRoot =   (data->mygrid->xproc[0] == 0)
+                && (data->mygrid->xproc[1] == 0)
+                && (data->mygrid->xproc[2] == 0);
 #endif
 
   // Register variables that are required in restart dumps
-  data->dump->RegisterVariable(&vtkFileNumber, "vtkFileNumber");
+  if(data->dump.get() != nullptr)
+    data->dump->RegisterVariable(&vtkFileNumber, "vtkFileNumber");
 }
 
 
@@ -232,27 +250,28 @@ int Vtk::Write() {
   IdfxFileHandler fileHdl;
   std::filesystem::path filename;
 
-  idfx::cout << "Vtk: Write file n " << vtkFileNumber << "..." << std::flush;
-
   timer.reset();
 
   std::stringstream ssfileName, ssvtkFileNum;
   ssvtkFileNum << std::setfill('0') << std::setw(4) << vtkFileNumber;
-  ssfileName << "data." << ssvtkFileNum.str() << ".vtk";
+  ssfileName << filebase << "." << ssvtkFileNum.str() << ".vtk";
   filename = outputDirectory/ssfileName.str();
 
+  idfx::cout << "Vtk: Write file " << ssfileName.str() << "..." << std::flush;
+
   // Check if file exists, if yes, delete it
-  if(idfx::prank==0) {
+  if(this->isRoot) {
     if(std::filesystem::exists(filename)) {
       std::filesystem::remove(filename);
     }
   }
 
+
   // Open file and write header
 #ifdef WITH_MPI
-  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(this->comm);
   // Open file for creating, return error if file already exists.
-  MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
+  MPI_SAFE_CALL(MPI_File_open(this->comm, filename.c_str(),
                               MPI_MODE_CREATE | MPI_MODE_RDWR
                               | MPI_MODE_EXCL | MPI_MODE_UNIQUE_OPEN,
                               MPI_INFO_NULL, &fileHdl));
@@ -387,7 +406,7 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
 
 
 
-  ssheader << "DIMENSIONS " << nx1 + IOFFSET << " " << nx2 + JOFFSET << " " << nx3 + KOFFSET
+  ssheader << "DIMENSIONS " << nx1 + ioffset << " " << nx2 + joffset << " " << nx3 + koffset
            << std::endl;
 
   header = ssheader.str();
@@ -398,30 +417,30 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
   /* -- Write rectilinear grid information -- */
   std::stringstream coordx, coordy, coordz;
 
-  coordx << "X_COORDINATES " << nx1 + IOFFSET << " float" << std::endl;
+  coordx << "X_COORDINATES " << nx1 + ioffset << " float" << std::endl;
   header = coordx.str();
   WriteHeaderString(header.c_str(), fvtk);
 
-  WriteHeaderBinary(xnode, nx1 + IOFFSET, fvtk);
+  WriteHeaderBinary(xnode, nx1 + ioffset, fvtk);
 
-  coordy << std::endl << "Y_COORDINATES " << nx2 + JOFFSET << " float" << std::endl;
+  coordy << std::endl << "Y_COORDINATES " << nx2 + joffset << " float" << std::endl;
   header = coordy.str();
   WriteHeaderString(header.c_str(), fvtk);
 
-  WriteHeaderBinary(ynode, nx2 + JOFFSET, fvtk);
+  WriteHeaderBinary(ynode, nx2 + joffset, fvtk);
 
-  coordz << std::endl << "Z_COORDINATES " << nx3 + KOFFSET << " float" << std::endl;
+  coordz << std::endl << "Z_COORDINATES " << nx3 + koffset << " float" << std::endl;
   header = coordz.str();
   WriteHeaderString(header.c_str(), fvtk);
 
-  WriteHeaderBinary(znode, nx3 + KOFFSET, fvtk);
+  WriteHeaderBinary(znode, nx3 + koffset, fvtk);
 
 #elif VTK_FORMAT == VTK_STRUCTURED_GRID
 
   /* -- define node_coord -- */
   std::stringstream ssheader2;
 
-  ssheader2 << "POINTS " << (nx1 + IOFFSET) * (nx2 + JOFFSET) * (nx3 + KOFFSET) << " float"
+  ssheader2 << "POINTS " << (nx1 + ioffset) * (nx2 + joffset) * (nx3 + koffset) << " float"
             << std::endl;
   header = ssheader2.str();
   WriteHeaderString(header.c_str(), fvtk);
@@ -464,7 +483,11 @@ void Vtk::WriteScalar(IdfxFileHandler fvtk, float* Vin,  const std::string &var_
 #ifdef WITH_MPI
   MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_FLOAT, this->view,
                                   "native", MPI_INFO_NULL));
-  MPI_SAFE_CALL(MPI_File_write_all(fvtk, Vin, nx1loc*nx2loc*nx3loc, MPI_FLOAT, MPI_STATUS_IGNORE));
+
+  int nwrite = nx1loc*nx2loc*nx3loc;
+  //if(idfx::prank != 0) nwrite = 0;
+  MPI_SAFE_CALL(MPI_File_write_all(fvtk, Vin, nwrite, MPI_FLOAT, MPI_STATUS_IGNORE));
+
   this->offset = this->offset + sizeof(float)*nx1*nx2*nx3;
 #else
   fwrite(Vin,sizeof(float),nx1loc*nx2loc*nx3loc,fvtk);

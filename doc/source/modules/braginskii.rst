@@ -1,3 +1,5 @@
+.. _braginskiiModule:
+
 Braginskii module
 ===================
 
@@ -69,6 +71,7 @@ of the Braginskii heat flux and viscosity.
   for more details on the this super time-stepping scheme.
 
 .. _braginskiiParameterSection:
+
 Main parameters of the module
 -----------------------------
 

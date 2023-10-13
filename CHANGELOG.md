@@ -38,6 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Passive tracers (!341)
 - Planet module (planet migration, planet-planet integration) (!278)
 - Custom equation of states (#185)
+- Sliced VTK files (beta version) (#195)
 - Check that the MPI library is GPU-aware when using a GPU backend (!262)
 - An optional user-defined Setup destructor can now be defined (!260)
 - performance improvement on CPUs by cleaning loops and rewriting EMF reconstruction (!281)

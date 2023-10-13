@@ -50,25 +50,25 @@ class Laplacian {
   UserDefBoundaryFunc userDefBoundaryFunc{NULL};
 
   // Local potential array size
-  std::vector<int> np_tot;
-  std::vector<int> np_int;
+  std::array<int,3> np_tot;
+  std::array<int,3> np_int;
 
-  std::vector<int> nghost;
-  std::vector<int> beg;
-  std::vector<int> end;
+  std::array<int,3> nghost;
+  std::array<int,3> beg;
+  std::array<int,3> end;
 
   // offset in the left and right direction between selfgravity grid and datablock grid
-  std::vector<int> loffset;
-  std::vector<int> roffset;
+  std::array<int,3> loffset;
+  std::array<int,3> roffset;
 
   // Grid for self-gravity solver (note that this grid may extend the grid of the current datablock)
-  std::vector<IdefixArray1D<real>> x;    ///< geometrical central points
-  std::vector<IdefixArray1D<real>> dx;   ///< cell width
+  std::array<IdefixArray1D<real>,3> x;    ///< geometrical central points
+  std::array<IdefixArray1D<real>,3> dx;   ///< cell width
 
   IdefixArray1D<real> sinx2;            ///< sinx2 (only in spherical)
 
   IdefixArray3D<real> dV;                ///< cell volume
-  std::vector<IdefixArray3D<real>> A;    ///< cell left interface area
+  std::array<IdefixArray3D<real>,3> A;    ///< cell left interface area
 
   bool isPeriodic; // Periodicity status of the density distribution
   std::array<LaplacianBoundaryType,3> lbound;  // Boundary condition to the left

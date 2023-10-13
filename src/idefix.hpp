@@ -219,6 +219,7 @@ using IdfxFileHandler = FILE*;
 // Types of boundary which can be treated
 enum BoundaryType { internal, periodic, reflective, outflow, shearingbox, axis, userdef};
 enum BoundarySide { left, right};
+enum class SliceType {Cut, Average};
 
 // Type of grid coarsening
 enum GridCoarsening{disabled,

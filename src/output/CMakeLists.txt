@@ -1,4 +1,6 @@
 target_sources(idefix
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/slice.cpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/slice.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/dump.cpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/dump.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/output.cpp

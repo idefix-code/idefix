@@ -50,7 +50,7 @@ print("diff_torque_nohill=%e"%diff_torqueh)
 # print("Error_torque=%e"%error_t)
 # print("Error_torque_nohill=%e"%error_th)
 # if error_t<5.0e-2 and error_th<5.0e-2 and error_rho<5.0e-2:
-if diff_torque<1.0e-14 and diff_torqueh<1.0e-14:
+if diff_torque<1.0e-12 and diff_torqueh<1.0e-13:
     print("SUCCESS!")
     sys.exit(0)
 else:

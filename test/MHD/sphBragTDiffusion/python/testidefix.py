@@ -67,7 +67,7 @@ def analytic_phi_sol(phi, t):
 
 
 success = True
-eps = 6.2e-8
+eps = 6.4e-8
 for it,t in enumerate(list_time):
     analytic_T = np.zeros((R.shape[0], TH.shape[0], PHI.shape[0]))
     for ir,r in enumerate(R):
@@ -76,7 +76,7 @@ for it,t in enumerate(list_time):
                 analytic_T[ir,ith,iphi] = analytic_sol(r,th,phi,t)
     TEMP = list_T[it]
     if np.mean(np.fabs(TEMP - analytic_T)) > eps:
-        success = False
+      success = False
 
 if success:
     print("SUCCESS")

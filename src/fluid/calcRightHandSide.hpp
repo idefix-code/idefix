@@ -151,15 +151,9 @@ struct Fluid_CorrectFluxFunctor {
 
       real Ax = A(k,j,i);
 
-#if GEOMETRY != CARTESIAN
-      if(Ax<SMALL_NUMBER)
-        Ax=SMALL_NUMBER;    // Essentially to avoid singularity around poles
-#endif
-
       for(int nv = 0 ; nv < Phys::nvar ; nv++) {
         Flux(nv,k,j,i) = Flux(nv,k,j,i) * Ax;
       }
-
 
       // Curvature terms
 #if    (GEOMETRY == POLAR       && COMPONENTS >= 2) \
@@ -168,6 +162,7 @@ struct Fluid_CorrectFluxFunctor {
         // Conserve angular momentum, hence flux is R*Bphi
         Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(x1m(i));
         if constexpr(Phys::mhd) {
+          if(Ax<SMALL_NUMBER) Ax=SMALL_NUMBER;    //avoid singularity around poles
           // No area for this one
           Flux(iBPHI,k,j,i) = Flux(iBPHI,k,j,i) / Ax;
         }
@@ -180,6 +175,7 @@ struct Fluid_CorrectFluxFunctor {
         Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(x1m(i));
   #endif // COMPONENTS == 3
         if constexpr(Phys::mhd) {
+          if(Ax<SMALL_NUMBER) Ax=SMALL_NUMBER;    // avoid singularity around poles
           EXPAND(                                            ,
               Flux(iBTH,k,j,i)  = Flux(iBTH,k,j,i) * x1m(i) / Ax;  ,
               Flux(iBPHI,k,j,i) = Flux(iBPHI,k,j,i) * x1m(i) / Ax; )
@@ -188,6 +184,7 @@ struct Fluid_CorrectFluxFunctor {
   #if COMPONENTS == 3
         Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(sinx2m(j));
         if constexpr(Phys::mhd) {
+          if(Ax<SMALL_NUMBER) Ax=SMALL_NUMBER;    // avoid singularity around poles
           Flux(iBPHI,k,j,i) = Flux(iBPHI,k,j,i)  / Ax;
         }
   #endif // COMPONENTS = 3

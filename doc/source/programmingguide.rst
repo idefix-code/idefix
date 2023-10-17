@@ -640,6 +640,10 @@ runtime.
 are by default excluded at compilation, and do not impact performance in production.
 To enable them, use the `-D Idefix_RUNTIME_CHECKS=ON` configuration flag.
 
+It may also be useful to implement debug-only safeguards with custom logic that doesn't
+fit `RUNTIME_CHECK_*` macros. This can be achieved by using the compiler directive
+`#ifdef RUNTIME_CHECKS` directly.
+
 Minimal skeleton
 ================
 

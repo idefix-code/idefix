@@ -8,6 +8,7 @@
 #ifndef OUTPUT_XDMF_HPP_
 #define OUTPUT_XDMF_HPP_
 #include <string>
+
 #include <filesystem>
 #include <map>
 #include "idefix.hpp"
@@ -29,6 +30,7 @@
 class Output;
 class DataBlock;
 
+
 class Xdmf {
   friend class Dump;
 
@@ -45,7 +47,6 @@ class Xdmf {
 
   // List of variables to be written to vtk files
   std::map<std::string, ScalarField> xdmfScalarMap;
-
   int xdmfFileNumber = 0;
   int periodicity[3];
 
@@ -83,7 +84,6 @@ class Xdmf {
 
   // output directory
   std::filesystem::path outputDirectory;
-
 
 #ifdef WITH_MPI
   int mpi_data_start[3];
@@ -123,4 +123,5 @@ void Xdmf::RegisterVariable(T& in, std::string name, int var) {
     xdmfScalarMap.emplace(name, ScalarField(in, var));
   }
 }
+
 #endif // OUTPUT_XDMF_HPP_

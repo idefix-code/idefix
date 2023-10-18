@@ -20,7 +20,7 @@
 // Whether or not we write the time in the XDMF file
 #define WRITE_TIME
 
-/*constructor*/
+
 Xdmf::Xdmf(Input &input, DataBlock *datain) {
   // Initialize the output structure
   // Create a local datablock as an image of gridin
@@ -79,6 +79,7 @@ Xdmf::Xdmf(Input &input, DataBlock *datain) {
   this->nx1loctot = data->np_tot[IDIR];
   this->nx2loctot = data->np_tot[JDIR];
   this->nx3loctot = data->np_tot[KDIR];
+
 
   this->ngx1 = grid.nghost[IDIR];
   this->ngx2 = grid.nghost[JDIR];
@@ -184,6 +185,7 @@ Xdmf::Xdmf(Input &input, DataBlock *datain) {
           D_EXPAND( x1_cell = grid.x[IDIR](i + data->gbeg[IDIR]);  ,
                     x2_cell = grid.x[JDIR](j + data->gbeg[JDIR]);  ,
                     x3_cell = grid.x[KDIR](k + data->gbeg[KDIR]);  )
+
         }
         #if (GEOMETRY == CARTESIAN) || (GEOMETRY == CYLINDRICAL)
         node_coord(0,k,j,i) = x1;
@@ -249,6 +251,7 @@ Xdmf::Xdmf(Input &input, DataBlock *datain) {
     this->mpi_data_start[dir] = data->gbeg[2-dir]-grid.nghost[2-dir];
     this->mpi_data_size[dir] = grid.np_int[2-dir];
     this->mpi_data_subsize[dir] = data->np_int[2-dir];
+
   }
   #elif (DIMENSIONS == 2)
   for(int dir = 0; dir < DIMENSIONS ; dir++) {
@@ -276,9 +279,7 @@ int Xdmf::Write() {
   std::filesystem::path filename;
   std::filesystem::path filename_xmf;
   hid_t err;
-
   idfx::cout << "Xdmf: Write file n " << xdmfFileNumber << "..." << std::flush;
-
   timer.reset();
 
   // Create a copy of the dataBlock on Host, and sync it.
@@ -392,8 +393,6 @@ int Xdmf::Write() {
         for(int i = data->beg[IDIR]; i < data->end[IDIR] ; i++ ) {
           vect3D[i-data->beg[IDIR] + (j-data->beg[JDIR])*nx1loc + (k-data->beg[KDIR])*nx1loc*nx2loc]
               = static_cast<DUMP_DATATYPE>(Vcin(k,j,i));
-          /* field_data(i-data.beg[IDIR],j-data.beg[JDIR],k-data.beg[KDIR])
-               = static_cast<DUMP_DATATYPE>(data.Vc(nv,k,j,i)); */
         }
       }
     }
@@ -518,6 +517,7 @@ void Xdmf::WriteHeader(
   H5Sclose(unit_info);
 
   dimstr = 1;
+
   ssheader << "Idefix " << IDEFIX_VERSION << " XDMF Data";
   strspace = H5Screate_simple(1, &dimstr, NULL);
   string_type = H5Tcopy(H5T_C_S1);

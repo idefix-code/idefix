@@ -28,7 +28,6 @@
   #endif
 #endif
 
-
 void Vtk::WriteHeaderNodes(IdfxFileHandler fvtk) {
   int64_t size = node_coord.extent(0) *
              node_coord.extent(1) *

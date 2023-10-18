@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fixed a bug that led to race condition when using GPU offloading, axis boundary condition and domain decomposition along X3 (!309)
 - fixed a bug that led to inconsistent results with MPI and UCT_HLLx EMF reconstruction schemes (!310)
 - fixed a bug that could result in .dmp file duplication on restart (!354)
-- Moving developement onto github.com. Some references to merge requests will likely be lost.
+- Moving development onto github.com. Some references to merge requests will likely be lost.
 - fixed a bug in v2.0 developement branch that resulted in broekn dump files when MHD was enabled with DIMENSIONS<3 (#174)
 - IDEFIX_Debug now automatically introduce Kokkos::fence at the end of each idefix_for, enforcing synchronisation between host and device when debugging (#188)
 - Do not use git lfs anymore due to bandwidth restrictions imposed by github (#183)

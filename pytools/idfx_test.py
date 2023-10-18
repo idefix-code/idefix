@@ -28,7 +28,7 @@ class idfxTest:
     idefix_dir_env = os.getenv("IDEFIX_DIR")
 
     parser.add_argument("-noplot",
-                        dest="plot",
+                        dest="noplot",
                         help="disable plotting in standard tests",
                         action="store_false")
 

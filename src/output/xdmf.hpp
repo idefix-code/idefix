@@ -8,7 +8,6 @@
 #ifndef OUTPUT_XDMF_HPP_
 #define OUTPUT_XDMF_HPP_
 #include <string>
-
 #include <filesystem>
 #include <map>
 #include "idefix.hpp"
@@ -29,7 +28,6 @@
 // Forward class declaration
 class Output;
 class DataBlock;
-
 
 class Xdmf {
   friend class Dump;
@@ -123,5 +121,4 @@ void Xdmf::RegisterVariable(T& in, std::string name, int var) {
     xdmfScalarMap.emplace(name, ScalarField(in, var));
   }
 }
-
 #endif // OUTPUT_XDMF_HPP_

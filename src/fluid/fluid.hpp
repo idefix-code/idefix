@@ -15,12 +15,15 @@
 #include "idefix.hpp"
 #include "grid.hpp"
 #include "fluid_defs.hpp"
+#include "eos.hpp"
 #include "thermalDiffusion.hpp"
 #include "bragThermalDiffusion.hpp"
 #include "selfGravity.hpp"
 #include "vtk.hpp"
 #include "dump.hpp"
-#include "eos.hpp"
+#ifdef WITH_HDF5
+#include "xdmf.hpp"
+#endif
 
 // forward class declaration
 class DataBlock;

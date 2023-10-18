@@ -185,7 +185,6 @@ Xdmf::Xdmf(Input &input, DataBlock *datain) {
           D_EXPAND( x1_cell = grid.x[IDIR](i + data->gbeg[IDIR]);  ,
                     x2_cell = grid.x[JDIR](j + data->gbeg[JDIR]);  ,
                     x3_cell = grid.x[KDIR](k + data->gbeg[KDIR]);  )
-
         }
         #if (GEOMETRY == CARTESIAN) || (GEOMETRY == CYLINDRICAL)
         node_coord(0,k,j,i) = x1;
@@ -251,7 +250,6 @@ Xdmf::Xdmf(Input &input, DataBlock *datain) {
     this->mpi_data_start[dir] = data->gbeg[2-dir]-grid.nghost[2-dir];
     this->mpi_data_size[dir] = grid.np_int[2-dir];
     this->mpi_data_subsize[dir] = data->np_int[2-dir];
-
   }
   #elif (DIMENSIONS == 2)
   for(int dir = 0; dir < DIMENSIONS ; dir++) {

@@ -11,7 +11,6 @@
 #include "fluid.hpp"
 #include "slice.hpp"
 
-
 Output::Output(Input &input, DataBlock &data) {
   idfx::pushRegion("Output::Output");
   // initialise the output objects for each format
@@ -66,24 +65,6 @@ Output::Output(Input &input, DataBlock &data) {
     }
   }
 
-
-  // Initialise xdmf outputs
-  if(input.CheckEntry("Output","xdmf")>0) {
-    xdmfPeriod = input.Get<real>("Output","xdmf",0);
-    if(xdmfPeriod>=0.0) {  // backward compatibility (negative value means no file)
-      xdmfLast = data.t - xdmfPeriod; // write something in the next CheckForWrite()
-      #ifdef WITH_HDF5
-      xdmfEnabled = true;
-      #else
-      xdmfEnabled = false;
-      IDEFIX_ERROR("Attention: HDF5 library not linked when building Idefix!");
-      #endif
-    }
-  }
-  #ifdef WITH_HDF5
-  xdmf.Init(input,data); // Always initialised in case of emergency xdmf output
-  #endif
-
   // intialise dump outputs
   if(input.CheckEntry("Output","dmp")>0) {
     dumpPeriod = input.Get<real>("Output","dmp",0);
@@ -120,6 +101,9 @@ Output::Output(Input &input, DataBlock &data) {
   data.dump->RegisterVariable(&dumpLast, "dumpLast");
   data.dump->RegisterVariable(&analysisLast, "analysisLast");
   data.dump->RegisterVariable(&vtkLast, "vtkLast");
+  #ifdef WITH_HDF5
+  data.dump->RegisterVariable(&xdmfLast, "xdmfLast");
+  #endif
 
   idfx::popRegion();
 }
@@ -307,29 +291,6 @@ void Output::ForceWriteXdmf(DataBlock &data) {
       }
       xdmfLast += xdmfPeriod;
       data.xdmf->Write();
-  }
-  idfx::popRegion();
-}
-#endif
-
-#ifdef WITH_HDF5
-void Output::ForceWriteXdmf(DataBlock &data) {
-  idfx::pushRegion("Output::ForceWriteXdmf");
-
-  if(!forceNoWrite) {
-    if(userDefVariablesEnabled) {
-        if(haveUserDefVariablesFunc) {
-          // Call user-def function to fill the userdefined variable arrays
-          idfx::pushRegion("UserDef::User-defined variables function");
-          userDefVariablesFunc(data, userDefVariables);
-          idfx::popRegion();
-        } else {
-          IDEFIX_ERROR("Cannot output user-defined variables without "
-                        "enrollment of your user-defined variables function");
-        }
-      }
-      xdmfLast += xdmfPeriod;
-      xdmf.Write(data, *this);
   }
   idfx::popRegion();
 }

@@ -10,7 +10,7 @@
 
 #include "../idefix.hpp"
 #include "fluid.hpp"
-#include "slopeLimiter.hpp"
+#include "extrapolateToFaces.hpp"
 #include "flux.hpp"
 #include "convertConsToPrim.hpp"
 
@@ -51,7 +51,7 @@ void RiemannSolver<Phys>::RoeHD(IdefixArray4D<real> &Flux) {
 
   EquationOfState eos = *(hydro->eos.get());
 
-  SlopeLimiter<Phys,DIR> slopeLim(Vc,data->dx[DIR],haveShockFlattening,shockFlattening.get());;
+  ExtrapolateToFaces<Phys,DIR> extrapol = *this->GetExtrapolator<DIR>();
 
   idefix_for("ROE_Kernel",
              data->beg[KDIR],data->end[KDIR]+koffset,
@@ -80,7 +80,7 @@ void RiemannSolver<Phys>::RoeHD(IdefixArray4D<real> &Flux) {
       real um[Phys::nvar];
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-      slopeLim.ExtrapolatePrimVar(i, j, k, vL, vR);
+      extrapol.ExtrapolatePrimVar(i, j, k, vL, vR);
 #pragma unroll
       for(int nv = 0 ; nv < Phys::nvar; nv++) {
         dv[nv] = vR[nv] - vL[nv];

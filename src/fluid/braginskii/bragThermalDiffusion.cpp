@@ -58,14 +58,14 @@ void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t,
                                                 const IdefixArray4D<real> &Flux) {
   idfx::pushRegion("BragThermalDiffusion::AddBragDiffusiveFlux");
   switch(limiter) {
-    case Limiter::VanLeer:
-      this->AddBragDiffusiveFluxLim<Limiter::VanLeer>(dir,t,Flux);
+    case PLMLimiter::VanLeer:
+      this->AddBragDiffusiveFluxLim<PLMLimiter::VanLeer>(dir,t,Flux);
       break;
-    case Limiter::McLim:
-      this->AddBragDiffusiveFluxLim<Limiter::McLim>(dir,t,Flux);
+    case PLMLimiter::McLim:
+      this->AddBragDiffusiveFluxLim<PLMLimiter::McLim>(dir,t,Flux);
       break;
-    case Limiter::MinMod:
-      this->AddBragDiffusiveFluxLim<Limiter::MinMod>(dir,t,Flux);
+    case PLMLimiter::MinMod:
+      this->AddBragDiffusiveFluxLim<PLMLimiter::MinMod>(dir,t,Flux);
       break;
     default:
       IDEFIX_ERROR("The slope limiter for the Braginskii heat flux is not defined.");

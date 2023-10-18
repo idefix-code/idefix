@@ -9,7 +9,7 @@
 #define FLUID_RIEMANNSOLVER_MHDSOLVERS_HLLMHD_HPP_
 
 #include "../idefix.hpp"
-#include "slopeLimiter.hpp"
+#include "extrapolateToFaces.hpp"
 #include "flux.hpp"
 #include "convertConsToPrim.hpp"
 #include "storeFlux.hpp"
@@ -78,7 +78,7 @@ void RiemannSolver<Phys>::HllMHD(IdefixArray4D<real> &Flux) {
 
   [[maybe_unused]] real xHConstant = hydro->xH;
 
-  SlopeLimiter<Phys,DIR> slopeLim(Vc,data->dx[DIR],haveShockFlattening,shockFlattening.get());;
+  ExtrapolateToFaces<Phys,DIR> extrapol = *this->GetExtrapolator<DIR>();
 
   // Define normal, tangent and bi-tanget indices
   // st and sb will be useful only when Hall is included
@@ -180,7 +180,7 @@ void RiemannSolver<Phys>::HllMHD(IdefixArray4D<real> &Flux) {
       c2Iso = ZERO_F;
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-      slopeLim.ExtrapolatePrimVar(i, j, k, vL, vR);
+      extrapol.ExtrapolatePrimVar(i, j, k, vL, vR);
       vL[BXn] = Vs(DIR,k,j,i);
       vR[BXn] = vL[BXn];
 

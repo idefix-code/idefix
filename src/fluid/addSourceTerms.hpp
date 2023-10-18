@@ -170,7 +170,7 @@ struct Fluid_AddSourceTermsFunctor {
                       +Vc(BX2,k,j,i)*Vc(BX2,k,j,i)  ,
                       +Vc(BX3,k,j,i)*Vc(BX3,k,j,i)  );
       } //MHD
-      Uc(MX1,k,j,i) += dt*Sm/x1(i);
+      Uc(MX1,k,j,i) += dt*Sm/rt(i);
   #if COMPONENTS >= 2
       real ct = 1.0/tanx2(j);
        // Centrifugal

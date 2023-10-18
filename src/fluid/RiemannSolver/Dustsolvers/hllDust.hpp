@@ -10,7 +10,7 @@
 
 #include "../idefix.hpp"
 #include "fluid.hpp"
-#include "slopeLimiter.hpp"
+#include "extrapolateToFaces.hpp"
 #include "flux.hpp"
 #include "convertConsToPrim.hpp"
 
@@ -31,7 +31,7 @@ void RiemannSolver<Phys>::HllDust(IdefixArray4D<real> &Flux) {
   IdefixArray1D<real> dx = this->data->dx[DIR];
 
 
-  SlopeLimiter<Phys,DIR> slopeLim(Vc,data->dx[DIR],haveShockFlattening,shockFlattening.get());;
+  ExtrapolateToFaces<Phys,DIR> extrapol = *this->GetExtrapolator<DIR>();
 
   idefix_for("HLL_Kernel",
              data->beg[KDIR],data->end[KDIR]+koffset,
@@ -55,7 +55,7 @@ void RiemannSolver<Phys>::HllDust(IdefixArray4D<real> &Flux) {
 
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-      slopeLim.ExtrapolatePrimVar(i, j, k, vL, vR);
+      extrapol.ExtrapolatePrimVar(i, j, k, vL, vR);
 
       // 2-- Get the wave speed
 

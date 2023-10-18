@@ -7,30 +7,12 @@
 #ifndef FLUID_RIEMANNSOLVER_SLOPELIMITER_HPP_
 #define FLUID_RIEMANNSOLVER_SLOPELIMITER_HPP_
 
-#include "fluid.hpp"
-#include "dataBlock.hpp"
-#include "shockFlattening.hpp"
+// The default PLM Limiter template type
+enum class PLMLimiter {VanLeer, MinMod, McLim};
 
-// Build a left and right extrapolation of the primitive variables along direction dir
-
-// These functions extrapolate the cell prim vars to the faces. Definitions are as followed
-//
-// |       cell i-1               interface i          cell i
-// |-----------------------------------|------------------------------------||
-//          Vc(i-1)           PrimL(i)  PrimR(i)       Vc(i)
-template<typename Phys,
-         const int dir,
-         const Limiter limiter = Limiter::VanLeer,
-         const int order = ORDER>
+template<const PLMLimiter limiter = PLMLimiter::VanLeer>
 class SlopeLimiter {
  public:
-  SlopeLimiter(IdefixArray4D<real> &Vc, IdefixArray1D<real> &dx,
-               bool haveSF, ShockFlattening<Phys> *sf): Vc(Vc), dx(dx), shockFlattening(haveSF) {
-          if(shockFlattening) {
-            flags = sf->flagArray;
-          }
-  }
-
   KOKKOS_FORCEINLINE_FUNCTION static real MinModLim(const real dvp, const real dvm) {
     real dq= 0.0;
     // MinMod
@@ -70,9 +52,16 @@ class SlopeLimiter {
   }
 
   KOKKOS_FORCEINLINE_FUNCTION static real VanLeerLim(const real dvp, const real dvm) {
-    real dq= 0.0;
-    dq = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
+    real dq = (dvp*dvm > ZERO_F ? TWO_F*dvp*dvm/(dvp + dvm) : ZERO_F);
     return(dq);
+  }
+
+  // Generalize vanleer for non-homogeneous grids
+  KOKKOS_FORCEINLINE_FUNCTION static real VanLeerLim(const real dvp, const real dvm,
+                                              const real cp , const real cm) {
+    real dq = (dvp*dvm > 0.0 ? dvp*dvm*(cp*dvm + cm*dvp)
+                       /(dvp*dvp + dvm*dvm + (cp + cm - 2.0)*dvp*dvm) : 0.0);
+    return dq;
   }
 
   KOKKOS_FORCEINLINE_FUNCTION static real McLim(const real dvp, const real dvm) {
@@ -85,11 +74,33 @@ class SlopeLimiter {
     return(dq);
   }
 
-  KOKKOS_FORCEINLINE_FUNCTION static real PLMLim(const real dvp, const real dvm) {
-    if constexpr(limiter == Limiter::VanLeer) return(VanLeerLim(dvp,dvm));
-    if constexpr(limiter == Limiter::McLim) return(McLim(dvp,dvm));
-    if constexpr(limiter == Limiter::MinMod) return(MinModLim(dvp,dvm));
+  // Generalized McLimiter for non-homogeneous grid
+  KOKKOS_FORCEINLINE_FUNCTION static real McLim(const real dvp, const real dvm,
+                                          const real cp , const real cm) {
+    real dq = 0;
+    if(dvp*dvm >0.0) {
+      real dqc = 0.5*(dvp+dvm);
+      real d2q =  fabs(dvp*cp) < fabs(dvm*cm) ? dvp*cp : dvm*cm;
+      dq= fabs(d2q) < fabs(dqc) ? d2q : dqc;
+    }
+    return(dq);
   }
+
+
+  KOKKOS_FORCEINLINE_FUNCTION static real PLMLim(const real dvp, const real dvm) {
+    if constexpr(limiter == PLMLimiter::VanLeer) return(VanLeerLim(dvp,dvm));
+    if constexpr(limiter == PLMLimiter::McLim) return(McLim(dvp,dvm));
+    if constexpr(limiter == PLMLimiter::MinMod) return(MinModLim(dvp,dvm));
+  }
+
+  // Overlad of PLM limiter for irregular grids
+  KOKKOS_FORCEINLINE_FUNCTION static real PLMLim(const real dvp, const real dvm,
+                                          const real cp, const real cm) {
+    if constexpr(limiter == PLMLimiter::VanLeer) return(VanLeerLim(dvp,dvm,cp,cm));
+    if constexpr(limiter == PLMLimiter::McLim) return(McLim(dvp,dvm,cp,cm));
+    if constexpr(limiter == PLMLimiter::MinMod) return(MinModLim(dvp,dvm));
+  }
+
 
   template <typename T>
   KOKKOS_FORCEINLINE_FUNCTION static int sign(T val) {
@@ -178,196 +189,6 @@ class SlopeLimiter {
       }
     }
   }
-
-  KOKKOS_FORCEINLINE_FUNCTION void ExtrapolatePrimVar(const int i,
-                                                    const int j,
-                                                    const int k,
-                                                    real vL[], real vR[]) const {
-    // 1-- Store the primitive variables on the left, right, and averaged states
-    constexpr int ioffset = (dir==IDIR ? 1 : 0);
-    constexpr int joffset = (dir==JDIR ? 1 : 0);
-    constexpr int koffset = (dir==KDIR ? 1 : 0);
-
-    for(int nv = 0 ; nv < Phys::nvar ; nv++) {
-      if constexpr(order == 1) {
-        vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset);
-        vR[nv] = Vc(nv,k,j,i);
-      } else if constexpr(order == 2) {
-        real dvm = Vc(nv,k-koffset,j-joffset,i-ioffset)
-                  -Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset);
-        real dvp = Vc(nv,k,j,i)-Vc(nv,k-koffset,j-joffset,i-ioffset);
-
-        real dv;
-        if(shockFlattening) {
-          if(flags(k-koffset,j-joffset,i-ioffset) == FlagShock::Shock) {
-            // Force slope limiter to minmod
-            dv = MinModLim(dvp,dvm);
-          } else {
-            dv = PLMLim(dvp,dvm);
-          }
-        } else { // No shock flattening
-          dv = PLMLim(dvp,dvm);
-        }
-
-        vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + HALF_F*dv;
-
-        dvm = dvp;
-        dvp = Vc(nv,k+koffset,j+joffset,i+ioffset) - Vc(nv,k,j,i);
-
-        if(shockFlattening) {
-          if(flags(k,j,i) == FlagShock::Shock) {
-            dv = MinModLim(dvp,dvm);
-          } else {
-            dv = PLMLim(dvp,dvm);
-          }
-        } else { // No shock flattening
-          dv = PLMLim(dvp,dvm);
-        }
-
-        vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
-      } else if constexpr(order == 3) {
-          // 1D index along the chosen direction
-          const int index = ioffset*i + joffset*j + koffset*k;
-          real dvm = Vc(nv,k-koffset,j-joffset,i-ioffset)
-                    -Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset);
-          real dvp = Vc(nv,k,j,i)-Vc(nv,k-koffset,j-joffset,i-ioffset);
-
-          // Limo3 limiter
-          real dv;
-          if(shockFlattening) {
-            if(flags(k-koffset,j-joffset,i-ioffset) == FlagShock::Shock) {
-              // Force slope limiter to minmod
-              dv = MinModLim(dvp,dvm);
-            } else {
-              dv = dvp * LimO3Lim(dvp, dvm, dx(index-1));
-            }
-          } else { // No shock flattening
-              dv = dvp * LimO3Lim(dvp, dvm, dx(index-1));
-          }
-
-          vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + HALF_F*dv;
-
-          // Check positivity
-          if(nv==RHO) {
-            // If face element is negative, revert to minmod
-            if(vL[nv] <= 0.0) {
-              dv = MinModLim(dvp,dvm);
-              vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + HALF_F*dv;
-            }
-          }
-          if constexpr(Phys::pressure) {
-            if(nv==PRS) {
-              // If face element is negative, revert to minmod
-              if(vL[nv] <= 0.0) {
-                dv = MinModLim(dvp,dvm);
-                vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset) + HALF_F*dv;
-              }
-            }
-          }
-
-          dvm = dvp;
-          dvp = Vc(nv,k+koffset,j+joffset,i+ioffset) - Vc(nv,k,j,i);
-
-          // Limo3 limiter
-          if(shockFlattening) {
-            if(flags(k,j,i) == FlagShock::Shock) {
-              // Force slope limiter to minmod
-              dv = MinModLim(dvp,dvm);
-            } else {
-              dv = dvm * LimO3Lim(dvm, dvp, dx(index));
-            }
-          } else { // No shock flattening
-            dv = dvm * LimO3Lim(dvm, dvp, dx(index));
-          }
-
-          vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
-
-          // Check positivity
-          if(nv==RHO) {
-            // If face element is negative, revert to vanleer
-            if(vR[nv] <= 0.0) {
-              dv = MinModLim(dvp,dvm);
-              vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
-            }
-          }
-          if constexpr(Phys::pressure) {
-            if(nv==PRS) {
-              // If face element is negative, revert to vanleer
-              if(vR[nv] <= 0.0) {
-                dv = MinModLim(dvp,dvm);
-                vR[nv] = Vc(nv,k,j,i) - HALF_F*dv;
-              }
-            }
-          }
-      } else if constexpr(order == 4) {
-          // Reconstruction in cell i-1
-          real vm2 = Vc(nv,k-3*koffset,j-3*joffset,i-3*ioffset);;
-          real vm1 = Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset);
-          real v0 = Vc(nv,k-koffset,j-joffset,i-ioffset);
-          real vp1 = Vc(nv,k,j,i);
-          real vp2 = Vc(nv,k+koffset,j+joffset,i+ioffset);
-
-          real vr,vl;
-          getPPMStates(vm2, vm1, v0, vp1, vp2, vl, vr);
-          // vL= left side of current interface (i-1/2)= right side of cell i-1
-
-          // Check positivity
-          if(nv==RHO) {
-            // If face element is negative, revert to vanleer
-            if(vr <= 0.0) {
-              real dv = PLMLim(vp1-v0,v0-vm1);
-              vr = v0+HALF_F*dv;
-            }
-          }
-          if constexpr(Phys::pressure) {
-            if(nv==PRS) {
-              // If face element is negative, revert to vanleer
-              if(vr <= 0.0) {
-                real dv = PLMLim(vp1-v0,v0-vm1);
-                vr = v0+HALF_F*dv;
-              }
-            }
-          }
-
-          vL[nv] = vr;
-          // Reconstruction in cell i
-
-          vm2 = vm1;
-          vm1 = v0;
-          v0 = vp1;
-          vp1 = vp2;
-          vp2 = Vc(nv,k+2*koffset,j+2*joffset,i+2*ioffset);
-
-          getPPMStates(vm2, vm1, v0, vp1, vp2, vl, vr);
-
-          // Check positivity
-          if(nv==RHO) {
-            // If face element is negative, revert to vanleer
-            if(vl <= 0.0) {
-              real dv = PLMLim(vp1-v0,v0-vm1);
-              vl = v0-HALF_F*dv;
-            }
-          }
-          if constexpr(Phys::pressure) {
-            if(nv==PRS) {
-              // If face element is negative, revert to vanleer
-              if(vl <= 0.0) {
-                real dv = PLMLim(vp1-v0,v0-vm1);
-                vl = v0-HALF_F*dv;
-              }
-            }
-          }
-
-          vR[nv] = vl;
-      }
-    }
-  }
-
-  IdefixArray4D<real> Vc;
-  IdefixArray1D<real> dx;
-  IdefixArray3D<FlagShock> flags;
-  bool shockFlattening{false};
 };
-
 
 #endif // FLUID_RIEMANNSOLVER_SLOPELIMITER_HPP_

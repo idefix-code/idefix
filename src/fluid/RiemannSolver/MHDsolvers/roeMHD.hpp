@@ -9,7 +9,7 @@
 #define FLUID_RIEMANNSOLVER_MHDSOLVERS_ROEMHD_HPP_
 
 #include "../idefix.hpp"
-#include "slopeLimiter.hpp"
+#include "extrapolateToFaces.hpp"
 #include "flux.hpp"
 #include "convertConsToPrim.hpp"
 #include "storeFlux.hpp"
@@ -104,7 +104,7 @@ void RiemannSolver<Phys>::RoeMHD(IdefixArray4D<real> &Flux) {
   // st and sb will be useful only when Hall is included
   real st = ONE_F, sb = ONE_F;
 
-  SlopeLimiter<Phys,DIR> slopeLim(Vc,data->dx[DIR],haveShockFlattening,shockFlattening.get());;
+  ExtrapolateToFaces<Phys,DIR> extrapol = *this->GetExtrapolator<DIR>();
 
   switch(DIR) {
     case(IDIR):
@@ -205,7 +205,7 @@ void RiemannSolver<Phys>::RoeMHD(IdefixArray4D<real> &Flux) {
 
 
       // 1-- Store the primitive variables on the left, right, and averaged states
-      slopeLim.ExtrapolatePrimVar(i, j, k, vL, vR);
+      extrapol.ExtrapolatePrimVar(i, j, k, vL, vR);
       vL[BXn] = Vs(DIR,k,j,i);
       vR[BXn] = vL[BXn];
 

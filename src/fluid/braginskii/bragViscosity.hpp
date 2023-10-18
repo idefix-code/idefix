@@ -14,7 +14,7 @@
 #include "input.hpp"
 #include "grid.hpp"
 #include "fluid_defs.hpp"
-#include "bragLimiter.hpp"
+#include "slopeLimiter.hpp"
 
 // Forward class hydro declaration
 template <typename Phys> class Fluid;
@@ -27,7 +27,7 @@ class BragViscosity {
   void ShowConfig();                    // print configuration
   void AddBragViscousFlux(int, const real, const IdefixArray4D<real> &);
 
-  template <const Limiter>
+  template <const PLMLimiter>
   void AddBragViscousFluxLim(int, const real, const IdefixArray4D<real> &);
 
   // Enroll user-defined viscous diffusivity
@@ -60,7 +60,7 @@ class BragViscosity {
   // constant diffusion coefficient (when needed)
   real etaBrag;
 
-  Limiter limiter{Limiter::VanLeer};
+  PLMLimiter limiter{PLMLimiter::VanLeer};
 };
 
 #include "fluid.hpp"
@@ -78,13 +78,13 @@ BragViscosity::BragViscosity(Input &input, Grid &grid, Fluid<Phys> *hydroin):
   if(input.CheckEntry("Hydro","bragViscosity")>=0) {
     if(input.Get<std::string>("Hydro","bragViscosity",1).compare("vanleer") == 0) {
       this->haveSlopeLimiter = true;
-      limiter = Limiter::VanLeer;
+      limiter = PLMLimiter::VanLeer;
     } else if(input.Get<std::string>("Hydro","bragViscosity",1).compare("mc") == 0) {
       this->haveSlopeLimiter = true;
-      limiter = Limiter::McLim;
+      limiter = PLMLimiter::McLim;
     } else if (input.Get<std::string>("Hydro","bragViscosity",1).compare("nolimiter") == 0) {
       this->haveSlopeLimiter = false;
-//      limiter = Limiter::VanLeer;
+//      limiter = PLMLimiter::VanLeer;
     } else {
       IDEFIX_ERROR("Unknown braginskii viscosity limiter in idefix.ini. "
                    "Can only be vanleer, mc or nolimiter.");
@@ -164,7 +164,7 @@ BragViscosity::BragViscosity(Input &input, Grid &grid, Fluid<Phys> *hydroin):
 // (this avoids an extra array)
 // Associated source terms, present in non-cartesian geometry are also computed
 // and stored in this->bragViscSrc for later use (in calcRhs).
-template <Limiter limTemplate>
+template <PLMLimiter limTemplate>
 void BragViscosity::AddBragViscousFluxLim(int dir, const real t, const IdefixArray4D<real> &Flux) {
   idfx::pushRegion("BragViscosity::AddBragViscousFlux");
   IdefixArray4D<real> Vc = this->Vc;
@@ -193,7 +193,7 @@ void BragViscosity::AddBragViscousFluxLim(int dir, const real t, const IdefixArr
   HydroModuleStatus haveViscosity = this->status.status;
   bool haveSlopeLimiter = this->haveSlopeLimiter;
 
-  using SL = BragLimiter<limTemplate>;
+  using SL = SlopeLimiter<limTemplate>;
 
   // Braginskii Viscosity
   // Compute viscosity if needed
@@ -389,21 +389,21 @@ void BragViscosity::AddBragViscousFluxLim(int dir, const real t, const IdefixArr
           bj = BY_I;
           Bmag += BY_I*BY_I;
           if (haveSlopeLimiter) {
-            dVxj = SL::Lim(SL_DY(Vc,VX1,k,j + 1,i)/dx2(j+1),
+            dVxj = SL::PLMLim(SL_DY(Vc,VX1,k,j + 1,i)/dx2(j+1),
                                 SL_DY(Vc,VX1,k,j + 1,i - 1)/dx2(j+1));
-            dVxj = SL::Lim(dVxj,
-                                SL::Lim(SL_DY(Vc,VX1,k,j,i)/dx2(j),
+            dVxj = SL::PLMLim(dVxj,
+                                SL::PLMLim(SL_DY(Vc,VX1,k,j,i)/dx2(j),
                                              SL_DY(Vc,VX1,k,j,i - 1)/dx2(j)));
-            dVyj = SL::Lim(SL_DY(Vc,VX2,k,j + 1,i)/dx2(j+1),
+            dVyj = SL::PLMLim(SL_DY(Vc,VX2,k,j + 1,i)/dx2(j+1),
                                 SL_DY(Vc,VX2,k,j + 1,i - 1)/dx2(j+1));
-            dVyj = SL::Lim(dVyj,
-                                SL::Lim(SL_DY(Vc,VX2,k,j,i)/dx2(j),
+            dVyj = SL::PLMLim(dVyj,
+                                SL::PLMLim(SL_DY(Vc,VX2,k,j,i)/dx2(j),
                                              SL_DY(Vc,VX2,k,j,i - 1)/dx2(j)));
             #if DIMENSIONS == 3
-              dVzj = SL::Lim(SL_DY(Vc,VX3,k,j + 1,i)/dx2(j+1),
+              dVzj = SL::PLMLim(SL_DY(Vc,VX3,k,j + 1,i)/dx2(j+1),
                                   SL_DY(Vc,VX3,k,j + 1,i - 1)/dx2(j+1));
-              dVzj = SL::Lim(dVzj,
-                                  SL::Lim(SL_DY(Vc,VX3,k,j,i)/dx2(j),
+              dVzj = SL::PLMLim(dVzj,
+                                  SL::PLMLim(SL_DY(Vc,VX3,k,j,i)/dx2(j),
                                                SL_DY(Vc,VX3,k,j,i - 1)/dx2(j)));
             #endif
           } else {
@@ -415,20 +415,20 @@ void BragViscosity::AddBragViscousFluxLim(int dir, const real t, const IdefixArr
             bk = BZ_I;
             Bmag += BZ_I*BZ_I;
             if (haveSlopeLimiter) {
-              dVxk = SL::Lim(SL_DZ(Vc,VX1,k + 1,j,i)/dx3(k+1),
+              dVxk = SL::PLMLim(SL_DZ(Vc,VX1,k + 1,j,i)/dx3(k+1),
                                   SL_DZ(Vc,VX1,k + 1,j,i - 1)/dx3(k+1));
-              dVxk = SL::Lim(dVxk,
-                                  SL::Lim(SL_DZ(Vc,VX1,k,j,i)/dx3(k),
+              dVxk = SL::PLMLim(dVxk,
+                                  SL::PLMLim(SL_DZ(Vc,VX1,k,j,i)/dx3(k),
                                                SL_DZ(Vc,VX1,k,j,i - 1)/dx3(k)));
-              dVyk = SL::Lim(SL_DZ(Vc,VX2,k + 1,j,i)/dx3(k+1),
+              dVyk = SL::PLMLim(SL_DZ(Vc,VX2,k + 1,j,i)/dx3(k+1),
                                   SL_DZ(Vc,VX2,k + 1,j,i - 1)/dx3(k+1));
-              dVyk = SL::Lim(dVyk,
-                                  SL::Lim(SL_DZ(Vc,VX2,k,j,i)/dx3(k),
+              dVyk = SL::PLMLim(dVyk,
+                                  SL::PLMLim(SL_DZ(Vc,VX2,k,j,i)/dx3(k),
                                                SL_DZ(Vc,VX2,k,j,i - 1)/dx3(k)));
-              dVzk = SL::Lim(SL_DZ(Vc,VX3,k + 1,j,i)/dx3(k+1),
+              dVzk = SL::PLMLim(SL_DZ(Vc,VX3,k + 1,j,i)/dx3(k+1),
                                   SL_DZ(Vc,VX3,k + 1,j,i - 1)/dx3(k+1));
-              dVzk = SL::Lim(dVzk,
-                                  SL::Lim(SL_DZ(Vc,VX3,k,j,i)/dx3(k),
+              dVzk = SL::PLMLim(dVzk,
+                                  SL::PLMLim(SL_DZ(Vc,VX3,k,j,i)/dx3(k),
                                                SL_DZ(Vc,VX3,k,j,i - 1)/dx3(k)));
             } else {
               EXPAND (  dVxk = D_DZ_I(Vc,VX1)/dx3(k); ,
@@ -563,22 +563,22 @@ void BragViscosity::AddBragViscousFluxLim(int dir, const real t, const IdefixArr
         }
 
         if (haveSlopeLimiter) {
-          dVxi = SL::Lim(SL_DX(Vc,VX1,k,j,i + 1)/dx1(i+1),
+          dVxi = SL::PLMLim(SL_DX(Vc,VX1,k,j,i + 1)/dx1(i+1),
                               SL_DX(Vc,VX1,k,j - 1,i + 1)/dx1(i+1));
-          dVxi = SL::Lim(dVxi,
-                              SL::Lim(SL_DX(Vc,VX1,k,j,i)/dx1(i),
+          dVxi = SL::PLMLim(dVxi,
+                              SL::PLMLim(SL_DX(Vc,VX1,k,j,i)/dx1(i),
                                            SL_DX(Vc,VX1,k,j - 1,i)/dx1(i)));
           #if DIMENSIONS >= 2
-            dVyi = SL::Lim(SL_DX(Vc,VX2,k,j,i + 1)/dx1(i+1),
+            dVyi = SL::PLMLim(SL_DX(Vc,VX2,k,j,i + 1)/dx1(i+1),
                                 SL_DX(Vc,VX2,k,j - 1,i + 1)/dx1(i+1));
-            dVyi = SL::Lim(dVyi,
-                                SL::Lim(SL_DX(Vc,VX2,k,j,i)/dx1(i),
+            dVyi = SL::PLMLim(dVyi,
+                                SL::PLMLim(SL_DX(Vc,VX2,k,j,i)/dx1(i),
                                              SL_DX(Vc,VX2,k,j - 1,i)/dx1(i)));
             #if DIMENSIONS == 3
-              dVzi = SL::Lim(SL_DX(Vc,VX3,k,j,i + 1)/dx1(i+1),
+              dVzi = SL::PLMLim(SL_DX(Vc,VX3,k,j,i + 1)/dx1(i+1),
                                   SL_DX(Vc,VX3,k,j - 1,i + 1)/dx1(i+1));
-              dVzi = SL::Lim(dVzi,
-                                  SL::Lim(SL_DX(Vc,VX3,k,j,i)/dx1(i),
+              dVzi = SL::PLMLim(dVzi,
+                                  SL::PLMLim(SL_DX(Vc,VX3,k,j,i)/dx1(i),
                                                SL_DX(Vc,VX3,k,j - 1,i)/dx1(i)));
             #endif
           #endif
@@ -600,20 +600,20 @@ void BragViscosity::AddBragViscousFluxLim(int dir, const real t, const IdefixArr
             bk = BZ_J;
             Bmag += BZ_J*BZ_J;
             if (haveSlopeLimiter) {
-              dVxk = SL::Lim(SL_DZ(Vc,VX1,k + 1,j,i)/dx3(k+1),
+              dVxk = SL::PLMLim(SL_DZ(Vc,VX1,k + 1,j,i)/dx3(k+1),
                                   SL_DZ(Vc,VX1,k + 1,j - 1,i)/dx3(k+1));
-              dVxk = SL::Lim(dVxk,
-                                  SL::Lim(SL_DZ(Vc,VX1,k,j,i)/dx3(k),
+              dVxk = SL::PLMLim(dVxk,
+                                  SL::PLMLim(SL_DZ(Vc,VX1,k,j,i)/dx3(k),
                                                SL_DZ(Vc,VX1,k,j - 1,i)/dx3(k)));
-              dVyk = SL::Lim(SL_DZ(Vc,VX2,k + 1,j,i)/dx3(k+1),
+              dVyk = SL::PLMLim(SL_DZ(Vc,VX2,k + 1,j,i)/dx3(k+1),
                                   SL_DZ(Vc,VX2,k + 1,j - 1,i)/dx3(k+1));
-              dVyk = SL::Lim(dVyk,
-                                  SL::Lim(SL_DZ(Vc,VX2,k,j,i)/dx3(k),
+              dVyk = SL::PLMLim(dVyk,
+                                  SL::PLMLim(SL_DZ(Vc,VX2,k,j,i)/dx3(k),
                                                SL_DZ(Vc,VX2,k,j - 1,i)/dx3(k)));
-              dVzk = SL::Lim(SL_DZ(Vc,VX3,k + 1,j,i)/dx3(k+1),
+              dVzk = SL::PLMLim(SL_DZ(Vc,VX3,k + 1,j,i)/dx3(k+1),
                                   SL_DZ(Vc,VX3,k + 1,j - 1,i)/dx3(k+1));
-              dVzk = SL::Lim(dVzk,
-                                  SL::Lim(SL_DZ(Vc,VX3,k,j,i)/dx3(k),
+              dVzk = SL::PLMLim(dVzk,
+                                  SL::PLMLim(SL_DZ(Vc,VX3,k,j,i)/dx3(k),
                                                SL_DZ(Vc,VX3,k,j - 1,i)/dx3(k)));
             } else {
               EXPAND (  dVxk = D_DZ_J(Vc,VX1)/dx3(k); ,
@@ -773,20 +773,20 @@ void BragViscosity::AddBragViscousFluxLim(int dir, const real t, const IdefixArr
         }
 
         if (haveSlopeLimiter) {
-          dVxi = SL::Lim(SL_DX(Vc,VX1,k,j,i + 1)/dx1(i+1),
+          dVxi = SL::PLMLim(SL_DX(Vc,VX1,k,j,i + 1)/dx1(i+1),
                               SL_DX(Vc,VX1,k - 1,j,i + 1)/dx1(i+1));
-          dVxi = SL::Lim(dVxi,
-                              SL::Lim(SL_DX(Vc,VX1,k,j,i)/dx1(i),
+          dVxi = SL::PLMLim(dVxi,
+                              SL::PLMLim(SL_DX(Vc,VX1,k,j,i)/dx1(i),
                                            SL_DX(Vc,VX1,k - 1,j,i)/dx1(i)));
-          dVyi = SL::Lim(SL_DX(Vc,VX2,k,j,i + 1)/dx1(i+1),
+          dVyi = SL::PLMLim(SL_DX(Vc,VX2,k,j,i + 1)/dx1(i+1),
                               SL_DX(Vc,VX2,k - 1,j,i + 1)/dx1(i+1));
-          dVyi = SL::Lim(dVyi,
-                              SL::Lim(SL_DX(Vc,VX2,k,j,i)/dx1(i),
+          dVyi = SL::PLMLim(dVyi,
+                              SL::PLMLim(SL_DX(Vc,VX2,k,j,i)/dx1(i),
                                            SL_DX(Vc,VX2,k - 1,j,i)/dx1(i)));
-          dVzi = SL::Lim(SL_DX(Vc,VX3,k,j,i + 1)/dx1(i+1),
+          dVzi = SL::PLMLim(SL_DX(Vc,VX3,k,j,i + 1)/dx1(i+1),
                               SL_DX(Vc,VX3,k - 1,j,i + 1)/dx1(i+1));
-          dVzi = SL::Lim(dVzi,
-                              SL::Lim(SL_DX(Vc,VX3,k,j,i)/dx1(i),
+          dVzi = SL::PLMLim(dVzi,
+                              SL::PLMLim(SL_DX(Vc,VX3,k,j,i)/dx1(i),
                                            SL_DX(Vc,VX3,k - 1,j,i)/dx1(i)));
         } else {
         EXPAND(  dVxi = D_DX_K(Vc,VX1)/dx1(i); ,
@@ -800,20 +800,20 @@ void BragViscosity::AddBragViscousFluxLim(int dir, const real t, const IdefixArr
           bj = BY_K;
           Bmag += BY_K*BY_K;
           if (haveSlopeLimiter) {
-            dVxj = SL::Lim(SL_DY(Vc,VX1,k,j + 1,i)/dx2(j+1),
+            dVxj = SL::PLMLim(SL_DY(Vc,VX1,k,j + 1,i)/dx2(j+1),
                                 SL_DY(Vc,VX1,k - 1,j + 1,i)/dx2(j+1));
-            dVxj = SL::Lim(dVxj,
-                                SL::Lim(SL_DY(Vc,VX1,k,j,i)/dx2(j),
+            dVxj = SL::PLMLim(dVxj,
+                                SL::PLMLim(SL_DY(Vc,VX1,k,j,i)/dx2(j),
                                              SL_DY(Vc,VX1,k - 1,j,i)/dx2(j)));
-            dVyj = SL::Lim(SL_DY(Vc,VX2,k,j + 1,i)/dx2(j+1),
+            dVyj = SL::PLMLim(SL_DY(Vc,VX2,k,j + 1,i)/dx2(j+1),
                                 SL_DY(Vc,VX2,k - 1,j + 1,i)/dx2(j+1));
-            dVyj = SL::Lim(dVyj,
-                                SL::Lim(SL_DY(Vc,VX2,k,j,i)/dx2(j),
+            dVyj = SL::PLMLim(dVyj,
+                                SL::PLMLim(SL_DY(Vc,VX2,k,j,i)/dx2(j),
                                              SL_DY(Vc,VX2,k - 1,j,i)/dx2(j)));
-            dVzj = SL::Lim(SL_DY(Vc,VX3,k,j + 1,i)/dx2(j+1),
+            dVzj = SL::PLMLim(SL_DY(Vc,VX3,k,j + 1,i)/dx2(j+1),
                                 SL_DY(Vc,VX3,k - 1,j + 1,i)/dx2(j+1));
-            dVzj = SL::Lim(dVzj,
-                                SL::Lim(SL_DY(Vc,VX3,k,j,i)/dx2(j),
+            dVzj = SL::PLMLim(dVzj,
+                                SL::PLMLim(SL_DY(Vc,VX3,k,j,i)/dx2(j),
                                              SL_DY(Vc,VX3,k - 1,j,i)/dx2(j)));
           } else {
             EXPAND(  dVxj = D_DY_K(Vc,VX1)/dx2(j); ,

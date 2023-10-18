@@ -40,7 +40,7 @@ class Grid {
   std::array<BoundaryType,3> rbound;          ///< Boundary condition to the right
 
   bool haveAxis{false};    ///< Do we require a special treatment of the axis in spherical coords?
-
+  bool isRegularCartesian{true}; ///< whether the grid is regular and cartesian (true) or not
 
   GridCoarsening haveGridCoarsening{GridCoarsening::disabled}; ///< Is grid coarsening enabled?
   std::array<bool,3> coarseningDirection;  ///< whether a coarsening is used in each direction

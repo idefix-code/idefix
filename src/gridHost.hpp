@@ -38,6 +38,7 @@ class GridHost {
   std::array<BoundaryType,3> rbound;         ///< Boundary condition to the right
 
   bool haveAxis=false;    ///< Do we require a special treatment of the axis in spherical coords?
+  bool isRegularCartesian; ///< whether the grid is regular and cartesian or not
 
   explicit GridHost(Grid&);   ///< Constructor from a corresponding Grid on the Device.
                               ///< (NB: this constructor does not sync any data)

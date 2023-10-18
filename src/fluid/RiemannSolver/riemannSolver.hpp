@@ -17,6 +17,9 @@
 // Forward declaration
 template<typename Phys>
 class ShockFlattening;
+
+#include "extrapolateToFaces.hpp"
+
 template <typename Phys>
 class RiemannSolver {
  public:
@@ -55,8 +58,14 @@ class RiemannSolver {
 
   template<const int>
     void HllDust(IdefixArray4D<real> &);
+  // Get the right slope limiter
+  template<int dir>
+  ExtrapolateToFaces<Phys, dir>* GetExtrapolator();
 
  private:
+  template <typename P, int dir, PLMLimiter L, int O>
+  friend class ExtrapolateToFaces;
+
   IdefixArray4D<real> Vc;
   IdefixArray4D<real> Vs;
   IdefixArray4D<real> Flux;
@@ -67,6 +76,12 @@ class RiemannSolver {
   Solver mySolver;
 
   std::unique_ptr<ShockFlattening<Phys>> shockFlattening;
+
+  // Because each direction is a different template, we can't use
+  std::unique_ptr<ExtrapolateToFaces<Phys,IDIR>> slopeLimIDIR;
+  std::unique_ptr<ExtrapolateToFaces<Phys,JDIR>> slopeLimJDIR;
+  std::unique_ptr<ExtrapolateToFaces<Phys,KDIR>> slopeLimKDIR;
+
   bool haveShockFlattening;
 };
 
@@ -142,6 +157,15 @@ RiemannSolver<Phys>::RiemannSolver(Input &input, Fluid<Phys>* hydro) : Vc{hydro-
     this->shockFlattening = std::make_unique<ShockFlattening<Phys>>(
                               hydro,input.Get<real>(std::string(Phys::prefix),"shockFlattening",0));
   }
+
+  // init slope limiters
+  slopeLimIDIR = std::make_unique<ExtrapolateToFaces<Phys,IDIR>>(this);
+  #if DIMENSIONS >= 2
+  slopeLimJDIR = std::make_unique<ExtrapolateToFaces<Phys,JDIR>>(this);
+  #endif
+  #if DIMENSIONS == 3
+  slopeLimKDIR = std::make_unique<ExtrapolateToFaces<Phys,KDIR>>(this);
+  #endif
 }
 
 template <typename Phys>
@@ -183,6 +207,20 @@ void RiemannSolver<Phys>::ShowConfig() {
     idfx::cout << Phys::prefix << ": Shock Flattening ENABLED." << std::endl;
   }
 }
+
+template <typename Phys>
+template<const int dir>
+ExtrapolateToFaces<Phys, dir>* RiemannSolver<Phys>::GetExtrapolator() {
+  if constexpr(dir==IDIR) {
+    return(this->slopeLimIDIR.get());
+  } else if constexpr(dir==JDIR) {
+    return(this->slopeLimJDIR.get());
+  } else if constexpr(dir==KDIR) {
+     return(this->slopeLimKDIR.get());
+  }
+}
+
+
 #include "calcFlux.hpp"
 
 #endif //FLUID_RIEMANNSOLVER_RIEMANNSOLVER_HPP_

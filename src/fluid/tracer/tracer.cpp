@@ -8,9 +8,6 @@
 #include "idefix.hpp"
 #include "tracer.hpp"
 
-// In order to use the slope limiters
-using SL = SlopeLimiter<DefaultPhysics,0>;
-
 // Convect Conservative to Primitive variable
 void Tracer::ConvertConsToPrim() {
   idfx::pushRegion("Tracer::ConvertConsToPrim");

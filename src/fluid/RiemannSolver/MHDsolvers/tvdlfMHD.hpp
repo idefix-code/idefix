@@ -9,7 +9,7 @@
 #define FLUID_RIEMANNSOLVER_MHDSOLVERS_TVDLFMHD_HPP_
 
 #include "../idefix.hpp"
-#include "slopeLimiter.hpp"
+#include "extrapolateToFaces.hpp"
 #include "flux.hpp"
 #include "convertConsToPrim.hpp"
 #include "storeFlux.hpp"
@@ -64,7 +64,7 @@ void RiemannSolver<Phys>::TvdlfMHD(IdefixArray4D<real> &Flux) {
 
   EquationOfState eos = *(hydro->eos.get());
 
-  SlopeLimiter<Phys,DIR> slopeLim(Vc,data->dx[DIR],haveShockFlattening,shockFlattening.get());;
+  ExtrapolateToFaces<Phys,DIR> extrapol = *this->GetExtrapolator<DIR>();
   // Define normal, tangent and bi-tanget indices
   // st and sb will be useful only when Hall is included
   real st = ONE_F, sb = ONE_F;
@@ -157,7 +157,7 @@ void RiemannSolver<Phys>::TvdlfMHD(IdefixArray4D<real> &Flux) {
       real fluxR[Phys::nvar];
 
       // Load primitive variables
-      slopeLim.ExtrapolatePrimVar(i, j, k, vL, vR);
+      extrapol.ExtrapolatePrimVar(i, j, k, vL, vR);
       vL[BXn] = Vs(DIR,k,j,i);
       vR[BXn] = vL[BXn];
 #pragma unroll

@@ -22,8 +22,6 @@ def testMe(test):
   # loop on all the ini files for this test
   for ini in inifiles:
     test.run(inputFile=ini)
-    if test.init and not test.mpi:
-      test.makeReference(filename=name)
     test.standardTest()
     # test.nonRegressionTest(filename=name,tolerance=tolerance)
 

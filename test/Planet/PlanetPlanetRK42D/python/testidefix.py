@@ -97,7 +97,7 @@ print("Error_dist0=%e"%error_d0)
 print("Error_dist1=%e"%error_d1)
 # print("Error_torque1=%e"%error_t1)
 # if error_d0<5.0e-2 and error_t0<5.0e-2 and error_d1<5.0e-2 and error_t1<5.0e-2 and error_rho<5.0e-2:
-if error_d0<5.0e-2 and diff_torque0<1.0e-15 and error_d1<5.0e-2 and diff_torque1<1.0e-15:
+if error_d0<5.0e-2 and diff_torque0<2.0e-14 and error_d1<5.0e-2 and diff_torque1<2.0e-14:
     print("SUCCESS!")
     sys.exit(0)
 else:

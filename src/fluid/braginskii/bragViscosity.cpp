@@ -83,14 +83,14 @@ void BragViscosity::EnrollBragViscousDiffusivity(DiffusivityFunc myFunc) {
 void BragViscosity::AddBragViscousFlux(int dir, const real t, const IdefixArray4D<real> &Flux) {
   idfx::pushRegion("BragViscosity::AddBragViscousFlux");
   switch(limiter) {
-    case Limiter::VanLeer:
-      this->AddBragViscousFluxLim<Limiter::VanLeer>(dir,t,Flux);
+    case PLMLimiter::VanLeer:
+      this->AddBragViscousFluxLim<PLMLimiter::VanLeer>(dir,t,Flux);
       break;
-    case Limiter::McLim:
-      this->AddBragViscousFluxLim<Limiter::McLim>(dir,t,Flux);
+    case PLMLimiter::McLim:
+      this->AddBragViscousFluxLim<PLMLimiter::McLim>(dir,t,Flux);
       break;
-    case Limiter::MinMod:
-      this->AddBragViscousFluxLim<Limiter::MinMod>(dir,t,Flux);
+    case PLMLimiter::MinMod:
+      this->AddBragViscousFluxLim<PLMLimiter::MinMod>(dir,t,Flux);
       break;
     default:
       IDEFIX_ERROR("The slope limiter for the Braginskii viscosity is not defined.");

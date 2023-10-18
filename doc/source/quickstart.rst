@@ -96,8 +96,9 @@ test with::
 
     cmake $IDEFIX_DIR
 
-Once the code is configured, it can be ran::
+Once the code is configured, it can be compiled and ran::
 
+    make -j 8
     ./idefix
 
 This test can take much more time that the sod test since it is 2D. In the end, you can visualize the results, which are written as VTK files using

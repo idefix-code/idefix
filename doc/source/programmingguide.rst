@@ -13,9 +13,10 @@ Data types
 
 Because *Idefix* can run on GPUs, and since GPUs experience a significant speedup when working
 with single precision arithmetic, a specific ``real`` datatype is used for all floating point
-operations in *Idefix*. This is by default aliased to ``double`` in `idefix.hpp`, but it can easily be modified
-to ``float`` for specific problems. Note however that this loss of precision might have a strong
-impact on the quality of the solution and is therefore not recommended.
+operations in *Idefix*. This is by default aliased to ``double`` in `idefix.hpp`, but it can easily converted
+to ``single`` with cmake ``Idefix_PRECISION`` property. Single precision arithemtic can lead to very significant speedups
+on some GPU architecture, but is not recommended for production runs as it can have an impact on the precision or even
+convergence of the solution.
 
 Host and device
 ===============

@@ -108,6 +108,7 @@ under the European Union Horizon 2020 research and innovation programme (Grant a
    reference
    modules
    programmingguide
+   kokkos
    contributing
    faq
    changelog

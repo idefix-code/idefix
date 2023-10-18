@@ -18,14 +18,26 @@ The dust module is designed to treat dust grains as a zero-pressure gas coupled 
 where :math:`\rho_i` and :math:`\rho` are the dust and gas densities, :math:`\mathbf{v}_i` and :math:`\mathbf{v}` are the dust and gas velocities and :math:`\gamma_i` is the drag coefficient
 between the dust and the gas. Note that by construction, all of the source terms (gravity, rotation, shearing box) of the gas are also automatically applied to each dust specie.
 
+When the gas follows an ideal or user-defined equation of state, the dust-gas drag leads to friction heating. Because the dust component does not posess an internal energy, *Idefix*
+assumes that all of the friction heating is deposited in the gas internal energy as an addition heating term :math:`Q_d`:
+
+.. math::
+
+    Q_d = \sum_i \gamma_i \rho_i \rho (\mathbf{v}-\mathbf{v}_i)\cdot\mathbf{v}_i
+
 When the drag feedback is enabled (default behaviour), the gas is subject to an additional drag force
 
 .. math::
 
     \mathbf{f}=\sum_i \gamma_i \rho_i \rho (\mathbf{v}_i-\mathbf{v})
 
-
 which guarantees total momentum conservation.
+
+.. note::
+
+    The heating associated to the feedback does not require any additional source term in the energy equation as *Idefix* conserves the total gas energy by design.
+
+
 
 Drag CFL condition
 -------------------

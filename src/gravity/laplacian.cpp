@@ -360,7 +360,7 @@ void Laplacian::PreComputeLaplacian() {
 
   idefix_for("L_Factor",KOFFSET,this->np_tot[KDIR]-KOFFSET,
                         JOFFSET,this->np_tot[JDIR]-JOFFSET,
-                        IOFFSET,this->np_tot[IDIR]-JOFFSET,
+                        IOFFSET,this->np_tot[IDIR]-IOFFSET,
     KOKKOS_LAMBDA(int k, int j,int i) {
       [[maybe_unused]] real h1, h2, h3;
       #if GEOMETRY == CARTESIAN

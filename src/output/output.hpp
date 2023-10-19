@@ -21,9 +21,6 @@
 #include "dump.hpp"
 #include "slice.hpp"
 
-class Vtk;
-class Dump;
-
 using AnalysisFunc = void (*) (DataBlock &);
 
 using UserDefVariablesContainer = std::map<std::string,IdefixHostArray3D<real>>;

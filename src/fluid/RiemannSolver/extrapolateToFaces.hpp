@@ -274,9 +274,11 @@ class ExtrapolateToFaces {
                                                     const int k,
                                                     real vL[], real vR[]) const {
     // 1-- Store the primitive variables on the left, right, and averaged states
-    constexpr int ioffset = (dir==IDIR ? 1 : 0);
-    constexpr int joffset = (dir==JDIR ? 1 : 0);
-    constexpr int koffset = (dir==KDIR ? 1 : 0);
+    #ifndef PRE_COMPUTE_SLOPES
+      constexpr int ioffset = (dir==IDIR ? 1 : 0);
+      constexpr int joffset = (dir==JDIR ? 1 : 0);
+      constexpr int koffset = (dir==KDIR ? 1 : 0);
+    #endif
 
     for(int nv = 0 ; nv < Phys::nvar ; nv++) {
       #ifdef PRE_COMPUTE_SLOPES

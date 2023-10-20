@@ -279,7 +279,7 @@ class ExtrapolateToFaces {
     constexpr int koffset = (dir==KDIR ? 1 : 0);
 
     for(int nv = 0 ; nv < Phys::nvar ; nv++) {
-      #ifdef PRE_COMPUTE_SLOPE
+      #ifdef PRE_COMPUTE_SLOPES
         // Use precomputed slopes
         vL[nv] = PrimL(nv,k,j,i);
         vR[nv] = PrimR(nv,k,j,i);

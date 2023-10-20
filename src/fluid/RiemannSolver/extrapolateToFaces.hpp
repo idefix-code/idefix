@@ -86,7 +86,7 @@ class ExtrapolateToFaces {
   void PreComputePrimVar(IdefixArray4D<real> Vc) {
     #ifndef PRE_COMPUTE_SLOPES
       return;
-    #endif
+    #else
     idfx::pushRegion("ExtraPolateToFaces::PreComputePrimVar");
 
     constexpr int ioffset = (dir==IDIR ? 1 : 0);
@@ -96,20 +96,27 @@ class ExtrapolateToFaces {
     // Multiplication coefficient to know the size of the stencil
     constexpr int coeff = (order < 4 ? 1 : 2);
 
-    idefix_for("PrecomputePrimVar",
-                0,  Vc.extent(0),
-                koffset*coeff , Vc.extent(1) - koffset*coeff,
-                joffset*coeff , Vc.extent(2) - joffset*coeff,
-                ioffset*coeff , Vc.extent(3) - ioffset*coeff,
-                KOKKOS_CLASS_LAMBDA(const int nv, const int k, const int j, const int i) {
-      if constexpr(order == 1) {
-        PrimR(nv,k,j,i) = Vc(nv,k,j,i);
-        PrimL(nv,k+koffset,j+joffset,i+ioffset) = Vc(nv,k,j,i);
-      } else if constexpr(order == 2) {
-        if(isRegularGrid) {
-          /////////////////////////////////////
-          // Regular Grid, PLM reconstruction
-          /////////////////////////////////////
+    if constexpr(order == 1) {
+      idefix_for("PrecomputePrimVar",
+                  0,  Vc.extent(0),
+                  koffset*coeff , Vc.extent(1) - koffset*coeff,
+                  joffset*coeff , Vc.extent(2) - joffset*coeff,
+                  ioffset*coeff , Vc.extent(3) - ioffset*coeff,
+                  KOKKOS_CLASS_LAMBDA(const int nv, const int k, const int j, const int i) {
+          PrimR(nv,k,j,i) = Vc(nv,k,j,i);
+          PrimL(nv,k+koffset,j+joffset,i+ioffset) = Vc(nv,k,j,i);
+      });
+    } else if constexpr(order == 2) {
+      if(isRegularGrid) {
+        /////////////////////////////////////
+        // Regular Grid, PLM reconstruction
+        /////////////////////////////////////
+        idefix_for("PrecomputePrimVar",
+                  0,  Vc.extent(0),
+                  koffset*coeff , Vc.extent(1) - koffset*coeff,
+                  joffset*coeff , Vc.extent(2) - joffset*coeff,
+                  ioffset*coeff , Vc.extent(3) - ioffset*coeff,
+                  KOKKOS_CLASS_LAMBDA(const int nv, const int k, const int j, const int i) {
           real v0 = Vc(nv,k,j,i);
           real dvm = v0-Vc(nv,k-koffset,j-joffset,i-ioffset);;
           real dvp = Vc(nv,k+koffset,j+joffset,i+ioffset) - v0;
@@ -127,10 +134,17 @@ class ExtrapolateToFaces {
 
           PrimL(nv,k+koffset,j+joffset,i+ioffset) = v0 + HALF_F*dv;
           PrimR(nv,k,j,i) = v0 - HALF_F*dv;
-        } else {
-          /////////////////////////////////////
-          // Irregular Grid, PLM reconstruction
-          /////////////////////////////////////
+        });
+      } else {
+        /////////////////////////////////////
+        // Irregular Grid, PLM reconstruction
+        /////////////////////////////////////
+        idefix_for("PrecomputePrimVar",
+              0,  Vc.extent(0),
+              koffset*coeff , Vc.extent(1) - koffset*coeff,
+              joffset*coeff , Vc.extent(2) - joffset*coeff,
+              ioffset*coeff , Vc.extent(3) - ioffset*coeff,
+              KOKKOS_CLASS_LAMBDA(const int nv, const int k, const int j, const int i) {
           const int index = ioffset*i + joffset*j + koffset*k;
 
           real v0 = Vc(nv,k,j,i);
@@ -154,9 +168,15 @@ class ExtrapolateToFaces {
           }
           PrimL(nv,k+koffset,j+joffset,i+ioffset) = v0 + dmArray(index)*dv;
           PrimR(nv,k,j,i) = v0 - dmArray(index)*dv;
-        } // Regular grid
-
-      } else if constexpr(order == 3) {
+        });
+      }
+    } else if constexpr(order == 3) {
+        idefix_for("PrecomputePrimVar",
+            0,  Vc.extent(0),
+            koffset*coeff , Vc.extent(1) - koffset*coeff,
+            joffset*coeff , Vc.extent(2) - joffset*coeff,
+            ioffset*coeff , Vc.extent(3) - ioffset*coeff,
+            KOKKOS_CLASS_LAMBDA(const int nv, const int k, const int j, const int i) {
           // 1D index along the chosen direction
           const int index = ioffset*i + joffset*j + koffset*k;
           real v0 = Vc(nv,k,j,i);
@@ -200,46 +220,52 @@ class ExtrapolateToFaces {
           }
           PrimL(nv,k+koffset,j+joffset,i+ioffset) = vL;
           PrimR(nv,k,j,i) = vR;
-      } else if constexpr(order == 4) {
-          // Reconstruction in cell i
+        });
+    } else if constexpr(order == 4) {
+      idefix_for("PrecomputePrimVar",
+        0,  Vc.extent(0),
+        koffset*coeff , Vc.extent(1) - koffset*coeff,
+        joffset*coeff , Vc.extent(2) - joffset*coeff,
+        ioffset*coeff , Vc.extent(3) - ioffset*coeff,
+        KOKKOS_CLASS_LAMBDA(const int nv, const int k, const int j, const int i) {
+        // Reconstruction in cell i
 
-          real vm2 = Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset);
-          real vm1 = Vc(nv,k-koffset,j-joffset,i-ioffset);
-          real v0 = Vc(nv,k,j,i);
-          real vp1 = Vc(nv,k+koffset,j+joffset,i+ioffset);
-          real vp2 = Vc(nv,k+2*koffset,j+2*joffset,i+2*ioffset);
+        real vm2 = Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset);
+        real vm1 = Vc(nv,k-koffset,j-joffset,i-ioffset);
+        real v0 = Vc(nv,k,j,i);
+        real vp1 = Vc(nv,k+koffset,j+joffset,i+ioffset);
+        real vp2 = Vc(nv,k+2*koffset,j+2*joffset,i+2*ioffset);
 
-          real vl,vr;
+        real vl,vr;
 
-          SL::getPPMStates(vm2, vm1, v0, vp1, vp2, vl, vr);
+        SL::getPPMStates(vm2, vm1, v0, vp1, vp2, vl, vr);
 
-          // Check positivity
-          if(nv==RHO) {
+        // Check positivity
+        if(nv==RHO) {
+          // If face element is negative, revert to vanleer
+          if(vl <= 0.0 || vr <=0.0) {
+            real dv = SL::PLMLim(vp1-v0,v0-vm1);
+            vl = v0-HALF_F*dv;
+            vr = v0+HALF_F*dv;
+          }
+        }
+        if constexpr(Phys::pressure) {
+          if(nv==PRS) {
             // If face element is negative, revert to vanleer
-            if(vl <= 0.0 || vr <=0.0) {
+            if(vl <= 0.0 || vr <=0.0 ) {
               real dv = SL::PLMLim(vp1-v0,v0-vm1);
               vl = v0-HALF_F*dv;
               vr = v0+HALF_F*dv;
             }
           }
-          if constexpr(Phys::pressure) {
-            if(nv==PRS) {
-              // If face element is negative, revert to vanleer
-              if(vl <= 0.0 || vr <=0.0 ) {
-                real dv = SL::PLMLim(vp1-v0,v0-vm1);
-                vl = v0-HALF_F*dv;
-                vr = v0+HALF_F*dv;
-              }
-            }
-          }
+        }
 
-          PrimL(nv,k+koffset,j+joffset,i+ioffset) = vr;
-          PrimR(nv,k,j,i) = vl;
-      }
-    } );
-
-
+        PrimL(nv,k+koffset,j+joffset,i+ioffset) = vr;
+        PrimR(nv,k,j,i) = vl;
+      });
+    }
     idfx::popRegion();
+    #endif
   }
 
   // Inline function

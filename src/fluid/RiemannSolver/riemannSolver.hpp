@@ -69,6 +69,7 @@ class RiemannSolver {
   IdefixArray4D<real> Vc;
   IdefixArray4D<real> Vs;
   IdefixArray4D<real> Flux;
+
   IdefixArray3D<real> cMax;
   Fluid<Phys>* hydro;
   DataBlock *data;

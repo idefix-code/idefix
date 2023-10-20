@@ -20,8 +20,8 @@
 #include "tvdlfHD.hpp"
 #include "roeHD.hpp"
 #include "hllDust.hpp"
-
 #include "shockFlattening.hpp"
+#include "extrapolateToFaces.hpp"
 
 // Compute Riemann fluxes from states
 template <typename Phys>
@@ -32,6 +32,9 @@ void RiemannSolver<Phys>::CalcFlux(IdefixArray4D<real> &flux) {
     // enable shock flattening
     if(haveShockFlattening) shockFlattening->FindShock();
   }
+  // Precompute slopes when needed
+  auto extrapolator = this->GetExtrapolator<dir>();
+  extrapolator->PreComputePrimVar(this->Vc);
 
   if constexpr(Phys::mhd) {
     switch (mySolver) {

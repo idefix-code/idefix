@@ -12,6 +12,9 @@
 #include "shockFlattening.hpp"
 #include "slopeLimiter.hpp"
 
+// Whether we precompute the slopes
+#define PRE_COMPUTE_SLOPES
+
 // Build a left and right extrapolation of the primitive variables along direction dir
 
 // These functions extrapolate the cell prim vars to the faces. Definitions are as followed
@@ -38,6 +41,16 @@ class ExtrapolateToFaces {
             if(!isRegularGrid) {
               ComputePLMweights(rSolver->hydro->data);
             }
+            #ifdef PRE_COMPUTE_SLOPES
+              PrimL = IdefixArray4D<real>("PrimL",Phys::nvar,
+                                          rSolver->hydro->data->np_tot[KDIR],
+                                          rSolver->hydro->data->np_tot[JDIR],
+                                          rSolver->hydro->data->np_tot[IDIR]);
+              PrimR = IdefixArray4D<real>("PrimR",Phys::nvar,
+                                          rSolver->hydro->data->np_tot[KDIR],
+                                          rSolver->hydro->data->np_tot[JDIR],
+                                          rSolver->hydro->data->np_tot[IDIR]);
+            #endif
   }
 
   void ComputePLMweights(DataBlock *data) {
@@ -70,8 +83,166 @@ class ExtrapolateToFaces {
                 });
   }
 
+  void PreComputePrimVar(IdefixArray4D<real> Vc) {
+    #ifndef PRE_COMPUTE_SLOPES
+      return;
+    #endif
+    idfx::pushRegion("ExtraPolateToFaces::PreComputePrimVar");
+
+    constexpr int ioffset = (dir==IDIR ? 1 : 0);
+    constexpr int joffset = (dir==JDIR ? 1 : 0);
+    constexpr int koffset = (dir==KDIR ? 1 : 0);
+
+    // Multiplication coefficient to know the size of the stencil
+    constexpr int coeff = (order < 4 ? 1 : 2);
+
+    idefix_for("PrecomputePrimVar",
+                0,  Vc.extent(0),
+                koffset*coeff , Vc.extent(1) - koffset*coeff,
+                joffset*coeff , Vc.extent(2) - joffset*coeff,
+                ioffset*coeff , Vc.extent(3) - ioffset*coeff,
+                KOKKOS_CLASS_LAMBDA(const int nv, const int k, const int j, const int i) {
+      if constexpr(order == 1) {
+        PrimR(nv,k,j,i) = Vc(nv,k,j,i);
+        PrimL(nv,k+koffset,j+joffset,i+ioffset) = Vc(nv,k,j,i);
+      } else if constexpr(order == 2) {
+        if(isRegularGrid) {
+          /////////////////////////////////////
+          // Regular Grid, PLM reconstruction
+          /////////////////////////////////////
+          real v0 = Vc(nv,k,j,i);
+          real dvm = v0-Vc(nv,k-koffset,j-joffset,i-ioffset);;
+          real dvp = Vc(nv,k+koffset,j+joffset,i+ioffset) - v0;
+
+          real dv;
+          if(shockFlattening) {
+            if(flags(k,j,i) == FlagShock::Shock) {
+              dv = SL::MinModLim(dvp,dvm);
+            } else {
+              dv = SL::PLMLim(dvp,dvm);
+            }
+          } else { // No shock flattening
+            dv = SL::PLMLim(dvp,dvm);
+          }
+
+          PrimL(nv,k+koffset,j+joffset,i+ioffset) = v0 + HALF_F*dv;
+          PrimR(nv,k,j,i) = v0 - HALF_F*dv;
+        } else {
+          /////////////////////////////////////
+          // Irregular Grid, PLM reconstruction
+          /////////////////////////////////////
+          const int index = ioffset*i + joffset*j + koffset*k;
+
+          real v0 = Vc(nv,k,j,i);
+          real dvm = v0-Vc(nv,k-koffset,j-joffset,i-ioffset);;
+          real dvp = Vc(nv,k+koffset,j+joffset,i+ioffset) - v0;
+
+          dvm *= wmArray(index);
+          dvp *= wpArray(index);
+          real cp = cpArray(index);
+          real cm = cmArray(index);
+
+          real dv;
+          if(shockFlattening) {
+            if(flags(k,j,i) == FlagShock::Shock) {
+              dv = SL::MinModLim(dvp,dvm);
+            } else {
+              dv = SL::PLMLim(dvp,dvm,cp,cm);
+            }
+          } else { // No shock flattening
+            dv = SL::PLMLim(dvp,dvm,cp,cm);
+          }
+          PrimL(nv,k+koffset,j+joffset,i+ioffset) = v0 + dmArray(index)*dv;
+          PrimR(nv,k,j,i) = v0 - dmArray(index)*dv;
+        } // Regular grid
+
+      } else if constexpr(order == 3) {
+          // 1D index along the chosen direction
+          const int index = ioffset*i + joffset*j + koffset*k;
+          real v0 = Vc(nv,k,j,i);
+          real dvm = v0-Vc(nv,k-koffset,j-joffset,i-ioffset);;
+          real dvp = Vc(nv,k+koffset,j+joffset,i+ioffset) - v0;
+
+          real dv;
+          // Limo3 limiter
+          if(shockFlattening) {
+            if(flags(k,j,i) == FlagShock::Shock) {
+              // Force slope limiter to minmod
+              dv = SL::MinModLim(dvp,dvm);
+            } else {
+              dv = dvm * SL::LimO3Lim(dvm, dvp, dx(index));
+            }
+          } else { // No shock flattening
+            dv = dvm * SL::LimO3Lim(dvm, dvp, dx(index));
+          }
+
+          real vR = v0 - HALF_F*dv;
+          real vL = v0 + HALF_F*dv;
+
+          // Check positivity
+          if(nv==RHO) {
+            // If face element is negative, revert to vanleer
+            if((vR <= 0.0) || (vL <=0.0)) {
+              dv = SL::MinModLim(dvp,dvm);
+              vR = v0 - HALF_F*dv;
+              vL = v0 + HALF_F*dv;
+            }
+          }
+          if constexpr(Phys::pressure) {
+            if(nv==PRS) {
+              // If face element is negative, revert to vanleer
+              if((vR <= 0.0) || (vL <=0.0)) {
+                dv = SL::MinModLim(dvp,dvm);
+                vR = v0 - HALF_F*dv;
+                vL = v0 + HALF_F*dv;
+              }
+            }
+          }
+          PrimL(nv,k+koffset,j+joffset,i+ioffset) = vL;
+          PrimR(nv,k,j,i) = vR;
+      } else if constexpr(order == 4) {
+          // Reconstruction in cell i
+
+          real vm2 = Vc(nv,k-2*koffset,j-2*joffset,i-2*ioffset);
+          real vm1 = Vc(nv,k-koffset,j-joffset,i-ioffset);
+          real v0 = Vc(nv,k,j,i);
+          real vp1 = Vc(nv,k+koffset,j+joffset,i+ioffset);
+          real vp2 = Vc(nv,k+2*koffset,j+2*joffset,i+2*ioffset);
+
+          real vl,vr;
+
+          SL::getPPMStates(vm2, vm1, v0, vp1, vp2, vl, vr);
+
+          // Check positivity
+          if(nv==RHO) {
+            // If face element is negative, revert to vanleer
+            if(vl <= 0.0 || vr <=0.0) {
+              real dv = SL::PLMLim(vp1-v0,v0-vm1);
+              vl = v0-HALF_F*dv;
+              vr = v0+HALF_F*dv;
+            }
+          }
+          if constexpr(Phys::pressure) {
+            if(nv==PRS) {
+              // If face element is negative, revert to vanleer
+              if(vl <= 0.0 || vr <=0.0 ) {
+                real dv = SL::PLMLim(vp1-v0,v0-vm1);
+                vl = v0-HALF_F*dv;
+                vr = v0+HALF_F*dv;
+              }
+            }
+          }
+
+          PrimL(nv,k+koffset,j+joffset,i+ioffset) = vr;
+          PrimR(nv,k,j,i) = vl;
+      }
+    } );
 
 
+    idfx::popRegion();
+  }
+
+  // Inline function
   KOKKOS_FORCEINLINE_FUNCTION void ExtrapolatePrimVar(const int i,
                                                     const int j,
                                                     const int k,
@@ -82,6 +253,12 @@ class ExtrapolateToFaces {
     constexpr int koffset = (dir==KDIR ? 1 : 0);
 
     for(int nv = 0 ; nv < Phys::nvar ; nv++) {
+      #ifdef PRE_COMPUTE_SLOPE
+        // Use precomputed slopes
+        vL[nv] = PrimL(nv,k,j,i);
+        vR[nv] = PrimR(nv,k,j,i);
+      #else
+      // Compute on the fly slopes
       if constexpr(order == 1) {
         vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset);
         vR[nv] = Vc(nv,k,j,i);
@@ -305,12 +482,14 @@ class ExtrapolateToFaces {
 
           vR[nv] = vl;
       }
+    #endif // PRE_COMPUTE_SLOPE
     }
   }
 
   IdefixArray4D<real> Vc;
   IdefixArray1D<real> dx;
   IdefixArray3D<FlagShock> flags;
+  IdefixArray4D<real> PrimL, PrimR;
 
   IdefixArray1D<real> cpArray;
   IdefixArray1D<real> cmArray;
@@ -323,5 +502,6 @@ class ExtrapolateToFaces {
   bool shockFlattening{false};
 };
 
+#undef PRE_COMPUTE_SLOPES
 
 #endif // FLUID_RIEMANNSOLVER_EXTRAPOLATETOFACES_HPP_

@@ -98,7 +98,7 @@ class ExtrapolateToFaces {
 
     if constexpr(order == 1) {
       idefix_for("PrecomputePrimVar",
-                  0,  Vc.extent(0),
+                  0,  Phys::nvar,
                   koffset*coeff , Vc.extent(1) - koffset*coeff,
                   joffset*coeff , Vc.extent(2) - joffset*coeff,
                   ioffset*coeff , Vc.extent(3) - ioffset*coeff,
@@ -112,7 +112,7 @@ class ExtrapolateToFaces {
         // Regular Grid, PLM reconstruction
         /////////////////////////////////////
         idefix_for("PrecomputePrimVar",
-                  0,  Vc.extent(0),
+                  0,  Phys::nvar,
                   koffset*coeff , Vc.extent(1) - koffset*coeff,
                   joffset*coeff , Vc.extent(2) - joffset*coeff,
                   ioffset*coeff , Vc.extent(3) - ioffset*coeff,
@@ -140,7 +140,7 @@ class ExtrapolateToFaces {
         // Irregular Grid, PLM reconstruction
         /////////////////////////////////////
         idefix_for("PrecomputePrimVar",
-              0,  Vc.extent(0),
+              0,  Phys::nvar,
               koffset*coeff , Vc.extent(1) - koffset*coeff,
               joffset*coeff , Vc.extent(2) - joffset*coeff,
               ioffset*coeff , Vc.extent(3) - ioffset*coeff,
@@ -172,7 +172,7 @@ class ExtrapolateToFaces {
       }
     } else if constexpr(order == 3) {
         idefix_for("PrecomputePrimVar",
-            0,  Vc.extent(0),
+            0,  Phys::nvar,
             koffset*coeff , Vc.extent(1) - koffset*coeff,
             joffset*coeff , Vc.extent(2) - joffset*coeff,
             ioffset*coeff , Vc.extent(3) - ioffset*coeff,
@@ -224,7 +224,7 @@ class ExtrapolateToFaces {
         });
     } else if constexpr(order == 4) {
       idefix_for("PrecomputePrimVar",
-        0,  Vc.extent(0),
+        0,  Phys::nvar,
         koffset*coeff , Vc.extent(1) - koffset*coeff,
         joffset*coeff , Vc.extent(2) - joffset*coeff,
         ioffset*coeff , Vc.extent(3) - ioffset*coeff,

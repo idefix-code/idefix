@@ -183,27 +183,28 @@ class ExtrapolateToFaces {
           real dvm = v0-Vc(nv,k-koffset,j-joffset,i-ioffset);;
           real dvp = Vc(nv,k+koffset,j+joffset,i+ioffset) - v0;
 
-          real dv;
+          real vR, vL;
           // Limo3 limiter
           if(shockFlattening) {
             if(flags(k,j,i) == FlagShock::Shock) {
               // Force slope limiter to minmod
-              dv = SL::MinModLim(dvp,dvm);
+              real dv = SL::MinModLim(dvp,dvm);
+              vR = v0 - HALF_F*dv;
+              vL = v0 + HALF_F*dv;
             } else {
-              dv = dvm * SL::LimO3Lim(dvm, dvp, dx(index));
+              vR = v0 - HALF_F*dvm * SL::LimO3Lim(dvm, dvp, dx(index));
+              vL = v0 + HALF_F*dvp * SL::LimO3Lim(dvp, dvm, dx(index));
             }
           } else { // No shock flattening
-            dv = dvm * SL::LimO3Lim(dvm, dvp, dx(index));
+            vR = v0 - HALF_F*dvm * SL::LimO3Lim(dvm, dvp, dx(index));
+            vL = v0 + HALF_F*dvp * SL::LimO3Lim(dvp, dvm, dx(index));
           }
-
-          real vR = v0 - HALF_F*dv;
-          real vL = v0 + HALF_F*dv;
 
           // Check positivity
           if(nv==RHO) {
             // If face element is negative, revert to vanleer
             if((vR <= 0.0) || (vL <=0.0)) {
-              dv = SL::MinModLim(dvp,dvm);
+              real dv = SL::MinModLim(dvp,dvm);
               vR = v0 - HALF_F*dv;
               vL = v0 + HALF_F*dv;
             }
@@ -212,7 +213,7 @@ class ExtrapolateToFaces {
             if(nv==PRS) {
               // If face element is negative, revert to vanleer
               if((vR <= 0.0) || (vL <=0.0)) {
-                dv = SL::MinModLim(dvp,dvm);
+                real dv = SL::MinModLim(dvp,dvm);
                 vR = v0 - HALF_F*dv;
                 vL = v0 + HALF_F*dv;
               }

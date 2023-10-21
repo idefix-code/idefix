@@ -166,7 +166,7 @@ class ExtrapolateToFaces {
           } else { // No shock flattening
             dv = SL::PLMLim(dvp,dvm,cp,cm);
           }
-          PrimL(nv,k+koffset,j+joffset,i+ioffset) = v0 + dmArray(index)*dv;
+          PrimL(nv,k+koffset,j+joffset,i+ioffset) = v0 + dpArray(index)*dv;
           PrimR(nv,k,j,i) = v0 - dmArray(index)*dv;
         });
       }

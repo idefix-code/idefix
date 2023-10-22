@@ -33,8 +33,10 @@ void RiemannSolver<Phys>::CalcFlux(IdefixArray4D<real> &flux) {
     if(haveShockFlattening) shockFlattening->FindShock();
   }
   // Precompute slopes when needed
-  auto extrapolator = this->GetExtrapolator<dir>();
-  extrapolator->PreComputePrimVar(this->Vc);
+  if constexpr(preComputeSlopes) {
+    auto extrapolator = this->GetExtrapolator<dir>();
+    extrapolator->PreComputePrimVar(this->Vc);
+  }
 
   if constexpr(Phys::mhd) {
     switch (mySolver) {

@@ -24,8 +24,10 @@ template <typename Phys>
 class RiemannSolver {
  public:
   // Riemann Solver type
-
   enum Solver {TVDLF_MHD, HLL_MHD, HLLD_MHD, ROE_MHD, TVDLF, HLL, HLLC, ROE, HLL_DUST};
+
+  // Whether we precompute the extrapolation
+  static constexpr bool preComputeSlopes = false;
 
   RiemannSolver(Input &input, Fluid<Phys>* hydro);
 
@@ -69,6 +71,8 @@ class RiemannSolver {
   IdefixArray4D<real> Vc;
   IdefixArray4D<real> Vs;
   IdefixArray4D<real> Flux;
+  
+  IdefixArray4D<real> PrimL,PrimR;
 
   IdefixArray3D<real> cMax;
   Fluid<Phys>* hydro;
@@ -78,7 +82,7 @@ class RiemannSolver {
 
   std::unique_ptr<ShockFlattening<Phys>> shockFlattening;
 
-  // Because each direction is a different template, we can't use
+  // Because each direction is a different template, we can't use an array
   std::unique_ptr<ExtrapolateToFaces<Phys,IDIR>> slopeLimIDIR;
   std::unique_ptr<ExtrapolateToFaces<Phys,JDIR>> slopeLimJDIR;
   std::unique_ptr<ExtrapolateToFaces<Phys,KDIR>> slopeLimKDIR;
@@ -160,6 +164,18 @@ RiemannSolver<Phys>::RiemannSolver(Input &input, Fluid<Phys>* hydro) : Vc{hydro-
   }
 
   // init slope limiters
+  if constexpr (preComputeSlopes) {
+    // Allocate Primitive variable for extrapolartor
+    PrimL = IdefixArray4D<real>("PrimL",Phys::nvar,
+                                hydro->data->np_tot[KDIR],
+                                hydro->data->np_tot[JDIR],
+                                hydro->data->np_tot[IDIR]);
+    PrimR = IdefixArray4D<real>("PrimR",Phys::nvar,
+                                hydro->data->np_tot[KDIR],
+                                hydro->data->np_tot[JDIR],
+                                hydro->data->np_tot[IDIR]);
+  }
+
   slopeLimIDIR = std::make_unique<ExtrapolateToFaces<Phys,IDIR>>(this);
   #if DIMENSIONS >= 2
   slopeLimJDIR = std::make_unique<ExtrapolateToFaces<Phys,JDIR>>(this);

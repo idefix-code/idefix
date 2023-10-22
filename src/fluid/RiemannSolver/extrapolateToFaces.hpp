@@ -275,7 +275,7 @@ class ExtrapolateToFaces {
         // Use precomputed slopes
         vL[nv] = PrimL(nv,k,j,i);
         vR[nv] = PrimR(nv,k,j,i);
-      } else { 
+      } else {
         // Compute on the fly slopes
         if constexpr(order == 1) {
           vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset);

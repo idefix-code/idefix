@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - RKL scheme now correctly takes into account grid coarsening when estimating the timestep of parabolic terms (!254)
 - fixed a bug in the evaluation of gravitational forces from the gradient of the potential in regions where grid coarsening is enabled (!267)
 - The CI tests now include a "non-regression" test that validate the code outputs *at machine precision*. This comes in addition to the "standard" test that validate the code against known analytical solution (at truncation precision). Each test now contains a testme.py script that does the full validation (documentation will come, for now use testme -help). (!311)
-- use PPM reconstruction for 2D Riemann solvers in Emf Computation when PPM is required.
+- use PPM reconstruction for 2D Riemann solvers in Emf Computation when PPM is required by the user.
 - the MPI routines have been refactored to guarantee reproductibility at machine precision independently of the domain decomposition. This implies that normal B field component are now exchanged between neighbouring processes. (!308)
 - allow the user to specify a particular output directory for vtk and dmp files (!339)
 - the -restart option without any number now loads the latest generated dump file, and not the last dump in the directory (!353)
@@ -23,12 +23,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fixed a bug in shock flattening that could lead to the breakup of conservation properties (!275)
 - fixed a bug in LookupTable that could lead to incorrect interpolation (!286)
 - fixed a bug that prevented to compile on HIP backend (!291)
-- fixed a bug that prevented idefix with vector potential to restart from dumps created with vector potential (!306)
+- fixed a bug that prevented idefix without vector potential to restart from dumps created with vector potential (!306)
 - fixed a bug that led to race condition when using GPU offloading, axis boundary condition and domain decomposition along X3 (!309)
 - fixed a bug that led to inconsistent results with MPI and UCT_HLLx EMF reconstruction schemes (!310)
 - fixed a bug that could result in .dmp file duplication on restart (!354)
 - Moving development onto github.com. Some references to merge requests will likely be lost.
-- fixed a bug in v2.0 developement branch that resulted in broekn dump files when MHD was enabled with DIMENSIONS<3 (#174)
+- fixed a bug in v2.0 developement branch that resulted in broken dump files when MHD was enabled with DIMENSIONS<3 (#174)
 - IDEFIX_Debug now automatically introduce Kokkos::fence at the end of each idefix_for, enforcing synchronisation between host and device when debugging (#188)
 - Do not use git lfs anymore due to bandwidth restrictions imposed by github (#183)
 - use proper cell centroid PLM reconstruction when using non-cartesian coordinates (#196)

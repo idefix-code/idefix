@@ -48,7 +48,7 @@ the input file, and for user-defined outputs. This can be seen as a way to link 
 setup to the main code at runtime, and avoid the need to pre-define tens of empty functions. Function enrollment
 is achieved by calling one of the ``EnrollXXX`` function of the class associated to it.
 
-For instance, the ``Hydro`` class provide the following list of enrollment functions (declared in hydro.hpp):
+For instance, the ``Fluid`` class provide the following list of enrollment functions (declared in hydro.hpp):
 
 .. code-block:: c++
 
@@ -72,21 +72,45 @@ For instance, the ``Hydro`` class provide the following list of enrollment funct
   void EnrollIsoSoundSpeed(IsoSoundSpeedFunc);
 
 When called, these function expects the address of the user-defined function. These user-defined
-function should have the following signatures (declared in hydro_defs.hpp):
+function should have the following signatures (declared in fluid_defs.hpp and boundary.hpp):
 
 .. code-block:: c++
 
-  using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side,
+  using UserDefBoundaryFunc = void (*) (Fluid<Phys> *, int dir, BoundarySide side,
                                       const real t);
   using GravPotentialFunc = void (*) (DataBlock &, const real t, IdefixArray1D<real>&,
                                     IdefixArray1D<real>&, IdefixArray1D<real>&,
                                     IdefixArray3D<real> &);
 
-  using SrcTermFunc = void (*) (DataBlock &, const real t, const real dt);
-  using InternalBoundaryFunc = void (*) (DataBlock &, const real t);
+  using SrcTermFunc = void (*) (Fluid<Phys> *, const real t, const real dt);
+  using InternalBoundaryFunc = void (*) (Fluid<Phys>*, const real t);
   using EmfBoundaryFunc = void (*) (DataBlock &, const real t);
   using DiffusivityFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
   using IsoSoundSpeedFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
+
+
+Note that some of these functions involve the template class ``Fluid<Phys>``. The ``Fluid`` class
+is indeed capable of handling several types of fluids (described by the template parameter ``Phys``):
+MHD, HD, pressureless, etc... Hence, depending on the type of fluid to which the user-defined
+function applies, the signature of the function would be different. For instance, a User-defined
+boundary condition for a system that would solve for a gas+dust mixture would read
+
+.. code-block:: c++
+
+  void MyBoundary(Fluid<DefaultPhysics> * fluid, int dir, BoundarySide side, const real t) {
+  // Here comes the code for the Gas boundary condition
+  }
+
+  void MyBoundaryDust(Fluid<DustPhysics> * fluid, int dir, BoundarySide side, const real t) {
+  // Here comes the code for the dust boundary condition
+  }
+
+Note that *Idefix* defines an alias for the default fluid which is often found in the example provided:
+
+.. code-block:: c++
+
+  using Hydro = Fluid<DefaultPhysics>;
+
 
 Example
 *******
@@ -114,7 +138,7 @@ constructor which reads a parameter from the .ini file and enroll the user-defin
     Mass = input.Get<real>("Setup","mass",0);
 
     // Enroll the user-defined potential
-    data.hydro.EnrollGravPotential(&Potential);
+    data.gravity->EnrollGravPotential(&Potential);
   }
 
 
@@ -126,18 +150,18 @@ User-defined boundaries
 If one (or several) boundaries are set to ``userdef`` in the input file, the user needs to
 enroll a user-defined boundary function in the ``Setup`` constructor as for the other user-def functions  (see :ref:`functionEnrollment`).
 Note that even if several boundaries are ``userdef`` in the input file, only one user-defined function
-is required. When *Idefix* calls the user defined boundary function, it sets the direction of the boundary (``dir=IDIR``, ``JDIR``,
+is required per fluid type. When *Idefix* calls the user defined boundary function, it sets the direction of the boundary (``dir=IDIR``, ``JDIR``,
 or ``KDIR``) and the side of the bondary (``side=left`` or ``side=right``). If conveninent, one can use
 the ``BoundaryFor`` wrapper functions to automatically loop on the boundary specified by ``dir`` and ``side``.
 A typical user-defined boundary condition function looks like this:
 
 .. code-block:: c++
 
-  void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
-    IdefixArray4D<real> Vc = data.hydro.Vc;
-    IdefixArray4D<real> Vs = data.hydro.Vs;
+  void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
+    IdefixArray4D<real> Vc = hydro->Vc;
+    IdefixArray4D<real> Vs = hydro->Vs;
     if(dir==IDIR) {
-      data.hydro.boundary.BoundaryFor("UserDefBoundary", dir, side,
+      hydro->boundary->BoundaryFor("UserDefBoundary", dir, side,
         KOKKOS_LAMBDA (int k, int j, int i) {
           Vc(RHO,k,j,i) = 1.0;
           Vc(VX1,k,j,i) = 0.0;
@@ -147,16 +171,22 @@ A typical user-defined boundary condition function looks like this:
       // For magnetic field (defined on cell sides), we need specific wrapper functions
       // Note that we don't need to initialise the field component parallel to dir, as it is
       // automatically reconstructed from the solenoidal condition and the tangential components
-      data.hydro.boundary.BoundaryForX2s("UserDefBoundaryBX2s", dir, side,
+      hydro->boundary->BoundaryForX2s("UserDefBoundaryBX2s", dir, side,
         KOKKOS_LAMBDA (int k, int j, int i) {
           Vs(BX2s,k,j,i) = 0.0;
         });
-      data.hydro.boundary.BoundaryForX3s("UserDefBoundaryBX3s", dir, side,
+      hydro->boundary->BoundaryForX3s("UserDefBoundaryBX3s", dir, side,
         KOKKOS_LAMBDA (int k, int j, int i) {
           Vs(BX3s,k,j,i) = 0.0;
         });
     }
   }
+
+.. warning::
+
+  Only the tangential field components should be initialised by user-defined boundary conditions.
+  *Idefix* automatically reconstruct (and overwrite!) the normal field component from the
+  divergence-free condition on B and the user-defined tangential magnetic field components.
 
 
 
@@ -258,6 +288,36 @@ can be automatically derived using ``DataBlockHost::MakeVsFromAmag`` as in the e
     dataHost.SyncToDevice();
   }
 
+Initialising passive tracers
+********************************
+
+Idefix provides the possibility to use passive tracers, that are scalars passively advected by
+the associated fluid. Tracers are enabled by setting on non-zero integer to the parameter ``tracer`` in
+a ``[Hydro]`` (for hydro tracers) or a ``[Dust]`` block in your input file, so that the tracers
+will follow the main fluid or the dust fluids, with the given number of tracers.
+
+Each tracer can be accessed in the dataBlockHost as a particular field in the array Vc as in the example below
+
+.. code-block:: c++
+
+  void Setup::InitFlow(DataBlock &data) {
+      // Create a host copy of the DataBlock given in argument
+      DataBlockHost dataHost(data);
+
+      for(int k = 0; k < dataHost.np_tot[KDIR] ; k++) {
+        for(int j = 0; j < dataHost.np_tot[JDIR] ; j++) {
+          for(int i = 0; i < dataHost.np_tot[IDIR] ; i++) {
+            real x = dataHost.x[IDIR](i);
+            real y = dataHost.x[JDIR](j);
+            // First tracer
+            dataHost.Vc(TRG,k,j,i) = (x < 0 ? 0 : 1); // TRG for gas tracers
+            // second tracer
+            dataHost.Vc(TRG+1,k,j,i) = (y < 0 ? 0 : 1); // For gas tracers
+
+.. note::
+
+  Note that when using dust tracers, one should use the field ``TRD`` instead of ``TRG``.
+
 .. _setupInitDump:
 
 Initialising from a restart dump
@@ -270,24 +330,21 @@ a new initial condition by extrapolating or extanding a restart dump (such as in
 test or a dimension change). In this case, one should use the ``DumpImage`` class which provides
 all the tools needed to read a restart dump (see also :ref:`dumpImageClass`).
 
-One typically first construct an instance of ``DumpImage`` in the ``Setup`` constructor, and then
-use this instance to initialise the flow in ``Setup::InitFlow``. The procedure is examplified below,
+One typically first construct an instance of ``DumpImage`` in ``Setup::InitFlow``, and then
+use this instance to initialise the flow. The procedure is examplified below,
 assuming we want to create a dump from ``mydump.dmp``:
 
 .. code-block:: c++
 
-  DumpImage *image;       // Global pointer to our DumpImage
-
-  // Setup constructor
-  Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
-    image = new DumpImage("mydump.dmp",output);   // load the dump file and store it in a DumpImage
-  }
+  #include "dumpImage.hpp"
 
   // Flow initialisation, read directly from the DumpImage
   void Setup::InitFlow(DataBlock &data) {
 
     // Create a host copy
     DataBlockHost d(data);
+
+    DumpImage image("mydump.dmp", &data);
 
     for(int k = d.beg[KDIR]; k < d.end[KDIR] ; k++) {
       for(int j = d.beg[JDIR]; j < d.end[JDIR] ; j++) {
@@ -299,9 +356,9 @@ assuming we want to create a dump from ``mydump.dmp``:
           int jglob=j-2*d.beg[JDIR]+d.gbeg[JDIR];
           int kglob=k-2*d.beg[KDIR]+d.gbeg[KDIR];
 
-          d.Vc(RHO,k,j,i) = image->arrays["Vc-RHO"](kglob,jglob,iglob);
-          d.Vc(PRS,k,j,i) = image->arrays["Vc-PRS"](kglob,jglob,iglob);
-          d.Vc(VX1,k,j,i) = image->arrays["Vc-VX1"](kglob,jglob,iglob);
+          d.Vc(RHO,k,j,i) = image.arrays["Vc-RHO"](kglob,jglob,iglob);
+          d.Vc(PRS,k,j,i) = image.arrays["Vc-PRS"](kglob,jglob,iglob);
+          d.Vc(VX1,k,j,i) = image.arrays["Vc-VX1"](kglob,jglob,iglob);
   }}}
 
     // For magnetic variable, we should fill the entire active domain, hence an additional

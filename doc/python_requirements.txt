@@ -12,3 +12,4 @@ sphinx_git==11.0.0
 breathe==4.34.0
 exhale==0.3.6
 m2r2==0.3.2
+sphinx-copybutton==0.5.2

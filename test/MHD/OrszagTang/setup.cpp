@@ -12,7 +12,6 @@ generators on different architectures.
 
 // Default constructor
 
-
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
@@ -26,6 +25,8 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
 void Setup::InitFlow(DataBlock &data) {
     // Create a host copy
     DataBlockHost d(data);
+
+    bool haveTracer = data.hydro->haveTracer;
 
     real B0=1.0/sqrt(4.0*M_PI);
 
@@ -48,6 +49,9 @@ void Setup::InitFlow(DataBlock &data) {
                   d.Vs(BX1s,k,j,i) = -B0*sin(2.0*M_PI*y);
                   d.Vs(BX2s,k,j,i) = B0*sin(4.0*M_PI*x);
                 #endif
+                if(haveTracer) {
+                  d.Vc(TRG,k,j,i) = x>0.5?  1.0:0.0;
+                }
 
             }
         }

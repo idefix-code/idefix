@@ -6,13 +6,13 @@
 // ***********************************************************************************
 
 #include "dumpImage.hpp"
-#include "output.hpp"
+#include "dataBlock.hpp"
 #include "idefix.hpp"
 
 
 #define  HEADERSIZE 128
 
-DumpImage::DumpImage(std::string filename, Output &output) {
+DumpImage::DumpImage(std::string filename, DataBlock *data) {
   idfx::pushRegion("DumpImage::DumpImage");
 
   int nx[3];
@@ -21,7 +21,7 @@ DumpImage::DumpImage(std::string filename, Output &output) {
   DataType type;
   int ndim;
   IdfxFileHandler fileHdl;
-  Dump &dump = output.dump;
+  Dump dump(data);
 
   idfx::cout << "DumpImage: loading restart file " << filename << "..." << std::flush;
 
@@ -82,6 +82,8 @@ DumpImage::DumpImage(std::string filename, Output &output) {
       dump.ReadSerial(fileHdl, ndim, nx, type, &this->time);
     } else if(fieldName.compare("geometry")==0) {
       dump.ReadSerial(fileHdl, ndim, nx, type, &this->geometry);
+    } else if(fieldName.compare("centralMass")==0) {
+      dump.ReadSerial(fileHdl, ndim, nx, type, &this->centralMass);
     } else {
       int size=sizeof(double);
       for(int dim =0 ; dim<ndim ; dim++) {

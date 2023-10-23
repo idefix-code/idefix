@@ -21,9 +21,15 @@ Several options can be provided at command line when running the code. These are
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+
 | -maxcycles n       |   stops when the code has performed ``n`` integration cycles                                                            |
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+
+| -force_init        | |  call initial conditions before reading dump file  (this has no effect if -restart is not also passed).               |
+|                    | |  This option is useful when more physics is enabled when restarting from a dump (e.g. switching on MHD or dust)       |
+|                    | |  as it initialize from the initial conditions the quantities that are absent from the restart dump                    |
++--------------------+-------------------------------------------------------------------------------------------------------------------------+
 | -nolog             |   disable log files                                                                                                     |
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+
 | -nowrite           |   disable all writes (useful for raw performance measures or for tests). This option implies ``-nolog``                 |
++--------------------+-------------------------------------------------------------------------------------------------------------------------+
+| -profile           |   Enable on-the-fly performance profiling (a final text report is automatically generated).                             |
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+
 | -Werror            |   warning messages are considered as errors and stop the code with a non-zero exit code.                                |
 +--------------------+-------------------------------------------------------------------------------------------------------------------------+

@@ -10,9 +10,9 @@
 
 #include "idefix.hpp"
 #include "input.hpp"
+#include "selfGravity.hpp"
+#include "planetarySystem.hpp"
 
-// Forward class hydro declaration
-class Hydro;
 class DataBlock;
 
 // Enrolled functions signature
@@ -25,8 +25,8 @@ using BodyForceFunc = void (*) (DataBlock &, const real t, IdefixArray4D<real>&)
 
 class Gravity {
  public:
-  void Init(Input &, DataBlock*);  ///< Initialisation
-  void ComputeGravity();           ///< compute gravitational field at current time t
+  Gravity(Input&, DataBlock*);
+  void ComputeGravity(int );           ///< compute gravitational field at current time t
 
   void EnrollPotential(GravPotentialFunc);
   void EnrollBodyForce(BodyForceFunc);
@@ -51,11 +51,26 @@ class Gravity {
   // Bodyforce
   IdefixArray4D<real> bodyForceVector;
 
+  // Self gravity
+  SelfGravity selfGravity;
+
+  // JM : moved in public class to handle changing centralMass during computation
+  real centralMass{1.0};                    ///< central mass parameter when central mass potential
+                                            ///< is enabled
+
+  // Gravitational constant G
+  real gravCst{1.0};
+
+  // Whether we should skip gravity computation every n steps
+  int skipGravity{1};
+
+
  private:
+  friend class PlanetarySystem;
   bool haveInitialisedPotential{false};     ///< whether a potential has already been initialised
   bool haveInitialisedBodyForce{false};     ///< whether a body force has already been initialised
-  real centralMass;                    ///< central mass parameter when central mass potential
-                                            ///< is enabled
+  bool haveInitialisedSelfGravity{false};   ///< whether self-gravity has already been initialised
+
   DataBlock *data;
 
   // User defined gravitational potential
@@ -63,6 +78,11 @@ class Gravity {
 
   // Body force
   BodyForceFunc bodyForceFunc{NULL};
+
+  #ifdef DEBUG_GRAVITY
+  // Used to get fields usefull for debugging
+  std::ofstream potTotFile;
+  #endif
 };
 
 #endif // GRAVITY_GRAVITY_HPP_

@@ -62,7 +62,10 @@ int initialize() {
 
 void pushRegion(const std::string& kName) {
   Kokkos::Profiling::pushRegion(kName);
-
+  if(prof.perfEnabled) {
+    prof.currentRegion = prof.currentRegion->GetChild(kName);
+    prof.currentRegion->Start();
+  }
 #ifdef DEBUG
   regionIndent=regionIndent+4;
   for(int i=0; i < regionIndent ; i++) {
@@ -74,6 +77,10 @@ void pushRegion(const std::string& kName) {
 
 void popRegion() {
   Kokkos::Profiling::popRegion();
+  if(prof.perfEnabled) {
+    prof.currentRegion->Stop();
+    prof.currentRegion = prof.currentRegion->parent;
+  }
 #ifdef DEBUG
   for(int i=0; i < regionIndent ; i++) {
     cout << "-";
@@ -122,6 +129,20 @@ real randm(void) {
     in0 = q;
 
     return static_cast<real>(static_cast<double>(q) / static_cast<double>(m));
+}
+
+void safeExit(int retCode) {
+  if(retCode != 0) {
+    #ifdef WITH_MPI
+    MPI_Abort(MPI_COMM_WORLD,retCode);
+    #endif
+  } else {
+    Kokkos::finalize();
+    #ifdef WITH_MPI
+    MPI_Finalize();
+    #endif
+  }
+  exit(retCode);
 }
 
 } // namespace idfx

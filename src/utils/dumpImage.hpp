@@ -12,13 +12,16 @@
 #include "idefix.hpp"
 #include "dump.hpp"
 
+class DataBlock;
+
 class DumpImage {
  public:
-  DumpImage(std::string, Output &);
+  DumpImage(std::string, DataBlock *);
 
   int np_int[3];               // number of points in each direction
   int geometry;                // geometry of the dump
   real time;                   // time at which the dump was created
+  real centralMass;            // central mass when dump was created
   IdefixHostArray1D<real> x[3];    // geometrical central points
   IdefixHostArray1D<real> xr[3];   // cell right interface
   IdefixHostArray1D<real> xl[3];   // cell left interface

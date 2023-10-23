@@ -8,7 +8,7 @@ Download and install *Idefix*
 One first need to download *Idefix* from the public git. Say you want to install *Idefix* in the directory ``~/src/idefix``, you need to run::
 
     cd ~/src
-    git clone https://<yourFavouriteIdefixRepo> idefix
+    git clone https://github.com/idefix-code/idefix.git idefix
     cd idefix
     git submodule init
     git submodule update
@@ -29,11 +29,11 @@ install directory of *Idefix*. We therefore conclude the installation with::
 
 Configure and run the SOD tube test problem
 ===========================================
-The test problem are all located in the ``$IDEFIX_DIR/test`` directory of the distribution. To access the Sod shock tube test, one go to::
+The test problem are all located in the ``$IDEFIX_DIR/test`` directory of the distribution. To access the Sod shock tube test, one goes to::
 
     cd $IDEFIX_DIR/test/HD/sod
 
-From there, one sees 3 files and a directory:
+From there, one sees 4 files and a directories:
 
 ``definitions.hpp``
     The configuration file. It contains C preprocessor directives for configuration options which require a re-compilation of the code. These are mostly
@@ -46,11 +46,15 @@ From there, one sees 3 files and a directory:
 ``idefix.ini``
     The input file. This file is read at runtime *only*. It defines most of the properties of the code: resolution, integrator, output, physical modules.
 
-``python`` directory
-    This directory is provided with most of the tests. Its content allows one to check that the code output is consistent with what is expected.
+``testme.py``
+    The validation script. It uses the python class ``idfx_test.py`` to validate the code outputs for that particular test. Use ``testme.py -help`` to find out the options.
+
+``python``
+    Directory that contains the standard test validation: i.e. comparison against an analytical solution (when it exists)
+
 
 For the time being, the files are already set up for the Sod test problem. The only thing lacking is a ``makefile`` to actually compile the code.
-In *Idefix* the makefile is created by `Cmake <https://cmake.org>`_ ,a tool to control code generation on diverse platforms. To configure *Idefix*,
+In *Idefix* the makefile is created by `cmake <https://cmake.org>`_ ,a tool to control code generation on diverse platforms. To configure *Idefix*,
 you need Cmake version >=3.16 installed on your machine. For this quickstart, let us configure the code to run on
 the cpu in serial (default behaviour). Assuming a ``cmake`` is in the PATH, we simply type in::
 
@@ -66,14 +70,19 @@ Finally, we compile and run the code::
     make -j 8
     ./idefix
 
-This test being one dimensional, it runs very fast. We can check that the final solution match the prediction of the shock tube problem. To this end, we go to the ``python``
-subdirectory and run the test::
+This test being one dimensional, it runs very fast. We can check that the final solution match the prediction of the shock tube problem. To this end, we
+use the ``testme.py`` script:
 
-    cd python
-    python3 ./testidefix.py
+    ./testme.py -check
 
-If everything goes well, ``testidefix.py`` will load the latest output produced by idefix, display it, compare it with an analytical solution and tell you
-whether the error is acceptable or not.
+The ``-check`` option tells the test suite that the simulation has already run and we just need a validation of the result. Note that it's also
+possible to validate all of the possible combination of algorithms using the ``-all`` option. In that case, the script automatically
+configure, compile and validate a series of test with varying combination of algorithms.
+
+.. warning::
+    Note that the validation relies on large reference
+    files that are stored in the separate `idefix-code/reference` repository that is automatically
+    cloned as a submodule along with Kokkos if you follow the above procedure.
 
 
 Configure and run the Orszag-Tang test problem
@@ -87,8 +96,9 @@ test with::
 
     cmake $IDEFIX_DIR
 
-Once the code is configured, it can be ran::
+Once the code is configured, it can be compiled and ran::
 
+    make -j 8
     ./idefix
 
 This test can take much more time that the sod test since it is 2D. In the end, you can visualize the results, which are written as VTK files using

@@ -9,6 +9,8 @@
 #define OUTPUT_OUTPUT_HPP_
 #include <string>
 #include <map>
+#include <vector>
+#include <memory>
 #include "idefix.hpp"
 #include "input.hpp"
 #include "dataBlock.hpp"
@@ -17,7 +19,7 @@
 #include "xdmf.hpp"
 #endif
 #include "dump.hpp"
-
+#include "slice.hpp"
 
 using AnalysisFunc = void (*) (DataBlock &);
 
@@ -35,7 +37,7 @@ class Output {
  public:
   Output(Input &, DataBlock &);           // Create Output Object
   int CheckForWrites(DataBlock &);        // Check if outputs are needed at this stage
-  void RestartFromDump(DataBlock &, int);  // Restart from a dump file.
+  bool RestartFromDump(DataBlock &, int);  // Restart from a dump file.
   void ForceWriteDump(DataBlock &);            // Force write dumps (needed during an abort)
   void ForceWriteVtk(DataBlock &);            // Force write vtks
   #ifdef WITH_HDF5
@@ -47,11 +49,6 @@ class Output {
   void EnrollUserDefVariables(UserDefVariablesFunc);
 
  private:
-  Vtk vtk;          // local instance of Vtk class
-  Dump dump;        // local instance of Dump class
-  #ifdef WITH_HDF5
-  Xdmf xdmf;        // local instance of Xdmf class
-  #endif
   bool forceNoWrite = false;    //< explicitely disable all writes
   bool vtkEnabled = false;
   real vtkPeriod = 0.0;   // periodicity of vtk outputs
@@ -76,6 +73,9 @@ class Output {
   bool haveUserDefVariablesFunc = false;
   UserDefVariablesFunc userDefVariablesFunc;
   UserDefVariablesContainer userDefVariables;
+
+  bool sliceEnabled = false;
+  std::vector<std::unique_ptr<Slice>> slices;
 
   Kokkos::Timer timer;
   double elapsedTime{0.0};

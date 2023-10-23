@@ -24,6 +24,9 @@ How do I use my favourite XXXXX compiler?
 I have a complex setup, and have written some functions in separate .cpp files. How can I add these files to *Idefix* build tree?
   Add a ``CmakeLists.txt`` in your problem directory and use the function `add_idefix_source` (see :ref:`customSourceFiles`).
 
+I want to run on the GPUs of xxx machine, how do I proceed?
+  Check the examples in :ref:`setupExamples`
+
 Compilation
 -----------
 
@@ -32,6 +35,9 @@ Is there a way to see explicitely the compilation commands with ``make``?
 
 The compilation stops while compiling Kokkos with ``/usr/include/stdlib.h(58): error: expected a ";"``
   This happens on Gricad machines when LIBDL is activated (wrong glibc). Simply disable LIBDL.
+
+When using the Intel compiler on a Mac Intel, I get a linking error involving the ``SharedAllocationRecordIvvE18t_tracking_enabledE`` symbol.
+  This is a known bug of the Intel Mac compiler with Kokkos. Apparently Intel has decided not to fix it. Check the issue on the `Kokkos git page <https://github.com/kokkos/kokkos/issues/1959>`_.
 
 Execution
 ---------
@@ -44,11 +50,12 @@ How can I stop the code without loosing the current calculation?
 I'm doing performance measures. How do I disable all outputs in *Idefix*?
   Add ``-nowrite`` when you call *Idefix* executable.
 
+
 Developement
 ------------
 
 I have a serious bug (e.g. segmentation fault), in my setup, how do I proceed?
-  Add ``-DIdefix_DEBUG=ON`` to ``cmake`` and recompile to find out exactly where the code crashes.
+  Add ``-DIdefix_DEBUG=ON`` to ``cmake`` and recompile to find out exactly where the code crashes (see :ref:`debugging`).
 
 I want to test a modification to *Idefix* source code specific to my problem without modifying files in `$IDEFIX_DIR`. How can I proceed?
   Add a ``CmakeLists.txt`` in your problem directory and use the function `replace_idefix_source` (see :ref:`customSourceFiles`).

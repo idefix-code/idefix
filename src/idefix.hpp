@@ -20,7 +20,6 @@ using Layout = Kokkos::LayoutRight;
 
 /// Type of loops we admit in idefix (see loop.hpp for details)
 enum class LoopPattern { SIMDFOR, RANGE, MDRANGE, TPX, TPTTRTVR, UNDEFINED };
-enum class Limiter {VanLeer, MinMod, McLim};
 
 #define     YES     255
 #define     NO      0
@@ -76,7 +75,7 @@ enum class Limiter {VanLeer, MinMod, McLim};
 #define  MX2 (COMPONENTS >= 2 ? 2: 255)
 #define  MX3 (COMPONENTS == 3 ? 3: 254)
 #if MHD == YES
-#define  BX1 (COMPONENTS + 1)
+#define  BX1 (COMPONENTS + 1 + HAVE_ENERGY)
 #define  BX2 (COMPONENTS >= 2 ? (BX1+1): 252)
 #define  BX3 (COMPONENTS == 3 ? (BX1+2): 251)
 
@@ -86,14 +85,12 @@ enum class Limiter {VanLeer, MinMod, McLim};
 #define  BX3 251
 #endif
 
-#if HAVE_ENERGY
-#if MHD == YES
-  #define ENG  (2*COMPONENTS + 1)
-#else
+#if HAVE_ENERGY == 1
   #define ENG  (COMPONENTS + 1)
+#else
+  #define ENG   250
 #endif
-  #define PRS  ENG
-#endif
+#define PRS  ENG
 
 #define VX1   MX1
 #define VX2   MX2
@@ -101,8 +98,12 @@ enum class Limiter {VanLeer, MinMod, McLim};
 
 #if MHD == YES
   #define NFLX (1 + 2*COMPONENTS + HAVE_ENERGY)
+  #define TRG   NFLX                  // Gas Tracer index
+  #define TRD  (NFLX-COMPONENTS)      // Dust Tracer index
 #else
   #define NFLX (1 + COMPONENTS + HAVE_ENERGY)
+  #define TRG  NFLX
+  #define TRD  NFLX
 #endif
 
 // Face-centered variables
@@ -217,6 +218,7 @@ using IdfxFileHandler = FILE*;
 // Types of boundary which can be treated
 enum BoundaryType { internal, periodic, reflective, outflow, shearingbox, axis, userdef};
 enum BoundarySide { left, right};
+enum class SliceType {Cut, Average};
 
 // Type of grid coarsening
 enum GridCoarsening{disabled,

@@ -1,5 +1,5 @@
 
-add_subdirectory(hydro)
+add_subdirectory(fluid)
 add_subdirectory(dataBlock)
 add_subdirectory(output)
 add_subdirectory(rkl)

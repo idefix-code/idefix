@@ -11,14 +11,44 @@
 #include "gridHost.hpp"
 #include "grid.hpp"
 
+Grid::Grid(SubGrid * subgrid) {
+  idfx::pushRegion("Grid::Grid(SubGrid)");
+  // Copy data from parent
+  x = subgrid->parentGrid->x;
+  xr = subgrid->parentGrid->xr;
+  xl = subgrid->parentGrid->xl;
+  dx = subgrid->parentGrid->dx;
+
+  xbeg = subgrid->parentGrid->xbeg;
+  xend = subgrid->parentGrid->xend;
+
+  np_tot = subgrid->parentGrid->np_tot;
+  np_int = subgrid->parentGrid->np_int;
+
+  nghost = subgrid->parentGrid->nghost;
+
+  lbound = subgrid->parentGrid->lbound;
+  rbound = subgrid->parentGrid->rbound;
+
+  haveGridCoarsening = subgrid->parentGrid->haveGridCoarsening;
+  coarseningDirection = subgrid->parentGrid->coarseningDirection;
+
+  nproc = subgrid->parentGrid->nproc;
+  xproc = subgrid->parentGrid->xproc;
+
+  // Now slice if along the chosen direction
+  SliceMe(subgrid);
+
+  idfx::popRegion();
+}
+
 Grid::Grid(Input &input) {
   idfx::pushRegion("Grid::Grid(Input)");
 
-  xbeg = std::vector<real>(3);
-  xend = std::vector<real>(3);
 
-  nghost = std::vector<int>(3);
-
+  #if GEOMETRY != CARTESIAN
+  isRegularCartesian = false;
+  #endif
   // Get grid size from input file, block [Grid]
   int npoints[3];
   for(int dir = 0 ; dir < 3 ; dir++) {
@@ -39,11 +69,6 @@ Grid::Grid(Input &input) {
       }
     }
   }
-
-  np_tot = std::vector<int>(3);
-  np_int = std::vector<int>(3);
-  lbound = std::vector<BoundaryType>(3);
-  rbound = std::vector<BoundaryType>(3);
 
   for(int dir = 0 ; dir < 3 ; dir++) {
     np_tot[dir] = npoints[dir] + 2*nghost[dir];
@@ -104,10 +129,6 @@ Grid::Grid(Input &input) {
   }
 
   // Allocate the grid structure on device. Initialisation will come from GridHost
-  x = std::vector<IdefixArray1D<real>>(3);
-  xr = std::vector<IdefixArray1D<real>>(3);
-  xl = std::vector<IdefixArray1D<real>>(3);
-  dx = std::vector<IdefixArray1D<real>>(3);
   for(int dir = 0 ; dir < 3 ; dir++) {
     x[dir] = IdefixArray1D<real>("Grid_x",np_tot[dir]);
     xr[dir] = IdefixArray1D<real>("Grid_xr",np_tot[dir]);
@@ -116,8 +137,6 @@ Grid::Grid(Input &input) {
   }
 
   // Allocate proc structure (by default: one proc in each direction, size one)
-  nproc = std::vector<int> (3);
-  xproc = std::vector<int> (3);
   for(int i=0 ; i < 3; i++) {
     nproc[i] = 1;
     xproc[i] = 0;
@@ -210,7 +229,8 @@ Grid::Grid(Input &input) {
       msg << "Grid coarsening can only be static or dynamic. I got: " << coarsenType;
       IDEFIX_ERROR(msg);
     }
-    this->coarseningDirection = std::vector<bool>(3, false);
+    this->coarseningDirection = {false, false, false};
+
     int directions = input.CheckEntry("Grid","coarsening");
     for(int i = 1 ; i < directions ; i++) {
       std::string dirname = input.Get<std::string>("Grid","coarsening",i);
@@ -379,4 +399,48 @@ void Grid::ShowConfig() {
     }
     idfx::cout << std::endl;
   }
+}
+
+void Grid::SliceMe(SubGrid *subgrid) {
+  // Slice this grid along the direction in subgrid
+  int dir = subgrid->direction;
+
+  auto x = IdefixArray1D<real>("Grid_x",1);
+  auto xr = IdefixArray1D<real>("Grid_xr",1);
+  auto xl = IdefixArray1D<real>("Grid_xl",1);
+  auto dx = IdefixArray1D<real>("Grid_dx",1);
+
+  auto xorigin = subgrid->parentGrid->x[dir];
+  auto xrorigin = subgrid->parentGrid->xr[dir];
+  auto xlorigin = subgrid->parentGrid->xl[dir];
+  auto dxorigin = subgrid->parentGrid->dx[dir];
+
+  idefix_for("Slice_grid", subgrid->index, subgrid->index+1,
+              KOKKOS_LAMBDA(int i) {
+                x(0) = xorigin(i);
+                xr(0) = xrorigin(i);
+                xl(0) = xlorigin(i);
+                dx(0) = dxorigin(i);
+  });
+
+  // Replace the arrays in the current subgrid
+  this->x[dir] = x;
+  this->xr[dir] = xr;
+  this->xl[dir] = xl;
+  this->dx[dir] = dx;
+
+  this->nghost[dir] = 0;
+  this->np_tot[dir] = 1;
+  this->np_int[dir] = 1;
+  this->xbeg[dir] = subgrid->x0;
+  this->xend[dir] = subgrid->x0;
+
+  // Slice the MPI communicator
+  #ifdef WITH_MPI
+    int remainDims[3] = {true, true, true};
+    remainDims[dir] = false;
+    MPI_Cart_sub(subgrid->parentGrid->CartComm, remainDims, &this->CartComm);
+    nproc[dir] = 1;
+    xproc[dir] = 0;
+  #endif
 }

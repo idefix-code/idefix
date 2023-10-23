@@ -8,18 +8,22 @@ static real shear;
 //#define STRATIFIED
 
 // UserStep, here only gravity (vertical and radial)
-void UserStep(DataBlock &data, const real t, const real dt) {
+void UserStep(Hydro *hydro, const real t, const real dt) {
+    auto *data = hydro->data;
     Kokkos::Profiling::pushRegion("Setup::UserStep");
-    IdefixArray4D<real> Uc = data.hydro.Uc;
-    IdefixArray4D<real> Vc = data.hydro.Vc;
-    IdefixArray1D<real> x = data.x[IDIR];
-    IdefixArray1D<real> z = data.x[KDIR];
+    IdefixArray4D<real> Uc = hydro->Uc;
+    IdefixArray4D<real> Vc = hydro->Vc;
+    IdefixArray1D<real> x = data->x[IDIR];
+    IdefixArray1D<real> z = data->x[KDIR];
 
     // GPUS cannot capture static variables
     real omegaLocal=omega;
     real shearLocal =shear;
 
-    idefix_for("UserSourceTerms",data.beg[KDIR],data.end[KDIR],data.beg[JDIR],data.end[JDIR],data.beg[IDIR],data.end[IDIR],
+    idefix_for("UserSourceTerms",
+      data->beg[KDIR], data->end[KDIR],
+      data->beg[JDIR], data->end[JDIR],
+      data->beg[IDIR], data->end[IDIR],
         KOKKOS_LAMBDA (int k, int j, int i) {
 #ifdef STRATIFIED
             Uc(MX3,k,j,i) += - dt*omegaLocal*omegaLocal*z(k)*Vc(RHO,k,j,i);
@@ -35,14 +39,14 @@ void UserStep(DataBlock &data, const real t, const real dt) {
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
-    gammaIdeal=data.hydro.GetGamma();
+    gammaIdeal=data.hydro->eos->GetGamma();
 
     // Get rotation rate along vertical axis
     omega=input.Get<real>("Hydro","rotation",0);
     shear=input.Get<real>("Hydro","shearingBox",0);
 
     // Add our userstep to the timeintegrator
-    data.hydro.EnrollUserSourceTerm(UserStep);
+    data.hydro->EnrollUserSourceTerm(UserStep);
 }
 
 // This routine initialize the flow

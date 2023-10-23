@@ -10,14 +10,18 @@ generators on different architectures.
 /*********************************************/
 
 // User-defined boundaries
-void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
+void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
+    auto *data = hydro->data;
     if( (dir==IDIR) && (side == left)) {
-        IdefixArray4D<real> Vc = data.hydro.Vc;
-        IdefixArray4D<real> Vs = data.hydro.Vs;
-        IdefixArray1D<real> x1 = data.x[IDIR];
+        IdefixArray4D<real> Vc = hydro->Vc;
+        IdefixArray4D<real> Vs = hydro->Vs;
+        IdefixArray1D<real> x1 = data->x[IDIR];
 
-        int ighost = data.nghost[IDIR];
-        idefix_for("UserDefBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,ighost,
+        int ighost = data->nghost[IDIR];
+        idefix_for("UserDefBoundary",
+          0, data->np_tot[KDIR],
+          0, data->np_tot[JDIR],
+          0, ighost,
                     KOKKOS_LAMBDA (int k, int j, int i) {
                         Vc(RHO,k,j,i) = Vc(RHO,k,j,ighost);
                         Vc(PRS,k,j,i) = Vc(PRS,k,j,ighost);
@@ -60,7 +64,7 @@ void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     // Set the function for userdefboundary
-    data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
+    data.hydro->EnrollUserDefBoundary(&UserdefBoundary);
     output.EnrollUserDefVariables(&ComputeUserVars);
 
 }

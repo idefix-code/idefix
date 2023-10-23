@@ -23,7 +23,7 @@ copyright = 'Geoffroy Lesur et al.'
 author = 'Geoffroy Lesur'
 
 # The full version, including alpha/beta/rc tags
-release = '1.0'
+release = '2.0.0'
 
 
 
@@ -37,7 +37,8 @@ extensions = [
     'sphinx_git',
     "breathe",
     "exhale",
-    "m2r2"
+    "m2r2",
+    "sphinx_copybutton"
     ]
 
 source_suffix = [".rst", ".md"]

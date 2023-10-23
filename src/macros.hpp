@@ -14,24 +14,21 @@
 #if COMPONENTS == 1
   #define EXPAND(a,b,c) a
   #define SELECT(a,b,c) a
-  #define ARG_EXPAND(a,b,c) a
 #endif
 
 #if COMPONENTS == 2
   #define EXPAND(a,b,c) a b
   #define SELECT(a,b,c) b
-  #define ARG_EXPAND(a,b,c) a,b
 #endif
 
 #if COMPONENTS == 3
   #define EXPAND(a,b,c) a b c
   #define SELECT(a,b,c) c
-  #define ARG_EXPAND(a,b,c) a,b,c
+
 #endif
 
 #if DIMENSIONS == 1
   #define D_EXPAND(a,b,c)  a
-  #define ARG_DEXPAND(a,b,c) a
   #define D_SELECT(a,b,c)  a
   #define IOFFSET 1
   #define JOFFSET 0
@@ -40,7 +37,6 @@
 
 #if DIMENSIONS == 2
   #define D_EXPAND(a,b,c) a b
-  #define ARG_DEXPAND(a,b,c) a,b
   #define D_SELECT(a,b,c) b
   #define IOFFSET 1
   #define JOFFSET 1
@@ -49,7 +45,6 @@
 
 #if DIMENSIONS == 3
   #define D_EXPAND(a,b,c) a b c
-  #define ARG_DEXPAND(a,b,c) a,b,c
   #define D_SELECT(a,b,c) c
   #define IOFFSET 1
   #define JOFFSET 1
@@ -167,5 +162,37 @@
     IDEFIX_ERROR(stream);                                             \
   }                                                                   \
 }
+
+
+#ifdef RUNTIME_CHECKS
+  #define RUNTIME_CHECK_HOST(condition, ...) { \
+    if(!(condition)) { \
+      char msg[255]; \
+      snprintf(msg, sizeof(msg), __VA_ARGS__); \
+      IDEFIX_ERROR(msg); \
+    } \
+  }
+
+  #if defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_CUDA)
+    // string formatting functions can't be accessed from GPU kernels,
+    // so we fallback to a simple error message
+    #define RUNTIME_CHECK_KERNEL(condition, fallback_msg, ...) { \
+      if(!(condition)) Kokkos::abort(fallback_msg); \
+    }
+  #else
+    #define RUNTIME_CHECK_KERNEL(condition, fallback_msg, ...) { \
+      if(!(condition)) { \
+        char msg[255]; \
+        snprintf(msg, sizeof(msg), __VA_ARGS__); \
+        Kokkos::abort(msg); \
+      } \
+    }
+  #endif // if defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_CUDA)
+
+#else
+  #define RUNTIME_CHECK_HOST(condition, msg, ...) {}
+  #define RUNTIME_CHECK_KERNEL(condition, fallback_msg, ...) {}
+#endif // ifdef RUNTIME_CHECKS
+
 
 #endif // MACROS_HPP_

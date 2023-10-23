@@ -22,22 +22,23 @@
 
 class GridHost {
  public:
-  std::vector<IdefixArray1D<real>::HostMirror> x;     ///< geometrical central points
-  std::vector<IdefixArray1D<real>::HostMirror> xr; ///< cell right interface
-  std::vector<IdefixArray1D<real>::HostMirror> xl; ///< cell left interface
-  std::vector<IdefixArray1D<real>::HostMirror> dx; ///< cell width
+  std::array<IdefixArray1D<real>::HostMirror,3> x;     ///< geometrical central points
+  std::array<IdefixArray1D<real>::HostMirror,3> xr; ///< cell right interface
+  std::array<IdefixArray1D<real>::HostMirror,3> xl; ///< cell left interface
+  std::array<IdefixArray1D<real>::HostMirror,3> dx; ///< cell width
 
-  std::vector<real> xbeg;                   ///< Beginning of grid
-  std::vector<real> xend;                   ///< End of grid
+  std::array<real,3> xbeg;                   ///< Beginning of grid
+  std::array<real,3> xend;                   ///< End of grid
 
-  std::vector<int> np_tot;                  ///< total number of grid points
-  std::vector<int> np_int;                  ///< internal number of grid points
+  std::array<int,3> np_tot;                  ///< total number of grid points
+  std::array<int,3> np_int;                  ///< internal number of grid points
 
-  std::vector<int> nghost;                  ///< number of ghost cells
-  std::vector<BoundaryType> lbound;         ///< Boundary condition to the left
-  std::vector<BoundaryType> rbound;         ///< Boundary condition to the right
+  std::array<int,3> nghost;                  ///< number of ghost cells
+  std::array<BoundaryType,3> lbound;         ///< Boundary condition to the left
+  std::array<BoundaryType,3> rbound;         ///< Boundary condition to the right
 
   bool haveAxis=false;    ///< Do we require a special treatment of the axis in spherical coords?
+  bool isRegularCartesian; ///< whether the grid is regular and cartesian or not
 
   explicit GridHost(Grid&);   ///< Constructor from a corresponding Grid on the Device.
                               ///< (NB: this constructor does not sync any data)

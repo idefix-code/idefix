@@ -17,10 +17,8 @@ CORE_EXCLUDE_LIST = [
 
 KOKKOS_EXCLUDE_LIST = [
     ".*",
-    "example",
     "appveyor.yml",
     "scripts",
-    "*test*",
 ]
 
 
@@ -97,6 +95,14 @@ def _make_self_contained_tarball(output_dir, *, suffix="", exclude_list=None):
 def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("output_dir", default=".", nargs="?")
+    parser.add_argument(
+        "--allow-dirty",
+        action="store_true",
+        help=(
+            "allow to build tarballs with uncommited changes. "
+            "Useful to test this script"
+        ),
+    )
     args = parser.parse_args(argv)
 
     with pushd(IDEFIX_DIR):
@@ -105,7 +111,7 @@ def main(argv=None):
 
         # break if local copy is dirty
         stdout = subprocess.check_output(["git", "diff", "--name-only"]).decode()
-        if stdout.strip() != "":
+        if not args.allow_dirty and stdout.strip() != "":
             print(
                 "ERROR: Local copy is dirty. Commit or stash changes before publishing.",
                 file=sys.stderr,

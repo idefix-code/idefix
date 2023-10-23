@@ -11,6 +11,7 @@
 #include <string>
 #include <chrono>   // NOLINT [build/c++11]
 #include <thread>  // NOLINT [build/c++11]
+#include <utility>
 #include "idefix.hpp"
 #include "dataBlock.hpp"
 
@@ -76,6 +77,7 @@ void Mpi::Init(Grid *grid, std::vector<int> inputMap,
   bufferSizeX1 = nghost[IDIR] * nint[JDIR] * nint[KDIR] * mapNVars;
 
   if(haveVs) {
+    bufferSizeX1 += nghost[IDIR] * nint[JDIR] * nint[KDIR];
     #if DIMENSIONS>=2
     bufferSizeX1 += nghost[IDIR] * (nint[JDIR]+1) * nint[KDIR];
     #endif
@@ -86,10 +88,10 @@ void Mpi::Init(Grid *grid, std::vector<int> inputMap,
   }
 
 
-  BufferRecvX1[faceLeft ] = IdefixArray1D<real>("BufferRecvX1Left", bufferSizeX1);
-  BufferRecvX1[faceRight] = IdefixArray1D<real>("BufferRecvX1Right",bufferSizeX1);
-  BufferSendX1[faceLeft ] = IdefixArray1D<real>("BufferSendX1Left", bufferSizeX1);
-  BufferSendX1[faceRight] = IdefixArray1D<real>("BufferSendX1Right",bufferSizeX1);
+  BufferRecvX1[faceLeft ] = Buffer(bufferSizeX1);
+  BufferRecvX1[faceRight] = Buffer(bufferSizeX1);
+  BufferSendX1[faceLeft ] = Buffer(bufferSizeX1);
+  BufferSendX1[faceRight] = Buffer(bufferSizeX1);
 
   // Number of cells in X2 boundary condition (only required when problem >2D):
 #if DIMENSIONS >= 2
@@ -97,15 +99,18 @@ void Mpi::Init(Grid *grid, std::vector<int> inputMap,
   if(haveVs) {
     // IDIR
     bufferSizeX2 += (ntot[IDIR]+1) * nghost[JDIR] * nint[KDIR];
+    #if DIMENSIONS>=2
+    bufferSizeX2 += ntot[IDIR] * nghost[JDIR] * nint[KDIR];
+    #endif
     #if DIMENSIONS==3
     bufferSizeX2 += ntot[IDIR] * nghost[JDIR] * (nint[KDIR]+1);
     #endif  // DIMENSIONS
   }
 
-  BufferRecvX2[faceLeft ] = IdefixArray1D<real>("BufferRecvX2Left", bufferSizeX2);
-  BufferRecvX2[faceRight] = IdefixArray1D<real>("BufferRecvX2Right",bufferSizeX2);
-  BufferSendX2[faceLeft ] = IdefixArray1D<real>("BufferSendX2Left", bufferSizeX2);
-  BufferSendX2[faceRight] = IdefixArray1D<real>("BufferSendX2Right",bufferSizeX2);
+  BufferRecvX2[faceLeft ] = Buffer(bufferSizeX2);
+  BufferRecvX2[faceRight] = Buffer(bufferSizeX2);
+  BufferSendX2[faceLeft ] = Buffer(bufferSizeX2);
+  BufferSendX2[faceRight] = Buffer(bufferSizeX2);
 
 #endif
 // Number of cells in X3 boundary condition (only required when problem is 3D):
@@ -117,12 +122,14 @@ void Mpi::Init(Grid *grid, std::vector<int> inputMap,
     bufferSizeX3 += (ntot[IDIR]+1) * ntot[JDIR] * nghost[KDIR];
     // JDIR
     bufferSizeX3 += ntot[IDIR] * (ntot[JDIR]+1) * nghost[KDIR];
+    // KDIR
+    bufferSizeX3 += ntot[IDIR] * ntot[JDIR] * nghost[KDIR];
   }
 
-  BufferRecvX3[faceLeft ] = IdefixArray1D<real>("BufferRecvX3Left", bufferSizeX3);
-  BufferRecvX3[faceRight] = IdefixArray1D<real>("BufferRecvX3Right",bufferSizeX3);
-  BufferSendX3[faceLeft ] = IdefixArray1D<real>("BufferSendX3Left", bufferSizeX3);
-  BufferSendX3[faceRight] = IdefixArray1D<real>("BufferSendX3Right",bufferSizeX3);
+  BufferRecvX3[faceLeft ] = Buffer(bufferSizeX3);
+  BufferRecvX3[faceRight] = Buffer(bufferSizeX3);
+  BufferSendX3[faceLeft ] = Buffer(bufferSizeX3);
+  BufferSendX3[faceRight] = Buffer(bufferSizeX3);
 #endif // DIMENSIONS
 
 #ifdef MPI_PERSISTENT
@@ -235,10 +242,9 @@ void Mpi::ExchangeX1(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   idfx::pushRegion("Mpi::ExchangeX1");
 
   // Load  the buffers with data
-  int ibeg,iend,jbeg,jend,kbeg,kend,offset;
-  int nx,ny,nz;
-  IdefixArray1D<real> BufferLeft=BufferSendX1[faceLeft];
-  IdefixArray1D<real> BufferRight=BufferSendX1[faceRight];
+  int ibeg,iend,jbeg,jend,kbeg,kend,offset,nx;
+  Buffer BufferLeft = BufferSendX1[faceLeft];
+  Buffer BufferRight = BufferSendX1[faceRight];
   IdefixArray1D<int> map = this->mapVars;
 
   // If MPI Persistent, start receiving even before the buffers are filled
@@ -260,41 +266,53 @@ void Mpi::ExchangeX1(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   offset = end[IDIR];     // Distance between beginning of left and right ghosts
   jbeg   = beg[JDIR];
   jend   = end[JDIR];
-  ny     = jend - jbeg;
+
   kbeg   = beg[KDIR];
   kend   = end[KDIR];
-  nz     = kend - kbeg;
 
-  idefix_for("LoadBufferX1Vc",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
-    KOKKOS_LAMBDA (int n, int k, int j, int i) {
-      BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ) = Vc(map(n),k,j,i+nx);
-      BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ) = Vc(map(n),k,j,i+offset-nx);
-    }
-  );
+
+  BufferLeft.ResetPointer();
+  BufferRight.ResetPointer();
+
+  BufferLeft.Pack(Vc, map, std::make_pair(ibeg+nx, iend+nx),
+                           std::make_pair(jbeg   , jend),
+                           std::make_pair(kbeg   , kend));
+
+  BufferRight.Pack(Vc, map, std::make_pair(ibeg+offset-nx, iend+offset-nx),
+                            std::make_pair(jbeg   , jend),
+                            std::make_pair(kbeg   , kend));
 
   // Load face-centered field in the buffer
   if(haveVs) {
-    #if DIMENSIONS >= 2
-    int VsIndex = mapNVars*nx*ny*nz;
+    BufferLeft.Pack(Vs, BX1s,std::make_pair(ibeg+nx+1, iend+nx+1),
+                             std::make_pair(jbeg   , jend),
+                             std::make_pair(kbeg   , kend));
 
-    idefix_for("LoadBufferX1JDIR",kbeg,kend,jbeg,jend+1,ibeg,iend,
-      KOKKOS_LAMBDA (int k, int j, int i) {
-        BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*(ny+1) + VsIndex ) = Vs(JDIR,k,j,i+nx);
-        BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*(ny+1) + VsIndex ) = Vs(JDIR,k,j,i+offset-nx);
-      }
-    );
+    BufferRight.Pack(Vs, BX1s, std::make_pair(ibeg+offset-nx, iend+offset-nx),
+                               std::make_pair(jbeg   , jend),
+                               std::make_pair(kbeg   , kend));
+
+    #if DIMENSIONS >= 2
+
+    BufferLeft.Pack(Vs, BX2s,std::make_pair(ibeg+nx, iend+nx),
+                             std::make_pair(jbeg   , jend+1),
+                             std::make_pair(kbeg   , kend));
+
+    BufferRight.Pack(Vs, BX2s, std::make_pair(ibeg+offset-nx, iend+offset-nx),
+                               std::make_pair(jbeg   , jend+1),
+                               std::make_pair(kbeg   , kend));
 
     #endif
 
     #if DIMENSIONS == 3
-    VsIndex = mapNVars*nx*ny*nz + nx*(ny+1)*nz;
 
-    idefix_for("LoadBufferX1KDIR",kbeg,kend+1,jbeg,jend,ibeg,iend,
-      KOKKOS_LAMBDA (int k, int j, int i) {
-        BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) = Vs(KDIR,k,j,i+nx);
-        BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) = Vs(KDIR,k,j,i+offset-nx);
-      }
-    );
+    BufferLeft.Pack(Vs, BX3s,std::make_pair(ibeg+nx, iend+nx),
+                             std::make_pair(jbeg   , jend),
+                             std::make_pair(kbeg   , kend+1));
+
+    BufferRight.Pack(Vs, BX3s, std::make_pair(ibeg+offset-nx, iend+offset-nx),
+                               std::make_pair(jbeg   , jend),
+                               std::make_pair(kbeg   , kend+1));
 
     #endif
   }
@@ -364,35 +382,45 @@ void Mpi::ExchangeX1(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   BufferLeft=BufferRecvX1[faceLeft];
   BufferRight=BufferRecvX1[faceRight];
 
+  BufferLeft.ResetPointer();
+  BufferRight.ResetPointer();
+
+  BufferLeft.Unpack(Vc, map,std::make_pair(ibeg, iend),
+                            std::make_pair(jbeg   , jend),
+                            std::make_pair(kbeg   , kend));
+
+  BufferRight.Unpack(Vc, map,std::make_pair(ibeg+offset, iend+offset),
+                             std::make_pair(jbeg   , jend),
+                             std::make_pair(kbeg   , kend));
   // We fill the ghost zones
-  idefix_for("StoreBufferX1Vc",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
-    KOKKOS_LAMBDA (int n, int k, int j, int i) {
-      Vc(map(n),k,j,i) = BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz );
-      Vc(map(n),k,j,i+offset) = BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz );
-    }
-  );
 
   if(haveVs) {
-    #if DIMENSIONS >= 2
-    int VsIndex = mapNVars*nx*ny*nz;
+    BufferLeft.Unpack(Vs, BX1s, std::make_pair(ibeg, iend),
+                                std::make_pair(jbeg   , jend),
+                                std::make_pair(kbeg   , kend));
 
-    idefix_for("StoreBufferX1JDIR",kbeg,kend,jbeg,jend+1,ibeg,iend,
-      KOKKOS_LAMBDA (int k, int j, int i) {
-        Vs(JDIR,k,j,i) = BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*(ny+1) + VsIndex );
-        Vs(JDIR,k,j,i+offset) = BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*(ny+1) + VsIndex );
-      }
-    );
+    BufferRight.Unpack(Vs, BX1s, std::make_pair(ibeg+offset+1, iend+offset+1),
+                                std::make_pair(jbeg   , jend),
+                                std::make_pair(kbeg   , kend));
+
+    #if DIMENSIONS >= 2
+    BufferLeft.Unpack(Vs, BX2s, std::make_pair(ibeg, iend),
+                                std::make_pair(jbeg   , jend+1),
+                                std::make_pair(kbeg   , kend));
+
+    BufferRight.Unpack(Vs, BX2s, std::make_pair(ibeg+offset, iend+offset),
+                                std::make_pair(jbeg   , jend+1),
+                                std::make_pair(kbeg   , kend));
     #endif
 
     #if DIMENSIONS == 3
-    VsIndex = mapNVars*nx*ny*nz + nx*(ny+1)*nz;
+    BufferLeft.Unpack(Vs, BX3s, std::make_pair(ibeg, iend),
+                                std::make_pair(jbeg   , jend),
+                                std::make_pair(kbeg   , kend+1));
 
-    idefix_for("StoreBufferX1KDIR",kbeg,kend+1,jbeg,jend,ibeg,iend,
-      KOKKOS_LAMBDA ( int k, int j, int i) {
-        Vs(KDIR,k,j,i) = BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
-        Vs(KDIR,k,j,i+offset) = BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
-      }
-    );
+    BufferRight.Unpack(Vs, BX3s, std::make_pair(ibeg+offset, iend+offset),
+                                std::make_pair(jbeg   , jend),
+                                std::make_pair(kbeg   , kend+1));
     #endif
   }
 
@@ -416,10 +444,9 @@ void Mpi::ExchangeX2(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   idfx::pushRegion("Mpi::ExchangeX2");
 
   // Load  the buffers with data
-  int ibeg,iend,jbeg,jend,kbeg,kend,offset;
-  int nx,ny,nz;
-  IdefixArray1D<real> BufferLeft=BufferSendX2[faceLeft];
-  IdefixArray1D<real> BufferRight=BufferSendX2[faceRight];
+  int ibeg,iend,jbeg,jend,kbeg,kend,offset,ny;
+  Buffer BufferLeft=BufferSendX2[faceLeft];
+  Buffer BufferRight=BufferSendX2[faceRight];
   IdefixArray1D<int> map = this->mapVars;
 
 // If MPI Persistent, start receiving even before the buffers are filled
@@ -437,43 +464,53 @@ void Mpi::ExchangeX2(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   // Coordinates of the ghost region which needs to be transfered
   ibeg   = 0;
   iend   = ntot[IDIR];
-  nx     = ntot[IDIR];  // Number of points in x
+
   jbeg   = 0;
   jend   = nghost[JDIR];
   offset = end[JDIR];     // Distance between beginning of left and right ghosts
   ny     = nghost[JDIR];
+
   kbeg   = beg[KDIR];
   kend   = end[KDIR];
-  nz     = kend - kbeg;
 
-  idefix_for("LoadBufferX2Vc",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
-    KOKKOS_LAMBDA (int n, int k, int j, int i) {
-      BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ) = Vc(map(n),k,j+ny,i);
-      BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ) = Vc(map(n),k,j+offset-ny,i);
-    }
-  );
+  BufferLeft.ResetPointer();
+  BufferRight.ResetPointer();
+
+  BufferLeft.Pack(Vc, map, std::make_pair(ibeg    , iend),
+                           std::make_pair(jbeg+ny , jend+ny),
+                           std::make_pair(kbeg    , kend));
+
+  BufferRight.Pack(Vc, map, std::make_pair(ibeg           , iend),
+                            std::make_pair(jbeg+offset-ny , jend+offset-ny),
+                            std::make_pair(kbeg           , kend));
 
   // Load face-centered field in the buffer
   if(haveVs) {
-    int VsIndex = mapNVars*nx*ny*nz;
+    BufferLeft.Pack(Vs, BX1s,std::make_pair(ibeg , iend+1),
+                          std::make_pair(jbeg+ny , jend+ny),
+                          std::make_pair(kbeg    , kend));
 
-    idefix_for("LoadBufferX2IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
-      KOKKOS_LAMBDA (int k, int j, int i) {
-        BufferLeft(i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex ) = Vs(IDIR,k,j+ny,i);
-        BufferRight(i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex ) = Vs(IDIR,k,j+offset-ny,i);
-      }
-    );
+    BufferRight.Pack(Vs, BX1s, std::make_pair(ibeg        , iend+1),
+                            std::make_pair(jbeg+offset-ny , jend+offset-ny),
+                            std::make_pair(kbeg           , kend));
+    #if DIMENSIONS >= 2
+    BufferLeft.Pack(Vs, BX2s,std::make_pair(ibeg , iend),
+                             std::make_pair(jbeg+ny+1 , jend+ny+1),
+                             std::make_pair(kbeg    , kend));
 
-
+    BufferRight.Pack(Vs, BX2s, std::make_pair(ibeg        , iend),
+                            std::make_pair(jbeg+offset-ny , jend+offset-ny),
+                            std::make_pair(kbeg           , kend));
+    #endif
     #if DIMENSIONS == 3
-    VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz;
 
-    idefix_for("LoadBufferX2KDIR",kbeg,kend+1,jbeg,jend,ibeg,iend,
-      KOKKOS_LAMBDA (int k, int j, int i) {
-        BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) = Vs(KDIR,k,j+ny,i);
-        BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) = Vs(KDIR,k,j+offset-ny,i);
-      }
-    );
+    BufferLeft.Pack(Vs, BX3s,std::make_pair(ibeg , iend),
+                          std::make_pair(jbeg+ny , jend+ny),
+                          std::make_pair(kbeg    , kend+1));
+
+    BufferRight.Pack(Vs, BX3s, std::make_pair(ibeg        , iend),
+                            std::make_pair(jbeg+offset-ny , jend+offset-ny),
+                            std::make_pair(kbeg           , kend+1));
 
     #endif
   }
@@ -543,35 +580,44 @@ void Mpi::ExchangeX2(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   BufferLeft=BufferRecvX2[faceLeft];
   BufferRight=BufferRecvX2[faceRight];
 
+  BufferLeft.ResetPointer();
+  BufferRight.ResetPointer();
+
+  // We fill the ghost zones
+  BufferLeft.Unpack(Vc, map,std::make_pair(ibeg, iend),
+                            std::make_pair(jbeg   , jend),
+                            std::make_pair(kbeg   , kend));
+
+  BufferRight.Unpack(Vc, map,std::make_pair(ibeg        , iend),
+                             std::make_pair(jbeg+offset , jend+offset),
+                             std::make_pair(kbeg        , kend));
   // We fill the ghost zones
 
-  idefix_for("StoreBufferX2Vc",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
-    KOKKOS_LAMBDA (int n, int k, int j, int i) {
-      Vc(map(n),k,j,i) = BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz );
-      Vc(map(n),k,j+offset,i) = BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz );
-    }
-  );
-
-  // Load face-centered field in the buffer
   if(haveVs) {
-    int VsIndex = mapNVars*nx*ny*nz;
+    BufferLeft.Unpack(Vs, BX1s, std::make_pair(ibeg, iend+1),
+                                std::make_pair(jbeg   , jend),
+                                std::make_pair(kbeg   , kend));
 
-    idefix_for("StoreBufferX2IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
-      KOKKOS_LAMBDA (int k, int j, int i) {
-        Vs(IDIR,k,j,i) = BufferLeft(i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex );
-        Vs(IDIR,k,j+offset,i) = BufferRight(i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex );
-      }
-    );
+    BufferRight.Unpack(Vs, BX1s, std::make_pair(ibeg, iend+1),
+                                std::make_pair(jbeg+offset   , jend+offset),
+                                std::make_pair(kbeg   , kend));
+    #if DIMENSIONS >= 2
+    BufferLeft.Unpack(Vs, BX2s, std::make_pair(ibeg, iend),
+                                std::make_pair(jbeg   , jend),
+                                std::make_pair(kbeg   , kend));
 
+    BufferRight.Unpack(Vs, BX2s, std::make_pair(ibeg, iend),
+                                std::make_pair(jbeg+offset+1, jend+offset+1),
+                                std::make_pair(kbeg   , kend));
+    #endif
     #if DIMENSIONS == 3
-    VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz;
+    BufferLeft.Unpack(Vs, BX3s, std::make_pair(ibeg, iend),
+                                std::make_pair(jbeg, jend),
+                                std::make_pair(kbeg, kend+1));
 
-    idefix_for("StoreBufferX2KDIR",kbeg,kend+1,jbeg,jend,ibeg,iend,
-      KOKKOS_LAMBDA ( int k, int j, int i) {
-        Vs(KDIR,k,j,i) = BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
-        Vs(KDIR,k,j+offset,i) = BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
-      }
-    );
+    BufferRight.Unpack(Vs, BX3s,std::make_pair(ibeg      , iend),
+                                std::make_pair(jbeg+offset, jend+offset),
+                                std::make_pair(kbeg       , kend+1));
     #endif
   }
 
@@ -596,10 +642,9 @@ void Mpi::ExchangeX3(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
 
 
   // Load  the buffers with data
-  int ibeg,iend,jbeg,jend,kbeg,kend,offset;
-  int nx,ny,nz;
-  IdefixArray1D<real> BufferLeft=BufferSendX3[faceLeft];
-  IdefixArray1D<real> BufferRight=BufferSendX3[faceRight];
+  int ibeg,iend,jbeg,jend,kbeg,kend,offset,nz;
+  Buffer BufferLeft=BufferSendX3[faceLeft];
+  Buffer BufferRight=BufferSendX3[faceRight];
   IdefixArray1D<int> map = this->mapVars;
 
   // If MPI Persistent, start receiving even before the buffers are filled
@@ -617,43 +662,56 @@ void Mpi::ExchangeX3(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   // Coordinates of the ghost region which needs to be transfered
   ibeg   = 0;
   iend   = ntot[IDIR];
-  nx     = ntot[IDIR];  // Number of points in x
+
   jbeg   = 0;
   jend   = ntot[JDIR];
-  ny     = ntot[JDIR];
+
   kbeg   = 0;
   kend   = nghost[KDIR];
   offset = end[KDIR];     // Distance between beginning of left and right ghosts
   nz     = nghost[KDIR];
 
-  idefix_for("LoadBufferX3Vc",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
-      KOKKOS_LAMBDA (int n, int k, int j, int i) {
-        int nt = map(n);
-        BufferLeft((i-ibeg) + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ) = Vc(nt,k+nz,j,i);
-        BufferRight((i-ibeg) + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ) = Vc(nt,k+offset-nz,j,i);
-      }
-  );
+  BufferLeft.ResetPointer();
+  BufferRight.ResetPointer();
+
+  BufferLeft.Pack(Vc, map, std::make_pair(ibeg   , iend),
+                           std::make_pair(jbeg   , jend),
+                           std::make_pair(kbeg+nz, kend+nz));
+
+  BufferRight.Pack(Vc, map, std::make_pair(ibeg            , iend),
+                            std::make_pair(jbeg            , jend),
+                            std::make_pair(kbeg + offset-nz, kend+ offset-nz));
 
   // Load face-centered field in the buffer
   if(haveVs) {
-    int VsIndex = mapNVars*nx*ny*nz;
+    BufferLeft.Pack(Vs, BX1s,std::make_pair(ibeg , iend+1),
+                             std::make_pair(jbeg    , jend),
+                             std::make_pair(kbeg+nz , kend+nz));
 
-    idefix_for("LoadBufferX3IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
-      KOKKOS_LAMBDA (int k, int j, int i) {
-        BufferLeft(i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex ) = Vs(IDIR,k+nz,j,i);
-        BufferRight(i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex ) = Vs(IDIR,k+offset-nz,j,i);
-      }
-    );
+    BufferRight.Pack(Vs, BX1s, std::make_pair(ibeg            , iend+1),
+                               std::make_pair(jbeg            , jend),
+                               std::make_pair(kbeg + offset-nz, kend+ offset-nz));
 
     #if DIMENSIONS >= 2
-    VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz;
 
-    idefix_for("LoadBufferX3JDIR",kbeg,kend,jbeg,jend+1,ibeg,iend,
-      KOKKOS_LAMBDA (int k, int j, int i) {
-        BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*(ny+1) + VsIndex ) = Vs(JDIR,k+nz,j,i);
-        BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*(ny+1) + VsIndex ) = Vs(JDIR,k+offset-nz,j,i);
-      }
-    );
+    BufferLeft.Pack(Vs, BX2s,std::make_pair(ibeg    , iend),
+                             std::make_pair(jbeg    , jend+1),
+                             std::make_pair(kbeg+nz , kend+nz));
+
+    BufferRight.Pack(Vs, BX2s, std::make_pair(ibeg            , iend),
+                               std::make_pair(jbeg            , jend+1),
+                               std::make_pair(kbeg + offset-nz, kend+ offset-nz));
+
+    #endif
+
+    #if DIMENSIONS == 3
+    BufferLeft.Pack(Vs, BX3s,std::make_pair(ibeg    , iend),
+                             std::make_pair(jbeg    , jend),
+                             std::make_pair(kbeg+nz+1 , kend+nz+1));
+
+    BufferRight.Pack(Vs, BX3s, std::make_pair(ibeg            , iend),
+                               std::make_pair(jbeg            , jend),
+                               std::make_pair(kbeg + offset-nz, kend+ offset-nz));
     #endif
   }
 
@@ -722,34 +780,47 @@ void Mpi::ExchangeX3(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   BufferLeft=BufferRecvX3[faceLeft];
   BufferRight=BufferRecvX3[faceRight];
 
+  BufferLeft.ResetPointer();
+  BufferRight.ResetPointer();
+
+
   // We fill the ghost zones
-  idefix_for("StoreBufferX3Vc",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
-    KOKKOS_LAMBDA (int n, int k, int j, int i) {
-      Vc(map(n),k,j,i) = BufferLeft((i-ibeg) + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz );
-      Vc(map(n),k+offset,j,i) = BufferRight((i-ibeg) + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz );
-    }
-  );
+  BufferLeft.Unpack(Vc, map,std::make_pair(ibeg, iend),
+                            std::make_pair(jbeg   , jend),
+                            std::make_pair(kbeg   , kend));
 
-  // Load face-centered field in the buffer
+  BufferRight.Unpack(Vc, map,std::make_pair(ibeg        , iend),
+                             std::make_pair(jbeg        , jend),
+                             std::make_pair(kbeg+offset , kend+offset));
+  // We fill the ghost zones
+
   if(haveVs) {
-    int VsIndex = mapNVars*nx*ny*nz;
+    BufferLeft.Unpack(Vs, BX1s, std::make_pair(ibeg, iend+1),
+                                std::make_pair(jbeg   , jend),
+                                std::make_pair(kbeg   , kend));
 
-    idefix_for("StoreBufferX3IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
-      KOKKOS_LAMBDA (int k, int j, int i) {
-        Vs(IDIR,k,j,i) = BufferLeft(i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex );
-        Vs(IDIR,k+offset,j,i) = BufferRight(i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex );
-      }
-    );
+    BufferRight.Unpack(Vs, BX1s, std::make_pair(ibeg, iend+1),
+                                std::make_pair(jbeg          , jend),
+                                std::make_pair(kbeg+offset   , kend+offset));
 
-    #if DIMENSIONS >= 2
-    VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz;
+    #if DIMENSIONS >=2
+    BufferLeft.Unpack(Vs, BX2s, std::make_pair(ibeg, iend),
+                                std::make_pair(jbeg, jend+1),
+                                std::make_pair(kbeg, kend));
 
-    idefix_for("StoreBufferX3JDIR",kbeg,kend,jbeg,jend+1,ibeg,iend,
-      KOKKOS_LAMBDA (int k, int j, int i) {
-        Vs(JDIR,k,j,i) = BufferLeft(i + (j-jbeg)*nx + (k-kbeg)*nx*(ny+1) + VsIndex );
-        Vs(JDIR,k+offset,j,i) = BufferRight(i + (j-jbeg)*nx + (k-kbeg)*nx*(ny+1) + VsIndex );
-      }
-    );
+    BufferRight.Unpack(Vs, BX2s,std::make_pair(ibeg       , iend),
+                                std::make_pair(jbeg       , jend+1),
+                                std::make_pair(kbeg+offset, kend+offset));
+    #endif
+
+    #if DIMENSIONS == 3
+    BufferLeft.Unpack(Vs, BX3s, std::make_pair(ibeg, iend),
+                                std::make_pair(jbeg, jend),
+                                std::make_pair(kbeg, kend));
+
+    BufferRight.Unpack(Vs, BX3s,std::make_pair(ibeg       , iend),
+                                std::make_pair(jbeg       , jend),
+                                std::make_pair(kbeg+offset+1, kend+offset+1));
     #endif
   }
 
@@ -763,7 +834,7 @@ void Mpi::ExchangeX3(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   MPI_Waitall(2, sendRequestX3, sendStatus);
 #endif
   myTimer += MPI_Wtime();
-  bytesSentOrReceived += 4*bufferSizeX2*sizeof(real);
+  bytesSentOrReceived += 4*bufferSizeX3*sizeof(real);
 
   idfx::popRegion();
 }

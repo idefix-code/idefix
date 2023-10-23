@@ -45,12 +45,12 @@ void FargoVelocity(DataBlock &data, IdefixArray2D<real> &Vphi) {
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
     // Set the function for userdefboundary
-    data.hydro.EnrollIsoSoundSpeed(&LISOTHSoundSpeed);
+    data.hydro->EnrollIsoSoundSpeed(&LISOTHSoundSpeed);
     aspect_ratio_glob = input.Get<real>("Setup","aspect_ratio",0);
     jump_radius_glob = input.Get<real>("Setup", "jump_radius",0);
     jump_width_glob = input.Get<real>("Setup", "jump_width",0);
     if(data.haveFargo)
-      data.fargo.EnrollVelocity(&FargoVelocity);
+      data.fargo->EnrollVelocity(&FargoVelocity);
 }
 
 // This routine initialize the flow

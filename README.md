@@ -12,7 +12,7 @@
   * [With MPI (gpu)](#with-mpi-gpu)
 - [Profiling](#profiling)
 - [Debugging](#debugging)
-- [Running tests](#running-tests)
+- [Code Validation](#code-validation)
 - [Contributing](#contributing)
 
 <!-- tocstop -->
@@ -20,13 +20,15 @@
 Download:
 ---------
 
-using either ssh or https url as `<address>`
+Assuming you want to use https to get idefix (easiest option):
+
 ```shell
-git clone <address> idefix
+git clone https://github.com/idefix-code/idefix.git idefix
 cd idefix
 git submodule init
 git submodule update
 ```
+
 
 Installation:
 -------------
@@ -100,31 +102,39 @@ mpirun -np 8 ./idefix -dec 1 2 4 --kokkos-num-devices=4
 
 Profiling
 -------------------
-use the kokkos profiler tool, which can be downloaded from kokkos-tools (on github)
-Then set the environement variable:
+use the embedded profiling tool by adding "-profile" when calling idefix (no need to recompile)
 
 ```shell
-export KOKKOS_PROFILE_LIBRARY=kokkos-tools/src/tools/space-time-stack/kp_space_time_stack.so
-````
-
-and then simply run the code (no need to recompile)
+./idefix -profile
+```
 
 Debugging
 -------------------
 Add `-DIdefix_DEBUG=ON` when calling cmake, or activate the `Idefix_DEBUG` option in ccmake, and recompile.
 Note that this option triggers a lot of outputs and memory access checks which significantly slow down the code.
 
-Running tests
--------------------
+Code Validation
+---------------
+
+Most of tests provided in the `test/` directory can be validated against analytical solution (standard test)
+and/or pre-computed solutions (non-regression tests). Note that the validation relies on large reference
+files that are stored in the separate `idefix-code/reference` repository that is cloned as a submodule.
+
+Ensure that reference files
+were properly downloaded (in the reference/ directory of the root of idefix) before attempting to validate the code.
+
+In order to do a full validation of a particular test
+(with all of the possible combination of algorithms), use the script `testme.py`
+with the `-all` option, as in e.g.:
+```shell
+cd $IDEFIX_DIR/test/HD/sod
+./testme.py -all
+```
+
 Tests require Python 3 along with some third party dependencies to be installed.
 To install those deps, run
 ```shell
 pip install -r test/python_requirements.txt
-```
-
-The test suite itself is then run with
-```shell
-bash test/checks.sh
 ```
 
 Contributing

@@ -5,33 +5,87 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include <unordered_set>
+#include <filesystem>
+#include <iomanip>
 #include "dump.hpp"
-#include "gitversion.hpp"
+#include "version.hpp"
 #include "dataBlockHost.hpp"
 #include "gridHost.hpp"
 #include "output.hpp"
+#include "fluid.hpp"
 
 // Max size of array name
 #define  NAMESIZE     16
 #define  FILENAMESIZE   256
 #define  HEADERSIZE 128
 
-void Dump::Init(Input &input, DataBlock &data) {
-  // Init the output period
+// Register a variable to be dumped (and read)
 
+void Dump::RegisterVariable(IdefixArray3D<real>& in,
+                        std::string name,
+                        int dir,
+                        DumpField::ArrayLocation loc) {
+    dumpFieldMap.emplace(name, DumpField(in, loc, dir));
+}
+
+void  Dump::RegisterVariable(IdefixHostArray3D<real>& in,
+                        std::string name,
+                        int dir,
+                        DumpField::ArrayLocation loc) {
+    dumpFieldMap.emplace(name, DumpField(in, loc, dir));
+}
+
+void  Dump::RegisterVariable(IdefixArray4D<real>& in,
+                        std::string name,
+                        int varnum,
+                        int dir,
+                        DumpField::ArrayLocation loc) {
+    dumpFieldMap.emplace(name, DumpField(in, varnum, loc, dir));
+}
+
+void  Dump::RegisterVariable(IdefixHostArray4D<real>& in,
+                        std::string name,
+                        int varnum,
+                        int dir,
+                        DumpField::ArrayLocation loc) {
+    dumpFieldMap.emplace(name, DumpField(in, varnum, loc, dir));
+}
+
+
+void Dump::Init(DataBlock *datain) {
+  idfx::pushRegion("Dump::Init");
+  this->data = datain;
 
   for (int dir=0; dir<3; dir++) {
-    this->periodicity[dir] = (data.mygrid->lbound[dir] == periodic);
+    this->periodicity[dir] = (data->mygrid->lbound[dir] == periodic);
   }
   this->dumpFileNumber = 0;
 
+  if(idfx::prank==0) {
+    if(!std::filesystem::is_directory(outputDirectory)) {
+      try {
+        if(!std::filesystem::create_directory(outputDirectory)) {
+          std::stringstream msg;
+          msg << "Cannot create directory " << outputDirectory << std::endl;
+          IDEFIX_ERROR(msg);
+        }
+      } catch(std::exception &e) {
+        std::stringstream msg;
+        msg << "Cannot create directory " << outputDirectory << std::endl;
+        msg << e.what();
+        IDEFIX_ERROR(msg);
+      }
+    }
+  }
+
   // Allocate scratch Array
-  this->scrch = new real[ (data.np_int[IDIR]+IOFFSET)*
-                          (data.np_int[JDIR]+JOFFSET)*
-                          (data.np_int[KDIR]+KOFFSET)];
+  this->scrch = new real[ (data->np_int[IDIR]+IOFFSET)*
+                          (data->np_int[JDIR]+JOFFSET)*
+                          (data->np_int[KDIR]+KOFFSET)];
 
   #ifdef WITH_MPI
-    Grid *grid = data.mygrid;
+    Grid *grid = data->mygrid;
 
     int start[3];
     int size[3];
@@ -40,8 +94,8 @@ void Dump::Init(Input &input, DataBlock &data) {
     // Dimensions for cell-centered fields
     for(int dir = 0; dir < 3 ; dir++) {
       size[2-dir] = grid->np_int[dir];
-      start[2-dir] = data.gbeg[dir]-data.nghost[dir];
-      subsize[2-dir] = data.np_int[dir];
+      start[2-dir] = data->gbeg[dir]-data->nghost[dir];
+      subsize[2-dir] = data->np_int[dir];
     }
 
     MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
@@ -52,8 +106,8 @@ void Dump::Init(Input &input, DataBlock &data) {
     for(int face = 0; face < 3 ; face++) {
       for(int dir = 0; dir < 3 ; dir++) {
         size[2-dir] = grid->np_int[dir];
-        start[2-dir] = data.gbeg[dir]-data.nghost[dir];
-        subsize[2-dir] = data.np_int[dir];
+        start[2-dir] = data->gbeg[dir]-data->nghost[dir];
+        subsize[2-dir] = data->np_int[dir];
       }
       // Add the extra guy in the face direction
       size[2-face]++;
@@ -71,57 +125,74 @@ void Dump::Init(Input &input, DataBlock &data) {
       MPI_SAFE_CALL(MPI_Type_commit(&this->descSW[face]));
     }
     // Dimensions for edge-centered field
-    #ifdef EVOLVE_VECTOR_POTENTIAL
-      for(int nv = 0; nv <= AX3e ; nv++) {
-        int edge; // Vector direction(=edge)
-
-        // Map nv to a vector direction
-        #if DIMENSIONS == 2
-          if(nv==AX3e) {
-            edge = KDIR;
-          } else {
-            IDEFIX_ERROR("Wrong direction for vector potential");
-          }
-        #elif DIMENSIONS == 3
-          edge = nv;
-        #else
-          IDEFIX_ERROR("Cannot treat vector potential with that number of dimensions");
-        #endif
-
-        // load the array size
-        for(int dir = 0; dir < 3 ; dir++) {
-          size[2-dir] = grid->np_int[dir];
-          start[2-dir] = data.gbeg[dir]-data.nghost[dir];
-          subsize[2-dir] = data.np_int[dir];
-        }
-
-        // Extra cell in the dirs perp to field
-        for(int i = 0 ; i < DIMENSIONS ; i++) {
-          if(i!=edge) {
-            size[2-i]++;
-            subsize[2-i]++; // valid only for reading
-                            //since it involves an overlap of data between procs
-          }
-        }
-        MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
-                                              MPI_ORDER_C, realMPI, &this->descER[nv]));
-        MPI_SAFE_CALL(MPI_Type_commit(&this->descER[nv]));
-
-        // Now for writing, it is only the last proc which keeps one additional cell,
-        // so we remove what we added for reads
-        for(int i = 0 ; i < DIMENSIONS ; i++) {
-          if(i!=edge) {
-            if(grid->xproc[i] != grid->nproc[i] - 1  ) {
-              subsize[2-i]--;
-            }
-          }
-        }
-        MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
-                                              MPI_ORDER_C, realMPI, &this->descEW[nv]));
-        MPI_SAFE_CALL(MPI_Type_commit(&this->descEW[nv]));
+    for(int nv = 0; nv < 3 ; nv++) {
+      // load the array size
+      for(int dir = 0; dir < 3 ; dir++) {
+        size[2-dir] = grid->np_int[dir];
+        start[2-dir] = data->gbeg[dir]-data->nghost[dir];
+        subsize[2-dir] = data->np_int[dir];
       }
-    #endif
+
+      // Extra cell in the dirs perp to field
+      for(int i = 0 ; i < DIMENSIONS ; i++) {
+        if(i!=nv) {
+          size[2-i]++;
+          subsize[2-i]++; // valid only for reading
+                          //since it involves an overlap of data between procs
+        }
+      }
+      MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
+                                            MPI_ORDER_C, realMPI, &this->descER[nv]));
+      MPI_SAFE_CALL(MPI_Type_commit(&this->descER[nv]));
+
+      // Now for writing, it is only the last proc which keeps one additional cell,
+      // so we remove what we added for reads
+      for(int i = 0 ; i < DIMENSIONS ; i++) {
+        if(i!=nv) {
+          if(grid->xproc[i] != grid->nproc[i] - 1  ) {
+            subsize[2-i]--;
+          }
+        }
+      }
+      MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
+                                            MPI_ORDER_C, realMPI, &this->descEW[nv]));
+      MPI_SAFE_CALL(MPI_Type_commit(&this->descEW[nv]));
+    }
+
   #endif
+
+  // Register variables that are needed in restart dumps
+  this->RegisterVariable(&dumpFileNumber, "dumpFileNumber");
+  this->RegisterVariable(&geometry, "geometry");
+  this->RegisterVariable(periodicity, "periodicity", 3);
+
+  idfx::popRegion();
+}
+
+
+Dump::Dump(Input &input, DataBlock *datain) {
+  // Constructor with an input object, in which case,
+  // We use the outputdirectory provided in the input
+
+    // initialize output path
+  if(input.CheckEntry("Output","dmp_dir")>=0) {
+    outputDirectory = input.Get<std::string>("Output","dmp_dir",0);
+  } else {
+    outputDirectory = "./";
+  }
+  Init(datain);
+}
+
+Dump::Dump(DataBlock *datain) {
+  // Constructor without an input object, in which case,
+  // We use the default output directory
+
+  outputDirectory = "./";
+  Init(datain);
+}
+
+Dump::~Dump() {
+  delete scrch;
 }
 
 void Dump::WriteString(IdfxFileHandler fileHdl, char *str, int size) {
@@ -450,8 +521,49 @@ void Dump::ReadDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gdi
   #endif
 }
 
-int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
-  char filename[FILENAMESIZE];
+// Helper function to convert filesystem::file_time into std::time_t
+// see https://stackoverflow.com/questions/56788745/
+// This conversion "hack" is required in C++17 as no proper conversion bewteen
+// std::filesystem::last_write_time and std::time_t
+// exists in the standard library until C++20
+template <typename TP>
+std::time_t to_time_t(TP tp) {
+    auto sctp = std::chrono::time_point_cast<std::chrono::system_clock::duration>
+                (tp - TP::clock::now() + std::chrono::system_clock::now());
+    return std::chrono::system_clock::to_time_t(sctp);
+}
+
+int Dump::GetLastDumpInDirectory(std::filesystem::path &directory) {
+  int num = -1;
+
+  std::time_t youngFileTime;
+  bool first = true;
+  for (const auto & entry : std::filesystem::directory_iterator(directory)) {
+      // Check file extension
+      if(entry.path().extension().string().compare(".dmp")==0) {
+        auto fileTime = to_time_t(std::filesystem::last_write_time(entry.path()));
+        // Check which one is the most recent
+        if(first || fileTime>youngFileTime) {
+          // std::tm *gmt = std::gmtime(&fileTime);
+          // idfx::cout << "file " << entry.path() << "is the most recent with "
+          //            << std::put_time(gmt, "%d %B %Y %H:%M:%S") << std::endl;
+
+          // Ours is more recent, extract the dump file number
+          try {
+            num = std::stoi(entry.path().filename().string().substr(5,4));
+            first = false;
+            youngFileTime = fileTime;
+          } catch (...) {
+            // the file name does not follow the convention "filebase.xxxx.dmp"
+            // ->We skip it
+          }
+        }
+      }
+  }
+  return(num);
+}
+bool Dump::Read(Output& output, int readNumber ) {
+  std::filesystem::path filename;
   int nx[3];
   int nxglob[3];
   std::string fieldName;
@@ -462,24 +574,43 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
 
   idfx::pushRegion("Dump::Read");
 
-  idfx::cout << "Dump: Reading restart file n " << readNumber << "..." << std::flush;
+  std::filesystem::path readDir = this->outputDirectory;
+
+  if(readNumber<0) {
+    // We actually don't know which file we're supposed to read, so let's guess
+    readNumber = GetLastDumpInDirectory(readDir);
+    if(readNumber < 0) {
+      idfx::cout << "Dump: cannot find a valid dump in " << this->outputDirectory << std::endl;
+      if(outputDirectory.compare("./")!=0) {
+        idfx::cout << "Dump: reverting to the current directory." << std::endl;
+        readDir = ".";
+        readNumber = GetLastDumpInDirectory(readDir);
+      }
+      if(readNumber<0) {
+        IDEFIX_WARNING("cannot find a valid restart dump.");
+        return(false);
+      }
+    }
+  }
 
   // Reset timer
   timer.reset();
 
   // Set filename
-  std::snprintf (filename, FILENAMESIZE, "dump.%04d.dmp", readNumber);
+  std::stringstream ssdumpFileNum,ssFileName;
+  ssdumpFileNum << std::setfill('0') << std::setw(4) << readNumber;
+  ssFileName << "dump." << ssdumpFileNum.str() << ".dmp";
+  filename = readDir/ssFileName.str();
 
-  // Make a local image of the datablock
-  DataBlockHost dataHost(data);
-
+  idfx::cout << "Dump: Reading " << filename << "..." << std::flush;
   // open file
 #ifdef WITH_MPI
-  MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename, MPI_MODE_RDONLY | MPI_MODE_UNIQUE_OPEN,
+  MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
+                              MPI_MODE_RDONLY | MPI_MODE_UNIQUE_OPEN,
                               MPI_INFO_NULL, &fileHdl));
   this->offset = 0;
 #else
-  fileHdl = fopen(filename,"rb");
+  fileHdl = fopen(filename.c_str(),"rb");
   if(fileHdl == NULL) {
     std::stringstream msg;
     msg << "Failed to open dump file: " << std::string(filename) << std::endl;
@@ -499,7 +630,7 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
   for(int dir=0 ; dir < 3; dir++) {
     ReadNextFieldProperties(fileHdl, ndim, nx, type, fieldName);
     if(ndim>1) IDEFIX_ERROR("Wrong coordinate array dimensions while reading restart dump");
-    if(nx[0] != data.mygrid->np_int[dir]) {
+    if(nx[0] != data->mygrid->np_int[dir]) {
       idfx::cout << "dir " << dir << ", restart has " << nx[0] << " points " << std::endl;
       IDEFIX_ERROR("Domain size from the restart dump is different from the current one");
     }
@@ -514,167 +645,108 @@ int Dump::Read(DataBlock &data, Output& output, int readNumber ) {
     }
     // Todo: check that coordinates are identical
   }
+  std::unordered_set<std::string> notFound {};
+  for(auto it = dumpFieldMap.begin(); it != dumpFieldMap.end(); it++) {
+    notFound.insert(it->first);
+  }
+
   // Coordinates are ok, load the bulk
   while(true) {
     ReadNextFieldProperties(fileHdl, ndim, nxglob, type, fieldName);
-    idfx::cout << "Next field is " << fieldName << " with " << ndim << " dimensions and (";
+
+    /*idfx::cout << "Next field is " << fieldName << " with " << ndim << " dimensions and (";
     for(int i = 0 ; i < ndim ; i++) idfx::cout << nxglob[i] << " ";
-    idfx::cout << ") points." << std::endl;
+    idfx::cout << ") points." << std::endl;*/
 
     if(fieldName.compare(eof) == 0) {
+      // We have reached end of dump file
       break;
-    } else if(fieldName.compare(0,3,"Vc-") == 0) {
-      // Next field is a cell-centered field
+    } else {
+      if(auto it = dumpFieldMap.find(fieldName) ; it != dumpFieldMap.end()) {
+        // This key has been registered
+        notFound.erase(fieldName);
+        DumpField &scalar = it->second;
+        if(scalar.GetType() == DumpField::Type::IdefixArray) {
+          // Distributed idefix array
+          int direction = scalar.GetDirection();
 
-      // Matching Name is Vc-<<VcName>>
-      int nv = -1;
-      for(int n = 0 ; n < NVAR; n++) {
-        if(fieldName.compare(3,3,data.hydro.VcName[n],0,3)==0) nv=n; // Found matching field
-      }
-      // Load it
-      for(int dir = 0 ; dir < 3; dir++) {
-        nx[dir] = dataHost.np_int[dir];
-      }
-      ReadDistributed(fileHdl, ndim, nx, nxglob, descC, scrch);
+          // Load it
+          for(int dir = 0 ; dir < 3; dir++) {
+            nx[dir] = data->np_int[dir];
+          }
 
-      if(nv<0) {
+          if(scalar.GetLocation() == DumpField::ArrayLocation::Face) {
+            nx[direction]++;   // Extra cell in the dir direction for face-centered fields
+          }
+          if(scalar.GetLocation() == DumpField::ArrayLocation::Edge) {
+            // Extra cell in the dirs perp to field
+            for(int i = 0 ; i < DIMENSIONS ; i++) {
+              if(i!=direction) nx[i] ++;
+            }
+          }
+          if(scalar.GetLocation() == DumpField::ArrayLocation::Center) {
+            ReadDistributed(fileHdl, ndim, nx, nxglob, descC, scrch);
+          } else if(scalar.GetLocation() == DumpField::ArrayLocation::Face) {
+            ReadDistributed(fileHdl, ndim, nx, nxglob, descSR[direction], scrch);
+          } else if(scalar.GetLocation() == DumpField::ArrayLocation::Edge) {
+            ReadDistributed(fileHdl, ndim, nx, nxglob, descER[direction], scrch);
+          }
+          auto toRead = scalar.GetHostField<IdefixHostArray3D<real>>();
+          // Load the scratch space in designated field
+          for(int k = 0; k < nx[KDIR]; k++) {
+            for(int j = 0 ; j < nx[JDIR]; j++) {
+              for(int i = 0; i < nx[IDIR]; i++) {
+                toRead(k+data->beg[KDIR],j+data->beg[JDIR],i+data->beg[IDIR]) =
+                                                        scrch[i + j*nx[IDIR] + k*nx[IDIR]*nx[JDIR]];
+              }
+            }
+          }
+          scalar.SyncFrom(toRead);
+        } else {
+          // Fundamental Type
+          // Check that size matches
+          if(nxglob[0] != scalar.GetSize()) {
+            idfx::cout << "nxglob=" << nxglob[0] << " scalar=" << scalar.GetSize() << std::endl;
+            IDEFIX_ERROR("Size of field "+fieldName+" do not match");
+          }
+          // Todo: check that type matches
+          void *ptr = scalar.GetHostField<void *>();
+
+          ReadSerial(fileHdl, ndim, nxglob, type, ptr);
+        }
+      } else {
+        Skip(fileHdl, ndim, nxglob, type);
+        // Key has not been registered, throw a warning
         IDEFIX_WARNING("Cannot find a field matching " + fieldName
                        + " in current running code. Skipping.");
-      } else {
-        // Load the scratch space in designated field
-        for(int k = 0; k < nx[KDIR]; k++) {
-          for(int j = 0 ; j < nx[JDIR]; j++) {
-            for(int i = 0; i < nx[IDIR]; i++) {
-              dataHost.Vc(nv,k+dataHost.beg[KDIR],j+dataHost.beg[JDIR],i+dataHost.beg[IDIR]) =
-                                                      scrch[i + j*nx[IDIR] + k*nx[IDIR]*nx[JDIR]];
-            }
-          }
-        }
       }
-    } else if(fieldName.compare(0,3,"Vs-") == 0) {
-      // Next field is a face-centered field
-
-      // Matching Name is Vs-<<VcName>>
-      #if MHD == YES
-        int nv = -1;
-        for(int n = 0 ; n < DIMENSIONS; n++) {
-          if(fieldName.compare(3,4,data.hydro.VsName[n],0,4)==0) nv=n; // Found matching field
-        }
-        if(nv<0) {
-          IDEFIX_ERROR("Cannot find a field matching " + fieldName
-                              + " in current running code.");
-        } else {
-          // Load it
-          for(int dir = 0 ; dir < 3; dir++) nx[dir] = dataHost.np_int[dir];
-          nx[nv]++;   // Extra cell in the dir direction for cell-centered fields
-          ReadDistributed(fileHdl, ndim, nx, nxglob, descSR[nv], scrch);
-
-          for(int k = 0; k < nx[KDIR]; k++) {
-            for(int j = 0 ; j < nx[JDIR]; j++) {
-              for(int i = 0; i < nx[IDIR]; i++) {
-                dataHost.Vs(nv,k+dataHost.beg[KDIR],j+dataHost.beg[JDIR],i+dataHost.beg[IDIR])
-                            = scrch[i + j*nx[IDIR] + k*nx[IDIR]*nx[JDIR]];
-              }
-            }
-          }
-        }
-      #else
-        IDEFIX_WARNING("Code configured without MHD. Face-centered magnetic field components \
-                        from the restart dump are skipped");
-      #endif
-    } else if(fieldName.compare(0,3,"Ve-") == 0) {
-      #if MHD == YES && defined(EVOLVE_VECTOR_POTENTIAL)
-        int nv = -1;
-        for(int n = 0 ; n <= AX3e; n++) {
-          if(fieldName.compare(3,4,data.hydro.VeName[n],0,4)==0) nv=n; // Found matching field
-        }
-        if(nv<0) {
-          IDEFIX_ERROR("Cannot find a field matching " + fieldName
-                              + " in current running code.");
-        } else {
-          int dir = 0;
-          #if DIMENSIONS == 2
-            if(nv==AX3e) {
-              dir = KDIR;
-            } else {
-              IDEFIX_ERROR("Wrong direction for vector potential");
-            }
-          #elif DIMENSIONS == 3
-            dir = nv;
-          #else
-            IDEFIX_ERROR("Cannot treat vector potential with that number of dimensions");
-          #endif
-          // Load it
-          for(int i = 0 ; i < 3; i++) {
-            nx[i] = dataHost.np_int[i];
-          }
-          // Extra cell in the dirs perp to field
-          for(int i = 0 ; i < DIMENSIONS ; i++) {
-            if(i!=dir) nx[i] ++;
-          }
-
-          ReadDistributed(fileHdl, ndim, nx, nxglob, descER[nv], scrch);
-
-          for(int k = 0; k < nx[KDIR]; k++) {
-            for(int j = 0 ; j < nx[JDIR]; j++) {
-              for(int i = 0; i < nx[IDIR]; i++) {
-                dataHost.Ve(nv,k+dataHost.beg[KDIR],j+dataHost.beg[JDIR],i+dataHost.beg[IDIR])
-                            = scrch[i + j*nx[IDIR] + k*nx[IDIR]*nx[JDIR]];
-              }
-            }
-          }
-        }
-
-      #else
-      IDEFIX_WARNING("Code configured without vector potential support. Vector potentials \
-                        from the restart dump are skipped");
-      Skip(fileHdl, ndim, nxglob, type);
-
-      #endif
-    } else if(fieldName.compare("time") == 0) {
-      ReadSerial(fileHdl, ndim, nxglob, type, &data.t);
-    } else if(fieldName.compare("dt") == 0) {
-      ReadSerial(fileHdl, ndim, nxglob, type, &data.dt);
-    } else if(fieldName.compare("vtkFileNumber")==0) {
-      ReadSerial(fileHdl, ndim, nxglob, type, &output.vtk.vtkFileNumber);
-    } else if(fieldName.compare("vtkLast")==0) {
-      ReadSerial(fileHdl, ndim, nxglob, type, &output.vtkLast);
-    } else if(fieldName.compare("dumpFileNumber")==0) {
-      ReadSerial(fileHdl, ndim, nxglob, type, &this->dumpFileNumber);
-    } else if(fieldName.compare("dumpLast")==0) {
-      ReadSerial(fileHdl, ndim, nxglob, type, &output.dumpLast);
-    } else if(fieldName.compare("analysisLast")==0) {
-      ReadSerial(fileHdl, ndim, nxglob, type, &output.analysisLast);
-    } else if(fieldName.compare("geometry")==0) {
-      ReadSerial(fileHdl, ndim, nxglob, type, &this->geometry);
-    } else if(fieldName.compare("periodicity")==0) {
-      ReadSerial(fileHdl, ndim, nxglob, type, &this->periodicity);
-    } else {
-      Skip(fileHdl, ndim, nxglob, type);
-      IDEFIX_WARNING("Unknown field "+fieldName+" in restart dump. Skipping.");
     }
   }
-
+  if (notFound.size() > 0) {
+    std::stringstream msg {};
+    msg << "The following fields were not found in " << filename << ": ";
+    for(auto it = notFound.begin(); it != notFound.end(); it++) {
+      msg << *it << ' ';
+    }
+    IDEFIX_WARNING(msg);
+  }
   #ifdef WITH_MPI
   MPI_SAFE_CALL(MPI_File_close(&fileHdl));
   #else
   fclose(fileHdl);
   #endif
 
-  // Send to device
-  dataHost.SyncToDevice();
-
   idfx::cout << "done in " << timer.seconds() << " s." << std::endl;
-  idfx::cout << "Restarting from t=" << data.t << "." << std::endl;
+  idfx::cout << "Restarting from t=" << data->t << "." << std::endl;
 
   idfx::popRegion();
 
-  return(0);
+  return(true);
 }
 
 
-int Dump::Write(DataBlock &data, Output& output) {
-  char filename[FILENAMESIZE];
+int Dump::Write(Output& output) {
+  std::filesystem::path filename;
   char fieldName[NAMESIZE+1]; // +1 is just in case
   int nx[3];
   int nxtot[3];
@@ -693,35 +765,37 @@ int Dump::Write(DataBlock &data, Output& output) {
   // Reset timer
   timer.reset();
 
-  // Set filename
-  std::snprintf(filename, FILENAMESIZE, "dump.%04d.dmp", dumpFileNumber);
+
+  // Set filenames
+  std::stringstream ssdumpFileNum,ssFileName;
+  ssdumpFileNum << std::setfill('0') << std::setw(4) << dumpFileNumber;
+  ssFileName << "dump." << ssdumpFileNum.str() << ".dmp";
+  filename = outputDirectory/ssFileName.str();
+
   dumpFileNumber++;   // For next one
+
+  // Check if file exists, if yes, delete it
+  if(idfx::prank==0) {
+    if(std::filesystem::exists(filename)) {
+      std::filesystem::remove(filename);
+    }
+  }
 
   // open file
 #ifdef WITH_MPI
-// Open file for creating, return error if file already exists.
-  int err = MPI_File_open(MPI_COMM_WORLD, filename,
-                              MPI_MODE_CREATE | MPI_MODE_RDWR
-                              | MPI_MODE_EXCL | MPI_MODE_UNIQUE_OPEN,
-                              MPI_INFO_NULL, &fileHdl);
-  if (err != MPI_SUCCESS)  {
-    // File exists, delete it before reopening
-    if(idfx::prank == 0) {
-      MPI_File_delete(filename,MPI_INFO_NULL);
-    }
-    MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename,
+  MPI_Barrier(MPI_COMM_WORLD);
+  // Open file for creating, return error if file already exists.
+  MPI_SAFE_CALL(MPI_File_open(MPI_COMM_WORLD, filename.c_str(),
                               MPI_MODE_CREATE | MPI_MODE_RDWR
                               | MPI_MODE_EXCL | MPI_MODE_UNIQUE_OPEN,
                               MPI_INFO_NULL, &fileHdl));
-  }
-
   this->offset = 0;
 #else
-  fileHdl = fopen(filename,"wb");
+  fileHdl = fopen(filename.c_str(),"wb");
 #endif
   // File is open
   // First thing we need are coordinates: init a host mirror and sync it
-  GridHost gridHost(*data.mygrid);
+  GridHost gridHost(*data->mygrid);
   gridHost.SyncFromDevice();
 
   // Test endianness
@@ -735,7 +809,8 @@ int Dump::Write(DataBlock &data, Output& output) {
   }
 
   char header[HEADERSIZE];
-  std::snprintf(header, HEADERSIZE, "Idefix %s Dump Data %s endian", GITVERSION, endian.c_str());
+  std::snprintf(header, HEADERSIZE, "Idefix %s Dump Data %s endian",
+                IDEFIX_VERSION, endian.c_str());
   WriteString(fileHdl, header, HEADERSIZE);
 
   for(int dir = 0; dir < 3 ; dir++) {
@@ -754,120 +829,70 @@ int Dump::Write(DataBlock &data, Output& output) {
   }
 
   // Then write raw data from Vc
-  DataBlockHost dataHost(data);
-  dataHost.SyncFromDevice();
 
-  for(int nv = 0 ; nv <NVAR ; nv++) {
-    std::snprintf(fieldName,NAMESIZE,"Vc-%s",data.hydro.VcName[nv].c_str());
-    // Load the active domain in the scratch space
-    for(int i = 0; i < 3 ; i++) {
-      nx[i] = dataHost.np_int[i];
-      nxtot[i] = gridHost.np_int[i];
-    }
-
-    for(int k = 0; k < nx[KDIR]; k++) {
-      for(int j = 0 ; j < nx[JDIR]; j++) {
-        for(int i = 0; i < nx[IDIR]; i++) {
-          scrch[i + j*nx[IDIR] + k*nx[IDIR]*nx[JDIR]] = dataHost.Vc(nv,k+dataHost.beg[KDIR],
-                                                                       j+dataHost.beg[JDIR],
-                                                                       i+dataHost.beg[IDIR]);
-        }
-      }
-    }
-    WriteDistributed(fileHdl, 3, nx, nxtot, fieldName, this->descC, scrch);
-  }
-
-  #if MHD == YES
-    // write staggered field components
-    for(int nv = 0 ; nv <DIMENSIONS ; nv++) {
-      std::snprintf(fieldName,NAMESIZE,"Vs-%s",data.hydro.VsName[nv].c_str());
-      // Load the active domain in the scratch space
+  for(auto const& [name, scalar] : dumpFieldMap) {
+    // Todo: replace these C char by std::string
+    std::snprintf(fieldName,NAMESIZE,"%s",name.c_str());
+    if(scalar.GetType() == DumpField::Type::IdefixArray) {
+      auto toWrite = scalar.GetHostField<IdefixHostArray3D<real>>();
+      int dir = scalar.GetDirection();
       for(int i = 0; i < 3 ; i++) {
-        nx[i] = dataHost.np_int[i];
+        nx[i] = data->np_int[i];
         nxtot[i] = gridHost.np_int[i];
       }
-      // If it is the last datablock of the dimension, increase the size by one to get the last
-      //active face of the staggered mesh.
-      if(data.mygrid->xproc[nv] == data.mygrid->nproc[nv] - 1  ) nx[nv]++;
-      nxtot[nv]++;
 
-      for(int k = 0; k < nx[KDIR]; k++) {
-        for(int j = 0 ; j < nx[JDIR]; j++) {
-          for(int i = 0; i < nx[IDIR]; i++) {
-            scrch[i + j*nx[IDIR] + k*nx[IDIR]*nx[JDIR] ] = dataHost.Vs(nv,k+dataHost.beg[KDIR],
-                                                                          j+dataHost.beg[JDIR],
-                                                                          i+dataHost.beg[IDIR]);
-          }
-        }
+      if(scalar.GetLocation() == DumpField::ArrayLocation::Face) {
+        // If it is the last datablock of the dimension, increase the size by one to get the last
+        //active face of the staggered mesh.
+        if(data->mygrid->xproc[dir] == data->mygrid->nproc[dir] - 1  ) nx[dir]++;
+        nxtot[dir]++;
       }
-      WriteDistributed(fileHdl, 3, nx, nxtot, fieldName, this->descSW[nv], scrch);
-    }
-    #ifdef EVOLVE_VECTOR_POTENTIAL
-      // write edge field components
-      for(int nv = 0 ; nv <= AX3e ; nv++) {
-        std::snprintf(fieldName,NAMESIZE,"Ve-%s",data.hydro.VeName[nv].c_str());
-        int edge = 0;
-        #if DIMENSIONS == 2
-          if(nv==AX3e) {
-            edge = KDIR;
-          } else {
-            IDEFIX_ERROR("Wrong direction for vector potential");
-          }
-        #elif DIMENSIONS == 3
-          edge = nv;
-        #else
-          IDEFIX_ERROR("Cannot treat vector potential with that number of dimensions");
-        #endif
-        // Load the active domain in the scratch space
-        for(int i = 0; i < 3 ; i++) {
-          nx[i] = dataHost.np_int[i];
-          nxtot[i] = gridHost.np_int[i];
-        }
+
+      if(scalar.GetLocation() == DumpField::ArrayLocation::Edge) {
         // If it is the last datablock of the dimension, increase the size by one in the direction
         // perpendicular to the vector.
-
         for(int i = 0 ; i < DIMENSIONS ; i++) {
-          if(i != edge) {
-            if(data.mygrid->xproc[i] == data.mygrid->nproc[i] - 1) nx[i]++;
+          if(i != dir) {
+            if(data->mygrid->xproc[i] == data->mygrid->nproc[i] - 1) nx[i]++;
             nxtot[i]++;
           }
         }
-        for(int k = 0; k < nx[KDIR]; k++) {
-          for(int j = 0 ; j < nx[JDIR]; j++) {
-            for(int i = 0; i < nx[IDIR]; i++) {
-              scrch[i + j*nx[IDIR] + k*nx[IDIR]*nx[JDIR] ] = dataHost.Ve(nv,k+dataHost.beg[KDIR],
-                                                                            j+dataHost.beg[JDIR],
-                                                                            i+dataHost.beg[IDIR]);
-            }
+      }
+
+      // Load the dataset in the scratch array
+      for(int k = 0; k < nx[KDIR]; k++) {
+        for(int j = 0 ; j < nx[JDIR]; j++) {
+          for(int i = 0; i < nx[IDIR]; i++) {
+            scrch[i + j*nx[IDIR] + k*nx[IDIR]*nx[JDIR]] = toWrite(k+data->beg[KDIR],
+                                                                  j+data->beg[JDIR],
+                                                                  i+data->beg[IDIR]);
           }
         }
-        WriteDistributed(fileHdl, 3, nx, nxtot, fieldName, this->descEW[nv], scrch);
       }
-    #endif
-  #endif
 
-  // Write some raw data
-  nx[0] = 1;
-  std::snprintf(fieldName,NAMESIZE, "time");
-  WriteSerial(fileHdl, 1, nx, realType, fieldName, &data.t);
-  std::snprintf(fieldName,NAMESIZE, "dt");
-  WriteSerial(fileHdl, 1, nx, realType, fieldName, &data.dt);
-  std::snprintf(fieldName,NAMESIZE, "vtkFileNumber");
-  WriteSerial(fileHdl, 1, nx, IntegerType, fieldName, &output.vtk.vtkFileNumber);
-  std::snprintf(fieldName,NAMESIZE, "vtkLast");
-  WriteSerial(fileHdl, 1, nx, realType, fieldName, &output.vtkLast);
-  std::snprintf(fieldName,NAMESIZE, "dumpFileNumber");
-  WriteSerial(fileHdl, 1, nx, IntegerType, fieldName, &this->dumpFileNumber);
-  std::snprintf(fieldName,NAMESIZE, "dumpLast");
-  WriteSerial(fileHdl, 1, nx, realType, fieldName, &output.dumpLast);
-  std::snprintf(fieldName,NAMESIZE, "analysisLast");
-  WriteSerial(fileHdl, 1, nx, realType, fieldName, &output.analysisLast);
-  std::snprintf(fieldName,NAMESIZE, "geometry");
-  WriteSerial(fileHdl, 1, nx, IntegerType, fieldName, &this->geometry);
+      if(scalar.GetLocation() == DumpField::ArrayLocation::Center) {
+        WriteDistributed(fileHdl, 3, nx, nxtot, fieldName, this->descC, scrch);
+      } else if(scalar.GetLocation() == DumpField::ArrayLocation::Face) {
+        WriteDistributed(fileHdl, 3, nx, nxtot, fieldName, this->descSW[dir], scrch);
+      } else if(scalar.GetLocation() == DumpField::ArrayLocation::Edge) {
+         WriteDistributed(fileHdl, 3, nx, nxtot, fieldName, this->descEW[dir], scrch);
+      } else {
+        IDEFIX_ERROR("Unknown scalar type for dump write");
+      }
 
-  nx[0] = 3;
-  std::snprintf(fieldName,NAMESIZE, "periodicity");
-  WriteSerial(fileHdl, 1, nx, IntegerType, fieldName, &this->periodicity);
+    } else {
+      // Scalar type if a fundamental type, not distributed
+      DataType thisType;
+      if(scalar.GetType()==DumpField::Type::Int) thisType = DataType::IntegerType;
+      if(scalar.GetType()==DumpField::Type::Single) thisType = DataType::SingleType;
+      if(scalar.GetType()==DumpField::Type::Double) thisType = DataType::DoubleType;
+      if(scalar.GetType()==DumpField::Type::Bool) thisType = DataType::BoolType;
+
+      nx[0] = scalar.GetSize();
+
+      WriteSerial(fileHdl, 1, nx, thisType, fieldName, scalar.GetHostField<void*>());
+    }
+  }
 
   // Write end of file
   scrch[0] = 0.0;

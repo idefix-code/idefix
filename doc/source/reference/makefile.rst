@@ -40,6 +40,13 @@ Several options can be enabled from the command line (or are accessible with ``c
     Enable debug options in *Idefix*. This triggers a lot of outputs, and automatic bound checks of array accesses. As a result, this
     option makes the code very slow.
 
+``-D Idefix_RUNTIME_CHECKS=ON``
+    Include (potentially expensive) runtime sanity checks implemented with ``RUNTIME_CHECK_HOST`` and ``RUNTIME_CHECK_KERNEL``.
+    See :ref:`defensiveProgramming`.
+
+``-D Idefix_HDF5=ON``
+    Enable HDF5 outputs. Requires the HDF5 library on the target system. Required for *Idefix* XDMF outputs.
+
 ``-D Idefix_RECONSTRUCTION=x``
     Specify the type of reconstruction scheme (replaces the old "ORDER" parameter in ``definitions.hpp``). Accepted values for ``x`` are:
       + ``Constant``: first order, donor cell reconstruction,
@@ -87,6 +94,65 @@ Several options can be enabled from the command line (or are accessible with ``c
     Launching ``cmake`` from a problem directory ensures that ``cmake`` will use that directory as its build directory. Note that it is also possible to use the ``-B``
     option to explictely tell ``cmake`` a path to a build=*Idefix* problem directory.
 
+
+.. _setupExamples:
+
+Configuration examples for selected clusters
+++++++++++++++++++++++++++++++++++++++++++++
+
+
+AdAstra at CINES, AMD Mi250X GPUs
+---------------------------------
+
+We recommend the following modules and environement variables on AdAstra:
+
+.. code-block:: bash
+
+    module load PrgEnv-cray-amd
+    module load cray-mpich
+    module load craype-network-ofi
+    module load cce
+    module load cpe
+    module load rocm/5.2.0
+    export LDFLAGS="-L${ROCM_PATH}/lib -lamdhip64 -lstdc++fs"
+
+The last line being there to guarantee the link to the HIP library and the access to specific
+C++17 <filesystem> functions.
+
+Finally, *Idefix* can be configured to run on Mi250 by enabling HIP and the desired architecture with the following options to ccmake:
+
+.. code-block:: bash
+
+    -DKokkos_ENABLE_HIP=ON -DKokkos_ENABLE_HIP_MULTIPLE_KERNEL_INSTANTIATION=ON -DKokkos_ARCH_VEGA90A=ON``
+
+
+MPI (multi-GPU) can be enabled by adding ``-DIdefix_MPI=ON`` as usual.
+
+Jean Zay at IDRIS, Nvidia V100 and A100 GPUs
+--------------------------------------------
+
+We recommend the following modules and environement variables on Jean Zay:
+
+.. code-block:: bash
+
+    module load cuda/12.1.0
+    module load gcc/12.2.0
+    module load openmpi/4.1.1-cuda
+    module load cmake/3.18.0
+
+*Idefix* can then be configured to run on Nvidia V100 with the following options to ccmake:
+
+.. code-block:: bash
+
+    -DKokkos_ENABLE_CUDA=ON -DKokkos_ENABLE_VOLTA70=ON
+
+While Ampere A100 GPUs are enabled with
+
+.. code-block:: bash
+
+    -DKokkos_ENABLE_CUDA=ON -DKokkos_ENABLE_AMPERE80=ON
+
+MPI (multi-GPU) can be enabled by adding ``-DIdefix_MPI=ON`` as usual.
 
 .. _setupSpecificOptions:
 

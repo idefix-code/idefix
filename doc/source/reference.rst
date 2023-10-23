@@ -1,5 +1,5 @@
 =====================
-Reference guide
+User guide
 =====================
 First, it is good practice to set the environment variable ``IDEFIX_DIR`` to the root path of your *Idefix* distribution, as it is needed at several stages. Setting up *Idefix* for a particular problem implies editing several files, some of which are automatically generated.
 To set up a particular *Idefix* setup, 5 steps are required.

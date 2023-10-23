@@ -23,9 +23,11 @@ void Analysis(DataBlock & data) {
 
 }
 
-void InternalBoundary(DataBlock& data, const real t) {
-  IdefixArray4D<real> Vc = data.hydro.Vc;
-  idefix_for("InternalBoundary",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
+void InternalBoundary(Fluid<DefaultPhysics> * hydro, const real t) {
+  IdefixArray4D<real> Vc = hydro->Vc;
+  idefix_for("InternalBoundary",0,hydro->data->np_tot[KDIR],
+                                0,hydro->data->np_tot[JDIR],
+                                0,hydro->data->np_tot[IDIR],
               KOKKOS_LAMBDA (int k, int j, int i) {
                 // Cancel any motion that could be happening
                 Vc(VX1,k,j,i) = 0.0;
@@ -39,7 +41,7 @@ void InternalBoundary(DataBlock& data, const real t) {
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   output.EnrollAnalysis(&Analysis);
-  data.hydro.EnrollInternalBoundary(&InternalBoundary);
+  data.hydro->EnrollInternalBoundary(&InternalBoundary);
 
   amplitude = input.Get<real>("Setup","amplitude",0);
   // Initialise the output file

@@ -28,11 +28,9 @@ GridHost::GridHost(Grid &grid) {
 
   haveAxis = grid.haveAxis;
 
+  isRegularCartesian = grid.isRegularCartesian;
+
   // Create mirrors on host
-  x = std::vector<IdefixArray1D<real>::HostMirror> (3);
-  xr = std::vector<IdefixArray1D<real>::HostMirror> (3);
-  xl = std::vector<IdefixArray1D<real>::HostMirror> (3);
-  dx = std::vector<IdefixArray1D<real>::HostMirror> (3);
   for(int dir = 0 ; dir < 3 ; dir++) {
     x[dir] = Kokkos::create_mirror_view(grid.x[dir]);
     xr[dir] = Kokkos::create_mirror_view(grid.xr[dir]);
@@ -88,7 +86,7 @@ void GridHost::MakeGrid(Input &input) {
           }
         } else if(patchType.compare("l")==0) {
           // log-increasing patch
-
+          isRegularCartesian = false;
           double alpha = (patchEnd + fabs(patchStart) - patchStart)/fabs(patchStart);
 
           for(int i = 0 - ghostStart ; i < patchSize + ghostEnd ; i++) {
@@ -125,6 +123,7 @@ void GridHost::MakeGrid(Input &input) {
         if(patch == numPatch-1) ghostEnd = nghost[dir];
         // Define the grid depending on patch type
         if((patchType.compare("s+")==0)||(patchType.compare("s-")==0)) {
+          isRegularCartesian = false;
           // Stretched grid
           // - means we take the initial dx on the left side, + on the right side
           // refPatch corresponds to the patch from which we compute the initial dx
@@ -217,10 +216,15 @@ if(haveAxis) {
   #if DIMENSIONS < 2
     IDEFIX_ERROR("Axis Boundaries requires at least two dimenions");
   #endif
-  if((fabs(xbeg[JDIR])>1e-10) && (lbound[JDIR] == axis)) {
+  #ifdef SINGLE_PRECISION
+    const real smallNumber = 1e-5;
+  #else
+    const real smallNumber = 1e-10;
+  #endif
+  if((fabs(xbeg[JDIR])>smallNumber) && (lbound[JDIR] == axis)) {
     IDEFIX_ERROR("Axis Boundaries requires your X2 domain to start at exactly x2=0.0");
   }
-  if((fabs(xend[JDIR]-M_PI)>1e-10) && (rbound[JDIR] == axis )) {
+  if((fabs(xend[JDIR]-M_PI)>smallNumber) && (rbound[JDIR] == axis )) {
     IDEFIX_ERROR("Axis Boundaries requires your X2 domain to end at exactly x2=Pi");
   }
   // Enforce symmetry of theta grid spacing when we cross the axis
@@ -257,6 +261,7 @@ void GridHost::SyncFromDevice() {
 
   xbeg = grid->xbeg;
   xend = grid->xend;
+  isRegularCartesian = grid->isRegularCartesian;
 
   idfx::popRegion();
 }
@@ -274,6 +279,7 @@ void GridHost::SyncToDevice() {
 
   grid->xbeg = xbeg;
   grid->xend = xend;
+  grid->isRegularCartesian = isRegularCartesian;
 
   idfx::popRegion();
 }

@@ -1,6 +1,5 @@
 #include "idefix.hpp"
 #include "setup.hpp"
-#include "boundaryloop.hpp"
 
 real epsilonGlob;
 real betaGlob;
@@ -23,7 +22,7 @@ void MySoundSpeed(DataBlock &data, const real t, IdefixArray3D<real> &cs) {
 }
 
 void MyViscosity(DataBlock &data, const real t, IdefixArray3D<real> &eta1, IdefixArray3D<real> &eta2) {
-  IdefixArray4D<real> Vc=data.hydro.Vc;
+  IdefixArray4D<real> Vc=data.hydro->Vc;
   IdefixArray1D<real> r=data.x[IDIR];
   IdefixArray1D<real> th=data.x[JDIR];
   real epsilon = epsilonGlob;
@@ -48,23 +47,24 @@ void FargoVelocity(DataBlock &data, IdefixArray2D<real> &Vphi) {
 }
 
 // User-defined boundaries
-void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
-  IdefixArray4D<real> Vc = data.hydro.Vc;
-  IdefixArray1D<real> x1 = data.x[IDIR];
-  IdefixArray1D<real> x2 = data.x[JDIR];
+void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
+  auto *data = hydro->data;
+  IdefixArray4D<real> Vc = hydro->Vc;
+  IdefixArray1D<real> x1 = data->x[IDIR];
+  IdefixArray1D<real> x2 = data->x[JDIR];
   real epsilon=epsilonGlob;
     if(dir==IDIR) {
 
 
         int ighost;
         if(side == left) {
-            ighost = data.beg[IDIR];
+            ighost = data->beg[IDIR];
         }
         else if(side==right) {
-            ighost = data.end[IDIR]-1;
+            ighost = data->end[IDIR]-1;
         }
 
-        data.hydro.boundary.BoundaryFor("UserDefBoundary", dir, side,
+        hydro->boundary->BoundaryFor("UserDefBoundary", dir, side,
           KOKKOS_LAMBDA (int k, int j, int i) {
               real R=x1(i)*sin(x2(j));
               real z=x1(i)*cos(x2(j));
@@ -81,14 +81,14 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
     if( dir==JDIR) {
         int jghost;
         if(side == left) {
-            jghost = data.beg[JDIR];
+            jghost = data->beg[JDIR];
         }
         else if(side==right) {
-            jghost = data.end[JDIR]-1;
+            jghost = data->end[JDIR]-1;
         }
 
 
-        data.hydro.boundary.BoundaryFor("UserDefBoundary", dir, side,
+        hydro->boundary->BoundaryFor("UserDefBoundary", dir, side,
             KOKKOS_LAMBDA (int k, int j, int i) {
               real R=x1(i)*sin(x2(j));
               real z=x1(i)*cos(x2(j));
@@ -112,11 +112,11 @@ void UserdefBoundary(DataBlock& data, int dir, BoundarySide side, real t) {
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   // Set the function for userdefboundary
-  data.hydro.EnrollUserDefBoundary(&UserdefBoundary);
-  data.hydro.EnrollIsoSoundSpeed(&MySoundSpeed);
-  data.hydro.viscosity.EnrollViscousDiffusivity(&MyViscosity);
+  data.hydro->EnrollUserDefBoundary(&UserdefBoundary);
+  data.hydro->EnrollIsoSoundSpeed(&MySoundSpeed);
+  data.hydro->viscosity->EnrollViscousDiffusivity(&MyViscosity);
   if(data.haveFargo)
-    data.fargo.EnrollVelocity(&FargoVelocity);
+    data.fargo->EnrollVelocity(&FargoVelocity);
   epsilonGlob = input.Get<real>("Setup","epsilon",0);
   alphaGlob = input.Get<real>("Setup","alpha",0);
   idfx::cout << "alpha= " << alphaGlob << std::endl;

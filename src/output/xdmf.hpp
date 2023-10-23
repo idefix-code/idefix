@@ -8,10 +8,11 @@
 #ifndef OUTPUT_XDMF_HPP_
 #define OUTPUT_XDMF_HPP_
 #include <string>
+#include <filesystem>
+#include <map>
 #include "idefix.hpp"
 #include "input.hpp"
-#include "dataBlock.hpp"
-#include "dataBlockHost.hpp"
+#include "scalarField.hpp"
 
 #define H5_USE_16_API
 #include "hdf5.h"
@@ -26,15 +27,24 @@
 
 // Forward class declaration
 class Output;
+class DataBlock;
 
 class Xdmf {
   friend class Dump;
 
  public:
-  void Init(Input &, DataBlock &);   // init XDMF object
-  int Write(DataBlock &, Output &);  // Create a XDMF from the current DataBlock
+  Xdmf(Input &, DataBlock *);   // init XDMF object
+  int Write();  // Create a XDMF from the current DataBlock
+
+  template<typename T>
+  void RegisterVariable(T&, std::string, int var = -1);
 
  private:
+  // Parent datablock
+  DataBlock *data;
+
+  // List of variables to be written to vtk files
+  std::map<std::string, ScalarField> xdmfScalarMap;
   int xdmfFileNumber = 0;
   int periodicity[3];
 
@@ -70,6 +80,8 @@ class Xdmf {
   int cellsize[4];
   int cellsubsize[4];
 
+  // output directory
+  std::filesystem::path outputDirectory;
 
 #ifdef WITH_MPI
   int mpi_data_start[3];
@@ -98,4 +110,15 @@ class Xdmf {
                        hid_t & ,
                        hid_t & );
 };
+
+template<typename T>
+void Xdmf::RegisterVariable(T& in, std::string name, int var) {
+  // if var>0, the caller provided explicitely an index
+  if constexpr(std::is_same<T,IdefixArray3D<real>>::value ||
+               std::is_same<T,IdefixHostArray3D<real>>::value) {
+    xdmfScalarMap.emplace(name, ScalarField(in) );
+  } else {
+    xdmfScalarMap.emplace(name, ScalarField(in, var));
+  }
+}
 #endif // OUTPUT_XDMF_HPP_

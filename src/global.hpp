@@ -14,6 +14,7 @@
 namespace idfx {
 int initialize();   // Initialisation routine for idefix
 real randm();      // Custom random number generator
+void safeExit(int );       // Exit the code
 class IdefixOutStream;
 class IdefixErrStream;
 class Profiler;
@@ -22,7 +23,7 @@ extern int prank;                       //< parallel rank
 extern int psize;
 extern IdefixOutStream cout;              //< custom cout for idefix
 extern IdefixErrStream cerr;              //< custom cerr for idefix
-extern Profiler prof;                   //< profiler (for memory usage)
+extern Profiler prof;                   //< profiler (for memory & performance usage)
 extern double mpiCallsTimer;            //< time significant MPI calls
 extern LoopPattern defaultLoopPattern;  //< default loop patterns (for idefix_for loops)
 extern bool warningsAreErrors;    //< whether warnings should be considered as errors

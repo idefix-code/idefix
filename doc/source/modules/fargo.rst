@@ -1,7 +1,7 @@
 .. _fargoModule:
 
-The FARGO module
-================
+Orbital advection (aka "FARGO") module
+=======================================
 
 The Fargo module implements the orbital advection algorithm, to accelerate the computation of flows
 subject to a dominant axisymmetric azimuthal velocity component. This is in particular the case

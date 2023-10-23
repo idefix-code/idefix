@@ -13,9 +13,10 @@ Data types
 
 Because *Idefix* can run on GPUs, and since GPUs experience a significant speedup when working
 with single precision arithmetic, a specific ``real`` datatype is used for all floating point
-operations in *Idefix*. This is by default aliased to ``double`` in `idefix.hpp`, but it can easily be modified
-to ``float`` for specific problems. Note however that this loss of precision might have a strong
-impact on the quality of the solution and is therefore not recommended.
+operations in *Idefix*. This is by default aliased to ``double`` in `idefix.hpp`, but it can easily converted
+to ``single`` with cmake ``Idefix_PRECISION`` property. Single precision arithemtic can lead to very significant speedups
+on some GPU architecture, but is not recommended for production runs as it can have an impact on the precision or even
+convergence of the solution.
 
 Host and device
 ===============
@@ -162,9 +163,8 @@ For instance, a sum over all of the elements would be done through:
 In the above example, ``localSum`` is the temporary variable *on the device* over which portions of the reduction
 are performed, while ``mySum`` is the final variable, *on the host* where the result is stored.
 
-It is possible to do other reduction operations
-like findining minimum, maximum etc (see
-`Kokkos custom reductions <https://github.com/kokkos/kokkos/wiki/Custom-Reductions%3A-Built-In-Reducers>`_
+It is possible to do other reduction operations like findining minimum, maximum etc (see
+`Kokkos custom reductions <https://kokkos.github.io/kokkos-core-wiki/API/core/builtin_reducers.html>`_
 for a list). For instance, the minimum value is obtained with the following code
 snippet:
 
@@ -293,9 +293,9 @@ specific to this subprocess, in contrast to ``Grid``). Here is the full API for 
 
 .. _hydroClass:
 
-``Hydro`` class
+``Fluid`` class
 ---------------------
-The ``Hydro`` class (and its sub-classes) contains all of the fields and methods specific to (magneto) hydrodynamics. While
+The ``Fluid`` class (and its sub-classes) contains all of the fields and methods specific to (magneto) hydrodynamics. While
 interested users may want to read in details the implementation of this class, we provide below a list of the most important
 members
 
@@ -325,6 +325,21 @@ These aliases are defined in ``idefix.hpp``
 Because the code uses contrained transport, the field defined on cell faces is stored in the ``Vs``
 array. Just like for ``Vc``, there are aliases, with "s" suffixes defined to simplify the adressing
 of the magnetic field components, as ``Vs(BX2s,k,j,i)``.
+
+It is important to realise that the ``Fluid`` class is a class template, that depends on the type of
+fluid that is modelled (encoded in a ``Physics`` class). By default, *Idefix* always instantiates
+one "default" fluid that contains the "default" physics requested by the user.
+This default fluid is, for compatibility reasons with *Idefix* v1, called `hydro` and is accessible
+from the ``dataBlock`` class as a pointer. It is defined as
+
+.. code-block:: c++
+
+  Fluid<DefaultPhysics> hydro;
+
+
+Additional fluids can be instantiated by *Idefix* for some problems, such as pressureless fluids
+to model dust grains (see :ref:`dustModule`).
+
 
 .. _datablockhostClass:
 
@@ -390,7 +405,7 @@ The ``DumpImage`` class definition is
 
   class DumpImage {
   public:
-    DumpImage(std::string, Output &);   // constructor with dump filename and output object as parameters
+    DumpImage(std::string, DataBlock *);   // constructor with dump filename and output object as parameters
 
     int np_int[3];               // number of points in each direction
     int geometry;                // geometry of the dump
@@ -403,7 +418,7 @@ The ``DumpImage`` class definition is
   };
 
 
-Typically, a ``DumpImage`` object is constructed invoking the ``DumpImage(filename, output)`` constructor,
+Typically, a ``DumpImage`` object is constructed invoking the ``DumpImage(filename, data)`` constructor,
 which essentially opens, allocate and load the dump file in memory (when running with MPI, each processor
 have access to the full domain covered by the dump, so try to avoid loading very large dumps!).
 The user can then have access to the dump content using the variable members of the object
@@ -422,7 +437,7 @@ finished working with it. An example is provided in :ref:`setupInitDump`.
 .. _LookupTableClass:
 
 ``LookupTable`` class
------------------
+---------------------
 
 The ``LookupTable`` class allows one to read and interpolate elements from a coma-separated value (CSV) file or a numpy file
 (generated from ``numpy.save`` in python).
@@ -524,36 +539,111 @@ The ``Get`` and ``GetHost`` functions expect a C array of size ``nDim`` and retu
 .. note::
   Usage examples are provided in `test/utils/lookupTable`.
 
+
+.. _debugging:
+
 Debugging and profiling
 =======================
 
-The easiest way to trigger debugging in ``Idefix`` is to switch on ``Idefix_DEBUG`` in cmake (for instance
+The easiest way to trigger debugging in *Idefix* is to switch on ``Idefix_DEBUG`` in cmake (for instance
 adding ``-DIdefix_DEBUG=ON`` when calling cmake). This forces the code to log each time a function is called or
 returned (this is achieved thanks to the ``idfx::pushRegion(std::string)`` and ``idfx::popRegion()`` which are
-found at the beginning and end of each function). In addition, ``Idefix_DEBUG`` enables Kokkos array bound checks, which
-will throw an error each time one tries to access an array out of its allocated memory space. Note that all of these
+found at the beginning and end of each function). In addition, ``Idefix_DEBUG`` will force *Idefix* to wait for each
+``idefix_for`` to finish before continuing to the next instruction (otherwise, ``idefix_for`` are asynchronous when using
+an accelerator). This simplifies the detection and identification of bugs in ``idefix_for`` loops. Note that all of these
 debugging features induce a large overhead, and should therefore not be activated in production runs.
 
-It is also possible to use `Kokkos-tools <https://github.com/kokkos/kokkos-tools>`_ to debug and profile the code.
-For instance, on the fly profiling, can be enabled with the Kokkos ``space-time-stack`` module. To use it, simply clone
-``Kokkos-tools`` to the directory of your choice (say ``$KOKKOS_TOOLS``), then ``cd`` to
-``$KOKKOS_TOOLS/profiling/space-time-stack`` and compile the module with ``make``.
+If you suspect an out-of-bound access, it may be worth enabling additionaly ``Kokkos_ENABLE_BOUNDS_CHECK`` that will check
+that you are not trying to access an array outside of its bounds.
 
-Once the profiling module is compiled, you can use it by setting the environement variable ``KOKKOS_PROFILE_LIBRARY``.
-For instance, in bash:
+If you want to profile the code, the simplest way is to use the embedded profiling tool in *Idefix*, adding ``-profile`` to the command line
+when calling the code. This will produce a simplified profiling report when the *Idefix* finishes.
+
+It is also possible to use `Kokkos-tools <https://github.com/kokkos/kokkos-tools>`_ for more advanced profiling/debbugging. To use it,
+you must compile Kokkos tools in the directory of your choice and enable your favourite tool
+by setting the environement variable ``KOKKOS_TOOLS_LIBS`` to the tool path, for instance:
 
 .. code-block:: bash
 
-  export KOKKOS_PROFILE_LIBRARY=$KOKKOS_TOOLS/profiling/space-time-stack/kp_space_time_stack.so
+  export KOKKOS_TOOLS_LIBS=<kokkos-tools-bin>/profiling/space-time-stack/libkp_space_time_stack.so
 
-Once this environement variable is set, *Idefix* automatically logs profiling informations when it ends (recompilation of *Idefix*
-is not needed).
 
-.. tip::
+.. _defensiveProgramming:
 
-  By default, ``Kokkos-tools`` assumes the user code is using MPI. If one wants to perform profiling in serial, one should disable MPI before
-  compling the ``space-time-stack`` module. This is done by editing the makefile in ``$KOKKOS_TOOLS/profiling/space-time-stack``
-  changing the compiler ``CXX`` to a valid serial compiler, and adding ``-DUSE_MPI=0`` to ``CFLAGS``.
+Defensive Programming
+---------------------
+
+``idefix.hpp`` defines useful function-like macros to program defensively and create
+informative error messages and warnings.
+
+First and foremost, ``IDEFIX_ERROR`` and ``IDEFIX_WARNING`` can be used in host space.
+
+.. code-block:: c++
+
+  #include "idefix.hpp"
+
+  #ifdef HAVE_ENERGY
+  IDEFIX_WARNING("This setup is not tested with HAVE_ENERGY defined");
+  #endif
+
+  real boxSize {-1};
+
+  // ... determine boxSize at runtime from parameter file
+
+  if(boxSize<1e-5) {
+    IDEFIX_ERROR("This setup requires a minimal box size of 1e-5");
+  }
+
+
+``idefix.hpp`` also defines the more advanced ``RUNTIME_CHECK_HOST`` and
+``RUNTIME_CHECK_KERNEL`` macros, which are useful to define arbitrary sanity checks at
+runtime in host space and within kernels respectively, together with a nicely formatted
+error message.
+
+Both macros take a condition (a boolean expression that *should* evaluate to ``true`` at
+runtime), and an error message. Additional arguments may be supplemented to the error
+message using string interpolation. Note however that this only works on CPU, so
+``RUNTIME_CHECK_KERNEL`` also expects a default error message that'll be used when
+running on GPUs.
+
+As an illustrative example, here's how they can be used to verify some assumptions at
+runtime.
+
+.. code-block:: c++
+
+  #include "idefix.hpp"
+
+  const int MAX_NPARTICLES = 1024;
+  const int NPARTICLES = 128;
+  const real lightSpeed = 1.0;
+  auto particleSpeed = IdefixArray1D<real>("particleSpeed", NPARTICLES);
+
+  RUNTIME_CHECK_HOST(
+    NPARTICLES<=MAX_NPARTICLES,
+    "The number of particles requested (%i) is too high (max is %i)",
+    NPARTICLES, MAX_NPARTICLES
+  );
+
+  idefix_for("check particle speeds",
+    0, NPARTICLES,
+    KOKKOS_LAMBDA(int idx) {
+      RUNTIME_CHECK_KERNEL(
+        particleSpeed(idx) < lightSpeed,
+        "Speeding particle(s) detected !", // this default error message is used on GPUs
+        "Particle at index %i has speed %.16e, which is greater than light speed (%.16e)",
+        idx, particleSpeed(idx), lightSpeed
+      );
+    }
+  );
+
+
+``RUNTIME_CHECK_HOST`` and ``RUNTIME_CHECK_KERNEL`` are considered debug-only tools, so
+are by default excluded at compilation, and do not impact performance in production.
+To enable them, use the `-D Idefix_RUNTIME_CHECKS=ON` configuration flag.
+
+It may also be useful to implement debug-only safeguards with custom logic that doesn't
+fit `RUNTIME_CHECK_*` macros. This can be achieved by using the compiler directive
+`#ifdef RUNTIME_CHECKS` directly.
 
 Minimal skeleton
 ================

@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Upcoming in v2.0
+## [2.0.0] 2023-10-23
 ### Changed
 - Reorganisation of class instances embedded in datablocks to allow for multi-fluid problems using a generalised template class "Fluid" that replaces "Hydro". Most instances (like data.hydro.Vc) have been replaced by pointers (e.g data.hydro->Vc) (!307).
 - RKL scheme now correctly takes into account grid coarsening when estimating the timestep of parabolic terms (!254)

@@ -211,7 +211,7 @@ class Mpi {
   ~Mpi();
 
  private:
-  // Because the MPI class initialise internal pointer, we do not allow copies of this class
+  // Because the MPI class initialise internal pointers, we do not allow copies of this class
   // These lines should not be removed as they constitute a safeguard
   Mpi(const Mpi&);
   Mpi operator=(const Mpi&);

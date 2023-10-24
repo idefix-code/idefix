@@ -28,6 +28,10 @@ def testMe(test):
 
 test=tst.idfxTest()
 
+# if no decomposition is specified, use that one
+if not test.dec:
+  test.dec=['2']
+
 if not test.all:
   if(test.check):
     test.standardTest()
@@ -39,4 +43,6 @@ else:
   test.single=False
   test.reconstruction=2
   test.mpi=False
+  testMe(test)
+  test.mpi=True
   testMe(test)

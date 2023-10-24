@@ -37,6 +37,7 @@ class IterativeSolver {
   int maxiter;        // Maximum iteration allowed to achieve convergence
   bool convStatus;    // Convergence status
   bool restart{false};
+  static constexpr bool isVerbose{false}; // Whether the solver should be verbose while iterating
 
   std::array<int,3> beg;
   std::array<int,3> end;
@@ -112,10 +113,10 @@ void IterativeSolver<T>::TestErrorL1() {
   // Checking convergence
   if(currentError <= this->targetError) {
     this->convStatus = true;
-    #ifdef DEBUG_BICGSTAB
-    idfx::cout << "IterativeSolver:: Squared, normalized norm L1 is " << currentError
-               << " at convergence." << std::endl;
-    #endif
+    if constexpr(isVerbose) {
+      idfx::cout << "IterativeSolver:: Squared, normalized norm L1 is " << currentError
+                << " at convergence." << std::endl;
+    }
   }
 
   idfx::popRegion();
@@ -159,7 +160,7 @@ void IterativeSolver<T>::TestErrorL2() {
 
   // Squared error
   this->currentError = sqrt(normL2Vector.v[0] / normL2Vector.v[1]);
-  //idfx::cout << "Error=" << this->currentError << std::endl;
+  if constexpr(isVerbose) idfx::cout << "L2 Error=" << this->currentError << std::endl;
 
   // Checking Nans
   if(std::isnan(currentError)) {
@@ -170,10 +171,10 @@ void IterativeSolver<T>::TestErrorL2() {
   // Checking convergence
   if(currentError <= this->targetError) {
     this->convStatus = true;
-    #ifdef DEBUG_BICGSTAB
-    idfx::cout << "IterativeSolver:: Squared, normalized norm L2 is " << currentError
-               << " at convergence." << std::endl;
-    #endif
+    if constexpr(isVerbose) {
+      idfx::cout << "IterativeSolver:: Squared, normalized norm L2 is " << currentError
+                << " at convergence." << std::endl;
+    }
   }
 
   idfx::popRegion();
@@ -235,10 +236,10 @@ void IterativeSolver<T>::TestErrorLINF() {
   // Checking convergence
   if(currentError <= this->targetError) {
     this->convStatus = true;
-    #ifdef DEBUG_BICGSTAB
-    idfx::cout << "IterativeSolver:: Squared, normalized norm LINF is " << currentError
-               << " at convergence." << std::endl;
-    #endif
+    if constexpr(this->isVerbose) {
+      idfx::cout << "IterativeSolver:: Squared, normalized norm LINF is " << currentError
+                << " at convergence." << std::endl;
+    }
   }
 
   idfx::popRegion();

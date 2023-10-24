@@ -183,6 +183,7 @@ class Buffer {
 
 class Mpi {
  public:
+  Mpi() = default;
   // MPI Exchange functions
   void ExchangeAll();   ///< Exchange boundary elements in all directions (todo)
   void ExchangeX1(IdefixArray4D<real> inputVc,
@@ -210,8 +211,14 @@ class Mpi {
   ~Mpi();
 
  private:
+  // Because the MPI class initialise internal pointer, we do not allow copies of this class
+  // These lines should not be removed as they constitute a safeguard
+  Mpi(const Mpi&);
+  Mpi operator=(const Mpi&);
+
   static int nInstances;     // total number of mpi instances in the code
   int thisInstance;          // unique number of the current instance
+  int nReferences;           // # of references to this instance
   bool isInitialized{false};
 
   DataBlock *data;          // pointer to datablock object

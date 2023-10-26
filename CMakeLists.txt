@@ -4,7 +4,7 @@ set (CMAKE_CXX_STANDARD 17)
 
 set(Idefix_VERSION_MAJOR 2)
 set(Idefix_VERSION_MINOR 0)
-set(Idefix_VERSION_PATCH 00)
+set(Idefix_VERSION_PATCH 01)
 
 project (idefix VERSION 1.0.0)
 option(Idefix_MHD "enable MHD" OFF)

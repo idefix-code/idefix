@@ -8,6 +8,7 @@
 #ifndef GRAVITY_SELFGRAVITY_HPP_
 #define GRAVITY_SELFGRAVITY_HPP_
 
+#include <memory>
 #include <vector>
 
 #include "idefix.hpp"
@@ -42,16 +43,7 @@ class SelfGravity {
   IterativeSolver<Laplacian> *iterativeSolver;
 
   // The linear operator involved in Poisson equation
-  Laplacian laplacian;
-
-  #ifdef DEBUG_GRAVITY
-  // Used to get fields usefull for debugging
-  void WriteField(std::ofstream &, IdefixArray3D<real> &, int = 0);
-  void WriteField(std::ofstream &, IdefixArray1D<real> &, int = 0);
-  std::ofstream rhoFile;
-  std::ofstream potentialFile;
-  std::ofstream geometryFile;
-  #endif
+  std::unique_ptr<Laplacian> laplacian;
 
   real currentError{0};       // last error of the iterative solver
   int nsteps{0};              // # of steps of the latest iteration

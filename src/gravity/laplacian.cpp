@@ -17,6 +17,7 @@
 Laplacian::Laplacian(DataBlock *datain, std::array<LaplacianBoundaryType,3> leftBound,
                                         std::array<LaplacianBoundaryType,3> rightBound,
                                         bool havePreconditionnerIn) {
+  idfx::pushRegion("Laplacian::Laplacian");
   // Save the parents data objects
   this->data = datain;
   this->havePreconditioner = havePreconditionnerIn;
@@ -40,10 +41,8 @@ Laplacian::Laplacian(DataBlock *datain, std::array<LaplacianBoundaryType,3> left
 
   isPeriodic = true;
   for(int dir = 0 ; dir < 3 ; dir++) {
-    if(lbound[dir] != LaplacianBoundaryType::periodic &&
-       lbound[dir] != LaplacianBoundaryType::internalgrav) isPeriodic = false;
-    if(rbound[dir] != LaplacianBoundaryType::periodic &&
-       rbound[dir] != LaplacianBoundaryType::internalgrav) isPeriodic = false;
+    if(lbound[dir] != LaplacianBoundaryType::periodic) isPeriodic = false;
+    if(rbound[dir] != LaplacianBoundaryType::periodic) isPeriodic = false;
   }
 
   #ifdef WITH_MPI
@@ -52,8 +51,19 @@ Laplacian::Laplacian(DataBlock *datain, std::array<LaplacianBoundaryType,3> left
       int remainDims[3] = {false, true, true};
       MPI_SAFE_CALL(MPI_Cart_sub(data->mygrid->CartComm, remainDims, &originComm));
     }
-  #endif
 
+  // Update internal boundaries in case of domain decomposition
+    for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
+      if(data->mygrid->nproc[dir]>1) {
+        if(this->data->lbound[dir]==internal ) {
+          this->lbound[dir] = Laplacian::internalgrav;
+        }
+        if(this->data->rbound[dir]==internal) {
+          this->rbound[dir] = Laplacian::internalgrav;
+        }
+      }
+    }
+  #endif
 
   #if GEOMETRY == SPHERICAL
     if ((this->rbound[JDIR]==axis) || (this->lbound[JDIR]==axis)) {
@@ -72,20 +82,6 @@ Laplacian::Laplacian(DataBlock *datain, std::array<LaplacianBoundaryType,3> left
     }
   #endif
 
-  // Init MPI stack when needed
-  #ifdef WITH_MPI
-  this->arr4D = IdefixArray4D<real> ("WorkingArrayMpi", 1, this->np_tot[KDIR],
-                                                           this->np_tot[JDIR],
-                                                           this->np_tot[IDIR]);
-
-  int ntarget = 0;
-  std::vector<int> mapVars;
-  mapVars.push_back(ntarget);
-
-  this->mpi.Init(data->mygrid, mapVars, this->nghost.data(), this->np_int.data());
-  #endif
-
-
   if(this->lbound[IDIR] == origin) {
     InitInternalGrid();
   }
@@ -96,6 +92,21 @@ Laplacian::Laplacian(DataBlock *datain, std::array<LaplacianBoundaryType,3> left
   }
   // Initialise the Laplacian coefficients
   PreComputeLaplacian();
+
+  // Init MPI stack when needed
+  #ifdef WITH_MPI
+    this->arr4D = IdefixArray4D<real> ("WorkingArrayMpi", 1, this->np_tot[KDIR],
+                                                            this->np_tot[JDIR],
+                                                            this->np_tot[IDIR]);
+
+    int ntarget = 0;
+    std::vector<int> mapVars;
+    mapVars.push_back(ntarget);
+
+    this->mpi.Init(data->mygrid, mapVars, this->nghost.data(), this->np_int.data());
+  #endif
+
+  idfx::popRegion();
 }
 
 void Laplacian::InitInternalGrid() {

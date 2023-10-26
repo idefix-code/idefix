@@ -45,6 +45,7 @@ void Mpi::ExchangeAll() {
 void Mpi::Init(Grid *grid, std::vector<int> inputMap,
                int nghost[3], int nint[3],
                bool inputHaveVs) {
+  idfx::pushRegion("Mpi::Init");
   this->mygrid = grid;
 
   // increase the number of instances
@@ -202,10 +203,13 @@ void Mpi::Init(Grid *grid, std::vector<int> inputMap,
 
   // say this instance is initialized.
   isInitialized = true;
+
+  idfx::popRegion();
 }
 
 // Destructor (clean up persistent communication channels)
 Mpi::~Mpi() {
+  idfx::pushRegion("Mpi::~Mpi");
   if(isInitialized) {
     // Properly clean up the mess
     #ifdef MPI_PERSISTENT
@@ -236,6 +240,7 @@ Mpi::~Mpi() {
     }
     isInitialized = false;
   }
+  idfx::popRegion();
 }
 
 void Mpi::ExchangeX1(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {

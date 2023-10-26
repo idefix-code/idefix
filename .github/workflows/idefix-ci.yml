@@ -186,6 +186,10 @@ jobs:
         run: |
           cd $IDEFIX_DIR/test/SelfGravity/UniformCollapse
           ./testme.py -all $TESTME_OPTIONS
+      - name: Dusty spherical collapse
+        run: |
+          cd $IDEFIX_DIR/test/SelfGravity/DustyCollapse
+          ./testme.py -all $TESTME_OPTIONS
 
   Planet:
     needs: [Linter, ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]

@@ -10,32 +10,34 @@ sys.path.append(os.getenv("IDEFIX_DIR"))
 
 import pytools.idfx_test as tst
 
+name="dump.0001.dmp"
+
+tolerance=1e-13
+
 def testMe(test):
   test.configure()
   test.compile()
-  inifiles=["idefix.ini","idefix-cg.ini","idefix-minres.ini"]
+  inifiles=["idefix.ini"]
 
   # loop on all the ini files for this test
   for ini in inifiles:
     test.run(inputFile=ini)
-    #if test.init:
-    #  test.makeReference(filename=name)
     test.standardTest()
-    # since the gravitationnal potential is not included in .dmp files, we can't perform
-    # the full non-regression test
-    #test.nonRegressionTest(filename=name)
 
 
 test=tst.idfxTest()
 
-if not test.dec:
-  test.dec=['2','2','1']
-
 if not test.all:
-  testMe(test)
+  if(test.check):
+    test.standardTest()
+  else:
+    testMe(test)
 else:
+  test.noplot = True
+  test.vectPot=False
+  test.single=False
+  test.reconstruction=2
   test.mpi=False
-  test.noplot=True
   testMe(test)
   test.mpi=True
   testMe(test)

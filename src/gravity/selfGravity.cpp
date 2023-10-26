@@ -5,8 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-
-
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -106,20 +105,6 @@ void SelfGravity::Init(Input &input, DataBlock *datain) {
     }
   }
 
-  // Update internal boundaries in case of domain decomposition
-  #ifdef WITH_MPI
-  for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
-    if(data->mygrid->nproc[dir]>1) {
-      if(this->data->lbound[dir]==internal ) {
-        this->lbound[dir] = Laplacian::internalgrav;
-      }
-      if(this->data->rbound[dir]==internal) {
-        this->rbound[dir] = Laplacian::internalgrav;
-      }
-    }
-  }
-  #endif
-
   // Update solver when provided
   if(input.CheckEntry("SelfGravity","solver") >= 0) {
     std::string strSolver = input.Get<std::string>("SelfGravity","solver",0);
@@ -162,27 +147,26 @@ void SelfGravity::Init(Input &input, DataBlock *datain) {
   }
 
   // Make the Laplacian operator
-  laplacian = Laplacian(data, lbound, rbound, this->havePreconditioner );
+  laplacian = std::make_unique<Laplacian>(data, lbound, rbound, this->havePreconditioner );
 
-  np_tot = laplacian.np_tot;
+  np_tot = laplacian->np_tot;
 
   // Instantiate the bicgstab solver
   if(solver == BICGSTAB || solver == PBICGSTAB) {
-    iterativeSolver = new Bicgstab(laplacian, targetError, maxiter,
-                                              laplacian.np_tot, laplacian.beg, laplacian.end);
+    iterativeSolver = new Bicgstab(*laplacian.get(), targetError, maxiter,
+                                              laplacian->np_tot, laplacian->beg, laplacian->end);
   } else if(solver == CG || solver == PCG) {
-    iterativeSolver = new Cg(laplacian, targetError, maxiter,
-                                        laplacian.np_tot, laplacian.beg, laplacian.end);
+    iterativeSolver = new Cg(*laplacian.get(), targetError, maxiter,
+                                        laplacian->np_tot, laplacian->beg, laplacian->end);
   } else if(solver == MINRES || solver == PMINRES) {
-    iterativeSolver = new Minres(laplacian,
+    iterativeSolver = new Minres(*laplacian.get(),
                                   targetError, maxiter,
-                                  laplacian.np_tot, laplacian.beg, laplacian.end);
+                                  laplacian->np_tot, laplacian->beg, laplacian->end);
   } else {
-      real step = laplacian.ComputeCFL();
-      iterativeSolver = new Jacobi(laplacian, targetError, maxiter, step,
-                                              laplacian.np_tot, laplacian.beg, laplacian.end);
+      real step = laplacian->ComputeCFL();
+      iterativeSolver = new Jacobi(*laplacian.get(), targetError, maxiter, step,
+                                              laplacian->np_tot, laplacian->beg, laplacian->end);
   }
-
 
 
   // Arrays initialisation
@@ -246,7 +230,7 @@ void SelfGravity::ShowConfig() {
   }
 
   if(this->lbound[IDIR] == Laplacian::LaplacianBoundaryType::origin) {
-    idfx::cout << "SelfGravity: using origin boundary with " << laplacian.loffset[IDIR]
+    idfx::cout << "SelfGravity: using origin boundary with " << laplacian->loffset[IDIR]
                << " additional radial points." << std::endl;
   }
 
@@ -268,9 +252,9 @@ void SelfGravity::InitSolver() {
 
   // Initialise the density field
   // todo: check bounds
-  int ioffset = laplacian.loffset[IDIR];
-  int joffset = laplacian.loffset[JDIR];
-  int koffset = laplacian.loffset[KDIR];
+  int ioffset = laplacian->loffset[IDIR];
+  int joffset = laplacian->loffset[JDIR];
+  int koffset = laplacian->loffset[KDIR];
 
   idefix_for("InitDensity", data->beg[KDIR], data->end[KDIR],
                             data->beg[JDIR], data->end[JDIR],
@@ -300,13 +284,13 @@ void SelfGravity::InitSolver() {
   // divide density by preconditionner if we're doing the preconditionned version
   if(havePreconditioner) {
     int ibeg, iend, jbeg, jend, kbeg, kend;
-    ibeg = laplacian.beg[IDIR];
-    iend = laplacian.end[IDIR];
-    jbeg = laplacian.beg[JDIR];
-    jend = laplacian.end[JDIR];
-    kbeg = laplacian.beg[KDIR];
-    kend = laplacian.end[KDIR];
-    IdefixArray3D<real> P = laplacian.precond;
+    ibeg = laplacian->beg[IDIR];
+    iend = laplacian->end[IDIR];
+    jbeg = laplacian->beg[JDIR];
+    jend = laplacian->end[JDIR];
+    kbeg = laplacian->beg[KDIR];
+    kend = laplacian->end[KDIR];
+    IdefixArray3D<real> P = laplacian->precond;
     idefix_for("Precond density", kbeg, kend, jbeg, jend, ibeg, iend,
     KOKKOS_LAMBDA (int k, int j, int i) {
       density(k, j, i) = density(k,j,i) / P(k,j,i);
@@ -330,11 +314,6 @@ void SelfGravity::InitSolver() {
     throw std::runtime_error(msg.str());
   }
 
-
-  #ifdef DEBUG_GRAVITY
-  WriteField(rhoFile, density);
-  #endif
-
   idfx::popRegion();
 }
 
@@ -344,15 +323,15 @@ void SelfGravity::SubstractMeanDensity() {
 
   // Loading needed attributes
   IdefixArray3D<real> density = this->density;
-  IdefixArray3D<real> dV = laplacian.dV;
+  IdefixArray3D<real> dV = laplacian->dV;
 
   int ibeg, iend, jbeg, jend, kbeg, kend;
-  ibeg = laplacian.beg[IDIR];
-  iend = laplacian.end[IDIR];
-  jbeg = laplacian.beg[JDIR];
-  jend = laplacian.end[JDIR];
-  kbeg = laplacian.beg[KDIR];
-  kend = laplacian.end[KDIR];
+  ibeg = laplacian->beg[IDIR];
+  iend = laplacian->end[IDIR];
+  jbeg = laplacian->beg[JDIR];
+  jend = laplacian->end[JDIR];
+  kbeg = laplacian->beg[KDIR];
+  kend = laplacian->end[KDIR];
 
   // Do the reduction on a vector
   MyVector meanDensityVector;
@@ -386,40 +365,14 @@ void SelfGravity::SubstractMeanDensity() {
                density(k, j, i) -= mean;
              });
 
-  #ifdef DEBUG_GRAVITY
-  idfx::cout << "SelfGravity:: Average value " << mean << " substracted to density" << std::endl;
-  #endif
-
   idfx::popRegion();
 }
 
 void SelfGravity::EnrollUserDefBoundary(Laplacian::UserDefBoundaryFunc myFunc) {
-  laplacian.EnrollUserDefBoundary(myFunc);
+  laplacian->EnrollUserDefBoundary(myFunc);
 }
 
 
-
-
-#ifdef DEBUG_GRAVITY
-// This routine is for debugging purpose
-void SelfGravity::WriteField(std::ofstream &stream, IdefixArray3D<real> &in, int index) {
-  stream.precision(15);
-  stream << std::scientific;// << index;
-  for(int i = 0 ; i < this->np_tot[IDIR] ; i++)  {
-    stream << in(0,0,i) << "\t";
-  }
-  stream << std::endl;
-}
-
-void SelfGravity::WriteField(std::ofstream &stream, IdefixArray1D<real> &in, int index) {
-  stream.precision(15);
-  stream << std::scientific;// << index;
-  for(int i = 0 ; i < this->np_tot[IDIR] ; i++)  {
-    stream << in(i) << "\t";
-  }
-  stream << std::endl;
-}
-#endif
 
 void SelfGravity::SolvePoisson() {
   idfx::pushRegion("SelfGravity::SolvePoisson");
@@ -427,17 +380,6 @@ void SelfGravity::SolvePoisson() {
   Kokkos::Timer timer;
 
   elapsedTime -= timer.seconds();
-
-  #ifdef DEBUG_GRAVITY
-    rhoFile.open("rho.dat",std::ios::trunc);
-    potentialFile.open("potential.dat",std::ios::trunc);
-    geometryFile.open("geometry.dat",std::ios::trunc);
-    WriteField(geometryFile,this->x[IDIR]);
-    WriteField(geometryFile,this->dx[IDIR]);
-    WriteField(geometryFile,this->A[IDIR]);
-    WriteField(geometryFile,this->dV);
-    geometryFile.close();
-  #endif
 
   InitSolver(); // (Re)initialise the solver
 
@@ -472,19 +414,6 @@ void SelfGravity::SolvePoisson() {
 
   currentError = iterativeSolver->GetError();
 
-  #ifdef DEBUG_GRAVITY
-  WriteField(potentialFile,potential,n);
-  if(this->convStatus == true) {
-    idfx::cout << "SelfGravity:: Reached convergence after " << n << " iterations" << std::endl;
-    rhoFile.close();
-    potentialFile.close();
-  } else if(n == maxiter) {
-    idfx::cout << "SelfGravity:: Reached max iter" << std::endl;
-    rhoFile.close();
-    potentialFile.close();
-    IDEFIX_WARNING("SelfGravity:: Failed to converge before reaching max iter");
-  }
-  #endif
 
   elapsedTime += timer.seconds();
   idfx::popRegion();
@@ -499,12 +428,12 @@ void SelfGravity::AddSelfGravityPotential(IdefixArray3D<real> &phiP) {
   real gravCst = this->data->gravity->gravCst;
 
   // Updating ghost cells before to return potential
-  laplacian.SetBoundaries(potential);
+  laplacian->SetBoundaries(potential);
 
   // Adding self-gravity contribution
-  int ioffset = laplacian.loffset[IDIR];
-  int joffset = laplacian.loffset[JDIR];
-  int koffset = laplacian.loffset[KDIR];
+  int ioffset = laplacian->loffset[IDIR];
+  int joffset = laplacian->loffset[JDIR];
+  int koffset = laplacian->loffset[KDIR];
   idefix_for("AddSelfGravityPotential", 0, data->np_tot[KDIR],
                                         0, data->np_tot[JDIR],
                                         0, data->np_tot[IDIR],

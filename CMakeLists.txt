@@ -113,7 +113,7 @@ if(Idefix_HDF5)
   )
   find_package(HDF5 REQUIRED)
   target_link_libraries(idefix "${HDF5_LIBRARIES}")
-  target_include_directories(idefix PUBLIC "${HDF5_INCLUDE_DIRS}")
+  target_include_directories(idefix "${HDF5_INCLUDE_DIRS}")
   message(STATUS "XDMF (hdf5+xmf) dumps enabled")
 else()
   set(Idefix_HDF5 OFF)
@@ -122,7 +122,11 @@ endif()
 if(Idefix_PYTHON)
   add_compile_definitions("WITH_PYTHON")
   find_package(pybind11 REQUIRED)
-  target_link_libraries(idefix PRIVATE pybind11::embed)
+  target_link_libraries(idefix pybind11::embed)
+  target_sources(idefix
+    PUBLIC src/pydefix.cpp
+    PUBLIC src/pydefix.hpp
+  )
 endif()
 
 if(Idefix_DEBUG)

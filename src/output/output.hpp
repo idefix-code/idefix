@@ -18,6 +18,9 @@
 #ifdef WITH_HDF5
 #include "xdmf.hpp"
 #endif
+#ifdef WITH_PYTHON
+#include "pydefix.hpp"
+#endif
 #include "dump.hpp"
 #include "slice.hpp"
 
@@ -81,5 +84,9 @@ class Output {
 
   Kokkos::Timer timer;
   double elapsedTime{0.0};
+
+  #ifdef WITH_PYTHON
+  Pydefix pydefix;
+  #endif
 };
 #endif // OUTPUT_OUTPUT_HPP_

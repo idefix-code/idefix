@@ -6,6 +6,7 @@
 // ***********************************************************************************
 
 #include <pybind11/embed.h> // everything needed for embedding
+#include <pybind11/numpy.h> // for numpy arrays
 #include "idefix.hpp"
 #include "pydefix.hpp"
 
@@ -30,4 +31,14 @@ Pydefix::~Pydefix() {
   }
   ninstance--;
   idfx::cout << "Pydefix: destroyed." << std::endl;
+}
+
+py::array_t<real> Pydefix::toNumpyArray(const IdefixHostArray3D<real>& in) {
+  py::array_t<real, py::array::c_style> array({in.extent(0),in.extent(1),in.extent(2)},in.data());
+  return array;
+}
+
+py::array_t<real> Pydefix::toNumpyArray(const IdefixHostArray4D<real>& in) {
+  py::array_t<real, py::array::c_style> array({in.extent(0),in.extent(1),in.extent(2),in.extent(3)},in.data());
+  return array;
 }

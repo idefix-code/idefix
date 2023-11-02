@@ -82,11 +82,18 @@ class Output {
   bool haveSlices = false;
   std::vector<std::unique_ptr<Slice>> slices;
 
+  #ifdef WITH_PYTHON
+    Pydefix pydefix;
+    bool pythonEnabled = false;
+    real pythonPeriod;
+    real pythonLast;
+    int pythonNcall;
+    std::string pythonScript;
+    std::string pythonFunction;
+  #endif
+
   Kokkos::Timer timer;
   double elapsedTime{0.0};
 
-  #ifdef WITH_PYTHON
-  Pydefix pydefix;
-  #endif
 };
 #endif // OUTPUT_OUTPUT_HPP_

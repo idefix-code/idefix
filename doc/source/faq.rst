@@ -39,11 +39,6 @@ The compilation stops while compiling Kokkos with ``/usr/include/stdlib.h(58): e
 When using the Intel compiler on a Mac Intel, I get a linking error involving the ``SharedAllocationRecordIvvE18t_tracking_enabledE`` symbol.
   This is a known bug of the Intel Mac compiler with Kokkos. Apparently Intel has decided not to fix it. Check the issue on the `Kokkos git page <https://github.com/kokkos/kokkos/issues/1959>`_.
 
-I get an error at link that says there are undefined symbols fo std::filesystem
-  This is a known bug/limitation of gcc8 that does not include filesystem extensions in the standard library.
-  You should try to clear up CMakeCache.txt and explicitely add the required link library when calling cmake as in
-  ``LDFLAGS=-lstdc++fs cmake $IDEFIX_DIR ...```
-
 Execution
 ---------
 

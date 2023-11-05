@@ -6,6 +6,7 @@
 // Analyse data to produce an output
 void Analysis(DataBlock & data) {
   double etot = 0;
+  double etotGlob;
   IdefixArray4D<real> Vc = data.hydro->Vc;
 
   idefix_reduce("Analysis", data.beg[KDIR],data.end[KDIR],
@@ -19,14 +20,16 @@ void Analysis(DataBlock & data) {
               }, Kokkos::Sum<double>(etot));
 
   #ifdef WITH_MPI
-    MPI_Reduce(MPI_IN_PLACE, &etot, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(&etot, &etotGlob, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  #else
+    etotGlob = etot;
   #endif
 
   if(idfx::prank == 0) {
     std::ofstream f;
     f.open(FILENAME,std::ios::app);
     f.precision(10);
-    f << std::scientific << data.t << "\t" << etot << std::endl;
+    f << std::scientific << data.t << "\t" << etotGlob << std::endl;
     f.close();
   }
 

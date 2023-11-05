@@ -38,6 +38,7 @@ include(GetGitRevisionDescription)
 include(ReplaceIdefixSource)
 include(AddIdefixSource)
 include(SetIdefixProperty)
+include(SetRequiredBuildSettingsForGCC8)
 
 #Idefix requires Cuda Lambdas (experimental)
 if(Kokkos_ENABLE_CUDA)
@@ -49,6 +50,9 @@ add_subdirectory(src/kokkos build/kokkos)
 
 # Add Idefix CXX Flags
 add_compile_options(${Idefix_CXX_FLAGS})
+
+# Add filesystem libraries for GCC8
+set_required_build_settings_for_GCC8()
 
 if(Idefix_WERROR)
   if(Kokkos_ENABLE_CUDA)

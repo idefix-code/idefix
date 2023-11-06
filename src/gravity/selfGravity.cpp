@@ -153,18 +153,18 @@ void SelfGravity::Init(Input &input, DataBlock *datain) {
 
   // Instantiate the bicgstab solver
   if(solver == BICGSTAB || solver == PBICGSTAB) {
-    iterativeSolver = new Bicgstab(*laplacian.get(), targetError, maxiter,
+    iterativeSolver = new Bicgstab<Laplacian>(*laplacian.get(), targetError, maxiter,
                                               laplacian->np_tot, laplacian->beg, laplacian->end);
   } else if(solver == CG || solver == PCG) {
-    iterativeSolver = new Cg(*laplacian.get(), targetError, maxiter,
+    iterativeSolver = new Cg<Laplacian>(*laplacian.get(), targetError, maxiter,
                                         laplacian->np_tot, laplacian->beg, laplacian->end);
   } else if(solver == MINRES || solver == PMINRES) {
-    iterativeSolver = new Minres(*laplacian.get(),
+    iterativeSolver = new Minres<Laplacian>(*laplacian.get(),
                                   targetError, maxiter,
                                   laplacian->np_tot, laplacian->beg, laplacian->end);
   } else {
       real step = laplacian->ComputeCFL();
-      iterativeSolver = new Jacobi(*laplacian.get(), targetError, maxiter, step,
+      iterativeSolver = new Jacobi<Laplacian>(*laplacian.get(), targetError, maxiter, step,
                                               laplacian->np_tot, laplacian->beg, laplacian->end);
   }
 

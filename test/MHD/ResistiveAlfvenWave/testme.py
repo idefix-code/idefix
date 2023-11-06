@@ -39,3 +39,5 @@ else:
   test.reconstruction=2
   test.mpi=False
   testMe(test)
+  test.mpi=True
+  testMe(test)

@@ -87,13 +87,11 @@ class Output {
     bool pythonEnabled = false;
     real pythonPeriod;
     real pythonLast;
-    int pythonNcall;
     std::string pythonScript;
     std::string pythonFunction;
   #endif
 
   Kokkos::Timer timer;
   double elapsedTime{0.0};
-
 };
 #endif // OUTPUT_OUTPUT_HPP_

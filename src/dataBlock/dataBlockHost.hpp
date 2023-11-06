@@ -25,33 +25,33 @@
 class DataBlockHost {
  public:
   // Local grid information
-  std::array<IdefixArray1D<real>::HostMirror,3> x;   ///< geometrical central points
-  std::array<IdefixArray1D<real>::HostMirror,3> xr;  ///< cell right interface
-  std::array<IdefixArray1D<real>::HostMirror,3> xl;  ///< cell left interface
-  std::array<IdefixArray1D<real>::HostMirror,3> dx;  ///< cell width
+  std::array<IdefixHostArray1D<real>,3> x;   ///< geometrical central points
+  std::array<IdefixHostArray1D<real>,3> xr;  ///< cell right interface
+  std::array<IdefixHostArray1D<real>,3> xl;  ///< cell left interface
+  std::array<IdefixHostArray1D<real>,3> dx;  ///< cell width
 
-  IdefixArray3D<real>::HostMirror dV;     ///< cell volume
-  std::array<IdefixArray3D<real>::HostMirror,3> A;   ///< cell right interface area
+  IdefixHostArray3D<real> dV;     ///< cell volume
+  std::array<IdefixHostArray3D<real>,3> A;   ///< cell right interface area
 
-  IdefixArray4D<real>::HostMirror Vc;     ///< Main cell-centered primitive variables index
+  IdefixHostArray4D<real> Vc;     ///< Main cell-centered primitive variables index
 
   bool haveDust{false};
   std::vector<IdefixHostArray4D<real>> dustVc; ///< Cell-centered primitive variables index for dust
 
   #if MHD == YES
-  IdefixArray4D<real>::HostMirror Vs;     ///< Main face-centered primitive variables index
-  IdefixArray4D<real>::HostMirror Ve;     ///< Main edge-centered primitive variables index
-  IdefixArray4D<real>::HostMirror J;      ///< Current (only when haveCurrent is enabled)
+  IdefixHostArray4D<real> Vs;     ///< Main face-centered primitive variables index
+  IdefixHostArray4D<real> Ve;     ///< Main edge-centered primitive variables index
+  IdefixHostArray4D<real> J;      ///< Current (only when haveCurrent is enabled)
 
-  IdefixArray3D<real>::HostMirror Ex1;    ///< x1 electric field
-  IdefixArray3D<real>::HostMirror Ex2;    ///< x2 electric field
-  IdefixArray3D<real>::HostMirror Ex3;    ///< x3 electric field
+  IdefixHostArray3D<real> Ex1;    ///< x1 electric field
+  IdefixHostArray3D<real> Ex2;    ///< x2 electric field
+  IdefixHostArray3D<real> Ex3;    ///< x3 electric field
 
   #endif
-  IdefixArray4D<real>::HostMirror Uc;     ///< Main cell-centered conservative variables
-  IdefixArray3D<real>::HostMirror InvDt;  ///< Inverse of maximum timestep in each cell
+  IdefixHostArray4D<real> Uc;     ///< Main cell-centered conservative variables
+  IdefixHostArray3D<real> InvDt;  ///< Inverse of maximum timestep in each cell
 
-  std::array<IdefixArray2D<int>::HostMirror,3> coarseningLevel; ///< Grid coarsening level
+  std::array<IdefixHostArray2D<int>,3> coarseningLevel; ///< Grid coarsening level
                                                      ///< (only defined when coarsening
                                                      ///< is enabled)
 

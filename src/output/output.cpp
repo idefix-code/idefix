@@ -9,12 +9,13 @@
 #include "dataBlock.hpp"
 #include "fluid.hpp"
 #include "slice.hpp"
+#include "dataBlockHost.hpp"
+
+#ifdef WITH_PYTHON
 #include "pydefix.hpp"
 
-PYBIND11_EMBEDDED_MODULE(embeded, module){
 
-  py::class_<IdefixHostArray4D<real>> animal(module, "IdefixArray");
-}
+#endif
 
 Output::Output(Input &input, DataBlock &data) {
   idfx::pushRegion("Output::Output");
@@ -124,15 +125,17 @@ Output::Output(Input &input, DataBlock &data) {
   // Initialise python script outputs
   if(input.CheckEntry("Output","python")>0) {
     #ifndef WITH_PYTHON
-    IDEFIX_ERROR("Usage of python outputs requires Idefix to be compiled with Python capabilities";)
+    IDEFIX_ERROR("Usage of python outputs requires Idefix to be compiled with Python capabilities");
     #else
       pythonPeriod = input.Get<real>("Output","python",0);
       if(pythonPeriod>=0.0) {  // backward compatibility (negative value means no file)
         pythonLast = data.t - pythonPeriod; // write something in the next CheckForWrite()
         pythonScript = input.Get<std::string>("Output","python",1);
+        if(pythonScript.substr(pythonScript.length() - 3, 3).compare(".py")==0) {
+          IDEFIX_ERROR("You should not include the python script .py extension in your input file");
+        }
         pythonFunction = input.Get<std::string>("Output","python",2);
         pythonEnabled = true;
-        pythonNcall = 0;
       }
     #endif
   }
@@ -257,23 +260,8 @@ int Output::CheckForWrites(DataBlock &data) {
   if(pythonEnabled) {
     if(data.t >= pythonLast + pythonPeriod) {
       elapsedTime -= timer.seconds();
-      DataBlockHost d(data);
-      //try {
-        auto Vc = pydefix.toNumpyArray(d.Vc);
-        py::module_ script = py::module_::import(pythonScript.c_str());
-        py::module_ embeded = py::module_::import("embeded");
-        py::object myV = py::cast(d.Vc);
-        py::object result = script.attr(pythonFunction.c_str())(pythonNcall, myV);
-      /*} catch(std::exception &e) {
-        std::stringstream message;
-        message << "An exception occured while calling the Python interpreter in"
-                   << "file \"" << pythonScript << "\" function \"" << pythonFunction << "\""
-                   << std::endl
-                   << e.what() << std::endl;
-        IDEFIX_ERROR(message);
-      }*/
+      pydefix.CallScript(&data, pythonScript,pythonFunction);
       elapsedTime += timer.seconds();
-      pythonNcall++;
       // Check if our next predicted output should already have happened
       if((pythonLast+pythonPeriod <= data.t) && pythonPeriod>0.0) {
         // Move forward analysisLast
@@ -281,7 +269,6 @@ int Output::CheckForWrites(DataBlock &data) {
           pythonLast += pythonPeriod;
         }
       }
-
     }
   }
   #endif

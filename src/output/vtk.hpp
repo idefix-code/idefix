@@ -9,7 +9,15 @@
 #define OUTPUT_VTK_HPP_
 #include <string>
 #include <map>
-#include <filesystem>
+#if __has_include(<filesystem>)
+  #include <filesystem>
+  namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+  #include <experimental/filesystem>
+  namespace fs = std::experimental::filesystem;
+#else
+  error "Missing the <filesystem> header."
+#endif
 #include "idefix.hpp"
 #include "input.hpp"
 #include "dataBlock.hpp"
@@ -158,7 +166,7 @@ class Vtk : public BaseVtk {
   void WriteHeaderNodes(IdfxFileHandler);
 
   // output directory
-  std::filesystem::path outputDirectory;
+  fs::path outputDirectory;
 };
 
 template<typename T>

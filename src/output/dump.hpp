@@ -9,8 +9,15 @@
 #define OUTPUT_DUMP_HPP_
 #include <string>
 #include <map>
-#include <filesystem>
-
+#if __has_include(<filesystem>)
+  #include <filesystem>
+  namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+  #include <experimental/filesystem>
+  namespace fs = std::experimental::filesystem;
+#else
+  error "Missing the <filesystem> header."
+#endif
 #include "idefix.hpp"
 #include "input.hpp"
 #include "dataBlock.hpp"
@@ -232,9 +239,9 @@ class Dump {
   void ReadSerial(IdfxFileHandler, int, int*, DataType, void*);
   void ReadDistributed(IdfxFileHandler, int, int*, int*, IdfxDataDescriptor&, void*);
   void Skip(IdfxFileHandler, int, int *, DataType);
-  int GetLastDumpInDirectory(std::filesystem::path &);
+  int GetLastDumpInDirectory(fs::path &);
 
-  std::filesystem::path outputDirectory;
+  fs::path outputDirectory;
 };
 
 

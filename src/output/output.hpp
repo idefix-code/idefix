@@ -74,7 +74,7 @@ class Output {
   UserDefVariablesFunc userDefVariablesFunc;
   UserDefVariablesContainer userDefVariables;
 
-  bool sliceEnabled = false;
+  bool haveSlices = false;
   std::vector<std::unique_ptr<Slice>> slices;
 
   Kokkos::Timer timer;

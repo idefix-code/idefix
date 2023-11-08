@@ -43,6 +43,9 @@ class Slice {
   UserDefVariablesContainer userDefVariableFull;
   UserDefVariablesContainer userDefVariableSliced;
   UserDefVariablesFunc userDefVariablesFunc{NULL};
+  #ifdef WITH_MPI
+    MPI_Comm avgComm;  // Communicator for averages
+  #endif
 };
 
 #endif // OUTPUT_SLICE_HPP_

@@ -22,6 +22,8 @@ Slice::Slice(Input &input, DataBlock & data, int nSlice, SliceType type,
   if(slicePeriod> 0) {
     sliceLast = data.t - slicePeriod;
   }
+  // Register the last output in dumps so that we restart from the right slice
+  data.dump->RegisterVariable(&sliceLast, std::string("vtk")+prefix+std::string("Last"));
   // Create the slice.
   this->type = type;
   this->direction = direction;
@@ -31,6 +33,16 @@ Slice::Slice(Input &input, DataBlock & data, int nSlice, SliceType type,
   this->sliceData = std::make_unique<DataBlock>(subgrid.get());
   this->containsX0 = (data.xbeg[direction] <= x0)
                      && (data.xend[direction] >= x0);
+
+  #ifdef WITH_MPI
+    if(type==SliceType::Average) {
+      // Create a communicator on which we can do the sum accross processors
+      int remainDims[3] = {false, false, false};
+      remainDims[direction] = true;
+      MPI_Cart_sub(subgrid->parentGrid->CartComm, remainDims, &avgComm);
+    }
+  #endif
+
 
   // Initialize the vtk routines
   this->vtk = std::make_unique<Vtk>(input, sliceData.get(),prefix);
@@ -135,7 +147,6 @@ void Slice::CheckForWrite(DataBlock &data) {
           }
         }
       }
-
       vtk->Write();
     }
     if(this->type == SliceType::Average) {
@@ -164,7 +175,6 @@ void Slice::CheckForWrite(DataBlock &data) {
         // Create a communicator on which we can do the sum accross processors
         int remainDims[3] = {false, false, false};
         remainDims[direction] = true;
-        MPI_Comm avgComm;
         MPI_Cart_sub(subgrid->parentGrid->CartComm, remainDims, &avgComm);
         MPI_Allreduce(MPI_IN_PLACE, Vcout.data(),
                       Vcout.extent(0)*Vcout.extent(1)*Vcout.extent(2)*Vcout.extent(3),

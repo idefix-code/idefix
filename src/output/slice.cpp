@@ -23,7 +23,7 @@ Slice::Slice(Input &input, DataBlock & data, int nSlice, SliceType type,
     sliceLast = data.t - slicePeriod;
   }
   // Register the last output in dumps so that we restart from the right slice
-  data.dump->RegisterVariable(&sliceLast, std::string("vtk")+prefix+std::string("Last"));
+  data.dump->RegisterVariable(&sliceLast, std::string("slcLast-")+std::to_string(nSlice));
   // Create the slice.
   this->type = type;
   this->direction = direction;
@@ -46,6 +46,9 @@ Slice::Slice(Input &input, DataBlock & data, int nSlice, SliceType type,
 
   // Initialize the vtk routines
   this->vtk = std::make_unique<Vtk>(input, sliceData.get(),prefix);
+  // Make sure the vtk file gets store in the parent's datablock dump
+  data.dump->RegisterVariable(&vtk->vtkFileNumber,
+                              std::string("slcNumber-")+std::to_string(nSlice));
 
   // Allocate array to compute the slice
   this->Vc = IdefixArray4D<real>("Slice_Vc", NVAR,

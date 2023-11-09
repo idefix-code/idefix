@@ -113,6 +113,7 @@ class BaseVtk {
 
 class Vtk : public BaseVtk {
   friend class Dump;
+  friend class Slice;
 
  public:
   explicit Vtk(Input &, DataBlock *, std::string filebase = "data");   // init VTK object

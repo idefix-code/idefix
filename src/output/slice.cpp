@@ -204,6 +204,8 @@ void Slice::CheckForWrite(DataBlock &data) {
       }
       if(containsX0) {
         vtk->Write();
+      } else {
+        vtk->vtkFileNumber++; // increment file number so that each process stay in sync
       }
     }
 

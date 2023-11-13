@@ -207,7 +207,7 @@ void Slice::CheckForWrite(DataBlock &data) {
       }
     }
     if(!containsX0) {
-      vtk->vtkFileNumber++; // increment file number so that each process stay in sync (both for Average and cut)
+      vtk->vtkFileNumber++; // increment file number so that each process stay in sync
     }
 
     sliceLast += slicePeriod;

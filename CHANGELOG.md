@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - fix and improve slice VTK outputs (#211)
 - improve std::filesystem compatibility with old stdlibc++ (#210)
+- cleanup planet test (#212)
 
 ## [2.0.2] 2023-11-6
 ### Changed

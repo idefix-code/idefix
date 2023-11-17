@@ -6,6 +6,7 @@
 // ***********************************************************************************
 
 #include <string>
+#include <map>
 #include "slice.hpp"
 #include "input.hpp"
 #include "physics.hpp"
@@ -21,6 +22,8 @@ Slice::Slice(Input &input, DataBlock & data, int nSlice, SliceType type,
   if(slicePeriod> 0) {
     sliceLast = data.t - slicePeriod;
   }
+  // Register the last output in dumps so that we restart from the right slice
+  data.dump->RegisterVariable(&sliceLast, std::string("slcLast-")+std::to_string(nSlice));
   // Create the slice.
   this->type = type;
   this->direction = direction;
@@ -31,8 +34,21 @@ Slice::Slice(Input &input, DataBlock & data, int nSlice, SliceType type,
   this->containsX0 = (data.xbeg[direction] <= x0)
                      && (data.xend[direction] >= x0);
 
+  #ifdef WITH_MPI
+    if(type==SliceType::Average) {
+      // Create a communicator on which we can do the sum accross processors
+      int remainDims[3] = {false, false, false};
+      remainDims[direction] = true;
+      MPI_Cart_sub(subgrid->parentGrid->CartComm, remainDims, &avgComm);
+    }
+  #endif
+
+
   // Initialize the vtk routines
   this->vtk = std::make_unique<Vtk>(input, sliceData.get(),prefix);
+  // Make sure the vtk file gets store in the parent's datablock dump
+  data.dump->RegisterVariable(&vtk->vtkFileNumber,
+                              std::string("slcNumber-")+std::to_string(nSlice));
 
   // Allocate array to compute the slice
   this->Vc = IdefixArray4D<real>("Slice_Vc", NVAR,
@@ -41,12 +57,13 @@ Slice::Slice(Input &input, DataBlock & data, int nSlice, SliceType type,
                                  sliceData->np_tot[IDIR]);
 
   vtk->RegisterVariable(Vc, "RHO", RHO);
-  vtk->RegisterVariable(Vc, "VX1", VX1);
-
+  EXPAND( vtk->RegisterVariable(Vc, "VX1", VX1);   ,
+          vtk->RegisterVariable(Vc, "VX2", VX2);   ,
+          vtk->RegisterVariable(Vc, "VX3", VX3); )
   #if MHD == YES
-  vtk->RegisterVariable(Vc, "BX1", BX1);
-  vtk->RegisterVariable(Vc, "BX2", BX2);
-  vtk->RegisterVariable(Vc, "BX3", BX3);
+  EXPAND( vtk->RegisterVariable(Vc, "BX1", BX1);   ,
+          vtk->RegisterVariable(Vc, "BX2", BX2);   ,
+          vtk->RegisterVariable(Vc, "BX3", BX3); )
   #endif
 
   // todo(glesur): add variables for dust and other fluids.
@@ -54,10 +71,32 @@ Slice::Slice(Input &input, DataBlock & data, int nSlice, SliceType type,
   idfx::popRegion();
 }
 
+void Slice::EnrollUserDefVariables(std::map<std::string,IdefixHostArray3D<real>> userDefVar) {
+  this->userDefVariableFull = userDefVar;
+  this->haveUserDefinedVariables = true;
+  for(auto const &[name, array] : userDefVariableFull) {
+    userDefVariableSliced.emplace(name, IdefixHostArray3D<real>(std::string("Slice_"+name),
+                                                                sliceData->np_tot[KDIR],
+                                                                sliceData->np_tot[JDIR],
+                                                                sliceData->np_tot[IDIR]));
+    vtk->RegisterVariable(userDefVariableSliced[name],name);
+  }
+}
+
+void Slice::EnrollUserDefFunc(UserDefVariablesFunc myFunc) {
+  userDefVariablesFunc = myFunc;
+}
+
 void Slice::CheckForWrite(DataBlock &data) {
   idfx::pushRegion("Slice:CheckForWrite");
 
   if(data.t >= sliceLast + slicePeriod) {
+    if(haveUserDefinedVariables) {
+      // Call user-def function to fill the userdefined variable arrays
+      idfx::pushRegion("UserDef::User-defined variables function");
+      userDefVariablesFunc(data, userDefVariableFull);
+      idfx::popRegion();
+    }
     auto Vcin=data.hydro->Vc;
     auto Vcout=this->Vc;
     if(this->type == SliceType::Cut && containsX0) {
@@ -70,16 +109,46 @@ void Slice::CheckForWrite(DataBlock &data) {
                   KOKKOS_LAMBDA(int n,int k,int j) {
                     Vcout(n,k,j,0) = Vcin(n,k,j,idx);
                   });
+        // Take a slice of the user-defined variables
+        if(haveUserDefinedVariables) {
+          for(auto const &[name, array] : userDefVariableFull) {
+            for(int k = 0 ; k < data.np_tot[KDIR] ; k++) {
+              for(int j = 0 ; j < data.np_tot[JDIR] ; j++) {
+                userDefVariableSliced[name](k,j,0) = userDefVariableFull[name](k,j,idx);
+              }
+            }
+          }
+        }
       } else if(direction == JDIR) {
         idefix_for("slice",0,NVAR,0,data.np_tot[KDIR],0,data.np_tot[IDIR],
                   KOKKOS_LAMBDA(int n,int k,int i) {
                     Vcout(n,k,0,i) = Vcin(n,k,idx,i);
                   });
+        // Take a slice of the user-defined variables
+        if(haveUserDefinedVariables) {
+          for(auto const &[name, array] : userDefVariableFull) {
+            for(int k = 0 ; k < data.np_tot[KDIR] ; k++) {
+              for(int i = 0 ; i < data.np_tot[IDIR] ; i++) {
+                userDefVariableSliced[name](k,0,i) = userDefVariableFull[name](k,idx,i);
+              }
+            }
+          }
+        }
       } else if(direction == KDIR) {
         idefix_for("slice",0,NVAR,0,data.np_tot[JDIR],0,data.np_tot[IDIR],
                   KOKKOS_LAMBDA(int n,int j,int i) {
                     Vcout(n,0,j,i) = Vcin(n,idx,j,i);
                   });
+        // Take a slice of the user-defined variables
+        if(haveUserDefinedVariables) {
+          for(auto const &[name, array] : userDefVariableFull) {
+            for(int j = 0 ; j < data.np_tot[JDIR] ; j++) {
+              for(int i = 0 ; i < data.np_tot[IDIR] ; i++) {
+                userDefVariableSliced[name](0,j,i) = userDefVariableFull[name](idx,j,i);
+              }
+            }
+          }
+        }
       }
       vtk->Write();
     }
@@ -87,9 +156,9 @@ void Slice::CheckForWrite(DataBlock &data) {
       // Perform a point average (NB: this does not perform a volume average!)
       // This is a naive approach which could be optimised using threaded loops
       // However, since this is only for I/O, we don't do any proper optimisation
-      idefix_for("Zero",0,NVAR,0,Vcout.extent(1),0,Vcout.extent(2),
-        KOKKOS_LAMBDA(int n,int k,int j) {
-                    Vcout(n,k,j,0) = 0.0;
+      idefix_for("Zero",0,NVAR,0,Vcout.extent(1),0,Vcout.extent(2),0,Vcout.extent(3),
+        KOKKOS_LAMBDA(int n,int k,int j, int i) {
+                    Vcout(n,k,j,i) = 0.0;
                   });
       int beg = data.beg[direction];
       int end = data.end[direction];
@@ -106,18 +175,39 @@ void Slice::CheckForWrite(DataBlock &data) {
                     Kokkos::atomic_add(&Vcout(n,kt,jt,it) , Vcin(n,k,j,i)/ntot);
                   });
       #ifdef WITH_MPI
-        // Create a communicator on which we can do the sum accross processors
-        int remainDims[3] = {false, false, false};
-        remainDims[direction] = true;
-        MPI_Comm avgComm;
-        MPI_Cart_sub(subgrid->parentGrid->CartComm, remainDims, &avgComm);
         MPI_Allreduce(MPI_IN_PLACE, Vcout.data(),
                       Vcout.extent(0)*Vcout.extent(1)*Vcout.extent(2)*Vcout.extent(3),
                       realMPI, MPI_SUM, avgComm);
       #endif
+      // Average of user-defined variables
+      if(haveUserDefinedVariables) {
+        for(auto const &[name, array] : userDefVariableSliced) {
+          for(int k = 0 ; k < array.extent(0) ; k++) {
+            for(int j = 0 ; j < array.extent(1) ; j++) {
+              for(int i = 0 ; i < array.extent(2) ; i++) {
+                array(k,j,i) = 0.0;
+          }}}
+          for(int k = data.beg[KDIR] ; k < data.end[KDIR] ; k++) {
+            for(int j = data.beg[JDIR] ; j < data.end[JDIR] ; j++) {
+              for(int i = data.beg[IDIR] ; i < data.end[IDIR] ; i++) {
+                const int it = (dir == IDIR ? 0 : i);
+                const int jt = (dir == JDIR ? 0 : j);
+                const int kt = (dir == KDIR ? 0 : k);
+                array(kt,jt,it) += userDefVariableFull[name](k,j,i)/ntot;
+          }}}
+          #ifdef WITH_MPI
+          MPI_Allreduce(MPI_IN_PLACE, array.data(),
+                    Vcout.extent(0)*Vcout.extent(1)*Vcout.extent(2),
+                    realMPI, MPI_SUM, avgComm);
+          #endif
+        }
+      }
       if(containsX0) {
         vtk->Write();
       }
+    }
+    if(!containsX0) {
+      vtk->vtkFileNumber++; // increment file number so that each process stay in sync
     }
 
     sliceLast += slicePeriod;

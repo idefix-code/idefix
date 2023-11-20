@@ -91,6 +91,8 @@ void Slice::CheckForWrite(DataBlock &data) {
   idfx::pushRegion("Slice:CheckForWrite");
 
   if(data.t >= sliceLast + slicePeriod) {
+    // sync time
+    sliceData->t = data.t;
     if(haveUserDefinedVariables) {
       // Call user-def function to fill the userdefined variable arrays
       idfx::pushRegion("UserDef::User-defined variables function");

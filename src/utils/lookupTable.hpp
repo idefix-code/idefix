@@ -66,7 +66,7 @@ class LookupTable {
           x_n = xstart;
           i = 0;
         }
-      } else if( x_n >= xend) {
+      } else if( x_n > xend) {
         if(errorIfOutOfBound) {
           Kokkos::abort("LookupTable:: ERROR! Attempt to interpolate above your upper bound.");
         } else {
@@ -78,6 +78,7 @@ class LookupTable {
       } else {
         // Bounds are fine,
         i = static_cast<int> ( (x_n - xstart) / (xend - xstart) * (dimensions(n)-1));
+        if(i == dimensions(n)-1) i = dimensions(n)-2;
         // Check if resulting bounding elements are correct
         if(xin(offset(n) + i) > x_n || xin(offset(n) + i+1) < x_n) {
           // Nop, so the points are not evenly distributed
@@ -442,7 +443,7 @@ LookupTable<kDim>::LookupTable(Kokkos::View<T, Args...> array,
   for(int n=0 ; n < shape.size() ; n++) {
     sizeX += shape[n];
     sizeTotal *= shape[n];
-    if(array.extent(n) != shape[n]) {
+    if(array.extent(kDim-n-1) != shape[n]) {
       std::stringstream errmsg;
       errmsg << "The " << n+1 << "th dimension of your input array (" << array.extent(n)
              << ") does not match the size of the corresponding x vector (" << shape[n];
@@ -468,13 +469,13 @@ LookupTable<kDim>::LookupTable(Kokkos::View<T, Args...> array,
     if constexpr(kDim == 1) {
       q = array(n);
     } else if constexpr(kDim == 2) {
-      int j = n  / shape[0];
-      int i = (n - j * shape[0]);
+      int i = n  / shape[1];
+      int j = (n - i * shape[1]);
       q = array(j,i);
     } else if constexpr(kDim == 3) {
-      int k = n / (shape[0]*shape[1]);
-      int j = (n - k * shape[0]*shape[1]) / shape[0];
-      int i = (n - k * shape[0]*shape[1] - j * shape[0]);
+      int i = n / (shape[2]*shape[1]);
+      int j = (n - i * shape[2]*shape[1]) / shape[2];
+      int k = (n - i * shape[2]*shape[1] - j * shape[2]);
       q = array(k,j,i);
     } else {
       IDEFIX_ERROR("The lookup table only handles array of rank <= 3");

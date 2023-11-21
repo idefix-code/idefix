@@ -5,7 +5,6 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#include <filesystem>
 #include "output.hpp"
 #include "dataBlock.hpp"
 #include "fluid.hpp"

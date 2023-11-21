@@ -1,7 +1,6 @@
 #include "idefix.hpp"
 #include "setup.hpp"
 #include "dumpImage.hpp"
-#include "lookupTable.hpp"
 
 /*********************************************/
 /**
@@ -33,8 +32,6 @@ void Analysis(DataBlock& data) {
   DataBlockHost d(data);
   d.SyncFromDevice();
 
-  LookupTable<3> toto(image.arrays["Vc-RHO"],image.x);
-  idfx::cout << "Rho @ 0=" << toto.GetHost((double []){0.5,0.5,0.5}) << std::endl;
   // increment outnum
   outnum++;
   int errornum;

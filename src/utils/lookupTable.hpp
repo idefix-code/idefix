@@ -22,6 +22,10 @@ class LookupTable {
   LookupTable(std::vector<std::string> filenames,
               std::string dataSet,
                bool errorIfOutOfBound = true);
+  template<typename T, typename ... Args>
+  LookupTable(Kokkos::View<T, Args...> array,
+              std::array<IdefixHostArray1D<real>,kDim>,
+               bool errorIfOutOfBound = true);
 
   IdefixArray1D<int> dimensionsDev;
   IdefixArray1D<int> offsetDev;      // Actually sum_(n-1) (dimensions)
@@ -62,7 +66,7 @@ class LookupTable {
           x_n = xstart;
           i = 0;
         }
-      } else if( x_n >= xend) {
+      } else if( x_n > xend) {
         if(errorIfOutOfBound) {
           Kokkos::abort("LookupTable:: ERROR! Attempt to interpolate above your upper bound.");
         } else {
@@ -74,6 +78,7 @@ class LookupTable {
       } else {
         // Bounds are fine,
         i = static_cast<int> ( (x_n - xstart) / (xend - xstart) * (dimensions(n)-1));
+        if(i == dimensions(n)-1) i = dimensions(n)-2;
         // Check if resulting bounding elements are correct
         if(xin(offset(n) + i) > x_n || xin(offset(n) + i+1) < x_n) {
           // Nop, so the points are not evenly distributed
@@ -419,5 +424,93 @@ LookupTable<kDim>::LookupTable(std::string filename, char delimiter, bool errOOB
   idfx::popRegion();
 }
 
+
+// Constructor from IdefixHostArray
+template<const int kDim>
+template<typename T, typename ... Args>
+LookupTable<kDim>::LookupTable(Kokkos::View<T, Args...> array,
+            std::array<IdefixHostArray1D<real>,kDim> x,
+              bool errOOB) {
+  idfx::pushRegion("LookupTable::LookupTable");
+  this->errorIfOutOfBound = errOOB;
+
+  std::vector<uint64_t> shape(kDim);
+  for(int i = 0 ; i < kDim ; i++) shape[i] = x[i].extent(0);
+
+  // Load this crap in memory
+  int64_t sizeX = 0;
+  int64_t sizeTotal = 1;
+  for(int n=0 ; n < shape.size() ; n++) {
+    sizeX += shape[n];
+    sizeTotal *= shape[n];
+    if(array.extent(kDim-n-1) != shape[n]) {
+      std::stringstream errmsg;
+      errmsg << "The " << n+1 << "th dimension of your input array (" << array.extent(n)
+             << ") does not match the size of the corresponding x vector (" << shape[n];
+      IDEFIX_ERROR(errmsg);
+    }
+  }
+
+  // Allocate the required memory
+  //Allocate arrays so that the data fits in it
+  this->xinDev = IdefixArray1D<real> ("Table_x", sizeX);
+  this->dimensionsDev = IdefixArray1D<int> ("Table_dim", kDim);
+  this->offsetDev = IdefixArray1D<int> ("Table_offset", kDim);
+  this->dataDev =  IdefixArray1D<real> ("Table_data", sizeTotal);
+
+  this->xinHost = Kokkos::create_mirror_view(this->xinDev);
+  this->dimensionsHost = Kokkos::create_mirror_view(this->dimensionsDev);
+  this->offsetHost = Kokkos::create_mirror_view(this->offsetDev);
+  this->dataHost = Kokkos::create_mirror_view(this->dataDev);
+
+  // Copy data in memory
+  for(uint64_t n = 0 ; n < sizeTotal ; n++) {
+    real q;
+    if constexpr(kDim == 1) {
+      q = array(n);
+    } else if constexpr(kDim == 2) {
+      int i = n  / shape[1];
+      int j = (n - i * shape[1]);
+      q = array(j,i);
+    } else if constexpr(kDim == 3) {
+      int i = n / (shape[2]*shape[1]);
+      int j = (n - i * shape[2]*shape[1]) / shape[2];
+      int k = (n - i * shape[2]*shape[1] - j * shape[2]);
+      q = array(k,j,i);
+    } else {
+      IDEFIX_ERROR("The lookup table only handles array of rank <= 3");
+    }
+    if(std::isnan(q)) {
+      std::stringstream msg;
+      msg << "Nans were found while loading the array." <<  std::endl;
+      IDEFIX_ERROR(msg);
+    }
+    dataHost(n) = q;
+  }
+
+  // Copy shape arrays and coordinates
+  offsetHost(0) = 0;
+  for(int n = 0 ; n < kDim ; n++) {
+    dimensionsHost(n) = shape[n];
+    if(n>0) offsetHost(n) = offsetHost(n-1) + shape[n-1];
+
+    for(int i = 0 ; i < shape[n] ; i++) {
+      xinHost(offsetHost(n)+i) = x[n](i);
+      if(std::isnan(x[n](i))) {
+        std::stringstream msg;
+        msg << "Nans were found while reading x[" << n << "]." << std::endl;
+        IDEFIX_ERROR(msg);
+      }
+    }
+  }
+
+  // Copy to target
+  Kokkos::deep_copy(this->xinDev ,xinHost);
+  Kokkos::deep_copy(this->dimensionsDev, dimensionsHost);
+  Kokkos::deep_copy(this->offsetDev, offsetHost);
+  Kokkos::deep_copy(this->dataDev, dataHost);
+
+  idfx::popRegion();
+              }
 
 #endif //UTILS_LOOKUPTABLE_HPP_

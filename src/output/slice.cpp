@@ -32,7 +32,7 @@ Slice::Slice(Input &input, DataBlock & data, int nSlice, SliceType type,
   // Initialize the associated dataBlock
   this->sliceData = std::make_unique<DataBlock>(subgrid.get());
   this->containsX0 = (data.xbeg[direction] <= x0)
-                     && (data.xend[direction] >= x0);
+                     && (data.xend[direction] > x0);
 
   #ifdef WITH_MPI
     if(type==SliceType::Average) {
@@ -218,6 +218,9 @@ void Slice::CheckForWrite(DataBlock &data) {
         sliceLast += slicePeriod;
       }
     }
+    #ifdef WITH_MPI
+      MPI_Barrier(MPI_COMM_WORLD);
+    #endif
   }
   idfx::popRegion();
 }

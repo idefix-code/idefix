@@ -173,25 +173,17 @@
     } \
   }
 
-  #if defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_CUDA)
-    // string formatting functions can't be accessed from GPU kernels,
-    // so we fallback to a simple error message
-    #define RUNTIME_CHECK_KERNEL(condition, fallback_msg, ...) { \
-      if(!(condition)) Kokkos::abort(fallback_msg); \
-    }
-  #else
-    #define RUNTIME_CHECK_KERNEL(condition, fallback_msg, ...) { \
-      if(!(condition)) { \
-        char msg[255]; \
-        snprintf(msg, sizeof(msg), __VA_ARGS__); \
-        Kokkos::abort(msg); \
-      } \
-    }
-  #endif // if defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_CUDA)
+  #define RUNTIME_CHECK_KERNEL(condition, ...) { \
+    if(!(condition)) { \
+      char msg[255]; \
+      Kokkos::printf(msg, __VA_ARGS__); \
+      Kokkos::abort(msg); \
+    } \
+  }
 
 #else
-  #define RUNTIME_CHECK_HOST(condition, msg, ...) {}
-  #define RUNTIME_CHECK_KERNEL(condition, fallback_msg, ...) {}
+  #define RUNTIME_CHECK_HOST(condition, ...) {}
+  #define RUNTIME_CHECK_KERNEL(condition, ...) {}
 #endif // ifdef RUNTIME_CHECKS
 
 

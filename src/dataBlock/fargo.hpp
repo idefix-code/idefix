@@ -14,8 +14,10 @@
   #include "mpi.hpp"
 #endif
 
-// Forward class hydro declaration
 #include "physics.hpp"
+#include "slopeLimiter.hpp"
+
+// Forward class hydro declaration
 template <typename Phys> class Fluid;
 using Hydro = Fluid<DefaultPhysics>;
 class DataBlock;
@@ -108,51 +110,36 @@ KOKKOS_INLINE_FUNCTION real FargoFlux(const IdefixArray4D<real> &Vin, int n, int
   int som2 = som1-1;
   if(!haveDomainDecomposition && (som2-sbeg< 0 )) som2 = som2+ds;
 
-  real dqm2,dqm1,dqp1,dqp2, q0,qm1, qp1;
+  real q0,qm1, qp1, qm2, qp2;
   #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
     q0 = Vin(n,k,so,i);
     qm1 = Vin(n,k,som1,i);
     qp1 = Vin(n,k,sop1,i);
-    dqm2 = qm1 - Vin(n,k,som2,i);
-    dqm1 = q0 - qm1;
-    dqp1 = qp1 - q0;
-    dqp2 = Vin(n,k,sop2,i) - qp1;
+    qm2 = Vin(n,k,som2,i);
+    qp2 = Vin(n,k,sop2,i);
   #elif GEOMETRY == SPHERICAL
     q0 = Vin(n,so,j,i);
     qm1 = Vin(n,som1,j,i);
     qp1 = Vin(n,sop1,j,i);
-    dqm2 = qm1 - Vin(n,som2,j,i);
-    dqm1 = q0 - qm1;
-    dqp1 = qp1 - q0;
-    dqp2 = Vin(n,sop2,j,i) - qp1;
+    qm2 = Vin(n,som2,j,i);
+    qp2 = Vin(n,sop2,j,i);
   #endif
-    // slope limited values around the reference point
-    real dqlm = PPMLim(dqm1,dqm2);
-    real dql0 = PPMLim(dqp1,dqm1);
-    real dqlp = PPMLim(dqp2,dqp1);
 
-    real dqp = 0.5 * dqp1 - (dqlp - dql0) / 6.0;
-    real dqm = -0.5 * dqm1 - (dql0 - dqlm) / 6.0;
+  real qp, qm;
+  SlopeLimiter<>::getPPMStates(qm2,qm1,q0,qp1,qp2, qm, qp);
 
-    if(dqp*dqm>0.0) {
-       dqp = dqm = 0.0;
-    } else {
-      if(FABS(dqp) >= 2.0*FABS(dqm)) dqp = -2.0*dqm;
-      if(FABS(dqm) >= 2.0*FABS(dqp)) dqm = -2.0*dqp;
-    }
+  real dqp = qp-q0;
+  real dqm = qm-q0;
 
-    real qp = q0 + dqp;
-    real qm = q0 + dqm;
+  real dqc = dqp - dqm;
+  real d2q = dqp + dqm;
 
-    real dqc = dqp - dqm;
-    real d2q = dqp + dqm;
-
-    real F;
-    if(eps > 0.0) {
-      F = eps*(qp - 0.5*eps*(dqc + d2q*(3.0 - 2.0*eps)));
-    } else {
-      F = eps*(qm - 0.5*eps*(dqc - d2q*(3.0 + 2.0*eps)));
-    }
+  real F;
+  if(eps > 0.0) {
+    F = eps*(qp - 0.5*eps*(dqc + d2q*(3.0 - 2.0*eps)));
+  } else {
+    F = eps*(qm - 0.5*eps*(dqc - d2q*(3.0 + 2.0*eps)));
+  }
 
   return(F);
 }

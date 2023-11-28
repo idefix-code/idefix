@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - improve std::filesystem compatibility with old stdlibc++ (#210)
 - cleanup planet test (#212)
 - allow the use of IdefixHostArrays as inputs for the LookupTable class (#214)
+- use Felker & Stone (2018) PPM scheme when using HIGH_ORDER_FARGO in place of Colella & Woodward (1984) (#218).
 
 ## [2.0.2] 2023-11-6
 ### Changed

@@ -116,6 +116,8 @@ class idfxTest:
       comm.append("-DKokkos_ENABLE_CUDA=ON")
       # disable fmad operations on Cuda to make it compatible with CPU arithmetics
       comm.append("-DIdefix_CXX_FLAGS=--fmad=false")
+      # disable Async cuda malloc for tests performed on old UCX implementations
+      comm.append("-DKokkos_ENABLE_IMPL_CUDA_MALLOC_ASYNC=OFF")
 
     if self.hip:
       comm.append("-DKokkos_ENABLE_HIP=ON")

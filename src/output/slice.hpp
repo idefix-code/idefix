@@ -20,8 +20,8 @@ class Grid;
 class SubGrid;
 class Vtk;
 
-using UserDefVariablesContainer = std::map<std::string,IdefixHostArray3D<real>>;
-using UserDefVariablesFunc = void (*) (DataBlock &, UserDefVariablesContainer &);
+using UserDefVariablesFunc = void (*) (DataBlock &,
+                                      std::map<std::string,IdefixHostArray3D<real>> &);
 
 class Slice {
  public:
@@ -33,15 +33,14 @@ class Slice {
   real sliceLast = 0.0;
  private:
   bool containsX0;
-  IdefixArray4D<real> Vc;
   SliceType type;
   int direction;
   std::unique_ptr<SubGrid> subgrid;
   std::unique_ptr<DataBlock> sliceData;
   std::unique_ptr<Vtk> vtk;
   bool haveUserDefinedVariables{false};
-  UserDefVariablesContainer userDefVariableFull;
-  UserDefVariablesContainer userDefVariableSliced;
+  std::map<std::string, IdefixHostArray3D<real>> variableMap;
+  std::map<std::string,IdefixHostArray3D<real>> userDefVariableMap;
   UserDefVariablesFunc userDefVariablesFunc{NULL};
   #ifdef WITH_MPI
     MPI_Comm avgComm;  // Communicator for averages

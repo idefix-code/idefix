@@ -26,30 +26,6 @@ Output::Output(Input &input, DataBlock &data) {
     }
   }
 
-  // Look for slice outputs (in the form of VTK files)
-  if(input.CheckEntry("Output","vtk_slice1")>0) {
-    haveSlices = true;
-    int n = 1;
-    while(input.CheckEntry("Output","vtk_slice"+std::to_string(n))>0) {
-      std::string sliceStr = "vtk_slice"+std::to_string(n);
-      real period = input.Get<real>("Output", sliceStr,0);
-      int direction = input.Get<int>("Output", sliceStr,1);
-      real x0 = input.Get<real>("Output", sliceStr, 2);
-      std::string typeStr = input.Get<std::string>("Output",sliceStr,3);
-      SliceType type;
-      if(typeStr.compare("cut")==0) {
-        type = SliceType::Cut;
-      } else if(typeStr.compare("average")==0) {
-        type = SliceType::Average;
-      } else {
-        IDEFIX_ERROR("Unknown slice type "+typeStr);
-      }
-      slices.emplace_back(std::make_unique<Slice>(input, data, n, type, direction, x0, period));
-      // Next iteration
-      n++;
-    }
-  }
-
   // Initialise xdmf outputs
   if(input.CheckEntry("Output","xdmf")>0) {
     xdmfPeriod = input.Get<real>("Output","xdmf",0);
@@ -93,12 +69,32 @@ Output::Output(Input &input, DataBlock &data) {
                                                                   data.np_tot[IDIR]);
       data.vtk->RegisterVariable(userDefVariables[arrayName],arrayName);
     }
-    if(haveSlices) {
-      for(int i = 0 ; i < slices.size() ; i++) {
-        slices[i]->EnrollUserDefVariables(userDefVariables);
-      }
-    }
     userDefVariablesEnabled = true;
+  }
+
+  // Look for slice outputs (in the form of VTK files)
+  if(input.CheckEntry("Output","vtk_slice1")>0) {
+    haveSlices = true;
+    int n = 1;
+    while(input.CheckEntry("Output","vtk_slice"+std::to_string(n))>0) {
+      std::string sliceStr = "vtk_slice"+std::to_string(n);
+      real period = input.Get<real>("Output", sliceStr,0);
+      int direction = input.Get<int>("Output", sliceStr,1);
+      real x0 = input.Get<real>("Output", sliceStr, 2);
+      std::string typeStr = input.Get<std::string>("Output",sliceStr,3);
+      SliceType type;
+      if(typeStr.compare("cut")==0) {
+        type = SliceType::Cut;
+      } else if(typeStr.compare("average")==0) {
+        type = SliceType::Average;
+      } else {
+        IDEFIX_ERROR("Unknown slice type "+typeStr);
+      }
+      slices.emplace_back(std::make_unique<Slice>(input, data, n, type, direction, x0, period));
+      if(userDefVariablesEnabled) slices[n-1]->EnrollUserDefVariables(userDefVariables);
+      // Next iteration
+      n++;
+    }
   }
 
   // Register variables that are needed in restart dumps

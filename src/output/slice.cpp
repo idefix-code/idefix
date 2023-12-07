@@ -200,7 +200,7 @@ void Slice::CheckForWrite(DataBlock &data) {
           }}}
           #ifdef WITH_MPI
           MPI_Allreduce(MPI_IN_PLACE, array.data(),
-                    Vcout.extent(0)*Vcout.extent(1)*Vcout.extent(2),
+                    array.extent(0)*array.extent(1)*array.extent(2),
                     realMPI, MPI_SUM, avgComm);
           #endif
         }

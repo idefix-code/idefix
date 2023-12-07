@@ -76,9 +76,9 @@ DumpImage::DumpImage(std::string filename, DataBlock *data, bool enableDomainDec
         IdefixHostArray1D<real> xlLoc("DumpImageXl",gridBox.size[dir]);
         IdefixHostArray1D<real> xrLoc("DumpImageXr",gridBox.size[dir]);
         for(int i = 0 ; i < gridBox.size[dir] ; i++) {
-        xLoc(i) = x[dir](i+gridBox.start[dir]);
-        xlLoc(i) = xl[dir](i+gridBox.start[dir]);
-        xrLoc(i) = xr[dir](i+gridBox.start[dir]);
+          xLoc(i) = x[dir](i+gridBox.start[dir]);
+          xlLoc(i) = xl[dir](i+gridBox.start[dir]);
+          xrLoc(i) = xr[dir](i+gridBox.start[dir]);
         }
         // Replace former arrays
         x[dir] = xLoc;
@@ -195,16 +195,19 @@ GridBox DumpImage::GetBox(DataBlock *data) {
     real xend = data->xend[dir];
 
     // left bound
-    int i = 0;
-    while(xl(i) <= xbeg  && i < xl.extent(0)) {
-      boundIndex[0] = i;
-      i++;
+    boundIndex[0] = 0;
+    for(int i = 0 ; i < xl.extent(0) ; i++) {
+      if(xl(i) <= xbeg) {
+        boundIndex[0] = i;
+      }
     }
+
     // right bound
-    i = 0;
-    while(xr(i) <= xend  && i < xr.extent(0)) {
-      boundIndex[1] = i;
-      i++;
+    boundIndex[1] = 0;
+    for(int i = 0 ; i < xr.extent(0) ; i++) {
+      if(xr(i) <= xend) {
+        boundIndex[1] = i;
+      }
     }
 
     // Bounds are stored in boundIndex

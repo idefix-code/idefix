@@ -56,7 +56,7 @@ class ScalarField {
       Kokkos::deep_copy(arr3D,h3Darray);
       return(arr3D);
     } else if(type==Host4D) {
-      IdefixHostArray3D<real> arr3D = Kokkos::subview(
+      IdefixArray3D<real> arr3D = Kokkos::subview(
                                       h4Darray, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
       return(arr3D);
     } else if(type==Device3D) {

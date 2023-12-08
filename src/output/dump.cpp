@@ -88,9 +88,16 @@ void Dump::Init(DataBlock *datain) {
   }
 
   // Allocate scratch Array
-  this->scrch = new real[ (data->np_int[IDIR]+IOFFSET)*
-                          (data->np_int[JDIR]+JOFFSET)*
-                          (data->np_int[KDIR]+KOFFSET)];
+  // It must be able to handle either a full domain 1D Array and
+  // a sub-3D somain
+  int64_t nmax = (data->np_int[IDIR]+IOFFSET)*
+                  (data->np_int[JDIR]+JOFFSET)*
+                  (data->np_int[KDIR]+KOFFSET);
+  nmax = std::max(nmax,static_cast<int64_t>(data->mygrid->np_tot[IDIR]));
+  nmax = std::max(nmax,static_cast<int64_t>(data->mygrid->np_tot[JDIR]));
+  nmax = std::max(nmax,static_cast<int64_t>(data->mygrid->np_tot[KDIR]));
+
+  this->scrch = new real[nmax];
 
   #ifdef WITH_MPI
     Grid *grid = data->mygrid;

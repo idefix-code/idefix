@@ -5,6 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include <algorithm>
 #include <unordered_set>
 #if __has_include(<filesystem>)
   #include <filesystem>

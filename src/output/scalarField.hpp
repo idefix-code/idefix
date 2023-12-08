@@ -48,29 +48,6 @@ class ScalarField {
     }
   }
 
-  IdefixArray3D<real> GetDeviceField() const {
-    if(type==Host3D) {
-      IdefixArray3D<real> arr3D("TemoraryDev",h3Darray.extent(0),
-                                              h3Darray.extent(1),
-                                              h3Darray.extent(2));
-      Kokkos::deep_copy(arr3D,h3Darray);
-      return(arr3D);
-    } else if(type==Host4D) {
-      IdefixArray3D<real> arr3D = Kokkos::subview(
-                                      h4Darray, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
-      return(arr3D);
-    } else if(type==Device3D) {
-      return(d3Darray);
-    } else if(type==Device4D) {
-      IdefixArray3D<real> arrDev3D = Kokkos::subview(
-                                      d4Darray, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
-      return(arrDev3D);
-    } else {
-      IDEFIX_ERROR("unknown field");
-      return(d3Darray);
-    }
-  }
-
  private:
   IdefixArray4D<real> d4Darray;
   IdefixArray3D<real> d3Darray;

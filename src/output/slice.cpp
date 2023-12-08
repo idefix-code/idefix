@@ -75,10 +75,10 @@ void Slice::EnrollUserDefFunc(UserDefVariablesFunc myFunc) {
   userDefVariablesFunc = myFunc;
 }
 
-void Slice::CheckForWrite(DataBlock &data) {
+void Slice::CheckForWrite(DataBlock &data, bool force) {
   idfx::pushRegion("Slice:CheckForWrite");
 
-  if(data.t >= sliceLast + slicePeriod) {
+  if(force || data.t >= sliceLast + slicePeriod) {
     // sync time
     sliceData->t = data.t;
     if(haveUserDefinedVariables) {

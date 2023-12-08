@@ -257,18 +257,23 @@ void Output::ForceWriteVtk(DataBlock &data) {
 
   if(!forceNoWrite) {
     if(userDefVariablesEnabled) {
-        if(haveUserDefVariablesFunc) {
-          // Call user-def function to fill the userdefined variable arrays
-          idfx::pushRegion("UserDef::User-defined variables function");
-          userDefVariablesFunc(data, userDefVariables);
-          idfx::popRegion();
-        } else {
-          IDEFIX_ERROR("Cannot output user-defined variables without "
-                        "enrollment of your user-defined variables function");
-        }
+      if(haveUserDefVariablesFunc) {
+        // Call user-def function to fill the userdefined variable arrays
+        idfx::pushRegion("UserDef::User-defined variables function");
+        userDefVariablesFunc(data, userDefVariables);
+        idfx::popRegion();
+      } else {
+        IDEFIX_ERROR("Cannot output user-defined variables without "
+                      "enrollment of your user-defined variables function");
       }
-      vtkLast += vtkPeriod;
-      data.vtk->Write();
+    }
+    vtkLast += vtkPeriod;
+    data.vtk->Write();
+    if(haveSlices) {
+      for(int i = 0 ; i < slices.size() ; i++) {
+        slices[i]->CheckForWrite(data,true);
+      }
+    }
   }
   idfx::popRegion();
 }

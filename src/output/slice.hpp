@@ -26,7 +26,7 @@ using UserDefVariablesFunc = void (*) (DataBlock &,
 class Slice {
  public:
   Slice(Input &, DataBlock &, int, SliceType, int, real, real);
-  void CheckForWrite(DataBlock &);
+  void CheckForWrite(DataBlock &, bool = false);
   void EnrollUserDefVariables(std::map<std::string,IdefixHostArray3D<real>>);
   void EnrollUserDefFunc(UserDefVariablesFunc);
   real slicePeriod = 0.0;

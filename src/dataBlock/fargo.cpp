@@ -5,6 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -98,7 +99,15 @@ Fargo::Fargo(Input &input, int nmax, DataBlock *data) {
 
 
   // Initialise our scratch space
-  this->scrhUc = IdefixArray4D<real>("FargoVcScratchSpace",NVAR
+  // Maximum number of variables
+  int nvar = data->hydro->Vc.extent(0);
+  if(data->haveDust) {
+    for(int n = 0 ; n < data->dust.size() ; n++) {
+      nvar = std::max(nvar,static_cast<int>(data->dust[n]->Vc.extent(0)));
+    }
+  }
+
+  this->scrhUc = IdefixArray4D<real>("FargoVcScratchSpace",nvar
                                       ,end[KDIR]-beg[KDIR] + 2*nghost[KDIR]
                                       ,end[JDIR]-beg[JDIR] + 2*nghost[JDIR]
                                       ,end[IDIR]-beg[IDIR] + 2*nghost[IDIR]);
@@ -120,7 +129,7 @@ Fargo::Fargo(Input &input, int nmax, DataBlock *data) {
   #ifdef WITH_MPI
     if(haveDomainDecomposition) {
       std::vector<int> vars;
-      for(int i=0 ; i < NVAR ; i++) {
+      for(int i=0 ; i < nvar ; i++) {
         vars.push_back(i);
       }
       #if MHD == YES

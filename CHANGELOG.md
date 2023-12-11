@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - allow the use of IdefixHostArrays as inputs for the LookupTable class (#214)
 - use Felker & Stone (2018) PPM scheme when using HIGH_ORDER_FARGO in place of Colella & Woodward (1984) (#218).
 - fix a bug that could result in segfaults when reading a restart dump, in particular in 1D problems with MPI (#219).
+- fix a bug preventing compilation on gcc 9.3.0 (#220)
 
 ## [2.0.2] 2023-11-6
 ### Changed

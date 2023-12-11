@@ -66,9 +66,9 @@ class Viscosity {
 
 template<typename Phys>
 Viscosity::Viscosity(Input &input, Grid &grid, Fluid<Phys> *hydroin):
-                      Vc{hydroin->Vc},
-                      dMax{hydroin->dMax},
-                      status{hydroin->viscosityStatus} {
+                      Vc(hydroin->Vc),
+                      dMax(hydroin->dMax),
+                      status(hydroin->viscosityStatus) {
   idfx::pushRegion("Viscosity::Viscosity");
   // Save the parent hydro object
   this->data = hydroin->data;

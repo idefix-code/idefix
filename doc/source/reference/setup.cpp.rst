@@ -395,3 +395,80 @@ User-defined analysis
 
 User-defined analysis and outputs can be coded in the ``setup.cpp`` file. Follow the
 guidelines in :ref:`output`.
+
+I need a global IdefixArray for my Setup
+-----------------------------------------
+
+There are situation where you will need one or several global IdefixArrays that can be accessed from different
+functions, e.g. the ``Initflow`` method and the user-defined boundary conditions.
+
+It is important to understand that IdefixArrays (equivalent to ``Kokkos::view`` that are references to memory chunks)
+are automatically dealocated when all of the IdefixArrays refereing to that memory chunk have been deleted. This deletion happens either
+implicitly (by a closing scope) in which case the objects contained in the scope are all deleted automatically,
+or explicitly (through a new/delete pair).
+
+If you define an IdefixArray in the global scope, it is deleted when the program terminates. Hence deallocation should happen then.
+Except that, according to `Kokkos documentation <https://kokkos.github.io/kokkos-core-wiki/ProgrammingGuide/Initialization.html#finalization>`_,  we
+need to call ``Kokkos::finalize`` before the program terminates and this ``finalize`` should be done once all of
+the Kokkos objects have been deleted (including IdefixArray). While *Idefix* makes sure that all of its objects (including the user's ``Setup``) are being deleted before calling ``finalize``,
+a simple IdefixArray in the global scope will not be explicitely deleted, and will typically lead to the following error:
+
+.. code-block:: bash
+
+  terminate called after throwing an instance of 'std::runtime_error'
+  what():  Kokkos allocation "MyAwesomeArray" is being deallocated after Kokkos::finalize was called
+
+The way to avoid this is to explicitely delete the object when you don't need it anymore. The cleanest way to do this for a setup is to define a "container" class,
+containing all of the arrays you will need in the global scope, and just have a global pointer to an instance of this class, that you eventually delete
+(and which deletes all of the arrays it contains automatically). More explicitely:
+
+#. start with a declaration of a class container (that we name MyGlobalClass in this example) and a global pointer to a class instance (note that you can put as many arrays as you want in the class)
+
+    .. code-block:: c++
+
+      // Class declaration
+      class MyGlobalClass {
+      public:
+        // Class constructor
+        MyGlobalClass(DataBlock &data) {
+        //allocate some memory for the array the class contains
+          this->array1 = IdefixArray3D<real>("MyAwesomeArray",data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
+        }
+
+        // array1, member of the class
+        IdefixArray3D<real> array1;
+      };
+
+      // A global class instance named "myGlobals"
+      MyGlobalClass *myGlobals;
+
+#. initialise your global object in the Setup constructor (this will aumatically allocate the array it contains thanks to the class constructor we have defined):
+
+    .. code-block:: c++
+
+      Setup::Setup(....) {
+        ...
+        myGlobals = new MyGlobalClass(data);
+        ...
+      }
+
+#. to avoid the error message above, don't forget to delete the object on exit in the Setup destructor
+
+    .. code-block:: c++
+
+      Setup::~Setup(....) {
+        ...
+        delete myGlobals;
+        ...
+      }
+
+#. and finally, use your array when you need it:
+
+    .. code-block:: c++
+
+      MyXXXXFunction(....) {
+        // Shallow copy the global array
+        IdefixArray3D<real> array = myGlobals->array1;
+        // Do stuff
+        ....
+      }

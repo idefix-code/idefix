@@ -64,11 +64,11 @@ class ThermalDiffusion {
 
 template <typename Phys>
 ThermalDiffusion::ThermalDiffusion(Input &input, Grid &grid, Fluid<Phys> *hydroin):
-                            Vc{hydroin->Vc},
-                            dMax{hydroin->dMax},
-                            eos{hydroin->eos.get()},
-                            data{hydroin->data},
-                            status{hydroin->thermalDiffusionStatus} {
+                            Vc(hydroin->Vc),
+                            dMax(hydroin->dMax),
+                            eos(hydroin->eos.get()),
+                            data(hydroin->data),
+                            status(hydroin->thermalDiffusionStatus) {
   idfx::pushRegion("ThermalDiffusion::ThermalDiffusion");
 
   if(status.status == Constant) {

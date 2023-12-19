@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.3] 2023-11-24
+### Changed
+- fix and improve slice VTK outputs (#211)
+- improve std::filesystem compatibility with old stdlibc++ (#210)
+- cleanup planet test (#212)
+- allow the use of IdefixHostArrays as inputs for the LookupTable class (#214)
+- use Felker & Stone (2018) PPM scheme when using HIGH_ORDER_FARGO in place of Colella & Woodward (1984) (#218).
+- fix a bug that could result in segfaults when reading a restart dump, in particular in 1D problems with MPI (#219).
+- fix a bug preventing compilation on gcc 9.3.0 (#220)
+
 ## [2.0.2] 2023-11-6
 ### Changed
 - fixed compilation issues with gcc 8.x (#205)

@@ -8,7 +8,15 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
-#include <filesystem>
+#if __has_include(<filesystem>)
+  #include <filesystem>
+  namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+  #include <experimental/filesystem>
+  namespace fs = std::experimental::filesystem;
+#else
+  error "Missing the <filesystem> header."
+#endif
 #include "vtk.hpp"
 #include "version.hpp"
 #include "idefix.hpp"
@@ -64,9 +72,9 @@ Vtk::Vtk(Input &input, DataBlock *datain, std::string filebase) {
   }
 
   if(idfx::prank==0) {
-    if(!std::filesystem::is_directory(outputDirectory)) {
+    if(!fs::is_directory(outputDirectory)) {
       try {
-        if(!std::filesystem::create_directory(outputDirectory)) {
+        if(!fs::create_directory(outputDirectory)) {
           std::stringstream msg;
           msg << "Cannot create directory " << outputDirectory << std::endl;
           IDEFIX_ERROR(msg);
@@ -247,7 +255,7 @@ int Vtk::Write() {
   idfx::pushRegion("Vtk::Write");
 
   IdfxFileHandler fileHdl;
-  std::filesystem::path filename;
+  fs::path filename;
 
   timer.reset();
 
@@ -260,8 +268,8 @@ int Vtk::Write() {
 
   // Check if file exists, if yes, delete it
   if(this->isRoot) {
-    if(std::filesystem::exists(filename)) {
-      std::filesystem::remove(filename);
+    if(fs::exists(filename)) {
+      fs::remove(filename);
     }
   }
 

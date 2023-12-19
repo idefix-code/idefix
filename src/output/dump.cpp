@@ -5,8 +5,17 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include <algorithm>
 #include <unordered_set>
-#include <filesystem>
+#if __has_include(<filesystem>)
+  #include <filesystem>
+  namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+  #include <experimental/filesystem>
+  namespace fs = std::experimental::filesystem;
+#else
+  error "Missing the <filesystem> header."
+#endif
 #include <iomanip>
 #include "dump.hpp"
 #include "version.hpp"
@@ -63,9 +72,9 @@ void Dump::Init(DataBlock *datain) {
   this->dumpFileNumber = 0;
 
   if(idfx::prank==0) {
-    if(!std::filesystem::is_directory(outputDirectory)) {
+    if(!fs::is_directory(outputDirectory)) {
       try {
-        if(!std::filesystem::create_directory(outputDirectory)) {
+        if(!fs::create_directory(outputDirectory)) {
           std::stringstream msg;
           msg << "Cannot create directory " << outputDirectory << std::endl;
           IDEFIX_ERROR(msg);
@@ -80,9 +89,16 @@ void Dump::Init(DataBlock *datain) {
   }
 
   // Allocate scratch Array
-  this->scrch = new real[ (data->np_int[IDIR]+IOFFSET)*
-                          (data->np_int[JDIR]+JOFFSET)*
-                          (data->np_int[KDIR]+KOFFSET)];
+  // It must be able to handle either a full domain 1D Array and
+  // a sub-3D somain
+  int64_t nmax = (data->np_int[IDIR]+IOFFSET)*
+                  (data->np_int[JDIR]+JOFFSET)*
+                  (data->np_int[KDIR]+KOFFSET);
+  nmax = std::max(nmax,static_cast<int64_t>(data->mygrid->np_tot[IDIR]));
+  nmax = std::max(nmax,static_cast<int64_t>(data->mygrid->np_tot[JDIR]));
+  nmax = std::max(nmax,static_cast<int64_t>(data->mygrid->np_tot[KDIR]));
+
+  this->scrch = new real[nmax];
 
   #ifdef WITH_MPI
     Grid *grid = data->mygrid;
@@ -524,7 +540,7 @@ void Dump::ReadDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gdi
 // Helper function to convert filesystem::file_time into std::time_t
 // see https://stackoverflow.com/questions/56788745/
 // This conversion "hack" is required in C++17 as no proper conversion bewteen
-// std::filesystem::last_write_time and std::time_t
+// fs::last_write_time and std::time_t
 // exists in the standard library until C++20
 template <typename TP>
 std::time_t to_time_t(TP tp) {
@@ -533,15 +549,15 @@ std::time_t to_time_t(TP tp) {
     return std::chrono::system_clock::to_time_t(sctp);
 }
 
-int Dump::GetLastDumpInDirectory(std::filesystem::path &directory) {
+int Dump::GetLastDumpInDirectory(fs::path &directory) {
   int num = -1;
 
   std::time_t youngFileTime;
   bool first = true;
-  for (const auto & entry : std::filesystem::directory_iterator(directory)) {
+  for (const auto & entry : fs::directory_iterator(directory)) {
       // Check file extension
       if(entry.path().extension().string().compare(".dmp")==0) {
-        auto fileTime = to_time_t(std::filesystem::last_write_time(entry.path()));
+        auto fileTime = to_time_t(fs::last_write_time(entry.path()));
         // Check which one is the most recent
         if(first || fileTime>youngFileTime) {
           // std::tm *gmt = std::gmtime(&fileTime);
@@ -563,7 +579,7 @@ int Dump::GetLastDumpInDirectory(std::filesystem::path &directory) {
   return(num);
 }
 bool Dump::Read(Output& output, int readNumber ) {
-  std::filesystem::path filename;
+  fs::path filename;
   int nx[3];
   int nxglob[3];
   std::string fieldName;
@@ -574,7 +590,7 @@ bool Dump::Read(Output& output, int readNumber ) {
 
   idfx::pushRegion("Dump::Read");
 
-  std::filesystem::path readDir = this->outputDirectory;
+  fs::path readDir = this->outputDirectory;
 
   if(readNumber<0) {
     // We actually don't know which file we're supposed to read, so let's guess
@@ -746,7 +762,7 @@ bool Dump::Read(Output& output, int readNumber ) {
 
 
 int Dump::Write(Output& output) {
-  std::filesystem::path filename;
+  fs::path filename;
   char fieldName[NAMESIZE+1]; // +1 is just in case
   int nx[3];
   int nxtot[3];
@@ -776,8 +792,8 @@ int Dump::Write(Output& output) {
 
   // Check if file exists, if yes, delete it
   if(idfx::prank==0) {
-    if(std::filesystem::exists(filename)) {
-      std::filesystem::remove(filename);
+    if(fs::exists(filename)) {
+      fs::remove(filename);
     }
   }
 

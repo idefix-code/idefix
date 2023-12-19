@@ -5,7 +5,6 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#include <filesystem>
 #include "output.hpp"
 #include "dataBlock.hpp"
 #include "fluid.hpp"
@@ -28,11 +27,11 @@ Output::Output(Input &input, DataBlock &data) {
   }
 
   // Look for slice outputs (in the form of VTK files)
-  if(input.CheckEntry("Output","vtkSlice1")>0) {
-    sliceEnabled = true;
+  if(input.CheckEntry("Output","vtk_slice1")>0) {
+    haveSlices = true;
     int n = 1;
-    while(input.CheckEntry("Output","vtkSlice"+std::to_string(n))>0) {
-      std::string sliceStr = "vtkSlice"+std::to_string(n);
+    while(input.CheckEntry("Output","vtk_slice"+std::to_string(n))>0) {
+      std::string sliceStr = "vtk_slice"+std::to_string(n);
       real period = input.Get<real>("Output", sliceStr,0);
       int direction = input.Get<int>("Output", sliceStr,1);
       real x0 = input.Get<real>("Output", sliceStr, 2);
@@ -93,6 +92,11 @@ Output::Output(Input &input, DataBlock &data) {
                                                                   data.np_tot[JDIR],
                                                                   data.np_tot[IDIR]);
       data.vtk->RegisterVariable(userDefVariables[arrayName],arrayName);
+    }
+    if(haveSlices) {
+      for(int i = 0 ; i < slices.size() ; i++) {
+        slices[i]->EnrollUserDefVariables(userDefVariables);
+      }
     }
     userDefVariablesEnabled = true;
   }
@@ -204,7 +208,7 @@ int Output::CheckForWrites(DataBlock &data) {
     }
   }
 
-  if(sliceEnabled) {
+  if(haveSlices) {
     for(int i = 0 ; i < slices.size() ; i++) {
       slices[i]->CheckForWrite(data);
     }
@@ -316,6 +320,11 @@ void Output::EnrollUserDefVariables(UserDefVariablesFunc myFunc) {
                  "but the userdef variables are not set in the input file");
   }
   userDefVariablesFunc = myFunc;
+  if(haveSlices) {
+    for(int i = 0 ; i < slices.size() ; i++) {
+      slices[i]->EnrollUserDefFunc(myFunc);
+    }
+  }
   haveUserDefVariablesFunc = true;
   idfx::popRegion();
 }

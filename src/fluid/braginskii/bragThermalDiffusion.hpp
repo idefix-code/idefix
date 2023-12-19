@@ -73,12 +73,12 @@ class BragThermalDiffusion {
 
 template <typename Phys>
 BragThermalDiffusion::BragThermalDiffusion(Input &input, Grid &grid, Fluid<Phys> *hydroin):
-                            Vc{hydroin->Vc},
-                            Vs{hydroin->Vs},
-                            dMax{hydroin->dMax},
-                            eos{hydroin->eos.get()},
-                            data{hydroin->data},
-                            status{hydroin->bragThermalDiffusionStatus} {
+                            Vc(hydroin->Vc),
+                            Vs(hydroin->Vs),
+                            dMax(hydroin->dMax),
+                            eos(hydroin->eos.get()),
+                            data(hydroin->data),
+                            status(hydroin->bragThermalDiffusionStatus) {
   idfx::pushRegion("BragThermalDiffusion::BragThermalDiffusion");
 
   if(input.CheckEntry("Hydro","bragTDiffusion")>=0) {

@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Upcoming [2.1.0]
+### Added
+- DumpImage can load dump and distribute dump in memory, following the domain decomposition used in the current simulation
+- Vtk slices now show all of the fluids (not only hydro)
+
+## Upcoming [2.1.0]
+### Added
+- DumpImage can load dump and distribute dump in memory, following the domain decomposition used in the current simulation
+- Vtk slices now show all of the fluids (not only hydro)
+
 ## [2.0.4] 2024-01-16
 ### Changed
 - fix potential segfault in slices

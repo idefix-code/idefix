@@ -61,6 +61,10 @@ How can I stop the code without loosing the current calculation?
 I'm doing performance measures. How do I disable all outputs in *Idefix*?
   Add ``-nowrite`` when you call *Idefix* executable.
 
+Using Cuda+MPI, I get an error ``The call to cuIpcGetMemHandle failed. This means the GPU RDMA protocol cannot be used. cuIpcGetMemHandle return value:   1``
+  This is because you are using an old version of MPI with UCX. You should disable ``Kokkos_ENABLE_IMPL_CUDA_MALLOC_ASYNC`` in cmake.
+
+
 I sometimes get incoherent values in my VTK files when running Idefix with OpenMPI>4, but the code seems to be running fine.
   This is probably a bug ot the MPI library for some of the MPI I/O calls used by the VTK class. We recommend passing ``--mca io ^ompio`` to mpirun to avoid
   this problem which seems to be a bug of the OMPIO layer of OpenMPI.

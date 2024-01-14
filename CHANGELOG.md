@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - fix potential segfault in slices
 - ensure that Fargo also advect passive tracers
+- fix reflective boundary conditions on the right of the domain (#225)
 
 ## [2.0.3] 2023-11-24
 ### Changed

@@ -671,9 +671,6 @@ void Boundary<Phys>::EnforceReflective(int dir, BoundarySide side ) {
     if(dir==JDIR || dir==KDIR) {
       BoundaryForX1s("BoundaryReflectiveX1s",dir,side,
         KOKKOS_LAMBDA (int k, int j, int i) {
-          // ref= 2*ibound -i -1
-          // with ibound = nghost on the left and ibount = nghost + nx -1 on the right
-          //const int iref = (dir==IDIR) ? 2*(ighost + side*(nxi-1)) - i - 1 : i;
           const int jref = (dir==JDIR) ? 2*(jghost + side*nxj) - j - 1 : j;
           const int kref = (dir==KDIR) ? 2*(kghost + side*nxk) - k - 1 : k;
 
@@ -685,10 +682,9 @@ void Boundary<Phys>::EnforceReflective(int dir, BoundarySide side ) {
         BoundaryForX2s("BoundaryReflectiveX2s",dir,side,
           KOKKOS_LAMBDA (int k, int j, int i) {
             const int iref = (dir==IDIR) ? 2*(ighost + side*nxi) - i - 1 : i;
-            //const int jref = (dir==JDIR) ? 2*(jghost + side*(nxj-1)) - j - 1 : j;
             const int kref = (dir==KDIR) ? 2*(kghost + side*nxk) - k - 1 : k;
 
-              Vs(BX2s,k,j,i) = -Vs(BX2s,kref,j,iref);
+            Vs(BX2s,k,j,i) = -Vs(BX2s,kref,j,iref);
           });
       }
     #endif
@@ -698,7 +694,6 @@ void Boundary<Phys>::EnforceReflective(int dir, BoundarySide side ) {
           KOKKOS_LAMBDA (int k, int j, int i) {
             const int iref = (dir==IDIR) ? 2*(ighost + side*nxi) - i - 1 : i;
             const int jref = (dir==JDIR) ? 2*(jghost + side*nxj) - j - 1 : j;
-            //const int kref = (dir==KDIR) ? 2*(kghost + side*(nxk-1)) - k - 1 : k;
 
             Vs(BX3s,k,j,i) = -Vs(BX3s,k,jref,iref);
           });

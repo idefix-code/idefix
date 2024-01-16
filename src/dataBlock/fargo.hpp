@@ -248,7 +248,7 @@ void Fargo::StoreToScratch(Fluid<Phys>* hydro) {
   int maxShift = this->maxShift;
 
   idefix_for("Fargo:StoreUc",
-            0,Phys::nvar,
+            0,Phys::nvar+hydro->nTracer,
             data->beg[KDIR],data->end[KDIR],
             data->beg[JDIR],data->end[JDIR],
             data->beg[IDIR],data->end[IDIR],
@@ -353,7 +353,7 @@ void Fargo::ShiftFluid(const real t, const real dt, Fluid<Phys>* hydro) {
   StoreToScratch(hydro);
 
   idefix_for("Fargo:ShiftVc",
-              0,Phys::nvar,
+              0,Phys::nvar+hydro->nTracer,
               data->beg[KDIR],data->end[KDIR],
               data->beg[JDIR],data->end[JDIR],
               data->beg[IDIR],data->end[IDIR],

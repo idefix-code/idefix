@@ -220,6 +220,11 @@ DataBlock::DataBlock(SubGrid *subgrid) {
   xbeg[refdir] = gridHost.x[refdir](subgrid->index);
   xend[refdir] = gridHost.x[refdir](subgrid->index);
 
+  // Reset gbeg/gend so that they don't refer anymore to the parent grid
+  gbeg[refdir] = 0;
+  gend[refdir] = 1;
+
+
   // Allocate the required fields (only a limited set for a datablock from a subgrid)
   std::string label;
   for(int dir = 0 ; dir < 3 ; dir++) {
@@ -239,9 +244,7 @@ DataBlock::DataBlock(SubGrid *subgrid) {
   // Initialize our sub-domain
   this->ExtractSubdomain();
 
-  // Reset gbeg/gend so that they don't refer anymore to the parent grid
-  gbeg[refdir] = 0;
-  gend[refdir] = 1;
+
   idfx::popRegion();
 }
 

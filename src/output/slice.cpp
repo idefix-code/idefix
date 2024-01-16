@@ -177,6 +177,7 @@ void Slice::CheckForWrite(DataBlock &data) {
                     Kokkos::atomic_add(&Vcout(n,kt,jt,it) , Vcin(n,k,j,i)/ntot);
                   });
       #ifdef WITH_MPI
+        Kokkos::fence();
         MPI_Allreduce(MPI_IN_PLACE, Vcout.data(),
                       Vcout.extent(0)*Vcout.extent(1)*Vcout.extent(2)*Vcout.extent(3),
                       realMPI, MPI_SUM, avgComm);

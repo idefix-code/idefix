@@ -8,6 +8,7 @@
 #include <string>
 #include <sstream>
 #include <iomanip>
+#include <limits.h>
 #if __has_include(<filesystem>)
   #include <filesystem>
   namespace fs = std::filesystem;
@@ -41,11 +42,14 @@ void Vtk::WriteHeaderNodes(IdfxFileHandler fvtk) {
              node_coord.extent(1) *
              node_coord.extent(2) *
              node_coord.extent(3);
-
+  if(size> INT_MAX) {
+	IDEFIX_WARNING("Possible overflow in I/O routine");
+  }
+  int size_int = (int) size;
 #ifdef WITH_MPI
   MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_FLOAT, this->nodeView,
                                   "native", MPI_INFO_NULL));
-  MPI_SAFE_CALL(MPI_File_write_all(fvtk, node_coord.data(), size, MPI_FLOAT, MPI_STATUS_IGNORE));
+  MPI_SAFE_CALL(MPI_File_write_all(fvtk, node_coord.data(), size_int, MPI_FLOAT, MPI_STATUS_IGNORE));
   this->offset += sizeof(float)*(nx1+ioffset)*(nx2+joffset)*(nx3+koffset)*3;
 #else
   fwrite(node_coord.data(),sizeof(float),size,fvtk);

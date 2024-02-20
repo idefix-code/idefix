@@ -50,6 +50,9 @@ class TimeIntegrator {
   real cflMaxVar; // Max CFL variation number
   real maxdivB{0};   // Maximum allowed divB
   int64_t ncycles;        // # of cycles
+
+  double computeLastLog;  // Timer for actual computeTime
+
   double lastLog;         // time for the last log (s)
   double lastMpiLog;      // time for the last MPI log (s)
   double lastSGLog;      // time for the last SelfGravity log (s)

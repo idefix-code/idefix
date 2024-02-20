@@ -8,6 +8,7 @@
 #include <cstdio>
 #include <iomanip>
 #include <string>
+#include <vector>
 #include "idefix.hpp"
 #include "timeIntegrator.hpp"
 #include "input.hpp"
@@ -175,6 +176,51 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
     }
   }
   idfx::cout << std::endl;
+
+  // Check gitter
+  #ifdef WITH_MPI
+    const double gitterMax = 1.1;
+    const double gitterMin = 0.9;
+
+    std::vector<double> computeLogPerCore(idfx::psize);
+    MPI_Gather(&computeLastLog, 1, MPI_DOUBLE, computeLogPerCore.data(), 1, MPI_DOUBLE, 0,
+                MPI_COMM_WORLD);
+    computeLastLog = 0; // reset timer for all cores
+    if(idfx::prank==0) {
+      // Compute the average, the min and the max
+      double computeMin = computeLogPerCore[0];
+      double computeMax = computeLogPerCore[0];
+      double computeMean = 0;
+
+      for(int i = 0 ; i < idfx::psize ; i++) {
+        computeMean += computeLogPerCore[i];
+        if(computeLogPerCore[i]>computeMax) {
+          computeMax = computeLogPerCore[i];
+        }
+        if(computeLogPerCore[i]<computeMin) {
+          computeMin = computeLogPerCore[i];
+        }
+      }
+      computeMean /= idfx::psize;
+      if(computeMax/computeMean > gitterMax || computeMin/computeMean < gitterMin ) {
+        idfx::cout << "--------------------------------------------------------------"<< std::endl;
+        idfx::cout << "Warning: MPI gittering found in this run " << std::endl;
+        idfx::cout << std::fixed;
+        for(int i = 0 ; i < idfx::psize ; i++) {
+          if(computeLogPerCore[i]/computeMean > gitterMax) {
+            idfx::cout << "+" << 100*(computeLogPerCore[i]/computeMean-1)
+                       << "% (proc " << i << ")" << std::endl;
+          }
+          if(computeLogPerCore[i]/computeMean < gitterMin) {
+            idfx::cout << "-" << 100*(1-computeLogPerCore[i]/computeMean)
+                              << "% (proc " << i << ")" << std::endl;
+          }
+        }
+        idfx::cout << "You should probably consider avoiding these nodes." << std::endl;
+        idfx::cout << "--------------------------------------------------------------"<< std::endl;
+      }
+    }
+  #endif
 }
 
 
@@ -227,8 +273,12 @@ void TimeIntegrator::Cycle(DataBlock &data) {
       if(ncycles % data.gravity->skipGravity == 0) data.gravity->ComputeGravity(ncycles);
     }
 
+    Kokkos::fence();
+    computeLastLog -= timer.seconds();
     // Update Uc & Vs
     data.EvolveStage();
+    Kokkos::fence();
+    computeLastLog += timer.seconds();
 
     // evolve dt accordingly
     data.t += data.dt;

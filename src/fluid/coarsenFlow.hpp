@@ -312,7 +312,6 @@ void Fluid<Phys>::CoarsenMagField(IdefixArray4D<real> &Vsin) {
                       An(k+shift*koffset, j+shift*joffset, i+shift*ioffset)
                     - qt - qb
                   );
-
             }
           }
         }

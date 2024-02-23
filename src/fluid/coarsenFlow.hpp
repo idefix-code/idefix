@@ -102,9 +102,9 @@ void Fluid<Phys>::CoarsenMagField(IdefixArray4D<real> &Vsin) {
       IdefixArray3D<real> At = data->A[BXt];
       IdefixArray3D<real> Ab = data->A[BXb];
 
-      int it = 0, ib = 0;
-      int jt = 0, jb = 0;
-      int kt = 0, kb = 0;
+      [[maybe_unused]] int it = 0, ib = 0;
+      [[maybe_unused]] int jt = 0, jb = 0;
+      [[maybe_unused]] int kt = 0, kb = 0;
       int endk = data->end[KDIR];
       int endj = data->end[JDIR];
       int endi = data->end[IDIR];

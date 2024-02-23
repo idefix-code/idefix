@@ -296,15 +296,14 @@ void Fluid<Phys>::CoarsenMagField(IdefixArray4D<real> &Vsin) {
                           * At(k+kt+shift*koffset, j+jt+shift*joffset, i+it+shift*ioffset)
                       - Vsin(BXt,k+shift*koffset, j+shift*joffset, i+shift*ioffset)
                           *  At(k+shift*koffset, j+shift*joffset, i+shift*ioffset);
-              real qb = Vsin(BXb,k+kb+shift*koffset, j+jb+shift*joffset, i+ib+shift*ioffset)
-                          * Ab(k+kb+shift*koffset, j+jb+shift*joffset, i+ib+shift*ioffset)
-                      - Vsin(BXb,k+shift*koffset, j+shift*joffset, i+shift*ioffset)
-                          *  Ab(k+shift*koffset, j+shift*joffset, i+shift*ioffset);
-  /*
-              if(i==10 && j == 3 && k == 10) {
-                idfx::cout << "shift=" << shift << " ; oldBxn=" << Vsin(BXn, k+(shift+1)*koffset, j+(shift+1)*joffset, i+(shift+1)*ioffset) << std::endl;
-                idfx::cout << "qt=" << qt << " ; qb=" << qb << std::endl;
-              }*/
+              #if DIMENSIONS == 3
+                real qb = Vsin(BXb,k+kb+shift*koffset, j+jb+shift*joffset, i+ib+shift*ioffset)
+                            * Ab(k+kb+shift*koffset, j+jb+shift*joffset, i+ib+shift*ioffset)
+                        - Vsin(BXb,k+shift*koffset, j+shift*joffset, i+shift*ioffset)
+                            *  Ab(k+shift*koffset, j+shift*joffset, i+shift*ioffset);
+              #else
+                real qb = 0.0;
+              #endif
 
               Vsin(BXn, k+(shift+1)*koffset, j+(shift+1)*joffset, i+(shift+1)*ioffset) =
                   1.0/An(k+(shift+1)*koffset, j+(shift+1)*joffset, i+(shift+1)*ioffset) *
@@ -313,10 +312,7 @@ void Fluid<Phys>::CoarsenMagField(IdefixArray4D<real> &Vsin) {
                       An(k+shift*koffset, j+shift*joffset, i+shift*ioffset)
                     - qt - qb
                   );
-                  /*
-              if(i==10 && j == 3 && k == 10) {
-                idfx::cout << "shift=" << shift << " ; newsBxn=" << Vsin(BXn, k+(shift+1)*koffset, j+(shift+1)*joffset, i+(shift+1)*ioffset) << std::endl;
-              }*/
+
             }
           }
         }

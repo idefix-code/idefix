@@ -44,7 +44,11 @@ I get an error during *Idefix* link that says there are undefined symbols to std
   While *Idefix* auto-detects gcc8 when it is used as the main compiler, it still misses the cases when another compiler
   (like Clang or Intel) is used with gcc8 as a backend.
   You should try to clear up CMakeCache.txt and explicitely add the required link library when calling cmake as in
-  ``LDFLAGS=-lstdc++fs cmake $IDEFIX_DIR ...```
+  ``LDFLAGS=-lstdc++fs cmake $IDEFIX_DIR ...``
+
+At the end of the compilation phase, during link on MacOS, I get an error ``ld: Assertion failed: (resultIndex < sectData.atoms.size()), function findAtom, ...``.
+  This is a known bug of the new linker provided by Apple with Xcode 15. Revert to the old linker:
+  ``LDFLAGS=-ld_classic instead cmake $IDEFIX_DIR ...``
 
 Execution
 ---------

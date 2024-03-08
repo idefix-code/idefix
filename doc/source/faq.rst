@@ -48,7 +48,7 @@ I get an error during *Idefix* link that says there are undefined symbols to std
 
 At the end of the compilation phase, during link on MacOS, I get an error ``ld: Assertion failed: (resultIndex < sectData.atoms.size()), function findAtom, ...``.
   This is a known bug of the new linker provided by Apple with Xcode 15. Revert to the old linker:
-  ``LDFLAGS=-ld_classic instead cmake $IDEFIX_DIR ...``
+  ``LDFLAGS=-ld_classic cmake $IDEFIX_DIR ...``
 
 Execution
 ---------

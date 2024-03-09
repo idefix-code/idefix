@@ -56,8 +56,6 @@ void Setup::InitFlow(DataBlock &data) {
     // Create a host copy
     DataBlockHost d(data);
 
-    real B0=1.0;
-
     int idx=0;
     for(int k = 0; k < d.np_tot[KDIR] ; k++) {
       if(spatialDir == KDIR) idx = k;

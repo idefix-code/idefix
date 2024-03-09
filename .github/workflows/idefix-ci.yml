@@ -123,6 +123,10 @@ jobs:
         run: |
           cd $IDEFIX_DIR/test/MHD/ResistiveAlfvenWave
           ./testme.py -all $TESTME_OPTIONS
+      - name: Grid coarsening diffusion
+        run: |
+          cd $IDEFIX_DIR/test/MHD/Coarsening
+          ./testme.py -all $TESTME_OPTIONS
       - name: Hall whistler waves
         run: |
           cd $IDEFIX_DIR/test/MHD/HallWhistler

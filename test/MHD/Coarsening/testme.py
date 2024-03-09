@@ -23,7 +23,7 @@ def testMe(test):
     if test.init and not test.mpi:
       test.makeReference(filename=name)
     test.standardTest()
-    #test.nonRegressionTest(filename=name)
+    test.nonRegressionTest(filename=name)
 
 
 test=tst.idfxTest()
@@ -38,6 +38,5 @@ else:
   test.mpi=False
   testMe(test)
 
-  test.vectPot=False
   test.mpi=True
   testMe(test)

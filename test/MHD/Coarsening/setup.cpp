@@ -66,7 +66,7 @@ void Setup::InitFlow(DataBlock &data) {
         for(int i = 0; i < d.np_tot[IDIR] ; i++) {
           if(spatialDir == IDIR) idx = i;
 
-          real x=d.x[componentDir](idx);
+          real x=d.x[spatialDir](idx);
 
           d.Vc(RHO,k,j,i) = 1.0;
           d.Vc(VX1,k,j,i) = 0.0;

@@ -15,3 +15,9 @@ test.configure()
 test.compile()
 # this test succeeds if it runs successfully
 test.run()
+
+test.mpi = True
+test.configure()
+test.compile()
+# this test succeeds if it runs successfully
+test.run()

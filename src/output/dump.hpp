@@ -9,6 +9,7 @@
 #define OUTPUT_DUMP_HPP_
 #include <string>
 #include <map>
+#include <array>
 #if __has_include(<filesystem>)
   #include <filesystem>
   namespace fs = std::filesystem;
@@ -165,6 +166,12 @@ class DumpField {
   Type type;
 };
 
+struct GridBox {
+  std::array<int,3> start;
+  std::array<int,3> size;
+  std::array<int,3> sizeGlob;
+};
+
 class Dump {
   friend class DumpImage; // Allow dumpimag to have access to dump API
  public:
@@ -226,7 +233,8 @@ class Dump {
   MPI_Offset offset;
 #endif
   // These descriptors are only useful with MPI
-  IdfxDataDescriptor descC;   // Descriptor for cell-centered fields (Read & write)
+  IdfxDataDescriptor descCR;   // Descriptor for cell-centered fields (Read)
+  IdfxDataDescriptor descCW;   // Descriptor for cell-centered fields (Write)
   IdfxDataDescriptor descSR[3]; // Descriptor for face-centered fields (Read)
   IdfxDataDescriptor descSW[3]; // Descriptor for face-centered fields (Write)
   IdfxDataDescriptor descER[3]; // Descriptor for edge-centered fields (Read)
@@ -240,6 +248,7 @@ class Dump {
   void ReadDistributed(IdfxFileHandler, int, int*, int*, IdfxDataDescriptor&, void*);
   void Skip(IdfxFileHandler, int, int *, DataType);
   int GetLastDumpInDirectory(fs::path &);
+  void CreateMPIDataType(GridBox, bool);
 
   fs::path outputDirectory;
 };

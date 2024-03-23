@@ -16,9 +16,10 @@ class DataBlock;
 
 class DumpImage {
  public:
-  DumpImage(std::string, DataBlock *);
+  DumpImage(std::string, DataBlock *, bool = false); // By default, no domain decomposition
 
-  int np_int[3];               // number of points in each direction
+  int np_int[3];               // number of local points in each direction
+  int np_glob[3];               // number of global points in each direction
   int geometry;                // geometry of the dump
   real time;                   // time at which the dump was created
   real centralMass;            // central mass when dump was created
@@ -27,6 +28,8 @@ class DumpImage {
   std::array<IdefixHostArray1D<real>,3> xl;   // cell left interface
 
   std::map<std::string,IdefixHostArray3D<real>> arrays;  // 3D arrays stored in the dump
+ private:
+  GridBox GetBox(DataBlock *);
 };
 
 #endif // UTILS_DUMPIMAGE_HPP_

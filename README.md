@@ -23,12 +23,11 @@ Download:
 Assuming you want to use https to get idefix (easiest option):
 
 ```shell
-git clone https://github.com/idefix-code/idefix.git idefix
+git clone --recurse-submodules https://github.com/idefix-code/idefix.git idefix
 cd idefix
-git submodule init
-git submodule update
 ```
 
+This will create and deploy Idefix in the directory `idefix`.
 
 Installation:
 -------------

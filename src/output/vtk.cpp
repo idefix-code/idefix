@@ -5,6 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include "vtk.hpp"
+#include <limits.h>
 #include <string>
 #include <sstream>
 #include <iomanip>
@@ -17,7 +19,6 @@
 #else
   error "Missing the <filesystem> header."
 #endif
-#include "vtk.hpp"
 #include "version.hpp"
 #include "idefix.hpp"
 #include "dataBlock.hpp"
@@ -41,11 +42,15 @@ void Vtk::WriteHeaderNodes(IdfxFileHandler fvtk) {
              node_coord.extent(1) *
              node_coord.extent(2) *
              node_coord.extent(3);
-
+  if(size> INT_MAX) {
+    IDEFIX_WARNING("Possible overflow in I/O routine");
+  }
 #ifdef WITH_MPI
+  int size_int = static_cast<int>(size);
   MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_FLOAT, this->nodeView,
                                   "native", MPI_INFO_NULL));
-  MPI_SAFE_CALL(MPI_File_write_all(fvtk, node_coord.data(), size, MPI_FLOAT, MPI_STATUS_IGNORE));
+  MPI_SAFE_CALL(MPI_File_write_all(fvtk, node_coord.data(), size_int,
+                                   MPI_FLOAT, MPI_STATUS_IGNORE));
   this->offset += sizeof(float)*(nx1+ioffset)*(nx2+joffset)*(nx3+koffset)*3;
 #else
   fwrite(node_coord.data(),sizeof(float),size,fvtk);

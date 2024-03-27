@@ -15,9 +15,9 @@
 //@HEADER
 */
 
+#include <unistd.h>
 
 #include <sys/time.h>
-
 #include <stdlib.h>
 #include <limits>
 #include <cstdio>
@@ -93,6 +93,11 @@ int main( int argc, char* argv[] ) {
     Output output(input, data);
     Setup mysetup(input, grid, data, output);
     idfx::cout << "Main: initialisation finished." << std::endl;
+
+    char host[1024];
+    gethostname(host,1024);
+
+    idfx::cout << "Main: running on " << std::string(host) << std::endl;
 
     ///////////////////////////////
     // Show configuration

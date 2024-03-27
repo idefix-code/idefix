@@ -571,7 +571,7 @@ void Fluid<Phys>::CalcRightHandSide(real t, real dt) {
 
 
   // If user has requested specific flux functions for the boundaries, here they come
-  if(boundary->haveFluxBoundary) boundary->EnforceFluxBoundaries(dir);
+  if(boundary->haveFluxBoundary) boundary->EnforceFluxBoundaries(dir,t);
 
   auto calcRHS = Fluid_CalcRHSFunctor<Phys,dir>(this,dt);
   /////////////////////////////////////////////////////////////////////////////

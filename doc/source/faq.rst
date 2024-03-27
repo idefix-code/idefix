@@ -44,7 +44,11 @@ I get an error during *Idefix* link that says there are undefined symbols to std
   While *Idefix* auto-detects gcc8 when it is used as the main compiler, it still misses the cases when another compiler
   (like Clang or Intel) is used with gcc8 as a backend.
   You should try to clear up CMakeCache.txt and explicitely add the required link library when calling cmake as in
-  ``LDFLAGS=-lstdc++fs cmake $IDEFIX_DIR ...```
+  ``LDFLAGS=-lstdc++fs cmake $IDEFIX_DIR ...``
+
+At the end of the compilation phase, during link on MacOS, I get an error ``ld: Assertion failed: (resultIndex < sectData.atoms.size()), function findAtom, ...``.
+  This is a known bug of the new linker provided by Apple with Xcode 15. Revert to the old linker:
+  ``LDFLAGS=-ld_classic cmake $IDEFIX_DIR ...``
 
 Execution
 ---------
@@ -57,6 +61,9 @@ How can I stop the code without loosing the current calculation?
 I'm doing performance measures. How do I disable all outputs in *Idefix*?
   Add ``-nowrite`` when you call *Idefix* executable.
 
+I sometimes get incoherent values in my VTK files when running Idefix with OpenMPI>4, but the code seems to be running fine.
+  This is probably a bug ot the MPI library for some of the MPI I/O calls used by the VTK class. We recommend passing ``--mca io ^ompio`` to mpirun to avoid
+  this problem which seems to be a bug of the OMPIO layer of OpenMPI.
 
 Developement
 ------------

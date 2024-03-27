@@ -43,7 +43,7 @@ void Vtk::WriteHeaderNodes(IdfxFileHandler fvtk) {
              node_coord.extent(2) *
              node_coord.extent(3);
   if(size> INT_MAX) {
-	IDEFIX_WARNING("Possible overflow in I/O routine");
+    IDEFIX_WARNING("Possible overflow in I/O routine");
   }
   int size_int = (int) size;
 #ifdef WITH_MPI

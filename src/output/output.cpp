@@ -68,9 +68,27 @@ Output::Output(Input &input, DataBlock &data) {
   if(input.CheckEntry("Output","dmp")>0) {
     dumpPeriod = input.Get<real>("Output","dmp",0);
     dumpLast = data.t - dumpPeriod; // dump something in the next CheckForWrite()
+    if(input.CheckEntry("Output","dmp")>1) {
+      dumpTimePeriod = input.Get<real>("Output","dmp",1);
+      std::string dumpTimeExtension = input.Get<std::string>("Output","dmp",2);
+      if(dumpTimeExtension.compare("s")==0) {
+        dumpTimePeriod *= 1.0;  // Dump time period is in seconds by default
+      } else if (dumpTimeExtension.compare("m")==0) {
+        dumpTimePeriod *= 60.0;
+      } else if (dumpTimeExtension.compare("h")==0) {
+        dumpTimePeriod *= 60.0*60.0;
+      } else if (dumpTimeExtension.compare("d")==0) {
+        dumpTimePeriod *= 60.0*60.0*24.0;
+      } else {
+        IDEFIX_ERROR("The dump time period unit should be either s, m, h or d");
+      }
+      dumpTimeLast = timer.seconds();
+    } else {
+      dumpTimePeriod = -1.0;
+    }
     dumpEnabled = true;
     // Backwards compatibility: negative period means no dump
-    if(dumpPeriod<0.0) dumpEnabled = false;
+    if(dumpPeriod<0.0 && dumpTimePeriod < 0.0) dumpEnabled = false;
   }
 
   // initialise analysis outputs
@@ -215,11 +233,22 @@ int Output::CheckForWrites(DataBlock &data) {
   }
   // Do we need a restart dump?
   if(dumpEnabled) {
+    bool haveClockDump = false;
+    if(dumpTimePeriod>0.0) {
+      real delay = timer.seconds()-dumpTimeLast;
+      #ifdef WITH_MPI
+      // Sync watches
+      MPI_Bcast(&delay, 1, realMPI, 0, MPI_COMM_WORLD);
+      #endif
+      if(delay>dumpTimePeriod) haveClockDump = true;
+    }
+
     // Dumps contain metadata about the most recent outputs of other types,
     // so it's important that this part happens last.
-    if(data.t >= dumpLast + dumpPeriod) {
+    if(data.t >= dumpLast + dumpPeriod || haveClockDump) {
       elapsedTime -= timer.seconds();
       dumpLast += dumpPeriod;
+      dumpTimeLast = timer.seconds();
       data.dump->Write(*this);
       nfiles++;
       elapsedTime += timer.seconds();

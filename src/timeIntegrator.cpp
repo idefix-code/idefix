@@ -5,6 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+//#define WITH_TEMPERATURE_SENSOR
+
 #include <cstdio>
 #include <iomanip>
 #include <string>

@@ -234,21 +234,29 @@ int Output::CheckForWrites(DataBlock &data) {
   // Do we need a restart dump?
   if(dumpEnabled) {
     bool haveClockDump = false;
+    bool havePeriodicDump = false;
+    if(dumpPeriod > 0.0) {
+      if(data.t >= dumpLast + dumpPeriod) {
+        havePeriodicDump = true;
+        dumpLast += dumpPeriod;
+      }
+    }
     if(dumpTimePeriod>0.0) {
       real delay = timer.seconds()-dumpTimeLast;
       #ifdef WITH_MPI
       // Sync watches
       MPI_Bcast(&delay, 1, realMPI, 0, MPI_COMM_WORLD);
       #endif
-      if(delay>dumpTimePeriod) haveClockDump = true;
+      if(delay>dumpTimePeriod) {
+        haveClockDump = true;
+        dumpTimeLast = timer.seconds();
+      }
     }
 
     // Dumps contain metadata about the most recent outputs of other types,
     // so it's important that this part happens last.
-    if(data.t >= dumpLast + dumpPeriod || haveClockDump) {
+    if(havePeriodicDump || haveClockDump) {
       elapsedTime -= timer.seconds();
-      dumpLast += dumpPeriod;
-      dumpTimeLast = timer.seconds();
       data.dump->Write(*this);
       nfiles++;
       elapsedTime += timer.seconds();

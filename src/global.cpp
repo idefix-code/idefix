@@ -78,6 +78,7 @@ void pushRegion(const std::string& kName) {
 void popRegion() {
   Kokkos::Profiling::popRegion();
   if(prof.perfEnabled) {
+    Kokkos::fence();
     prof.currentRegion->Stop();
     prof.currentRegion = prof.currentRegion->parent;
   }

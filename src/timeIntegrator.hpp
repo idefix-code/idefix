@@ -33,6 +33,8 @@ class TimeIntegrator {
   bool isSilent{false};   // Whether the integration should proceed silently
 
  private:
+  double ComputeBalance(); // Compute the compute balance between MPI processes
+
   // Whether we have RKL
   bool haveRKL{false};
 

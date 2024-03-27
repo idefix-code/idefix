@@ -45,8 +45,8 @@ void Vtk::WriteHeaderNodes(IdfxFileHandler fvtk) {
   if(size> INT_MAX) {
     IDEFIX_WARNING("Possible overflow in I/O routine");
   }
-  int size_int = static_cast<int>(size);
 #ifdef WITH_MPI
+  int size_int = static_cast<int>(size);
   MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_FLOAT, this->nodeView,
                                   "native", MPI_INFO_NULL));
   MPI_SAFE_CALL(MPI_File_write_all(fvtk, node_coord.data(), size_int,

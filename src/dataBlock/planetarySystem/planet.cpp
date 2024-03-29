@@ -129,13 +129,13 @@ m_vxp(state.vx), m_vyp(state.vy), m_vzp(state.vz), m_xp(state.x), m_yp(state.y),
 void Planet::RegisterInDump() {
   idfx::pushRegion("Planet::RegisterInDump");
   // Register variables for dump read/write
-  data->dump->RegisterVariable(&m_xp,std::string("x_p_")+std::to_string(m_ip));
-  data->dump->RegisterVariable(&m_yp,std::string("y_p_")+std::to_string(m_ip));
-  data->dump->RegisterVariable(&m_zp,std::string("z_p_")+std::to_string(m_ip));
-  data->dump->RegisterVariable(&m_vxp,std::string("vx_p_")+std::to_string(m_ip));
-  data->dump->RegisterVariable(&m_vyp,std::string("vy_p_")+std::to_string(m_ip));
-  data->dump->RegisterVariable(&m_vzp,std::string("vz_p_")+std::to_string(m_ip));
-  data->dump->RegisterVariable(&m_qp,std::string("q_p_")+std::to_string(m_ip));
+  data->dump->RegisterVariable(&m_xp,std::string("x_p")+std::to_string(m_ip));
+  data->dump->RegisterVariable(&m_yp,std::string("y_p")+std::to_string(m_ip));
+  data->dump->RegisterVariable(&m_zp,std::string("z_p")+std::to_string(m_ip));
+  data->dump->RegisterVariable(&m_vxp,std::string("vx_p")+std::to_string(m_ip));
+  data->dump->RegisterVariable(&m_vyp,std::string("vy_p")+std::to_string(m_ip));
+  data->dump->RegisterVariable(&m_vzp,std::string("vz_p")+std::to_string(m_ip));
+  data->dump->RegisterVariable(&m_qp,std::string("q_p")+std::to_string(m_ip));
 
   idfx::popRegion();
 }

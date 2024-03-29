@@ -8,12 +8,10 @@ Download and install *Idefix*
 One first need to download *Idefix* from the public git. Say you want to install *Idefix* in the directory ``~/src/idefix``, you need to run::
 
     cd ~/src
-    git clone https://github.com/idefix-code/idefix.git idefix
+    git clone --recurse-submodules https://github.com/idefix-code/idefix.git idefix
     cd idefix
-    git submodule init
-    git submodule update
 
-Note that the ``idefix`` directory is automatically created by ``git clone``. Because Kokkos is embedded as a submodule of *Idefix*, the last two lines will download Kokkos for you and put it
+Note that the ``idefix`` directory is automatically created by ``git clone``. Because Kokkos is embedded as a submodule of *Idefix*, the ``--recurse-submodules`` will download Kokkos for you and put it
 at the right place.
 
 The configuration and compilation of *Idefix* relies on the environement variable ``$IDEFIX_DIR``, which should point to the

@@ -31,6 +31,14 @@ void Fluid<Phys>::CalcCurrent() {
   IdefixArray1D<real> sinx2m = data->sinx2m;
   #endif
 
+  bool haveGridCoarsening = data->haveGridCoarsening != GridCoarsening::disabled;
+  bool haveGridCoarseningX1 = data->coarseningDirection[IDIR];
+  bool haveGridCoarseningX2 = data->coarseningDirection[JDIR];
+  bool haveGridCoarseningX3 = data->coarseningDirection[KDIR];
+  auto coarseningLevelX1 = data->coarseningLevel[IDIR];
+  auto coarseningLevelX2 = data->coarseningLevel[JDIR];
+  auto coarseningLevelX3 = data->coarseningLevel[KDIR];
+
   idefix_for("CalcCurrent",
              KOFFSET,data->np_tot[KDIR],
              JOFFSET,data->np_tot[JDIR],
@@ -127,7 +135,28 @@ void Fluid<Phys>::CalcCurrent() {
 
 #endif
 
-      // Compute actual current
+    // Correct spacing for grid coarsening
+    if(haveGridCoarsening) {
+      if(haveGridCoarseningX1) {
+        const int factor =  1 << (coarseningLevelX1(k,j) - 1);
+        d12 /= factor;
+        d13 /= factor;
+      }
+
+      if(haveGridCoarseningX2) {
+        const int factor =  1 << (coarseningLevelX2(k,i) - 1);
+        d21 /= factor;
+        d23 /= factor;
+      }
+
+      if(haveGridCoarseningX3) {
+        const int factor =  1 << (coarseningLevelX3(j,i) - 1);
+        d31 /= factor;
+        d32 /= factor;
+      }
+    }
+
+    // Compute actual current
 
 #if COMPONENTS == 3
   #if DIMENSIONS == 3

@@ -4,9 +4,9 @@ set (CMAKE_CXX_STANDARD 17)
 
 set(Idefix_VERSION_MAJOR 2)
 set(Idefix_VERSION_MINOR 0)
-set(Idefix_VERSION_PATCH 04)
+set(Idefix_VERSION_PATCH 05)
 
-project (idefix VERSION 2.0.04)
+project (idefix VERSION 2.0.05)
 option(Idefix_MHD "enable MHD" OFF)
 option(Idefix_MPI "enable Message Passing Interface parallelisation" OFF)
 option(Idefix_HIGH_ORDER_FARGO "Force Fargo to use a PPM reconstruction scheme" OFF)

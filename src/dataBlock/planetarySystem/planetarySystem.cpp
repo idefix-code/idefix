@@ -225,10 +225,10 @@ void PlanetarySystem::IntegrateAnalytically(DataBlock& data, const real& dt) {
     real yp = planet[ip].m_yp;
 
     // from cartesian to polar
-    real Rp{sqrt(xp*xp+yp*yp)};
-    real phip{atan2(yp,xp)};
+    real Rp{std::sqrt(xp*xp+yp*yp)};
+    real phip{std::atan2(yp,xp)};
 
-    real omegap{sqrt((ONE_F+qp)/Rp/Rp/Rp)};
+    real omegap{std::sqrt((ONE_F+qp)/Rp/Rp/Rp)};
 
     real RpNew{Rp};
 //    real phipNew{phip + dt*omegap};
@@ -242,7 +242,7 @@ void PlanetarySystem::IntegrateAnalytically(DataBlock& data, const real& dt) {
     }
 
     real vxp_tmp{ZERO_F};
-    real vyp_tmp{RpNew*sqrt((ONE_F+qp)/RpNew/RpNew/RpNew)};
+    real vyp_tmp{RpNew*std::sqrt((ONE_F+qp)/RpNew/RpNew/RpNew)};
 
     planet[ip].m_xp = RpNew*cos(phipNew);
     planet[ip].m_yp = RpNew*sin(phipNew);

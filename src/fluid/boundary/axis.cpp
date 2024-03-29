@@ -368,36 +368,42 @@ void Axis::ReconstructBx2s() {
   int nend = data->end[JDIR];
   int ntot = data->np_tot[JDIR];
 
-  [[maybe_unused]] int signLeft = 1;
-  [[maybe_unused]] int signRight = 1;
-  if(axisLeft) signLeft = -1;
-  if(axisRight) signRight = -1;
+  bool haveleft = axisLeft;
+  bool haveright = axisRight;
 
-  // This loop is a copy of ReconstructNormalField, with the proper sign when we cross the axis
-  idefix_for("Axis::ReconstructBX2s",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
-        KOKKOS_LAMBDA (int k, int i) {
-          for(int j = nstart ; j>=0 ; j-- ) {
-            Vs(BX2s,k,j,i) = 1.0 / Ax2(k,j,i) * ( Ax2(k,j+1,i)*Vs(BX2s,k,j+1,i)
-                        +(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
-                                                                                                  ,
-                              + signLeft*( Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i)
-                                                              - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))));
-          }
-          for(int j = nend ; j<ntot ; j++ ) {
-            Vs(BX2s,k,j+1,i) = 1.0 / Ax2(k,j+1,i) * ( Ax2(k,j,i)*Vs(BX2s,k,j,i)
-                        -(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
-                                                                                                  ,
-                              + signRight*( Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i)
-                                                               - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))));
-          }
+  if(haveleft) {
+    // This loop is a copy of ReconstructNormalField, with the proper sign when we cross the axis
+    idefix_for("Axis::ReconstructBX2sLeft",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
+      KOKKOS_LAMBDA (int k, int i) {
+        for(int j = nstart ; j>=0 ; j-- ) {
+          Vs(BX2s,k,j,i) = 1.0 / Ax2(k,j,i) * ( Ax2(k,j+1,i)*Vs(BX2s,k,j+1,i)
+                      +(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
+                                                                                                ,
+                            - ( Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i)
+                                                            - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))));
         }
-      );
+      }
+    );
+  }
+  if(haveright) {
+    // This loop is a copy of ReconstructNormalField, with the proper sign when we cross the axis
+    idefix_for("Axis::ReconstructBX2sRight",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
+      KOKKOS_LAMBDA (int k, int i) {
+        for(int j = nend ; j<ntot ; j++ ) {
+          Vs(BX2s,k,j+1,i) = 1.0 / Ax2(k,j+1,i) * ( Ax2(k,j,i)*Vs(BX2s,k,j,i)
+                      -(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
+                                                                                                ,
+                            -  ( Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i)
+                                                            - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))));
+        }
+      }
+    );
+  }
 
-  // Set BX2s on the axis to the average of the two agacent cells
-  // This is required since Bx2s on the axis is not evolved since
-  // there is no circulation around it
-    bool haveleft = axisLeft;
-    bool haveright = axisRight;
+    // Set BX2s on the axis to the average of the two agacent cells
+    // This is required since Bx2s on the axis is not evolved since
+    // there is no circulation around it
+
 
     int jright = data->end[JDIR];
     int jleft = data->beg[JDIR];

@@ -134,7 +134,8 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
   }
 
   #ifdef WITH_MPI
-  double imbalance = ComputeBalance();
+    double imbalance = 0;
+    if(ncycles>=cyclePeriod) imbalance = ComputeBalance();
   #endif
   idfx::cout << "TimeIntegrator: ";
   idfx::cout << std::scientific;

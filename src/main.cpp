@@ -9,7 +9,7 @@
 //@HEADER
 // ************************************************************************
 //
-//                        IDEFIX v 2.0.0
+//                        IDEFIX v 2.0.05
 //
 // ************************************************************************
 //@HEADER
@@ -76,7 +76,7 @@ int main( int argc, char* argv[] ) {
 
     Input input(argc, argv);
     input.PrintLogo();
-    idfx::cout << "Main: Initialization stage." << std::endl;
+    idfx::cout << "Main: initialization stage." << std::endl;
 
     // Allocate the grid on device
     Grid grid(input);

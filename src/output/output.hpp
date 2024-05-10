@@ -57,6 +57,8 @@ class Output {
   bool dumpEnabled = false;
   real dumpPeriod = 0.0;
   real dumpLast = 0.0;
+  real dumpTimePeriod = 0.0;
+  real dumpTimeLast = 0.0;
 
   bool xdmfEnabled = false;
   real xdmfPeriod = 0.0;   // periodicity of xdmf outputs

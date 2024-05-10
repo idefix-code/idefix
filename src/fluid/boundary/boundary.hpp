@@ -43,13 +43,14 @@ class Boundary {
   void ReconstructVcField(IdefixArray4D<real> &);  ///< reconstruct cell-centered magnetic field
   void ReconstructNormalField(int dir);           ///< reconstruct normal field using divB=0
 
-  void EnforceFluxBoundaries(int dir);        ///< Apply boundary condition conditions to the fluxes
+  void EnforceFluxBoundaries(int,real);      ///< Apply boundary condition conditions to the fluxes
 
   void EnrollUserDefBoundary(UserDefBoundaryFuncOld); ///< Deprecated
   void EnrollUserDefBoundary(UserDefBoundaryFunc<Phys>); ///< User-defined boundary condition
   void EnrollInternalBoundary(InternalBoundaryFuncOld); ///< Deprecated
   void EnrollInternalBoundary(InternalBoundaryFunc<Phys>); ///< User-defined internal boundary
-  void EnrollFluxBoundary(UserDefBoundaryFuncOld);
+  void EnrollFluxBoundary(UserDefBoundaryFuncOld); ///< Deprecated
+  void EnrollFluxBoundary(UserDefBoundaryFunc<Phys>); ///< Flux boundary condition
 
   void EnforcePeriodic(int, BoundarySide ); ///< Enforce periodic BC in direction and side
   void EnforceReflective(int, BoundarySide ); ///< Enforce reflective BC in direction and side
@@ -72,7 +73,8 @@ class Boundary {
 
   // Flux boundary function
   bool haveFluxBoundary{false};
-  UserDefBoundaryFuncOld fluxBoundaryFunc{NULL};
+  UserDefBoundaryFuncOld fluxBoundaryFuncOld{NULL};
+  UserDefBoundaryFunc<Phys> fluxBoundaryFunc{NULL};
 
   // specific for loops on ghost cells
   template <typename Function>
@@ -185,21 +187,44 @@ Boundary<Phys>::Boundary(Fluid<Phys>* fluid) {
   idfx::popRegion();
 }
 
+
 template<typename Phys>
 void Boundary<Phys>::EnrollFluxBoundary(UserDefBoundaryFuncOld myFunc) {
+  std::stringstream msg;
+  msg << "The old signature for flux boundary condition " << std::endl
+      << "(DataBlock &, int dir, BoundarySide side, const real t)" << std::endl
+      << "is deprecated. You should now use "<< std::endl
+      << "(Fluid<Phys> *, int dir, BoundarySide side, const real t)" << std::endl
+      << "With the Phys of your choice (DefaultPhysics, DustPhysics...)" << std::endl;
+
+  IDEFIX_WARNING(msg);
+  this->fluxBoundaryFuncOld = myFunc;
+  this->haveUserDefBoundary = true;
+}
+
+template<typename Phys>
+void Boundary<Phys>::EnrollFluxBoundary(UserDefBoundaryFunc<Phys> myFunc) {
   this->haveFluxBoundary = true;
   this->fluxBoundaryFunc = myFunc;
 }
 
 template<typename Phys>
-void Boundary<Phys>::EnforceFluxBoundaries(int dir) {
+void Boundary<Phys>::EnforceFluxBoundaries(int dir,const real t) {
   idfx::pushRegion("Boundary::EnforceFluxBoundaries");
   if(haveFluxBoundary) {
     if(data->lbound[dir] != internal) {
-      fluxBoundaryFunc(*data, dir, left, data->t);
+        if(fluxBoundaryFunc != NULL) {
+        this->fluxBoundaryFunc(fluid, dir, left, t);
+      } else {
+        this->fluxBoundaryFuncOld(*data, dir, left, t);
+      }
     }
     if(data->rbound[dir] != internal) {
-      fluxBoundaryFunc(*data, dir, right, data->t);
+      if(fluxBoundaryFunc != NULL) {
+        this->fluxBoundaryFunc(fluid, dir, right, t);
+      } else {
+        this->fluxBoundaryFuncOld(*data, dir, right, t);
+      }
     }
   } else {
     IDEFIX_ERROR("Cannot enforce flux boundary conditions without enrolling a specific function");

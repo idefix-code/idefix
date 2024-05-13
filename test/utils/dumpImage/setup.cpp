@@ -26,7 +26,11 @@ void Analysis(DataBlock& data) {
   // Create a dumpImage from the created dump
   char filename[20];
   std::snprintf(filename, 20, "dump.%04d.dmp", outnum);
+  #ifdef WITH_MPI
+  DumpImage image(filename,&data,true); // enable domain decomposition in dumpImage
+  #else
   DumpImage image(filename,&data);
+  #endif
 
   // Check that whetever is in the image matches the current state
   DataBlockHost d(data);
@@ -37,7 +41,7 @@ void Analysis(DataBlock& data) {
   int errornum;
 
   errornum = 0;
-  idfx::cout << "Analysis: checking dumpImage consistency with current state..." << std::flush;
+  idfx::cout << "Analysis: checking dumpImage consistency with current state..." << std::endl << std::flush;
   // Check that the save/load routines have left everything unchanged.
   char fieldName[20];
   for(auto const& [name, arr] : image.arrays) {

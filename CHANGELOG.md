@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] 2024-05-10
+### Changed
+- VTK slices are automatically produced along with standard VTK when an emergency abort is triggered.
+- Bump up Kokkos version to 4.3.01
+- Add compile time info on startup
+
+### Added
+- DumpImage can load dump and distribute dump in memory, following the domain decomposition used in the current simulation
+- Vtk slices now show all of the fluids (not only hydro)
+
+
 ## [2.0.5] 2024-03-29
 ### Added
 - implement per-fluid flux boundary conditions (experimental) following a suggestion from Paul Segretain (#235)

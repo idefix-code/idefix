@@ -14,7 +14,7 @@
   #include <experimental/filesystem>
   namespace fs = std::experimental::filesystem;
 #else
-  error "Missing the <filesystem> header."
+  #error "Missing the <filesystem> header."
 #endif
 #include <iomanip>
 #include "dump.hpp"
@@ -62,6 +62,97 @@ void  Dump::RegisterVariable(IdefixHostArray4D<real>& in,
 }
 
 
+
+void Dump::CreateMPIDataType(GridBox gb, bool read) {
+  #ifdef WITH_MPI
+    int start[3];
+    int size[3];
+    int subsize[3];
+
+    // the grid is required to now the current MPÏ domain decomposition
+    Grid *grid = data->mygrid;
+
+    // Dimensions for cell-centered fields
+    for(int dir = 0; dir < 3 ; dir++) {
+      size[2-dir] = gb.sizeGlob[dir];
+      start[2-dir] = gb.start[dir];
+      subsize[2-dir] = gb.size[dir];
+    }
+    if(read) {
+      MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
+                                            MPI_ORDER_C, realMPI, &this->descCR));
+      MPI_SAFE_CALL(MPI_Type_commit(&this->descCR));
+    } else {
+      MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
+                                            MPI_ORDER_C, realMPI, &this->descCW));
+      MPI_SAFE_CALL(MPI_Type_commit(&this->descCW));
+    }
+
+    // Dimensions for face-centered field
+    for(int face = 0; face < 3 ; face++) {
+      for(int dir = 0; dir < 3 ; dir++) {
+        size[2-dir] = gb.sizeGlob[dir];
+        start[2-dir] = gb.start[dir];
+        subsize[2-dir] = gb.size[dir];
+      }
+      if(read) {
+        // Add the extra guy in the face direction
+        size[2-face]++;
+        subsize[2-face]++; // valid only for reading
+                          //since it involves an overlap of data between procs
+
+        MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
+                                              MPI_ORDER_C, realMPI, &this->descSR[face]));
+        MPI_SAFE_CALL(MPI_Type_commit(&this->descSR[face]));
+      } else {
+        // Now for writing, it is only the last proc which keeps one additional cell
+        size[2-face]++;
+        if(grid->xproc[face] == grid->nproc[face] - 1  ) subsize[2-face]++;
+        MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
+                                              MPI_ORDER_C, realMPI, &this->descSW[face]));
+        MPI_SAFE_CALL(MPI_Type_commit(&this->descSW[face]));
+      }
+    }
+    // Dimensions for edge-centered field
+    for(int nv = 0; nv < 3 ; nv++) {
+      // load the array size
+      for(int dir = 0; dir < 3 ; dir++) {
+        size[2-dir] = gb.sizeGlob[dir];
+        start[2-dir] = gb.start[dir];
+        subsize[2-dir] = gb.size[dir];
+      }
+
+      if(read) {
+        // Extra cell in the dirs perp to field
+        for(int i = 0 ; i < DIMENSIONS ; i++) {
+          if(i!=nv) {
+            size[2-i]++;
+            subsize[2-i]++; // valid only for reading
+                            //since it involves an overlap of data between procs
+          }
+        }
+        MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
+                                              MPI_ORDER_C, realMPI, &this->descER[nv]));
+        MPI_SAFE_CALL(MPI_Type_commit(&this->descER[nv]));
+      } else {
+        // Now for writing, it is only the last proc which keeps one additional cell,
+        // so we remove what we added for reads
+        for(int i = 0 ; i < DIMENSIONS ; i++) {
+          if(i!=nv) {
+            size[2-i]++;
+            if(grid->xproc[i] == grid->nproc[i] - 1  ) {
+              subsize[2-i]++;
+            }
+          }
+        }
+        MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
+                                              MPI_ORDER_C, realMPI, &this->descEW[nv]));
+        MPI_SAFE_CALL(MPI_Type_commit(&this->descEW[nv]));
+      }
+    }
+  #endif
+}
+
 void Dump::Init(DataBlock *datain) {
   idfx::pushRegion("Dump::Init");
   this->data = datain;
@@ -102,79 +193,15 @@ void Dump::Init(DataBlock *datain) {
 
   #ifdef WITH_MPI
     Grid *grid = data->mygrid;
-
-    int start[3];
-    int size[3];
-    int subsize[3];
-
-    // Dimensions for cell-centered fields
+    GridBox gb;
     for(int dir = 0; dir < 3 ; dir++) {
-      size[2-dir] = grid->np_int[dir];
-      start[2-dir] = data->gbeg[dir]-data->nghost[dir];
-      subsize[2-dir] = data->np_int[dir];
+      gb.start[dir] = data->gbeg[dir]-data->nghost[dir];
+      gb.size[dir] = data->np_int[dir];
+      gb.sizeGlob[dir] = grid->np_int[dir];
     }
-
-    MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
-                                           MPI_ORDER_C, realMPI, &this->descC));
-    MPI_SAFE_CALL(MPI_Type_commit(&this->descC));
-
-    // Dimensions for face-centered field
-    for(int face = 0; face < 3 ; face++) {
-      for(int dir = 0; dir < 3 ; dir++) {
-        size[2-dir] = grid->np_int[dir];
-        start[2-dir] = data->gbeg[dir]-data->nghost[dir];
-        subsize[2-dir] = data->np_int[dir];
-      }
-      // Add the extra guy in the face direction
-      size[2-face]++;
-      subsize[2-face]++; // valid only for reading
-                         //since it involves an overlap of data between procs
-
-      MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
-                                             MPI_ORDER_C, realMPI, &this->descSR[face]));
-      MPI_SAFE_CALL(MPI_Type_commit(&this->descSR[face]));
-
-      // Now for writing, it is only the last proc which keeps one additional cell
-      if(grid->xproc[face] != grid->nproc[face] - 1  ) subsize[2-face]--;
-      MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
-                                             MPI_ORDER_C, realMPI, &this->descSW[face]));
-      MPI_SAFE_CALL(MPI_Type_commit(&this->descSW[face]));
-    }
-    // Dimensions for edge-centered field
-    for(int nv = 0; nv < 3 ; nv++) {
-      // load the array size
-      for(int dir = 0; dir < 3 ; dir++) {
-        size[2-dir] = grid->np_int[dir];
-        start[2-dir] = data->gbeg[dir]-data->nghost[dir];
-        subsize[2-dir] = data->np_int[dir];
-      }
-
-      // Extra cell in the dirs perp to field
-      for(int i = 0 ; i < DIMENSIONS ; i++) {
-        if(i!=nv) {
-          size[2-i]++;
-          subsize[2-i]++; // valid only for reading
-                          //since it involves an overlap of data between procs
-        }
-      }
-      MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
-                                            MPI_ORDER_C, realMPI, &this->descER[nv]));
-      MPI_SAFE_CALL(MPI_Type_commit(&this->descER[nv]));
-
-      // Now for writing, it is only the last proc which keeps one additional cell,
-      // so we remove what we added for reads
-      for(int i = 0 ; i < DIMENSIONS ; i++) {
-        if(i!=nv) {
-          if(grid->xproc[i] != grid->nproc[i] - 1  ) {
-            subsize[2-i]--;
-          }
-        }
-      }
-      MPI_SAFE_CALL(MPI_Type_create_subarray(3, size, subsize, start,
-                                            MPI_ORDER_C, realMPI, &this->descEW[nv]));
-      MPI_SAFE_CALL(MPI_Type_commit(&this->descEW[nv]));
-    }
-
+    // Create MPI datatypes for read/write
+    CreateMPIDataType(gb, false);
+    CreateMPIDataType(gb, true);
   #endif
 
   // Register variables that are needed in restart dumps
@@ -661,6 +688,7 @@ bool Dump::Read(Output& output, int readNumber ) {
     }
     // Todo: check that coordinates are identical
   }
+
   std::unordered_set<std::string> notFound {};
   for(auto it = dumpFieldMap.begin(); it != dumpFieldMap.end(); it++) {
     notFound.insert(it->first);
@@ -701,7 +729,7 @@ bool Dump::Read(Output& output, int readNumber ) {
             }
           }
           if(scalar.GetLocation() == DumpField::ArrayLocation::Center) {
-            ReadDistributed(fileHdl, ndim, nx, nxglob, descC, scrch);
+            ReadDistributed(fileHdl, ndim, nx, nxglob, descCR, scrch);
           } else if(scalar.GetLocation() == DumpField::ArrayLocation::Face) {
             ReadDistributed(fileHdl, ndim, nx, nxglob, descSR[direction], scrch);
           } else if(scalar.GetLocation() == DumpField::ArrayLocation::Edge) {
@@ -887,7 +915,7 @@ int Dump::Write(Output& output) {
       }
 
       if(scalar.GetLocation() == DumpField::ArrayLocation::Center) {
-        WriteDistributed(fileHdl, 3, nx, nxtot, fieldName, this->descC, scrch);
+        WriteDistributed(fileHdl, 3, nx, nxtot, fieldName, this->descCW, scrch);
       } else if(scalar.GetLocation() == DumpField::ArrayLocation::Face) {
         WriteDistributed(fileHdl, 3, nx, nxtot, fieldName, this->descSW[dir], scrch);
       } else if(scalar.GetLocation() == DumpField::ArrayLocation::Edge) {

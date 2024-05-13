@@ -420,4 +420,5 @@ void Input::PrintOptions() {
 void Input::PrintVersion() {
   idfx::cout << "              Idefix version " << IDEFIX_VERSION << std::endl;
   idfx::cout << "              Built against Kokkos " << KOKKOS_VERSION << std::endl;
+  idfx::cout << "              Compiled on " << __DATE__ <<  " at " << __TIME__ << std::endl;
 }

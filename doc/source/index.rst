@@ -74,6 +74,9 @@ Soufiane Baghdadi
 Gaylor Wafflard-Fernandez
   planet-disc interaction
 
+Jonah Mauxion
+  self-gravity module
+
 Clément Robert
   gitlab integration, linter
 
@@ -96,8 +99,12 @@ This documentation has automatically been generated on |today| from the followin
 Acknowledgements
 ===================
 
-The developement of *Idefix* is supported by the European Research Council (ERC)
-under the European Union Horizon 2020 research and innovation programme (Grant agreement No. 815559 (MHDiscs))
+The developement of *Idefix* was supported by the European Research Council (ERC)
+under the European Union Horizon 2020 research and innovation programme (Grant agreement No. 815559 (MHDiscs)).
+Idefix developement team is partly funded by the `PEPR Origins <https://pepr-origins.fr>`_ through the project "MHD@Exascale".
+The Idefix collaboration benefited from funding from the “Programme National de Physique Stellaire” (PNPS),
+“Programme National Soleil-Terre” (PNST), “Programme National de Hautes Energies” (PNHE) and
+“Programme National de Planétologie” (PNP) of CNRS/INSU co-funded by CEA and CNES.
 
 
 .. toctree::

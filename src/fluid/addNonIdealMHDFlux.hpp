@@ -258,7 +258,7 @@ void Fluid<Phys>::AddNonIdealMHDFlux(const real t) {
             #if HAVE_ENERGY
               Flux(ENG,k,j,i) += - Bx1 * eta * Jx2 + Bx2 * eta * Jx1;
             #endif
-            dMax(k,j,i) += eta;
+            locdmax += eta;
           }
 
           if(haveAmbipolar) {

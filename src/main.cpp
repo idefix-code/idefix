@@ -200,7 +200,7 @@ int main( int argc, char* argv[] ) {
     n_seconds = divres.rem;
 
     double perfs = timer.seconds() / grid.np_int[IDIR] / grid.np_int[JDIR]
-                            / grid.np_int[KDIR] / Tint.GetNCycles();
+                            / grid.np_int[KDIR] / Tint.GetNCycles() / idfx::psize;
 
     idfx::cout << "Main: Reached t=" << data.t << std::endl;
     idfx::cout << "Main: Completed in ";

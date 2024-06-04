@@ -55,7 +55,7 @@ Terms and condition of Use
 ===========================
 *Idefix* is distributed freely under the `CeCILL license <https://en.wikipedia.org/wiki/CeCILL>`_, a free software license adapted to both international and French legal matters, in the spirit of and retaining
 compatibility with the GNU General Public License (GPL). We expect *Idefix* to be referenced and acknowledeged by authors in their publications. At the minimum, the authors
-should cite the *Idefix* `method paper <https://ui.adsabs.harvard.edu/abs/2023arXiv230413746L/abstract>`_.
+should cite the *Idefix* `method paper <https://ui.adsabs.harvard.edu/abs/2023A%26A...677A...9L/abstract>`_.
 
 *Idefix* data structure and algorithm are derived from Andrea Mignone's `PLUTO code <http://plutocode.ph.unito.it/>`_, released under the GPL license.
 *Idefix* also relies on the `Kokkos <https://github.com/kokkos/kokkos>`_ performance portability programming ecosystem released under the terms
@@ -73,6 +73,9 @@ Soufiane Baghdadi
 
 Gaylor Wafflard-Fernandez
   planet-disc interaction
+
+Jonah Mauxion
+  self-gravity module
 
 Clément Robert
   gitlab integration, linter
@@ -96,8 +99,12 @@ This documentation has automatically been generated on |today| from the followin
 Acknowledgements
 ===================
 
-The developement of *Idefix* is supported by the European Research Council (ERC)
-under the European Union Horizon 2020 research and innovation programme (Grant agreement No. 815559 (MHDiscs))
+The developement of *Idefix* was supported by the European Research Council (ERC)
+under the European Union Horizon 2020 research and innovation programme (Grant agreement No. 815559 (MHDiscs)).
+Idefix developement team is partly funded by the `PEPR Origins <https://pepr-origins.fr>`_ through the project "MHD@Exascale".
+The Idefix collaboration benefited from funding from the “Programme National de Physique Stellaire” (PNPS),
+“Programme National Soleil-Terre” (PNST), “Programme National de Hautes Energies” (PNHE) and
+“Programme National de Planétologie” (PNP) of CNRS/INSU co-funded by CEA and CNES.
 
 
 .. toctree::
@@ -108,6 +115,7 @@ under the European Union Horizon 2020 research and innovation programme (Grant a
    reference
    modules
    programmingguide
+   performances
    kokkos
    contributing
    faq

@@ -108,15 +108,17 @@ We recommend the following modules and environement variables on AdAstra:
 
 .. code-block:: bash
 
-    module load PrgEnv-cray-amd
-    module load cray-mpich
-    module load craype-network-ofi
-    module load cce
-    module load cpe
-    module load rocm/5.2.0
-    export LDFLAGS="-L${ROCM_PATH}/lib -lamdhip64 -lstdc++fs"
+    module load cpe/23.12
+    module load craype-accel-amd-gfx90a craype-x86-trento
+    module load PrgEnv-cray
+    module load amd-mixed/5.7.1
+    module load rocm/5.7.1 # nécessaire a cause d'un bug de path pas encore fix..
+    export HIPCC_COMPILE_FLAGS_APPEND="-isystem ${CRAY_MPICH_PREFIX}/include"
+    export HIPCC_LINK_FLAGS_APPEND="-L${CRAY_MPICH_PREFIX}/lib -lmpi ${PE_MPICH_GTL_DIR_amd_gfx90a} ${PE_MPICH_GTL_LIBS_amd_gfx90a} -lstdc++fs"
+    export CXX=hipcc
+    export CC=hipcc
 
-The last line being there to guarantee the link to the HIP library and the access to specific
+The `-lstdc++fs` option being there to guarantee the link to the HIP library and the access to specific
 C++17 <filesystem> functions.
 
 Finally, *Idefix* can be configured to run on Mi250 by enabling HIP and the desired architecture with the following options to ccmake:

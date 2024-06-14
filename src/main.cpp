@@ -29,6 +29,7 @@
 #include "idefix.hpp"
 #include "profiler.hpp"
 #include "input.hpp"
+#include "units.hpp"
 #include "grid.hpp"
 #include "gridHost.hpp"
 #include "fluid.hpp"
@@ -78,6 +79,9 @@ int main( int argc, char* argv[] ) {
     input.PrintLogo();
     idfx::cout << "Main: initialization stage." << std::endl;
 
+    // Init the units when needed
+    idfx::units.Init(input);
+
     // Allocate the grid on device
     Grid grid(input);
     // Allocate the grid image on host
@@ -107,6 +111,7 @@ int main( int argc, char* argv[] ) {
                  << std::endl;
     }
     input.ShowConfig();
+    idfx::units.ShowConfig();
     grid.ShowConfig();
     data.ShowConfig();
     Tint.ShowConfig();

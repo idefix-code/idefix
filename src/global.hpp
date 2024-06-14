@@ -18,6 +18,7 @@ void safeExit(int );       // Exit the code
 class IdefixOutStream;
 class IdefixErrStream;
 class Profiler;
+class Units;
 
 extern int prank;                       //< parallel rank
 extern int psize;
@@ -27,6 +28,7 @@ extern Profiler prof;                   //< profiler (for memory & performance u
 extern double mpiCallsTimer;            //< time significant MPI calls
 extern LoopPattern defaultLoopPattern;  //< default loop patterns (for idefix_for loops)
 extern bool warningsAreErrors;    //< whether warnings should be considered as errors
+extern Units units;               //< Units for the run
 
 void pushRegion(const std::string&);
 void popRegion();

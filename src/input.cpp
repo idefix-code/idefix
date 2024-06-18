@@ -226,6 +226,12 @@ void Input::ShowConfig() {
   idfx::cout << "-----------------------------------------------------------------------------"
              << std::endl;
 
+  std::stringstream os;
+  Kokkos::DefaultExecutionSpace().print_configuration(os, true);
+  idfx::cout << "Input: Kokkos configuration" << std::endl << os.str();
+  idfx::cout << "-----------------------------------------------------------------------------"
+             << std::endl;
+
   #ifdef SINGLE_PRECISION
     idfx::cout << "Input: Compiled with SINGLE PRECISION arithmetic." << std::endl;
   #else
@@ -236,15 +242,6 @@ void Input::ShowConfig() {
   idfx::cout << "Input: COMPONENTS=" << COMPONENTS << "." << std::endl;
   #ifdef WITH_MPI
     idfx::cout << "Input: MPI ENABLED." << std::endl;
-  #endif
-  #ifdef KOKKOS_ENABLE_HIP
-    idfx::cout << "Input: Kokkos HIP target ENABLED." << std::endl;
-  #endif
-  #ifdef KOKKOS_ENABLE_CUDA
-    idfx::cout << "Input: Kokkos CUDA target ENABLED." << std::endl;
-  #endif
-  #ifdef KOKKOS_ENABLE_OPENMP
-    idfx::cout << "Input: Kokkos OpenMP ENABLED." << std::endl;
   #endif
 }
 

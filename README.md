@@ -4,6 +4,7 @@
 <!-- toc -->
 
 - [What is Idefix?](#what-is-idefix)
+- [Documentation](#documentation)
 - [Download:](#download)
 - [Installation:](#installation)
 - [Compile an example:](#compile-an-example)
@@ -20,7 +21,7 @@
 
 What is Idefix?
 ---------------
-Idefix is a computational fluid dynamics code based on a finite-volume high-order Godunov method, originally designed for astrophysical fluid dynamics applications.  Idefix is designed to be performance-portable, and uses the Kokkos framework to achieve this goal. This means that it can run both on your laptop's cpu and on the largest GPU Exascale clusters. More technically, Idefix can run in serial, use OpenMP and/or MPI (message passing interface) for parallelization, and use GPU acceleration when available (based on Nvidia Cuda, AMD HIP, etc...). All these capabilities are embedded within one single code, so the code relies on relatively abstracted classes and objects available in C++17, which are not necessarily
+Idefix is a computational fluid dynamics code based on a finite-volume high-order Godunov method, originally designed for astrophysical fluid dynamics applications.  Idefix is designed to be performance-portable, and uses the [Kokkos](https://github.com/kokkos/kokkos) framework to achieve this goal. This means that it can run both on your laptop's cpu and on the largest GPU Exascale clusters. More technically, Idefix can run in serial, use OpenMP and/or MPI (message passing interface) for parallelization, and use GPU acceleration when available (based on Nvidia Cuda, AMD HIP, etc...). All these capabilities are embedded within one single code, so the code relies on relatively abstracted classes and objects available in C++17, which are not necessarily
 familiar to astrophysicists. A large effort has been devoted to simplify this level of abstraction so that the code can be modified by researchers and students familiar with C and who are aware of basic object-oriented concepts.
 
 
@@ -39,6 +40,10 @@ Idefix currently supports the following physics:
 * Multi dust species modelled as pressureless fluids
 * Multiple planets interraction
 
+Documentation
+-------------
+
+A full online documentation is available on [readTheDoc](https://idefix.readthedocs.io/latest/).
 
 
 Download:
@@ -80,10 +85,8 @@ Configure the code launching cmake (version >= 3.16) in the example directory:
 cmake $IDEFIX_DIR
 ```
 
-Several options can be enabled from the command line (a complete list is available with `cmake $IDEFIX_DIR -LH`). For instance: `-DIdefix_RECONSTRUCTION=Parabolic` (enable PPM reconstruction), `-DIdefix_MPI=ON` (enable mpi), `-DKokkos_ENABLE_OPENMP=ON` (enable openmp parallelisation), etc... For more complex target architectures, it is recommended to use cmake GUI launching `ccmake $IDEFIX_DIR` in place of `cmake` and then switching on the required options.
+Several options can be enabled from the command line (a complete list is available with `cmake $IDEFIX_DIR -LH`). For instance: `-DIdefix_RECONSTRUCTION=Parabolic` (enable PPM reconstruction), `-DIdefix_MPI=ON` (enable mpi), `-DKokkos_ENABLE_OPENMP=ON` (enable openmp parallelisation), etc... For more complex target architectures, it is recommended to use cmake GUI launching `ccmake $IDEFIX_DIR` in place of `cmake` and then switching on the required options. See the [online documentation](https://idefix.readthedocs.io/latest/) for details.
 
-Optional xdmf(hdf5+xmf) file dumping feature has been added to `Idefix`. This uses either serial or parallel implementation of `hdf5` library which needs to be made available. These xdmf file pairs can be easily visualized in `ParaView` or `VisIt` by loading the `xmf` files. The `hdf5` files can also be loaded easily in `python` (using `h5py`) for post-processing and post-run analysis. One can turn on `xdmf` data dumps by using `-DIdefix_HDF5=ON`. The `[Output]` block of `.ini` file is checked during runtime for a `xdmf` entry whih controls the frequency of xdmf file dumps during code execution.
-<!-- TODO: HDF5 Chunking and Compression filters -->
 
 One can then compile the code:
 

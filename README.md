@@ -3,6 +3,7 @@
 
 <!-- toc -->
 
+- [What is Idefix?](#what-is-idefix)
 - [Download:](#download)
 - [Installation:](#installation)
 - [Compile an example:](#compile-an-example)
@@ -16,6 +17,29 @@
 - [Contributing](#contributing)
 
 <!-- tocstop -->
+
+What is Idefix?
+---------------
+Idefix is a computational fluid dynamics code based on a finite-volume high-order Godunov method, originally designed for astrophysical fluid dynamics applications.  Idefix is designed to be performance-portable, and uses the Kokkos framework to achieve this goal. This means that it can run both on your laptop's cpu and on the largest GPU Exascale clusters. More technically, Idefix can run in serial, use OpenMP and/or MPI (message passing interface) for parallelization, and use GPU acceleration when available (based on Nvidia Cuda, AMD HIP, etc...). All these capabilities are embedded within one single code, so the code relies on relatively abstracted classes and objects available in C++17, which are not necessarily
+familiar to astrophysicists. A large effort has been devoted to simplify this level of abstraction so that the code can be modified by researchers and students familiar with C and who are aware of basic object-oriented concepts.
+
+
+Idefix currently supports the following physics:
+
+* Compressible hydrodynamics in 1D, 2D, 3D
+* Compressible magnetohydrodynamics using constrained transport in 1D, 2D, 3D
+* Multiple geometry (cartesian, polar, spherical)
+* Variable mesh spacing
+* Multiple parallelisation strategies (OpenMP, MPI, GPU offloading, etc...)
+* Full non-ideal MHD (Ohmic, ambipolar, Hall)
+* Viscosity and thermal diffusion
+* Super-timestepping for all parabolic terms
+* Orbital advection (Fargo-like)
+* Self-gravity
+* Multi dust species modelled as pressureless fluids
+* Multiple planets interraction
+
+
 
 Download:
 ---------

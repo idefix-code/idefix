@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Kokkos execution space configuration is now shown on startup (#248)
 - Add CUDA_MALLOC_ASYNC flags in Jean Zay documentation to deal with MPI issues when using Kokkos 4.3 (#248)
 - Add a description and link to documentation in readme (#248)
+- Add indicative expected performances in documentation (#249)
 
 ## [2.1.0] 2024-05-10
 ### Changed

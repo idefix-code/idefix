@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.01] 2024-06-20
+### Changed
+- Fix a bug that could result in too restrictive timesteps when resistivity is enabled (#244)
+- Fix documentation for reflective boundary conditions (#246)
+- Changed performance metric: the performance is now measured per MPI process (and not globally) (#249)
+- Remove documentation for replace_idefix_source, as this can't work for .hpp file (#248)
+
+### Added
+- Kokkos execution space configuration is now shown on startup (#248)
+- Add CUDA_MALLOC_ASYNC flags in Jean Zay documentation to deal with MPI issues when using Kokkos 4.3 (#248)
+- Add a description and link to documentation in readme (#248)
+- Add indicative expected performances in documentation (#249)
+
 ## [2.1.0] 2024-05-10
 ### Changed
 - VTK slices are automatically produced along with standard VTK when an emergency abort is triggered.

@@ -343,7 +343,8 @@ and ``X1-end``, ``X2-end``, ``X3-end`` for the right boundaries. Each boundary c
 +----------------+------------------------------------------------------------------------------------------------------------------+
 | periodic       |  Periodic boundary conditions. Each field is copied between beg and end sides of the boundary.                   |
 +----------------+------------------------------------------------------------------------------------------------------------------+
-| reflective     | The normal component of the velocity is systematically reversed. Otherwise identical to ``outflow``.             |
+| reflective     | | Mirror the normal component of the velocity field and the tangential components of the magnetic field.         |
+|                | | Zero gradient on the other components (tangential velocity and normal field).                                  |
 +----------------+------------------------------------------------------------------------------------------------------------------+
 | shearingbox    | Shearing-box boudary conditions.                                                                                 |
 +----------------+------------------------------------------------------------------------------------------------------------------+

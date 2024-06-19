@@ -146,15 +146,16 @@ We recommend the following modules and environement variables on Jean Zay:
 
 .. code-block:: bash
 
-    -DKokkos_ENABLE_CUDA=ON -DKokkos_ENABLE_VOLTA70=ON
+    -DKokkos_ENABLE_CUDA=ON -DKokkos_ENABLE_VOLTA70=ON -DKokkos_ENABLE_IMPL_CUDA_MALLOC_ASYNC=OFF
 
 While Ampere A100 GPUs are enabled with
 
 .. code-block:: bash
 
-    -DKokkos_ENABLE_CUDA=ON -DKokkos_ENABLE_AMPERE80=ON
+    -DKokkos_ENABLE_CUDA=ON -DKokkos_ENABLE_AMPERE80=ON -DKokkos_ENABLE_IMPL_CUDA_MALLOC_ASYNC=OFF
 
-MPI (multi-GPU) can be enabled by adding ``-DIdefix_MPI=ON`` as usual.
+MPI (multi-GPU) can be enabled by adding ``-DIdefix_MPI=ON`` as usual. The malloc async option is here to prevent a bug when using PSM2 with async
+cuda malloc possibly leading to openmpi crash or hangs on the Jean Zay machine.
 
 .. _setupSpecificOptions:
 
@@ -176,7 +177,7 @@ explicitely the options as they are required, using the functions ``set_idefix_p
 
 .. _customSourceFiles:
 
-Add/replace custom source files
+Add custom source files
 +++++++++++++++++++++++++++++++
 
 It is possible to add custom source files to be compiled and linked against *Idefix*. This can be useful
@@ -189,21 +190,6 @@ say you want to add source files for an analysis, your ``CMakeLists.txt`` should
 
     add_idefix_source(analysis.cpp)
     add_idefix_source(analysis.hpp)
-
-
-*Idefix* also allows one to replace a source file in `$IDEFIX_DIR` by your own implementation. This is useful when developping new functionnalities without touching
-the main directory of your *Idefix* repository. For instance, say one wants to replace the implementation of viscosity in `$IDEFIX_SRC/src/hydro/viscosity.cpp`,
-with a customised `myviscosity.cpp` in the problem directory, one should add a ``CMakeLists.txt`` in the problem directory reading
-
-.. code-block::
-    :caption: CMakeLists.txt
-
-    replace_idefix_source(hydro/viscosity.cpp myviscosity.cpp)
-
-
-Note that the first parameter of ``replace_idefix_source`` is used as a search pattern in `$IDEFIX_DIR`. Hence it is possible to ommit the parent directory
-of the file being replaced if there is only one file with that name in the *Idefix* source directory, which is not guaranteed (some classes may implement
-methods with the same name). It is therefore recommended to add the parent directory in the first argument of ``replace_idefix_source``.
 
 
 .. tip::

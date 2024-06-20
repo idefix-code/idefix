@@ -125,7 +125,7 @@ Finally, *Idefix* can be configured to run on Mi250 by enabling HIP and the desi
 
 .. code-block:: bash
 
-    -DKokkos_ENABLE_HIP=ON -DKokkos_ENABLE_HIP_MULTIPLE_KERNEL_INSTANTIATION=ON -DKokkos_ARCH_VEGA90A=ON``
+    -DKokkos_ENABLE_HIP=ON -DKokkos_ENABLE_HIP_MULTIPLE_KERNEL_INSTANTIATION=ON -DKokkos_ARCH_VEGA90A=ON
 
 
 MPI (multi-GPU) can be enabled by adding ``-DIdefix_MPI=ON`` as usual.
@@ -155,7 +155,7 @@ While Ampere A100 GPUs are enabled with
     -DKokkos_ENABLE_CUDA=ON -DKokkos_ENABLE_AMPERE80=ON -DKokkos_ENABLE_IMPL_CUDA_MALLOC_ASYNC=OFF
 
 MPI (multi-GPU) can be enabled by adding ``-DIdefix_MPI=ON`` as usual. The malloc async option is here to prevent a bug when using PSM2 with async
-cuda malloc possibly leading to openmpi crash or hangs on the Jean Zay machine.
+Cuda malloc possibly leading to openmpi crash or hangs on Jean Zay.
 
 .. _setupSpecificOptions:
 

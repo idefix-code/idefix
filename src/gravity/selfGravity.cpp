@@ -187,6 +187,8 @@ void SelfGravity::Init(Input &input, DataBlock *datain) {
                                                       this->np_tot[IDIR]);
 
 
+  data->dump->RegisterVariable(this->potential, "GravPotential");
+
   idfx::popRegion();
 }
 

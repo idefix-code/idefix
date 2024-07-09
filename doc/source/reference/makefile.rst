@@ -125,7 +125,7 @@ Finally, *Idefix* can be configured to run on Mi250 by enabling HIP and the desi
 
 .. code-block:: bash
 
-    -DKokkos_ENABLE_HIP=ON -DKokkos_ENABLE_HIP_MULTIPLE_KERNEL_INSTANTIATION=ON -DKokkos_ARCH_VEGA90A=ON
+    -DKokkos_ENABLE_HIP=ON -DKokkos_ENABLE_HIP_MULTIPLE_KERNEL_INSTANTIATIONS=ON -DKokkos_ARCH_VEGA90A=ON
 
 
 MPI (multi-GPU) can be enabled by adding ``-DIdefix_MPI=ON`` as usual.

@@ -4,9 +4,9 @@ Performances
 
 We report below the performances obtained on various architectures using Idefix. The reference test
 is the 3D MHD Orszag-Tang test problem with 2nd order reconstruction and uct_contact EMFS bundled in
-Idefix test suite, computed with a 128\ :sup:`3` resolution per MPI sub-domain on GPUs or 32\ :sup:`3`
-per MPI sub-domain on CPUs. All of the performances measures have been obtained enabling MPI on
-*one full node*, but we report here the performance *per GPU*
+Idefix test suite, disabling passive tracers. The test is computed with a 128\ :sup:`3` resolution per
+MPI sub-domain on GPUs or 32\ :sup:`3` per MPI sub-domain on CPUs. All of the performances measures
+have been obtained enabling MPI on *one full node*, but we report here the performance *per GPU*
 (i.e. with 2 GCDs on AMD Mi250) or *per core* (on CPU), i.e. dividing the node performance by the number of GPU/core
 to simplify the comparison with other clusters.
 

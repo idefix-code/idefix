@@ -199,7 +199,7 @@ void Boundary<Phys>::EnrollFluxBoundary(UserDefBoundaryFuncOld myFunc) {
 
   IDEFIX_WARNING(msg);
   this->fluxBoundaryFuncOld = myFunc;
-  this->haveUserDefBoundary = true;
+  this->haveFluxBoundary = true;
 }
 
 template<typename Phys>

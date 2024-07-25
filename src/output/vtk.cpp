@@ -202,24 +202,24 @@ Vtk::Vtk(Input &input, DataBlock *datain, std::string filebase) {
         node_coord(k,j,i,2) = BigEndian(x3);
 
   #elif GEOMETRY == POLAR
-        node_coord(k,j,i,0) = BigEndian(x1 * cos(x2));
-        node_coord(k,j,i,1) = BigEndian(x1 * sin(x2));
+        node_coord(k,j,i,0) = BigEndian(x1 * std::cos(x2));
+        node_coord(k,j,i,1) = BigEndian(x1 * std::sin(x2));
         node_coord(k,j,i,2) = BigEndian(x3);
 
   #elif GEOMETRY == SPHERICAL
     #if DIMENSIONS == 1
         node_coord(k,j,i,0) = BigEndian(x1);
-        node_coord(k,j,i,1) = BigEndian(0.0);
-        node_coord(k,j,i,2) = BigEndian(0.0);
+        node_coord(k,j,i,1) = BigEndian(0.0f);
+        node_coord(k,j,i,2) = BigEndian(0.0f);
     #elif DIMENSIONS == 2
-        node_coord(k,j,i,0) = BigEndian(x1 * sin(x2));
-        node_coord(k,j,i,1) = BigEndian(x1 * cos(x2));
-        node_coord(k,j,i,2) = BigEndian(0.0);
+        node_coord(k,j,i,0) = BigEndian(x1 * std::sin(x2));
+        node_coord(k,j,i,1) = BigEndian(x1 * std::cos(x2));
+        node_coord(k,j,i,2) = BigEndian(0.0f);
 
     #elif DIMENSIONS == 3
-        node_coord(k,j,i,0) = BigEndian(x1 * sin(x2) * cos(x3));
-        node_coord(k,j,i,1) = BigEndian(x1 * sin(x2) * sin(x3));
-        node_coord(k,j,i,2) = BigEndian(x1 * cos(x2));
+        node_coord(k,j,i,0) = BigEndian(x1 * std::sin(x2) * std::cos(x3));
+        node_coord(k,j,i,1) = BigEndian(x1 * std::sin(x2) * std::sin(x3));
+        node_coord(k,j,i,2) = BigEndian(x1 * std::cos(x2));
     #endif // DIMENSIONS
   #endif // GEOMETRY
       }

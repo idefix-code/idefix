@@ -62,7 +62,7 @@ class BaseVtk {
   DataBlock *data;
 
   // BigEndian conversion
-  BigEndian BigEndian;
+  BigEndian bigEndian;
 
 
   void WriteHeaderString(const char* header, IdfxFileHandler fvtk) {

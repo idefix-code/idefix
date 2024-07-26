@@ -21,7 +21,9 @@
 #include "idefix.hpp"
 #include "input.hpp"
 #include "dataBlock.hpp"
+#include "bigEndian.hpp"
 #include "scalarField.hpp"
+
 
 // Forward class declaration
 class Output;
@@ -29,17 +31,8 @@ class DataBlock;
 
 
 class BaseVtk {
- private:
-  // Endianness swaping function and variable
-  bool shouldSwapEndian {true};
-
  protected:
   BaseVtk() {
-    // Test endianness
-    int tmp1 = 1;
-    unsigned char *tmp2 = (unsigned char *) &tmp1;
-    if (*tmp2 == 0)
-      this->shouldSwapEndian = false;
     // Initialise the root tag (used for MPI non-collective I/Os)
     this->isRoot = idfx::prank == 0;
   }
@@ -68,25 +61,9 @@ class BaseVtk {
   // DataBlock parent
   DataBlock *data;
 
-  /* ****************************************************************************/
-  /** Determines if the machine is little-endian.  If so,
-    it will force the data to be big-endian.
-  @param in_number floating point number to be converted in big endian */
-  /* *************************************************************************** */
+  // BigEndian conversion
+  BigEndian BigEndian;
 
-  template <typename T>
-  T BigEndian(T in_number) {
-    if (shouldSwapEndian) {
-      unsigned char *bytes = (unsigned char*) &in_number;
-      unsigned char tmp = bytes[0];
-      bytes[0] = bytes[3];
-      bytes[3] = tmp;
-      tmp = bytes[1];
-      bytes[1] = bytes[2];
-      bytes[2] = tmp;
-    }
-    return(in_number);
-  }
 
   void WriteHeaderString(const char* header, IdfxFileHandler fvtk) {
   #ifdef WITH_MPI

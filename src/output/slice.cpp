@@ -13,6 +13,7 @@
 #include "dataBlock.hpp"
 #include "fluid.hpp"
 #include "vtk.hpp"
+#include "balancedScheme.hpp"
 
 Slice::Slice(Input &input, DataBlock & data, int nSlice, SliceType type,
              int direction, real x0, real period) {

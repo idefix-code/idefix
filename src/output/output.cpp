@@ -9,6 +9,7 @@
 #include "dataBlock.hpp"
 #include "fluid.hpp"
 #include "slice.hpp"
+#include "balancedScheme.hpp"
 
 Output::Output(Input &input, DataBlock &data) {
   idfx::pushRegion("Output::Output");

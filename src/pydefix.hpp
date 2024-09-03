@@ -9,27 +9,36 @@
 #define PYDEFIX_HPP_
 
 
-//#define PYBIND11_DETAILED_ERROR_MESSAGES
+#define PYBIND11_DETAILED_ERROR_MESSAGES
 #include <pybind11/pybind11.h>
 #include <pybind11/embed.h>
 #include <pybind11/numpy.h>
 #include <string>
 #include <vector>
 #include "idefix.hpp"
+#include "input.hpp"
 
 namespace py = pybind11;
 
 class DataBlock;
+class DataBlockHost;
 
 class Pydefix {
  public:
-  Pydefix();
+  explicit Pydefix(Input&);
   ~Pydefix();
-  void CallScript(DataBlock *, std::string, std::string);
-
+  void Output(DataBlock &);
+  void InitFlow(DataBlock &);
+  void ShowConfig();
+  bool isActive{false};
+  bool haveOutput{false};
+  bool haveInitflow{false};
  private:
+  void CallScript(DataBlockHost *, std::string, std::string);
   static int ninstance;
-  int nCalls{0};
+  std::string scriptFilename;
+  std::string outputFunctionName;
+  std::string initflowFunctionName;
 };
 
 namespace pybind11 { namespace detail {
@@ -74,6 +83,7 @@ template <typename T> struct type_caster<IdefixHostArray4D<T>> {
                                              src.extent(2),
                                              src.extent(3)},
                                              src.data());
+    idfx::cout << "Coucou @ cast" << std::endl;
     return a.release();
   }
 };

@@ -13,11 +13,13 @@
 
 #ifdef WITH_PYTHON
 #include "pydefix.hpp"
-
-
 #endif
 
-Output::Output(Input &input, DataBlock &data) {
+Output::Output(Input &input, DataBlock &data):
+#ifdef WITH_PYTHON
+pydefix(input)
+#endif
+{
   idfx::pushRegion("Output::Output");
   // initialise the output objects for each format
 
@@ -130,11 +132,6 @@ Output::Output(Input &input, DataBlock &data) {
       pythonPeriod = input.Get<real>("Output","python",0);
       if(pythonPeriod>=0.0) {  // backward compatibility (negative value means no file)
         pythonLast = data.t - pythonPeriod; // write something in the next CheckForWrite()
-        pythonScript = input.Get<std::string>("Output","python",1);
-        if(pythonScript.substr(pythonScript.length() - 3, 3).compare(".py")==0) {
-          IDEFIX_ERROR("You should not include the python script .py extension in your input file");
-        }
-        pythonFunction = input.Get<std::string>("Output","python",2);
         pythonEnabled = true;
       }
     #endif
@@ -260,7 +257,7 @@ int Output::CheckForWrites(DataBlock &data) {
   if(pythonEnabled) {
     if(data.t >= pythonLast + pythonPeriod) {
       elapsedTime -= timer.seconds();
-      pydefix.CallScript(&data, pythonScript,pythonFunction);
+      pydefix.Output(data);
       elapsedTime += timer.seconds();
       // Check if our next predicted output should already have happened
       if((pythonLast+pythonPeriod <= data.t) && pythonPeriod>0.0) {

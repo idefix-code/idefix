@@ -87,8 +87,6 @@ class Output {
     bool pythonEnabled = false;
     real pythonPeriod;
     real pythonLast;
-    std::string pythonScript;
-    std::string pythonFunction;
   #endif
 
   Kokkos::Timer timer;

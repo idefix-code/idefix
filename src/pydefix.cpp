@@ -5,6 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#define PYBIND11_DETAILED_ERROR_MESSAGES
+
 #include "pydefix.hpp"
 #include <pybind11/embed.h> // everything needed for embedding
 #include <pybind11/numpy.h> // for numpy arrays
@@ -14,6 +16,7 @@
 #include "idefix.hpp"
 #include "dataBlock.hpp"
 #include "dataBlockHost.hpp"
+
 
 namespace py = pybind11;
 
@@ -27,10 +30,10 @@ PYBIND11_EMBEDDED_MODULE(pydefix, m) {
   py::class_<DataBlockHost>(m, "DataBlockHost")
     .def(py::init<>())
     .def_readwrite("x", &DataBlockHost::x)
-    .def_readwrite("xr", &DataBlockHost::x)
-    .def_readwrite("xl", &DataBlockHost::x)
-    .def_readwrite("dx", &DataBlockHost::x)
-    .def_readwrite("dV", &DataBlockHost::x)
+    .def_readwrite("xr", &DataBlockHost::xr)
+    .def_readwrite("xl", &DataBlockHost::xl)
+    .def_readwrite("dx", &DataBlockHost::dx)
+    .def_readwrite("dV", &DataBlockHost::dV)
     .def_readwrite("A", &DataBlockHost::A)
     .def_readwrite("Vc", &DataBlockHost::Vc)
     .def_readwrite("dustVc", &DataBlockHost::dustVc)
@@ -46,34 +49,102 @@ PYBIND11_EMBEDDED_MODULE(pydefix, m) {
 }
 
 
-Pydefix::Pydefix() {
-  ninstance++;
-  if(ninstance==1) {
-    idfx::cout << "Pydefix: start Python interpreter." << std::endl;
+Pydefix::Pydefix(Input &input) {
+  // Check that the input has a [python] block
+  if(input.CheckBlock("Python")) {
+    this->isActive = true;
+    ninstance++;
+    // Check whether we need to start an interpreter
+    if(ninstance==1) {
+      idfx::cout << "Pydefix: start Python interpreter." << std::endl;
 
-    py::initialize_interpreter();
+      py::initialize_interpreter();
+    }
+    this->scriptFilename = input.Get<std::string>("Python","script",0);
+    if(scriptFilename.substr(scriptFilename.length() - 3, 3).compare(".py")==0) {
+      IDEFIX_ERROR("You should not include the python script .py extension in your input file");
+    }
+    if(input.CheckEntry("Python","output_function")>0) {
+      this->haveOutput = true;
+      this->outputFunctionName = input.Get<std::string>("Python","output_function",0);
+    }
+    if(input.CheckEntry("Python","initflow_function")>0) {
+      this->haveInitflow = true;
+      this->initflowFunctionName = input.Get<std::string>("Python","initflow_function",0);
+    }
+  }
+  this->ShowConfig();
+}
+
+void Pydefix::Output(DataBlock &data) {
+  idfx::pushRegion("Pydefix::Output");
+  if(!this->isActive) {
+    IDEFIX_ERROR("Python Outputs requires the [python] block to be defined in your input file.");
+  }
+  if(!this->haveOutput) {
+    IDEFIX_ERROR("No python output function has been defined "
+                  "in your input file [python]:output_function");
+  }
+  DataBlockHost dataHost(data);
+  dataHost.SyncFromDevice();
+  this->CallScript(&dataHost,this->scriptFilename,this->outputFunctionName);
+  idfx::popRegion();
+}
+
+void Pydefix::InitFlow(DataBlock &data) {
+  idfx::pushRegion("Pydefix::InitFlow");
+  if(!this->isActive) {
+    IDEFIX_ERROR("Python Initflow requires the [python] block to be defined in your input file.");
+  }
+  if(!this->haveOutput) {
+    IDEFIX_ERROR("No python initflow function has been defined "
+                  "in your input file [python]:initflow_function");
+  }
+  DataBlockHost dataHost(data);
+  dataHost.SyncFromDevice();
+  this->CallScript(&dataHost,this->scriptFilename,this->initflowFunctionName);
+  dataHost.SyncToDevice();
+  idfx::popRegion();
+}
+
+void Pydefix::ShowConfig() {
+  if(isActive == false) {
+    idfx::cout << "Pydefix: DISABLED." << std::endl;
+  } else {
+    idfx::cout << "Pydefix: ENABLED." << std::endl;
+    if(haveOutput) {
+      idfx::cout << "Pydefix: output function ENABLED." << std::endl;
+    } else {
+      idfx::cout << "Pydefix: output function DISABLED." << std::endl;
+    }
+    if(haveInitflow) {
+      idfx::cout << "Pydefix: initflow function ENABLED." << std::endl;
+    } else {
+      idfx::cout << "Pydefix: initflow function DISABLED." << std::endl;
+    }
   }
 }
 
 Pydefix::~Pydefix() {
-  if(ninstance == 1) {
-    py::finalize_interpreter();
-    idfx::cout << "Pydefix: shutdown Python interpreter." << std::endl;
+  if(isActive) {
+    if(ninstance == 1) {
+      py::finalize_interpreter();
+      idfx::cout << "Pydefix: shutdown Python interpreter." << std::endl;
+    }
+    ninstance--;
+    isActive = false;
   }
-  ninstance--;
 }
 
-void Pydefix::CallScript(DataBlock *data, std::string scriptName, std::string funcName) {
+void Pydefix::CallScript(DataBlockHost *data, std::string scriptName, std::string funcName) {
   idfx::pushRegion("Pydefix::CallScript");
-  DataBlockHost d(*data);
-  d.SyncFromDevice();
   try {
     //auto Vc = pydefix.toNumpyArray(d.Vc);
     py::module_ script = py::module_::import(scriptName.c_str());
 
     //py::module_ embeded = py::module_::import("embeded");
     //py::object myV = py::cast(Vc);
-    py::object result = script.attr(funcName.c_str())(nCalls, d);
+    py::object result = script.attr(funcName.c_str())(data);
   } catch(std::exception &e) {
     std::stringstream message;
     message << "An exception occured while calling the Python interpreter" << std::endl
@@ -82,7 +153,6 @@ void Pydefix::CallScript(DataBlock *data, std::string scriptName, std::string fu
                 << e.what() << std::endl;
     IDEFIX_ERROR(message);
   }
-  nCalls++;
   idfx::popRegion();
 }
 /*

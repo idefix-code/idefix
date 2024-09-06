@@ -46,6 +46,20 @@ PYBIND11_EMBEDDED_MODULE(pydefix, m) {
       .def_readwrite("Ex3", &DataBlockHost::Ex3)
     #endif
     .def_readwrite("InvDt", &DataBlockHost::InvDt);
+
+    m.attr("RHO") = RHO;
+    m.attr("VX1") = VX1;
+    m.attr("VX2") = VX2;
+    m.attr("VX3") = VX3;
+    m.attr("PRS") = PRS;
+    #if MHD == YES
+      m.attr("BX1") = BX1;
+      m.attr("BX2") = BX2;
+      m.attr("BX3") = BX3;
+    #endif
+    m.attr("IDIR") = IDIR;
+    m.attr("JDIR") = JDIR;
+    m.attr("KDIR") = KDIR;
 }
 
 
@@ -87,7 +101,7 @@ void Pydefix::Output(DataBlock &data) {
   }
   DataBlockHost dataHost(data);
   dataHost.SyncFromDevice();
-  this->CallScript(&dataHost,this->scriptFilename,this->outputFunctionName);
+  this->CallScript(dataHost,this->scriptFilename,this->outputFunctionName);
   idfx::popRegion();
 }
 
@@ -102,7 +116,7 @@ void Pydefix::InitFlow(DataBlock &data) {
   }
   DataBlockHost dataHost(data);
   dataHost.SyncFromDevice();
-  this->CallScript(&dataHost,this->scriptFilename,this->initflowFunctionName);
+  this->CallScript(dataHost,this->scriptFilename,this->initflowFunctionName);
   dataHost.SyncToDevice();
   idfx::popRegion();
 }
@@ -136,7 +150,7 @@ Pydefix::~Pydefix() {
   }
 }
 
-void Pydefix::CallScript(DataBlockHost *data, std::string scriptName, std::string funcName) {
+void Pydefix::CallScript(DataBlockHost &data, std::string scriptName, std::string funcName) {
   idfx::pushRegion("Pydefix::CallScript");
   try {
     //auto Vc = pydefix.toNumpyArray(d.Vc);
@@ -144,6 +158,7 @@ void Pydefix::CallScript(DataBlockHost *data, std::string scriptName, std::strin
 
     //py::module_ embeded = py::module_::import("embeded");
     //py::object myV = py::cast(Vc);
+    //py::object result = script.attr(funcName.c_str())(data);
     py::object result = script.attr(funcName.c_str())(data);
   } catch(std::exception &e) {
     std::stringstream message;

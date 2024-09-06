@@ -34,7 +34,7 @@ class Pydefix {
   bool haveOutput{false};
   bool haveInitflow{false};
  private:
-  void CallScript(DataBlockHost *, std::string, std::string);
+  void CallScript(DataBlockHost &, std::string, std::string);
   static int ninstance;
   std::string scriptFilename;
   std::string outputFunctionName;
@@ -78,12 +78,13 @@ template <typename T> struct type_caster<IdefixHostArray4D<T>> {
   static py::handle cast(const IdefixHostArray4D<T>& src,
                          py::return_value_policy policy,
                          py::handle parent) {
+    py::none dummyDataOwner;
     py::array_t<real, py::array::c_style> a({src.extent(0),
                                              src.extent(1),
                                              src.extent(2),
                                              src.extent(3)},
-                                             src.data());
-    idfx::cout << "Coucou @ cast" << std::endl;
+                                             src.data(), dummyDataOwner);
+
     return a.release();
   }
 };
@@ -122,10 +123,11 @@ template <typename T> struct type_caster<IdefixHostArray3D<T>> {
   static py::handle cast(const IdefixHostArray3D<T>& src,
                          py::return_value_policy policy,
                          py::handle parent) {
+    py::none dummyDataOwner;
     py::array_t<real, py::array::c_style> a({src.extent(0),
                                              src.extent(1),
                                              src.extent(2)},
-                                             src.data());
+                                             src.data(),dummyDataOwner);
     return a.release();
   }
 };
@@ -164,7 +166,8 @@ template <typename T> struct type_caster<IdefixHostArray2D<T>> {
   static py::handle cast(const IdefixHostArray2D<T>& src,
                          py::return_value_policy policy,
                          py::handle parent) {
-    py::array_t<real, py::array::c_style> a({src.extent(0),src.extent(1)},src.data());
+    py::none dummyOwner;
+    py::array_t<real, py::array::c_style> a({src.extent(0),src.extent(1)},src.data(),dummyOwner);
     return a.release();
   }
 };
@@ -203,7 +206,8 @@ template <typename T> struct type_caster<IdefixHostArray1D<T>> {
   static py::handle cast(const IdefixHostArray1D<T>& src,
                          py::return_value_policy policy,
                          py::handle parent) {
-    py::array_t<real, py::array::c_style> a(src.extent(0),src.data());
+    py::none dummyDataOwner;
+    py::array_t<real, py::array::c_style> a(src.extent(0),src.data(),dummyDataOwner);
     return a.release();
   }
 };

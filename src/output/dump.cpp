@@ -249,7 +249,7 @@ void Dump::WriteString(IdfxFileHandler fileHdl, char *str, int size) {
     offset=offset+size;
   #else
     if(fwrite (str, sizeof(char), size, fileHdl) != size) {
-      IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota");
+      IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota.");
     }
   #endif
 }
@@ -315,21 +315,21 @@ void Dump::WriteSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
   #else
     // Write type of data
     if(fwrite(&type, sizeof(int), 1, fileHdl) != 1) {
-      IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota");
+      IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota.");
     }
     // Write dimensions of array
     if(fwrite(&ndim, sizeof(int), 1, fileHdl) != 1) {
-      IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota");
+      IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota.");
     }
     for(int n = 0 ; n < ndim ; n++) {
       if(fwrite(dim+n, sizeof(int), 1, fileHdl) != 1) {
-        IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota");
+        IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota.");
       }
       ntot = ntot * dim[n];
     }
     // Write raw data
     if(fwrite(data, size, ntot, fileHdl) != ntot) {
-      IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota");
+      IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota.");
     }
   #endif
 }
@@ -395,24 +395,24 @@ void Dump::WriteDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gd
     // Write type of data
 
     if(fwrite(&type, sizeof(int), 1, fileHdl) != 1) {
-      IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota");
+      IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota.");
     }
 
     // Write dimensions of array
     // (in serial, dim and gdim are identical, so no need to differentiate)
     if(fwrite(&ndim, sizeof(int), 1, fileHdl) != 1) {
-      IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota");
+      IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota.");
     }
     for(int n = 0 ; n < ndim ; n++) {
       if(fwrite(dim+n, sizeof(int), 1, fileHdl) != 1) {
-        IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota");
+        IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota.");
       }
       ntot = ntot * dim[n];
     }
 
     // Write raw data
     if(fwrite(data, sizeof(real), ntot, fileHdl) != ntot) {
-      IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota");
+      IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota.");
     }
   #endif
 }
@@ -854,6 +854,12 @@ int Dump::Write(Output& output) {
   this->offset = 0;
 #else
   fileHdl = fopen(filename.c_str(),"wb");
+  if(fileHdl == NULL) {
+    std::stringstream msg;
+    msg << "Unable to open file " << filename << std::endl;
+    msg << "Check that you have write access and that you don't exceed your quota." << std::endl;
+    IDEFIX_ERROR(msg);
+  }
 #endif
   // File is open
   // First thing we need are coordinates: init a host mirror and sync it

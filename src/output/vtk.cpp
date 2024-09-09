@@ -54,7 +54,7 @@ void Vtk::WriteHeaderNodes(IdfxFileHandler fvtk) {
   this->offset += sizeof(float)*(nx1+ioffset)*(nx2+joffset)*(nx3+koffset)*3;
 #else
   if(fwrite(node_coord.data(),sizeof(float),size,fvtk) != size) {
-    IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota");
+    IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota.");
   }
 #endif
 }
@@ -296,7 +296,7 @@ int Vtk::Write() {
   if(fileHdl == NULL) {
     std::stringstream msg;
     msg << "Unable to open file " << filename << std::endl;
-    msg << "Check that you have write access and that you don't exceed your quota" << std::endl;
+    msg << "Check that you have write access and that you don't exceed your quota." << std::endl;
     IDEFIX_ERROR(msg);
   }
 #endif
@@ -512,7 +512,7 @@ void Vtk::WriteScalar(IdfxFileHandler fvtk, float* Vin,  const std::string &var_
   this->offset = this->offset + sizeof(float)*nx1*nx2*nx3;
 #else
   if(fwrite(Vin,sizeof(float),nx1loc*nx2loc*nx3loc,fvtk) != nx1loc*nx2loc*nx3loc) {
-    IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota");
+    IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota.");
   }
 #endif
 }

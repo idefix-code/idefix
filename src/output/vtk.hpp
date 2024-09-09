@@ -75,7 +75,10 @@ class BaseVtk {
     }
     offset=offset+strlen(header);
   #else
-    fprintf (fvtk, "%s", header);
+    int rc = fprintf (fvtk, "%s", header);
+    if(rc<0) {
+      IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota");
+    }
   #endif
   }
 
@@ -90,7 +93,9 @@ class BaseVtk {
     }
     offset=offset+nelem*sizeof(T);
   #else
-    fwrite(buffer, sizeof(T), nelem, fvtk);
+    if(fwrite(buffer, sizeof(T), nelem, fvtk) != nelem) {
+      IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota");
+    }
   #endif
   }
 };

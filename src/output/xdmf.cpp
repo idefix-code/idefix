@@ -165,7 +165,7 @@ Xdmf::Xdmf(Input &input, DataBlock *datain) {
                                                                  cellsubsize[3]);
   */
   // Temporary storage on host for 3D arrays
-  this->vect3D = new float[nx1loc*nx2loc*nx3loc];
+  this->vect3D = new DUMP_DATATYPE[nx1loc*nx2loc*nx3loc];
 
   // fill the node_coord array
   DUMP_DATATYPE x1 = 0.0;

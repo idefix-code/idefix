@@ -56,6 +56,10 @@ PYBIND11_EMBEDDED_MODULE(pydefix, m) {
       m.attr("BX1") = BX1;
       m.attr("BX2") = BX2;
       m.attr("BX3") = BX3;
+      D_EXPAND(
+        m.attr("BX1s") = BX1; ,
+        m.attr("BX2s") = BX2; ,
+        m.attr("BX3s") = BX3; )
     #endif
     m.attr("IDIR") = IDIR;
     m.attr("JDIR") = JDIR;

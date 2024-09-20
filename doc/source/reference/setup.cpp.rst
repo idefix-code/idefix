@@ -369,7 +369,7 @@ assuming we want to create a dump from ``mydump.dmp``:
             int iglob=i-2*d.beg[IDIR]+d.gbeg[IDIR];
             int jglob=j-2*d.beg[JDIR]+d.gbeg[JDIR];
             int kglob=k-2*d.beg[KDIR]+d.gbeg[KDIR];
-            d.Vs(BX1s,k,j,i) = image->arrays["Vs-BX1s"](kglob,jglob,iglob);
+            d.Vs(BX1s,k,j,i) = image.arrays["Vs-BX1s"](kglob,jglob,iglob);
     }}}
 
     // And so on for the other components

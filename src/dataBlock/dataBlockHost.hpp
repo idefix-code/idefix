@@ -75,6 +75,9 @@ class DataBlockHost {
   std::array<int,3> gbeg;                      ///< Begining of local block in the grid (internal)
   std::array<int,3> gend;                      ///< End of local block in the grid (internal)
 
+  real dt;                     ///< Current timestep
+  real t;                      ///< Current time
+
   explicit DataBlockHost(DataBlock &);        ///< Constructor from a device datablock
                                               ///< (NB: does not sync any data)
 

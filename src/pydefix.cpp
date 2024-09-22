@@ -45,7 +45,9 @@ PYBIND11_EMBEDDED_MODULE(pydefix, m) {
       .def_readwrite("Ex2", &DataBlockHost::Ex2)
       .def_readwrite("Ex3", &DataBlockHost::Ex3)
     #endif
-    .def_readwrite("InvDt", &DataBlockHost::InvDt);
+    .def_readwrite("InvDt", &DataBlockHost::InvDt)
+    .def_readwrite("t",&DataBlockHost::t)
+    .def_readwrite("dt",&DataBlockHost::dt);
 
     m.attr("RHO") = RHO;
     m.attr("VX1") = VX1;
@@ -57,9 +59,9 @@ PYBIND11_EMBEDDED_MODULE(pydefix, m) {
       m.attr("BX2") = BX2;
       m.attr("BX3") = BX3;
       D_EXPAND(
-        m.attr("BX1s") = BX1; ,
-        m.attr("BX2s") = BX2; ,
-        m.attr("BX3s") = BX3; )
+        m.attr("BX1s") = BX1s; ,
+        m.attr("BX2s") = BX2s; ,
+        m.attr("BX3s") = BX3s; )
     #endif
     m.attr("IDIR") = IDIR;
     m.attr("JDIR") = JDIR;
@@ -91,7 +93,6 @@ Pydefix::Pydefix(Input &input) {
       this->initflowFunctionName = input.Get<std::string>("Python","initflow_function",0);
     }
   }
-  this->ShowConfig();
 }
 
 void Pydefix::Output(DataBlock &data) {

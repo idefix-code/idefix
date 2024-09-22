@@ -101,6 +101,8 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
 void DataBlockHost::SyncToDevice() {
   idfx::pushRegion("DataBlockHost::SyncToDevice()");
 
+  data->t = this->t;
+  data->dt = this->dt;
   Kokkos::deep_copy(data->hydro->Vc,Vc);
   Kokkos::deep_copy(data->hydro->InvDt,InvDt);
 
@@ -137,6 +139,9 @@ void DataBlockHost::SyncToDevice() {
 
 void DataBlockHost::SyncFromDevice() {
   idfx::pushRegion("DataBlockHost::SyncFromDevice()");
+  this->t = data->t;
+  this->dt = data->dt;
+  
   Kokkos::deep_copy(Vc,data->hydro->Vc);
   Kokkos::deep_copy(InvDt,data->hydro->InvDt);
 

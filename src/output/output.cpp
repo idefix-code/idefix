@@ -15,9 +15,9 @@
 #include "pydefix.hpp"
 #endif
 
-Output::Output(Input &input, DataBlock &data):
+Output::Output(Input &input, DataBlock &data)
 #ifdef WITH_PYTHON
-pydefix(input)
+:pydefix(input)
 #endif
 {
   idfx::pushRegion("Output::Output");

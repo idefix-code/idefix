@@ -248,7 +248,7 @@ class VTKDataset(object):
                         np.arctan2(ycart[0, self.ny // 2, :], xcart[0, self.ny // 2, :])
                     )
                     theta = np.arccos(
-                        ycart[0, :, 0]
+                        zcart[0, :, 0]
                         / np.sqrt(xcart[0, :, 0] ** 2 + zcart[0, :, 0] ** 2)
                     )
                 else:

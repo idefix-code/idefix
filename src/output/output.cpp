@@ -254,7 +254,7 @@ int Output::CheckForWrites(DataBlock &data) {
     // so it's important that this part happens last.
     if(havePeriodicDump || haveClockDump) {
       elapsedTime -= timer.seconds();
-      data.dump->Write(*this);
+      data.dump->Write();
       nfiles++;
       elapsedTime += timer.seconds();
 

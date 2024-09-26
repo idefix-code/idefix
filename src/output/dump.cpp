@@ -585,7 +585,8 @@ int Dump::GetLastDumpInDirectory(fs::path &directory) {
   }
   return(num);
 }
-bool Dump::Read(Output& output, int readNumber ) {
+
+bool Dump::Read(int readNumber) {
   fs::path filename;
   int nx[3];
   int nxglob[3];
@@ -768,7 +769,7 @@ bool Dump::Read(Output& output, int readNumber ) {
 }
 
 
-int Dump::Write(Output& output) {
+int Dump::Write() {
   fs::path filename;
   char fieldName[NAMESIZE+1]; // +1 is just in case
   int nx[3];

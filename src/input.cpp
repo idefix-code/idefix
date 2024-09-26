@@ -43,6 +43,7 @@ Input::Input(int argc, char* argv[] ) {
   bool haveBlock = false;
   std::stringstream msg;
   int nParameters = 0;    // # of parameters in current block
+  this->enableLogs = true;
 
   // Tell the system we want to catch the SIGUSR2 signals
   signal(SIGUSR2, signalHandler);
@@ -190,9 +191,13 @@ void Input::ParseCommandLine(int argc, char **argv) {
       IDEFIX_ERROR(msg);
     }
   }
+  this->enableLogs = enableLogs;
+  /*
   if(enableLogs) {
+    this->enableLogs = enableLogs;
     idfx::cout.enableLogFile();
   }
+  */
 }
 
 

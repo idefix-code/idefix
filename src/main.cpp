@@ -75,6 +75,15 @@ int main( int argc, char* argv[] ) {
     ///////////////////////////////
 
     Input input(argc, argv);
+
+    if(input.enableLogs) {
+      if(input.CheckEntry("Output","log_dir")>=0) {
+        idfx::logFileDir = input.Get<std::string>("Output", "log_dir", 0);
+      } else {
+        idfx::logFileDir = "./";
+      }
+      idfx::cout.enableLogFile();
+    }
     input.PrintLogo();
     idfx::cout << "Main: initialization stage." << std::endl;
 

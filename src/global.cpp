@@ -26,6 +26,7 @@ bool warningsAreErrors{false};
 
 IdefixOutStream cout;
 IdefixErrStream cerr;
+std::string logFileDir;
 Profiler prof;
 LoopPattern defaultLoopPattern;
 
@@ -103,8 +104,8 @@ void IdefixOutStream::init(int rank) {
 // disable the log file
 void IdefixOutStream::enableLogFile() {
   std::stringstream sslogFileName;
-  sslogFileName << "idefix." << idfx::prank << ".log";
-
+    
+  sslogFileName << idfx::logFileDir << "/./"  << "idefix." << idfx::prank << ".log";
   std::string logFileName(sslogFileName.str());
   this->my_fstream.open(logFileName.c_str());
 

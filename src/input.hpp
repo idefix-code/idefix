@@ -24,6 +24,9 @@ class Input {
   // Constructor from a file
   Input (int, char ** );
   void ShowConfig();
+  
+  // flag if logging is to be done
+  bool enableLogs;
 
   // Accessor to input parameters
   // the parameters are always: BlockName, EntryName, ParameterNumber (starting from 0)

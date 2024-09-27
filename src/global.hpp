@@ -21,6 +21,7 @@ class Profiler;
 
 extern int prank;                       //< parallel rank
 extern int psize;
+extern std::string logFileDir;       //< logfileDir
 extern IdefixOutStream cout;              //< custom cout for idefix
 extern IdefixErrStream cerr;              //< custom cerr for idefix
 extern Profiler prof;                   //< profiler (for memory & performance usage)

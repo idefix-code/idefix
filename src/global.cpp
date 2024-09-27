@@ -7,6 +7,16 @@
 
 #include <string>
 #include <sstream>
+#if __has_include(<filesystem>)
+  #include <filesystem>
+  namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+  #include <experimental/filesystem>
+  namespace fs = std::experimental::filesystem;
+#else
+  #error "Missing the <filesystem> header."
+#endif
+
 #include "idefix.hpp"
 #include "global.hpp"
 #include "profiler.hpp"
@@ -26,6 +36,7 @@ bool warningsAreErrors{false};
 
 IdefixOutStream cout;
 IdefixErrStream cerr;
+std::string logFileDir;
 Profiler prof;
 LoopPattern defaultLoopPattern;
 
@@ -103,11 +114,30 @@ void IdefixOutStream::init(int rank) {
 // disable the log file
 void IdefixOutStream::enableLogFile() {
   std::stringstream sslogFileName;
-  sslogFileName << "idefix." << idfx::prank << ".log";
-
+    
+  sslogFileName << idfx::logFileDir << "/./"  << "idefix." << idfx::prank << ".log";
   std::string logFileName(sslogFileName.str());
+  
+  if(idfx::prank==0) {
+    if(!fs::is_directory(logFileDir)) {
+      try {
+        if(!fs::create_directories(logFileDir)) {
+          std::stringstream msg;
+          msg << "Cannot create directory " << logFileDir << std::endl;
+          IDEFIX_ERROR(msg);
+        }
+      } catch(std::exception &e) {
+        std::stringstream msg;
+        msg << "Cannot create directory " << logFileDir << std::endl;
+        msg << e.what();
+        IDEFIX_ERROR(msg);
+      }
+    }
+  }
+#ifdef WITH_MPI
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif
   this->my_fstream.open(logFileName.c_str());
-
   this->logFileEnabled = true;
 }
 

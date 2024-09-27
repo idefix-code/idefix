@@ -10,6 +10,16 @@
 #include <vector>
 #include <algorithm>
 #include <iomanip>
+#if __has_include(<filesystem>)
+  #include <filesystem>
+  namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+  #include <experimental/filesystem>
+  namespace fs = std::experimental::filesystem;
+#else
+  #error "Missing the <filesystem> header."
+#endif
+
 #include "xdmf.hpp"
 #include "version.hpp"
 #include "idefix.hpp"
@@ -39,9 +49,9 @@ Xdmf::Xdmf(Input &input, DataBlock *datain) {
   }
 
   if(idfx::prank==0) {
-    if(!std::filesystem::is_directory(outputDirectory)) {
+    if(!fs::is_directory(outputDirectory)) {
       try {
-        if(!std::filesystem::create_directory(outputDirectory)) {
+        if(!fs::create_directory(outputDirectory)) {
           std::stringstream msg;
           msg << "Cannot create directory " << outputDirectory << std::endl;
           IDEFIX_ERROR(msg);
@@ -274,8 +284,8 @@ Xdmf::Xdmf(Input &input, DataBlock *datain) {
 
 int Xdmf::Write() {
   idfx::pushRegion("Xdmf::Write");
-  std::filesystem::path filename;
-  std::filesystem::path filename_xmf;
+  fs::path filename;
+  fs::path filename_xmf;
   hid_t err;
   idfx::cout << "Xdmf: Write file n " << xdmfFileNumber << "..." << std::flush;
   timer.reset();

@@ -114,10 +114,10 @@ void IdefixOutStream::init(int rank) {
 // disable the log file
 void IdefixOutStream::enableLogFile() {
   std::stringstream sslogFileName;
-    
+
   sslogFileName << idfx::logFileDir << "/./"  << "idefix." << idfx::prank << ".log";
   std::string logFileName(sslogFileName.str());
-  
+
   if(idfx::prank==0) {
     if(!fs::is_directory(logFileDir)) {
       try {

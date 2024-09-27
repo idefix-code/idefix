@@ -110,7 +110,7 @@ Input::Input(int argc, char* argv[] ) {
     }
   }
   file.close();
-  
+
   if(this->enableLogs) {
       if(CheckEntry("Output","log_dir")>=0) {
         idfx::logFileDir = Get<std::string>("Output", "log_dir", 0);

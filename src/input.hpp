@@ -24,7 +24,7 @@ class Input {
   // Constructor from a file
   Input (int, char ** );
   void ShowConfig();
-  
+
   // flag if logging is to be done
   bool enableLogs;
 

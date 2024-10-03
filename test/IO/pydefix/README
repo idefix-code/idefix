@@ -1,5 +1,6 @@
-this directory shows how to use Idefix with pure python initial condtions and outputs. It reproduced the 2D OrszagTang vortex available in MHD/OrszagTang
-The python script initialize the initial condition of the OT test and produces a series of PNG files through matplotlib
+This directory shows how to use Idefix with pure python initial conditions and outputs. It reproduces the 2D OrszagTang vortex available in MHD/OrszagTang without requiring any single line of C++ code from the user.
+
+The python script `pydefix_example.py` initializes the initial condition of the OT test (`initflow`) and produces a series of PNG files through matplotlib (`output`).
 
 # Python modules installation
 

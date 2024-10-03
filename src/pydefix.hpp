@@ -27,19 +27,21 @@ class Pydefix {
  public:
   explicit Pydefix(Input&);
   ~Pydefix();
-  void Output(DataBlock &);
+  void Output(DataBlock &, int);
   void InitFlow(DataBlock &);
   void ShowConfig();
   bool isActive{false};
   bool haveOutput{false};
   bool haveInitflow{false};
  private:
-  void CallScript(DataBlockHost &, std::string, std::string);
+  template<typename... Ts>
+  void CallScript(std::string, std::string, Ts...);
   static int ninstance;
   std::string scriptFilename;
   std::string outputFunctionName;
   std::string initflowFunctionName;
 };
+
 
 namespace pybind11 { namespace detail {
 // Caster for IdefixArray4D<T>

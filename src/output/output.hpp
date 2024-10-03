@@ -87,6 +87,7 @@ class Output {
     bool pythonEnabled = false;
     real pythonPeriod;
     real pythonLast;
+    real pythonNumber;
   #endif
 
   Kokkos::Timer timer;

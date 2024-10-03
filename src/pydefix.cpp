@@ -69,6 +69,24 @@ PYBIND11_EMBEDDED_MODULE(pydefix, m) {
 }
 
 
+template<typename... Ts>
+void Pydefix::CallScript(std::string scriptName, std::string funcName, Ts... args) {
+  idfx::pushRegion("Pydefix::CallScript");
+  try {
+    py::module_ script = py::module_::import(scriptName.c_str());
+    py::object result = script.attr(funcName.c_str())(&args...);
+  } catch(std::exception &e) {
+    std::stringstream message;
+    message << "An exception occured while calling the Python interpreter" << std::endl
+                << "in file \"" << scriptName << ".py\" function \"" << funcName << "\":"
+                << std::endl
+                << e.what() << std::endl;
+    IDEFIX_ERROR(message);
+  }
+  idfx::popRegion();
+}
+
+
 Pydefix::Pydefix(Input &input) {
   // Check that the input has a [python] block
   if(input.CheckBlock("Python")) {
@@ -95,7 +113,7 @@ Pydefix::Pydefix(Input &input) {
   }
 }
 
-void Pydefix::Output(DataBlock &data) {
+void Pydefix::Output(DataBlock &data, int n) {
   idfx::pushRegion("Pydefix::Output");
   if(!this->isActive) {
     IDEFIX_ERROR("Python Outputs requires the [python] block to be defined in your input file.");
@@ -106,7 +124,7 @@ void Pydefix::Output(DataBlock &data) {
   }
   DataBlockHost dataHost(data);
   dataHost.SyncFromDevice();
-  this->CallScript(dataHost,this->scriptFilename,this->outputFunctionName);
+  this->CallScript(this->scriptFilename,this->outputFunctionName,dataHost, n);
   idfx::popRegion();
 }
 
@@ -121,7 +139,7 @@ void Pydefix::InitFlow(DataBlock &data) {
   }
   DataBlockHost dataHost(data);
   dataHost.SyncFromDevice();
-  this->CallScript(dataHost,this->scriptFilename,this->initflowFunctionName);
+  this->CallScript(this->scriptFilename,this->initflowFunctionName,dataHost);
   dataHost.SyncToDevice();
   idfx::popRegion();
 }
@@ -155,26 +173,7 @@ Pydefix::~Pydefix() {
   }
 }
 
-void Pydefix::CallScript(DataBlockHost &data, std::string scriptName, std::string funcName) {
-  idfx::pushRegion("Pydefix::CallScript");
-  try {
-    //auto Vc = pydefix.toNumpyArray(d.Vc);
-    py::module_ script = py::module_::import(scriptName.c_str());
 
-    //py::module_ embeded = py::module_::import("embeded");
-    //py::object myV = py::cast(Vc);
-    //py::object result = script.attr(funcName.c_str())(data);
-    py::object result = script.attr(funcName.c_str())(data);
-  } catch(std::exception &e) {
-    std::stringstream message;
-    message << "An exception occured while calling the Python interpreter" << std::endl
-                << "in file \"" << scriptName << ".py\" function \"" << funcName << "\":"
-                << std::endl
-                << e.what() << std::endl;
-    IDEFIX_ERROR(message);
-  }
-  idfx::popRegion();
-}
 /*
 py::array_t<real> Pydefix::toNumpyArray(const IdefixHostArray3D<real>& in) {
   py::array_t<real, py::array::c_style> array({in.extent(0),in.extent(1),in.extent(2)},in.data());

@@ -133,6 +133,7 @@ Output::Output(Input &input, DataBlock &data)
       if(pythonPeriod>=0.0) {  // backward compatibility (negative value means no file)
         pythonLast = data.t - pythonPeriod; // write something in the next CheckForWrite()
         pythonEnabled = true;
+        pythonNumber = 0;
       }
     #endif
   }
@@ -146,6 +147,7 @@ Output::Output(Input &input, DataBlock &data)
   #endif
   #ifdef WITH_PYTHON
   data.dump->RegisterVariable(&pythonLast, "pythonLast");
+  data.dump->RegisterVariable(&pythonNumber,"pythonNumber");
   #endif
 
   idfx::popRegion();
@@ -257,7 +259,8 @@ int Output::CheckForWrites(DataBlock &data) {
   if(pythonEnabled) {
     if(data.t >= pythonLast + pythonPeriod) {
       elapsedTime -= timer.seconds();
-      pydefix.Output(data);
+      pydefix.Output(data,pythonNumber);
+      pythonNumber++;
       elapsedTime += timer.seconds();
       // Check if our next predicted output should already have happened
       if((pythonLast+pythonPeriod <= data.t) && pythonPeriod>0.0) {

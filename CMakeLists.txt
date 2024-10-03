@@ -75,7 +75,7 @@ add_subdirectory(src build)
 if(EXISTS ${PROJECT_BINARY_DIR}/setup.cpp)
   target_sources(idefix PUBLIC ${PROJECT_BINARY_DIR}/setup.cpp)
 else()
-  message(WARNING "No specific setup.cpp found in the problem directory")
+  message(WARNING "No specific setup.cpp found in the problem directory (this message can be ignored if using python to define your problem)")
 endif()
 
 # If a CMakeLists.txt is in the problem dir (for problem-specific source files)
@@ -121,6 +121,7 @@ endif()
 
 if(Idefix_PYTHON)
   add_compile_definitions("WITH_PYTHON")
+  set(PYBIND11_FINDPYTHON ON CACHE BOOL "Idefix requires python" FORCE)
   find_package(pybind11 REQUIRED)
   target_link_libraries(idefix pybind11::embed)
   target_sources(idefix

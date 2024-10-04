@@ -50,17 +50,17 @@ void GridHost::MakeGrid(Input &input) {
 
   // Get grid parameters from input file, block [Grid]
   for(int dir = 0 ; dir < 3 ; dir++) {
-    std::string label = std::string("X")+std::to_string(dir+1)+std::string("-grid");
-    int numPatch = input.Get<int>("Grid",label,0);
-
-    xstart[dir] = input.Get<real>("Grid",label,1);
-    xend[dir] = input.Get<real>("Grid",label,4+(numPatch-1)*3);
-
-    this->xbeg[dir] = xstart[dir];
-    this->xend[dir] = xend[dir];
-
+    // These are extra dimensions that are not being used.
 
     if(dir<DIMENSIONS) {
+      std::string label = std::string("X")+std::to_string(dir+1)+std::string("-grid");
+      int numPatch = input.Get<int>("Grid",label,0);
+
+      xstart[dir] = input.Get<real>("Grid",label,1);
+      xend[dir] = input.Get<real>("Grid",label,4+(numPatch-1)*3);
+
+      this->xbeg[dir] = xstart[dir];
+      this->xend[dir] = xend[dir];
       // First, we fill cells for any non strecthed patch
       // Loop on all the patches
       int idxstart = nghost[dir];
@@ -200,6 +200,12 @@ void GridHost::MakeGrid(Input &input) {
     } else {
       // dir >= DIMENSIONS/ Init simple uniform grid
       for(int i = 0 ; i < np_tot[dir] ; i++) {
+        // Initialize to default values
+        xstart[dir] = 0.0;
+        xend[dir] = 1.0;
+
+        this->xbeg[dir] = xstart[dir];
+        this->xend[dir] = xend[dir];
         dx[dir](i) = (xend[dir]-xstart[dir])/(np_int[dir]);
         x[dir](i)=xstart[dir] + (i-nghost[dir]+HALF_F)*dx[dir](i);
         xl[dir](i)=xstart[dir] + (i-nghost[dir])*dx[dir](i);

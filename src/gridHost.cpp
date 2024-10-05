@@ -201,15 +201,15 @@ void GridHost::MakeGrid(Input &input) {
       // dir >= DIMENSIONS/ Init simple uniform grid
       for(int i = 0 ; i < np_tot[dir] ; i++) {
         // Initialize to default values
-        xstart[dir] = 0.0;
-        xend[dir] = 1.0;
+        xstart[dir] = -0.5;
+        xend[dir] = 0.5;
 
         this->xbeg[dir] = xstart[dir];
         this->xend[dir] = xend[dir];
-        dx[dir](i) = (xend[dir]-xstart[dir])/(np_int[dir]);
-        x[dir](i)=xstart[dir] + (i-nghost[dir]+HALF_F)*dx[dir](i);
-        xl[dir](i)=xstart[dir] + (i-nghost[dir])*dx[dir](i);
-        xr[dir](i)=xstart[dir] + (i-nghost[dir]+1)*dx[dir](i);
+        dx[dir](i) = 1.0;
+        x[dir](i)=0.0;
+        xl[dir](i)=-0.5;
+        xr[dir](i)=0.5;
       }
     }
   }

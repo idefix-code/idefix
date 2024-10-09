@@ -94,6 +94,9 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
   this->haveplanetarySystem = data->haveplanetarySystem;
   this->planetarySystem = data->planetarySystem.get();
 
+  this->t = data->t;
+  this->dt = data->dt;
+
   idfx::popRegion();
 }
 
@@ -141,7 +144,7 @@ void DataBlockHost::SyncFromDevice() {
   idfx::pushRegion("DataBlockHost::SyncFromDevice()");
   this->t = data->t;
   this->dt = data->dt;
-  
+
   Kokkos::deep_copy(Vc,data->hydro->Vc);
   Kokkos::deep_copy(InvDt,data->hydro->InvDt);
 

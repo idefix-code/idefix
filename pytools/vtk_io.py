@@ -68,6 +68,7 @@ class VTKDataset(object):
         elif line.startswith("FIELD"):
             # Idefix >= 0.8
             nfield = int(line.split()[2])
+            self.idefix_vtk_format = 0
             for _ in range(nfield):
                 d = fh.readline().decode("utf-8")
                 if d.startswith("GEOMETRY"):
@@ -88,6 +89,8 @@ class VTKDataset(object):
                     self.t = np.fromfile(fh, dt, 1)
                 elif d.startswith("PERIODICITY"):
                     self.periodicity = np.fromfile(fh, dtype=dint, count=3).astype(bool)
+                elif d.startswith("IDEFIX_VTK_FORMAT"):
+                    self.idefix_vtk_format = np.fromfile(fh, dtype=dint, count=1).item()
                 else:
                     warnings.warn("Found unknown field %s" % d)
                 fh.readline()  # skip extra linefeed (empty line)
@@ -243,14 +246,25 @@ class VTKDataset(object):
             # Reconstruct the spherical coordinate system
             if self.geometry == "spherical":
                 if is2d:
-                    r = np.sqrt(xcart[:, 0, 0] ** 2 + zcart[:, 0, 0] ** 2)
-                    phi = np.unwrap(
-                        np.arctan2(ycart[0, self.ny // 2, :], xcart[0, self.ny // 2, :])
-                    )
-                    theta = np.arccos(
-                        zcart[0, :, 0]
-                        / np.sqrt(xcart[0, :, 0] ** 2 + zcart[0, :, 0] ** 2)
-                    )
+                    if self.idefix_vtk_format>=1:
+                        r = np.sqrt(xcart[:, 0, 0] ** 2 + zcart[:, 0, 0] ** 2)
+                        phi = np.unwrap(
+                            np.arctan2(ycart[0, self.ny // 2, :], xcart[0, self.ny // 2, :])
+                        )
+                        theta = np.arccos(
+                            zcart[0, :, 0]
+                            / np.sqrt(xcart[0, :, 0] ** 2 + zcart[0, :, 0] ** 2)
+                        )
+                    else:
+                        r = np.sqrt(xcart[:, 0, 0] ** 2 + ycart[:, 0, 0] ** 2)
+                        phi = np.unwrap(
+                            np.arctan2(zcart[0, self.ny // 2, :], xcart[0, self.ny // 2, :])
+                        )
+                        theta = np.arccos(
+                            ycart[0, :, 0]
+                            / np.sqrt(xcart[0, :, 0] ** 2 + ycart[0, :, 0] ** 2)
+                        )
+
                 else:
                     r = np.sqrt(
                         xcart[:, 0, 0] ** 2 + ycart[:, 0, 0] ** 2 + zcart[:, 0, 0] ** 2

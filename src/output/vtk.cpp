@@ -8,10 +8,11 @@
 #include "vtk.hpp"
 #include <limits.h>
 #include <string>
+#include <cstdio>
 #include <sstream>
 #include <iomanip>
 #if __has_include(<filesystem>)
-  #include <filesystem>
+  #include <filesystem> // NOLINT [build/c++17]
   namespace fs = std::filesystem;
 #elif __has_include(<experimental/filesystem>)
   #include <experimental/filesystem>

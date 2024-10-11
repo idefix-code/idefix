@@ -12,6 +12,7 @@
 #include <chrono>   // NOLINT [build/c++11]
 #include <thread>  // NOLINT [build/c++11]
 #include <utility>
+#include <vector>
 #include "idefix.hpp"
 #include "dataBlock.hpp"
 

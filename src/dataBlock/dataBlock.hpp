@@ -12,6 +12,7 @@
 #include <string>
 #include <map>
 #include <memory>
+#include <cstdio>
 
 #include "idefix.hpp"
 #include "grid.hpp"

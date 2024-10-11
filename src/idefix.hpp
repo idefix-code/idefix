@@ -9,6 +9,7 @@
 #define IDEFIX_HPP_
 #include <fstream>
 #include <iostream>
+#include <cstdio>
 #include <Kokkos_Core.hpp>
 // #include <Kokkos_DualView.hpp> // do we still need this?
 #ifdef WITH_MPI

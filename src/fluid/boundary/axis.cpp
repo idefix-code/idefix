@@ -5,6 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include <vector>
 #include "axis.hpp"
 #include "boundary.hpp"
 

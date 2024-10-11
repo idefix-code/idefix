@@ -5,6 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include <string>
+#include <cstdio>
 #include "dumpImage.hpp"
 #include "dataBlock.hpp"
 #include "idefix.hpp"

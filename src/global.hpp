@@ -7,6 +7,7 @@
 
 #ifndef GLOBAL_HPP_
 #define GLOBAL_HPP_
+#include <iostream>
 #include <string>
 #include <vector>
 #include "arrays.hpp"

@@ -17,6 +17,8 @@
   #error "Missing the <filesystem> header."
 #endif
 #include <iomanip>
+#include <string>
+#include <cstdio>
 #include "dump.hpp"
 #include "version.hpp"
 #include "dataBlockHost.hpp"

@@ -8,6 +8,7 @@
 #include "vtk.hpp"
 #include <limits.h>
 #include <string>
+#include <cstdio>
 #include <sstream>
 #include <iomanip>
 #if __has_include(<filesystem>)

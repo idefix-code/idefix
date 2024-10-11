@@ -5,6 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include <vector>
 #include "idefix.hpp"
 #include "dataBlockHost.hpp"
 #include "fluid.hpp"

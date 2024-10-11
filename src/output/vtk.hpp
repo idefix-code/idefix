@@ -18,6 +18,7 @@
 #else
   error "Missing the <filesystem> header."
 #endif
+#include <cstdio>
 #include "idefix.hpp"
 #include "input.hpp"
 #include "dataBlock.hpp"

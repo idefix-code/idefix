@@ -10,6 +10,7 @@
 #ifndef MACROS_HPP_
 #define MACROS_HPP_
 
+#include <cstdio>
 
 #if COMPONENTS == 1
   #define EXPAND(a,b,c) a

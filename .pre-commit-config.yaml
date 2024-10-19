@@ -3,7 +3,7 @@ exclude: "^(src/kokkos)"
 repos:
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: v5.0.0
     hooks:
       - id: trailing-whitespace  # auto-fix trailing whitespaces
       - id: end-of-file-fixer  # add EOF "\n" if missing
@@ -23,7 +23,7 @@ repos:
 
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.278
+    rev: v0.6.9
     hooks:
       - id: ruff
         args:
@@ -35,12 +35,12 @@ repos:
         - I # isort
 
   - repo: https://github.com/neutrinoceros/inifix
-    rev: v4.4.0
+    rev: v5.0.2
     hooks:
       - id: inifix-format
 
   - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.5.1
+    rev: v1.5.5
     hooks:
       - id: remove-tabs  # auto-fix tab/space mixing
       - id: insert-license

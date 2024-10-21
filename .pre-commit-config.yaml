@@ -33,6 +33,7 @@ repos:
         - F # pyflakes
         - B # flake8-bugbear
         - I # isort
+        - NPY # numpy-specific rules
 
   - repo: https://github.com/neutrinoceros/inifix
     rev: v5.0.2

@@ -146,13 +146,13 @@ We recommend the following modules and environement variables on Jean Zay:
 
 .. code-block:: bash
 
-    -DKokkos_ENABLE_CUDA=ON -DKokkos_ENABLE_VOLTA70=ON -DKokkos_ENABLE_IMPL_CUDA_MALLOC_ASYNC=OFF
+    -DKokkos_ENABLE_CUDA=ON -DKokkos_ARCH_VOLTA70=ON -DKokkos_ENABLE_IMPL_CUDA_MALLOC_ASYNC=OFF
 
 While Ampere A100 GPUs are enabled with
 
 .. code-block:: bash
 
-    -DKokkos_ENABLE_CUDA=ON -DKokkos_ENABLE_AMPERE80=ON -DKokkos_ENABLE_IMPL_CUDA_MALLOC_ASYNC=OFF
+    -DKokkos_ENABLE_CUDA=ON -DKokkos_ARCH_AMPERE80=ON -DKokkos_ENABLE_IMPL_CUDA_MALLOC_ASYNC=OFF
 
 MPI (multi-GPU) can be enabled by adding ``-DIdefix_MPI=ON`` as usual. The malloc async option is here to prevent a bug when using PSM2 with async
 Cuda malloc possibly leading to openmpi crash or hangs on Jean Zay.

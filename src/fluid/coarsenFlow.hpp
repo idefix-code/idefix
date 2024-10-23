@@ -290,28 +290,52 @@ void Fluid<Phys>::CoarsenMagField(IdefixArray4D<real> &Vsin) {
           // We reconstruct the parrallel field component with divB=0
 
           int factor = 1 << (coarsening-1);
+
+
           if( (index-begDir)%factor == 0) {
+            real qt = 0;
+            real qb = 0;
+
+            // Loop forward
             for(int shift = 0 ; shift < factor-1 ; shift++) {
-              real qt = Vsin(BXt,k+kt+shift*koffset, j+jt+shift*joffset, i+it+shift*ioffset)
+              qt += Vsin(BXt,k+kt+shift*koffset, j+jt+shift*joffset, i+it+shift*ioffset)
                           * At(k+kt+shift*koffset, j+jt+shift*joffset, i+it+shift*ioffset)
                       - Vsin(BXt,k+shift*koffset, j+shift*joffset, i+shift*ioffset)
                           *  At(k+shift*koffset, j+shift*joffset, i+shift*ioffset);
               #if DIMENSIONS == 3
-                real qb = Vsin(BXb,k+kb+shift*koffset, j+jb+shift*joffset, i+ib+shift*ioffset)
+                qb += Vsin(BXb,k+kb+shift*koffset, j+jb+shift*joffset, i+ib+shift*ioffset)
                             * Ab(k+kb+shift*koffset, j+jb+shift*joffset, i+ib+shift*ioffset)
                         - Vsin(BXb,k+shift*koffset, j+shift*joffset, i+shift*ioffset)
                             *  Ab(k+shift*koffset, j+shift*joffset, i+shift*ioffset);
-              #else
-                real qb = 0.0;
               #endif
 
               Vsin(BXn, k+(shift+1)*koffset, j+(shift+1)*joffset, i+(shift+1)*ioffset) =
+                  ((real) (factor-(shift+1))) / ((real)factor)  *
                   1.0/An(k+(shift+1)*koffset, j+(shift+1)*joffset, i+(shift+1)*ioffset) *
-                  (
-                    Vsin(BXn, k+shift*koffset, j+shift*joffset, i+shift*ioffset) *
-                      An(k+shift*koffset, j+shift*joffset, i+shift*ioffset)
-                    - qt - qb
-                  );
+                  (Vsin(BXn, k, j, i) * An(k, j, i) - qt - qb);
+            }
+            // Loop backward
+            qt = 0;
+            qb = 0;
+
+            // Loop forward
+            for(int shift = factor-1 ; shift >=1 ; shift--) {
+              qt += Vsin(BXt,k+kt+shift*koffset, j+jt+shift*joffset, i+it+shift*ioffset)
+                          * At(k+kt+shift*koffset, j+jt+shift*joffset, i+it+shift*ioffset)
+                      - Vsin(BXt,k+shift*koffset, j+shift*joffset, i+shift*ioffset)
+                          *  At(k+shift*koffset, j+shift*joffset, i+shift*ioffset);
+              #if DIMENSIONS == 3
+                qb += Vsin(BXb,k+kb+shift*koffset, j+jb+shift*joffset, i+ib+shift*ioffset)
+                            * Ab(k+kb+shift*koffset, j+jb+shift*joffset, i+ib+shift*ioffset)
+                        - Vsin(BXb,k+shift*koffset, j+shift*joffset, i+shift*ioffset)
+                            *  Ab(k+shift*koffset, j+shift*joffset, i+shift*ioffset);
+              #endif
+
+              Vsin(BXn, k+shift*koffset, j+shift*joffset, i+shift*ioffset) +=
+                  ((real) shift) / ((real)factor) *
+                  1.0/An(k+shift*koffset, j+shift*joffset, i+shift*ioffset) *
+                  (Vsin(BXn, k+factor*koffset, j+factor*joffset, i+factor*ioffset)
+                    * An( k+factor*koffset, j+factor*joffset, i+factor*ioffset) + qt + qb);
             }
           }
         }

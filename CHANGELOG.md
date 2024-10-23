@@ -3,22 +3,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-## [2.1] 2024-10-24
 
+## [2.1.02] 2024-10-24
 ### Changed
 
 - Fix a bug that could lead to corrupted VTK file when using single precision arithmetic (#255)
 - Fix a bug that could lead to incorrect central mass gravitational potential upon restart (#287)
+- Ensure that XDMF outputs are precision agnostic (#261)
+
 - Check that writes are successfull in serial, otherwise throw an error (#260)
 - Ensure that shock flattening flags can be modified by user (#260)
-- Throw an error when used enable Fargo without enough DIMENSIONS (#250)
-- Fix linting errors (#279, #281)
+- Throw an error when user enables Fargo without enough DIMENSIONS (#250)
+- Fix linting errors following upgrade to cpplint 2.0 (#278, #279, #281)
+- Update idfx_io to numpy 2.0 (#283)
 
 ### Added
 
-- Allow the user to define the grid only on active dimensions (#274)
+- Allow the user to define the grid and boundary conditions only on active dimensions (#274)
 
-### Removed
 
 ## [2.1.01] 2024-06-20
 ### Changed

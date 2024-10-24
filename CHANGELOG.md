@@ -9,8 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Fix a bug that could lead to corrupted VTK file when using single precision arithmetic (#255)
 - Fix a bug that could lead to incorrect central mass gravitational potential upon restart (#287)
+- Changed the way magnetic field is reconstructed when using grid coarsening to reduce roundoff errors on div(B). This can have an impact on the results of models using grid coarsening+MHD (#284)
 - Ensure that XDMF outputs are precision agnostic (#261)
-
+- Bump up Kokkos version to 4.4.01 (#289)
 - Check that writes are successfull in serial, otherwise throw an error (#260)
 - Ensure that shock flattening flags can be modified by user (#260)
 - Throw an error when user enables Fargo without enough DIMENSIONS (#250)
@@ -20,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Allow the user to define the grid and boundary conditions only on active dimensions (#274)
+- Configuration for Nvidia H100 on Jean Zay in the documentation
 
 
 ## [2.1.01] 2024-06-20

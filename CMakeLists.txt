@@ -45,10 +45,12 @@ include(SetRequiredBuildSettingsForGCC8)
 #Idefix requires Cuda Lambdas (experimental)
 if(Kokkos_ENABLE_CUDA)
   set(Kokkos_ENABLE_CUDA_LAMBDA ON CACHE BOOL "Idefix requires lambdas on Cuda" FORCE)
+  set(Kokkos_ENABLE_IMPL_CUDA_MALLOC_ASYNC OFF CACHE BOOL "Disable Async malloc to avoid bugs on PSM2" FORCE)
 endif()
 
 # Add kokkos CMAKE files (required early since these set compiler options)
 add_subdirectory(src/kokkos build/kokkos)
+include_directories(${Kokkos_INCLUDE_DIRS_RET})
 
 # Add Idefix CXX Flags
 add_compile_options(${Idefix_CXX_FLAGS})

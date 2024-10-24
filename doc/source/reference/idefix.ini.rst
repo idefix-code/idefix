@@ -16,7 +16,7 @@ allows for comments, which should start with ``#``.
 
 ``Grid`` section
 --------------------
-The grid section defines the grid total dimension. It consists of 3 entries ``X1-grid``, ``X2-grid`` and ``X3-grid``. Each entry defines the repartition of the grid points in the corresponding direction (the grid is always rectilinear).
+The grid section defines the grid total dimension. It consists of 3 entries ``X1-grid``, ``X2-grid`` (when DIMENSIONS>=2) and ``X3-grid`` (when DIMENSIONS=3). Each entry defines the repartition of the grid points in the corresponding direction (the grid is always rectilinear).
 Each entry defines a series of grid blocks which are concatenated along the direction. Each block in a direction can have a different spacing rule (uniform, log or stretched). The definition of the Grid entries is as follows
 
 +----------------------------+-------------------------+------------------------------+
@@ -332,8 +332,8 @@ this block is simply ignored.
 ------------------------
 
 This section describes the boundary conditions used by the code. There are 6 entries
-which need to be defined: ``X1-beg``, ``X2-beg``, ``X3-beg`` for the left boundaries in the direction X1, X2, X3,
-and ``X1-end``, ``X2-end``, ``X3-end`` for the right boundaries. Each boundary can be assigned the following types of conditions
+that need to be defined: ``X1-beg``, ``X2-beg``, ``X3-beg`` for the left boundaries in the direction X1, X2, X3,
+and ``X1-end``, ``X2-end``, ``X3-end`` for the right boundaries. ``X2`` boundaries are mandatory only when DIMENSIONS>=2 and ``X3`` when DIMENSIONS=3. Each boundary can be assigned the following types of conditions
 
 +----------------+------------------------------------------------------------------------------------------------------------------+
 | Boundary type  | Comment                                                                                                          |

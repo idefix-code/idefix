@@ -10,7 +10,7 @@
 #include <string>
 #include <map>
 #if __has_include(<filesystem>)
-  #include <filesystem>
+  #include <filesystem> // NOLINT [build/c++17]
   namespace fs = std::filesystem;
 #elif __has_include(<experimental/filesystem>)
   #include <experimental/filesystem>
@@ -18,10 +18,13 @@
 #else
   error "Missing the <filesystem> header."
 #endif
+#include <cstdio>
 #include "idefix.hpp"
 #include "input.hpp"
 #include "dataBlock.hpp"
+#include "bigEndian.hpp"
 #include "scalarField.hpp"
+
 
 // Forward class declaration
 class Output;
@@ -29,17 +32,8 @@ class DataBlock;
 
 
 class BaseVtk {
- private:
-  // Endianness swaping function and variable
-  bool shouldSwapEndian {true};
-
  protected:
   BaseVtk() {
-    // Test endianness
-    int tmp1 = 1;
-    unsigned char *tmp2 = (unsigned char *) &tmp1;
-    if (*tmp2 == 0)
-      this->shouldSwapEndian = false;
     // Initialise the root tag (used for MPI non-collective I/Os)
     this->isRoot = idfx::prank == 0;
   }
@@ -68,25 +62,9 @@ class BaseVtk {
   // DataBlock parent
   DataBlock *data;
 
-  /* ****************************************************************************/
-  /** Determines if the machine is little-endian.  If so,
-    it will force the data to be big-endian.
-  @param in_number floating point number to be converted in big endian */
-  /* *************************************************************************** */
+  // BigEndian conversion
+  BigEndian bigEndian;
 
-  template <typename T>
-  T BigEndian(T in_number) {
-    if (shouldSwapEndian) {
-      unsigned char *bytes = (unsigned char*) &in_number;
-      unsigned char tmp = bytes[0];
-      bytes[0] = bytes[3];
-      bytes[3] = tmp;
-      tmp = bytes[1];
-      bytes[1] = bytes[2];
-      bytes[2] = tmp;
-    }
-    return(in_number);
-  }
 
   void WriteHeaderString(const char* header, IdfxFileHandler fvtk) {
   #ifdef WITH_MPI
@@ -98,7 +76,10 @@ class BaseVtk {
     }
     offset=offset+strlen(header);
   #else
-    fprintf (fvtk, "%s", header);
+    int rc = fprintf (fvtk, "%s", header);
+    if(rc<0) {
+      IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota.");
+    }
   #endif
   }
 
@@ -113,7 +94,9 @@ class BaseVtk {
     }
     offset=offset+nelem*sizeof(T);
   #else
-    fwrite(buffer, sizeof(T), nelem, fvtk);
+    if(fwrite(buffer, sizeof(T), nelem, fvtk) != nelem) {
+      IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota.");
+    }
   #endif
   }
 };

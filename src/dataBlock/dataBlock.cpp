@@ -6,6 +6,8 @@
 // ***********************************************************************************
 
 #include <algorithm>
+#include <memory>
+#include <string>
 #include "idefix.hpp"
 #include "dataBlock.hpp"
 #include "fluid.hpp"

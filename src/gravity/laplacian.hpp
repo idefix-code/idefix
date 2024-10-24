@@ -19,7 +19,14 @@ class DataBlock;
 class Laplacian {
  public:
   // Types of boundary which can be treated
-  enum LaplacianBoundaryType {internalgrav, periodic, nullgrad, nullpot, userdef, axis, origin};
+  enum LaplacianBoundaryType {internalgrav,
+                              periodic,
+                              nullgrad,
+                              nullpot,
+                              userdef,
+                              axis,
+                              origin,
+                              undefined};
 
   Laplacian() = default;
   Laplacian(DataBlock *, std::array<LaplacianBoundaryType,3>,

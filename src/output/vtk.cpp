@@ -8,10 +8,11 @@
 #include "vtk.hpp"
 #include <limits.h>
 #include <string>
+#include <cstdio>
 #include <sstream>
 #include <iomanip>
 #if __has_include(<filesystem>)
-  #include <filesystem>
+  #include <filesystem> // NOLINT [build/c++17]
   namespace fs = std::filesystem;
 #elif __has_include(<experimental/filesystem>)
   #include <experimental/filesystem>
@@ -53,7 +54,9 @@ void Vtk::WriteHeaderNodes(IdfxFileHandler fvtk) {
                                    MPI_FLOAT, MPI_STATUS_IGNORE));
   this->offset += sizeof(float)*(nx1+ioffset)*(nx2+joffset)*(nx3+koffset)*3;
 #else
-  fwrite(node_coord.data(),sizeof(float),size,fvtk);
+  if(fwrite(node_coord.data(),sizeof(float),size,fvtk) != size) {
+    IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota.");
+  }
 #endif
 }
 
@@ -124,21 +127,21 @@ Vtk::Vtk(Input &input, DataBlock *datain, std::string filebase) {
 
   for (int32_t i = 0; i < nx1 + ioffset; i++) {
     if(grid.np_tot[IDIR] == 1) // only one dimension in this direction
-      xnode[i] = BigEndian(static_cast<float>(grid.x[IDIR](i)));
+      xnode[i] = bigEndian(static_cast<float>(grid.x[IDIR](i)));
     else
-      xnode[i] = BigEndian(static_cast<float>(grid.xl[IDIR](i + grid.nghost[IDIR])));
+      xnode[i] = bigEndian(static_cast<float>(grid.xl[IDIR](i + grid.nghost[IDIR])));
   }
   for (int32_t j = 0; j < nx2 + joffset; j++)    {
     if(grid.np_tot[JDIR] == 1) // only one dimension in this direction
-      ynode[j] = BigEndian(static_cast<float>(grid.x[JDIR](j)));
+      ynode[j] = bigEndian(static_cast<float>(grid.x[JDIR](j)));
     else
-      ynode[j] = BigEndian(static_cast<float>(grid.xl[JDIR](j + grid.nghost[JDIR])));
+      ynode[j] = bigEndian(static_cast<float>(grid.xl[JDIR](j + grid.nghost[JDIR])));
   }
   for (int32_t k = 0; k < nx3 + koffset; k++) {
     if(grid.np_tot[KDIR] == 1)
-      znode[k] = BigEndian(static_cast<float>(grid.x[KDIR](k)));
+      znode[k] = bigEndian(static_cast<float>(grid.x[KDIR](k)));
     else
-      znode[k] = BigEndian(static_cast<float>(grid.xl[KDIR](k + grid.nghost[KDIR])));
+      znode[k] = bigEndian(static_cast<float>(grid.xl[KDIR](k + grid.nghost[KDIR])));
   }
 #if VTK_FORMAT == VTK_STRUCTURED_GRID   // VTK_FORMAT
   /* -- Allocate memory for node_coord which is later used -- */
@@ -191,35 +194,35 @@ Vtk::Vtk(Input &input, DataBlock *datain, std::string filebase) {
   for (int32_t k = 0; k < nodesubsize[0]; k++) {
     for (int32_t j = 0; j < nodesubsize[1]; j++) {
       for (int32_t i = 0; i < nodesubsize[2]; i++) {
-        // BigEndian allows us to get back to little endian when needed
+        // bigEndian allows us to get back to little endian when needed
           x1 = grid.xl[IDIR](i + data->gbeg[IDIR]);
           x2 = grid.xl[JDIR](j + data->gbeg[JDIR]);
           x3 = grid.xl[KDIR](k + data->gbeg[KDIR]);
 
   #if (GEOMETRY == CARTESIAN) || (GEOMETRY == CYLINDRICAL)
-        node_coord(k,j,i,0) = BigEndian(x1);
-        node_coord(k,j,i,1) = BigEndian(x2);
-        node_coord(k,j,i,2) = BigEndian(x3);
+        node_coord(k,j,i,0) = bigEndian(x1);
+        node_coord(k,j,i,1) = bigEndian(x2);
+        node_coord(k,j,i,2) = bigEndian(x3);
 
   #elif GEOMETRY == POLAR
-        node_coord(k,j,i,0) = BigEndian(x1 * cos(x2));
-        node_coord(k,j,i,1) = BigEndian(x1 * sin(x2));
-        node_coord(k,j,i,2) = BigEndian(x3);
+        node_coord(k,j,i,0) = bigEndian(x1 * std::cos(x2));
+        node_coord(k,j,i,1) = bigEndian(x1 * std::sin(x2));
+        node_coord(k,j,i,2) = bigEndian(x3);
 
   #elif GEOMETRY == SPHERICAL
     #if DIMENSIONS == 1
-        node_coord(k,j,i,0) = BigEndian(x1);
-        node_coord(k,j,i,1) = BigEndian(0.0);
-        node_coord(k,j,i,2) = BigEndian(0.0);
+        node_coord(k,j,i,0) = bigEndian(x1);
+        node_coord(k,j,i,1) = bigEndian(0.0f);
+        node_coord(k,j,i,2) = bigEndian(0.0f);
     #elif DIMENSIONS == 2
-        node_coord(k,j,i,0) = BigEndian(x1 * sin(x2));
-        node_coord(k,j,i,1) = BigEndian(x1 * cos(x2));
-        node_coord(k,j,i,2) = BigEndian(0.0);
+        node_coord(k,j,i,0) = bigEndian(x1 * std::sin(x2));
+        node_coord(k,j,i,1) = bigEndian(x1 * std::cos(x2));
+        node_coord(k,j,i,2) = bigEndian(0.0f);
 
     #elif DIMENSIONS == 3
-        node_coord(k,j,i,0) = BigEndian(x1 * sin(x2) * cos(x3));
-        node_coord(k,j,i,1) = BigEndian(x1 * sin(x2) * sin(x3));
-        node_coord(k,j,i,2) = BigEndian(x1 * cos(x2));
+        node_coord(k,j,i,0) = bigEndian(x1 * std::sin(x2) * std::cos(x3));
+        node_coord(k,j,i,1) = bigEndian(x1 * std::sin(x2) * std::sin(x3));
+        node_coord(k,j,i,2) = bigEndian(x1 * std::cos(x2));
     #endif // DIMENSIONS
   #endif // GEOMETRY
       }
@@ -290,6 +293,13 @@ int Vtk::Write() {
   this->offset = 0;
 #else
   fileHdl = fopen(filename.c_str(),"wb");
+
+  if(fileHdl == NULL) {
+    std::stringstream msg;
+    msg << "Unable to open file " << filename << std::endl;
+    msg << "Check that you have write access and that you don't exceed your quota." << std::endl;
+    IDEFIX_ERROR(msg);
+  }
 #endif
 
   WriteHeader(fileHdl, this->data->t);
@@ -301,7 +311,7 @@ int Vtk::Write() {
       for(int j = data->beg[JDIR]; j < data->end[JDIR] ; j++ ) {
         for(int i = data->beg[IDIR]; i < data->end[IDIR] ; i++ ) {
           vect3D[i-data->beg[IDIR] + (j-data->beg[JDIR])*nx1loc + (k-data->beg[KDIR])*nx1loc*nx2loc]
-              = BigEndian(static_cast<float>(Vcin(k,j,i)));
+              = bigEndian(static_cast<float>(Vcin(k,j,i)));
         }
       }
     }
@@ -379,7 +389,7 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
   ssheader.str(std::string());
 
   // convert time to single precision big endian
-  int32_t geoBig = BigEndian(this->geometry);
+  int32_t geoBig = bigEndian(this->geometry);
 
   WriteHeaderBinary(&geoBig, 1, fvtk);
   // Done, add cariage return for next ascii write
@@ -396,7 +406,7 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
 
   int32_t perBig{-1};
   for (int dir=0; dir<3; dir++) {
-    perBig = BigEndian(this->periodicity[dir]);
+    perBig = bigEndian(this->periodicity[dir]);
     WriteHeaderBinary(&perBig, 1, fvtk);
   }
   // Done, add cariage return for next ascii write
@@ -410,7 +420,7 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
   ssheader.str(std::string());
 
   // convert time to single precision big endian
-  float timeBE = BigEndian(static_cast<float>(time));
+  float timeBE = bigEndian(static_cast<float>(time));
 
   WriteHeaderBinary(&timeBE, 1, fvtk);
   // Done, add cariage return for next ascii write
@@ -502,6 +512,8 @@ void Vtk::WriteScalar(IdfxFileHandler fvtk, float* Vin,  const std::string &var_
 
   this->offset = this->offset + sizeof(float)*nx1*nx2*nx3;
 #else
-  fwrite(Vin,sizeof(float),nx1loc*nx2loc*nx3loc,fvtk);
+  if(fwrite(Vin,sizeof(float),nx1loc*nx2loc*nx3loc,fvtk) != nx1loc*nx2loc*nx3loc) {
+    IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota.");
+  }
 #endif
 }

@@ -43,7 +43,6 @@ void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
   IdefixArray4D<real> Vc = hydro->Vc;
   auto *data = hydro->data;
   IdefixArray1D<real> x1 = data->x[IDIR];
-  IdefixArray1D<real> x3 = data->x[KDIR];
   if(dir==IDIR) {
     int ighost,ibeg,iend;
     if(side == left) {
@@ -56,7 +55,6 @@ void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
         ibeg, iend,
         KOKKOS_LAMBDA (int k, int j, int i) {
           real R=x1(i);
-          real z=x3(k);
           real Vk = 1.0/sqrt(R);
 
           Vc(RHO,k,j,i) = Vc(RHO,k,j,2*ighost - i +1);
@@ -75,7 +73,6 @@ void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
         ibeg, iend,
         KOKKOS_LAMBDA (int k, int j, int i) {
           real R=x1(i);
-          real z=x3(k);
           real Vk = 1.0/sqrt(R);
 
           Vc(RHO,k,j,i) = Vc(RHO,k,j,ighost);

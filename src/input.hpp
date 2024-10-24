@@ -25,6 +25,9 @@ class Input {
   Input (int, char ** );
   void ShowConfig();
 
+  // flag if logging is to be done
+  bool enableLogs;
+
   // Accessor to input parameters
   // the parameters are always: BlockName, EntryName, ParameterNumber (starting from 0)
   // These specialised functions are deprecated. Use the template Get<T> function.

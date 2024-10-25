@@ -28,6 +28,7 @@ class Laplacian {
   // Types of boundary which can be treated
   enum LaplacianBoundaryType {internalgrav,
                               periodic,
+                              shearingbox,
                               nullgrad,
                               nullpot,
                               userdef,

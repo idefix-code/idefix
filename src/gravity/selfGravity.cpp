@@ -55,6 +55,9 @@ void SelfGravity::Init(Input &input, DataBlock *datain) {
       this->isPeriodic = false;
     } else if(boundary.compare("periodic") == 0) {
       this->lbound[dir] = Laplacian::LaplacianBoundaryType::periodic;
+    } else if(boundary.compare("shearingbox") == 0) {
+      this->lbound[dir] = Laplacian::LaplacianBoundaryType::shearingbox;
+      // this is considered periodic so that mean density is substracted
     } else if(boundary.compare("nullgrad") == 0) {
       this->lbound[dir] = Laplacian::LaplacianBoundaryType::nullgrad;
       this->isPeriodic = false;
@@ -90,6 +93,9 @@ void SelfGravity::Init(Input &input, DataBlock *datain) {
       this->isPeriodic = false;
     } else if(boundary.compare("periodic") == 0) {
       this->rbound[dir] = Laplacian::LaplacianBoundaryType::periodic;
+    } else if(boundary.compare("shearingbox") == 0) {
+      this->rbound[dir] = Laplacian::LaplacianBoundaryType::shearingbox;
+      // this is considered periodic so that mean density is substracted
     } else if(boundary.compare("nullgrad") == 0) {
       this->rbound[dir] = Laplacian::LaplacianBoundaryType::nullgrad;
       this->isPeriodic = false;

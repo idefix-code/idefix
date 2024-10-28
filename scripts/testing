@@ -17,8 +17,6 @@ while (( $# > 0 )); do
     esac
 done
 
-shift
-
 IDEFIX_DIR="$PWD"
 IDEFIX_TEST="$1"; shift
 if (($# > 0)); then

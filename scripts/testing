@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+set -ue
+
+action=( do_nothing )
+declare -a IDEFIX_CMAKE_OPTIONS=( )
+declare -a IDEFIX_MAKE_OPTIONS=( )
+
+while (( $# > 0 )); do
+    opt="$1"; shift
+    case "$opt" in
+        compile) action=( do_compile ); break;;
+        run)     action=( do_run );     break;;
+        *)
+            action=( do_error 1 "Error: unknown option '%s' (expected 'compile' or 'run', or a dashed option)\n" "$1"  )
+            break
+            ;;
+    esac
+done
+
+shift
+
+IDEFIX_DIR="$PWD"
+IDEFIX_TEST="$1"; shift
+if (($# > 0)); then
+    IDEFIX_SUBTESTS=( "$@" )
+else
+    IDEFIX_SUBTESTS=( $(cd "test/$IDEFIX_TEST/idefix-build.d" && ls) )
+fi
+
+source scripts/etc/env-$(hostname).sh
+
+function show_help() {
+    cat <<EOF
+Usage: $0 (compile|run) TEST [SUB_TEST...]
+
+Run an Idefix test suite (available in the test/ directory).
+EOF
+}
+
+function do_error() {
+    local errno="$1"; shift
+    printf "$@" >&2
+    show_help
+    return "$errno"
+}
+function do_compile() (
+    function 
+    cd "test/$IDEFIX_TEST"
+    for test in "${IDEFIX_SUBTESTS[@]}"; do
+        (
+            cd "idefix-build.d/$test"
+            in_env cmake "$IDEFIX_DIR" "${IDEFIX_CMAKE_OPTIONS[@]}"
+            in_env make "${IDEFIX_MAKE_OPTIONS[@]}"
+        )
+    done
+)
+function do_run() (
+    echo "do_run: function not implemented" >&2
+    return 2
+)
+
+"${action[@]}"

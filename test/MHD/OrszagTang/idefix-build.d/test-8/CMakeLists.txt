@@ -1,0 +1,6 @@
+include(../../CMakeLists.txt)
+set_idefix_property(Idefix_PRECISION Double)
+set_idefix_property(Idefix_EVOLVE_VECTOR_POTENTIAL ON)
+set_idefix_property(Idefix_DEFS definitions.hpp)
+set_idefix_property(Idefix_MPI OFF)
+set_idefix_property(Idefix_RECONSTRUCTION Linear)

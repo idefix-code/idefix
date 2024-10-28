@@ -42,7 +42,6 @@ function do_error() {
     return "$errno"
 }
 function do_compile() (
-    function 
     cd "test/$IDEFIX_TEST"
     for test in "${IDEFIX_SUBTESTS[@]}"; do
         (

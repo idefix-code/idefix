@@ -55,6 +55,7 @@ function do_error() {
     return "$errno"
 }
 function do_compile() (
+    setup_env
     set_vars "$@"
     cd "test/$IDEFIX_TEST"
     for test in "${IDEFIX_SUBTESTS[@]}"; do
@@ -66,6 +67,7 @@ function do_compile() (
     done
 )
 function do_run() (
+    setup_env
     set_vars "$@"
     echo "do_run: function not implemented" >&2
     return 2

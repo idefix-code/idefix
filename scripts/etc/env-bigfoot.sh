@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
+set +e
 source /applis/site/nix.sh
+set -e
 
 # IDEFIX_CMAKE_OPTIONS+=( -DKokkos_ENABLE_HIP=ON -DKokkos_ARCH_VEGA90A=ON -DCMAKE_CXX_COMPILER=hipcc )
 mkdir -p "$HOME/.nix-shell"

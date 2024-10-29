@@ -40,9 +40,10 @@ EOF
 }
 
 function do_list() {
-    for test in test/*/*; do
-        printf "Test: %s\n" "${test#test/}"
-        for sub_test in "$test/idefix-build.d/"*; do
+    find test -name idefix-build.d | while read test; do
+        test="${test#*/}"
+        printf "Test: %s\n" "${test%/*}"
+        for sub_test in "test/$test/"*; do
             printf "  - sub-test: %s\n" "${sub_test##*/}"
         done
     done

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set +ue
-source /applis/site/nix.sh
+source /applis/site/nix.sh >/dev/null 2>&1
 set -ue
 
 # IDEFIX_CMAKE_OPTIONS+=( -DKokkos_ENABLE_HIP=ON -DKokkos_ARCH_VEGA90A=ON -DCMAKE_CXX_COMPILER=hipcc )

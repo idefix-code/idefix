@@ -1,40 +1,52 @@
 #!/usr/bin/env bash
 set -ue
 
-action=( do_nothing )
+action=( do_error 1 "Error: no action specified (expected 'compile' or 'run')\n" )
 declare -a IDEFIX_CMAKE_OPTIONS=( )
 declare -a IDEFIX_MAKE_OPTIONS=( )
 
 while (( $# > 0 )); do
     opt="$1"; shift
     case "$opt" in
-        compile) action=( do_compile ); break;;
-        run)     action=( do_run );     break;;
+        compile) action=( do_compile "$@" );   break;;
+        run)     action=( do_run "$@" );       break;;
+        list)    action=( do_list "$@" ); break;;
         *)
-            action=( do_error 1 "Error: unknown option '%s' (expected 'compile' or 'run', or a dashed option)\n" "$1"  )
+            action=( do_error 2 "Error: unknown option '%s' (expected 'compile' or 'run', or a dashed option)\n" "$1"  )
             break
             ;;
     esac
 done
 
-IDEFIX_DIR="$PWD"
-IDEFIX_TEST="$1"; shift
-if (($# > 0)); then
-    IDEFIX_SUBTESTS=( "$@" )
-else
-    IDEFIX_SUBTESTS=( $(cd "test/$IDEFIX_TEST/idefix-build.d" && ls) )
-fi
+function set_vars() {
+    IDEFIX_DIR="$PWD"
+    IDEFIX_TEST="$1"; shift
+    if (($# > 0)); then
+        IDEFIX_SUBTESTS=( "$@" )
+    else
+        IDEFIX_SUBTESTS=( $(cd "test/$IDEFIX_TEST/idefix-build.d" && ls) )
+    fi
+}
 
 source scripts/etc/env-$(hostname).sh
 
 function show_help() {
     cat <<EOF
 Usage: $0 (compile|run) TEST [SUB_TEST...]
+    OR $0 list [TEST]
 
 Run an Idefix test suite (available in the test/ directory).
 EOF
 }
 
+function do_list() {
+    for test in test/*/*; do
+        printf "Test: %s\n" "${test#test/}"
+        for sub_test in "$test/idefix-build.d/"*; do
+            printf "  - sub-test: %s\n" "${sub_test##*/}"
+        done
+    done
+}
 function do_error() {
     local errno="$1"; shift
     printf "$@" >&2
@@ -42,6 +54,7 @@ function do_error() {
     return "$errno"
 }
 function do_compile() (
+    set_vars "$@"
     cd "test/$IDEFIX_TEST"
     for test in "${IDEFIX_SUBTESTS[@]}"; do
         (
@@ -52,6 +65,7 @@ function do_compile() (
     done
 )
 function do_run() (
+    set_vars "$@"
     echo "do_run: function not implemented" >&2
     return 2
 )

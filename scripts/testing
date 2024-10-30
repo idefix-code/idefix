@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -ue
 
-action=( do_error 1 "Error: no action specified (expected 'compile' or 'run')\n" )
+declare action=( do_error 1 "Error: no action specified (expected 'compile' or 'run')\n" )
+declare gpu_model=""
 declare -a IDEFIX_CMAKE_OPTIONS=( )
 declare -a IDEFIX_MAKE_OPTIONS=( )
 
@@ -11,6 +12,7 @@ while (( $# > 0 )); do
         compile) action=( do_compile "$@" );   break;;
         run)     action=( do_run "$@" );       break;;
         list)    action=( do_list "$@" ); break;;
+        --gpu)   gpu_model="$1"; shift;; 
         *)
             action=( do_error 2 "Error: unknown option '%s' (expected 'compile' or 'run', or a dashed option)\n" "$1"  )
             break

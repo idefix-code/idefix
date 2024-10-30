@@ -28,8 +28,8 @@ function in_env_raw() {
     local -a cmd="$1"
     local drvfile="$IDEFIX_DIR/scripts/etc/env-bigfoot.drv"
     if [ ! -e "$drvfile" ]; then
-        printf "Cacheing an Idefix shell derivation in %s\n" "$drvfile"
-        nix-instantiate --add-root "$drvfile" "$IDEFIX_DIR/scripts/etc/env-bigfoot.nix"
+        printf "Cacheing an Idefix shell derivation in %s\n" "$drvfile" >&2
+        nix-instantiate --add-root "$drvfile" "$IDEFIX_DIR/scripts/etc/env-bigfoot.nix" >/dev/null
     fi
     printf "Running command: %s\n" "$cmd" >&2
     NIX_BUILD_SHELL="$HOME/.nix-shell/bash" nix-shell "$drvfile" --run "$cmd"

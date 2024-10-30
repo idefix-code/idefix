@@ -28,6 +28,7 @@ function set_vars() {
     else
         IDEFIX_SUBTESTS=( $(cd "test/$IDEFIX_TEST/idefix-build.d" && ls) )
     fi
+    setup_env
     set_gpu_options "$gpu_model"
 }
 
@@ -58,7 +59,6 @@ function do_error() {
     return "$errno"
 }
 function do_compile() (
-    setup_env
     set_vars "$@"
     cd "test/$IDEFIX_TEST"
     for test in "${IDEFIX_SUBTESTS[@]}"; do
@@ -70,7 +70,6 @@ function do_compile() (
     done
 )
 function do_run() (
-    setup_env
     set_vars "$@"
     echo "do_run: function not implemented" >&2
     return 2

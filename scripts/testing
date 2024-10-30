@@ -28,6 +28,7 @@ function set_vars() {
     else
         IDEFIX_SUBTESTS=( $(cd "test/$IDEFIX_TEST/idefix-build.d" && ls) )
     fi
+    set_gpu_options "$gpu_model"
 }
 
 source scripts/etc/env-$(hostname).sh

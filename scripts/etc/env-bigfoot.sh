@@ -31,5 +31,6 @@ function in_env() {
         printf "Cacheing an Idefix shell derivation in %s\n" "$drvfile"
         nix-instantiate --add-root "$drvfile" "$IDEFIX_DIR/scripts/etc/env-bigfoot.nix"
     fi
+    printf "Running command: %s\n" "$*"
     NIX_BUILD_SHELL="$HOME/.nix-shell/bash" nix-shell "$drvfile" --run "$(declare -p cmd); "'"${cmd[@]}"'
 }

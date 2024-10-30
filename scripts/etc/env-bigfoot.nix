@@ -1,5 +1,5 @@
 let nixpkgs = import <nixpkgs> {};
-    cudart = lib.getDev cudaPackages.cuda_cudart;
+    cudart = nixpkgs.lib.getDev cudaPackages.cuda_cudart;
 
     inputs = with nixpkgs; [
       nur.repos.gricad.openmpi4

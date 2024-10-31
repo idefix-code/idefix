@@ -1,16 +1,17 @@
 let nixpkgs = import <nixpkgs> {};
-    cudart = nixpkgs.lib.getDev nixpkgs.cudaPackages.cuda_cudart;
+    cudart = nixpkgs.lib.getDev nixpkgs.cudaPackages_12.cuda_cudart;
 
     inputs = with nixpkgs; [
-      gcc11
       nur.repos.gricad.openmpi4
       nur.repos.gricad.ucx
       rocmPackages.rocm-smi
       rocmPackages.clr
       rocmPackages.rocthrust
       rocmPackages.rocprim
-      cudaPackages.cuda_nvcc
+      
+      cudaPackages_12.cuda_nvcc
       cudart
+
       cmake
       pkg-config
     ];

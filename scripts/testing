@@ -61,13 +61,21 @@ function do_error() {
 function do_compile() (
     set_vars "$@"
     cd "test/$IDEFIX_TEST"
+    local stdout
+
+    exec {stdout}>&1
     for test in "${IDEFIX_SUBTESTS[@]}"; do
         (
+            printf "Running test: %s\n" "$test" >&"$stdout"
             cd "idefix-build.d/$test"
             in_env cmake "$IDEFIX_DIR" "${IDEFIX_CMAKE_OPTIONS[@]}"
             in_env make "${IDEFIX_MAKE_OPTIONS[@]}"
-        )
+            printf "Finished test: %s\n" "$test" >&"$stdout"
+        ) > "$test.log" 2>&1 &
     done
+    exec "$stdout">&-
+
+    wait
 )
 function do_run() (
     set_vars "$@"

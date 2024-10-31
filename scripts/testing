@@ -66,7 +66,7 @@ function do_compile() (
     exec {stdout}>&1
     for test in "${IDEFIX_SUBTESTS[@]}"; do
         (
-            printf "Running test: %s\n" "$test" >&"$stdout"
+            printf "Running test: %s (logs in %s)\n" "$test" "$PWD/$test.log" >&"$stdout"
             cd "idefix-build.d/$test"
             in_env cmake "$IDEFIX_DIR" "${IDEFIX_CMAKE_OPTIONS[@]}"
             in_env make "${IDEFIX_MAKE_OPTIONS[@]}"

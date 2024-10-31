@@ -11,7 +11,7 @@ let nixpkgs = import <nixpkgs> {};
       cudaPackages.cuda_nvcc
       cudart
       cmake
-      gcc
+      gcc11
       pkg-config
     ];
 in nixpkgs.mkShell {

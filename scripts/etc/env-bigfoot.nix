@@ -1,8 +1,11 @@
-let nixpkgs = import <nixpkgs> {};
+let nixpkgs = import <nixpkgs> { };
     cudatoolkit = nixpkgs.cudaPackages_12.cudatoolkit;
     
     inputs = with nixpkgs; [
-      nur.repos.gricad.openmpi4
+      (nur.repos.gricad.openmpi4.override {
+        cudaSupport = true;
+        inherit cudatoolkit;
+      })
       nur.repos.gricad.ucx
       rocmPackages.rocm-smi
       rocmPackages.clr

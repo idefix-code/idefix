@@ -1,5 +1,4 @@
 let nixpkgs = import <nixpkgs> {};
-    cudart = nixpkgs.lib.getDev nixpkgs.cudaPackages_12.cuda_cudart;
 
     inputs = with nixpkgs; [
       nur.repos.gricad.openmpi4
@@ -9,8 +8,7 @@ let nixpkgs = import <nixpkgs> {};
       rocmPackages.rocthrust
       rocmPackages.rocprim
       
-      cudaPackages_12.cuda_nvcc
-      cudart
+      cudaPackages_12.cudatoolkit
 
       cmake
       pkg-config
@@ -19,5 +17,5 @@ in nixpkgs.mkShell {
   buildInputs = inputs;
   LD_LIBRARY_PATH = nixpkgs.lib.makeLibraryPath inputs;
   NIX_SHELL_PROMPT_TAG = "idefix";
-  IDEFIX_CUDA_INCLUDE = "${cudart}/include";
+  IDEFIX_CUDA_INCLUDE = "${cudaPackages_12.cudatoolkit}/include";
 }

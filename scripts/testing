@@ -66,7 +66,7 @@ function do_compile() (
     exec {stdout}>&1
     for test in "${IDEFIX_SUBTESTS[@]}"; do
         (
-            printf "Running test: %s (logs in %s)\n" "$test" "$PWD/$test.log" >&"$stdout"
+            printf "Compiling test: %s (logs in %s)\n" "$test" "$PWD/$test.log" >&"$stdout"
             cd "idefix-build.d/$test"
             in_env cmake "$IDEFIX_DIR" "${IDEFIX_CMAKE_OPTIONS[@]}"
             in_env make "${IDEFIX_MAKE_OPTIONS[@]}"
@@ -79,8 +79,22 @@ function do_compile() (
 )
 function do_run() (
     set_vars "$@"
-    echo "do_run: function not implemented" >&2
-    return 2
+    cd "test/$IDEFIX_TEST"
+    local stdout
+
+    exec {stdout}>&1
+    for test in "${IDEFIX_SUBTESTS[@]}"; do
+        (
+            printf "Running test: %s (logs in %s)\n" "$PWD/$test-run.log" >&"$stdout"
+            cd "idefix-build.d/$test"
+            in_env ./idefix
+            printf "Finished test: %s\n" >&"$stdout"
+            
+        ) >"$test-run.log" 2>&1 &
+    done
+    exec {stdout}>&-
+
+    wait
 )
 
 "${action[@]}"

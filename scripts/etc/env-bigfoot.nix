@@ -11,7 +11,8 @@ let nixpkgs = import <nixpkgs> { };
       rocmPackages.clr
       rocmPackages.rocthrust
       rocmPackages.rocprim
-      
+
+      zlib
       cudatoolkit
 
       cmake

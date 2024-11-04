@@ -73,7 +73,7 @@ function do_compile() (
             printf "Finished test: %s\n" "$test" >&"$stdout"
         ) > "$test.log" 2>&1 &
     done
-    exec "$stdout">&-
+    exec {stdout}>&-
 
     wait
 )

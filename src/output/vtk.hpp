@@ -129,6 +129,7 @@ class Vtk : public BaseVtk {
 
   // Coordinates needed by VTK outputs
   float *xnode, *ynode, *znode;
+  float *xcenter, *ycenter, *zcenter;
 
   IdefixHostArray4D<float> node_coord;
 

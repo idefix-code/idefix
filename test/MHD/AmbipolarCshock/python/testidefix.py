@@ -72,7 +72,7 @@ r.set_initial_value(DSim[iref],x[iref])
 Dth=np.zeros(x.shape)
 for i in range(x.size):
     r.set_initial_value(DSim[iref],x[iref])
-    Dth[i]=r.integrate(x[i])
+    Dth[i]=r.integrate(x[i]).item()
     #print("Dth[%d]=%g"%(i,Dth[i]))
 
 bTh=np.sqrt(b0**2+2*A**2*(Dth-1)*(1/Dth-1/M**2))

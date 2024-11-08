@@ -402,7 +402,7 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
 #elif VTK_FORMAT == VTK_STRUCTURED_GRID
   ssheader << "DATASET STRUCTURED_GRID" << std::endl;
 #endif
-  // fields: geometry, periodicity, time, 6 NativeCoordinates (x1l, x2l, x3l, x1, x2, x3)
+  // fields: geometry, periodicity, time, 6 NativeCoordinates (x1l, x2l, x3l, x1c, x2c, x3c)
   int nfields = 9;
 
   // Write grid geometry in the VTK file

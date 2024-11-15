@@ -61,7 +61,7 @@ in nixpkgs.mkShell {
   ];
   shellHook = ''
     export LD_LIBRARY_PATH="${nixpkgs.lib.makeLibraryPath inputs}:/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH"
-  ''
+  '';
   NIX_SHELL_PROMPT_TAG = "idefix";
   IDEFIX_CUDA_INCLUDE = "${nixpkgs.lib.getDev cudatoolkit}/include";
 }

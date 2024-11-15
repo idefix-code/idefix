@@ -564,6 +564,8 @@ void Laplacian::EnforceBoundary(int dir, BoundarySide side, LaplacianBoundaryTyp
 
       const int nprocsIDIR = data->mygrid->nproc[dir];
 
+      const int nxiglob = data->mygrid->np_int[IDIR];
+
       idefix_for("BoundaryShearingBox", kbeg, kend, jbeg, jend, ibeg, iend,
             KOKKOS_LAMBDA (int k, int j, int i) {
               const int iscrh = i - side*(ighost +nxi);

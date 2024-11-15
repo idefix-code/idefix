@@ -3,9 +3,13 @@ function setup_env() {
     set +ue
     source /applis/site/nix.sh >/dev/null 2>&1
     set -ue
-    
-    mkdir -p "$HOME/.nix-shell"
-    ln -fs "$(which bash)" "$HOME/.nix-shell/bash"
+
+    if [ ! -e ~/.nix-cache ]; then
+        mkdir -p ~/.nix-cache
+        local cache=~/.nix-cache/nix-shell
+	nix-instantiate --add-root "$cache.drv" --expr 'with import <nixpkgs> {}; bashInteractive'
+	nix-store --realise --add-root "$cache" "$cache.drv" 
+    fi
 }
 
 function set_gpu_options() {
@@ -32,7 +36,7 @@ function in_env_raw() {
         nix-instantiate --add-root "$drvfile" "$IDEFIX_DIR/scripts/etc/env-bigfoot.nix" >/dev/null
     fi
     printf "Running command: %s\n" "$cmd" >&2
-    NIX_BUILD_SHELL="$HOME/.nix-shell/bash" nix-shell "$drvfile" --run "$cmd"
+    NIX_BUILD_SHELL="$HOME/.nix-cache/nix-shell/bin/bash" nix-shell "$drvfile" --run "$cmd"
 }
 function in_env() {
     local -a cmd=( "$@" )

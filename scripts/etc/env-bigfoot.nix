@@ -1,6 +1,4 @@
-let cudatoolkit = nixpkgs.cudaPackages_12.cudatoolkit;
-
-    # doit correspondre a la glibc du systeme (2.31 a compter du Fri Nov 15 11:27:37 CET 2024)
+let # doit correspondre a la glibc du systeme (2.31 a compter du Fri Nov 15 11:27:37 CET 2024)
     nixpkgs_bigfoot = import (builtins.fetchGit {
       name = "nixpkgs_glibc_2_31";
       url = "https://github.com/NixOS/nixpkgs/";
@@ -38,6 +36,8 @@ let cudatoolkit = nixpkgs.cudaPackages_12.cudatoolkit;
     nixpkgs = import <nixpkgs> {
       overlays = [ withBigfootStdenv ];
     };
+    
+    cudatoolkit = nixpkgs.cudaPackages_12.cudatoolkit;
 
     inputs = with nixpkgs; [
       (nur.repos.gricad.openmpi4.override {

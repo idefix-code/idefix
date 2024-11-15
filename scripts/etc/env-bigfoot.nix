@@ -39,7 +39,8 @@ let # doit correspondre a la glibc du systeme (2.31 a compter du Fri Nov 15 11:2
     
     cudatoolkit = nixpkgs.cudaPackages_12.cudatoolkit;
 
-    inputs = with nixpkgs; [
+    libInputs = with nixpkgs; [
+      stdenv.cc.cc
       (nur.repos.gricad.openmpi4.override {
         cudaSupport = true;
         inherit cudatoolkit;
@@ -52,13 +53,15 @@ let # doit correspondre a la glibc du systeme (2.31 a compter du Fri Nov 15 11:2
 
       zlib
       cudatoolkit
-      
-      cmake
-      pkg-config
     ];
 in nixpkgs.mkShell {
-  buildInputs = inputs;
-  LD_LIBRARY_PATH = nixpkgs.lib.makeLibraryPath inputs;
+  buildInputs = with nixpkgs; [
+    cmake
+    pkg-config
+  ];
+  shellHook = ''
+    export LD_LIBRARY_PATH="${nixpkgs.lib.makeLibraryPath inputs}:/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH"
+  ''
   NIX_SHELL_PROMPT_TAG = "idefix";
   IDEFIX_CUDA_INCLUDE = "${nixpkgs.lib.getDev cudatoolkit}/include";
 }

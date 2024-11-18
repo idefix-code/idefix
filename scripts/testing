@@ -10,6 +10,7 @@ while (( $# > 0 )); do
     opt="$1"; shift
     case "$opt" in
         compile) action=( do_compile "$@" );   break;;
+        repl)    action=( do_repl "$@" );      break;;
         run)     action=( do_run "$@" );       break;;
         list)    action=( do_list "$@" ); break;;
         --gpu)   gpu_model="$1"; shift;; 
@@ -96,5 +97,10 @@ function do_run() (
 
     wait
 )
+function do_repl() {
+    set_vars "$@"
+    cd "test/$IDEFIX_TEST"
+    in_env bash
+}
 
 "${action[@]}"

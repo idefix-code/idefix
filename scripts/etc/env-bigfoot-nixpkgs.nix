@@ -34,4 +34,4 @@ let # doit correspondre a la glibc du systeme (2.31 a compter du Fri Nov 15 11:2
     };
 in import <nixpkgs> {
   overlays = [ withBigfootStdenv ];
-};
+}

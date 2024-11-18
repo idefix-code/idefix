@@ -534,6 +534,11 @@ void Laplacian::EnforceBoundary(int dir, BoundarySide side, LaplacianBoundaryTyp
       break;
     }
     case shearingbox: {
+      if(dir!=IDIR)
+        IDEFIX_ERROR(
+        "Laplacian:: Shearing box boundary condition should only be used in IDIR"
+      );
+
       IdefixArray3D<real> scrh = sBArray;
 
       const real S  = data->hydro->sbS;
@@ -564,15 +569,8 @@ void Laplacian::EnforceBoundary(int dir, BoundarySide side, LaplacianBoundaryTyp
 
       idefix_for("BoundaryShearingBox", kbeg, kend, jbeg, jend, ibeg, iend,
             KOKKOS_LAMBDA (int k, int j, int i) {
-              int iref;
-              // This hack takes care of cases where we have more ghost zones than active zones
+              int iref = i - side*(ighost +nxi); //ighost + (i+ighost*(nxi-1))%nxi;//;
 
-              if(dir==IDIR)
-                iref = i - side*(ighost +nxi); //ighost + (i+ighost*(nxi-1))%nxi;//;
-              else
-                IDEFIX_ERROR(
-                "Laplacian:: Shearing box boundary condition should only be used in IDIR"
-                );
               //idfx::cout<<iref<<std::endl;
 
               //localVar(k,j,i) = localVar(k,j,iref)+j; // this works

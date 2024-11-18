@@ -97,8 +97,6 @@ class Laplacian {
 
   bool isTwoPi{false};
   bool havePreconditioner{false}; // Use of preconditionner (or not)
-  
-  IdefixArray3D<real> sBArray;    ///< Array use by shearingbox boundary conditions
 
   IdefixArray3D<real> sBArray;    ///< Array use by shearingbox boundary conditions
 

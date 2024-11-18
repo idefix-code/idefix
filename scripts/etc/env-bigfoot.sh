@@ -4,9 +4,9 @@ function setup_env() {
     source /applis/site/nix.sh >/dev/null 2>&1
     set -ue
 
-    if [ ! -e ~/.nix-cache ]; then
+    local cache=~/.nix-cache/nix-shell-idefix
+    if [ ! -e "$cache" ]; then
         mkdir -p ~/.nix-cache
-        local cache=~/.nix-cache/nix-shell-idefix
 	nix-instantiate --add-root "$cache.drv" --expr 'with import ./scripts/etc/env-bigfoot-nixpkgs.nix; bashInteractive'
 	nix-store --realise --add-root "$cache" "$cache.drv" 
     fi

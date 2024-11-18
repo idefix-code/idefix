@@ -564,11 +564,11 @@ void Laplacian::EnforceBoundary(int dir, BoundarySide side, LaplacianBoundaryTyp
 
       idefix_for("BoundaryShearingBox", kbeg, kend, jbeg, jend, ibeg, iend,
             KOKKOS_LAMBDA (int k, int j, int i) {
-              int iref, jref, kref;
+              int iref;
               // This hack takes care of cases where we have more ghost zones than active zones
 
               if(dir==IDIR)
-                iref =   i - side*(ighost +nxi); //ighost + (i+ighost*(nxi-1))%nxi;//;
+                iref = i - side*(ighost +nxi); //ighost + (i+ighost*(nxi-1))%nxi;//;
               else
                 IDEFIX_ERROR(
                 "Laplacian:: Shearing box boundary condition should only be used in IDIR"
@@ -633,7 +633,7 @@ void Laplacian::EnforceBoundary(int dir, BoundarySide side, LaplacianBoundaryTyp
 
         idefix_for("BoundaryShearingBoxCopy", kbeg, kend, jbeg, jend, ibeg, iend,
         KOKKOS_LAMBDA ( int k, int j, int i) {
-          int iref =   i - side*(ighost +nxi); //ighost + (i+ighost*(nxi-1))%nxi;//;
+          int iref = i - side*(ighost +nxi); //ighost + (i+ighost*(nxi-1))%nxi;//;
           localVar(k,j,i) = scrh(k,j,iref);
         });
       break;

@@ -201,15 +201,25 @@ void GridHost::MakeGrid(Input &input) {
       // dir >= DIMENSIONS/ Init simple uniform grid
       for(int i = 0 ; i < np_tot[dir] ; i++) {
         // Initialize to default values
-        xstart[dir] = -0.5;
-        xend[dir] = 0.5;
-
+        #if GEOMETRY != SPHERICAL
+          xstart[dir] = -0.5;
+          xend[dir] = 0.5;
+        #elif GEOMETRY == SPHERICAL
+          if(dir == JDIR) {
+            xstart[dir] = 0;
+            xend[dir] = M_PI;
+          }
+          if(dir == KDIR) {
+            xstart[dir] = -0.5;
+            xend[dir] = 0.5;
+          }
+        #endif
         this->xbeg[dir] = xstart[dir];
         this->xend[dir] = xend[dir];
-        dx[dir](i) = 1.0;
-        x[dir](i)=0.0;
-        xl[dir](i)=-0.5;
-        xr[dir](i)=0.5;
+        dx[dir](i) = xend[dir] - xstart[dir];
+        x[dir](i)=0.5*(xstart[dir]+xend[dir]);
+        xl[dir](i)=xstart[dir];
+        xr[dir](i)=xend[dir];
       }
     }
   }

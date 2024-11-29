@@ -1,0 +1,18 @@
+name: Idefix CIs CUDA
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - v2.0
+      - marc-test-ci
+  pull_request:
+    paths-ignore:
+      - '.github/ISSUE_TEMPLATE/*'
+
+jobs:
+  jobs:
+    name: CUDA Jobs
+    uses: ./.github/workflows/idefix-ci-jobs.yml
+    with:
+      TESTME_OPTIONS: -cuda -Werror

@@ -11,7 +11,7 @@ on:
     env: ${{ inputs.env }}
     runs-on: ubuntu-latest
     steps:
-      - name: First step: show variable
+      - name: "First step: show variable"
         run: echo $VAR_1
 
   job-2:
@@ -19,6 +19,6 @@ on:
     env: ${{ inputs.env }}
     runs-on: ubuntu-latest
     steps:
-      - name: First step: show variable
+      - name: "First step: show variable"
         run: echo $VAR_2
           

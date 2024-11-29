@@ -1,4 +1,7 @@
 name: Workflow de test
+
+on: push
+
 jobs:
   jobi:
     name: Run the jobs

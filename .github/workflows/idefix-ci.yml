@@ -1,4 +1,4 @@
-name: Idefix CIs CUDA
+name: Idefix CIs
 on:
   workflow_dispatch:
   push:
@@ -11,8 +11,14 @@ on:
       - '.github/ISSUE_TEMPLATE/*'
 
 jobs:
-  jobs:
+  cuda-jobs:
     name: CUDA Jobs
     uses: ./.github/workflows/idefix-ci-jobs.yml
     with:
       TESTME_OPTIONS: -cuda -Werror
+
+  cpu-jobs:
+    name: CPU Jobs
+    uses: ./.github/workflows/idefix-ci-jobs.yml
+    with:
+      TESTME_OPTIONS: -Werror

@@ -5,6 +5,7 @@ on:
     inputs:
       env:
         required: true
+        type: environment
 
 jobs:
   job-1:

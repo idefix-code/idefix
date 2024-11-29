@@ -3,14 +3,18 @@ name: Test workflow
 on:
   workflow_call:
     inputs:
-      env:
+      VAR_1:
         required: true
-        type: environment
+        type: string
+      VAR_2:
+        required: true
+        type: string
 
 jobs:
   job-1:
     name: Some job no. 1
-    env: ${{ inputs.env }}
+    env:
+      - VAR_1: ${{ inputs.VAR_1 }}
     runs-on: ubuntu-latest
     steps:
       - name: "First step: show variable"
@@ -18,7 +22,8 @@ jobs:
 
   job-2:
     name: Some job no. 2
-    env: ${{ inputs.env }}
+    env:
+      - VAR_2: ${{ inputs.VAR_2 }}
     runs-on: ubuntu-latest
     steps:
       - name: "First step: show variable"

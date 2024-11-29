@@ -1,0 +1,26 @@
+name: Test workflow
+
+on:
+  workflow_call:
+    inputs:
+      env:
+        required: true
+
+  job-1:
+    name: Some job no. 1
+    env: ${{ inputs.env }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: First step: show variable
+        run: |
+          echo $VAR_1
+
+  job-2:
+    name: Some job no. 2
+    env: ${{ inputs.env }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: First step: show variable
+        run: |
+          echo $VAR_2
+          

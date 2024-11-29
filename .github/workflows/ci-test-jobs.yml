@@ -12,8 +12,7 @@ on:
     runs-on: ubuntu-latest
     steps:
     - name: First step: show variable
-      run: |
-        echo $VAR_1
+      run: echo $VAR_1
 
   job-2:
     name: Some job no. 2
@@ -21,6 +20,5 @@ on:
     runs-on: ubuntu-latest
     steps:
     - name: First step: show variable
-      run: |
-        echo $VAR_2
+      run: echo $VAR_2
           

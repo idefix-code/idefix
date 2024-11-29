@@ -14,7 +14,7 @@ jobs:
   job-1:
     name: Some job no. 1
     env:
-      - VAR_1: ${{ inputs.VAR_1 }}
+      VAR_1: ${{ inputs.VAR_1 }}
     runs-on: ubuntu-latest
     steps:
       - name: "First step: show variable"
@@ -23,7 +23,7 @@ jobs:
   job-2:
     name: Some job no. 2
     env:
-      - VAR_2: ${{ inputs.VAR_2 }}
+      VAR_2: ${{ inputs.VAR_2 }}
     runs-on: ubuntu-latest
     steps:
       - name: "First step: show variable"

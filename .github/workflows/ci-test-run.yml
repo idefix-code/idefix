@@ -10,3 +10,9 @@ jobs:
       VAR_1: Hello
       VAR_2: Goodbye
 
+  joba:
+    name: Run the jobs
+    uses: ./.github/workflows/ci-test-jobs.yml
+    with:
+      VAR_1: "Hello flop"
+      VAR_2: "Goodbye flip"

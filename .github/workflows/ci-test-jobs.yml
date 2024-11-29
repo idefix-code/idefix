@@ -11,16 +11,16 @@ on:
     env: ${{ inputs.env }}
     runs-on: ubuntu-latest
     steps:
-      - name: First step: show variable
-        run: |
-          echo $VAR_1
+    - name: First step: show variable
+      run: |
+        echo $VAR_1
 
   job-2:
     name: Some job no. 2
     env: ${{ inputs.env }}
     runs-on: ubuntu-latest
     steps:
-      - name: First step: show variable
-        run: |
-          echo $VAR_2
+    - name: First step: show variable
+      run: |
+        echo $VAR_2
           

@@ -6,6 +6,7 @@ on:
       env:
         required: true
 
+jobs:
   job-1:
     name: Some job no. 1
     env: ${{ inputs.env }}

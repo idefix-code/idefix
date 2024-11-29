@@ -8,6 +8,6 @@ jobs:
     uses: ./.github/workflows/ci-test-jobs.yml
     with:
       env:
-        VAR_1: Hello
-        VAR_2: Goodbye
+      - VAR_1: Hello
+      - VAR_2: Goodbye
 

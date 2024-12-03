@@ -35,11 +35,13 @@ class BragThermalDiffusion {
   void AddBragDiffusiveFluxLim(int, const real, const IdefixArray4D<real> &);
 
   // Enroll user-defined thermal conductivity
-  void EnrollBragThermalDiffusivity(BragDiffusivityFunc);
+  void EnrollBragThermalDiffusivity(FourArrayDiffusivityFunc);
 
   IdefixArray3D<real> heatSrc;  // Source terms of the thermal operator
   IdefixArray3D<real> knorArr;
   IdefixArray3D<real> kparArr;
+  IdefixArray3D<real> alpha;  // Transition from Brag to collisionless tc
+  IdefixArray3D<real> clessQ; // Collisionless tc flux coefficient
 
   // pre-computed geometrical factors in non-cartesian geometry
   IdefixArray1D<real> one_dmu;
@@ -50,7 +52,7 @@ class BragThermalDiffusion {
   // status of the module
   ParabolicModuleStatus &status;
 
-  BragDiffusivityFunc diffusivityFunc;
+  FourArrayDiffusivityFunc diffusivityFunc;
 
   bool haveSlopeLimiter{false};
 
@@ -108,6 +110,12 @@ BragThermalDiffusion::BragThermalDiffusion(Input &input, Grid &grid, Fluid<Phys>
                                                                data->np_tot[JDIR],
                                                                data->np_tot[IDIR]);
       this->knorArr = IdefixArray3D<real>("BragThermalDiffusionKnorArray",data->np_tot[KDIR],
+                                                               data->np_tot[JDIR],
+                                                               data->np_tot[IDIR]);
+      this->alpha = IdefixArray3D<real>("ClessThermalDiffusionAlphaArray",data->np_tot[KDIR],
+                                                               data->np_tot[JDIR],
+                                                               data->np_tot[IDIR]);
+      this->clessQ = IdefixArray3D<real>("ClessThermalDiffusionClessQ",data->np_tot[KDIR],
                                                                data->np_tot[JDIR],
                                                                data->np_tot[IDIR]);
     } else {
@@ -256,7 +264,7 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
   if(haveThermalDiffusion == UserDefFunction && dir == IDIR) {
     if(diffusivityFunc) {
       idfx::pushRegion("UserDef::BragThermalDiffusivityFunction");
-      diffusivityFunc(*this->data, t, kparArr, knorArr);
+      diffusivityFunc(*this->data, t, kparArr, knorArr, alpha, clessQ);
       idfx::popRegion();
     } else {
       IDEFIX_ERROR("No user-defined thermal diffusion function has been enrolled");
@@ -273,6 +281,8 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
 
       [[maybe_unused]] real dTi, dTj, dTk, dTn;
       dTi = dTj = dTk = dTn = ZERO_F;
+
+      [[maybe_unused]] real dvp, dvm, dpp, dpm, Pn, Vn; /* For the collisionless / saturated flux */
 
       real locdmax = 0;
       ///////////////////////////////////////////
@@ -292,9 +302,9 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
           kpar = kparConstant;
         }
 
-        EXPAND( Bi = BX_I; ,
-                Bj = BY_I; ,
-                Bk = BZ_I; )
+        D_EXPAND( Bi = BX_I; ,
+          Bj = BY_I; ,
+          Bk = BZ_I; )
         Bn = BX_I;
 
         #if GEOMETRY == CARTESIAN
@@ -370,7 +380,9 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
             }
 
           dTi = D_DX_I_T(Vc)/dx1(i);
+
           #if DIMENSIONS >= 2
+
             if (haveSlopeLimiter) {
               dTj = 1./x1(i-1)*SL::PLMLim(SL_DY_T(Vc,k,j,i-1)/dx2(j),
                                             SL_DY_T(Vc,k,j+1,i-1)/dx2(j+1));
@@ -399,6 +411,22 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
         locdmax = FMAX(kpar,knor)/(0.5*(Vc(RHO,k,j,i) + Vc(RHO,k,j,i - 1)))*gamma_m1;
 
         dTn = dTi;
+
+        /* For collisionless / saturated heat flux */
+
+       dvp = Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i);
+       dvm = Vc(VX1,k,j,i) - Vc(VX1,k,j,i-1);
+
+       dpp = Vc(PRS,k,j,i+1) - Vc(PRS,k,j,i);
+       dpm = Vc(PRS,k,j,i) - Vc(PRS,k,j,i-1);
+
+       if(haveSlopeLimiter) {
+          Vn = Vc(VX1,k,j,i)+0.5*SL::PLMLim(dvp, dvm);
+          Pn = Vc(PRS,k,j,i)+0.5*SL::PLMLim(dpp, dpm);
+        } else {
+          Vn = 0.5*(Vc(VX1,k, j, i) + Vc(VX1,k,j,i+1));
+          Pn = 0.5*(Vc(PRS,k, j, i) + Vc(PRS,k,j,i+1));
+    }
       } else if(dir == JDIR) {
         //////////////
         // JDIR
@@ -533,6 +561,22 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
         locdmax = FMAX(kpar,knor)/(0.5*(Vc(RHO,k,j,i) + Vc(RHO,k,j - 1,i)))*gamma_m1;
 
         dTn = dTj;
+
+        /* For the collisionless / saturated flux */
+
+        dvp = Vc(VX2,k,j+1,i) - Vc(VX2,k,j,i);
+        dvm = Vc(VX2,k,j,i) - Vc(VX2,k,j-1,i);
+
+        dpp = Vc(PRS,k,j+1,i) - Vc(PRS,k,j,i);
+        dpm = Vc(PRS,k,j,i) - Vc(PRS,k,j-1,i);
+
+        if(haveSlopeLimiter) {
+          Vn = Vc(VX2,k,j,i)+0.5*SL::PLMLim(dvp, dvm);
+          Pn = Vc(PRS,k,j,i)+0.5*SL::PLMLim(dpp, dpm);
+        } else {
+          Vn = 0.5*(Vc(VX2,k,j, i) + Vc(VX2,k,j+1,i));
+          Pn = 0.5*(Vc(PRS,k,j, i) + Vc(PRS,k,j+1,i));
+        }
       } else if(dir == KDIR) {
       //////////////
       // KDIR
@@ -625,11 +669,28 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
         locdmax = FMAX(kpar,knor)/(0.5*(Vc(RHO,k,j,i) + Vc(RHO,k-1,j,i)))*gamma_m1;
 
         dTn = dTk;
+
+        /* For the collisionless / saturated flux */
+       dvp = Vc(VX3,k+1,j,i) - Vc(VX3,k,j,i);
+       dvm = Vc(VX3,k,j,i) - Vc(VX3,k-1,j,i);
+
+       dpp = Vc(PRS,k+1,j,i) - Vc(PRS,k,j,i);
+       dpm = Vc(PRS,k,j,i) - Vc(PRS,k-1,j,i);
+
+       if(haveSlopeLimiter) {
+          Vn = Vc(VX3,k,j,i)+0.5*SL::PLMLim(dvp, dvm);
+          Pn = Vc(PRS,k,j,i)+0.5*SL::PLMLim(dpp, dpm);
+        } else {
+          Vn = 0.5*(Vc(VX3,k,j,i) + Vc(VX3,k+1,j,i));
+          Pn = 0.5*(Vc(PRS,k,j,i) + Vc(PRS,k+1,j,i));
+        }
       }
       // From here, gradients and normal have been computed, so we just need to get the fluxes
 
-      bgradT = EXPAND( Bi*dTi , + Bj*dTj, +Bk*dTk);
-      Bmag = EXPAND( Bi*Bi , + Bj*Bj, + Bk*Bk);
+      bgradT = D_EXPAND( Bi*dTi , + Bj*dTj, +Bk*dTk);
+      Bmag = D_EXPAND( Bi*Bi , + Bj*Bj, + Bk*Bk);
+      //printf("%f , %f\n", Bmag, EXPAND(Bi*Bi, + Bj*Bj, + Bk*Bk));
+      //printf("%f , %f \n", 0.5*(Vc(VX1,k,j,i) + Vc(VX1,k,j,i+1)), Vn);
       Bmag = sqrt(Bmag);
       Bmag = FMAX(1e-6*SMALL_NUMBER,Bmag);
 
@@ -637,10 +698,11 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
 
       bn = Bn/Bmag; /* -- unit vector component -- */
       q = kpar*bgradT*bn + knor*(dTn - bn*bgradT);
+      q = alpha(k,j,i)*q + (1-alpha(k,j,i))*clessQ(k,j,i)*Pn*Vn;
 
       Flux(ENG, k, j, i) -= q;
 
-      dMax(k,j,i) = FMAX(dMax(k,j,i),locdmax);
+      dMax(k,j,i) = FMAX(dMax(k,j,i),locdmax)*alpha(k,j,i);
     });
   idfx::popRegion();
 }

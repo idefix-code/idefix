@@ -46,7 +46,7 @@ void BragThermalDiffusion::ShowConfig() {
   }
 }
 
-void BragThermalDiffusion::EnrollBragThermalDiffusivity(BragDiffusivityFunc myFunc) {
+void BragThermalDiffusion::EnrollBragThermalDiffusivity(FourArrayDiffusivityFunc myFunc) {
   if(this->status.status != UserDefFunction) {
     IDEFIX_WARNING("Braginskii thermal diffusivity enrollment requires Hydro/BragThermalDiffusion "
                  "to be set to userdef in .ini file");

@@ -10,12 +10,12 @@ on:
       - '.github/ISSUE_TEMPLATE/*'
 
 jobs:
-  cuda-jobs:
-    name: CUDA Jobs
+  icc-jobs:
+    name: CPU Jobs (icc)
     uses: ./.github/workflows/idefix-ci-jobs.yml
     with:
-      TESTME_OPTIONS: -cuda -Werror
-      IDEFIX_COMPILER: cuda
+      TESTME_OPTIONS: -Werror
+      IDEFIX_COMPILER: icc
 
   gcc-jobs:
     name: CPU Jobs (gcc)
@@ -24,9 +24,9 @@ jobs:
       TESTME_OPTIONS: -Werror
       IDEFIX_COMPILER: gcc
 
-  icc-jobs:
-    name: CPU Jobs (icc)
+  cuda-jobs:
+    name: CUDA Jobs
     uses: ./.github/workflows/idefix-ci-jobs.yml
     with:
-      TESTME_OPTIONS: -Werror
-      IDEFIX_COMPILER: icc
+      TESTME_OPTIONS: -cuda -Werror
+      IDEFIX_COMPILER: cuda

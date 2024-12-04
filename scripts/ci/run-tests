@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-set -ue
 if [ "$IDEFIX_COMPILER" == icc ]; then
     source /opt/intel/oneapi/setvars.sh
     export CC=icx
     export CXX=icpx
 fi
+set -ue
 cd "$1"
 ./testme.py "${@:2}"

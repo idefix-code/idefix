@@ -4,7 +4,7 @@ on:
       TESTME_OPTIONS:
         required: true
         type: string
-      IDEFIX_TARGET:
+      IDEFIX_COMPILER:
         required: true
         type: string
 

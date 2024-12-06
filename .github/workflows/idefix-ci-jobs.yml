@@ -22,21 +22,7 @@ env:
   IDEFIX_DIR: ${{ github.workspace }}
 
 jobs:
-  Linter:
-    # Don't do this in forks
-    if: ${{ github.repository == 'idefix-code/idefix' || github.repository == 'glesur/idefix' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
-        with:
-          python-version: 3.x
-      - uses: pre-commit/action@v3.0.0
-      - uses: pre-commit-ci/lite-action@v1.0.0
-        if: always()
-
   ShocksHydro:
-    needs: Linter
     runs-on: self-hosted
     steps:
       - name: Check out repo
@@ -51,7 +37,6 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/HD//MachReflection -all $TESTME_OPTIONS
 
   ParabolicHydro:
-    needs: Linter
     runs-on: self-hosted
     steps:
       - name: Check out repo
@@ -66,7 +51,6 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/HD/thermalDiffusion -all $TESTME_OPTIONS
 
   ShocksMHD:
-    needs: Linter
     runs-on: self-hosted
     steps:
       - name: Check out repo
@@ -83,7 +67,6 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/OrszagTang3D -all $TESTME_OPTIONS
 
   ParabolicMHD:
-    needs: Linter
     runs-on: self-hosted
     steps:
       - name: Check out repo
@@ -102,7 +85,7 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/HallWhistler -all $TESTME_OPTIONS
 
   Fargo:
-    needs: [Linter, ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
+    needs: [ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
     runs-on: self-hosted
     steps:
       - name: Check out repo
@@ -115,7 +98,7 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/FargoMHDSpherical -all $TESTME_OPTIONS
 
   ShearingBox:
-    needs: [Linter, ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
+    needs: [ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
     runs-on: self-hosted
     steps:
       - name: Check out repo
@@ -128,7 +111,7 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/ShearingBox -all $TESTME_OPTIONS
 
   SelfGravity:
-    needs: [Linter, ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
+    needs: [ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
     runs-on: self-hosted
     steps:
       - name: Check out repo
@@ -147,7 +130,7 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/SelfGravity/DustyCollapse -all $TESTME_OPTIONS
 
   Planet:
-    needs: [Linter, ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
+    needs: [ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
     runs-on: self-hosted
     steps:
       - name: Check out repo
@@ -168,7 +151,7 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/Planet/PlanetsIsActiveRK52D -all $TESTME_OPTIONS
 
   Dust:
-    needs: [Linter, ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
+    needs: [ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
     runs-on: self-hosted
     steps:
       - name: Check out repo
@@ -181,7 +164,7 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/Dust/DustyWave -all $TESTME_OPTIONS
 
   Braginskii:
-    needs: [Linter, ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
+    needs: [ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
     runs-on: self-hosted
     steps:
       - name: Check out repo

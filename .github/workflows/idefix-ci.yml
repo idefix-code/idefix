@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - master
-      - v2.0
-      - marc-test-ci
   pull_request:
     paths-ignore:
       - '.github/ISSUE_TEMPLATE/*'

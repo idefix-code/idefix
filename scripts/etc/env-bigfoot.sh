@@ -22,7 +22,7 @@ function set_gpu_options() {
         H100)
             IDEFIX_CMAKE_OPTIONS+=( -DKokkos_ENABLE_CUDA=ON -DKokkos_ARCH_HOPPER90=ON "-DCUDAToolkit_INCLUDE_DIR=$(in_env_raw 'echo $IDEFIX_CUDA_INCLUDE')" );;
         Mi200)
-            IDEFIX_CMAKE_OPTIONS+=( -DKokkos_ENABLE_HIP=ON -DKokkos_ARCH_VEGA90A=ON );;
+            IDEFIX_CMAKE_OPTIONS+=( -DKokkos_ENABLE_HIP=ON -DCMAKE_CXX_COMPILER=hipcc -DKokkos_ARCH_VEGA90A=ON );;
         '') ;;
         *)
             printf "Error: unknown gpu architecture '%s'\n" "$model"

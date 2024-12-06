@@ -20,6 +20,7 @@ in nixpkgs.mkShell {
   buildInputs = with nixpkgs; [
     cmake
     pkg-config
+    rocmPackages.hipcc
   ];
   NIX_SHELL_PROMPT_TAG = "idefix";
   IDEFIX_CUDA_INCLUDE = "${nixpkgs.lib.getDev cudatoolkit}/include";

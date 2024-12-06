@@ -22,7 +22,7 @@ jobs:
       - uses: pre-commit/action@v3.0.0
       - uses: pre-commit-ci/lite-action@v1.0.0
         if: always()
-  
+
   icc-jobs:
     needs: Linter
     name: CPU Jobs (icc)

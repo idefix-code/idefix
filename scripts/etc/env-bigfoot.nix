@@ -1,4 +1,4 @@
-let nixpkgs = import ./env-bigfoot-nigpkgs.nix;
+let nixpkgs = import ./env-bigfoot-nixpkgs.nix;
     
     cudatoolkit = nixpkgs.cudaPackages_12.cudatoolkit;
 

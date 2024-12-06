@@ -3,7 +3,6 @@ let nixpkgs = import ./env-bigfoot-nixpkgs.nix;
     cudatoolkit = nixpkgs.cudaPackages_12.cudatoolkit;
 
     libInputs = with nixpkgs; [
-      stdenv.cc.cc
       (nur.repos.gricad.openmpi4.override {
         cudaSupport = true;
         inherit cudatoolkit;
@@ -22,9 +21,6 @@ in nixpkgs.mkShell {
     cmake
     pkg-config
   ];
-  shellHook = ''
-    export LD_LIBRARY_PATH="${nixpkgs.lib.makeLibraryPath libInputs}:/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH"
-  '';
   NIX_SHELL_PROMPT_TAG = "idefix";
   IDEFIX_CUDA_INCLUDE = "${nixpkgs.lib.getDev cudatoolkit}/include";
 }

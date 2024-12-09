@@ -11,10 +11,48 @@ generators on different architectures.
 
 Output* myOutput;
 int outnum;
+
+void CheckConservation(DataBlock &data) {
+  static real firstCall{true};
+  static std::array<real,DefaultPhysics::nvar> consArray;
+  data.hydro->ConvertPrimToCons();
+  auto Uc = data.hydro->Uc;
+  auto dV = data.dV;
+  for(int nv = 0 ; nv < DefaultPhysics::nvar ; nv++) {
+    real cons = 0;
+    idefix_reduce("Timestep_reduction",
+        data.beg[KDIR], data.end[KDIR],
+        data.beg[JDIR], data.end[JDIR],
+        data.beg[IDIR], data.end[IDIR],
+        KOKKOS_LAMBDA (int k, int j, int i, real &c) {
+                c += dV(k,j,i)*Uc(nv,k,j,i);
+            },
+        Kokkos::Sum<real>(cons));
+    #ifdef WITH_MPI
+      MPI_Allreduce(MPI_IN_PLACE, &cons, 1, realMPI, MPI_SUM, MPI_COMM_WORLD);
+    #endif
+    if(firstCall) {
+      consArray[nv] = cons;
+    } else {
+      real err = std::fabs((consArray[nv]-cons));
+      if(err>1e-13) {
+        std::stringstream str;
+        str << "Quantity " << data.hydro->VcName[nv] << " is not conserved" << std::endl;
+        std::cout << "Error on " << data.hydro->VcName[nv] << " is " << err << std::endl;
+        std::cout << "Original=" << consArray[nv] << " New=" << cons << std::endl;
+        IDEFIX_ERROR(str);
+      }
+    }
+  }
+  firstCall=false;
+}
 // Analysis function
 // This analysis checks that the restart routines are performing as they should
 void Analysis(DataBlock& data) {
+  idfx::cout << "Analysis: conservation check..." << std::endl;
 
+  CheckConservation(data);
+  idfx::cout << "Analysis: conservation check successful." << std::endl;
 
   idfx::cout << "Analysis: Checking restart routines" << std::endl;
 

@@ -260,6 +260,8 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
   real kparConstant = this->kpar;
   IdefixArray3D<real> knorArr = this->knorArr;
   IdefixArray3D<real> kparArr = this->kparArr;
+  IdefixArray3D<real> alpha   = this->alpha;
+  IdefixArray3D<real> clessQ  = this->clessQ;
 
   if(haveThermalDiffusion == UserDefFunction && dir == IDIR) {
     if(diffusivityFunc) {

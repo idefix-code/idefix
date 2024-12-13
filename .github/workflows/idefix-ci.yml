@@ -25,7 +25,7 @@ jobs:
 
   icc-jobs:
     needs: Linter
-    name: CPU Jobs (icc)
+    name: CPU Jobs (intel OneApi)
     uses: ./.github/workflows/idefix-ci-jobs.yml
     with:
       TESTME_OPTIONS: -intel -Werror

@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - master
-      - test-ci
+      - develop
   pull_request:
     paths-ignore:
       - '.github/ISSUE_TEMPLATE/*'

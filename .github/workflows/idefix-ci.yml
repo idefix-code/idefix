@@ -28,7 +28,7 @@ jobs:
     name: CPU Jobs (icc)
     uses: ./.github/workflows/idefix-ci-jobs.yml
     with:
-      TESTME_OPTIONS: -Werror
+      TESTME_OPTIONS: -intel -Werror
       IDEFIX_COMPILER: icc
 
   gcc-jobs:
@@ -45,4 +45,4 @@ jobs:
     uses: ./.github/workflows/idefix-ci-jobs.yml
     with:
       TESTME_OPTIONS: -cuda -Werror
-      IDEFIX_COMPILER: cuda
+      IDEFIX_COMPILER: nvcc

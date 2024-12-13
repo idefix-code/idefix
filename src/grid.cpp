@@ -158,8 +158,16 @@ Grid::Grid(Input &input) {
   for(int i=0 ; i < 3 ; i++)
     period[i] = 0;
 
-  // Check if the dec option has been passed when number of procs > 1
+  // Check that number of procs > 1
   if(idfx::psize>1) {
+    int ngridtot=1;
+    for(int dir=0 ; dir < DIMENSIONS; dir++) {
+      ngridtot *= np_int[dir];
+    }
+    // Check that the total grid dimension is effectively divisible by number of procs
+    if(ngridtot % idfx::psize)
+      IDEFIX_ERROR("Total grid size must be a multiple of the number of mpi process");
+    // Check that dec option has been passed 
     if(input.CheckEntry("CommandLine","dec")  != DIMENSIONS) {
       // No command line decomposition, make auto-decomposition if possible
       // (only when nproc and dimensions are powers of 2, and in 1D)
@@ -185,7 +193,7 @@ Grid::Grid(Input &input) {
       int ntot=1;
       for(int dir=0 ; dir < DIMENSIONS; dir++) {
         nproc[dir] = input.Get<int>("CommandLine","dec",dir);
-        // Check that the dimension is effectively divisible by number of procs
+        // Check that the dimension is effectively divisible by number of procs along each direction
         if(np_int[dir] % nproc[dir])
           IDEFIX_ERROR("Grid size must be a multiple of the domain decomposition");
         // Count the total number of procs we'll need for the specified domain decomposition

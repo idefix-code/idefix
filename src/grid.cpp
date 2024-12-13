@@ -167,7 +167,7 @@ Grid::Grid(Input &input) {
     // Check that the total grid dimension is effectively divisible by number of procs
     if(ngridtot % idfx::psize)
       IDEFIX_ERROR("Total grid size must be a multiple of the number of mpi process");
-    // Check that dec option has been passed 
+    // Check that dec option has been passed
     if(input.CheckEntry("CommandLine","dec")  != DIMENSIONS) {
       // No command line decomposition, make auto-decomposition if possible
       // (only when nproc and dimensions are powers of 2, and in 1D)

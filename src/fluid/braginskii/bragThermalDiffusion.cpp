@@ -27,11 +27,17 @@ void BragThermalDiffusion::ShowConfig() {
   } else if (status.status==UserDefFunction) {
     idfx::cout << "Braginskii Thermal Diffusion: ENABLED with user-defined diffusivity function."
                    << std::endl;
-    if(!diffusivityFunc) {
+    if(!bragDiffusivityFunc) {
       IDEFIX_ERROR("No braginskii thermal diffusion function has been enrolled");
     }
+  } else if (status.status==CollisionLess) {
+    idfx::cout << "CollisionLess / Braginskii Thermal Diffusion: ENABLED with user-defined "
+      "diffusivity function."<< std::endl;
+    if(!clessDiffusivityFunc) {
+      IDEFIX_ERROR("No collisionless / Braginskii thermal diffusion function has been enrolled");
+    }
   } else {
-    IDEFIX_ERROR("Unknown braginskii thermal diffusion mode");
+    IDEFIX_ERROR("Unknown Braginskii thermal diffusion mode");
   }
   if(status.isExplicit) {
     idfx::cout << "Braginskii Thermal Diffusion: uses an explicit time integration." << std::endl;
@@ -46,12 +52,20 @@ void BragThermalDiffusion::ShowConfig() {
   }
 }
 
-void BragThermalDiffusion::EnrollBragThermalDiffusivity(FourArrayDiffusivityFunc myFunc) {
+void BragThermalDiffusion::EnrollBragThermalDiffusivity(TwoArrayDiffusivityFunc myFunc) {
   if(this->status.status != UserDefFunction) {
     IDEFIX_WARNING("Braginskii thermal diffusivity enrollment requires Hydro/BragThermalDiffusion "
                  "to be set to userdef in .ini file");
   }
-  this->diffusivityFunc = myFunc;
+  this->bragDiffusivityFunc = myFunc;
+}
+
+void BragThermalDiffusion::EnrollClessThermalDiffusivity(FourArrayDiffusivityFunc myFunc) {
+  if(this->status.status != UserDefFunction) {
+    IDEFIX_WARNING("Collisionless/Braginskii thermal diffusivity enrollment requires "
+           "Hydro/BragThermalDiffusion to be set to collisionless in .ini file");
+  }
+  this->clessDiffusivityFunc = myFunc;
 }
 
 void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t,

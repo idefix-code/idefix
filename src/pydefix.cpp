@@ -133,7 +133,7 @@ void Pydefix::InitFlow(DataBlock &data) {
   if(!this->isActive) {
     IDEFIX_ERROR("Python Initflow requires the [python] block to be defined in your input file.");
   }
-  if(!this->haveOutput) {
+  if(!this->haveInitflow) {
     IDEFIX_ERROR("No python initflow function has been defined "
                   "in your input file [python]:initflow_function");
   }

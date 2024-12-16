@@ -133,7 +133,7 @@ BragThermalDiffusion::BragThermalDiffusion(Input &input, Grid &grid, Fluid<Phys>
                      data->np_tot[IDIR]);
     } else {
       IDEFIX_ERROR("Unknown braginskii thermal diffusion definition in idefix.ini. "
-                   "Can only be constant or userdef.");
+                   "Can only be constant, userdef or collisionless.");
     }
   } else {
     IDEFIX_ERROR("I cannot create a BragThermalDiffusion object without bragTDiffusion defined"
@@ -728,13 +728,13 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
       bn = Bn/Bmag; /* -- unit vector component -- */
       q = kpar*bgradT*bn + knor*(dTn - bn*bgradT);
       if(includeCollisionlessTD) {
-    q = clessAlpha(k,j,i)*q + (1-clessAlpha(k,j,i))*clessBeta(k,j,i)*Pn*Vn;
+        q = clessAlpha(k,j,i)*q + (1-clessAlpha(k,j,i))*clessBeta(k,j,i)*Pn*Vn;
       }
       Flux(ENG, k, j, i) -= q;
       dMax(k,j,i) = FMAX(dMax(k,j,i),locdmax);
 
       if(includeCollisionlessTD) {
-    dMax(k,j,i) *= clessAlpha(k,j,i);
+        dMax(k,j,i) *= clessAlpha(k,j,i);
       }
     });
   idfx::popRegion();

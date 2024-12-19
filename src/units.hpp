@@ -16,7 +16,24 @@ class Input;
 namespace idfx {
 class Units {
  public:
+  Units() = default;
+  // Copy constructor make reference to new object
+  Units(const Units &u) : length(_length), 
+                    velocity(_velocity), 
+                    density(_density), 
+                    Kelvin(_Kelvin), 
+                    magField(_magField), 
+                    is_initialized(_is_initialized),
+                    _length(u._length),
+                    _velocity(u._velocity),
+                    _density(u._density),
+                    _Kelvin(u._Kelvin),
+                    _magField(u._Kelvin),
+                    _is_initialized(u._is_initialized)
+                     {}
+
   void Init(Input &input);
+  
 
   const real u  {1.6605390666e-24};                 // Atomic mass unit (g)
   const real m_p{1.67262192369e-24};                // Proton mass unit (g)

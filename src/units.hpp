@@ -18,7 +18,7 @@ class Units {
  public:
   Units() = default;
   // Copy constructor make reference to new object
-  KOKKOS_INLINE_FUNCTION (const Units &u) : length(_length), 
+  KOKKOS_FUNCTION (const Units &u) : length(_length), 
                     velocity(_velocity), 
                     density(_density), 
                     Kelvin(_Kelvin), 

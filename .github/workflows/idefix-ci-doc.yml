@@ -1,0 +1,26 @@
+name: Idefix CIs
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - develop
+      - docCI
+  pull_request:
+    paths-ignore:
+      - '.github/ISSUE_TEMPLATE/*'
+
+
+jobs:
+  ReadTheDocs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: install dependencies
+        run: python -m pip install --exists-action=w --no-cache-dir -r doc/python_requirements.txt
+      - name: compile documentation
+        run: python -m sphinx -T -b html -d _build/doctrees -D language=en . ./html
+

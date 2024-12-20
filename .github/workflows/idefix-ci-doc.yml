@@ -23,4 +23,3 @@ jobs:
         run: python -m pip install --exists-action=w --no-cache-dir -r doc/python_requirements.txt
       - name: compile documentation
         run: python -m sphinx -T -b html -d _build/doctrees -D language=en . ./html
-

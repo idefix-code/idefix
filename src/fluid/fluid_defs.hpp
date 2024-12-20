@@ -25,7 +25,7 @@ class Fluid;
 
 
 // Parabolic terms can have different status
-enum HydroModuleStatus {Disabled, Constant, UserDefFunction, CollisionLess};
+enum HydroModuleStatus {Disabled, Constant, UserDefFunction};
 
 // Structure to describe the status of parabolic modules
 struct ParabolicModuleStatus {

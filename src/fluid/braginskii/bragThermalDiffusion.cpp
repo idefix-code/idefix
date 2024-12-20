@@ -27,14 +27,8 @@ void BragThermalDiffusion::ShowConfig() {
   } else if (status.status==UserDefFunction) {
     idfx::cout << "Braginskii Thermal Diffusion: ENABLED with user-defined diffusivity function."
                    << std::endl;
-    if(!bragDiffusivityFunc) {
+    if(!bragDiffusivityFunc && !clessDiffusivityFunc) {
       IDEFIX_ERROR("No braginskii thermal diffusion function has been enrolled");
-    }
-  } else if (status.status==CollisionLess) {
-    idfx::cout << "CollisionLess / Braginskii Thermal Diffusion: ENABLED with user-defined "
-      "diffusivity function."<< std::endl;
-    if(!clessDiffusivityFunc) {
-      IDEFIX_ERROR("No collisionless / Braginskii thermal diffusion function has been enrolled");
     }
   } else {
     IDEFIX_ERROR("Unknown Braginskii thermal diffusion mode");
@@ -50,12 +44,15 @@ void BragThermalDiffusion::ShowConfig() {
   if(haveSlopeLimiter) {
     idfx::cout << "Braginskii Thermal Diffusion: uses a slope limiter." << std::endl;
   }
+  if(includeCollisionlessTD) {
+     idfx::cout << "Saturation with collisionless flux is enabled." << std::endl;
+  }
 }
 
 void BragThermalDiffusion::EnrollBragThermalDiffusivity(TwoArrayDiffusivityFunc myFunc) {
   if(this->status.status != UserDefFunction) {
     IDEFIX_WARNING("Braginskii thermal diffusivity enrollment requires Hydro/BragThermalDiffusion "
-                 "to be set to userdef in .ini file");
+                   "to be set to userdef in .ini file");
   }
   this->bragDiffusivityFunc = myFunc;
 }
@@ -63,7 +60,7 @@ void BragThermalDiffusion::EnrollBragThermalDiffusivity(TwoArrayDiffusivityFunc 
 void BragThermalDiffusion::EnrollClessThermalDiffusivity(FourArrayDiffusivityFunc myFunc) {
   if(this->status.status != UserDefFunction) {
     IDEFIX_WARNING("Collisionless/Braginskii thermal diffusivity enrollment requires "
-           "Hydro/BragThermalDiffusion to be set to collisionless in .ini file");
+           "Hydro/BragThermalDiffusion to be set to userdef in .ini file");
   }
   this->clessDiffusivityFunc = myFunc;
 }

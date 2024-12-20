@@ -41,8 +41,8 @@ class BragThermalDiffusion {
   IdefixArray3D<real> heatSrc;  // Source terms of the thermal operator
   IdefixArray3D<real> knorArr;
   IdefixArray3D<real> kparArr;
-  IdefixArray3D<real> clessAlpha;  // Transition from Brag to collisionless tc
-  IdefixArray3D<real> clessBeta;   // Collisionless tc flux coefficient
+  IdefixArray3D<real> clessAlphaArr;  // Transition from Brag to collisionless tc
+  IdefixArray3D<real> clessBetaArr;   // Collisionless tc flux coefficient (before pv)
 
   // pre-computed geometrical factors in non-cartesian geometry
   IdefixArray1D<real> one_dmu;
@@ -67,6 +67,7 @@ class BragThermalDiffusion {
 
   // constant diffusion coefficient (when needed)
   real knor, kpar;
+  real clessAlpha, clessBeta;
 
   // equation of state (required to get the heat capacity)
   EquationOfState *eos;
@@ -104,36 +105,55 @@ BragThermalDiffusion::BragThermalDiffusion(Input &input, Grid &grid, Fluid<Phys>
       IDEFIX_ERROR("Unknown braginskii thermal diffusion limiter in idefix.ini. "
                    "Can only be vanleer, mc or nolimiter.");
     }
-    if(input.Get<std::string>("Hydro","bragTDiffusion",2).compare("constant") == 0) {
-      this->kpar = input.Get<real>("Hydro","bragTDiffusion",3);
-      this->knor = input.GetOrSet<real>("Hydro","bragTDiffusion",4,0.);
-      this->status.status = Constant;
-    } else if(input.Get<std::string>("Hydro","bragTDiffusion",2).compare("userdef") == 0) {
-      this->status.status = UserDefFunction;
-      this->kparArr = IdefixArray3D<real>("BragThermalDiffusionKparArray",data->np_tot[KDIR],
-                      data->np_tot[JDIR],
-                      data->np_tot[IDIR]);
-      this->knorArr = IdefixArray3D<real>("BragThermalDiffusionKnorArray",data->np_tot[KDIR],
-                      data->np_tot[JDIR],
-                      data->np_tot[IDIR]);
-    } else if(input.Get<std::string>("Hydro","bragTDiffusion",2).compare("collisionless") == 0) {
-      this->includeCollisionlessTD = true;
-      this->status.status = CollisionLess;
-      this->kparArr = IdefixArray3D<real>("BragThermalDiffusionKparArray",data->np_tot[KDIR],
-                      data->np_tot[JDIR],
-                      data->np_tot[IDIR]);
-      this->knorArr = IdefixArray3D<real>("BragThermalDiffusionKnorArray",data->np_tot[KDIR],
-                      data->np_tot[JDIR],
-                      data->np_tot[IDIR]);
-      this->clessAlpha = IdefixArray3D<real>("ClessThermalDiffusionAlphaArray",data->np_tot[KDIR],
-                    data->np_tot[JDIR],
-                    data->np_tot[IDIR]);
-      this->clessBeta = IdefixArray3D<real>("ClessThermalDiffusionBetaArray",data->np_tot[KDIR],
-                     data->np_tot[JDIR],
-                     data->np_tot[IDIR]);
+    if(input.Get<std::string>("Hydro","bragTDiffusion",2).compare("nosat") == 0) {
+      if(input.Get<std::string>("Hydro","bragTDiffusion",3).compare("constant") == 0) {
+        this->kpar = input.Get<real>("Hydro","bragTDiffusion",4);
+        this->knor = input.GetOrSet<real>("Hydro","bragTDiffusion",5,0.);
+        this->status.status = Constant;
+      } else if(input.Get<std::string>("Hydro","bragTDiffusion",3).compare("userdef") == 0) {
+        this->status.status = UserDefFunction;
+        this->kparArr = IdefixArray3D<real>("BragThermalDiffusionKparArray",data->np_tot[KDIR],
+                        data->np_tot[JDIR],
+                        data->np_tot[IDIR]);
+        this->knorArr = IdefixArray3D<real>("BragThermalDiffusionKnorArray",data->np_tot[KDIR],
+                        data->np_tot[JDIR],
+                        data->np_tot[IDIR]);
+      } else {
+        IDEFIX_ERROR("Unknown braginskii thermal diffusion definition in idefix.ini. "
+                     "Can only be constant or userdef.");
+      }
+    } else if(input.Get<std::string>("Hydro","bragTDiffusion",2).compare("wcollisionless") == 0.0) {
+      if(input.Get<std::string>("Hydro","bragTDiffusion",3).compare("constant") == 0) {
+        this->includeCollisionlessTD = true;
+        this->kpar = input.Get<real>("Hydro","bragTDiffusion",4);
+        this->knor = input.GetOrSet<real>("Hydro","bragTDiffusion",5,0.);
+        this->clessAlpha = input.GetOrSet<real>("Hydro","bragTDiffusion",6,1.);
+        this->clessBeta  = input.GetOrSet<real>("Hydro","bragTDiffusion",7,0.);
+        this->status.status = Constant;
+      } else if(input.Get<std::string>("Hydro","bragTDiffusion",3).compare("userdef") == 0) {
+        this->includeCollisionlessTD = true;
+        this->status.status = UserDefFunction;
+        this->kparArr = IdefixArray3D<real>("BragThermalDiffusionKparArray",data->np_tot[KDIR],
+                        data->np_tot[JDIR],
+                        data->np_tot[IDIR]);
+        this->knorArr = IdefixArray3D<real>("BragThermalDiffusionKnorArray",data->np_tot[KDIR],
+                        data->np_tot[JDIR],
+                        data->np_tot[IDIR]);
+        this->clessAlphaArr = IdefixArray3D<real>("ClessThermalDiffusionAlphaArray",
+                              data->np_tot[KDIR],
+                              data->np_tot[JDIR],
+                              data->np_tot[IDIR]);
+        this->clessBetaArr = IdefixArray3D<real>("ClessThermalDiffusionBetaArray",
+                              data->np_tot[KDIR],
+                              data->np_tot[JDIR],
+                              data->np_tot[IDIR]);
+      } else {
+        IDEFIX_ERROR("Unknown braginskii/collsiionless thermal diffusion definition in idefix.ini. "
+                     "Can only be constant or userdef.");
+      }
     } else {
-      IDEFIX_ERROR("Unknown braginskii thermal diffusion definition in idefix.ini. "
-                   "Can only be constant, userdef or collisionless.");
+      IDEFIX_ERROR("Unknown braginskii thermal diffusion saturation in idefix.ini. "
+                   "Can only be nosat or wcollisionless.");
     }
   } else {
     IDEFIX_ERROR("I cannot create a BragThermalDiffusion object without bragTDiffusion defined"
@@ -156,7 +176,7 @@ BragThermalDiffusion::BragThermalDiffusion(Input &input, Grid &grid, Fluid<Phys>
 //    and therefore not available as such in the DataBlock.
 //    It is rather defined as PRS/RHO.
 //    Special spatial derivative macros are therefore needed and defined here
-//    directly at the right cell interface according to the direciton of the flux.
+//    directly at the right cell interface according to the direction of the flux.
 #define D_DX_I_T(q)  (q(PRS,k,j,i)/q(RHO,k,j,i) - q(PRS,k,j,i - 1)/q(RHO,k,j,i - 1))
 #define D_DY_J_T(q)  (q(PRS,k,j,i)/q(RHO,k,j,i) - q(PRS,k,j - 1,i)/q(RHO,k,j - 1,i))
 #define D_DZ_K_T(q)  (q(PRS,k,j,i)/q(RHO,k,j,i) - q(PRS,k - 1,j,i)/q(RHO,k - 1,j,i))
@@ -272,27 +292,31 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
   #endif
   real knorConstant = this->knor;
   real kparConstant = this->kpar;
+  real clessAlphaConst = this->clessAlpha;
+  real clessBetaConst = this->clessBeta;
   IdefixArray3D<real> knorArr = this->knorArr;
   IdefixArray3D<real> kparArr = this->kparArr;
-  IdefixArray3D<real> clessAlpha   = this->clessAlpha;
-  IdefixArray3D<real> clessBeta  = this->clessBeta;
+  IdefixArray3D<real> clessAlphaArr   = this->clessAlphaArr;
+  IdefixArray3D<real> clessBetaArr  = this->clessBetaArr;
 
-  if(haveThermalDiffusion == UserDefFunction && dir == IDIR) {
+  if(includeCollisionlessTD == false && haveThermalDiffusion == UserDefFunction && dir == IDIR) {
     if(bragDiffusivityFunc) {
       idfx::pushRegion("UserDef::BragThermalDiffusivityFunction");
       bragDiffusivityFunc(*this->data, t, kparArr, knorArr);
       idfx::popRegion();
     }
     else {
-      IDEFIX_ERROR("No user-defined thermal diffusion function has been enrolled");
+      IDEFIX_ERROR("No user-defined Braginskii thermal diffusion function has been enrolled");
     }
-  } else if(haveThermalDiffusion == CollisionLess && dir == IDIR) {
+  } else if(includeCollisionlessTD == true && haveThermalDiffusion == UserDefFunction
+            && dir == IDIR) {
     if (clessDiffusivityFunc) {
       idfx::pushRegion("UserDef::ClessThermalDiffusivityFunction");
-      clessDiffusivityFunc(*this->data, t, kparArr, knorArr, clessAlpha, clessBeta);
+      clessDiffusivityFunc(*this->data, t, kparArr, knorArr, clessAlphaArr, clessBetaArr);
       idfx::popRegion();
     } else {
-      IDEFIX_ERROR("No user-defined collisionless thermal diffusion function has been enrolled");
+      IDEFIX_ERROR("No user-defined Braginskii/collisionless "
+                    "thermal diffusion function has been enrolled");
     }
   }
 
@@ -306,8 +330,8 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
 
       [[maybe_unused]] real dTi, dTj, dTk, dTn;
       dTi = dTj = dTk = dTn = ZERO_F;
-
-      [[maybe_unused]] real dvp, dvm, dpp, dpm, Pn, Vn; /* For the collisionless / saturated flux */
+      /* For the collisionless / saturated flux */
+      [[maybe_unused]] real clessAlpha, clessBeta, dvp, dvm, dpp, dpm, Pn, Vn;
 
       real locdmax = 0;
       ///////////////////////////////////////////
@@ -315,16 +339,24 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
       ///////////////////////////////////////////
 
       if(dir == IDIR) {
-        if(haveThermalDiffusion == UserDefFunction || haveThermalDiffusion == CollisionLess) {
+        if(haveThermalDiffusion == UserDefFunction) {
           knor = HALF_F*(knorArr(k,j,i-1)+knorArr(k,j,i));
           if(haveSlopeLimiter) {
             kpar = 2.*(kparArr(k,j,i-1)*kparArr(k,j,i))/(kparArr(k,j,i-1)+kparArr(k,j,i));
           } else {
             kpar = HALF_F*(kparArr(k,j,i-1)+kparArr(k,j,i));
           }
+          if(includeCollisionlessTD) {
+            clessAlpha=HALF_F*(clessAlphaArr(k,j,i-1)+clessAlphaArr(k,j,i));
+            clessBeta=HALF_F*(clessBetaArr(k,j,i-1)+clessAlphaArr(k,j,i));
+          }
         } else {
           knor = knorConstant;
           kpar = kparConstant;
+          if(includeCollisionlessTD) {
+            clessAlpha=clessAlphaConst;
+            clessBeta=clessBetaConst;
+          }
         }
 
         D_EXPAND( Bi = BX_I; ,
@@ -446,11 +478,11 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
       dpm = Vc(PRS,k,j,i) - Vc(PRS,k,j,i-1);
 
       if(haveSlopeLimiter) {
-        Vn = Vc(VX1,k,j,i)+0.5*SL::PLMLim(dvp, dvm);
-        Pn = Vc(PRS,k,j,i)+0.5*SL::PLMLim(dpp, dpm);
+        Vn = Vc(VX1,k,j,i)-HALF_F*SL::PLMLim(dvp, dvm);
+        Pn = Vc(PRS,k,j,i)-HALF_F*SL::PLMLim(dpp, dpm);
       } else {
-        Vn = 0.5*(Vc(VX1,k, j, i) + Vc(VX1,k,j,i+1));
-        Pn = 0.5*(Vc(PRS,k, j, i) + Vc(PRS,k,j,i+1));
+        Vn = HALF_F*(Vc(VX1,k,j,i) + Vc(VX1,k,j,i-1));
+        Pn = HALF_F*(Vc(PRS,k,j,i) + Vc(PRS,k,j,i-1));
       }
     }
       } else if(dir == JDIR) {
@@ -458,16 +490,24 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
         // JDIR
         /////////////
 
-        if(haveThermalDiffusion == UserDefFunction || haveThermalDiffusion == CollisionLess) {
+        if(haveThermalDiffusion == UserDefFunction) {
           knor = HALF_F*(knorArr(k,j-1,i)+knorArr(k,j,i));
           if(haveSlopeLimiter) {
             kpar = 2.*(kparArr(k,j-1,i)*kparArr(k,j,i))/(kparArr(k,j-1,i)+kparArr(k,j,i));
           } else {
             kpar = HALF_F*(kparArr(k,j-1,i)+kparArr(k,j,i));
           }
+          if(includeCollisionlessTD) {
+            clessAlpha=HALF_F*(clessAlphaArr(k,j-1,i)+clessAlphaArr(k,j,i));
+            clessBeta=HALF_F*(clessBetaArr(k,j-1,i)+clessAlphaArr(k,j,i));
+          }
         } else {
           knor = knorConstant;
           kpar = kparConstant;
+          if(includeCollisionlessTD) {
+            clessAlpha=clessAlphaConst;
+            clessBeta=clessBetaConst;
+          }
         }
 
         EXPAND( Bi = BX_J; ,
@@ -597,27 +637,35 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
       dpm = Vc(PRS,k,j,i) - Vc(PRS,k,j-1,i);
 
       if(haveSlopeLimiter) {
-        Vn = Vc(VX2,k,j,i)+0.5*SL::PLMLim(dvp, dvm);
-        Pn = Vc(PRS,k,j,i)+0.5*SL::PLMLim(dpp, dpm);
+        Vn = Vc(VX2,k,j,i)-HALF_F*SL::PLMLim(dvp, dvm);
+        Pn = Vc(PRS,k,j,i)-HALF_F*SL::PLMLim(dpp, dpm);
       } else {
-        Vn = 0.5*(Vc(VX2,k,j, i) + Vc(VX2,k,j+1,i));
-        Pn = 0.5*(Vc(PRS,k,j, i) + Vc(PRS,k,j+1,i));
+        Vn = 0.5*(Vc(VX2,k,j-1,i) + Vc(VX2,k,j,i));
+        Pn = 0.5*(Vc(PRS,k,j-1,i) + Vc(PRS,k,j,i));
       }
     }
       } else if(dir == KDIR) {
       //////////////
       // KDIR
       /////////////
-        if(haveThermalDiffusion == UserDefFunction || haveThermalDiffusion == CollisionLess) {
+        if(haveThermalDiffusion == UserDefFunction) {
           knor = HALF_F*(knorArr(k-1,j,i)+knorArr(k,j,i));
           if(haveSlopeLimiter) {
             kpar = 2.*(kparArr(k-1,j,i)*kparArr(k,j,i))/(kparArr(k-1,j,i)+kparArr(k,j,i));
           } else {
             kpar = HALF_F*(kparArr(k-1,j,i)+kparArr(k,j,i));
           }
+          if(includeCollisionlessTD) {
+            clessAlpha=HALF_F*(clessAlphaArr(k-1,j,i)+clessAlphaArr(k,j,i));
+            clessBeta=HALF_F*(clessBetaArr(k-1,j,i)+clessBetaArr(k,j,i));
+          }
         } else {
           knor = knorConstant;
           kpar = kparConstant;
+          if(includeCollisionlessTD) {
+            clessAlpha=clessAlphaConst;
+            clessBeta=clessBetaConst;
+          }
         }
 
         Bi = BX_K;
@@ -706,11 +754,11 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
           dpm = Vc(PRS,k,j,i) - Vc(PRS,k-1,j,i);
 
           if(haveSlopeLimiter) {
-            Vn = Vc(VX3,k,j,i)+0.5*SL::PLMLim(dvp, dvm);
-            Pn = Vc(PRS,k,j,i)+0.5*SL::PLMLim(dpp, dpm);
+            Vn = Vc(VX3,k,j,i)-HALF_F*SL::PLMLim(dvp, dvm);
+            Pn = Vc(PRS,k,j,i)-HALF_F*SL::PLMLim(dpp, dpm);
           } else {
-            Vn = 0.5*(Vc(VX3,k,j,i) + Vc(VX3,k+1,j,i));
-            Pn = 0.5*(Vc(PRS,k,j,i) + Vc(PRS,k+1,j,i));
+            Vn = HALF_F*(Vc(VX3,k-1,j,i) + Vc(VX3,k,j,i));
+            Pn = HALF_F*(Vc(PRS,k-1,j,i) + Vc(PRS,k,j,i));
           }
         }
       }
@@ -728,13 +776,13 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
       bn = Bn/Bmag; /* -- unit vector component -- */
       q = kpar*bgradT*bn + knor*(dTn - bn*bgradT);
       if(includeCollisionlessTD) {
-        q = clessAlpha(k,j,i)*q + (1-clessAlpha(k,j,i))*clessBeta(k,j,i)*Pn*Vn;
+        q = clessAlpha*q + (1-clessAlpha)*clessBeta*Pn*Vn;
       }
       Flux(ENG, k, j, i) -= q;
       dMax(k,j,i) = FMAX(dMax(k,j,i),locdmax);
 
       if(includeCollisionlessTD) {
-        dMax(k,j,i) *= clessAlpha(k,j,i);
+        dMax(k,j,i) *= clessAlpha;
       }
     });
   idfx::popRegion();

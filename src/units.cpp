@@ -33,7 +33,7 @@ void idfx::Units::SetVelocity(const real in) {
 }
 
 void idfx::Units::ShowConfig() {
-  if(_is_initialized) {
+  if(_isInitialized) {
     idfx::cout << "Units: [Length]      = " << this->_length << " cm" << std::endl;
     idfx::cout << "Units: [Velocity]    = " << this->_velocity << " cm/s" << std::endl;
     idfx::cout << "Units: [Density]     = " << this->_density << " g/cm3" << std::endl;
@@ -43,7 +43,7 @@ void idfx::Units::ShowConfig() {
 }
 
 void idfx::Units::ComputeUnits() {
-  this->_is_initialized = true;
+  this->_isInitialized = true;
   this->_magField = std::sqrt(4*M_PI*_density*_velocity*_velocity);
   this->_Kelvin = u * _velocity*_velocity/k_B;
 }

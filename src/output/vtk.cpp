@@ -124,24 +124,51 @@ Vtk::Vtk(Input &input, DataBlock *datain, std::string filebase) {
   this->xnode = new float[nx1+ioffset];
   this->ynode = new float[nx2+joffset];
   this->znode = new float[nx3+koffset];
+  this->xcenter = new float[nx1];
+  this->ycenter = new float[nx2];
+  this->zcenter = new float[nx3];
 
   for (int32_t i = 0; i < nx1 + ioffset; i++) {
-    if(grid.np_tot[IDIR] == 1) // only one dimension in this direction
+    if(grid.np_tot[IDIR] == 1) { // only one dimension in this direction
       xnode[i] = bigEndian(static_cast<float>(grid.x[IDIR](i)));
-    else
+    } else {
       xnode[i] = bigEndian(static_cast<float>(grid.xl[IDIR](i + grid.nghost[IDIR])));
+    }
   }
   for (int32_t j = 0; j < nx2 + joffset; j++)    {
-    if(grid.np_tot[JDIR] == 1) // only one dimension in this direction
+    if(grid.np_tot[JDIR] == 1) { // only one dimension in this direction
       ynode[j] = bigEndian(static_cast<float>(grid.x[JDIR](j)));
-    else
+    } else {
       ynode[j] = bigEndian(static_cast<float>(grid.xl[JDIR](j + grid.nghost[JDIR])));
+    }
   }
   for (int32_t k = 0; k < nx3 + koffset; k++) {
-    if(grid.np_tot[KDIR] == 1)
+    if(grid.np_tot[KDIR] == 1) {
       znode[k] = bigEndian(static_cast<float>(grid.x[KDIR](k)));
-    else
+    } else {
       znode[k] = bigEndian(static_cast<float>(grid.xl[KDIR](k + grid.nghost[KDIR])));
+    }
+  }
+  for (int32_t i = 0; i < nx1; i++) {
+    if(grid.np_tot[IDIR] == 1) { // only one dimension in this direction
+      xcenter[i] = xnode[i];
+    } else {
+      xcenter[i] = bigEndian(static_cast<float>(grid.x[IDIR](i + grid.nghost[IDIR])));
+    }
+  }
+  for (int32_t j = 0; j < nx2; j++)    {
+    if(grid.np_tot[JDIR] == 1) { // only one dimension in this direction
+      ycenter[j] = ynode[j];
+    } else {
+      ycenter[j] = bigEndian(static_cast<float>(grid.x[JDIR](j + grid.nghost[JDIR])));
+    }
+  }
+  for (int32_t k = 0; k < nx3; k++) {
+    if(grid.np_tot[KDIR] == 1) {
+      zcenter[k] = znode[k];
+    } else {
+      zcenter[k] = bigEndian(static_cast<float>(grid.x[KDIR](k + grid.nghost[KDIR])));
+    }
   }
 #if VTK_FORMAT == VTK_STRUCTURED_GRID   // VTK_FORMAT
   /* -- Allocate memory for node_coord which is later used -- */
@@ -375,8 +402,8 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
 #elif VTK_FORMAT == VTK_STRUCTURED_GRID
   ssheader << "DATASET STRUCTURED_GRID" << std::endl;
 #endif
-  // fields: geometry, periodicity, time
-  int nfields = 3;
+  // fields: geometry, periodicity, time, 6 NativeCoordinates (x1l, x2l, x3l, x1c, x2c, x3c)
+  int nfields = 9;
 
   // Write grid geometry in the VTK file
   ssheader << "FIELD FieldData " << nfields << std::endl;
@@ -426,7 +453,71 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
   // Done, add cariage return for next ascii write
   ssheader << std::endl;
 
+  // write x1l native coordinates
+  ssheader << "X1L_NATIVE_COORDINATES 1 " << (nx1 + ioffset) << " float" << std::endl;
+  // Flush the ascii header
+  header = ssheader.str();
+  WriteHeaderString(header.c_str(), fvtk);
+  // reset the string stream
+  ssheader.str(std::string());
+  WriteHeaderBinary(this->xnode, nx1 + ioffset, fvtk);
+  // Done, add cariage return for next ascii write
+  ssheader << std::endl;
 
+  // write x2l native coordinates
+  ssheader << "X2L_NATIVE_COORDINATES 1 " << (nx2 + joffset) << " float" << std::endl;
+  // Flush the ascii header
+  header = ssheader.str();
+  WriteHeaderString(header.c_str(), fvtk);
+  // reset the string stream
+  ssheader.str(std::string());
+  WriteHeaderBinary(this->ynode, nx2 + joffset, fvtk);
+  // Done, add cariage return for next ascii write
+  ssheader << std::endl;
+
+  // write x3l native coordinates
+  ssheader << "X3L_NATIVE_COORDINATES 1 " << (nx3 + koffset) << " float" << std::endl;
+  // Flush the ascii header
+  header = ssheader.str();
+  WriteHeaderString(header.c_str(), fvtk);
+  // reset the string stream
+  ssheader.str(std::string());
+  WriteHeaderBinary(this->znode, nx3 + koffset, fvtk);
+  // Done, add cariage return for next ascii write
+  ssheader << std::endl;
+
+  // write x1 native coordinates
+  ssheader << "X1C_NATIVE_COORDINATES 1 " << nx1 << " float" << std::endl;
+  // Flush the ascii header
+  header = ssheader.str();
+  WriteHeaderString(header.c_str(), fvtk);
+  // reset the string stream
+  ssheader.str(std::string());
+  WriteHeaderBinary(this->xcenter, nx1, fvtk);
+  // Done, add cariage return for next ascii write
+  ssheader << std::endl;
+
+  // write x2 native coordinates
+  ssheader << "X2C_NATIVE_COORDINATES 1 " << nx2 << " float" << std::endl;
+  // Flush the ascii header
+  header = ssheader.str();
+  WriteHeaderString(header.c_str(), fvtk);
+  // reset the string stream
+  ssheader.str(std::string());
+  WriteHeaderBinary(this->ycenter, nx2, fvtk);
+  // Done, add cariage return for next ascii write
+  ssheader << std::endl;
+
+  // write x3 native coordinates
+  ssheader << "X3C_NATIVE_COORDINATES 1 " << nx3 << " float" << std::endl;
+  // Flush the ascii header
+  header = ssheader.str();
+  WriteHeaderString(header.c_str(), fvtk);
+  // reset the string stream
+  ssheader.str(std::string());
+  WriteHeaderBinary(this->zcenter, nx3, fvtk);
+  // Done, add cariage return for next ascii write
+  ssheader << std::endl;
 
   ssheader << "DIMENSIONS " << nx1 + ioffset << " " << nx2 + joffset << " " << nx3 + koffset
            << std::endl;
@@ -485,7 +576,6 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
 }
 #undef VTK_STRUCTURED_GRID
 #undef VTK_RECTILINEAR_GRID
-
 
 /* ********************************************************************* */
 void Vtk::WriteScalar(IdfxFileHandler fvtk, float* Vin,  const std::string &var_name) {

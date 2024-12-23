@@ -6,9 +6,9 @@ set (CMAKE_CXX_STANDARD 17)
 
 set(Idefix_VERSION_MAJOR 2)
 set(Idefix_VERSION_MINOR 1)
-set(Idefix_VERSION_PATCH 01)
+set(Idefix_VERSION_PATCH 02)
 
-project (idefix VERSION 2.1.00)
+project (idefix VERSION 2.1.02)
 option(Idefix_MHD "enable MHD" OFF)
 option(Idefix_MPI "enable Message Passing Interface parallelisation" OFF)
 option(Idefix_HIGH_ORDER_FARGO "Force Fargo to use a PPM reconstruction scheme" OFF)
@@ -46,10 +46,13 @@ include(SetRequiredBuildSettingsForGCC8)
 #Idefix requires Cuda Lambdas (experimental)
 if(Kokkos_ENABLE_CUDA)
   set(Kokkos_ENABLE_CUDA_LAMBDA ON CACHE BOOL "Idefix requires lambdas on Cuda" FORCE)
+  # CUDA_MALLOC_ASYNC disbaled by default in Kokkos 4.5, so not required here
+  #set(Kokkos_ENABLE_IMPL_CUDA_MALLOC_ASYNC OFF CACHE BOOL "Disable Async malloc to avoid bugs on PSM2" FORCE)
 endif()
 
 # Add kokkos CMAKE files (required early since these set compiler options)
 add_subdirectory(src/kokkos build/kokkos)
+include_directories(${Kokkos_INCLUDE_DIRS_RET})
 
 # Add Idefix CXX Flags
 add_compile_options(${Idefix_CXX_FLAGS})

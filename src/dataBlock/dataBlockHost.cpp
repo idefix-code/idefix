@@ -231,8 +231,8 @@ void DataBlockHost::MakeVsFromAmag(IdefixHostArray4D<real> &Ain) {
                                    + 1/(x1m(i)*(cos(x2m(j))
                                    - cos(x2m(j+1)))) * (sin(x2m(j+1))*Ain(KDIR,k,j+1,i)
                                    - sin(x2m(j))*Ain(KDIR,k,j,i) )                       ,
-                                   - 1/(x1m(i)*sin(x2(j))*dx3(k)) * (Ain(JDIR,k+1,j,i)
-                                   - Ain(JDIR,k,j,i) )                                   );
+                                   - dx2(j)/(x1m(i)*((cos(x2m(j))- cos(x2m(j+1))))*dx3(k))
+                                   * (Ain(JDIR,k+1,j,i) - Ain(JDIR,k,j,i) )                       );
 
         real Ax2m = fabs(sin(x2m(j)));
         // Regularisation along the axis

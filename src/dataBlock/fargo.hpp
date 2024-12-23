@@ -508,7 +508,7 @@ void Fargo::ShiftFluid(const real t, const real dt, Fluid<Phys>* hydro) {
             for(int ss = s-m ; ss < s ; ss++) {
               int sc;
               if(haveDomainDecomposition) {
-                sc = ss;
+                sc = ss + maxShift;
               } else {
                 sc = sbeg + modPositive(ss-sbeg,n);
               }
@@ -518,7 +518,7 @@ void Fargo::ShiftFluid(const real t, const real dt, Fluid<Phys>* hydro) {
             for(int ss = s ; ss < s-m ; ss++) {
               int sc;
               if(haveDomainDecomposition) {
-                sc = ss;
+                sc = ss + maxShift;
               } else {
                 sc = sbeg + modPositive(ss-sbeg,n);
               }
@@ -544,7 +544,7 @@ void Fargo::ShiftFluid(const real t, const real dt, Fluid<Phys>* hydro) {
             for(int ss = s-m ; ss < s ; ss++) {
               int sc;
               if(haveDomainDecomposition) {
-                sc = ss;
+                sc = ss + maxShift;
               } else {
                 sc = sbeg + modPositive(ss-sbeg,n);
               }
@@ -554,7 +554,7 @@ void Fargo::ShiftFluid(const real t, const real dt, Fluid<Phys>* hydro) {
             for(int ss = s ; ss < s-m ; ss++) {
               int sc;
               if(haveDomainDecomposition) {
-                sc = ss;
+                sc = ss + maxShift;
               } else {
                 sc = sbeg + modPositive(ss-sbeg,n);
               }
@@ -637,7 +637,7 @@ void Fargo::ShiftFluid(const real t, const real dt, Fluid<Phys>* hydro) {
             for(int ss = s-m ; ss < s ; ss++) {
               int sc;
               if(haveDomainDecomposition) {
-                sc = ss;
+                sc = ss + maxShift;
               } else {
                 sc = sbeg + modPositive(ss-sbeg,n);
               }
@@ -647,7 +647,7 @@ void Fargo::ShiftFluid(const real t, const real dt, Fluid<Phys>* hydro) {
             for(int ss = s ; ss < s-m ; ss++) {
               int sc;
               if(haveDomainDecomposition) {
-                sc = ss;
+                sc = ss + maxShift;
               } else {
                 sc = sbeg + modPositive(ss-sbeg,n);
               }
@@ -672,7 +672,7 @@ void Fargo::ShiftFluid(const real t, const real dt, Fluid<Phys>* hydro) {
           for(int ss = s-m ; ss < s ; ss++) {
             int sc;
             if(haveDomainDecomposition) {
-              sc = ss;
+              sc = ss + maxShift;
             } else {
               sc = sbeg + modPositive(ss-sbeg,n);
             }
@@ -682,7 +682,7 @@ void Fargo::ShiftFluid(const real t, const real dt, Fluid<Phys>* hydro) {
           for(int ss = s ; ss < s-m ; ss++) {
             int sc;
             if(haveDomainDecomposition) {
-              sc = ss;
+              sc = ss + maxShift;
             } else {
               sc = sbeg + modPositive(ss-sbeg,n);
             }

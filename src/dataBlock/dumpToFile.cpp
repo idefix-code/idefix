@@ -92,6 +92,16 @@ void DataBlock::DumpToFile(std::string filebase)  {
 
   WriteVariable(fileHdl, 4, dims, fieldName, locVc.data());
 
+  if (this->gravity->haveSelfGravityPotential) {
+    IdefixArray3D<real>::HostMirror locPot = Kokkos::create_mirror_view(this->gravity->phiP);
+    Kokkos::deep_copy(locPot, this->gravity->phiP);
+
+    dims[3] = 1;
+    std::snprintf(fieldName,NAMESIZE,"Pot");
+
+    WriteVariable(fileHdl, 4, dims, fieldName, locPot.data());
+  }
+
   // Write Flux
   /*
   nx1=this->np_tot[IDIR];

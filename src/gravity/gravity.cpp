@@ -10,6 +10,7 @@
 #include "gravity.hpp"
 #include "planetarySystem.hpp"
 #include "dataBlock.hpp"
+#include "output.hpp"
 #include "input.hpp"
 
 Gravity::Gravity(Input &input, DataBlock *datain) {
@@ -29,6 +30,7 @@ Gravity::Gravity(Input &input, DataBlock *datain) {
       } else if (potentialString.compare("central") == 0) {
         this->haveCentralMassPotential = true;
         this->centralMass = input.GetOrSet<real>("Gravity","Mcentral",0, 1.0);
+        data->dump->RegisterVariable(&this->centralMass, "centralMass",1);
       } else if (potentialString.compare("selfgravity") == 0) {
         this->haveSelfGravityPotential = true;
       } else if (potentialString.compare("planet") == 0) {

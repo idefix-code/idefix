@@ -98,7 +98,6 @@ class DataBlockHost {
 
   GridCoarsening haveGridCoarsening{GridCoarsening::disabled}; ///< Is grid coarsening enabled?
 
- private:
   // Data object to which we are the mirror
   DataBlock *data;
 };

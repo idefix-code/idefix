@@ -54,24 +54,33 @@ template <typename T> struct type_caster<IdefixHostArray4D<T>> {
     if ( !convert && !py::array_t<T>::check_(src) )
       return false;
 
-    auto buf = py::array_t<T, py::array::c_style | py::array::forcecast>::ensure(src);
-    if ( !buf )
+    auto array = py::array_t<T, py::array::c_style | py::array::forcecast>::ensure(src);
+    if ( !array )
       return false;
 
-    auto dims = buf.ndim();
+    auto dims = array.ndim();
     if ( dims != 4  )
       return false;
 
-    std::vector<size_t> shape(4);
+    auto buf = array.request();
 
-    for ( int i = 0 ; i < 4 ; ++i )
-      shape[i] = buf.shape()[i];
+    
 
+    value = Kokkos::View<T****, 
+                        Kokkos::LayoutRight, 
+                        Kokkos::HostSpace, 
+                        Kokkos::MemoryTraits<Kokkos::Unmanaged>> ((T*)buf.ptr, 
+                                                                  array.shape()[0],
+                                                                  array.shape()[1],
+                                                                  array.shape()[2],
+                                                                  array.shape()[3]);
 
-    value = IdefixHostArray4D<T>("pyArray",shape[0], shape[1], shape[2], shape[3]);
-
-    // Still need to fill in with buf.data()+buf.size()
-    IDEFIX_ERROR("Python->Idefix Not implemented");
+    /*
+    value = Kokkos::View<T****, 
+                        Kokkos::LayoutRight, 
+                        Kokkos::HostSpace, 
+                        Kokkos::MemoryTraits<Kokkos::Unmanaged>> ((T*)buf.ptr, 
+                                                                  array.shape()[0]);*/
 
     return true;
   }

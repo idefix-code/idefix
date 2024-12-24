@@ -26,6 +26,106 @@ int Pydefix::ninstance = 0;
  * DataBlockHost Python binding
  * **********************************/
 
+IdefixHostArray4D<real> GatherIdefixArray(IdefixHostArray4D<real> in, DataBlockHost dataHost) {
+  idfx::cout << "I am being called" << std::endl;
+  idfx::cout << "My dims=" << in.extent(0) << " " << in.extent(1) << " " << in.extent(2) << " " << in.extent(3) << std::endl;
+  idfx::cout << "First element=" << in(0,0,0,0) << std::endl; 
+  Grid *grid = dataHost.data->mygrid;
+  IdefixHostArray4D<real> out;
+  #ifdef WITH_MPI
+    if(idfx::psize > 1) {
+      const int nvar = in.extent(0);
+      out = IdefixHostArray4D<real>("pydefix::GatheredArray",nvar,grid->np_tot[KDIR],grid->np_tot[JDIR],grid->np_tot[IDIR]);
+      if(idfx::prank == 0) {
+        for(int rank = 0 ; rank < idfx::psize ; rank++) {
+          // np_tot: total size of the incoming array
+          // np_int: size that should be copied into global
+          // beg: offset in the incoming array where copy should begin
+          // gbeg: offset in the global array where copy should be begin
+          MPI_Status status;
+          std::array<int,3> np_int,np_tot, beg, gbeg;
+          IdefixHostArray4D<real> buf;
+
+          if(rank==0) {
+            np_int = dataHost.np_int;
+            np_tot = dataHost.np_tot;
+            gbeg = dataHost.gbeg;
+            beg = dataHost.beg;
+
+            // Add back boundaries
+            for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
+              if(dataHost.lbound[dir] != internal) {
+                np_int[dir] += dataHost.nghost[dir];
+                gbeg[dir] -= dataHost.nghost[dir];
+                beg[dir] -= dataHost.nghost[dir];
+              }
+              if(dataHost.rbound[dir] != internal) {
+                np_int[dir] += dataHost.nghost[dir];
+              }
+            }
+            buf = in;
+          } else { // target rank >0
+            // Fetch the local array size
+            MPI_Recv(np_int.data(), 3, MPI_INT, rank, 010, MPI_COMM_WORLD, &status);
+            MPI_Recv(np_tot.data(), 3, MPI_INT, rank, 011, MPI_COMM_WORLD, &status);
+            MPI_Recv(beg.data(), 3, MPI_INT, rank, 012, MPI_COMM_WORLD, &status);
+            MPI_Recv(gbeg.data(), 3, MPI_INT, rank, 013, MPI_COMM_WORLD, &status);
+
+            buf = IdefixHostArray4D<real>("pydefix::tempArray",nvar,np_tot[KDIR],np_tot[JDIR],np_tot[IDIR]);
+            // Fetch data
+            MPI_Recv(buf.data(), nvar*np_tot[IDIR]*np_tot[JDIR]*np_tot[KDIR], realMPI, rank, 014, MPI_COMM_WORLD,&status);
+          } // target rank
+          // Copy data from the buffer
+          for(int n = 0 ; n < nvar ; n++) {
+            for(int k = 0 ; k < np_int[KDIR] ; k++) {
+              const int kt = k+gbeg[KDIR];
+              for(int j = 0 ; j < np_int[JDIR] ; j++) {
+                const int jt = j+gbeg[JDIR];
+                for(int i = 0 ; i < np_int[IDIR] ; i++) {
+                  const int it = i+gbeg[IDIR];
+                  out(n,kt,jt,it) = buf(n,k+beg[KDIR],j+beg[JDIR],i+beg[IDIR]);
+                }
+              }
+            }
+          }// End for
+        }// End loop on target rank for root process
+      } else { // MPI prank >0
+        std::array<int,3> np_int = dataHost.np_int;
+        std::array<int,3> np_tot = dataHost.np_tot;
+        std::array<int,3> gbeg = dataHost.gbeg;
+        std::array<int,3> beg = dataHost.beg;
+
+        // Add back boundaries
+        for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
+          if(dataHost.lbound[dir] != internal) {
+            np_int[dir] += dataHost.nghost[dir];
+            gbeg[dir] -= dataHost.nghost[dir];
+            beg[dir] -= dataHost.nghost[dir];
+          }
+          if(dataHost.rbound[dir] != internal) {
+            np_int[dir] += dataHost.nghost[dir];
+          }
+        }
+
+        // send the local array size
+        MPI_Send(np_int.data(), 3, MPI_INT, 0, 010, MPI_COMM_WORLD);
+        MPI_Send(np_tot.data(), 3, MPI_INT, 0, 011, MPI_COMM_WORLD);
+        MPI_Send(beg.data(), 3, MPI_INT, 0, 012, MPI_COMM_WORLD);
+        MPI_Send(gbeg.data(), 3, MPI_INT, 0, 013, MPI_COMM_WORLD);
+        MPI_Send(in.data(), nvar*np_tot[IDIR]*np_tot[JDIR]*np_tot[KDIR], realMPI, 0, 014, MPI_COMM_WORLD);        // Allocate array
+      }
+      // All is transfered
+      MPI_Bcast(out.data(), nvar*grid->np_tot[KDIR]*grid->np_tot[JDIR]*grid->np_tot[IDIR], realMPI, 0, MPI_COMM_WORLD);
+    } else { // MPI with a single proc
+      out = in;
+    }
+  #else // No MPI
+    out = in;
+  #endif
+  idfx::cout << "final dims=" << out.extent(0) << " " << out.extent(1) << " " << out.extent(2) << " " << out.extent(3) << std::endl;
+  return out;
+} 
+
 PYBIND11_EMBEDDED_MODULE(pydefix, m) {
   py::class_<DataBlockHost>(m, "DataBlockHost")
     .def(py::init<>())
@@ -66,6 +166,11 @@ PYBIND11_EMBEDDED_MODULE(pydefix, m) {
     m.attr("IDIR") = IDIR;
     m.attr("JDIR") = JDIR;
     m.attr("KDIR") = KDIR;
+
+    m.attr("prank") = idfx::prank;
+    m.attr("psize") = idfx::psize;
+
+    m.def("GatherIdefixArray",&GatherIdefixArray, "Gather arrays from domain decomposition");
 }
 
 

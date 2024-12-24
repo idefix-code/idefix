@@ -124,7 +124,7 @@ endif()
 
 if(Idefix_PYTHON)
   add_compile_definitions("WITH_PYTHON")
-  set(PYBIND11_FINDPYTHON ON CACHE BOOL "Idefix requires python" FORCE)
+  #set(PYBIND11_FINDPYTHON ON CACHE BOOL "Idefix requires python" FORCE)
   find_package(pybind11 REQUIRED)
   target_link_libraries(idefix pybind11::embed)
   target_sources(idefix

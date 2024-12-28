@@ -22,11 +22,9 @@ namespace py = pybind11;
 
 int Pydefix::ninstance = 0;
 
-/************************************
- * DataBlockHost Python binding
- * **********************************/
 
-IdefixHostArray4D<real> GatherIdefixArray(IdefixHostArray4D<real> in, DataBlockHost dataHost) {
+namespace PydefixTools {
+IdefixHostArray4D<real> GatherIdefixArray(IdefixHostArray4D<real> in, DataBlockHost dataHost, bool keepBoundaries = true) {
   idfx::cout << "I am being called" << std::endl;
   idfx::cout << "My dims=" << in.extent(0) << " " << in.extent(1) << " " << in.extent(2) << " " << in.extent(3) << std::endl;
   idfx::cout << "First element=" << in(0,0,0,0) << std::endl; 
@@ -35,7 +33,11 @@ IdefixHostArray4D<real> GatherIdefixArray(IdefixHostArray4D<real> in, DataBlockH
   #ifdef WITH_MPI
     if(idfx::psize > 1) {
       const int nvar = in.extent(0);
-      out = IdefixHostArray4D<real>("pydefix::GatheredArray",nvar,grid->np_tot[KDIR],grid->np_tot[JDIR],grid->np_tot[IDIR]);
+      if(keepBoundaries) {
+        out = IdefixHostArray4D<real>("pydefix::GatheredArray",nvar,grid->np_tot[KDIR],grid->np_tot[JDIR],grid->np_tot[IDIR]);
+      } else {
+        out = IdefixHostArray4D<real>("pydefix::GatheredArray",nvar,grid->np_int[KDIR],grid->np_int[JDIR],grid->np_int[IDIR]);
+      }
       if(idfx::prank == 0) {
         for(int rank = 0 ; rank < idfx::psize ; rank++) {
           // np_tot: total size of the incoming array
@@ -53,14 +55,16 @@ IdefixHostArray4D<real> GatherIdefixArray(IdefixHostArray4D<real> in, DataBlockH
             beg = dataHost.beg;
 
             // Add back boundaries
-            for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
-              if(dataHost.lbound[dir] != internal) {
-                np_int[dir] += dataHost.nghost[dir];
-                gbeg[dir] -= dataHost.nghost[dir];
-                beg[dir] -= dataHost.nghost[dir];
-              }
-              if(dataHost.rbound[dir] != internal) {
-                np_int[dir] += dataHost.nghost[dir];
+            if(keepBoundaries) {
+              for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
+                if(dataHost.lbound[dir] != internal) {
+                  np_int[dir] += dataHost.nghost[dir];
+                  gbeg[dir] -= dataHost.nghost[dir];
+                  beg[dir] -= dataHost.nghost[dir];
+                }
+                if(dataHost.rbound[dir] != internal) {
+                  np_int[dir] += dataHost.nghost[dir];
+                }
               }
             }
             buf = in;
@@ -76,13 +80,17 @@ IdefixHostArray4D<real> GatherIdefixArray(IdefixHostArray4D<real> in, DataBlockH
             MPI_Recv(buf.data(), nvar*np_tot[IDIR]*np_tot[JDIR]*np_tot[KDIR], realMPI, rank, 014, MPI_COMM_WORLD,&status);
           } // target rank
           // Copy data from the buffer
+
           for(int n = 0 ; n < nvar ; n++) {
             for(int k = 0 ; k < np_int[KDIR] ; k++) {
-              const int kt = k+gbeg[KDIR];
+              int kt = k+gbeg[KDIR];
+              if(!keepBoundaries) kt -= dataHost.nghost[KDIR];
               for(int j = 0 ; j < np_int[JDIR] ; j++) {
-                const int jt = j+gbeg[JDIR];
+                int jt = j+gbeg[JDIR];
+                if(!keepBoundaries) jt -= dataHost.nghost[JDIR];
                 for(int i = 0 ; i < np_int[IDIR] ; i++) {
-                  const int it = i+gbeg[IDIR];
+                  int it = i+gbeg[IDIR];
+                  if(!keepBoundaries) it -= dataHost.nghost[IDIR];
                   out(n,kt,jt,it) = buf(n,k+beg[KDIR],j+beg[JDIR],i+beg[IDIR]);
                 }
               }
@@ -96,14 +104,16 @@ IdefixHostArray4D<real> GatherIdefixArray(IdefixHostArray4D<real> in, DataBlockH
         std::array<int,3> beg = dataHost.beg;
 
         // Add back boundaries
-        for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
-          if(dataHost.lbound[dir] != internal) {
-            np_int[dir] += dataHost.nghost[dir];
-            gbeg[dir] -= dataHost.nghost[dir];
-            beg[dir] -= dataHost.nghost[dir];
-          }
-          if(dataHost.rbound[dir] != internal) {
-            np_int[dir] += dataHost.nghost[dir];
+        if(keepBoundaries) {
+          for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
+            if(dataHost.lbound[dir] != internal) {
+              np_int[dir] += dataHost.nghost[dir];
+              gbeg[dir] -= dataHost.nghost[dir];
+              beg[dir] -= dataHost.nghost[dir];
+            }
+            if(dataHost.rbound[dir] != internal) {
+              np_int[dir] += dataHost.nghost[dir];
+            }
           }
         }
 
@@ -122,9 +132,13 @@ IdefixHostArray4D<real> GatherIdefixArray(IdefixHostArray4D<real> in, DataBlockH
   #else // No MPI
     out = in;
   #endif
-  idfx::cout << "final dims=" << out.extent(0) << " " << out.extent(1) << " " << out.extent(2) << " " << out.extent(3) << std::endl;
   return out;
-} 
+}
+}// PydefixTools
+
+/************************************
+ * DataBlockHost Python binding
+ * **********************************/
 
 PYBIND11_EMBEDDED_MODULE(pydefix, m) {
   py::class_<DataBlockHost>(m, "DataBlockHost")
@@ -145,9 +159,30 @@ PYBIND11_EMBEDDED_MODULE(pydefix, m) {
       .def_readwrite("Ex2", &DataBlockHost::Ex2)
       .def_readwrite("Ex3", &DataBlockHost::Ex3)
     #endif
+    .def_readwrite("xbeg", &DataBlockHost::xbeg)
+    .def_readwrite("xend", &DataBlockHost::xend)
+    .def_readwrite("gbeg", &DataBlockHost::gbeg)
+    .def_readwrite("gend", &DataBlockHost::gend)
+    .def_readwrite("beg", &DataBlockHost::beg)
+    .def_readwrite("end", &DataBlockHost::end)
+    .def_readwrite("np_tot", &DataBlockHost::np_tot)
+    .def_readwrite("np_int", &DataBlockHost::np_int)
+    .def_readwrite("nghost", &DataBlockHost::nghost)
     .def_readwrite("InvDt", &DataBlockHost::InvDt)
     .def_readwrite("t",&DataBlockHost::t)
     .def_readwrite("dt",&DataBlockHost::dt);
+
+  py::class_<GridHost>(m, "GridHost")
+    .def(py::init<>())
+    .def_readwrite("x", &GridHost::x)
+    .def_readwrite("xr", &GridHost::xr)
+    .def_readwrite("xl", &GridHost::xl)
+    .def_readwrite("dx", &GridHost::dx)
+    .def_readwrite("xbeg", &GridHost::xbeg)
+    .def_readwrite("xend", &GridHost::xend)
+    .def_readwrite("np_tot", &GridHost::np_tot)
+    .def_readwrite("np_int", &GridHost::np_int)
+    .def_readwrite("nghost", &GridHost::nghost);
 
     m.attr("RHO") = RHO;
     m.attr("VX1") = VX1;
@@ -170,7 +205,7 @@ PYBIND11_EMBEDDED_MODULE(pydefix, m) {
     m.attr("prank") = idfx::prank;
     m.attr("psize") = idfx::psize;
 
-    m.def("GatherIdefixArray",&GatherIdefixArray, "Gather arrays from domain decomposition");
+    m.def("GatherIdefixArray",&PydefixTools::GatherIdefixArray, "Gather arrays from domain decomposition");
 }
 
 
@@ -228,8 +263,10 @@ void Pydefix::Output(DataBlock &data, int n) {
                   "in your input file [python]:output_function");
   }
   DataBlockHost dataHost(data);
+  GridHost gridHost(*data.mygrid);
+  gridHost.SyncFromDevice();
   dataHost.SyncFromDevice();
-  this->CallScript(this->scriptFilename,this->outputFunctionName,dataHost, n);
+  this->CallScript(this->scriptFilename,this->outputFunctionName,dataHost, gridHost, n);
   idfx::popRegion();
 }
 

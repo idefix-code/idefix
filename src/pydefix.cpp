@@ -24,84 +24,58 @@ int Pydefix::ninstance = 0;
 
 
 namespace PydefixTools {
-IdefixHostArray4D<real> GatherIdefixArray(IdefixHostArray4D<real> in, DataBlockHost dataHost, bool keepBoundaries = true) {
-  idfx::cout << "I am being called" << std::endl;
-  idfx::cout << "My dims=" << in.extent(0) << " " << in.extent(1) << " " << in.extent(2) << " " << in.extent(3) << std::endl;
-  idfx::cout << "First element=" << in(0,0,0,0) << std::endl; 
+// Functions provided by Idefix in Pydefix for user convenience
+py::array_t<real, py::array::c_style> GatherIdefixArray(IdefixHostArray3D<real> in,
+                                                        DataBlockHost dataHost,
+                                                        bool keepBoundaries = true,
+                                                        bool broadcast = true) {
+  idfx::pushRegion("PydefixTools::GatherIdefixArray");
   Grid *grid = dataHost.data->mygrid;
-  IdefixHostArray4D<real> out;
-  #ifdef WITH_MPI
-    if(idfx::psize > 1) {
-      const int nvar = in.extent(0);
-      if(keepBoundaries) {
-        out = IdefixHostArray4D<real>("pydefix::GatheredArray",nvar,grid->np_tot[KDIR],grid->np_tot[JDIR],grid->np_tot[IDIR]);
-      } else {
-        out = IdefixHostArray4D<real>("pydefix::GatheredArray",nvar,grid->np_int[KDIR],grid->np_int[JDIR],grid->np_int[IDIR]);
-      }
-      if(idfx::prank == 0) {
-        for(int rank = 0 ; rank < idfx::psize ; rank++) {
-          // np_tot: total size of the incoming array
-          // np_int: size that should be copied into global
-          // beg: offset in the incoming array where copy should begin
-          // gbeg: offset in the global array where copy should be begin
-          MPI_Status status;
-          std::array<int,3> np_int,np_tot, beg, gbeg;
-          IdefixHostArray4D<real> buf;
+  IdefixHostArray3D<real> out;
+  py::array_t<real, py::array::c_style> pyOut;
+  if(broadcast || idfx::prank==0) {
+    if(keepBoundaries) {
+      // Create a python-managed array, with memory accessible from Kokkos
+      pyOut = py::array_t<real, py::array::c_style>({grid->np_tot[KDIR],
+                                                      grid->np_tot[JDIR],
+                                                      grid->np_tot[IDIR]});
+      out = Kokkos::View<real***,
+                    Kokkos::LayoutRight,
+                    Kokkos::HostSpace,
+                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+                                                      (reinterpret_cast<real*>(pyOut.request().ptr),
+                                                              grid->np_tot[KDIR],
+                                                              grid->np_tot[JDIR],
+                                                              grid->np_tot[IDIR]);
 
-          if(rank==0) {
-            np_int = dataHost.np_int;
-            np_tot = dataHost.np_tot;
-            gbeg = dataHost.gbeg;
-            beg = dataHost.beg;
+    } else {
+      pyOut = py::array_t<real, py::array::c_style>({grid->np_int[KDIR],
+                                                      grid->np_int[JDIR],
+                                                      grid->np_int[IDIR]});
+      out = Kokkos::View<real***,
+                    Kokkos::LayoutRight,
+                    Kokkos::HostSpace,
+                    Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+                                                      (reinterpret_cast<real*>(pyOut.request().ptr),
+                                                              grid->np_int[KDIR],
+                                                              grid->np_int[JDIR],
+                                                              grid->np_int[IDIR]);
+    }
+  }
+  if(idfx::prank == 0) {
+    for(int rank = 0 ; rank < idfx::psize ; rank++) {
+      // np_tot: total size of the incoming array
+      // np_int: size that should be copied into global
+      // beg: offset in the incoming array where copy should begin
+      // gbeg: offset in the global array where copy should be begin
+      std::array<int,3> np_int,np_tot, beg, gbeg;
+      IdefixHostArray3D<real> buf;
 
-            // Add back boundaries
-            if(keepBoundaries) {
-              for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
-                if(dataHost.lbound[dir] != internal) {
-                  np_int[dir] += dataHost.nghost[dir];
-                  gbeg[dir] -= dataHost.nghost[dir];
-                  beg[dir] -= dataHost.nghost[dir];
-                }
-                if(dataHost.rbound[dir] != internal) {
-                  np_int[dir] += dataHost.nghost[dir];
-                }
-              }
-            }
-            buf = in;
-          } else { // target rank >0
-            // Fetch the local array size
-            MPI_Recv(np_int.data(), 3, MPI_INT, rank, 010, MPI_COMM_WORLD, &status);
-            MPI_Recv(np_tot.data(), 3, MPI_INT, rank, 011, MPI_COMM_WORLD, &status);
-            MPI_Recv(beg.data(), 3, MPI_INT, rank, 012, MPI_COMM_WORLD, &status);
-            MPI_Recv(gbeg.data(), 3, MPI_INT, rank, 013, MPI_COMM_WORLD, &status);
-
-            buf = IdefixHostArray4D<real>("pydefix::tempArray",nvar,np_tot[KDIR],np_tot[JDIR],np_tot[IDIR]);
-            // Fetch data
-            MPI_Recv(buf.data(), nvar*np_tot[IDIR]*np_tot[JDIR]*np_tot[KDIR], realMPI, rank, 014, MPI_COMM_WORLD,&status);
-          } // target rank
-          // Copy data from the buffer
-
-          for(int n = 0 ; n < nvar ; n++) {
-            for(int k = 0 ; k < np_int[KDIR] ; k++) {
-              int kt = k+gbeg[KDIR];
-              if(!keepBoundaries) kt -= dataHost.nghost[KDIR];
-              for(int j = 0 ; j < np_int[JDIR] ; j++) {
-                int jt = j+gbeg[JDIR];
-                if(!keepBoundaries) jt -= dataHost.nghost[JDIR];
-                for(int i = 0 ; i < np_int[IDIR] ; i++) {
-                  int it = i+gbeg[IDIR];
-                  if(!keepBoundaries) it -= dataHost.nghost[IDIR];
-                  out(n,kt,jt,it) = buf(n,k+beg[KDIR],j+beg[JDIR],i+beg[IDIR]);
-                }
-              }
-            }
-          }// End for
-        }// End loop on target rank for root process
-      } else { // MPI prank >0
-        std::array<int,3> np_int = dataHost.np_int;
-        std::array<int,3> np_tot = dataHost.np_tot;
-        std::array<int,3> gbeg = dataHost.gbeg;
-        std::array<int,3> beg = dataHost.beg;
+      if(rank==0) {
+        np_int = dataHost.np_int;
+        np_tot = dataHost.np_tot;
+        gbeg = dataHost.gbeg;
+        beg = dataHost.beg;
 
         // Add back boundaries
         if(keepBoundaries) {
@@ -116,25 +90,82 @@ IdefixHostArray4D<real> GatherIdefixArray(IdefixHostArray4D<real> in, DataBlockH
             }
           }
         }
+        buf = in;
+      } else { // target rank >0
+        #ifdef WITH_MPI
+          MPI_Status status;
+          // Fetch the local array size
+          MPI_Recv(np_int.data(), 3, MPI_INT, rank, 010, MPI_COMM_WORLD, &status);
+          MPI_Recv(np_tot.data(), 3, MPI_INT, rank, 011, MPI_COMM_WORLD, &status);
+          MPI_Recv(beg.data(), 3, MPI_INT, rank, 012, MPI_COMM_WORLD, &status);
+          MPI_Recv(gbeg.data(), 3, MPI_INT, rank, 013, MPI_COMM_WORLD, &status);
 
-        // send the local array size
-        MPI_Send(np_int.data(), 3, MPI_INT, 0, 010, MPI_COMM_WORLD);
-        MPI_Send(np_tot.data(), 3, MPI_INT, 0, 011, MPI_COMM_WORLD);
-        MPI_Send(beg.data(), 3, MPI_INT, 0, 012, MPI_COMM_WORLD);
-        MPI_Send(gbeg.data(), 3, MPI_INT, 0, 013, MPI_COMM_WORLD);
-        MPI_Send(in.data(), nvar*np_tot[IDIR]*np_tot[JDIR]*np_tot[KDIR], realMPI, 0, 014, MPI_COMM_WORLD);        // Allocate array
+          buf = IdefixHostArray3D<real>("pydefix::tempArray",
+                                         np_tot[KDIR],np_tot[JDIR],np_tot[IDIR]);
+          // Fetch data
+          MPI_Recv(buf.data(), np_tot[IDIR]*np_tot[JDIR]*np_tot[KDIR],
+                   realMPI, rank, 014, MPI_COMM_WORLD,&status);
+        #else
+          IDEFIX_ERROR("Can't deal with psize>1 without MPI.");
+        #endif
+      } // target rank
+      // Copy data from the buffer
+
+      for(int k = 0 ; k < np_int[KDIR] ; k++) {
+        int kt = k+gbeg[KDIR];
+        if(!keepBoundaries) kt -= dataHost.nghost[KDIR];
+        for(int j = 0 ; j < np_int[JDIR] ; j++) {
+          int jt = j+gbeg[JDIR];
+          if(!keepBoundaries) jt -= dataHost.nghost[JDIR];
+          for(int i = 0 ; i < np_int[IDIR] ; i++) {
+            int it = i+gbeg[IDIR];
+            if(!keepBoundaries) it -= dataHost.nghost[IDIR];
+            out(kt,jt,it) = buf(k+beg[KDIR],j+beg[JDIR],i+beg[IDIR]);
+          }
+        }
+      }// End for
+    }// End loop on target rank for root process
+  } else { // MPI prank >0
+    std::array<int,3> np_int = dataHost.np_int;
+    std::array<int,3> np_tot = dataHost.np_tot;
+    std::array<int,3> gbeg = dataHost.gbeg;
+    std::array<int,3> beg = dataHost.beg;
+
+    // Add back boundaries
+    if(keepBoundaries) {
+      for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
+        if(dataHost.lbound[dir] != internal) {
+          np_int[dir] += dataHost.nghost[dir];
+          gbeg[dir] -= dataHost.nghost[dir];
+          beg[dir] -= dataHost.nghost[dir];
+        }
+        if(dataHost.rbound[dir] != internal) {
+          np_int[dir] += dataHost.nghost[dir];
+        }
       }
-      // All is transfered
-      MPI_Bcast(out.data(), nvar*grid->np_tot[KDIR]*grid->np_tot[JDIR]*grid->np_tot[IDIR], realMPI, 0, MPI_COMM_WORLD);
-    } else { // MPI with a single proc
-      out = in;
     }
-  #else // No MPI
-    out = in;
+    #ifdef WITH_MPI
+      // send the local array size
+      MPI_Send(np_int.data(), 3, MPI_INT, 0, 010, MPI_COMM_WORLD);
+      MPI_Send(np_tot.data(), 3, MPI_INT, 0, 011, MPI_COMM_WORLD);
+      MPI_Send(beg.data(), 3, MPI_INT, 0, 012, MPI_COMM_WORLD);
+      MPI_Send(gbeg.data(), 3, MPI_INT, 0, 013, MPI_COMM_WORLD);
+      MPI_Send(in.data(), np_tot[IDIR]*np_tot[JDIR]*np_tot[KDIR], realMPI, 0, 014, MPI_COMM_WORLD);
+    #else
+      IDEFIX_ERROR("Can't deal with psize>1 without MPI.");
+    #endif
+  }
+  // All is transfered
+  #ifdef WITH_MPI
+    if(broadcast) {
+      MPI_Bcast(out.data(), out.extent(0)*out.extent(1)*out.extent(2), realMPI, 0, MPI_COMM_WORLD);
+    }
   #endif
-  return out;
+
+  idfx::popRegion();
+  return pyOut;
 }
-}// PydefixTools
+// namespace PydefixTools
 
 /************************************
  * DataBlockHost Python binding
@@ -205,7 +236,12 @@ PYBIND11_EMBEDDED_MODULE(pydefix, m) {
     m.attr("prank") = idfx::prank;
     m.attr("psize") = idfx::psize;
 
-    m.def("GatherIdefixArray",&PydefixTools::GatherIdefixArray, "Gather arrays from domain decomposition");
+    m.def("GatherIdefixArray",&PydefixTools::GatherIdefixArray,
+                               py::arg("in"),
+                               py::arg("data"),
+                               py::arg("keepBoundaries") = true,
+                               py::arg("broadcast") = true,
+                               "Gather arrays from MPI domain decomposition");
 }
 
 

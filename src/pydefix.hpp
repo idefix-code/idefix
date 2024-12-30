@@ -64,23 +64,17 @@ template <typename T> struct type_caster<IdefixHostArray4D<T>> {
 
     auto buf = array.request();
 
-    
 
-    value = Kokkos::View<T****, 
-                        Kokkos::LayoutRight, 
-                        Kokkos::HostSpace, 
-                        Kokkos::MemoryTraits<Kokkos::Unmanaged>> ((T*)buf.ptr, 
+
+    value = Kokkos::View<T****,
+                        Kokkos::LayoutRight,
+                        Kokkos::HostSpace,
+                        Kokkos::MemoryTraits<Kokkos::Unmanaged>> (reinterpret_cast<T*>(buf.ptr),
                                                                   array.shape()[0],
                                                                   array.shape()[1],
                                                                   array.shape()[2],
                                                                   array.shape()[3]);
 
-    /*
-    value = Kokkos::View<T****, 
-                        Kokkos::LayoutRight, 
-                        Kokkos::HostSpace, 
-                        Kokkos::MemoryTraits<Kokkos::Unmanaged>> ((T*)buf.ptr, 
-                                                                  array.shape()[0]);*/
 
     return true;
   }
@@ -106,27 +100,31 @@ template <typename T> struct type_caster<IdefixHostArray3D<T>> {
 
   // Conversion part 1 (Python -> C++)
   bool load(py::handle src, bool convert) {
+    idfx::pushRegion("Pydefix::TypeCaster3D Python->C");
     if ( !convert && !py::array_t<T>::check_(src) )
       return false;
 
-    auto buf = py::array_t<T, py::array::c_style | py::array::forcecast>::ensure(src);
-    if ( !buf )
+    auto array = py::array_t<T, py::array::c_style | py::array::forcecast>::ensure(src);
+    if ( !array )
       return false;
 
-    auto dims = buf.ndim();
+    auto dims = array.ndim();
     if ( dims != 3  )
       return false;
 
-    std::vector<size_t> shape(3);
-
-    for ( int i = 0 ; i < 3 ; ++i )
-      shape[i] = buf.shape()[i];
+    auto buf = array.request();
 
 
-    value = IdefixHostArray3D<T>("pyArray",shape[0], shape[1], shape[2]);
 
-    // Still need to fill in with buf.data()+buf.size()
-    IDEFIX_ERROR("Python->Idefix Not implemented");
+    value = Kokkos::View<T***,
+                        Kokkos::LayoutRight,
+                        Kokkos::HostSpace,
+                        Kokkos::MemoryTraits<Kokkos::Unmanaged>> (reinterpret_cast<T*>(buf.ptr),
+                                                                  array.shape()[0],
+                                                                  array.shape()[1],
+                                                                  array.shape()[2]);
+
+    idfx::popRegion();
     return true;
   }
 
@@ -134,11 +132,15 @@ template <typename T> struct type_caster<IdefixHostArray3D<T>> {
   static py::handle cast(const IdefixHostArray3D<T>& src,
                          py::return_value_policy policy,
                          py::handle parent) {
+    idfx::pushRegion("Pydefix::TypeCaster3D C->Python");
+    // Keep a local reference
+    auto arr = src;
     py::none dummyDataOwner;
     py::array_t<real, py::array::c_style> a({src.extent(0),
                                              src.extent(1),
                                              src.extent(2)},
                                              src.data(),dummyDataOwner);
+    idfx::popRegion();
     return a.release();
   }
 };

@@ -165,7 +165,7 @@ py::array_t<real, py::array::c_style> GatherIdefixArray(IdefixHostArray3D<real> 
   idfx::popRegion();
   return pyOut;
 }
-// namespace PydefixTools
+}// namespace PydefixTools
 
 /************************************
  * DataBlockHost Python binding

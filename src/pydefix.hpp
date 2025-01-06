@@ -114,8 +114,6 @@ template <typename T> struct type_caster<IdefixHostArray3D<T>> {
 
     auto buf = array.request();
 
-
-
     value = Kokkos::View<T***,
                         Kokkos::LayoutRight,
                         Kokkos::HostSpace,
@@ -162,16 +160,16 @@ template <typename T> struct type_caster<IdefixHostArray2D<T>> {
     if ( dims != 2  )
       return false;
 
-    std::vector<size_t> shape(2);
+    auto buf = array.request();
 
-    for ( int i = 0 ; i < 2 ; ++i )
-      shape[i] = buf.shape()[i];
+    value = Kokkos::View<T**,
+                        Kokkos::LayoutRight,
+                        Kokkos::HostSpace,
+                        Kokkos::MemoryTraits<Kokkos::Unmanaged>> (reinterpret_cast<T*>(buf.ptr),
+                                                                  array.shape()[0],
+                                                                  array.shape()[1]);
 
-
-    value = IdefixHostArray2D<T>("pyArray",shape[0], shape[1]);
-
-    // Still need to fill in with buf.data()+buf.size()
-    IDEFIX_ERROR("Python->Idefix Not implemented");
+    idfx::popRegion();
     return true;
   }
 
@@ -202,16 +200,15 @@ template <typename T> struct type_caster<IdefixHostArray1D<T>> {
     if ( dims != 1  )
       return false;
 
-    std::vector<size_t> shape(1);
+    auto buf = array.request();
 
-    for ( int i = 0 ; i < 1 ; ++i )
-      shape[i] = buf.shape()[i];
+    value = Kokkos::View<T*,
+                        Kokkos::LayoutRight,
+                        Kokkos::HostSpace,
+                        Kokkos::MemoryTraits<Kokkos::Unmanaged>> (reinterpret_cast<T*>(buf.ptr),
+                                                                  array.shape()[0]);
 
-
-    value = IdefixHostArray1D<T>("pyArray",shape[0]);
-
-    // Still need to fill in with buf.data()+buf.size()
-    IDEFIX_ERROR("Python->Idefix Not implemented");
+    idfx::popRegion();
     return true;
   }
 

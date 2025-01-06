@@ -358,6 +358,23 @@ and ``X1-end``, ``X2-end``, ``X3-end`` for the right boundaries. ``X2`` boundari
 |                | | (see :ref:`userdefBoundaries`)                                                                                 |
 +----------------+------------------------------------------------------------------------------------------------------------------+
 
+``Python`` section
+------------------
+
+This section describes the python script and function that can interact with Idefix while running using the Pydefix module (see :ref:`pydefixModule`)
+
++------------------------+-----------------------+-----------------------------------------------------------------------------------------------------------+
+|  Entry name            | Parameter type        | Comment                                                                                                   |
++========================+=======================+===========================================================================================================+
+| script                 | string                | | (Mandatory) Filename (*without ".py"!*) of the python script that Idefix should use.                    |
+|                        |                       | | The script should be in location of Idefix executable file                                              |
++------------------------+-----------------------+-----------------------------------------------------------------------------------------------------------+
+| output_function        | string                | | (Optional) Name of the function that will be called for each output event (the function should be       |
+|                        |                       | |  defined in the  python script above). When ommited, pydefix output functions are disabled.             |
++------------------------+-----------------------+-----------------------------------------------------------------------------------------------------------+
+| initflow_function      | string                | | (optional) Name of the python function that will be called to initialize the flow in place of the C++   |
+|                        |                       | | function `Setup::InitFlow`. Revert to `Setup::Initflow`` when ommited.                                  |
++------------------------+-----------------------+-----------------------------------------------------------------------------------------------------------+
 
 .. _outputSection:
 
@@ -410,6 +427,9 @@ This section describes the outputs *Idefix* produces. For more details about eac
 |                |                         | | function to be enrolled with ``Output::EnrollUserDefVariables(UserDefVariablesFunc)``          |
 |                |                         | | (see :ref:`functionEnrollment`). The user-defined variables defined by this function           |
 |                |                         | | are then written as new variables in vtk and/or xdmf  outputs.                                 |
++----------------+-------------------------+--------------------------------------------------------------------------------------------------+
+| python         | float                   | | Time interval between pydefix outputs, in code units.                                          |
+|                |                         | | If negative, periodic pydefix outputs are disabled.                                            |
 +----------------+-------------------------+--------------------------------------------------------------------------------------------------+
 
 .. note::

@@ -152,11 +152,11 @@ template <typename T> struct type_caster<IdefixHostArray2D<T>> {
     if ( !convert && !py::array_t<T>::check_(src) )
       return false;
 
-    auto buf = py::array_t<T, py::array::c_style | py::array::forcecast>::ensure(src);
-    if ( !buf )
+    auto array = py::array_t<T, py::array::c_style | py::array::forcecast>::ensure(src);
+    if ( !array )
       return false;
 
-    auto dims = buf.ndim();
+    auto dims = array.ndim();
     if ( dims != 2  )
       return false;
 
@@ -192,11 +192,11 @@ template <typename T> struct type_caster<IdefixHostArray1D<T>> {
     if ( !convert && !py::array_t<T>::check_(src) )
       return false;
 
-    auto buf = py::array_t<T, py::array::c_style | py::array::forcecast>::ensure(src);
-    if ( !buf )
+    auto array = py::array_t<T, py::array::c_style | py::array::forcecast>::ensure(src);
+    if ( !array )
       return false;
 
-    auto dims = buf.ndim();
+    auto dims = array.ndim();
     if ( dims != 1  )
       return false;
 

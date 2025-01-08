@@ -34,6 +34,9 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
 
   nghost = data->nghost;
 
+  lbound = data->lbound;
+  rbound = data->rbound;
+
   xbeg = data->xbeg;
   xend = data->xend;
   beg = data->beg;

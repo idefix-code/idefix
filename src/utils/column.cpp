@@ -1,7 +1,24 @@
-#include "column.hpp"
-#include "loop.hpp"
+// ***********************************************************************************
+// Idefix MHD astrophysical code
+// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+// and other code contributors
+// Licensed under CeCILL 2.1 License, see COPYING for more information
+// ***********************************************************************************
 
-Column::Column(int dir, int sign, int variable, DataBlock *data) : direction(dir), sign(sign), variable(variable) {
+
+#include <vector>
+#include <string>
+
+#include "column.hpp"
+#include "idefix.hpp"
+#include "input.hpp"
+#include "output.hpp"
+#include "grid.hpp"
+#include "dataBlock.hpp"
+#include "dataBlockHost.hpp"
+
+Column::Column(int dir, int sign, int variable, DataBlock *data)
+                : direction(dir), sign(sign), variable(variable) {
   idfx::pushRegion("Column::Column");
   this->np_tot = data->np_tot;
   this->np_int = data->np_int;
@@ -157,19 +174,22 @@ void Column::ComputeColumn(IdefixArray4D<real> in) {
       if(direction == IDIR) {
         idefix_for("Loadsum",kb,ke,jb,je,
           KOKKOS_LAMBDA(int k, int j) {
-            localSum(k,j) = column(k,j,ie-1) + in(var,k,j,ie-1) * dV(k,j,ie-1) / (0.5*(A(k,j,ie-1)+A(k,j,ie)));
+            localSum(k,j) = column(k,j,ie-1) + in(var,k,j,ie-1) * dV(k,j,ie-1)
+                            / (0.5*(A(k,j,ie-1)+A(k,j,ie)));
         });
       }
       if(direction == JDIR) {
         idefix_for("Loadsum",kb,ke,ib,ie,
           KOKKOS_LAMBDA(int k, int i) {
-            localSum(k,i) = column(k,je-1,i) + in(var,k,je-1,i) * dV(k,je-1,i) / (0.5*(A(k,je-1,i)+A(k,je,i)));
+            localSum(k,i) = column(k,je-1,i) + in(var,k,je-1,i) * dV(k,je-1,i)
+                            / (0.5*(A(k,je-1,i)+A(k,je,i)));
         });
       }
       if(direction == KDIR) {
         idefix_for("Loadsum",jb,je,ib,ie,
           KOKKOS_LAMBDA(int j, int i) {
-            localSum(j,i) = column(ke-1,j,i) + in(var,ke-1,j,i) * dV(ke-1,j,i) / (0.5*(A(ke-1,j,i)+A(ke,j,i)));
+            localSum(j,i) = column(ke-1,j,i) + in(var,ke-1,j,i) * dV(ke-1,j,i)
+                            / (0.5*(A(ke-1,j,i)+A(ke,j,i)));
         });
       }
 

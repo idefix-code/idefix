@@ -201,3 +201,5 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/utils/lookupTable -all $TESTME_OPTIONS
       - name: Dump Image
         run: scripts/ci/run-tests $IDEFIX_DIR/test/utils/dumpImage -all $TESTME_OPTIONS
+      - name: Column density
+        run: scripts/ci/run-tests $IDEFIX_DIR/test/utils/columnDensity -all $TESTME_OPTIONS

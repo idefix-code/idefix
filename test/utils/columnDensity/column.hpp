@@ -11,15 +11,19 @@
 #include <string>
 
 
-
+// A class to implement a parralel cumulative sum
 class Column {
  public:
   // Constructor from Setup arguments
   Column(int dir, int sign, int variable, DataBlock *);
+  // dir : direction along which the integration is performed
+  // sign: +1 for an integration from left to right, -1 for an integration from right to left (backwards)
+  // variable: index of the variable along which we do the integral (since the intput array is 4D)
   void ComputeColumn(IdefixArray4D<real> in);
+  // Effectively compute integral from the input array in parameter
   IdefixArray3D<real> GetColumn() {
     return (this->ColumnArray);
-  }
+  }// Return the column density
  private:
   IdefixArray3D<real> ColumnArray;
   int direction; // The direction along which the column is computed

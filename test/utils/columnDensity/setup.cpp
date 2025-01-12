@@ -34,6 +34,11 @@ void Analysis(DataBlock & data) {
 
   real errMax = 0.0;
 
+  // Because this particular setup has a constant density =1, we expect
+  // the column density from the left to match the cell right coordinates,
+  // and the column density from the right to match L-the cell left coordinate (where L is the box size)
+  // here we have L=1
+  // This routine checks that all of the available column densities do match the expected values.
   for(int k = data.beg[KDIR]; k < data.end[KDIR] ; k++) {
     for(int j = data.beg[JDIR]; j < data.end[JDIR] ; j++) {
       for(int i = data.beg[IDIR]; i < data.end[IDIR] ; i++) {

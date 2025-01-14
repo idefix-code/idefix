@@ -17,8 +17,8 @@
 #include "dataBlock.hpp"
 #include "dataBlockHost.hpp"
 
-Column::Column(int dir, int sign, int variable, DataBlock *data)
-                : direction(dir), sign(sign), variable(variable) {
+Column::Column(int dir, int sign, DataBlock *data)
+                : direction(dir), sign(sign) {
   idfx::pushRegion("Column::Column");
   this->np_tot = data->np_tot;
   this->np_int = data->np_int;
@@ -62,7 +62,7 @@ Column::Column(int dir, int sign, int variable, DataBlock *data)
   idfx::popRegion();
 }
 
-void Column::ComputeColumn(IdefixArray4D<real> in) {
+void Column::ComputeColumn(IdefixArray4D<real> in, const int var) {
   idfx::pushRegion("Column::ComputeColumn");
   const int nk = np_int[KDIR];
   const int nj = np_int[JDIR];
@@ -80,7 +80,6 @@ void Column::ComputeColumn(IdefixArray4D<real> in) {
   auto A = this->Area;
   auto localSum = this->localSum;
 
-  const int var = this->variable;
   if(direction==IDIR) {
     // Inspired from loop.hpp
     Kokkos::parallel_for("ColumnX1", team_policy (nk*nj, Kokkos::AUTO),
@@ -210,7 +209,7 @@ void Column::ComputeColumn(IdefixArray4D<real> in) {
     // density in the ghost zones are coherent
     #ifdef WITH_MPI
       // Create a 4D array that contains our column data
-      this->arr4D = IdefixArray4D<real> (column.data(), 1, this->np_tot[KDIR],
+      IdefixArray4D<real> arr4D(column.data(), 1, this->np_tot[KDIR],
                                                         this->np_tot[JDIR],
                                                         this->np_tot[IDIR]);
 
@@ -219,17 +218,23 @@ void Column::ComputeColumn(IdefixArray4D<real> in) {
         if(nproc[dir]>1) {
           switch(dir) {
             case 0:
-              this->mpi.ExchangeX1(this->arr4D);
+              this->mpi.ExchangeX1(arr4D);
               break;
             case 1:
-              this->mpi.ExchangeX2(this->arr4D);
+              this->mpi.ExchangeX2(arr4D);
               break;
             case 2:
-              this->mpi.ExchangeX3(this->arr4D);
+              this->mpi.ExchangeX3(arr4D);
               break;
           }
         }
       }
     #endif
   idfx::popRegion();
+}
+
+void Column::ComputeColumn(IdefixArray3D<real> in) {
+  // 4D alias
+  IdefixArray4D<real> arr4D(in.data(), 1, in.extent(2), in.extent(1), in.extent(0));
+  return this->ComputeColumn(arr4D,0);
 }

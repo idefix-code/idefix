@@ -24,15 +24,22 @@ class Column {
   /// @param dir direction along which the integration is performed
   /// @param sign: +1 for an integration from left to right, -1 for an integration from right to
   ///              left i.e (backwards)
-  /// @param variable: index of the variable along which we do the integral (since the
-  ///                   intput array is 4D)
   ///////////////////////////////////////////////////////////////////////////////////
-  Column(int dir, int sign, int variable, DataBlock *);
+  Column(int dir, int sign, DataBlock *);
 
   ///////////////////////////////////////////////////////////////////////////////////
   /// @brief Effectively compute integral from the input array in argument
+  /// @param in: 4D input array
+  /// @param variable: index of the variable along which we do the integral (since the
+  ///                   intput array is 4D)
   ///////////////////////////////////////////////////////////////////////////////////
-  void ComputeColumn(IdefixArray4D<real> in);
+  void ComputeColumn(IdefixArray4D<real> in, int variable);
+
+    ///////////////////////////////////////////////////////////////////////////////////
+  /// @brief Effectively compute integral from the input array in argument
+  /// @param in: 3D input array
+  ///////////////////////////////////////////////////////////////////////////////////
+  void ComputeColumn(IdefixArray3D<real> in);
 
   ///////////////////////////////////////////////////////////////////////////////////
   /// @brief Get a reference to the computed column density array
@@ -45,7 +52,6 @@ class Column {
   IdefixArray3D<real> ColumnArray;
   int direction; // The direction along which the column is computed
   int sign;      // whether we integrate from the left or from the right
-  int variable;     // The variable we use to compute the column
   std::array<int,3> np_tot;
   std::array<int,3> np_int;
   std::array<int,3> beg;
@@ -60,7 +66,6 @@ class Column {
   int MPIrank;
   int MPIsize;
 
-  IdefixArray4D<real> arr4D; // Dummy array 4D used for MPI xchanges
   std::array<int,3> nproc; // 3D size of the MPI cartesian geometry
 
   #endif

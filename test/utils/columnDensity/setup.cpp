@@ -15,12 +15,22 @@ void Analysis(DataBlock & data) {
 
   DataBlockHost d(data);
 
-  columnX1Left->ComputeColumn(data.hydro->Vc);
-  columnX1Right->ComputeColumn(data.hydro->Vc);
-  columnX2Left->ComputeColumn(data.hydro->Vc);
-  columnX2Right->ComputeColumn(data.hydro->Vc);
-  columnX3Left->ComputeColumn(data.hydro->Vc);
-  columnX3Right->ComputeColumn(data.hydro->Vc);
+  // Try the 4D array interface
+  columnX1Left->ComputeColumn(data.hydro->Vc,RHO);
+  columnX1Right->ComputeColumn(data.hydro->Vc,RHO);
+
+  // Try the 3D array interface
+  IdefixArray3D<real> rho("rho",data.np_tot[KDIR],data.np_tot[JDIR],data.np_tot[IDIR]);
+  auto Vc = data.hydro->Vc;
+
+  idefix_for("init rho",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
+    KOKKOS_LAMBDA(int k, int j, int i) {
+      rho(k,j,i) = Vc(RHO,k,j,i);
+    });
+  columnX2Left->ComputeColumn(rho);
+  columnX2Right->ComputeColumn(rho);
+  columnX3Left->ComputeColumn(rho);
+  columnX3Right->ComputeColumn(rho);
 
   IdefixArray3D<real> columnDensityLeft, columnDensityRight;
   IdefixArray3D<real>::HostMirror columnDensityLeftHost, columnDensityRightHost;
@@ -124,12 +134,12 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   output.EnrollAnalysis(&Analysis);
   data.hydro->EnrollInternalBoundary(&InternalBoundary);
 
-  columnX1Left = new Column(IDIR, 1, RHO, &data);
-  columnX1Right = new Column(IDIR, -1, RHO, &data);
-  columnX2Left = new Column(JDIR, 1, RHO, &data);
-  columnX2Right = new Column(JDIR, -1, RHO, &data);
-  columnX3Left = new Column(KDIR, 1, RHO, &data);
-  columnX3Right = new Column(KDIR, -1, RHO, &data);
+  columnX1Left = new Column(IDIR, 1, &data);
+  columnX1Right = new Column(IDIR, -1, &data);
+  columnX2Left = new Column(JDIR, 1, &data);
+  columnX2Right = new Column(JDIR, -1, &data);
+  columnX3Left = new Column(KDIR, 1, &data);
+  columnX3Right = new Column(KDIR, -1, &data);
   // Initialise the output file
 }
 

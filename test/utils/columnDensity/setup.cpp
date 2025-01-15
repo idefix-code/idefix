@@ -23,7 +23,7 @@ void Analysis(DataBlock & data) {
   IdefixArray3D<real> rho("rho",data.np_tot[KDIR],data.np_tot[JDIR],data.np_tot[IDIR]);
   auto Vc = data.hydro->Vc;
 
-  idefix_for("init rho",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
+  idefix_for("init rho",data.beg[KDIR],data.end[KDIR],data.beg[JDIR],data.end[JDIR],data.beg[IDIR],data.end[IDIR],
     KOKKOS_LAMBDA(int k, int j, int i) {
       rho(k,j,i) = Vc(RHO,k,j,i);
     });

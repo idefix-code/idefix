@@ -235,6 +235,6 @@ void Column::ComputeColumn(IdefixArray4D<real> in, const int var) {
 
 void Column::ComputeColumn(IdefixArray3D<real> in) {
   // 4D alias
-  IdefixArray4D<real> arr4D(in.data(), 1, in.extent(2), in.extent(1), in.extent(0));
+  IdefixArray4D<real> arr4D(in.data(), 1, in.extent(0), in.extent(1), in.extent(2));
   return this->ComputeColumn(arr4D,0);
 }

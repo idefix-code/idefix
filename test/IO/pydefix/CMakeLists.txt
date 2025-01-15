@@ -1,0 +1,2 @@
+enable_idefix_property(Idefix_MHD)
+enable_idefix_property(Idefix_PYTHON)

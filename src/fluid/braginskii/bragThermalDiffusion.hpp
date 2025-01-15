@@ -122,7 +122,7 @@ BragThermalDiffusion::BragThermalDiffusion(Input &input, Grid &grid, Fluid<Phys>
         IDEFIX_ERROR("Unknown braginskii thermal diffusion definition in idefix.ini. "
                      "Can only be constant or userdef.");
       }
-    } else if(input.Get<std::string>("Hydro","bragTDiffusion",2).compare("wcollisionless") == 0.0) {
+    } else if(input.Get<std::string>("Hydro","bragTDiffusion",2).compare("wcless") == 0.0) {
       if(input.Get<std::string>("Hydro","bragTDiffusion",3).compare("constant") == 0) {
         this->includeCollisionlessTD = true;
         this->kpar = input.Get<real>("Hydro","bragTDiffusion",4);
@@ -148,12 +148,12 @@ BragThermalDiffusion::BragThermalDiffusion(Input &input, Grid &grid, Fluid<Phys>
                               data->np_tot[JDIR],
                               data->np_tot[IDIR]);
       } else {
-        IDEFIX_ERROR("Unknown braginskii/collsiionless thermal diffusion definition in idefix.ini. "
+        IDEFIX_ERROR("Unknown braginskii/collisionless thermal diffusion definition in idefix.ini. "
                      "Can only be constant or userdef.");
       }
     } else {
       IDEFIX_ERROR("Unknown braginskii thermal diffusion saturation in idefix.ini. "
-                   "Can only be nosat or wcollisionless.");
+                   "Can only be nosat or wcless.");
     }
   } else {
     IDEFIX_ERROR("I cannot create a BragThermalDiffusion object without bragTDiffusion defined"
@@ -220,7 +220,7 @@ BragThermalDiffusion::BragThermalDiffusion(Input &input, Grid &grid, Fluid<Phys>
 
 //We now define spatial average macros for the magnetic field.
 //    The magnetic field appears in the expression of the Braginskii heat flux.
-//    It is therefore needed at the right cell interface according to the direction of the flux.
+//    It is therefore needed at the left cell interface according to the direction of the flux.
 #define BX_I  Vs(BX1s,k,j,i)
 #define BY_J  Vs(BX2s,k,j,i)
 #define BZ_K  Vs(BX3s,k,j,i)
@@ -348,7 +348,7 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
           }
           if(includeCollisionlessTD) {
             clessAlpha=HALF_F*(clessAlphaArr(k,j,i-1)+clessAlphaArr(k,j,i));
-            clessBeta=HALF_F*(clessBetaArr(k,j,i-1)+clessAlphaArr(k,j,i));
+            clessBeta=HALF_F*(clessBetaArr(k,j,i-1)+clessBetaArr(k,j,i));
           }
         } else {
           knor = knorConstant;
@@ -470,21 +470,28 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
         dTn = dTi;
 
         /* For collisionless / saturated heat flux */
-    if (includeCollisionlessTD) {
-      dvp = Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i);
-      dvm = Vc(VX1,k,j,i) - Vc(VX1,k,j,i-1);
+        if (includeCollisionlessTD) {
+          if(haveSlopeLimiter) {
+            dvp = Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i);
+            dvm = Vc(VX1,k,j,i) - Vc(VX1,k,j,i-1);
 
-      dpp = Vc(PRS,k,j,i+1) - Vc(PRS,k,j,i);
-      dpm = Vc(PRS,k,j,i) - Vc(PRS,k,j,i-1);
+            dpp = Vc(PRS,k,j,i+1) - Vc(PRS,k,j,i);
+            dpm = Vc(PRS,k,j,i) - Vc(PRS,k,j,i-1);
 
-      if(haveSlopeLimiter) {
-        Vn = Vc(VX1,k,j,i)-HALF_F*SL::PLMLim(dvp, dvm);
-        Pn = Vc(PRS,k,j,i)-HALF_F*SL::PLMLim(dpp, dpm);
-      } else {
-        Vn = HALF_F*(Vc(VX1,k,j,i) + Vc(VX1,k,j,i-1));
-        Pn = HALF_F*(Vc(PRS,k,j,i) + Vc(PRS,k,j,i-1));
-      }
-    }
+        /* Upwind scheme */
+        if (Vc(VX1,k,j,i) > 0.0) {
+          Vn = Vc(VX1,k,j,i-1)+HALF_F*SL::PLMLim(dvm, dvp);
+          Pn = Vc(PRS,k,j,i-1)+HALF_F*SL::PLMLim(dpm, dpp);
+        }
+        else {
+          Vn = Vc(VX1,k,j,i)-HALF_F*SL::PLMLim(dvm, dvp);
+          Pn = Vc(PRS,k,j,i)-HALF_F*SL::PLMLim(dpm, dpp);
+        }
+          } else {
+            Vn = HALF_F*(Vc(VX1,k,j,i) + Vc(VX1,k,j,i-1));
+            Pn = HALF_F*(Vc(PRS,k,j,i) + Vc(PRS,k,j,i-1));
+          }
+        }
       } else if(dir == JDIR) {
         //////////////
         // JDIR
@@ -499,7 +506,7 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
           }
           if(includeCollisionlessTD) {
             clessAlpha=HALF_F*(clessAlphaArr(k,j-1,i)+clessAlphaArr(k,j,i));
-            clessBeta=HALF_F*(clessBetaArr(k,j-1,i)+clessAlphaArr(k,j,i));
+            clessBeta=HALF_F*(clessBetaArr(k,j-1,i)+clessBetaArr(k,j,i));
           }
         } else {
           knor = knorConstant;
@@ -629,21 +636,27 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
         dTn = dTj;
 
         /* For the collisionless / saturated flux */
-    if(includeCollisionlessTD) {
-      dvp = Vc(VX2,k,j+1,i) - Vc(VX2,k,j,i);
-      dvm = Vc(VX2,k,j,i) - Vc(VX2,k,j-1,i);
+        if(includeCollisionlessTD) {
+          if(haveSlopeLimiter) {
+            dvp = Vc(VX2,k,j+1,i) - Vc(VX2,k,j,i);
+            dvm = Vc(VX2,k,j,i) - Vc(VX2,k,j-1,i);
 
-      dpp = Vc(PRS,k,j+1,i) - Vc(PRS,k,j,i);
-      dpm = Vc(PRS,k,j,i) - Vc(PRS,k,j-1,i);
+            dpp = Vc(PRS,k,j+1,i) - Vc(PRS,k,j,i);
+            dpm = Vc(PRS,k,j,i) - Vc(PRS,k,j-1,i);
 
-      if(haveSlopeLimiter) {
-        Vn = Vc(VX2,k,j,i)-HALF_F*SL::PLMLim(dvp, dvm);
-        Pn = Vc(PRS,k,j,i)-HALF_F*SL::PLMLim(dpp, dpm);
-      } else {
-        Vn = 0.5*(Vc(VX2,k,j-1,i) + Vc(VX2,k,j,i));
-        Pn = 0.5*(Vc(PRS,k,j-1,i) + Vc(PRS,k,j,i));
-      }
-    }
+        /* Upwind scheme */
+        if (Vc(VX2,k,j,i) > 0.0) {
+          Vn = Vc(VX2,k,j-1,i)+HALF_F*SL::PLMLim(dvm, dvp);
+          Pn = Vc(PRS,k,j-1,i)+HALF_F*SL::PLMLim(dpm, dpp);
+        } else {
+          Vn = Vc(VX2,k,j,i)-HALF_F*SL::PLMLim(dvm, dvp);
+          Pn = Vc(PRS,k,j,i)-HALF_F*SL::PLMLim(dpm, dpp);
+        }
+          } else {
+            Vn = HALF_F*(Vc(VX2,k,j-1,i) + Vc(VX2,k,j,i));
+            Pn = HALF_F*(Vc(PRS,k,j-1,i) + Vc(PRS,k,j,i));
+          }
+        }
       } else if(dir == KDIR) {
       //////////////
       // KDIR
@@ -747,15 +760,21 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
 
         /* For the collisionless / saturated flux */
         if(includeCollisionlessTD) {
-          dvp = Vc(VX3,k+1,j,i) - Vc(VX3,k,j,i);
-          dvm = Vc(VX3,k,j,i) - Vc(VX3,k-1,j,i);
-
-          dpp = Vc(PRS,k+1,j,i) - Vc(PRS,k,j,i);
-          dpm = Vc(PRS,k,j,i) - Vc(PRS,k-1,j,i);
-
           if(haveSlopeLimiter) {
-            Vn = Vc(VX3,k,j,i)-HALF_F*SL::PLMLim(dvp, dvm);
-            Pn = Vc(PRS,k,j,i)-HALF_F*SL::PLMLim(dpp, dpm);
+            dvp = Vc(VX3,k+1,j,i) - Vc(VX3,k,j,i);
+            dvm = Vc(VX3,k,j,i) - Vc(VX3,k-1,j,i);
+
+            dpp = Vc(PRS,k+1,j,i) - Vc(PRS,k,j,i);
+            dpm = Vc(PRS,k,j,i) - Vc(PRS,k-1,j,i);
+
+        /* Upwind scheme */
+        if (Vc(VX3,k,j,i) > 0.0) {
+          Vn = Vc(VX3,k-1,j,i)+HALF_F*SL::PLMLim(dvp, dvm);
+          Pn = Vc(PRS,k-1,j,i)+HALF_F*SL::PLMLim(dpp, dpm);
+        } else {
+          Vn = Vc(VX3,k,j,i)-HALF_F*SL::PLMLim(dvp, dvm);
+          Pn = Vc(PRS,k,j,i)-HALF_F*SL::PLMLim(dpp, dpm);
+        }
           } else {
             Vn = HALF_F*(Vc(VX3,k-1,j,i) + Vc(VX3,k,j,i));
             Pn = HALF_F*(Vc(PRS,k-1,j,i) + Vc(PRS,k,j,i));

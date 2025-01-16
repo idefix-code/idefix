@@ -59,6 +59,9 @@ class BragThermalDiffusion {
   bool includeCollisionlessTD{false};
 
   bool haveSlopeLimiter{false};
+  bool haveMonotizedCentral{false};
+  bool haveVanLeer{false};
+  bool haveMinmod{false};
 
   // helper array
   IdefixArray4D<real> &Vc;
@@ -91,9 +94,11 @@ BragThermalDiffusion::BragThermalDiffusion(Input &input, Grid &grid, Fluid<Phys>
   if(input.CheckEntry("Hydro","bragTDiffusion")>=0) {
     if(input.Get<std::string>("Hydro","bragTDiffusion",1).compare("mc") == 0) {
       this->haveSlopeLimiter = true;
+      this->haveMonotizedCentral = true;
       limiter = PLMLimiter::McLim;
     } else if(input.Get<std::string>("Hydro","bragTDiffusion",1).compare("vanleer") == 0) {
       this->haveSlopeLimiter = true;
+      this->haveVanLeer = true;
       limiter = PLMLimiter::VanLeer;
     } else if(input.Get<std::string>("Hydro","bragTDiffusion",1).compare("minmod") == 0) {
       IDEFIX_ERROR("The minmod slope limiter is not available because it has been "

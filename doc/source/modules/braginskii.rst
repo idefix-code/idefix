@@ -37,7 +37,7 @@ though adapted to vector quantities.
     cell interface by a simple arithmetic average
     (Eq. (6)-(7) from Sharma & Hammett 2007).
     However in the same paper, the authors showed that this implementation can lead to
-    unphysical heat flux from high to low temperature regions.
+    unphysical heat flux from low to high temperature regions.
     So we implemented slope limiters for the computation of these transverse heat fluxes,
     as described in Eq. (17) from Sharma & Hammett (2007).
     Only the van Leer and the Monotonized Central (MC) limiters are available

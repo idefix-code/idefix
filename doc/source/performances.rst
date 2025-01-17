@@ -33,16 +33,26 @@ CPU performances
 | IDRIS/Jean Zay      | Intel Cascade Lake | 0.62                                               |
 +---------------------+--------------------+----------------------------------------------------+
 
-
 GPU performances
 ================
 
+.. plot::
+
+   import plot_idefix_bench
+   plot_idefix_bench.do_plot('Performance on NVidia V100 GPUs at Jean-Zay', 'bench-jeanzay.json', 'v100')
+
+.. plot::
+
+   import plot_idefix_bench
+   plot_idefix_bench.do_plot('Performance on NVidia A100 GPUs at Jean-Zay', 'bench-jeanzay.json', 'a100')
+
+.. plot::
+
+   import plot_idefix_bench
+   plot_idefix_bench.do_plot('Performance on NVidia H100 GPUs at Jean-Zay', 'bench-jeanzay.json', 'h100')
+   
 +----------------------+--------------------+----------------------------------------------------+
 | Cluster name         | GPU                | Performances (in 10\ :sup:`6` cell/s/GPU)          |
 +======================+====================+====================================================+
-| IDRIS/Jean Zay       | NVIDIA V100        | 110                                                |
-+----------------------+--------------------+----------------------------------------------------+
-| IDRIS/Jean Zay       | NVIDIA A100        | 194                                                |
-+----------------------+--------------------+----------------------------------------------------+
 | CINES/Adastra        | AMD Mi250          | 250                                                |
 +----------------------+--------------------+----------------------------------------------------+

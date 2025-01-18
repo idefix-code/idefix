@@ -22,8 +22,6 @@ template<typename Phys>
 void ConstrainedTransport<Phys>::CalcRiemannAverage() {
   idfx::pushRegion("ConstrainedTransport::calcRiemannAverage");
 
-#if EMF_AVERAGE == UCT_HLLD || EMF_AVERAGE == UCT_HLL
-
   // Corned EMFs
   IdefixArray3D<real> ez = this->ez;
 #if DIMENSIONS == 3
@@ -428,7 +426,6 @@ void ConstrainedTransport<Phys>::CalcRiemannAverage() {
 #endif
     }
   );
-#endif // EMF_AVERAGE
 
   idfx::popRegion();
 }

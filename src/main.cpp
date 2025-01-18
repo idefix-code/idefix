@@ -9,7 +9,7 @@
 //@HEADER
 // ************************************************************************
 //
-//                        IDEFIX v 2.1.00
+//                        IDEFIX v 2.2.00
 //
 // ************************************************************************
 //@HEADER
@@ -91,8 +91,12 @@ int main( int argc, char* argv[] ) {
     // instantiate required objects.
     DataBlock data(grid, input);
     TimeIntegrator Tint(input,data);
+    #ifdef WITH_PYTHON
+      Pydefix pydefix(input);
+    #endif
     Output output(input, data);
     Setup mysetup(input, grid, data, output);
+
     idfx::cout << "Main: initialisation finished." << std::endl;
 
     char host[1024];
@@ -111,6 +115,9 @@ int main( int argc, char* argv[] ) {
     grid.ShowConfig();
     data.ShowConfig();
     Tint.ShowConfig();
+    #ifdef WITH_PYTHON
+    pydefix.ShowConfig();
+    #endif
 
     ///////////////////////////////
     // Initial conditions (or restart)
@@ -118,10 +125,22 @@ int main( int argc, char* argv[] ) {
     // Are we restarting?
     if(input.restartRequested) {
       if(input.forceInitRequested) {
-        idfx::pushRegion("Setup::Initflow");
-        mysetup.InitFlow(data);
-        data.DeriveVectorPotential();
-        idfx::popRegion();
+        #ifdef WITH_PYTHON
+          if(pydefix.haveInitflow) {
+            idfx::pushRegion("Pydefix::Initflow");
+            pydefix.InitFlow(data);
+          } else {
+            idfx::pushRegion("Setup::Initflow");
+            mysetup.InitFlow(data);
+          }
+          data.DeriveVectorPotential();
+          idfx::popRegion();
+        #else
+          idfx::pushRegion("Setup::Initflow");
+          mysetup.InitFlow(data);
+          data.DeriveVectorPotential();
+          idfx::popRegion();
+        #endif
       }
       idfx::cout << "Main: Restarting from dump file."  << std::endl;
       bool restartSuccess = output.RestartFromDump(data,input.restartFileNumber);
@@ -134,8 +153,18 @@ int main( int argc, char* argv[] ) {
     }
     if(!input.restartRequested) {
       idfx::cout << "Main: Creating initial conditions." << std::endl;
-      idfx::pushRegion("Setup::Initflow");
-      mysetup.InitFlow(data);
+      #ifdef WITH_PYTHON
+        if(pydefix.haveInitflow) {
+          idfx::pushRegion("Pydefix::Initflow");
+          pydefix.InitFlow(data);
+        } else {
+          idfx::pushRegion("Setup::Initflow");
+          mysetup.InitFlow(data);
+        }
+      #else
+        idfx::pushRegion("Setup::Initflow");
+        mysetup.InitFlow(data);
+      #endif
       idfx::popRegion();
       data.DeriveVectorPotential();   // This does something only when evolveVectorPotential is on
       data.SetBoundaries();

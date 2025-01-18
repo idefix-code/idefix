@@ -4,22 +4,10 @@ on:
   push:
     branches:
       - master
-      - v2.0
+      - develop
   pull_request:
     paths-ignore:
       - '.github/ISSUE_TEMPLATE/*'
-
-concurrency:
-  # auto-cancel any concurrent job *in the same context*
-  # see https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#concurrency
-  # see https://docs.github.com/en/actions/learn-github-actions/contexts#github-context
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-env:
-  TESTME_OPTIONS: -cuda -Werror
-  PYTHONPATH: ${{ github.workspace }}
-  IDEFIX_DIR: ${{ github.workspace }}
 
 jobs:
   Linter:
@@ -35,261 +23,26 @@ jobs:
       - uses: pre-commit-ci/lite-action@v1.0.0
         if: always()
 
-  ShocksHydro:
+  icc-jobs:
     needs: Linter
-    runs-on: self-hosted
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Sod test
-        run: |
-          cd $IDEFIX_DIR/test/HD/sod
-          ./testme.py -all $TESTME_OPTIONS
-      - name: Isothermal Sod test
-        run: |
-          cd $IDEFIX_DIR/test/HD/sod-iso
-          ./testme.py -all $TESTME_OPTIONS
-      - name: Mach reflection test
-        run: |
-          cd $IDEFIX_DIR/test/HD//MachReflection
-          ./testme.py -all $TESTME_OPTIONS
+    name: CPU Jobs (intel OneApi)
+    uses: ./.github/workflows/idefix-ci-jobs.yml
+    with:
+      TESTME_OPTIONS: -intel -Werror
+      IDEFIX_COMPILER: icc
 
-  ParabolicHydro:
+  gcc-jobs:
     needs: Linter
-    runs-on: self-hosted
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Viscous flow past cylinder
-        run: |
-          cd $IDEFIX_DIR/test/HD/ViscousFlowPastCylinder
-          ./testme.py -all $TESTME_OPTIONS
-      - name: Viscous disk
-        run: |
-          cd $IDEFIX_DIR/test/HD/ViscousDisk
-          ./testme.py -all $TESTME_OPTIONS
-      - name: Thermal diffusion
-        run: |
-          cd $IDEFIX_DIR/test/HD/thermalDiffusion
-          ./testme.py -all $TESTME_OPTIONS
+    name: CPU Jobs (gcc)
+    uses: ./.github/workflows/idefix-ci-jobs.yml
+    with:
+      TESTME_OPTIONS: -Werror
+      IDEFIX_COMPILER: gcc
 
-  ShocksMHD:
+  cuda-jobs:
     needs: Linter
-    runs-on: self-hosted
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: MHD Sod test
-        run: |
-          cd $IDEFIX_DIR/test/MHD/sod
-          ./testme.py -all $TESTME_OPTIONS
-      - name: MHD Isothermal Sod test
-        run: |
-          cd $IDEFIX_DIR/test/MHD/sod-iso
-          ./testme.py -all $TESTME_OPTIONS
-      - name: Orszag Tang
-        run: |
-          cd $IDEFIX_DIR/test/MHD/OrszagTang
-          ./testme.py -all $TESTME_OPTIONS
-      - name: Orszag Tang 3D+restart tests
-        run: |
-          cd $IDEFIX_DIR/test/MHD/OrszagTang3D
-          ./testme.py -all $TESTME_OPTIONS
-
-
-  ParabolicMHD:
-    needs: Linter
-    runs-on: self-hosted
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Ambipolar C Shock
-        run: |
-          cd $IDEFIX_DIR/test/MHD/AmbipolarCshock
-          ./testme.py -all $TESTME_OPTIONS
-      - name: Ambipolar C Shock 3D
-        run: |
-          cd $IDEFIX_DIR/test/MHD/AmbipolarCshock3D
-          ./testme.py -all $TESTME_OPTIONS
-      - name: Resistive Alfvén wave
-        run: |
-          cd $IDEFIX_DIR/test/MHD/ResistiveAlfvenWave
-          ./testme.py -all $TESTME_OPTIONS
-      - name: Grid coarsening diffusion
-        run: |
-          cd $IDEFIX_DIR/test/MHD/Coarsening
-          ./testme.py -all $TESTME_OPTIONS
-      - name: Hall whistler waves
-        run: |
-          cd $IDEFIX_DIR/test/MHD/HallWhistler
-          ./testme.py -all $TESTME_OPTIONS
-
-  Fargo:
-    needs: [Linter, ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
-    runs-on: self-hosted
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Fargo + planet
-        run: |
-          cd $IDEFIX_DIR/test/HD/FargoPlanet
-          ./testme.py -all $TESTME_OPTIONS
-      - name: Fargo MHD spherical
-        run: |
-          cd $IDEFIX_DIR/test/MHD/FargoMHDSpherical
-          ./testme.py -all $TESTME_OPTIONS
-
-  ShearingBox:
-    needs: [Linter, ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
-    runs-on: self-hosted
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Hydro shearing box
-        run: |
-          cd $IDEFIX_DIR/test/HD/ShearingBox
-          ./testme.py -all $TESTME_OPTIONS
-      - name: MHD shearing box
-        run: |
-          cd $IDEFIX_DIR/test/MHD/ShearingBox
-          ./testme.py -all $TESTME_OPTIONS
-
-  SelfGravity:
-    needs: [Linter, ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
-    runs-on: self-hosted
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Jeans Instability
-        run: |
-          cd $IDEFIX_DIR/test/SelfGravity/JeansInstability
-          ./testme.py -all $TESTME_OPTIONS
-      - name: Random sphere spherical
-        run: |
-          cd $IDEFIX_DIR/test/SelfGravity/RandomSphere
-          ./testme.py -all $TESTME_OPTIONS
-      - name: Random sphere cartesian
-        run: |
-          cd $IDEFIX_DIR/test/SelfGravity/RandomSphereCartesian
-          ./testme.py -all $TESTME_OPTIONS
-      - name: Uniform spherical collapse
-        run: |
-          cd $IDEFIX_DIR/test/SelfGravity/UniformCollapse
-          ./testme.py -all $TESTME_OPTIONS
-      - name: Dusty spherical collapse
-        run: |
-          cd $IDEFIX_DIR/test/SelfGravity/DustyCollapse
-          ./testme.py -all $TESTME_OPTIONS
-
-  Planet:
-    needs: [Linter, ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
-    runs-on: self-hosted
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: 3 body
-        run: |
-          cd $IDEFIX_DIR/test/Planet/Planet3Body
-          ./testme.py -all $TESTME_OPTIONS
-      - name: migration
-        run: |
-          cd $IDEFIX_DIR/test/Planet/PlanetMigration2D
-          ./testme.py -all $TESTME_OPTIONS
-      - name: planet-planet
-        run: |
-          cd $IDEFIX_DIR/test/Planet/PlanetPlanetRK42D
-          ./testme.py -all $TESTME_OPTIONS
-      - name: spiral wake
-        run: |
-          cd $IDEFIX_DIR/test/Planet/PlanetSpiral2D
-          ./testme.py -all $TESTME_OPTIONS
-      - name: torques
-        run: |
-          cd $IDEFIX_DIR/test/Planet/PlanetTorque3D
-          ./testme.py -all $TESTME_OPTIONS
-      - name: RK5
-        run: |
-          cd $IDEFIX_DIR/test/Planet/PlanetsIsActiveRK52D
-          ./testme.py -all $TESTME_OPTIONS
-
-  Dust:
-    needs: [Linter, ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
-    runs-on: self-hosted
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Energy conservation
-        run: |
-          cd $IDEFIX_DIR/test/Dust/DustEnergy
-          ./testme.py -all $TESTME_OPTIONS
-      - name: Dusty wave
-        run: |
-          cd $IDEFIX_DIR/test/Dust/DustyWave
-          ./testme.py -all $TESTME_OPTIONS
-
-  Braginskii:
-    needs: [Linter, ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
-    runs-on: self-hosted
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: MTI
-        run: |
-          cd $IDEFIX_DIR/test/MHD/MTI
-          ./testme.py -all $TESTME_OPTIONS
-      - name: Spherical anisotropic diffusion
-        run: |
-          cd $IDEFIX_DIR/test/MHD/sphBragTDiffusion
-          ./testme.py -all $TESTME_OPTIONS
-      - name: Spherical anisotropic viscosity
-        run: |
-          cd $IDEFIX_DIR/test/MHD/sphBragViscosity
-          ./testme.py -all $TESTME_OPTIONS
-
-  Examples:
-    needs: [Fargo, Dust, Planet, ShearingBox, SelfGravity]
-    runs-on: self-hosted
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Run examples test
-        run: cd test && ./checks_examples.sh $TEST_OPTIONS
-
-  Utils:
-    needs: [Fargo, Dust, Planet, ShearingBox, SelfGravity]
-    runs-on: self-hosted
-    steps:
-      - name: Check out repo
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Lookup table
-        run: |
-          cd $IDEFIX_DIR/test/utils/lookupTable
-          ./testme.py -all $TESTME_OPTIONS
-      - name: Dump Image
-        run: |
-          cd $IDEFIX_DIR/test/utils/dumpImage
-          ./testme.py -all $TESTME_OPTIONS
+    name: CUDA Jobs
+    uses: ./.github/workflows/idefix-ci-jobs.yml
+    with:
+      TESTME_OPTIONS: -cuda -Werror
+      IDEFIX_COMPILER: nvcc

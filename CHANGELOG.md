@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.00] 2025-01-17
+### Changed
+
+- Fix a bug that could lead to a segmentation fault when MHD+Fargo+MPI (with X3 domain decomposition) are all enabled (#295)
+- Fix a bug that could result in an incorrect magnetic field when initialising B from the vector potential in non-axisymmetric spherical geometry (#293)
+- Fix a bug that could result in Idefix believing the MPI library is not Cuda aware for some versions of OpenMPI (#310)
+- Ensure that the behaviour in 1D Spherical geometry is identical to Pluto (#291)
+
+### Added
+
+- Add the python interface "pydefix", allowing users to initialise and analyse Idefix simulations live from Python without writing any file (#277)
+- Add the native Idefix coordinates in VTK file to simplify postprocessing (#292)
+- Add code testing on CPU targets using gcc and Intel Oneapi (#300)
+
+
 ## [2.1.02] 2024-10-24
 ### Changed
 

@@ -22,10 +22,10 @@
 
 class GridHost {
  public:
-  std::array<IdefixArray1D<real>::HostMirror,3> x;     ///< geometrical central points
-  std::array<IdefixArray1D<real>::HostMirror,3> xr; ///< cell right interface
-  std::array<IdefixArray1D<real>::HostMirror,3> xl; ///< cell left interface
-  std::array<IdefixArray1D<real>::HostMirror,3> dx; ///< cell width
+  std::array<IdefixHostArray1D<real>,3> x;     ///< geometrical central points
+  std::array<IdefixHostArray1D<real>,3> xr; ///< cell right interface
+  std::array<IdefixHostArray1D<real>,3> xl; ///< cell left interface
+  std::array<IdefixHostArray1D<real>,3> dx; ///< cell width
 
   std::array<real,3> xbeg;                   ///< Beginning of grid
   std::array<real,3> xend;                   ///< End of grid

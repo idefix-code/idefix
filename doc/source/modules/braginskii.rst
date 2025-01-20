@@ -91,7 +91,7 @@ and :math:`\beta` controls the amplitude of the collisionless heat flux (typical
 .. note::
     If selected, slope limiters are also used in the collisionless flux, where an upwind scheme has been implemented for stability.
 .. note::
-    This saturation has been thought to be used mostly using the uerdef function that takes four arrays as input and is enrolled through
+    This saturation has been thought to be used mostly using the userdef function that takes four arrays as input and is enrolled through
     ``data.hydro->bragThermalDiffusion->EnrollClessThermalDiffusivity()``
 
 Main parameters of the module

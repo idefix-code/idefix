@@ -73,3 +73,6 @@ I want to test a modification to *Idefix* source code specific to my problem wit
 
 I want to use a lookup table from a CSV file in my idefix_loop. How could I proceed?
   Use the ``LookupTable`` class (see :ref:`LookupTableClass`)
+
+I want to compute a cumulative sum (e.g a column density) on the fly. How could I proceed?
+  Use the ``Column`` class (see :class:`::Column`)

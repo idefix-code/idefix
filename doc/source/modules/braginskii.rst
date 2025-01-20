@@ -4,7 +4,7 @@ Braginskii module
 ===================
 
 Equations solved and methods
----------------------------
+----------------------------
 
 The ``Braginskii`` module implements the anisotropic heat and momentum fluxes specific
 to weakly collisional, magnetised plasma like the intracluster medium
@@ -72,18 +72,69 @@ of the Braginskii heat flux and viscosity.
 
 .. _braginskiiParameterSection:
 
+
+Saturation with collisionless heat flux
+---------------------------------------
+
+The ``Braginskii`` module can include a collisionless saturation of the Braginskii heat flux.
+The heat flux is then computed as follows:
+
+:math:`q = \alpha (q_B + q_\perp) + (1-\alpha)\beta*p*v`,
+
+where :math:`\alpha \in [0,1]` controls the transition between the Braginskii heat flux and the collisionless heat flux
+and :math:`\beta` controls the amplitude of the collisionless heat flux (typically :math:`\beta \in [1,4]`, see Hollweg 1976).
+
+.. note::
+    As a result, even with :math:`\kappa_\perp = 0`, the heat flux is no longer necessarilly strictly aligned with the magnetic field.
+.. note::
+    The collisionless heat flux is a hyperbolic term and the diffusion coefficient is set proportional to :math:`\alpha`.
+.. note::
+    If selected, slope limiters are also used in the collisionless flux, where an upwind scheme has been implemented for stability.
+.. note::
+    This saturation has been thought to be used mostly using the uerdef function that takes four arrays as input and is enrolled through
+    ``data.hydro->bragThermalDiffusion->EnrollClessThermalDiffusivity()``
+
 Main parameters of the module
 -----------------------------
 
 The ``Braginskii`` module can be enabled adding one or two lines in the ``[Hydro]`` section
-starting with the keyword
-`bragTDiffusion` or/and *bragViscosity*. The following table summarises the different options
+starting with the keyword `bragTDiffusion` or/and *bragViscosity*. The following tables summarise the different options
 associated to the activation of the Braginskii module:
 
 +--------+-----------------------+-------------------------+---------------------------------------------------------------------------------------+
 | Column |  Entry name           | Parameter type          | Comment                                                                               |
 +========+=======================+=========================+=======================================================================================+
-| 0      |  bragModule           | string                  | | Activates Braginskii diffusion. Can be ``bragTDiffusion`` or ``bragViscosity``.     |
+| 0      |  bragTDiffusion       | string                  | | Activates Braginskii thermal diffusion.                                             |
++--------+-----------------------+-------------------------+---------------------------------------------------------------------------------------+
+| 1      | integration           | string                  | | Specifies the type of scheme to be used to integrate the parabolic term.            |
+|        |                       |                         | | Can be ``rkl`` or ``explicit``.                                                     |
++--------+-----------------------+-------------------------+---------------------------------------------------------------------------------------+
+| 2      | slope limiter         | string                  | | Choose the type of limiter to be used to compute anisotropic transverse flux terms. |
+|        |                       |                         | | Can be ``mc``, ``vanleer`` or ``nolimiter``.                                        |
++--------+-----------------------+-------------------------+---------------------------------------------------------------------------------------+
+| 3      | saturation mode       | string                  | | Include or not collisionless saturation. Can be ``nosat`` or ``wcless``.            |
++--------+-----------------------+-------------------------+---------------------------------------------------------------------------------------+
+| 4      | diffusivity type      | string                  | | Specifies the type of diffusivity wanted. Can be ``constant`` or ``userdef``.       |
++--------+-----------------------+-------------------------+---------------------------------------------------------------------------------------+
+| 5      | parallel diffusivity  | real                    | | Mandatory if the diffusivity type is ``constant``. Not needed otherwise.            |
+|        |                       |                         | | Value of the parallel diffusivity. Should be a real number.                         |
++--------+-----------------------+-------------------------+---------------------------------------------------------------------------------------+
+| 6      | normal diffusivity    | real                    | | When bragModule ``bragTDiffusion`` and diffusivity type ``constant``,               |
+|        |                       |                         | | value of the normal diffusivity. Should be a real number.                           |
++--------+-----------------------+-------------------------+---------------------------------------------------------------------------------------+
+| 7      | alpha collisionless   | real                    | | If the diffusivity type is ``constant`` and saturation is ``wcless``.               |
+|        |                       |                         | | Set to 1 if not provided.                                                           |
++--------+-----------------------+-------------------------+---------------------------------------------------------------------------------------+
+| 8      | beta collisionless    | real                    | | If the diffusivity type is ``constant`` and saturation is ``wcless``.               |
+|        |                       |                         | | Set to 0 if not provided.                                                           |
++--------+-----------------------+-------------------------+---------------------------------------------------------------------------------------+
+
+for the *bragViscosity*:
+
++--------+-----------------------+-------------------------+---------------------------------------------------------------------------------------+
+| Column |  Entry name           | Parameter type          | Comment                                                                               |
++========+=======================+=========================+=======================================================================================+
+| 0      |  bragViscosity        | string                  | | Activates Braginskii viscosity.                                                     |
 +--------+-----------------------+-------------------------+---------------------------------------------------------------------------------------+
 | 1      | integration           | string                  | | Specifies the type of scheme to be used to integrate the parabolic term.            |
 |        |                       |                         | | Can be ``rkl`` or ``explicit``.                                                     |
@@ -101,7 +152,7 @@ associated to the activation of the Braginskii module:
 +--------+-----------------------+-------------------------+---------------------------------------------------------------------------------------+
 
 Numerical checks
----------------
+----------------
 
 In Cartesian geometry, the ``Braginskii`` module has been tested with many setups
 and in all configurations of magnetic polarisation:
@@ -119,3 +170,5 @@ The same goes for the anisotropic heat flux in Cylindrical/Polar geometry while
 the anisotropic viscosity has *never* been tested in this geometry.
 In spherical geometry, both ``Braginskii`` operators have been partially validated
 (diffusion along the polar axis has not been directly tested).
+
+The collisionless saturation has been tested in 1D and 2D spherical geometry.

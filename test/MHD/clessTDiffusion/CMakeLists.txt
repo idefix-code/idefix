@@ -1,0 +1,2 @@
+enable_idefix_property(Idefix_MHD)
+set_idefix_property(Idefix_RECONSTRUCTION Parabolic)

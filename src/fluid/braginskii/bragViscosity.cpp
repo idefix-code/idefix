@@ -60,12 +60,11 @@ void BragViscosity::ShowConfig() {
   }
   if(haveSlopeLimiter) {
     if(haveMonotizedCentral) {
-      idfx::cout << "Braginskii Viscosity: uses the monotonized central slope limiter." << std::endl;
-    }
-    else if(haveVanLeer) {
+      idfx::cout << "Braginskii Viscosity: uses the "
+      "monotonized central slope limiter." << std::endl;
+    } else if(haveVanLeer) {
       idfx::cout << "Braginskii Viscosity: uses the van Leer slope limiter." << std::endl;
-    }
-    else {
+    } else {
       IDEFIX_ERROR("Unknown slope limiter for braginskii viscosity.");
     }
   }

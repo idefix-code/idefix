@@ -42,18 +42,18 @@ void BragThermalDiffusion::ShowConfig() {
     IDEFIX_ERROR("Unknown time integrator for braginskii thermal diffusion.");
   }
   if(haveSlopeLimiter) {
-    if(haveMonotizedCentral) {
-      idfx::cout << "Braginskii Thermal Diffusion: uses the monotonized central slope limiter." << std::endl;
-    }
-    else if(haveVanLeer) {
+    if(haveMonotonizedCentral) {
+      idfx::cout << "Braginskii Thermal Diffusion: "
+      "uses the monotonized central slope limiter." << std::endl;
+    } else if(haveVanLeer) {
       idfx::cout << "Braginskii Thermal Diffusion: uses the van Leer slope limiter." << std::endl;
-    }
-    else {
+    } else {
       IDEFIX_ERROR("Unknown slope limiter for braginskii thermal diffusion.");
     }
   }
   if(includeCollisionlessTD) {
-     idfx::cout << "Braginskii Thermal Diffusion: saturation with collisionless flux is enabled." << std::endl;
+     idfx::cout << "Braginskii Thermal Diffusion: saturation"
+     " with collisionless flux is enabled." << std::endl;
   }
 }
 

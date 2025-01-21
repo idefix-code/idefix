@@ -59,7 +59,7 @@ class BragThermalDiffusion {
   bool includeCollisionlessTD{false};
 
   bool haveSlopeLimiter{false};
-  bool haveMonotizedCentral{false};
+  bool haveMonotonizedCentral{false};
   bool haveVanLeer{false};
   bool haveMinmod{false};
 
@@ -94,7 +94,7 @@ BragThermalDiffusion::BragThermalDiffusion(Input &input, Grid &grid, Fluid<Phys>
   if(input.CheckEntry("Hydro","bragTDiffusion")>=0) {
     if(input.Get<std::string>("Hydro","bragTDiffusion",1).compare("mc") == 0) {
       this->haveSlopeLimiter = true;
-      this->haveMonotizedCentral = true;
+      this->haveMonotonizedCentral = true;
       limiter = PLMLimiter::McLim;
     } else if(input.Get<std::string>("Hydro","bragTDiffusion",1).compare("vanleer") == 0) {
       this->haveSlopeLimiter = true;

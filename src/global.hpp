@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include "arrays.hpp"
+#include "npy.hpp"
 
 namespace idfx {
 int initialize();   // Initialisation routine for idefix

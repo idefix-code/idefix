@@ -35,6 +35,7 @@ release = '2.2.00'
 extensions = [
     "sphinx_rtd_theme",
     'sphinx_git',
+    'matplotlib.sphinxext.plot_directive',
     "breathe",
     "exhale",
     "m2r2",

@@ -142,5 +142,69 @@
         "cell_updates": 3.083581E+8
       }
     ]
+  },
+  {
+    "date": "2025-01-24_13:02:08",
+    "gpumodel": "h100",
+    "idefix_commit": "54482d582361f1cd05c39717902f752b3d04ae6e",
+    "bench_commit": "a94bc00490b3c62f81f7713327f4388e44a2abea",
+    "results": [
+      {
+        "nbgpu": 1,
+        "cell_updates": 3.076537E+8
+      }
+    ]
+  },
+  {
+    "date": "2025-01-24_13:04:02",
+    "gpumodel": "h100",
+    "idefix_commit": "54482d582361f1cd05c39717902f752b3d04ae6e",
+    "bench_commit": "a94bc00490b3c62f81f7713327f4388e44a2abea",
+    "results": [
+      {
+        "nbgpu": 1,
+        "cell_updates": 3.032686E+8
+      },
+      {
+        "nbgpu": 2,
+        "cell_updates": 3.007089E+8
+      },
+      {
+        "nbgpu": 4,
+        "cell_updates": 2.938962E+8
+      }
+    ]
+  },
+  {
+    "date": "2025-01-24_14:17:30",
+    "gpumodel": "h100",
+    "idefix_commit": "54482d582361f1cd05c39717902f752b3d04ae6e",
+    "bench_commit": "a94bc00490b3c62f81f7713327f4388e44a2abea",
+    "results": [
+      {
+        "nbgpu": 1,
+        "cell_updates": 3.074363E+8
+      },
+      {
+        "nbgpu": 2,
+        "cell_updates": 3.009340E+8
+      },
+      {
+        "nbgpu": 4,
+        "cell_updates": 2.938868E+8
+      },
+      {
+        "nbgpu": 8,
+        "cell_updates": 2.833054E+8
+      },
+      {
+        "nbgpu": 16,
+        "cell_updates": 2.822483E+8
+      },
+      {
+        "nbgpu": 32,
+        "cell_updates": 2.817151E+8
+      }
+    ]
   }
 ]

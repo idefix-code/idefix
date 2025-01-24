@@ -80,6 +80,14 @@
       {
         "nbgpu": 32,
         "cell_updates": 6.669339E+7
+      },
+      {
+        "nbgpu": 64,
+        "cell_updates": 5.497455E+7
+      },
+      {
+        "nbgpu": 128,
+        "cell_updates": 5.440610E+7
       }
     ]
   },
@@ -104,6 +112,22 @@
       {
         "nbgpu": 8,
         "cell_updates": 1.929568E+8
+      },
+      {
+        "nbgpu": 16,
+        "cell_updates": 9.408132E+7
+      },
+      {
+        "nbgpu": 32,
+        "cell_updates": 5.937487E+7
+      },
+      {
+        "nbgpu": 64,
+        "cell_updates": 4.159838E+7
+      },
+      {
+        "nbgpu": 128,
+        "cell_updates": 5.061931E+7
       }
     ]
   },

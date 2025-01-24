@@ -50,7 +50,7 @@ GPU performances
 
    import plot_idefix_bench
    plot_idefix_bench.do_plot('Performance on NVidia H100 GPUs at Jean-Zay', 'bench-jeanzay.json', 'h100')
-   
+
 +----------------------+--------------------+----------------------------------------------------+
 | Cluster name         | GPU                | Performances (in 10\ :sup:`6` cell/s/GPU)          |
 +======================+====================+====================================================+

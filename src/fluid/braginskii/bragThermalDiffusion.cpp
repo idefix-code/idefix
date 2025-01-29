@@ -19,7 +19,6 @@
 #include "eos.hpp"
 
 
-
 void BragThermalDiffusion::ShowConfig() {
   if(status.status==Constant) {
     idfx::cout << "Braginskii Thermal Diffusion: ENABLED with constant diffusivity kpar="
@@ -27,11 +26,11 @@ void BragThermalDiffusion::ShowConfig() {
   } else if (status.status==UserDefFunction) {
     idfx::cout << "Braginskii Thermal Diffusion: ENABLED with user-defined diffusivity function."
                    << std::endl;
-    if(!diffusivityFunc) {
+    if(!bragDiffusivityFunc) {
       IDEFIX_ERROR("No braginskii thermal diffusion function has been enrolled");
     }
   } else {
-    IDEFIX_ERROR("Unknown braginskii thermal diffusion mode");
+    IDEFIX_ERROR("Unknown Braginskii thermal diffusion mode");
   }
   if(status.isExplicit) {
     idfx::cout << "Braginskii Thermal Diffusion: uses an explicit time integration." << std::endl;
@@ -42,16 +41,27 @@ void BragThermalDiffusion::ShowConfig() {
     IDEFIX_ERROR("Unknown time integrator for braginskii thermal diffusion.");
   }
   if(haveSlopeLimiter) {
-    idfx::cout << "Braginskii Thermal Diffusion: uses a slope limiter." << std::endl;
+    if(haveMonotonizedCentral) {
+      idfx::cout << "Braginskii Thermal Diffusion: "
+      "uses the monotonized central slope limiter." << std::endl;
+    } else if(haveVanLeer) {
+      idfx::cout << "Braginskii Thermal Diffusion: uses the van Leer slope limiter." << std::endl;
+    } else {
+      IDEFIX_ERROR("Unknown slope limiter for braginskii thermal diffusion.");
+    }
+  }
+  if(includeCollisionlessTD) {
+     idfx::cout << "Braginskii Thermal Diffusion: saturation"
+     " with collisionless flux is enabled." << std::endl;
   }
 }
 
 void BragThermalDiffusion::EnrollBragThermalDiffusivity(BragDiffusivityFunc myFunc) {
   if(this->status.status != UserDefFunction) {
     IDEFIX_WARNING("Braginskii thermal diffusivity enrollment requires Hydro/BragThermalDiffusion "
-                 "to be set to userdef in .ini file");
+                   "to be set to userdef in .ini file");
   }
-  this->diffusivityFunc = myFunc;
+  this->bragDiffusivityFunc = myFunc;
 }
 
 void BragThermalDiffusion::AddBragDiffusiveFlux(int dir, const real t,

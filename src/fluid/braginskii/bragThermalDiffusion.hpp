@@ -791,7 +791,7 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
 
       bgradT = D_EXPAND( Bi*dTi , + Bj*dTj, +Bk*dTk);
       Bmag = D_EXPAND( Bi*Bi , + Bj*Bj, + Bk*Bk);
-      // EXPAND can yield uexpected behaviour when DIMENSIONS < COMPONENTS
+      // EXPAND can yield unexpected behaviour when DIMENSIONS < COMPONENTS
       //printf("%f , %f\n", Bmag, EXPAND(Bi*Bi, + Bj*Bj, + Bk*Bk));
       Bmag = sqrt(Bmag);
       Bmag = FMAX(1e-6*SMALL_NUMBER,Bmag);

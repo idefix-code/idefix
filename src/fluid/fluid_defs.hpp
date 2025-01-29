@@ -8,6 +8,7 @@
 #ifndef FLUID_FLUID_DEFS_HPP_
 #define FLUID_FLUID_DEFS_HPP_
 
+#include <vector>
 #include "../idefix.hpp"
 
 
@@ -49,12 +50,9 @@ using SrcTermFunc = void (*) (Fluid<Phys> *, const real t, const real dt);
 
 using EmfBoundaryFunc = void (*) (DataBlock &, const real t);
 using DiffusivityFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
-using TwoArrayDiffusivityFunc = void (*) (DataBlock &, const real t,
-                      IdefixArray3D<real> &, IdefixArray3D<real> &);
 
-using FourArrayDiffusivityFunc = void (*) (DataBlock &, const real t,
-                       IdefixArray3D<real> &, IdefixArray3D<real> &,
-                       IdefixArray3D<real> &, IdefixArray3D<real> &);
+using BragDiffusivityFunc = void (*) (DataBlock &, const real,
+                      std::vector<IdefixArray3D<real>> &);
 
 // Deprecated signatures
 using SrcTermFuncOld = void (*) (DataBlock &, const real t, const real dt);

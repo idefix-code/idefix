@@ -76,7 +76,7 @@ of the Braginskii heat flux and viscosity.
 Saturation with collisionless heat flux
 ---------------------------------------
 
-The ``Braginskii`` module can include a collisionless saturation of the Braginskii heat flux.
+The ``Braginskii`` module can include a collisionless saturation of the Braginskii heat flux, typically due to supra-thermal electrons.
 The heat flux is then computed as follows:
 
 :math:`q = \alpha (q_B + q_\perp) + (1-\alpha)\beta*p*v`,
@@ -91,8 +91,7 @@ and :math:`\beta` controls the amplitude of the collisionless heat flux (typical
 .. note::
     If selected, slope limiters are also used in the collisionless flux, where an upwind scheme has been implemented for stability.
 .. note::
-    This saturation has been thought to be used mostly using the userdef function that takes four arrays as input and is enrolled through
-    ``data.hydro->bragThermalDiffusion->EnrollClessThermalDiffusivity()``
+    This saturation has been thought to be used mostly using the userdef function that takes four userdef arrays as input.
 
 Main parameters of the module
 -----------------------------

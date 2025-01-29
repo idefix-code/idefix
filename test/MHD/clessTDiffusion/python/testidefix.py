@@ -22,7 +22,7 @@ def gamma_prime(gamma, beta):
     return (gamma+beta*(gamma-1))/(1+beta*(gamma-1))
 
 success = True
-eps = 1e-2
+eps = 3e-4
 
 gamma_eff = np.gradient(prs, r)/np.gradient(rho, r)*rho/prs
 

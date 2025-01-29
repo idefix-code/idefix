@@ -10,19 +10,28 @@ real va_vescGlob;
 real k0_Glob;
 real ParkerWind(real);
 
-void MyClessThermalConductivity(DataBlock &data, const real t, IdefixArray3D<real> &kparArr, IdefixArray3D<real> &knorArr, IdefixArray3D<real> &alpha, IdefixArray3D<real> &clessQ) {
+const real kB{1.3807e-16};
+const real mp{1.6726e-24};
+
+void MyClessThermalConductivity(DataBlock &data, const real t, std::vector<IdefixArray3D<real>> &userdefArr) {
   IdefixArray4D<real> Vc = data.hydro->Vc;
   IdefixArray1D<real> x1 = data.x[IDIR];
   IdefixArray1D<real> x2 = data.x[JDIR];
-  real norm = 1.6726e-24*0.5/(udenGlob*uvelGlob*ulenGlob*1.3807e-16);
-  real uTemp=0.5*uvelGlob*uvelGlob*1.6726e-24/1.3807e-16;
+
+  IdefixArray3D<real> kparArr = userdefArr[0];
+  IdefixArray3D<real> knorArr = userdefArr[1];
+  IdefixArray3D<real> clessAlpha = userdefArr[2];
+  IdefixArray3D<real> clessBeta  = userdefArr[3];
+
+  real norm = mp*0.5/(udenGlob*uvelGlob*ulenGlob*kB);
+  real uTemp=0.5*uvelGlob*uvelGlob*mp/kB;
   real k0 = k0_Glob*norm;
-  idefix_for("MyThConductivity",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
+  idefix_for("MyClessThConductivity",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
          KOKKOS_LAMBDA (int k, int j, int i) {
            kparArr(k,j,i) = k0*pow(Vc(PRS,k,j,i)/Vc(RHO,k,j,i)*uTemp,2.5);
            knorArr(k,j,i) = 0.;
-           alpha(k,j,i) = (1.0-tanh(x1(i)-10))/2;
-           clessQ(k,j,i) = -1.5;
+           clessAlpha(k,j,i) = (1.0-tanh(x1(i)-10))/2;
+           clessBeta(k,j,i)  = -1.5;
          });
 }
 
@@ -39,6 +48,7 @@ void UserDefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
     real rc,vc,vwind0;
     real cs=cs_vescGlob*sqrt(2.);
     real va_vesc = va_vescGlob;
+    real mu = va_vesc * sqrt(2.);
     real PonRho;
 
     PonRho = cs*cs;
@@ -49,7 +59,7 @@ void UserDefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
     hydro->boundary->BoundaryFor("UserDefBoundary", dir, side,
                  KOKKOS_LAMBDA (int k, int j, int i) {
                    real r = x1(i);
-                   real mu = va_vesc * sqrt(2.);
+
                    Vc(RHO,k,j,i) = vwind0/(vwind0 * r * r);
                    Vc(PRS,k,j,i) = PonRho * Vc(RHO, k, j, i);
                    Vc(VX1,k,j,i) = vwind0;
@@ -68,7 +78,7 @@ void UserDefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   // Set the function for userdefboundary
   data.hydro->EnrollUserDefBoundary(&UserDefBoundary);
-  data.hydro->bragThermalDiffusion->EnrollClessThermalDiffusivity(&MyClessThermalConductivity);
+  data.hydro->bragThermalDiffusion->EnrollBragThermalDiffusivity(&MyClessThermalConductivity);
   gammaGlob=input.Get<real>("Hydro", "gamma", 0);
   udenGlob=input.Get<real>("Setup", "UNIT_DENSITY",0);
   ulenGlob=input.Get<real>("Setup", "UNIT_LENGTH",0);

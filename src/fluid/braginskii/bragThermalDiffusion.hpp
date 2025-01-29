@@ -9,6 +9,7 @@
 #define FLUID_BRAGINSKII_BRAGTHERMALDIFFUSION_HPP_
 
 #include <string>
+#include <vector>
 
 #include "idefix.hpp"
 #include "input.hpp"
@@ -35,8 +36,7 @@ class BragThermalDiffusion {
   void AddBragDiffusiveFluxLim(int, const real, const IdefixArray4D<real> &);
 
   // Enroll user-defined thermal conductivity
-  void EnrollBragThermalDiffusivity(TwoArrayDiffusivityFunc);
-  void EnrollClessThermalDiffusivity(FourArrayDiffusivityFunc);
+  void EnrollBragThermalDiffusivity(BragDiffusivityFunc);
 
   IdefixArray3D<real> heatSrc;  // Source terms of the thermal operator
   IdefixArray3D<real> knorArr;
@@ -53,8 +53,7 @@ class BragThermalDiffusion {
   // status of the module
   ParabolicModuleStatus &status;
 
-  TwoArrayDiffusivityFunc  bragDiffusivityFunc;
-  FourArrayDiffusivityFunc clessDiffusivityFunc;
+  BragDiffusivityFunc  bragDiffusivityFunc;
 
   bool includeCollisionlessTD{false};
 
@@ -307,7 +306,8 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
   if(includeCollisionlessTD == false && haveThermalDiffusion == UserDefFunction && dir == IDIR) {
     if(bragDiffusivityFunc) {
       idfx::pushRegion("UserDef::BragThermalDiffusivityFunction");
-      bragDiffusivityFunc(*this->data, t, kparArr, knorArr);
+      std::vector<IdefixArray3D<real>> userdefArr = {kparArr, knorArr};
+      bragDiffusivityFunc(*this->data, t, userdefArr);
       idfx::popRegion();
     }
     else {
@@ -315,9 +315,10 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
     }
   } else if(includeCollisionlessTD == true && haveThermalDiffusion == UserDefFunction
             && dir == IDIR) {
-    if (clessDiffusivityFunc) {
+    if (bragDiffusivityFunc) {
       idfx::pushRegion("UserDef::ClessThermalDiffusivityFunction");
-      clessDiffusivityFunc(*this->data, t, kparArr, knorArr, clessAlphaArr, clessBetaArr);
+      std::vector<IdefixArray3D<real>> userdefArr = {kparArr, knorArr, clessAlphaArr, clessBetaArr};
+      bragDiffusivityFunc(*this->data, t, userdefArr);
       idfx::popRegion();
     } else {
       IDEFIX_ERROR("No user-defined Braginskii/collisionless "
@@ -484,14 +485,14 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
             dpm = Vc(PRS,k,j,i) - Vc(PRS,k,j,i-1);
 
         /* Upwind scheme */
-        if (Vc(VX1,k,j,i) > 0.0) {
-          Vn = Vc(VX1,k,j,i-1)+HALF_F*SL::PLMLim(dvm, dvp);
-          Pn = Vc(PRS,k,j,i-1)+HALF_F*SL::PLMLim(dpm, dpp);
-        }
-        else {
-          Vn = Vc(VX1,k,j,i)-HALF_F*SL::PLMLim(dvm, dvp);
-          Pn = Vc(PRS,k,j,i)-HALF_F*SL::PLMLim(dpm, dpp);
-        }
+            if (Vc(VX1,k,j,i) > 0.0) {
+              Vn = Vc(VX1,k,j,i-1)+HALF_F*SL::PLMLim(dvm, dvp);
+              Pn = Vc(PRS,k,j,i-1)+HALF_F*SL::PLMLim(dpm, dpp);
+            }
+            else {
+              Vn = Vc(VX1,k,j,i)-HALF_F*SL::PLMLim(dvm, dvp);
+              Pn = Vc(PRS,k,j,i)-HALF_F*SL::PLMLim(dpm, dpp);
+            }
           } else {
             Vn = HALF_F*(Vc(VX1,k,j,i) + Vc(VX1,k,j,i-1));
             Pn = HALF_F*(Vc(PRS,k,j,i) + Vc(PRS,k,j,i-1));
@@ -649,14 +650,14 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
             dpp = Vc(PRS,k,j+1,i) - Vc(PRS,k,j,i);
             dpm = Vc(PRS,k,j,i) - Vc(PRS,k,j-1,i);
 
-        /* Upwind scheme */
-        if (Vc(VX2,k,j,i) > 0.0) {
-          Vn = Vc(VX2,k,j-1,i)+HALF_F*SL::PLMLim(dvm, dvp);
-          Pn = Vc(PRS,k,j-1,i)+HALF_F*SL::PLMLim(dpm, dpp);
-        } else {
-          Vn = Vc(VX2,k,j,i)-HALF_F*SL::PLMLim(dvm, dvp);
-          Pn = Vc(PRS,k,j,i)-HALF_F*SL::PLMLim(dpm, dpp);
-        }
+            /* Upwind scheme */
+            if (Vc(VX2,k,j,i) > 0.0) {
+              Vn = Vc(VX2,k,j-1,i)+HALF_F*SL::PLMLim(dvm, dvp);
+              Pn = Vc(PRS,k,j-1,i)+HALF_F*SL::PLMLim(dpm, dpp);
+            } else {
+              Vn = Vc(VX2,k,j,i)-HALF_F*SL::PLMLim(dvm, dvp);
+              Pn = Vc(PRS,k,j,i)-HALF_F*SL::PLMLim(dpm, dpp);
+            }
           } else {
             Vn = HALF_F*(Vc(VX2,k,j-1,i) + Vc(VX2,k,j,i));
             Pn = HALF_F*(Vc(PRS,k,j-1,i) + Vc(PRS,k,j,i));
@@ -772,14 +773,14 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
             dpp = Vc(PRS,k+1,j,i) - Vc(PRS,k,j,i);
             dpm = Vc(PRS,k,j,i) - Vc(PRS,k-1,j,i);
 
-        /* Upwind scheme */
-        if (Vc(VX3,k,j,i) > 0.0) {
-          Vn = Vc(VX3,k-1,j,i)+HALF_F*SL::PLMLim(dvp, dvm);
-          Pn = Vc(PRS,k-1,j,i)+HALF_F*SL::PLMLim(dpp, dpm);
-        } else {
-          Vn = Vc(VX3,k,j,i)-HALF_F*SL::PLMLim(dvp, dvm);
-          Pn = Vc(PRS,k,j,i)-HALF_F*SL::PLMLim(dpp, dpm);
-        }
+            /* Upwind scheme */
+            if (Vc(VX3,k,j,i) > 0.0) {
+              Vn = Vc(VX3,k-1,j,i)+HALF_F*SL::PLMLim(dvp, dvm);
+              Pn = Vc(PRS,k-1,j,i)+HALF_F*SL::PLMLim(dpp, dpm);
+            } else {
+              Vn = Vc(VX3,k,j,i)-HALF_F*SL::PLMLim(dvp, dvm);
+              Pn = Vc(PRS,k,j,i)-HALF_F*SL::PLMLim(dpp, dpm);
+            }
           } else {
             Vn = HALF_F*(Vc(VX3,k-1,j,i) + Vc(VX3,k,j,i));
             Pn = HALF_F*(Vc(PRS,k-1,j,i) + Vc(PRS,k,j,i));
@@ -790,8 +791,8 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
 
       bgradT = D_EXPAND( Bi*dTi , + Bj*dTj, +Bk*dTk);
       Bmag = D_EXPAND( Bi*Bi , + Bj*Bj, + Bk*Bk);
+      // EXPAND can yield uexpected behaviour when DIMENSIONS < COMPONENTS
       //printf("%f , %f\n", Bmag, EXPAND(Bi*Bi, + Bj*Bj, + Bk*Bk));
-      //printf("%f , %f \n", 0.5*(Vc(VX1,k,j,i) + Vc(VX1,k,j,i+1)), Vn);
       Bmag = sqrt(Bmag);
       Bmag = FMAX(1e-6*SMALL_NUMBER,Bmag);
 

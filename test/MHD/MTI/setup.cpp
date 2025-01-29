@@ -39,9 +39,13 @@ void Potential(DataBlock& data, const real t, IdefixArray1D<real>& x1, IdefixArr
 }
 
 
-void MyBragThermalConductivity(DataBlock &data, const real t, IdefixArray3D<real> &kparArr, IdefixArray3D<real> &knorArr) {
+void MyBragThermalConductivity(DataBlock &data, const real t, std::vector<IdefixArray3D<real>> &userdefArr) {
   IdefixArray4D<real> Vc = data.hydro->Vc;
   IdefixArray1D<real> x2 = data.x[JDIR];
+
+  IdefixArray3D<real> kparArr = userdefArr[0];
+  IdefixArray3D<real> knorArr = userdefArr[1];
+
   real ksi = ksiGlob;
   idefix_for("MyThConductivity",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
               KOKKOS_LAMBDA (int k, int j, int i) {

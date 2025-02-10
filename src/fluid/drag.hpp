@@ -24,7 +24,16 @@ class Drag {
   Drag(Input &, Fluid<Phys> *);
   void ShowConfig();                    // print configuration
   void AddDragForce(const real);
+
+  //////////////////////////
+  // Implicit functions
+  void AddImplicitBackReaction(const real, IdefixArray3D<real>);  // Add the back reaction
+  void NormalizeImplicitBackReaction(const real);  // Normalize the implicit back reaction
+  void AddImplicitFluidMomentum(const real);  // Add the implicit drag force on dust grains
+  /////////////////////////
+
   void EnrollUserDrag(UserDefDragFunc);   // User defined drag function enrollment
+  bool IsImplicit() const { return implicit; }  // Check if the drag is implicit
 
   IdefixArray4D<real> UcDust;  // Dust conservative quantities
   IdefixArray4D<real> UcGas;  // Gas conservative quantities
@@ -32,12 +41,17 @@ class Drag {
   IdefixArray4D<real> VcGas;  // Gas primitive quantities
   IdefixArray3D<real> InvDt;  // The InvDt of current dust specie
   IdefixArray3D<real> gammai; // the drag coefficient (only used for user-defined dust grains)
+  IdefixArray3D<real> implicitFactor; // The prefactor used by the implicit timestepping
+
   Type type;
 
  private:
   DataBlock* data;
   real dragCoeff;
   bool feedback{false};
+  bool implicit{false};
+  int instanceNumber;
+
 
   UserDefDragFunc userDrag{NULL};
 
@@ -92,11 +106,21 @@ Drag::Drag(Input &input, Fluid<Phys> *hydroin):
       IDEFIX_ERROR(msg);
     }
     // Fetch the drag coefficient for the current specie.
-    const int n = hydroin->instanceNumber;
-    this->dragCoeff = input.Get<real>(BlockName,"drag",n+1);
+    this->instanceNumber = hydroin->instanceNumber;
+    this->dragCoeff = input.Get<real>(BlockName,"drag",instanceNumber+1);
 
     // Feedback is true by default, but can be switched off.
     this->feedback = input.GetOrSet<bool>(BlockName,"drag_feedback",0,true);
+
+    this->implicit = input.GetOrSet<bool>(BlockName,"drag_implicit",0,false);
+
+    if(implicit && instanceNumber == 0) {
+      this->implicitFactor = IdefixArray3D<real>("ImplicitFactor",
+                                  data->np_tot[KDIR],
+                                  data->np_tot[JDIR],
+                                  data->np_tot[IDIR]);
+    }
+
   } else {
     IDEFIX_ERROR("A [Drag] block is required in your input file to define the drag force.");
   }

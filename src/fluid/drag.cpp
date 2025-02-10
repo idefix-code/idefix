@@ -21,6 +21,10 @@ void Drag::AddDragForce(const real dt) {
 
   EquationOfState eos = *(this->eos);
 
+  if(implicit) {
+    IDEFIX_ERROR("Add DragForce should not be called when drag is implicit");
+  }
+
   auto userGammai = this->gammai;
   if(type == Type::Userdef) {
     if(userDrag != NULL) {
@@ -78,9 +82,199 @@ void Drag::AddDragForce(const real dt) {
     });
   idfx::popRegion();
 }
+//
+// $ p_g^{(n+1)}=p_g^{(n)}+\sum_i\frac{\rho_g\gamma_i dt}{1+\rho_g \gamma_i dt}p_i^{(n)} $
+// We accumulate in the array "prefactor"
+// $ \sum_i\frac{\rho_i\gamma_i dt}{1+\rho_g\gamma_i dt}
+//
+
+void Drag::AddImplicitBackReaction(const real dt, IdefixArray3D<real> preFactor) {
+  if(!feedback) {
+    // no feedback, no need for anything
+    return;
+  }
+  idfx::pushRegion("AddImplicitFluidMomentum");
+
+  auto UcGas = this->UcGas;
+  auto VcGas = this->VcGas;
+  auto UcDust = this->UcDust;
+  auto VcDust = this->VcDust;
+
+  const Type type = this->type;
+  real dragCoeff = this->dragCoeff;
+  bool feedback = this->feedback;
+
+  bool isFirst = this->instanceNumber == 0;
+
+  EquationOfState eos = *(this->eos);
+
+  if(!implicit) {
+    IDEFIX_ERROR("AddImplicitGasMomentum should not be called when drag is explicit");
+  }
+
+  auto userGammai = this->gammai;
+  if(type == Type::Userdef) { // If feedback enabled,
+                                          // the coefficients were already computed in the gas
+                                          // momentum pass
+    if(userDrag != NULL) {
+      idfx::pushRegion("Drag::UserDrag");
+      userDrag(data, dragCoeff, userGammai);
+      idfx::popRegion();
+    } else {
+      IDEFIX_ERROR("No User-defined drag function has been enrolled");
+    }
+  }
+  // Compute a drag force fd = - gamma*rhod*rhog*(vd-vg)
+  // Where gamma is computed according to the choice of drag type
+  idefix_for("DragForce",0,data->np_tot[KDIR],0,data->np_tot[JDIR],0,data->np_tot[IDIR],
+    KOKKOS_LAMBDA (int k, int j, int i) {
+      real gamma;  // The drag coefficient
+      if(type ==  Type::Gamma) {
+        gamma = dragCoeff;
+
+      } else if(type == Type::Tau) {
+        // In this case, the coefficient is the stopping time (assumed constant)
+        gamma = 1/(dragCoeff*VcGas(RHO,k,j,i));
+      } else if(type == Type::Size) {
+        real cs;
+        // Assume a fixed size, hence for both Epstein or Stokes, gamma~1/rho_g/cs
+        // Get the sound speed
+        #if HAVE_ENERGY == 1
+          cs = std::sqrt(eos.GetGamma(VcGas(PRS,k,j,i),VcGas(RHO,k,j,i)
+                         *VcGas(PRS,k,j,i)/VcGas(RHO,k,j,i)));
+        #else
+          cs = eos.GetWaveSpeed(k,j,i);
+        #endif
+        gamma = cs/dragCoeff;
+      } else if(type == Type::Userdef) {
+        gamma = userGammai(k,j,i);
+      }
+
+      const real factor = VcDust(RHO,k,j,i)*gamma*dt/(1+VcGas(RHO,k,j,i)*gamma*dt);
+      if(isFirst) {
+        preFactor(k,j,i) = factor;
+      } else {
+        preFactor(k,j,i) += factor;
+      }
+
+      for(int n = MX1 ; n < MX1+COMPONENTS ; n++) {
+        UcGas(n,k,j,i) +=  dt * gamma * VcGas(RHO,k,j,i) * UcDust(n,k,j,i) /
+                                                                   (1 + VcGas(RHO,k,j,i)*dt*gamma);
+      }
+    });
+  idfx::popRegion();
+}
+
+void Drag::NormalizeImplicitBackReaction(const real dt) {
+  if(!feedback) {
+    // no feedback, no need for anything
+    return;
+  }
+  idfx::pushRegion("AddImplicitFluidMomentum");
+
+  auto UcGas = this->UcGas;
+  auto preFactor = this->implicitFactor;
+
+  if(!implicit) {
+    IDEFIX_ERROR("AddImplicitGasMomentum should not be called when drag is explicit");
+  }
+
+  // Compute a drag force fd = - gamma*rhod*rhog*(vd-vg)
+  // Where gamma is computed according to the choice of drag type
+  idefix_for("DragForce",0,data->np_tot[KDIR],0,data->np_tot[JDIR],0,data->np_tot[IDIR],
+    KOKKOS_LAMBDA (int k, int j, int i) {
+      const real factor = 1+preFactor(k,j,i);
+      for(int n = MX1 ; n < MX1+COMPONENTS ; n++) {
+        UcGas(n,k,j,i) /= factor;
+      }
+    });
+  idfx::popRegion();
+}
+
+void Drag::AddImplicitFluidMomentum(const real dt) {
+  idfx::pushRegion("AddImplicitFluidMomentum");
+
+  auto UcGas = this->UcGas;
+  auto VcGas = this->VcGas;
+  auto UcDust = this->UcDust;
+  auto VcDust = this->VcDust;
+  auto InvDt = this->InvDt;
+
+  const Type type = this->type;
+  real dragCoeff = this->dragCoeff;
+  bool feedback = this->feedback;
+
+  EquationOfState eos = *(this->eos);
+
+  if(!implicit) {
+    IDEFIX_ERROR("AddImplicitGasMomentum should not be called when drag is explicit");
+  }
+
+  auto userGammai = this->gammai;
+  if(type == Type::Userdef && !feedback) { // If feedback enabled,
+                                          // the coefficients were already computed in the gas
+                                          // momentum pass
+    if(userDrag != NULL) {
+      idfx::pushRegion("Drag::UserDrag");
+      userDrag(data, dragCoeff, userGammai);
+      idfx::popRegion();
+    } else {
+      IDEFIX_ERROR("No User-defined drag function has been enrolled");
+    }
+  }
+  // Compute a drag force fd = - gamma*rhod*rhog*(vd-vg)
+  // Where gamma is computed according to the choice of drag type
+  idefix_for("DragForce",0,data->np_tot[KDIR],0,data->np_tot[JDIR],0,data->np_tot[IDIR],
+    KOKKOS_LAMBDA (int k, int j, int i) {
+      real gamma;  // The drag coefficient
+      if(type ==  Type::Gamma) {
+        gamma = dragCoeff;
+
+      } else if(type == Type::Tau) {
+        // In this case, the coefficient is the stopping time (assumed constant)
+        gamma = 1/(dragCoeff*VcGas(RHO,k,j,i));
+      } else if(type == Type::Size) {
+        real cs;
+        // Assume a fixed size, hence for both Epstein or Stokes, gamma~1/rho_g/cs
+        // Get the sound speed
+        #if HAVE_ENERGY == 1
+          cs = std::sqrt(eos.GetGamma(VcGas(PRS,k,j,i),VcGas(RHO,k,j,i)
+                         *VcGas(PRS,k,j,i)/VcGas(RHO,k,j,i)));
+        #else
+          cs = eos.GetWaveSpeed(k,j,i);
+        #endif
+        gamma = cs/dragCoeff;
+      } else if(type == Type::Userdef) {
+        gamma = userGammai(k,j,i);
+      }
+
+      for(int n = MX1 ; n < MX1+COMPONENTS ; n++) {
+        real oldUc = UcDust(n,k,j,i);
+        UcDust(n,k,j,i) = (oldUc + dt * gamma * VcDust(RHO,k,j,i) * UcGas(n,k,j,i)) /
+                          (1 + VcGas(RHO,k,j,i)*dt*gamma);
+
+        #if HAVE_ENERGY == 1
+          real dp = UcDust(n,k,j,i) - oldUc;
+
+          // We add back the energy dissipated for the dust which is not accounted for
+          // (since there is no energy equation for dust grains)
+
+          // TODO(GL): this should be disabled in the case of a true multifluid system where
+          // both fluids have a proper energy equation
+          UcGas(ENG,k,j,i) -= dp*VcDust(n,k,j,i);
+        #endif
+      }
+    });
+  idfx::popRegion();
+}
 
 void Drag::ShowConfig() {
   idfx::cout << "Drag: Using ";
+  if(implicit) {
+    idfx::cout << " IMPLICIT ";
+  } else {
+    idfx::cout << " EXPLICIT ";
+  }
   switch(type) {
     case Type::Gamma:
       idfx::cout << "constant gamma";

@@ -46,31 +46,17 @@ IdefixArray1D<T> ConvertVectorToIdefixArray(std::vector<T> &inputVector) {
 }
 
 ///< dump Idefix array to a numpy array on disk
-template<typename T>
-void dumpArray(std::string filename, IdefixArray3D<T> array) {
-  IdefixHostArray3D<T> hArray = Kokkos::create_mirror(array);
-  Kokkos::deep_copy(hArray,array);
+template<typename ArrayType>
+void DumpArray(std::string filename, ArrayType array) {
+  auto hArray = Kokkos::create_mirror(array);
+  Kokkos::deep_copy(hArray, array);
 
-  std::array<uint64_t,3> shape;
+  std::array<uint64_t, ArrayType::rank> shape;
   bool fortran_order{false};
-  shape[0] = array.extent(0);
-  shape[1] = array.extent(1);
-  shape[2] = array.extent(2);
-  npy::SaveArrayAsNumpy(filename, fortran_order, 3, shape.data(), hArray.data());
-}
-
-template<typename T>
-void dumpArray(std::string filename, IdefixArray4D<T> array) {
-  IdefixHostArray4D<T> hArray = Kokkos::create_mirror(array);
-  Kokkos::deep_copy(hArray,array);
-
-  std::array<uint64_t,4> shape;
-  bool fortran_order{false};
-  shape[0] = array.extent(0);
-  shape[1] = array.extent(1);
-  shape[2] = array.extent(2);
-  shape[3] = array.extent(3);
-  npy::SaveArrayAsNumpy(filename, fortran_order, 4, shape.data(), hArray.data());
+  for (size_t i = 0; i < ArrayType::rank; ++i) {
+    shape[i] = array.extent(i);
+  }
+  npy::SaveArrayAsNumpy(filename, fortran_order, ArrayType::rank, shape.data(), hArray.data());
 }
 
 } // namespace idfx

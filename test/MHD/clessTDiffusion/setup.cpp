@@ -18,10 +18,10 @@ void MyClessThermalConductivity(DataBlock &data, const real t, std::vector<Idefi
   IdefixArray1D<real> x1 = data.x[IDIR];
   IdefixArray1D<real> x2 = data.x[JDIR];
 
-  IdefixArray3D<real> kparArr = userdefArr[0];
-  IdefixArray3D<real> knorArr = userdefArr[1];
-  IdefixArray3D<real> clessAlpha = userdefArr[2];
-  IdefixArray3D<real> clessBeta  = userdefArr[3];
+  IdefixArray3D<real> kparArr = userdefArr.at(0);
+  IdefixArray3D<real> knorArr = userdefArr.at(1);
+  IdefixArray3D<real> clessAlpha = userdefArr.at(2);
+  IdefixArray3D<real> clessBeta  = userdefArr.at(3);
 
   real norm = mp*0.5/(udenGlob*uvelGlob*ulenGlob*kB);
   real uTemp=0.5*uvelGlob*uvelGlob*mp/kB;

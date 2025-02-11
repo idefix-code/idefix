@@ -43,8 +43,8 @@ void MyBragThermalConductivity(DataBlock &data, const real t, std::vector<Idefix
   IdefixArray4D<real> Vc = data.hydro->Vc;
   IdefixArray1D<real> x2 = data.x[JDIR];
 
-  IdefixArray3D<real> kparArr = userdefArr[0];
-  IdefixArray3D<real> knorArr = userdefArr[1];
+  IdefixArray3D<real> kparArr = userdefArr.at(0);
+  IdefixArray3D<real> knorArr = userdefArr.at(1);
 
   real ksi = ksiGlob;
   idefix_for("MyThConductivity",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],

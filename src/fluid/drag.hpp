@@ -13,7 +13,7 @@
 #include "fluid_defs.hpp"
 #include "eos.hpp"
 
-using UserDefDragFunc = void (*) (DataBlock *, real beta, IdefixArray3D<real> &gammai);
+using UserDefDragFunc = void (*) (DataBlock *, int n, real beta, IdefixArray3D<real> &gammai);
 
 /* A class that holds the kind of drag law we intend to use */
 class GammaDrag {
@@ -55,6 +55,7 @@ class GammaDrag {
   IdefixArray3D<real> gammai;
   IdefixArray4D<real> VcGas;
 
+  int instanceNumber;
   UserDefDragFunc userDrag{NULL};
 };
 
@@ -92,9 +93,6 @@ class Drag {
   bool implicit{false};
   int instanceNumber;
 };
-
-
-
 
 
 #include "fluid.hpp"

@@ -216,7 +216,7 @@ void GammaDrag::RefreshUserDrag(DataBlock *data) {
   if(type == Type::Userdef) {
     if(userDrag != NULL) {
       idfx::pushRegion("GammaDrag::UserDrag");
-        userDrag(data, dragCoeff, gammai);
+        userDrag(data, instanceNumber, dragCoeff, gammai);
       idfx::popRegion();
     } else {
       IDEFIX_ERROR("No User-defined drag function has been enrolled");
@@ -260,4 +260,5 @@ GammaDrag::GammaDrag(Input &input, std::string BlockName, int instanceNumber, Da
   }
   // Fetch the drag coefficient for the current specie.
   this->dragCoeff = input.Get<real>(BlockName,"drag",instanceNumber+1);
+  this->instanceNumber = instanceNumber;
 }

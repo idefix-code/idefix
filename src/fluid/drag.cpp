@@ -5,7 +5,12 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 #include "drag.hpp"
+#include <string>
+
 #include "physics.hpp"
+
+
+
 void Drag::AddDragForce(const real dt) {
   idfx::pushRegion("Drag::AddDragForce");
 
@@ -15,51 +20,20 @@ void Drag::AddDragForce(const real dt) {
   auto VcDust = this->VcDust;
   auto InvDt = this->InvDt;
 
-  const Type type = this->type;
-  real dragCoeff = this->dragCoeff;
   bool feedback = this->feedback;
-
-  EquationOfState eos = *(this->eos);
 
   if(implicit) {
     IDEFIX_ERROR("Add DragForce should not be called when drag is implicit");
   }
 
-  auto userGammai = this->gammai;
-  if(type == Type::Userdef) {
-    if(userDrag != NULL) {
-      idfx::pushRegion("Drag::UserDrag");
-      userDrag(data, dragCoeff, userGammai);
-      idfx::popRegion();
-    } else {
-      IDEFIX_ERROR("No User-defined drag function has been enrolled");
-    }
-  }
+  auto gammaDrag = this->gammaDrag;
+  gammaDrag.RefreshUserDrag(data);
+
   // Compute a drag force fd = - gamma*rhod*rhog*(vd-vg)
   // Where gamma is computed according to the choice of drag type
   idefix_for("DragForce",0,data->np_tot[KDIR],0,data->np_tot[JDIR],0,data->np_tot[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
-      real gamma;  // The drag coefficient
-      if(type ==  Type::Gamma) {
-        gamma = dragCoeff;
-
-      } else if(type == Type::Tau) {
-        // In this case, the coefficient is the stopping time (assumed constant)
-        gamma = 1/(dragCoeff*VcGas(RHO,k,j,i));
-      } else if(type == Type::Size) {
-        real cs;
-        // Assume a fixed size, hence for both Epstein or Stokes, gamma~1/rho_g/cs
-        // Get the sound speed
-        #if HAVE_ENERGY == 1
-          cs = std::sqrt(eos.GetGamma(VcGas(PRS,k,j,i),VcGas(RHO,k,j,i)
-                         *VcGas(PRS,k,j,i)/VcGas(RHO,k,j,i)));
-        #else
-          cs = eos.GetWaveSpeed(k,j,i);
-        #endif
-        gamma = cs/dragCoeff;
-      } else if(type == Type::Userdef) {
-        gamma = userGammai(k,j,i);
-      }
+      real gamma = gammaDrag.GetGamma(k,j,i);  // The drag coefficient
 
       real dp = dt * gamma * VcDust(RHO,k,j,i) * VcGas(RHO,k,j,i);
       for(int n = MX1 ; n < MX1+COMPONENTS ; n++) {
@@ -97,58 +71,26 @@ void Drag::AddImplicitBackReaction(const real dt, IdefixArray3D<real> preFactor)
 
   auto UcGas = this->UcGas;
   auto VcGas = this->VcGas;
-  auto UcDust = this->UcDust;
   auto VcDust = this->VcDust;
 
-  const Type type = this->type;
-  real dragCoeff = this->dragCoeff;
   bool feedback = this->feedback;
 
   bool isFirst = this->instanceNumber == 0;
 
-  EquationOfState eos = *(this->eos);
 
   if(!implicit) {
     IDEFIX_ERROR("AddImplicitGasMomentum should not be called when drag is explicit");
   }
 
-  auto userGammai = this->gammai;
-  if(type == Type::Userdef) { // If feedback enabled,
-                                          // the coefficients were already computed in the gas
-                                          // momentum pass
-    if(userDrag != NULL) {
-      idfx::pushRegion("Drag::UserDrag");
-      userDrag(data, dragCoeff, userGammai);
-      idfx::popRegion();
-    } else {
-      IDEFIX_ERROR("No User-defined drag function has been enrolled");
-    }
-  }
+  auto gammaDrag = this->gammaDrag;
+  gammaDrag.RefreshUserDrag(data);
+
   // Compute a drag force fd = - gamma*rhod*rhog*(vd-vg)
   // Where gamma is computed according to the choice of drag type
   idefix_for("DragForce",0,data->np_tot[KDIR],0,data->np_tot[JDIR],0,data->np_tot[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
-      real gamma;  // The drag coefficient
-      if(type ==  Type::Gamma) {
-        gamma = dragCoeff;
+      real gamma = gammaDrag.GetGamma(k,j,i);  // The drag coefficient
 
-      } else if(type == Type::Tau) {
-        // In this case, the coefficient is the stopping time (assumed constant)
-        gamma = 1/(dragCoeff*VcGas(RHO,k,j,i));
-      } else if(type == Type::Size) {
-        real cs;
-        // Assume a fixed size, hence for both Epstein or Stokes, gamma~1/rho_g/cs
-        // Get the sound speed
-        #if HAVE_ENERGY == 1
-          cs = std::sqrt(eos.GetGamma(VcGas(PRS,k,j,i),VcGas(RHO,k,j,i)
-                         *VcGas(PRS,k,j,i)/VcGas(RHO,k,j,i)));
-        #else
-          cs = eos.GetWaveSpeed(k,j,i);
-        #endif
-        gamma = cs/dragCoeff;
-      } else if(type == Type::Userdef) {
-        gamma = userGammai(k,j,i);
-      }
 
       const real factor = VcDust(RHO,k,j,i)*gamma*dt/(1+VcGas(RHO,k,j,i)*gamma*dt);
       if(isFirst) {
@@ -200,53 +142,20 @@ void Drag::AddImplicitFluidMomentum(const real dt) {
   auto VcDust = this->VcDust;
   auto InvDt = this->InvDt;
 
-  const Type type = this->type;
-  real dragCoeff = this->dragCoeff;
   bool feedback = this->feedback;
-
-  EquationOfState eos = *(this->eos);
 
   if(!implicit) {
     IDEFIX_ERROR("AddImplicitGasMomentum should not be called when drag is explicit");
   }
 
-  auto userGammai = this->gammai;
-  if(type == Type::Userdef && !feedback) { // If feedback enabled,
-                                          // the coefficients were already computed in the gas
-                                          // momentum pass
-    if(userDrag != NULL) {
-      idfx::pushRegion("Drag::UserDrag");
-      userDrag(data, dragCoeff, userGammai);
-      idfx::popRegion();
-    } else {
-      IDEFIX_ERROR("No User-defined drag function has been enrolled");
-    }
-  }
+  auto gammaDrag = this->gammaDrag;
+  if(!feedback) gammaDrag.RefreshUserDrag(data);
+
   // Compute a drag force fd = - gamma*rhod*rhog*(vd-vg)
   // Where gamma is computed according to the choice of drag type
   idefix_for("DragForce",0,data->np_tot[KDIR],0,data->np_tot[JDIR],0,data->np_tot[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i) {
-      real gamma;  // The drag coefficient
-      if(type ==  Type::Gamma) {
-        gamma = dragCoeff;
-
-      } else if(type == Type::Tau) {
-        // In this case, the coefficient is the stopping time (assumed constant)
-        gamma = 1/(dragCoeff*VcGas(RHO,k,j,i));
-      } else if(type == Type::Size) {
-        real cs;
-        // Assume a fixed size, hence for both Epstein or Stokes, gamma~1/rho_g/cs
-        // Get the sound speed
-        #if HAVE_ENERGY == 1
-          cs = std::sqrt(eos.GetGamma(VcGas(PRS,k,j,i),VcGas(RHO,k,j,i)
-                         *VcGas(PRS,k,j,i)/VcGas(RHO,k,j,i)));
-        #else
-          cs = eos.GetWaveSpeed(k,j,i);
-        #endif
-        gamma = cs/dragCoeff;
-      } else if(type == Type::Userdef) {
-        gamma = userGammai(k,j,i);
-      }
+      real gamma = gammaDrag.GetGamma(k,j,i);  // The drag coefficient
 
       for(int n = MX1 ; n < MX1+COMPONENTS ; n++) {
         real oldUc = UcDust(n,k,j,i);
@@ -275,17 +184,17 @@ void Drag::ShowConfig() {
   } else {
     idfx::cout << " EXPLICIT ";
   }
-  switch(type) {
-    case Type::Gamma:
+  switch(gammaDrag.type) {
+    case GammaDrag::Type::Gamma:
       idfx::cout << "constant gamma";
       break;
-    case Type::Tau:
+    case GammaDrag::Type::Tau:
       idfx::cout << "constant stopping time";
       break;
-    case Type::Size:
+    case GammaDrag::Type::Size:
       idfx::cout << "constant dust size";
       break;
-    case Type::Userdef:
+    case GammaDrag::Type::Userdef:
       idfx::cout << "user-defined";
       break;
   }
@@ -299,8 +208,59 @@ void Drag::ShowConfig() {
 }
 
 void Drag::EnrollUserDrag(UserDefDragFunc func) {
+  gammaDrag.EnrollUserDrag(func);
+}
+
+////////////////////////////////////////////
+// GammaDrag function definitions
+////////////////////////////////////////////
+
+void GammaDrag::RefreshUserDrag(DataBlock *data) {
+  if(type == Type::Userdef) {
+    if(userDrag != NULL) {
+      idfx::pushRegion("GammaDrag::UserDrag");
+        userDrag(data, dragCoeff, gammai);
+      idfx::popRegion();
+    } else {
+      IDEFIX_ERROR("No User-defined drag function has been enrolled");
+    }
+  }
+}
+
+void GammaDrag::EnrollUserDrag(UserDefDragFunc func) {
   if(type != Type::Userdef) {
     IDEFIX_ERROR("User-defined drag function requires drag entry to be set to \"userdef\"");
   }
   this->userDrag = func;
+}
+
+GammaDrag::GammaDrag(Input &input, std::string BlockName, int instanceNumber, DataBlock *data) {
+  if(input.CheckEntry(BlockName,"drag")>=0) {
+    std::string dragType = input.Get<std::string>(BlockName,"drag",0);
+    if(dragType.compare("gamma") == 0) {
+      this->type = Type::Gamma;
+    } else if(dragType.compare("tau") == 0) {
+      this->type = Type::Tau;
+      this->VcGas = data->hydro->Vc;
+    } else if(dragType.compare("size") == 0) {
+      this->type = Type::Size;
+      this->eos = *(data->hydro->eos.get());
+      this->VcGas = data->hydro->Vc;
+    } else if(dragType.compare("userdef") == 0) {
+      this->type = Type::Userdef;
+      this->gammai = IdefixArray3D<real>("UserDrag",
+                                  data->np_tot[KDIR],
+                                  data->np_tot[JDIR],
+                                  data->np_tot[IDIR]);
+    } else {
+      std::stringstream msg;
+      msg << "Unknown drag type \"" <<  dragType
+          << "\" in your input file." << std::endl
+          << "Allowed values are: gamma, tau, epstein, stokes, userdef." << std::endl;
+
+      IDEFIX_ERROR(msg);
+    }
+  }
+  // Fetch the drag coefficient for the current specie.
+  this->dragCoeff = input.Get<real>(BlockName,"drag",instanceNumber+1);
 }

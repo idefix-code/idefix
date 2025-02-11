@@ -6,10 +6,7 @@
 // ***********************************************************************************
 #include "drag.hpp"
 #include <string>
-
 #include "physics.hpp"
-
-
 
 void Drag::AddDragForce(const real dt) {
   idfx::pushRegion("Drag::AddDragForce");

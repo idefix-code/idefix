@@ -47,6 +47,7 @@ void Drag::AddDragForce(const real dt) {
             UcGas(ENG,k,j,i) += dp*dv*VcDust(n,k,j,i);
           #endif
         } // feedback
+      }
       // Cfl constraint
       real idt = gamma*VcGas(RHO,k,j,i);
       if(feedback) idt += gamma*VcDust(RHO,k,j,i);

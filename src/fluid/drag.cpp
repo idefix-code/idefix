@@ -169,7 +169,7 @@ void Drag::AddImplicitFluidMomentum(const real dt) {
 
           // TODO(GL): this should be disabled in the case of a true multifluid system where
           // both fluids have a proper energy equation
-          if(feedback) UcGas(ENG,k,j,i) -= dp*UcDust(n,k,j,i)/UcDust(RHO,k,j,i);
+          if(feedback) UcGas(ENG,k,j,i) -= dp*VcDust(n,k,j,i);
         #endif
       }
     });

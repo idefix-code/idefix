@@ -89,7 +89,7 @@ void Drag::AddImplicitBackReaction(const real dt, IdefixArray3D<real> preFactor)
       real gamma = gammaDrag.GetGamma(k,j,i);  // The drag coefficient
 
 
-      const real factor = VcDust(RHO,k,j,i)*gamma*dt/(1+VcGas(RHO,k,j,i)*gamma*dt);
+      const real factor = UcDust(RHO,k,j,i)*gamma*dt/(1+UcGas(RHO,k,j,i)*gamma*dt);
       if(isFirst) {
         preFactor(k,j,i) = factor;
       } else {
@@ -97,8 +97,8 @@ void Drag::AddImplicitBackReaction(const real dt, IdefixArray3D<real> preFactor)
       }
 
       for(int n = MX1 ; n < MX1+COMPONENTS ; n++) {
-        UcGas(n,k,j,i) +=  dt * gamma * VcGas(RHO,k,j,i) * UcDust(n,k,j,i) /
-                                                                   (1 + VcGas(RHO,k,j,i)*dt*gamma);
+        UcGas(n,k,j,i) +=  dt * gamma * UcGas(RHO,k,j,i) * UcDust(n,k,j,i) /
+                                                                   (1 + UcGas(RHO,k,j,i)*dt*gamma);
       }
     });
   idfx::popRegion();
@@ -156,8 +156,8 @@ void Drag::AddImplicitFluidMomentum(const real dt) {
 
       for(int n = MX1 ; n < MX1+COMPONENTS ; n++) {
         real oldUc = UcDust(n,k,j,i);
-        UcDust(n,k,j,i) = (oldUc + dt * gamma * VcDust(RHO,k,j,i) * UcGas(n,k,j,i)) /
-                          (1 + VcGas(RHO,k,j,i)*dt*gamma);
+        UcDust(n,k,j,i) = (oldUc + dt * gamma * UcDust(RHO,k,j,i) * UcGas(n,k,j,i)) /
+                          (1 + UcGas(RHO,k,j,i)*dt*gamma);
 
         #if HAVE_ENERGY == 1
           real dp = UcDust(n,k,j,i) - oldUc;
@@ -167,7 +167,7 @@ void Drag::AddImplicitFluidMomentum(const real dt) {
 
           // TODO(GL): this should be disabled in the case of a true multifluid system where
           // both fluids have a proper energy equation
-          UcGas(ENG,k,j,i) -= dp*VcDust(n,k,j,i);
+          UcGas(ENG,k,j,i) -= dp*UcDust(n,k,j,i)/UcDust(RHO,k,j,i);
         #endif
       }
     });

@@ -8,6 +8,7 @@
 #ifndef FLUID_FLUID_DEFS_HPP_
 #define FLUID_FLUID_DEFS_HPP_
 
+#include <vector>
 #include "../idefix.hpp"
 
 
@@ -25,7 +26,7 @@ class Fluid;
 
 
 // Parabolic terms can have different status
-enum HydroModuleStatus {Disabled, Constant, UserDefFunction };
+enum HydroModuleStatus {Disabled, Constant, UserDefFunction};
 
 // Structure to describe the status of parabolic modules
 struct ParabolicModuleStatus {
@@ -49,8 +50,9 @@ using SrcTermFunc = void (*) (Fluid<Phys> *, const real t, const real dt);
 
 using EmfBoundaryFunc = void (*) (DataBlock &, const real t);
 using DiffusivityFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
-using BragDiffusivityFunc = void (*) (DataBlock &, const real t,
-                                      IdefixArray3D<real> &, IdefixArray3D<real> &);
+
+using BragDiffusivityFunc = void (*) (DataBlock &, const real,
+                      std::vector<IdefixArray3D<real>> &);
 
 // Deprecated signatures
 using SrcTermFuncOld = void (*) (DataBlock &, const real t, const real dt);

@@ -763,11 +763,6 @@ void RKLegendre<Phys>::CalcParabolicRHS(real t) {
     KOKKOS_LAMBDA (int n, int k, int j, int i) {
       real Ax = A(k,j,i);
 
-#if GEOMETRY != CARTESIAN
-      if(Ax<SMALL_NUMBER)
-        Ax=SMALL_NUMBER;    // Essentially to avoid singularity around poles
-#endif
-
       const int nv = varList(n);
 
       Flux(nv,k,j,i) = Flux(nv,k,j,i) * Ax;

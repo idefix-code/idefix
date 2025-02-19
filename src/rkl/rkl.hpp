@@ -770,19 +770,35 @@ void RKLegendre<Phys>::CalcParabolicRHS(real t) {
       // Curvature terms
 #if    (GEOMETRY == POLAR       && COMPONENTS >= 2) \
     || (GEOMETRY == CYLINDRICAL && COMPONENTS == 3)
-      if(dir==IDIR && nv==iMPHI) {
-        // Conserve angular momentum, hence flux is R*Vphi
-        Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(x1m(i));
+      if(dir==IDIR) {
+        if(nv==iMPHI) {
+          Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(x1(i));
+        }
+        if constexpr(Phys::mhd) {
+          if(nv==iBPHI) {
+            // No area for this one
+            if(Ax > 0) Flux(iBPHI,k,j,i) = Flux(iBPHI,k,j,i) / Ax;//avoid singularity around poles
+          }
+        }
       }
 #endif // GEOMETRY==POLAR OR CYLINDRICAL
 
-#if GEOMETRY == SPHERICAL && COMPONENTS == 3
-      if(dir==IDIR && nv==iMPHI) {
-        Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(x1m(i));
-      } else if(dir==JDIR && nv==iMPHI) {
-        Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(sm(j));
+#if GEOMETRY == SPHERICAL
+      if(dir==IDIR && nv==VX3) {
+        Flux(nv,k,j,i) = Flux(nv,k,j,i) * FABS(x1m(i));
+      } else if(dir==JDIR && nv==VX3) {
+        Flux(nv,k,j,i) = Flux(nv,k,j,i) * FABS(sm(j));
       }
-#endif // GEOMETRY == SPHERICAL && COMPONENTS == 3
+
+      if constexpr(Phys::mhd) {
+        if(dir == IDIR && Ax > 0 && (nv==BX3 || nv == BX2)) {
+          Flux(nv,k,j,i) = Flux(nv,k,j,i) * x1m(i) / Ax;
+        }
+        if(dir==JDIR && Ax > 0 && nv==BX3) {
+          Flux(nv,k,j,i) = Flux(nv,k,j,i) / Ax;
+        }
+      }
+#endif // GEOMETRY == SPHERICAL$
     }
   );
 
@@ -813,17 +829,37 @@ void RKLegendre<Phys>::CalcParabolicRHS(real t) {
       }
 
 #if GEOMETRY != CARTESIAN
-  #ifdef iMPHI
-      if((dir==IDIR) && (nv == iMPHI)) {
+  if(dir==IDIR) {
+    #ifdef iMPHI
+      if((nv == iMPHI)) {
         rhs /= x1(i);
       }
+    #endif // iMPHI
+    if constexpr(Phys::mhd) {
+      #if (GEOMETRY == POLAR || GEOMETRY == CYLINDRICAL) &&  (defined iBPHI)
+        if(nv==iBPHI) rhs = - 1 / dx(i) * (Flux(iBPHI, k, j, i+1) - Flux(iBPHI, k, j, i) );
+
+      #elif (GEOMETRY == SPHERICAL)
+        real q = 1 / (x1(i)*dx(i));
+        if(nv == BX2 || nv == BX3) {
+          rhs = -q * ((Flux(nv, k, j, i+1)  - Flux(nv, k, j, i) ));
+        }
+      #endif // GEOMETRY
+    } // MHD
+  } // dir==IDIR
+  if(dir==JDIR) {
     #if (GEOMETRY == SPHERICAL) && (COMPONENTS == 3)
-      if((dir==JDIR) && (nv == iMPHI)) {
+      if(nv == iMPHI) {
         rhs /= FABS(s(j));
       }
+      if constexpr(Phys::mhd) {
+        if(nv == iBPHI) {
+          rhs = - 1 / (rt(i)*dx(j)) * (Flux(nv, k, j+1, i) - Flux(nv, k, j, i));
+        }
+      }
     #endif // GEOMETRY
-      // Nothing for KDIR
-  #endif  // iMPHI
+  } // dir==JDIR
+  // Nothing for KDIR
 #endif // GEOMETRY != CARTESIAN
 
       // store the field components

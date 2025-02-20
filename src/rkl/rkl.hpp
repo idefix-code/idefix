@@ -772,7 +772,7 @@ void RKLegendre<Phys>::CalcParabolicRHS(real t) {
     || (GEOMETRY == CYLINDRICAL && COMPONENTS == 3)
       if(dir==IDIR) {
         if(nv==iMPHI) {
-          Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(x1(i));
+          Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(x1m(i));
         }
         if constexpr(Phys::mhd) {
           if(nv==iBPHI) {

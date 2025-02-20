@@ -762,43 +762,42 @@ void RKLegendre<Phys>::CalcParabolicRHS(real t) {
              data->beg[IDIR],data->end[IDIR]+ioffset,
     KOKKOS_LAMBDA (int n, int k, int j, int i) {
       real Ax = A(k,j,i);
-
       const int nv = varList(n);
 
-      Flux(nv,k,j,i) = Flux(nv,k,j,i) * Ax;
-
       // Curvature terms
-#if    (GEOMETRY == POLAR       && COMPONENTS >= 2) \
-    || (GEOMETRY == CYLINDRICAL && COMPONENTS == 3)
-      if(dir==IDIR) {
-        if(nv==iMPHI) {
-          Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(x1m(i));
-        }
-        if constexpr(Phys::mhd) {
-          if(nv==iBPHI) {
-            // No area for this one
-            if(Ax > 0) Flux(iBPHI,k,j,i) = Flux(iBPHI,k,j,i) / Ax;//avoid singularity around poles
+      #if    (GEOMETRY == POLAR       && COMPONENTS >= 2) \
+      || (GEOMETRY == CYLINDRICAL && COMPONENTS == 3)
+        if(dir==IDIR) {
+          if(nv==iMPHI) {
+            Ax *= FABS(x1m(i));
+          }
+          if constexpr(Phys::mhd) {
+            if(nv==iBPHI) {
+              // No area for this one
+              Ax = 1;
+            }
           }
         }
-      }
-#endif // GEOMETRY==POLAR OR CYLINDRICAL
+      #endif // GEOMETRY==POLAR OR CYLINDRICAL
 
-#if GEOMETRY == SPHERICAL
-      if(dir==IDIR && nv==VX3) {
-        Flux(nv,k,j,i) = Flux(nv,k,j,i) * FABS(x1m(i));
-      } else if(dir==JDIR && nv==VX3) {
-        Flux(nv,k,j,i) = Flux(nv,k,j,i) * FABS(sm(j));
-      }
+      #if GEOMETRY == SPHERICAL
+        if(dir==IDIR && nv==VX3) {
+          Ax *= FABS(x1m(i));
+        } else if(dir==JDIR && nv==VX3) {
+          Ax *= FABS(sm(j));
+        }
 
-      if constexpr(Phys::mhd) {
-        if(dir == IDIR && Ax > 0 && (nv==BX3 || nv == BX2)) {
-          Flux(nv,k,j,i) = Flux(nv,k,j,i) * x1m(i) / Ax;
+        if constexpr(Phys::mhd) {
+          if(dir == IDIR  && (nv==BX3 || nv == BX2)) {
+            Ax = x1m(i);
+          }
+          if(dir==JDIR && nv==BX3) {
+            Ax = 1.0;
+          }
         }
-        if(dir==JDIR && Ax > 0 && nv==BX3) {
-          Flux(nv,k,j,i) = Flux(nv,k,j,i) / Ax;
-        }
-      }
-#endif // GEOMETRY == SPHERICAL$
+      #endif // GEOMETRY == SPHERICAL
+
+      Flux(nv,k,j,i) = Flux(nv,k,j,i) * Ax;
     }
   );
 

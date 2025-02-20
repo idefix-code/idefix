@@ -149,45 +149,49 @@ struct Fluid_CorrectFluxFunctor {
         Flux(MX1+meanDir,k,j,i) += meanV * Flux(RHO,k,j,i);
       } // Fargo & Rotation corrections
 
-      real Ax = A(k,j,i);
+      //////////////////////////////////////////////
+      // Define correction factor for the fluxes
+      //////////////////////////////////////////////
 
-      for(int nv = 0 ; nv < Phys::nvar ; nv++) {
-        Flux(nv,k,j,i) = Flux(nv,k,j,i) * Ax;
-      }
+      real Ax[Phys::nvar]; // corrected Area
+      for(int nv = 0 ; nv < Phys::nvar ; nv++) Ax[nv] = A(k,j,i);
 
       // Curvature terms
-#if    (GEOMETRY == POLAR       && COMPONENTS >= 2) \
-    || (GEOMETRY == CYLINDRICAL && COMPONENTS == 3)
-      if constexpr (dir==IDIR) {
-        // Conserve angular momentum, hence flux is R*Bphi
-        Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(x1m(i));
-        if constexpr(Phys::mhd) {
-          if(Ax>0) Flux(iBPHI,k,j,i) = Flux(iBPHI,k,j,i) / Ax;    //avoid singularity around poles
-        }
-      }
-#endif // GEOMETRY==POLAR OR CYLINDRICAL
-
-#if GEOMETRY == SPHERICAL
-      if constexpr(dir==IDIR) {
-  #if COMPONENTS == 3
-        Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(x1m(i));
-  #endif // COMPONENTS == 3
-        if constexpr(Phys::mhd) {
-          if(Ax>0) {    // avoid singularity around poles
-            EXPAND(                                            ,
-                Flux(iBTH,k,j,i)  = Flux(iBTH,k,j,i) * x1m(i) / Ax;  ,
-                Flux(iBPHI,k,j,i) = Flux(iBPHI,k,j,i) * x1m(i) / Ax; )
+      #if    (GEOMETRY == POLAR       && COMPONENTS >= 2) \
+          || (GEOMETRY == CYLINDRICAL && COMPONENTS == 3)
+        if constexpr (dir==IDIR) {
+          // Conserve angular momentum, hence flux is R*Bphi
+          Ax[iMPHI] *= FABS(x1m(i));
+          if constexpr(Phys::mhd) {
+            Ax[iBPHI] = 1.0;    // corrected Flux is simply Bphi
           }
         }
-      } else if constexpr (dir==JDIR) {
-  #if COMPONENTS == 3
-        Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(sinx2m(j));
-        if constexpr(Phys::mhd) {
-          if(Ax>0) Flux(iBPHI,k,j,i) = Flux(iBPHI,k,j,i)  / Ax; // avoid singularity around poles
+      #endif // GEOMETRY==POLAR OR CYLINDRICAL
+
+      #if GEOMETRY == SPHERICAL
+        if constexpr(dir==IDIR) {
+          #if COMPONENTS == 3
+            Ax[iMPHI] *= FABS(x1m(i));
+          #endif // COMPONENTS == 3
+          if constexpr(Phys::mhd) {
+            EXPAND(                                            ,
+                Ax[iBTH]  = x1m(i);  ,
+                Ax[iBPHI]  = x1m(i); )
+          }// Phys::mhd
+        } else if constexpr (dir==JDIR) {
+          #if COMPONENTS == 3
+              Ax[iMPHI] *= FABS(sinx2m(j));
+              if constexpr(Phys::mhd) {
+                Ax[iBPHI] = 1.0; // corrected Flux is simply Bphi
+              }
+          #endif // COMPONENTS = 3
         }
-  #endif // COMPONENTS = 3
+      #endif // GEOMETRY == SPHERICAL
+
+      // Finally correct the flux
+      for(int nv = 0 ; nv < Phys::nvar ; nv++) {
+        Flux(nv,k,j,i) = Flux(nv,k,j,i) * Ax[nv];
       }
-#endif // GEOMETRY == SPHERICAL
     }
 };
 

@@ -71,6 +71,7 @@ void Drag::AddImplicitBackReaction(const real dt, IdefixArray3D<real> preFactor)
   auto UcGas = this->UcGas;
   auto VcGas = this->VcGas;
   auto VcDust = this->VcDust;
+  auto UcDust = this->UcDust;
 
   bool feedback = this->feedback;
 

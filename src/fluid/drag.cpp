@@ -73,8 +73,6 @@ void Drag::AddImplicitBackReaction(const real dt, IdefixArray3D<real> preFactor)
   auto VcDust = this->VcDust;
   auto UcDust = this->UcDust;
 
-  bool feedback = this->feedback;
-
   bool isFirst = this->instanceNumber == 0;
 
 

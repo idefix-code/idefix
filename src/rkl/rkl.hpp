@@ -835,12 +835,15 @@ void RKLegendre<Phys>::CalcParabolicRHS(real t) {
         rhs /= x1(i);
       }
     #endif // iMPHI
+    real dx_ = dx(i);
+    real x1_ = x1(i);
+
     if constexpr(Phys::mhd) {
       #if (GEOMETRY == POLAR || GEOMETRY == CYLINDRICAL) &&  (defined iBPHI)
-        if(nv==iBPHI) rhs = - 1 / dx(i) * (Flux(iBPHI, k, j, i+1) - Flux(iBPHI, k, j, i) );
+        if(nv==iBPHI) rhs = - 1 / dx_ * (Flux(iBPHI, k, j, i+1) - Flux(iBPHI, k, j, i) );
 
       #elif (GEOMETRY == SPHERICAL)
-        real q = 1 / (x1(i)*dx(i));
+        real q = 1 / (x1_*dx_);
         if(nv == BX2 || nv == BX3) {
           rhs = -q * ((Flux(nv, k, j, i+1)  - Flux(nv, k, j, i) ));
         }
@@ -852,9 +855,11 @@ void RKLegendre<Phys>::CalcParabolicRHS(real t) {
       if(nv == iMPHI) {
         rhs /= FABS(s(j));
       }
+      real dx_ = dx(j);
+      real rt_ = rt(i);
       if constexpr(Phys::mhd) {
         if(nv == iBPHI) {
-          rhs = - 1 / (rt(i)*dx(j)) * (Flux(nv, k, j+1, i) - Flux(nv, k, j, i));
+          rhs = - 1 / (rt_*dx_) * (Flux(nv, k, j+1, i) - Flux(nv, k, j, i));
         }
       }
     #endif // GEOMETRY

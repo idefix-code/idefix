@@ -45,7 +45,7 @@ void UserDefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
     IdefixArray4D<real> Vs = hydro->Vs;
     IdefixArray1D<real> x1 = data->x[IDIR];
 
-    real rc,vc,vwind0;
+    real rc,vwind0;
     real cs=cs_vescGlob*sqrt(2.);
     real va_vesc = va_vescGlob;
     real mu = va_vesc * sqrt(2.);
@@ -96,8 +96,8 @@ void Setup::InitFlow(DataBlock &data) {
   // Create a host copy
   DataBlockHost d(data);
 
-  real r,th,rl;
-  real PonRho, vwind0, rc, vc;
+  real r,rl;
+  real PonRho, vwind0, rc;
   real cs=cs_vescGlob*sqrt(2.);
 
 
@@ -110,7 +110,7 @@ void Setup::InitFlow(DataBlock &data) {
     for(int j = 0; j < d.np_tot[JDIR] ; j++) {
       for(int i = 0; i < d.np_tot[IDIR] ; i++) {
         r=d.x[IDIR](i);
-        th=d.x[JDIR](j);
+
         real vwind;
 
         vwind = ParkerWind(r/rc) * cs;

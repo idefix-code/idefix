@@ -177,6 +177,8 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/sphBragTDiffusion -all $TESTME_OPTIONS
       - name: Spherical anisotropic viscosity
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/sphBragViscosity -all $TESTME_OPTIONS
+      - name: Collisionless thermal conduction
+        run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/clessTDiffusion -all $TESTME_OPTIONS
 
   Examples:
     needs: [Fargo, Dust, Planet, ShearingBox, SelfGravity]

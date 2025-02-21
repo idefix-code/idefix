@@ -534,6 +534,7 @@ void Laplacian::EnforceBoundary(int dir, BoundarySide side, LaplacianBoundaryTyp
       break;
     }
     case shearingbox: {
+      idfx::cout<<"This is SG shearing box boundary " <<idfx::prank<<std::endl;
       if(dir!=IDIR)
         IDEFIX_ERROR(
         "Laplacian:: Shearing box boundary condition should only be used in IDIR"
@@ -565,13 +566,21 @@ void Laplacian::EnforceBoundary(int dir, BoundarySide side, LaplacianBoundaryTyp
 
       const int sideShift =0;// (side +1)%2;
 
-      const int nxiglob = data->mygrid->np_int[IDIR];
+      //const int nxiglob = data->mygrid->np_int[IDIR];
 
       idefix_for("BoundaryShearingBox", kbeg, kend, jbeg, jend, ibeg, iend,
             KOKKOS_LAMBDA (int k, int j, int i) {
-              int iref = i - side*(ighost +nxi); //ighost + (i+ighost*(nxi-1))%nxi;//;
+              int iscrh = i - side*(ighost +nxi);
+              int iref;
+              if(data->mygrid->nproc[dir]==1) {
+                // no MPI domain decomposition: we look at the other side of the datablock
+                iref = ighost + (i+ighost*(nxi-1))%nxi;
+              } else {
+                // we need to copy the data to this side (done by MPI), then shift it
+                iref = i;
+              }
 
-              //idfx::cout<<iref<<std::endl;
+              //idfx::cout<<i << "\t" << iref<<std::endl;
 
               //localVar(k,j,i) = localVar(k,j,iref)+j; // this works
 
@@ -584,6 +593,9 @@ void Laplacian::EnforceBoundary(int dir, BoundarySide side, LaplacianBoundaryTyp
 
               const int jom2 = jghost + ((jo-2-jghost)%nxj+nxj)%nxj;
               const int jop2 = jghost + ((jo+2-jghost)%nxj+nxj)%nxj;
+
+              //if (j==0)
+              //  idfx::cout<< t <<"\t"<<jo<<std::endl;
 
               real Fl,Fr;
               real dqm, dqp, dq;
@@ -600,39 +612,44 @@ void Laplacian::EnforceBoundary(int dir, BoundarySide side, LaplacianBoundaryTyp
             // order recontruction in eps
             if(eps>=ZERO_F) {
             // Compute Fl
-            dqm = localVar(k,jom1,i) - localVar(k,jom2,i);
-            dqp = localVar(k,jo,i) - localVar(k,jom1,i);
+            dqm = localVar(k,jom1,iref) - localVar(k,jom2,iref);
+            dqp = localVar(k,jo,iref) - localVar(k,jom1,iref);
             dq = dqm+dqp; //(dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+            //dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
 
-            Fl = localVar(k,jom1,i) + 0.5*dq*(1.0-eps);
+            Fl = localVar(k,jom1,iref) + 0.5*dq*(1.0-eps);
             //Compute Fr
             dqm=dqp;
-            dqp = localVar(k,jop1,i) - localVar(k,jo,i);
+            dqp = localVar(k,jop1,iref) - localVar(k,jo,iref);
             dq = dqm+dqp; //(dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+            //dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
 
-            Fr = localVar(k,jo,i) + 0.5*dq*(1.0-eps);
+            Fr = localVar(k,jo,iref) + 0.5*dq*(1.0-eps);
           } else {
             //Compute Fl
-            dqm = localVar(k,jo,i) - localVar(k,jom1,i);
-            dqp = localVar(k,jop1,i) - localVar(k,jo,i);
+            dqm = localVar(k,jo,iref) - localVar(k,jom1,iref);
+            dqp = localVar(k,jop1,iref) - localVar(k,jo,iref);
             dq = dqm+dqp; //(dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+            //dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
 
-            Fl = localVar(k,jo,i) - 0.5*dq*(1.0+eps);
+            Fl = localVar(k,jo,iref) - 0.5*dq*(1.0+eps);
             // Compute Fr
             dqm=dqp;
-            dqp = localVar(k,jop2,i) - localVar(k,jop1,i);
+            dqp = localVar(k,jop2,iref) - localVar(k,jop1,iref);
             dq = dqm+dqp; //(dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+            //dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
 
-            Fr = localVar(k,jop1,i) - 0.5*dq*(1.0+eps);
+            Fr = localVar(k,jop1,iref) - 0.5*dq*(1.0+eps);
           }
-          scrh(k,j,iref) = localVar(k,jo,i) - eps*(Fr - Fl);
+          //idfx::cout<<i<<"\t"<<iscrh<< "\t"<<iref<<std::endl;
+          scrh(k,j,iscrh) = localVar(k,jo,iref) - eps*(Fr - Fl);
       });
 
 
         idefix_for("BoundaryShearingBoxCopy", kbeg, kend, jbeg, jend, ibeg, iend,
         KOKKOS_LAMBDA ( int k, int j, int i) {
-          int iref = i - side*(ighost +nxi); //ighost + (i+ighost*(nxi-1))%nxi;//;
-          localVar(k,j,i) = scrh(k,j,iref);
+          int iscrh = i - side*(ighost +nxi); //ighost + (i+ighost*(nxi-1))%nxi;//;
+          localVar(k,j,i) = scrh(k,j,iscrh);
         });
       break;
     }

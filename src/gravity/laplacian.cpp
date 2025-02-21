@@ -534,6 +534,7 @@ void Laplacian::EnforceBoundary(int dir, BoundarySide side, LaplacianBoundaryTyp
       break;
     }
     case shearingbox: {
+      idfx::cout<<"This is SG shearing box boundary " <<idfx::prank<<std::endl;
       if(dir!=IDIR)
         IDEFIX_ERROR(
         "Laplacian:: Shearing box boundary condition should only be used in IDIR"
@@ -564,7 +565,7 @@ void Laplacian::EnforceBoundary(int dir, BoundarySide side, LaplacianBoundaryTyp
 
       const int nprocsIDIR = data->mygrid->nproc[dir];
 
-      const int nxiglob = data->mygrid->np_int[IDIR];
+      //const int nxiglob = data->mygrid->np_int[IDIR];
 
       idefix_for("BoundaryShearingBox", kbeg, kend, jbeg, jend, ibeg, iend,
             KOKKOS_LAMBDA (int k, int j, int i) {
@@ -581,6 +582,9 @@ void Laplacian::EnforceBoundary(int dir, BoundarySide side, LaplacianBoundaryTyp
 
               const int jom2 = jghost + ((jo-2-jghost)%nxj+nxj)%nxj;
               const int jop2 = jghost + ((jo+2-jghost)%nxj+nxj)%nxj;
+
+              //if (j==0)
+              //  idfx::cout<< t <<"\t"<<jo<<std::endl;
 
               real Fl,Fr;
               real dqm, dqp, dq;

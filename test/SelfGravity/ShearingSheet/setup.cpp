@@ -1,9 +1,18 @@
 #include "idefix.hpp"
 #include "setup.hpp"
+<<<<<<< HEAD
+=======
+#include "analysis.hpp"
+>>>>>>> 4b686185 (Fixed IDIR index shift)
 
 static real gammaIdeal;
 static real omega;
 static real shear;
+<<<<<<< HEAD
+=======
+Analysis *analysis;
+
+>>>>>>> 4b686185 (Fixed IDIR index shift)
 
 //#define STRATIFIED
 
@@ -97,3 +106,12 @@ void Setup::InitFlow(DataBlock &data) {
     // Send it all, if needed
     d.SyncToDevice();
 }
+<<<<<<< HEAD
+=======
+
+
+// Analyse data to produce an output
+
+void MakeAnalysis(DataBlock & data) {
+}
+>>>>>>> 4b686185 (Fixed IDIR index shift)

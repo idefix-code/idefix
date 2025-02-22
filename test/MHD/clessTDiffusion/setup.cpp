@@ -45,7 +45,7 @@ void UserDefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
     IdefixArray4D<real> Vs = hydro->Vs;
     IdefixArray1D<real> x1 = data->x[IDIR];
 
-    real rc,vwind0;
+    real rc,vc,vwind0;
     real cs=cs_vescGlob*sqrt(2.);
     real va_vesc = va_vescGlob;
     real mu = va_vesc * sqrt(2.);

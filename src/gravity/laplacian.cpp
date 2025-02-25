@@ -534,7 +534,6 @@ void Laplacian::EnforceBoundary(int dir, BoundarySide side, LaplacianBoundaryTyp
       break;
     }
     case shearingbox: {
-      idfx::cout<<"This is SG shearing box boundary " <<idfx::prank<<std::endl;
       if(dir!=IDIR)
         IDEFIX_ERROR(
         "Laplacian:: Shearing box boundary condition should only be used in IDIR"
@@ -561,94 +560,67 @@ void Laplacian::EnforceBoundary(int dir, BoundarySide side, LaplacianBoundaryTyp
 
       const int m = static_cast<int> (std::floor(dL/dy+HALF_F));
 
-      //const real eps = dL - m *dy;
       const real eps = dL/dy - m;
-
-      const int sideShift =0;// (side +1)%2;
-
-      //const int nxiglob = data->mygrid->np_int[IDIR];
 
       idefix_for("BoundaryShearingBox", kbeg, kend, jbeg, jend, ibeg, iend,
             KOKKOS_LAMBDA (int k, int j, int i) {
-              int iscrh = i - side*(ighost +nxi);
-              int iref;
-              if(data->mygrid->nproc[dir]==1) {
-                // no MPI domain decomposition: we look at the other side of the datablock
-                iref = ighost + (i+ighost*(nxi-1))%nxi;
-              } else {
-                // we need to copy the data to this side (done by MPI), then shift it
-                iref = i;
-              }
+              const int iscrh = i - side*(ighost +nxi);
 
-              //idfx::cout<<i << "\t" << iref<<std::endl;
+              // no MPI domain decomposition: we look at the other side of the datablock
+              // MPI: we need to copy the data to this side (done by MPI), then shift it
+              const int iref = (data->mygrid->nproc[dir]==1) ?
+                             ighost + (i+ighost*(nxi-1))%nxi : i;
 
-              //localVar(k,j,i) = localVar(k,j,iref)+j; // this works
-
-              // il faut prendre en compte les ghost zones d'une façon ou d'une autre
-              // ce n'est pas le cas ici...
-
-              const int jo = jghost + ((j-m-jghost+sideShift)%nxj+nxj)%nxj;
+              const int jo = jghost + ((j-m-jghost)%nxj+nxj)%nxj;
               const int jop1 = jghost + ((jo+1-jghost)%nxj+nxj)%nxj;
               const int jom1 = jghost + ((jo-1-jghost)%nxj+nxj)%nxj;
 
               const int jom2 = jghost + ((jo-2-jghost)%nxj+nxj)%nxj;
               const int jop2 = jghost + ((jo+2-jghost)%nxj+nxj)%nxj;
 
-              //if (j==0)
-              //  idfx::cout<< t <<"\t"<<jo<<std::endl;
-
               real Fl,Fr;
               real dqm, dqp, dq;
-/*
-              if (eps <= 0) {
-                localVar(k,j,i) = (1+eps) * localVar(k,jo,iref)
-                                              - eps*localVar(k,jop1,iref);
+
+              // the follwing, like for the fluxes in boundary.hpp is a second-
+              // order recontruction in eps
+              if(eps>=ZERO_F) {
+                // Compute Fl
+                dqm = localVar(k,jom1,iref) - localVar(k,jom2,iref);
+                dqp = localVar(k,jo,iref) - localVar(k,jom1,iref);
+                dq = dqm+dqp;
+                //dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+
+                Fl = localVar(k,jom1,iref) + 0.5*dq*(1.0-eps);
+                //Compute Fr
+                dqm=dqp;
+                dqp = localVar(k,jop1,iref) - localVar(k,jo,iref);
+                dq = dqm+dqp;
+                //dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+
+                Fr = localVar(k,jo,iref) + 0.5*dq*(1.0-eps);
               } else {
-                localVar(k,j,i) = ((1-eps) * localVar(k,jom1,iref)
-                                              + eps*localVar(k,jo,iref));
-              }*/
+                //Compute Fl
+                dqm = localVar(k,jo,iref) - localVar(k,jom1,iref);
+                dqp = localVar(k,jop1,iref) - localVar(k,jo,iref);
+                dq = dqm+dqp;
+                //dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
 
-            // the follwing, like for the fluxes in boundary.hpp is a second-
-            // order recontruction in eps
-            if(eps>=ZERO_F) {
-            // Compute Fl
-            dqm = localVar(k,jom1,iref) - localVar(k,jom2,iref);
-            dqp = localVar(k,jo,iref) - localVar(k,jom1,iref);
-            dq = dqm+dqp; //(dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-            //dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+                Fl = localVar(k,jo,iref) - 0.5*dq*(1.0+eps);
+                // Compute Fr
+                dqm=dqp;
+                dqp = localVar(k,jop2,iref) - localVar(k,jop1,iref);
+                dq = dqm+dqp;
+                //dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
 
-            Fl = localVar(k,jom1,iref) + 0.5*dq*(1.0-eps);
-            //Compute Fr
-            dqm=dqp;
-            dqp = localVar(k,jop1,iref) - localVar(k,jo,iref);
-            dq = dqm+dqp; //(dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-            //dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-
-            Fr = localVar(k,jo,iref) + 0.5*dq*(1.0-eps);
-          } else {
-            //Compute Fl
-            dqm = localVar(k,jo,iref) - localVar(k,jom1,iref);
-            dqp = localVar(k,jop1,iref) - localVar(k,jo,iref);
-            dq = dqm+dqp; //(dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-            //dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-
-            Fl = localVar(k,jo,iref) - 0.5*dq*(1.0+eps);
-            // Compute Fr
-            dqm=dqp;
-            dqp = localVar(k,jop2,iref) - localVar(k,jop1,iref);
-            dq = dqm+dqp; //(dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-            //dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
-
-            Fr = localVar(k,jop1,iref) - 0.5*dq*(1.0+eps);
-          }
-          //idfx::cout<<i<<"\t"<<iscrh<< "\t"<<iref<<std::endl;
-          scrh(k,j,iscrh) = localVar(k,jo,iref) - eps*(Fr - Fl);
+                Fr = localVar(k,jop1,iref) - 0.5*dq*(1.0+eps);
+              }
+              scrh(k,j,iscrh) = localVar(k,jo,iref) - eps*(Fr - Fl);
       });
 
 
         idefix_for("BoundaryShearingBoxCopy", kbeg, kend, jbeg, jend, ibeg, iend,
         KOKKOS_LAMBDA ( int k, int j, int i) {
-          int iscrh = i - side*(ighost +nxi); //ighost + (i+ighost*(nxi-1))%nxi;//;
+          const int iscrh = i - side*(ighost +nxi);
           localVar(k,j,i) = scrh(k,j,iscrh);
         });
       break;

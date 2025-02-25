@@ -3,11 +3,7 @@
 """
 Created on Wed Feb 19 15:42:19 2025
 
-<<<<<<< HEAD
 @author: vdbma
-=======
-@author: vdmba
->>>>>>> 4b686185 (Fixed IDIR index shift)
 """
 import os
 import sys

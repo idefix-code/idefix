@@ -562,13 +562,15 @@ void Laplacian::EnforceBoundary(int dir, BoundarySide side, LaplacianBoundaryTyp
 
       const real eps = dL/dy - m;
 
+      const int nprocsIDIR = data->mygrid->nproc[dir];
+
       idefix_for("BoundaryShearingBox", kbeg, kend, jbeg, jend, ibeg, iend,
             KOKKOS_LAMBDA (int k, int j, int i) {
               const int iscrh = i - side*(ighost +nxi);
 
               // no MPI domain decomposition: we look at the other side of the datablock
               // MPI: we need to copy the data to this side (done by MPI), then shift it
-              const int iref = (data->mygrid->nproc[dir]==1) ?
+              const int iref = (nprocsIDIR==1) ?
                              ighost + (i+ighost*(nxi-1))%nxi : i;
 
               const int jo = jghost + ((j-m-jghost)%nxj+nxj)%nxj;

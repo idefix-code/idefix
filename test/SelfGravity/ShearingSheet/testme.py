@@ -25,7 +25,7 @@ def testMe(test):
 
 test=tst.idfxTest()
 if not test.dec:
-  test.dec=['2','1','2']
+  test.dec=['3','1']
 
 if not test.all:
   if(test.check):
@@ -37,4 +37,7 @@ else:
   test.single=False
   test.reconstruction=2
   test.mpi=False
+  testMe(test)
+
+  test.mpi=True
   testMe(test)

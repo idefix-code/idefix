@@ -87,15 +87,18 @@ The boundary conditions can be following
 | origin                | | In spherical coordinates, artificially extends the grid used to compute the potential close to R=0.            |
 |                       | | should only be used in X1-beg direction.                                                                       |
 +-----------------------+------------------------------------------------------------------------------------------------------------------+
+| shearingbox           | Shearingbox boundary conditions.                                             |
++-----------------------+------------------------------------------------------------------------------------------------------------------+
 | userdef               | |User-defined boundary conditions. The boundary condition function should be enrolled in the setup constructor   |
 |                       | | (see :ref:`userdefBoundaries`).                                                                                |
 +-----------------------+------------------------------------------------------------------------------------------------------------------+
 
 .. note::
     The method in fully periodic setups requires the removal of the mean gas density
-    before solving Poisson equation. This is done automatically if all of the self-gravity boundaries are set to ``periodic``.
-    Hence, make sure to specify all self-gravity boundary conditions as periodic for such setups, otherwise the solver will
+    before solving Poisson equation. This is done automatically if all of the self-gravity boundaries are set to ``periodic`` or ``shearingbox``.
+    Hence, make sure to specify all self-gravity boundary conditions as periodic (or shearingbox) for such setups, otherwise the solver will
     fail to converge.
+    Note that in these cases, if the initial density is uniform, the self-gravity solver will fail as this correspond to a vaccum initial state.
 
 The selfGravity module in *Idefix* is fully parallelised. This means that one can have a MPI domain decomposition in any spatial direction
 either on CPU or GPU.

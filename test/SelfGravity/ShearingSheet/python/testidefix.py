@@ -3,7 +3,7 @@
 """
 Created on Wed Feb 19 15:42:19 2025
 
-@author: vdmba
+@author: vdbma
 """
 import os
 import sys

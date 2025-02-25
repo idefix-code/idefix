@@ -10,12 +10,11 @@ import sys
 import numpy as np
 import inifix
 sys.path.append(os.getenv("IDEFIX_DIR"))
-from pytools.idfx_io import readIdfxFile
 from pytools.vtk_io import readVTK
 import matplotlib.pyplot as plt
 import argparse
 
-# check that the density the potential minima is sheared
+# check that the potential minima is sheared
 # at the correct rate in the boundaries
 
 
@@ -32,12 +31,9 @@ args, unknown=parser.parse_known_args()
 Vbeg = readVTK("../data.0000.vtk")
 Vend = readVTK("../data.0002.vtk")
 
-Iend=readIdfxFile('../test.2.0.idfx') # Last Idfx
-Iref=readIdfxFile('../test.0.0.idfx') # Ref vtk (initial state)
-
 Ly = Vbeg.yl[-1]-Vbeg.yl[0]
-xLeft = Vbeg.xl[0]
-xRight = Vbeg.xl[-1]
+xLeft = Vbeg.x[0]
+xRight = Vbeg.x[-1]
 
 deltaT = Vend.t[0]-Vbeg.t[0]
 
@@ -45,30 +41,28 @@ conf = inifix.load("../idefix.ini")
 
 S = conf["Hydro"]["shearingBox"]
 
-RHO = 0
-nghost = 2
 dy = Ly/Vbeg.ny
 
 
-indexMaxInitLeftRHO = np.argmax(Iref.data["Vc"][RHO,0,nghost:-nghost,0])
-indexMaxInitRightRHO = np.argmax(Iref.data["Vc"][RHO,0,nghost:-nghost,-1])
+indexMaxInitLeftRHO = np.argmax(Vbeg.data["RHO"][0,:,0])
+indexMaxInitRightRHO = np.argmax(Vbeg.data["RHO"][-1,:,0])
 
 posMaxInitLeftRHO = Vbeg.y[indexMaxInitLeftRHO]
 posMaxInitRightRHO = Vbeg.y[indexMaxInitRightRHO]
 
 #breakpoint()
-if args.noplot:
+if not args.noplot:
     fig, ax = plt.subplots()
-    ax.plot(Vbeg.y,Iend.data["Pot"][RHO,0,nghost:-nghost,0]/Iend.data["Pot"][RHO,0,nghost:-nghost,0].max())
-    ax.plot(Vbeg.y,Iend.data["Pot"][RHO,0,nghost:-nghost,-1]/Iend.data["Pot"][RHO,0,nghost:-nghost,-1].max())
+    ax.plot(Vend.y,Vend.data["phiP"][0,:,0]/Vend.data["phiP"][0,:,:].max(),".")
+    ax.plot(Vend.y,Vend.data["phiP"][-1,:,0]/Vend.data["phiP"][-1,:,0].max(),".")
     plt.show()
 
 # potential is not computed at 0th step: using the position of the initial density maximum
 posMaxInitLeftPot = posMaxInitLeftRHO
 posMaxInitRightPot = posMaxInitRightRHO
 
-indexMaxEndLeftPot = np.argmin(Iend.data["Pot"][RHO,0,nghost:-nghost,0])
-indexMaxEndRightPot = np.argmin(Iend.data["Pot"][RHO,0,nghost:-nghost,-1])
+indexMaxEndLeftPot = np.argmin(Vend.data["phiP"][0,:,0])
+indexMaxEndRightPot = np.argmin(Vend.data["phiP"][-1,:,0])
 
 posMaxEndLeftPot = Vbeg.y[indexMaxEndLeftPot]
 posMaxEndRightPot = Vbeg.y[indexMaxEndRightPot]
@@ -82,10 +76,11 @@ errorRightPot = abs(deltaPosRightPot - S*xRight*deltaT)
 errorPot = (errorLeftPot**2 + errorRightPot**2)**.5
 
 
-err=abs(1-errorPot/dy)
+
+err=abs(errorPot/dy)
 print("Error=",err)
 
-if(err<0.05):
+if(err<1): # total cummulated shift is less than on cell
   print("SUCCESS")
   sys.exit(0)
 else:

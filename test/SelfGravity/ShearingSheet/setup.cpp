@@ -84,7 +84,7 @@ void Setup::InitFlow(DataBlock &data) {
                 y=d.x[JDIR](j);,
                 z=d.x[KDIR](k);
                 );
-                d.Vc(RHO,k,j,i) = 2 + cos(2.0*M_PI*y) + 0.1 * sin(2.0*M_PI*x);
+                d.Vc(RHO,k,j,i) = 2 + cos(2.0*M_PI*y);//+ 0.2 * sin(2.0*M_PI*x);
 
 #ifdef STRATIFIED
                 d.Vc(RHO,k,j,i) *=exp(-z*z/(2.0));

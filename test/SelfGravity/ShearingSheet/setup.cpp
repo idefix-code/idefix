@@ -1,12 +1,9 @@
 #include "idefix.hpp"
 #include "setup.hpp"
-#include "analysis.hpp"
 
 static real gammaIdeal;
 static real omega;
 static real shear;
-Analysis *analysis;
-
 
 //#define STRATIFIED
 
@@ -40,9 +37,6 @@ void BodyForce(DataBlock &data, const real t, IdefixArray4D<real> &force) {
   idfx::popRegion();
 }
 
-void AnalysisFunction(DataBlock &data) {
-  analysis->PerformAnalysis(data);
-}
 
 void ComputeUserVars(DataBlock &data, UserDefVariablesContainer &variables) {
   Kokkos::deep_copy(variables["phiP"], data.gravity->phiP);
@@ -59,8 +53,6 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   // Add our userstep to the timeintegrator
   data.gravity->EnrollBodyForce(BodyForce);
 
-  analysis = new Analysis();
-  output.EnrollAnalysis(&AnalysisFunction);
   output.EnrollUserDefVariables(&ComputeUserVars);
 
 }
@@ -104,10 +96,4 @@ void Setup::InitFlow(DataBlock &data) {
 
     // Send it all, if needed
     d.SyncToDevice();
-}
-
-
-// Analyse data to produce an output
-
-void MakeAnalysis(DataBlock & data) {
 }

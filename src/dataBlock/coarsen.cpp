@@ -70,8 +70,8 @@ void DataBlock::CheckCoarseningLevels() {
     if(mygrid->coarseningDirection[dir]) {
       IdefixHostArray2D<int> arr = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
                                                                        coarseningLevel[dir]);
-      for(int i = 0 ; i < arr.extent(1) ; i++) {
-        for(int j = 0 ; j < arr.extent(0) ; j++) {
+      for(int j = 0 ; j < arr.extent(0) ; j++) {
+        for(int i = 0 ; i < arr.extent(1) ; i++) {
           if(std::isnan(arr(j,i))) {
             std::stringstream str;
             str << "Incorrect grid coarsening levels" << std::endl;

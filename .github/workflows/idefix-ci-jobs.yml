@@ -65,6 +65,8 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/OrszagTang -all $TESTME_OPTIONS
       - name: Orszag Tang 3D+restart tests
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/OrszagTang3D -all $TESTME_OPTIONS
+      - name: Axis Flux tube
+        run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/AxisFluxTube -all $TESTME_OPTIONS
 
   ParabolicMHD:
     runs-on: self-hosted

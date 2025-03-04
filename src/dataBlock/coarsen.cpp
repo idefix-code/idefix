@@ -74,22 +74,25 @@ void DataBlock::CheckCoarseningLevels() {
         for(int i = 0 ; i < arr.extent(1) ; i++) {
           if(std::isnan(arr(j,i))) {
             std::stringstream str;
-            str << "Incorrect grid coarsening levels" << std::endl;
+            str << "Nan in grid coarsening levels" << std::endl;
             str << "at (i,j)=("<< i << "," << j << "): Coarsening level is NaN!" << std::endl;
             IDEFIX_ERROR(str);
           }
           if(arr(j,i) < 1) {
             std::stringstream str;
-            str << "Incorrect grid coarsening levels" << std::endl;
-            str << "at (i,j)=("<< i << "," << j << "): Coarsening level < 1!" << std::endl;
+            str << "Coarsening level < 1!" << std::endl;
+            str << "at (i,j)=("<< i << "," << j << "): ";
+            str << "coarsening level= " << arr(j,i) << std::endl;
             IDEFIX_ERROR(str);
           }
           const int factor = 1 << (arr(j,i) - 1);
           if(np_int[dir] % factor != 0) {
             std::stringstream str;
-            str << "local grid size not divisible by coarsening level" << std::endl;
-            str << "at (i,j)=("<< i << "," << j << "): Coarsening level: ";
-            str <<  arr(j,i) << std::endl;
+            str << "Local grid size not divisible by coarsening level." << std::endl;
+            str << "at (i,j)=("<< i << "," << j << "): ";
+            str << "coarsening level= " << arr(j,i) << std::endl;
+            str << np_int[dir] << " cannot be divided by 2^" << arr(j,i)-1;
+            str << " = " << factor << std::endl;
             IDEFIX_ERROR(str);
           }
         }

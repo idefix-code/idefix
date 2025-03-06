@@ -111,7 +111,8 @@ We recommend the following modules and environement variables on AdAstra:
     module load cpe/24.07
     module load craype-accel-amd-gfx90a craype-x86-trento
     module load PrgEnv-cray
-    module load amd-mixed
+    module load amd-mixed/6.1.2
+    module load rocm/6.1.2
     module load cray-python/3.11.7
 
 Finally, *Idefix* can be configured to run on Mi250 by enabling HIP and the desired architecture with the following options to ccmake:

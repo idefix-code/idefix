@@ -1,209 +1,161 @@
 [
   {
-    "date": "2025-01-17_15:33:13",
+    "date": "2025-03-04_12:57:12",
     "gpumodel": "v100",
-    "idefix_commit": "d0e82202ca90d0b664c71582962c2ae255bc6528",
-    "bench_commit": "a94bc00490b3c62f81f7713327f4388e44a2abea",
+    "idefix_commit": "2bc09a0d218459f278e2b28506a09e4591b103ae",
+    "bench_commit": "37161676db15115c38fed3f35c94fa447cbac7bd",
     "results": [
       {
         "nbgpu": 1,
-        "cell_updates": 1.192208E+8
+        "cell_updates": 1.193720E+8
       },
       {
         "nbgpu": 2,
-        "cell_updates": 1.178276E+8
+        "cell_updates": 1.178864E+8
       },
       {
         "nbgpu": 4,
-        "cell_updates": 1.151014E+8
-      }
-    ]
-  },
-  {
-    "date": "2025-01-17_15:35:16",
-    "gpumodel": "v100",
-    "idefix_commit": "d0e82202ca90d0b664c71582962c2ae255bc6528",
-    "bench_commit": "a94bc00490b3c62f81f7713327f4388e44a2abea",
-    "results": [
-      {
-        "nbgpu": 1,
-        "cell_updates": 1.192139E+8
-      },
-      {
-        "nbgpu": 2,
-        "cell_updates": 1.178690E+8
-      },
-      {
-        "nbgpu": 4,
-        "cell_updates": 1.092092E+8
+        "cell_updates": 1.155336E+8
       },
       {
         "nbgpu": 8,
-        "cell_updates": 7.464571E+7
+        "cell_updates": 1.014338E+8
       },
       {
         "nbgpu": 16,
-        "cell_updates": 7.485223E+7
+        "cell_updates": 9.855007E+7
       },
       {
         "nbgpu": 32,
-        "cell_updates": 6.795755E+7
-      }
-    ]
-  },
-  {
-    "date": "2025-01-17_16:57:02",
-    "gpumodel": "v100",
-    "idefix_commit": "d0e82202ca90d0b664c71582962c2ae255bc6528",
-    "bench_commit": "a94bc00490b3c62f81f7713327f4388e44a2abea",
-    "results": [
-      {
-        "nbgpu": 1,
-        "cell_updates": 1.192784E+8
-      },
-      {
-        "nbgpu": 2,
-        "cell_updates": 1.117701E+8
-      },
-      {
-        "nbgpu": 4,
-        "cell_updates": 1.087580E+8
-      },
-      {
-        "nbgpu": 8,
-        "cell_updates": 7.472364E+7
-      },
-      {
-        "nbgpu": 16,
-        "cell_updates": 7.554497E+7
-      },
-      {
-        "nbgpu": 32,
-        "cell_updates": 6.669339E+7
+        "cell_updates": 9.012061E+7
       },
       {
         "nbgpu": 64,
-        "cell_updates": 5.497455E+7
+        "cell_updates": 8.538461E+7
       },
       {
         "nbgpu": 128,
-        "cell_updates": 5.440610E+7
+        "cell_updates": 8.531021E+7
       }
     ]
   },
   {
-    "date": "2025-01-17_17:09:39",
+    "date": "2025-03-04_13:07:10",
     "gpumodel": "a100",
-    "idefix_commit": "d0e82202ca90d0b664c71582962c2ae255bc6528",
-    "bench_commit": "a94bc00490b3c62f81f7713327f4388e44a2abea",
+    "idefix_commit": "2bc09a0d218459f278e2b28506a09e4591b103ae",
+    "bench_commit": "b536949200e50fac68d8a46d5db38fc8e3f02da5",
     "results": [
       {
         "nbgpu": 1,
-        "cell_updates": 2.035935E+8
+        "cell_updates": 2.044728E+8
       },
       {
         "nbgpu": 2,
-        "cell_updates": 1.992927E+8
+        "cell_updates": 2.003563E+8
       },
       {
         "nbgpu": 4,
-        "cell_updates": 1.958386E+8
+        "cell_updates": 1.963512E+8
       },
       {
         "nbgpu": 8,
-        "cell_updates": 1.929568E+8
+        "cell_updates": 1.933039E+8
       },
       {
         "nbgpu": 16,
-        "cell_updates": 9.408132E+7
+        "cell_updates": 9.759154E+7
       },
       {
         "nbgpu": 32,
-        "cell_updates": 5.937487E+7
+        "cell_updates": 6.369645E+7
       },
       {
         "nbgpu": 64,
-        "cell_updates": 4.159838E+7
+        "cell_updates": 4.629474E+7
       },
       {
         "nbgpu": 128,
-        "cell_updates": 5.061931E+7
+        "cell_updates": 4.580281E+7
       }
     ]
   },
   {
-    "date": "2025-01-17_17:23:13",
+    "date": "2025-03-04_13:16:01",
     "gpumodel": "h100",
-    "idefix_commit": "d0e82202ca90d0b664c71582962c2ae255bc6528",
-    "bench_commit": "a94bc00490b3c62f81f7713327f4388e44a2abea",
+    "idefix_commit": "2bc09a0d218459f278e2b28506a09e4591b103ae",
+    "bench_commit": "b536949200e50fac68d8a46d5db38fc8e3f02da5",
     "results": [
       {
         "nbgpu": 1,
-        "cell_updates": 3.083581E+8
-      }
-    ]
-  },
-  {
-    "date": "2025-01-24_13:02:08",
-    "gpumodel": "h100",
-    "idefix_commit": "54482d582361f1cd05c39717902f752b3d04ae6e",
-    "bench_commit": "a94bc00490b3c62f81f7713327f4388e44a2abea",
-    "results": [
-      {
-        "nbgpu": 1,
-        "cell_updates": 3.076537E+8
-      }
-    ]
-  },
-  {
-    "date": "2025-01-24_13:04:02",
-    "gpumodel": "h100",
-    "idefix_commit": "54482d582361f1cd05c39717902f752b3d04ae6e",
-    "bench_commit": "a94bc00490b3c62f81f7713327f4388e44a2abea",
-    "results": [
-      {
-        "nbgpu": 1,
-        "cell_updates": 3.032686E+8
+        "cell_updates": 3.079643E+8
       },
       {
         "nbgpu": 2,
-        "cell_updates": 3.007089E+8
+        "cell_updates": 3.012300E+8
       },
       {
         "nbgpu": 4,
-        "cell_updates": 2.938962E+8
-      }
-    ]
-  },
-  {
-    "date": "2025-01-24_14:17:30",
-    "gpumodel": "h100",
-    "idefix_commit": "54482d582361f1cd05c39717902f752b3d04ae6e",
-    "bench_commit": "a94bc00490b3c62f81f7713327f4388e44a2abea",
-    "results": [
-      {
-        "nbgpu": 1,
-        "cell_updates": 3.074363E+8
-      },
-      {
-        "nbgpu": 2,
-        "cell_updates": 3.009340E+8
-      },
-      {
-        "nbgpu": 4,
-        "cell_updates": 2.938868E+8
+        "cell_updates": 2.944091E+8
       },
       {
         "nbgpu": 8,
-        "cell_updates": 2.833054E+8
+        "cell_updates": 2.837224E+8
       },
       {
         "nbgpu": 16,
-        "cell_updates": 2.822483E+8
+        "cell_updates": 2.827778E+8
       },
       {
         "nbgpu": 32,
-        "cell_updates": 2.817151E+8
+        "cell_updates": 2.822657E+8
+      },
+      {
+        "nbgpu": 64,
+        "cell_updates": 2.767820E+8
+      },
+      {
+        "nbgpu": 128,
+        "cell_updates": 2.767322E+8
+      }
+    ]
+  },
+  {
+    "date": "2025-03-06_11:21:56",
+    "gpumodel": "mi250x",
+    "idefix_commit": "2bc09a0d218459f278e2b28506a09e4591b103ae",
+    "bench_commit": "868be0a87c6fcda665cbb62db7020aeff70dc62d",
+    "results": [
+      {
+        "nbgpu": 1,
+        "cell_updates": 1.436580E+8
+      },
+      {
+        "nbgpu": 2,
+        "cell_updates": 1.372499E+8
+      },
+      {
+        "nbgpu": 4,
+        "cell_updates": 1.344528E+8
+      },
+      {
+        "nbgpu": 8,
+        "cell_updates": 1.293602E+8
+      },
+      {
+        "nbgpu": 16,
+        "cell_updates": 1.260359E+8
+      },
+      {
+        "nbgpu": 32,
+        "cell_updates": 1.204980E+8
+      },
+      {
+        "nbgpu": 64,
+        "cell_updates": 1.163099E+8
+      },
+      {
+        "nbgpu": 128,
+        "cell_updates": 1.192343E+8
       }
     ]
   }

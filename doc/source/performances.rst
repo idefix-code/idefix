@@ -7,7 +7,7 @@ is the 3D MHD Orszag-Tang test problem with 2nd order reconstruction and uct_con
 Idefix test suite, disabling passive tracers. The test is computed with a 128\ :sup:`3` resolution per
 MPI sub-domain on GPUs or 32\ :sup:`3` per MPI sub-domain on CPUs. All of the performances measures
 have been obtained enabling MPI and we reporte here the performance *per GPU*, *per GCD* (on Mi250)
- or *per core* (on CPU).
+or *per core* (on CPU).
 
 The complete scalability tests are available in Idefix `method paper <https://ui.adsabs.harvard.edu/abs/2023A%26A...677A...9L/abstract>`_.
 The performances mentionned below are updated for each major revision of Idefix, so they might slightly differ from the method paper.
@@ -38,10 +38,8 @@ GPU performances
 .. plot::
 
    import plot_idefix_bench
-   plot_idefix_bench.do_plot('Performance on NVidia and AMD GPUs', 'bench.json', ['v100','a100','h100'])
+   plot_idefix_bench.do_plot('Performance on NVidia and AMD GPUs', 'bench.json', ['v100','a100','h100','mi250x'])
 
-+----------------------+--------------------+----------------------------------------------------+
-| Cluster name         | GPU                | Performances (in 10\ :sup:`6` cell/s/GPU)          |
-+======================+====================+====================================================+
-| CINES/Adastra        | AMD Mi250          | 250                                                |
-+----------------------+--------------------+----------------------------------------------------+
+.. note::
+
+    The inter-node communication on Jean Zay is not optimal on A100 nodes. A ticket is opened with IDRIS support to fix this issue.

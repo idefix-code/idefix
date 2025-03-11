@@ -4,6 +4,7 @@ doc/source/_static/*
 doc/source/_public/*
 doc/source/api/*
 doc/source/xml/*
+doc/env/*
 
 # compiled files
 **/__pycache__

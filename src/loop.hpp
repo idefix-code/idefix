@@ -51,6 +51,8 @@ typedef Kokkos::TeamPolicy<>::member_type  member_type;
     constexpr LoopPattern defaultLoop = LoopPattern::RANGE;
   #elif defined(KOKKOS_ENABLE_HIP)
     constexpr LoopPattern defaultLoop = LoopPattern::RANGE;
+    #elif defined(KOKKOS_ENABLE_SYCL)
+    constexpr LoopPattern defaultLoop = LoopPattern::RANGE;
   #elif defined(KOKKOS_ENABLE_SERIAL)
     constexpr LoopPattern defaultLoop = LoopPattern::SIMDFOR;
   #else

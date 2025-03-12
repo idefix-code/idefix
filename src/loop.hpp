@@ -141,7 +141,6 @@ inline void idefix_for(const std::string & NAME,
 
     // SIMD FOR loops
   } else if constexpr(defaultLoop == LoopPattern::SIMDFOR) {
-    // Check that Idefix Arrays can be assigned from SIMD loop
     for (auto j = JB; j < JE; j++)
 #pragma omp simd
       for (auto i = IB; i < IE; i++)
@@ -226,7 +225,6 @@ inline void idefix_for(const std::string & NAME,
 
   // SIMD FOR loops
   } else if constexpr(defaultLoop == LoopPattern::SIMDFOR) {
-    // Check that Idefix Arrays can be assigned from SIMD loop
     for (auto k = KB; k < KE; k++)
       for (auto j = JB; j < JE; j++)
 #pragma omp simd

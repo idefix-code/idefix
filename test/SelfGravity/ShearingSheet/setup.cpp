@@ -73,7 +73,7 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
 void Setup::InitFlow(DataBlock &data) {
     // Create a host copy
     DataBlockHost d(data);
-    real x,y,z;
+    real x,y,z = 0;
 
     real cs2 = gammaIdeal*omega*omega;
 

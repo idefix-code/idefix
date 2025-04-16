@@ -585,52 +585,55 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
   }
 
   for(int i = 0 ; i < Phys::nvar+nTracer ;  i++) {
-    switch(i) {
-      case RHO:
-        VcName.push_back("RHO");
-        data->dump->RegisterVariable(Vc, outputPrefix+"Vc-RHO", RHO);
-        break;
-      case VX1:
-        VcName.push_back("VX1");
-        data->dump->RegisterVariable(Vc, outputPrefix+"Vc-VX1", VX1, IDIR);
-        break;
-      case VX2:
-        VcName.push_back("VX2");
-        data->dump->RegisterVariable(Vc, outputPrefix+"Vc-VX2", VX2, JDIR);
-        break;
-      case VX3:
-        VcName.push_back("VX3");
-        data->dump->RegisterVariable(Vc, outputPrefix+"Vc-VX3", VX3, KDIR);
-        break;
-      case BX1:
-        VcName.push_back("BX1");
-        // never save cell-centered BX1 in dumps
-        break;
-      case BX2:
-        VcName.push_back("BX2");
-        #if DIMENSIONS < 2
-          data->dump->RegisterVariable(Vc, outputPrefix+"Vc-BX2", BX2, JDIR);
-        #endif
-        break;
-      case BX3:
-        VcName.push_back("BX3");
-        #if DIMENSIONS < 3
-          data->dump->RegisterVariable(Vc, outputPrefix+"Vc-BX3", BX3, KDIR);
-        #endif
-        break;
-      case PRS:
-        VcName.push_back("PRS");
-        data->dump->RegisterVariable(Vc, outputPrefix+"Vc-PRS", PRS);
-        break;
-      default:
-        if(i>=Phys::nvar) {
-          std::string tracerLabel = std::string("TR")+std::to_string(i-Phys::nvar); // ="TRn"
-          VcName.push_back(tracerLabel);
-          data->dump->RegisterVariable(Vc, outputPrefix+"Vc-"+tracerLabel, i);
-        } else {
+    if(i < Phys::nvar) {
+      // These are standard variable names
+      switch(i) {
+        case RHO:
+          VcName.push_back("RHO");
+          data->dump->RegisterVariable(Vc, outputPrefix+"Vc-RHO", RHO);
+          break;
+        case VX1:
+          VcName.push_back("VX1");
+          data->dump->RegisterVariable(Vc, outputPrefix+"Vc-VX1", VX1, IDIR);
+          break;
+        case VX2:
+          VcName.push_back("VX2");
+          data->dump->RegisterVariable(Vc, outputPrefix+"Vc-VX2", VX2, JDIR);
+          break;
+        case VX3:
+          VcName.push_back("VX3");
+          data->dump->RegisterVariable(Vc, outputPrefix+"Vc-VX3", VX3, KDIR);
+          break;
+        case BX1:
+          VcName.push_back("BX1");
+          // never save cell-centered BX1 in dumps
+          break;
+        case BX2:
+          VcName.push_back("BX2");
+          #if DIMENSIONS < 2
+            data->dump->RegisterVariable(Vc, outputPrefix+"Vc-BX2", BX2, JDIR);
+          #endif
+          break;
+        case BX3:
+          VcName.push_back("BX3");
+          #if DIMENSIONS < 3
+            data->dump->RegisterVariable(Vc, outputPrefix+"Vc-BX3", BX3, KDIR);
+          #endif
+          break;
+        case PRS:
+          VcName.push_back("PRS");
+          data->dump->RegisterVariable(Vc, outputPrefix+"Vc-PRS", PRS);
+          break;
+        default:
+          // unknown variable name (this should never happen, but who knows...)
           VcName.push_back("Vc-"+std::to_string(i));
           data->vtk->RegisterVariable(Vc, outputPrefix+"Vc-"+std::to_string(i), i);
-        }
+          break;
+      }
+    } else { //if(i>=Phys::nvar)
+      std::string tracerLabel = std::string("TR")+std::to_string(i-Phys::nvar); // ="TRn"
+      VcName.push_back(tracerLabel);
+      data->dump->RegisterVariable(Vc, outputPrefix+"Vc-"+tracerLabel, i);
     }
     data->vtk->RegisterVariable(Vc, outputPrefix+VcName[i], i);
     #ifdef WITH_HDF5

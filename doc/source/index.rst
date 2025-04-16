@@ -84,8 +84,11 @@ Jonah Mauxion
 Clément Robert
   gitlab integration, linter
 
-Jean Kempf & François Rincon
-    anisotropic diffusion
+Jean Kempf, Victor Reville, François Rincon
+  anisotropic diffusion and collisionless thermal conduction
+
+Marc Coiffier
+  Continuous integration, automatic benchmarking
 
 ========================
 About this documentation

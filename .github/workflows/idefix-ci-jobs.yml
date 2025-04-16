@@ -65,6 +65,8 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/OrszagTang -all $TESTME_OPTIONS
       - name: Orszag Tang 3D+restart tests
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/OrszagTang3D -all $TESTME_OPTIONS
+      - name: Axis Flux tube
+        run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/AxisFluxTube -all $TESTME_OPTIONS
 
   ParabolicMHD:
     runs-on: self-hosted
@@ -177,6 +179,8 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/sphBragTDiffusion -all $TESTME_OPTIONS
       - name: Spherical anisotropic viscosity
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/sphBragViscosity -all $TESTME_OPTIONS
+      - name: Collisionless thermal conduction
+        run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/clessTDiffusion -all $TESTME_OPTIONS
 
   Examples:
     needs: [Fargo, Dust, Planet, ShearingBox, SelfGravity]
@@ -201,3 +205,5 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/utils/lookupTable -all $TESTME_OPTIONS
       - name: Dump Image
         run: scripts/ci/run-tests $IDEFIX_DIR/test/utils/dumpImage -all $TESTME_OPTIONS
+      - name: Column density
+        run: scripts/ci/run-tests $IDEFIX_DIR/test/utils/columnDensity -all $TESTME_OPTIONS

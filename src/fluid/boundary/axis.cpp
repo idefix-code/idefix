@@ -128,12 +128,12 @@ void Axis::RegularizeCurrentSide(int side) {
     real deltaPhi = data->mygrid->xend[KDIR] - data->mygrid->xbeg[KDIR];
 
     // Use the circulation around the pole of Bphi to determine Jr on the pole:
-    // Delta phi r^2(1-cos theta) Jr = int r sin(theta) Bphi dphi
+    // 1/2*Delta phi r^2 sin theta^2 Jr = int r sin(theta) Bphi dphi
 
     idefix_for("fixJ",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
         KOKKOS_LAMBDA(int k,int i) {
           real th = x2(jc);
-          real fact = sign*sin(th)/(deltaPhi*x1(i)*(1-cos(th)));
+          real fact = 2*sign/(deltaPhi*x1(i)*sin(th));
           J(IDIR, k,js,i) = BAvg(i)*fact;
         });
 

@@ -59,7 +59,14 @@ void BragViscosity::ShowConfig() {
     IDEFIX_ERROR("Unknown time integrator for braginskii viscosity.");
   }
   if(haveSlopeLimiter) {
-    idfx::cout << "Braginskii Viscosity: uses a slope limiter." << std::endl;
+    if(haveMonotizedCentral) {
+      idfx::cout << "Braginskii Viscosity: uses the "
+      "monotonized central slope limiter." << std::endl;
+    } else if(haveVanLeer) {
+      idfx::cout << "Braginskii Viscosity: uses the van Leer slope limiter." << std::endl;
+    } else {
+      IDEFIX_ERROR("Unknown slope limiter for braginskii viscosity.");
+    }
   }
 
   #if GEOMETRY == CYLINDRICAL || GEOMETRY == POLAR

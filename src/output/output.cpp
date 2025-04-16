@@ -55,8 +55,13 @@ Output::Output(Input &input, DataBlock &data)
     dumpPeriod = input.Get<real>("Output","dmp",0);
     dumpLast = data.t - dumpPeriod; // dump something in the next CheckForWrite()
     if(input.CheckEntry("Output","dmp")>1) {
-      dumpTimePeriod = input.Get<real>("Output","dmp",1);
-      std::string dumpTimeExtension = input.Get<std::string>("Output","dmp",2);
+      std::string dumpString = input.Get<std::string>("Output","dmp",1);
+      try {
+        dumpTimePeriod = std::stod(dumpString.substr(0, dumpString.size()-1), NULL);
+      } catch(const std::exception& e) {
+        IDEFIX_ERROR("The dump time period should be a number followed by a unit (s, m, h or d)");
+      }
+      std::string dumpTimeExtension = dumpString.substr(dumpString.size()-1,1);
       if(dumpTimeExtension.compare("s")==0) {
         dumpTimePeriod *= 1.0;  // Dump time period is in seconds by default
       } else if (dumpTimeExtension.compare("m")==0) {

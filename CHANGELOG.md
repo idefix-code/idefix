@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.01] 2025-04-16
+### Changed
+
+- Fix a bug that led to instabilities in the RKL scheme with very small grid spacings (#323)
+- Fix a bug that prevented Idefix from running with Sycl backend (required on Intel GPUs) (#331)
+- Fix an error that led to incorrect electrical current regularisation around the polar axis in non-Ideal MHD  (#333)
+- Improve div(B) checks with a dimensionless implementation, avoiding too large divB errors in grids with large stretch factors (#334)
+
+### Added
+
+- Time-Implicit drag for multiple dust species, preventing small time steps for strongly coupled dust grains (#321)
+- Collisionless heat flux added to the Braginskii module (#317)
+- New global `idfx::DumpArray` debugging function to dump any Idefix array into a numpy array that can read from python (#318)
+- Automatic benchmark plots in the documentation (#319)
+- More CI tests of grid coarsening (#329)
+- Dump outputs based on wallclock time (#335)
+
+
 ## [2.2.00] 2025-01-17
 ### Changed
 

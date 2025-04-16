@@ -19,6 +19,16 @@ void DataBlock::EvolveStage() {
     for(int i = 0 ; i < dust.size() ; i++) {
       dust[i]->EvolveStage(this->t,this->dt);
     }
+    // Add implicit term for dust drag
+    if(dust[0]->drag->IsImplicit()) {
+      for(int i = 0 ; i < dust.size() ; i++) {
+        dust[i]->drag->AddImplicitBackReaction(this->dt,dust[0]->drag->implicitFactor);
+      }
+      dust[0]->drag->NormalizeImplicitBackReaction(this->dt);
+      for(int i = 0 ; i < dust.size() ; i++) {
+        dust[i]->drag->AddImplicitFluidMomentum(this->dt);
+      }
+    }
   }
 
   idfx::popRegion();

@@ -388,8 +388,10 @@ This section describes the outputs *Idefix* produces. For more details about eac
 +================+=========================+==================================================================================================+
 | log            | integer                 | | Time interval between log outputs, in code steps (default 100).                                |
 +----------------+-------------------------+--------------------------------------------------------------------------------------------------+
-| dmp            | float                   | | Time interval between dump outputs, in code units.                                             |
-|                |                         | | If negative, periodic dump outputs are disabled.                                               |
+| dmp            | float, float+char       | | 1st parameter: Code time interval between dump outputs, in code units.                         |
+|                |                         | | If negative, the first parameter is ignored.                                                   |
+|                |                         | | 2nd parameter (optional): Wallclock time interval between two dumps. The ending character      |
+|                |                         | | can be "s" (seconds) "m" (minutes) "h" (hours) or "d" (days)                                   |
 +----------------+-------------------------+--------------------------------------------------------------------------------------------------+
 | dmp_dir        | string                  | | directory for dump file outputs. Default to "./"                                               |
 |                |                         | | The directory is automatically created if it does not exist.                                   |

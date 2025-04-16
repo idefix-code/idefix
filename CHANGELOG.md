@@ -20,8 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Automatic benchmark plots in the documentation (#319)
 - More CI tests of grid coarsening (#329)
 
-### Removed
-
 
 ## [2.2.00] 2025-01-17
 ### Changed

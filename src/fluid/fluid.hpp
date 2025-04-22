@@ -539,7 +539,7 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   dMax = IdefixArray3D<real>(prefix+"_dMax",
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  
+
   for(int i = 0 ; i < DIMENSIONS ; i++) {
     FluxRiemann[i] = IdefixArray4D<real>(prefix+"_FluxRiemann_X"+std::to_string(i),
                                         Phys::nvar+nTracer,

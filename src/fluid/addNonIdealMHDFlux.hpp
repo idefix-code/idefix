@@ -19,8 +19,7 @@ void Fluid<Phys>::AddNonIdealMHDFlux(const real t) {
 
   if constexpr(Phys::mhd) {
     int ioffset,joffset,koffset;
-
-    IdefixArray4D<real> Flux = this->FluxRiemann;
+    IdefixArray4D<real> Flux = this->FluxRiemann[dir];
     IdefixArray4D<real> Vc   = this->Vc;
     IdefixArray4D<real> Vs   = this->Vs;
     IdefixArray3D<real> dMax = this->dMax;

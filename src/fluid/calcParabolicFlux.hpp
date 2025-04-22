@@ -42,7 +42,7 @@ void Fluid<Phys>::CalcParabolicFlux(const real t) {
     if(data->haveFargo && viscosityStatus.isExplicit) {
       data->fargo->AddVelocityFluid(t,this);
     }
-    this->viscosity->AddViscousFlux(dir,t, this->FluxRiemann);
+    this->viscosity->AddViscousFlux(dir,t, this->FluxRiemann[dir]);
 
     // Remove back Fargo velocity
     if(data->haveFargo && viscosityStatus.isExplicit) {
@@ -53,18 +53,18 @@ void Fluid<Phys>::CalcParabolicFlux(const real t) {
   // Add thermal diffusion
   if( (thermalDiffusionStatus.isExplicit && (!data->rklCycle))
     || (thermalDiffusionStatus.isRKL && data->rklCycle))  {
-    this->thermalDiffusion->AddDiffusiveFlux(dir,t, this->FluxRiemann);
+    this->thermalDiffusion->AddDiffusiveFlux(dir,t, this->FluxRiemann[dir]);
   }
 
   if( (bragViscosityStatus.isExplicit && (!data->rklCycle))
     || (bragViscosityStatus.isRKL && data->rklCycle))  {
-    this->bragViscosity->AddBragViscousFlux(dir,t, this->FluxRiemann);
+    this->bragViscosity->AddBragViscousFlux(dir,t, this->FluxRiemann[dir]);
   }
 
   // Add braginskii thermal diffusion
   if( (bragThermalDiffusionStatus.isExplicit && (!data->rklCycle))
     || (bragThermalDiffusionStatus.isRKL && data->rklCycle))  {
-    this->bragThermalDiffusion->AddBragDiffusiveFlux(dir,t, this->FluxRiemann);
+    this->bragThermalDiffusion->AddBragDiffusiveFlux(dir,t, this->FluxRiemann[dir]);
   }
 
   idfx::popRegion();

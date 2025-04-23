@@ -11,10 +11,12 @@
 
 
 void idfx::Units::Init(Input &input) {
-  this->_length = input.GetOrSet<real>("Units","length",0,1.0);
-  this->_velocity = input.GetOrSet<real>("Units","velocity",0,1.0);
-  this->_density = input.GetOrSet<real>("Units","density",0,1.0);
-  this->ComputeUnits();
+  if(input.CheckBlock("Units")) {
+    this->_length = input.GetOrSet<real>("Units","length",0,1.0);
+    this->_velocity = input.GetOrSet<real>("Units","velocity",0,1.0);
+    this->_density = input.GetOrSet<real>("Units","density",0,1.0);
+    this->ComputeUnits();
+  }
 }
 
 void idfx::Units::SetDensity(const real in) {

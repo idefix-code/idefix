@@ -39,6 +39,8 @@ void idfx::Units::ShowConfig() {
     idfx::cout << "Units: [Length]      = " << this->_length << " cm" << std::endl;
     idfx::cout << "Units: [Velocity]    = " << this->_velocity << " cm/s" << std::endl;
     idfx::cout << "Units: [Density]     = " << this->_density << " g/cm3" << std::endl;
+    idfx::cout << "Units: [Energy]     = " << this->_energy << " erg/cm3" << std::endl;
+    idfx::cout << "Units: [Time]     = " << this->_time << " s" << std::endl;
     idfx::cout << "Units: [Temperature] = " << this->_Kelvin << " K" << std::endl;
     idfx::cout << "Units: [Mag. Field]  = " << this->_magField << " G" << std::endl;
   }
@@ -48,4 +50,7 @@ void idfx::Units::ComputeUnits() {
   this->_isInitialized = true;
   this->_magField = std::sqrt(4*M_PI*_density*_velocity*_velocity);
   this->_Kelvin = u * _velocity*_velocity/k_B;
+  this->_energy = _density*_velocity*_velocity;
+  this->_time = _length/_velocity;
 }
+

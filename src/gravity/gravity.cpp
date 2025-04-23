@@ -11,6 +11,7 @@
 #include "planetarySystem.hpp"
 #include "dataBlock.hpp"
 #include "input.hpp"
+#include "units.hpp"
 
 Gravity::Gravity(Input &input, DataBlock *datain) {
   idfx::pushRegion("Gravity::Gravity");
@@ -19,7 +20,7 @@ Gravity::Gravity(Input &input, DataBlock *datain) {
   // Gravitational constant G
   // should we compute it from the units?
   if(input.CheckEntry("Gravity","gravCst")>=0) {
-    if(input.Get<std::string>("Gravity","gravCst").compare("units") == 0) {
+    if(input.Get<std::string>("Gravity","gravCst",0).compare("units") == 0) {
       // User ask us to compute the gravitational constants from the units
 
       this->gravCst = idfx::units.GetDensity() * idfx::units.GetTime() * idfx::units.GetTime()

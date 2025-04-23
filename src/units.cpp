@@ -53,4 +53,3 @@ void idfx::Units::ComputeUnits() {
   this->_energy = _density*_velocity*_velocity;
   this->_time = _length/_velocity;
 }
-

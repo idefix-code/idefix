@@ -11,6 +11,7 @@
 #include "idefix.hpp"
 #include "global.hpp"
 #include "profiler.hpp"
+#include "units.hpp"
 
 #ifdef WITH_MPI
 #include "mpi.hpp"
@@ -29,6 +30,7 @@ IdefixOutStream cout;
 IdefixErrStream cerr;
 Profiler prof;
 LoopPattern defaultLoopPattern;
+Units units;
 
 #ifdef DEBUG
 static int regionIndent = 0;

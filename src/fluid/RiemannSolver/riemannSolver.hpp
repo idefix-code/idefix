@@ -70,7 +70,6 @@ class RiemannSolver {
 
   IdefixArray4D<real> Vc;
   IdefixArray4D<real> Vs;
-  IdefixArray4D<real> Flux;
   IdefixArray3D<real> cMax;
   Fluid<Phys>* hydro;
   DataBlock *data;
@@ -90,7 +89,6 @@ class RiemannSolver {
 template <typename Phys>
 RiemannSolver<Phys>::RiemannSolver(Input &input, Fluid<Phys>* hydro) : Vc{hydro->Vc},
                                       Vs{hydro->Vs},
-                                      Flux{hydro->FluxRiemann},
                                       cMax{hydro->cMax},
                                       hydro{hydro},
                                       data{hydro->data}
@@ -147,8 +145,6 @@ RiemannSolver<Phys>::RiemannSolver(Input &input, Fluid<Phys>* hydro) : Vc{hydro-
     // We're dealing with dust grains
     mySolver = HLL_DUST;
   }
-
-
 
   // Shock flattening
   this->haveShockFlattening = input.CheckEntry(std::string(Phys::prefix),"shockFlattening")>=0;

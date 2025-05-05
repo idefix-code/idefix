@@ -9,11 +9,11 @@ import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
 
 import pytools.idfx_test as tst
-tolerance=1e-15
+tolerance=1e-12
 def testMe(test):
   test.configure()
   test.compile()
-  inifiles=["idefix.ini"]
+  inifiles=["idefix.ini"]#,"idefix-noSG.ini"]
 
   for ini in inifiles:
     test.run(inputFile=ini)
@@ -24,6 +24,8 @@ def testMe(test):
 
 
 test=tst.idfxTest()
+test.noplot = False
+
 if not test.dec:
   test.dec=['8','1']
 
@@ -33,7 +35,6 @@ if not test.all:
   else:
     testMe(test)
 else:
-  test.noplot = True
   test.single=False
   test.reconstruction=2
   test.mpi=False

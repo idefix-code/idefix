@@ -20,7 +20,7 @@ import scipy.integrate as si
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-noplot",
-                    default=True,
+                    default=False,
                     help="disable plotting",
                     action="store_true")
 
@@ -56,8 +56,10 @@ def f2s(t,y):
     kx = kx0 + q*Omega*ky*t
     k = np.sqrt(kx*kx+ky*ky)
 
+    pot =  -4*np.pi *G *Sigma0 *isSG
+
     b = -2*q*Omega*kx*ky/k/k
-    c = 2*(2-q)*Omega*Omega+k**2*cs**2 - 2*np.pi *G *Sigma0 *k*isSG - 2*q*(2-q)*Omega*Omega*ky*ky/k/k
+    c = 2*(2-q)*Omega*Omega+k**2*cs**2 + pot - 2*q*(2-q)*Omega*Omega*ky*ky/k/k
     d = 2*Omega*(1-q*ky*ky/k/k)*Sigma0*xi1
 
     sp,s = y
@@ -89,16 +91,24 @@ for i in range(200):
 
 
 time = np.array(time)
-amplitude=np.array(amplitude).real
+amplitude=np.array(amplitude).real/Sigma0
 amp_exact=np.array(amp_exact)
 
 
 
-
-err=np.abs((amp_exact*Sigma0-amplitude)/Sigma0).max()
+err=np.sum((amp_exact-amplitude)**2)/np.sum(amp_exact**2)
 print("Error=",err)
 
-if(err<1e-3):
+
+if not args.noplot:
+  import matplotlib.pyplot as plt
+  fig, ax = plt.subplots()
+  ax.plot(sol.t, sol.y[1],color="orange",ls="-",label="linear")
+  ax.plot(time,amplitude,".",label="vtk")
+  ax.legend()
+  plt.show()
+
+if(err<.1):
   print("SUCCESS")
   sys.exit(0)
 else:

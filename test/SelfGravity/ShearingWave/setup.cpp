@@ -59,8 +59,6 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   // Add our userstep to the timeintegrator
   data.gravity->EnrollBodyForce(BodyForce);
 
-  //output.EnrollUserDefVariables(&ComputeUserVars);
-
 }
 
 // This routine initialize the flow
@@ -73,6 +71,7 @@ void Setup::InitFlow(DataBlock &data) {
     real x,y,z = 0;
 
     // setup from Paardekooper 2012
+    // but not quite because we are in 2D here not rho ~ delta(z)
     real kx = -4.*M_PI;
     real ky = 2.*M_PI;
     real sigma_init = 0.0005;
@@ -82,6 +81,7 @@ void Setup::InitFlow(DataBlock &data) {
     real kappa = omega;
 
     real cs = M_PI*Sigma0*Q/kappa*Gnewt; // G = 1
+    cs = 0.07853981633974483;
     std::cout<< "cs = " << cs << std::endl;
 
     for(int k = 0; k < d.np_tot[KDIR] ; k++) {
@@ -97,8 +97,8 @@ void Setup::InitFlow(DataBlock &data) {
                 d.Vc(PRS,k,j,i) = d.Vc(RHO,k,j,i)*cs*cs;
 #endif
                 EXPAND(
-                d.Vc(VX1,k,j,i) = 0.0;, //sigma_init/Sigma0*cos(kx*x+ky*y);,
-                d.Vc(VX2,k,j,i) = shear*x;,// + sigma_init/Sigma0*cos(kx*x+ky*y);,
+                d.Vc(VX1,k,j,i) = 0.0;,
+                d.Vc(VX2,k,j,i) = shear*x;,
                 d.Vc(VX3,k,j,i) = 0.0;
                 );
 

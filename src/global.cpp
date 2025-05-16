@@ -66,6 +66,7 @@ int initialize() {
 void pushRegion(const std::string& kName) {
   Kokkos::Profiling::pushRegion(kName);
   if(prof.perfEnabled) {
+    Kokkos::fence();
     prof.currentRegion = prof.currentRegion->GetChild(kName);
     prof.currentRegion->Start();
   }

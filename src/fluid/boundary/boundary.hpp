@@ -692,7 +692,7 @@ void Boundary<Phys>::EnforceReflective(int dir, BoundarySide side ) {
           const int jref = (dir==JDIR) ? 2*(jghost + side*nxj) - j - 1 : j;
           const int kref = (dir==KDIR) ? 2*(kghost + side*nxk) - k - 1 : k;
 
-          const int sign = (n == VX1+dir) ? -1.0 : 1.0;
+          const int sign = (n == VX1+dir || (n >= BX1 && n != BX1+dir)) ? -1.0 : 1.0;
 
           Vc(n,k,j,i) = sign * Vc(n,kref,jref,iref);
         });

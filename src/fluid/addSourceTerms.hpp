@@ -85,6 +85,9 @@ struct Fluid_AddSourceTermsFunctor {
       }
       if(haveFargo) {
         Uc(MX1,k,j,i) +=   TWO_F * dt * Vc(RHO,k,j,i) * OmegaZ * sbS * x1(i);
+        if constexpr(Phys::pressure) {
+          Uc(ENG,k,j,i) +=   TWO_F * dt * Vc(RHO,k,j,i) * OmegaZ * sbS * x1(i) * Vc(VX1,k,j,i);
+        }
       }
     #endif
       // fetch fargo velocity when required

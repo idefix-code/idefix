@@ -468,8 +468,10 @@ void Boundary<Phys>::ReconstructNormalField(int dir) {
   if(dir==JDIR) {
     nstart = data->beg[JDIR]-1;
     nend = data->end[JDIR];
-    const int signLeft = haveLeftAxis ? -1 : 1; // left axis is in the negative direction
-    const int signRight = haveRightAxis ? -1 : 1; // right axis is in the negative direction
+    #if DIMENSIONS == 3
+      const int signLeft = haveLeftAxis ? -1 : 1; // left axis is in the negative direction
+      const int signRight = haveRightAxis ? -1 : 1; // right axis is in the negative direction
+    #endif
 
     idefix_for("ReconstructBX2s",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
       KOKKOS_LAMBDA (int k, int i) {

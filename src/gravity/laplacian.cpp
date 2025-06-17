@@ -12,6 +12,7 @@
 #include "laplacian.hpp"
 #include "selfGravity.hpp"
 #include "dataBlock.hpp"
+#include "fluid.hpp"
 
 
 Laplacian::Laplacian(DataBlock *datain, std::array<LaplacianBoundaryType,3> leftBound,
@@ -39,11 +40,22 @@ Laplacian::Laplacian(DataBlock *datain, std::array<LaplacianBoundaryType,3> left
   this->lbound = leftBound;
   this->rbound = rightBound;
 
-  isPeriodic = true;
+  isPeriodic = true; // is this ever used ? this is not selfgravity.isPeriodic
   for(int dir = 0 ; dir < 3 ; dir++) {
-    if(lbound[dir] != LaplacianBoundaryType::periodic) isPeriodic = false;
-    if(rbound[dir] != LaplacianBoundaryType::periodic) isPeriodic = false;
+    if(lbound[dir] != LaplacianBoundaryType::periodic
+                    && lbound[dir] != LaplacianBoundaryType::shearingbox) isPeriodic = false;
+    if(rbound[dir] != LaplacianBoundaryType::periodic
+                    && lbound[dir] != LaplacianBoundaryType::shearingbox) isPeriodic = false;
   }
+
+  #if GEOMETRY == CARTESIAN
+  if(lbound[IDIR] == shearingbox || rbound[IDIR] == shearingbox) {
+    sBArray = IdefixArray3D<real>("ShearingPotentialBoxArray",
+                                  data->np_tot[KDIR],
+                                  data->np_tot[JDIR],
+                                  data->nghost[IDIR]);
+  }
+  #endif // CARTESIAN
 
   #ifdef WITH_MPI
     if(lbound[IDIR] == origin) {
@@ -521,7 +533,100 @@ void Laplacian::EnforceBoundary(int dir, BoundarySide side, LaplacianBoundaryTyp
       });
       break;
     }
+    case shearingbox: {
+      if(dir!=IDIR)
+        IDEFIX_ERROR(
+        "Laplacian:: Shearing box boundary condition should only be used in IDIR"
+      );
 
+      IdefixArray3D<real> scrh = sBArray;
+
+      const real S  = data->hydro->sbS;
+
+      // Box size
+      const real Lx = data->mygrid->xend[IDIR] - data->mygrid->xbeg[IDIR];
+      const real Ly = data->mygrid->xend[JDIR] - data->mygrid->xbeg[JDIR];
+
+      // total number of cells in y (active domain)
+      const int nxj = data->mygrid->np_int[JDIR];
+      const real dy = Ly/nxj;
+
+      // Compute offset in y modulo the box size
+      const real t = data->t;
+
+      const int sign=2*side-1;
+      const real sbVelocity = sign*S*Lx;
+      real dL = std::fmod(sbVelocity*t,Ly);
+
+      const int m = static_cast<int> (std::floor(dL/dy+HALF_F));
+
+      const real eps = dL/dy - m;
+
+      const int nprocsIDIR = data->mygrid->nproc[dir];
+
+      idefix_for("BoundaryShearingBox", kbeg, kend, jbeg, jend, ibeg, iend,
+            KOKKOS_LAMBDA (int k, int j, int i) {
+              const int iscrh = i - side*(ighost +nxi);
+
+              // no MPI domain decomposition: we look at the other side of the datablock
+              // MPI: we need to copy the data to this side (done by MPI), then shift it
+              const int iref = (nprocsIDIR==1) ?
+                             ighost + (i+ighost*(nxi-1))%nxi : i;
+
+              const int jo = jghost + ((j-m-jghost)%nxj+nxj)%nxj;
+              const int jop1 = jghost + ((jo+1-jghost)%nxj+nxj)%nxj;
+              const int jom1 = jghost + ((jo-1-jghost)%nxj+nxj)%nxj;
+
+              const int jom2 = jghost + ((jo-2-jghost)%nxj+nxj)%nxj;
+              const int jop2 = jghost + ((jo+2-jghost)%nxj+nxj)%nxj;
+
+              real Fl,Fr;
+              real dqm, dqp, dq;
+
+              // the follwing, like for the fluxes in boundary.hpp is a second-
+              // order recontruction in eps
+              if(eps>=ZERO_F) {
+                // Compute Fl
+                dqm = localVar(k,jom1,iref) - localVar(k,jom2,iref);
+                dqp = localVar(k,jo,iref) - localVar(k,jom1,iref);
+                dq = dqm+dqp;
+                //dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+
+                Fl = localVar(k,jom1,iref) + 0.5*dq*(1.0-eps);
+                //Compute Fr
+                dqm=dqp;
+                dqp = localVar(k,jop1,iref) - localVar(k,jo,iref);
+                dq = dqm+dqp;
+                //dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+
+                Fr = localVar(k,jo,iref) + 0.5*dq*(1.0-eps);
+              } else {
+                //Compute Fl
+                dqm = localVar(k,jo,iref) - localVar(k,jom1,iref);
+                dqp = localVar(k,jop1,iref) - localVar(k,jo,iref);
+                dq = dqm+dqp;
+                //dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+
+                Fl = localVar(k,jo,iref) - 0.5*dq*(1.0+eps);
+                // Compute Fr
+                dqm=dqp;
+                dqp = localVar(k,jop2,iref) - localVar(k,jop1,iref);
+                dq = dqm+dqp;
+                //dq = (dqp*dqm > ZERO_F ? TWO_F*dqp*dqm/(dqp + dqm) : ZERO_F);
+
+                Fr = localVar(k,jop1,iref) - 0.5*dq*(1.0+eps);
+              }
+              scrh(k,j,iscrh) = localVar(k,jo,iref) - eps*(Fr - Fl);
+      });
+
+
+        idefix_for("BoundaryShearingBoxCopy", kbeg, kend, jbeg, jend, ibeg, iend,
+        KOKKOS_LAMBDA ( int k, int j, int i) {
+          const int iscrh = i - side*(ighost +nxi);
+          localVar(k,j,i) = scrh(k,j,iscrh);
+        });
+      break;
+    }
     case userdef: {
       if(this->haveUserDefBoundary) {
         // Warning: unlike hydro userdef boundary functions, the selfGravity

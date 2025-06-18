@@ -14,20 +14,20 @@ template<typename Phys>
 template<int dir>
 void Fluid<Phys>::LoopDir(const real t, const real dt) {
     // Step 2: compute the intercell flux with our Riemann solver, store the resulting InvDt
-    this->rSolver->template CalcFlux<dir>(this->FluxRiemann);
+    this->rSolver->template CalcFlux<dir>(this->FluxRiemann[dir]);
 
     // Step 2.5: compute intercell parabolic flux when needed
     if(haveExplicitParabolicTerms) CalcParabolicFlux<dir>(t);
 
     // If we have tracers, compute the tracer intercell flux
     if(haveTracer) {
-      this->tracer->template CalcFlux<dir, Phys>(this->FluxRiemann);
+      this->tracer->template CalcFlux<dir, Phys>(this->FluxRiemann[dir]);
     }
 
     // Step 3: compute the resulting evolution of the conserved variables, stored in Uc
     CalcRightHandSide<dir>(t,dt);
     if(haveTracer) {
-      this->tracer->template CalcRightHandSide<dir, Phys>(this->FluxRiemann,t ,dt);
+      this->tracer->template CalcRightHandSide<dir, Phys>(this->FluxRiemann[dir],t ,dt);
     }
 
     // Recursive: do next dimension

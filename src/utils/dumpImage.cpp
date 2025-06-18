@@ -58,7 +58,7 @@ DumpImage::DumpImage(std::string filename, DataBlock *data, bool enableDomainDec
     this->np_glob[dir] = nx[0];
     // Allocate arrays dynamically
     this->x[dir] = IdefixHostArray1D<real>("DumpImageX",np_int[dir]);
-    this->xl[dir] = IdefixHostArray1D<real>("DumpImageXl",np_int[dir]);
+    this->xl[dir] = IdefixHostArray1D<real>("DumpImageXl",np_int[dir]+1);
     this->xr[dir] = IdefixHostArray1D<real>("DumpImageXr",np_int[dir]);
 
     // Read coordinates
@@ -67,6 +67,8 @@ DumpImage::DumpImage(std::string filename, DataBlock *data, bool enableDomainDec
     dump.ReadSerial(fileHdl, ndim, nx, type, reinterpret_cast<void*>( this->xl[dir].data()) );
     dump.ReadNextFieldProperties(fileHdl, ndim, nx, type, fieldName);
     dump.ReadSerial(fileHdl, ndim, nx, type, reinterpret_cast<void*>( this->xr[dir].data()) );
+    // last point of xl is the same as the last point-1 of xr
+    this->xl[dir](nx[0]) = this->xr[dir](nx[0]-1);
   }
 
   if(enableDomainDecomposition) {

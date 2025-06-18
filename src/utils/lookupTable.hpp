@@ -445,8 +445,8 @@ LookupTable<kDim>::LookupTable(Kokkos::View<T, Args...> array,
     sizeTotal *= shape[n];
     if(array.extent(kDim-n-1) != shape[n]) {
       std::stringstream errmsg;
-      errmsg << "The " << n+1 << "th dimension of your input array (" << array.extent(n)
-             << ") does not match the size of the corresponding x vector (" << shape[n];
+      errmsg << "The " << n+1 << "th dimension of your input array (" << array.extent(kDim-n-1)
+             << ") does not match the size of the corresponding x vector (" << shape[n] << ").";
       IDEFIX_ERROR(errmsg);
     }
   }

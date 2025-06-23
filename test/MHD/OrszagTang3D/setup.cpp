@@ -19,6 +19,7 @@ void Analysis(DataBlock& data) {
   idfx::cout << "Analysis: Checking restart routines" << std::endl;
 
   // Trigger dump creation
+  // data.SetBoundaries();
   myOutput->ForceWriteDump(data);
 
     // Mirror data on Host
@@ -96,7 +97,8 @@ void Analysis(DataBlock& data) {
             errornum++;
             idfx::cout << "-----------------------------------------" << std::endl
                        << " Error in Vc at (i,j,k,n) = ( " << i << ", " << j << ", " << k << ", " << n << ")" << std::endl
-                       << " Coordinates (x1,x2,x3)   = ( " << d.x[IDIR](i) << ", " << d.x[JDIR](j) << ", " << d.x[KDIR](k) << ")" << std::endl;
+                       << " Coordinates (x1,x2,x3)   = ( " << d.x[IDIR](i) << ", " << d.x[JDIR](j) << ", " << d.x[KDIR](k) << ")" << std::endl
+                       << "Original= " << myVc(n,k,j,i) << " New=" << d.Vc(n,k,j,i) << " diff=" << myVc(n,k,j,i)-d.Vc(n,k,j,i) << std::endl;
           }
 
         }

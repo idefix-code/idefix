@@ -23,7 +23,7 @@
 
 
 //#define MPI_NON_BLOCKING
-//#define MPI_PERSISTENT
+#define MPI_PERSISTENT
 
 // init the number of instances
 int Mpi::nInstances = 0;

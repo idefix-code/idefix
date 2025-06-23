@@ -150,14 +150,14 @@ void Mpi::Init(Grid *grid, std::vector<int> inputMap,
   BufferSendX3[faceRight] = Buffer(bufferSizeX3[faceRight]);
 #endif // DIMENSIONS
 
-  MPI_Cart_shift(mygrid->CartComm,0,1,&procRecvX1[faceRight],&procSendX1[faceLeft]);
-  MPI_Cart_shift(mygrid->CartComm,0,-1,&procRecvX1[faceLeft],&procSendX1[faceRight]);
+  MPI_Cart_shift(mygrid->CartComm,0,1,&procRecvX1[faceLeft],&procSendX1[faceRight]);
+  MPI_Cart_shift(mygrid->CartComm,0,-1,&procRecvX1[faceRight],&procSendX1[faceLeft]);
 
-  MPI_Cart_shift(mygrid->CartComm,1,1,&procRecvX2[faceRight],&procSendX2[faceLeft]);
-  MPI_Cart_shift(mygrid->CartComm,1,-1,&procRecvX2[faceLeft],&procSendX2[faceRight]);
+  MPI_Cart_shift(mygrid->CartComm,1,1,&procRecvX2[faceLeft],&procSendX2[faceRight]);
+  MPI_Cart_shift(mygrid->CartComm,1,-1,&procRecvX2[faceRight],&procSendX2[faceLeft]);
 
-  MPI_Cart_shift(mygrid->CartComm,2,1,&procRecvX3[faceRight],&procSendX3[faceLeft]);
-  MPI_Cart_shift(mygrid->CartComm,2,-1,&procRecvX3[faceLeft],&procSendX3[faceRight]);
+  MPI_Cart_shift(mygrid->CartComm,2,1,&procRecvX3[faceLeft],&procSendX3[faceRight]);
+  MPI_Cart_shift(mygrid->CartComm,2,-1,&procRecvX3[faceRight],&procSendX3[faceLeft]);
 
 
 #ifdef MPI_PERSISTENT

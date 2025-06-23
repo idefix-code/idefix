@@ -22,7 +22,7 @@
 #endif
 
 
-#define MPI_NON_BLOCKING
+//#define MPI_NON_BLOCKING
 //#define MPI_PERSISTENT
 
 // init the number of instances
@@ -270,6 +270,9 @@ void Mpi::ExchangeX1(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   Buffer BufferRight = BufferSendX1[faceRight];
   IdefixArray1D<int> map = this->mapVars;
 
+  bool recvRight = (procRecvX1[faceRight] != MPI_PROC_NULL);
+  bool recvLeft  = (procRecvX1[faceLeft] != MPI_PROC_NULL);
+
   // If MPI Persistent, start receiving even before the buffers are filled
   myTimer -= MPI_Wtime();
   double tStart = MPI_Wtime();
@@ -394,39 +397,26 @@ void Mpi::ExchangeX1(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
                 mygrid->CartComm, &status);
   #endif
 #endif
-  myTimer += MPI_Wtime();
-  idfx::mpiCallsTimer += MPI_Wtime() - tStart;
-  // Unpack
-  BufferLeft=BufferRecvX1[faceLeft];
-  BufferRight=BufferRecvX1[faceRight];
+myTimer += MPI_Wtime();
+idfx::mpiCallsTimer += MPI_Wtime() - tStart;
+// Unpack
+BufferLeft=BufferRecvX1[faceLeft];
+BufferRight=BufferRecvX1[faceRight];
 
-  BufferLeft.ResetPointer();
-  BufferRight.ResetPointer();
+BufferLeft.ResetPointer();
+BufferRight.ResetPointer();
 
-  BufferLeft.Unpack(Vc, map,std::make_pair(ibeg, iend),
-                            std::make_pair(jbeg   , jend),
-                            std::make_pair(kbeg   , kend));
-
-  BufferRight.Unpack(Vc, map,std::make_pair(ibeg+offset, iend+offset),
-                             std::make_pair(jbeg   , jend),
-                             std::make_pair(kbeg   , kend));
-  // We fill the ghost zones
-
+if(recvLeft) {
+    BufferLeft.Unpack(Vc, map,std::make_pair(ibeg, iend),
+                          std::make_pair(jbeg   , jend),
+                          std::make_pair(kbeg   , kend));
   if(haveVs) {
     BufferLeft.Unpack(Vs, BX1s, std::make_pair(ibeg, iend),
-                                std::make_pair(jbeg   , jend),
-                                std::make_pair(kbeg   , kend));
-
-    BufferRight.Unpack(Vs, BX1s, std::make_pair(ibeg+offset, iend+offset+1),
-                                std::make_pair(jbeg   , jend),
-                                std::make_pair(kbeg   , kend));
+                                  std::make_pair(jbeg   , jend),
+                                  std::make_pair(kbeg   , kend));
 
     #if DIMENSIONS >= 2
     BufferLeft.Unpack(Vs, BX2s, std::make_pair(ibeg, iend),
-                                std::make_pair(jbeg   , jend+1),
-                                std::make_pair(kbeg   , kend));
-
-    BufferRight.Unpack(Vs, BX2s, std::make_pair(ibeg+offset, iend+offset),
                                 std::make_pair(jbeg   , jend+1),
                                 std::make_pair(kbeg   , kend));
     #endif
@@ -435,13 +425,33 @@ void Mpi::ExchangeX1(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
     BufferLeft.Unpack(Vs, BX3s, std::make_pair(ibeg, iend),
                                 std::make_pair(jbeg   , jend),
                                 std::make_pair(kbeg   , kend+1));
-
-    BufferRight.Unpack(Vs, BX3s, std::make_pair(ibeg+offset, iend+offset),
-                                std::make_pair(jbeg   , jend),
-                                std::make_pair(kbeg   , kend+1));
     #endif
   }
+  if(recvRight) {
+    BufferRight.Unpack(Vc, map,std::make_pair(ibeg+offset, iend+offset),
+                            std::make_pair(jbeg   , jend),
+                            std::make_pair(kbeg   , kend));
+    // We fill the ghost zones
+    if(haveVs) {
+      BufferRight.Unpack(Vs, BX1s, std::make_pair(ibeg+offset, iend+offset+1),
+                                  std::make_pair(jbeg   , jend),
+                                  std::make_pair(kbeg   , kend));
 
+      #if DIMENSIONS >= 2
+      BufferRight.Unpack(Vs, BX2s, std::make_pair(ibeg+offset, iend+offset),
+                                  std::make_pair(jbeg   , jend+1),
+                                  std::make_pair(kbeg   , kend));
+      #endif
+
+      #if DIMENSIONS == 3
+      BufferRight.Unpack(Vs, BX3s, std::make_pair(ibeg+offset, iend+offset),
+                                  std::make_pair(jbeg   , jend),
+                                  std::make_pair(kbeg   , kend+1));
+      #endif
+    }
+  }
+}
+ 
 myTimer -= MPI_Wtime();
 #ifdef MPI_NON_BLOCKING
   // Wait for the sends if they have not yet completed
@@ -466,6 +476,9 @@ void Mpi::ExchangeX2(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   Buffer BufferLeft=BufferSendX2[faceLeft];
   Buffer BufferRight=BufferSendX2[faceRight];
   IdefixArray1D<int> map = this->mapVars;
+
+  bool recvRight = (procRecvX2[faceRight] != MPI_PROC_NULL);
+  bool recvLeft  = (procRecvX2[faceLeft] != MPI_PROC_NULL);
 
 // If MPI Persistent, start receiving even before the buffers are filled
   myTimer -= MPI_Wtime();
@@ -541,7 +554,6 @@ void Mpi::ExchangeX2(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
 #ifdef MPI_PERSISTENT
   MPI_Startall(2, sendRequestX2);
   MPI_Waitall(2,recvRequestX2,recvStatus);
-
 #else
 
   #ifdef MPI_NON_BLOCKING
@@ -592,44 +604,51 @@ void Mpi::ExchangeX2(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   BufferLeft.ResetPointer();
   BufferRight.ResetPointer();
 
-  // We fill the ghost zones
-  BufferLeft.Unpack(Vc, map,std::make_pair(ibeg, iend),
-                            std::make_pair(jbeg   , jend),
-                            std::make_pair(kbeg   , kend));
+  if(recvLeft) {
+    // We fill the ghost zones
+    BufferLeft.Unpack(Vc, map,std::make_pair(ibeg, iend),
+                              std::make_pair(jbeg   , jend),
+                              std::make_pair(kbeg   , kend));
 
-  BufferRight.Unpack(Vc, map,std::make_pair(ibeg        , iend),
-                             std::make_pair(jbeg+offset , jend+offset),
-                             std::make_pair(kbeg        , kend));
-  // We fill the ghost zones
+    if(haveVs) {
+      BufferLeft.Unpack(Vs, BX1s, std::make_pair(ibeg, iend+1),
+                                  std::make_pair(jbeg   , jend),
+                                  std::make_pair(kbeg   , kend));
 
-  if(haveVs) {
-    BufferLeft.Unpack(Vs, BX1s, std::make_pair(ibeg, iend+1),
-                                std::make_pair(jbeg   , jend),
-                                std::make_pair(kbeg   , kend));
-
-    BufferRight.Unpack(Vs, BX1s, std::make_pair(ibeg, iend+1),
-                                std::make_pair(jbeg+offset   , jend+offset),
-                                std::make_pair(kbeg   , kend));
-    #if DIMENSIONS >= 2
-    BufferLeft.Unpack(Vs, BX2s, std::make_pair(ibeg, iend),
-                                std::make_pair(jbeg   , jend),
-                                std::make_pair(kbeg   , kend));
-
-    BufferRight.Unpack(Vs, BX2s, std::make_pair(ibeg, iend),
-                                std::make_pair(jbeg+offset, jend+offset+1),
-                                std::make_pair(kbeg   , kend));
-    #endif
-    #if DIMENSIONS == 3
-    BufferLeft.Unpack(Vs, BX3s, std::make_pair(ibeg, iend),
-                                std::make_pair(jbeg, jend),
-                                std::make_pair(kbeg, kend+1));
-
-    BufferRight.Unpack(Vs, BX3s,std::make_pair(ibeg      , iend),
-                                std::make_pair(jbeg+offset, jend+offset),
-                                std::make_pair(kbeg       , kend+1));
-    #endif
+      #if DIMENSIONS >= 2
+      BufferLeft.Unpack(Vs, BX2s, std::make_pair(ibeg, iend),
+                                  std::make_pair(jbeg   , jend),
+                                  std::make_pair(kbeg   , kend));
+      #endif
+      #if DIMENSIONS == 3
+      BufferLeft.Unpack(Vs, BX3s, std::make_pair(ibeg, iend),
+                                  std::make_pair(jbeg, jend),
+                                  std::make_pair(kbeg, kend+1));
+      #endif
+    }
   }
+  if(recvRight) {
+    BufferRight.Unpack(Vc, map,std::make_pair(ibeg        , iend),
+                              std::make_pair(jbeg+offset , jend+offset),
+                              std::make_pair(kbeg        , kend));
+    // We fill the ghost zones
 
+    if(haveVs) {
+      BufferRight.Unpack(Vs, BX1s, std::make_pair(ibeg, iend+1),
+                                  std::make_pair(jbeg+offset   , jend+offset),
+                                  std::make_pair(kbeg   , kend));
+      #if DIMENSIONS >= 2
+      BufferRight.Unpack(Vs, BX2s, std::make_pair(ibeg, iend),
+                                  std::make_pair(jbeg+offset, jend+offset+1),
+                                  std::make_pair(kbeg   , kend));
+      #endif
+      #if DIMENSIONS == 3
+      BufferRight.Unpack(Vs, BX3s,std::make_pair(ibeg      , iend),
+                                  std::make_pair(jbeg+offset, jend+offset),
+                                  std::make_pair(kbeg       , kend+1));
+      #endif
+    }
+  }
   myTimer -= MPI_Wtime();
 #ifdef MPI_NON_BLOCKING
   // Wait for the sends if they have not yet completed
@@ -655,6 +674,9 @@ void Mpi::ExchangeX3(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   Buffer BufferLeft=BufferSendX3[faceLeft];
   Buffer BufferRight=BufferSendX3[faceRight];
   IdefixArray1D<int> map = this->mapVars;
+
+  bool recvRight = (procRecvX3[faceRight] != MPI_PROC_NULL);
+  bool recvLeft  = (procRecvX3[faceLeft] != MPI_PROC_NULL);
 
   // If MPI Persistent, start receiving even before the buffers are filled
   myTimer -= MPI_Wtime();
@@ -783,45 +805,50 @@ void Mpi::ExchangeX3(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   BufferLeft.ResetPointer();
   BufferRight.ResetPointer();
 
+  if(recvLeft) {
+    // We fill the ghost zones
+    BufferLeft.Unpack(Vc, map,std::make_pair(ibeg, iend),
+                              std::make_pair(jbeg   , jend),
+                              std::make_pair(kbeg   , kend));
+    if(haveVs) {
+      BufferLeft.Unpack(Vs, BX1s, std::make_pair(ibeg, iend+1),
+                                  std::make_pair(jbeg   , jend),
+                                  std::make_pair(kbeg   , kend));
+      #if DIMENSIONS >=2
+      BufferLeft.Unpack(Vs, BX2s, std::make_pair(ibeg, iend),
+                                  std::make_pair(jbeg, jend+1),
+                                  std::make_pair(kbeg, kend));
+      #endif
 
-  // We fill the ghost zones
-  BufferLeft.Unpack(Vc, map,std::make_pair(ibeg, iend),
-                            std::make_pair(jbeg   , jend),
-                            std::make_pair(kbeg   , kend));
+      #if DIMENSIONS == 3
+      BufferLeft.Unpack(Vs, BX3s, std::make_pair(ibeg, iend),
+                                  std::make_pair(jbeg, jend),
+                                  std::make_pair(kbeg, kend));
+      #endif
+    }
+  }
+  if(recvRight) {
+    BufferRight.Unpack(Vc, map,std::make_pair(ibeg        , iend),
+                              std::make_pair(jbeg        , jend),
+                              std::make_pair(kbeg+offset , kend+offset));
+    // We fill the ghost zones
+    if(haveVs) {
+      BufferRight.Unpack(Vs, BX1s, std::make_pair(ibeg, iend+1),
+                                  std::make_pair(jbeg          , jend),
+                                  std::make_pair(kbeg+offset   , kend+offset));
 
-  BufferRight.Unpack(Vc, map,std::make_pair(ibeg        , iend),
-                             std::make_pair(jbeg        , jend),
-                             std::make_pair(kbeg+offset , kend+offset));
-  // We fill the ghost zones
+      #if DIMENSIONS >=2
+      BufferRight.Unpack(Vs, BX2s,std::make_pair(ibeg       , iend),
+                                  std::make_pair(jbeg       , jend+1),
+                                  std::make_pair(kbeg+offset, kend+offset));
+      #endif
 
-  if(haveVs) {
-    BufferLeft.Unpack(Vs, BX1s, std::make_pair(ibeg, iend+1),
-                                std::make_pair(jbeg   , jend),
-                                std::make_pair(kbeg   , kend));
-
-    BufferRight.Unpack(Vs, BX1s, std::make_pair(ibeg, iend+1),
-                                std::make_pair(jbeg          , jend),
-                                std::make_pair(kbeg+offset   , kend+offset));
-
-    #if DIMENSIONS >=2
-    BufferLeft.Unpack(Vs, BX2s, std::make_pair(ibeg, iend),
-                                std::make_pair(jbeg, jend+1),
-                                std::make_pair(kbeg, kend));
-
-    BufferRight.Unpack(Vs, BX2s,std::make_pair(ibeg       , iend),
-                                std::make_pair(jbeg       , jend+1),
-                                std::make_pair(kbeg+offset, kend+offset));
-    #endif
-
-    #if DIMENSIONS == 3
-    BufferLeft.Unpack(Vs, BX3s, std::make_pair(ibeg, iend),
-                                std::make_pair(jbeg, jend),
-                                std::make_pair(kbeg, kend));
-
-    BufferRight.Unpack(Vs, BX3s,std::make_pair(ibeg       , iend),
-                                std::make_pair(jbeg       , jend),
-                                std::make_pair(kbeg+offset, kend+offset+1));
-    #endif
+      #if DIMENSIONS == 3
+      BufferRight.Unpack(Vs, BX3s,std::make_pair(ibeg       , iend),
+                                  std::make_pair(jbeg       , jend),
+                                  std::make_pair(kbeg+offset, kend+offset+1));
+      #endif
+    }
   }
 
   myTimer -= MPI_Wtime();

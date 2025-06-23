@@ -427,28 +427,28 @@ if(recvLeft) {
                                 std::make_pair(kbeg   , kend+1));
     #endif
   }
-  if(recvRight) {
-    BufferRight.Unpack(Vc, map,std::make_pair(ibeg+offset, iend+offset),
-                            std::make_pair(jbeg   , jend),
-                            std::make_pair(kbeg   , kend));
-    // We fill the ghost zones
-    if(haveVs) {
-      BufferRight.Unpack(Vs, BX1s, std::make_pair(ibeg+offset, iend+offset+1),
-                                  std::make_pair(jbeg   , jend),
-                                  std::make_pair(kbeg   , kend));
+}
+if(recvRight) {
+  BufferRight.Unpack(Vc, map,std::make_pair(ibeg+offset, iend+offset),
+                          std::make_pair(jbeg   , jend),
+                          std::make_pair(kbeg   , kend));
+  // We fill the ghost zones
+  if(haveVs) {
+    BufferRight.Unpack(Vs, BX1s, std::make_pair(ibeg+offset, iend+offset+1),
+                                std::make_pair(jbeg   , jend),
+                                std::make_pair(kbeg   , kend));
 
-      #if DIMENSIONS >= 2
-      BufferRight.Unpack(Vs, BX2s, std::make_pair(ibeg+offset, iend+offset),
-                                  std::make_pair(jbeg   , jend+1),
-                                  std::make_pair(kbeg   , kend));
-      #endif
+    #if DIMENSIONS >= 2
+    BufferRight.Unpack(Vs, BX2s, std::make_pair(ibeg+offset, iend+offset),
+                                std::make_pair(jbeg   , jend+1),
+                                std::make_pair(kbeg   , kend));
+    #endif
 
-      #if DIMENSIONS == 3
-      BufferRight.Unpack(Vs, BX3s, std::make_pair(ibeg+offset, iend+offset),
-                                  std::make_pair(jbeg   , jend),
-                                  std::make_pair(kbeg   , kend+1));
-      #endif
-    }
+    #if DIMENSIONS == 3
+    BufferRight.Unpack(Vs, BX3s, std::make_pair(ibeg+offset, iend+offset),
+                                std::make_pair(jbeg   , jend),
+                                std::make_pair(kbeg   , kend+1));
+    #endif
   }
 }
  

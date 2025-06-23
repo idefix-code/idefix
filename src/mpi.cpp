@@ -22,8 +22,8 @@
 #endif
 
 
-//#define MPI_NON_BLOCKING
-#define MPI_PERSISTENT
+#define MPI_NON_BLOCKING
+//#define MPI_PERSISTENT
 
 // init the number of instances
 int Mpi::nInstances = 0;
@@ -362,7 +362,7 @@ void Mpi::ExchangeX1(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   MPI_Isend(BufferSendX1[faceRight].data(), bufferSizeX1[faceRight], realMPI, procSendX1[faceRight], 100,
                 mygrid->CartComm, &sendRequest[0]);
 
-  MPI_Irecv(BufferRecvX1[faceLeft].data(), bufferSizeX1[faceLeft], realMPI, procRecvX1[faceLeft], 100,
+  MPI_Irecv(BufferRecvX1[faceLeft].data(), bufferSizeX1[faceRight], realMPI, procRecvX1[faceLeft], 100,
                 mygrid->CartComm, &recvRequest[0]);
 
   // Send to the left
@@ -371,7 +371,7 @@ void Mpi::ExchangeX1(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   MPI_Isend(BufferSendX1[faceLeft].data(), bufferSizeX1[faceLeft], realMPI, procSendX1[faceLeft], 101,
                 mygrid->CartComm, &sendRequest[1]);
 
-  MPI_Irecv(BufferRecvX1[faceRight].data(), bufferSizeX1[faceRight], realMPI, procRecvX1[faceRight], 101,
+  MPI_Irecv(BufferRecvX1[faceRight].data(), bufferSizeX1[faceLeft], realMPI, procRecvX1[faceRight], 101,
                 mygrid->CartComm, &recvRequest[1]);
 
   // Wait for recv to complete (we don't care about the sends)
@@ -562,7 +562,7 @@ void Mpi::ExchangeX2(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   MPI_Isend(BufferSendX2[faceLeft].data(), bufferSizeX2[faceLeft], realMPI, procSendX2[faceLeft], 101,
                 mygrid->CartComm, &sendRequest[1]);
 
-  MPI_Irecv(BufferRecvX2[faceRight].data(), bufferSizeX2[faceRight], realMPI, procRecvX2[faceRight], 101,
+  MPI_Irecv(BufferRecvX2[faceRight].data(), bufferSizeX2[faceLeft], realMPI, procRecvX2[faceRight], 101,
                 mygrid->CartComm, &recvRequest[1]);
 
   // Wait for recv to complete (we don't care about the sends)

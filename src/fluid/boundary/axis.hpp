@@ -29,7 +29,7 @@ class Axis {
   void RegularizeEMFs();                 // Regularize the EMF sitting on the axis
   void RegularizeCurrent();             // Regularize the currents along the axis
   void EnforceAxisBoundary(int side);   // Enforce the boundary conditions (along X2)
-  void ReconstructBx2s();               // Reconstruct BX2s in the ghost zone using divB=0
+  void RegularizeBX2s();               // Regularize BX2s on the axis
   void ShowConfig();
 
 
@@ -42,6 +42,8 @@ class Axis {
   void ExchangeMPI(int side);           // Function has to be public for GPU, but its technically
                                         // a private function
 
+  bool haveLeftAxis() const { return axisLeft; }  ///< Check if the axis is on the left
+  bool haveRightAxis() const { return axisRight; } ///< Check if the axis is on the right
 
  private:
   bool isTwoPi = false;
@@ -147,7 +149,6 @@ Axis::Axis(Boundary<Phys> *boundary) {
   Kokkos::deep_copy(symmetryVc, symmetryVcHost);
 
   if constexpr(Phys::mhd) {
-    idfx::cout << "Phys MHD" << std::endl;
     symmetryVs = IdefixArray1D<int>("Axis:SymmetryVs",DIMENSIONS);
     IdefixArray1D<int>::HostMirror symmetryVsHost = Kokkos::create_mirror_view(symmetryVs);
     // Init the array

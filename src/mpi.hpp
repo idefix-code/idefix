@@ -69,7 +69,7 @@ class Buffer {
     const int offset = this->pointer;
 
     auto arr = this->array;
-    idefix_for("LoadBuffer4D",kb.first,kb.second,jb.first,jb.second,ib.first,ib.second,
+    idefix_for("LoadBuffer4D_var",kb.first,kb.second,jb.first,jb.second,ib.first,ib.second,
       KOKKOS_LAMBDA (int k, int j, int i) {
       arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + offset ) = in(var, k,j,i);
     });
@@ -92,7 +92,7 @@ class Buffer {
     const int offset = this->pointer;
     auto arr = this->array;
 
-    idefix_for("LoadBuffer4D",0,map.size(),
+    idefix_for("LoadBuffer4D_map",0,map.size(),
                              kb.first,kb.second,
                              jb.first,jb.second,
                              ib.first,ib.second,
@@ -117,7 +117,7 @@ class Buffer {
     const int offset = this->pointer;
     auto arr = this->array;
 
-    idefix_for("LoadBuffer3D",kb.first,kb.second,jb.first,jb.second,ib.first,ib.second,
+    idefix_for("UnLoadBuffer3D",kb.first,kb.second,jb.first,jb.second,ib.first,ib.second,
       KOKKOS_LAMBDA (int k, int j, int i) {
         out(k,j,i) = arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + offset );
     });
@@ -140,7 +140,7 @@ class Buffer {
     const int offset = this->pointer;
 
     auto arr = this->array;
-    idefix_for("LoadBuffer3D",kb.first,kb.second,jb.first,jb.second,ib.first,ib.second,
+    idefix_for("UnLoadBuffer4D_var",kb.first,kb.second,jb.first,jb.second,ib.first,ib.second,
       KOKKOS_LAMBDA (int k, int j, int i) {
         out(var,k,j,i) = arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + offset );
     });
@@ -163,7 +163,7 @@ class Buffer {
     const int offset = this->pointer;
 
     auto arr = this->array;
-    idefix_for("LoadBuffer4D",0,map.size(),
+    idefix_for("UnLoadBuffer4D_map",0,map.size(),
                               kb.first,kb.second,
                               jb.first,jb.second,
                               ib.first,ib.second,

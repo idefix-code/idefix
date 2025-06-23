@@ -233,6 +233,13 @@ class Mpi {
   Buffer BufferRecvX2[2];
   Buffer BufferRecvX3[2];
 
+  int procSendX1[2];  // MPI process to send to in X1 direction
+  int procRecvX1[2];  // MPI process to receive from in X1 direction
+  int procSendX2[2];  // MPI process to send to in X2 direction
+  int procRecvX2[2];  // MPI process to receive from in X2 direction
+  int procSendX3[2];  // MPI process to send to in X3 direction
+  int procRecvX3[2];  // MPI process to receive
+
   IdefixArray1D<int>  mapVars;
   int mapNVars{0};
 

@@ -242,9 +242,9 @@ class Mpi {
   int beg[3];             //< begining index of the active zone
   int end[3];             //< end index of the active zone
 
-  int bufferSizeX1;
-  int bufferSizeX2;
-  int bufferSizeX3;
+  int bufferSizeX1[2];
+  int bufferSizeX2[2];
+  int bufferSizeX3[2];
 
   bool haveVs{false};
 

@@ -19,8 +19,9 @@
 // This is because in some specific cases involving curvilinear coordinates, roundoff errors
 // can accumulate, leading to a small drift of face-values that should be strictly equal.
 // This behaviour is enabled using the flag below.
-
-//#define ENFORCE_EMF_CONSISTENCY
+#ifdef EVOLVE_VECTOR_POTENTIAL
+  #define ENFORCE_EMF_CONSISTENCY
+#endif
 
 template<typename Phys>
 void ConstrainedTransport<Phys>::EnforceEMFBoundary() {

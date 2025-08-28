@@ -7,7 +7,7 @@ Output formats
 --------------
 
 *Idefix* uses several types of outputs you may want for your setup. By default, *Idefix* allows
-for 4 kinds of outputs:
+for 5 kinds of outputs:
 
 * logs which essentially tells the user what *Idefix* is currently doing. When running in serial, logs are sent to stdout, but when
   MPI is enabled, only the logs of the rank 0 process is sent to stdout, and each process (including rank 0) simultaneously writes a
@@ -21,17 +21,20 @@ for 4 kinds of outputs:
   or `Visit <https://wci.llnl.gov/simulation/computer-codes/visit>`_. The XDMF format relies on the HDF5 format and therefore requires *Idefix* to be configured with HDF5 support.
 * user-defined analysis files. These are totally left to the user. They usually consist of ascii tables defined by the user, but they can
   be anything.
+* python script, that relies on the :ref:`pydefixModule`. This launches a user-defined python function fed with Idefix data. One can then directly plot or interact with Idefix outputs from python.
 
 The output periodicity and the userdef variables should all be declared in the input file, as described in :ref:`outputSection`.
 
 Defining your own outputs
 -------------------------
 
-*Idefix* provides two ways to define your own outputs: analysis, which are used to make your
-own output file (e.g. an ascii-tabulated file); and user variables, which are written by *Idefix* output routines.
+*Idefix* provides three ways to define your own outputs: analysis, which are used to make your
+own output file (e.g. an ascii-tabulated file); user variables, which are written by *Idefix* output routines, and python user-defined
+functions that process Idefix's data.
 
 Both analysis and uservar requires the definition of a user function which needs to be enrolled following the procedure described
-in :ref:`functionEnrollment` and using the function signatures declared in `output.hpp`.
+in :ref:`functionEnrollment` and using the function signatures declared in `output.hpp`. The python outputs are described
+in the :ref:`pydefixModule`.
 
 We provide below an example of a setup using both analysis outputs and uservar outputs
 

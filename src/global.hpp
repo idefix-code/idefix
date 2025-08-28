@@ -7,9 +7,11 @@
 
 #ifndef GLOBAL_HPP_
 #define GLOBAL_HPP_
+#include <iostream>
 #include <string>
 #include <vector>
 #include "arrays.hpp"
+#include "npy.hpp"
 
 namespace idfx {
 int initialize();   // Initialisation routine for idefix
@@ -41,6 +43,20 @@ IdefixArray1D<T> ConvertVectorToIdefixArray(std::vector<T> &inputVector) {
   }
   Kokkos::deep_copy(outArr, outArrHost);
   return(outArr);
+}
+
+///< dump Idefix array to a numpy array on disk
+template<typename ArrayType>
+void DumpArray(std::string filename, ArrayType array) {
+  auto hArray = Kokkos::create_mirror(array);
+  Kokkos::deep_copy(hArray, array);
+
+  std::array<uint64_t, ArrayType::rank> shape;
+  bool fortran_order{false};
+  for (size_t i = 0; i < ArrayType::rank; ++i) {
+    shape[i] = array.extent(i);
+  }
+  npy::SaveArrayAsNumpy(filename, fortran_order, ArrayType::rank, shape.data(), hArray.data());
 }
 
 } // namespace idfx

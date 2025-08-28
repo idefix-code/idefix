@@ -5,12 +5,22 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include <string>
 #include "output.hpp"
 #include "dataBlock.hpp"
 #include "fluid.hpp"
 #include "slice.hpp"
+#include "dataBlockHost.hpp"
 
-Output::Output(Input &input, DataBlock &data) {
+#ifdef WITH_PYTHON
+#include "pydefix.hpp"
+#endif
+
+Output::Output(Input &input, DataBlock &data)
+#ifdef WITH_PYTHON
+:pydefix(input)
+#endif
+{
   idfx::pushRegion("Output::Output");
   // initialise the output objects for each format
 
@@ -45,8 +55,13 @@ Output::Output(Input &input, DataBlock &data) {
     dumpPeriod = input.Get<real>("Output","dmp",0);
     dumpLast = data.t - dumpPeriod; // dump something in the next CheckForWrite()
     if(input.CheckEntry("Output","dmp")>1) {
-      dumpTimePeriod = input.Get<real>("Output","dmp",1);
-      std::string dumpTimeExtension = input.Get<std::string>("Output","dmp",2);
+      std::string dumpString = input.Get<std::string>("Output","dmp",1);
+      try {
+        dumpTimePeriod = std::stod(dumpString.substr(0, dumpString.size()-1), NULL);
+      } catch(const std::exception& e) {
+        IDEFIX_ERROR("The dump time period should be a number followed by a unit (s, m, h or d)");
+      }
+      std::string dumpTimeExtension = dumpString.substr(dumpString.size()-1,1);
       if(dumpTimeExtension.compare("s")==0) {
         dumpTimePeriod *= 1.0;  // Dump time period is in seconds by default
       } else if (dumpTimeExtension.compare("m")==0) {
@@ -115,12 +130,30 @@ Output::Output(Input &input, DataBlock &data) {
     }
   }
 
+  // Initialise python script outputs
+  if(input.CheckEntry("Output","python")>0) {
+    #ifndef WITH_PYTHON
+    IDEFIX_ERROR("Usage of python outputs requires Idefix to be compiled with Python capabilities");
+    #else
+      pythonPeriod = input.Get<real>("Output","python",0);
+      if(pythonPeriod>=0.0) {  // backward compatibility (negative value means no file)
+        pythonLast = data.t - pythonPeriod; // write something in the next CheckForWrite()
+        pythonEnabled = true;
+        pythonNumber = 0;
+      }
+    #endif
+  }
+
   // Register variables that are needed in restart dumps
   data.dump->RegisterVariable(&dumpLast, "dumpLast");
   data.dump->RegisterVariable(&analysisLast, "analysisLast");
   data.dump->RegisterVariable(&vtkLast, "vtkLast");
   #ifdef WITH_HDF5
   data.dump->RegisterVariable(&xdmfLast, "xdmfLast");
+  #endif
+  #ifdef WITH_PYTHON
+  data.dump->RegisterVariable(&pythonLast, "pythonLast");
+  data.dump->RegisterVariable(&pythonNumber,"pythonNumber");
   #endif
 
   idfx::popRegion();
@@ -227,6 +260,24 @@ int Output::CheckForWrites(DataBlock &data) {
       slices[i]->CheckForWrite(data);
     }
   }
+
+  #ifdef WITH_PYTHON
+  if(pythonEnabled) {
+    if(data.t >= pythonLast + pythonPeriod) {
+      elapsedTime -= timer.seconds();
+      pydefix.Output(data,pythonNumber);
+      pythonNumber++;
+      elapsedTime += timer.seconds();
+      // Check if our next predicted output should already have happened
+      if((pythonLast+pythonPeriod <= data.t) && pythonPeriod>0.0) {
+        // Move forward analysisLast
+        while(pythonLast <= data.t - pythonPeriod) {
+          pythonLast += pythonPeriod;
+        }
+      }
+    }
+  }
+  #endif
   // Do we need a restart dump?
   if(dumpEnabled) {
     bool haveClockDump = false;

@@ -5,6 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include <vector>
 #include "idefix.hpp"
 #include "dataBlockHost.hpp"
 #include "fluid.hpp"
@@ -32,6 +33,9 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
   np_tot = data->np_tot;
 
   nghost = data->nghost;
+
+  lbound = data->lbound;
+  rbound = data->rbound;
 
   xbeg = data->xbeg;
   xend = data->xend;
@@ -94,6 +98,9 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
   this->haveplanetarySystem = data->haveplanetarySystem;
   this->planetarySystem = data->planetarySystem.get();
 
+  this->t = data->t;
+  this->dt = data->dt;
+
   idfx::popRegion();
 }
 
@@ -101,6 +108,8 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
 void DataBlockHost::SyncToDevice() {
   idfx::pushRegion("DataBlockHost::SyncToDevice()");
 
+  data->t = this->t;
+  data->dt = this->dt;
   Kokkos::deep_copy(data->hydro->Vc,Vc);
   Kokkos::deep_copy(data->hydro->InvDt,InvDt);
 
@@ -137,6 +146,9 @@ void DataBlockHost::SyncToDevice() {
 
 void DataBlockHost::SyncFromDevice() {
   idfx::pushRegion("DataBlockHost::SyncFromDevice()");
+  this->t = data->t;
+  this->dt = data->dt;
+
   Kokkos::deep_copy(Vc,data->hydro->Vc);
   Kokkos::deep_copy(InvDt,data->hydro->InvDt);
 
@@ -222,8 +234,8 @@ void DataBlockHost::MakeVsFromAmag(IdefixHostArray4D<real> &Ain) {
                                    + 1/(x1m(i)*(cos(x2m(j))
                                    - cos(x2m(j+1)))) * (sin(x2m(j+1))*Ain(KDIR,k,j+1,i)
                                    - sin(x2m(j))*Ain(KDIR,k,j,i) )                       ,
-                                   - 1/(x1m(i)*sin(x2(j))*dx3(k)) * (Ain(JDIR,k+1,j,i)
-                                   - Ain(JDIR,k,j,i) )                                   );
+                                   - dx2(j)/(x1m(i)*((cos(x2m(j))- cos(x2m(j+1))))*dx3(k))
+                                   * (Ain(JDIR,k+1,j,i) - Ain(JDIR,k,j,i) )                       );
 
         real Ax2m = fabs(sin(x2m(j)));
         // Regularisation along the axis

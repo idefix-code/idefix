@@ -7,6 +7,7 @@
 
 #ifndef FLUID_CHECKNAN_HPP_
 #define FLUID_CHECKNAN_HPP_
+#include <iostream>
 #include "dataBlock.hpp"
 #include "dataBlockHost.hpp"
 #include "fluid.hpp"

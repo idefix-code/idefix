@@ -645,6 +645,27 @@ It may also be useful to implement debug-only safeguards with custom logic that 
 fit `RUNTIME_CHECK_*` macros. This can be achieved by using the compiler directive
 `#ifdef RUNTIME_CHECKS` directly.
 
+Dump an array to a file
+-----------------------
+
+It is usually difficult to know what Idefix arrays effectively contains, especially when running on GPU.
+To help with this difficulty, Idefix provides a global function ``DumpArray`` that can be used
+to dump a ``IdefixArray`` to a numpy file (that can be read from python). This feature can be used
+for debugging purpose as:
+
+
+.. code-block:: c++
+
+  #include "idefix.hpp"
+
+  IdefixArray3D<real> myArray("debugMe",10,10,10);
+
+  idfx::DumpArray("myFilename.npy",myArray); // Dump the array content to a numpy file named "myFilename.npy"
+
+
+Note that the array is automatically transfered from the GPU, if needed.
+
+
 Minimal skeleton
 ================
 

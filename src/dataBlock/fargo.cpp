@@ -65,6 +65,9 @@ Fargo::Fargo(Input &input, int nmax, DataBlock *data) {
   }
 
   #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
+    #if DIMENSIONS < 2
+      IDEFIX_ERROR("Fargo should be used with DIMENSIONS >= 2 in Cartesian or Polar geometries");
+    #endif
     // Check if there is a domain decomposition in the intended fargo direction
     if(data->mygrid->nproc[JDIR]>1) {
       haveDomainDecomposition = true;
@@ -80,6 +83,9 @@ Fargo::Fargo(Input &input, int nmax, DataBlock *data) {
       this->meanVelocity = IdefixArray2D<real>("FargoVelocity",data->np_tot[KDIR],
                                                              data->np_tot[IDIR]);
   #elif GEOMETRY == SPHERICAL
+    #if DIMENSIONS < 3
+      IDEFIX_ERROR("Fargo should be used with DIMENSIONS == 3 in Spherical geometry");
+    #endif
     // Check if there is a domain decomposition in the intended fargo direction
     if(data->mygrid->nproc[KDIR]>1) {
       haveDomainDecomposition = true;

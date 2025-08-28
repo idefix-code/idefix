@@ -33,6 +33,10 @@ MPI library
   When using MPI parallelisation, *Idefix* relies on an external MPI library. *Idefix* has been tested successfully with OpenMPI and IntelMPI libraries. When used on GPU architectures, *Idefix* assumes that
   the MPI library is GPU-Aware. If unsure, check this last point with your system administrator.
 
+Python
+  When using *Idefix* with its python interface through the module `Pydefix`, *Idefix* relies on an external python>=3.8 interpreter with the module `pybind11 <https://pybind11.readthedocs.io>`_
+  installed.
+
 ================
 Features
 ================
@@ -80,8 +84,11 @@ Jonah Mauxion
 Clément Robert
   gitlab integration, linter
 
-Jean Kempf & François Rincon
-    anisotropic diffusion
+Jean Kempf, Victor Reville, François Rincon
+  anisotropic diffusion and collisionless thermal conduction
+
+Marc Coiffier
+  Continuous integration, automatic benchmarking
 
 ========================
 About this documentation

@@ -4,6 +4,59 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.01] 2025-04-16
+### Changed
+
+- Fix a bug that led to instabilities in the RKL scheme with very small grid spacings (#323)
+- Fix a bug that prevented Idefix from running with Sycl backend (required on Intel GPUs) (#331)
+- Fix an error that led to incorrect electrical current regularisation around the polar axis in non-Ideal MHD  (#333)
+- Improve div(B) checks with a dimensionless implementation, avoiding too large divB errors in grids with large stretch factors (#334)
+
+### Added
+
+- Time-Implicit drag for multiple dust species, preventing small time steps for strongly coupled dust grains (#321)
+- Collisionless heat flux added to the Braginskii module (#317)
+- New global `idfx::DumpArray` debugging function to dump any Idefix array into a numpy array that can read from python (#318)
+- Automatic benchmark plots in the documentation (#319)
+- More CI tests of grid coarsening (#329)
+- Dump outputs based on wallclock time (#335)
+
+
+## [2.2.00] 2025-01-17
+### Changed
+
+- Fix a bug that could lead to a segmentation fault when MHD+Fargo+MPI (with X3 domain decomposition) are all enabled (#295)
+- Fix a bug that could result in an incorrect magnetic field when initialising B from the vector potential in non-axisymmetric spherical geometry (#293)
+- Fix a bug that could result in Idefix believing the MPI library is not Cuda aware for some versions of OpenMPI (#310)
+- Ensure that the behaviour in 1D Spherical geometry is identical to Pluto (#291)
+
+### Added
+
+- Add the python interface "pydefix", allowing users to initialise and analyse Idefix simulations live from Python without writing any file (#277)
+- Add the native Idefix coordinates in VTK file to simplify postprocessing (#292)
+- Add code testing on CPU targets using gcc and Intel Oneapi (#300)
+
+
+## [2.1.02] 2024-10-24
+### Changed
+
+- Fix a bug that could lead to corrupted VTK file when using single precision arithmetic (#255)
+- Fix a bug that could lead to incorrect central mass gravitational potential upon restart (#287)
+- Changed the way magnetic field is reconstructed when using grid coarsening to reduce roundoff errors on div(B). This can have an impact on the results of models using grid coarsening+MHD (#284)
+- Ensure that XDMF outputs are precision agnostic (#261)
+- Bump up Kokkos version to 4.4.01 (#289)
+- Check that writes are successfull in serial, otherwise throw an error (#260)
+- Ensure that shock flattening flags can be modified by user (#260)
+- Throw an error when user enables Fargo without enough DIMENSIONS (#250)
+- Fix linting errors following upgrade to cpplint 2.0 (#278, #279, #281)
+- Update idfx_io to numpy 2.0 (#283)
+
+### Added
+
+- Allow the user to define the grid and boundary conditions only on active dimensions (#274)
+- Configuration for Nvidia H100 on Jean Zay in the documentation
+
+
 ## [2.1.01] 2024-06-20
 ### Changed
 - Fix a bug that could result in too restrictive timesteps when resistivity is enabled (#244)

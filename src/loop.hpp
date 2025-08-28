@@ -34,6 +34,12 @@ typedef Kokkos::TeamPolicy<>::member_type  member_type;
 
 // Check if the user requested a specific loop unrolling strategy
 #if defined(LOOP_PATTERN_SIMD)
+  // Check that Idefix Arrays can be assigned from SIMD loop
+  static_assert(
+    Kokkos::SpaceAccessibility<Kokkos::DefaultHostExecutionSpace::execution_space,
+                               Kokkos::DefaultExecutionSpace::memory_space>::accessible,
+    "Idefix Arrays cannot be accessed from SIMD loop. You should try another loop pattern."
+  );
   constexpr LoopPattern defaultLoop = LoopPattern::SIMDFOR;
 #elif defined(LOOP_PATTERN_1DRANGE)
   constexpr LoopPattern defaultLoop = LoopPattern::RANGE;
@@ -51,7 +57,16 @@ typedef Kokkos::TeamPolicy<>::member_type  member_type;
     constexpr LoopPattern defaultLoop = LoopPattern::RANGE;
   #elif defined(KOKKOS_ENABLE_HIP)
     constexpr LoopPattern defaultLoop = LoopPattern::RANGE;
+  #elif defined(KOKKOS_ENABLE_SYCL)
+    constexpr LoopPattern defaultLoop = LoopPattern::RANGE;
   #elif defined(KOKKOS_ENABLE_SERIAL)
+    // Check that Idefix Arrays can be assigned from SIMD loop
+    static_assert(
+      Kokkos::SpaceAccessibility<Kokkos::DefaultHostExecutionSpace::execution_space,
+                                 Kokkos::DefaultExecutionSpace::memory_space>::accessible,
+      "Idefix Arrays cannot be accessed from Host, but Device is unknown/untested. "
+      "Ask the developers to add support."
+    );
     constexpr LoopPattern defaultLoop = LoopPattern::SIMDFOR;
   #else
     #warning "Unknown target architeture: default to MDrange"

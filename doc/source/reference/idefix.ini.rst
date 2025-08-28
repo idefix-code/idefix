@@ -16,7 +16,7 @@ allows for comments, which should start with ``#``.
 
 ``Grid`` section
 --------------------
-The grid section defines the grid total dimension. It consists of 3 entries ``X1-grid``, ``X2-grid`` and ``X3-grid``. Each entry defines the repartition of the grid points in the corresponding direction (the grid is always rectilinear).
+The grid section defines the grid total dimension. It consists of 3 entries ``X1-grid``, ``X2-grid`` (when DIMENSIONS>=2) and ``X3-grid`` (when DIMENSIONS=3). Each entry defines the repartition of the grid points in the corresponding direction (the grid is always rectilinear).
 Each entry defines a series of grid blocks which are concatenated along the direction. Each block in a direction can have a different spacing rule (uniform, log or stretched). The definition of the Grid entries is as follows
 
 +----------------------------+-------------------------+------------------------------+
@@ -332,8 +332,8 @@ this block is simply ignored.
 ------------------------
 
 This section describes the boundary conditions used by the code. There are 6 entries
-which need to be defined: ``X1-beg``, ``X2-beg``, ``X3-beg`` for the left boundaries in the direction X1, X2, X3,
-and ``X1-end``, ``X2-end``, ``X3-end`` for the right boundaries. Each boundary can be assigned the following types of conditions
+that need to be defined: ``X1-beg``, ``X2-beg``, ``X3-beg`` for the left boundaries in the direction X1, X2, X3,
+and ``X1-end``, ``X2-end``, ``X3-end`` for the right boundaries. ``X2`` boundaries are mandatory only when DIMENSIONS>=2 and ``X3`` when DIMENSIONS=3. Each boundary can be assigned the following types of conditions
 
 +----------------+------------------------------------------------------------------------------------------------------------------+
 | Boundary type  | Comment                                                                                                          |
@@ -358,6 +358,23 @@ and ``X1-end``, ``X2-end``, ``X3-end`` for the right boundaries. Each boundary c
 |                | | (see :ref:`userdefBoundaries`)                                                                                 |
 +----------------+------------------------------------------------------------------------------------------------------------------+
 
+``Python`` section
+------------------
+
+This section describes the python script and function that can interact with Idefix while running using the Pydefix module (see :ref:`pydefixModule`)
+
++------------------------+-----------------------+-----------------------------------------------------------------------------------------------------------+
+|  Entry name            | Parameter type        | Comment                                                                                                   |
++========================+=======================+===========================================================================================================+
+| script                 | string                | | (Mandatory) Filename (*without ".py"!*) of the python script that Idefix should use.                    |
+|                        |                       | | The script should be in location of Idefix executable file                                              |
++------------------------+-----------------------+-----------------------------------------------------------------------------------------------------------+
+| output_function        | string                | | (Optional) Name of the function that will be called for each output event (the function should be       |
+|                        |                       | |  defined in the  python script above). When ommited, pydefix output functions are disabled.             |
++------------------------+-----------------------+-----------------------------------------------------------------------------------------------------------+
+| initflow_function      | string                | | (optional) Name of the python function that will be called to initialize the flow in place of the C++   |
+|                        |                       | | function `Setup::InitFlow`. Revert to `Setup::Initflow`` when ommited.                                  |
++------------------------+-----------------------+-----------------------------------------------------------------------------------------------------------+
 
 .. _outputSection:
 
@@ -371,8 +388,10 @@ This section describes the outputs *Idefix* produces. For more details about eac
 +================+=========================+==================================================================================================+
 | log            | integer                 | | Time interval between log outputs, in code steps (default 100).                                |
 +----------------+-------------------------+--------------------------------------------------------------------------------------------------+
-| dmp            | float                   | | Time interval between dump outputs, in code units.                                             |
-|                |                         | | If negative, periodic dump outputs are disabled.                                               |
+| dmp            | float, float+char       | | 1st parameter: Code time interval between dump outputs, in code units.                         |
+|                |                         | | If negative, the first parameter is ignored.                                                   |
+|                |                         | | 2nd parameter (optional): Wallclock time interval between two dumps. The ending character      |
+|                |                         | | can be "s" (seconds) "m" (minutes) "h" (hours) or "d" (days)                                   |
 +----------------+-------------------------+--------------------------------------------------------------------------------------------------+
 | dmp_dir        | string                  | | directory for dump file outputs. Default to "./"                                               |
 |                |                         | | The directory is automatically created if it does not exist.                                   |
@@ -410,6 +429,9 @@ This section describes the outputs *Idefix* produces. For more details about eac
 |                |                         | | function to be enrolled with ``Output::EnrollUserDefVariables(UserDefVariablesFunc)``          |
 |                |                         | | (see :ref:`functionEnrollment`). The user-defined variables defined by this function           |
 |                |                         | | are then written as new variables in vtk and/or xdmf  outputs.                                 |
++----------------+-------------------------+--------------------------------------------------------------------------------------------------+
+| python         | float                   | | Time interval between pydefix outputs, in code units.                                          |
+|                |                         | | If negative, periodic pydefix outputs are disabled.                                            |
 +----------------+-------------------------+--------------------------------------------------------------------------------------------------+
 
 .. note::

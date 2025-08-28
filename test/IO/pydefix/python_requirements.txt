@@ -1,0 +1,6 @@
+# note: version requirements are indicative and tests # should be able to run with
+# older versions of our dependencies, though it is not guaranteed.
+
+numpy>=1.16.6
+matplotlib>=2.2.5
+pybind11>=2.12.0

@@ -53,3 +53,7 @@ else:
   test.vectPot=False
   test.mpi=True
   testMe(test)
+
+  test.vectPot=True
+  test.mpi=True
+  testMe(test)

@@ -23,7 +23,7 @@ copyright = 'Geoffroy Lesur et al.'
 author = 'Geoffroy Lesur'
 
 # The full version, including alpha/beta/rc tags
-release = '2.1.01'
+release = '2.2.00'
 
 
 
@@ -35,6 +35,7 @@ release = '2.1.01'
 extensions = [
     "sphinx_rtd_theme",
     'sphinx_git',
+    'matplotlib.sphinxext.plot_directive',
     "breathe",
     "exhale",
     "m2r2",

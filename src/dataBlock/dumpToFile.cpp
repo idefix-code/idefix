@@ -5,6 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include <string>
+#include <cstdio>
 #include "../idefix.hpp"
 #include "dataBlock.hpp"
 #include "version.hpp"
@@ -89,6 +91,16 @@ void DataBlock::DumpToFile(std::string filebase)  {
   std::snprintf(fieldName,NAMESIZE,"Vc");
 
   WriteVariable(fileHdl, 4, dims, fieldName, locVc.data());
+
+  if (this->gravity->haveSelfGravityPotential) {
+    IdefixArray3D<real>::HostMirror locPot = Kokkos::create_mirror_view(this->gravity->phiP);
+    Kokkos::deep_copy(locPot, this->gravity->phiP);
+
+    dims[3] = 1;
+    std::snprintf(fieldName,NAMESIZE,"Pot");
+
+    WriteVariable(fileHdl, 4, dims, fieldName, locPot.data());
+  }
 
   // Write Flux
   /*

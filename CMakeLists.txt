@@ -98,7 +98,7 @@ endif()
 if(Idefix_MPI)
   add_compile_definitions("WITH_MPI")
   find_package(MPI REQUIRED)
-  target_link_libraries(idefix MPI::MPI_CXX)
+  target_link_libraries(idefix PRIVATE MPI::MPI_CXX)
   target_sources(idefix
     PUBLIC src/mpi.cpp
     PUBLIC src/mpi.hpp
@@ -114,9 +114,9 @@ if(Idefix_HDF5)
     PUBLIC src/output/xdmf.cpp
     PUBLIC src/output/xdmf.hpp
   )
-  find_package(HDF5 REQUIRED)
-  target_link_libraries(idefix "${HDF5_LIBRARIES}")
-  target_include_directories(idefix "${HDF5_INCLUDE_DIRS}")
+  find_package(HDF5 REQUIRED COMPONENTS C)
+  target_link_libraries(idefix PRIVATE HDF5::HDF5)
+  # target_include_directories(idefix PRIVATE ${HDF5_INCLUDE_DIRS})
   message(STATUS "XDMF (hdf5+xmf) dumps enabled")
 else()
   set(Idefix_HDF5 OFF)
@@ -237,7 +237,7 @@ target_include_directories(idefix PUBLIC
                            src
                            )
 
-target_link_libraries(idefix Kokkos::kokkos)
+target_link_libraries(idefix PRIVATE Kokkos::kokkos)
 
 message(STATUS "Idefix final configuration")
 if(Idefix_EVOLVE_VECTOR_POTENTIAL)

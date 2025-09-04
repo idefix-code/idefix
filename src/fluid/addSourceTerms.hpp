@@ -42,6 +42,13 @@ struct Fluid_AddSourceTermsFunctor {
     }
     // shearing box (only with fargo&cartesian)
     sbS = hydro->sbS;
+
+    // Radiative cooling
+    coolingOn = hydro->coolingOn;
+    if (coolingOn) {
+      hydro->radCooling->CalculateCoolingSource(dt);
+      IdefixArray3D<real> delta_eng_cool = hydro->radCooling->delta_eng;
+    }
   }
 
   //*****************************************************************
@@ -52,6 +59,7 @@ struct Fluid_AddSourceTermsFunctor {
   IdefixArray1D<real> x1;
   IdefixArray1D<real> x2;
   IdefixArray3D<real> csIsoArr;
+  IdefixArray3D<real> delta_eng_cool;
 
   real dt;
 #if GEOMETRY == SPHERICAL
@@ -71,6 +79,9 @@ struct Fluid_AddSourceTermsFunctor {
 
   // shearing box (only with fargo&cartesian)
   real sbS;
+
+  // Radiative cooling
+  bool coolingOn;
 
   //*****************************************************************
   // Functor Operator
@@ -193,6 +204,9 @@ struct Fluid_AddSourceTermsFunctor {
       } // MHD
       Uc(MX2,k,j,i) += dt*Sm / rt(i);
   #endif // COMPONENTS
+  if (coolingOn) {
+    Uc(ENG,k,j,i) += delta_eng_cool(k,j,i); 
+  }
 #endif
     }
 };

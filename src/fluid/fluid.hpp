@@ -19,6 +19,7 @@
 #include "thermalDiffusion.hpp"
 #include "bragThermalDiffusion.hpp"
 #include "selfGravity.hpp"
+#include "cooling.hpp"
 #include "vtk.hpp"
 #include "dump.hpp"
 #ifdef WITH_HDF5
@@ -48,7 +49,7 @@ class BragViscosity;
 class BragThermalDiffusion;
 class Drag;
 class Tracer;
-
+class RadCooling;
 
 template<typename Phys>
 class Fluid {
@@ -139,6 +140,10 @@ class Fluid {
   bool haveTracer{false};
   int nTracer{0};
 
+  // Radiative cooling
+  std::unique_ptr<RadCooling> radCooling;
+  bool coolingOn{false};
+
 
   // Enroll user-defined boundary conditions (proxies for boundary class functions)
   template <typename T>
@@ -205,6 +210,7 @@ class Fluid {
   friend class BragViscosity;
   friend class BragThermalDiffusion;
   friend class Drag;
+  friend class RadCooling;
 
   template <typename P>
   friend struct Fluid_AddSourceTermsFunctor;
@@ -258,7 +264,6 @@ class Fluid {
 #include "drag.hpp"
 #include "checkNan.hpp"
 #include "tracer.hpp"
-
 
 template<typename Phys>
 Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
@@ -321,6 +326,12 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
     if(this->nTracer < 1) {
       IDEFIX_ERROR("The number of passive tracers should be >= 1");
     }
+  }
+
+  // Radiative cooling
+  if(input.CheckEntry("Hydro", "Cooling")>=0) {
+    this->haveSourceTerms = true;
+    this->coolingOn = true;
   }
 
   // If we are not the primary hydro object, we copy the properties of the primary hydro object
@@ -749,6 +760,10 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
   // Tracers when needed
   if(haveTracer) {
     this->tracer= std::make_unique<Tracer>(this, nTracer);
+  }
+
+  if(coolingOn) {
+    this->radCooling = std::make_unique<RadCooling>(input, grid, this);
   }
 
   idfx::popRegion();

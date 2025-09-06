@@ -28,6 +28,12 @@ is temperature (in :math:`\rm K`) and second  row is :math:`\Lambda (T)` (in :ma
     what is supplied to the code. Right now, this module has been tested only with the ideal gas equation of state.
     We also assume the mean particle mass :math:`\mu=0.609`, i.e., constant in the current implementation (appropriate
     for fully ionized plasma).
+    It is recommended to include conversion factors between code and physical units in ``definitions.hpp``. For example,
+    ``
+    #define     UNIT_LENGTH     3.086e+18
+    #define     UNIT_DENSITY    (1.0e-02*0.609*1.673e-24)
+    #define     UNIT_VELOCITY   1.000e+05
+    ``
 
 Main parameters of the module
 -----------------------------

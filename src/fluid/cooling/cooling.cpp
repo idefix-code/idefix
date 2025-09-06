@@ -12,6 +12,7 @@
 // ApJ
 
 #include <string>
+#include <sstream>
 
 #include "idefix.hpp"
 #include "cooling.hpp"
@@ -72,7 +73,6 @@ void RadCooling::InitUnits() {
 }
 
 void RadCooling::InitArrays() {
-   
   // Allocate and fill arrays when neede
   cooltable_data = LookupTable<1>(cooltable_filename,' ');
   temperature_data = cooltable_data.xinDev;
@@ -114,7 +114,7 @@ void RadCooling::TownsendIntegration(real dt) {
   real mu = 0.609;
   real mp = 1.6726e-24;
   real XH = 0.71;
-  
+
   int ibeg, iend, jbeg, jend, kbeg, kend;
   ibeg = this->data->beg[IDIR];
   iend = this->data->end[IDIR];
@@ -130,12 +130,15 @@ void RadCooling::TownsendIntegration(real dt) {
       // ideal gas eos is used
       real temperature = Vc(PRS,k,j,i)/Vc(RHO,k,j,i)*(mu*mp/kB)*pow(vel_unit,2);
 
-      if ( (temperature<temperature_data(0)) || (temperature>temperature_data(temperature_data.extent(0)-1)) ) {
-        char tmp[32];
-          sprintf(tmp, "%e K", temperature);
-          IDEFIX_ERROR("Temperature out of range: T="+std::string(tmp)); 
+      if ( (temperature<temperature_data(0)) ||
+           (temperature>temperature_data(temperature_data.extent(0)-1)) ) {
+        std::ostringstream tmp;
+        tmp << std::scientific <<
+            "Temperature out of range: T="
+            << temperature << " K" << std::endl;
+        IDEFIX_ERROR(tmp.str());
       }
-      
+
       while (T_indx_lo<=T_indx_hi) {
         T_indx_mid = (T_indx_lo + T_indx_hi)/2;
         if (temperature < temperature_data(T_indx_mid)) {
@@ -155,7 +158,7 @@ void RadCooling::TownsendIntegration(real dt) {
         T_indx_hi = T_indx_mid;
       }
 
-      real temperature_lo = temperature_data(T_indx_lo); 
+      real temperature_lo = temperature_data(T_indx_lo);
       real temperature_hi = temperature_data(T_indx_hi);
       real Lambda_lo = Lambda_cool_data(T_indx_lo);
       real Lambda_hi = Lambda_cool_data(T_indx_hi);
@@ -163,7 +166,11 @@ void RadCooling::TownsendIntegration(real dt) {
       real alpha = std::log(Lambda_hi/Lambda_lo)/std::log(temperature_hi/temperature_lo);
       real Lambda_T = Lambda_lo * pow((temperature/temperature_lo), alpha);
       // real gamma = eos.GetGamma(Vc(PRS,k,j,i),Vc(RHO,k,j,i));
-      real t_cool = eos.GetInternalEnergy(Vc(PRS,k,j,i), Vc(RHO,k,j,i))*rho_unit*pow(vel_unit,2)/(pow(Vc(RHO,k,j,i)*rho_unit*XH/mp,2)*Lambda_T); // cgs
+      real eint = eos.GetInternalEnergy(Vc(PRS,k,j,i),
+                                        Vc(RHO,k,j,i))
+                                       *rho_unit*pow(vel_unit,2); // cgs
+      real edot = pow(Vc(RHO,k,j,i)*rho_unit*XH/mp,2)*Lambda_T; // cgs
+      real t_cool = eint/edot; // cgs
 
       real Y, del_prs;
       if (alpha!=1.0) {
@@ -171,7 +178,9 @@ void RadCooling::TownsendIntegration(real dt) {
       } else {
         Y = std::log(temperature_hi/temperature);
       }
-      real inv_Y_arg = Y + (temperature/temperature_hi) * (Lambda_hi/Lambda_T) * (dt/(t_cool/(len_unit/vel_unit)));
+      real inv_Y_arg = Y + (temperature/temperature_hi)
+                         * (Lambda_hi/Lambda_T)
+                         * (dt/(t_cool/(len_unit/vel_unit)));
       real T_fin;
       if (alpha!=1.0) {
         T_fin = temperature_hi*pow((1.0 - (1.0-alpha)*inv_Y_arg), 1.0/(1.0-alpha));

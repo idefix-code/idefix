@@ -5,8 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef FLUID_TOWNSEND_RADIATIVE_HPP_
-#define FLUID_TOWNSEND_RADIATIVE_HPP_
+#ifndef FLUID_COOLING_COOLING_HPP_
+#define FLUID_COOLING_COOLING_HPP_
 
 #include <string>
 
@@ -105,4 +105,4 @@ RadCooling::RadCooling(Input &input, Grid &grid, Fluid<Phys> *hydroin):
   idfx::popRegion();
 }
 
-#endif // FLUID_TOWNSEND_RADIATIVE_HPP_
+#endif // FLUID_COOLING_COOLING_HPP_

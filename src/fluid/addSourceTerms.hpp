@@ -208,8 +208,6 @@ struct Fluid_AddSourceTermsFunctor {
   #endif // COMPONENTS
 #endif
     if (coolingOn) {
-      // idfx::cout << k << ',' << j << ',' << i << ": " << std::scientific << Uc(ENG,k,j,i) << '\t' << (delta_eng_cool(k,j,i)/Uc(RHO,k,j,i)) << std::endl;
-      // if ((k*j*i+k*j+i)>10) IDEFIX_ERROR("Abort!");
       Uc(ENG,k,j,i) += (delta_eng_cool(k,j,i)/Uc(RHO,k,j,i)); // specific energy
     }
   }

@@ -19,7 +19,8 @@ struct Fluid_AddSourceTermsFunctor {
   //*****************************************************************
   // Functor constructor
   //*****************************************************************
-  explicit Fluid_AddSourceTermsFunctor(Fluid<Phys> *hydro, real dt) {
+  explicit Fluid_AddSourceTermsFunctor(Fluid<Phys> *hydro, real dt):
+    hydroin(hydro) {
     Uc = hydro->Uc;
     Vc = hydro->Vc;
     x1 = hydro->data->x[IDIR];
@@ -47,7 +48,7 @@ struct Fluid_AddSourceTermsFunctor {
     coolingOn = hydro->coolingOn;
     if (coolingOn) {
       hydro->radCooling->CalculateCoolingSource(dt);
-      IdefixArray3D<real> delta_eng_cool = hydro->radCooling->delta_eng;
+      this->delta_eng_cool = hydro->radCooling->delta_eng;
     }
   }
 
@@ -61,6 +62,7 @@ struct Fluid_AddSourceTermsFunctor {
   IdefixArray3D<real> csIsoArr;
   IdefixArray3D<real> delta_eng_cool;
 
+  Fluid<Phys> *hydroin;
   real dt;
 #if GEOMETRY == SPHERICAL
   IdefixArray1D<real> sinx2;
@@ -204,11 +206,13 @@ struct Fluid_AddSourceTermsFunctor {
       } // MHD
       Uc(MX2,k,j,i) += dt*Sm / rt(i);
   #endif // COMPONENTS
-  if (coolingOn) {
-    Uc(ENG,k,j,i) += delta_eng_cool(k,j,i); 
-  }
 #endif
+    if (coolingOn) {
+      // idfx::cout << k << ',' << j << ',' << i << ": " << std::scientific << Uc(ENG,k,j,i) << '\t' << (delta_eng_cool(k,j,i)/Uc(RHO,k,j,i)) << std::endl;
+      // if ((k*j*i+k*j+i)>10) IDEFIX_ERROR("Abort!");
+      Uc(ENG,k,j,i) += (delta_eng_cool(k,j,i)/Uc(RHO,k,j,i)); // specific energy
     }
+  }
 };
 
 

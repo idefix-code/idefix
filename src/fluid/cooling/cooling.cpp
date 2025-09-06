@@ -157,7 +157,8 @@ void RadCooling::TownsendIntegration(real dt) {
 
       real temperature_lo = temperature_data(T_indx_lo); 
       real temperature_hi = temperature_data(T_indx_hi);
-      real Lambda_lo, Lambda_hi = Lambda_cool_data(T_indx_lo), Lambda_cool_data(T_indx_hi);
+      real Lambda_lo = Lambda_cool_data(T_indx_lo);
+      real Lambda_hi = Lambda_cool_data(T_indx_hi);
       // T_ref = temperature_hi
       real alpha = std::log(Lambda_hi/Lambda_lo)/std::log(temperature_hi/temperature_lo);
       real Lambda_T = Lambda_lo * pow((temperature/temperature_lo), alpha);
@@ -166,20 +167,26 @@ void RadCooling::TownsendIntegration(real dt) {
 
       real Y, del_prs;
       if (alpha!=1.0) {
-        Y = (1.0-pow(temperature_hi/temperature, alpha-1))/(1-alpha);
+        Y = (1.0-pow(temperature_hi/temperature, alpha-1.0))/(1.0-alpha);
       } else {
         Y = std::log(temperature_hi/temperature);
       }
-      real inv_Y_arg = Y + (temperature/temperature_hi) * (Lambda_hi/Lambda_T) * dt/(t_cool/(len_unit/vel_unit));
+      real inv_Y_arg = Y + (temperature/temperature_hi) * (Lambda_hi/Lambda_T) * (dt/(t_cool/(len_unit/vel_unit)));
       real T_fin;
       if (alpha!=1.0) {
-        T_fin = pow(temperature_hi*(1.0 - (1-alpha)*inv_Y_arg), 1.0/(1-alpha));
+        T_fin = temperature_hi*pow((1.0 - (1.0-alpha)*inv_Y_arg), 1.0/(1.0-alpha));
       } else {
         T_fin = temperature_hi * std::exp(-inv_Y_arg);
       }
       // ideal gas eos is used
-      del_prs = -Vc(RHO,k,j,i)/(mu*mp/kB)*std::min(temperature-T_fin, temperature-TcoolFloor)/pow(vel_unit,2);
-      delta_eng(k,j,i) = eos.GetInternalEnergy(del_prs, Vc(RHO,k,j,i));
+      if (T_fin>=TcoolFloor) {
+        del_prs = -Vc(RHO,k,j,i)/(mu*mp/kB)*(temperature-T_fin)/pow(vel_unit,2);
+        delta_eng(k,j,i) = eos.GetInternalEnergy(del_prs, Vc(RHO,k,j,i));
+      }
+      else {
+        del_prs = ZERO_F;
+        delta_eng(k,j,i) = ZERO_F;
+      }
     });
   idfx::popRegion();
 }

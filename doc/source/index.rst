@@ -122,6 +122,7 @@ The Idefix collaboration benefited from funding from the “Programme National d
    reference
    modules
    programmingguide
+   testing
    performances
    kokkos
    contributing

@@ -31,7 +31,7 @@ class Units {
   const real M_sun{1.988409870698051e+33};          // Solar mass (g)
   const real R_sun{69570000000.0};                  // Solar radius (cm)
   const real M_earth{5.972167867791379e+27};        // Earth mass (g)
-  const real R_earth{637810000.0};                  // Earth radius (cm)
+  const real R_earth{6.3781e8};                     // Earth radius (cm)
   const real G{6.674299999999999e-8};               // Gravitational constant  (cm3 / (g s2))
   const real h{6.62607015e-27};                     // Planck constant (erg.s)
   const real pc{3.08568e+18};                       // Parsec (cm)

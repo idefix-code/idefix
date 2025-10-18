@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fixed a bug that could lead to incorrect energy budget when shearing box and fargo were both enabled (#346)
 - fixed a bug that led to incorrect BX2 reconstruction when axis is not used on both sides of the domain (#345)
 - fixed a bug that led to incorrect reflective boundary conditions on B when DIMENSIONS < 3 (#345)
-- fixed a bug that led to incorrect dust stopping time when the adiabatic equation of state is used with "size" drag law (#354)
+- fixed a bug that led to incorrect dust stopping time when the adiabatic equation of state is used with "size" drag law (#353)
 
 ### Added
 

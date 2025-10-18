@@ -332,7 +332,7 @@ These entries define how one code units should be converted to CGS units. When u
 +----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
 
 .. note::
-    The units module automatically reconstruct all of the units (time, temperature, magnetic field, etc.) from the above 3 fondamental constants. These can
+    The units module automatically reconstruct all of the units (time, temperature, magnetic field, etc.) from the above 3 fundamental constants. These can
     all be obtained from the global object ``idfx::units``. Note however that the code outputs remain in code units, even if `[Units]` are defined.
 
 ``RKL`` section

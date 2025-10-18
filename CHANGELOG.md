@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.02] 2025-10-18
+### Changed
+
+- Added a module to add explicit units (#338)
+- fixed a bug that could lead to incorrect profiling information on non-blocking cuda loops (#341)
+- fixed a bug that could lead to incorrect energy budget when shearing box and fargo were both enabled (#346)
+- fixed a bug that led to incorrect BX2 reconstruction when axis is not used on both sides of the domain (#345)
+- fixed a bug that led to incorrect reflective boundary conditions on B when DIMENSIONS < 3 (#345)
+- fixed a bug that led to incorrect dust stopping time when the adiabatic equation of state is used with "size" drag law (#354)
+
+### Added
+
+- documentation for the continuous integration (#354)
+
 ## [2.2.01] 2025-04-16
 ### Changed
 

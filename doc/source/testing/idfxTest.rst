@@ -170,4 +170,3 @@ Regression Testing
 
 - The ``nonRegressionTest`` method compares output dumps to reference files using RMSE.
 - If the error exceeds the tolerance, the test fails and (optionally) plots the difference.
-

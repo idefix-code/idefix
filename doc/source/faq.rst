@@ -71,8 +71,8 @@ VTK output appears corrupted when running with MPI (OpenMPI)
 
     This has resolved intermittent corruption for several users. See issue #348 for discussion and reports.
 
-Developement
-------------
+Development
+-----------
 
 I have a serious bug (e.g. segmentation fault), in my setup, how do I proceed?
   Add ``-DIdefix_DEBUG=ON`` to ``cmake`` and recompile to find out exactly where the code crashes (see :ref:`debugging`).

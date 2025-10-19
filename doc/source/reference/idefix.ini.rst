@@ -265,8 +265,10 @@ section as followed:
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | Mcentral       | real                    | | Mass of the central object when a central potential is enabled (see above). Default is 1. |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
-| gravCst        | real                    | | Set the value of the gravitational constant :math:`G_c` used by the central               |
+| gravCst        | real or string          | | Set the value of the gravitational constant :math:`G_c` used by the central               |
 |                |                         | | mass potential and self-gravitational potential (when enabled) ). Default is 1.           |
+|                |                         | | If set to "units", Idefix will compute the gravitational constant from the user units     |
+|                |                         | | defined in the units section (see :ref:`unitsSection`).                                   |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | bodyForce      | string                  | | Adds an acceleration vector to each cell of the domain. The only value allowed            |
 |                |                         | | is ``userdef``. The ``Gravity`` class then expects a user-defined bodyforce function to   |
@@ -310,7 +312,28 @@ of gravitational potential in the ``Gravity`` section (see :ref:`gravitySection`
 |                |                         | | Default is 1 (i.e. self-gravity is computed at every cycle).                              |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 
+.. _unitsSection:
 
+``Units`` section
+------------------
+
+This optional section controls how the code handles units. By default, Idefix work "unit free" and this section is not useful.
+However, some physical processes like self-gravity or radiative transfer require the explicit use of units to define natural constants.
+These entries define how one code units should be converted to CGS units. When used, the following values should be set:
+
++----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
+|  Entry name    | Parameter type     | Comment                                                                                                   |
++================+====================+===========================================================================================================+
+| length         | float              | The code unit length: 1 code unit = `length` cm. 1 by default.                                            |
++----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
+| velocity       | float              | The code unit velocity: 1 code unit = `velocity` cm/s. 1 by default.                                      |
++----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
+| density        | float              | The code unit density: 1 code unit = `density` g/cm^3. 1 by default.                                      |
++----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
+
+.. note::
+    The units module automatically reconstruct all of the units (time, temperature, magnetic field, etc.) from the above 3 fundamental constants. These can
+    all be obtained from the global object ``idfx::units``. Note however that the code outputs remain in code units, even if `[Units]` are defined.
 
 ``RKL`` section
 ------------------

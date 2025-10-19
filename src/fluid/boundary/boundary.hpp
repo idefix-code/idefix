@@ -112,6 +112,8 @@ class Boundary {
   IdefixArray4D<real> Vs; ///< reference to face-centered array that we should sync
   std::unique_ptr<Axis> axis; ///< Axis object, initialised if needed.
   bool haveAxis{false};
+  bool haveLeftAxis{false};  ///< True if the left boundary is an axis
+  bool haveRightAxis{false}; ///< True if the right boundary is an axis
 
  private:
   friend class Axis;
@@ -137,6 +139,8 @@ Boundary<Phys>::Boundary(Fluid<Phys>* fluid) {
   if(data->haveAxis) {
     this->axis = std::make_unique<Axis>(this);
     this->haveAxis = true;
+    this->haveLeftAxis = axis->haveLeftAxis();
+    this->haveRightAxis = axis->haveRightAxis();
   }
 
 
@@ -464,30 +468,34 @@ void Boundary<Phys>::ReconstructNormalField(int dir) {
   if(dir==JDIR) {
     nstart = data->beg[JDIR]-1;
     nend = data->end[JDIR];
-    if(!this->haveAxis) {
-      idefix_for("ReconstructBX2s",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
-        KOKKOS_LAMBDA (int k, int i) {
-          if(reconstructLeft) {
-            for(int j = nstart ; j>=0 ; j-- ) {
-              Vs(BX2s,k,j,i) = 1.0 / Ax2(k,j,i) * ( Ax2(k,j+1,i)*Vs(BX2s,k,j+1,i)
-                      +(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
-                                                                                                ,
-                            + Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) )));
-            }
-          }
-          if(reconstructRight) {
-            for(int j = nend ; j<nx2 ; j++ ) {
-              Vs(BX2s,k,j+1,i) = 1.0 / Ax2(k,j+1,i) * ( Ax2(k,j,i)*Vs(BX2s,k,j,i)
-                       -(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
-                                                                                                ,
-                            + Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) )));
-            }
+    #if DIMENSIONS == 3
+      const int signLeft = haveLeftAxis ? -1 : 1; // left axis is in the negative direction
+      const int signRight = haveRightAxis ? -1 : 1; // right axis is in the negative direction
+    #endif
+
+    idefix_for("ReconstructBX2s",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
+      KOKKOS_LAMBDA (int k, int i) {
+        if(reconstructLeft) {
+          for(int j = nstart ; j>=0 ; j-- ) {
+            Vs(BX2s,k,j,i) = 1.0 / Ax2(k,j,i) * ( Ax2(k,j+1,i)*Vs(BX2s,k,j+1,i)
+                    +(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
+                                                                                              ,
+                    + signLeft*(Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))));
           }
         }
-      );
-    } else {
+        if(reconstructRight) {
+          for(int j = nend ; j<nx2 ; j++ ) {
+            Vs(BX2s,k,j+1,i) = 1.0 / Ax2(k,j+1,i) * ( Ax2(k,j,i)*Vs(BX2s,k,j,i)
+                      -(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
+                                                                                              ,
+                    + signRight*(Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i) - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))));
+          }
+        }
+      }
+    );
+    if(haveAxis) {
       // We have an axis, ask myAxis to do that job for us
-      axis->ReconstructBx2s();
+      axis->RegularizeBX2s();
     }
   }
 #endif
@@ -686,7 +694,7 @@ void Boundary<Phys>::EnforceReflective(int dir, BoundarySide side ) {
           const int jref = (dir==JDIR) ? 2*(jghost + side*nxj) - j - 1 : j;
           const int kref = (dir==KDIR) ? 2*(kghost + side*nxk) - k - 1 : k;
 
-          const int sign = (n == VX1+dir) ? -1.0 : 1.0;
+          const int sign = (n == VX1+dir || (n >= BX1 && n != BX1+dir)) ? -1.0 : 1.0;
 
           Vc(n,k,j,i) = sign * Vc(n,kref,jref,iref);
         });

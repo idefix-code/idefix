@@ -11,6 +11,7 @@
 #include "idefix.hpp"
 #include "global.hpp"
 #include "profiler.hpp"
+#include "units.hpp"
 
 #ifdef WITH_MPI
 #include "mpi.hpp"
@@ -29,6 +30,7 @@ IdefixOutStream cout;
 IdefixErrStream cerr;
 Profiler prof;
 LoopPattern defaultLoopPattern;
+Units units;
 
 #ifdef DEBUG
 static int regionIndent = 0;
@@ -64,6 +66,7 @@ int initialize() {
 void pushRegion(const std::string& kName) {
   Kokkos::Profiling::pushRegion(kName);
   if(prof.perfEnabled) {
+    Kokkos::fence();
     prof.currentRegion = prof.currentRegion->GetChild(kName);
     prof.currentRegion->Start();
   }

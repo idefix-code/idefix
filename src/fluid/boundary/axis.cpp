@@ -358,65 +358,28 @@ void Axis::EnforceAxisBoundary(int side) {
 
 // Reconstruct Bx2s taking care of the sides where an axis is lying
 
-void Axis::ReconstructBx2s() {
-  idfx::pushRegion("Axis::ReconstructBx2s");
+void Axis::RegularizeBX2s() {
+  idfx::pushRegion("Axis::RegularizeBX2s");
 #if DIMENSIONS >= 2 && MHD == YES
   IdefixArray4D<real> Vs = this->Vs;
-  IdefixArray3D<real> Ax1=data->A[IDIR];
-  IdefixArray3D<real> Ax2=data->A[JDIR];
-  IdefixArray3D<real> Ax3=data->A[KDIR];
-  int nstart = data->beg[JDIR]-1;
-  int nend = data->end[JDIR];
-  int ntot = data->np_tot[JDIR];
-
-  bool haveleft = axisLeft;
-  bool haveright = axisRight;
-
-  if(haveleft) {
-    // This loop is a copy of ReconstructNormalField, with the proper sign when we cross the axis
-    idefix_for("Axis::ReconstructBX2sLeft",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
-      KOKKOS_LAMBDA (int k, int i) {
-        for(int j = nstart ; j>=0 ; j-- ) {
-          Vs(BX2s,k,j,i) = 1.0 / Ax2(k,j,i) * ( Ax2(k,j+1,i)*Vs(BX2s,k,j+1,i)
-                      +(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
-                                                                                                ,
-                            - ( Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i)
-                                                            - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))));
-        }
-      }
-    );
-  }
-  if(haveright) {
-    // This loop is a copy of ReconstructNormalField, with the proper sign when we cross the axis
-    idefix_for("Axis::ReconstructBX2sRight",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
-      KOKKOS_LAMBDA (int k, int i) {
-        for(int j = nend ; j<ntot ; j++ ) {
-          Vs(BX2s,k,j+1,i) = 1.0 / Ax2(k,j+1,i) * ( Ax2(k,j,i)*Vs(BX2s,k,j,i)
-                      -(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
-                                                                                                ,
-                            -  ( Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i)
-                                                            - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))));
-        }
-      }
-    );
-  }
 
     // Set BX2s on the axis to the average of the two agacent cells
     // This is required since Bx2s on the axis is not evolved since
     // there is no circulation around it
 
-
     int jright = data->end[JDIR];
     int jleft = data->beg[JDIR];
     if(isTwoPi) {
       #ifdef AXIS_BX2S_USE_ATHENA_REGULARISATION
-        if(haveleft) FixBx2sAxisGhostAverage(left);
-        if(haveright) FixBx2sAxisGhostAverage(right);
+        if(axisLeft) FixBx2sAxisGhostAverage(left);
+        if(axisRight) FixBx2sAxisGhostAverage(right);
       #else
-        if(haveleft) FixBx2sAxis(left);
-        if(haveright) FixBx2sAxis(right);
+        if(axisLeft) FixBx2sAxis(left);
+        if(axisRight) FixBx2sAxis(right);
       #endif
     } else {
+      bool haveleft = axisLeft;
+      bool haveright = axisRight;
       idefix_for("Axis:BoundaryAvg",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
             KOKKOS_LAMBDA (int k, int i) {
               if(haveleft) {

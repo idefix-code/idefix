@@ -60,7 +60,7 @@ void Fluid<Phys>::ShowConfig() {
                  << ": Ohmic resistivity ENABLED with user-defined resistivity function."
                  << std::endl;
       if(!ohmicDiffusivityFunc) {
-        IDEFIX_ERROR("No user-defined Ihmic resistivity function has been enrolled.");
+        IDEFIX_ERROR("No user-defined Ohmic resistivity function has been enrolled.");
       }
     } else {
       IDEFIX_ERROR("Unknown Ohmic resistivity mode");
@@ -163,6 +163,10 @@ void Fluid<Phys>::ShowConfig() {
   }
   if(haveDrag) {
     drag->ShowConfig();
+  }
+
+  if(coolingOn) {
+    radCooling->ShowConfig();
   }
 }
 #endif //FLUID_SHOWCONFIG_HPP_

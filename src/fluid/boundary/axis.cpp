@@ -52,7 +52,7 @@ void Axis::SymmetrizeEx1Side(int jref) {
   KOKKOS_LAMBDA(int k,int i) {
     Ex1(k,jref,i) = Ex1Avg(i)/((real) ncells);
   });
-  
+
 #endif
 }
 

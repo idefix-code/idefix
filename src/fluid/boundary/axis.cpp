@@ -28,39 +28,31 @@ void Axis::SymmetrizeEx1Side(int jref) {
   IdefixArray3D<real> Ex1 = this->ex;
   IdefixArray1D<real> Ex1Avg = this->Ex1Avg;
 
-  if(isTwoPi) {
-    idefix_for("Ex1_ini",0,data->np_tot[IDIR],
-        KOKKOS_LAMBDA(int i) {
-          Ex1Avg(i) = ZERO_F;
-        });
-
-    idefix_for("Ex1_Symmetrize",data->beg[KDIR],data->end[KDIR],0,data->np_tot[IDIR],
-      KOKKOS_LAMBDA(int k,int i) {
-        Kokkos::atomic_add(&Ex1Avg(i),  Ex1(k,jref,i));
+  idefix_for("Ex1_ini",0,data->np_tot[IDIR],
+      KOKKOS_LAMBDA(int i) {
+        Ex1Avg(i) = ZERO_F;
       });
-    if(needMPIExchange) {
-      #ifdef WITH_MPI
-        Kokkos::fence();
-        // sum along all of the processes on the same r
-        MPI_Allreduce(MPI_IN_PLACE, Ex1Avg.data(), data->np_tot[IDIR], realMPI,
-                      MPI_SUM, data->mygrid->AxisComm);
-      #endif
-    }
 
-    int ncells=data->mygrid->np_int[KDIR];
-
-    idefix_for("Ex1_Store",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
+  idefix_for("Ex1_Symmetrize",data->beg[KDIR],data->end[KDIR],0,data->np_tot[IDIR],
     KOKKOS_LAMBDA(int k,int i) {
-      Ex1(k,jref,i) = Ex1Avg(i)/((real) ncells);
+      Kokkos::atomic_add(&Ex1Avg(i),  Ex1(k,jref,i));
     });
-  } else {
-    // if we're not doing full two pi, the flow is symmetric with respect to the axis, and the axis
-    // EMF is simply zero
-    idefix_for("Ex1_Store",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
-    KOKKOS_LAMBDA(int k,int i) {
-      Ex1(k,jref,i) = ZERO_F;
-    });
+  if(needMPIExchange) {
+    #ifdef WITH_MPI
+      Kokkos::fence();
+      // sum along all of the processes on the same r
+      MPI_Allreduce(MPI_IN_PLACE, Ex1Avg.data(), data->np_tot[IDIR], realMPI,
+                    MPI_SUM, data->mygrid->AxisComm);
+    #endif
   }
+
+  int ncells=data->mygrid->np_int[KDIR];
+
+  idefix_for("Ex1_Store",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
+  KOKKOS_LAMBDA(int k,int i) {
+    Ex1(k,jref,i) = Ex1Avg(i)/((real) ncells);
+  });
+  
 #endif
 }
 
@@ -100,9 +92,9 @@ void Axis::RegularizeCurrentSide(int side) {
       sign = -1;
     }
     IdefixArray1D<real> BAvg = this->Ex1Avg;
-    IdefixArray1D<real> x2 = data->x[JDIR];
     IdefixArray1D<real> x1 = data->x[IDIR];
     IdefixArray1D<real> dx3 = data->dx[KDIR];
+    IdefixArray1D<real> dx2 = data->dx[JDIR];
 
     idefix_for("B_ini",0,data->np_tot[IDIR],
           KOKKOS_LAMBDA(int i) {
@@ -132,8 +124,7 @@ void Axis::RegularizeCurrentSide(int side) {
 
     idefix_for("fixJ",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
         KOKKOS_LAMBDA(int k,int i) {
-          real th = x2(jc);
-          real fact = 2*sign/(deltaPhi*x1(i)*sin(th));
+          real fact = 2*sign/(deltaPhi*x1(i)*dx2(jc));
           J(IDIR, k,js,i) = BAvg(i)*fact;
         });
 

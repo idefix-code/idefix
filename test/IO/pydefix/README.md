@@ -47,5 +47,5 @@ If while running the code using a python interpreter in an environment, you run 
 installed in your environement is not present. This is because pybind11 does not always capture your venv. You need to force the following environement variables (replace XX by your python version)
 
 ```bash
-export PYTHONPATH=$VIRTUAL_ENV/lib/python3.XX/site-packages
+export PYTHONPATH=$VIRTUAL_ENV/lib/python3.XX/site-packages:$PYTHONPATH
 ```

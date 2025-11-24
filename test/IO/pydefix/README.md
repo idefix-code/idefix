@@ -43,7 +43,7 @@ export pybind11_DIR=env/lib/python3.10/site-packages/pybind11
 
 you can then run cmake which should be able to find pybind11, and compile the code.
 
-If while running the code using a python interpreter in an envionement, you might run into errors stating that some module
+If while running the code using a python interpreter in an environment, you run into errors stating that some module
 installed in your environement is not present. This is because pybind11 does not always capture your venv. You need to force the following environement variables (replace XX by your python version)
 
 ```bash

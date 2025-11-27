@@ -12,9 +12,7 @@
 #include "input.hpp"
 #include "OrnsteinUhlenbeckProcess.hpp"
 
-enum ForcingType {iso3D, iso2D, ani3D, vsh, userDef};
-enum NormalBoundType {bothFree, rightHomDir, bothHomDir, bothHomNeu};
-enum NormalBasis {chebyshev, legendre, fourier};
+enum ForcingType {iso3D, iso2D};
 
 class DataBlock;
 
@@ -30,7 +28,7 @@ class Forcing {
   void InitForcingModes();          ///< init forcing modes given its type
 
   void ComputeForcing(real);        ///< compute the required forcing field at current time t
-  
+
   void ComputePristineForcing(real);///< compute the pristine forcing field at current time t
 
   void ComputeSolenoidalForcing(real); ///< compute the solenoidal part of the forcing field at current time t
@@ -38,8 +36,6 @@ class Forcing {
 //  void ComputeCompressiveForcing(real); ///< compute the compressive part of the forcing field at current time t
 
   void ResetForcingTerms();          ///< fill the forcing field with zeros.
-
-  void ComputeAverageSoundSpeed(); ///< compute the initial average sound speed within the solution domain
 
   void ShowConfig();                ///< Show the forcing configuration
 

@@ -363,7 +363,7 @@ struct Fluid_CalcRHSFunctor {
         #if (GEOMETRY == SPHERICAL) && (COMPONENTS == 3)
           rhs[iMPHI] /= FABS(sinx2(j));
           if constexpr(Phys::mhd) {
-            rhs[iBPHI] = -dt / (rt(i)*dx(j)) * (Flux(iBPHI, k, j+1, i) - Flux(iBPHI, k, j, i));
+            rhs[iBPHI] = -dt / (x1(i)*dx(j)) * (Flux(iBPHI, k, j+1, i) - Flux(iBPHI, k, j, i));
           } // MHD
         #endif // GEOMETRY
       }

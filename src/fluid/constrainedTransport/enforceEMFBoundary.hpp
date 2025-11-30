@@ -31,14 +31,14 @@ void ConstrainedTransport<Phys>::EnforceEMFBoundary() {
     this->data->hydro->emfBoundaryFunc(*data, data->t);
 
   if(this->data->hydro->haveAxis) {
-    this->data->hydro->boundary->axis->RegularizeEMFs();
+    this->data->hydro->boundary->axis->RegularizeEMFs(this->ex, this->ey, this->ez);
   }
 
   #ifdef ENFORCE_EMF_CONSISTENCY
     #ifdef WITH_MPI
       // This average the EMFs at the domain surface with immediate neighbours
       // to ensure the EMFs exactly match
-      this->ExchangeAll();
+      this->ExchangeAll(this->ex, this->ey, this->ez);
     #endif
   #endif
 

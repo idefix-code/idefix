@@ -5,6 +5,7 @@ target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/constrainedTransport.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/EMFexchange.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/enforceEMFBoundary.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/EnforceVectorPotentialBoundary.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/evolveMagField.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/evolveVectorPotential.hpp
   )

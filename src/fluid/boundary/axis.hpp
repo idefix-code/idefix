@@ -26,15 +26,16 @@ class Axis {
  public:
   template <typename Phys>
   explicit Axis(Boundary<Phys> *);  // Initialisation
-  void RegularizeEMFs();                 // Regularize the EMF sitting on the axis
+  void RegularizeEMFs(IdefixArray3D<real>, IdefixArray3D<real>, IdefixArray3D<real>);
+                      // Regularize the EMF sitting on the axis
   void RegularizeCurrent();             // Regularize the currents along the axis
   void EnforceAxisBoundary(int side);   // Enforce the boundary conditions (along X2)
   void RegularizeBX2s();               // Regularize BX2s on the axis
   void ShowConfig();
 
-
-  void SymmetrizeEx1Side(int);         // Symmetrize on a specific side (internal method)
-  void RegularizeEx3side(int);         // Regularize Ex3 along the axis (internal method)
+  // Internal methods
+  void SymmetrizeEx1Side(int, IdefixArray3D<real>); // Symmetrize on a specific side
+  void RegularizeEx3side(int, IdefixArray3D<real>); // Regularize Ex3 along the axis
   void RegularizeCurrentSide(int);      // Regularize J along the axis (internal method)
   void FixBx2sAxis(int side);           // Fix BX2s on the axis using the field around it (internal)
   void FixBx2sAxisGhostAverage(int side); //Fix BX2s on the axis using the average of neighbouring
@@ -76,9 +77,6 @@ class Axis {
   IdefixArray1D<int> symmetryVc;
   IdefixArray1D<int> symmetryVs;
 
-  IdefixArray3D<real> ex;
-  IdefixArray3D<real> ey;
-  IdefixArray3D<real> ez;
   IdefixArray4D<real> J;
 
   IdefixArray4D<real> Vc;
@@ -94,11 +92,6 @@ Axis::Axis(Boundary<Phys> *boundary) {
   Vc = boundary->Vc;
   Vs = boundary->Vs;
   J = boundary->fluid->J;
-  if constexpr(Phys::mhd) {
-    ex = boundary->fluid->emf->ex;
-    ey = boundary->fluid->emf->ey;
-    ez = boundary->fluid->emf->ez;
-  }
 
   data = boundary->data;
   haveMHD = Phys::mhd;

@@ -29,7 +29,7 @@ class Exchanger {
               std::array<int, 3> nghost,
               std::array<int, 3> nint,
               bool inputHaveVs = false,
-              bool overwriteBXn = true);
+              std::array<bool,2> overwriteBXn = {true, true});
 
   void Exchange(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs);
   ~Exchanger();
@@ -67,7 +67,6 @@ class Exchanger {
   int end[3];             //< end index of the active zone
 
   bool haveVs{false};
-  bool overwriteBXn{true};
 
   // Requests for MPI persistent communications
   MPI_Request sendRequest[2];

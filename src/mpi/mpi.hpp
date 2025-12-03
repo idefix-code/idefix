@@ -52,6 +52,7 @@ class Mpi {
   ~Mpi();
 
  private:
+  enum {faceRight, faceLeft};
   // Because the MPI class initialise internal pointers, we do not allow copies of this class
   // These lines should not be removed as they constitute a safeguard
   Mpi(const Mpi&);

@@ -53,10 +53,18 @@ void Mpi::Init(Grid *grid, std::vector<int> inputMap,
   thisInstance=nInstances;
 
   for(int dir=0; dir<3; dir++) {
+    std::array<bool,2> overWriteBXn = {true, true};
+    if(grid->lbound[dir] == BoundaryType::shearingbox) {
+      overWriteBXn[faceLeft] = false;
+    }
+    if(grid->rbound[dir] == BoundaryType::shearingbox) {
+      overWriteBXn[faceRight] = false;
+    }
+
     exchanger[dir].Init(grid, dir, inputMap,
                           {nghost[0], nghost[1], nghost[2]},
                           {nint[0], nint[1], nint[2]},
-                          inputHaveVs);
+                          inputHaveVs, overWriteBXn);
   }
 
   isInitialized = true;

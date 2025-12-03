@@ -19,7 +19,7 @@ void Exchanger::Init(
               std::array<int, 3> nghost,
               std::array<int, 3> nint,
               bool inputHaveVs,
-              bool overwriteBXn) {
+              std::array<bool,2> overwriteBXn) {
   this->grid = grid;
   this->direction = direction;
   // Allocate mapVars on target and copy it from the input argument list
@@ -84,10 +84,10 @@ void Exchanger::Init(
       }
     } else {
       // component == direction
-      if(!overwriteBXn) boxSendVs[component][faceLeft][normalDir][0] += 1;
+      if(!overwriteBXn[faceLeft]) boxSendVs[component][faceLeft][normalDir][0] += 1;
       boxSendVs[component][faceLeft][normalDir][1] += 1;
 
-      if(!overwriteBXn) boxRecvVs[component][faceRight][normalDir][0] += 1;
+      if(!overwriteBXn[faceRight]) boxRecvVs[component][faceRight][normalDir][0] += 1;
       boxRecvVs[component][faceRight][normalDir][1] += 1;
     }
   }
@@ -183,12 +183,10 @@ void Exchanger::Exchange(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
 #endif
   myTimer += MPI_Wtime();
 
-
   BufferLeft.ResetPointer();
   BufferRight.ResetPointer();
 
   BufferLeft.Pack(Vc, map, boxSend[faceLeft]);
-
   BufferRight.Pack(Vc, map, boxSend[faceRight]);
   // Load face-centered field in the buffer
   if(haveVs) {
@@ -275,7 +273,6 @@ if(recvLeft) {
 }
 if(recvRight) {
   BufferRight.Unpack(Vc, map, boxRecv[faceRight]);
-  // We fill the ghost zones
   if(haveVs) {
     for(int component = 0 ; component < DIMENSIONS ; component++) {
       BufferRight.Unpack(Vs, component, boxRecvVs[component][faceRight]);

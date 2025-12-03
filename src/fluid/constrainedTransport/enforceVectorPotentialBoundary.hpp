@@ -28,6 +28,7 @@ void ConstrainedTransport<Phys>::EnforceVectorPotentialBoundary(IdefixArray4D<re
 
       this->ExchangeAll(Ax1, Ax2, Ax3);
     #endif
+    EnforceEMFBoundaryPeriodic(Ax1, Ax2, Ax3);
   #endif
 
   idfx::popRegion();

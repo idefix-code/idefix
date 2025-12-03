@@ -102,6 +102,9 @@ class ConstrainedTransport {
   void EvolveVectorPotential(real, IdefixArray4D<real> &);
   void ComputeMagFieldFromA(IdefixArray4D<real> &Vein, IdefixArray4D<real> &Vsout);
   void EnforceVectorPotentialBoundary(IdefixArray4D<real> &Vein); // Enforce BCs on A
+  void EnforceEMFBoundaryPeriodic(IdefixArray3D<real> ex,
+                                  IdefixArray3D<real> ey,
+                                  IdefixArray3D<real> ez);
 
 #ifdef WITH_MPI
   // Exchange surface EMFs to remove interprocess round off errors

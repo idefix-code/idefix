@@ -128,9 +128,8 @@ class Boundary {
   bool haveRightAxis{false}; ///< True if the right boundary is an axis
 
   std::array<std::array<BoundingBox,2>,3> GhostBoxVc; ///< A bounding box for each ghost regions
-  std::array<std::array<BoundingBox,2>,3> GhostBoxX1s; ///< A bounding box for each ghost regions
-  std::array<std::array<BoundingBox,2>,3> GhostBoxX2s; ///< A bounding box for each ghost regions
-  std::array<std::array<BoundingBox,2>,3> GhostBoxX3s; ///< A bounding box for each ghost regions
+  std::array<std::array<std::array<BoundingBox,2>,3>,3>
+                                          GhostBoxVs; ///< A bounding box each Vs component
 
  private:
   friend class Axis;
@@ -171,14 +170,7 @@ Boundary<Phys>::Boundary(Fluid<Phys>* fluid) {
                                   data->nghost[IDIR]);
   }
 
-  // Initialise the Bounding Box
-  const int nxi = data->np_int[IDIR];
-  const int nxj = data->np_int[JDIR];
-  const int nxk = data->np_int[KDIR];
-
-  const int ighost = data->nghost[IDIR];
-  const int jghost = data->nghost[JDIR];
-  const int kghost = data->nghost[KDIR];
+  // Initialise the Bounding Boxes for cell-centered variables
   for(int dir = 0 ; dir < 3 ; dir++) {
     // dir=direction along which we plan to apply the boundary conditions
     for(int side = 0; side < 2 ; side++) {
@@ -195,36 +187,27 @@ Boundary<Phys>::Boundary(Fluid<Phys>* fluid) {
       }
     }
   }
-  // Initialise the boxes for face-centered variables with the same bounding box
-  GhostBoxX1s = GhostBoxVc;
-  GhostBoxX2s = GhostBoxVc;
-  GhostBoxX3s = GhostBoxVc;
 
-  // Add one element in the normal direction
-  for(int dir = 0 ; dir < 3 ; dir++) {
-    for(int side = 0 ; side < 2 ; side++) {
-      GhostBoxX1s[dir][side][IDIR][1] += 1;
-      GhostBoxX2s[dir][side][JDIR][1] += 1;
-      GhostBoxX3s[dir][side][KDIR][1] += 1;
-      if(dir==IDIR) {
-        if(data->mygrid->nproc[dir] > 1
-           || data->rbound[dir] != BoundaryType::periodic) {
-            // Do not overwrite right-side BXs normal if not periodic
-            GhostBoxX1s[dir][side][IDIR][0] += 1;
-        }
-      }
-      if(dir==JDIR) {
-        if(data->mygrid->nproc[dir] > 1
-           || data->rbound[dir] != BoundaryType::periodic) {
-            // Do not overwrite right-side BXs normal if not periodic
-            GhostBoxX2s[dir][side][JDIR][0] += 1;
-        }
-      }
-      if(dir==KDIR) {
-        if(data->mygrid->nproc[dir] > 1
-           || data->rbound[dir] != BoundaryType::periodic) {
-            // Do not overwrite right-side BXs normal if not periodic
-            GhostBoxX3s[dir][side][KDIR][0] += 1;
+  // Initialise the Bounding Boxes for face-centered variables (NB: we need onefor each component)
+  for(int component = 0 ; component < DIMENSIONS ; component++) {
+    // Initialise the boxes for face-centered variables with the same bounding box
+    GhostBoxVs[component] = GhostBoxVc;
+    for(int dir = 0 ; dir < 3 ; dir++) {
+      for(int side = 0 ; side < 2 ; side++) {
+          // Add one element in the normal direction since we're staggered
+        GhostBoxVs[component][dir][side][component][1] += 1;
+        // Do not overwrite last active BXs normal if not serial+periodic
+        if(dir == component) {
+          if(side==left) {
+            if(data->mygrid->nproc[dir] > 1 || data->lbound[dir] != BoundaryType::periodic) {
+              GhostBoxVs[component][dir][side][component][1] -= 1;
+            }
+          }
+          if(side==right) {
+            if(data->mygrid->nproc[dir] > 1 || data->rbound[dir] != BoundaryType::periodic) {
+              GhostBoxVs[component][dir][side][component][0] += 1;
+            }
+          }
         }
       }
     }
@@ -1096,7 +1079,7 @@ inline void Boundary<Phys>::BoundaryForX1s(
   const int &dir,
   const BoundarySide &side,
   Function function) {
-    BoundaryFor(name,GhostBoxX1s[dir][side],function);
+    BoundaryFor(name,GhostBoxVs[BX1s][dir][side],function);
 }
 
 template<typename Phys>
@@ -1106,7 +1089,7 @@ inline void Boundary<Phys>::BoundaryForX2s(
   const int &dir,
   const BoundarySide &side,
   Function function) {
-    BoundaryFor(name,GhostBoxX2s[dir][side],function);
+    BoundaryFor(name,GhostBoxVs[BX2s][dir][side],function);
 }
 
 template<typename Phys>
@@ -1116,7 +1099,7 @@ inline void Boundary<Phys>::BoundaryForX3s(
   const int &dir,
   const BoundarySide &side,
   Function function) {
-    BoundaryFor(name,GhostBoxX3s[dir][side],function);
+    BoundaryFor(name,GhostBoxVs[BX3s][dir][side],function);
 }
 
 

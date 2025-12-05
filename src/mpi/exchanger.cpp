@@ -163,7 +163,6 @@ Exchanger::~Exchanger() {
 void Exchanger::Exchange(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   idfx::pushRegion("Mpi::ExchangeX1");
   // Load  the buffers with data
-  int ibeg,iend,jbeg,jend,kbeg,kend,offset,nx;
   Buffer BufferLeft = BufferSend[faceLeft];
   Buffer BufferRight = BufferSend[faceRight];
   IdefixArray1D<int> map = this->mapVars;

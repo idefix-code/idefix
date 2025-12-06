@@ -52,7 +52,7 @@ void Exchanger::Init(
     } else {
       // dir == direction
       boxRecv[faceLeft][dir][0] = 0;
-      boxRecv[faceLeft][dir][1] = nghost[IDIR];
+      boxRecv[faceLeft][dir][1] = nghost[dir];
     }
   }
   // Copy all the boxes from boxRecvLeft

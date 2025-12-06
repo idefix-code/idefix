@@ -12,6 +12,8 @@
 #include "grid.hpp"
 #include "arrays.hpp"
 
+int Exchanger::nInstances = 0;
+
 void Exchanger::Init(
               Grid *grid,
               int direction,
@@ -26,6 +28,9 @@ void Exchanger::Init(
   this->mapVars = idfx::ConvertVectorToIdefixArray(inputMap);
   this->mapNVars = inputMap.size();
   this->haveVs = inputHaveVs;
+
+  // increase the number of instances
+  this->thisInstance = nInstances;
 
   // Compute indices of arrays we will be working with
   for(int dir = 0 ; dir < 3 ; dir++) {
@@ -119,28 +124,29 @@ void Exchanger::Init(
   // We receive from procRecv, and we send to procSend
 
   MPI_Send_init(BufferSend[faceRight].data(), bufferSize[faceRight], realMPI,
-            procSend[faceRight], thisInstance*100+10*direction,
+            procSend[faceRight], thisInstance*2,
             grid->CartComm, &sendRequest[faceRight]);
 
   MPI_Recv_init(BufferRecv[faceLeft].data(), bufferSize[faceRight], realMPI,
-            procRecv[faceLeft],thisInstance*100+10*direction,
+            procRecv[faceLeft],thisInstance*2,
             grid->CartComm, &recvRequest[faceLeft]);
 
   // Send to the left
   // We receive from procRecv, and we send to procSend
 
   MPI_Send_init(BufferSend[faceLeft].data(), bufferSize[faceLeft], realMPI,
-            procSend[faceLeft],thisInstance*100+10*direction+1,
+            procSend[faceLeft],thisInstance*2+1,
             grid->CartComm, &sendRequest[faceLeft]);
 
   MPI_Recv_init(BufferRecvX1[faceRight].data(), bufferSizeX1[faceLeft], realMPI,
-            procRecv[faceRight], thisInstance*100+10*direction+1,
+            procRecv[faceRight], thisInstance*2+1,
             grid->CartComm, &recvRequest[faceRight]);
 
   #endif // MPI_PERSISTENT
 
   // say this instance is initialized.
   isInitialized = true;
+  nInstances++;
 
   idfx::popRegion();
 }

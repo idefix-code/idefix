@@ -244,7 +244,8 @@ Boundary<Phys>::Boundary(Fluid<Phys>* fluid) {
     }
   }
 
-  mpi.Init(data->mygrid, mapVars, data->nghost, data->np_int, data->lbound, data->rbound, Phys::mhd);
+  mpi.Init(data->mygrid, mapVars, data->nghost, data->np_int,
+           data->lbound, data->rbound, Phys::mhd);
 
 #endif // MPI
   idfx::popRegion();

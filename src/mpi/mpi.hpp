@@ -39,7 +39,7 @@ class Mpi {
 
   // Init from datablock
   void Init(Grid *grid, std::vector<int> inputMap,
-            std::array<int,3> nghost, std::array<int,3> nint, 
+            std::array<int,3> nghost, std::array<int,3> nint,
             std::array<BoundaryType,3> lbound,
             std::array<BoundaryType,3> rbound,
             bool inputHaveVs = false );

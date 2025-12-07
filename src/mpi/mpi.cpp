@@ -22,8 +22,7 @@
 #endif
 
 
-//#define MPI_NON_BLOCKING
-#define MPI_PERSISTENT
+
 
 // init the number of instances
 int Mpi::nInstances = 0;
@@ -44,7 +43,9 @@ void Mpi::ExchangeAll() {
 ///
 
 void Mpi::Init(Grid *grid, std::vector<int> inputMap,
-               int nghost[3], int nint[3],
+               std::array<int,3> nghost, std::array<int,3> nint,
+               std::array<BoundaryType,3> lbound,
+               std::array<BoundaryType,3> rbound,
                bool inputHaveVs) {
   idfx::pushRegion("Mpi::Init");
 
@@ -54,16 +55,15 @@ void Mpi::Init(Grid *grid, std::vector<int> inputMap,
 
   for(int dir=0; dir<3; dir++) {
     std::array<bool,2> overWriteBXn = {true, true};
-    if(grid->lbound[dir] == BoundaryType::shearingbox) {
+    if(lbound[dir] == BoundaryType::shearingbox) {
       overWriteBXn[faceLeft] = false;
     }
-    if(grid->rbound[dir] == BoundaryType::shearingbox) {
+    if(rbound[dir] == BoundaryType::shearingbox) {
       overWriteBXn[faceRight] = false;
     }
 
     exchanger[dir].Init(grid, dir, inputMap,
-                          {nghost[0], nghost[1], nghost[2]},
-                          {nint[0], nint[1], nint[2]},
+                          nghost, nint,
                           inputHaveVs, overWriteBXn);
   }
 
@@ -86,13 +86,13 @@ Mpi::~Mpi() {
                 << bytesSentOrReceived/myTimer/1024.0/1024.0 << " MB/s" << std::endl;
       idfx::cout << "Mpi(" << thisInstance << "): message sizes were " << std::endl;
       idfx::cout << "        X1: "
-                 << exchanger[IDIR].bufferSize[0]*sizeof(real)/1024.0/1024.0
+                 << exchanger[IDIR].bufferSizeSend[0]*sizeof(real)/1024.0/1024.0
                  << " MB" << std::endl;
       idfx::cout << "        X2: "
-                 << exchanger[JDIR].bufferSize[0]*sizeof(real)/1024.0/1024.0
+                 << exchanger[JDIR].bufferSizeSend[0]*sizeof(real)/1024.0/1024.0
                  << " MB" << std::endl;
       idfx::cout << "        X3: "
-                 << exchanger[KDIR].bufferSize[0]*sizeof(real)/1024.0/1024.0
+                 << exchanger[KDIR].bufferSizeSend[0]*sizeof(real)/1024.0/1024.0
                  << " MB" << std::endl;
     }
     isInitialized = false;

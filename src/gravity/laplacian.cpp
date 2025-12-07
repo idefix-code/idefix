@@ -103,7 +103,7 @@ Laplacian::Laplacian(DataBlock *datain, std::array<LaplacianBoundaryType,3> left
     std::vector<int> mapVars;
     mapVars.push_back(ntarget);
 
-    this->mpi.Init(data->mygrid, mapVars, this->nghost.data(), this->np_int.data());
+    this->mpi.Init(data->mygrid, mapVars, nghost, this->np_int, datain->lbound, datain->rbound, false);
   #endif
 
   idfx::popRegion();

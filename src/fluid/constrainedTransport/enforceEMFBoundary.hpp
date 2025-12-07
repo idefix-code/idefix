@@ -141,11 +141,13 @@ void ConstrainedTransport<Phys>::SymmetrizeEMFShearingBox() {
         if(data->lbound[IDIR]==shearingbox) {
           // We send to our left (which, by periodicity, is the right end of the domain)
           // our value of sbEyL and get
+          Kokkos::fence();
           MPI_Sendrecv(sbEyL.data(), size, realMPI, procLeft, 2001,
                        sbEyR.data(), size, realMPI, procLeft, 2002,
                        data->mygrid->CartComm, &status );
         }
         if(data->rbound[IDIR]==shearingbox) {
+          Kokkos::fence();
           // We send to our right (which, by periodicity, is the left end (=beginning)
           // of the domain) our value of sbEyR and get sbEyL
           MPI_Sendrecv(sbEyR.data(), size, realMPI, procRight, 2002,

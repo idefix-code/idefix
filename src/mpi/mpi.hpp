@@ -39,7 +39,10 @@ class Mpi {
 
   // Init from datablock
   void Init(Grid *grid, std::vector<int> inputMap,
-            int nghost[3], int nint[3], bool inputHaveVs = false );
+            std::array<int,3> nghost, std::array<int,3> nint, 
+            std::array<BoundaryType,3> lbound,
+            std::array<BoundaryType,3> rbound,
+            bool inputHaveVs = false );
 
   // Check that MPI will work with the designated target (in particular GPU Direct)
   static void CheckConfig();

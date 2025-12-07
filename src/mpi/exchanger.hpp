@@ -43,7 +43,8 @@ class Exchanger {
   int64_t bytesSentOrReceived{0};
 
   // Buffer sizes for throughput calculations
-  int bufferSize[2];
+  std::array<int,2> bufferSizeSend;
+  std::array<int,2> bufferSizeRecv;
 
  private:
   enum {faceRight, faceLeft};

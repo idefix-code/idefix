@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Upcoming
+### Changed
+
+- fixed a bug that could lead to diverging results around the spherical axis in non-ideal MHD in 2.5D and 3D (#356)
+- refactor of the MPI exchange routines and boundary routines to avoid buildup of roundoff errors at domain faces/edges that could lead to the sudden burst of div(B) or incoherences between MPI sub-domains (#357)
+
+
+### Added
+
+
 ## [2.2.02] 2025-10-18
 ### Changed
 

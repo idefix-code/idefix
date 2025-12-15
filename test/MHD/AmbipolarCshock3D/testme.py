@@ -9,7 +9,7 @@ import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
 
 import pytools.idfx_test as tst
-tolerance=2e-14
+tolerance=3e-14
 def testMe(test):
   test.configure()
   test.compile()

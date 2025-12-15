@@ -22,10 +22,9 @@ void Axis::ShowConfig() {
 }
 
 
-void Axis::SymmetrizeEx1Side(int jref) {
+void Axis::SymmetrizeEx1Side(int jref, IdefixArray3D<real> Ex1) {
 #if DIMENSIONS == 3
 
-  IdefixArray3D<real> Ex1 = this->ex;
   IdefixArray1D<real> Ex1Avg = this->Ex1Avg;
 
   idefix_for("Ex1_ini",0,data->np_tot[IDIR],
@@ -63,9 +62,7 @@ void Axis::SymmetrizeEx1Side(int jref) {
 // Hence, we enforce a regularisation of Ex3 for consistancy.
 
 
-void Axis::RegularizeEx3side(int jref) {
-  IdefixArray3D<real> Ex3 = this->ez;
-
+void Axis::RegularizeEx3side(int jref, IdefixArray3D<real> Ex3) {
   idefix_for("Ex3_Regularise",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
     KOKKOS_LAMBDA(int k,int i) {
       Ex3(k,jref,i) = 0.0;
@@ -133,18 +130,20 @@ void Axis::RegularizeCurrentSide(int side) {
 
 // Average the Emf component along the axis
 
-void Axis::RegularizeEMFs() {
+void Axis::RegularizeEMFs(IdefixArray3D<real> ex,
+                          IdefixArray3D<real> ey,
+                          IdefixArray3D<real> ez) {
   idfx::pushRegion("Axis::RegularizeEMFs");
 
   if(this->axisLeft) {
     int jref = data->beg[JDIR];
-    SymmetrizeEx1Side(jref);
-    RegularizeEx3side(jref);
+    SymmetrizeEx1Side(jref, ex);
+    RegularizeEx3side(jref, ez);
   }
   if(this->axisRight) {
     int jref = data->end[JDIR];
-    SymmetrizeEx1Side(jref);
-    RegularizeEx3side(jref);
+    SymmetrizeEx1Side(jref, ex);
+    RegularizeEx3side(jref, ez);
   }
 
   idfx::popRegion();

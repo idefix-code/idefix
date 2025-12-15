@@ -99,10 +99,7 @@ if(Idefix_MPI)
   add_compile_definitions("WITH_MPI")
   find_package(MPI REQUIRED)
   target_link_libraries(idefix MPI::MPI_CXX)
-  target_sources(idefix
-    PUBLIC src/mpi.cpp
-    PUBLIC src/mpi.hpp
-  )
+  add_subdirectory(src/mpi)
 endif()
 
 if(Idefix_HDF5)
@@ -234,6 +231,7 @@ target_include_directories(idefix PUBLIC
                            src/gravity
                            src/utils
                            src/utils/iterativesolver
+                           src/mpi
                            src
                            )
 

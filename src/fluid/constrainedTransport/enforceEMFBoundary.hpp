@@ -49,7 +49,7 @@ void ConstrainedTransport<Phys>::EnforceEMFBoundary() {
     }
   }
   #ifdef ENFORCE_EMF_CONSISTENCY
-  EnforceEMFBoundaryPeriodic(ex,ey,ez);
+  EnforceEMFBoundaryPeriodic(this->ex, this->ey, this->ez);
   #endif //ENFORCE_EMF_CONSISTENCY
 #endif // MHD==YES
   idfx::popRegion();

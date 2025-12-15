@@ -188,7 +188,7 @@ Boundary<Phys>::Boundary(Fluid<Phys>* fluid) {
     }
   }
 
-  // Initialise the Bounding Boxes for face-centered variables (NB: we need onefor each component)
+  // Initialise the Bounding Boxes for face-centered variables (NB: we need one for each component)
   for(int component = 0 ; component < DIMENSIONS ; component++) {
     // Initialise the boxes for face-centered variables with the same bounding box
     GhostBoxVs[component] = GhostBoxVc;

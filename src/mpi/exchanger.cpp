@@ -25,6 +25,7 @@ void Exchanger::Init(
               std::array<int, 3> nint,
               bool inputHaveVs,
               std::array<bool,2> overwriteBXn) {
+  idfx::pushRegion("Exchanger::Init");
   this->grid = grid;
   this->direction = direction;
   // Allocate mapVars on target and copy it from the input argument list

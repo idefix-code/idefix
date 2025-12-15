@@ -35,7 +35,7 @@ class Axis {
 
   // Internal methods
   void SymmetrizeEx1Side(int, IdefixArray3D<real>); // Symmetrize on a specific side
-  void RegularizeEx3side(int, IdefixArray3D<real>); // Regularize Ex3 along the axis
+  void RegularizeEx3side(int side, IdefixArray3D<real> ex3); // Regularize Ex3 along the axis
   void RegularizeCurrentSide(int);      // Regularize J along the axis (internal method)
   void FixBx2sAxis(int side);           // Fix BX2s on the axis using the field around it (internal)
   void FixBx2sAxisGhostAverage(int side); //Fix BX2s on the axis using the average of neighbouring

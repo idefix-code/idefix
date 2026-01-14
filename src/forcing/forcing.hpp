@@ -78,13 +78,6 @@ class Forcing {
   ForcingType forcingType;
   int normal2Diso;
   std::string normal2DisoStr;
-  int normal3Dani;
-  std::string normal3DaniStr;
-  IdefixHostArray1D<NormalBoundType> normal3DaniBoundHost;
-  IdefixArray1D<NormalBoundType> normal3DaniBound;
-  std::string normal3DaniBoundStr;
-  NormalBasis normal3DaniBasis;
-  std::string normal3DaniBasisStr;
   int haveSolenoidalForcing;
 
   IdefixArray2D<real> k3Diso;

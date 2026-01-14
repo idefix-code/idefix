@@ -240,7 +240,7 @@ Forcing::Forcing(Input &input, DataBlock *datain) {
     #if GEOMETRY == POLAR or GEOMETRY == CYLINDRICAL
       IDEFIX_ERROR("Cannot have solenoidal forcing in polar in cylindrical geometry.");
     #endif //GEOMETRY == POLAR or GEOMETRY == CYLINDRICAL
-    else this->haveSolenoidalForcing = true;
+    this->haveSolenoidalForcing = true;
   }
 
   // Allocate required arrays
@@ -335,10 +335,6 @@ void Forcing::InitForcingParameters() {
 void Forcing::InitForcingModes() {
   idfx::pushRegion("Forcing::InitForcingModes");
 
-  int normal3Dani = this->normal3Dani;
-//  IDEFIX_ERROR("DSTOP");
-  IdefixArray1D<NormalBoundType> normal3DaniBound = this->normal3DaniBound;
-  int normal3DaniBasis = this->normal3DaniBasis;
   real kx0 = this->kx0;
   real ky0 = this->ky0;
   real kz0 = this->kz0;
@@ -360,17 +356,13 @@ void Forcing::InitForcingModes() {
   Kokkos::complex unit_j(0.,1.);
   int nForcingModes = this->nForcingModes;
   ForcingType forcingType = this->forcingType;
-  idefix_for("Forcing::InitForcingModes",
-              0, nForcingModes,
-              0, data->np_tot[KDIR],
-              0, data->np_tot[JDIR],
-              0, data->np_tot[IDIR],
-              KOKKOS_LAMBDA(int l, int k, int j, int i) {
-                EXPAND(
-                forcingModesIdir(l,k,j,i) = ZERO_F; ,
-                forcingModesJdir(l,k,j,i) = ZERO_F; ,
-                forcingModesKdir(l,k,j,i) = ZERO_F; )
-              });
+
+  // todo(GL): not sure this is needed
+  Kokkos::deep_copy(forcingModesIdir,0);
+  Kokkos::deep_copy(forcingModesJdir,0);
+  Kokkos::deep_copy(forcingModesKdir,0);
+
+
   switch(forcingType) {
     case ForcingType::iso3D:
       idefix_for("iso3D", 0, nForcingModes, 0, data->np_tot[KDIR], 0, data->np_tot[JDIR], 0, data->np_tot[IDIR],

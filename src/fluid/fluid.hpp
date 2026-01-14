@@ -18,6 +18,7 @@
 #include "eos.hpp"
 #include "thermalDiffusion.hpp"
 #include "bragThermalDiffusion.hpp"
+#include "forcing.hpp"
 #include "selfGravity.hpp"
 #include "vtk.hpp"
 #include "dump.hpp"
@@ -59,6 +60,7 @@ class Fluid {
   template <int> void CalcParabolicFlux(const real);
   template <int> void AddNonIdealMHDFlux(const real);
   template <int> void CalcRightHandSide(real, real );
+  template <int> void CalcForcingRHS(real, real );
   void CalcCurrent();
   void AddSourceTerms(real, real );
   void CoarsenFlow(IdefixArray4D<real>&);
@@ -66,6 +68,7 @@ class Fluid {
   real CheckDivB();
   void EvolveStage(const real, const real);
   void ResetStage();
+  void EvolveForcing(const real, const real);
   void ShowConfig();
   IdefixArray4D<real> GetFlux() {return this->FluxRiemann;}
   int CheckNan();
@@ -215,6 +218,9 @@ class Fluid {
   template <typename P, int dir>
   friend struct Fluid_CalcRHSFunctor;
 
+  template <typename P, int dir>
+  friend struct Fluid_CalcForcingFunctor;
+
   template<typename P>
   friend struct ShockFlattening_FindShockFunctor;
 
@@ -244,6 +250,10 @@ class Fluid {
   // Loop on dimensions
   template <int dir>
   void LoopDir(const real, const real);
+
+  // Loop on dimensions for forcing
+  template <int dir>
+  void LoopForcingDir(const real, const real);
 };
 
 #include "physics.hpp"

@@ -61,9 +61,18 @@ How can I stop the code without loosing the current calculation?
 I'm doing performance measures. How do I disable all outputs in *Idefix*?
   Add ``-nowrite`` when you call *Idefix* executable.
 
+VTK output appears corrupted when running with MPI (OpenMPI)
+    Some OpenMPI configurations (notably OpenMPI 4 with the ompio component) can produce corrupted VTK/VTU output when running with MPI enabled. This appears to be caused by bugs in OpenMPI's ompio I/O component.
+    Disable ompio so OpenMPI falls back to ROMIO (MPICH's MPI-IO), which is typically more stable:
 
-Developement
-------------
+    .. code-block:: console
+
+       mpirun --mca io ^ompio ...
+
+    This has resolved intermittent corruption for several users. See issue #348 for discussion and reports.
+
+Development
+-----------
 
 I have a serious bug (e.g. segmentation fault), in my setup, how do I proceed?
   Add ``-DIdefix_DEBUG=ON`` to ``cmake`` and recompile to find out exactly where the code crashes (see :ref:`debugging`).

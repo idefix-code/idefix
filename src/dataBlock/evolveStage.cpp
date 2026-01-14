@@ -45,6 +45,15 @@ void DataBlock::EvolveRKLStage() {
 
 void DataBlock::EvolveForcing(real t, real dt) {
   idfx::pushRegion("DataBlock::EvolveForcing");
+  forcing->ComputeForcing(dt);
+  forcing->oUprocesses.WriteTimestep(t, dt);
+  if (forcing->write) {
+    forcing->oUprocesses.WriteProcessesValues(t);
+    forcing->oUprocesses.WriteNormalValues(t);
+  }
+
+  if (forcing->stillHaveForcing and t > forcing->stopTime) forcing->stillHaveForcing = false;
+
 //  if(haveForcing) {
     hydro->EvolveForcing(t, dt);
 //  }

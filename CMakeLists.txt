@@ -226,6 +226,7 @@ target_include_directories(idefix PUBLIC
                            src/fluid/RiemannSolver/MHDsolvers
                            src/fluid/RiemannSolver/Dustsolvers
                            src/fluid/tracer
+                           src/forcing
                            src/output
                            src/rkl
                            src/gravity

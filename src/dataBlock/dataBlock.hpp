@@ -142,7 +142,7 @@ class DataBlock {
 
   void EvolveStage();             ///< Evolve this DataBlock by dt
   void EvolveRKLStage();          ///< Evolve this DataBlock by dt for terms impacted by RKL
-  void EvolveForcing(real, real);          ///< Evolve this DataBlock by dt for the forcing term
+  void EvolveForcing();          ///< Evolve this DataBlock by dt for the forcing term
   void SetBoundaries();       ///< Enforce boundary conditions to this datablock
   void ConsToPrim();       ///< Convert conservative to primitive variables
   void PrimToCons();       ///< Convert primitive to conservative variables

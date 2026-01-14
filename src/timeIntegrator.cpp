@@ -352,6 +352,10 @@ void TimeIntegrator::Cycle(DataBlock &data) {
       data.fargo->ShiftSolution(t0,data.dt);
     }
 
+    if(data.haveForcing && stage == nstages-1) {
+      data.EvolveForcing();
+    }
+
     // Coarsen conservative variables once they have been evolved
     if(data.haveGridCoarsening) {
       data.Coarsen();
@@ -373,15 +377,15 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     MPI_SAFE_CALL(MPI_Wait(&dtReduce, MPI_STATUS_IGNORE));
   }
 #endif
-
-  if(data.haveForcing) {
+/*
+if(data.haveForcing) {
     if(data.forcing->stillHaveForcing) {
-      data.EvolveForcing(data.t, data.dt);
+      data.EvolveForcing();
 
       // Back to using Vc
       data.ConsToPrim();
     }
-  }
+  }*/
   
   if(haveRKL && (ncycles%2)==0) {    // Runge-Kutta-Legendre cycle
     data.EvolveRKLStage();

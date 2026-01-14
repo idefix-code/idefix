@@ -12,6 +12,7 @@
 #include "dataBlock.hpp"
 #include "fluid.hpp"
 #include "gravity.hpp"
+#include "forcing.hpp"
 #include "planetarySystem.hpp"
 #include "vtk.hpp"
 #include "dump.hpp"
@@ -142,6 +143,12 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
   if(input.CheckBlock("Gravity") || haveplanetarySystem) {
     this->gravity = std::make_unique<Gravity>(input, this);
     this->haveGravity = true;
+  }
+
+  // Initialise forcing if needed
+  if(input.CheckBlock("Forcing")) {
+    this->forcing = std::make_unique<Forcing>(input, this);
+    this->haveForcing = true;
   }
 
   // Initialise dust grains if needed
@@ -318,6 +325,7 @@ void DataBlock::ShowConfig() {
                                    << std::endl;
   if(haveUserStepLast) idfx::cout << "DataBlock: User's last step has been enrolled."
                                   << std::endl;
+  if(haveForcing) forcing->ShowConfig();
   if(haveDust) {
     idfx::cout << "DataBlock: evolving " << dust.size() << " dust species." << std::endl;
     // Only show the config the first dust specie

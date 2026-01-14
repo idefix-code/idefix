@@ -41,3 +41,12 @@ void DataBlock::EvolveRKLStage() {
   }
   idfx::popRegion();
 }
+
+
+void DataBlock::EvolveForcing(real t, real dt) {
+  idfx::pushRegion("DataBlock::EvolveForcing");
+//  if(haveForcing) {
+    hydro->EvolveForcing(t, dt);
+//  }
+  idfx::popRegion();
+}

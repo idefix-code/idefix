@@ -81,6 +81,21 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
     data.states["begin"].AllocateAs(data.states["current"]);
   }
 
+  if(data.haveForcing) {
+    DataBlockHost d(data);
+    d.SyncToDevice();
+    data.forcing->InitForcingModes();
+    if (!input.restartRequested) {
+      data.forcing->oUprocesses.ResetProcessesValues(); // so that we get the excited modes even if we don't write
+      data.forcing->oUprocesses.ResetTimestep();
+      if(data.forcing->write) {
+        data.forcing->oUprocesses.ResetNormalValues();
+      }
+    }
+    if (input.restartRequested) data.forcing->oUprocesses.AdvanceProcessesValues();
+//    if (input.restartRequested) data.forcing->oUprocesses.AdvanceProcessesValues(data.tabDt);
+  }
+
   idfx::popRegion();
 }
 
@@ -359,6 +374,15 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   }
 #endif
 
+  if(data.haveForcing) {
+    if(data.forcing->stillHaveForcing) {
+      data.EvolveForcing(data.t, data.dt);
+
+      // Back to using Vc
+      data.ConsToPrim();
+    }
+  }
+  
   if(haveRKL && (ncycles%2)==0) {    // Runge-Kutta-Legendre cycle
     data.EvolveRKLStage();
   }

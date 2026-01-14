@@ -19,6 +19,7 @@
 #include "gridHost.hpp"
 #include "planetarySystem.hpp"
 #include "gravity.hpp"
+#include "forcing.hpp"
 #include "stateContainer.hpp"
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -141,6 +142,7 @@ class DataBlock {
 
   void EvolveStage();             ///< Evolve this DataBlock by dt
   void EvolveRKLStage();          ///< Evolve this DataBlock by dt for terms impacted by RKL
+  void EvolveForcing(real, real);          ///< Evolve this DataBlock by dt for the forcing term
   void SetBoundaries();       ///< Enforce boundary conditions to this datablock
   void ConsToPrim();       ///< Convert conservative to primitive variables
   void PrimToCons();       ///< Convert primitive to conservative variables
@@ -163,6 +165,10 @@ class DataBlock {
   bool haveGravity{false};
   std::unique_ptr<Gravity> gravity;
 
+  // Do we have Forcing ?
+  bool haveForcing{false};
+  std::unique_ptr<Forcing> forcing;
+  
   // User step functions (before or after the main integrator step)
   void LaunchUserStepFirst();     ///< perform user-defined step before main integration step
   void LaunchUserStepLast();      ///< Perform user-defined step after main integration step

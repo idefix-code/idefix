@@ -505,24 +505,10 @@ void Forcing::ComputeSolenoidalForcing(real dt) {
 // Fill the forcing term with zeros
 void Forcing::ResetForcingTerms() {
   idfx::pushRegion("Forcing::ResetForcingTerms");
-  IdefixArray4D<real> forcingTerm = this->forcingTerm;
-  IdefixArray4D<real> pristineForcingTerm = this->pristineForcingTerm;
-  IdefixArray4D<real> solenoidalForcingTerm = this->solenoidalForcingTerm;
-//  IdefixArray4D<real> compressiveForcingTerm = this->compressiveForcingTerm;
-  idefix_for("Forcing::ResetForcingTerms",
-              0, data->np_tot[KDIR],
-              0, data->np_tot[JDIR],
-              0, data->np_tot[IDIR],
-              KOKKOS_LAMBDA(int k, int j, int i) {
-                forcingTerm(IDIR,k,j,i) = ZERO_F;
-                forcingTerm(JDIR,k,j,i) = ZERO_F;
-                forcingTerm(KDIR,k,j,i) = ZERO_F;
-                pristineForcingTerm(IDIR,k,j,i) = ZERO_F;
-                pristineForcingTerm(JDIR,k,j,i) = ZERO_F;
-                pristineForcingTerm(KDIR,k,j,i) = ZERO_F;
-                solenoidalForcingTerm(IDIR,k,j,i) = ZERO_F;
-                solenoidalForcingTerm(JDIR,k,j,i) = ZERO_F;
-                solenoidalForcingTerm(KDIR,k,j,i) = ZERO_F;
-              });
+
+  Kokkos::deep_copy(this->forcingTerm,0);
+  Kokkos::deep_copy(this->pristineForcingTerm,0);
+  Kokkos::deep_copy(this->solenoidalForcingTerm,0);
+
   idfx::popRegion();
 }

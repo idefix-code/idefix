@@ -108,7 +108,7 @@ void OrnsteinUhlenbeckProcesses::AdvanceProcessesValues() {
     file.close();
   }
   else {
-      IDEFIX_ERROR("UNABLE TO READ THE TIMESTEP FILE TO ADVANCE OU PROCESSES");
+      IDEFIX_WARNING("UNABLE TO READ THE TIMESTEP FILE TO ADVANCE OU PROCESSES");
   }
 }
 

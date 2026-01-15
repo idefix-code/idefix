@@ -80,7 +80,8 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
     this->coarseningDirection = data->coarseningDirection;
     for(int dir = 0 ; dir < 3 ; dir++) {
       if(coarseningDirection[dir]) {
-        coarseningLevel[dir] = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->coarseningLevel[dir]);
+        coarseningLevel[dir] = Kokkos::create_mirror_view(Kokkos::HostSpace(),
+                                                          data->coarseningLevel[dir]);
       }
     }
   }

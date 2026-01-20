@@ -228,6 +228,11 @@ PYBIND11_EMBEDDED_MODULE(pydefix, m) {
         m.attr("BX1s") = BX1s; ,
         m.attr("BX2s") = BX2s; ,
         m.attr("BX3s") = BX3s; )
+      #ifdef EVOLVE_VECTOR_POTENTIAL
+        m.attr("AX1e") = AX1e;
+        m.attr("AX2e") = AX2e;
+        m.attr("AX3e") = AX3e;
+      #endif
     #endif
     m.attr("IDIR") = IDIR;
     m.attr("JDIR") = JDIR;

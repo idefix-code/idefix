@@ -32,10 +32,10 @@ GridHost::GridHost(Grid &grid) {
 
   // Create mirrors on host
   for(int dir = 0 ; dir < 3 ; dir++) {
-    x[dir] = Kokkos::create_mirror_view(grid.x[dir]);
-    xr[dir] = Kokkos::create_mirror_view(grid.xr[dir]);
-    xl[dir] = Kokkos::create_mirror_view(grid.xl[dir]);
-    dx[dir] = Kokkos::create_mirror_view(grid.dx[dir]);
+    x[dir] = Kokkos::create_mirror_view(Kokkos::HostSpace(), grid.x[dir]);
+    xr[dir] = Kokkos::create_mirror_view(Kokkos::HostSpace(), grid.xr[dir]);
+    xl[dir] = Kokkos::create_mirror_view(Kokkos::HostSpace(), grid.xl[dir]);
+    dx[dir] = Kokkos::create_mirror_view(Kokkos::HostSpace(), grid.dx[dir]);
   }
 
   idfx::popRegion();

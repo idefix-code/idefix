@@ -71,7 +71,7 @@ void Dump::CreateMPIDataType(GridBox gb, bool read) {
     int size[3];
     int subsize[3];
 
-    // the grid is required to now the current MPÏ domain decomposition
+    // the grid is required to know the current MPÏ domain decomposition
     Grid *grid = data->mygrid;
 
     // Dimensions for cell-centered fields

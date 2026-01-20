@@ -22,7 +22,7 @@ void ConstrainedTransport<Phys>::EnforceVectorPotentialBoundary(IdefixArray4D<re
       Ax2 = Kokkos::subview(Vein, AX2e, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
     #endif
     Ax3 = Kokkos::subview(Vein, AX3e, Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
-      
+
 
     if(this->hydro->haveAxis) {
       this->hydro->boundary->axis->RegularizeEMFs(Ax1, Ax2, Ax3);

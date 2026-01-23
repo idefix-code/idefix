@@ -272,6 +272,10 @@ void RiemannSolver<Phys>::HllMHD(IdefixArray4D<real> &Flux) {
 
         SLb = FMIN(cminL, cminR);
         SRb = FMAX(cmaxL,cmaxR);
+
+        // Quick fix to use the same wave speed for all of the conserved quantities
+        sl = SLb;
+        sr = SRb;
       }
 
       cmax = FMAX(FABS(SLb), FABS(SRb));

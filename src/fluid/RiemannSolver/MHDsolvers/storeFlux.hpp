@@ -201,7 +201,7 @@ KOKKOS_FORCEINLINE_FUNCTION void K_StoreHLLD( const int i, const int j, const in
   }
 
   #if COMPONENTS > 1
-  EXPAND( Et(k,j,i) = -st*(ar*vL[Xt] - al*vR[Xt])*scrh;  ,
+  D_EXPAND( Et(k,j,i) = -st*(ar*vL[Xt] - al*vR[Xt])*scrh;  ,
                                                           ,
           Eb(k,j,i) = -sb*(ar*vL[Xb] - al*vR[Xb])*scrh;  );
   #endif

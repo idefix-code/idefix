@@ -16,6 +16,7 @@ option(Idefix_DEBUG "Enable Idefix debug features (makes the code very slow)" OF
 option(Idefix_RUNTIME_CHECKS "Enable runtime sanity checks" OFF)
 option(Idefix_WERROR "Treat compiler warnings as errors" OFF)
 option(Idefix_PYTHON "Enable python bindings (requires pybind11)" OFF)
+Option(Idefix_PROBLEM_DIR "Define the directory of the case to build for." ${PROJECT_BINARY_DIR})
 set(Idefix_CXX_FLAGS "" CACHE STRING "Additional compiler/linker flag")
 set(Idefix_DEFS "definitions.hpp" CACHE FILEPATH "Problem definition header file")
 option(Idefix_CUSTOM_EOS "Use custom equation of state" OFF)
@@ -34,7 +35,6 @@ set_property(CACHE Idefix_PRECISION PROPERTY STRINGS Double Single)
 set(Idefix_LOOP_PATTERN "Default" CACHE STRING "Loop pattern for idefix_for")
 set_property(CACHE Idefix_LOOP_PATTERN PROPERTY STRINGS Default SIMD Range MDRange TeamPolicy TeamPolicyInnerVector)
 
-
 # load git revision tools
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 include(GetGitRevisionDescription)
@@ -51,7 +51,7 @@ if(Kokkos_ENABLE_CUDA)
 endif()
 
 # Add kokkos CMAKE files (required early since these set compiler options)
-add_subdirectory(src/kokkos build/kokkos)
+add_subdirectory(src/kokkos ${CMAKE_BINARY_DIR}/build/kokkos)
 include_directories(${Kokkos_INCLUDE_DIRS_RET})
 
 # Add Idefix CXX Flags
@@ -75,19 +75,27 @@ endif()
 add_executable(idefix)
 add_subdirectory(src build)
 
-if(EXISTS ${PROJECT_BINARY_DIR}/setup.cpp)
-  target_sources(idefix PUBLIC ${PROJECT_BINARY_DIR}/setup.cpp)
+# make absolute
+get_filename_component(Idefix_PROBLEM_DIR_ABS "${Idefix_PROBLEM_DIR}" REALPATH BASE_DIR "${PROJECT_BINARY_DIR}")
+
+if(EXISTS ${Idefix_PROBLEM_DIR_ABS}/setup.cpp)
+  target_sources(idefix PUBLIC ${Idefix_PROBLEM_DIR_ABS}/setup.cpp)
 else()
   message(WARNING "No specific setup.cpp found in the problem directory (this message can be ignored if using python to define your problem)")
 endif()
 
 # If a CMakeLists.txt is in the problem dir (for problem-specific source files)
 # then read it
-if(EXISTS ${PROJECT_BINARY_DIR}/CMakeLists.txt)
-  message(STATUS "Including problem-specific CMakeLists in '${PROJECT_BINARY_DIR}'")
-  add_subdirectory(${PROJECT_BINARY_DIR} build/setup)
+if(EXISTS ${Idefix_PROBLEM_DIR_ABS}/CMakeLists.txt)
+  message(STATUS "Including problem-specific CMakeLists in '${Idefix_PROBLEM_DIR_ABS}'")
+  add_subdirectory(${Idefix_PROBLEM_DIR_ABS} build/setup)
 endif()
 
+# if case dir is not PROJECT_BUILD_DIR we need to point the remote config as backup
+# if the user don't copy it locally
+if (NOT Idefix_PROBLEM_DIR STREQUAL PROJECT_BUILD_DIR)
+  add_definitions(-DIDEFIX_CASE_INI_FALLBACK="${Idefix_PROBLEM_DIR}/idefix.ini")
+endif()
 
 if(Idefix_MHD)
   add_compile_definitions("MHD=YES")
@@ -210,7 +218,7 @@ if(${Idefix_PRECISION} STREQUAL "Single")
 endif()
 
 target_include_directories(idefix PUBLIC
-                           "${PROJECT_BINARY_DIR}"
+                           "${Idefix_PROBLEM_DIR_ABS}"
                            )
 target_include_directories(idefix PUBLIC
                            src/kokkos/core/src

@@ -98,9 +98,9 @@ class idfxTest:
     parser.add_argument("-Werror",
                     help="Consider warnings as errors",
                     action="store_true")
-    
+
     parser.add_argument("-ccache",
-                    help="Use CCache to reduce the build time over multiple run of the test suite.",
+                    help="Use ccache to reduce the build time over multiple run of the test suite.",
                     action="store_true")
 
     args, unknown=parser.parse_known_args()

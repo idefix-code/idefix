@@ -44,5 +44,5 @@ jobs:
     name: CUDA Jobs
     uses: ./.github/workflows/idefix-ci-jobs.yml
     with:
-      TESTME_OPTIONS: -cuda -Werror -ccache
+      TESTME_OPTIONS: -cuda -Werror
       IDEFIX_COMPILER: nvcc

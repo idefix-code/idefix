@@ -16,7 +16,7 @@ option(Idefix_DEBUG "Enable Idefix debug features (makes the code very slow)" OF
 option(Idefix_RUNTIME_CHECKS "Enable runtime sanity checks" OFF)
 option(Idefix_WERROR "Treat compiler warnings as errors" OFF)
 option(Idefix_PYTHON "Enable python bindings (requires pybind11)" OFF)
-Option(Idefix_PROBLEM_DIR "Define the directory of the case to build for." ${PROJECT_BINARY_DIR})
+set(Idefix_PROBLEM_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "Define the directory of the case to build for.")
 set(Idefix_CXX_FLAGS "" CACHE STRING "Additional compiler/linker flag")
 set(Idefix_DEFS "definitions.hpp" CACHE FILEPATH "Problem definition header file")
 option(Idefix_CUSTOM_EOS "Use custom equation of state" OFF)
@@ -76,7 +76,7 @@ add_executable(idefix)
 add_subdirectory(src build)
 
 # make absolute
-get_filename_component(Idefix_PROBLEM_DIR_ABS "${Idefix_PROBLEM_DIR}" REALPATH BASE_DIR "${PROJECT_BINARY_DIR}")
+file(REAL_PATH ${Idefix_PROBLEM_DIR} Idefix_PROBLEM_DIR_ABS BASE_DIRECTORY ${PROJECT_BINARY_DIR})
 
 if(EXISTS ${Idefix_PROBLEM_DIR_ABS}/setup.cpp)
   target_sources(idefix PUBLIC ${Idefix_PROBLEM_DIR_ABS}/setup.cpp)

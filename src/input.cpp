@@ -15,7 +15,6 @@
 #include <iostream>
 #include <vector>
 #include <memory>
-#include <filesystem>
 
 #include "idefix.hpp"
 #include "input.hpp"
@@ -54,12 +53,6 @@ Input::Input(int argc, char* argv[] ) {
 
   // Default input file name
   this->inputFileName = std::string("idefix.ini");
-
-  // Default backup if not copied locally and Idefix_CASE_DIR is not local one
-  #ifdef IDEFIX_CASE_INI_FALLBACK
-    if (!std::filesystem::exists(this->inputFileName))
-      this->inputFileName = IDEFIX_CASE_INI_FALLBACK;
-  #endif
 
   // Parse command line (may replace the input file)
   ParseCommandLine(argc,argv);

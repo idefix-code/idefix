@@ -110,11 +110,19 @@ class idfxTest:
     self.referenceDirectory = os.path.join(idefix_dir_env,"reference")
     # current directory relative to $IDEFIX_DIR/test (used to retrieve the path ot reference files)
     self.testDir=os.path.relpath(os.curdir,os.path.join(idefix_dir_env,"test"))
+    # build directory, currently inside the test named build-test
+    self.buildDir=os.path.abspath("./build-test")
+    # store the full path of problem directory
+    self.problemDir=os.path.abspath("./")
 
   def configure(self,definitionFile=""):
     comm=["cmake"]
     # add source directory
     comm.append(self.idefixDir)
+
+    # we will build in ./build-test so problem dir is parent
+    comm.append("-DIdefix_PROBLEM_DIR="+self.problemDir)
+
     # add specific options
     for opt in self.cmake:
       comm.append("-D"+opt)
@@ -158,7 +166,7 @@ class idfxTest:
     else:
       self.definitions="definitions.hpp"
 
-    comm.append("-DIdefix_DEFS="+self.definitions)
+    comm.append("-DIdefix_DEFS="+os.path.join(self.problemDir, self.definitions))
 
     if(self.mpi):
       comm.append("-DIdefix_MPI=ON")
@@ -177,7 +185,11 @@ class idfxTest:
       comm.append("-DCMAKE_CXX_COMPILER_LAUNCHER=ccache")
 
     try:
-        cmake=subprocess.run(comm)
+        # clean before configuring again
+        self.clean()
+
+        # call cmake
+        cmake=subprocess.run(comm, cwd=os.path.abspath(self.buildDir))
         cmake.check_returncode()
     except subprocess.CalledProcessError as e:
         print(bcolors.FAIL+"***************************************************")
@@ -185,9 +197,15 @@ class idfxTest:
         print("***************************************************"+bcolors.ENDC)
         raise e
 
+  def clean(self):
+    # remove the build directory before re-creating it
+    if os.path.exists(self.buildDir):
+      shutil.rmtree(self.buildDir)
+    os.makedirs(self.buildDir, exist_ok=False)
+
   def compile(self,jobs=8):
     try:
-        make=subprocess.run(["make","-j"+str(jobs)])
+        make=subprocess.run(["make","-j"+str(jobs)], cwd=os.path.abspath(self.buildDir))
         make.check_returncode()
     except subprocess.CalledProcessError as e:
         print(bcolors.FAIL+"***************************************************")
@@ -196,7 +214,7 @@ class idfxTest:
         raise e
 
   def run(self, inputFile="", np=2, nowrite=False, restart=-1):
-      comm=["./idefix"]
+      comm=[os.path.join(self.buildDir,"idefix")]
       if inputFile:
           comm.append("-i")
           comm.append(inputFile)

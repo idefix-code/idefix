@@ -91,12 +91,6 @@ if(EXISTS ${Idefix_PROBLEM_DIR_ABS}/CMakeLists.txt)
   add_subdirectory(${Idefix_PROBLEM_DIR_ABS} build/setup)
 endif()
 
-# if case dir is not PROJECT_BUILD_DIR we need to point the remote config as backup
-# if the user don't copy it locally
-if (NOT Idefix_PROBLEM_DIR STREQUAL PROJECT_BUILD_DIR)
-  add_definitions(-DIDEFIX_CASE_INI_FALLBACK="${Idefix_PROBLEM_DIR}/idefix.ini")
-endif()
-
 if(Idefix_MHD)
   add_compile_definitions("MHD=YES")
 else()
@@ -257,6 +251,7 @@ message(STATUS "    Python: ${Idefix_PYTHON}")
 message(STATUS "    Reconstruction: ${Idefix_RECONSTRUCTION}")
 message(STATUS "    Precision: ${Idefix_PRECISION}")
 message(STATUS "    Version: ${Idefix_VERSION}")
+message(STATUS "    Problem directory: '${Idefix_PROBLEM_DIR_ABS}'")
 message(STATUS "    Problem definitions: '${Idefix_DEFS}'")
 if(Idefix_CUSTOM_EOS)
   message(STATUS "    EOS: Custom file '${Idefix_CUSTOM_EOS_FILE}'")

@@ -76,7 +76,7 @@ add_executable(idefix)
 add_subdirectory(src build)
 
 # make absolute
-file(REAL_PATH ${Idefix_PROBLEM_DIR} Idefix_PROBLEM_DIR_ABS BASE_DIRECTORY ${PROJECT_BINARY_DIR})
+get_filename_component(Idefix_PROBLEM_DIR_ABS ${Idefix_PROBLEM_DIR} ABSOLUTE BASE_DIR ${PROJECT_BINARY_DIR})
 
 if(EXISTS ${Idefix_PROBLEM_DIR_ABS}/setup.cpp)
   target_sources(idefix PUBLIC ${Idefix_PROBLEM_DIR_ABS}/setup.cpp)

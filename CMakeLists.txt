@@ -16,7 +16,7 @@ option(Idefix_DEBUG "Enable Idefix debug features (makes the code very slow)" OF
 option(Idefix_RUNTIME_CHECKS "Enable runtime sanity checks" OFF)
 option(Idefix_WERROR "Treat compiler warnings as errors" OFF)
 option(Idefix_PYTHON "Enable python bindings (requires pybind11)" OFF)
-set(Idefix_PROBLEM_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "Define the directory of the case to build for.")
+set(Idefix_PROBLEM_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "Define the directory of the problem to build for.")
 set(Idefix_CXX_FLAGS "" CACHE STRING "Additional compiler/linker flag")
 set(Idefix_DEFS "definitions.hpp" CACHE FILEPATH "Problem definition header file")
 option(Idefix_CUSTOM_EOS "Use custom equation of state" OFF)

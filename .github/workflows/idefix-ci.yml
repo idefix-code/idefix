@@ -28,7 +28,7 @@ jobs:
     name: CPU Jobs (intel OneApi)
     uses: ./.github/workflows/idefix-ci-jobs.yml
     with:
-      TESTME_OPTIONS: -intel -Werror
+      TESTME_OPTIONS: -intel -Werror -ccache
       IDEFIX_COMPILER: icc
 
   gcc-jobs:
@@ -36,7 +36,7 @@ jobs:
     name: CPU Jobs (gcc)
     uses: ./.github/workflows/idefix-ci-jobs.yml
     with:
-      TESTME_OPTIONS: -Werror
+      TESTME_OPTIONS: -Werror -ccache
       IDEFIX_COMPILER: gcc
 
   cuda-jobs:

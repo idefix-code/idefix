@@ -59,6 +59,12 @@ Several options can be enabled from the command line (or are accessible with ``c
     The number of ghost cells is automatically adjusted as a function of the order of the reconstruction scheme.
     *Idefix* uses 2 ghost cells when ``ORDER < 4`` and 3 ghost cells when ``ORDER = 4``
 
+``-D Idefix_PROBLEM_DIR=.``
+    Specify where to find the problem directory to build *Idefix* out of source.
+    Place yourself in the ``build`` directory you want to build in and call the ``cmake`` by :
+      + pointing the *Idefix* source directory via ``IDEFIX_DIR`` as usual.
+      + using ``-D Idefix_PROBLEM_DIR`` to point the problem to build.
+
 ``-D Kokkos_ENABLE_OPENMP=ON``
     Enable OpenMP parallelisation on supported compilers. Note that this can be enabled simultaneously with MPI, resulting in a hybrid MPI+OpenMP compilation.
 

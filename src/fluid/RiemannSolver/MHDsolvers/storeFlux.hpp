@@ -87,9 +87,9 @@ KOKKOS_FORCEINLINE_FUNCTION void K_StoreHLLD( const int i, const int j, const in
                                         const IdefixArray3D<real> &aR,
                                         const IdefixArray3D<real> &dL,
                                         const IdefixArray3D<real> &dR) {
-  EXPAND( const int Xn = DIR+MX1;                    ,
-        const int Xt = (DIR == IDIR ? MX2 : MX1);  ,
-        const int Xb = (DIR == KDIR ? MX2 : MX3);  )
+  EXPAND(                const int Xn = DIR+MX1;                    ,
+                         const int Xt = (DIR == IDIR ? MX2 : MX1);  ,
+        [[maybe_unused]] const int Xb = (DIR == KDIR ? MX2 : MX3);  )
   // Compute magnetic pressure
   [[maybe_unused]] real ptR, ptL;
 

@@ -30,7 +30,7 @@ def MakeNumpyFile():
 
 
 
-test=tst.idfxTest()
+test=tst.idfxTest(__file__)
 MakeNumpyFile()
 
 test.configure()

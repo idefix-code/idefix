@@ -29,7 +29,7 @@ def testMe(test):
     test.nonRegressionTest(filename=name, tolerance=1e-15)
 
 
-test=tst.idfxTest()
+test=tst.idfxTest(__file__)
 
 if not test.all:
   if(test.check):

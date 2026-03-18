@@ -26,7 +26,7 @@ def testMe(test):
     test.standardTest()
 
 
-test=tst.idfxTest()
+test=tst.idfxTest(__file__)
 
 # if no decomposition is specified, use that one
 if not test.dec:

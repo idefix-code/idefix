@@ -26,7 +26,7 @@ def testMe(test):
     #test.nonRegressionTest(filename=name)
 
 
-test=tst.idfxTest()
+test=tst.idfxTest(__file__)
 
 if not test.dec:
   test.dec=['2','2','1']

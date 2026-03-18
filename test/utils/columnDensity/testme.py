@@ -9,7 +9,7 @@ import sys
 sys.path.append(os.getenv("IDEFIX_DIR"))
 import pytools.idfx_test as tst
 
-test=tst.idfxTest()
+test=tst.idfxTest(__file__)
 
 test.configure()
 test.compile()

@@ -1,0 +1,17 @@
+{
+    "namings": "ini,mpi,vectPot",
+    "variants": [
+        {
+            "dumpname": "dump.0001.dmp",
+            "ini": ["idefix.ini"],
+            "noplot": true,
+            "single": false,
+            "reconstruction": 2,
+            "vectPot": [false, true],
+            "mpi": [false, true],
+            "dec": ["2","2","2"],
+            "standardTest": false,
+            "tolerance": 1e-14
+        }
+    ]
+}

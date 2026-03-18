@@ -1,0 +1,28 @@
+{
+	"namings": "definitionFile,ini",
+	"variants": [
+		{
+			"dumpname": "dump.0001.dmp",
+			"definitionFile": "definitions.hpp",
+			"ini": ["idefix.ini"],
+			"vectPot": false,
+			"reconstruction": 2,
+			"single": false,
+			"mpi": true,
+			"dec": [2, 2, 2 ],
+			"standardTest": false,
+			"tolerance": 0
+		},{
+			"dumpname": "dump.0001.dmp",
+			"definitionFile": "definitions-spherical.hpp",
+			"ini": ["idefix-spherical.ini"],
+			"vectPot": false,
+			"reconstruction": 2,
+			"single": false,
+			"mpi": true,
+			"dec": [2, 2, 2 ],
+			"standardTest": false,
+			"tolerance": 0
+		}
+	]
+}

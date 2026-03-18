@@ -1,0 +1,12 @@
+{
+    "namings": "ini,mpi",
+    "variants": [
+        {
+            "dumpname": "dump.0001.dmp",
+            "ini": ["idefix.ini","idefix-rkl.ini","idefix-x2.ini","idefix-x3.ini"],
+            "noplot": true,
+            "mpi": [false,true],
+            "tolerance": 0
+        }
+    ]
+}

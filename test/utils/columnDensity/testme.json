@@ -1,0 +1,13 @@
+{
+    "namings": "ini,mpi",
+    "variants": [
+        {
+            "dumpname": "dump.0001.dmp",
+            "ini": ["idefix.ini"],
+            "mpi": [false,true],
+            "nonRegressionTest": false,
+            "standardTest": false,
+            "tolerance": 0
+        }
+    ]
+}

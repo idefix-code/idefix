@@ -1,0 +1,17 @@
+{
+    "namings": "ini,mpi",
+    "variants": [
+        {
+            "dumpname": "dump.0001.dmp",
+            "ini": ["idefix-rk4.ini", "idefix-rk5.ini"],
+            "noplot": true,
+            "vectPot": false,
+            "single": false,
+            "reconstruction": 2,
+            "mpi": [false, true],
+            "dec": ["2","2"],
+            "nonRegressionTest": false,
+            "tolerance": 1e-13
+        }
+    ]
+}

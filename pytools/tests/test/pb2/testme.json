@@ -1,0 +1,18 @@
+{
+	"variants": [
+		{
+			"dumpname": "dump.0001.dmp",
+			"ini": ["idefix.ini","idefix-implicit.ini"],
+			"noplot": true,
+			"reconstruction": 2,
+			"tolerance": 1e-14
+		},
+		{
+			"dumpname": "dump.0001.dmp",
+			"ini": ["idefix.ini","idefix-implicit.ini"],
+			"noplot": false,
+			"reconstruction": 2,
+			"tolerance": 1e-14
+		}
+	]
+}

@@ -1,15 +1,15 @@
 {
-	"namings": "ini,mpi",
-	"variants": [
-		{
-			"dumpname": "dump.0001.dmp",
-			"ini": ["idefix.ini","idefix-hll.ini","idefix-hllc.ini","idefix-tvdlf.ini"],
-			"noplot": true,
-			"reconstruction": 2,
-			"single": false,
-			"mpi": [false, true],
-			"dec": [2, 2],
-			"tolerance": 0
-		}
-	]
+  "namings": "ini,mpi",
+  "variants": [
+    {
+      "dumpname": "dump.0001.dmp",
+      "ini": ["idefix.ini","idefix-hll.ini","idefix-hllc.ini","idefix-tvdlf.ini"],
+      "noplot": true,
+      "reconstruction": 2,
+      "single": false,
+      "mpi": [false, true],
+      "dec": [2, 2],
+      "tolerance": 0
+    }
+  ]
 }

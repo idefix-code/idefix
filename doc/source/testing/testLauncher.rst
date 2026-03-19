@@ -302,8 +302,8 @@ By default, the alphabetical order will be used.
 When clauses
 ------------
 
-You can also dynamically override a specific value when a parameter value is selected,
-it simplified the writting of some conditions like if you used and IF statement.
+You can also dynamically override a specific value when a parameter value is selected.
+It is just like if you used and IF statement.
 
 .. code-block:: json
 
@@ -360,7 +360,6 @@ They are described like :
             "dec": [2,2,2],
             "multirun": [
                 {
-                    
                 },{
                     "mpi": true,
                     "restart": true,

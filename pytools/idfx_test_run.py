@@ -55,7 +55,7 @@ class IdexPytestRunner:
     # split namings
     namings = namings.split(",")
 
-    # loop on each 
+    # loop on each
     for variant in variants:
       for name in namings:
         if name in variant and isinstance(variant[name], list) == False:
@@ -101,10 +101,10 @@ class IdexPytestRunner:
             result += idefixTestGenerator.genTestConfigs(namings, test['variants'], test.get('when', {}))
         except Exception as e:
           raise Exception(f"Fail to generate tests from {testfileRelPath} : {e}")
-    
+
     # ok
     return result
-  
+
   def run(self, config: dict) -> None:
     # clone before modify to not modity for caller
     config = copy.deepcopy(config)
@@ -239,7 +239,7 @@ class IdexPytestRunner:
       sys.argv.append("-all")
     idefixTest = tst.idfxTest(self.parentScritFile, name="main")
     os.environ["IDEFIX_TEST_FILTER_SUBDIR"] = idefixTest.filterSubdir
-  
+
     if idefixTest.all:
       pytest.main(['-v', '--no-header', '--junit-xml=idefix-tests.junit.xml', '--tb=short'] + idefixTest.remainingArgs + [self.parentScritFile])
     else:

@@ -21,7 +21,7 @@ class IdefixDirTestGenerator:
     Constructor or the class.
 
     Args:
-      currentTestFile (str): 
+      currentTestFile (str):
         Path the the current python file. Normally you
         simply pass __file__ to this parameter.
       name (str):
@@ -55,7 +55,7 @@ class IdefixDirTestGenerator:
     # get name ordering list
     nameList = names.split(',')
 
-    # gen list of complete configs 
+    # gen list of complete configs
     all_configs = []
     if isinstance(params, dict):
       all_configs += self._genOneConfigSeries(names, params)
@@ -64,7 +64,7 @@ class IdefixDirTestGenerator:
         all_configs += self._genOneConfigSeries(names, p)
     else:
       raise Exception("Should never be called !")
-    
+
     # convert as parametrize with nice name
     result = []
     for config in all_configs:
@@ -98,7 +98,7 @@ class IdefixDirTestGenerator:
     Args:
       params (list|dict):
         The list of configuration sets to scan or a single set.
-    
+
     Returns:
       The list of names of the variable parameters.
     '''
@@ -129,7 +129,7 @@ class IdefixDirTestGenerator:
     # TODO make something better by assigning a priority to vars
     variables.sort()
 
-    # ok    
+    # ok
     return ','.join(variables)
 
   def _genNextLevelCombinations(self, input: list, paramName: str, paramValues: list) -> list:
@@ -139,7 +139,7 @@ class IdefixDirTestGenerator:
     Args:
       input (list):
         The incoming list of combinations already unpacked before this call.
-      paramName (str): 
+      paramName (str):
         Name of the parameter to unpack.
       paramValues (list):
         The list of values to unpack and to build combinations for.

@@ -5,8 +5,6 @@ import subprocess
 import sys
 import re
 import json
-import pytest
-import warnings
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -105,11 +103,11 @@ class idfxTest:
     parser.add_argument("-ccache",
                     help="Use ccache to reduce the build time over multiple run of the test suite.",
                     action="store_true")
-    
+
     parser.add_argument("-restart",
                     help="Enable creating a restart from a checkpoint.",
                     action='store_true')
-    
+
     parser.add_argument("-v", "--verbose",
                     help="Enable verbose mode, by not capturing the output.",
                     action="store_true")
@@ -145,7 +143,7 @@ class idfxTest:
     self.lastCmakeCmd=""
     # subdir
     self.filterSubdir=args.subdir
-    # save 
+    # save
     self.cmdArgs = vars(args)
     self.cmdArgs.update({
       "restart_no_overwrite": [],
@@ -153,12 +151,12 @@ class idfxTest:
     self.log=[]
     # when making a restart we should not overrite those files (will be checked)
     self.restart_no_overwrite=[]
-    
+
     # forward args for pytest
     if args.verbose:
-        unknown.append("--capture=no")
+      unknown.append("--capture=no")
     if args.help_pytest:
-        unknown.append("--help")
+      unknown.append("--help")
     # remaining args
     self.remainingArgs=unknown
 
@@ -178,7 +176,7 @@ class idfxTest:
     newArgs = {}
     newArgs.update(self.cmdArgs)
     newArgs.update(config)
-  
+
     # replace in dict
     self.__dict__.update(newArgs)
 

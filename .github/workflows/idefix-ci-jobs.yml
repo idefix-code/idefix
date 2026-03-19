@@ -65,8 +65,10 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/sod-iso -all $TESTME_OPTIONS
       - name: Orszag Tang
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/OrszagTang -all $TESTME_OPTIONS
-      - name: Orszag Tang 3D+restart tests
+      - name: Orszag Tang 3D
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/OrszagTang3D -all $TESTME_OPTIONS
+      - name: Linear wave test
+        run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/LinearWave -all $TESTME_OPTIONS
       - name: Axis Flux tube
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/AxisFluxTube -all $TESTME_OPTIONS
 

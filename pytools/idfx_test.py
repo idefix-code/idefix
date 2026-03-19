@@ -121,6 +121,7 @@ class idfxTest:
                     help="Make a fake run by just logging the actions to validate that we generate same command over refactoring.",
                     action="store_true")
 
+    # this option is not used directly by direct users of idfxTest but by idx_test_gen
     parser.add_argument("-subdir",
                     default="./test",
                     help="Select the test in the given subdir not to run all.",
@@ -308,7 +309,7 @@ class idfxTest:
       shutil.rmtree(self.buildDir)
 
     # remove previous build configuration cache in the test itself
-    # otherwise cmake take in in the build subdir
+    # otherwise cmake takes it in the build subdir
     testDirCMakeCache = os.path.join(self.testDir, "CMakeCache.txt")
     if os.path.exists(testDirCMakeCache):
       os.unlink(testDirCMakeCache)

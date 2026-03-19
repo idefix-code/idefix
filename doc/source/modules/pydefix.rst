@@ -138,3 +138,8 @@ The fix is to force the following environement variables (replace XX by your pyt
 ```bash
 export PYTHONPATH=$VIRTUAL_ENV/lib/python3.XX/site-packages:$PYTHONPATH
 ```
+
+.. warning::
+  This is a dirty patch to fix an issue actually caused by pybind11. A better solution would be to fix pybind11 to properly detect virtual environments.
+  Note that you *should never* set the PYTHONPATH variable globally in your system (i.e. in .bashrc), but only in the terminal where you launch Idefix with pydefix.
+  The reader may check the dedicated `pydefix PR for details <https://github.com/idefix/idefix/pull/365>`_.

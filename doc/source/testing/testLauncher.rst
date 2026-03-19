@@ -7,9 +7,9 @@ Overview
 
 The class :doc:`idfxTest <idfxTest>` provides the basement to implement an *Idefix* integration test for validation.
 In order to ease launching all the tests, the user might prefer to use directly the ``./test.py`` command at the
-root or *Idefix* sources.
+root of the *Idefix* sources.
 
-This script will run all the registered variants of *Idefix* and build a report in the terminal. At the
+This script will run all the listed variants of *Idefix* and build a report in the terminal. At the
 end of the run a standard ``junit.xml`` file is produced. This one can be translated into a browsable
 HTML file.
 
@@ -61,7 +61,7 @@ The result of the execution will be an output like :
     ---------- generated xml file: idefix-tests.junit.xml ---------------------------------------------------------
     =============================== 8 passed, 44 deselected in 73.03s (0:01:13) ===================================
 
-In case of an error, the output of the command will be printed.
+When seeing an error, the output of the command will be printed at the end.
 
 HTML report
 -----------
@@ -117,7 +117,7 @@ Here the options supported by the test script :
     -fake                 Make a fake run by just logging the actions to validate that we generate same command over refactoring.
     -subdir SUBDIR        Select the test in the given subdir not to run all.
 
-The script is constructed on top of the ``pytest`` command so you automatically get access
+The script is built on top of the ``pytest`` command so you automatically get access
 to all the advanced option this command provide. Here a few examples :
 
 .. code-block:: shell
@@ -159,7 +159,7 @@ For a single basic configuration one can use :
 Available parameters
 --------------------
 
-The parameters in the ``variants`` dictionnary correspond to the option supported by the
+The parameters in the ``variants`` dictionnary correspond to the options supported by the
 :doc:`idfxTest <idfxTest>` script to configure the build and run of *Idefix*.
 
 In addition there is some extra keys which are dedicated to the json interpretation layer :
@@ -197,7 +197,7 @@ Looping over parameters
 
 You might want to explore running Idefix within parameter ranges (configuration files, modes).
 For this simply list the values you want as a list. The test script will automatically
-generate the list of all combinations.
+generate all combinations.
 
 .. code-block:: json
 
@@ -329,7 +329,7 @@ it simplified the writting of some conditions like if you used and IF statement.
         }
     }
 
-In this case, ``reconstrucion`` will be set to 1 when ``single`` equal to ``true``.
+In this case, ``reconstruction`` will be set to 1 when ``single`` is equal to ``true``.
 
 Note that the ``conditions`` field can contains several values which will be treaded
 as and AND logical operator.

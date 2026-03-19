@@ -6,6 +6,7 @@ import sys
 import re
 import json
 import pytest
+import warnings
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -307,12 +308,6 @@ class idfxTest:
     # remove the build directory before re-creating it
     if os.path.exists(self.buildDir):
       shutil.rmtree(self.buildDir)
-
-    # remove previous build configuration cache in the test itself
-    # otherwise cmake takes it in the build subdir
-    testDirCMakeCache = os.path.join(self.testDir, "CMakeCache.txt")
-    if os.path.exists(testDirCMakeCache):
-      os.unlink(testDirCMakeCache)
 
     # recreate
     os.makedirs(self.buildDir, exist_ok=False)

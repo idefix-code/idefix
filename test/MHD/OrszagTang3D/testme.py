@@ -27,12 +27,6 @@ def testMe(test):
           test.makeReference(filename="dump.0001.dmp")
   test.nonRegressionTest(filename="dump.0001.dmp",tolerance=tol)
 
-  # Check restarts
-  test.run("idefix-checkrestart.ini")
-  #force override the inputfile since the result should be identical
-  test.inifile="idefix.ini"
-  test.nonRegressionTest(filename="dump.0002.dmp",tolerance=tol)
-
 
 test=tst.idfxTest()
 

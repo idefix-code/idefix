@@ -35,6 +35,8 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/HD/sod-iso -all $TESTME_OPTIONS
       - name: Mach reflection test
         run: scripts/ci/run-tests $IDEFIX_DIR/test/HD//MachReflection -all $TESTME_OPTIONS
+      - name: Sedov blast wave
+        run: scripts/ci/run-tests $IDEFIX_DIR/test/HD/SedovBlastWave -all $TESTME_OPTIONS
 
   ParabolicHydro:
     runs-on: self-hosted
@@ -207,3 +209,18 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/utils/dumpImage -all $TESTME_OPTIONS
       - name: Column density
         run: scripts/ci/run-tests $IDEFIX_DIR/test/utils/columnDensity -all $TESTME_OPTIONS
+
+  IOs:
+    needs: [Fargo, Dust, Planet, ShearingBox, SelfGravity]
+    runs-on: self-hosted
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Restart dumps
+        run: scripts/ci/run-tests $IDEFIX_DIR/test/IO/dump -all $TESTME_OPTIONS
+      - name: Pydefix
+        run: scripts/ci/run-tests $IDEFIX_DIR/test/IO/pydefix -all $TESTME_OPTIONS
+      - name: xdmf
+        run: scripts/ci/run-tests $IDEFIX_DIR/test/IO/xdmf -all $TESTME_OPTIONS

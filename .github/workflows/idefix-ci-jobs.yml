@@ -21,6 +21,7 @@ env:
   PYTHONPATH: ${{ github.workspace }}
   IDEFIX_DIR: ${{ github.workspace }}
 
+
 jobs:
   ShocksHydro:
     runs-on: self-hosted
@@ -223,6 +224,11 @@ jobs:
       - name: Restart dumps
         run: scripts/ci/run-tests $IDEFIX_DIR/test/IO/dump -all $TESTME_OPTIONS
       - name: Pydefix
-        run: scripts/ci/run-tests $IDEFIX_DIR/test/IO/pydefix -all $TESTME_OPTIONS
+        run: |
+          python -m venv $IDEFIX_DIR/test/IO/pydefix/env
+          source $IDEFIX_DIR/test/IO/pydefix/env/activate
+          python -m pip install -r $IDEFIX_DIR/test/IO/pydefix/python_requirements.txt
+          scripts/ci/run-tests $IDEFIX_DIR/test/IO/pydefix -all $TESTME_OPTIONS
+
       - name: xdmf
         run: scripts/ci/run-tests $IDEFIX_DIR/test/IO/xdmf -all $TESTME_OPTIONS

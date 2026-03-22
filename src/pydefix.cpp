@@ -278,6 +278,9 @@ Pydefix::Pydefix(Input &input) {
       idfx::cout << "Pydefix: start Python interpreter." << std::endl;
 
       py::initialize_interpreter();
+      py::exec("import sys; print(f'Pydefix: Python Version: {sys.version}')");
+      py::exec("print(f'Pydefix: Executable Path: {sys.executable}')");
+      py::exec("print(f'Pydefix: Sys Path: {sys.path}')");
     }
     this->scriptFilename = input.Get<std::string>("Python","script",0);
     if(scriptFilename.substr(scriptFilename.length() - 3, 3).compare(".py")==0) {

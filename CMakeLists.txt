@@ -129,6 +129,16 @@ endif()
 
 if(Idefix_PYTHON)
   add_compile_definitions("WITH_PYTHON")
+  find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+
+  execute_process(
+    COMMAND "${Python3_EXECUTABLE}" -m pybind11 --cmakedir
+    OUTPUT_VARIABLE PYBIND11_CMAKE_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    COMMAND_ERROR_IS_FATAL ANY
+  )
+
+  list(APPEND CMAKE_PREFIX_PATH "${PYBIND11_CMAKE_DIR}")
   if (NOT DEFINED Python_FIND_FRAMEWORK)
     set(Python_FIND_FRAMEWORK "LAST") # Use Apple's python only at last resort on Macos
   endif ()

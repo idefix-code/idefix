@@ -226,7 +226,7 @@ jobs:
       - name: Pydefix
         run: |
           python3 -m venv $IDEFIX_DIR/test/IO/pydefix/env
-          source $IDEFIX_DIR/test/IO/pydefix/env/activate
+          source $IDEFIX_DIR/test/IO/pydefix/env/bin/activate
           python3 -m pip install -r $IDEFIX_DIR/test/IO/pydefix/python_requirements.txt
           scripts/ci/run-tests $IDEFIX_DIR/test/IO/pydefix -all $TESTME_OPTIONS
 

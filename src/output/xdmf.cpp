@@ -455,7 +455,6 @@ void Xdmf::WriteHeader(
   hid_t tspace, tattr;
   hid_t unit_info, unit_attr;
   hid_t group;
-  hid_t file_access = 0;
   #ifdef WITH_MPI
   hid_t plist_id_mpiio = 0; /* for collective MPI I/O */
   #endif

@@ -44,7 +44,7 @@ real Fluid<Phys>::CheckDivB() {
                 d3=0.5*(Ax3(k+1,j,i) + Ax3(k,j,i));  )
 
 
-      const real amplitude += D_EXPAND( d1, + d2, + d3 );
+      const real amplitude = D_EXPAND( d1, + d2, + d3 );
 
       divBmax=FMAX(FABS(D_EXPAND(dB1, +dB2, +dB3))/amplitude,divBmax);
     },

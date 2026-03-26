@@ -115,7 +115,13 @@ if(Idefix_HDF5)
   )
   find_package(HDF5 REQUIRED)
   target_link_libraries(idefix "${HDF5_LIBRARIES}")
-  target_include_directories(idefix "${HDF5_INCLUDE_DIRS}")
+  message(STATUS "Found HDF5 include directories: ${HDF5_INCLUDE_DIRS}")
+  target_include_directories(idefix PUBLIC "${HDF5_INCLUDE_DIRS}")
+  if(Idefix_MPI)
+    if(NOT HDF5_IS_PARALLEL)
+      message(FATAL_ERROR "Parallel HDF5 required for Idefix_MPI but the found HDF5 library does not support it")
+    endif()
+  endif()
   message(STATUS "XDMF (hdf5+xmf) dumps enabled")
 else()
   set(Idefix_HDF5 OFF)
@@ -123,6 +129,16 @@ endif()
 
 if(Idefix_PYTHON)
   add_compile_definitions("WITH_PYTHON")
+  find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+
+  execute_process(
+    COMMAND "${Python3_EXECUTABLE}" -m pybind11 --cmakedir
+    OUTPUT_VARIABLE PYBIND11_CMAKE_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    COMMAND_ERROR_IS_FATAL ANY
+  )
+
+  list(APPEND CMAKE_PREFIX_PATH "${PYBIND11_CMAKE_DIR}")
   if (NOT DEFINED Python_FIND_FRAMEWORK)
     set(Python_FIND_FRAMEWORK "LAST") # Use Apple's python only at last resort on Macos
   endif ()

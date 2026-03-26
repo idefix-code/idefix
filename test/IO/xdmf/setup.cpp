@@ -1,18 +1,6 @@
 #include "idefix.hpp"
 #include "setup.hpp"
 
-/*********************************************/
-/**
-Customized random number generator
-Allow one to have consistant random numbers
-generators on different architectures.
-**/
-/*********************************************/
-
-Output* myOutput;
-int outnum;
-// Analysis function
-
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {

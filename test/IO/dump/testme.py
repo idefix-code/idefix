@@ -16,16 +16,9 @@ tolerance=1e-13
 def testMe(test):
   test.configure()
   test.compile()
-  tol=tolerance
-  if test.single:
-    tol=1e-6
 
-  # default with idefix.ini
-  test.run()
-  if test.init:
-      if not test.mpi:
-          test.makeReference(filename="dump.0001.dmp")
-  test.nonRegressionTest(filename="dump.0001.dmp",tolerance=tol)
+  # Check restarts
+  test.run("idefix.ini")
 
 
 test=tst.idfxTest()
@@ -35,9 +28,6 @@ if not test.dec:
   test.dec=["2","2","2"]
 
 if not test.all:
-  if(test.check):
-      test.checkOnly(filename="dump.0001.dmp",tolerance=tolerance)
-  else:
     testMe(test)
 else:
   test.vectPot=False

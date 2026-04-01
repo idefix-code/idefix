@@ -40,7 +40,7 @@ repos:
         - F403 # ignore import *
 
   - repo: https://github.com/neutrinoceros/inifix
-    rev: v5.0.2
+    rev: v6.1.2
     hooks:
       - id: inifix-format
 

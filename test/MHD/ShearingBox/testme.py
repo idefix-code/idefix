@@ -6,9 +6,11 @@
 """
 import os
 import sys
+
 sys.path.append(os.getenv("IDEFIX_DIR"))
 
 import pytools.idfx_test as tst
+
 tolerance=1e-14
 
 def testMe(test):

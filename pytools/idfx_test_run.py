@@ -5,16 +5,19 @@
 # Licensed under CeCILL 2.1 License, see COPYING for more information
 #####################################################################################
 
+import copy
+import glob
+import json
 import os
 import sys
-import json
-import glob
-import copy
+from contextlib import contextmanager
+
 import pytest
+
 # idefix test class
 import pytools.idfx_test as tst
-from  pytools.idfx_test_gen import IdefixDirTestGenerator
-from contextlib import contextmanager
+from pytools.idfx_test_gen import IdefixDirTestGenerator
+
 
 @contextmanager
 def moveInDir(path):

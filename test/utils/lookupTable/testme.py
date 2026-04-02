@@ -6,10 +6,13 @@
 """
 import os
 import sys
+
 sys.path.append(os.getenv("IDEFIX_DIR"))
 import numpy as np
+
 #from scipy.interpolate import RegularGridInterpolator
 import pytools.idfx_test as tst
+
 
 def MakeNumpyFile():
   x=np.arange(1,10,1.0)

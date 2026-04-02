@@ -5,9 +5,12 @@
 # Licensed under CeCILL 2.1 License, see COPYING for more information
 #####################################################################################
 
-from ..idfx_test_run import IdexPytestRunner
-import pytest
 import os
+
+import pytest
+
+from ..idfx_test_run import IdexPytestRunner
+
 
 def test_genTests():
   # build runner

@@ -5,10 +5,12 @@ Created on Wed Sep  9 15:31:57 2020
 
 @author: lesurg
 """
-import numpy as np
-import matplotlib.pyplot as plt
 import os
 import sys
+
+import matplotlib.pyplot as plt
+import numpy as np
+
 sys.path.append(os.getenv("IDEFIX_DIR"))
 from pytools.vtk_io import readVTK
 

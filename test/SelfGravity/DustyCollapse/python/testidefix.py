@@ -1,6 +1,7 @@
-import numpy as np
 import os
 import sys
+
+import numpy as np
 
 sys.path.append(os.getenv("IDEFIX_DIR"))
 from pytools.vtk_io import readVTK

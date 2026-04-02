@@ -8,12 +8,15 @@ Created on Thu Mar  5 11:29:41 2020
 
 import os
 import sys
+
 sys.path.append(os.getenv("IDEFIX_DIR"))
-from pytools.vtk_io import readVTK
 import argparse
-import numpy as np
+
 import matplotlib.pyplot as plt
+import numpy as np
 from scipy.integrate import solve_ivp
+
+from pytools.vtk_io import readVTK
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-noplot",

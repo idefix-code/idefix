@@ -1,10 +1,12 @@
 import os
 import sys
+
 sys.path.append(os.getenv("IDEFIX_DIR"))
-from pytools.vtk_io import readVTK
-import numpy as np
 import inifix
+import numpy as np
 from scipy.special import jn
+
+from pytools.vtk_io import readVTK
 
 conf = inifix.load("../idefix.ini")
 amplitude = conf["Setup"]["amplitude"]

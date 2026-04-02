@@ -5,10 +5,11 @@ Created on Mon Mar 13 14:45:58 2023
 
 @author: lesurg
 """
-import sys
-import numpy as np
 import argparse
+import sys
+
 import matplotlib.pyplot as plt
+import numpy as np
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-noplot",

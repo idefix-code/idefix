@@ -1,15 +1,16 @@
 import argparse
+import json
 import os
+import re
 import shutil
 import subprocess
 import sys
-import re
-import json
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 from .dump_io import readDump
+
 
 class bcolors:
     HEADER = '\033[95m'

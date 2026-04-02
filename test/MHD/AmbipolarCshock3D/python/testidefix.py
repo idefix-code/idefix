@@ -5,14 +5,17 @@ Created on Tue Sep  8 09:10:06 2020
 
 @author: lesurg
 """
-import numpy as np
-from scipy.integrate import ode
-import matplotlib.pyplot as plt
 import os
 import sys
+
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.integrate import ode
+
 sys.path.append(os.getenv("IDEFIX_DIR"))
-from pytools.vtk_io import readVTK
 import argparse
+
+from pytools.vtk_io import readVTK
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-noplot",

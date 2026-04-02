@@ -2,7 +2,6 @@ import struct
 
 import numpy as np
 
-
 __all__ = ["readIdfxFile"]
 # Read .idfx files which are created
 # for debug purposes by DataBlock.DumpToFile(std::string&)

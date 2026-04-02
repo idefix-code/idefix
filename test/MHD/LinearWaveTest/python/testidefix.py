@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import numpy as np
+import math
 import os
 import sys
-import math
+
+import numpy as np
+
 sys.path.append(os.getenv("IDEFIX_DIR"))
-from pytools.dump_io import readDump
-import matplotlib.pyplot as plt
 import argparse
+
+import matplotlib.pyplot as plt
+
+from pytools.dump_io import readDump
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-noplot",

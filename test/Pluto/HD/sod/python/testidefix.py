@@ -6,12 +6,13 @@ Created on Thu Mar  5 11:29:41 2020
 @author: glesur
 """
 
-import idefixTools as idfx
-import sod
-import sys
 import argparse
-import numpy as np
+import sys
+
+import idefixTools as idfx
 import matplotlib.pyplot as plt
+import numpy as np
+import sod
 from scipy.interpolate import interp1d
 
 parser = argparse.ArgumentParser()

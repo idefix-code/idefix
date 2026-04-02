@@ -4,10 +4,11 @@ Created on Mon Nov  3 15:23:00 2014
 @author: glesur
 """
 
-import warnings
-import numpy as np
 import os
 import re
+import warnings
+
+import numpy as np
 
 # restrict what's included with `import *` to public API
 __all__ = [

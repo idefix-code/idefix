@@ -6,6 +6,7 @@
 """
 import os
 import sys
+
 sys.path.append(os.getenv("IDEFIX_DIR"))
 
 import pytools.idfx_test as tst

@@ -7,9 +7,11 @@ Created on Tue Jan 26 15:52:44 2021
 """
 import os
 import sys
+
 sys.path.append(os.getenv("IDEFIX_DIR"))
-from pytools.idfx_io import readIdfxFile
 import matplotlib.pyplot as plt
+
+from pytools.idfx_io import readIdfxFile
 
 rep="../"
 

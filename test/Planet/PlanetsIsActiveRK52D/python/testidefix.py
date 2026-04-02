@@ -8,8 +8,10 @@ Created on Tue Dec  21 12:04:41 2021
 
 import os
 import sys
+
 sys.path.append(os.getenv("IDEFIX_DIR"))
 import numpy as np
+
 
 def find_nearest(array, value):
     array = np.asarray(array)

@@ -26,7 +26,7 @@ class IdfxFileField(object):
             return
         self.ndims = int.from_bytes(fh.read(INT_SIZE), byteorder)
         dims = []
-        for dim in range(self.ndims):
+        for _ in range(self.ndims):
             dims.append(int.from_bytes(fh.read(INT_SIZE), byteorder))
         ntot = int(np.prod(dims))
         raw = struct.unpack(str(ntot) + "d", fh.read(DOUBLE_SIZE * ntot))

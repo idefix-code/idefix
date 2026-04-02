@@ -167,8 +167,10 @@ class idfxTest:
       with open(os.path.join(self.problemDir,"testsuite.log.json"), "w+") as fp:
         json.dump(self.log, fp, indent='\t')
 
-  def applyConfig(self, config: dict={}):
+  def applyConfig(self, config: dict | None = None):
     # check args
+    if config is None:
+        config = {}
     for key, value in config.items():
       if key not in ['ini', 'testfile', 'testname', 'dumpname', 'check_file_produced']:
         assert key in self.cmdArgs, f"The given configuration overriding try to set an invalid paramater : {key}={value}"
@@ -254,7 +256,9 @@ class idfxTest:
     return comm
 
 
-  def configure(self,definitionFile="", reuse_last_same_build=True, override: dict={}):
+  def configure(self,definitionFile="", reuse_last_same_build=True, override: dict | None = None):
+    if override is None:
+        override = {}
     # log
     self.addLog({"call": "configure", "args":{
       'definitionFile': definitionFile,

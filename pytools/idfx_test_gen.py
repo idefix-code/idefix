@@ -33,7 +33,7 @@ class IdefixDirTestGenerator:
     self.currentTestName = name
 
   # generate the list of configs to run
-  def genTestConfigs(self, names:str, params, whenClauses = {}, defaultConfig: dict = {}) -> list:
+  def genTestConfigs(self, names:str, params, whenClauses = None, defaultConfig: dict | None = None) -> list:
     '''
     Generate the the list of configurations as pytest parameters.
     It will unpack the configuration set by looping on all combinations defined
@@ -55,6 +55,10 @@ class IdefixDirTestGenerator:
     Returns:
       A list of pytest.param() ready to be fiven to parametrized pytest functions.
     '''
+    if defaultConfig is None:
+      defaultConfig = {}
+    if whenClauses is None:
+      whenClauses = {}
     # get name ordering list
     nameList = names.split(',')
     if '' in nameList:
@@ -160,7 +164,7 @@ class IdefixDirTestGenerator:
         result.append(v)
     return result
 
-  def _genOneConfigSeries(self, names: str, config: dict, defaultConfig: dict={}) -> list:
+  def _genOneConfigSeries(self, names: str, config: dict, defaultConfig: dict | None = None) -> list:
     '''
     Generate the the list of configurations as pytest parameters.
     It will unpack the configuration set by looping on all combinations defined
@@ -178,6 +182,8 @@ class IdefixDirTestGenerator:
     Returns:
       A list of pytest.param() ready to be fiven to parametrized pytest functions.
     '''
+    if defaultConfig is None:
+      defaultConfig = {}
     # get name ordering list
     nameList = names.split(',')
 

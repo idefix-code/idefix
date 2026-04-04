@@ -103,6 +103,9 @@ The python script `pydefix_example.py` initializes the initial condition of the 
 Troubleshooting
 ---------------
 
+Pybind11 not found by cmake
+++++++++++++++++++++++++++++
+
 It during configuration stage, you get::
 
   CMake Error at CMakeLists.txt:122 (find_package):
@@ -124,3 +127,19 @@ You can then exit the interpreter and set the pybind11_DIR environement variable
   export pybind11_DIR=env/lib/python3.10/site-packages/pybind11
 
 you can then run cmake which should be able to find pybind11, and compile the code.
+
+Using pydefix in a virtual environment
++++++++++++++++++++++++++++++++++++++++
+If you use pydefix in a python virtual environment (venv), pydefix might not detect your environment and fail to find pybind11 or other
+python packages in your venv. This typically results in a python error "xxxx module not found" when you run Idefix with pydefix.
+
+The fix is to force the following environement variables (replace XX by your python version) before launching Idefix:
+
+```bash
+export PYTHONPATH=$VIRTUAL_ENV/lib/python3.XX/site-packages:$PYTHONPATH
+```
+
+.. warning::
+  This is a dirty patch to fix an issue actually caused by pybind11. A better solution would be to fix pybind11 to properly detect virtual environments.
+  Note that you *should never* set the PYTHONPATH variable globally in your system (i.e. in .bashrc), but only in the terminal where you launch Idefix with pydefix.
+  The reader may check the dedicated `pydefix PR for details <https://github.com/idefix/idefix/pull/365>`_.

@@ -43,6 +43,7 @@ repos:
     rev: v6.1.2
     hooks:
       - id: inifix-format
+        files: ^(test/).*\.(ini)$ # want to skip pytest.ini
 
   - repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.5.5

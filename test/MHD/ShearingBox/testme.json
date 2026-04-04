@@ -1,0 +1,15 @@
+{
+    "namings": "ini,mpi",
+    "variants": [
+        {
+            "dumpname": "dump.0001.dmp",
+            "ini": ["idefix.ini","idefix-fargo.ini"],
+            "noplot": true,
+            "single": false,
+            "reconstruction": 2,
+            "mpi": [false, true],
+            "dec": ["2","1","2"],
+            "tolerance": 1e-14
+        }
+    ]
+}

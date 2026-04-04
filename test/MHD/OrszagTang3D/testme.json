@@ -1,0 +1,42 @@
+{
+    "namings": "ini,single,vectPot,mpi",
+    "variants": [
+        {
+            "dumpname": "dump.0001.dmp",
+            "ini": ["idefix.ini"],
+            "vectPot": [false, true],
+            "reconstruction": 2,
+            "single": [false],
+            "mpi": [false, true],
+            "dec": ["2","2","2"],
+            "standardTest": false,
+            "tolerance": 1e-13,
+            "multirun": [
+                {},
+                {"ini": "idefix-checkrestart.ini", "dumpname": "dump.0002.dmp", "nonRegressionTestIni": "idefix.ini"}
+            ]
+        },{
+            "dumpname": "dump.0001.dmp",
+            "ini": ["idefix.ini"],
+            "vectPot": [false],
+            "reconstruction": 2,
+            "mpi": [false, true],
+            "single": [true],
+            "dec": ["2","2","2"],
+            "standardTest": false,
+            "tolerance": 1e-13,
+            "multirun": [
+                {},
+                {"ini": "idefix-checkrestart.ini", "dumpname": "dump.0002.dmp", "nonRegressionTestIni": "idefix.ini"}
+            ]
+        }
+    ],
+    "when": {
+        "conditions": {
+            "single": true
+        },
+        "apply" : {
+            "tolerance": 1e-6
+        }
+    }
+}

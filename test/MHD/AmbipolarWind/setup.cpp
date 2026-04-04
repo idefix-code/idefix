@@ -335,7 +335,7 @@ void EmfBoundary(DataBlock& data, const real t) {
 }
 
 void FluxBoundary(DataBlock & data, int dir, BoundarySide side, const real t) {
-    IdefixArray4D<real> Flux = data.hydro->FluxRiemann;
+    IdefixArray4D<real> Flux = data.hydro->FluxRiemann[dir];
     if( dir==IDIR && side == left) {
         int iref = data.beg[IDIR];
 

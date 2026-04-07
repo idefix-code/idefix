@@ -12,10 +12,11 @@ Created on Thu Sep  3 17:09:32 2020
 
 @author: lesurg
 """
-import sys
-import numpy as np
 import argparse
+import sys
+
 import matplotlib.pyplot as plt
+import numpy as np
 from scipy.signal import argrelextrema
 
 parser = argparse.ArgumentParser()

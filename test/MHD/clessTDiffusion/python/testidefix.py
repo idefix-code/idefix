@@ -1,9 +1,11 @@
 import os
 import sys
+
 sys.path.append(os.getenv("IDEFIX_DIR"))
-from pytools.vtk_io import readVTK
-import numpy as np
 import inifix
+import numpy as np
+
+from pytools.vtk_io import readVTK
 
 conf = inifix.load("../idefix.ini")
 gamma = conf["Hydro"]["gamma"]

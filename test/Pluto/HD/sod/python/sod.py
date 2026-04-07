@@ -266,7 +266,7 @@ def solve(left_state, right_state, geometry, t, gamma=1.4, npts=500,
 
     pos_description = ('Head of Rarefaction', 'Foot of Rarefaction',
                        'Contact Discontinuity', 'Shock')
-    positions = dict(zip(pos_description, x_positions))
+    positions = dict(zip(pos_description, x_positions, strict=True))
 
     # create arrays
     x, p, rho, u = create_arrays(pl, pr, xl, xr, x_positions,

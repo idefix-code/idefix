@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import sys
 import os
-sys.path.append(os.getenv("IDEFIX_DIR"))
-from pytools.vtk_io import readVTK
+import sys
 
-import numpy as np
+sys.path.append(os.getenv("IDEFIX_DIR"))
 import matplotlib.pyplot as plt
+import numpy as np
+
+from pytools.vtk_io import readVTK
 
 on = 3
 ds = readVTK(f"../data.{on:04d}.vtk", geometry="polar")

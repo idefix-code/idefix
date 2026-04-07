@@ -9,9 +9,10 @@ Parrish, Ian J., et al. "The effects of anisotropic viscosity on turbulence and 
 
 import os
 import sys
+
 sys.path.append(os.getenv("IDEFIX_DIR"))
-import numpy as np
 import inifix
+import numpy as np
 
 n = 1 # fondamental mode
 

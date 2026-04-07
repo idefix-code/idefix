@@ -4,10 +4,11 @@ Created on Mon Nov  3 15:23:00 2014
 @author: glesur
 """
 
-import warnings
-import numpy as np
 import os
 import re
+import warnings
+
+import numpy as np
 
 # restrict what's included with `import *` to public API
 __all__ = [
@@ -98,7 +99,7 @@ class VTKDataset(object):
                     native_name, _ncomp, native_dim, _dtype = d.split()
                     self.native_coordinates[native_name] = np.fromfile(fh, dtype=dt, count=int(native_dim))
                 else:
-                    warnings.warn("Found unknown field %s" % d)
+                    warnings.warn("Found unknown field %s" % d, stacklevel=3)
                 fh.readline()  # skip extra linefeed (empty line)
 
         if self.geometry is None:

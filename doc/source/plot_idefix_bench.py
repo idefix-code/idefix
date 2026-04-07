@@ -1,5 +1,7 @@
-import matplotlib.pyplot as plt
 import json
+
+import matplotlib.pyplot as plt
+
 
 def do_plot(title, bench_file, gpumodels):
     with open(bench_file, 'r') as f:

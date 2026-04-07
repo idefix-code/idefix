@@ -7,6 +7,8 @@ Created on Mon Nov  3 15:23:00 2014
 
 
 import numpy as np
+
+
 class DataStructure:
     pass
 

@@ -6,6 +6,7 @@
 """
 import os
 import sys
+
 sys.path.append(os.getenv("IDEFIX_DIR"))
 
 import pytools.idfx_test as tst
@@ -30,10 +31,7 @@ def check_xdmf_exists():
 if not test.dec:
   test.dec=['2','2','2']
 
-if test.check:
-  check_xdmf_exists()
-
-else:
+if not test.check:
   test.vectPot=False
   test.single=False
   test.reconstruction=2
@@ -42,4 +40,5 @@ else:
   test.configure(definitionFile="definitions.hpp")
   test.compile()
   test.run(inputFile="idefix.ini")
-  check_xdmf_exists
+
+check_xdmf_exists()

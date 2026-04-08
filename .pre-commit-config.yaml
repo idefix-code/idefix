@@ -15,6 +15,11 @@ repos:
       - id: check-added-large-files
         args: ['--maxkb=100'] ## prevent files larger than 100kB from being commited (exclude git lfs files)
 
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.23.1
+    hooks:
+    - id: zizmor
+
   - repo: https://github.com/Lucas-C/pre-commit-hooks-nodejs
     rev: v1.1.2
     hooks:

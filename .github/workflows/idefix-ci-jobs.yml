@@ -26,7 +26,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
       - name: Sod test
@@ -40,7 +40,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
       - name: Viscous flow past cylinder
@@ -54,7 +54,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
       - name: MHD Sod test
@@ -72,7 +72,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
       - name: Ambipolar C Shock
@@ -91,7 +91,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
       - name: Fargo + planet
@@ -104,7 +104,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
       - name: Hydro shearing box
@@ -117,7 +117,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
       - name: Jeans Instability
@@ -136,7 +136,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
       - name: 3 body
@@ -157,7 +157,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
       - name: Energy conservation
@@ -170,7 +170,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
       - name: MTI
@@ -187,7 +187,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
       - name: Run examples test
@@ -198,7 +198,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
       - name: Lookup table

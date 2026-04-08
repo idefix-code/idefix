@@ -9,6 +9,8 @@ on:
     paths-ignore:
       - '.github/ISSUE_TEMPLATE/*'
 
+permissions: {}
+
 jobs:
   Linter:
     # Don't do this in forks

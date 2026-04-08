@@ -9,6 +9,7 @@ on:
     paths-ignore:
       - '.github/ISSUE_TEMPLATE/*'
 
+permissions: {}
 
 jobs:
   ReadTheDocs:

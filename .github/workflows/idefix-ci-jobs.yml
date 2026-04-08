@@ -21,6 +21,8 @@ env:
   PYTHONPATH: ${{ github.workspace }}
   IDEFIX_DIR: ${{ github.workspace }}
 
+permissions: {}
+
 jobs:
   ShocksHydro:
     runs-on: self-hosted

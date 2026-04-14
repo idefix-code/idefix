@@ -19,7 +19,8 @@ struct Fluid_AddSourceTermsFunctor {
   //*****************************************************************
   // Functor constructor
   //*****************************************************************
-  explicit Fluid_AddSourceTermsFunctor(Fluid<Phys> *hydro, real dt) {
+  explicit Fluid_AddSourceTermsFunctor(Fluid<Phys> *hydro, real dt):
+    hydroin(hydro) {
     Uc = hydro->Uc;
     Vc = hydro->Vc;
     x1 = hydro->data->x[IDIR];
@@ -42,6 +43,13 @@ struct Fluid_AddSourceTermsFunctor {
     }
     // shearing box (only with fargo&cartesian)
     sbS = hydro->sbS;
+
+    // Radiative cooling
+    coolingOn = hydro->coolingOn;
+    if (coolingOn) {
+      hydro->radCooling->CalculateCoolingSource(dt);
+      this->delta_eng_cool = hydro->radCooling->delta_eng;
+    }
   }
 
   //*****************************************************************
@@ -52,7 +60,9 @@ struct Fluid_AddSourceTermsFunctor {
   IdefixArray1D<real> x1;
   IdefixArray1D<real> x2;
   IdefixArray3D<real> csIsoArr;
+  IdefixArray3D<real> delta_eng_cool;
 
+  Fluid<Phys> *hydroin;
   real dt;
 #if GEOMETRY == SPHERICAL
   IdefixArray1D<real> sinx2;
@@ -71,6 +81,9 @@ struct Fluid_AddSourceTermsFunctor {
 
   // shearing box (only with fargo&cartesian)
   real sbS;
+
+  // Radiative cooling
+  bool coolingOn;
 
   //*****************************************************************
   // Functor Operator
@@ -191,7 +204,10 @@ struct Fluid_AddSourceTermsFunctor {
       Uc(MX2,k,j,i) += dt*Sm / rt(i);
   #endif // COMPONENTS
 #endif
+    if (coolingOn) {
+      Uc(ENG,k,j,i) += (delta_eng_cool(k,j,i)/Uc(RHO,k,j,i)); // specific energy
     }
+  }
 };
 
 

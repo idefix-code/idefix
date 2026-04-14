@@ -170,7 +170,7 @@ void Laplacian::InitInternalGrid() {
      });
 
   // Check that all is well
-  IdefixArray1D<real>::HostMirror xH = Kokkos::create_mirror_view(x1l);
+  IdefixArray1D<real>::host_mirror_type xH = Kokkos::create_mirror_view(x1l);
   Kokkos::deep_copy(xH, x1l);
 
   if(xH(0)<0.0) {

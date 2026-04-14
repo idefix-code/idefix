@@ -355,13 +355,13 @@ fills the following arrays (essentially grid information) with data from its par
 
 .. code-block:: c++
 
-  IdefixArray1D<real>::HostMirror x[3];   // geometrical central points
-  IdefixArray1D<real>::HostMirror xr[3];  // cell right interface
-  IdefixArray1D<real>::HostMirror xl[3];  // cell left interface
-  IdefixArray1D<real>::HostMirror dx[3];  // cell width
+  IdefixArray1D<real>::host_mirror_type x[3];   // geometrical central points
+  IdefixArray1D<real>::host_mirror_type xr[3];  // cell right interface
+  IdefixArray1D<real>::host_mirror_type xl[3];  // cell left interface
+  IdefixArray1D<real>::host_mirror_type dx[3];  // cell width
 
-  IdefixArray3D<real>::HostMirror dV;     // cell volume
-  IdefixArray3D<real>::HostMirror A[3];   // cell right interface area
+  IdefixArray3D<real>::host_mirror_type dV;     // cell volume
+  IdefixArray3D<real>::host_mirror_type A[3];   // cell right interface area
 
 
 Note however that the physics arrays are not automatically synchronized when ``DataBlockHost`` is
@@ -369,17 +369,17 @@ created, that is:
 
 .. code-block:: c++
 
-  IdefixArray4D<real>::HostMirror Vc;     // Main cell-centered primitive variables index
-  IdefixArray4D<real>::HostMirror Vs;     // Main face-centered primitive variables index
-  IdefixArray4D<real>::HostMirror J;      // Current (only when haveCurrent is enabled)
-  IdefixArray4D<real>::HostMirror Uc;     // Main cell-centered conservative variables
-  IdefixArray3D<real>::HostMirror InvDt;
+  IdefixArray4D<real>::host_mirror_type Vc;     // Main cell-centered primitive variables index
+  IdefixArray4D<real>::host_mirror_type Vs;     // Main face-centered primitive variables index
+  IdefixArray4D<real>::host_mirror_type J;      // Current (only when haveCurrent is enabled)
+  IdefixArray4D<real>::host_mirror_type Uc;     // Main cell-centered conservative variables
+  IdefixArray3D<real>::host_mirror_type InvDt;
 
-  IdefixArray3D<real>::HostMirror Ex1;    // x1 electric field
-  IdefixArray3D<real>::HostMirror Ex2;    // x2 electric field
-  IdefixArray3D<real>::HostMirror Ex3;    // x3 electric field
+  IdefixArray3D<real>::host_mirror_type Ex1;    // x1 electric field
+  IdefixArray3D<real>::host_mirror_type Ex2;    // x2 electric field
+  IdefixArray3D<real>::host_mirror_type Ex3;    // x3 electric field
 
-need to be synchronized *manually*. These IdefixArrays are all defined as ``HostMirror``, implying that they are accessible
+need to be synchronized *manually*. These IdefixArrays are all defined as ``host_mirror_type``, implying that they are accessible
 from the host only. If modifications are performed on the arrays of the
 parent ``DataBlock``, one can call ``DataBlockHost::SyncFromDevice()`` to refresh the host arrays,
 and inversely one can call ``DataBlockHost::SyncToDevice()`` to send data from ``DataBlockHost``

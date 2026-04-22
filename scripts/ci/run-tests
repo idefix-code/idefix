@@ -13,8 +13,16 @@ if [ -d .venv ]; then
     source .venv/bin/activate
 fi
 
-# jump in test directory
-cd "$1"
+# to get access to idefix ./pytools/ module in python code
+if [[ -v PYTHONPATH ]]; then
+    export PYTHONPATH="${PWD}:${PYTHONPATH}"
+else
+    export PYTHONPATH="${PWD}"
+fi
 
-# run the test
-./testme.py "${@:2}"
+# run the test the old way (still possible up to now)
+#cd "$1"
+#./testme.py "${@:2}"
+
+# run the test the new way (via pytest)
+./test.py -subdir "$@"

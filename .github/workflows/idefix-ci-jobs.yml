@@ -39,7 +39,7 @@ jobs:
       - name: Isothermal Sod test
         run: scripts/ci/run-tests $IDEFIX_DIR/test/HD/sod-iso -all $TESTME_OPTIONS
       - name: Mach reflection test
-        run: scripts/ci/run-tests $IDEFIX_DIR/test/HD//MachReflection -all $TESTME_OPTIONS
+        run: scripts/ci/run-tests $IDEFIX_DIR/test/HD/MachReflection -all $TESTME_OPTIONS
       - name: Sedov blast wave
         run: scripts/ci/run-tests $IDEFIX_DIR/test/HD/SedovBlastWave -all $TESTME_OPTIONS
 

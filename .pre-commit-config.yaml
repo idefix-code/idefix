@@ -47,8 +47,10 @@ repos:
   - repo: https://github.com/neutrinoceros/inifix
     rev: v6.1.2
     hooks:
+      - id: inifix-validate
+        args: [--sections=require]
       - id: inifix-format
-        files: ^(test/).*\.(ini)$ # want to skip pytest.ini
+        args: [--skip-validation]
 
   - repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.5.5

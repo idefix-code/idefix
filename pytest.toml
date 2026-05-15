@@ -1,0 +1,10 @@
+[pytest]
+minversion = "9.0"
+markers = [
+  "default: Test to run by default.",
+]
+python_files = [
+  "test_*.py",
+]
+junit_logging = "system-out"
+junit_log_passing_tests = false

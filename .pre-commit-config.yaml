@@ -44,11 +44,10 @@ repos:
         - --ignore
         - F403 # ignore import *
 
-  - repo: https://github.com/neutrinoceros/inifix
-    rev: v6.1.2
+  - repo: https://github.com/la-niche/inifix-pre-commit
+    rev: v1.0.0
     hooks:
       - id: inifix-format
-        files: ^(test/).*\.(ini)$ # want to skip pytest.ini
 
   - repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.5.5

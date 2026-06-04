@@ -20,11 +20,11 @@ algorithm is essentially the same (but with some major modification to its struc
 ================
 Requirements
 ================
-*Idefix* is written is standard C++20 and does not rely on any external library in serial (non MPI).
+*Idefix* is written is standard C++17 and does not rely on any external library in serial (non MPI).
 
 Compiler
-  *Idefix* requires a C++20 compatible compiler. It has been tested successfully with GCC (>11), Intel compiler suite (>2022) and
-  Clang on both Intel and AMD CPUs. *Idefix* has also been tested on NVIDIA GPUs (Pascal, Volta and Ampere architectures) using the nvcc (>12) compiler, and on AMD GPUs (Radeon Mi50, Mi210, Mi250, Mi300) using the hipcc compiler.
+  *Idefix* requires a C++17 compatible compiler. It has been tested successfully with GCC (>8), Intel compiler suite (>2018) and
+  Clang on both Intel and AMD CPUs. *Idefix* has also been tested on NVIDIA GPUs (Pascal, Volta and Ampere architectures) using the nvcc (>10) compiler, and on AMD GPUs (Radeon Mi50, Mi210, Mi250) using the hipcc compiler.
 
 Kokkos library
   *Idefix* relies internally on the `Kokkos <https://github.com/kokkos/kokkos>`_ library, which is bundled with *Idefix* as a git submodule and compiled on the fly, hence no external installation is required.
@@ -89,9 +89,6 @@ Jean Kempf, Victor Reville, François Rincon
 
 Marc Coiffier
   Continuous integration, automatic benchmarking
-
-Sébastien Valat
-   Continuous integration
 
 ========================
 About this documentation

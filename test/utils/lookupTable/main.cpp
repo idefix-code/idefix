@@ -38,7 +38,7 @@ int main( int argc, char* argv[] )
     idfx::cout << "--------------------------------------" << std::endl;
     idfx::cout << "Testing 2D CSV file on device." << std::endl;
     IdefixArray1D<real> arr = IdefixArray1D<real>("Test",1);
-    IdefixArray1D<real>::HostMirror arrHost = Kokkos::create_mirror_view(arr);
+    IdefixArray1D<real>::host_mirror_type arrHost = Kokkos::create_mirror_view(arr);
 
     LookupTable<2> csv("toto.csv",',');
 

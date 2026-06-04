@@ -1,7 +1,20 @@
 #!/usr/bin/env bash
+
+# load ICC compiler env
 if [ "$IDEFIX_COMPILER" == icc ]; then
     source /opt/intel/oneapi/setvars.sh
 fi
+
+# enable bash features
 set -ue
+
+# load python venv if present
+if [ -d .venv ]; then
+    source .venv/bin/activate
+fi
+
+# jump in test directory
 cd "$1"
+
+# run the test
 ./testme.py "${@:2}"

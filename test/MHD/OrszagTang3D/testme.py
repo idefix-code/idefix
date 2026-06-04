@@ -28,7 +28,7 @@ def testMe(test):
   test.nonRegressionTest(filename="dump.0001.dmp",tolerance=tol)
 
 
-test=tst.idfxTest()
+test=tst.idfxTest(__file__)
 
 # if no decomposition is specified, use that one
 if not test.dec:

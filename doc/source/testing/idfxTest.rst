@@ -74,6 +74,9 @@ The constructor parses command-line arguments using ``argparse``. These options 
    * - ``-Werror``
      - ``Werror``
      - Treat compiler warnings as errors.
+   * - ``-ccache``
+     - ``ccache``
+     - Enable usage of ccache to build the tests and reduce the build time.
 
 Main Methods
 ------------

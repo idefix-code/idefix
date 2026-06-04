@@ -21,15 +21,17 @@ env:
   PYTHONPATH: ${{ github.workspace }}
   IDEFIX_DIR: ${{ github.workspace }}
 
+permissions: {}
 
 jobs:
   ShocksHydro:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
+          persist-credentials: false
       - name: Prep python
         uses: ./.github/workflows/actions/pre-install-py-packages
       - name: Sod test
@@ -45,9 +47,10 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
+          persist-credentials: false
       - name: Prep python
         uses: ./.github/workflows/actions/pre-install-py-packages
       - name: Viscous flow past cylinder
@@ -61,9 +64,10 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
+          persist-credentials: false
       - name: Prep python
         uses: ./.github/workflows/actions/pre-install-py-packages
       - name: MHD Sod test
@@ -83,9 +87,10 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
+          persist-credentials: false
       - name: Prep python
         uses: ./.github/workflows/actions/pre-install-py-packages
       - name: Ambipolar C Shock
@@ -104,9 +109,10 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
+          persist-credentials: false
       - name: Prep python
         uses: ./.github/workflows/actions/pre-install-py-packages
       - name: Fargo + planet
@@ -119,9 +125,10 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
+          persist-credentials: false
       - name: Prep python
         uses: ./.github/workflows/actions/pre-install-py-packages
       - name: Hydro shearing box
@@ -134,9 +141,10 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
+          persist-credentials: false
       - name: Prep python
         uses: ./.github/workflows/actions/pre-install-py-packages
       - name: Jeans Instability
@@ -155,9 +163,10 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
+          persist-credentials: false
       - name: Prep python
         uses: ./.github/workflows/actions/pre-install-py-packages
       - name: 3 body
@@ -178,9 +187,10 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
+          persist-credentials: false
       - name: Prep python
         uses: ./.github/workflows/actions/pre-install-py-packages
       - name: Energy conservation
@@ -193,9 +203,10 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
+          persist-credentials: false
       - name: Prep python
         uses: ./.github/workflows/actions/pre-install-py-packages
       - name: MTI
@@ -212,9 +223,10 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
+          persist-credentials: false
       - name: Prep python
         uses: ./.github/workflows/actions/pre-install-py-packages
       - name: Run examples test
@@ -225,9 +237,10 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
+          persist-credentials: false
       - name: Prep python
         uses: ./.github/workflows/actions/pre-install-py-packages
       - name: Lookup table
@@ -242,9 +255,10 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
         with:
           submodules: recursive
+          persist-credentials: false
       - name: Prep python
         uses: ./.github/workflows/actions/pre-install-py-packages
       - name: Restart dumps

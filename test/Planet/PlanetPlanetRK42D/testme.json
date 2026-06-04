@@ -1,0 +1,27 @@
+{
+    "namings": "mpi",
+    "default": {
+        "ini": "idefix.ini",
+        "dumpname": "dump.0002.dmp",
+        "noplot": true,
+        "vectPot": false,
+        "single": false,
+        "reconstruction": 2,
+        "dec": ["2","2"],
+        "tolerance": 1e-13
+    },
+    "variants": [
+        {
+            "mpi": [false, true],
+            "multirun": [
+                {
+                    "nonRegressionTest": true,
+                    "standardTest": true
+                },{
+                    "restart": true,
+                    "restart_no_overwrite": ["dump.0001.dmp", "data.0005.vtk"]
+                }
+            ]
+        }
+    ]
+}

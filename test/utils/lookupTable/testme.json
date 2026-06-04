@@ -1,0 +1,9 @@
+{
+    "default": {
+        "dumpname": "dump.0001.dmp",
+        "ini": "idefix.ini",
+        "nonRegressionTest": false,
+        "standardTest": false,
+        "tolerance": 0
+    }
+}

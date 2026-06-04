@@ -38,7 +38,7 @@ def testMe(test):
     assert dump_mtime == os.path.getmtime("dump.0001.dmp"), "Dump was overwritten on restart"
     assert vtk_mtime == os.path.getmtime("data.0005.vtk"), "VTK file was overwritten on restart"
 
-test=tst.idfxTest()
+test=tst.idfxTest(__file__)
 if not test.dec:
   test.dec=['2','2']
 

@@ -15,6 +15,11 @@ repos:
       - id: check-added-large-files
         args: ['--maxkb=100'] ## prevent files larger than 100kB from being commited (exclude git lfs files)
 
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.23.1
+    hooks:
+    - id: zizmor
+
   - repo: https://github.com/Lucas-C/pre-commit-hooks-nodejs
     rev: v1.1.2
     hooks:
@@ -43,6 +48,7 @@ repos:
     rev: v6.1.2
     hooks:
       - id: inifix-format
+        files: ^(test/).*\.(ini)$ # want to skip pytest.ini
 
   - repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.5.5

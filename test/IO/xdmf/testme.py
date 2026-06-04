@@ -12,7 +12,7 @@ import pytools.idfx_test as tst
 
 name="dump.0001.dmp"
 
-test=tst.idfxTest()
+test=tst.idfxTest(__file__)
 
 def check_xdmf_exists():
   # verify that the expected XDMF sidecar and data file exist.

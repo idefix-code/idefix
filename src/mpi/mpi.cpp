@@ -131,7 +131,7 @@ void Mpi::CheckConfig() {
 
   // Run-time check that we can do a reduce on device arrays
   IdefixArray1D<int64_t> src("MPIChecksrc",1);
-  IdefixArray1D<int64_t>::HostMirror srcHost = Kokkos::create_mirror_view(src);
+  IdefixArray1D<int64_t>::host_mirror_type srcHost = Kokkos::create_mirror_view(src);
 
   if(idfx::prank == 0) {
     srcHost(0) = 0;

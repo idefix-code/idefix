@@ -1,15 +1,17 @@
 {
-    "namings": "ini",
-    "variants": [
-        {
-            "dumpname": "dump.0001.dmp",
-            "ini": ["idefix.ini","idefix-rkl.ini","idefix-sl.ini"],
-            "noplot": true,
-            "vectPot": false,
-            "single": false,
-            "reconstruction": 2,
-            "mpi": false,
-            "tolerance": 0
-        }
-    ]
+  "namings": "ini",
+  "default": {
+    "dumpname": "dump.0001.dmp",
+    "noplot": true,
+    "vectPot": false,
+    "single": false,
+    "reconstruction": 2,
+    "mpi": false,
+    "tolerance": 0
+  },
+  "variants": [
+    {
+      "ini": ["idefix.ini","idefix-rkl.ini","idefix-sl.ini"]
+    }
+  ]
 }

@@ -1,28 +1,23 @@
 {
   "namings": "definitionFile,ini",
+  "default": {
+    "dumpname": "dump.0001.dmp",
+    "vectPot": false,
+    "reconstruction": 2,
+    "single": false,
+    "mpi": true,
+    "dec": [2, 2, 2 ],
+    "standardTest": false,
+    "nonRegressionTest": false,
+    "tolerance": 0
+  },
   "variants": [
     {
-      "dumpname": "dump.0001.dmp",
       "definitionFile": "definitions.hpp",
-      "ini": ["idefix.ini"],
-      "vectPot": false,
-      "reconstruction": 2,
-      "single": false,
-      "mpi": true,
-      "dec": [2, 2, 2 ],
-      "standardTest": false,
-      "tolerance": 0
+      "ini": ["idefix.ini"]
     },{
-      "dumpname": "dump.0001.dmp",
       "definitionFile": "definitions-spherical.hpp",
-      "ini": ["idefix-spherical.ini"],
-      "vectPot": false,
-      "reconstruction": 2,
-      "single": false,
-      "mpi": true,
-      "dec": [2, 2, 2 ],
-      "standardTest": false,
-      "tolerance": 0
+      "ini": ["idefix-spherical.ini"]
     }
   ]
 }

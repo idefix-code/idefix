@@ -32,7 +32,7 @@ class IdefixDirTestGenerator:
     self.currentTestName = name
 
   # generate the list of configs to run
-  def genTestConfigs(self, names:str, params, whenClauses = {}) -> list:
+  def genTestConfigs(self, names:str, params, whenClauses = {}, defaultConfig: dict = {}) -> list:
     '''
     Generate the the list of configurations as pytest parameters.
     It will unpack the configuration set by looping on all combinations defined
@@ -48,20 +48,24 @@ class IdefixDirTestGenerator:
       whenCaluses (dict|list):
         Provide a set of clauses to apply after unpacking
         the configuration so we can patch some values depending on some others.
+      defaultConfig (dict):
+        The default configuration on top of which to apply the variants.
 
     Returns:
       A list of pytest.param() ready to be fiven to parametrized pytest functions.
     '''
     # get name ordering list
     nameList = names.split(',')
+    if '' in nameList:
+      nameList.remove('')
 
     # gen list of complete configs
     all_configs = []
     if isinstance(params, dict):
-      all_configs += self._genOneConfigSeries(names, params)
+      all_configs += self._genOneConfigSeries(names, params, defaultConfig=defaultConfig)
     elif isinstance(params, list):
       for p in params:
-        all_configs += self._genOneConfigSeries(names, p)
+        all_configs += self._genOneConfigSeries(names, p, defaultConfig=defaultConfig)
     else:
       raise Exception("Should never be called !")
 
@@ -155,7 +159,7 @@ class IdefixDirTestGenerator:
         result.append(v)
     return result
 
-  def _genOneConfigSeries(self, names: str, config: dict) -> list:
+  def _genOneConfigSeries(self, names: str, config: dict, defaultConfig: dict={}) -> list:
     '''
     Generate the the list of configurations as pytest parameters.
     It will unpack the configuration set by looping on all combinations defined
@@ -167,6 +171,8 @@ class IdefixDirTestGenerator:
         name of the file.
       config (dict):
         A configuration set as a dictionnary.
+      defaultConfig (dict):
+        The default configuration to overload with the variant part.
 
     Returns:
       A list of pytest.param() ready to be fiven to parametrized pytest functions.
@@ -179,9 +185,11 @@ class IdefixDirTestGenerator:
     if 'ini' in loopOrder:
       loopOrder.remove('ini')
       loopOrder.append('ini')
+    if '' in loopOrder:
+      loopOrder.remove('')
 
     # init core with everything not a list
-    core = {}
+    core = copy.deepcopy(defaultConfig)
     for key, value in config.items():
       if isinstance(value, list) and key not in DO_NOT_LOOP_ON:
         assert key in nameList, f"All variable parameteres should be ordered in the names list, '{key}' is not."

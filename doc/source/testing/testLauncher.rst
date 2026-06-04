@@ -144,7 +144,7 @@ For a single basic configuration one can use :
 .. code-block:: json
 
     {
-        "variants": {
+        "default": {
             "dumpname": "dump.0001.dmp",
             "ini": "idefix.ini",
             "vectPot": false,
@@ -159,7 +159,7 @@ For a single basic configuration one can use :
 Available parameters
 --------------------
 
-The parameters in the ``variants`` dictionnary correspond to the options supported by the
+The parameters in the ``default`` dictionnary correspond to the options supported by the
 :doc:`idfxTest <idfxTest>` script to configure the build and run of *Idefix*.
 
 In addition there is some extra keys which are dedicated to the json interpretation layer :
@@ -195,22 +195,24 @@ In addition there is some extra keys which are dedicated to the json interpretat
 Looping over parameters
 -----------------------
 
-You might want to explore running Idefix within parameter ranges (configuration files, modes).
-For this simply list the values you want as a list. The test script will automatically
-generate all combinations.
+You might want to explore running *Idefix* within parameter ranges (configuration files, modes).
+For this simply list the values you want as a list in tha ``variants`` dictionnary. The test script
+will automatically generate all combinations.
 
 .. code-block:: json
 
     {
-        "variants": {
+        "default": {
             "dumpname": "dump.0001.dmp",
-            "ini": ["idefix.ini","idefix-hll.ini"],
-            "vectPot": [false, true],
             "single": false,
             "reconstruction": 2,
-            "mpi": [false, true],
             "standardTest": false,
             "tolerance": 0
+        },
+        "variants": {
+            "ini": ["idefix.ini","idefix-hll.ini"],
+            "vectPot": [false, true],
+            "mpi": [false, true]
         }
     }
 
@@ -245,25 +247,24 @@ can list several sets as a list. Here using single only on half of the modes.
 .. code-block:: json
 
     {
+        "default": {
+            "dumpname": "dump.0001.dmp",
+            "tolerance": 0
+            "standardTest": false,
+            "reconstruction": 2
+        },
         "variants": [
             {
-                "dumpname": "dump.0001.dmp",
-                "ini": ["idefix.ini"],
+                "ini": "idefix.ini",
                 "vectPot": false,
                 "single": false,
-                "reconstruction": 2,
                 "mpi": [false, true],
-                "standardTest": false,
-                "tolerance": 0
             },{
-                "dumpname": "dump.0001.dmp",
-                "ini": ["idefix-hll.ini"],
+                "ini": "idefix-hll.ini",
                 "vectPot": true,
                 "single": true,
-                "reconstruction": 2,
                 "mpi": [false, true],
-                "standardTest": false,
-                "tolerance": 0
+
             }
         ]
     }
@@ -284,15 +285,17 @@ the order you want to see them composing the test name.
 
     {
         "namings": "ini,single,mpi",
-        "variants": {
+        "default": {
             "dumpname": "dump.0001.dmp",
-            "ini": ["idefix.ini","idefix-hll.ini"],
             "vectPot": false,
-            "single": [false, true],
             "reconstruction": 2,
-            "mpi": [false, true],
             "standardTest": false,
             "tolerance": 0
+        },
+        "variants": {
+            "ini": ["idefix.ini","idefix-hll.ini"],
+            "single": [false, true],
+            "mpi": [false, true],
         }
     }
 
@@ -309,15 +312,17 @@ It is just like if you used and IF statement.
 
     {
         "namings": "ini,single,mpi",
-        "variants": {
+        "default": {
             "dumpname": "dump.0001.dmp",
-            "ini": ["idefix.ini","idefix-hll.ini"],
             "vectPot": false,
-            "single": [false, true],
             "reconstruction": 2,
-            "mpi": [false, true],
             "standardTest": false,
             "tolerance": 0
+        },
+        "variants": {
+            "ini": ["idefix.ini","idefix-hll.ini"],
+            "single": [false, true],
+            "mpi": [false, true],
         },
         "when": {
             "conditions": {
@@ -348,9 +353,9 @@ They are described like :
 .. code-block:: json
 
     {
-        "variants": {
+        "default": {
             "dumpname": "dump.0001.dmp",
-            "ini": ["idefix.ini"],
+            "ini": "idefix.ini",
             "vectPot": false,
             "single": false,
             "reconstruction": 2,

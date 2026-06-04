@@ -1,16 +1,18 @@
 {
-    "namings": "ini,mpi",
+    "namings": "mpi",
+    "default": {
+        "dumpname": "dump.0001.dmp",
+        "ini": "idefix.ini",
+        "noplot": true,
+        "vectPot": false,
+        "single": false,
+        "reconstruction": 2,
+        "nonRegressionTest": false,
+        "tolerance": 1e-13
+    },
     "variants": [
         {
-            "dumpname": "dump.0001.dmp",
-            "ini": ["idefix.ini"],
-            "noplot": true,
-            "vectPot": false,
-            "single": false,
-            "reconstruction": 2,
-            "mpi": [false, true],
-            "nonRegressionTest": false,
-            "tolerance": 1e-13
+            "mpi": [false, true]
         }
     ]
 }

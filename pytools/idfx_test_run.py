@@ -85,20 +85,27 @@ class IdexPytestRunner:
 
           # load json & build the inner test combinations
           with open(testfilePath, 'r') as fp:
+            # load
             test = json.load(fp)
             idefixTestGenerator=IdefixDirTestGenerator(testfilePath, testfileDir)
+
+            # extract default config & when & variants
+            defaultConfig = test.get('default', {})
+            whenClauses = test.get('when', {})
+            variants = test.get('variants', {})
+
             if 'namings' in test:
               namings = test['namings']
-              autoExtracted = idefixTestGenerator.extractNamingParameters(test['variants'])
+              autoExtracted = idefixTestGenerator.extractNamingParameters(variants)
               self._validateNaming(namings, autoExtracted, testfilePath)
             else:
-              namings = idefixTestGenerator.extractNamingParameters(test['variants'])
+              namings = idefixTestGenerator.extractNamingParameters(variants)
 
             # required to simplify the algos later, if var is listed as variable, we need to loop over it.
-            self._makeVariableArgAsList(namings, test['variants'])
+            self._makeVariableArgAsList(namings, variants)
 
             # gen
-            result += idefixTestGenerator.genTestConfigs(namings, test['variants'], test.get('when', {}))
+            result += idefixTestGenerator.genTestConfigs(namings, variants, whenClauses=whenClauses, defaultConfig=defaultConfig)
         except Exception as e:
           raise Exception(f"Fail to generate tests from {testfileRelPath} : {e}")
 
@@ -151,7 +158,7 @@ class IdexPytestRunner:
 
     # check produced
     for file in check_file_produced:
-      if not os.path.exists(file):
+      if not os.path.exists(file) and not self.currentTestRunner.fake:
         raise Exception(f"Don't find expected file to be produced by the run : {file} !")
 
   def _runNonRegression(self, dumpname, ini, config_override, tolerance=0, definitionFile="", nonReg=True, nonRegIni=None, standardTest=True, first_run_ini=None,first_run_dumpname=None,configure_and_compile=True):

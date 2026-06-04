@@ -1,15 +1,17 @@
 {
-    "namings": "ini",
-    "variants": [
-        {
-            "dumpname": "dump.0001.dmp",
-            "ini": ["idefix.ini","idefix-fargo.ini"],
-            "noplot": true,
-            "reconstruction": 2,
-            "single": false,
-            "mpi": false,
-            "dec": ["2","1","2"],
-            "tolerance": 1e-15
-        }
-    ]
+  "namings": "ini",
+  "default": {
+    "dumpname": "dump.0001.dmp",
+    "noplot": true,
+    "reconstruction": 2,
+    "single": false,
+    "mpi": false,
+    "dec": ["2","1","2"],
+    "tolerance": 1e-15
+  },
+  "variants": [
+    {
+      "ini": ["idefix.ini","idefix-fargo.ini"]
+    }
+  ]
 }

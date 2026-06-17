@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import sys
 import re
+import json
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -22,7 +23,7 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 class idfxTest:
-  def __init__ (self):
+  def __init__ (self, current_test_file, name=""):
     parser = argparse.ArgumentParser()
 
     idefix_dir_env = os.getenv("IDEFIX_DIR")
@@ -99,19 +100,94 @@ class idfxTest:
                     help="Consider warnings as errors",
                     action="store_true")
 
+    parser.add_argument("-ccache",
+                    help="Use ccache to reduce the build time over multiple run of the test suite.",
+                    action="store_true")
+
+    parser.add_argument("-restart",
+                    help="Enable creating a restart from a checkpoint.",
+                    action='store_true')
+
+    parser.add_argument("-v", "--verbose",
+                    help="Enable verbose mode, by not capturing the output.",
+                    action="store_true")
+
+    parser.add_argument("--help-pytest",
+                    help="Display the options you can transmit directly to pytest in addition to the specific to idefix tests.",
+                    action="store_true")
+
+    parser.add_argument("-fake",
+                    help="Make a fake run by just logging the actions to validate that we generate same command over refactoring.",
+                    action="store_true")
+
+    # this option is not used directly by direct users of idfxTest but by idx_test_gen
+    parser.add_argument("-subdir",
+                    default="./test",
+                    help="Select the test in the given subdir not to run all.",
+                    type=str)
 
     args, unknown=parser.parse_known_args()
 
     # transform all arguments from args into attributes of this instance
     self.__dict__.update(vars(args))
+    # store the full path of problem directory
+    self.currentTestFile = current_test_file
+    self.currentTestName = name
+    self.problemDir=os.path.dirname(current_test_file)
     self.referenceDirectory = os.path.join(idefix_dir_env,"reference")
     # current directory relative to $IDEFIX_DIR/test (used to retrieve the path ot reference files)
-    self.testDir=os.path.relpath(os.curdir,os.path.join(idefix_dir_env,"test"))
+    self.testDir=os.path.relpath(self.problemDir,os.path.join(idefix_dir_env,"test"))
+    # build directory, currently inside the test named build-test
+    self.buildDir=os.path.join(self.problemDir,"build-test")
+    # remind what build we dit last
+    self.lastCmakeCmd=""
+    # subdir
+    self.filterSubdir=args.subdir
+    # save
+    self.cmdArgs = vars(args)
+    self.cmdArgs.update({
+      "restart_no_overwrite": [],
+    })
+    self.log=[]
+    # when making a restart we should not overrite those files (will be checked)
+    self.restart_no_overwrite=[]
 
-  def configure(self,definitionFile=""):
+    # forward args for pytest
+    if args.verbose:
+      unknown.append("--capture=no")
+    if args.help_pytest:
+      unknown.append("--help")
+    # remaining args
+    self.remainingArgs=unknown
+
+  def addLog(self, entry):
+    if self.fake:
+      self.log.append(entry)
+      with open(os.path.join(self.problemDir,"testsuite.log.json"), "w+") as fp:
+        json.dump(self.log, fp, indent='\t')
+
+  def applyConfig(self, config: dict={}):
+    # check args
+    for key, value in config.items():
+      if key not in ['ini', 'testfile', 'testname', 'dumpname']:
+        assert key in self.cmdArgs, f"The given configuration overriding try to set an invalid paramater : {key}={value}"
+
+    # override options
+    newArgs = {}
+    newArgs.update(self.cmdArgs)
+    newArgs.update(config)
+
+    # replace in dict
+    self.__dict__.update(newArgs)
+
+  def _genCmakeCommand(self,definitionFile=""):
     comm=["cmake"]
     # add source directory
     comm.append(self.idefixDir)
+
+    # we will build in ./build-test so problem dir is parent
+    comm.append("-DIdefix_PROBLEM_DIR="+self.problemDir)
+
     # add specific options
     for opt in self.cmake:
       comm.append("-D"+opt)
@@ -155,7 +231,7 @@ class idfxTest:
     else:
       self.definitions="definitions.hpp"
 
-    comm.append("-DIdefix_DEFS="+self.definitions)
+    comm.append("-DIdefix_DEFS="+os.path.join(self.problemDir, self.definitions))
 
     if(self.mpi):
       comm.append("-DIdefix_MPI=ON")
@@ -169,20 +245,88 @@ class idfxTest:
     elif(self.reconstruction==4):
       comm.append("-DIdefix_RECONSTRUCTION=Parabolic")
 
+    # export ccache env
+    if self.ccache:
+      comm.append("-DCMAKE_CXX_COMPILER_LAUNCHER=ccache")
 
+    # ok
+    return comm
+
+
+  def configure(self,definitionFile="", reuse_last_same_build=True, override: dict={}):
+    # log
+    self.addLog({"call": "configure", "args":{
+      'definitionFile': definitionFile,
+      'reuse_last_same_build': reuse_last_same_build,
+      'override': override
+    }})
+
+    # gen command
+    comm = self._genCmakeCommand(definitionFile)
+
+    # log
+    print("***************** CALLING CMAKE *******************")
+    print(f"mkdir -p {self.buildDir}")
+    print(f"cd {self.buildDir}")
+    print(' '.join(comm))
+    print("***************************************************")
+
+    # not action needed if same command or force no rebuild
+    if reuse_last_same_build == True and self.lastCmakeCmd == ' '.join(comm):
+      print("SKIP ALREADY DONE")
+      return
+
+    # run
     try:
-        cmake=subprocess.run(comm)
-        cmake.check_returncode()
+        # do cleanup
+        self.clean()
+
+        # log and in fake mode we do not execute
+        self.addLog({"command": comm})
+
+        # call cmake
+        if not self.fake:
+          cmake=subprocess.run(comm, cwd=os.path.abspath(self.buildDir))
+          cmake.check_returncode()
     except subprocess.CalledProcessError as e:
         print(bcolors.FAIL+"***************************************************")
         print("Cmake failed")
         print("***************************************************"+bcolors.ENDC)
         raise e
+    finally:
+        # remind for next time
+        self.lastCmakeCmd = ' '.join(comm)
+
+  def clean(self):
+    # log and in fake mode we do not execute
+    self.addLog({"call": "clean", "args":{}})
+    if self.fake:
+      return
+
+    # remove the build directory before re-creating it
+    if os.path.exists(self.buildDir):
+      shutil.rmtree(self.buildDir)
+
+    # recreate
+    os.makedirs(self.buildDir, exist_ok=False)
 
   def compile(self,jobs=8):
+    self.addLog({"call": "compile", "args":{
+      'jobs': jobs,
+    }})
+
     try:
-        make=subprocess.run(["make","-j"+str(jobs)])
-        make.check_returncode()
+        comm = ["make","-j"+str(jobs)]
+        self.addLog({"command": comm})
+
+        print("***************************************************")
+        print(f"cd {os.getcwd()}")
+        print(' '.join(comm))
+        print("***************************************************")
+
+        if not self.fake:
+          make=subprocess.run(comm, cwd=os.path.abspath(self.buildDir))
+          make.check_returncode()
     except subprocess.CalledProcessError as e:
         print(bcolors.FAIL+"***************************************************")
         print("Compilation failed")
@@ -190,7 +334,14 @@ class idfxTest:
         raise e
 
   def run(self, inputFile="", np=2, nowrite=False, restart=-1):
-      comm=["./idefix"]
+      # log
+      self.addLog({"call": "run", "args":{
+        'np': np,
+        'nowrite': nowrite,
+        'restart': restart,
+      }})
+
+      comm=[os.path.join(self.buildDir,"idefix")]
       if inputFile:
           comm.append("-i")
           comm.append(inputFile)
@@ -218,9 +369,16 @@ class idfxTest:
         comm.append("-restart")
         comm.append(str(restart))
 
+      print("***************************************************")
+      print(f"cd {os.getcwd()}")
+      print(' '.join(comm))
+      print("***************************************************")
+
       try:
-          make=subprocess.run(comm)
-          make.check_returncode()
+          self.addLog({"command": comm})
+          if not self.fake:
+            make=subprocess.run(comm, cwd=self.problemDir)
+            make.check_returncode()
       except subprocess.CalledProcessError as e:
           print(bcolors.FAIL+"***************************************************")
           print("Execution failed")
@@ -230,6 +388,9 @@ class idfxTest:
       self._readLog()
 
   def _readLog(self):
+    if self.fake:
+      return
+
     if not os.path.exists('./idefix.0.log'):
       # When no idefix file is produced, we leave
       return
@@ -274,6 +435,12 @@ class idfxTest:
     self.perf=float(line.group(1))
 
   def checkOnly(self, filename, tolerance=0):
+    # log
+    self.addLog({"call": "checkOnly", "args":{
+      'filename': filename,
+      'tolerance': tolerance,
+    }})
+
     # Assumes the code has been run manually using some configuration, so we simply
     # do the test suite witout configure/compile/run
     self._readLog()
@@ -288,8 +455,14 @@ class idfxTest:
     self.nonRegressionTest(filename, tolerance)
 
   def standardTest(self):
-    if os.path.exists(os.path.join('python', 'testidefix.py')):
-      os.chdir("python")
+    # log and in fake mode do not execute.
+    self.addLog({"call": "standardTest", "args":{}})
+    if self.fake:
+      return
+
+    if os.path.exists(os.path.join(self.problemDir, 'python', 'testidefix.py')):
+      oldPwd = os.getcwd()
+      os.chdir(os.path.join(self.problemDir, "python"))
       comm = [sys.executable, "testidefix.py"]
       if self.noplot:
         comm.append("-noplot")
@@ -304,12 +477,19 @@ class idfxTest:
           print("***************************************************"+bcolors.ENDC)
           raise e
       print(bcolors.OKCYAN+"Standard test succeeded"+bcolors.ENDC)
-      os.chdir("..")
+      os.chdir(oldPwd)
     else:
       print(bcolors.WARNING+"No standard testidefix.py for this test"+bcolors.ENDC)
     sys.stdout.flush()
 
   def nonRegressionTest(self, filename,tolerance=0):
+    # log and in fake mode do not execute.
+    self.addLog({"call": "nonRegressionTest", "args":{
+      "filename": filename,
+      "tolerance": tolerance
+    }})
+    if self.fake:
+      return
 
     fileref=os.path.join(self.referenceDirectory, self.testDir, self._getReferenceFilename())
     if not(os.path.exists(fileref)):
@@ -333,6 +513,14 @@ class idfxTest:
     sys.stdout.flush()
 
   def compareDump(self, file1, file2,tolerance=0):
+    self.addLog({"call": "compareDump", "args":{
+      "file1": file1,
+      "file2": file2,
+      "tolerance": tolerance,
+    }})
+    if self.fake:
+      return
+
     Vref=readDump(file1)
     Vtest=readDump(file2)
     error=self._computeError(Vref,Vtest)
@@ -347,6 +535,13 @@ class idfxTest:
 
 
   def makeReference(self,filename):
+    # log and in fake mode do not execute.
+    self.addLog({"call": "compareDump", "args":{
+      "filename": filename,
+    }})
+    if self.fake:
+      return
+
     self._readLog()
     targetDir = os.path.join(self.referenceDirectory,self.testDir)
     if not os.path.exists(targetDir):

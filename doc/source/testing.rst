@@ -71,9 +71,17 @@ How tests are driven (testme scripts)
 Each test directory contains a small Python "testMe" driver that uses the helper Python
 class documented in the repository:
 
+- See the test launcher documentation: :doc:`test.py <testing/testLauncher>`
 - See the test helper documentation: :doc:`idfxTest <testing/idfxTest>`
 
-That helper (idfxTest) is responsible for:
+The test launcher (test.py) is responsible for:
+
+- Loading all the test definitions by search all the ``testme.json`` files in the ``test``
+  directory.
+- Calling the :doc:`idfxTest <testing/idfxTest>` helper to run the particular test.
+- Generate reports about success and failures.
+
+The helper (idfxTest) is responsible for:
 
 - parsing TESTME_OPTIONS-like flags (precision, MPI, CUDA, reconstruction, vector potential, etc.),
 - calling configure / compile / run,
@@ -108,10 +116,12 @@ Relevant files
 
 - Workflow entry point: .github/workflows/idefix-ci.yml
 - Reusable jobs: .github/workflows/idefix-ci-jobs.yml
+- Test launcher documentation: :doc:`test launcher <testing/testLauncher>`
 - Test helper documentation: :doc:`idfxTest <testing/idfxTest>`
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   testing/testLauncher.rst
    testing/idfxTest.rst

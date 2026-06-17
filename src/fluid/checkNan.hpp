@@ -67,7 +67,7 @@ int Fluid<Phys>::CheckNan()  {
 
       DataBlockHost dataHost(*data);
 
-      IdefixHostArray4D<real> VcHost = Kokkos::create_mirror_view(this->Vc);
+      IdefixHostArray4D<real> VcHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), this->Vc);
       Kokkos::deep_copy(VcHost,Vc);
 
       int nerrormax=10;
@@ -95,7 +95,7 @@ int Fluid<Phys>::CheckNan()  {
       }
 
       if constexpr(Phys::mhd) {
-        IdefixHostArray4D<real> VsHost = Kokkos::create_mirror_view(this->Vs);
+        IdefixHostArray4D<real> VsHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), this->Vs);
         Kokkos::deep_copy(VsHost,Vs);
         for(int k = data->beg[KDIR] ; k < data->end[KDIR]+KOFFSET ; k++) {
           for(int j = data->beg[JDIR] ; j < data->end[JDIR]+JOFFSET ; j++) {

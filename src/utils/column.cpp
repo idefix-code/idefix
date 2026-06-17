@@ -56,7 +56,7 @@ Column::Column(int dir, int sign, DataBlock *data)
     std::vector<int> mapVars;
     mapVars.push_back(ntarget);
 
-    this->mpi.Init(data->mygrid, mapVars, data->nghost.data(), data->np_int.data());
+    this->mpi.Init(data->mygrid, mapVars, data->nghost, data->np_int, data->lbound, data->rbound);
     this->nproc = data->mygrid->nproc;
   #endif
   idfx::popRegion();

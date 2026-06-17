@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] 2026-04-21
+### Changed
+
+- fixed a bug that could lead to diverging results around the spherical axis in non-ideal MHD in 2.5D and 3D (#356)
+- refactor of the MPI exchange routines and boundary routines to avoid buildup of roundoff errors at domain faces/edges that could lead to the sudden burst of div(B) or incoherences between MPI sub-domains (#357)
+- fixed a bug that could lead to compilations error when targetting AMD APUs (#359)
+- fixed a bug that led to the generation of incorrect subviews in 2.5D with vector_potential enabled (#362)
+- fixed a bug that could lead to memory corruption when using the UCT_HLLD emf reconstruction scheme and DIMENSIONS < COMPONENTS  (#363)
+- reorganise the test to separate specific IO tests from physics tests (#367)
+
+### Added
+- magnetic vector potential is now accessible from pydefix when enabled (#361)
+- use ccache in the test suite to reduce the runtime of continuous integration (#364)
+- automatically detects pybind11 path with cmake when using pydefix (#367)
+- skeleton to run the test suite with pytest (#366)
+
+
 ## [2.2.02] 2025-10-18
 ### Changed
 
@@ -13,6 +30,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fixed a bug that led to incorrect BX2 reconstruction when axis is not used on both sides of the domain (#345)
 - fixed a bug that led to incorrect reflective boundary conditions on B when DIMENSIONS < 3 (#345)
 - fixed a bug that led to incorrect dust stopping time when the adiabatic equation of state is used with "size" drag law (#353)
+- fixed div(B) normalisation to avoid "too large div(B)" errors when this is actually due to nulls in |B|
+- fixed insecure github actions settings (#373)
 
 ### Added
 

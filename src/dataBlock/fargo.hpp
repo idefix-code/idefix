@@ -11,7 +11,7 @@
 #include <vector>
 #include "idefix.hpp"
 #ifdef WITH_MPI
-  #include "mpi.hpp"
+  #include "exchanger.hpp"
 #endif
 
 #include "physics.hpp"
@@ -63,7 +63,7 @@ class Fargo {
   IdefixArray4D<real> scrhVs;
 
 #ifdef WITH_MPI
-  Mpi mpi;                      // Fargo-specific MPI layer
+  Exchanger mpiExchanger;                      // Fargo-specific MPI layer
 #endif
 
   std::array<int,3> beg;
@@ -290,11 +290,7 @@ void Fargo::StoreToScratch(Fluid<Phys>* hydro) {
   }
   #if WITH_MPI
     if(haveDomainDecomposition) {
-      #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
-        this->mpi.ExchangeX2(scrhUc, scrhVs);
-      #elif GEOMETRY == SPHERICAL
-        this->mpi.ExchangeX3(scrhUc, scrhVs);
-      #endif
+      this->mpiExchanger.Exchange(scrhUc, scrhVs);
     }
   #endif
 }

@@ -101,13 +101,17 @@ class ConstrainedTransport {
   // Routines for evolving the magnetic potential (only available when EVOLVE_VECTOR_POTENTIAL)
   void EvolveVectorPotential(real, IdefixArray4D<real> &);
   void ComputeMagFieldFromA(IdefixArray4D<real> &Vein, IdefixArray4D<real> &Vsout);
+  void EnforceVectorPotentialBoundary(IdefixArray4D<real> &Vein); // Enforce BCs on A
+  void EnforceEMFBoundaryPeriodic(IdefixArray3D<real> ex,
+                                  IdefixArray3D<real> ey,
+                                  IdefixArray3D<real> ez);
 
 #ifdef WITH_MPI
   // Exchange surface EMFs to remove interprocess round off errors
-  void ExchangeAll();
-  void ExchangeX1();
-  void ExchangeX2();
-  void ExchangeX3();
+  void ExchangeAll(IdefixArray3D<real> ex, IdefixArray3D<real> ey, IdefixArray3D<real> ez);
+  void ExchangeX1(IdefixArray3D<real> ey, IdefixArray3D<real> ez);
+  void ExchangeX2(IdefixArray3D<real> ex, IdefixArray3D<real> ez);
+  void ExchangeX3(IdefixArray3D<real> ex, IdefixArray3D<real> ey);
 #endif
 
  private:
@@ -449,6 +453,7 @@ void ConstrainedTransport<Phys>::ShowConfig() {
 #include "calcRiemannEmf.hpp"
 #include "EMFexchange.hpp"
 #include "enforceEMFBoundary.hpp"
+#include "enforceVectorPotentialBoundary.hpp"
 #include "evolveMagField.hpp"
 #include "evolveVectorPotential.hpp"
 

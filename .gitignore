@@ -22,6 +22,9 @@ CMakeFiles
 CMakeCache.txt
 cmake_install.cmake
 Makefile.local
+git-state.txt
+Kokkos_Version_info.*
+
 
 # test artifacts
 test/**/*.o
@@ -36,6 +39,9 @@ test/**/KokkosCore*
 test/**/*.csv
 test/**/*.pyc
 test/**/*.dat
+test/**/cmake_packages*
+test/**/
+idefix-tests.junit.xml
 
 # machine specific cache and hidden files
 .*

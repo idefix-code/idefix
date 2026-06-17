@@ -23,7 +23,8 @@ Pydefix usage
 Idefix Configuration
 ++++++++++++++++++++
 
-In order to use Pydefix, you need to switch on ``Idefix_PYTHON`` in cmake. This will auto-detect Python and check that pybind11 can be used effectively.
+In order to use Pydefix, you need to switch on ``Idefix_PYTHON`` in cmake. This will auto-detect Python and check that pybind11 can be used effectively. If you are using a python environement manager such as venv or conda, make sure to activate the right environement *before* running cmake, as idefix
+now includes the full path to python and pybind11 in its executable file.
 
 
 Run Idefix with Pydefix

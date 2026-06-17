@@ -138,10 +138,15 @@ Fargo::Fargo(Input &input, int nmax, DataBlock *data) {
       for(int i=0 ; i < nvar ; i++) {
         vars.push_back(i);
       }
+      #if GEOMETRY == CARTESIAN || GEOMETRY == POLAR
+        const int dirShift = JDIR;
+      #elif GEOMETRY == SPHERICAL
+        const int dirShift = KDIR;
+      #endif
       #if MHD == YES
-        this->mpi.Init(data->mygrid, vars, this->nghost.data(), data->np_int.data(), true);
+        this->mpiExchanger.Init(data->mygrid, dirShift, vars, this->nghost, data->np_int, true);
       #else
-        this->mpi.Init(data->mygrid, vars, this->nghost.data(), data->np_int.data());
+        this->mpiExchanger.Init(data->mygrid, dirShift, vars, this->nghost, data->np_int, false);
       #endif
     }
   #endif

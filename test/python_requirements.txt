@@ -8,3 +8,7 @@ scipy>=1.2.3
 
 # note that no version of inifix supports Python older than 3.6
 inifix>=0.11.2
+
+# To run the test suite, we can use pytest, mostly any version
+# 6.0 is the one available on system available on debian-11
+pytest >= 6.0

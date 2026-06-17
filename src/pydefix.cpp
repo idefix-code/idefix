@@ -68,7 +68,7 @@ py::array_t<real, py::array::c_style> GatherIdefixArray(IdefixHostArray3D<real> 
       // np_int: size that should be copied into global
       // beg: offset in the incoming array where copy should begin
       // gbeg: offset in the global array where copy should be begin
-      std::array<int,3> np_int,np_tot, beg, gbeg;
+      [[maybe_unused]] std::array<int,3> np_int,np_tot, beg, gbeg;
       IdefixHostArray3D<real> buf;
 
       if(rank==0) {
@@ -127,7 +127,7 @@ py::array_t<real, py::array::c_style> GatherIdefixArray(IdefixHostArray3D<real> 
     }// End loop on target rank for root process
   } else { // MPI prank >0
     std::array<int,3> np_int = dataHost.np_int;
-    std::array<int,3> np_tot = dataHost.np_tot;
+    [[maybe_unused]] std::array<int,3> np_tot = dataHost.np_tot;
     std::array<int,3> gbeg = dataHost.gbeg;
     std::array<int,3> beg = dataHost.beg;
 
@@ -228,6 +228,11 @@ PYBIND11_EMBEDDED_MODULE(pydefix, m) {
         m.attr("BX1s") = BX1s; ,
         m.attr("BX2s") = BX2s; ,
         m.attr("BX3s") = BX3s; )
+      #ifdef EVOLVE_VECTOR_POTENTIAL
+        m.attr("AX1e") = AX1e;
+        m.attr("AX2e") = AX2e;
+        m.attr("AX3e") = AX3e;
+      #endif
     #endif
     m.attr("IDIR") = IDIR;
     m.attr("JDIR") = JDIR;
@@ -273,6 +278,9 @@ Pydefix::Pydefix(Input &input) {
       idfx::cout << "Pydefix: start Python interpreter." << std::endl;
 
       py::initialize_interpreter();
+      py::exec("import sys; print(f'Pydefix: Python Version: {sys.version}')");
+      py::exec("print(f'Pydefix: Executable Path: {sys.executable}')");
+      py::exec("print(f'Pydefix: Sys Path: {sys.path}')");
     }
     this->scriptFilename = input.Get<std::string>("Python","script",0);
     if(scriptFilename.substr(scriptFilename.length() - 3, 3).compare(".py")==0) {

@@ -79,7 +79,48 @@ void UserdefBoundary(Hydro *hydro, int dir, BoundarySide side, real t) {
 
             });
         }
+  if(dir ==KDIR) {
+    auto Vc = hydro->Vc;
+    auto Vs = hydro->Vs;
+    int jbeg = data->beg[JDIR];
+    int jend = data->end[JDIR];
+    int kbeg = data->beg[KDIR];
+    int kend = data->end[KDIR];
+    hydro->boundary->BoundaryForAll("UserdefBoundary", dir, side,
+      KOKKOS_LAMBDA (int n, int k, int j, int i) {
+        int kref=k;
 
+        if(side == left) {
+          kref = kbeg;
+        } else {
+          kref = kend -1;
+        }
+        Vc(n,k,j,i) = Vc(n,kref,j,i);
+      });
+
+    if(dir == KDIR) {
+      hydro->boundary->BoundaryForX1s("UserdefBoundaryX1s", dir, side,
+        KOKKOS_LAMBDA (int k, int j, int i) {
+          int kref=k;
+          if(side == left) {
+            kref = kbeg;
+          } else {
+            kref = kend -1;
+          }
+          Vs(BX1s,k,j,i) = Vs(BX1s,kref,j,i);
+        });
+      hydro->boundary->BoundaryForX2s("UserdefBoundaryX2s", dir, side,
+        KOKKOS_LAMBDA (int k, int j, int i) {
+          int kref=k;
+          if(side == left) {
+            kref = kbeg;
+          } else {
+            kref = kend -1;
+          }
+          Vs(BX2s,k,j,i) = Vs(BX2s,kref,j,i);
+        });
+      }
+    }
 
 
 }
@@ -136,8 +177,8 @@ void Setup::InitFlow(DataBlock &data) {
                     real z = d.x[KDIR](k);
                     real y = d.x[JDIR](j);
                     d.Ve(AX1e,k,j,i) = B0*sin(theta)*z;
-                    d.Ve(AX2e,k,j,i) = ZERO_F;
-                    d.Ve(AX3e,k,j,i) = B0*cos(theta)*y;
+                    d.Ve(AX2e,k,j,i) = -B0*cos(theta)*z;
+                    d.Ve(AX3e,k,j,i) = 0;
                   #else
                     IDEFIX_ERROR("Vector potential only valid in 3 dimensions for this setup");
                   #endif

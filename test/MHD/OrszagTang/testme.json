@@ -1,0 +1,74 @@
+{
+    "namings": "ini,reconstruction,mpi,single,vectPot",
+    "variants": [
+        {
+            "dumpname": "dump.0001.dmp",
+            "ini": [
+                "idefix.ini",
+                "idefix-hll.ini",
+                "idefix-hlld-arithmetic.ini",
+                "idefix-hlld-hll.ini",
+                "idefix-hlld-hlld.ini",
+                "idefix-hlld-uct0.ini",
+                "idefix-hlld.ini",
+                "idefix-tvdlf.ini"
+            ],
+            "noplot": true,
+            "vectPot": [false],
+            "single": false,
+            "reconstruction": [2,3,4],
+            "mpi": [false, true],
+            "dec": ["2","2"],
+            "tolerance": 1e-12,
+            "standardTest": false
+        },{
+            "dumpname": "dump.0001.dmp",
+            "ini": [
+                "idefix.ini",
+                "idefix-hll.ini",
+                "idefix-hlld-arithmetic.ini",
+                "idefix-hlld-hll.ini",
+                "idefix-hlld-hlld.ini",
+                "idefix-hlld-uct0.ini",
+                "idefix-hlld.ini",
+                "idefix-tvdlf.ini"
+            ],
+            "noplot": true,
+            "vectPot": [false],
+            "single": true,
+            "reconstruction": [2],
+            "mpi": [false],
+            "dec": ["2","2"],
+            "tolerance": 1e-12,
+            "standardTest": false
+        },{
+            "dumpname": "dump.0001.dmp",
+            "ini": [
+                "idefix.ini",
+                "idefix-hll.ini",
+                "idefix-hlld-arithmetic.ini",
+                "idefix-hlld-hll.ini",
+                "idefix-hlld-hlld.ini",
+                "idefix-hlld-uct0.ini",
+                "idefix-hlld.ini",
+                "idefix-tvdlf.ini"
+            ],
+             "noplot": true,
+            "vectPot": [true],
+            "single": false,
+            "reconstruction": [2],
+            "mpi": [false],
+            "dec": ["2","2"],
+            "tolerance": 1e-12,
+            "standardTest": false
+        }
+    ],
+    "when": {
+        "conditions": {
+            "single": true
+        },
+        "apply" : {
+            "tolerance": 1e-5
+        }
+    }
+}

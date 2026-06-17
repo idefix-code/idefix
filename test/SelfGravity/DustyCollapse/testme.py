@@ -25,7 +25,7 @@ def testMe(test):
     test.standardTest()
 
 
-test=tst.idfxTest()
+test=tst.idfxTest(__file__)
 
 if not test.all:
   if(test.check):

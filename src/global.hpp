@@ -39,7 +39,7 @@ template<typename T>
 IdefixArray1D<T> ConvertVectorToIdefixArray(std::vector<T> &inputVector) {
   IdefixArray1D<T> outArr = IdefixArray1D<T>("Vector",inputVector.size());
   IdefixHostArray1D<T> outArrHost;
-  outArrHost = Kokkos::create_mirror_view(outArr);
+  outArrHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), outArr);
   for(int i = 0; i < inputVector.size() ; i++) {
     outArrHost(i) = inputVector[i];
   }

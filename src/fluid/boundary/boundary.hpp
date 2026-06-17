@@ -34,6 +34,8 @@ template <typename Phys>
 using InternalBoundaryFunc = void (*) (Fluid<Phys> *, const real t);
 using InternalBoundaryFuncOld = void (*) (DataBlock &, const real t); // DEPRECATED
 
+using BoundingBox = std::array<std::array<int,2>,3>;
+
 template<typename Phys>
 class Boundary {
  public:
@@ -84,9 +86,19 @@ class Boundary {
                             Function );
 
   template <typename Function>
+  void BoundaryFor(const std::string &,
+                            BoundingBox box,
+                            Function );
+
+  template <typename Function>
   void BoundaryForAll(const std::string &,
                             const int &,
                             const BoundarySide &,
+                            Function );
+
+  template <typename Function>
+  void BoundaryForAll(const std::string &,
+                            BoundingBox box,
                             Function );
 
   template <typename Function>
@@ -114,6 +126,10 @@ class Boundary {
   bool haveAxis{false};
   bool haveLeftAxis{false};  ///< True if the left boundary is an axis
   bool haveRightAxis{false}; ///< True if the right boundary is an axis
+
+  std::array<std::array<BoundingBox,2>,3> GhostBoxVc; ///< A bounding box for each ghost regions
+  std::array<std::array<std::array<BoundingBox,2>,3>,3>
+                                          GhostBoxVs; ///< A bounding box each Vs component
 
  private:
   friend class Axis;
@@ -154,6 +170,49 @@ Boundary<Phys>::Boundary(Fluid<Phys>* fluid) {
                                   data->nghost[IDIR]);
   }
 
+  // Initialise the Bounding Boxes for cell-centered variables
+  for(int dir = 0 ; dir < 3 ; dir++) {
+    // dir=direction along which we plan to apply the boundary conditions
+    for(int side = 0; side < 2 ; side++) {
+      // Side on which we apply the boundaries
+      for(int dim = 0 ; dim < 3 ; dim++) {
+        // Dimension of the datacube
+        if(dim != dir) {
+          GhostBoxVc[dir][side][dim][0] = 0;
+          GhostBoxVc[dir][side][dim][1] = data->np_tot[dim];
+        } else {
+          GhostBoxVc[dir][side][dim][0] = side*(data->end[dim]);
+          GhostBoxVc[dir][side][dim][1] = side*(data->end[dim])+data->nghost[dim];
+        }
+      }
+    }
+  }
+
+  // Initialise the Bounding Boxes for face-centered variables (NB: we need one for each component)
+  for(int component = 0 ; component < DIMENSIONS ; component++) {
+    // Initialise the boxes for face-centered variables with the same bounding box
+    GhostBoxVs[component] = GhostBoxVc;
+    for(int dir = 0 ; dir < 3 ; dir++) {
+      for(int side = 0 ; side < 2 ; side++) {
+          // Add one element in the normal direction since we're staggered
+        GhostBoxVs[component][dir][side][component][1] += 1;
+        // Do not overwrite last active BXs normal if not serial+periodic
+        if(dir == component) {
+          if(side==left) {
+            if(data->mygrid->nproc[dir] > 1 || data->lbound[dir] != BoundaryType::periodic) {
+              GhostBoxVs[component][dir][side][component][1] -= 1;
+            }
+          }
+          if(side==right) {
+            if(data->mygrid->nproc[dir] > 1 || data->rbound[dir] != BoundaryType::periodic) {
+              GhostBoxVs[component][dir][side][component][0] += 1;
+            }
+          }
+        }
+      }
+    }
+  }
+
   // Init MPI stack when needed
 #ifdef WITH_MPI
   ////////////////////////////////////////////////////////////////////////////
@@ -185,7 +244,8 @@ Boundary<Phys>::Boundary(Fluid<Phys>* fluid) {
     }
   }
 
-  mpi.Init(data->mygrid, mapVars, data->nghost.data(), data->np_int.data(), Phys::mhd);
+  mpi.Init(data->mygrid, mapVars, data->nghost, data->np_int,
+           data->lbound, data->rbound, Phys::mhd);
 
 #endif // MPI
   idfx::popRegion();
@@ -970,27 +1030,38 @@ template<typename Phys>
 template <typename Function>
 inline void Boundary<Phys>::BoundaryForAll(
   const std::string & name,
+  BoundingBox box,
+  Function function) {
+    idefix_for(name, 0, this->nVar,
+                box[KDIR][0], box[KDIR][1],
+                box[JDIR][0], box[JDIR][1],
+                box[IDIR][0], box[IDIR][1],
+                function);
+}
+
+template<typename Phys>
+template <typename Function>
+inline void Boundary<Phys>::BoundaryForAll(
+  const std::string & name,
   const int &dir,
   const BoundarySide &side,
   Function function) {
-    const int nxi = data->np_int[IDIR];
-    const int nxj = data->np_int[JDIR];
-    const int nxk = data->np_int[KDIR];
-
-    const int ighost = data->nghost[IDIR];
-    const int jghost = data->nghost[JDIR];
-    const int kghost = data->nghost[KDIR];
-
-    // Boundaries of the loop
-    const int ibeg = (dir == IDIR) ? side*(ighost+nxi) : 0;
-    const int iend = (dir == IDIR) ? ighost + side*(ighost+nxi) : data->np_tot[IDIR];
-    const int jbeg = (dir == JDIR) ? side*(jghost+nxj) : 0;
-    const int jend = (dir == JDIR) ? jghost + side*(jghost+nxj) : data->np_tot[JDIR];
-    const int kbeg = (dir == KDIR) ? side*(kghost+nxk) : 0;
-    const int kend = (dir == KDIR) ? kghost + side*(kghost+nxk) : data->np_tot[KDIR];
-
-    idefix_for(name, 0, this->nVar, kbeg, kend, jbeg, jend, ibeg, iend, function);
+    BoundaryForAll(name,GhostBoxVc[dir][side],function);
 }
+
+template<typename Phys>
+template <typename Function>
+inline void Boundary<Phys>::BoundaryFor(
+  const std::string & name,
+  BoundingBox box,
+  Function function) {
+    idefix_for(name,
+                box[KDIR][0], box[KDIR][1],
+                box[JDIR][0], box[JDIR][1],
+                box[IDIR][0], box[IDIR][1],
+                function);
+}
+
 
 template<typename Phys>
 template <typename Function>
@@ -999,25 +1070,7 @@ inline void Boundary<Phys>::BoundaryFor(
   const int &dir,
   const BoundarySide &side,
   Function function) {
-    const int nxi = data->np_int[IDIR];
-    const int nxj = data->np_int[JDIR];
-    const int nxk = data->np_int[KDIR];
-
-    const int ighost = data->nghost[IDIR];
-    const int jghost = data->nghost[JDIR];
-    const int kghost = data->nghost[KDIR];
-
-    // Boundaries of the loop
-    const int ibeg = (dir == IDIR) ? side*(ighost+nxi) : 0;
-    const int iend = (dir == IDIR) ? ighost + side*(ighost+nxi) : data->np_tot[IDIR];
-    const int jbeg = (dir == JDIR) ? side*(jghost+nxj) : 0;
-    const int jend = (dir == JDIR) ? jghost + side*(jghost+nxj) : data->np_tot[JDIR];
-    const int kbeg = (dir == KDIR) ? side*(kghost+nxk) : 0;
-    const int kend = (dir == KDIR) ? kghost + side*(kghost+nxk) : data->np_tot[KDIR];
-
-
-
-    idefix_for(name, kbeg, kend, jbeg, jend, ibeg, iend, function);
+    BoundaryFor(name,GhostBoxVc[dir][side],function);
 }
 
 template<typename Phys>
@@ -1027,23 +1080,7 @@ inline void Boundary<Phys>::BoundaryForX1s(
   const int &dir,
   const BoundarySide &side,
   Function function) {
-    const int nxi = data->np_int[IDIR]+1;
-    const int nxj = data->np_int[JDIR];
-    const int nxk = data->np_int[KDIR];
-
-    const int ighost = data->nghost[IDIR];
-    const int jghost = data->nghost[JDIR];
-    const int kghost = data->nghost[KDIR];
-
-    // Boundaries of the loop
-    const int ibeg = (dir == IDIR) ? side*(ighost+nxi) : 0;
-    const int iend = (dir == IDIR) ? ighost + side*(ighost+nxi) : data->np_tot[IDIR]+1;
-    const int jbeg = (dir == JDIR) ? side*(jghost+nxj) : 0;
-    const int jend = (dir == JDIR) ? jghost + side*(jghost+nxj) : data->np_tot[JDIR];
-    const int kbeg = (dir == KDIR) ? side*(kghost+nxk) : 0;
-    const int kend = (dir == KDIR) ? kghost + side*(kghost+nxk) : data->np_tot[KDIR];
-
-    idefix_for(name, kbeg, kend, jbeg, jend, ibeg, iend, function);
+    BoundaryFor(name,GhostBoxVs[BX1s][dir][side],function);
 }
 
 template<typename Phys>
@@ -1053,23 +1090,7 @@ inline void Boundary<Phys>::BoundaryForX2s(
   const int &dir,
   const BoundarySide &side,
   Function function) {
-    const int nxi = data->np_int[IDIR];
-    const int nxj = data->np_int[JDIR]+1;
-    const int nxk = data->np_int[KDIR];
-
-    const int ighost = data->nghost[IDIR];
-    const int jghost = data->nghost[JDIR];
-    const int kghost = data->nghost[KDIR];
-
-    // Boundaries of the loop
-    const int ibeg = (dir == IDIR) ? side*(ighost+nxi) : 0;
-    const int iend = (dir == IDIR) ? ighost + side*(ighost+nxi) : data->np_tot[IDIR];
-    const int jbeg = (dir == JDIR) ? side*(jghost+nxj) : 0;
-    const int jend = (dir == JDIR) ? jghost + side*(jghost+nxj) : data->np_tot[JDIR]+1;
-    const int kbeg = (dir == KDIR) ? side*(kghost+nxk) : 0;
-    const int kend = (dir == KDIR) ? kghost + side*(kghost+nxk) : data->np_tot[KDIR];
-
-    idefix_for(name, kbeg, kend, jbeg, jend, ibeg, iend, function);
+    BoundaryFor(name,GhostBoxVs[BX2s][dir][side],function);
 }
 
 template<typename Phys>
@@ -1079,23 +1100,7 @@ inline void Boundary<Phys>::BoundaryForX3s(
   const int &dir,
   const BoundarySide &side,
   Function function) {
-    const int nxi = data->np_int[IDIR];
-    const int nxj = data->np_int[JDIR];
-    const int nxk = data->np_int[KDIR]+1;
-
-    const int ighost = data->nghost[IDIR];
-    const int jghost = data->nghost[JDIR];
-    const int kghost = data->nghost[KDIR];
-
-    // Boundaries of the loop
-    const int ibeg = (dir == IDIR) ? side*(ighost+nxi) : 0;
-    const int iend = (dir == IDIR) ? ighost + side*(ighost+nxi) : data->np_tot[IDIR];
-    const int jbeg = (dir == JDIR) ? side*(jghost+nxj) : 0;
-    const int jend = (dir == JDIR) ? jghost + side*(jghost+nxj) : data->np_tot[JDIR];
-    const int kbeg = (dir == KDIR) ? side*(kghost+nxk) : 0;
-    const int kend = (dir == KDIR) ? kghost + side*(kghost+nxk) : data->np_tot[KDIR]+1;
-
-    idefix_for(name, kbeg, kend, jbeg, jend, ibeg, iend, function);
+    BoundaryFor(name,GhostBoxVs[BX3s][dir][side],function);
 }
 
 

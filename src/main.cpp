@@ -9,7 +9,7 @@
 //@HEADER
 // ************************************************************************
 //
-//                        IDEFIX v 2.2.01
+//                        IDEFIX v 2.3.0
 //
 // ************************************************************************
 //@HEADER
@@ -192,7 +192,9 @@ int main( int argc, char* argv[] ) {
       try {
         Tint.Cycle(data);
       } catch(std::exception &e) {
-        idfx::cout << "Main: WARNING! Caught an exception in TimeIntegrator." << std::endl;
+        idfx::cout << std::endl
+                   << "Main: WARNING! Caught an exception in TimeIntegrator."
+                   << std::endl;
         #ifdef WITH_MPI
           if(!Mpi::CheckSync(5)) {
             std::stringstream message;

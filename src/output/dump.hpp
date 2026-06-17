@@ -88,13 +88,13 @@ class DumpField {
                                         h4Darray, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
         return(arr3D);
       } else if(arrayType==Device3D) {
-        IdefixHostArray3D<real> arr3D = Kokkos::create_mirror(d3Darray);
+        IdefixHostArray3D<real> arr3D = Kokkos::create_mirror(Kokkos::HostSpace(), d3Darray);
         Kokkos::deep_copy(arr3D,d3Darray);
         return(arr3D);
       } else if(arrayType==Device4D) {
         IdefixArray3D<real> arrDev3D = Kokkos::subview(
                                        d4Darray, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
-        IdefixHostArray3D<real> arr3D = Kokkos::create_mirror(arrDev3D);
+        IdefixHostArray3D<real> arr3D = Kokkos::create_mirror(Kokkos::HostSpace(), arrDev3D);
         Kokkos::deep_copy(arr3D,arrDev3D);
         return(arr3D);
       } else {

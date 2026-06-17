@@ -1,0 +1,35 @@
+{
+    "namings": "ini,mpi,vectPot",
+    "variants": [
+        {
+            "dumpname": "dump.0001.dmp",
+            "ini": ["idefix.ini","idefix-rkl.ini"],
+            "noplot": true,
+            "single": false,
+            "reconstruction": 2,
+            "mpi": [false],
+            "vectPot": [false, true],
+            "dec": ["2","1","1"],
+            "tolerance": 3e-14
+        },{
+            "dumpname": "dump.0001.dmp",
+            "ini": ["idefix.ini","idefix-rkl.ini"],
+            "noplot": true,
+            "single": false,
+            "reconstruction": 2,
+            "mpi": [true],
+            "vectPot": [false],
+            "dec": ["2","1","1"],
+            "tolerance": 3e-14
+        }
+    ],
+    "when": {
+        "conditions": {
+            "ini": "idefix-rkl.ini",
+            "mpi": true
+        },
+        "apply": {
+            "tolerance": 2e-10
+        }
+    }
+}

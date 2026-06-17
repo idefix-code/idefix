@@ -12,7 +12,9 @@
 // own implementation of the constructor, initflow and destructor
 
 __attribute__((weak)) Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
-  IDEFIX_WARNING("Caution, this is the default Setup constructor and it does nothing!");
+  #ifndef WITH_PYTHON
+    IDEFIX_WARNING("Caution, this is the default Setup constructor and it does nothing!");
+  #endif
 }
 
 __attribute__((weak)) void Setup::InitFlow(DataBlock &data) {

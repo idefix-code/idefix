@@ -205,7 +205,7 @@ struct Fluid_AddSourceTermsFunctor {
   #endif // COMPONENTS
 #endif
     if (coolingOn) {
-      Uc(ENG,k,j,i) += (delta_eng_cool(k,j,i)/Uc(RHO,k,j,i)); // specific energy
+      Uc(ENG,k,j,i) += delta_eng_cool(k,j,i); // energy per unit volume
     }
   }
 };

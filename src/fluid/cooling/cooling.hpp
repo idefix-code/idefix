@@ -28,15 +28,13 @@ class RadCooling {
   RadCooling(Input &, Grid &, Fluid<Phys> *);
   void ShowConfig();                      // print configuration
 
-  // Function for internal use (but public to allow for Cuda lambda capture)
+  // Function for internal use (but public to allow for device lambda capture)
   void InitArrays();
-  void InitUnits();
 
   LookupTable<1> cooltable_data;
   IdefixArray1D<real> temperature_data;
   IdefixArray1D<real> Lambda_cool_data;
 
-  real rho_unit, mass_unit, vel_unit, time_unit, len_unit;
   real TcoolFloor;
 
   IdefixArray3D<real> delta_eng;  // Source terms of the cooling operator
@@ -99,7 +97,6 @@ RadCooling::RadCooling(Input &input, Grid &grid, Fluid<Phys> *hydroin):
                    "in the .ini file");
   }
 
-  InitUnits();
   InitArrays();
 
   idfx::popRegion();

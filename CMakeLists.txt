@@ -253,7 +253,7 @@ target_include_directories(idefix PUBLIC
                            src
                            )
 
-target_link_libraries(idefix PRIVATE Kokkos::kokkos)
+target_link_libraries(idefix Kokkos::kokkos)
 
 message(STATUS "Idefix final configuration")
 if(Idefix_EVOLVE_VECTOR_POTENTIAL)

@@ -113,12 +113,64 @@ if(Idefix_HDF5)
     PUBLIC src/output/xdmf.cpp
     PUBLIC src/output/xdmf.hpp
   )
-  find_package(HDF5 REQUIRED)
-  target_link_libraries(idefix "${HDF5_LIBRARIES}")
+  # Prefer imported targets (matches older working behavior), then fall back.
+  find_package(HDF5 QUIET COMPONENTS C)
+  if(NOT HDF5_FOUND)
+    find_package(HDF5 REQUIRED MODULE COMPONENTS C)
+  endif()
+
+  set(_idefix_hdf5_link_items "${HDF5_LIBRARIES}")
+  if(TARGET hdf5::hdf5)
+    set(_idefix_hdf5_link_items hdf5::hdf5)
+  elseif(TARGET HDF5::HDF5)
+    set(_idefix_hdf5_link_items HDF5::HDF5)
+  endif()
+
+  target_link_libraries(idefix ${_idefix_hdf5_link_items})
   message(STATUS "Found HDF5 include directories: ${HDF5_INCLUDE_DIRS}")
   target_include_directories(idefix PUBLIC "${HDF5_INCLUDE_DIRS}")
   if(Idefix_MPI)
-    if(NOT HDF5_IS_PARALLEL)
+    include(CheckCSourceCompiles)
+
+    # Some CMake/HDF5 combinations do not reliably set HDF5_IS_PARALLEL.
+    # Combine metadata checks with a compile+link probe for MPI-IO symbols.
+    set(_idefix_hdf5_is_parallel FALSE)
+    if(HDF5_IS_PARALLEL OR HDF5_C_IS_PARALLEL)
+      set(_idefix_hdf5_is_parallel TRUE)
+    endif()
+
+    if(NOT _idefix_hdf5_is_parallel AND DEFINED HDF5_C_COMPILER_EXECUTABLE)
+      execute_process(
+        COMMAND ${HDF5_C_COMPILER_EXECUTABLE} -showconfig
+        OUTPUT_VARIABLE _idefix_hdf5_showconfig
+        ERROR_QUIET
+      )
+      if(_idefix_hdf5_showconfig MATCHES "Parallel HDF5:[ \t]*yes")
+        set(_idefix_hdf5_is_parallel TRUE)
+      endif()
+    endif()
+
+    set(CMAKE_REQUIRED_INCLUDES ${HDF5_INCLUDE_DIRS} ${MPI_C_INCLUDE_DIRS})
+    set(CMAKE_REQUIRED_LIBRARIES ${_idefix_hdf5_link_items} MPI::MPI_C)
+    check_c_source_compiles(
+      "#include <mpi.h>
+       #include <hdf5.h>
+       int main(void) {
+         hid_t plist = H5Pcreate(H5P_FILE_ACCESS);
+         H5Pset_fapl_mpio(plist, MPI_COMM_WORLD, MPI_INFO_NULL);
+         H5Pclose(plist);
+         return 0;
+       }"
+      IDEFIX_HDF5_HAS_MPI_IO
+    )
+    unset(CMAKE_REQUIRED_INCLUDES)
+    unset(CMAKE_REQUIRED_LIBRARIES)
+
+    if(IDEFIX_HDF5_HAS_MPI_IO)
+      set(_idefix_hdf5_is_parallel TRUE)
+    endif()
+
+    if(NOT _idefix_hdf5_is_parallel)
       message(FATAL_ERROR "Parallel HDF5 required for Idefix_MPI but the found HDF5 library does not support it")
     endif()
   endif()

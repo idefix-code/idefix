@@ -4,16 +4,34 @@
 #include "fluid.hpp"
 #include "fluid_defs.hpp"
 #include "eos.hpp"
+#include "units.hpp"
 #include "input.hpp"
 #include "grid.hpp"
+#include "dataBlock.hpp"
 
 void MakeAnalysis(DataBlock &);
 
+namespace {
+struct CoolBoxUnits {
+  real kB;
+  real m_p;
+  real rho_unit;
+  real vel_unit;
+  real len_unit;
+};
+
+inline CoolBoxUnits LoadCoolBoxUnits() {
+  return {idfx::units.k_B,
+          idfx::units.m_p,
+          idfx::units.GetDensity(),
+          idfx::units.GetVelocity(),
+          idfx::units.GetLength()};
+}
+}  // namespace
+
 // Default constructor
 real Tini;
-#include "units.hpp"
 EquationOfState eos;
-
 
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
@@ -28,13 +46,13 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
 // One can therefore define locally
 // a datahost and sync it, if needed
 void Setup::InitFlow(DataBlock &data) {
-    real kB = idfx::units.k_B;
+  const CoolBoxUnits units = LoadCoolBoxUnits();
+  real kB = units.kB;
     real mu = 0.609;
-    real m_p = idfx::units.m_p;
-    real XH = 0.71;
+  real m_p = units.m_p;
 
-    real rho_unit = idfx::units.GetDensity();
-    real vel_unit = idfx::units.GetVelocity();
+  real rho_unit = units.rho_unit;
+  real vel_unit = units.vel_unit;
 
     // Create a host copy
     DataBlockHost d(data);
@@ -62,20 +80,20 @@ void Setup::InitFlow(DataBlock &data) {
 
 // Analyse data to produce an output
 void MakeAnalysis(DataBlock & data) {
-  // Mirror data on Host
+  // Mirror data on host for analysis reductions.
   DataBlockHost d(data);
-
-  // Sync it
   d.SyncFromDevice();
 
-  real kB = idfx::units.k_B;
+  const CoolBoxUnits units = LoadCoolBoxUnits();
+
+  real kB = units.kB;
   real mu = 0.609;
-  real m_p = idfx::units.m_p;
+  real m_p = units.m_p;
   real XH = 0.71;
 
-  real rho_unit = idfx::units.GetDensity();
-  real vel_unit = idfx::units.GetVelocity();
-  real len_unit = idfx::units.GetLength();
+  real rho_unit = units.rho_unit;
+  real vel_unit = units.vel_unit;
+  real len_unit = units.len_unit;
 
   // Ensure time considered is unique
   static real time_old = -ONE_F;
@@ -92,12 +110,6 @@ void MakeAnalysis(DataBlock & data) {
     e_old = e_now;
   }
 
-
-  IdefixArray1D<real> x1 = d.x[IDIR];
-  IdefixArray1D<real> x2 = d.x[JDIR];
-  IdefixArray1D<real> x3 = d.x[KDIR];
-  IdefixArray3D<real> dV = d.dV;
-
   int ibeg, iend, jbeg, jend, kbeg, kend;
   ibeg = d.beg[IDIR];
   iend = d.end[IDIR];
@@ -105,45 +117,24 @@ void MakeAnalysis(DataBlock & data) {
   jend = d.end[JDIR];
   kbeg = d.beg[KDIR];
   kend = d.end[KDIR];
-/*
-  IdefixArray3D<real> rho_temperature("rhotemperatureArray", iend-ibeg+1, jend-jbeg+1, kend-kbeg+1);
-  idefix_for("rho_temperatureLoop",
-           kbeg,kend,
-           jbeg,jend,
-           ibeg,iend,
-           KOKKOS_LAMBDA (int k, int j, int i) {
-              rho_temperature(k,j,i) = (mu*mp/kB)*d.Vc(PRS,k,j,i)*rho_unit*pow(vel_unit,2);
-            });
-*/
+
   real numrt = ZERO_F;
   real denom = ZERO_F;
   real vol_tot = ZERO_F;
 
-  idefix_reduce("numerator",
-              kbeg,kend,
-              jbeg,jend,
-              ibeg,iend,
-              KOKKOS_LAMBDA (int k, int j, int i, real &numrt) {
-                  real rho_temperature = (mu*m_p/kB)*d.Vc(PRS,k,j,i)*rho_unit*pow(vel_unit,2);
-                  numrt += (rho_temperature*dV(k,j,i));
-              },
-              Kokkos::Sum<real> (numrt));
-  idefix_reduce("denomenator",
-              kbeg,kend,
-              jbeg,jend,
-              ibeg,iend,
-              KOKKOS_LAMBDA (int k, int j, int i, real &denom) {
-                  denom += (d.Vc(RHO,k,j,i)*rho_unit*dV(k,j,i));
-              },
-              Kokkos::Sum<real> (denom));
-    idefix_reduce("volume",
-              kbeg,kend,
-              jbeg,jend,
-              ibeg,iend,
-              KOKKOS_LAMBDA (int k, int j, int i, real &vol_tot) {
-                  vol_tot += dV(k,j,i);
-              },
-              Kokkos::Sum<real> (vol_tot));
+  for(int k = kbeg; k < kend; k++) {
+    for(int j = jbeg; j < jend; j++) {
+      for(int i = ibeg; i < iend; i++) {
+        real cellVol = d.dV(k,j,i);
+        real rho = d.Vc(RHO,k,j,i);
+        real prs = d.Vc(PRS,k,j,i);
+        real rho_temperature = (mu*m_p/kB) * prs * rho_unit * pow(vel_unit,2);
+        numrt += rho_temperature * cellVol;
+        denom += rho * rho_unit * cellVol;
+        vol_tot += cellVol;
+      }
+    }
+  }
 
   real temperature_mass_avg = numrt/denom; // K
   real dens_avg = denom/vol_tot; // cgs

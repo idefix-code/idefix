@@ -12,7 +12,6 @@
 // ApJ
 
 #include <string>
-#include <sstream>
 
 #include "idefix.hpp"
 #include "units.hpp"
@@ -53,10 +52,14 @@ void RadCooling::ShowConfig() {
 // using Townsend integration
 void RadCooling::TownsendIntegration(real dt) {
   idfx::pushRegion("RadCooling::TownsendIntegration");
-  IdefixArray1D<real> x1 = this->data->x[IDIR];
-  IdefixArray1D<real> x2 = this->data->x[JDIR];
-  IdefixArray1D<real> x3 = this->data->x[KDIR];
-  IdefixArray3D<real> dV = this->data->dV;
+  // Copy all required members to local device-capturable objects.
+  // Capturing class members directly in a CUDA kernel would capture the host `this` pointer.
+  auto Vc = this->Vc;
+  auto delta_eng = this->delta_eng;
+  auto temperature_data = this->temperature_data;
+  auto Lambda_cool_data = this->Lambda_cool_data;
+  auto eos = this->eos;
+  real TcoolFloor = this->TcoolFloor;
 
   real kB = idfx::units.k_B;
   real mu = 0.609;
@@ -78,8 +81,9 @@ void RadCooling::TownsendIntegration(real dt) {
 
   idefix_for("RadCoolingLoop",kbeg, kend, jbeg, jend, ibeg, iend,
     KOKKOS_LAMBDA (int k, int j, int i) {
-      int T_indx_lo = 0, T_indx_hi=temperature_data.extent(0)-1;
-      int T_indx_mid;
+      int T_indx_lo = 0;
+      int T_indx_hi = static_cast<int>(temperature_data.extent(0)) - 1;
+      int T_indx_mid = 0;
       // ideal gas eos is used
       real temperature = Vc(PRS,k,j,i)/Vc(RHO,k,j,i)*(mu*m_p/kB)*pow(vel_unit,2);
 
@@ -91,11 +95,9 @@ void RadCooling::TownsendIntegration(real dt) {
       } else if ( (temperature<temperature_data(0)) ||
            (temperature>temperature_data(temperature_data.extent(0)-1)) ) {
         // tabulated data does not enclose the temperature value
-        std::ostringstream tmp;
-        tmp << std::scientific <<
-            "Temperature out of range: T="
-            << temperature << " K" << std::endl;
-        IDEFIX_ERROR(tmp.str());
+        printf("RadCooling::TownsendIntegration Temperature out of range: T=%e, valid range=[%e, %e]\n",
+               temperature, temperature_data(0), temperature_data(temperature_data.extent(0)-1));
+        Kokkos::abort("RadCooling::TownsendIntegration Temperature out of range");
       } else {
         while (T_indx_lo<=T_indx_hi) {
           T_indx_mid = (T_indx_lo + T_indx_hi)/2;
@@ -109,8 +111,9 @@ void RadCooling::TownsendIntegration(real dt) {
             break;
           }
         }
-        if (T_indx_lo!=T_indx_hi) {
-          // swap
+        if (T_indx_lo != T_indx_hi) {
+          // At loop exit, indices straddle the value as hi < lo.
+          // Swap so lo <= hi before interpolation.
           T_indx_mid = T_indx_lo;
           T_indx_lo = T_indx_hi;
           T_indx_hi = T_indx_mid;
@@ -121,8 +124,16 @@ void RadCooling::TownsendIntegration(real dt) {
         real Lambda_lo = Lambda_cool_data(T_indx_lo);
         real Lambda_hi = Lambda_cool_data(T_indx_hi);
         // T_ref = temperature_hi
-        real alpha = std::log(Lambda_hi/Lambda_lo)/std::log(temperature_hi/temperature_lo);
-        real Lambda_T = Lambda_lo * pow((temperature/temperature_lo), alpha);
+        real Lambda_T;
+        real alpha;
+        if (temperature_hi == temperature_lo) {
+          // Exact match in table: avoid 0/0 in slope estimate.
+          alpha = ZERO_F;
+          Lambda_T = Lambda_lo;
+        } else {
+          alpha = std::log(Lambda_hi/Lambda_lo)/std::log(temperature_hi/temperature_lo);
+          Lambda_T = Lambda_lo * pow((temperature/temperature_lo), alpha);
+        }
         // real gamma = eos.GetGamma(Vc(PRS,k,j,i),Vc(RHO,k,j,i));
         real eint = eos.GetInternalEnergy(Vc(PRS,k,j,i),
                                           Vc(RHO,k,j,i))

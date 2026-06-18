@@ -28,7 +28,7 @@ is temperature (in :math:`\rm K`) and second  row is :math:`\Lambda (T)` (in :ma
     what is supplied to the code. Right now, this module has been tested only with the ideal gas equation of state.
     We also assume the mean particle mass :math:`\mu=0.609`, i.e., constant in the current implementation (appropriate
     for fully ionized plasma).
-    It is recommended to include conversion factors between code and physical units in ``idefix.ini`` which is in the [Units]
+    It is recommended to include conversion factors between code and physical units in ``idefix.ini`` which is in the `[Units]`
     block. This is to ensure that the cooling curve supplied in physical units is correctly interpreted by the code.
     A test example of a uniform advecting box is in `test/HD/CoolBox`.
 Main parameters of the module

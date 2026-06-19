@@ -5,6 +5,11 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#undef NDEBUG
+#include <cassert>
+#include <cstdio>
+#include <iostream>
+
 #include <vector>
 #include "axis.hpp"
 #include "boundary.hpp"
@@ -395,17 +400,24 @@ void Axis::ExchangeMPI(int side) {
   int ibeg,iend,jbeg,jend,kbeg,kend,offset;
   int nx,ny,nz;
   auto bufferSend = this->bufferSend;
+  Buffer bufferSendNew = this->bufferSendNew;
   IdefixArray1D<int> map = this->mapVars;
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Vs = this->Vs;
+
+  //reset pointer
+  bufferSendNew.ResetPointer();
 
 // If MPI Persistent, start receiving even before the buffers are filled
 
   MPI_Status sendStatus;
   MPI_Status recvStatus;
+  MPI_Status sendStatusNew;
+  MPI_Status recvStatusNew;
 
   double tStart = MPI_Wtime();
   MPI_SAFE_CALL(MPI_Start(&recvRequest));
+  MPI_SAFE_CALL(MPI_Start(&recvRequestNew));
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // Coordinates of the ghost region which needs to be transfered
@@ -419,73 +431,145 @@ void Axis::ExchangeMPI(int side) {
   kbeg   = data->beg[KDIR];
   kend   = data->end[KDIR];
   nz     = kend - kbeg;
+
+  // Create the box
+  BoundingBox baseBox;
+  baseBox[IDIR][0] = ibeg;
+  baseBox[IDIR][1] = iend;
+  baseBox[JDIR][0] = jbeg;
+  baseBox[JDIR][1] = jend;
+  baseBox[KDIR][0] = kbeg;
+  baseBox[KDIR][1] = kend;
+
   if(side==left) {
+    //shift by NY
+    BoundingBox sendBoxVc = baseBox;
+    sendBoxVc[JDIR][0] += ny;
+    sendBoxVc[JDIR][1] += ny;
+    bufferSendNew.Pack(Vc, map, sendBoxVc);
+
     idefix_for("LoadBufferX2Vc",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
       KOKKOS_LAMBDA (int n, int k, int j, int i) {
-        bufferSend(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ) =
+        const int storeId = i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz;
+        bufferSend(storeId ) =
                                                           Vc(map(n),k,j+ny,i);
+        assert(bufferSend(storeId) == bufferSendNew.getArray()(storeId));
       }
     );
+
     if (haveMHD) {
+      //extend by one
+      BoundingBox sendBoxVsIdir = sendBoxVc;
+      sendBoxVsIdir[IDIR][1] += 1;
+      bufferSendNew.Pack(Vs, IDIR, sendBoxVsIdir);
+
       int VsIndex = mapNVars*nx*ny*nz;
       idefix_for("LoadBufferX2IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
         KOKKOS_LAMBDA (int k, int j, int i) {
-          bufferSend(i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex ) =
+          const int storeId = i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex;
+          bufferSend(storeId ) =
                                                           Vs(IDIR,k,j+ny,i);
+          assert(bufferSend(storeId) == bufferSendNew.getArray()(storeId));
         }
       );
+
+      //extend by one
+      BoundingBox sendBoxVsKdir = sendBoxVc;
+      sendBoxVsKdir[KDIR][1] += 1;
+      bufferSendNew.Pack(Vs, KDIR, sendBoxVsKdir);
+
       VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz;
       idefix_for("LoadBufferX2KDIR",kbeg,kend+1,jbeg,jend,ibeg,iend,
         KOKKOS_LAMBDA (int k, int j, int i) {
-          bufferSend(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) =
+          const int storeId = i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex;
+          bufferSend(storeId) =
                                                           Vs(KDIR,k,j+ny,i);
+          assert(bufferSend(storeId) == bufferSendNew.getArray()(storeId));
         }
       );
     } // MHD
   } else if(side==right) {
+    //shift by offset - NY (to pub on right)
+    BoundingBox sendBoxVc = baseBox;
+    sendBoxVc[JDIR][0] += offset - ny;
+    sendBoxVc[JDIR][1] += offset - ny;
+    bufferSendNew.Pack(Vc, map, sendBoxVc);
+
     idefix_for("LoadBufferX2Vc",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
       KOKKOS_LAMBDA (int n, int k, int j, int i) {
-        bufferSend(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ) =
+        const int storeId = i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz;
+        bufferSend(storeId) =
                                                           Vc(map(n),k,j+offset-ny,i);
+        assert(bufferSend(storeId) == bufferSendNew.getArray()(storeId));
       }
     );
 
     // Load face-centered field in the buffer
      if (haveMHD) {
+      //extend by one
+      BoundingBox sendBoxVsIdir = baseBox;
+      sendBoxVsIdir[IDIR][1] += 1;
+      sendBoxVsIdir[JDIR][0] += offset - ny;
+      sendBoxVsIdir[JDIR][1] += offset - ny;
+      bufferSendNew.Pack(Vs, IDIR, sendBoxVsIdir);
+
       int VsIndex = mapNVars*nx*ny*nz;
       idefix_for("LoadBufferX2IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
         KOKKOS_LAMBDA (int k, int j, int i) {
-          bufferSend(i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex ) =
+          const int storeId = i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex;
+          bufferSend(storeId) =
                                                           Vs(IDIR,k,j+offset-ny,i);
+          assert(bufferSend(storeId) == bufferSendNew.getArray()(storeId));
         }
       );
-      VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz;
 
+      //extend by one
+      BoundingBox sendBoxVsKdir = baseBox;
+      sendBoxVsKdir[KDIR][1] += 1;
+      sendBoxVsKdir[JDIR][0] += offset - ny;
+      sendBoxVsKdir[JDIR][1] += offset - ny;
+      bufferSendNew.Pack(Vs, KDIR, sendBoxVsKdir);
+
+      VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz;
       idefix_for("LoadBufferX2KDIR",kbeg,kend+1,jbeg,jend,ibeg,iend,
         KOKKOS_LAMBDA (int k, int j, int i) {
-          bufferSend(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) =
+          const int storeId = i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex;
+          bufferSend(storeId ) =
                                                           Vs(KDIR,k,j+offset-ny,i);
+          assert(bufferSend(storeId) == bufferSendNew.getArray()(storeId));
         }
       );
     } // MHD
   } // side==right
 
+  assert(bufferSendNew.getArray().size() == bufferSend.size());
+
   Kokkos::fence();
 
   tStart = MPI_Wtime();
   MPI_SAFE_CALL(MPI_Start(&sendRequest));
-  MPI_Wait(&recvRequest,&recvStatus);
+  MPI_SAFE_CALL(MPI_Start(&sendRequestNew));
+  MPI_Wait(&recvRequest,&recvStatusNew);
+  MPI_Wait(&recvRequestNew,&recvStatusNew);
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // Unpack
   auto bufferRecv=this->bufferRecv;
+  Buffer bufferRecvNew=this->bufferRecvNew;
+  bufferRecvNew.ResetPointer();
   auto sVc = this->symmetryVc;
 
+  assert(bufferRecvNew.getArray().size() == bufferRecv.size());
+
   if(side==left) {
+    //unpack Vc
+    BoundingBox recvBoxVc = baseBox;
+    bufferRecvNew.UnpackJDirSymetric(Vc, map, sVc, recvBoxVc);
+
     idefix_for("StoreBufferAxis",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
       KOKKOS_LAMBDA (int n, int k, int j, int i) {
-        Vc(map(n),k,jend-(j-jbeg)-1,i) =
-                    sVc(map(n))*bufferRecv(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz );
+        assert(Vc(map(n),k,jend-(j-jbeg)-1,i) ==
+                    sVc(map(n))*bufferRecv(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ));
       }
     );
 
@@ -493,27 +577,44 @@ void Axis::ExchangeMPI(int side) {
     if (haveMHD) {
       int VsIndex = mapNVars*nx*ny*nz;
       auto sVs = this->symmetryVs;
+
+      //unpack Vc
+      BoundingBox recvBoxVsIdir = baseBox;
+      recvBoxVsIdir[IDIR][1] += 1;
+      bufferRecvNew.UnpackJDirSymetric(Vs, IDIR, sVs(IDIR), recvBoxVsIdir);
+
       idefix_for("StoreBufferX2IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
         KOKKOS_LAMBDA (int k, int j, int i) {
-          Vs(IDIR,k,jend-(j-jbeg)-1,i) =
-                    sVs(IDIR)*bufferRecv(i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex );
+          assert(Vs(IDIR,k,jend-(j-jbeg)-1,i) ==
+                    sVs(IDIR)*bufferRecv(i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex ));
         }
       );
 
       VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz;
 
+      //unpack Vc
+      BoundingBox recvBoxVsKdir = baseBox;
+      recvBoxVsKdir[KDIR][1] += 1;
+      bufferRecvNew.UnpackJDirSymetric(Vs, KDIR, sVs(KDIR), recvBoxVsKdir);
+
       idefix_for("StoreBufferX2KDIR",kbeg,kend+1,jbeg,jend,ibeg,iend,
         KOKKOS_LAMBDA ( int k, int j, int i) {
-          Vs(KDIR,k,jend-(j-jbeg)-1,i) =
-                      sVs(KDIR)*bufferRecv(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
+          assert(Vs(KDIR,k,jend-(j-jbeg)-1,i) ==
+                      sVs(KDIR)*bufferRecv(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ));
         }
       );
     }
   } else if(side==right) {
+    //unpack Vc
+    BoundingBox recvBoxVc = baseBox;
+    recvBoxVc[JDIR][0] += offset;
+    recvBoxVc[JDIR][1] += offset;
+    bufferRecvNew.UnpackJDirSymetric(Vc, map, sVc, recvBoxVc);
+
     idefix_for("StoreBufferAxis",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
       KOKKOS_LAMBDA (int n, int k, int j, int i) {
-        Vc(map(n),k,jend-(j-jbeg)-1+offset,i) =
-                    sVc(map(n))*bufferRecv(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz );
+        assert(Vc(map(n),k,jend-(j-jbeg)-1+offset,i) ==
+                    sVc(map(n))*bufferRecv(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ));
       }
     );
 
@@ -521,24 +622,40 @@ void Axis::ExchangeMPI(int side) {
     if (haveMHD) {
       int VsIndex = mapNVars*nx*ny*nz;
       auto sVs = this->symmetryVs;
+
+      //unpack Vc
+      BoundingBox recvBoxVsIdir = baseBox;
+      recvBoxVsIdir[IDIR][1] += 1;
+      recvBoxVsIdir[JDIR][0] += offset;
+      recvBoxVsIdir[JDIR][1] += offset;
+      bufferRecvNew.UnpackJDirSymetric(Vs, IDIR, sVs(IDIR), recvBoxVsIdir);
+
       idefix_for("StoreBufferX2IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
         KOKKOS_LAMBDA (int k, int j, int i) {
-          Vs(IDIR,k,jend-(j-jbeg)-1+offset,i) =
-                      sVs(IDIR)*bufferRecv(i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex );
+          assert(Vs(IDIR,k,jend-(j-jbeg)-1+offset,i) ==
+                      sVs(IDIR)*bufferRecv(i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex ));
         }
       );
       VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz;
 
+      //unpack Vc
+      BoundingBox recvBoxVsKdir = baseBox;
+      recvBoxVsKdir[KDIR][1] += 1;
+      recvBoxVsKdir[JDIR][0] += offset;
+      recvBoxVsKdir[JDIR][1] += offset;
+      bufferRecvNew.UnpackJDirSymetric(Vs, KDIR, sVs(KDIR), recvBoxVsKdir);
+
       idefix_for("StoreBufferX2KDIR",kbeg,kend+1,jbeg,jend,ibeg,iend,
         KOKKOS_LAMBDA ( int k, int j, int i) {
-          Vs(KDIR,k,jend-(j-jbeg)-1+offset,i) =
-                      sVs(KDIR)*bufferRecv(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
+          assert(Vs(KDIR,k,jend-(j-jbeg)-1+offset,i) ==
+                      sVs(KDIR)*bufferRecv(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ));
         }
       );
     } // MHD
   }
 
   MPI_Wait(&sendRequest, &sendStatus);
+  MPI_Wait(&sendRequestNew, &sendStatusNew);
 
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
@@ -597,6 +714,10 @@ void Axis::InitMPI() {
   this->bufferRecv = IdefixArray1D<real>("bufferRecvAxis", bufferSize);
   this->bufferSend = IdefixArray1D<real>("bufferSendAxis", bufferSize);
 
+  //build buffers
+  this->bufferRecvNew = Buffer(bufferSize);
+  this->bufferSendNew = Buffer(bufferSize);
+
   // init persistent communications
   // We receive from procRecv, and we send to procSend
   int procSend, procRecv;
@@ -610,6 +731,15 @@ void Axis::InitMPI() {
 
   MPI_SAFE_CALL(MPI_Recv_init(bufferRecv.data(), bufferSize, realMPI, procRecv,
                 650, data->mygrid->AxisComm, &recvRequest));
+
+  assert(bufferSize == bufferSendNew.Size());
+  assert(bufferSize == bufferRecvNew.Size());
+
+  MPI_SAFE_CALL(MPI_Send_init(bufferSendNew.data(), bufferSendNew.Size(), realMPI, procSend,
+                1666651, data->mygrid->AxisComm, &sendRequestNew));
+
+  MPI_SAFE_CALL(MPI_Recv_init(bufferRecvNew.data(), bufferRecvNew.Size(), realMPI, procRecv,
+                1666651, data->mygrid->AxisComm, &recvRequestNew));
 
   #endif
   idfx::popRegion();

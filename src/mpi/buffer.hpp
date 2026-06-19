@@ -179,7 +179,7 @@ class Buffer {
     const int offset = this->pointer;
 
     auto arr = this->array;
-    idefix_for("UnLoadBuffer4D_var",kbeg,kend,jbeg,jend,ibeg,iend,
+    idefix_for("UnLoadBuffer4D_var_sym",kbeg,kend,jbeg,jend,ibeg,iend,
       KOKKOS_LAMBDA (int k, int j, int i) {
         const int jinverted = jend-(j-jbeg)-1;
         const int arrIndex = i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + offset;
@@ -233,7 +233,7 @@ class Buffer {
     const int offset = this->pointer;
 
     auto arr = this->array;
-    idefix_for("UnLoadBuffer4D_map",0,map.size(),
+    idefix_for("UnLoadBuffer4D_map_sym",0,map.size(),
                               kbeg,kend,
                               jbeg,jend,
                               ibeg,iend,

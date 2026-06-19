@@ -423,7 +423,7 @@ void Axis::ExchangeMPI(int side) {
   kend   = data->end[KDIR];
   nz     = kend - kbeg;
 
-  // Create the box
+  // Create the base box to be patched by the ops
   BoundingBox baseBox;
   baseBox[IDIR][0] = ibeg;
   baseBox[IDIR][1] = iend;
@@ -440,18 +440,18 @@ void Axis::ExchangeMPI(int side) {
     bufferSend.Pack(Vc, map, sendBoxVc);
 
     if (haveMHD) {
-      //extend by one
+      //extend by one the end on idir
       BoundingBox sendBoxVsIdir = sendBoxVc;
       sendBoxVsIdir[IDIR][1] += 1;
       bufferSend.Pack(Vs, IDIR, sendBoxVsIdir);
 
-      //extend by one
+      //extend by one the end on kdir
       BoundingBox sendBoxVsKdir = sendBoxVc;
       sendBoxVsKdir[KDIR][1] += 1;
       bufferSend.Pack(Vs, KDIR, sendBoxVsKdir);
     } // MHD
   } else if(side==right) {
-    //shift by offset - NY (to pub on right)
+    //shift by offset - NY (to select the right part)
     BoundingBox sendBoxVc = baseBox;
     sendBoxVc[JDIR][0] += offset - ny;
     sendBoxVc[JDIR][1] += offset - ny;
@@ -459,14 +459,14 @@ void Axis::ExchangeMPI(int side) {
 
     // Load face-centered field in the buffer
      if (haveMHD) {
-      //extend by one
+      //extend by one the end on idir + take the right part or the mesh on jdir
       BoundingBox sendBoxVsIdir = baseBox;
       sendBoxVsIdir[IDIR][1] += 1;
       sendBoxVsIdir[JDIR][0] += offset - ny;
       sendBoxVsIdir[JDIR][1] += offset - ny;
       bufferSend.Pack(Vs, IDIR, sendBoxVsIdir);
 
-      //extend by one
+      //extend by one the end on kdir + take the right part or the mesh on jdir
       BoundingBox sendBoxVsKdir = baseBox;
       sendBoxVsKdir[KDIR][1] += 1;
       sendBoxVsKdir[JDIR][0] += offset - ny;
@@ -497,18 +497,18 @@ void Axis::ExchangeMPI(int side) {
       int VsIndex = mapNVars*nx*ny*nz;
       auto sVs = this->symmetryVs;
 
-      //unpack Vc
+      //unpack Vs face-centered
       BoundingBox recvBoxVsIdir = baseBox;
       recvBoxVsIdir[IDIR][1] += 1;
       bufferRecv.UnpackJDirSymetric(Vs, IDIR, sVs(IDIR), recvBoxVsIdir);
 
-      //unpack Vc
+      //unpack Vs face-centered
       BoundingBox recvBoxVsKdir = baseBox;
       recvBoxVsKdir[KDIR][1] += 1;
       bufferRecv.UnpackJDirSymetric(Vs, KDIR, sVs(KDIR), recvBoxVsKdir);
     }
   } else if(side==right) {
-    //unpack Vc
+    //unpack Vc on right part
     BoundingBox recvBoxVc = baseBox;
     recvBoxVc[JDIR][0] += offset;
     recvBoxVc[JDIR][1] += offset;
@@ -519,14 +519,14 @@ void Axis::ExchangeMPI(int side) {
       int VsIndex = mapNVars*nx*ny*nz;
       auto sVs = this->symmetryVs;
 
-      //unpack Vc
+      //unpack Vs face-centered on right part
       BoundingBox recvBoxVsIdir = baseBox;
       recvBoxVsIdir[IDIR][1] += 1;
       recvBoxVsIdir[JDIR][0] += offset;
       recvBoxVsIdir[JDIR][1] += offset;
       bufferRecv.UnpackJDirSymetric(Vs, IDIR, sVs(IDIR), recvBoxVsIdir);
 
-      //unpack Vc
+      //unpack Vs face-centered on right part
       BoundingBox recvBoxVsKdir = baseBox;
       recvBoxVsKdir[KDIR][1] += 1;
       recvBoxVsKdir[JDIR][0] += offset;

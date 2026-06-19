@@ -48,6 +48,31 @@ if(Kokkos_ENABLE_CUDA)
   set(Kokkos_ENABLE_CUDA_LAMBDA ON CACHE BOOL "Idefix requires lambdas on Cuda" FORCE)
   # CUDA_MALLOC_ASYNC disbaled by default in Kokkos 4.5, so not required here
   #set(Kokkos_ENABLE_IMPL_CUDA_MALLOC_ASYNC OFF CACHE BOOL "Disable Async malloc to avoid bugs on PSM2" FORCE)
+
+  # On recent glibc (>= 2.34) the realtime functions were merged into libc and
+  # /usr/lib64/librt.a is only an empty archive stub. CMake's FindCUDAToolkit still
+  # resolves librt via find_library(CUDAToolkit_rt_LIBRARY rt) and attaches the
+  # resulting /usr/lib64/librt.a to CUDA::cudart_static_deps, which is pulled in by
+  # CUDA::cudart and CUDA::cuda_driver (the targets Kokkos links). The device link
+  # then passes that absolute archive path to nvlink, which cannot open the empty
+  # stub and fails with:
+  #   nvlink fatal: Could not open input file '/usr/lib64/librt.a'
+  # Pre-seed the cache so FindCUDAToolkit links the shared librt (host-only, ignored
+  # by nvlink) instead of the static stub. We point at the shared object when it can
+  # be located, otherwise fall back to the "-lrt" link flag form; both avoid handing
+  # an absolute *.a path to nvlink, and the realtime symbols are provided by libc.
+  if(NOT DEFINED CUDAToolkit_rt_LIBRARY)
+    find_library(IDEFIX_RT_SHARED_LIBRARY
+                 NAMES librt.so.1 librt.so
+                 PATHS /lib64 /usr/lib64 /lib /usr/lib)
+    if(IDEFIX_RT_SHARED_LIBRARY)
+      set(CUDAToolkit_rt_LIBRARY "${IDEFIX_RT_SHARED_LIBRARY}"
+          CACHE FILEPATH "Shared librt used by CUDA::cudart_static_deps" FORCE)
+    else()
+      set(CUDAToolkit_rt_LIBRARY "rt"
+          CACHE FILEPATH "librt link flag used by CUDA::cudart_static_deps" FORCE)
+    endif()
+  endif()
 endif()
 
 # Add kokkos CMAKE files (required early since these set compiler options)

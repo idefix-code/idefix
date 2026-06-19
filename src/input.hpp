@@ -73,6 +73,8 @@ class Input {
   Kokkos::Timer timer;
 
   double lastStopFileCheck;
+  bool enableLogs{true};
+  std::string executableDirectory{"."};
 };
 
 // Template functions

@@ -16,6 +16,16 @@
 #include <vector>
 #include <memory>
 
+#if __has_include(<filesystem>)
+  #include <filesystem> // NOLINT [build/c++17]
+  namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+  #include <experimental/filesystem>
+  namespace fs = std::experimental::filesystem;
+#else
+  #error "Missing the <filesystem> header."
+#endif
+
 #include "idefix.hpp"
 #include "input.hpp"
 #include "version.hpp"
@@ -56,6 +66,15 @@ Input::Input(int argc, char* argv[] ) {
 
   // Parse command line (may replace the input file)
   ParseCommandLine(argc,argv);
+
+  // Determine executable directory. This is the fallback log destination when
+  // [Output]:log_dir is not defined in the input file.
+  fs::path executablePath(argv[0]);
+  std::error_code errorCode;
+  executablePath = fs::absolute(executablePath, errorCode);
+  if(!errorCode && executablePath.has_parent_path()) {
+    this->executableDirectory = executablePath.parent_path().string();
+  }
 
   file.open(this->inputFileName);
 
@@ -108,12 +127,20 @@ Input::Input(int argc, char* argv[] ) {
     }
   }
   file.close();
+
+  if(this->enableLogs) {
+    if(CheckEntry("Output","log_dir") > 0) {
+      idfx::cout.enableLogFile(Get<std::string>("Output","log_dir",0));
+    } else {
+      idfx::cout.enableLogFile(this->executableDirectory);
+    }
+  }
 }
 
 // This routine parse command line options
 void Input::ParseCommandLine(int argc, char **argv) {
   std::stringstream msg;
-  bool enableLogs = true;
+  this->enableLogs = true;
   for(int i = 1 ; i < argc ; i++) {
     // MPI decomposition argument
     if(std::string(argv[i]) == "-dec") {
@@ -171,9 +198,9 @@ void Input::ParseCommandLine(int argc, char **argv) {
       this->forceInitRequested = true;
     } else if(std::string(argv[i]) == "-nowrite") {
       this->forceNoWrite = true;
-      enableLogs = false;
+      this->enableLogs = false;
     } else if(std::string(argv[i]) == "-nolog") {
-      enableLogs = false;
+      this->enableLogs = false;
     } else if(std::string(argv[i]) == "-profile") {
       idfx::prof.EnablePerformanceProfiling();
     } else if(std::string(argv[i]) == "-Werror") {
@@ -189,9 +216,6 @@ void Input::ParseCommandLine(int argc, char **argv) {
       msg << "Unknown option " << argv[i];
       IDEFIX_ERROR(msg);
     }
-  }
-  if(enableLogs) {
-    idfx::cout.enableLogFile();
   }
 }
 

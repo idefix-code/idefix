@@ -59,14 +59,9 @@ class Axis {
 #ifdef WITH_MPI
   MPI_Request sendRequest;
   MPI_Request recvRequest;
-  MPI_Request sendRequestNew;
-  MPI_Request recvRequestNew;
 
-  IdefixArray1D<real> bufferSend;
-  IdefixArray1D<real> bufferRecv;
-
-  Buffer bufferSendNew;
-  Buffer bufferRecvNew;
+  Buffer bufferSend;
+  Buffer bufferRecv;
 
   int bufferSize;
 

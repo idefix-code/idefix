@@ -136,10 +136,11 @@ void ConstrainedTransport<Phys>::ExchangeX1(IdefixArray3D<real> ey, IdefixArray3
   recvBoxEz[JDIR][1] += 1;
   recvBoxEz[IDIR][0] = ileft;
   recvBoxEz[IDIR][1] = ileft + 1;
-  BufferLeftNew.Unpack(ez, recvBoxEz);
+  if(lbound == internal || lbound == periodic)
+    BufferLeftNew.Unpack(ez, recvBoxEz);
   idefix_for("StoreBufferX1Emfz",kbeg,kend,jbeg,jend+1,
     KOKKOS_LAMBDA (int k, int j) {
-      if(lbound == internal || lbound == periodic) {
+      if(lbound == internal || lbound == periodic) {//////////////<<<<<<<<<<<<<<<<<<TODO
         assert(ez(k,j,ileft) == BufferLeft( (j-jbeg) + (k-kbeg)*(ny+1)));
         ez(k,j,ileft) = BufferLeft( (j-jbeg) + (k-kbeg)*(ny+1));
       }
@@ -152,10 +153,11 @@ void ConstrainedTransport<Phys>::ExchangeX1(IdefixArray3D<real> ey, IdefixArray3
   recvBoxEy[KDIR][1] += 1;
   recvBoxEy[IDIR][0] = ileft;
   recvBoxEy[IDIR][1] = ileft + 1;
-  BufferLeftNew.Unpack(ey, recvBoxEy);
+  if(lbound == internal || lbound == periodic)
+    BufferLeftNew.Unpack(ey, recvBoxEy);
   idefix_for("StoreBufferX1Emfy",kbeg,kend+1,jbeg,jend,
     KOKKOS_LAMBDA (int k, int j) {
-      if(lbound == internal || lbound == periodic) {
+      if(lbound == internal || lbound == periodic) {//////////////<<<<<<<<<<<<<<<<<<TODO
         assert(ey(k,j,ileft) == BufferLeft( (j-jbeg) + (k-kbeg)*ny +Vsindex));
         ey(k,j,ileft) = BufferLeft( (j-jbeg) + (k-kbeg)*ny +Vsindex);
       }
@@ -270,10 +272,11 @@ void ConstrainedTransport<Phys>::ExchangeX2(IdefixArray3D<real> ex, IdefixArray3
   recvBoxEz[IDIR][1] += 1;
   recvBoxEz[JDIR][0] = jleft;
   recvBoxEz[JDIR][1] = jleft + 1;
-  BufferLeftNew.Unpack(ez, recvBoxEz);
+  if(lbound == internal || lbound == periodic)
+    BufferLeftNew.Unpack(ez, recvBoxEz);
   idefix_for("StoreBufferX2Emfz",kbeg,kend,ibeg,iend+1,
     KOKKOS_LAMBDA (int k, int i) {
-      if(lbound == internal || lbound == periodic) {
+      if(lbound == internal || lbound == periodic) {//////////////<<<<<<<<<<<<<<<<<<TODO
         assert(ez(k,jleft,i) == BufferLeft( (i-ibeg) + (k-kbeg)*(nx+1) ));
         ez(k,jleft,i) = BufferLeft( (i-ibeg) + (k-kbeg)*(nx+1) );
       }
@@ -285,10 +288,11 @@ void ConstrainedTransport<Phys>::ExchangeX2(IdefixArray3D<real> ex, IdefixArray3
   recvBoxEx[KDIR][1] += 1;
   recvBoxEx[JDIR][0] = jleft;
   recvBoxEx[JDIR][1] = jleft + 1;
-  BufferLeftNew.Unpack(ex, recvBoxEx);
+  if(lbound == internal || lbound == periodic)
+    BufferLeftNew.Unpack(ex, recvBoxEx);
   idefix_for("StoreBufferX1Emfy",kbeg,kend+1,ibeg,iend,
     KOKKOS_LAMBDA (int k, int i) {
-      if(lbound == internal || lbound == periodic) {
+      if(lbound == internal || lbound == periodic) {//////////////<<<<<<<<<<<<<<<<<<TODO
         assert(ex(k,jleft,i) == BufferLeft( (i-ibeg) + (k-kbeg)*nx +Vsindex));
         ex(k,jleft,i) = BufferLeft( (i-ibeg) + (k-kbeg)*nx +Vsindex);
       }
@@ -406,10 +410,11 @@ void ConstrainedTransport<Phys>::ExchangeX3(IdefixArray3D<real> ex, IdefixArray3
   recvBoxEx[JDIR][1] += 1;
   recvBoxEx[KDIR][0] = kleft;
   recvBoxEx[KDIR][1] = kleft + 1;
-  BufferLeftNew.Unpack(ex, recvBoxEx);
+  if(lbound == internal || lbound == periodic)
+    BufferLeftNew.Unpack(ex, recvBoxEx);
   idefix_for("StoreBufferX3Emfx",jbeg,jend+1,ibeg,iend,
     KOKKOS_LAMBDA (int j, int i) {
-      if(lbound == internal || lbound == periodic) {
+      if(lbound == internal || lbound == periodic) {//////////////<<<<<<<<<<<<<<<<<<TODO
         assert(ex(kleft,j,i) == BufferLeft( (i-ibeg) + (j-jbeg)*nx ));
         ex(kleft,j,i) = BufferLeft( (i-ibeg) + (j-jbeg)*nx );
       }
@@ -421,10 +426,11 @@ void ConstrainedTransport<Phys>::ExchangeX3(IdefixArray3D<real> ex, IdefixArray3
   recvBoxEy[IDIR][1] += 1;
   recvBoxEy[KDIR][0] = kleft;
   recvBoxEy[KDIR][1] = kleft + 1;
-  BufferLeftNew.Unpack(ey, recvBoxEy);
+  if(lbound == internal || lbound == periodic)
+    BufferLeftNew.Unpack(ey, recvBoxEy);
   idefix_for("StoreBufferX3Emfy",jbeg,jend,ibeg,iend+1,
     KOKKOS_LAMBDA (int j, int i) {
-      if(lbound == internal || lbound == periodic) {
+      if(lbound == internal || lbound == periodic) {//////////////<<<<<<<<<<<<<<<<<<TODO
         assert(ey(kleft,j,i) == BufferLeft( (i-ibeg) + (j-jbeg)*(nx+1) + Vsindex ));
         ey(kleft,j,i) = BufferLeft( (i-ibeg) + (j-jbeg)*(nx+1) + Vsindex );
       }

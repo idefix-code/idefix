@@ -12,6 +12,7 @@
 // ApJ
 
 #include <string>
+#include <cstdio>
 
 #include "idefix.hpp"
 #include "units.hpp"
@@ -84,6 +85,7 @@ void RadCooling::TownsendIntegration(real dt) {
       int T_indx_lo = 0;
       int T_indx_hi = static_cast<int>(temperature_data.extent(0)) - 1;
       int T_indx_mid = 0;
+      real temperature_max = temperature_data(T_indx_hi);
       // ideal gas eos is used
       real temperature = Vc(PRS,k,j,i)/Vc(RHO,k,j,i)*(mu*m_p/kB)*pow(vel_unit,2);
 
@@ -92,11 +94,12 @@ void RadCooling::TownsendIntegration(real dt) {
         // delta_eng(k,j,i) = ZERO_F;
         real del_prs = -Vc(RHO,k,j,i)/(mu*m_p/kB)*(temperature-TcoolFloor)/pow(vel_unit,2);
         delta_eng(k,j,i) = eos.GetInternalEnergy(del_prs, Vc(RHO,k,j,i));
-      } else if ( (temperature<temperature_data(0)) ||
-           (temperature>temperature_data(temperature_data.extent(0)-1)) ) {
+      } else if ((temperature < temperature_data(0)) ||
+                 (temperature > temperature_max)) {
         // tabulated data does not enclose the temperature value
-        printf("RadCooling::TownsendIntegration Temperature out of range: T=%e, valid range=[%e, %e]\n",
-               temperature, temperature_data(0), temperature_data(temperature_data.extent(0)-1));
+        printf("RadCooling::TownsendIntegration Temperature out of range: T=%e, "
+               "valid range=[%e, %e]\n",
+               temperature, temperature_data(0), temperature_max);
         Kokkos::abort("RadCooling::TownsendIntegration Temperature out of range");
       } else {
         while (T_indx_lo<=T_indx_hi) {

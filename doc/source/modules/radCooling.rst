@@ -7,10 +7,10 @@ Equations solved and method
 ---------------------------
 
 The ``RadiativeCooling`` module implements the computation of the loss of internal thermal energy
-due radiation in an optically thin medium. Physically, it solves for :math:`\dot_{e}=\mathcal{L}`,
-where we have used :math:`\mathcal{L}=-n_H^2 \Lambda (T)` (where :math:`T` is the gas temperature,
-:math:`n_H=\rho X_H/m_p` is the total hydrogen number density, and :math:`\Lambda(T)`) is the
-radiative cooling rate computed seperately from quantum mechanical calculations
+due to radiation in an optically thin medium. Physically, it solves for :math:`\dot{e}=\mathcal{L}`,
+where we have used :math:`\mathcal{L}=-n_H^2 \Lambda(T)` (where :math:`T` is the gas temperature,
+:math:`n_H=\rho X_H/m_p` is the total hydrogen number density, and :math:`\Lambda(T)` is the
+radiative cooling rate computed separately from quantum mechanical calculations
 by other plasma modeling codes, for example, Cloudy (Ferland et. al, PASP 110, 749 (1998)).
 
 This computation becomes especially relevant for multiphase gas in astrophysical environments

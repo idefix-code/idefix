@@ -204,9 +204,11 @@ struct Fluid_AddSourceTermsFunctor {
       Uc(MX2,k,j,i) += dt*Sm / rt(i);
   #endif // COMPONENTS
 #endif
+#if HAVE_ENERGY
     if (coolingOn) {
       Uc(ENG,k,j,i) += delta_eng_cool(k,j,i); // energy per unit volume
     }
+#endif
   }
 };
 

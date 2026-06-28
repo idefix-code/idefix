@@ -9,7 +9,7 @@
 #define FLUID_COOLING_COOLING_HPP_
 
 #include <string>
-
+#include <functional>
 #include "idefix.hpp"
 #include "input.hpp"
 #include "grid.hpp"

@@ -74,7 +74,6 @@ class Input {
 
   double lastStopFileCheck;
   bool enableLogs{true};
-  std::string executableDirectory{"."};
 };
 
 // Template functions

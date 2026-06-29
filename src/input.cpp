@@ -16,16 +16,6 @@
 #include <vector>
 #include <memory>
 
-#if __has_include(<filesystem>)
-  #include <filesystem> // NOLINT [build/c++17]
-  namespace fs = std::filesystem;
-#elif __has_include(<experimental/filesystem>)
-  #include <experimental/filesystem>
-  namespace fs = std::experimental::filesystem;
-#else
-  #error "Missing the <filesystem> header."
-#endif
-
 #include "idefix.hpp"
 #include "input.hpp"
 #include "version.hpp"
@@ -66,15 +56,6 @@ Input::Input(int argc, char* argv[] ) {
 
   // Parse command line (may replace the input file)
   ParseCommandLine(argc,argv);
-
-  // Determine executable directory. This is the fallback log destination when
-  // [Output]:log_dir is not defined in the input file.
-  fs::path executablePath(argv[0]);
-  std::error_code errorCode;
-  executablePath = fs::absolute(executablePath, errorCode);
-  if(!errorCode && executablePath.has_parent_path()) {
-    this->executableDirectory = executablePath.parent_path().string();
-  }
 
   file.open(this->inputFileName);
 
@@ -132,7 +113,9 @@ Input::Input(int argc, char* argv[] ) {
     if(CheckEntry("Output","log_dir") > 0) {
       idfx::cout.enableLogFile(Get<std::string>("Output","log_dir",0));
     } else {
-      idfx::cout.enableLogFile(this->executableDirectory);
+      // No log directory specified: write the log file in the current working
+      // directory (historical behavior).
+      idfx::cout.enableLogFile("");
     }
   }
 }

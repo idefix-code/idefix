@@ -5,15 +5,12 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-// This source code is largely inspired from the viscous_flux of Pluto4.2
-// ((c) P. Tzeferacos & A. Mignone)
+// Optically thin radiative cooling for the Fluid module.
+// Implements Townsend (2009, ApJS 181, 391) integration for tabulated cooling curves.
 
-// Implementation of monotonicity-preserving viscous flux following ZuHone et al.,
-// ApJ
-
-#include <string>
+#include <cmath>
 #include <cstdio>
-
+#include <string>
 #include "idefix.hpp"
 #include "units.hpp"
 #include "cooling.hpp"

@@ -25,7 +25,7 @@ is temperature (in :math:`\rm K`) and second  row is :math:`\Lambda (T)` (in :ma
     of the cooling curve supplied by the rate table at runtime to *Idefix*. Different might cooling curves with
     different normalisation is known to exist in literature and special attention must be given to
     what is supplied to the code. Right now, this module has been tested only with the ideal gas equation of state.
-    We also assume the mean particle mass :math:`\mu=0.609`, i.e., constant in the current implementation (appropriate
+    We also assume a fixed composition with :math:`X_H=0.71` and mean particle mass :math:`\mu=0.609`, i.e., constant in the current implementation (appropriate
     for fully ionized plasma).
     It is recommended to include conversion factors between code and physical units in ``idefix.ini`` which is in the `[Units]`
     block. This is to ensure that the cooling curve supplied in physical units is correctly interpreted by the code.

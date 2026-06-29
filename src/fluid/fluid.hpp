@@ -329,10 +329,16 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
   }
 
   // Radiative cooling
+#if HAVE_ENERGY
   if(input.CheckEntry("Hydro", "Cooling")>=0) {
     this->haveSourceTerms = true;
     this->coolingOn = true;
   }
+#else
+  if(input.CheckEntry("Hydro", "Cooling")>=0) {
+    IDEFIX_ERROR("Radiative cooling requires HAVE_ENERGY=1 (non-isothermal configuration).");
+  }
+#endif
 
   // If we are not the primary hydro object, we copy the properties of the primary hydro object
   // so that we solve for consistant physics

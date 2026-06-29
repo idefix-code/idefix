@@ -160,15 +160,10 @@ void RadCooling::TownsendIntegration(real dt) {
         } else {
           T_fin = temperature_hi * std::exp(-inv_Y_arg);
         }
-        if (T_fin>=TcoolFloor) {
-          del_prs = -Vc(RHO,k,j,i)/(mu*m_p/kB)*(temperature-T_fin)/pow(vel_unit,2);
-          delta_eng(k,j,i) = eos.GetInternalEnergy(del_prs, Vc(RHO,k,j,i));
-        }
-        } else {
+        if (T_fin<TcoolFloor)
           T_fin = TcoolFloor;
-          del_prs = -Vc(RHO,k,j,i)/(mu*m_p/kB)*(temperature-T_fin)/pow(vel_unit,2);
-          delta_eng(k,j,i) = eos.GetInternalEnergy(del_prs, Vc(RHO,k,j,i));
-        }
+        del_prs = -Vc(RHO,k,j,i)/(mu*m_p/kB)*(temperature-T_fin)/pow(vel_unit,2);
+        delta_eng(k,j,i) = eos.GetInternalEnergy(del_prs, Vc(RHO,k,j,i));
       }
     });
   idfx::popRegion();

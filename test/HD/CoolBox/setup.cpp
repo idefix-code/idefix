@@ -67,9 +67,9 @@ void Setup::InitFlow(DataBlock &data) {
                 d.Vc(VX2,k,j,i) = ZERO_F;,\
                 d.Vc(VX3,k,j,i) = ZERO_F;)
                 d.Vc(TRG,k,j,i) = ONE_F;
-#if HAVE_ENERGY
+                #if HAVE_ENERGY
                 d.Vc(PRS,k,j,i) = ((d.Vc(RHO,k,j,i)*rho_unit)/(mu*m_p) * kB * Tini)/(rho_unit*pow(vel_unit,2));
-#endif
+                #endif
             }
         }
     }
@@ -83,7 +83,7 @@ void MakeAnalysis(DataBlock & data) {
   // Mirror data on host for analysis reductions.
   DataBlockHost d(data);
   d.SyncFromDevice();
-
+  #if HAVE_ENERGY
   const CoolBoxUnits units = LoadCoolBoxUnits();
 
   real kB = units.kB;
@@ -136,6 +136,19 @@ void MakeAnalysis(DataBlock & data) {
     }
   }
 
+  #ifdef WITH_MPI
+  real sendArr[3] = {numrt, denom, vol_tot};
+  real recvArr[3] = {ZERO_F, ZERO_F, ZERO_F};
+  // MPI_Allreduce(sendArr, recvArr, 3, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Reduce(sendArr, recvArr, 3, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  int transfer = 0;
+  numrt = recvArr[transfer++];
+  denom = recvArr[transfer++];
+  vol_tot = recvArr[transfer++];
+  #endif
+
+  if (idfx::prank!=0) return;
+
   real temperature_mass_avg = numrt/denom; // K
   real dens_avg = denom/vol_tot; // cgs
   e_now = eos.GetInternalEnergy((dens_avg/(mu*m_p))*kB*temperature_mass_avg, dens_avg); // cgs
@@ -153,4 +166,5 @@ void MakeAnalysis(DataBlock & data) {
   file.precision(10);
   file << std::scientific << data.t << '\t' << temperature_mass_avg << '\t' << (-de_dt/pow(nH,2)) << std::endl;
   file.close();
+  #endif
 }

@@ -13,7 +13,7 @@ temperature floor. The analysis file stores, for every snapshot:
 We compare the measured cooling rate (col2) as a function of temperature
 (col1) against the tabulated cooling curve used as input (cooltable.dat,
 row 0 = temperature, row 1 = cooling rate), over the temperature range
-[1.2e4, 1.9e6] K.
+[1.05e4, 1.95e6] K.
 
 @author: dutta-alankar
 """

@@ -1,5 +1,6 @@
 target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/cooling.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/coolingConstructor.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/cooling.cpp
   )
 

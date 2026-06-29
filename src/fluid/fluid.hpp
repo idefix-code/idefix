@@ -779,4 +779,5 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
 #include "checkDivB.hpp"
 #include "evolveStage.hpp"
 #include "showConfig.hpp"
+#include "coolingConstructor.hpp"
 #endif // FLUID_FLUID_HPP_

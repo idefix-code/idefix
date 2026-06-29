@@ -1,0 +1,29 @@
+{
+    "namings": "ini",
+    "variants": [
+        {
+            "dumpname": "dump.0001.dmp",
+            "ini": ["idefix.ini"],
+            "noplot": true,
+            "reconstruction": 2,
+            "single": false,
+            "mpi": false,
+            "nonRegressionTest": false,
+            "standardTest": true,
+            "check_file_produced": ["analysis-time-temperature.dat"],
+            "tolerance": 0
+        },{
+            "dumpname": "dump.0001.dmp",
+            "ini": ["idefix.ini"],
+            "noplot": true,
+            "reconstruction": 2,
+            "single": false,
+            "mpi": true,
+            "dec": ["2","1","2"],
+            "nonRegressionTest": false,
+            "standardTest": true,
+            "check_file_produced": ["analysis-time-temperature.dat"],
+            "tolerance": 0
+        }
+    ]
+}

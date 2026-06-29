@@ -130,13 +130,18 @@ class idfxTest:
 
     # transform all arguments from args into attributes of this instance
     self.__dict__.update(vars(args))
+    idefix_dir = os.path.realpath(os.path.abspath(self.idefixDir))
+    current_test_file_abs = os.path.realpath(os.path.abspath(current_test_file))
+
     # store the full path of problem directory
-    self.currentTestFile = current_test_file
+    self.currentTestFile = current_test_file_abs
     self.currentTestName = name
-    self.problemDir=os.path.dirname(current_test_file)
-    self.referenceDirectory = os.path.join(idefix_dir_env,"reference")
+    self.problemDir=os.path.dirname(current_test_file_abs)
+    self.referenceDirectory = os.path.join(idefix_dir,"reference")
     # current directory relative to $IDEFIX_DIR/test (used to retrieve the path ot reference files)
-    self.testDir=os.path.relpath(self.problemDir,os.path.join(idefix_dir_env,"test"))
+    self.testDir=os.path.relpath(self.problemDir,os.path.join(idefix_dir,"test"))
+    # Default input file name used by Idefix when no -i argument is provided.
+    self.inifile = "idefix.ini"
     # build directory, currently inside the test named build-test
     self.buildDir=os.path.join(self.problemDir,"build-test")
     # remind what build we dit last
@@ -343,8 +348,11 @@ class idfxTest:
 
       comm=[os.path.join(self.buildDir,"idefix")]
       if inputFile:
+          self.inifile = os.path.basename(inputFile)
           comm.append("-i")
           comm.append(inputFile)
+      else:
+          self.inifile = "idefix.ini"
       if self.mpi:
           if self.dec:
             np=1

@@ -55,6 +55,8 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/HD/ViscousDisk -all $TESTME_OPTIONS
       - name: Thermal diffusion
         run: scripts/ci/run-tests $IDEFIX_DIR/test/HD/thermalDiffusion -all $TESTME_OPTIONS
+      - name: CoolBox
+        run: scripts/ci/run-tests $IDEFIX_DIR/test/HD/CoolBox -all $TESTME_OPTIONS
 
   ShocksMHD:
     runs-on: self-hosted

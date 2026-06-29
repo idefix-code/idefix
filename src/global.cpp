@@ -132,7 +132,8 @@ void IdefixOutStream::enableLogFile(const std::string &logDirectory) {
     // spuriously. Instead, we verify success by checking that the path exists as
     // a directory afterwards, which is robust to this race condition.
     fs::create_directories(outputDirectory, errorCode);
-    if(!fs::is_directory(outputDirectory)) {
+    const bool isDir = fs::is_directory(outputDirectory, errorCode);
+    if(errorCode || !isDir) {
       IDEFIX_ERROR("Unable to create log directory " + logDirectory);
     }
     logFileName = (outputDirectory / sslogFileName.str()).string();

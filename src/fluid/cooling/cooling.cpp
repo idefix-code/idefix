@@ -91,10 +91,8 @@ void RadCooling::TownsendIntegration(real dt) {
       real temperature = Vc(PRS,k,j,i)/Vc(RHO,k,j,i)*(mu*m_p/kB)*pow(vel_unit,2);
 
       if (temperature<=TcoolFloor) {
-        // not zero cooling but floor the temperature
-        // delta_eng(k,j,i) = ZERO_F;
-        real del_prs = -Vc(RHO,k,j,i)/(mu*m_p/kB)*(temperature-TcoolFloor)/pow(vel_unit,2);
-        delta_eng(k,j,i) = eos.GetInternalEnergy(del_prs, Vc(RHO,k,j,i));
+        // Cooling disabled below the floor temperature.
+        delta_eng(k,j,i) = ZERO_F;
       } else if ((temperature < temperature_min_data) ||
                  (temperature > temperature_max_data)) {
         // tabulated data does not enclose the temperature value

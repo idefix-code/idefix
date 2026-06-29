@@ -21,8 +21,12 @@ RadCooling::RadCooling(Input &input, Grid &grid, Fluid<Phys> *hydroin):
   this->data = hydroin->data;
   this->eos = *(hydroin->eos.get());
 
-  if(input.CheckEntry("Hydro","Cooling")>=0) {
-    idfx::cout << input.Get<std::string>("Hydro","Cooling",1) << std::endl;
+  const int nCoolingParams = input.CheckEntry("Hydro","Cooling");
+  if(nCoolingParams < 3) {
+    IDEFIX_ERROR("[Hydro]:Cooling expects: Cooling Tabulated <table> Townsend [TcoolFloor <T>] ");
+  }
+
+  if(nCoolingParams >= 0) {
     if(input.Get<std::string>("Hydro","Cooling",0).compare("Tabulated") == 0) {
       this->cooling_type = "tabulated";
       this->cooltable_filename = input.Get<std::string>("Hydro","Cooling",1);
@@ -30,14 +34,14 @@ RadCooling::RadCooling(Input &input, Grid &grid, Fluid<Phys> *hydroin):
         this->cooling_integration = "townsend";
         this->rad_cooling_int_func = [this](real dt){ TownsendIntegration(dt); };
       } else {
-        IDEFIX_ERROR("Unknown radiative cooling integration in idefix.ini. "
-                     "Can only be Townsend at the moment.");
+        IDEFIX_ERROR("Unknown radiative cooling integration in idefix.ini. Can only be Townsend at the moment.");
       }
-      if(input.Get<std::string>("Hydro","Cooling",3).compare("TcoolFloor") == 0) {
+      if(nCoolingParams >= 5 && input.Get<std::string>("Hydro","Cooling",3).compare("TcoolFloor") == 0) {
         this->TcoolFloor = input.Get<real>("Hydro","Cooling",4);
+      } else if(nCoolingParams >= 4) {
+        IDEFIX_ERROR("Unknown optional radiative cooling parameter '" + input.Get<std::string>("Hydro","Cooling",3) + "'. Expected TcoolFloor.");
       } else {
-        IDEFIX_WARNING("No cooling floor set "
-                       "Defaulting to 1.0e+04 K");
+        IDEFIX_WARNING("No cooling floor set Defaulting to 1.0e+04 K");
         this->TcoolFloor = 1.0e+04;
       }
     /*

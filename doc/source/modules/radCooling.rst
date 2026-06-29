@@ -1,8 +1,7 @@
 .. _radiativeCoolingModule:
 
 Radiative Cooling module
-===================
-
+========================
 Equations solved and method
 ---------------------------
 
@@ -38,9 +37,9 @@ The ``RadiativeCooling`` module is a submodule of the ``Hydro`` module to comput
 of the gas. The parameters specific to radiative cooling are to be set in a dedicated line starting with the word
 ``Cooling`` in the ``[Hydro]`` block. An example is as follows succeded by a detailed explanation.
 
-``
-Cooling   Tabulated    cooltable.dat    Townsend    TcoolFloor    1.0e+04
-``
+.. code-block:: ini
+
+   Cooling   Tabulated    cooltable.dat    Townsend    TcoolFloor    1.0e+04
 
 +----------------------+-------------------------+----------------------------------------------------------------------------------------------+
 |  Entry name          | Parameter type          | Comment                                                                                      |

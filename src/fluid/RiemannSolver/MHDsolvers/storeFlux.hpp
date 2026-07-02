@@ -62,8 +62,8 @@ KOKKOS_FORCEINLINE_FUNCTION void K_StoreHLL( const int i, const int j, const int
   real al = std::fmin(ZERO_F, sl);
   real scrh = ONE_F/(ar - al);
 
-  #if COMPONENTS > 1
-  EXPAND( Et(k,j,i) = -st*(ar*vL[Xt] - al*vR[Xt])*scrh;  ,
+  #if DIMENSIONS > 1
+  D_EXPAND( Et(k,j,i) = -st*(ar*vL[Xt] - al*vR[Xt])*scrh;  ,
                                                         ,
           Eb(k,j,i) = -sb*(ar*vL[Xb] - al*vR[Xb])*scrh;  );
   #endif

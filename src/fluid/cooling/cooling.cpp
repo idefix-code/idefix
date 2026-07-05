@@ -99,8 +99,8 @@ void RadCooling::TownsendIntegration(real dt) {
       if (temperature<=TcoolFloor) {
         // Cooling disabled below the floor temperature.
         delta_eng(k,j,i) = ZERO_F;
-        // Use the following if you want to heat to the floor value
-        // and override say adiabatic expansion
+        /* Use the following if you want to heat to the floor value
+           and override say adiabatic expansion */
         // real del_prs = -Vc(RHO,k,j,i)/(mu*m_p/kB)*(temperature-TcoolFloor)/pow(vel_unit,2);
         // delta_eng(k,j,i) = eos.GetInternalEnergy(del_prs, Vc(RHO,k,j,i));
       }

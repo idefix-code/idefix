@@ -57,17 +57,17 @@ void RadCooling::TownsendIntegration(real dt) {
   auto temperature_data = this->temperature_data;
   auto Lambda_cool_data = this->Lambda_cool_data;
   auto eos = this->eos;
-  real TcoolFloor = this->TcoolFloor;
+  const real TcoolFloor = this->TcoolFloor;
 
-  real kB = idfx::units.k_B;
-  real mu = 0.609;
-  real m_p = idfx::units.m_p;
-  real XH = 0.71;
+  const real kB = idfx::units.k_B;
+  const real mu = 0.609;
+  const real m_p = idfx::units.m_p;
+  const real XH = 0.71;
 
   // Code-to-physical (CGS) unit conversion factors
-  real vel_unit = idfx::units.GetVelocity();
-  real rho_unit = idfx::units.GetDensity();
-  real len_unit = idfx::units.GetLength();
+  const real vel_unit = idfx::units.GetVelocity();
+  const real rho_unit = idfx::units.GetDensity();
+  const real len_unit = idfx::units.GetLength();
 
   int ibeg, iend, jbeg, jend, kbeg, kend;
   ibeg = this->data->beg[IDIR];
@@ -82,22 +82,29 @@ void RadCooling::TownsendIntegration(real dt) {
       int T_indx_lo = 0;
       int T_indx_hi = static_cast<int>(temperature_data.extent(0)) - 1;
       int T_indx_mid = 0;
-      real temperature_max_data = temperature_data(T_indx_hi);
-      real temperature_min_data = temperature_data(T_indx_lo);
+      const real temperature_max_data = temperature_data(T_indx_hi);
+      const real temperature_min_data = temperature_data(T_indx_lo);
       // ideal gas eos is used
-      real temperature = Vc(PRS,k,j,i)/Vc(RHO,k,j,i)*(mu*m_p/kB)*pow(vel_unit,2);
+      const real temperature = Vc(PRS,k,j,i)/Vc(RHO,k,j,i)*(mu*m_p/kB)*pow(vel_unit,2);
 
-      if (temperature<=TcoolFloor) {
-        // Cooling disabled below the floor temperature.
-        delta_eng(k,j,i) = ZERO_F;
-      } else if ((temperature < temperature_min_data) ||
-                 (temperature > temperature_max_data)) {
+      if ((temperature < temperature_min_data) ||
+          (temperature > temperature_max_data)) {
         // tabulated data does not enclose the temperature value
         printf("RadCooling::TownsendIntegration Temperature out of range: T=%e, "
                "valid range=[%e, %e]\n",
                temperature, temperature_min_data, temperature_max_data);
         Kokkos::abort("RadCooling::TownsendIntegration Temperature out of range");
-      } else {
+      }
+
+      if (temperature<=TcoolFloor) {
+        // Cooling disabled below the floor temperature.
+        delta_eng(k,j,i) = ZERO_F;
+        // Use the following if you want to heat to the floor value
+        // and override say adiabatic expansion
+        // real del_prs = -Vc(RHO,k,j,i)/(mu*m_p/kB)*(temperature-TcoolFloor)/pow(vel_unit,2);
+        // delta_eng(k,j,i) = eos.GetInternalEnergy(del_prs, Vc(RHO,k,j,i));
+      }
+      else {
         while (T_indx_lo<=T_indx_hi) {
           T_indx_mid = (T_indx_lo + T_indx_hi)/2;
           if (temperature < temperature_data(T_indx_mid)) {
@@ -160,7 +167,8 @@ void RadCooling::TownsendIntegration(real dt) {
         del_prs = -Vc(RHO,k,j,i)/(mu*m_p/kB)*(temperature-T_fin)/pow(vel_unit,2);
         delta_eng(k,j,i) = eos.GetInternalEnergy(del_prs, Vc(RHO,k,j,i));
       }
-    });
+    }
+  );
   idfx::popRegion();
 }
 

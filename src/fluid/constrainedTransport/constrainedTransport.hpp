@@ -123,18 +123,12 @@ class ConstrainedTransport {
   enum {faceRight, faceLeft};
 
   // Buffers for MPI calls
-  IdefixArray1D<real> BufferSendX1[2];
-  IdefixArray1D<real> BufferSendX2[2];
-  IdefixArray1D<real> BufferSendX3[2];
-  IdefixArray1D<real> BufferRecvX1[2];
-  IdefixArray1D<real> BufferRecvX2[2];
-  IdefixArray1D<real> BufferRecvX3[2];
-  Buffer BufferSendX1New[2];
-  Buffer BufferSendX2New[2];
-  Buffer BufferSendX3New[2];
-  Buffer BufferRecvX1New[2];
-  Buffer BufferRecvX2New[2];
-  Buffer BufferRecvX3New[2];
+  Buffer BufferSendX1[2];
+  Buffer BufferSendX2[2];
+  Buffer BufferSendX3[2];
+  Buffer BufferRecvX1[2];
+  Buffer BufferRecvX2[2];
+  Buffer BufferRecvX3[2];
 
   IdefixArray1D<int>  mapVars;
 
@@ -149,12 +143,6 @@ class ConstrainedTransport {
   MPI_Request recvRequestX1[2];
   MPI_Request recvRequestX2[2];
   MPI_Request recvRequestX3[2];
-  MPI_Request sendRequestX1New[2];
-  MPI_Request sendRequestX2New[2];
-  MPI_Request sendRequestX3New[2];
-  MPI_Request recvRequestX1New[2];
-  MPI_Request recvRequestX2New[2];
-  MPI_Request recvRequestX3New[2];
 
   Kokkos::Timer timer;    // Internal MPI timer
 #endif
@@ -299,15 +287,10 @@ ConstrainedTransport<Phys>::ConstrainedTransport(Input &input, Fluid<Phys> *hydr
   bufferSizeX1 += data->np_int[JDIR] * (data->np_int[KDIR]+KOFFSET);
   #endif
 
-  BufferRecvX1[faceLeft ] = IdefixArray1D<real>("EmfRecvX1Left", bufferSizeX1);
-  BufferRecvX1[faceRight] = IdefixArray1D<real>("EmfRecvX1Right",bufferSizeX1);
-  BufferSendX1[faceLeft ] = IdefixArray1D<real>("EmfSendX1Left", bufferSizeX1);
-  BufferSendX1[faceRight] = IdefixArray1D<real>("EmfSendX1Right",bufferSizeX1);
-
-  BufferRecvX1New[faceLeft ] = Buffer(bufferSizeX1);
-  BufferRecvX1New[faceRight] = Buffer(bufferSizeX1);
-  BufferSendX1New[faceLeft ] = Buffer(bufferSizeX1);
-  BufferSendX1New[faceRight] = Buffer(bufferSizeX1);
+  BufferRecvX1[faceLeft ] = Buffer(bufferSizeX1);
+  BufferRecvX1[faceRight] = Buffer(bufferSizeX1);
+  BufferSendX1[faceLeft ] = Buffer(bufferSizeX1);
+  BufferSendX1[faceRight] = Buffer(bufferSizeX1);
 
   // Number of cells in X2 boundary condition (only required when problem >2D):
 #if DIMENSIONS >= 2
@@ -319,15 +302,10 @@ ConstrainedTransport<Phys>::ConstrainedTransport(Input &input, Fluid<Phys> *hydr
   bufferSizeX2 += data->np_int[IDIR] * (data->np_int[KDIR]+KOFFSET);
   #endif
 
-  BufferRecvX2[faceLeft ] = IdefixArray1D<real>("EmfRecvX2Left", bufferSizeX2);
-  BufferRecvX2[faceRight] = IdefixArray1D<real>("EmfRecvX2Right",bufferSizeX2);
-  BufferSendX2[faceLeft ] = IdefixArray1D<real>("EmfSendX2Left", bufferSizeX2);
-  BufferSendX2[faceRight] = IdefixArray1D<real>("EmfSendX2Right",bufferSizeX2);
-
-  BufferRecvX2New[faceLeft ] = Buffer(bufferSizeX2);
-  BufferRecvX2New[faceRight] = Buffer(bufferSizeX2);
-  BufferSendX2New[faceLeft ] = Buffer(bufferSizeX2);
-  BufferSendX2New[faceRight] = Buffer(bufferSizeX2);
+  BufferRecvX2[faceLeft ] = Buffer(bufferSizeX2);
+  BufferRecvX2[faceRight] = Buffer(bufferSizeX2);
+  BufferSendX2[faceLeft ] = Buffer(bufferSizeX2);
+  BufferSendX2[faceRight] = Buffer(bufferSizeX2);
 
 #endif
 // Number of cells in X3 boundary condition (only required when problem is 3D):
@@ -337,15 +315,10 @@ ConstrainedTransport<Phys>::ConstrainedTransport(Input &input, Fluid<Phys> *hydr
   // ey
   bufferSizeX3 += (data->np_int[IDIR]+IOFFSET) * data->np_int[JDIR];
 
-  BufferRecvX3[faceLeft ] = IdefixArray1D<real>("EmfRecvX3Left", bufferSizeX3);
-  BufferRecvX3[faceRight] = IdefixArray1D<real>("EmfRecvX3Right",bufferSizeX3);
-  BufferSendX3[faceLeft ] = IdefixArray1D<real>("EmfSendX3Left", bufferSizeX3);
-  BufferSendX3[faceRight] = IdefixArray1D<real>("EmfSendX3Right",bufferSizeX3);
-
-  BufferRecvX3New[faceLeft ] = Buffer(bufferSizeX3);
-  BufferRecvX3New[faceRight] = Buffer(bufferSizeX3);
-  BufferSendX3New[faceLeft ] = Buffer(bufferSizeX3);
-  BufferSendX3New[faceRight] = Buffer(bufferSizeX3);
+  BufferRecvX3[faceLeft ] = Buffer(bufferSizeX3);
+  BufferRecvX3[faceRight] = Buffer(bufferSizeX3);
+  BufferSendX3[faceLeft ] = Buffer(bufferSizeX3);
+  BufferSendX3[faceRight] = Buffer(bufferSizeX3);
 #endif // DIMENSIONS
 
   // Init persistent MPI communications
@@ -360,15 +333,9 @@ ConstrainedTransport<Phys>::ConstrainedTransport(Input &input, Fluid<Phys> *hydr
 
   MPI_SAFE_CALL(MPI_Send_init(BufferSendX1[faceRight].data(), bufferSizeX1, realMPI, procSend, 100,
                 mygrid->CartComm, &sendRequestX1[faceRight]));
-  MPI_SAFE_CALL(MPI_Send_init(BufferSendX1New[faceRight].data(), bufferSizeX1, realMPI, procSend,
-                1100,
-                mygrid->CartComm, &sendRequestX1New[faceRight]));
 
   MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX1[faceLeft].data(), bufferSizeX1, realMPI, procRecv, 100,
                 mygrid->CartComm, &recvRequestX1[faceLeft]));
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX1New[faceLeft].data(), bufferSizeX1, realMPI, procRecv,
-                1100,
-                mygrid->CartComm, &recvRequestX1New[faceLeft]));
 
   // Send to the left
   // We receive from procRecv, and we send to procSend
@@ -379,15 +346,9 @@ ConstrainedTransport<Phys>::ConstrainedTransport(Input &input, Fluid<Phys> *hydr
 
   MPI_SAFE_CALL(MPI_Send_init(BufferSendX1[faceLeft].data(), bufferSizeX1, realMPI, procSend, 101,
                 mygrid->CartComm, &sendRequestX1[faceLeft]));
-  MPI_SAFE_CALL(MPI_Send_init(BufferSendX1New[faceLeft].data(), bufferSizeX1, realMPI, procSend,
-                1101,
-                mygrid->CartComm, &sendRequestX1New[faceLeft]));
 
   MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX1[faceRight].data(), bufferSizeX1, realMPI, procRecv, 101,
                 mygrid->CartComm, &recvRequestX1[faceRight]));
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX1New[faceRight].data(), bufferSizeX1, realMPI, procRecv,
-                1101,
-                mygrid->CartComm, &recvRequestX1New[faceRight]));
 
   #if DIMENSIONS >= 2
   // We receive from procRecv, and we send to procSend
@@ -395,15 +356,9 @@ ConstrainedTransport<Phys>::ConstrainedTransport(Input &input, Fluid<Phys> *hydr
 
   MPI_SAFE_CALL(MPI_Send_init(BufferSendX2[faceRight].data(), bufferSizeX2, realMPI, procSend, 200,
                 mygrid->CartComm, &sendRequestX2[faceRight]));
-  MPI_SAFE_CALL(MPI_Send_init(BufferSendX2New[faceRight].data(), bufferSizeX2, realMPI, procSend,
-                1200,
-                mygrid->CartComm, &sendRequestX2New[faceRight]));
 
   MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX2[faceLeft].data(), bufferSizeX2, realMPI, procRecv, 200,
                 mygrid->CartComm, &recvRequestX2[faceLeft]));
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX2New[faceLeft].data(), bufferSizeX2, realMPI, procRecv,
-                1200,
-                mygrid->CartComm, &recvRequestX2New[faceLeft]));
 
   // Send to the left
   // We receive from procRecv, and we send to procSend
@@ -411,15 +366,9 @@ ConstrainedTransport<Phys>::ConstrainedTransport(Input &input, Fluid<Phys> *hydr
 
   MPI_SAFE_CALL(MPI_Send_init(BufferSendX2[faceLeft].data(), bufferSizeX2, realMPI, procSend, 201,
                 mygrid->CartComm, &sendRequestX2[faceLeft]));
-  MPI_SAFE_CALL(MPI_Send_init(BufferSendX2New[faceLeft].data(), bufferSizeX2, realMPI, procSend,
-                1201,
-                mygrid->CartComm, &sendRequestX2New[faceLeft]));
 
   MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX2[faceRight].data(), bufferSizeX2, realMPI, procRecv, 201,
                 mygrid->CartComm, &recvRequestX2[faceRight]));
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX2New[faceRight].data(), bufferSizeX2, realMPI, procRecv,
-                1201,
-                mygrid->CartComm, &recvRequestX2New[faceRight]));
   #endif
 
   #if DIMENSIONS == 3
@@ -428,15 +377,9 @@ ConstrainedTransport<Phys>::ConstrainedTransport(Input &input, Fluid<Phys> *hydr
 
   MPI_SAFE_CALL(MPI_Send_init(BufferSendX3[faceRight].data(), bufferSizeX3, realMPI, procSend, 300,
                 mygrid->CartComm, &sendRequestX3[faceRight]));
-  MPI_SAFE_CALL(MPI_Send_init(BufferSendX3New[faceRight].data(), bufferSizeX3, realMPI, procSend,
-                1300,
-                mygrid->CartComm, &sendRequestX3New[faceRight]));
 
   MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX3[faceLeft].data(), bufferSizeX3, realMPI, procRecv, 300,
                 mygrid->CartComm, &recvRequestX3[faceLeft]));
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX3New[faceLeft].data(), bufferSizeX3, realMPI, procRecv,
-                1300,
-                mygrid->CartComm, &recvRequestX3New[faceLeft]));
 
   // Send to the left
   // We receive from procRecv, and we send to procSend
@@ -444,15 +387,9 @@ ConstrainedTransport<Phys>::ConstrainedTransport(Input &input, Fluid<Phys> *hydr
 
   MPI_SAFE_CALL(MPI_Send_init(BufferSendX3[faceLeft].data(), bufferSizeX3, realMPI, procSend, 301,
                 mygrid->CartComm, &sendRequestX3[faceLeft]));
-  MPI_SAFE_CALL(MPI_Send_init(BufferSendX3New[faceLeft].data(), bufferSizeX3, realMPI, procSend,
-                1301,
-                mygrid->CartComm, &sendRequestX3New[faceLeft]));
 
   MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX3[faceRight].data(), bufferSizeX3, realMPI, procRecv, 301,
                 mygrid->CartComm, &recvRequestX3[faceRight]));
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX3New[faceRight].data(), bufferSizeX3, realMPI, procRecv,
-                1301,
-                mygrid->CartComm, &recvRequestX3New[faceRight]));
   #endif
 
 #endif  // WITH_MPI
@@ -474,21 +411,15 @@ ConstrainedTransport<Phys>::~ConstrainedTransport() {
     for(int i=0 ; i< 2; i++) {
       MPI_Request_free( &sendRequestX1[i]);
       MPI_Request_free( &recvRequestX1[i]);
-      MPI_Request_free( &sendRequestX1New[i]);
-      MPI_Request_free( &recvRequestX1New[i]);
 
     #if DIMENSIONS >= 2
       MPI_Request_free( &sendRequestX2[i]);
       MPI_Request_free( &recvRequestX2[i]);
-      MPI_Request_free( &sendRequestX2New[i]);
-      MPI_Request_free( &recvRequestX2New[i]);
     #endif
 
     #if DIMENSIONS == 3
       MPI_Request_free( &sendRequestX3[i]);
       MPI_Request_free( &recvRequestX3[i]);
-      MPI_Request_free( &sendRequestX3New[i]);
-      MPI_Request_free( &recvRequestX3New[i]);
     #endif
     }
     #endif

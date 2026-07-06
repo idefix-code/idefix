@@ -8,8 +8,6 @@
 #ifndef FLUID_CONSTRAINEDTRANSPORT_EMFEXCHANGE_HPP_
 #define FLUID_CONSTRAINEDTRANSPORT_EMFEXCHANGE_HPP_
 
-#include <cassert>
-
 #include "constrainedTransport.hpp"
 #include "fluid.hpp"
 #include "dataBlock.hpp"

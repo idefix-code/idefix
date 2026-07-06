@@ -393,7 +393,7 @@ void Axis::ExchangeMPI(int side) {
   #ifdef WITH_MPI
   // Load  the buffers with data
   int ibeg,iend,jbeg,jend,kbeg,kend,offset;
-  int nx,ny,nz;
+  int ny;
   Buffer bufferSend = this->bufferSend;
   IdefixArray1D<int> map = this->mapVars;
   IdefixArray4D<real> Vc = this->Vc;
@@ -412,25 +412,17 @@ void Axis::ExchangeMPI(int side) {
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // Coordinates of the ghost region which needs to be transfered
-  ibeg   = 0;
-  iend   = data->np_tot[IDIR];
-  nx     = data->np_tot[IDIR];  // Number of points in x
-  jbeg   = 0;
-  jend   = data->nghost[JDIR];
   offset = data->end[JDIR];     // Distance between beginning of left and right ghosts
   ny     = data->nghost[JDIR];
-  kbeg   = data->beg[KDIR];
-  kend   = data->end[KDIR];
-  nz     = kend - kbeg;
 
   // Create the base box to be patched by the ops
   BoundingBox baseBox;
-  baseBox[IDIR][0] = ibeg;
-  baseBox[IDIR][1] = iend;
-  baseBox[JDIR][0] = jbeg;
-  baseBox[JDIR][1] = jend;
-  baseBox[KDIR][0] = kbeg;
-  baseBox[KDIR][1] = kend;
+  baseBox[IDIR][0] = 0;
+  baseBox[IDIR][1] = data->np_tot[IDIR];
+  baseBox[JDIR][0] = 0;
+  baseBox[JDIR][1] = data->nghost[JDIR];
+  baseBox[KDIR][0] = data->beg[KDIR];
+  baseBox[KDIR][1] = data->end[KDIR];
 
   if(side==left) {
     //shift by NY
@@ -494,7 +486,6 @@ void Axis::ExchangeMPI(int side) {
 
     // Load face-centered field in the buffer
     if (haveMHD) {
-      int VsIndex = mapNVars*nx*ny*nz;
       auto sVs = this->symmetryVs;
 
       //unpack Vs face-centered
@@ -516,7 +507,6 @@ void Axis::ExchangeMPI(int side) {
 
     // Load face-centered field in the buffer
     if (haveMHD) {
-      int VsIndex = mapNVars*nx*ny*nz;
       auto sVs = this->symmetryVs;
 
       //unpack Vs face-centered on right part

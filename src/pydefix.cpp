@@ -13,6 +13,7 @@
 #include <pybind11/stl.h>   // For STL vectors and containers
 #include <string>
 #include <vector>
+#include <csignal>
 #include "idefix.hpp"
 #include "dataBlock.hpp"
 #include "dataBlockHost.hpp"
@@ -278,6 +279,7 @@ Pydefix::Pydefix(Input &input) {
       idfx::cout << "Pydefix: start Python interpreter." << std::endl;
 
       py::initialize_interpreter();
+      std::signal(SIGINT, SIG_DFL);  // restore "terminate on Ctrl-C" signal handler
       py::exec("import sys; print(f'Pydefix: Python Version: {sys.version}')");
       py::exec("print(f'Pydefix: Executable Path: {sys.executable}')");
       py::exec("print(f'Pydefix: Sys Path: {sys.path}')");

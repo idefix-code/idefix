@@ -331,11 +331,11 @@ ConstrainedTransport<Phys>::ConstrainedTransport(Input &input, Fluid<Phys> *hydr
   if(data->rbound[IDIR] == shearingbox ) procSend = MPI_PROC_NULL;
   if(data->lbound[IDIR] == shearingbox ) procRecv = MPI_PROC_NULL;
 
-  MPI_SAFE_CALL(MPI_Send_init(BufferSendX1[faceRight].data(), bufferSizeX1, realMPI, procSend, 100,
-                mygrid->CartComm, &sendRequestX1[faceRight]));
+  MPI_SAFE_CALL(MPI_Send_init(BufferSendX1[faceRight].commData(), bufferSizeX1, realMPI, procSend,
+                100, mygrid->CartComm, &sendRequestX1[faceRight]));
 
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX1[faceLeft].data(), bufferSizeX1, realMPI, procRecv, 100,
-                mygrid->CartComm, &recvRequestX1[faceLeft]));
+  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX1[faceLeft].commData(), bufferSizeX1, realMPI, procRecv,
+                100, mygrid->CartComm, &recvRequestX1[faceLeft]));
 
   // Send to the left
   // We receive from procRecv, and we send to procSend
@@ -344,52 +344,52 @@ ConstrainedTransport<Phys>::ConstrainedTransport(Input &input, Fluid<Phys> *hydr
   if(data->lbound[IDIR] == shearingbox ) procSend = MPI_PROC_NULL;
   if(data->rbound[IDIR] == shearingbox ) procRecv = MPI_PROC_NULL;
 
-  MPI_SAFE_CALL(MPI_Send_init(BufferSendX1[faceLeft].data(), bufferSizeX1, realMPI, procSend, 101,
-                mygrid->CartComm, &sendRequestX1[faceLeft]));
+  MPI_SAFE_CALL(MPI_Send_init(BufferSendX1[faceLeft].commData(), bufferSizeX1, realMPI, procSend,
+                 101, mygrid->CartComm, &sendRequestX1[faceLeft]));
 
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX1[faceRight].data(), bufferSizeX1, realMPI, procRecv, 101,
-                mygrid->CartComm, &recvRequestX1[faceRight]));
+  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX1[faceRight].commData(), bufferSizeX1, realMPI, procRecv,
+                 101, mygrid->CartComm, &recvRequestX1[faceRight]));
 
   #if DIMENSIONS >= 2
   // We receive from procRecv, and we send to procSend
   MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,1,1,&procRecv,&procSend ));
 
-  MPI_SAFE_CALL(MPI_Send_init(BufferSendX2[faceRight].data(), bufferSizeX2, realMPI, procSend, 200,
-                mygrid->CartComm, &sendRequestX2[faceRight]));
+  MPI_SAFE_CALL(MPI_Send_init(BufferSendX2[faceRight].commData(), bufferSizeX2, realMPI, procSend,
+                 200, mygrid->CartComm, &sendRequestX2[faceRight]));
 
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX2[faceLeft].data(), bufferSizeX2, realMPI, procRecv, 200,
-                mygrid->CartComm, &recvRequestX2[faceLeft]));
+  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX2[faceLeft].commData(), bufferSizeX2, realMPI, procRecv,
+                 200, mygrid->CartComm, &recvRequestX2[faceLeft]));
 
   // Send to the left
   // We receive from procRecv, and we send to procSend
   MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,1,-1,&procRecv,&procSend ));
 
-  MPI_SAFE_CALL(MPI_Send_init(BufferSendX2[faceLeft].data(), bufferSizeX2, realMPI, procSend, 201,
-                mygrid->CartComm, &sendRequestX2[faceLeft]));
+  MPI_SAFE_CALL(MPI_Send_init(BufferSendX2[faceLeft].commData(), bufferSizeX2, realMPI, procSend,
+                 201, mygrid->CartComm, &sendRequestX2[faceLeft]));
 
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX2[faceRight].data(), bufferSizeX2, realMPI, procRecv, 201,
-                mygrid->CartComm, &recvRequestX2[faceRight]));
+  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX2[faceRight].commData(), bufferSizeX2, realMPI, procRecv,
+                 201, mygrid->CartComm, &recvRequestX2[faceRight]));
   #endif
 
   #if DIMENSIONS == 3
   // We receive from procRecv, and we send to procSend
   MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,2,1,&procRecv,&procSend ));
 
-  MPI_SAFE_CALL(MPI_Send_init(BufferSendX3[faceRight].data(), bufferSizeX3, realMPI, procSend, 300,
-                mygrid->CartComm, &sendRequestX3[faceRight]));
+  MPI_SAFE_CALL(MPI_Send_init(BufferSendX3[faceRight].commData(), bufferSizeX3, realMPI, procSend,
+                 300, mygrid->CartComm, &sendRequestX3[faceRight]));
 
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX3[faceLeft].data(), bufferSizeX3, realMPI, procRecv, 300,
-                mygrid->CartComm, &recvRequestX3[faceLeft]));
+  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX3[faceLeft].commData(), bufferSizeX3, realMPI, procRecv,
+                 300, mygrid->CartComm, &recvRequestX3[faceLeft]));
 
   // Send to the left
   // We receive from procRecv, and we send to procSend
   MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,2,-1,&procRecv,&procSend ));
 
-  MPI_SAFE_CALL(MPI_Send_init(BufferSendX3[faceLeft].data(), bufferSizeX3, realMPI, procSend, 301,
-                mygrid->CartComm, &sendRequestX3[faceLeft]));
+  MPI_SAFE_CALL(MPI_Send_init(BufferSendX3[faceLeft].commData(), bufferSizeX3, realMPI, procSend,
+                 301, mygrid->CartComm, &sendRequestX3[faceLeft]));
 
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX3[faceRight].data(), bufferSizeX3, realMPI, procRecv, 301,
-                mygrid->CartComm, &recvRequestX3[faceRight]));
+  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX3[faceRight].commData(), bufferSizeX3, realMPI, procRecv,
+                 301, mygrid->CartComm, &recvRequestX3[faceRight]));
   #endif
 
 #endif  // WITH_MPI

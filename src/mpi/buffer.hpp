@@ -17,7 +17,10 @@ using BoundingBox = std::array<std::array<int,2>,3>;
 class Buffer {
  public:
   Buffer() = default;
-  explicit Buffer(size_t size): pointer{0}, array{IdefixArray1D<real>("BufferArray",size)} {};
+  explicit Buffer(size_t size)
+    : pointer{0}
+    , deviceArray{IdefixArray1D<real>("BufferArray",size)}
+    , commArray{initCommArray(deviceArray)} {}
 
   // Compute the size of a bounding box
   static size_t ComputeBoxSize(BoundingBox box) {
@@ -27,16 +30,34 @@ class Buffer {
     return(ninjnk);
   }
 
-  void* data() {
-    return(array.data());
+  void* deviceData() {
+    return(deviceArray.data());
   }
 
-  const IdefixArray1D<real> & getArray(void) const {
-    return this->array;
+  void* commData() {
+    return(commArray.data());
+  }
+
+  void syncCommData() {
+    #ifndef WITH_GPU_DIRECT
+    //will make a memory transfer only if deviceArray is on device
+      Kokkos::deep_copy(this->commArray, this->deviceArray);
+    #endif
+  }
+
+  void syncDeviceData() {
+    #ifndef WITH_GPU_DIRECT
+      //will make a memory transfer only if deviceArray is on device
+      Kokkos:deep_copy(this->deviceArray, this->commArray);
+    #endif
+  }
+
+  const IdefixArray1D<real> & getDeviceArray(void) const {
+    return this->deviceArray;
   }
 
   int Size() {
-    return(array.size());
+    return(deviceArray.size());
   }
 
   void ResetPointer() {
@@ -55,7 +76,7 @@ class Buffer {
     const int kend = box[KDIR][1];
     const int offset = this->pointer;
 
-    auto arr = this->array;
+    auto arr = this->deviceArray;
     idefix_for("LoadBuffer3D",kbeg,kend,jbeg,jend,ibeg,iend,
       KOKKOS_LAMBDA (int k, int j, int i) {
       arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + offset ) = in(k,j,i);
@@ -79,7 +100,7 @@ class Buffer {
     const int kend = box[KDIR][1];
     const int offset = this->pointer;
 
-    auto arr = this->array;
+    auto arr = this->deviceArray;
     idefix_for("LoadBuffer4D_var",kbeg,kend,jbeg,jend,ibeg,iend,
       KOKKOS_LAMBDA (int k, int j, int i) {
       arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + offset ) = in(var, k,j,i);
@@ -102,7 +123,7 @@ class Buffer {
     const int jend = box[JDIR][1];
     const int kend = box[KDIR][1];
     const int offset = this->pointer;
-    auto arr = this->array;
+    auto arr = this->deviceArray;
 
     idefix_for("LoadBuffer4D_map",0,map.size(),
                              kbeg,kend,
@@ -128,7 +149,7 @@ class Buffer {
     const int jend = box[JDIR][1];
     const int kend = box[KDIR][1];
     const int offset = this->pointer;
-    auto arr = this->array;
+    auto arr = this->deviceArray;
 
     idefix_for("UnLoadBuffer3D",kbeg,kend,jbeg,jend,ibeg,iend,
       KOKKOS_LAMBDA (int k, int j, int i) {
@@ -153,7 +174,7 @@ class Buffer {
       const int kend = box[KDIR][1];
     const int offset = this->pointer;
 
-    auto arr = this->array;
+    auto arr = this->deviceArray;
     idefix_for("UnLoadBuffer4D_var",kbeg,kend,jbeg,jend,ibeg,iend,
       KOKKOS_LAMBDA (int k, int j, int i) {
         out(var,k,j,i) = arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + offset );
@@ -178,7 +199,7 @@ class Buffer {
     const int kend = box[KDIR][1];
     const int offset = this->pointer;
 
-    auto arr = this->array;
+    auto arr = this->deviceArray;
     idefix_for("UnLoadBuffer4D_var_sym",kbeg,kend,jbeg,jend,ibeg,iend,
       KOKKOS_LAMBDA (int k, int j, int i) {
         const int jinverted = jend-(j-jbeg)-1;
@@ -204,7 +225,7 @@ class Buffer {
     const int kend = box[KDIR][1];
     const int offset = this->pointer;
 
-    auto arr = this->array;
+    auto arr = this->deviceArray;
     idefix_for("UnLoadBuffer4D_map",0,map.size(),
                               kbeg,kend,
                               jbeg,jend,
@@ -232,7 +253,7 @@ class Buffer {
     const int kend = box[KDIR][1];
     const int offset = this->pointer;
 
-    auto arr = this->array;
+    auto arr = this->deviceArray;
     idefix_for("UnLoadBuffer4D_map_sym",0,map.size(),
                               kbeg,kend,
                               jbeg,jend,
@@ -247,10 +268,26 @@ class Buffer {
     this->pointer += ninjnk*map.size();
   }
 
+ private:
+  static IdefixArray1D<real> initCommArray(IdefixArray1D<real> & deviceArray) {
+    #ifdef WITH_GPU_DIRECT
+      //in gpu direct, we use directly the device buffer
+      //if running on host, it will also just use directly the host storage.
+      return deviceArray;
+    #else
+      //if no GPU DIRECT, it creates a copy only if deviceArray is on GPU,
+      //if on host, it just reference it
+      return Kokkos::create_mirror_view(deviceArray);
+    #endif
+  }
 
  private:
   size_t pointer;
-  IdefixArray1D<real> array;
+  IdefixArray1D<real> deviceArray;
+  //array use for MPI communications, it is deviceArray when running on Host or
+  //using GPU DIRECT. Otherwise it represent a copy which needs to be synced
+  //before communications.
+  IdefixArray1D<real> commArray;
 };
 
 #endif // MPI_BUFFER_HPP_

@@ -470,8 +470,10 @@ void Axis::ExchangeMPI(int side) {
   Kokkos::fence();
 
   tStart = MPI_Wtime();
+  bufferSend.syncCommData();
   MPI_SAFE_CALL(MPI_Start(&sendRequest));
   MPI_Wait(&recvRequest,&recvStatus);
+  bufferRecv.syncDeviceData();
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // Unpack
@@ -526,7 +528,6 @@ void Axis::ExchangeMPI(int side) {
   }
 
   MPI_Wait(&sendRequest, &sendStatus);
-
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
 
@@ -593,10 +594,10 @@ void Axis::InitMPI() {
   MPI_SAFE_CALL(MPI_Cart_shift(data->mygrid->AxisComm,0,data->mygrid->nproc[KDIR]/2,
                                &procRecv,&procSend ));
 
-  MPI_SAFE_CALL(MPI_Send_init(bufferSend.data(), bufferSend.Size(), realMPI, procSend,
+  MPI_SAFE_CALL(MPI_Send_init(bufferSend.commData(), bufferSend.Size(), realMPI, procSend,
                 650, data->mygrid->AxisComm, &sendRequest));
 
-  MPI_SAFE_CALL(MPI_Recv_init(bufferRecv.data(), bufferRecv.Size(), realMPI, procRecv,
+  MPI_SAFE_CALL(MPI_Recv_init(bufferRecv.commData(), bufferRecv.Size(), realMPI, procRecv,
                 650, data->mygrid->AxisComm, &recvRequest));
 
   #endif

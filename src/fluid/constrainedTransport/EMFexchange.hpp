@@ -82,16 +82,19 @@ void ConstrainedTransport<Phys>::ExchangeX1(IdefixArray3D<real> ey, IdefixArray3
   Kokkos::fence();
 
   tStart = MPI_Wtime();
+  BufferRight.syncCommData();
   MPI_SAFE_CALL(MPI_Startall(2, sendRequestX1));
   // Wait for buffers to be received
 
   MPI_Waitall(2,recvRequestX1,recvStatus);
   MPI_Waitall(2, sendRequestX1, sendStatus);
-  idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // Unpack
   BufferLeft=BufferRecvX1[faceLeft];
   BufferRight=BufferRecvX1[faceRight];
+
+  BufferLeft.syncDeviceData();
+  idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // Erase the emf with the one coming from the left process
   //extend by one the end on jdir && take the ghost revc zone on i
@@ -169,15 +172,21 @@ void ConstrainedTransport<Phys>::ExchangeX2(IdefixArray3D<real> ex, IdefixArray3
   Kokkos::fence();
 
   tStart = MPI_Wtime();
+
+  BufferRight.syncCommData();
+
   MPI_SAFE_CALL(MPI_Startall(2, sendRequestX2));
   // Wait for buffers to be received
   MPI_Waitall(2, recvRequestX2, recvStatus);
   MPI_Waitall(2, sendRequestX2, sendStatus);
-  idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // Unpack
   BufferLeft=BufferRecvX2[faceLeft];
   BufferRight=BufferRecvX2[faceRight];
+
+  BufferLeft.syncDeviceData();
+
+  idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // We average the edge emfs zones
   //extend by one the end on idir && take the ghost revc zone on j
@@ -256,15 +265,19 @@ void ConstrainedTransport<Phys>::ExchangeX3(IdefixArray3D<real> ex, IdefixArray3
   Kokkos::fence();
 
   tStart = MPI_Wtime();
+  BufferRight.syncCommData();
   MPI_SAFE_CALL(MPI_Startall(2, sendRequestX3));
   // Wait for buffers to be received
   MPI_Waitall(2, recvRequestX3, recvStatus);
   MPI_Waitall(2, sendRequestX3, sendStatus);
-  idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // Unpack
   BufferLeft=BufferRecvX3[faceLeft];
   BufferRight=BufferRecvX3[faceRight];
+
+  BufferLeft.syncDeviceData();
+
+  idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // We average the edge emfs zones
   //extend by one the end on jdir && take the ghost revc zone on k

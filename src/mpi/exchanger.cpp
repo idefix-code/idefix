@@ -129,22 +129,22 @@ void Exchanger::Init(
   // X1-dir exchanges
   // We receive from procRecv, and we send to procSend
 
-  MPI_Send_init(BufferSend[faceRight].data(), bufferSizeSend[faceRight], realMPI,
+  MPI_Send_init(BufferSend[faceRight].commData(), bufferSizeSend[faceRight], realMPI,
             procSend[faceRight], thisInstance*2,
             grid->CartComm, &sendRequest[faceRight]);
 
-  MPI_Recv_init(BufferRecv[faceLeft].data(), bufferSizeRecv[faceLeft], realMPI,
+  MPI_Recv_init(BufferRecv[faceLeft].commData(), bufferSizeRecv[faceLeft], realMPI,
             procRecv[faceLeft],thisInstance*2,
             grid->CartComm, &recvRequest[faceLeft]);
 
   // Send to the left
   // We receive from procRecv, and we send to procSend
 
-  MPI_Send_init(BufferSend[faceLeft].data(), bufferSizeSend[faceLeft], realMPI,
+  MPI_Send_init(BufferSend[faceLeft].commData(), bufferSizeSend[faceLeft], realMPI,
             procSend[faceLeft],thisInstance*2+1,
             grid->CartComm, &sendRequest[faceLeft]);
 
-  MPI_Recv_init(BufferRecv[faceRight].data(), bufferSizeRecv[faceRight], realMPI,
+  MPI_Recv_init(BufferRecv[faceRight].commData(), bufferSizeRecv[faceRight], realMPI,
             procRecv[faceRight], thisInstance*2+1,
             grid->CartComm, &recvRequest[faceRight]);
 
@@ -211,6 +211,11 @@ void Exchanger::Exchange(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   Kokkos::fence();
   myTimer -= MPI_Wtime();
   tStart = MPI_Wtime();
+
+  //sync comm arrays
+  BufferLeft.syncCommData();
+  BufferRight.syncCommData();
+
 #ifdef MPI_PERSISTENT
   MPI_Startall(2, sendRequest);
   // Wait for buffers to be received
@@ -265,10 +270,16 @@ void Exchanger::Exchange(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   #endif
 #endif
 myTimer += MPI_Wtime();
-idfx::mpiCallsTimer += MPI_Wtime() - tStart;
+
 // Unpack
 BufferLeft=BufferRecv[faceLeft];
 BufferRight=BufferRecv[faceRight];
+
+// sync
+BufferLeft.syncDeviceData();
+BufferRight.syncDeviceData();
+
+idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
 BufferLeft.ResetPointer();
 BufferRight.ResetPointer();

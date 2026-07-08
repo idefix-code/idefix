@@ -393,11 +393,14 @@ void Axis::ExchangeMPI(int side) {
   #ifdef WITH_MPI
   // Load  the buffers with data
   int ibeg,iend,jbeg,jend,kbeg,kend,offset;
-  int nx,ny,nz;
-  auto bufferSend = this->bufferSend;
+  int ny;
+  Buffer bufferSend = this->bufferSend;
   IdefixArray1D<int> map = this->mapVars;
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Vs = this->Vs;
+
+  //reset pointer
+  bufferSend.ResetPointer();
 
 // If MPI Persistent, start receiving even before the buffers are filled
 
@@ -409,64 +412,58 @@ void Axis::ExchangeMPI(int side) {
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // Coordinates of the ghost region which needs to be transfered
-  ibeg   = 0;
-  iend   = data->np_tot[IDIR];
-  nx     = data->np_tot[IDIR];  // Number of points in x
-  jbeg   = 0;
-  jend   = data->nghost[JDIR];
   offset = data->end[JDIR];     // Distance between beginning of left and right ghosts
   ny     = data->nghost[JDIR];
-  kbeg   = data->beg[KDIR];
-  kend   = data->end[KDIR];
-  nz     = kend - kbeg;
+
+  // Create the base box to be patched by the ops
+  BoundingBox baseBox;
+  baseBox[IDIR][0] = 0;
+  baseBox[IDIR][1] = data->np_tot[IDIR];
+  baseBox[JDIR][0] = 0;
+  baseBox[JDIR][1] = data->nghost[JDIR];
+  baseBox[KDIR][0] = data->beg[KDIR];
+  baseBox[KDIR][1] = data->end[KDIR];
+
   if(side==left) {
-    idefix_for("LoadBufferX2Vc",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
-      KOKKOS_LAMBDA (int n, int k, int j, int i) {
-        bufferSend(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ) =
-                                                          Vc(map(n),k,j+ny,i);
-      }
-    );
+    //shift by NY
+    BoundingBox sendBoxVc = baseBox;
+    sendBoxVc[JDIR][0] += ny;
+    sendBoxVc[JDIR][1] += ny;
+    bufferSend.Pack(Vc, map, sendBoxVc);
+
     if (haveMHD) {
-      int VsIndex = mapNVars*nx*ny*nz;
-      idefix_for("LoadBufferX2IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
-        KOKKOS_LAMBDA (int k, int j, int i) {
-          bufferSend(i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex ) =
-                                                          Vs(IDIR,k,j+ny,i);
-        }
-      );
-      VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz;
-      idefix_for("LoadBufferX2KDIR",kbeg,kend+1,jbeg,jend,ibeg,iend,
-        KOKKOS_LAMBDA (int k, int j, int i) {
-          bufferSend(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) =
-                                                          Vs(KDIR,k,j+ny,i);
-        }
-      );
+      //extend by one the end on idir
+      BoundingBox sendBoxVsIdir = sendBoxVc;
+      sendBoxVsIdir[IDIR][1] += 1;
+      bufferSend.Pack(Vs, IDIR, sendBoxVsIdir);
+
+      //extend by one the end on kdir
+      BoundingBox sendBoxVsKdir = sendBoxVc;
+      sendBoxVsKdir[KDIR][1] += 1;
+      bufferSend.Pack(Vs, KDIR, sendBoxVsKdir);
     } // MHD
   } else if(side==right) {
-    idefix_for("LoadBufferX2Vc",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
-      KOKKOS_LAMBDA (int n, int k, int j, int i) {
-        bufferSend(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ) =
-                                                          Vc(map(n),k,j+offset-ny,i);
-      }
-    );
+    //shift by offset - NY (to select the right part)
+    BoundingBox sendBoxVc = baseBox;
+    sendBoxVc[JDIR][0] += offset - ny;
+    sendBoxVc[JDIR][1] += offset - ny;
+    bufferSend.Pack(Vc, map, sendBoxVc);
 
     // Load face-centered field in the buffer
      if (haveMHD) {
-      int VsIndex = mapNVars*nx*ny*nz;
-      idefix_for("LoadBufferX2IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
-        KOKKOS_LAMBDA (int k, int j, int i) {
-          bufferSend(i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex ) =
-                                                          Vs(IDIR,k,j+offset-ny,i);
-        }
-      );
-      VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz;
+      //extend by one the end on idir + take the right part or the mesh on jdir
+      BoundingBox sendBoxVsIdir = baseBox;
+      sendBoxVsIdir[IDIR][1] += 1;
+      sendBoxVsIdir[JDIR][0] += offset - ny;
+      sendBoxVsIdir[JDIR][1] += offset - ny;
+      bufferSend.Pack(Vs, IDIR, sendBoxVsIdir);
 
-      idefix_for("LoadBufferX2KDIR",kbeg,kend+1,jbeg,jend,ibeg,iend,
-        KOKKOS_LAMBDA (int k, int j, int i) {
-          bufferSend(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) =
-                                                          Vs(KDIR,k,j+offset-ny,i);
-        }
-      );
+      //extend by one the end on kdir + take the right part or the mesh on jdir
+      BoundingBox sendBoxVsKdir = baseBox;
+      sendBoxVsKdir[KDIR][1] += 1;
+      sendBoxVsKdir[JDIR][0] += offset - ny;
+      sendBoxVsKdir[JDIR][1] += offset - ny;
+      bufferSend.Pack(Vs, KDIR, sendBoxVsKdir);
     } // MHD
   } // side==right
 
@@ -478,63 +475,53 @@ void Axis::ExchangeMPI(int side) {
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // Unpack
-  auto bufferRecv=this->bufferRecv;
+  Buffer bufferRecv=this->bufferRecv;
+  bufferRecv.ResetPointer();
   auto sVc = this->symmetryVc;
 
   if(side==left) {
-    idefix_for("StoreBufferAxis",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
-      KOKKOS_LAMBDA (int n, int k, int j, int i) {
-        Vc(map(n),k,jend-(j-jbeg)-1,i) =
-                    sVc(map(n))*bufferRecv(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz );
-      }
-    );
+    //unpack Vc
+    BoundingBox recvBoxVc = baseBox;
+    bufferRecv.UnpackJDirSymetric(Vc, map, sVc, recvBoxVc);
 
     // Load face-centered field in the buffer
     if (haveMHD) {
-      int VsIndex = mapNVars*nx*ny*nz;
       auto sVs = this->symmetryVs;
-      idefix_for("StoreBufferX2IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
-        KOKKOS_LAMBDA (int k, int j, int i) {
-          Vs(IDIR,k,jend-(j-jbeg)-1,i) =
-                    sVs(IDIR)*bufferRecv(i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex );
-        }
-      );
 
-      VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz;
+      //unpack Vs face-centered
+      BoundingBox recvBoxVsIdir = baseBox;
+      recvBoxVsIdir[IDIR][1] += 1;
+      bufferRecv.UnpackJDirSymetric(Vs, IDIR, sVs(IDIR), recvBoxVsIdir);
 
-      idefix_for("StoreBufferX2KDIR",kbeg,kend+1,jbeg,jend,ibeg,iend,
-        KOKKOS_LAMBDA ( int k, int j, int i) {
-          Vs(KDIR,k,jend-(j-jbeg)-1,i) =
-                      sVs(KDIR)*bufferRecv(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
-        }
-      );
+      //unpack Vs face-centered
+      BoundingBox recvBoxVsKdir = baseBox;
+      recvBoxVsKdir[KDIR][1] += 1;
+      bufferRecv.UnpackJDirSymetric(Vs, KDIR, sVs(KDIR), recvBoxVsKdir);
     }
   } else if(side==right) {
-    idefix_for("StoreBufferAxis",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
-      KOKKOS_LAMBDA (int n, int k, int j, int i) {
-        Vc(map(n),k,jend-(j-jbeg)-1+offset,i) =
-                    sVc(map(n))*bufferRecv(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz );
-      }
-    );
+    //unpack Vc on right part
+    BoundingBox recvBoxVc = baseBox;
+    recvBoxVc[JDIR][0] += offset;
+    recvBoxVc[JDIR][1] += offset;
+    bufferRecv.UnpackJDirSymetric(Vc, map, sVc, recvBoxVc);
 
     // Load face-centered field in the buffer
     if (haveMHD) {
-      int VsIndex = mapNVars*nx*ny*nz;
       auto sVs = this->symmetryVs;
-      idefix_for("StoreBufferX2IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
-        KOKKOS_LAMBDA (int k, int j, int i) {
-          Vs(IDIR,k,jend-(j-jbeg)-1+offset,i) =
-                      sVs(IDIR)*bufferRecv(i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex );
-        }
-      );
-      VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz;
 
-      idefix_for("StoreBufferX2KDIR",kbeg,kend+1,jbeg,jend,ibeg,iend,
-        KOKKOS_LAMBDA ( int k, int j, int i) {
-          Vs(KDIR,k,jend-(j-jbeg)-1+offset,i) =
-                      sVs(KDIR)*bufferRecv(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
-        }
-      );
+      //unpack Vs face-centered on right part
+      BoundingBox recvBoxVsIdir = baseBox;
+      recvBoxVsIdir[IDIR][1] += 1;
+      recvBoxVsIdir[JDIR][0] += offset;
+      recvBoxVsIdir[JDIR][1] += offset;
+      bufferRecv.UnpackJDirSymetric(Vs, IDIR, sVs(IDIR), recvBoxVsIdir);
+
+      //unpack Vs face-centered on right part
+      BoundingBox recvBoxVsKdir = baseBox;
+      recvBoxVsKdir[KDIR][1] += 1;
+      recvBoxVsKdir[JDIR][0] += offset;
+      recvBoxVsKdir[JDIR][1] += offset;
+      bufferRecv.UnpackJDirSymetric(Vs, KDIR, sVs(KDIR), recvBoxVsKdir);
     } // MHD
   }
 
@@ -594,8 +581,9 @@ void Axis::InitMPI() {
     #endif  // DIMENSIONS
   }
 
-  this->bufferRecv = IdefixArray1D<real>("bufferRecvAxis", bufferSize);
-  this->bufferSend = IdefixArray1D<real>("bufferSendAxis", bufferSize);
+  //build buffers
+  this->bufferRecv = Buffer(bufferSize);
+  this->bufferSend = Buffer(bufferSize);
 
   // init persistent communications
   // We receive from procRecv, and we send to procSend
@@ -605,10 +593,10 @@ void Axis::InitMPI() {
   MPI_SAFE_CALL(MPI_Cart_shift(data->mygrid->AxisComm,0,data->mygrid->nproc[KDIR]/2,
                                &procRecv,&procSend ));
 
-  MPI_SAFE_CALL(MPI_Send_init(bufferSend.data(), bufferSize, realMPI, procSend,
+  MPI_SAFE_CALL(MPI_Send_init(bufferSend.data(), bufferSend.Size(), realMPI, procSend,
                 650, data->mygrid->AxisComm, &sendRequest));
 
-  MPI_SAFE_CALL(MPI_Recv_init(bufferRecv.data(), bufferSize, realMPI, procRecv,
+  MPI_SAFE_CALL(MPI_Recv_init(bufferRecv.data(), bufferRecv.Size(), realMPI, procRecv,
                 650, data->mygrid->AxisComm, &recvRequest));
 
   #endif

@@ -11,6 +11,7 @@
 #include <vector>
 #include "idefix.hpp"
 #include "grid.hpp"
+#include "buffer.hpp"
 
 // Forward class hydro declaration
 #include "physics.hpp"
@@ -59,8 +60,8 @@ class Axis {
   MPI_Request sendRequest;
   MPI_Request recvRequest;
 
-  IdefixArray1D<real> bufferSend;
-  IdefixArray1D<real> bufferRecv;
+  Buffer bufferSend;
+  Buffer bufferRecv;
 
   int bufferSize;
 

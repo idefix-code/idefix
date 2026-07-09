@@ -15,6 +15,8 @@
 #include "idefix.hpp"
 #include "buffer.hpp"
 
+namespace idefix {
+
 /**
  * Provide a specific array used for MPI communications. It embeds the standard
  * array as usual, and also carry optionally a communication copy on host depending
@@ -103,13 +105,13 @@ struct Idefix_MPI_Request {
 };
 
 /** Wrap the idefix 1D array to use it for communication purpose. */
-template <class T> using Idefix_MPI_Request_1D = Idefix_MPI_Request< IdefixArray1D<T> >;
+template <class T> using MPI_Request_1D = Idefix_MPI_Request< IdefixArray1D<T> >;
 /** Wrap the idefix 2D array to use it for communication purpose. */
-template <class T> using Idefix_MPI_Request_2D = Idefix_MPI_Request< IdefixArray2D<T> >;
+template <class T> using MPI_Request_2D = Idefix_MPI_Request< IdefixArray2D<T> >;
 /** Wrap the idefix 3D array to use it for communication purpose. */
-template <class T> using Idefix_MPI_Request_3D = Idefix_MPI_Request< IdefixArray3D<T> >;
+template <class T> using MPI_Request_3D = Idefix_MPI_Request< IdefixArray3D<T> >;
 /** Wrap the idefix 4D array to use it for communication purpose. */
-template <class T> using Idefix_MPI_Request_4D = Idefix_MPI_Request< IdefixArray4D<T> >;
+template <class T> using MPI_Request_4D = Idefix_MPI_Request< IdefixArray4D<T> >;
 
 /**
  * Provide a wrapper of the standard MPI_Sendrecv by handling a kokkkos
@@ -117,7 +119,7 @@ template <class T> using Idefix_MPI_Request_4D = Idefix_MPI_Request< IdefixArray
  * host buffer if required (when WITH_MPI_GPU_DIRECT is disabled.).
  */
 template <class T, class U, class V>
-int idefix_MPI_View_Sendrecv(Kokkos::View<T, U, V> sendbuf, int sendcount, MPI_Datatype sendtype,
+int MPI_Sendrecv(Kokkos::View<T, U, V> sendbuf, int sendcount, MPI_Datatype sendtype,
   int dest, int sendtag, Kokkos::View<T, U, V> recvbuf, int recvcount,
   MPI_Datatype recvtype, int source, int recvtag, MPI_Comm comm, MPI_Status *status) {
   //check size
@@ -137,7 +139,7 @@ int idefix_MPI_View_Sendrecv(Kokkos::View<T, U, V> sendbuf, int sendcount, MPI_D
   #endif
 
   //make the communication
-  const int result = MPI_Sendrecv(sendHostArray.data(), sendcount, sendtype, dest, sendtag,
+  const int result = ::MPI_Sendrecv(sendHostArray.data(), sendcount, sendtype, dest, sendtag,
                recvHostArray.data(), recvcount, recvtype, source, recvtag,
                comm, status);
 
@@ -156,7 +158,7 @@ int idefix_MPI_View_Sendrecv(Kokkos::View<T, U, V> sendbuf, int sendcount, MPI_D
  * to the host if required (when WITH_MPI_GPU_DIRECT is disabled).
  */
 template <class T>
-int idefix_MPI_View_Sendrecv(IdefixCommArray<T> sendbuf, int sendcount, MPI_Datatype sendtype,
+int MPI_Sendrecv(IdefixCommArray<T> sendbuf, int sendcount, MPI_Datatype sendtype,
   int dest, int sendtag, IdefixCommArray<T> recvbuf, int recvcount,
   MPI_Datatype recvtype, int source, int recvtag, MPI_Comm comm, MPI_Status *status) {
   //check size
@@ -171,7 +173,7 @@ int idefix_MPI_View_Sendrecv(IdefixCommArray<T> sendbuf, int sendcount, MPI_Data
   #endif
 
   //make the communication
-  const int result = MPI_Sendrecv(sendbuf.commData(), sendcount, sendtype, dest, sendtag,
+  const int result = ::MPI_Sendrecv(sendbuf.commData(), sendcount, sendtype, dest, sendtag,
                recvbuf.commData(), recvcount, recvtype, source, recvtag,
                comm, status);
 
@@ -185,7 +187,7 @@ int idefix_MPI_View_Sendrecv(IdefixCommArray<T> sendbuf, int sendcount, MPI_Data
 }
 
 template <class T>
-int idefix_MPI_View_Send_init(IdefixCommArray<T> & buf, int count, MPI_Datatype datatype, int dest,
+int MPI_Send_init(IdefixCommArray<T> & buf, int count, MPI_Datatype datatype, int dest,
                   int tag, MPI_Comm comm, Idefix_MPI_Request<T> *request) {
     //check
     assert(request != nullptr);
@@ -204,7 +206,7 @@ int idefix_MPI_View_Send_init(IdefixCommArray<T> & buf, int count, MPI_Datatype 
 }
 
 template <class T>
-int idefix_MPI_View_Recv_init(IdefixCommArray<T> & buf, int count, MPI_Datatype datatype, int
+int MPI_Recv_init(IdefixCommArray<T> & buf, int count, MPI_Datatype datatype, int
     source, int tag, MPI_Comm comm, Idefix_MPI_Request<T>* request) {
   //check
   assert(request != nullptr);
@@ -223,7 +225,7 @@ int idefix_MPI_View_Recv_init(IdefixCommArray<T> & buf, int count, MPI_Datatype 
 }
 
 template <class T>
-int idefix_MPI_View_Request_free(Idefix_MPI_Request<T>* request) {
+int MPI_Request_free(Idefix_MPI_Request<T>* request) {
   //check
   assert(request != nullptr);
 
@@ -232,7 +234,7 @@ int idefix_MPI_View_Request_free(Idefix_MPI_Request<T>* request) {
 }
 
 template <class T>
-int idefix_MPI_View_Startall(int count, Idefix_MPI_Request<T>* request) {
+int MPI_Startall(int count, Idefix_MPI_Request<T>* request) {
   //check
   assert(request != nullptr);
   assert(count >= 0);
@@ -248,7 +250,7 @@ int idefix_MPI_View_Startall(int count, Idefix_MPI_Request<T>* request) {
   //launch the comms
   int final_result = 0;
   for (size_t i = 0 ; i < count ; i++) {
-    const int result = MPI_Start(&request[i].request);
+    const int result = ::MPI_Start(&request[i].request);
     if (result < 0)
       final_result = result;
   }
@@ -258,7 +260,7 @@ int idefix_MPI_View_Startall(int count, Idefix_MPI_Request<T>* request) {
 }
 
 template <class T>
-int idefix_MPI_View_Waitall(int count, Idefix_MPI_Request<T>* request,
+int MPI_Waitall(int count, Idefix_MPI_Request<T>* request,
   MPI_Status *array_of_statuses) {
   //check
   assert(request != nullptr);
@@ -267,7 +269,7 @@ int idefix_MPI_View_Waitall(int count, Idefix_MPI_Request<T>* request,
   //wait the comms
   int final_result = 0;
   for (size_t i = 0 ; i < count ; i++) {
-    const int result = MPI_Wait(&request[i].request, &array_of_statuses[i]);
+    const int result = ::MPI_Wait(&request[i].request, &array_of_statuses[i]);
     if (result < 0)
       final_result = result;
   }
@@ -285,7 +287,7 @@ int idefix_MPI_View_Waitall(int count, Idefix_MPI_Request<T>* request,
 }
 
 template <class T>
-int idefix_MPI_View_Start(Idefix_MPI_Request<T>* request) {
+int MPI_Start(Idefix_MPI_Request<T>* request) {
   //check
   assert(request != nullptr);
 
@@ -293,16 +295,16 @@ int idefix_MPI_View_Start(Idefix_MPI_Request<T>* request) {
   request->commArray.syncCommData();
 
   //call MPI
-  return MPI_Start(&request->request);
+  return ::MPI_Start(&request->request);
 }
 
 template <class T>
-int idefix_MPI_View_Wait(Idefix_MPI_Request<T>* request, MPI_Status *array_of_statuses) {
+int MPI_Wait(Idefix_MPI_Request<T>* request, MPI_Status *array_of_statuses) {
   //check
   assert(request != nullptr);
 
   //wait the comms
-  const int result = MPI_Wait(&request->request, array_of_statuses);
+  const int result = ::MPI_Wait(&request->request, array_of_statuses);
 
   //sync the copies in async mode
   request->commArray.syncDeviceData();
@@ -310,5 +312,7 @@ int idefix_MPI_View_Wait(Idefix_MPI_Request<T>* request, MPI_Status *array_of_st
   //ok
   return result;
 }
+
+} // namespace idefix
 
 #endif // MPI_MPIVIEW_HPP_

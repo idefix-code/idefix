@@ -41,7 +41,7 @@ void ConstrainedTransport<Phys>::ExchangeX1(IdefixArray3D<real> ey, IdefixArray3
   MPI_Status recvStatus[2];
 
   double tStart = MPI_Wtime();
-  MPI_SAFE_CALL(idefix_MPI_View_Startall(2, recvRequestX1));
+  MPI_SAFE_CALL(idefix::MPI_Startall(2, recvRequestX1));
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   BoundaryType lbound = data->lbound[IDIR];
@@ -82,10 +82,10 @@ void ConstrainedTransport<Phys>::ExchangeX1(IdefixArray3D<real> ey, IdefixArray3
   Kokkos::fence();
 
   tStart = MPI_Wtime();
-  MPI_SAFE_CALL(idefix_MPI_View_Startall(2, sendRequestX1));
+  MPI_SAFE_CALL(idefix::MPI_Startall(2, sendRequestX1));
   // Wait for buffers to be received
-  idefix_MPI_View_Waitall(2,recvRequestX1,recvStatus);
-  idefix_MPI_View_Waitall(2, sendRequestX1, sendStatus);
+  idefix::MPI_Waitall(2,recvRequestX1,recvStatus);
+  idefix::MPI_Waitall(2, sendRequestX1, sendStatus);
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // Unpack
@@ -129,7 +129,7 @@ void ConstrainedTransport<Phys>::ExchangeX2(IdefixArray3D<real> ex, IdefixArray3
   double tStart = MPI_Wtime();
   MPI_Status sendStatus[2];
   MPI_Status recvStatus[2];
-  MPI_SAFE_CALL(idefix_MPI_View_Startall(2, recvRequestX2));
+  MPI_SAFE_CALL(idefix::MPI_Startall(2, recvRequestX2));
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   BoundaryType lbound = data->lbound[JDIR];
@@ -168,10 +168,10 @@ void ConstrainedTransport<Phys>::ExchangeX2(IdefixArray3D<real> ex, IdefixArray3
   Kokkos::fence();
 
   tStart = MPI_Wtime();
-  MPI_SAFE_CALL(idefix_MPI_View_Startall(2, sendRequestX2));
+  MPI_SAFE_CALL(idefix::MPI_Startall(2, sendRequestX2));
   // Wait for buffers to be received
-  idefix_MPI_View_Waitall(2, recvRequestX2, recvStatus);
-  idefix_MPI_View_Waitall(2, sendRequestX2, sendStatus);
+  idefix::MPI_Waitall(2, recvRequestX2, recvStatus);
+  idefix::MPI_Waitall(2, sendRequestX2, sendStatus);
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // Unpack
@@ -215,7 +215,7 @@ void ConstrainedTransport<Phys>::ExchangeX3(IdefixArray3D<real> ex, IdefixArray3
   double tStart = MPI_Wtime();
   MPI_Status sendStatus[2];
   MPI_Status recvStatus[2];
-  MPI_SAFE_CALL(idefix_MPI_View_Startall(2, recvRequestX3));
+  MPI_SAFE_CALL(idefix::MPI_Startall(2, recvRequestX3));
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   BoundaryType lbound = data->lbound[KDIR];
@@ -255,10 +255,10 @@ void ConstrainedTransport<Phys>::ExchangeX3(IdefixArray3D<real> ex, IdefixArray3
   Kokkos::fence();
 
   tStart = MPI_Wtime();
-  MPI_SAFE_CALL(idefix_MPI_View_Startall(2, sendRequestX3));
+  MPI_SAFE_CALL(idefix::MPI_Startall(2, sendRequestX3));
   // Wait for buffers to be received
-  idefix_MPI_View_Waitall(2, recvRequestX3, recvStatus);
-  idefix_MPI_View_Waitall(2, sendRequestX3, sendStatus);
+  idefix::MPI_Waitall(2, recvRequestX3, recvStatus);
+  idefix::MPI_Waitall(2, sendRequestX3, sendStatus);
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // Unpack

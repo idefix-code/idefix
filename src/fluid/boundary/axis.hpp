@@ -57,8 +57,8 @@ class Axis {
 
   enum {faceTop, faceBot};
 #ifdef WITH_MPI
-  Idefix_MPI_Request_1D<real> sendRequest;
-  Idefix_MPI_Request_1D<real> recvRequest;
+  idefix::MPI_Request_1D<real> sendRequest;
+  idefix::MPI_Request_1D<real> recvRequest;
 
   Buffer bufferSend;
   Buffer bufferRecv;

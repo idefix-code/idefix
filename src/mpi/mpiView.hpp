@@ -35,11 +35,27 @@ class IdefixCommArray : public T {
   }
 
   /**
+   * If needed, transfers the data from the device to the host to be ready to make
+   * a communication.
+   */
+  void syncCommDataAsync(void) {
+    Kokkos::deep_copy(Kokkos::DefaultExecutionSpace(), this->commArray, *this);
+  }
+
+  /**
    * If needed, transerts the data to the device after a communication to be ready
    * to use it.
    */
   void syncDeviceData(void) {
     Kokkos::deep_copy(*this, this->commArray);
+  }
+
+  /**
+   * If needed, transerts the data to the device after a communication to be ready
+   * to use it.
+   */
+  void syncDeviceDataAsync(void) {
+    Kokkos::deep_copy(Kokkos::DefaultExecutionSpace(), *this, this->commArray);
   }
 
   /**
@@ -80,12 +96,20 @@ template <class T> using IdefixCommArray3D = IdefixCommArray< IdefixArray3D<T> >
 /** Wrap the idefix 4D array to use it for communication purpose. */
 template <class T> using IdefixCommArray4D = IdefixCommArray< IdefixArray4D<T> >;
 
-/*template <class T>
-struct IdefixMpiViewRequest
-{
-  Mpi
+template <class T>
+struct Idefix_MPI_Request {
+  IdefixCommArray<T> commArray;
   MPI_Request request;
-};*/
+};
+
+/** Wrap the idefix 1D array to use it for communication purpose. */
+template <class T> using Idefix_MPI_Request_1D = Idefix_MPI_Request< IdefixArray1D<T> >;
+/** Wrap the idefix 2D array to use it for communication purpose. */
+template <class T> using Idefix_MPI_Request_2D = Idefix_MPI_Request< IdefixArray2D<T> >;
+/** Wrap the idefix 3D array to use it for communication purpose. */
+template <class T> using Idefix_MPI_Request_3D = Idefix_MPI_Request< IdefixArray3D<T> >;
+/** Wrap the idefix 4D array to use it for communication purpose. */
+template <class T> using Idefix_MPI_Request_4D = Idefix_MPI_Request< IdefixArray4D<T> >;
 
 /**
  * Provide a wrapper of the standard MPI_Sendrecv by handling a kokkkos
@@ -155,6 +179,133 @@ int idefix_MPI_View_Sendrecv(IdefixCommArray<T> sendbuf, int sendcount, MPI_Data
   #ifndef WITH_MPI_GPU_DIRECT
     recvbuf.syncDeviceData();
   #endif
+
+  //ok
+  return result;
+}
+
+template <class T>
+int idefix_MPI_View_Send_init(IdefixCommArray<T> & buf, int count, MPI_Datatype datatype, int dest,
+                  int tag, MPI_Comm comm, Idefix_MPI_Request<T> *request) {
+    //check
+    assert(request != nullptr);
+    assert(buf.span() == count);
+    assert(buf.span_is_contiguous());
+
+    //store the values
+    request->commArray = buf;
+
+    //call MPI
+    const int result = MPI_Send_init(buf.commData(), count, datatype,
+      dest, tag, comm, &request->request);
+
+    //ok
+    return result;
+}
+
+template <class T>
+int idefix_MPI_View_Recv_init(IdefixCommArray<T> & buf, int count, MPI_Datatype datatype, int
+    source, int tag, MPI_Comm comm, Idefix_MPI_Request<T>* request) {
+  //check
+  assert(request != nullptr);
+  assert(buf.span() == count);
+  assert(buf.span_is_contiguous());
+
+  //store the values
+  request->commArray = buf;
+
+  //call MPI
+  const int result = MPI_Recv_init(buf.commData(), count, datatype,
+    source, tag, comm, &request->request);
+
+  //ok
+  return result;
+}
+
+template <class T>
+int idefix_MPI_View_Request_free(Idefix_MPI_Request<T>* request) {
+  //check
+  assert(request != nullptr);
+
+  //call MPI
+  return MPI_Request_free(&request->request);
+}
+
+template <class T>
+int idefix_MPI_View_Startall(int count, Idefix_MPI_Request<T>* request) {
+  //check
+  assert(request != nullptr);
+  assert(count >= 0);
+
+  //sync the copies in async mode
+  for (size_t i = 0 ; i < count ; i++) {
+    request[i].commArray.syncCommDataAsync();
+  }
+
+  //wait transfers to be done
+  Kokkos::fence();
+
+  //launch the comms
+  int final_result = 0;
+  for (size_t i = 0 ; i < count ; i++) {
+    const int result = MPI_Start(&request[i].request);
+    if (result < 0)
+      final_result = result;
+  }
+
+  //ok
+  return final_result;
+}
+
+template <class T>
+int idefix_MPI_View_Waitall(int count, Idefix_MPI_Request<T>* request,
+  MPI_Status *array_of_statuses) {
+  //check
+  assert(request != nullptr);
+  assert(count >= 0);
+
+  //wait the comms
+  int final_result = 0;
+  for (size_t i = 0 ; i < count ; i++) {
+    const int result = MPI_Wait(&request[i].request, &array_of_statuses[i]);
+    if (result < 0)
+      final_result = result;
+  }
+
+  //sync the copies in async mode
+  for (size_t i = 0 ; i < count ; i++) {
+    request[i].commArray.syncDeviceDataAsync();
+  }
+
+  //wait transfers to be done
+  Kokkos::fence();
+
+  //ok
+  return final_result;
+}
+
+template <class T>
+int idefix_MPI_View_Start(Idefix_MPI_Request<T>* request) {
+  //check
+  assert(request != nullptr);
+
+  //sync the copies in async mode
+  request->commArray.syncCommData();
+
+  //call MPI
+  return MPI_Start(&request->request);
+}
+
+template <class T>
+int idefix_MPI_View_Wait(Idefix_MPI_Request<T>* request, MPI_Status *array_of_statuses) {
+  //check
+  assert(request != nullptr);
+
+  //wait the comms
+  const int result = MPI_Wait(&request->request, array_of_statuses);
+
+  //sync the copies in async mode
+  request->commArray.syncDeviceData();
 
   //ok
   return result;

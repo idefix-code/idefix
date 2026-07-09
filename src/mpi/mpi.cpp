@@ -123,7 +123,7 @@ void Mpi::ExchangeX3(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
 void Mpi::CheckConfig() {
   idfx::pushRegion("Mpi::CheckConfig");
   // compile time check
-  #ifdef KOKKOS_ENABLE_CUDA
+  #if defined(KOKKOS_ENABLE_CUDA) && defined(WITH_MPI_GPU_DIRECT)
     #if defined(MPIX_CUDA_AWARE_SUPPORT) && !MPIX_CUDA_AWARE_SUPPORT
       #error Your MPI library is not CUDA Aware (check Idefix requirements).
     #endif

@@ -108,9 +108,9 @@ void ConstrainedTransport<Phys>::SymmetrizeEMFShearingBox() {
   idfx::pushRegion("Emf::EnforceEMFBoundary");
   #if MHD == YES
 
-    IdefixArray2D<real> sbEyL = this->sbEyL;
-    IdefixArray2D<real> sbEyR = this->sbEyR;
-    IdefixArray2D<real> sbEyRL = this->sbEyRL;
+    auto sbEyL = this->sbEyL;
+    auto sbEyR = this->sbEyR;
+    auto sbEyRL = this->sbEyRL;
 
     IdefixArray3D<real> ey = this->ey;
 
@@ -142,16 +142,16 @@ void ConstrainedTransport<Phys>::SymmetrizeEMFShearingBox() {
           // We send to our left (which, by periodicity, is the right end of the domain)
           // our value of sbEyL and get
           Kokkos::fence();
-          MPI_Sendrecv(sbEyL.data(), size, realMPI, procLeft, 2001,
-                       sbEyR.data(), size, realMPI, procLeft, 2002,
+          idefix_MPI_View_Sendrecv(sbEyL, size, realMPI, procLeft, 2001,
+                       sbEyR, size, realMPI, procLeft, 2002,
                        data->mygrid->CartComm, &status );
         }
         if(data->rbound[IDIR]==shearingbox) {
           Kokkos::fence();
           // We send to our right (which, by periodicity, is the left end (=beginning)
           // of the domain) our value of sbEyR and get sbEyL
-          MPI_Sendrecv(sbEyR.data(), size, realMPI, procRight, 2002,
-                       sbEyL.data(), size, realMPI, procRight, 2001,
+          idefix_MPI_View_Sendrecv(sbEyR, size, realMPI, procRight, 2002,
+                       sbEyL, size, realMPI, procRight, 2001,
                        data->mygrid->CartComm, &status );
         }
       }

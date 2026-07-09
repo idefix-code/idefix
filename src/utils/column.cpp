@@ -16,6 +16,7 @@
 #include "grid.hpp"
 #include "dataBlock.hpp"
 #include "dataBlockHost.hpp"
+#include "mpiView.hpp"
 
 Column::Column(int dir, int sign, DataBlock *data)
                 : direction(dir), sign(sign) {
@@ -35,13 +36,13 @@ Column::Column(int dir, int sign, DataBlock *data)
 
   // allocate helper  array
   if(dir == IDIR) {
-    localSum = IdefixArray2D<real>("localSum",np_tot[KDIR], np_tot[JDIR]);
+    localSum = idefix::IdefixCommArray2D<real>("localSum",np_tot[KDIR], np_tot[JDIR]);
   }
   if(dir == JDIR) {
-    localSum = IdefixArray2D<real>("localSum",np_tot[KDIR], np_tot[IDIR]);
+    localSum = idefix::IdefixCommArray2D<real>("localSum",np_tot[KDIR], np_tot[IDIR]);
   }
   if(dir == KDIR) {
-    localSum = IdefixArray2D<real>("localSum",np_tot[JDIR], np_tot[IDIR]);
+    localSum = idefix::IdefixCommArray2D<real>("localSum",np_tot[JDIR], np_tot[IDIR]);
   }
   #ifdef WITH_MPI
   // Create sub-MPI communicator dedicated to scan
@@ -133,7 +134,7 @@ void Column::ComputeColumn(IdefixArray4D<real> in, const int var) {
         MPI_Status status;
         // Get the cumulative sum from previous processes
         Kokkos::fence();
-        MPI_Recv(localSum.data(), size, realMPI, src, 20, ColumnComm, &status);
+        idefix::MPI_Recv(localSum, size, realMPI, src, 20, ColumnComm, &status);
         // Add this to our cumulative sum
         idefix_for("Addsum",kb,ke,jb,je,ib,ie,
           KOKKOS_LAMBDA(int k, int j, int i) {
@@ -164,7 +165,7 @@ void Column::ComputeColumn(IdefixArray4D<real> in, const int var) {
         }
         // And send it
         Kokkos::fence();
-        MPI_Send(localSum.data(),size, realMPI, dst, 20, ColumnComm);
+        idefix::MPI_Send(localSum,size, realMPI, dst, 20, ColumnComm);
       } // MPIrank small enough
     #endif
     // If we need it backwards
@@ -194,7 +195,7 @@ void Column::ComputeColumn(IdefixArray4D<real> in, const int var) {
 
       #ifdef WITH_MPI
       Kokkos::fence();
-      MPI_Bcast(localSum.data(),size, realMPI, MPIsize-1, ColumnComm);
+      idefix::MPI_Bcast(localSum,size, realMPI, MPIsize-1, ColumnComm);
       #endif
       // All substract the local column from the full column
 

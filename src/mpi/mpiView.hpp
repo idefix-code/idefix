@@ -19,7 +19,7 @@ namespace idefix {
 
 /**
  * Provide a specific array used for MPI communications. It embeds the standard
- * array as usual, and also carry optionally a communication copy on host depending
+ * array as usual, and also optionally a communication copy on the host, depending
  * if we have access to WITH_MPI_GPU_DIRECT or not.
  */
 template <class T>
@@ -186,6 +186,10 @@ int MPI_Sendrecv(IdefixCommArray<T> sendbuf, int sendcount, MPI_Datatype sendtyp
   return result;
 }
 
+/**
+ * Overlad the MPI_Send_init() function to handle an idefix communication array. It will automate the
+ * CPU / GPU transfers if the array in on GPU and WITH_MPI_GPU_DIRECT is disabled.
+ */
 template <class T>
 int MPI_Send_init(IdefixCommArray<T> & buf, int count, MPI_Datatype datatype, int dest,
                   int tag, MPI_Comm comm, Idefix_MPI_Request<T> *request) {
@@ -205,6 +209,10 @@ int MPI_Send_init(IdefixCommArray<T> & buf, int count, MPI_Datatype datatype, in
     return result;
 }
 
+/**
+ * Overlad the MPI_Recv_init() function to handle an idefix communication array. It will automate the
+ * CPU / GPU transfers if the array in on GPU and WITH_MPI_GPU_DIRECT is disabled.
+ */
 template <class T>
 int MPI_Recv_init(IdefixCommArray<T> & buf, int count, MPI_Datatype datatype, int
     source, int tag, MPI_Comm comm, Idefix_MPI_Request<T>* request) {
@@ -224,6 +232,10 @@ int MPI_Recv_init(IdefixCommArray<T> & buf, int count, MPI_Datatype datatype, in
   return result;
 }
 
+/**
+ * Overlad the MPI_Request_free() function to handle an idefix communication array. It will automate the
+ * CPU / GPU transfers if the array in on GPU and WITH_MPI_GPU_DIRECT is disabled.
+ */
 template <class T>
 int MPI_Request_free(Idefix_MPI_Request<T>* request) {
   //check
@@ -233,6 +245,10 @@ int MPI_Request_free(Idefix_MPI_Request<T>* request) {
   return MPI_Request_free(&request->request);
 }
 
+/**
+ * Overlad the MPI_Startall() function to handle an idefix communication array. It will automate the
+ * CPU / GPU transfers if the array in on GPU and WITH_MPI_GPU_DIRECT is disabled.
+ */
 template <class T>
 int MPI_Startall(int count, Idefix_MPI_Request<T>* request) {
   //check
@@ -259,6 +275,10 @@ int MPI_Startall(int count, Idefix_MPI_Request<T>* request) {
   return final_result;
 }
 
+/**
+ * Overlad the MPI_Waitall() function to handle an idefix communication array. It will automate the
+ * CPU / GPU transfers if the array in on GPU and WITH_MPI_GPU_DIRECT is disabled.
+ */
 template <class T>
 int MPI_Waitall(int count, Idefix_MPI_Request<T>* request,
   MPI_Status *array_of_statuses) {
@@ -286,6 +306,10 @@ int MPI_Waitall(int count, Idefix_MPI_Request<T>* request,
   return final_result;
 }
 
+/**
+ * Overlad the MPI_Start() function to handle an idefix communication array. It will automate the
+ * CPU / GPU transfers if the array in on GPU and WITH_MPI_GPU_DIRECT is disabled.
+ */
 template <class T>
 int MPI_Start(Idefix_MPI_Request<T>* request) {
   //check
@@ -298,6 +322,10 @@ int MPI_Start(Idefix_MPI_Request<T>* request) {
   return ::MPI_Start(&request->request);
 }
 
+/**
+ * Overlad the MPI_Wait() function to handle an idefix communication array. It will automate the
+ * CPU / GPU transfers if the array in on GPU and WITH_MPI_GPU_DIRECT is disabled.
+ */
 template <class T>
 int MPI_Wait(Idefix_MPI_Request<T>* request, MPI_Status *array_of_statuses) {
   //check
@@ -308,6 +336,130 @@ int MPI_Wait(Idefix_MPI_Request<T>* request, MPI_Status *array_of_statuses) {
 
   //sync the copies in async mode
   request->commArray.syncDeviceData();
+
+  //ok
+  return result;
+}
+
+/**
+ * Overlad the MPI_Send() function to handle an idefix communication array. It will automate the
+ * CPU / GPU transfers if the array in on GPU and WITH_MPI_GPU_DIRECT is disabled.
+ */
+template <class T>
+int MPI_Send(IdefixCommArray<T> & buf, int count, MPI_Datatype datatype, int
+    source, int tag, MPI_Comm comm) {
+  //check
+  assert(buf.span() == count);
+  assert(buf.span_is_contiguous());
+
+  //sync
+  buf.syncCommData();
+
+  //call MPI
+  const int result = ::MPI_Send(buf.commData(), count, datatype,
+    source, tag, comm);
+
+  //ok
+  return result;
+}
+
+/**
+ * Overlad the MPI_Recv() function to handle an idefix communication array. It will automate the
+ * CPU / GPU transfers if the array in on GPU and WITH_MPI_GPU_DIRECT is disabled.
+ */
+template <class T>
+int MPI_Recv(IdefixCommArray<T> & buf, int count, MPI_Datatype datatype, int
+    source, int tag, MPI_Comm comm, MPI_Status * status) {
+  //check
+  assert(buf.span() == count);
+  assert(buf.span_is_contiguous());
+
+  //call MPI
+  const int result = ::MPI_Recv(buf.commData(), count, datatype,
+    source, tag, comm, status);
+
+  //sync
+  buf.syncDeviceData();
+
+  //ok
+  return result;
+}
+
+/**
+ * Overlad the MPI_Isend() function to handle an idefix communication array. It will automate the
+ * CPU / GPU transfers if the array in on GPU and WITH_MPI_GPU_DIRECT is disabled.
+ */
+template <class T>
+int MPI_Isend(IdefixCommArray<T> & buf, int count, MPI_Datatype datatype, int
+    source, int tag, MPI_Comm comm, Idefix_MPI_Request<T>* request) {
+  //check
+  assert(request != nullptr);
+  assert(buf.span() == count);
+  assert(buf.span_is_contiguous());
+
+  //store the values
+  request->commArray = buf;
+
+  //sync
+  buf.syncCommData();
+
+  //call MPI
+  const int result = ::MPI_Isend(buf.commData(), count, datatype,
+    source, tag, comm, &request->request);
+
+  //ok
+  return result;
+}
+
+/**
+ * Overlad the MPI_Irecv() function to handle an idefix communication array. It will automate the
+ * CPU / GPU transfers if the array in on GPU and WITH_MPI_GPU_DIRECT is disabled.
+ */
+template <class T>
+int MPI_Irecv(IdefixCommArray<T> & buf, int count, MPI_Datatype datatype, int
+    source, int tag, MPI_Comm comm, Idefix_MPI_Request<T>* request) {
+  //check
+  assert(request != nullptr);
+  assert(buf.span() == count);
+  assert(buf.span_is_contiguous());
+
+  //store the values
+  request->commArray = buf;
+
+  //call MPI
+  const int result = ::MPI_Irecv(buf.commData(), count, datatype,
+    source, tag, comm, &request->request);
+
+  //ok
+  return result;
+}
+
+/**
+ * Overlad the MPI_Bcast() function to handle an idefix communication array. It will automate the
+ * CPU / GPU transfers if the array in on GPU and WITH_MPI_GPU_DIRECT is disabled.
+ */
+template <class T>
+int MPI_Bcast(IdefixCommArray<T> & buffer, int count, MPI_Datatype datatype, int root,
+  MPI_Comm comm) {
+  //check
+  assert(buffer.span() == count);
+  assert(buffer.span_is_contiguous());
+
+  //get current rank
+  int rank = -1;
+  const int status = ::MPI_Comm_rank(comm, &rank);
+  assert(status == MPI_SUCCESS);
+
+  //sync
+  if (rank == root)
+    buffer.syncCommData();
+
+  //call MPI
+  const int result = ::MPI_Bcast(buffer.commData(), count, datatype, root, comm);
+
+  //sync back
+  if (rank != root)
+    buffer.syncDeviceData();
 
   //ok
   return result;

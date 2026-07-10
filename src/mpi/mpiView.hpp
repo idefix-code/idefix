@@ -38,6 +38,11 @@ class IdefixCommArray : public T {
    * a communication.
    */
   void syncCommData(void) {
+    //do lazy init (cannot do in constructor without having a warning under CUDA build)
+    if (this->commArray.is_allocated() == false)
+      this->commArray = initCommArray(*this);
+
+    //transfer the data from device to host.
     Kokkos::deep_copy(this->commArray, *this);
   }
 
@@ -70,6 +75,7 @@ class IdefixCommArray : public T {
    * depending on the WITH_MPI_GPU_DIRECT configuration.
    */
   void * commData(void) {
+    assert(this->commArray.is_allocated());
     return this->commArray.data();
   }
 
@@ -94,7 +100,7 @@ class IdefixCommArray : public T {
    * Buffer to contain a copy of the data on host if required. If WITH_MPI_GPU_DIRECT
    * is enabled it directly points the device buffer as no copy is required.
    */
-  typename T::host_mirror_type commArray{initCommArray(*this)};
+  typename T::host_mirror_type commArray;
 };
 
 /** Wrap the idefix 1D array to use it for communication purpose. */
@@ -593,6 +599,7 @@ template <class T>
 int MPI_Gather(const void* sendbuf, int sendcount, MPI_Datatype
     sendtype, std::vector<T> & recvbuf, int recvcount, MPI_Datatype recvtype,
     int root, MPI_Comm comm) {
+  assert(recvcount <= recvbuf.size());
   return MPI_Gather(sendbuf, sendcount, sendtype, recvbuf.data(), recvcount, recvtype, root, comm);
 }
 

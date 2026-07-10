@@ -392,7 +392,7 @@ void Axis::ExchangeMPI(int side) {
   idfx::pushRegion("Axis::ExchangeMPI");
   #ifdef WITH_MPI
   // Load  the buffers with data
-  int ibeg,iend,jbeg,jend,kbeg,kend,offset;
+  int offset;
   int ny;
   Buffer bufferSend = this->bufferSend;
   IdefixArray1D<int> map = this->mapVars;

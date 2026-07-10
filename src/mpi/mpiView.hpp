@@ -8,6 +8,7 @@
 #ifndef MPI_MPIVIEW_HPP_
 #define MPI_MPIVIEW_HPP_
 
+//To enable to force transfers and validate that it is working in any conditions.
 //#define FORCE_TRANSFERS_ALL_TIME
 
 #include <mpi.h>
@@ -592,7 +593,7 @@ template <class T>
 int MPI_Gather(const void* sendbuf, int sendcount, MPI_Datatype
     sendtype, std::vector<T> & recvbuf, int recvcount, MPI_Datatype recvtype,
     int root, MPI_Comm comm) {
-  return MPI_Gather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, root, comm);
+  return MPI_Gather(sendbuf, sendcount, sendtype, recvbuf.data(), recvcount, recvtype, root, comm);
 }
 
 } // namespace idefix

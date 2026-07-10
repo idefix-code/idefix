@@ -162,7 +162,7 @@ void Slice::CheckForWrite(DataBlock &data, bool force) {
         }}}
         #ifdef WITH_MPI
           Kokkos::fence();
-          MPI_Allreduce(MPI_IN_PLACE, arrOut.data(),
+          idefix::MPI_Allreduce(MPI_IN_PLACE, arrOut,
                         arrOut.extent(0)*arrOut.extent(1)*arrOut.extent(2)*arrOut.extent(3),
                         realMPI, MPI_SUM, avgComm);
         #endif

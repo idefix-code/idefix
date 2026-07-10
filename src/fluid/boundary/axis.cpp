@@ -25,7 +25,7 @@ void Axis::ShowConfig() {
 void Axis::SymmetrizeEx1Side(int jref, IdefixArray3D<real> Ex1) {
 #if DIMENSIONS == 3
 
-  IdefixArray1D<real> Ex1Avg = this->Ex1Avg;
+  idefix::IdefixCommArray1D<real> Ex1Avg = this->Ex1Avg;
 
   idefix_for("Ex1_ini",0,data->np_tot[IDIR],
       KOKKOS_LAMBDA(int i) {
@@ -40,7 +40,7 @@ void Axis::SymmetrizeEx1Side(int jref, IdefixArray3D<real> Ex1) {
     #ifdef WITH_MPI
       Kokkos::fence();
       // sum along all of the processes on the same r
-      MPI_Allreduce(MPI_IN_PLACE, Ex1Avg.data(), data->np_tot[IDIR], realMPI,
+      idefix::MPI_Allreduce(MPI_IN_PLACE, Ex1Avg, data->np_tot[IDIR], realMPI,
                     MPI_SUM, data->mygrid->AxisComm);
     #endif
   }
@@ -88,7 +88,7 @@ void Axis::RegularizeCurrentSide(int side) {
       jc = data->end[JDIR]-1;
       sign = -1;
     }
-    IdefixArray1D<real> BAvg = this->Ex1Avg;
+    idefix::IdefixCommArray1D<real> BAvg = this->Ex1Avg;
     IdefixArray1D<real> x1 = data->x[IDIR];
     IdefixArray1D<real> dx3 = data->dx[KDIR];
     IdefixArray1D<real> dx2 = data->dx[JDIR];
@@ -107,7 +107,7 @@ void Axis::RegularizeCurrentSide(int side) {
       #ifdef WITH_MPI
         Kokkos::fence();
         // sum along all of the processes on the same r
-        MPI_Allreduce(MPI_IN_PLACE, BAvg.data(), data->np_tot[IDIR], realMPI,
+        MPI_Allreduce(MPI_IN_PLACE, BAvg, data->np_tot[IDIR], realMPI,
                       MPI_SUM, data->mygrid->AxisComm);
       #endif
     }
@@ -169,7 +169,7 @@ void Axis::FixBx2sAxis(int side) {
   // Compute the values of Bx and By that are consistent with BX2 along the axis
   #if DIMENSIONS == 3
     IdefixArray4D<real> Vs = this->Vs;
-    IdefixArray2D<real> BAvg = this->BAvg;
+    idefix::IdefixCommArray2D<real> BAvg = this->BAvg;
     IdefixArray1D<real> phi = data->x[KDIR];
 
     int jin = 0;
@@ -208,7 +208,7 @@ void Axis::FixBx2sAxis(int side) {
       Kokkos::fence();
       #ifdef WITH_MPI
         // sum along all of the processes on the same r
-        MPI_Allreduce(MPI_IN_PLACE, BAvg.data(), 2*data->np_tot[IDIR], realMPI,
+        idefix::MPI_Allreduce(MPI_IN_PLACE, BAvg, 2*data->np_tot[IDIR], realMPI,
                       MPI_SUM, data->mygrid->AxisComm);
       #endif
     }

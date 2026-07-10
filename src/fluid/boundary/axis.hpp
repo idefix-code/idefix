@@ -71,8 +71,8 @@ class Axis {
 #endif
   void InitMPI();
 
-  IdefixArray1D<real> Ex1Avg;
-  IdefixArray2D<real> BAvg;
+  idefix::IdefixCommArray1D<real> Ex1Avg;
+  idefix::IdefixCommArray2D<real> BAvg;
   bool haveCurrent;
   IdefixArray2D<real> JAvg;
   IdefixArray1D<int> symmetryVc;
@@ -155,8 +155,8 @@ Axis::Axis(Boundary<Phys> *boundary) {
     }
     Kokkos::deep_copy(symmetryVs, symmetryVsHost);
 
-    this->Ex1Avg = IdefixArray1D<real>("Axis:Ex1Avg",data->np_tot[IDIR]);
-    this->BAvg = IdefixArray2D<real>("Axis:BxAvg",data->np_tot[IDIR],2);
+    this->Ex1Avg = idefix::IdefixCommArray1D<real>("Axis:Ex1Avg",data->np_tot[IDIR]);
+    this->BAvg = idefix::IdefixCommArray2D<real>("Axis:BxAvg",data->np_tot[IDIR],2);
     if(haveCurrent) {
       this->JAvg = IdefixArray2D<real>("Axis:JAvg",data->np_tot[IDIR],3);
     }

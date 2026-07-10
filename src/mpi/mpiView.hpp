@@ -8,6 +8,8 @@
 #ifndef MPI_MPIVIEW_HPP_
 #define MPI_MPIVIEW_HPP_
 
+//#define FORCE_TRANSFERS_ALL_TIME
+
 #include <mpi.h>
 
 #include <cassert>
@@ -76,6 +78,9 @@ class IdefixCommArray : public T {
       //in gpu direct, we use directly the device buffer
       //if running on host, it will also just use directly the host storage.
       return deviceArray;
+    #elif defined(FORCE_TRANSFERS_ALL_TIME)
+      //for validation purpose, force the transfers by using a copy anytime.
+      return Kokkos::create_mirror(deviceArray);
     #else
       //if no GPU DIRECT, it creates a copy only if deviceArray is on GPU,
       //if on host, it just reference it

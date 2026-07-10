@@ -170,30 +170,6 @@ class Buffer {
     this->pointer += ninjnk;
   }
 
-  void UnpackAveraged(IdefixArray4D<real>& out,
-       const int var,
-        BoundingBox box) {
-      const int ni = box[IDIR][1]-box[IDIR][0];
-      const int ninj = (box[JDIR][1]-box[JDIR][0])*ni;
-      const int ninjnk = (box[KDIR][1]-box[KDIR][0])*ninj;
-      const int ibeg = box[IDIR][0];
-      const int jbeg = box[JDIR][0];
-      const int kbeg = box[KDIR][0];
-      const int iend = box[IDIR][1];
-      const int jend = box[JDIR][1];
-      const int kend = box[KDIR][1];
-    const int offset = this->pointer;
-
-    auto arr = this->array;
-    idefix_for("UnLoadBuffer4D_var",kbeg,kend,jbeg,jend,ibeg,iend,
-      KOKKOS_LAMBDA (int k, int j, int i) {
-        out(var,k,j,i) = arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + offset );
-    });
-
-    // Update pointer
-    this->pointer += ninjnk;
-  }
-
   void UnpackJDirSymetric(IdefixArray4D<real>& out,
         const int var,
         const int symMultiplier,

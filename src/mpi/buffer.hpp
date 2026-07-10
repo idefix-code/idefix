@@ -255,8 +255,8 @@ class Buffer {
   }
 
  private:
-  size_t pointer;
-  idefix::IdefixCommArray1D<real> array;
+  size_t pointer{0};
+  idefix::IdefixCommArray1D<real> array{};
 };
 
 #endif // MPI_BUFFER_HPP_

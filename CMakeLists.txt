@@ -16,7 +16,7 @@ option(Idefix_DEBUG "Enable Idefix debug features (makes the code very slow)" OF
 option(Idefix_RUNTIME_CHECKS "Enable runtime sanity checks" OFF)
 option(Idefix_WERROR "Treat compiler warnings as errors" OFF)
 option(Idefix_PYTHON "Enable python bindings (requires pybind11)" OFF)
-option(Idefix_GPU_DIRECT "Enable usage of GPU direct to avoid CPU-GPU copies for MPI messages." ON)
+option(Idefix_MPI_GPU_DIRECT "Enable usage of GPU direct to avoid CPU-GPU copies for MPI messages." ON)
 set(Idefix_PROBLEM_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "Problem directory to build for.")
 set(Idefix_CXX_FLAGS "" CACHE STRING "Additional compiler/linker flag")
 set(Idefix_DEFS "definitions.hpp" CACHE FILEPATH "Problem definition header file")

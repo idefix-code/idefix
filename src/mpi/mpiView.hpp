@@ -16,7 +16,6 @@
 #include <cassert>
 #include <vector>
 #include <array>
-#include <utility>
 
 #include "idefix.hpp"
 #include "buffer.hpp"
@@ -34,25 +33,11 @@ class IdefixCommArrayGpuDirect : public T {
   //inherit constructors
   using T::T;
 
-  IdefixCommArrayGpuDirect(const IdefixCommArrayGpuDirect & orig) {
-    T & tmp = *this;
-    tmp = (T&)orig;
-  }
-
-  IdefixCommArrayGpuDirect(IdefixCommArrayGpuDirect && orig) {
-    T & tmp = *this;
-    tmp = std::move((T&)orig);
-  }
-
-  IdefixCommArrayGpuDirect<T> & operator=(const IdefixCommArrayGpuDirect & orig) {
-    T & tmp = *this;
-    tmp = (T&)orig;
-    return *this;
-  }
-
-  IdefixCommArrayGpuDirect<T> & operator=(IdefixCommArrayGpuDirect && orig) {
-    T & tmp = *this;
-    tmp = std::move((T&)orig);
+  /**
+   * Accès it as a simple device view for usiage in kokkos kernels
+   * (because need to not carry the host part).
+   */
+  T & deviceView(void) {
     return *this;
   }
 
@@ -100,32 +85,13 @@ class IdefixCommArrayNoGpuDirect : public T {
   //inherit constructors
   using T::T;
 
-  IdefixCommArrayNoGpuDirect(const IdefixCommArrayNoGpuDirect & orig) {
-    T & tmp = *this;
-    tmp = (T&)orig;
-    this->commArray = orig.commArray;
-  }
-
-  IdefixCommArrayNoGpuDirect(IdefixCommArrayNoGpuDirect && orig) {
-    T & tmp = *this;
-    tmp = std::move((T&)orig);
-    this->commArray = std::move(orig.commArray);
-  }
-
-  IdefixCommArrayNoGpuDirect<T> & operator=(IdefixCommArrayNoGpuDirect & orig) {
-    T & tmp = *this;
-    tmp = (T&)orig;
-    this->commArray = orig.commArray;
+  /**
+   * Accès it as a simple device view for usiage in kokkos kernels
+   * (because need to not carry the host part).
+   */
+  T & deviceView(void) {
     return *this;
   }
-
-  IdefixCommArrayNoGpuDirect<T> & operator=(IdefixCommArrayNoGpuDirect && orig) {
-    T & tmp = *this;
-    tmp = std::move((T&)orig);
-    this->commArray = std::move(orig.commArray);
-    return *this;
-  }
-
 
   /**
    * If needed, transfers the data from the device to the host to be ready to make
@@ -223,8 +189,8 @@ template <class T> using MPI_Request_4D = Idefix_MPI_Request< IdefixArray4D<T> >
  * to the host if required (when WITH_MPI_GPU_DIRECT is disabled).
  */
 template <class T>
-int MPI_Sendrecv(IdefixCommArray<T> sendbuf, int sendcount, MPI_Datatype sendtype,
-  int dest, int sendtag, IdefixCommArray<T> recvbuf, int recvcount,
+int MPI_Sendrecv(IdefixCommArray<T> & sendbuf, int sendcount, MPI_Datatype sendtype,
+  int dest, int sendtag, IdefixCommArray<T> &recvbuf, int recvcount,
   MPI_Datatype recvtype, int source, int recvtag, MPI_Comm comm, MPI_Status *status) {
   //check size
   assert(sendbuf.span() == sendcount);
@@ -233,9 +199,7 @@ int MPI_Sendrecv(IdefixCommArray<T> sendbuf, int sendcount, MPI_Datatype sendtyp
   assert(recvbuf.span_is_contiguous());
 
   //make a local allocation if needed
-  #ifndef WITH_MPI_GPU_DIRECT
-    sendbuf.syncCommData();
-  #endif
+  sendbuf.syncCommData();
 
   //make the communication
   const int result = ::MPI_Sendrecv(sendbuf.commData(), sendcount, sendtype, dest, sendtag,
@@ -243,9 +207,7 @@ int MPI_Sendrecv(IdefixCommArray<T> sendbuf, int sendcount, MPI_Datatype sendtyp
                comm, status);
 
   //copy back if needed
-  #ifndef WITH_MPI_GPU_DIRECT
-    recvbuf.syncDeviceData();
-  #endif
+  recvbuf.syncDeviceData();
 
   //ok
   return result;

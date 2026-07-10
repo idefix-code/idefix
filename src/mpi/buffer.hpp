@@ -86,7 +86,7 @@ class Buffer {
     const int kend = box[KDIR][1];
     const int offset = this->pointer;
 
-    auto arr = this->array;
+    auto arr = this->array.deviceView();
     idefix_for("LoadBuffer4D_var",kbeg,kend,jbeg,jend,ibeg,iend,
       KOKKOS_LAMBDA (int k, int j, int i) {
       arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + offset ) = in(var, k,j,i);
@@ -109,7 +109,7 @@ class Buffer {
     const int jend = box[JDIR][1];
     const int kend = box[KDIR][1];
     const int offset = this->pointer;
-    auto arr = this->array;
+    auto arr = this->array.deviceView();
 
     idefix_for("LoadBuffer4D_map",0,map.size(),
                              kbeg,kend,
@@ -135,7 +135,7 @@ class Buffer {
     const int jend = box[JDIR][1];
     const int kend = box[KDIR][1];
     const int offset = this->pointer;
-    auto arr = this->array;
+    auto arr = this->array.deviceView();
 
     idefix_for("UnLoadBuffer3D",kbeg,kend,jbeg,jend,ibeg,iend,
       KOKKOS_LAMBDA (int k, int j, int i) {
@@ -160,7 +160,7 @@ class Buffer {
       const int kend = box[KDIR][1];
     const int offset = this->pointer;
 
-    auto arr = this->array;
+    auto arr = this->array.deviceView();
     idefix_for("UnLoadBuffer4D_var",kbeg,kend,jbeg,jend,ibeg,iend,
       KOKKOS_LAMBDA (int k, int j, int i) {
         out(var,k,j,i) = arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + offset );
@@ -185,7 +185,7 @@ class Buffer {
     const int kend = box[KDIR][1];
     const int offset = this->pointer;
 
-    auto arr = this->array;
+    auto arr = this->array.deviceView();
     idefix_for("UnLoadBuffer4D_var_sym",kbeg,kend,jbeg,jend,ibeg,iend,
       KOKKOS_LAMBDA (int k, int j, int i) {
         const int jinverted = jend-(j-jbeg)-1;
@@ -211,7 +211,7 @@ class Buffer {
     const int kend = box[KDIR][1];
     const int offset = this->pointer;
 
-    auto arr = this->array;
+    auto arr = this->array.deviceView();
     idefix_for("UnLoadBuffer4D_map",0,map.size(),
                               kbeg,kend,
                               jbeg,jend,
@@ -239,7 +239,7 @@ class Buffer {
     const int kend = box[KDIR][1];
     const int offset = this->pointer;
 
-    auto arr = this->array;
+    auto arr = this->array.deviceView();
     idefix_for("UnLoadBuffer4D_map_sym",0,map.size(),
                               kbeg,kend,
                               jbeg,jend,

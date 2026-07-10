@@ -79,7 +79,7 @@ void Column::ComputeColumn(IdefixArray4D<real> in, const int var) {
   auto column = this->ColumnArray;
   auto dV = this->Volume;
   auto A = this->Area;
-  auto localSum = this->localSum;
+  auto localSum = this->localSum.deviceView();
 
   if(direction==IDIR) {
     // Inspired from loop.hpp
@@ -134,7 +134,7 @@ void Column::ComputeColumn(IdefixArray4D<real> in, const int var) {
         MPI_Status status;
         // Get the cumulative sum from previous processes
         Kokkos::fence();
-        idefix::MPI_Recv(localSum, size, realMPI, src, 20, ColumnComm, &status);
+        idefix::MPI_Recv(this->localSum, size, realMPI, src, 20, ColumnComm, &status);
         // Add this to our cumulative sum
         idefix_for("Addsum",kb,ke,jb,je,ib,ie,
           KOKKOS_LAMBDA(int k, int j, int i) {
@@ -165,7 +165,7 @@ void Column::ComputeColumn(IdefixArray4D<real> in, const int var) {
         }
         // And send it
         Kokkos::fence();
-        idefix::MPI_Send(localSum,size, realMPI, dst, 20, ColumnComm);
+        idefix::MPI_Send(this->localSum,size, realMPI, dst, 20, ColumnComm);
       } // MPIrank small enough
     #endif
     // If we need it backwards
@@ -195,7 +195,7 @@ void Column::ComputeColumn(IdefixArray4D<real> in, const int var) {
 
       #ifdef WITH_MPI
       Kokkos::fence();
-      idefix::MPI_Bcast(localSum,size, realMPI, MPIsize-1, ColumnComm);
+      idefix::MPI_Bcast(this->localSum,size, realMPI, MPIsize-1, ColumnComm);
       #endif
       // All substract the local column from the full column
 

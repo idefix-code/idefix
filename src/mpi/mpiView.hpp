@@ -34,18 +34,13 @@ class IdefixCommArray : public T {
   using T::T;
 
   /**
-   * Overload the copy constructor
-  */
-  IdefixCommArray(const IdefixCommArray<T> & orig)
-    :T(orig)
-    ,commArray(orig.commArray) {}
-
-  /**
    * If needed, transfers the data from the device to the host to be ready to make
    * a communication.
    */
   void syncCommData(void) {
-    Kokkos::deep_copy(this->commArray, *this);
+    #ifndef WITH_MPI_GPU_DIRECT
+      Kokkos::deep_copy(this->commArray, *this);
+    #endif //WITH_MPI_GPU_DIRECT
   }
 
   /**
@@ -53,7 +48,9 @@ class IdefixCommArray : public T {
    * a communication.
    */
   void syncCommDataAsync(void) {
-    Kokkos::deep_copy(Kokkos::DefaultExecutionSpace(), this->commArray, *this);
+    #ifndef WITH_MPI_GPU_DIRECT
+      Kokkos::deep_copy(Kokkos::DefaultExecutionSpace(), this->commArray, *this);
+    #endif //WITH_MPI_GPU_DIRECT
   }
 
   /**
@@ -61,7 +58,9 @@ class IdefixCommArray : public T {
    * to use it.
    */
   void syncDeviceData(void) {
-    Kokkos::deep_copy(*this, this->commArray);
+    #ifndef WITH_MPI_GPU_DIRECT
+      Kokkos::deep_copy(*this, this->commArray);
+    #endif //WITH_MPI_GPU_DIRECT
   }
 
   /**
@@ -69,7 +68,9 @@ class IdefixCommArray : public T {
    * to use it.
    */
   void syncDeviceDataAsync(void) {
-    Kokkos::deep_copy(Kokkos::DefaultExecutionSpace(), *this, this->commArray);
+    #ifndef WITH_MPI_GPU_DIRECT
+      Kokkos::deep_copy(Kokkos::DefaultExecutionSpace(), *this, this->commArray);
+    #endif //WITH_MPI_GPU_DIRECT
   }
 
   /**
@@ -77,31 +78,35 @@ class IdefixCommArray : public T {
    * depending on the WITH_MPI_GPU_DIRECT configuration.
    */
   void * commData(void) {
-    return this->commArray.data();
-  }
-
- private:
-  static typename T::host_mirror_type initCommArray(T & deviceArray) {
     #ifdef WITH_MPI_GPU_DIRECT
-      //in gpu direct, we use directly the device buffer
-      //if running on host, it will also just use directly the host storage.
-      return deviceArray;
-    #elif defined(FORCE_TRANSFERS_ALL_TIME)
-      //for validation purpose, force the transfers by using a copy anytime.
-      return Kokkos::create_mirror(deviceArray);
+      return this->data();
     #else
-      //if no GPU DIRECT, it creates a copy only if deviceArray is on GPU,
-      //if on host, it just reference it
-      return Kokkos::create_mirror_view(deviceArray);
-    #endif
+      return this->commArray.data();
+    #endif //WITH_MPI_GPU_DIRECT
   }
 
  private:
-  /**
-   * Buffer to contain a copy of the data on host if required. If WITH_MPI_GPU_DIRECT
-   * is enabled it directly points the device buffer as no copy is required.
-   */
-  typename T::host_mirror_type commArray{initCommArray(*this)};
+  #ifndef WITH_MPI_GPU_DIRECT
+    static typename T::host_mirror_type initCommArray(T & deviceArray) {
+      #ifdef FORCE_TRANSFERS_ALL_TIME
+        //for validation purpose, force the transfers by using a copy anytime.
+        return Kokkos::create_mirror(deviceArray);
+      #else
+        //if no GPU DIRECT, it creates a copy only if deviceArray is on GPU,
+        //if on host, it just reference it
+        return Kokkos::create_mirror_view(deviceArray);
+      #endif
+    }
+  #endif //WITH_MPI_GPU_DIRECT
+
+ private:
+  #ifndef WITH_MPI_GPU_DIRECT
+    /**
+     * Buffer to contain a copy of the data on host if required. If WITH_MPI_GPU_DIRECT
+     * is enabled it directly points the device buffer as no copy is required.
+     */
+    typename T::host_mirror_type commArray{initCommArray(*this)};
+  #endif //WITH_MPI_GPU_DIRECT
 };
 
 /** Wrap the idefix 1D array to use it for communication purpose. */

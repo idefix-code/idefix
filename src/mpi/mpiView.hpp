@@ -34,11 +34,17 @@ class IdefixCommArray : public T {
   using T::T;
 
   /**
+   * Overload the copy constructor
+  */
+  IdefixCommArray(const IdefixCommArray<T> & orig)
+    :T(orig)
+    ,commArray(orig.commArray) {}
+
+  /**
    * If needed, transfers the data from the device to the host to be ready to make
    * a communication.
    */
   void syncCommData(void) {
-    this->lazyInit();
     Kokkos::deep_copy(this->commArray, *this);
   }
 
@@ -47,7 +53,6 @@ class IdefixCommArray : public T {
    * a communication.
    */
   void syncCommDataAsync(void) {
-    this->lazyInit();
     Kokkos::deep_copy(Kokkos::DefaultExecutionSpace(), this->commArray, *this);
   }
 
@@ -56,7 +61,6 @@ class IdefixCommArray : public T {
    * to use it.
    */
   void syncDeviceData(void) {
-    this->lazyInit();
     Kokkos::deep_copy(*this, this->commArray);
   }
 
@@ -65,7 +69,6 @@ class IdefixCommArray : public T {
    * to use it.
    */
   void syncDeviceDataAsync(void) {
-    this->lazyInit();
     Kokkos::deep_copy(Kokkos::DefaultExecutionSpace(), *this, this->commArray);
   }
 
@@ -74,15 +77,7 @@ class IdefixCommArray : public T {
    * depending on the WITH_MPI_GPU_DIRECT configuration.
    */
   void * commData(void) {
-    this->lazyInit();
     return this->commArray.data();
-  }
-
- private:
-  void lazyInit(void) {
-    //do lazy init (cannot do in constructor without having a warning under CUDA build)
-    if (this->commArray.is_allocated() == false)
-      this->commArray = initCommArray(*this);
   }
 
  private:
@@ -106,7 +101,7 @@ class IdefixCommArray : public T {
    * Buffer to contain a copy of the data on host if required. If WITH_MPI_GPU_DIRECT
    * is enabled it directly points the device buffer as no copy is required.
    */
-  typename T::host_mirror_type commArray;
+  typename T::host_mirror_type commArray{initCommArray(*this)};
 };
 
 /** Wrap the idefix 1D array to use it for communication purpose. */

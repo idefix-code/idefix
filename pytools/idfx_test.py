@@ -170,7 +170,7 @@ class idfxTest:
   def applyConfig(self, config: dict | None = None):
     # check args
     if config is None:
-        config = {}
+      config = {}
     for key, value in config.items():
       if key not in ['ini', 'testfile', 'testname', 'dumpname', 'check_file_produced']:
         assert key in self.cmdArgs, f"The given configuration overriding try to set an invalid paramater : {key}={value}"

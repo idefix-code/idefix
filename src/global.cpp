@@ -5,6 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include <iostream>
 #include <string>
 #include <sstream>
 #if __has_include(<filesystem>)
@@ -20,6 +21,7 @@
 #include "idefix.hpp"
 #include "global.hpp"
 #include "profiler.hpp"
+#include "units.hpp"
 
 #ifdef WITH_MPI
 #include "mpi.hpp"
@@ -39,6 +41,7 @@ IdefixErrStream cerr;
 std::string logFileDir;
 Profiler prof;
 LoopPattern defaultLoopPattern;
+Units units;
 
 #ifdef DEBUG
 static int regionIndent = 0;
@@ -74,6 +77,7 @@ int initialize() {
 void pushRegion(const std::string& kName) {
   Kokkos::Profiling::pushRegion(kName);
   if(prof.perfEnabled) {
+    Kokkos::fence();
     prof.currentRegion = prof.currentRegion->GetChild(kName);
     prof.currentRegion->Start();
   }

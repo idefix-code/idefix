@@ -10,14 +10,29 @@
 #include "gravity.hpp"
 #include "planetarySystem.hpp"
 #include "dataBlock.hpp"
+#include "output.hpp"
 #include "input.hpp"
+#include "units.hpp"
 
 Gravity::Gravity(Input &input, DataBlock *datain) {
   idfx::pushRegion("Gravity::Gravity");
   this->data = datain;
 
   // Gravitational constant G
-  this->gravCst = input.GetOrSet<real>("Gravity","gravCst",0, 1.0);
+  // should we compute it from the units?
+  if(input.CheckEntry("Gravity","gravCst")>=0) {
+    if(input.Get<std::string>("Gravity","gravCst",0).compare("units") == 0) {
+      // User ask us to compute the gravitational constants from the units
+
+      this->gravCst = idfx::units.GetDensity() * idfx::units.GetTime() * idfx::units.GetTime()
+                      * idfx::units.G;
+    } else {
+      this->gravCst = input.Get<real>("Gravity","gravCst",0);
+    }
+  } else { // default value to 1.0
+    this->gravCst = 1.0;
+  }
+
   // Gravitational potential
   int nPotential = input.CheckEntry("Gravity","potential");
   if(nPotential >=0) {
@@ -29,6 +44,7 @@ Gravity::Gravity(Input &input, DataBlock *datain) {
       } else if (potentialString.compare("central") == 0) {
         this->haveCentralMassPotential = true;
         this->centralMass = input.GetOrSet<real>("Gravity","Mcentral",0, 1.0);
+        data->dump->RegisterVariable(&this->centralMass, "centralMass",1);
       } else if (potentialString.compare("selfgravity") == 0) {
         this->haveSelfGravityPotential = true;
       } else if (potentialString.compare("planet") == 0) {

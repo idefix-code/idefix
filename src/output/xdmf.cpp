@@ -10,6 +10,16 @@
 #include <vector>
 #include <algorithm>
 #include <iomanip>
+#if __has_include(<filesystem>)
+  #include <filesystem> // NOLINT [build/c++17]
+  namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+  #include <experimental/filesystem>
+  namespace fs = std::experimental::filesystem;
+#else
+  #error "Missing the <filesystem> header."
+#endif
+
 #include "xdmf.hpp"
 #include "version.hpp"
 #include "idefix.hpp"
@@ -39,9 +49,9 @@ Xdmf::Xdmf(Input &input, DataBlock *datain) {
   }
 
   if(idfx::prank==0) {
-    if(!std::filesystem::is_directory(outputDirectory)) {
+    if(!fs::is_directory(outputDirectory)) {
       try {
-        if(!std::filesystem::create_directory(outputDirectory)) {
+        if(!fs::create_directory(outputDirectory)) {
           std::stringstream msg;
           msg << "Cannot create directory " << outputDirectory << std::endl;
           IDEFIX_ERROR(msg);
@@ -274,20 +284,20 @@ Xdmf::Xdmf(Input &input, DataBlock *datain) {
 
 int Xdmf::Write() {
   idfx::pushRegion("Xdmf::Write");
-  std::filesystem::path filename;
-  std::filesystem::path filename_xmf;
-  hid_t err;
+  fs::path filename;
+  fs::path filename_xmf;
+  [[maybe_unused]] hid_t err;
   idfx::cout << "Xdmf: Write file n " << xdmfFileNumber << "..." << std::flush;
   timer.reset();
 
   // Create a copy of the dataBlock on Host, and sync it.
 
   #if DIMENSIONS == 1
-  int tot_dim = 1;
+  [[maybe_unused]] int tot_dim = 1;
   #elif DIMENSIONS == 2
   int tot_dim = 2;
   #elif DIMENSIONS == 3
-  int tot_dim = 3;
+  [[maybe_unused]] int tot_dim = 3;
   #endif
 
   std::stringstream ssfileName, ssfileNameXmf, ssxdmfFileNum;
@@ -334,7 +344,8 @@ int Xdmf::Write() {
   #endif
 
   // Layout of the field data in memory
-  hsize_t field_data_size[3], field_data_start[3], field_data_subsize[3], stride[3];
+  [[maybe_unused]] hsize_t field_data_size[3], field_data_start[3];
+  [[maybe_unused]] hsize_t field_data_subsize[3], stride[3];
   #ifdef WITH_MPI
   for(int dir = 0; dir < 3 ; dir++) {
     field_data_size[dir] = static_cast<hsize_t>(this->mpi_data_size[dir]);
@@ -444,11 +455,10 @@ void Xdmf::WriteHeader(
   hid_t tspace, tattr;
   hid_t unit_info, unit_attr;
   hid_t group;
-  hid_t file_access = 0;
   #ifdef WITH_MPI
   hid_t plist_id_mpiio = 0; /* for collective MPI I/O */
   #endif
-  hid_t err;
+  [[maybe_unused]] hid_t err;
 
   hsize_t dimstr;
 
@@ -804,7 +814,7 @@ void Xdmf::WriteScalar(
   dataset_name = var_name.c_str();
   std::string dataset_label = dataset_name.c_str();
   std::transform(dataset_label.begin(), dataset_label.end(), dataset_label.begin(), ::tolower);
-  hid_t err, dataset;
+  [[maybe_unused]] hid_t err, dataset;
 
   // We define the dataset that contain the fields.
 

@@ -83,12 +83,16 @@ indirect term, with multiple planets that don't feel each others.");
     IDEFIX_ERROR("need to define a planet-to-primary mass ratio via planetToPrimary");
   }
 #if GEOMETRY == POLAR || GEOMETRY == CARTESIAN
-  if ((this->data->mygrid->xbeg[KDIR] == 0)
-      || (this->data->mygrid->xend[KDIR] == 0)) {
-    this->halfdisk = true;
-  } else {
+  #if DIMENSIONS == 3
+    if ((this->data->mygrid->xbeg[KDIR] == 0)
+        || (this->data->mygrid->xend[KDIR] == 0)) {
+      this->halfdisk = true;
+    } else {
+      this->halfdisk = false;
+    }
+  #else // DIMENSIONS == 3
     this->halfdisk = false;
-  }
+  #endif // DIMENSIONS == 3
 #elif GEOMETRY == SPHERICAL
   if ( (this->data->mygrid->xbeg[JDIR] == M_PI/2.0)
         || (this->data->mygrid->xend[JDIR] == M_PI/2.0)) {

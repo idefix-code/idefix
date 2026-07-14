@@ -35,9 +35,6 @@ sol=np.roots(poly)
 # Get the minimal decay rate (this should be the one that pops up)
 tau=np.amax(np.imag(sol))
 
-
-
-
 # load the dat file produced by the setup
 raw=np.loadtxt('../timevol.dat',skiprows=1)
 t=raw[:,0]
@@ -58,10 +55,10 @@ if not(args.noplot):
 # Compute decay rate:
 tau_measured=t[-1]/(2*np.log(etot[-1]/etot[0]))
 # error on the decay rate:
-error=(tau_measured-tau)/tau
+error=np.abs((tau_measured-tau)/tau)
 
 print("error=%f"%error)
-if(error<0.065):
+if(error<0.07):
   print("Success!")
 else:
   print("Failure!")

@@ -28,6 +28,9 @@ In this section, you will find a more detailed documentation about each module t
 :ref:`gridCoarseningModule`
   The grid coarsening module, that allows to derefine the grid in particular locations to speed up the computation.
 
+:ref:`pydefixModule`
+  The Python interaction module, that allows Idefix to interact directly with a python interpreter.
+
 
 .. toctree::
    :maxdepth: 2
@@ -40,3 +43,4 @@ In this section, you will find a more detailed documentation about each module t
    modules/selfGravity.rst
    modules/braginskii.rst
    modules/gridCoarsening.rst
+   modules/pydefix.rst

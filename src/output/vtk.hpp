@@ -10,7 +10,7 @@
 #include <string>
 #include <map>
 #if __has_include(<filesystem>)
-  #include <filesystem>
+  #include <filesystem> // NOLINT [build/c++17]
   namespace fs = std::filesystem;
 #elif __has_include(<experimental/filesystem>)
   #include <experimental/filesystem>
@@ -18,6 +18,7 @@
 #else
   error "Missing the <filesystem> header."
 #endif
+#include <cstdio>
 #include "idefix.hpp"
 #include "input.hpp"
 #include "dataBlock.hpp"
@@ -128,6 +129,7 @@ class Vtk : public BaseVtk {
 
   // Coordinates needed by VTK outputs
   float *xnode, *ynode, *znode;
+  float *xcenter, *ycenter, *zcenter;
 
   IdefixHostArray4D<float> node_coord;
 

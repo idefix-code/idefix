@@ -59,6 +59,12 @@ Several options can be enabled from the command line (or are accessible with ``c
     The number of ghost cells is automatically adjusted as a function of the order of the reconstruction scheme.
     *Idefix* uses 2 ghost cells when ``ORDER < 4`` and 3 ghost cells when ``ORDER = 4``
 
+``-D Idefix_PROBLEM_DIR=.``
+    Specify where to find the problem directory to build *Idefix* out of source.
+    Place yourself in the ``build`` directory you want to build in and call the ``cmake`` by :
+      + pointing the *Idefix* source directory via ``IDEFIX_DIR`` as usual.
+      + using ``-D Idefix_PROBLEM_DIR`` to point the problem to build.
+
 ``-D Kokkos_ENABLE_OPENMP=ON``
     Enable OpenMP parallelisation on supported compilers. Note that this can be enabled simultaneously with MPI, resulting in a hybrid MPI+OpenMP compilation.
 
@@ -108,18 +114,12 @@ We recommend the following modules and environement variables on AdAstra:
 
 .. code-block:: bash
 
-    module load cpe/23.12
+    module load cpe/24.07
     module load craype-accel-amd-gfx90a craype-x86-trento
     module load PrgEnv-cray
-    module load amd-mixed/5.7.1
-    module load rocm/5.7.1 # nécessaire a cause d'un bug de path pas encore fix..
-    export HIPCC_COMPILE_FLAGS_APPEND="-isystem ${CRAY_MPICH_PREFIX}/include"
-    export HIPCC_LINK_FLAGS_APPEND="-L${CRAY_MPICH_PREFIX}/lib -lmpi ${PE_MPICH_GTL_DIR_amd_gfx90a} ${PE_MPICH_GTL_LIBS_amd_gfx90a} -lstdc++fs"
-    export CXX=hipcc
-    export CC=hipcc
-
-The `-lstdc++fs` option being there to guarantee the link to the HIP library and the access to specific
-C++17 <filesystem> functions.
+    module load amd-mixed/6.1.2
+    module load rocm/6.1.2
+    module load cray-python/3.11.7
 
 Finally, *Idefix* can be configured to run on Mi250 by enabling HIP and the desired architecture with the following options to ccmake:
 
@@ -130,32 +130,56 @@ Finally, *Idefix* can be configured to run on Mi250 by enabling HIP and the desi
 
 MPI (multi-GPU) can be enabled by adding ``-DIdefix_MPI=ON`` as usual.
 
-Jean Zay at IDRIS, Nvidia V100 and A100 GPUs
---------------------------------------------
+Jean Zay at IDRIS, Nvidia V100/A100/H100 GPUs
+---------------------------------------------
 
-We recommend the following modules and environement variables on Jean Zay:
+We recommend the following modules and environement variables on Jean Zay V100/A100:
 
 .. code-block:: bash
 
+    module load arch/a100 # ONLY forA100
     module load cuda/12.1.0
     module load gcc/12.2.0
     module load openmpi/4.1.1-cuda
-    module load cmake/3.18.0
+    module load cmake/3.25.2
+
+While for H100:
+
+.. code-block:: bash
+
+    module load arch/h100
+    module load cmake/3.30.1
+    module load cuda/12.1.0
+    module load openmpi/4.1.5-cuda
 
 *Idefix* can then be configured to run on Nvidia V100 with the following options to ccmake:
 
 .. code-block:: bash
 
-    -DKokkos_ENABLE_CUDA=ON -DKokkos_ENABLE_VOLTA70=ON -DKokkos_ENABLE_IMPL_CUDA_MALLOC_ASYNC=OFF
+    -DKokkos_ENABLE_CUDA=ON -DKokkos_ARCH_VOLTA70=ON
 
 While Ampere A100 GPUs are enabled with
 
 .. code-block:: bash
 
-    -DKokkos_ENABLE_CUDA=ON -DKokkos_ENABLE_AMPERE80=ON -DKokkos_ENABLE_IMPL_CUDA_MALLOC_ASYNC=OFF
+    -DKokkos_ENABLE_CUDA=ON -DKokkos_ARCH_AMPERE80=ON
 
-MPI (multi-GPU) can be enabled by adding ``-DIdefix_MPI=ON`` as usual. The malloc async option is here to prevent a bug when using PSM2 with async
-Cuda malloc possibly leading to openmpi crash or hangs on Jean Zay.
+And for H100 GPUS:
+
+.. code-block:: bash
+
+    -DKokkos_ENABLE_CUDA=ON -DKokkos_ARCH_HOPPER90=ON
+
+
+MPI (multi-GPU) can be enabled by adding ``-DIdefix_MPI=ON`` as usual.
+
+
+.. warning::
+
+  As of *Idefix* 2.1.02, we automatically disable Cuda Malloc async (``-DKokkos_ENABLE_IMPL_CUDA_MALLOC_ASYNC=OFF``). However, earlier versions of
+  *Idefix* requires this flag when calling cmake to prevent a bug when using PSM2 with async Cuda malloc possibly leading to openmpi crash or hangs on Jean Zay.
+
+
 
 .. _setupSpecificOptions:
 

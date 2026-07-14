@@ -8,7 +8,15 @@
 #ifndef OUTPUT_XDMF_HPP_
 #define OUTPUT_XDMF_HPP_
 #include <string>
-#include <filesystem>
+#if __has_include(<filesystem>)
+  #include <filesystem> // NOLINT [build/c++17]
+  namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+  #include <experimental/filesystem>
+  namespace fs = std::experimental::filesystem;
+#else
+  error "Missing the <filesystem> header."
+#endif
 #include <map>
 #include "idefix.hpp"
 #include "input.hpp"

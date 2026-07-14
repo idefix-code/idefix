@@ -66,27 +66,33 @@ void DataBlock::CheckCoarseningLevels() {
   idfx::pushRegion("DataBlock::CheckCoarseningLevels()");
   // Check that the coarsening levels we have are valid
   // NB: this is a costly procedure, we can't repeat it at each loop!
-  DataBlockHost d(*this);
-  d.SyncFromDevice();
   for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
     if(mygrid->coarseningDirection[dir]) {
-      IdefixHostArray2D<int> arr = d.coarseningLevel[dir];
-      const int Xt = (dir == IDIR ? JDIR : IDIR);
-      const int Xb = (dir == KDIR ? JDIR : KDIR);
-      for(int i = beg[Xt] ; i < end[Xt] ; i++) {
-        for(int j = beg[Xb] ; j < end[Xb] ; j++) {
+      IdefixHostArray2D<int> arr = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                                                       coarseningLevel[dir]);
+      for(int j = 0 ; j < arr.extent(0) ; j++) {
+        for(int i = 0 ; i < arr.extent(1) ; i++) {
+          if(std::isnan(arr(j,i))) {
+            std::stringstream str;
+            str << "Nan in grid coarsening levels" << std::endl;
+            str << "at (i,j)=("<< i << "," << j << "): Coarsening level is NaN!" << std::endl;
+            IDEFIX_ERROR(str);
+          }
           if(arr(j,i) < 1) {
             std::stringstream str;
-            str << "Incorrect grid coarsening levels" << std::endl;
-            str << "at (i,j)=("<< i << "," << j << "): Coarsening level < 1!" << std::endl;
+            str << "Coarsening level < 1!" << std::endl;
+            str << "at (i,j)=("<< i << "," << j << "): ";
+            str << "coarsening level= " << arr(j,i) << std::endl;
             IDEFIX_ERROR(str);
           }
           const int factor = 1 << (arr(j,i) - 1);
           if(np_int[dir] % factor != 0) {
             std::stringstream str;
-            str << "local grid size not divisible by coarsening level" << std::endl;
-            str << "at (i,j)=("<< i << "," << j << "): Coarsening level: ";
-            str <<  arr(j,i) << std::endl;
+            str << "Local grid size not divisible by coarsening level." << std::endl;
+            str << "at (i,j)=("<< i << "," << j << "): ";
+            str << "coarsening level= " << arr(j,i) << std::endl;
+            str << np_int[dir] << " cannot be divided by 2^" << arr(j,i)-1;
+            str << " = " << factor << std::endl;
             IDEFIX_ERROR(str);
           }
         }

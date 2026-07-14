@@ -5,16 +5,18 @@ endif()
 set (CMAKE_CXX_STANDARD 17)
 
 set(Idefix_VERSION_MAJOR 2)
-set(Idefix_VERSION_MINOR 1)
-set(Idefix_VERSION_PATCH 01)
+set(Idefix_VERSION_MINOR 3)
+set(Idefix_VERSION_PATCH 0)
 
-project (idefix VERSION 2.1.00)
+project (idefix VERSION 2.3.0)
 option(Idefix_MHD "enable MHD" OFF)
 option(Idefix_MPI "enable Message Passing Interface parallelisation" OFF)
 option(Idefix_HIGH_ORDER_FARGO "Force Fargo to use a PPM reconstruction scheme" OFF)
 option(Idefix_DEBUG "Enable Idefix debug features (makes the code very slow)" OFF)
 option(Idefix_RUNTIME_CHECKS "Enable runtime sanity checks" OFF)
 option(Idefix_WERROR "Treat compiler warnings as errors" OFF)
+option(Idefix_PYTHON "Enable python bindings (requires pybind11)" OFF)
+set(Idefix_PROBLEM_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "Problem directory to build for.")
 set(Idefix_CXX_FLAGS "" CACHE STRING "Additional compiler/linker flag")
 set(Idefix_DEFS "definitions.hpp" CACHE FILEPATH "Problem definition header file")
 option(Idefix_CUSTOM_EOS "Use custom equation of state" OFF)
@@ -33,7 +35,6 @@ set_property(CACHE Idefix_PRECISION PROPERTY STRINGS Double Single)
 set(Idefix_LOOP_PATTERN "Default" CACHE STRING "Loop pattern for idefix_for")
 set_property(CACHE Idefix_LOOP_PATTERN PROPERTY STRINGS Default SIMD Range MDRange TeamPolicy TeamPolicyInnerVector)
 
-
 # load git revision tools
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 include(GetGitRevisionDescription)
@@ -45,10 +46,13 @@ include(SetRequiredBuildSettingsForGCC8)
 #Idefix requires Cuda Lambdas (experimental)
 if(Kokkos_ENABLE_CUDA)
   set(Kokkos_ENABLE_CUDA_LAMBDA ON CACHE BOOL "Idefix requires lambdas on Cuda" FORCE)
+  # CUDA_MALLOC_ASYNC disbaled by default in Kokkos 4.5, so not required here
+  #set(Kokkos_ENABLE_IMPL_CUDA_MALLOC_ASYNC OFF CACHE BOOL "Disable Async malloc to avoid bugs on PSM2" FORCE)
 endif()
 
 # Add kokkos CMAKE files (required early since these set compiler options)
-add_subdirectory(src/kokkos build/kokkos)
+add_subdirectory(src/kokkos ${CMAKE_BINARY_DIR}/build/kokkos)
+include_directories(${Kokkos_INCLUDE_DIRS_RET})
 
 # Add Idefix CXX Flags
 add_compile_options(${Idefix_CXX_FLAGS})
@@ -71,19 +75,21 @@ endif()
 add_executable(idefix)
 add_subdirectory(src build)
 
-if(EXISTS ${PROJECT_BINARY_DIR}/setup.cpp)
-  target_sources(idefix PUBLIC ${PROJECT_BINARY_DIR}/setup.cpp)
+# make absolute
+get_filename_component(Idefix_PROBLEM_DIR_ABS ${Idefix_PROBLEM_DIR} ABSOLUTE BASE_DIR ${PROJECT_BINARY_DIR})
+
+if(EXISTS ${Idefix_PROBLEM_DIR_ABS}/setup.cpp)
+  target_sources(idefix PUBLIC ${Idefix_PROBLEM_DIR_ABS}/setup.cpp)
 else()
-  message(WARNING "No specific setup.cpp found in the problem directory")
+  message(WARNING "No specific setup.cpp found in the problem directory (this message can be ignored if using python to define your problem)")
 endif()
 
 # If a CMakeLists.txt is in the problem dir (for problem-specific source files)
 # then read it
-if(EXISTS ${PROJECT_BINARY_DIR}/CMakeLists.txt)
-  message(STATUS "Including problem-specific CMakeLists in '${PROJECT_BINARY_DIR}'")
-  add_subdirectory(${PROJECT_BINARY_DIR} build/setup)
+if(EXISTS ${Idefix_PROBLEM_DIR_ABS}/CMakeLists.txt)
+  message(STATUS "Including problem-specific CMakeLists in '${Idefix_PROBLEM_DIR_ABS}'")
+  add_subdirectory(${Idefix_PROBLEM_DIR_ABS} build/setup)
 endif()
-
 
 if(Idefix_MHD)
   add_compile_definitions("MHD=YES")
@@ -95,10 +101,7 @@ if(Idefix_MPI)
   add_compile_definitions("WITH_MPI")
   find_package(MPI REQUIRED)
   target_link_libraries(idefix MPI::MPI_CXX)
-  target_sources(idefix
-    PUBLIC src/mpi.cpp
-    PUBLIC src/mpi.hpp
-  )
+  add_subdirectory(src/mpi)
 endif()
 
 if(Idefix_HDF5)
@@ -112,10 +115,40 @@ if(Idefix_HDF5)
   )
   find_package(HDF5 REQUIRED)
   target_link_libraries(idefix "${HDF5_LIBRARIES}")
+  message(STATUS "Found HDF5 include directories: ${HDF5_INCLUDE_DIRS}")
   target_include_directories(idefix PUBLIC "${HDF5_INCLUDE_DIRS}")
+  if(Idefix_MPI)
+    if(NOT HDF5_IS_PARALLEL)
+      message(FATAL_ERROR "Parallel HDF5 required for Idefix_MPI but the found HDF5 library does not support it")
+    endif()
+  endif()
   message(STATUS "XDMF (hdf5+xmf) dumps enabled")
 else()
   set(Idefix_HDF5 OFF)
+endif()
+
+if(Idefix_PYTHON)
+  add_compile_definitions("WITH_PYTHON")
+  find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
+
+  execute_process(
+    COMMAND "${Python3_EXECUTABLE}" -m pybind11 --cmakedir
+    OUTPUT_VARIABLE PYBIND11_CMAKE_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    COMMAND_ERROR_IS_FATAL ANY
+  )
+
+  list(APPEND CMAKE_PREFIX_PATH "${PYBIND11_CMAKE_DIR}")
+  if (NOT DEFINED Python_FIND_FRAMEWORK)
+    set(Python_FIND_FRAMEWORK "LAST") # Use Apple's python only at last resort on Macos
+  endif ()
+  set(PYBIND11_FINDPYTHON ON CACHE BOOL "Idefix requires python" FORCE)
+  find_package(pybind11 REQUIRED)
+  target_link_libraries(idefix pybind11::embed)
+  target_sources(idefix
+    PUBLIC src/pydefix.cpp
+    PUBLIC src/pydefix.hpp
+  )
 endif()
 
 if(Idefix_DEBUG)
@@ -195,7 +228,7 @@ if(${Idefix_PRECISION} STREQUAL "Single")
 endif()
 
 target_include_directories(idefix PUBLIC
-                           "${PROJECT_BINARY_DIR}"
+                           "${Idefix_PROBLEM_DIR_ABS}"
                            )
 target_include_directories(idefix PUBLIC
                            src/kokkos/core/src
@@ -216,6 +249,7 @@ target_include_directories(idefix PUBLIC
                            src/gravity
                            src/utils
                            src/utils/iterativesolver
+                           src/mpi
                            src
                            )
 
@@ -229,9 +263,11 @@ else()
 endif()
 message(STATUS "    MPI:  ${Idefix_MPI}")
 message(STATUS "    HDF5: ${Idefix_HDF5}")
+message(STATUS "    Python: ${Idefix_PYTHON}")
 message(STATUS "    Reconstruction: ${Idefix_RECONSTRUCTION}")
 message(STATUS "    Precision: ${Idefix_PRECISION}")
 message(STATUS "    Version: ${Idefix_VERSION}")
+message(STATUS "    Problem directory: '${Idefix_PROBLEM_DIR}'")
 message(STATUS "    Problem definitions: '${Idefix_DEFS}'")
 if(Idefix_CUSTOM_EOS)
   message(STATUS "    EOS: Custom file '${Idefix_CUSTOM_EOS_FILE}'")

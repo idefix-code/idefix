@@ -23,7 +23,7 @@ def testMe(test):
     test.nonRegressionTest(filename="dump.0001.dmp",tolerance=tolerance)
 
 
-test=tst.idfxTest()
+test=tst.idfxTest(__file__)
 if not test.dec:
   test.dec=['2','1','2']
 

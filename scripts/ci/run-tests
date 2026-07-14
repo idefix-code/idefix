@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+if [ "$IDEFIX_COMPILER" == icc ]; then
+    source /opt/intel/oneapi/setvars.sh
+fi
+set -ue
+cd "$1"
+./testme.py "${@:2}"

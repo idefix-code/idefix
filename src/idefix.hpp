@@ -9,6 +9,7 @@
 #define IDEFIX_HPP_
 #include <fstream>
 #include <iostream>
+#include <cstdio>
 #include <Kokkos_Core.hpp>
 // #include <Kokkos_DualView.hpp> // do we still need this?
 #ifdef WITH_MPI
@@ -216,7 +217,7 @@ using IdfxFileHandler = FILE*;
 #endif
 
 // Types of boundary which can be treated
-enum BoundaryType { internal, periodic, reflective, outflow, shearingbox, axis, userdef};
+enum BoundaryType { internal, periodic, reflective, outflow, shearingbox, axis, userdef, undefined};
 enum BoundarySide { left, right};
 enum class SliceType {Cut, Average};
 

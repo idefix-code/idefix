@@ -10,6 +10,7 @@
 #ifndef MACROS_HPP_
 #define MACROS_HPP_
 
+#include <cstdio>
 
 #if COMPONENTS == 1
   #define EXPAND(a,b,c) a
@@ -24,7 +25,6 @@
 #if COMPONENTS == 3
   #define EXPAND(a,b,c) a b c
   #define SELECT(a,b,c) c
-
 #endif
 
 #if DIMENSIONS == 1

@@ -5,6 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include <vector>
 #include "idefix.hpp"
 #include "dataBlockHost.hpp"
 #include "fluid.hpp"
@@ -20,11 +21,11 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
 
   // Create mirrors (should be mirror_view)
   for(int dir = 0 ; dir < 3 ; dir++) {
-    x[dir] = Kokkos::create_mirror_view(data->x[dir]);
-    xr[dir] = Kokkos::create_mirror_view(data->xr[dir]);
-    xl[dir] = Kokkos::create_mirror_view(data->xl[dir]);
-    dx[dir] = Kokkos::create_mirror_view(data->dx[dir]);
-    A[dir] = Kokkos::create_mirror_view(data->A[dir]);
+    x[dir] = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->x[dir]);
+    xr[dir] = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->xr[dir]);
+    xl[dir] = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->xl[dir]);
+    dx[dir] = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->dx[dir]);
+    A[dir] = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->A[dir]);
   }
 
   np_tot = data->np_tot;
@@ -32,6 +33,9 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
   np_tot = data->np_tot;
 
   nghost = data->nghost;
+
+  lbound = data->lbound;
+  rbound = data->rbound;
 
   xbeg = data->xbeg;
   xend = data->xend;
@@ -43,30 +47,30 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
 
     // TO BE COMPLETED...
 
-  dV = Kokkos::create_mirror_view(data->dV);
-  Vc = Kokkos::create_mirror_view(data->hydro->Vc);
-  Uc = Kokkos::create_mirror_view(data->hydro->Uc);
-  InvDt = Kokkos::create_mirror_view(data->hydro->InvDt);
+  dV = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->dV);
+  Vc = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->Vc);
+  Uc = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->Uc);
+  InvDt = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->InvDt);
 
 #if MHD == YES
-  Vs = Kokkos::create_mirror_view(data->hydro->Vs);
+  Vs = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->Vs);
   this->haveCurrent = data->hydro->haveCurrent;
   if(data->hydro->haveCurrent) {
-    J = Kokkos::create_mirror_view(data->hydro->J);
+    J = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->J);
   }
   #ifdef EVOLVE_VECTOR_POTENTIAL
-    Ve = Kokkos::create_mirror_view(data->hydro->Ve);
+    Ve = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->Ve);
   #endif
 
-  D_EXPAND( Ex3 = Kokkos::create_mirror_view(data->hydro->emf->ez);  ,
+  D_EXPAND( Ex3 = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->emf->ez);  ,
                                                              ,
-            Ex1 = Kokkos::create_mirror_view(data->hydro->emf->ex);
-            Ex2 = Kokkos::create_mirror_view(data->hydro->emf->ey);  )
+            Ex1 = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->emf->ex);
+            Ex2 = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->emf->ey);  )
 #endif
   if(haveDust) {
     dustVc = std::vector<IdefixHostArray4D<real>>(data->dust.size());
     for(int i = 0 ; i < data->dust.size() ; i++) {
-      dustVc[i] = Kokkos::create_mirror_view(data->dust[i]->Vc);
+      dustVc[i] = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->dust[i]->Vc);
     }
   }
 
@@ -76,7 +80,8 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
     this->coarseningDirection = data->coarseningDirection;
     for(int dir = 0 ; dir < 3 ; dir++) {
       if(coarseningDirection[dir]) {
-        coarseningLevel[dir] = Kokkos::create_mirror_view(data->coarseningLevel[dir]);
+        coarseningLevel[dir] = Kokkos::create_mirror_view(Kokkos::HostSpace(),
+                                                          data->coarseningLevel[dir]);
       }
     }
   }
@@ -94,6 +99,9 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
   this->haveplanetarySystem = data->haveplanetarySystem;
   this->planetarySystem = data->planetarySystem.get();
 
+  this->t = data->t;
+  this->dt = data->dt;
+
   idfx::popRegion();
 }
 
@@ -101,6 +109,8 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
 void DataBlockHost::SyncToDevice() {
   idfx::pushRegion("DataBlockHost::SyncToDevice()");
 
+  data->t = this->t;
+  data->dt = this->dt;
   Kokkos::deep_copy(data->hydro->Vc,Vc);
   Kokkos::deep_copy(data->hydro->InvDt,InvDt);
 
@@ -137,6 +147,9 @@ void DataBlockHost::SyncToDevice() {
 
 void DataBlockHost::SyncFromDevice() {
   idfx::pushRegion("DataBlockHost::SyncFromDevice()");
+  this->t = data->t;
+  this->dt = data->dt;
+
   Kokkos::deep_copy(Vc,data->hydro->Vc);
   Kokkos::deep_copy(InvDt,data->hydro->InvDt);
 
@@ -222,8 +235,8 @@ void DataBlockHost::MakeVsFromAmag(IdefixHostArray4D<real> &Ain) {
                                    + 1/(x1m(i)*(cos(x2m(j))
                                    - cos(x2m(j+1)))) * (sin(x2m(j+1))*Ain(KDIR,k,j+1,i)
                                    - sin(x2m(j))*Ain(KDIR,k,j,i) )                       ,
-                                   - 1/(x1m(i)*sin(x2(j))*dx3(k)) * (Ain(JDIR,k+1,j,i)
-                                   - Ain(JDIR,k,j,i) )                                   );
+                                   - dx2(j)/(x1m(i)*((cos(x2m(j))- cos(x2m(j+1))))*dx3(k))
+                                   * (Ain(JDIR,k+1,j,i) - Ain(JDIR,k,j,i) )                       );
 
         real Ax2m = fabs(sin(x2m(j)));
         // Regularisation along the axis

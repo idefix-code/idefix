@@ -19,8 +19,9 @@
 // This is because in some specific cases involving curvilinear coordinates, roundoff errors
 // can accumulate, leading to a small drift of face-values that should be strictly equal.
 // This behaviour is enabled using the flag below.
-
-//#define ENFORCE_EMF_CONSISTENCY
+#ifdef EVOLVE_VECTOR_POTENTIAL
+  #define ENFORCE_EMF_CONSISTENCY
+#endif
 
 template<typename Phys>
 void ConstrainedTransport<Phys>::EnforceEMFBoundary() {
@@ -30,81 +31,73 @@ void ConstrainedTransport<Phys>::EnforceEMFBoundary() {
     this->data->hydro->emfBoundaryFunc(*data, data->t);
 
   if(this->data->hydro->haveAxis) {
-    this->data->hydro->boundary->axis->RegularizeEMFs();
+    this->data->hydro->boundary->axis->RegularizeEMFs(this->ex, this->ey, this->ez);
   }
 
   #ifdef ENFORCE_EMF_CONSISTENCY
     #ifdef WITH_MPI
       // This average the EMFs at the domain surface with immediate neighbours
       // to ensure the EMFs exactly match
-      this->ExchangeAll();
+      this->ExchangeAll(this->ex, this->ey, this->ez);
     #endif
   #endif
-
-  IdefixArray3D<real> ex = this->ex;
-  IdefixArray3D<real> ey = this->ey;
-  IdefixArray3D<real> ez = this->ez;
 
   // Enforce specific EMF regularisation
   for(int dir=0 ; dir < DIMENSIONS ; dir++ ) {
     if(data->lbound[dir] == shearingbox || data->rbound[dir] == shearingbox) {
       SymmetrizeEMFShearingBox();
     }
-    #ifdef ENFORCE_EMF_CONSISTENCY
-      if(data->lbound[dir] == periodic && data->rbound[dir] == periodic) {
-        // If domain decomposed, periodicity is already enforced by ExchangeAll
-        if(data->mygrid->nproc[dir] == 1) {
-          int ioffset = (dir == IDIR) ? data->np_int[IDIR] : 0;
-          int joffset = (dir == JDIR) ? data->np_int[JDIR] : 0;
-          int koffset = (dir == KDIR) ? data->np_int[KDIR] : 0;
+  }
+  #ifdef ENFORCE_EMF_CONSISTENCY
+  EnforceEMFBoundaryPeriodic(this->ex, this->ey, this->ez);
+  #endif //ENFORCE_EMF_CONSISTENCY
+#endif // MHD==YES
+  idfx::popRegion();
+}
 
-          int ibeg = (dir == IDIR) ? data->beg[IDIR] : 0;
-          int iend = (dir == IDIR) ? data->beg[IDIR]+1 : data->np_tot[IDIR];
-          int jbeg = (dir == JDIR) ? data->beg[JDIR] : 0;
-          int jend = (dir == JDIR) ? data->beg[JDIR]+1 : data->np_tot[JDIR];
-          int kbeg = (dir == KDIR) ? data->beg[KDIR] : 0;
-          int kend = (dir == KDIR) ? data->beg[KDIR]+1 : data->np_tot[KDIR];
-          idefix_for("BoundaryEMFPeriodic",kbeg,kend,jbeg,jend,ibeg,iend,
-            KOKKOS_LAMBDA (int k, int j, int i) {
-              real em;
+template<typename Phys>
+void ConstrainedTransport<Phys>::EnforceEMFBoundaryPeriodic(IdefixArray3D<real> ex,
+                                                            IdefixArray3D<real> ey,
+                                                            IdefixArray3D<real> ez) {
+  idfx::pushRegion("Emf::EnforceEMFBoundaryPeriodic");
+  #if MHD == YES
+  for(int dir=0 ; dir < DIMENSIONS ; dir++ ) {
+    if(data->lbound[dir] == periodic && data->rbound[dir] == periodic) {
+      // If domain decomposed, periodicity is already enforced by ExchangeAll
+      if(data->mygrid->nproc[dir] == 1) {
+        int ioffset = (dir == IDIR) ? data->np_int[IDIR] : 0;
+        int joffset = (dir == JDIR) ? data->np_int[JDIR] : 0;
+        int koffset = (dir == KDIR) ? data->np_int[KDIR] : 0;
 
-              if(dir==IDIR) {
-                em = HALF_F*(ez(k,j,i)+ez(k,j,i+ioffset));
-                ez(k,j,i) = em;
-                ez(k,j,i+ioffset) = em;
+        int ibeg = (dir == IDIR) ? data->beg[IDIR] : 0;
+        int iend = (dir == IDIR) ? data->beg[IDIR]+1 : data->np_tot[IDIR];
+        int jbeg = (dir == JDIR) ? data->beg[JDIR] : 0;
+        int jend = (dir == JDIR) ? data->beg[JDIR]+1 : data->np_tot[JDIR];
+        int kbeg = (dir == KDIR) ? data->beg[KDIR] : 0;
+        int kend = (dir == KDIR) ? data->beg[KDIR]+1 : data->np_tot[KDIR];
+        idefix_for("BoundaryEMFPeriodic",kbeg,kend,jbeg,jend,ibeg,iend,
+          KOKKOS_LAMBDA (int k, int j, int i) {
+            if(dir==IDIR) {
+              ez(k,j,i+ioffset) = ez(k,j,i);
+              #if DIMENSIONS == 3
+              ey(k,j,i+ioffset) = ey(k,j,i);
+              #endif
+            }
 
-                #if DIMENSIONS == 3
-                em = HALF_F*(ey(k,j,i)+ey(k,j,i+ioffset));
-                ey(k,j,i) = em;
-                ey(k,j,i+ioffset) = em;
-                #endif
-              }
+            if(dir==JDIR) {
+              ez(k,j+joffset,i) = ez(k,j,i);
+              #if DIMENSIONS == 3
+              ex(k,j+joffset,i) = ex(k,j,i);
+              #endif
+            }
 
-              if(dir==JDIR) {
-                em = HALF_F*(ez(k,j,i)+ez(k,j+joffset,i));
-                ez(k,j,i) = em;
-                ez(k,j+joffset,i) = em;
-
-                #if DIMENSIONS == 3
-                em = HALF_F*(ex(k,j,i)+ex(k,j+joffset,i));
-                ex(k,j,i) = em;
-                ex(k,j+joffset,i) = em;
-                #endif
-              }
-
-              if(dir==KDIR) {
-                em = HALF_F*(ex(k,j,i)+ex(k+koffset,j,i));
-                ex(k,j,i) = em;
-                ex(k+koffset,j,i) = em;
-
-                em = HALF_F*(ey(k,j,i)+ey(k+koffset,j,i));
-                ey(k,j,i) = em;
-                ey(k+koffset,j,i) = em;
-              }
-            });
-        }
+            if(dir==KDIR) {
+              ex(k+koffset,j,i) = ex(k,j,i);
+              ey(k+koffset,j,i) = ey(k,j,i);
+            }
+          });
       }
-    #endif //ENFORCE_EMF_CONSISTENCY
+    }
   }
 #endif // MHD==YES
   idfx::popRegion();
@@ -148,11 +141,13 @@ void ConstrainedTransport<Phys>::SymmetrizeEMFShearingBox() {
         if(data->lbound[IDIR]==shearingbox) {
           // We send to our left (which, by periodicity, is the right end of the domain)
           // our value of sbEyL and get
+          Kokkos::fence();
           MPI_Sendrecv(sbEyL.data(), size, realMPI, procLeft, 2001,
                        sbEyR.data(), size, realMPI, procLeft, 2002,
                        data->mygrid->CartComm, &status );
         }
         if(data->rbound[IDIR]==shearingbox) {
+          Kokkos::fence();
           // We send to our right (which, by periodicity, is the left end (=beginning)
           // of the domain) our value of sbEyR and get sbEyL
           MPI_Sendrecv(sbEyR.data(), size, realMPI, procRight, 2002,

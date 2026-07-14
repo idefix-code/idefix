@@ -5,6 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include <vector>
 #include "axis.hpp"
 #include "boundary.hpp"
 
@@ -21,45 +22,36 @@ void Axis::ShowConfig() {
 }
 
 
-void Axis::SymmetrizeEx1Side(int jref) {
+void Axis::SymmetrizeEx1Side(int jref, IdefixArray3D<real> Ex1) {
 #if DIMENSIONS == 3
 
-  IdefixArray3D<real> Ex1 = this->ex;
   IdefixArray1D<real> Ex1Avg = this->Ex1Avg;
 
-  if(isTwoPi) {
-    idefix_for("Ex1_ini",0,data->np_tot[IDIR],
-        KOKKOS_LAMBDA(int i) {
-          Ex1Avg(i) = ZERO_F;
-        });
-
-    idefix_for("Ex1_Symmetrize",data->beg[KDIR],data->end[KDIR],0,data->np_tot[IDIR],
-      KOKKOS_LAMBDA(int k,int i) {
-        Kokkos::atomic_add(&Ex1Avg(i),  Ex1(k,jref,i));
+  idefix_for("Ex1_ini",0,data->np_tot[IDIR],
+      KOKKOS_LAMBDA(int i) {
+        Ex1Avg(i) = ZERO_F;
       });
-    if(needMPIExchange) {
-      #ifdef WITH_MPI
-        Kokkos::fence();
-        // sum along all of the processes on the same r
-        MPI_Allreduce(MPI_IN_PLACE, Ex1Avg.data(), data->np_tot[IDIR], realMPI,
-                      MPI_SUM, data->mygrid->AxisComm);
-      #endif
-    }
 
-    int ncells=data->mygrid->np_int[KDIR];
-
-    idefix_for("Ex1_Store",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
+  idefix_for("Ex1_Symmetrize",data->beg[KDIR],data->end[KDIR],0,data->np_tot[IDIR],
     KOKKOS_LAMBDA(int k,int i) {
-      Ex1(k,jref,i) = Ex1Avg(i)/((real) ncells);
+      Kokkos::atomic_add(&Ex1Avg(i),  Ex1(k,jref,i));
     });
-  } else {
-    // if we're not doing full two pi, the flow is symmetric with respect to the axis, and the axis
-    // EMF is simply zero
-    idefix_for("Ex1_Store",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
-    KOKKOS_LAMBDA(int k,int i) {
-      Ex1(k,jref,i) = ZERO_F;
-    });
+  if(needMPIExchange) {
+    #ifdef WITH_MPI
+      Kokkos::fence();
+      // sum along all of the processes on the same r
+      MPI_Allreduce(MPI_IN_PLACE, Ex1Avg.data(), data->np_tot[IDIR], realMPI,
+                    MPI_SUM, data->mygrid->AxisComm);
+    #endif
   }
+
+  int ncells=data->mygrid->np_int[KDIR];
+
+  idefix_for("Ex1_Store",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
+  KOKKOS_LAMBDA(int k,int i) {
+    Ex1(k,jref,i) = Ex1Avg(i)/((real) ncells);
+  });
+
 #endif
 }
 
@@ -70,9 +62,7 @@ void Axis::SymmetrizeEx1Side(int jref) {
 // Hence, we enforce a regularisation of Ex3 for consistancy.
 
 
-void Axis::RegularizeEx3side(int jref) {
-  IdefixArray3D<real> Ex3 = this->ez;
-
+void Axis::RegularizeEx3side(int jref, IdefixArray3D<real> Ex3) {
   idefix_for("Ex3_Regularise",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
     KOKKOS_LAMBDA(int k,int i) {
       Ex3(k,jref,i) = 0.0;
@@ -99,9 +89,9 @@ void Axis::RegularizeCurrentSide(int side) {
       sign = -1;
     }
     IdefixArray1D<real> BAvg = this->Ex1Avg;
-    IdefixArray1D<real> x2 = data->x[JDIR];
     IdefixArray1D<real> x1 = data->x[IDIR];
     IdefixArray1D<real> dx3 = data->dx[KDIR];
+    IdefixArray1D<real> dx2 = data->dx[JDIR];
 
     idefix_for("B_ini",0,data->np_tot[IDIR],
           KOKKOS_LAMBDA(int i) {
@@ -127,12 +117,11 @@ void Axis::RegularizeCurrentSide(int side) {
     real deltaPhi = data->mygrid->xend[KDIR] - data->mygrid->xbeg[KDIR];
 
     // Use the circulation around the pole of Bphi to determine Jr on the pole:
-    // Delta phi r^2(1-cos theta) Jr = int r sin(theta) Bphi dphi
+    // 1/2*Delta phi r^2 sin theta^2 Jr = int r sin(theta) Bphi dphi
 
     idefix_for("fixJ",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
         KOKKOS_LAMBDA(int k,int i) {
-          real th = x2(jc);
-          real fact = sign*sin(th)/(deltaPhi*x1(i)*(1-cos(th)));
+          real fact = 2*sign/(deltaPhi*x1(i)*dx2(jc));
           J(IDIR, k,js,i) = BAvg(i)*fact;
         });
 
@@ -141,18 +130,20 @@ void Axis::RegularizeCurrentSide(int side) {
 
 // Average the Emf component along the axis
 
-void Axis::RegularizeEMFs() {
+void Axis::RegularizeEMFs(IdefixArray3D<real> ex,
+                          IdefixArray3D<real> ey,
+                          IdefixArray3D<real> ez) {
   idfx::pushRegion("Axis::RegularizeEMFs");
 
   if(this->axisLeft) {
     int jref = data->beg[JDIR];
-    SymmetrizeEx1Side(jref);
-    RegularizeEx3side(jref);
+    SymmetrizeEx1Side(jref, ex);
+    RegularizeEx3side(jref, ez);
   }
   if(this->axisRight) {
     int jref = data->end[JDIR];
-    SymmetrizeEx1Side(jref);
-    RegularizeEx3side(jref);
+    SymmetrizeEx1Side(jref, ex);
+    RegularizeEx3side(jref, ez);
   }
 
   idfx::popRegion();
@@ -357,65 +348,28 @@ void Axis::EnforceAxisBoundary(int side) {
 
 // Reconstruct Bx2s taking care of the sides where an axis is lying
 
-void Axis::ReconstructBx2s() {
-  idfx::pushRegion("Axis::ReconstructBx2s");
+void Axis::RegularizeBX2s() {
+  idfx::pushRegion("Axis::RegularizeBX2s");
 #if DIMENSIONS >= 2 && MHD == YES
   IdefixArray4D<real> Vs = this->Vs;
-  IdefixArray3D<real> Ax1=data->A[IDIR];
-  IdefixArray3D<real> Ax2=data->A[JDIR];
-  IdefixArray3D<real> Ax3=data->A[KDIR];
-  int nstart = data->beg[JDIR]-1;
-  int nend = data->end[JDIR];
-  int ntot = data->np_tot[JDIR];
-
-  bool haveleft = axisLeft;
-  bool haveright = axisRight;
-
-  if(haveleft) {
-    // This loop is a copy of ReconstructNormalField, with the proper sign when we cross the axis
-    idefix_for("Axis::ReconstructBX2sLeft",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
-      KOKKOS_LAMBDA (int k, int i) {
-        for(int j = nstart ; j>=0 ; j-- ) {
-          Vs(BX2s,k,j,i) = 1.0 / Ax2(k,j,i) * ( Ax2(k,j+1,i)*Vs(BX2s,k,j+1,i)
-                      +(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
-                                                                                                ,
-                            - ( Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i)
-                                                            - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))));
-        }
-      }
-    );
-  }
-  if(haveright) {
-    // This loop is a copy of ReconstructNormalField, with the proper sign when we cross the axis
-    idefix_for("Axis::ReconstructBX2sRight",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
-      KOKKOS_LAMBDA (int k, int i) {
-        for(int j = nend ; j<ntot ; j++ ) {
-          Vs(BX2s,k,j+1,i) = 1.0 / Ax2(k,j+1,i) * ( Ax2(k,j,i)*Vs(BX2s,k,j,i)
-                      -(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
-                                                                                                ,
-                            -  ( Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i)
-                                                            - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))));
-        }
-      }
-    );
-  }
 
     // Set BX2s on the axis to the average of the two agacent cells
     // This is required since Bx2s on the axis is not evolved since
     // there is no circulation around it
 
-
     int jright = data->end[JDIR];
     int jleft = data->beg[JDIR];
     if(isTwoPi) {
       #ifdef AXIS_BX2S_USE_ATHENA_REGULARISATION
-        if(haveleft) FixBx2sAxisGhostAverage(left);
-        if(haveright) FixBx2sAxisGhostAverage(right);
+        if(axisLeft) FixBx2sAxisGhostAverage(left);
+        if(axisRight) FixBx2sAxisGhostAverage(right);
       #else
-        if(haveleft) FixBx2sAxis(left);
-        if(haveright) FixBx2sAxis(right);
+        if(axisLeft) FixBx2sAxis(left);
+        if(axisRight) FixBx2sAxis(right);
       #endif
     } else {
+      bool haveleft = axisLeft;
+      bool haveright = axisRight;
       idefix_for("Axis:BoundaryAvg",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
             KOKKOS_LAMBDA (int k, int i) {
               if(haveleft) {

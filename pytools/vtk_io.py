@@ -7,7 +7,7 @@ Created on Mon Nov  3 15:23:00 2014
 import warnings
 import numpy as np
 import os
-
+import re
 
 # restrict what's included with `import *` to public API
 __all__ = [
@@ -21,6 +21,8 @@ __all__ = [
 dt = np.dtype(">f")  # Big endian single precision floats
 dint = np.dtype(">i4")  # Big endian integer
 
+NATIVE_COORDINATE_REGEXP = re.compile(r"X(1|2|3)(L|C)_NATIVE_COORDINATES")
+
 KNOWN_GEOMETRIES = {
     0: "cartesian",
     1: "polar",
@@ -33,9 +35,13 @@ class VTKDataset(object):
     def __init__(self, filename, geometry=None):
         self.filename = os.path.abspath(filename)
         self.data = {}
+        self.native_coordinates = {}
         with open(filename, "rb") as fh:
             self._load_header(fh, geometry=geometry)
             self._load(fh)
+
+        if self.native_coordinates:
+            self._setup_coordinates_from_native()
 
     def _load(self, fh):
         if self._dataset_type in ("RECTILINEAR_GRID", "STRUCTURED_GRID"):
@@ -88,6 +94,9 @@ class VTKDataset(object):
                     self.t = np.fromfile(fh, dt, 1)
                 elif d.startswith("PERIODICITY"):
                     self.periodicity = np.fromfile(fh, dtype=dint, count=3).astype(bool)
+                elif NATIVE_COORDINATE_REGEXP.match(d):
+                    native_name, _ncomp, native_dim, _dtype = d.split()
+                    self.native_coordinates[native_name] = np.fromfile(fh, dtype=dt, count=int(native_dim))
                 else:
                     warnings.warn("Found unknown field %s" % d)
                 fh.readline()  # skip extra linefeed (empty line)
@@ -340,6 +349,29 @@ class VTKDataset(object):
 
     def _load_particles(self, fh):
         raise NotImplementedError("Particles vtk are not supported yet !")
+
+    def _setup_coordinates_from_native(self):
+        if self.geometry == "spherical":
+            native2attr = {
+                "X1L_NATIVE_COORDINATES": "rl",
+                "X1C_NATIVE_COORDINATES": "r",
+                "X2L_NATIVE_COORDINATES": "thetal",
+                "X2C_NATIVE_COORDINATES": "theta",
+                "X3L_NATIVE_COORDINATES": "phil",
+                "X3C_NATIVE_COORDINATES": "phi",
+            }
+        elif self.geometry in ("cartesian", "cylindrical", "polar"):
+            native2attr = {
+                "X1L_NATIVE_COORDINATES": "xl",
+                "X1C_NATIVE_COORDINATES": "x",
+                "X2L_NATIVE_COORDINATES": "yl",
+                "X2C_NATIVE_COORDINATES": "y",
+                "X3L_NATIVE_COORDINATES": "zl",
+                "X3C_NATIVE_COORDINATES": "z",
+            }
+
+        for native_field, attr in native2attr.items():
+            setattr(self, attr, self.native_coordinates[native_field])
 
     def __repr__(self):
         return "VTKDataset('%s')" % self.filename

@@ -183,10 +183,10 @@ LookupTable<kDim>::LookupTable(std::vector<std::string> filenames,
   this->offsetDev = IdefixArray1D<int> ("Table_offset", kDim);
   this->dataDev =  IdefixArray1D<real> ("Table_data", dataVector.size());
 
-  this->xinHost = Kokkos::create_mirror_view(this->xinDev);
-  this->dimensionsHost = Kokkos::create_mirror_view(this->dimensionsDev);
-  this->offsetHost = Kokkos::create_mirror_view(this->offsetDev);
-  this->dataHost = Kokkos::create_mirror_view(this->dataDev);
+  this->xinHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), this->xinDev);
+  this->dimensionsHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), this->dimensionsDev);
+  this->offsetHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), this->offsetDev);
+  this->dataHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), this->dataDev);
 
   // Copy data in memory
   for(uint64_t i = 0 ; i < dataVector.size() ; i++) {
@@ -346,10 +346,10 @@ LookupTable<kDim>::LookupTable(std::string filename, char delimiter, bool errOOB
   this->offsetDev = IdefixArray1D<int> ("Table_offset", kDim);
   this->dataDev =  IdefixArray1D<real> ("Table_data", size[0]*size[1]);
 
-  this->xinHost = Kokkos::create_mirror_view(this->xinDev);
-  this->dimensionsHost = Kokkos::create_mirror_view(this->dimensionsDev);
-  this->offsetHost = Kokkos::create_mirror_view(this->offsetDev);
-  this->dataHost = Kokkos::create_mirror_view(this->dataDev);
+  this->xinHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), this->xinDev);
+  this->dimensionsHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), this->dimensionsDev);
+  this->offsetHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), this->offsetDev);
+  this->dataHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), this->dataDev);
 
   // Fill the arrays with the std::vector content
   if(idfx::prank == 0) {
@@ -458,10 +458,10 @@ LookupTable<kDim>::LookupTable(Kokkos::View<T, Args...> array,
   this->offsetDev = IdefixArray1D<int> ("Table_offset", kDim);
   this->dataDev =  IdefixArray1D<real> ("Table_data", sizeTotal);
 
-  this->xinHost = Kokkos::create_mirror_view(this->xinDev);
-  this->dimensionsHost = Kokkos::create_mirror_view(this->dimensionsDev);
-  this->offsetHost = Kokkos::create_mirror_view(this->offsetDev);
-  this->dataHost = Kokkos::create_mirror_view(this->dataDev);
+  this->xinHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), this->xinDev);
+  this->dimensionsHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), this->dimensionsDev);
+  this->offsetHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), this->offsetDev);
+  this->dataHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), this->dataDev);
 
   // Copy data in memory
   for(uint64_t n = 0 ; n < sizeTotal ; n++) {

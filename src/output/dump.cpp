@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <unordered_set>
 #if __has_include(<filesystem>)
-  #include <filesystem>
+  #include <filesystem> // NOLINT [build/c++17]
   namespace fs = std::filesystem;
 #elif __has_include(<experimental/filesystem>)
   #include <experimental/filesystem>
@@ -17,6 +17,8 @@
   #error "Missing the <filesystem> header."
 #endif
 #include <iomanip>
+#include <string>
+#include <cstdio>
 #include "dump.hpp"
 #include "version.hpp"
 #include "dataBlockHost.hpp"
@@ -69,7 +71,7 @@ void Dump::CreateMPIDataType(GridBox gb, bool read) {
     int size[3];
     int subsize[3];
 
-    // the grid is required to now the current MPÏ domain decomposition
+    // the grid is required to know the current MPÏ domain decomposition
     Grid *grid = data->mygrid;
 
     // Dimensions for cell-centered fields

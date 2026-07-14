@@ -34,6 +34,7 @@
 #include <sstream>
 #include <cstdint>
 #include <cstring>
+#include <cstdio>
 #include <array>
 #include <vector>
 #include <stdexcept>

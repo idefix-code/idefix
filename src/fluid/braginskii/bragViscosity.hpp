@@ -52,6 +52,8 @@ class BragViscosity {
   DiffusivityFunc bragViscousDiffusivityFunc;
 
   bool haveSlopeLimiter{false};
+  bool haveMonotizedCentral{false};
+  bool haveVanLeer{false};
 
   IdefixArray4D<real> &Vc;
   IdefixArray4D<real> &Vs;
@@ -78,9 +80,11 @@ BragViscosity::BragViscosity(Input &input, Grid &grid, Fluid<Phys> *hydroin):
   if(input.CheckEntry("Hydro","bragViscosity")>=0) {
     if(input.Get<std::string>("Hydro","bragViscosity",1).compare("vanleer") == 0) {
       this->haveSlopeLimiter = true;
+      this->haveVanLeer = true;
       limiter = PLMLimiter::VanLeer;
     } else if(input.Get<std::string>("Hydro","bragViscosity",1).compare("mc") == 0) {
       this->haveSlopeLimiter = true;
+      this->haveMonotizedCentral = true;
       limiter = PLMLimiter::McLim;
     } else if (input.Get<std::string>("Hydro","bragViscosity",1).compare("nolimiter") == 0) {
       this->haveSlopeLimiter = false;

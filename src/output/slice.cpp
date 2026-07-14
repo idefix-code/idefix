@@ -7,6 +7,7 @@
 
 #include <string>
 #include <map>
+#include <memory>
 #include "slice.hpp"
 #include "input.hpp"
 #include "physics.hpp"

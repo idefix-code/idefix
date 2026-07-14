@@ -39,15 +39,45 @@ which guarantees total momentum conservation.
 
 
 
-Drag CFL condition
--------------------
-*Idefix* computes the drag terms with a time-explicit scheme. Hence, an addition CFL constraint arrises because of the drag:
+Time Integration
+----------------
+
+*Idefix* can compute the drag with a 2nd order time-explicit (default) or 1st order time-implicit scheme. Each scheme has its pros and cons. The choice
+is made by the user in the input file.
+
+Explicit scheme: drag CFL condition
++++++++++++++++++++++++++++++++++++
+
+When using the time explicit scheme, an addition CFL constraint arrises because of the drag:
 
 .. math::
 
     dt < \min(\frac{1}{\sum_i\gamma_i(\rho_i+\rho)})
 
-*Idefix* automatically adjusts the CFL to satisfy this inequality, in addition to the usual CFL condition.
+*Idefix* automatically adjusts the CFL to satisfy this inequality, in addition to the usual CFL condition. This can severly limit the time step,
+especially when the gas density is high.
+
+Implicit scheme
++++++++++++++++
+
+When the drag is applied with a 1st order implicit scheme, the drag force is applied at the end of each step. In order to avoid
+the complete inversion of the system, we follow a simplified inversion procedure, where we first update the gas momentum as:
+
+.. math::
+
+    v_g^{(n+1)}=\left(v_g^{(n)}+\sum_i\frac{\rho_i\gamma_i dt}{1+\rho \gamma_i dt}v_i^{(n)}\right)/\left(1+\sum_i\frac{\rho_i\gamma_i dt}{1+\rho\gamma_idt}\right)
+
+And then update the dust momentum as:
+
+.. math::
+
+    v_i^{(n+1)}=\left(v_i^{(n)}+\rho\gamma_i v_g^{(n+1)}dt\right)/(1+\rho\gamma_i dt)
+
+Note that the latter equation relies on the *updated* gas velocity.
+
+.. warning::
+  While the implicit scheme is more stable than the explicit one, and it does not require any additional CFL condition, it is less accurate and
+  possibly lead to inacurrate dust velocities when :math:`dt\gg (\gamma_i\rho)^{-1}`. Use it at your own risk.
 
 Dust parameters
 ---------------
@@ -65,6 +95,9 @@ The dust module can be enabled adding a block `[Dust]` in your input .ini file. 
 |                |                         | | (see below). *Idefix* expect to have as many drag parameters as there are dust species.   |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | drag_feedback  | bool                    | | (optionnal) whether the gas feedback is enabled (default true).                           |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| drag_implicit  | bool                    | | (optionnal) whether the drag uses a 1st order implicit method. Otherwise use the          |
+|                |                         | | 2nd order time-explicit scheme (default is false=time explicit)                           |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 
 The drag parameter :math:`\beta_i` above sets the functional form of :math:`\gamma_i(\rho, \rho_i, c_s)` depending on the drag type:

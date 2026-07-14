@@ -12,7 +12,7 @@ import pytools.idfx_test as tst
 
 name="dump.0001.dmp"
 
-test=tst.idfxTest()
+test=tst.idfxTest(__file__)
 
 if not test.dec:
   test.dec=['2','2','2']

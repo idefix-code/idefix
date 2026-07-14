@@ -42,7 +42,11 @@ void SelfGravity::Init(Input &input, DataBlock *datain) {
   }
 
   // Get the gravity-related boundary conditions
-  for(int dir = 0 ; dir < 3 ; dir++) {
+  for (int dir = 0 ; dir < 3 ; dir++) {
+    this->lbound[dir] = Laplacian::LaplacianBoundaryType::undefined;
+    this->rbound[dir] = Laplacian::LaplacianBoundaryType::undefined;
+  }
+  for(int dir = 0 ; dir < DIMENSIONS ; dir++) {
     std::string label = std::string("boundary-X")+std::to_string(dir+1)+std::string("-beg");
     std::string boundary = input.Get<std::string>("SelfGravity",label,0);
 

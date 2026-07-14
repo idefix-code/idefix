@@ -26,7 +26,7 @@ def testMe(test):
     test.nonRegressionTest(filename="dump.0001.dmp",tolerance=mytol)
 
 
-test=tst.idfxTest()
+test=tst.idfxTest(__file__)
 if not test.dec:
   test.dec=['2','1','2']
 
@@ -40,4 +40,7 @@ else:
   test.single=False
   test.reconstruction=2
   test.mpi=False
+  testMe(test)
+
+  test.mpi=True
   testMe(test)

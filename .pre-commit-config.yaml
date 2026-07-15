@@ -30,8 +30,10 @@ repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.8
     hooks:
+      - id: ruff-format
+        args: [--target-version=py310]
       - id: ruff-check
-        args: [--quiet, --fix, --show-fixes]
+        args: [--target-version=py310, --quiet, --fix, --show-fixes]
 
   - repo: https://github.com/la-niche/inifix-pre-commit
     rev: v1.0.0

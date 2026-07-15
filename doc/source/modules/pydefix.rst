@@ -16,7 +16,7 @@ Before you start
 Pybind11 installation
 +++++++++++++++++++++
 
-In order to use pydefix, you need to be working in a python>=3.10 environement that includes `pybind11 <https://pybind11.readthedocs.io>`_. Follow the instruction of your package manager to install pybind11>=2.12.
+In order to use pydefix, you need to be working in a python>=3.10 environment that includes `pybind11 <https://pybind11.readthedocs.io>`_. Follow the instructions of your package manager to install pybind11>=2.12.
 
 Pydefix usage
 -------------

@@ -108,12 +108,22 @@ Input::Input(int argc, char* argv[] ) {
     }
   }
   file.close();
+
+  if(this->enableLogs) {
+    if(CheckEntry("Output","log_dir") > 0) {
+      idfx::cout.enableLogFile(Get<std::string>("Output","log_dir",0));
+    } else {
+      // No log directory specified: write the log file in the current working
+      // directory (historical behavior).
+      idfx::cout.enableLogFile("");
+    }
+  }
 }
 
 // This routine parse command line options
 void Input::ParseCommandLine(int argc, char **argv) {
   std::stringstream msg;
-  bool enableLogs = true;
+  this->enableLogs = true;
   for(int i = 1 ; i < argc ; i++) {
     // MPI decomposition argument
     if(std::string(argv[i]) == "-dec") {
@@ -171,9 +181,9 @@ void Input::ParseCommandLine(int argc, char **argv) {
       this->forceInitRequested = true;
     } else if(std::string(argv[i]) == "-nowrite") {
       this->forceNoWrite = true;
-      enableLogs = false;
+      this->enableLogs = false;
     } else if(std::string(argv[i]) == "-nolog") {
-      enableLogs = false;
+      this->enableLogs = false;
     } else if(std::string(argv[i]) == "-profile") {
       idfx::prof.EnablePerformanceProfiling();
     } else if(std::string(argv[i]) == "-Werror") {
@@ -189,9 +199,6 @@ void Input::ParseCommandLine(int argc, char **argv) {
       msg << "Unknown option " << argv[i];
       IDEFIX_ERROR(msg);
     }
-  }
-  if(enableLogs) {
-    idfx::cout.enableLogFile();
   }
 }
 

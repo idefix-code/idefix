@@ -98,7 +98,7 @@ A typical loop on three indices looks like
   idefix_for("LoopName",
              kbeg,kend,
              jbeg,jend,
-             ibeg,ieng,
+             ibeg,iend,
              KOKKOS_LAMBDA (int k, int j, int i) {
                 myArray(k,j,i) = 0.0;
               });
@@ -153,7 +153,7 @@ For instance, a sum over all of the elements would be done through:
   idefix_reduce("Sum",
                 kbeg,kend,
                 jbeg,jend,
-                ibeg,ieng,
+                ibeg,iend,
                 KOKKOS_LAMBDA (int k, int j, int i, real &localSum) {
                     localSum += myArray(k,j,i);
                 },
@@ -179,7 +179,7 @@ snippet:
   idefix_reduce("Minimum",
                 kbeg,kend,
                 jbeg,jend,
-                ibeg,ieng,
+                ibeg,iend,
                 KOKKOS_LAMBDA (int k, int j, int i, real &localMin) {
                     localMin = std::fmin(localMin, myArray(k,j,i));
                 },

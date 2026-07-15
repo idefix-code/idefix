@@ -66,7 +66,7 @@ void DumpArray(std::string filename, ArrayType array) {
 class idfx::IdefixOutStream {
  public:
   void init(int);
-  void enableLogFile();
+  void enableLogFile(const std::string &logDirectory = "");
   // for regular output of variables and stuff
   template<typename T> IdefixOutStream& operator<<(const T& something) {
     if(toscreen) std::cout << something;

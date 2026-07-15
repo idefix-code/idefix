@@ -25,6 +25,10 @@ In this section, you will find a more detailed documentation about each module t
   The Braginskii module, models the anisotropic flux of heat and momentum
   taking place in weakly collisional, magnetised plasma (like the intracluster medium).
 
+:ref:`radiativeCoolingModule`
+  The optically thin radiative cooling module, handles the loss of internal thermal energy due to radiation in an
+  optically thin medium.
+
 :ref:`gridCoarseningModule`
   The grid coarsening module, that allows to derefine the grid in particular locations to speed up the computation.
 
@@ -42,5 +46,6 @@ In this section, you will find a more detailed documentation about each module t
    modules/eos.rst
    modules/selfGravity.rst
    modules/braginskii.rst
+   modules/radCooling.rst
    modules/gridCoarsening.rst
    modules/pydefix.rst

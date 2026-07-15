@@ -4,6 +4,7 @@ add_subdirectory(constrainedTransport)
 add_subdirectory(eos)
 add_subdirectory(RiemannSolver)
 add_subdirectory(tracer)
+add_subdirectory(cooling)
 
 
 target_sources(idefix

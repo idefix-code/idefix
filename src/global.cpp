@@ -8,6 +8,17 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+
+#if __has_include(<filesystem>)
+  #include <filesystem> // NOLINT [build/c++17]
+  namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+  #include <experimental/filesystem>
+  namespace fs = std::experimental::filesystem;
+#else
+  #error "Missing the <filesystem> header."
+#endif
+
 #include "idefix.hpp"
 #include "global.hpp"
 #include "profiler.hpp"
@@ -105,12 +116,35 @@ void IdefixOutStream::init(int rank) {
 
 
 // disable the log file
-void IdefixOutStream::enableLogFile() {
+void IdefixOutStream::enableLogFile(const std::string &logDirectory) {
   std::stringstream sslogFileName;
   sslogFileName << "idefix." << idfx::prank << ".log";
 
-  std::string logFileName(sslogFileName.str());
+  std::string logFileName;
+  if(!logDirectory.empty()) {
+    fs::path outputDirectory(logDirectory);
+    std::error_code errorCode;
+    // Attempt to create the directory. We deliberately ignore the boolean return
+    // value of create_directories: when several MPI processes call this function
+    // concurrently, only one of them actually creates the directory while the
+    // others get a "false" return (nothing created) even though no error
+    // occurred. Relying on that return value would make the losing ranks abort
+    // spuriously. Instead, we verify success by checking that the path exists as
+    // a directory afterwards, which is robust to this race condition.
+    fs::create_directories(outputDirectory, errorCode);
+    const bool isDir = fs::is_directory(outputDirectory, errorCode);
+    if(errorCode || !isDir) {
+      IDEFIX_ERROR("Unable to create log directory " + logDirectory);
+    }
+    logFileName = (outputDirectory / sslogFileName.str()).string();
+  } else {
+    logFileName = sslogFileName.str();
+  }
+
   this->my_fstream.open(logFileName.c_str());
+  if(!this->my_fstream.is_open()) {
+    IDEFIX_ERROR("Unable to open log file " + logFileName);
+  }
 
   this->logFileEnabled = true;
 }

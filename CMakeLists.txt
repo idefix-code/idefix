@@ -48,6 +48,31 @@ if(Kokkos_ENABLE_CUDA)
   set(Kokkos_ENABLE_CUDA_LAMBDA ON CACHE BOOL "Idefix requires lambdas on Cuda" FORCE)
   # CUDA_MALLOC_ASYNC disbaled by default in Kokkos 4.5, so not required here
   #set(Kokkos_ENABLE_IMPL_CUDA_MALLOC_ASYNC OFF CACHE BOOL "Disable Async malloc to avoid bugs on PSM2" FORCE)
+
+  # On recent glibc (>= 2.34) the realtime functions were merged into libc and
+  # /usr/lib64/librt.a is only an empty archive stub. CMake's FindCUDAToolkit still
+  # resolves librt via find_library(CUDAToolkit_rt_LIBRARY rt) and attaches the
+  # resulting /usr/lib64/librt.a to CUDA::cudart_static_deps, which is pulled in by
+  # CUDA::cudart and CUDA::cuda_driver (the targets Kokkos links). The device link
+  # then passes that absolute archive path to nvlink, which cannot open the empty
+  # stub and fails with:
+  #   nvlink fatal: Could not open input file '/usr/lib64/librt.a'
+  # Pre-seed the cache so FindCUDAToolkit links the shared librt (host-only, ignored
+  # by nvlink) instead of the static stub. We point at the shared object when it can
+  # be located, otherwise fall back to the "-lrt" link flag form; both avoid handing
+  # an absolute *.a path to nvlink, and the realtime symbols are provided by libc.
+  if(NOT DEFINED CUDAToolkit_rt_LIBRARY)
+    find_library(IDEFIX_RT_SHARED_LIBRARY
+                 NAMES librt.so.1 librt.so
+                 PATHS /lib64 /usr/lib64 /lib /usr/lib)
+    if(IDEFIX_RT_SHARED_LIBRARY)
+      set(CUDAToolkit_rt_LIBRARY "${IDEFIX_RT_SHARED_LIBRARY}"
+          CACHE FILEPATH "Shared librt used by CUDA::cudart_static_deps" FORCE)
+    else()
+      set(CUDAToolkit_rt_LIBRARY "rt"
+          CACHE FILEPATH "librt link flag used by CUDA::cudart_static_deps" FORCE)
+    endif()
+  endif()
 endif()
 
 # Add kokkos CMAKE files (required early since these set compiler options)
@@ -113,12 +138,64 @@ if(Idefix_HDF5)
     PUBLIC src/output/xdmf.cpp
     PUBLIC src/output/xdmf.hpp
   )
-  find_package(HDF5 REQUIRED)
-  target_link_libraries(idefix "${HDF5_LIBRARIES}")
+  # Prefer imported targets (matches older working behavior), then fall back.
+  find_package(HDF5 QUIET COMPONENTS C)
+  if(NOT HDF5_FOUND)
+    find_package(HDF5 REQUIRED MODULE COMPONENTS C)
+  endif()
+
+  set(_idefix_hdf5_link_items "${HDF5_LIBRARIES}")
+  if(TARGET hdf5::hdf5)
+    set(_idefix_hdf5_link_items hdf5::hdf5)
+  elseif(TARGET HDF5::HDF5)
+    set(_idefix_hdf5_link_items HDF5::HDF5)
+  endif()
+
+  target_link_libraries(idefix ${_idefix_hdf5_link_items})
   message(STATUS "Found HDF5 include directories: ${HDF5_INCLUDE_DIRS}")
   target_include_directories(idefix PUBLIC "${HDF5_INCLUDE_DIRS}")
   if(Idefix_MPI)
-    if(NOT HDF5_IS_PARALLEL)
+    include(CheckCSourceCompiles)
+
+    # Some CMake/HDF5 combinations do not reliably set HDF5_IS_PARALLEL.
+    # Combine metadata checks with a compile+link probe for MPI-IO symbols.
+    set(_idefix_hdf5_is_parallel FALSE)
+    if(HDF5_IS_PARALLEL OR HDF5_C_IS_PARALLEL)
+      set(_idefix_hdf5_is_parallel TRUE)
+    endif()
+
+    if(NOT _idefix_hdf5_is_parallel AND DEFINED HDF5_C_COMPILER_EXECUTABLE)
+      execute_process(
+        COMMAND ${HDF5_C_COMPILER_EXECUTABLE} -showconfig
+        OUTPUT_VARIABLE _idefix_hdf5_showconfig
+        ERROR_QUIET
+      )
+      if(_idefix_hdf5_showconfig MATCHES "Parallel HDF5:[ \t]*yes")
+        set(_idefix_hdf5_is_parallel TRUE)
+      endif()
+    endif()
+
+    set(CMAKE_REQUIRED_INCLUDES ${HDF5_INCLUDE_DIRS} ${MPI_C_INCLUDE_DIRS})
+    set(CMAKE_REQUIRED_LIBRARIES ${_idefix_hdf5_link_items} MPI::MPI_C)
+    check_c_source_compiles(
+      "#include <mpi.h>
+       #include <hdf5.h>
+       int main(void) {
+         hid_t plist = H5Pcreate(H5P_FILE_ACCESS);
+         H5Pset_fapl_mpio(plist, MPI_COMM_WORLD, MPI_INFO_NULL);
+         H5Pclose(plist);
+         return 0;
+       }"
+      IDEFIX_HDF5_HAS_MPI_IO
+    )
+    unset(CMAKE_REQUIRED_INCLUDES)
+    unset(CMAKE_REQUIRED_LIBRARIES)
+
+    if(IDEFIX_HDF5_HAS_MPI_IO)
+      set(_idefix_hdf5_is_parallel TRUE)
+    endif()
+
+    if(NOT _idefix_hdf5_is_parallel)
       message(FATAL_ERROR "Parallel HDF5 required for Idefix_MPI but the found HDF5 library does not support it")
     endif()
   endif()

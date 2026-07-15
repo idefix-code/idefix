@@ -143,7 +143,7 @@ if(Idefix_HDF5)
 
     if(NOT _idefix_hdf5_is_parallel AND DEFINED HDF5_C_COMPILER_EXECUTABLE)
       execute_process(
-        COMMAND ${HDF5_C_COMPILER_EXECUTABLE} -showconfig
+        COMMAND "${HDF5_C_COMPILER_EXECUTABLE}" -showconfig
         OUTPUT_VARIABLE _idefix_hdf5_showconfig
         ERROR_QUIET
       )
@@ -151,6 +151,9 @@ if(Idefix_HDF5)
         set(_idefix_hdf5_is_parallel TRUE)
       endif()
     endif()
+
+    set(_idefix_saved_required_includes "${CMAKE_REQUIRED_INCLUDES}")
+    set(_idefix_saved_required_libraries "${CMAKE_REQUIRED_LIBRARIES}")
 
     set(CMAKE_REQUIRED_INCLUDES ${HDF5_INCLUDE_DIRS} ${MPI_C_INCLUDE_DIRS})
     set(CMAKE_REQUIRED_LIBRARIES ${_idefix_hdf5_link_items} MPI::MPI_C)
@@ -165,8 +168,11 @@ if(Idefix_HDF5)
        }"
       IDEFIX_HDF5_HAS_MPI_IO
     )
-    unset(CMAKE_REQUIRED_INCLUDES)
-    unset(CMAKE_REQUIRED_LIBRARIES)
+
+    set(CMAKE_REQUIRED_INCLUDES "${_idefix_saved_required_includes}")
+    set(CMAKE_REQUIRED_LIBRARIES "${_idefix_saved_required_libraries}")
+    unset(_idefix_saved_required_includes)
+    unset(_idefix_saved_required_libraries)
 
     if(IDEFIX_HDF5_HAS_MPI_IO)
       set(_idefix_hdf5_is_parallel TRUE)

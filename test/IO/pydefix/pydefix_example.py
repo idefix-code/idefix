@@ -1,6 +1,7 @@
-from pydefix import *
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
+from pydefix import *
+
 
 # The output function
 # the only argument is dataBlockHost python object, wrapping a dataBlockHost Idefix object

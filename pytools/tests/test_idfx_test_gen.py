@@ -5,8 +5,10 @@
 # Licensed under CeCILL 2.1 License, see COPYING for more information
 #####################################################################################
 
-from ..idfx_test_gen import IdefixDirTestGenerator
 import pytest
+
+from ..idfx_test_gen import IdefixDirTestGenerator
+
 
 def test_extractNamingParameters():
   # build generator

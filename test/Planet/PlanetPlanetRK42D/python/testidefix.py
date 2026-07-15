@@ -7,10 +7,12 @@ Created on Tue Dec  21 12:04:41 2021
 """
 
 import os
-import sys
 import re
+import sys
+
 sys.path.append(os.getenv("IDEFIX_DIR"))
 import numpy as np
+
 
 def filter_index(t):
     # get read of data previously generated (when the code was restarted)

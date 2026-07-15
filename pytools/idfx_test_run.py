@@ -5,16 +5,19 @@
 # Licensed under CeCILL 2.1 License, see COPYING for more information
 #####################################################################################
 
+import copy
+import glob
+import json
 import os
 import sys
-import json
-import glob
-import copy
+from contextlib import contextmanager
+
 import pytest
+
 # idefix test class
 import pytools.idfx_test as tst
-from  pytools.idfx_test_gen import IdefixDirTestGenerator
-from contextlib import contextmanager
+from pytools.idfx_test_gen import IdefixDirTestGenerator
+
 
 @contextmanager
 def moveInDir(path):
@@ -107,7 +110,7 @@ class IdexPytestRunner:
             # gen
             result += idefixTestGenerator.genTestConfigs(namings, variants, whenClauses=whenClauses, defaultConfig=defaultConfig)
         except Exception as e:
-          raise Exception(f"Fail to generate tests from {testfileRelPath} : {e}")
+          raise Exception(f"Fail to generate tests from {testfileRelPath}") from e
 
     # ok
     return result
@@ -256,7 +259,7 @@ class IdexPytestRunner:
     if idefixTest.all:
       pytest.main(['-v', '--no-header', '--junit-xml=idefix-tests.junit.xml', '--tb=short'] + idefixTest.remainingArgs + [self.parentScritFile])
     else:
-      assert False, "Not yet supported !"
+      raise NotImplementedError("Not yet supported !")
     #elif self.check:
     #  idefixTest.checkOnly(filename=dumpname, tolerance=tolerance)
     #else:

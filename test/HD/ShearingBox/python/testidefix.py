@@ -5,11 +5,13 @@ Created on Mon Jun 21 15:42:19 2021
 
 @author: lesurg
 """
-import sys
-import numpy as np
-import matplotlib.pyplot as plt
-from scipy.integrate import solve_ivp
 import argparse
+import sys
+
+import matplotlib.pyplot as plt
+import numpy as np
+from scipy.integrate import solve_ivp
+
 
 #compute theoretical solution (from Balbus & Hawley 2006, using notations from Lesur 2021)
 def rhs(t, y, Omega, q, k0x, k0y, k0z):

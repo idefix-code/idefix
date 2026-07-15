@@ -59,7 +59,7 @@ class DumpField(object):
         self.ndims = int.from_bytes(fh.read(INT_SIZE), byteorder)
         dims = []
         ntot = 1
-        for dim in range(self.ndims):
+        for _ in range(self.ndims):
             dims.append(int.from_bytes(fh.read(INT_SIZE), byteorder))
             ntot = ntot * dims[-1]
         raw = struct.unpack(str(ntot) + stringchar, fh.read(mysize * ntot))

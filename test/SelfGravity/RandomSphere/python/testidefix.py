@@ -6,11 +6,12 @@ Created on Thu Mar  5 11:29:41 2020
 @author: glesur
 """
 
+import argparse
 import os
 import sys
-import numpy as np
+
 import matplotlib.pyplot as plt
-import argparse
+import numpy as np
 
 sys.path.append(os.getenv("IDEFIX_DIR"))
 

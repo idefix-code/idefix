@@ -136,7 +136,7 @@ python packages in your venv. This typically results in a python error "xxxx mod
 The fix is to force the following environement variables (replace XX by your python version) before launching Idefix:
 
 ```bash
-export PYTHONPATH=$VIRTUAL_ENV/lib/python3.XX/site-packages:$PYTHONPATH
+export PYTHONPATH=$(python3 -c "import sys; print(':'.join(x for x in sys.path if x))")
 ```
 
 .. warning::

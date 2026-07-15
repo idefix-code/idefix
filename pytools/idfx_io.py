@@ -13,9 +13,9 @@ FLOAT_SIZE = 4
 
 HEADER_SIZE = 128
 
+
 # There is one .idfx file per processor
 class IdfxFileField(object):
-
     def __init__(self, fh, byteorder="little"):
         # read entry name
         q = fh.read(NAME_SIZE)
@@ -32,6 +32,7 @@ class IdfxFileField(object):
         raw = struct.unpack(str(ntot) + "d", fh.read(DOUBLE_SIZE * ntot))
         self.array = np.asarray(raw).reshape(dims[::-1])
 
+
 class IdfxFileDataset(object):
     def __init__(self, filename):
         # identical to DumpDataset
@@ -45,11 +46,10 @@ class IdfxFileDataset(object):
         # could easily be identical to DumpDataset
         headerSize = 128
         q = fh.read(headerSize)
-        n = q.index(b'\x00')
-        self.header = q[:n].decode('utf-8')
+        n = q.index(b"\x00")
+        self.header = q[:n].decode("utf-8")
 
         self.metadata["byteorder"] = "little"
-
 
     def _read_field(self, fh):
         # identical to DumpDataset

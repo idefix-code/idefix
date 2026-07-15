@@ -9,256 +9,271 @@ import copy
 
 import pytest
 
-DO_NOT_LOOP_ON = ['restart_no_overwrite', "dec", "multirun", "check_file_produced"]
+DO_NOT_LOOP_ON = ["restart_no_overwrite", "dec", "multirun", "check_file_produced"]
+
 
 class IdefixDirTestGenerator:
-  '''
-  Class used to generate the various configuration to run by parsing the
-  files `testme.py` found in the hierarchy of the /test directory of Idefix.
-  '''
+    """
+    Class used to generate the various configuration to run by parsing the
+    files `testme.py` found in the hierarchy of the /test directory of Idefix.
+    """
 
-  def __init__(self, currentTestFile: str, name: str = ""):
-    '''
-    Constructor or the class.
+    def __init__(self, currentTestFile: str, name: str = ""):
+        """
+        Constructor or the class.
 
-    Args:
-      currentTestFile (str):
-        Path the the current python file. Normally you
-        simply pass __file__ to this parameter.
-      name (str):
-        Define a name for the test, can be empty.
-    '''
+        Args:
+          currentTestFile (str):
+            Path the the current python file. Normally you
+            simply pass __file__ to this parameter.
+          name (str):
+            Define a name for the test, can be empty.
+        """
 
-    self.currentTestFile = currentTestFile
-    self.currentTestName = name
+        self.currentTestFile = currentTestFile
+        self.currentTestName = name
 
-  # generate the list of configs to run
-  def genTestConfigs(self, names:str, params, whenClauses = None, defaultConfig: dict | None = None) -> list:
-    '''
-    Generate the the list of configurations as pytest parameters.
-    It will unpack the configuration set by looping on all combinations defined
-    by the given sets.
+    # generate the list of configs to run
+    def genTestConfigs(
+        self, names: str, params, whenClauses=None, defaultConfig: dict | None = None
+    ) -> list:
+        """
+        Generate the the list of configurations as pytest parameters.
+        It will unpack the configuration set by looping on all combinations defined
+        by the given sets.
 
-    Args:
-      names (str):
-        Comma separated list of variables do consider to build the
-        name of the file.
-      params (dict|list):
-        A configuration set as a dictionnary or a list of
-        configuration set.
-      whenCaluses (dict|list):
-        Provide a set of clauses to apply after unpacking
-        the configuration so we can patch some values depending on some others.
-      defaultConfig (dict):
-        The default configuration on top of which to apply the variants.
+        Args:
+          names (str):
+            Comma separated list of variables do consider to build the
+            name of the file.
+          params (dict|list):
+            A configuration set as a dictionnary or a list of
+            configuration set.
+          whenCaluses (dict|list):
+            Provide a set of clauses to apply after unpacking
+            the configuration so we can patch some values depending on some others.
+          defaultConfig (dict):
+            The default configuration on top of which to apply the variants.
 
-    Returns:
-      A list of pytest.param() ready to be fiven to parametrized pytest functions.
-    '''
-    if defaultConfig is None:
-      defaultConfig = {}
-    if whenClauses is None:
-      whenClauses = {}
-    # get name ordering list
-    nameList = names.split(',')
-    if '' in nameList:
-      nameList.remove('')
+        Returns:
+          A list of pytest.param() ready to be fiven to parametrized pytest functions.
+        """
+        if defaultConfig is None:
+            defaultConfig = {}
+        if whenClauses is None:
+            whenClauses = {}
+        # get name ordering list
+        nameList = names.split(",")
+        if "" in nameList:
+            nameList.remove("")
 
-    # gen list of complete configs
-    all_configs = []
-    if isinstance(params, dict):
-      all_configs += self._genOneConfigSeries(names, params, defaultConfig=defaultConfig)
-    elif isinstance(params, list):
-      for p in params:
-        all_configs += self._genOneConfigSeries(names, p, defaultConfig=defaultConfig)
-    else:
-      raise Exception("Should never be called !")
-
-    # convert as parametrize with nice name
-    result = []
-    for config in all_configs:
-      # append the file
-      config['testfile'] = self.currentTestFile
-      config['testname'] = self.currentTestName
-      # gen name
-      nameParts = [self.currentTestName]
-      for name in nameList:
-        if isinstance(config[name], bool):
-          if config[name]:
-            nameParts.append(name)
-        elif isinstance(config[name], str):
-          nameParts.append(str(config[name]))
+        # gen list of complete configs
+        all_configs = []
+        if isinstance(params, dict):
+            all_configs += self._genOneConfigSeries(
+                names, params, defaultConfig=defaultConfig
+            )
+        elif isinstance(params, list):
+            for p in params:
+                all_configs += self._genOneConfigSeries(
+                    names, p, defaultConfig=defaultConfig
+                )
         else:
-          nameParts.append(f"{name}-{config[name]}")
-      confName = "-".join(nameParts)
+            raise Exception("Should never be called !")
 
-      # apply when clause
-      config = self._applyWhen(config, whenClauses)
+        # convert as parametrize with nice name
+        result = []
+        for config in all_configs:
+            # append the file
+            config["testfile"] = self.currentTestFile
+            config["testname"] = self.currentTestName
+            # gen name
+            nameParts = [self.currentTestName]
+            for name in nameList:
+                if isinstance(config[name], bool):
+                    if config[name]:
+                        nameParts.append(name)
+                elif isinstance(config[name], str):
+                    nameParts.append(str(config[name]))
+                else:
+                    nameParts.append(f"{name}-{config[name]}")
+            confName = "-".join(nameParts)
 
-      result.append(pytest.param(config, id=confName))
+            # apply when clause
+            config = self._applyWhen(config, whenClauses)
 
-    # ok
-    return result
+            result.append(pytest.param(config, id=confName))
 
-  def extractNamingParameters(self, params) -> list:
-    '''
-    Loop on the parameters and check automatically what are the list of variable parameters.
+        # ok
+        return result
 
-    Args:
-      params (list|dict):
-        The list of configuration sets to scan or a single set.
+    def extractNamingParameters(self, params) -> list:
+        """
+        Loop on the parameters and check automatically what are the list of variable parameters.
 
-    Returns:
-      The list of names of the variable parameters.
-    '''
+        Args:
+          params (list|dict):
+            The list of configuration sets to scan or a single set.
 
-    # if not a list make a list
-    if not isinstance(params, list):
-      params = [params]
+        Returns:
+          The list of names of the variable parameters.
+        """
 
-    # see params
-    seen = {}
-    variables = []
+        # if not a list make a list
+        if not isinstance(params, list):
+            params = [params]
 
-    # loop
-    for param_set in params:
-      for key, value in param_set.items():
-        if key in variables:
-          pass
-        elif key in DO_NOT_LOOP_ON:
-          pass
-        elif isinstance(value, list):
-          variables.append(key)
-        elif key in seen and seen[key] != value:
-          variables.append(key)
-        elif key not in seen:
-          seen[key] = value
+        # see params
+        seen = {}
+        variables = []
 
-    # by default sort by alphabetic order about var names
-    # TODO make something better by assigning a priority to vars
-    variables.sort()
+        # loop
+        for param_set in params:
+            for key, value in param_set.items():
+                if key in variables:
+                    pass
+                elif key in DO_NOT_LOOP_ON:
+                    pass
+                elif isinstance(value, list):
+                    variables.append(key)
+                elif key in seen and seen[key] != value:
+                    variables.append(key)
+                elif key not in seen:
+                    seen[key] = value
 
-    # ok
-    return ','.join(variables)
+        # by default sort by alphabetic order about var names
+        # TODO make something better by assigning a priority to vars
+        variables.sort()
 
-  def _genNextLevelCombinations(self, input: list, paramName: str, paramValues: list) -> list:
-    '''
-    Take an input case list and unpack the given parameter to build the new combinations.
+        # ok
+        return ",".join(variables)
 
-    Args:
-      input (list):
-        The incoming list of combinations already unpacked before this call.
-      paramName (str):
-        Name of the parameter to unpack.
-      paramValues (list):
-        The list of values to unpack and to build combinations for.
+    def _genNextLevelCombinations(
+        self, input: list, paramName: str, paramValues: list
+    ) -> list:
+        """
+        Take an input case list and unpack the given parameter to build the new combinations.
 
-    Returns:
-      The updated list of run sets.
-    '''
-    result = []
-    for entry in input:
-      for value in paramValues:
-        v = copy.deepcopy(entry)
-        v[paramName] = value
-        result.append(v)
-    return result
+        Args:
+          input (list):
+            The incoming list of combinations already unpacked before this call.
+          paramName (str):
+            Name of the parameter to unpack.
+          paramValues (list):
+            The list of values to unpack and to build combinations for.
 
-  def _genOneConfigSeries(self, names: str, config: dict, defaultConfig: dict | None = None) -> list:
-    '''
-    Generate the the list of configurations as pytest parameters.
-    It will unpack the configuration set by looping on all combinations defined
-    by the given sets.
+        Returns:
+          The updated list of run sets.
+        """
+        result = []
+        for entry in input:
+            for value in paramValues:
+                v = copy.deepcopy(entry)
+                v[paramName] = value
+                result.append(v)
+        return result
 
-    Args:
-      names (str):
-        Comma separated list of variables do consider to build the
-        name of the file.
-      config (dict):
-        A configuration set as a dictionnary.
-      defaultConfig (dict):
-        The default configuration to overload with the variant part.
+    def _genOneConfigSeries(
+        self, names: str, config: dict, defaultConfig: dict | None = None
+    ) -> list:
+        """
+        Generate the the list of configurations as pytest parameters.
+        It will unpack the configuration set by looping on all combinations defined
+        by the given sets.
 
-    Returns:
-      A list of pytest.param() ready to be fiven to parametrized pytest functions.
-    '''
-    if defaultConfig is None:
-      defaultConfig = {}
-    # get name ordering list
-    nameList = names.split(',')
+        Args:
+          names (str):
+            Comma separated list of variables do consider to build the
+            name of the file.
+          config (dict):
+            A configuration set as a dictionnary.
+          defaultConfig (dict):
+            The default configuration to overload with the variant part.
 
-    # if there is ini in the list we put it at the end
-    loopOrder = nameList.copy()
-    if 'ini' in loopOrder:
-      loopOrder.remove('ini')
-      loopOrder.append('ini')
-    if '' in loopOrder:
-      loopOrder.remove('')
+        Returns:
+          A list of pytest.param() ready to be fiven to parametrized pytest functions.
+        """
+        if defaultConfig is None:
+            defaultConfig = {}
+        # get name ordering list
+        nameList = names.split(",")
 
-    # init core with everything not a list
-    core = copy.deepcopy(defaultConfig)
-    for key, value in config.items():
-      if isinstance(value, list) and key not in DO_NOT_LOOP_ON:
-        assert key in nameList, f"All variable parameteres should be ordered in the names list, '{key}' is not."
-      else:
-        core[key] = copy.deepcopy(value)
+        # if there is ini in the list we put it at the end
+        loopOrder = nameList.copy()
+        if "ini" in loopOrder:
+            loopOrder.remove("ini")
+            loopOrder.append("ini")
+        if "" in loopOrder:
+            loopOrder.remove("")
 
-    # at start we have only default core
-    result = [core]
+        # init core with everything not a list
+        core = copy.deepcopy(defaultConfig)
+        for key, value in config.items():
+            if isinstance(value, list) and key not in DO_NOT_LOOP_ON:
+                assert key in nameList, (
+                    f"All variable parameteres should be ordered in the names list, '{key}' is not."
+                )
+            else:
+                core[key] = copy.deepcopy(value)
 
-    # loop
-    for key in loopOrder:
-      value = config[key]
-      assert isinstance(value, list), f"This parameter is marked as a list but is not a list : {key}={value} !"
-      result = self._genNextLevelCombinations(result, key, value)
+        # at start we have only default core
+        result = [core]
 
-    # ok
-    return result
+        # loop
+        for key in loopOrder:
+            value = config[key]
+            assert isinstance(value, list), (
+                f"This parameter is marked as a list but is not a list : {key}={value} !"
+            )
+            result = self._genNextLevelCombinations(result, key, value)
 
-  def _matchWhenClause(self, config: dict, when_clause: dict) -> bool:
-    '''
-    Check the matching of a given when clause on the given configuration.
+        # ok
+        return result
 
-    Args:
-      config (dict): The configuration.
-      when_clause (dict): The when clause to check.
+    def _matchWhenClause(self, config: dict, when_clause: dict) -> bool:
+        """
+        Check the matching of a given when clause on the given configuration.
 
-    Returns:
-      True if the clause, match, False otherwise.
-    '''
-    for key, value in when_clause.items():
-      if config[key] != value:
-        return False
-    return True
+        Args:
+          config (dict): The configuration.
+          when_clause (dict): The when clause to check.
 
-  def _applyWhen(self, config: dict, when: dict) -> dict:
-    '''
-    Check if the when clause applies and apply if if any.
+        Returns:
+          True if the clause, match, False otherwise.
+        """
+        for key, value in when_clause.items():
+            if config[key] != value:
+                return False
+        return True
 
-    Args:
-      config (dict): The configuration.
-      when_clause (dict): The when clause to check and apply.
+    def _applyWhen(self, config: dict, when: dict) -> dict:
+        """
+        Check if the when clause applies and apply if if any.
 
-    Returns:
-      The fixed config.
-    '''
-    # nothing to do
-    if when == {}:
-      return config
+        Args:
+          config (dict): The configuration.
+          when_clause (dict): The when clause to check and apply.
 
-    # clone
-    result = copy.deepcopy(config)
+        Returns:
+          The fixed config.
+        """
+        # nothing to do
+        if when == {}:
+            return config
 
-    # loop on when
-    if isinstance(when, list):
-      for clause in when:
-        if self._matchWhenClause(config, clause['conditions']):
-          result.update(clause['apply'])
-    elif isinstance(when, dict):
-      if self._matchWhenClause(config, when['conditions']):
-        result.update(when['apply'])
-    else:
-      raise Exception(f"Invalid type for 'when' : {when}")
+        # clone
+        result = copy.deepcopy(config)
 
-    # ok
-    return result
+        # loop on when
+        if isinstance(when, list):
+            for clause in when:
+                if self._matchWhenClause(config, clause["conditions"]):
+                    result.update(clause["apply"])
+        elif isinstance(when, dict):
+            if self._matchWhenClause(config, when["conditions"]):
+                result.update(when["apply"])
+        else:
+            raise Exception(f"Invalid type for 'when' : {when}")
+
+        # ok
+        return result

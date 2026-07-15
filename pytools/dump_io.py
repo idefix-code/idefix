@@ -4,6 +4,7 @@ Created on Fri Nov 27 22:07:47 2020
 
 @author: lesurg
 """
+
 import os
 import re
 import struct
@@ -118,6 +119,7 @@ class DumpDataset(object):
 
     def __repr__(self):
         return "DumpDataset('%s')" % self.filename
+
 
 # public API
 def readDump(filename):

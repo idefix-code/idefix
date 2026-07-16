@@ -4,6 +4,7 @@
 
 @author: glesur
 """
+
 import os
 import sys
 
@@ -11,38 +12,39 @@ sys.path.append(os.getenv("IDEFIX_DIR"))
 
 import pytools.idfx_test as tst
 
-name="dump.0001.dmp"
+name = "dump.0001.dmp"
 
-tolerance=1e-13
+tolerance = 1e-13
+
 
 def testMe(test):
-  test.configure()
-  test.compile()
-  inifiles=["idefix-rk4.ini", "idefix-rk5.ini"]
+    test.configure()
+    test.compile()
+    inifiles = ["idefix-rk4.ini", "idefix-rk5.ini"]
 
-  # loop on all the ini files for this test
-  for ini in inifiles:
-    test.run(inputFile=ini)
-    test.standardTest()
-    # test.nonRegressionTest(filename=name,tolerance=tolerance)
+    # loop on all the ini files for this test
+    for ini in inifiles:
+        test.run(inputFile=ini)
+        test.standardTest()
+        # test.nonRegressionTest(filename=name,tolerance=tolerance)
 
 
-test=tst.idfxTest(__file__)
+test = tst.idfxTest(__file__)
 if not test.dec:
-  test.dec=['2','2']
+    test.dec = ["2", "2"]
 
 if not test.all:
-  if(test.check):
-    test.checkOnly(filename=name,tolerance=tolerance)
-  else:
-    testMe(test)
+    if test.check:
+        test.checkOnly(filename=name, tolerance=tolerance)
+    else:
+        testMe(test)
 else:
-  test.noplot = True
-  test.vectPot=False
-  test.single=False
-  test.reconstruction=2
-  test.mpi=False
-  testMe(test)
+    test.noplot = True
+    test.vectPot = False
+    test.single = False
+    test.reconstruction = 2
+    test.mpi = False
+    testMe(test)
 
-  test.mpi=True
-  testMe(test)
+    test.mpi = True
+    testMe(test)

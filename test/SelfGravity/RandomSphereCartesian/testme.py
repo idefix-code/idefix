@@ -4,6 +4,7 @@
 
 @author: glesur
 """
+
 import os
 import sys
 
@@ -13,24 +14,24 @@ import pytools.idfx_test as tst
 
 
 def testMe(test):
-  test.configure()
-  test.compile()
-  inifiles=["idefix.ini","idefix-cg.ini","idefix-minres.ini","idefix-jacobi.ini"]
+    test.configure()
+    test.compile()
+    inifiles = ["idefix.ini", "idefix-cg.ini", "idefix-minres.ini", "idefix-jacobi.ini"]
 
-  # loop on all the ini files for this test
-  for ini in inifiles:
-    test.run(inputFile=ini)
-    #if test.init:
-    #  test.makeReference(filename=name)
-    test.standardTest()
-    # since the gravitationnal potential is not included in .dmp files, we can't perform
-    # the full non-regression test
-    #test.nonRegressionTest(filename=name)
+    # loop on all the ini files for this test
+    for ini in inifiles:
+        test.run(inputFile=ini)
+        # if test.init:
+        #  test.makeReference(filename=name)
+        test.standardTest()
+        # since the gravitationnal potential is not included in .dmp files, we can't perform
+        # the full non-regression test
+        # test.nonRegressionTest(filename=name)
 
 
-test=tst.idfxTest(__file__)
+test = tst.idfxTest(__file__)
 if not test.all:
-  testMe(test)
+    testMe(test)
 else:
-  test.noplot=True
-  testMe(test)
+    test.noplot = True
+    testMe(test)

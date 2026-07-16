@@ -97,7 +97,9 @@ class VTKDataset(object):
                     self.periodicity = np.fromfile(fh, dtype=dint, count=3).astype(bool)
                 elif NATIVE_COORDINATE_REGEXP.match(d):
                     native_name, _ncomp, native_dim, _dtype = d.split()
-                    self.native_coordinates[native_name] = np.fromfile(fh, dtype=dt, count=int(native_dim))
+                    self.native_coordinates[native_name] = np.fromfile(
+                        fh, dtype=dt, count=int(native_dim)
+                    )
                 else:
                     warnings.warn("Found unknown field %s" % d, stacklevel=3)
                 fh.readline()  # skip extra linefeed (empty line)
@@ -211,7 +213,6 @@ class VTKDataset(object):
 
             # Reconstruct the polar coordinate system
             if self.geometry == "polar":
-
                 r = np.sqrt(xcart[:, 0, 0] ** 2 + ycart[:, 0, 0] ** 2)
                 theta = np.unwrap(np.arctan2(ycart[0, :, 0], xcart[0, :, 0]))
                 z = zcart[0, 0, :]
@@ -376,6 +377,7 @@ class VTKDataset(object):
 
     def __repr__(self):
         return "VTKDataset('%s')" % self.filename
+
 
 # ////// public API //////
 def readVTK(filename, geometry=None):

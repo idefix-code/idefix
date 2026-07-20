@@ -119,7 +119,7 @@ void IdefixOutStream::init(int rank) {
 void IdefixOutStream::enableLogFile() {
   std::stringstream sslogFileName;
 
-  sslogFileName << idfx::logFileDir << "/./"  << "idefix." << idfx::prank << ".log";
+  sslogFileName << idfx::logFileDir << "/"  << "idefix." << idfx::prank << ".log";
   std::string logFileName(sslogFileName.str());
 
   if(idfx::prank==0) {

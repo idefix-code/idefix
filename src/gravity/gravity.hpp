@@ -52,7 +52,7 @@ class Gravity {
   IdefixArray4D<real> bodyForceVector;
 
   // Self gravity
-  SelfGravity selfGravity;
+  std::unique_ptr<SelfGravity> selfGravity;
 
   // JM : moved in public class to handle changing centralMass during computation
   real centralMass{1.0};                    ///< central mass parameter when central mass potential

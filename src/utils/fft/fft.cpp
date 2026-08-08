@@ -79,23 +79,7 @@ FFT::FFT(std::array<int,3> npr_glob, std::array<int,3> npf_glob) {
     havePlan = true;
   };
 
-// Perform a real-to-complex FFT
-void FFT::R2C(const IdefixArray3D<real> in, IdefixArray3D<complex> out, bool transpose) {
-  idfx::pushRegion("FFT::R2C");
 
-  #ifdef WITH_MPI
-    R2C_MPI(in, out, transpose);
-  #else
-      // Ensure that in array is not erased
-    //Kokkos::deep_copy(tempReal, in);
-    if(havePlan) {
-      KokkosFFT::execute(*(r2cPlan.get()), in, out);
-    } else {
-      KokkosFFT::rfftn(Kokkos::DefaultExecutionSpace(), in, out);
-    }
-  #endif
-  idfx::popRegion();
-}
 
 void FFT::R2C_MPI(const IdefixArray3D<real> in, IdefixArray3D<complex> out, bool transpose) {
   idfx::pushRegion("FFT::R2C_MPI");
@@ -119,23 +103,6 @@ void FFT::R2C_MPI(const IdefixArray3D<real> in, IdefixArray3D<complex> out, bool
   idfx::popRegion();
 }
 
-// Perform a complex-to-real inverse FFT
-void FFT::C2R(const IdefixArray3D<complex> in, IdefixArray3D<real> out, bool transpose) {
-  idfx::pushRegion("FFT::C2R");
-    #ifdef WITH_MPI
-      C2R_MPI(in,out,transpose);
-    #else
-      // Ensure that in array is not erased
-      Kokkos::deep_copy(tempComplex, in);
-      if(havePlan) {
-        KokkosFFT::execute(*(c2rPlan.get()), tempComplex, out);
-      } else {
-        KokkosFFT::irfftn(Kokkos::DefaultExecutionSpace(), tempComplex, out);
-      }
-    #endif
-
-  idfx::popRegion();
-}
 
 void FFT::C2R_MPI(const IdefixArray3D<complex> in, IdefixArray3D<real> out, bool transpose) {
   idfx::pushRegion("FFT::C2R_MPI");
@@ -155,25 +122,6 @@ void FFT::C2R_MPI(const IdefixArray3D<complex> in, IdefixArray3D<real> out, bool
     KokkosFFT::execute(*(c2rMPIPlan_axis1t3.get()), tempTransposedComplex, out);
     idfx::popRegion();
   }
-  idfx::popRegion();
-}
-
-// FFT on Host, using the device.
-void FFT::R2C_Host(const IdefixHostArray3D<real> in, IdefixHostArray3D<complex> out) {
-  idfx::pushRegion("FFT::R2C_Host");
-  IdefixArray3D<real> inDev = Kokkos::create_mirror_view_and_copy(Kokkos::DefaultExecutionSpace(), in);
-  IdefixArray3D<complex> outDev = Kokkos::create_mirror_view(Kokkos::DefaultExecutionSpace(), out);
-  this->R2C(inDev, outDev,true);
-  Kokkos::deep_copy(out, outDev);
-  idfx::popRegion();
-}
-
-void FFT::C2R_Host(const IdefixHostArray3D<complex> in, IdefixHostArray3D<real> out) {
-  idfx::pushRegion("FFT::C2R_Host");
-  IdefixArray3D<complex> inDev = Kokkos::create_mirror_view_and_copy(Kokkos::DefaultExecutionSpace(), in);
-  IdefixArray3D<real> outDev = Kokkos::create_mirror_view(Kokkos::DefaultExecutionSpace(), out);
-  this->C2R(inDev, outDev,true);
-  Kokkos::deep_copy(out, outDev);
   idfx::popRegion();
 }
 

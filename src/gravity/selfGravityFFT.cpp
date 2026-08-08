@@ -61,6 +61,15 @@ void SelfGravityFFT::Init(Input &input, DataBlock *datain) {
   std::array<int,3> nfft_complex = {npr_glob[KDIR], npr_glob[JDIR], npr_glob[IDIR]/2+1};
 
   this->fft = std::make_unique<FFT>(nfft_real, nfft_complex);
+  
+  #ifdef WITH_MPI
+
+    int ntarget = 0;
+    std::vector<int> mapVars;
+    mapVars.push_back(ntarget);
+
+    this->mpi.Init(data->mygrid, mapVars, data->nghost, data->np_int, data->lbound, data->rbound, false);
+  #endif
   idfx::popRegion();
 }
 
@@ -142,7 +151,7 @@ void SelfGravityFFT::SetBoundaries(IdefixArray3D<real> &arr) {
   idfx::pushRegion("SelfGravityFFT::SetBoundaries");
 
   #ifdef WITH_MPI
-  this->arr4D = IdefixArray4D<real> (arr.data(), 1, data->np_tot[KDIR],
+  IdefixArray4D<real> arr4D = IdefixArray4D<real> (arr.data(), 1, data->np_tot[KDIR],
                                                     data->np_tot[JDIR],
                                                     data->np_tot[IDIR]);
   #endif
@@ -153,13 +162,13 @@ void SelfGravityFFT::SetBoundaries(IdefixArray3D<real> &arr) {
     if(data->mygrid->nproc[dir]>1) {
       switch(dir) {
         case 0:
-          this->mpi.ExchangeX1(this->arr4D);
+          this->mpi.ExchangeX1(arr4D);
           break;
         case 1:
-          this->mpi.ExchangeX2(this->arr4D);
+          this->mpi.ExchangeX2(arr4D);
           break;
         case 2:
-          this->mpi.ExchangeX3(this->arr4D);
+          this->mpi.ExchangeX3(arr4D);
           break;
       }
     }
@@ -193,13 +202,24 @@ void SelfGravityFFT::SolvePoisson() {
   auto kx1 = kx[IDIR];
   auto kx2 = kx[JDIR];
   auto kx3 = kx[KDIR];
-  idefix_for("PoissonFFT", 0, npf[KDIR], 0, npf[JDIR], 0, npf[IDIR],
-    KOKKOS_LAMBDA(int k, int j, int i) {
-      const real k2 = kx1(i)*kx1(i) + kx2(j)*kx2(j) + kx3(k)*kx3(k);
-      real inv_k2 = (k2 > 0.0) ? -1.0/k2 : 0.0;
-      phiF(k,j,i) = rhoF(k,j,i) * inv_k2;
-    }
-  );
+  #ifdef WITH_MPI
+    // Work with transposed arrays
+    idefix_for("PoissonFFT", 0, npf_t[KDIR], 0, npf_t[JDIR], 0, npf_t[IDIR],
+        KOKKOS_LAMBDA(int j, int k, int i) {
+        const real k2 = kx1(i)*kx1(i) + kx2(j)*kx2(j) + kx3(k)*kx3(k);
+        real inv_k2 = (k2 > 0.0) ? -1.0/k2 : 0.0;
+        phiF(j,k,i) = rhoF(j,k,i) * inv_k2;
+        }
+    );
+  #else
+    idefix_for("PoissonFFT", 0, npf[KDIR], 0, npf[JDIR], 0, npf[IDIR],
+        KOKKOS_LAMBDA(int k, int j, int i) {
+        const real k2 = kx1(i)*kx1(i) + kx2(j)*kx2(j) + kx3(k)*kx3(k);
+        real inv_k2 = (k2 > 0.0) ? -1.0/k2 : 0.0;
+        phiF(k,j,i) = rhoF(k,j,i) * inv_k2;
+        }
+    );
+  #endif
 
   // Backward transform of the potential field
   auto phiReal = Kokkos::subview(phi,

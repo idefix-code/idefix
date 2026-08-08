@@ -181,6 +181,7 @@ void FFT::C2R_Host(const InView &in, const OutView &out) {
   Kokkos::deep_copy(out, outDev);
 }
 
+
 template<typename ViewIn, typename ViewOut>
 void FFT::TransposeLocal(const ViewIn &in, const ViewOut &out) {
   static_assert(is_rank3_v<ViewIn>, "FFT::TransposeLocal: input must be a rank-3 Kokkos::View");

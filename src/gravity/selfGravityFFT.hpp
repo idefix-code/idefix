@@ -14,6 +14,9 @@
 
 #include "fft.hpp"
 #include "selfGravity.hpp"
+#ifdef WITH_MPI
+#include "mpi.hpp"
+#endif
 
 
 class SelfGravityFFT final : public SelfGravity {
@@ -46,6 +49,10 @@ class SelfGravityFFT final : public SelfGravity {
 
   std::array<int,3> begin{0,0,0}; // [k,j,i]
   std::array<int,3> end{0,0,0}; // [k,j,i]
+
+  #ifdef WITH_MPI
+  Mpi mpi;  // Mpi object when WITH_MPI is set
+  #endif
 };
 
 #endif // GRAVITY_SELFGRAVITYFFT_HPP_

@@ -57,7 +57,7 @@ FFT::FFT(std::array<int,3> npr_glob, std::array<int,3> npf_glob) {
       this->tempTransposedReal = IdefixArray3D<real>("FFT transpose temp2", npr[1]/idfx::psize, npr[0]*idfx::psize, npr[2]);
       this->tempT2Complex = IdefixArray3D<complex>("FFT temp2 complex", npf[0],npf[2], npf[1]);
       this->tempT2Complex2 = IdefixArray3D<complex>("FFT temp2 complex2",  npf[0],npf[2], npf[1]);
-      IdefixArray3D<complex> tempComplex2 = idfx::makeArray<IdefixArray3D<complex>>("FFT temp complex", npf);
+      IdefixArray3D<complex> tempComplex2 = IdefixArray3D<complex>("FFT temp complex", npf[0],npf[1],npf[2]);
 
      // MPI C2R Plans
       // Axis 1 transposed is axis2 for the fft library
@@ -141,10 +141,10 @@ void FFT::TestMPI() {
   npf_glob[2] = npr_glob[2]/2+1;
 
   Kokkos::View<real***, Kokkos::LayoutRight, Device> localReal_right("local real array", npr[0], npr[1], npr[2]);
-  IdefixArray3D<real> localReal = idfx::makeArray<IdefixArray3D<real>>("local real array", npr);
+  IdefixArray3D<real> localReal = IdefixArray3D<real>("local real array", npr[0], npr[1], npr[2]);
 
   Kokkos::View<real***, Kokkos::LayoutRight, Device> globalReal_right("global real array", npr_glob[0], npr_glob[1], npr_glob[2]);
-  IdefixArray3D<real> globalReal = idfx::makeArray<IdefixArray3D<real>>("global real array", npr_glob);
+  IdefixArray3D<real> globalReal = IdefixArray3D<real>("global real array", npr_glob[0], npr_glob[1], npr_glob[2]);
 
   // Compute a dummy real array
   if(idfx::prank == 0) {
@@ -154,13 +154,13 @@ void FFT::TestMPI() {
   // Scatter to make local arrays
   // And broadcast the global the array
   MPI_Scatter(globalReal_right.data(), npr[0]*npr[1]*npr[2],
-              MPI_Astra_real,
+              realMPI,
               localReal_right.data(), npr[0]*npr[1]*npr[2],
-              MPI_Astra_real,
+              realMPI,
               0, MPI_COMM_WORLD);
 
   MPI_Bcast(globalReal_right.data(), npr_glob[0]*npr_glob[1]*npr_glob[2],
-            MPI_Astra_real, 0, MPI_COMM_WORLD);
+            realMPI, 0, MPI_COMM_WORLD);
 
   // Change array Layout
   idefix_for("Reshape global",0, npr_glob[0],
@@ -179,8 +179,8 @@ void FFT::TestMPI() {
     });
 
     // Create the complex arrays
-    IdefixArray3D<complex> localComplex = idfx::makeArray<IdefixArray3D<complex>>("local complex array", npf);
-    IdefixArray3D<complex> globalComplex = idfx::makeArray<IdefixArray3D<complex>>("global complex array", npf_glob);
+    IdefixArray3D<complex> localComplex = IdefixArray3D<complex>("local complex array", npf[0], npf[1], npf[2]);
+    IdefixArray3D<complex> globalComplex = IdefixArray3D<complex>("global complex array", npf_glob[0], npf_glob[1], npf_glob[2]);
 
     // Compute the full serial fft
     KokkosFFT::rfftn(Kokkos::DefaultExecutionSpace(), globalReal, globalComplex);

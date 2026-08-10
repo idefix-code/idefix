@@ -57,13 +57,13 @@ void SelfGravityFFT::Init(Input &input, DataBlock *datain) {
                                   std::pair<int,int>(p * npf_t[KDIR], (p+1) * npf_t[KDIR]));
   }
 
-  if(idfx::psize > 1) {
+  #ifdef WITH_MPI
     rhoF = IdefixArray3D<complex>("rhoHatFFT", npf_t[KDIR], npf_t[JDIR], npf_t[IDIR]);
     phiF = IdefixArray3D<complex>("phiHatFFT", npf_t[KDIR], npf_t[JDIR], npf_t[IDIR]);
-  } else {
+  #else
     rhoF = IdefixArray3D<complex>("rhoHatFFT", npf[KDIR], npf[JDIR], npf[IDIR]);
     phiF = IdefixArray3D<complex>("phiHatFFT", npf[KDIR], npf[JDIR], npf[IDIR]);
-  }
+  #endif
 
   std::array<int,3> nfft_real = {npr_glob[KDIR], npr_glob[JDIR], npr_glob[IDIR]};
   std::array<int,3> nfft_complex = {npr_glob[KDIR], npr_glob[JDIR], npr_glob[IDIR]/2+1};

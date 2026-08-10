@@ -35,13 +35,10 @@ FFT::FFT(std::array<int,3> npr_glob, std::array<int,3> npf_glob) {
     // We assume a decomposition along the first dimension only for now
     this->npr = npr_glob;
     this->npf = npf_glob;
-    this->npr_t = npr_glob;
 
     #ifdef WITH_MPI
       this->npr[0] = npr_glob[0]/idfx::psize;
       this->npf[0] = npf_glob[0]/idfx::psize;
-      this->npr_t[0] = npr_glob[1]/idfx::psize;
-      this->npr_t[1] = npr_glob[0];
     #endif
 
     tempReal = IdefixArray3D<real>("FFT temp real", npr[0],npr[1],npr[2]);
@@ -55,23 +52,21 @@ FFT::FFT(std::array<int,3> npr_glob, std::array<int,3> npf_glob) {
 
     #ifdef WITH_MPI
       // Allocate temporary arrays for domain-splited FFTs and transposes
-      this->tempTransposedComplex = IdefixArray3D<complex>("FFT transpose temp", npf[1]/idfx::psize, npf[0]*idfx::psize, npf[2]);
-      this->tempTransposedComplex2 = IdefixArray3D<complex>("FFT transpose temp2", npf[1]/idfx::psize, npf[0]*idfx::psize, npf[2]);
-      this->tempTransposedReal = IdefixArray3D<real>("FFT transpose temp2", npr[1]/idfx::psize, npr[0]*idfx::psize, npr[2]);
-      this->tempT2Complex = IdefixArray3D<complex>("FFT temp2 complex", npf[0],npf[2], npf[1]);
-      this->tempT2Complex2 = IdefixArray3D<complex>("FFT temp2 complex2",  npf[0],npf[2], npf[1]);
-      IdefixArray3D<complex> tempComplex2 = IdefixArray3D<complex>("FFT temp complex", npf[0],npf[1],npf[2]);
+      this->tempTransposedComplex = IdefixArray3D<complex>("FFT transpose temp", npf_glob[1]/idfx::psize, npf_glob[0], npf_glob[2]);
+      this->tempTransposedComplex2 = IdefixArray3D<complex>("FFT transpose temp2", npf_glob[1]/idfx::psize, npf_glob[0], npf_glob[2]);
+      this->tempT2Complex = IdefixArray3D<complex>("FFT temp2 complex", npf_glob[1]/idfx::psize, npf_glob[2],npf_glob[0]);
+      this->tempT2Complex2 = IdefixArray3D<complex>("FFT temp2 complex2",  npf_glob[1]/idfx::psize, npf_glob[2], npf_glob[0]);
 
      // MPI C2R Plans
       // Axis 1 transposed is axis2 for the fft library
       this->c2ciMPIPlan_axis2 = std::make_unique<PlanC2CType1D>(Kokkos::DefaultExecutionSpace(),
                                 tempT2Complex, tempT2Complex2, KokkosFFT::Direction::backward, std::array<int,1>{-1});
       this->c2rMPIPlan_axis1t3 = std::make_unique<PlanC2RType2D>(Kokkos::DefaultExecutionSpace(),
-                                tempTransposedComplex, tempTransposedReal, KokkosFFT::Direction::backward, std::array<int,2>{-2,-1});
+                                tempComplex, tempReal, KokkosFFT::Direction::backward, std::array<int,2>{-2,-1});
 
       // MPI R2C plans
       this->r2cMPIPlan_axis1t3 = std::make_unique<PlanR2CType2D>(Kokkos::DefaultExecutionSpace(),
-                                  tempTransposedReal, tempTransposedComplex, KokkosFFT::Direction::forward, std::array<int,2>{-2,-1});
+                                  tempReal, tempComplex, KokkosFFT::Direction::forward, std::array<int,2>{-2,-1});
       this->c2cfMPIPlan_axis2 = std::make_unique<PlanC2CType1D>(Kokkos::DefaultExecutionSpace(),
                                   tempT2Complex, tempT2Complex2, KokkosFFT::Direction::forward, std::array<int,1>{-1});
 
@@ -87,22 +82,32 @@ FFT::FFT(std::array<int,3> npr_glob, std::array<int,3> npf_glob) {
 void FFT::R2C_MPI(const IdefixArray3D<real> in, IdefixArray3D<complex> out, bool transpose) {
   idfx::pushRegion("FFT::R2C_MPI");
 
-  if(transpose) {
-    this->transposeReal->Apply(in,tempTransposedReal);
-    idfx::pushRegion("FFT::R2C_MPI axis1t3");
-    KokkosFFT::execute(*(r2cMPIPlan_axis1t3.get()), tempTransposedReal, tempTransposedComplex);
-    idfx::popRegion();
-  } else {
-    idfx::pushRegion("FFT::R2C_MPI axis1t3");
-    KokkosFFT::execute(*(r2cMPIPlan_axis1t3.get()), in, tempTransposedComplex);
-    idfx::popRegion();
-  }
-  this->transposeComplex->Apply(tempTransposedComplex,tempComplex);
-  TransposeLocal(tempComplex,tempT2Complex);
+
+  idfx::pushRegion("FFT::R2C_MPI axis1t3");
+  // input is [n0/p,n1,n2]
+  KokkosFFT::execute(*(r2cMPIPlan_axis1t3.get()), in, tempComplex);
+  idfx::popRegion();
+  // tempComplex is [n0/p,n1,n2/2+1]
+
+  this->transposeComplex->Apply(tempComplex,tempTransposedComplex);
+
+  // tempTransposedComplex is [n1/p,n0,n2/2+1]
+  TransposeLocal(tempTransposedComplex,tempT2Complex);
+
+  // tempT2Complex is [n1/p,n2/2+1,n0]
   idfx::pushRegion("FFT::R2C_MPI axis2");
   KokkosFFT::execute(*(c2cfMPIPlan_axis2.get()), tempT2Complex, tempT2Complex2);
   idfx::popRegion();
-  TransposeLocal(tempT2Complex2,out);
+
+  // tempT2Complex is [n1/p,n2/2+1,n0]
+  if(transpose) {
+    // Expect output to be [n0/p,n1,n2/2+1]
+    TransposeLocal(tempT2Complex2,tempTransposedComplex);
+    this->transposeComplex->Apply(tempTransposedComplex,out);
+  } else {
+    // Expect output to be [n1/p,n0,n2/2+1]
+    TransposeLocal(tempT2Complex2,out);
+  }
   idfx::popRegion();
 }
 
@@ -110,21 +115,25 @@ void FFT::R2C_MPI(const IdefixArray3D<real> in, IdefixArray3D<complex> out, bool
 void FFT::C2R_MPI(const IdefixArray3D<complex> in, IdefixArray3D<real> out, bool transpose) {
   idfx::pushRegion("FFT::C2R_MPI");
   idfx::pushRegion("FFT::C2R_MPI axis2");
-  TransposeLocal(in,tempT2Complex);
-  KokkosFFT::execute(*(c2ciMPIPlan_axis2.get()), tempT2Complex, tempT2Complex2);
-  TransposeLocal(tempT2Complex2,tempComplex);
-  idfx::popRegion();
-  this->transposeComplex->Apply(tempComplex,tempTransposedComplex);
-  if(transpose) {
-    idfx::pushRegion("FFT::C2R_MPI axis1t3");
-    KokkosFFT::execute(*(c2rMPIPlan_axis1t3.get()), tempTransposedComplex, tempTransposedReal);
-    idfx::popRegion();
-    this->transposeReal->Apply(tempTransposedReal,out);
+  if(!transpose) {
+    // Expect input to be [n1/p,n0,n2/2+1]
+    TransposeLocal(in,tempT2Complex);
   } else {
-    idfx::pushRegion("FFT::C2R_MPI axis1t3");
-    KokkosFFT::execute(*(c2rMPIPlan_axis1t3.get()), tempTransposedComplex, out);
-    idfx::popRegion();
+    // Expect input to be [n0/p,n1,n2/2+1]
+    this->transposeComplex->Apply(in,tempTransposedComplex);
+    // tempTransposedComplex is [n1/p,n0,n2/2+1]
+    TransposeLocal(tempTransposedComplex,tempT2Complex);
   }
+  // tempT2Complex is [n1/p,n2/2+1,n0]
+  KokkosFFT::execute(*(c2ciMPIPlan_axis2.get()), tempT2Complex, tempT2Complex2);
+  TransposeLocal(tempT2Complex2,tempTransposedComplex);
+  idfx::popRegion();
+  // tempTransposedComplex is [n1/p,n0,n2/2+1]
+  this->transposeComplex->Apply(tempTransposedComplex,tempComplex);
+
+  // tempComplex is [n0/p,n1,n2/2+1]
+  KokkosFFT::execute(*(c2rMPIPlan_axis1t3.get()), tempComplex, out);
+
   idfx::popRegion();
 }
 

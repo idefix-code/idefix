@@ -53,10 +53,10 @@ class FFT {
   FFT(std::array<int,3> npr_glob, std::array<int,3> npf_glob);
 
   template<typename InView, typename OutView>
-  void R2C(const InView &in, const OutView &out, bool transpose=false);
+  void R2C(const InView &in, const OutView &out, bool transpose=true);
 
   template<typename InView, typename OutView>
-  void C2R(const InView &in, const OutView &out, bool transpose=false);
+  void C2R(const InView &in, const OutView &out, bool transpose=true);
 
   template<typename InView, typename OutView>
   void R2C_Host(const InView &in, const OutView &out);
@@ -67,8 +67,8 @@ class FFT {
   template<typename ViewIn, typename ViewOut>
   void TransposeLocal(const ViewIn &in, const ViewOut &out);
 
-  void R2C_MPI(const IdefixArray3D<real> in, IdefixArray3D<complex> out, bool transpose=false);
-  void C2R_MPI(const IdefixArray3D<complex> in, IdefixArray3D<real> out, bool transpose=false);
+  void R2C_MPI(const IdefixArray3D<real> in, IdefixArray3D<complex> out, bool transpose=true);
+  void C2R_MPI(const IdefixArray3D<complex> in, IdefixArray3D<real> out, bool transpose=true);
   void TestMPI();
 
  private:
@@ -102,7 +102,7 @@ class FFT {
 
  public:
   std::array<int,3> npr_glob, npf_glob;
-  std::array<int,3> npr, npf, npr_t;
+  std::array<int,3> npr, npf;
   bool havePlan{false};
 
   IdefixArray3D<real> tempReal;
@@ -139,8 +139,13 @@ void FFT::R2C(const InView &in, const OutView &out, bool transpose) {
 
 #ifdef WITH_MPI
   Kokkos::deep_copy(tempReal, in);
-  R2C_MPI(tempReal, tempComplex, transpose);
-  Kokkos::deep_copy(out, tempComplex);
+  if(!transpose) {
+    R2C_MPI(tempReal, tempTransposedComplex, transpose);
+    Kokkos::deep_copy(out, tempTransposedComplex);
+  } else {
+    R2C_MPI(tempReal, tempComplex, transpose);
+    Kokkos::deep_copy(out, tempComplex);
+  }
 #else
   Kokkos::deep_copy(tempReal, in);
   KokkosFFT::execute(*(r2cPlan.get()), tempReal, tempComplex);
@@ -162,8 +167,13 @@ void FFT::C2R(const InView &in, const OutView &out, bool transpose) {
   idfx::pushRegion("FFT::C2R");
 
 #ifdef WITH_MPI
-  Kokkos::deep_copy(tempComplex, in);
-  C2R_MPI(tempComplex, tempReal, transpose);
+  if(!transpose) {
+    Kokkos::deep_copy(tempTransposedComplex, in);
+    C2R_MPI(tempTransposedComplex, tempReal,transpose);
+  } else {
+    Kokkos::deep_copy(tempComplex, in);
+    C2R_MPI(tempComplex, tempReal, transpose);
+  }
   Kokkos::deep_copy(out, tempReal);
 #else
   Kokkos::deep_copy(tempComplex, in);

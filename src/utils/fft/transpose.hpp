@@ -28,7 +28,7 @@ class Transpose {
     this->tempB = Kokkos::View<T**, Kokkos::LayoutRight, Device>("FFT transpose tempB", n1,nk);
     this->tempC = Kokkos::View<T**, Kokkos::LayoutRight, Device>("FFT transpose tempC", n1,nk);
   }
-  void Apply(const IdefixArray3D<T>& input, IdefixArray3D<T>& output);
+  void Apply(const IdefixArray3D<T>& input, const IdefixArray3D<T>& output);
   void Test();
 
  private:
@@ -128,7 +128,7 @@ Then we need to transpose x1 and x2 to have x1 contiguous in memory.
 #include "idefix.hpp"
 
 template <typename T>
-void Transpose<T>::Apply(const IdefixArray3D<T>& in, IdefixArray3D<T>& out) {
+void Transpose<T>::Apply(const IdefixArray3D<T>& in, const IdefixArray3D<T>& out) {
   idfx::pushRegion("Transpose::Apply");
   #ifdef WITH_MPI
   const int64_t n = idfx::psize; // number of MPI processes

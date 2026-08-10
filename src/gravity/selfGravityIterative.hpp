@@ -5,8 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef GRAVITY_SELFGRAVITY_ITERATIVE_HPP_
-#define GRAVITY_SELFGRAVITY_ITERATIVE_HPP_
+#ifndef GRAVITY_SELFGRAVITYITERATIVE_HPP_
+#define GRAVITY_SELFGRAVITYITERATIVE_HPP_
 
 #include <memory>
 #include <vector>
@@ -46,4 +46,4 @@ class SelfGravityIterative final : public SelfGravity {
   bool isPeriodic{true};
 };
 
-#endif // GRAVITY_SELFGRAVITY_ITERATIVE_HPP_
+#endif // GRAVITY_SELFGRAVITYITERATIVE_HPP_

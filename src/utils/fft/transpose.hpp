@@ -5,8 +5,11 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef TRANSPOSE_HPP_
-#define TRANSPOSE_HPP_
+// This file is originally from the ASTRA code
+// https://github.com/glesur/astra
+
+#ifndef UTILS_FFT_TRANSPOSE_HPP_
+#define UTILS_FFT_TRANSPOSE_HPP_
 
 #ifdef WITH_MPI
 #include <mpi.h>
@@ -225,4 +228,4 @@ void Transpose<T>::Test() {
 }
 
 
-#endif // TRANSPOSE_HPP_
+#endif // UTILS_FFT_TRANSPOSE_HPP_

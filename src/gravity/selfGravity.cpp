@@ -22,7 +22,8 @@ std::unique_ptr<SelfGravity> SelfGravity::Create(Input &input, DataBlock *data) 
     #ifdef WITH_FFT
       ptr = std::make_unique<SelfGravityFFT>();
     #else
-      IDEFIX_ERROR("[SelfGravity]: FFT solver requested but Idefix was not compiled with FFT support.");
+      IDEFIX_ERROR("[SelfGravity]: FFT solver requested but "
+                   "Idefix was not compiled with FFT support.");
     #endif
   } else {
     ptr = std::make_unique<SelfGravityIterative>();

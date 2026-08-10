@@ -8,6 +8,7 @@
 #ifndef GRAVITY_GRAVITY_HPP_
 #define GRAVITY_GRAVITY_HPP_
 
+#include <memory>
 #include "idefix.hpp"
 #include "input.hpp"
 #include "selfGravity.hpp"

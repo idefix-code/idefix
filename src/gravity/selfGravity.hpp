@@ -43,7 +43,6 @@ class SelfGravity {
 
  protected:
   DataBlock *data{nullptr};
-
 };
 
 #endif // GRAVITY_SELFGRAVITY_HPP_

@@ -8,7 +8,9 @@
 #ifdef WITH_FFT
 
 #include <cmath>
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 #include <KokkosFFT.hpp>
 
@@ -28,13 +30,18 @@ void SelfGravityFFT::Init(Input &input, DataBlock *datain) {
   // FFT path currently requires periodic BC in all active dimensions
   for (int dir = 0; dir < DIMENSIONS; dir++) {
     if(grid->lbound[dir] != periodic || grid->rbound[dir] != periodic) {
-      IDEFIX_ERROR("[SelfGravityFFT]: FFT solver requires periodic boundary conditions in all active dimensions.");
+      IDEFIX_ERROR("[SelfGravityFFT]: FFT solver requires periodic boundary "
+                    "conditions in all active dimensions.");
     }
   }
 
   // storage with laplacian local array
-  rho = IdefixArray3D<real>("Density", data->np_int[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  phi = IdefixArray3D<real>("Potential", data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+  rho = IdefixArray3D<real>("Density", data->np_int[KDIR],
+                                       data->np_tot[JDIR],
+                                       data->np_tot[IDIR]);
+  phi = IdefixArray3D<real>("Potential", data->np_tot[KDIR],
+                                         data->np_tot[JDIR],
+                                         data->np_tot[IDIR]);
 
   npr_glob = {grid->np_int[IDIR], grid->np_int[JDIR], grid->np_int[KDIR]};
   npr = {grid->np_int[IDIR], grid->np_int[JDIR], grid->np_int[KDIR]/idfx::psize};
@@ -46,7 +53,8 @@ void SelfGravityFFT::Init(Input &input, DataBlock *datain) {
     kx_glob[dir] = KokkosFFT::fftfreq(Device(), npr_glob[dir], d);
     int p = idfx::prank;
     if(dir != JDIR) kx[dir] = kx_glob[dir];
-    else            kx[dir] = Kokkos::subview(kx_glob[dir], std::pair<int,int>(p * npf_t[KDIR], (p+1) * npf_t[KDIR]));
+    else            kx[dir] = Kokkos::subview(kx_glob[dir],
+                                  std::pair<int,int>(p * npf_t[KDIR], (p+1) * npf_t[KDIR]));
   }
 
   if(idfx::psize > 1) {
@@ -61,14 +69,15 @@ void SelfGravityFFT::Init(Input &input, DataBlock *datain) {
   std::array<int,3> nfft_complex = {npr_glob[KDIR], npr_glob[JDIR], npr_glob[IDIR]/2+1};
 
   this->fft = std::make_unique<FFT>(nfft_real, nfft_complex);
-  
+
   #ifdef WITH_MPI
 
     int ntarget = 0;
     std::vector<int> mapVars;
     mapVars.push_back(ntarget);
 
-    this->mpi.Init(data->mygrid, mapVars, data->nghost, data->np_int, data->lbound, data->rbound, false);
+    this->mpi.Init(data->mygrid, mapVars, data->nghost,
+                   data->np_int, data->lbound, data->rbound, false);
   #endif
   idfx::popRegion();
 }
@@ -82,13 +91,12 @@ void SelfGravityFFT::CheckCompatibility() {
       IDEFIX_ERROR("SelfGravityFFT requires no domain decomposition in the X1 and X2 directions.");
     }
     if(grid->np_int[KDIR] % idfx::psize != 0 || grid->np_int[JDIR] % idfx::psize != 0) {
-      IDEFIX_ERROR("SelfGravityFFT requires that the number of grid points in the X3 and X2 directions are"
-                   " divisible by the number of MPI processes.");
+      IDEFIX_ERROR("SelfGravityFFT requires that the number of grid points in the X3 and "
+                   "X2 directions are divisible by the number of MPI processes.");
     }
     if(grid->np_int[IDIR] % 2 != 0) {
       IDEFIX_ERROR("SelfGravityFFT requires an even number of grid points in the X1 direction.");
     }
-
 }
 
 void SelfGravityFFT::ShowConfig() {
@@ -188,10 +196,10 @@ void SelfGravityFFT::SolvePoisson() {
 
   // Make a view omitting the ghost cells
   auto rhoReal = Kokkos::subview(data->hydro->Vc,
-                                                RHO,
-                                                std::pair<int,int>(data->beg[KDIR],data->end[KDIR]),
-                                                std::pair<int,int>(data->beg[JDIR],data->end[JDIR]),
-                                                std::pair<int,int>(data->beg[IDIR],data->end[IDIR]));
+                                RHO,
+                                std::pair<int,int>(data->beg[KDIR],data->end[KDIR]),
+                                std::pair<int,int>(data->beg[JDIR],data->end[JDIR]),
+                                std::pair<int,int>(data->beg[IDIR],data->end[IDIR]));
 
   auto rhoF = this->rhoF;
   auto phiF = this->phiF;
@@ -221,14 +229,14 @@ void SelfGravityFFT::SolvePoisson() {
     );
   #endif
 
-  // Backward transform of the potential field
+  // make a ghost-cell free view of the potential field to apply the inverse transform
   auto phiReal = Kokkos::subview(phi,
                                 std::pair<int,int>(data->beg[KDIR],data->end[KDIR]),
                                 std::pair<int,int>(data->beg[JDIR],data->end[JDIR]),
                                 std::pair<int,int>(data->beg[IDIR],data->end[IDIR]));
 
   fft->C2R(phiF, phiReal, false);
-  // Need to apply the boundary conditions to the potential field, since the FFT does not know about the ghost cells
+  // Need to apply the boundary conditions to the potential field to fill the ghost cells,
   SetBoundaries(phi);
   elapsedTime += timer.seconds();
 
@@ -251,7 +259,8 @@ void SelfGravityFFT::AddSelfGravityPotential(IdefixArray3D<real> &phiP) {
 
 void SelfGravityFFT::EnrollUserDefBoundary(Laplacian::UserDefBoundaryFunc myFunc) {
   (void) myFunc;
-  IDEFIX_ERROR("SelfGravityFFT only supports periodic boundaries; userdef boundary is unsupported.");
+  IDEFIX_ERROR("SelfGravityFFT only supports periodic boundaries; "
+               "userdef boundaries are not supported.");
 }
 
 #endif // WITH_FFT

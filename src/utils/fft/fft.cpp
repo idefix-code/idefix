@@ -5,6 +5,9 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+// This file is originally from the ASTRA code
+// https://github.com/glesur/astra
+
 #include <memory>
 #include <KokkosFFT.hpp>
 #include <Kokkos_Random.hpp>

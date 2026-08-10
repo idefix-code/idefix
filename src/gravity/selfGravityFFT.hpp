@@ -28,6 +28,7 @@ class SelfGravityFFT final : public SelfGravity {
   void EnrollUserDefBoundary(Laplacian::UserDefBoundaryFunc myFunc) override;
   void SetBoundaries(IdefixArray3D<real> &);
   void EnforcePeriodic(int dir, BoundarySide side, IdefixArray3D<real> &);
+
  private:
   void SubstractMeanDensity();
   void CheckCompatibility();

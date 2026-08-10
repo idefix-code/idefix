@@ -168,8 +168,9 @@ void SelfGravityIterative::Init(Input &input, DataBlock *datain) {
                                   laplacian->np_tot, laplacian->beg, laplacian->end);
   } else {
       real step = laplacian->ComputeCFL();
-      iterativeSolver = std::make_unique<Jacobi<Laplacian>>(*laplacian.get(), targetError, maxiter, step,
-                                              laplacian->np_tot, laplacian->beg, laplacian->end);
+      iterativeSolver = std::make_unique<Jacobi<Laplacian>>(*laplacian.get(),
+                                    targetError, maxiter, step,
+                                    laplacian->np_tot, laplacian->beg, laplacian->end);
   }
 
 

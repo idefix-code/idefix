@@ -5,8 +5,11 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef FFT_HPP_
-#define FFT_HPP_
+// This file is originally from the ASTRA code
+// https://github.com/glesur/astra
+
+#ifndef UTILS_FFT_FFT_HPP_
+#define UTILS_FFT_FFT_HPP_
 
 #include <memory>
 #include <type_traits>
@@ -14,15 +17,35 @@
 #include "arrays.hpp"
 #include "transpose.hpp"
 
-using PlanR2CType = KokkosFFT::Plan<Kokkos::DefaultExecutionSpace, IdefixArray3D<real>, IdefixArray3D<complex>,3>;
-using PlanC2RType = KokkosFFT::Plan<Kokkos::DefaultExecutionSpace, IdefixArray3D<complex>, IdefixArray3D<real>,3>;
+using PlanR2CType = KokkosFFT::Plan<Kokkos::DefaultExecutionSpace,
+                                    IdefixArray3D<real>,
+                                    IdefixArray3D<complex>,
+                                    3>;
+using PlanC2RType = KokkosFFT::Plan<Kokkos::DefaultExecutionSpace,
+                                    IdefixArray3D<complex>,
+                                    IdefixArray3D<real>,
+                                    3>;
+using PlanC2CType1D = KokkosFFT::Plan<Kokkos::DefaultExecutionSpace,
+                                      IdefixArray3D<complex>,
+                                      IdefixArray3D<complex>,
+                                      1>;
+using PlanC2RType1D = KokkosFFT::Plan<Kokkos::DefaultExecutionSpace,
+                                      IdefixArray3D<complex>,
+                                      IdefixArray3D<real>,
+                                      1>;
+using PlanR2CType1D = KokkosFFT::Plan<Kokkos::DefaultExecutionSpace,
+                                      IdefixArray3D<real>,
+                                      IdefixArray3D<complex>,
+                                       1>;
 
-using PlanC2CType1D = KokkosFFT::Plan<Kokkos::DefaultExecutionSpace, IdefixArray3D<complex>, IdefixArray3D<complex>,1>;
-using PlanC2RType1D = KokkosFFT::Plan<Kokkos::DefaultExecutionSpace, IdefixArray3D<complex>, IdefixArray3D<real>,1>;
-using PlanR2CType1D = KokkosFFT::Plan<Kokkos::DefaultExecutionSpace, IdefixArray3D<real>, IdefixArray3D<complex>,1>;
-
-using PlanR2CType2D = KokkosFFT::Plan<Kokkos::DefaultExecutionSpace, IdefixArray3D<real>, IdefixArray3D<complex>,2>;
-using PlanC2RType2D = KokkosFFT::Plan<Kokkos::DefaultExecutionSpace, IdefixArray3D<complex>, IdefixArray3D<real>,2>;
+using PlanR2CType2D = KokkosFFT::Plan<Kokkos::DefaultExecutionSpace,
+                                      IdefixArray3D<real>,
+                                      IdefixArray3D<complex>,
+                                      2>;
+using PlanC2RType2D = KokkosFFT::Plan<Kokkos::DefaultExecutionSpace,
+                                      IdefixArray3D<complex>,
+                                      IdefixArray3D<real>,
+                                      2>;
 
 class FFT {
  public:
@@ -197,4 +220,4 @@ void FFT::TransposeLocal(const ViewIn &in, const ViewOut &out) {
     });
 }
 
-#endif // FFT_HPP_
+#endif // UTILS_FFT_FFT_HPP_

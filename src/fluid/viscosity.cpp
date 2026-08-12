@@ -215,7 +215,7 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
         real dx3 = dx3Array(k);
 
         // Correct spacing for grid coarsening
-        
+
         if(haveGridCoarsening) {
           if(haveGridCoarseningX1) {
             const int factor =  1 << (coarseningLevelX1(k,j) - 1);

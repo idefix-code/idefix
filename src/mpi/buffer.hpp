@@ -172,7 +172,7 @@ class Buffer {
 
   void UnpackJDirSymetric(IdefixArray4D<real>& out,
         const int var,
-        const int symMultiplier,
+        IdefixArray1D<int>& SymMap,
         BoundingBox box) {
     const int ni = box[IDIR][1]-box[IDIR][0];
     const int ninj = (box[JDIR][1]-box[JDIR][0])*ni;
@@ -190,6 +190,7 @@ class Buffer {
       KOKKOS_LAMBDA (int k, int j, int i) {
         const int jinverted = jend-(j-jbeg)-1;
         const int arrIndex = i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + offset;
+        const int symMultiplier = SymMap(var);
         out(var,k,jinverted,i) = symMultiplier * arr(arrIndex);
     });
 

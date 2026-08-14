@@ -215,7 +215,7 @@ int MPI_Wait(Idefix_MPI_Request<T>* request, MPI_Status *array_of_statuses) {
  */
 template <class T>
 int MPI_Send(IdefixCommArray<T> & buf, int count, MPI_Datatype datatype, int
-    source, int tag, MPI_Comm comm) {
+    dest, int tag, MPI_Comm comm) {
   //check
   assert(buf.span() == count);
   assert(buf.span_is_contiguous());
@@ -225,10 +225,36 @@ int MPI_Send(IdefixCommArray<T> & buf, int count, MPI_Datatype datatype, int
 
   //call MPI
   const int result = ::MPI_Send(buf.commData(), count, datatype,
-    source, tag, comm);
+    dest, tag, comm);
 
   //ok
   return result;
+}
+
+/**
+ * Overlad the MPI_Send() function to handle an idefix communication array. It will automate the
+ * CPU / GPU transfers if the array in on GPU and WITH_MPI_GPU_DIRECT is disabled.
+ */
+template <class T, size_t U>
+int MPI_Send(const std::array<T, U> & buf, int count, MPI_Datatype datatype,
+    int dest, int tag, MPI_Comm comm) {
+  //call MPI
+  return ::MPI_Send(buf.data(), count, datatype, dest, tag, comm);
+}
+
+/**
+ * Overlad the MPI_Send() function to handle an idefix communication array. It will automate the
+ * CPU / GPU transfers if the array in on GPU and WITH_MPI_GPU_DIRECT is disabled.
+ */
+template <class T>
+int MPI_Send(const Kokkos::View<T, Kokkos::LayoutRight, Kokkos::HostSpace> & buf, int count,
+    MPI_Datatype datatype, int dest, int tag, MPI_Comm comm) {
+  //check
+  assert(buffer.span() == count);
+  assert(buffer.span_is_contiguous());
+
+  //call MPI
+  return ::MPI_Send(buf.data(), count, datatype, dest, tag, comm);
 }
 
 /**
@@ -257,9 +283,24 @@ int MPI_Recv(IdefixCommArray<T> & buf, int count, MPI_Datatype datatype, int
  * Overlad the MPI_Recv() function to handle an idefix communication array. It will automate the
  * CPU / GPU transfers if the array in on GPU and WITH_MPI_GPU_DIRECT is disabled.
  */
-template <class T, int U>
+template <class T, size_t U>
 int MPI_Recv(std::array<T, U> & buf, int count, MPI_Datatype datatype, int
     source, int tag, MPI_Comm comm, MPI_Status * status) {
+  //call MPI
+  return ::MPI_Recv(buf.data(), count, datatype, source, tag, comm, status);
+}
+
+/**
+ * Overlad the MPI_Recv() function to handle an idefix communication array. It will automate the
+ * CPU / GPU transfers if the array in on GPU and WITH_MPI_GPU_DIRECT is disabled.
+ */
+template <class T>
+int MPI_Recv(Kokkos::View<T, Kokkos::LayoutRight, Kokkos::HostSpace> & buf, int count,
+    MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status * status) {
+  //check
+  assert(buffer.span() == count);
+  assert(buffer.span_is_contiguous());
+
   //call MPI
   return ::MPI_Recv(buf.data(), count, datatype, source, tag, comm, status);
 }
@@ -356,7 +397,7 @@ int MPI_Bcast(IdefixHostArray1D<T> & buffer, int count, MPI_Datatype datatype, i
   assert(buffer.span_is_contiguous());
 
   //call MPI
-  const int result = ::MPI_Bcast(buffer.commData(), count, datatype, root, comm);
+  const int result = ::MPI_Bcast(buffer.data(), count, datatype, root, comm);
 
   //ok
   return result;

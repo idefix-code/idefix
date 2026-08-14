@@ -13,6 +13,7 @@
 
 #include "idefix.hpp"
 #include "dataBlock.hpp"
+#include "commArray.hpp"
 
 
 

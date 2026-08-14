@@ -250,8 +250,8 @@ template <class T>
 int MPI_Send(const Kokkos::View<T, Kokkos::LayoutRight, Kokkos::HostSpace> & buf, int count,
     MPI_Datatype datatype, int dest, int tag, MPI_Comm comm) {
   //check
-  assert(buffer.span() == count);
-  assert(buffer.span_is_contiguous());
+  assert(buf.span() == count);
+  assert(buf.span_is_contiguous());
 
   //call MPI
   return ::MPI_Send(buf.data(), count, datatype, dest, tag, comm);
@@ -298,8 +298,8 @@ template <class T>
 int MPI_Recv(Kokkos::View<T, Kokkos::LayoutRight, Kokkos::HostSpace> & buf, int count,
     MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status * status) {
   //check
-  assert(buffer.span() == count);
-  assert(buffer.span_is_contiguous());
+  assert(buf.span() == count);
+  assert(buf.span_is_contiguous());
 
   //call MPI
   return ::MPI_Recv(buf.data(), count, datatype, source, tag, comm, status);

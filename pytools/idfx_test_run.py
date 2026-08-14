@@ -365,7 +365,7 @@ class IdexPytestRunner:
         os.environ["IDEFIX_TEST_FILTER_SUBDIR"] = idefixTest.filterSubdir
 
         if idefixTest.all:
-            pytest.main(
+            status = pytest.main(
                 [
                     "-v",
                     "--no-header",
@@ -375,6 +375,7 @@ class IdexPytestRunner:
                 + idefixTest.remainingArgs
                 + [self.parentScritFile]
             )
+            sys.exit(status)
         else:
             raise NotImplementedError("Not yet supported !")
         # elif self.check:

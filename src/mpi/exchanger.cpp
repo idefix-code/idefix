@@ -225,24 +225,24 @@ void Exchanger::Exchange(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   #ifdef MPI_NON_BLOCKING
   MPI_Status sendStatus[2];
   MPI_Status recvStatus[2];
-  idefix::MPI_Request sendRequest[2];
-  idefix::MPI_Request recvRequest[2];
+  idefix::MPI_Request_1D<real> sendRequest[2];
+  idefix::MPI_Request_1D<real> recvRequest[2];
 
   // We receive from procRecv, and we send to procSend
 
   idefix::MPI_Isend(BufferSend[faceRight].commView(), bufferSizeSend[faceRight], realMPI,
-            procSend[faceRight], 100, mygrid->CartComm, &sendRequest[0]);
+            procSend[faceRight], 100, grid->CartComm, &sendRequest[0]);
 
   idefix::MPI_Irecv(BufferRecv[faceLeft].commView(), bufferSizeRecv[faceLeft], realMPI,
-            procRecv[faceLeft], 100, mygrid->CartComm, &recvRequest[0]);
+            procRecv[faceLeft], 100, grid->CartComm, &recvRequest[0]);
   // Send to the left
   // We receive from procRecv, and we send to procSend
 
   idefix::MPI_Isend(BufferSend[faceLeft].commView(), bufferSizeSend[faceLeft], realMPI,
-            procSend[faceLeft], 101, mygrid->CartComm, &sendRequest[1]);
+            procSend[faceLeft], 101, grid->CartComm, &sendRequest[1]);
 
   idefix::MPI_Irecv(BufferRecv[faceRight].commView(), bufferSizeRecv[faceRight], realMPI,
-            procRecv[faceRight], 101, mygrid->CartComm, &recvRequest[1]);
+            procRecv[faceRight], 101, grid->CartComm, &recvRequest[1]);
 
   // Wait for recv to complete (we don't care about the sends)
   idefix::MPI_Waitall(2, recvRequest, recvStatus);

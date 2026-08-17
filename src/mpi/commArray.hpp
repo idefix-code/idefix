@@ -9,7 +9,7 @@
 #define MPI_COMMARRAY_HPP_
 
 //To enable to force transfers and validate that it is working in any conditions.
-//#define FORCE_TRANSFERS_ALL_TIME
+//#define WITH_GPU_FORCE_COPY
 
 #ifdef WITH_MPI
   #include <mpi.h>
@@ -136,7 +136,7 @@ class IdefixCommArrayNoGpuDirect : public T {
 
  private:
   static typename T::host_mirror_type initCommArray(T & deviceArray) {
-    #ifdef FORCE_TRANSFERS_ALL_TIME
+    #ifdef WITH_GPU_FORCE_COPY
       //for validation purpose, force the transfers by using a copy anytime.
       return Kokkos::create_mirror(deviceArray);
     #else

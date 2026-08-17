@@ -94,6 +94,10 @@ class idfxTest:
                         help="MPI communication mode to use (Default)",
                         type=str)
 
+    parser.add_argument("-mpiGpuForceCopy",
+                        action="store_true",
+                        help="Disable MPI GPU direct and force memory transfers for validation purpose.")
+
     parser.add_argument("-all",
                     help="Do all test suite (otherwise, just do the test with the current configuration)",
                     action="store_true")
@@ -246,6 +250,10 @@ class idfxTest:
 
     if self.mpiMode != "Default":
       comm.append(f"-DIdefix_MPI_MODE={self.mpiMode}")
+
+    if self.mpiGpuForceCopy:
+      comm.append("-DIdefix_MPI_GPU_DIRECT=OFF")
+      comm.append("-DIdefix_MPI_GPU_FORCE_COPY=ON")
 
     if(self.reconstruction == 2):
       comm.append("-DIdefix_RECONSTRUCTION=Linear")

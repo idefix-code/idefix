@@ -7,6 +7,7 @@
 
 import copy
 import glob
+import importlib
 import json
 import os
 import sys
@@ -135,6 +136,58 @@ class IdexPytestRunner:
         # ok
         return result
 
+    def buildPyHooks(self, config: dict) -> dict:
+        # init
+        result = {}
+        key: str
+
+        # extract and build dict
+        for key, value in config.items():
+            if key.startswith("callPyFunction"):
+                when = key.replace("callPyFunction", "")
+                result[when] = value
+
+        # ok
+        return result
+
+    # https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
+    def importFromPath(self, moduleName: str, filePath: str):
+        spec = importlib.util.spec_from_file_location(moduleName, filePath)
+        module = importlib.util.module_from_spec(spec)
+        # sys.modules[moduleName] = module
+        spec.loader.exec_module(module)
+        return module
+
+    def callPyHook(self, dir: str, hooks: dict, name: str) -> None:
+        # nothing to do
+        if name not in hooks:
+            return
+
+        # split file:funcName
+        params = hooks[name].split(":", 1)
+        filePath = params[0]
+        funcName = params[1]
+
+        # complete
+        fileFullPath = os.path.join(dir, filePath)
+
+        # log
+        print("************** CALLING PY FUNCTION ****************")
+        print(f"Hook: {name}")
+        print(f"HookValue: {hooks[name]}")
+        print(f"Import {fileFullPath}")
+        print(f"Call: {funcName}")
+        print("***************************************************")
+
+        # import the module
+        module = self.importFromPath("idefix_test_py_hooks", fileFullPath)
+
+        # get function
+        function = getattr(module, funcName)
+
+        # call it
+        function()
+
     def run(self, config: dict) -> None:
         # clone before modify to not modity for caller
         config = copy.deepcopy(config)
@@ -155,6 +208,7 @@ class IdexPytestRunner:
         nonRegressionTestIni = config.get("nonRegressionTestIni", None)
         check_file_produced = config.get("check_file_produced", [])
         problemDir = os.path.dirname(testfile)
+        pyHooks = self.buildPyHooks(config)
 
         # cleanup some keyword not handled at the
         # level of idx_test so we don't perturbate it
@@ -169,6 +223,11 @@ class IdexPytestRunner:
             del config["nonRegressionTest"]
         if "nonRegressionTestIni" in config:
             del config["nonRegressionTestIni"]
+        for hook in pyHooks:
+            del config[f"callPyFunction{hook}"]
+
+        # call hook before
+        self.callPyHook(problemDir, pyHooks, "Before")
 
         # if switch from test, rebuild the runner (a runner make for one dir)
         if self.currentTestFile != testfile:
@@ -194,6 +253,9 @@ class IdexPytestRunner:
                 raise Exception(
                     f"Don't find expected file to be produced by the run : {file} !"
                 )
+
+        # call hook after
+        self.callPyHook(problemDir, pyHooks, "After")
 
     def _runNonRegression(
         self,

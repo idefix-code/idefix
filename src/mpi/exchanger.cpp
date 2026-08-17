@@ -12,8 +12,11 @@
 #include "grid.hpp"
 #include "arrays.hpp"
 
-//#define MPI_NON_BLOCKING
-#define MPI_PERSISTENT
+#if defined(COMMUNICATION_MODE_NON_BLOCKING)
+  #define MPI_NON_BLOCKING
+#elif defined(COMMUNICATION_MODE_PERSISTENT)
+  #define MPI_PERSISTENT
+#endif //COMMUNICATION_MODE_*
 
 int Exchanger::nInstances = 0;
 

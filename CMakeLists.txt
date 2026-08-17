@@ -36,6 +36,10 @@ set_property(CACHE Idefix_PRECISION PROPERTY STRINGS Double Single)
 set(Idefix_LOOP_PATTERN "Default" CACHE STRING "Loop pattern for idefix_for")
 set_property(CACHE Idefix_LOOP_PATTERN PROPERTY STRINGS Default SIMD Range MDRange TeamPolicy TeamPolicyInnerVector)
 
+set(Idefix_MPI_MODE "Persistent" CACHE STRING "MPI communication mode to use.")
+set_property(CACHE Idefix_MPI_MODE PROPERTY STRINGS Persistent Blocking NonBlocking)
+mark_as_advanced(Idefix_MPI_MODE)
+
 # load git revision tools
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 include(GetGitRevisionDescription)
@@ -230,6 +234,15 @@ endif()
 # precision
 if(${Idefix_PRECISION} STREQUAL "Single")
   add_compile_definitions("SINGLE_PRECISION")
+endif()
+
+# MPI mode
+if(${Idefix_MPI_MODE} STREQUAL "Persistent")
+  add_compile_definitions("COMMUNICATION_MODE_PERSISTENT")
+elseif(${Idefix_MPI_MODE} STREQUAL "NonBlocking")
+  add_compile_definitions("COMMUNICATION_MODE_NON_BLOCKING")
+else(NOT ${Idefix_MPI_MODE} STREQUAL "Blocking")
+  message(ERROR "Unknown MPI communication mode : Idefix_MPI_MODE=${Idefix_MPI_MODE}")
 endif()
 
 target_include_directories(idefix PUBLIC

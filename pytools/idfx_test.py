@@ -88,6 +88,12 @@ class idfxTest:
                         help="Enable MPI",
                         action="store_true")
 
+    parser.add_argument("-mpiMode",
+                        default="Persistent",
+                        choices=["Default", "Persistent", "NonBlocking", "Blocking"],
+                        help="MPI communication mode to use (Default)",
+                        type=str)
+
     parser.add_argument("-all",
                     help="Do all test suite (otherwise, just do the test with the current configuration)",
                     action="store_true")
@@ -237,6 +243,9 @@ class idfxTest:
       comm.append("-DIdefix_MPI=ON")
     else:
       comm.append("-DIdefix_MPI=OFF")
+
+    if self.mpiMode != "Default":
+      comm.append(f"-DIdefix_MPI_MODE={self.mpiMode}")
 
     if(self.reconstruction == 2):
       comm.append("-DIdefix_RECONSTRUCTION=Linear")

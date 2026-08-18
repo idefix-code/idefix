@@ -249,11 +249,12 @@ class IdexPytestRunner:
             )
 
         # check produced
-        for file in check_file_produced:
-            if not os.path.exists(file) and not self.currentTestRunner.fake:
-                raise Exception(
-                    f"Don't find expected file to be produced by the run : {file} !"
-                )
+        with moveInDir(problemDir):
+            for file in check_file_produced:
+                if not os.path.exists(file) and not self.currentTestRunner.fake:
+                    raise Exception(
+                        f"Don't find expected file to be produced by the run : {file} !"
+                    )
 
         # call hook after
         with moveInDir(problemDir):

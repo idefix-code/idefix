@@ -75,7 +75,7 @@ void ConstrainedTransport<Phys>::ExchangeX1(IdefixArray3D<real> ey, IdefixArray3
   sendBoxEy[KDIR][1] += 1;
   sendBoxEy[IDIR][0] = iright;
   sendBoxEy[IDIR][1] = iright + 1;
-  BufferRight.Pack(ez, sendBoxEy);
+  BufferRight.Pack(ey, sendBoxEy);
   #endif
 
   // Wait for completion before sending out everything
@@ -238,11 +238,11 @@ void ConstrainedTransport<Phys>::ExchangeX3(IdefixArray3D<real> ex, IdefixArray3
   baseBox[KDIR][1] = data->end[KDIR];
 
   //extend by one the end on jdir && take the ghost on k
-  BoundingBox sendBoxEz = baseBox;
-  sendBoxEz[JDIR][1] += 1;
-  sendBoxEz[KDIR][0] = kright;
-  sendBoxEz[KDIR][1] = kright + 1;
-  BufferRight.Pack(ez, sendBoxEz);
+  BoundingBox sendBoxEx = baseBox;
+  sendBoxEx[JDIR][1] += 1;
+  sendBoxEx[KDIR][0] = kright;
+  sendBoxEx[KDIR][1] = kright + 1;
+  BufferRight.Pack(ex, sendBoxEx);
 
   //extend by one the end on idir && take the ghost on k
   BoundingBox sendBoxEy = baseBox;

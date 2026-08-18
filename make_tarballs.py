@@ -89,7 +89,7 @@ def _make_self_contained_tarball(output_dir, *, suffix="", exclude_list=None):
         os.replace(os.path.join(work_dir, tarball), final_tarfile)
 
     filesize = os.path.getsize(final_tarfile)
-    print("Done ! Final file size is %.1f MB" % (filesize / 1024 ** 2))
+    print("Done ! Final file size is %.1f MB" % (filesize / 1024**2))
 
 
 def main(argv=None):

@@ -227,7 +227,8 @@ class IdexPytestRunner:
             del config[f"callPyFunction{hook}"]
 
         # call hook before
-        self.callPyHook(problemDir, pyHooks, "Before")
+        with moveInDir(problemDir):
+            self.callPyHook(problemDir, pyHooks, "Before")
 
         # if switch from test, rebuild the runner (a runner make for one dir)
         if self.currentTestFile != testfile:
@@ -255,7 +256,8 @@ class IdexPytestRunner:
                 )
 
         # call hook after
-        self.callPyHook(problemDir, pyHooks, "After")
+        with moveInDir(problemDir):
+            self.callPyHook(problemDir, pyHooks, "After")
 
     def _runNonRegression(
         self,

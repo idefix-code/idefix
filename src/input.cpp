@@ -242,13 +242,6 @@ void Input::ShowConfig() {
   idfx::cout << "Input: COMPONENTS=" << COMPONENTS << "." << std::endl;
   #ifdef WITH_MPI
     idfx::cout << "Input: MPI ENABLED." << std::endl;
-    #ifdef COMMUNICATION_MODE_NON_BLOCKING
-      idfx::cout << "Input: MPI MODE=NonBLocking." << std::endl;
-    #elif defined(COMMUNICATION_MODE_PERSISTENT)
-      idfx::cout << "Input: MPI MODE=Persisent." << std::endl;
-    #else
-      idfx::cout << "Input: MPI MODE=Blocking." << std::endl;
-    #endif
   #endif
 }
 

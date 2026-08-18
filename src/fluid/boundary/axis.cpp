@@ -392,7 +392,8 @@ void Axis::ExchangeMPI(int side) {
   idfx::pushRegion("Axis::ExchangeMPI");
   #ifdef WITH_MPI
   // Load  the buffers with data
-  int ibeg,iend,jbeg,jend,kbeg,kend,offset;
+  [[maybe_unused]] int ibeg,iend,jbeg,jend,kbeg,kend;
+  int offset;
   int ny;
   Buffer bufferSend = this->bufferSend;
   IdefixArray1D<int> map = this->mapVars;
@@ -491,12 +492,12 @@ void Axis::ExchangeMPI(int side) {
       //unpack Vs face-centered
       BoundingBox recvBoxVsIdir = baseBox;
       recvBoxVsIdir[IDIR][1] += 1;
-      bufferRecv.UnpackJDirSymetric(Vs, IDIR, sVs(IDIR), recvBoxVsIdir);
+      bufferRecv.UnpackJDirSymetric(Vs, IDIR, sVs, recvBoxVsIdir);
 
       //unpack Vs face-centered
       BoundingBox recvBoxVsKdir = baseBox;
       recvBoxVsKdir[KDIR][1] += 1;
-      bufferRecv.UnpackJDirSymetric(Vs, KDIR, sVs(KDIR), recvBoxVsKdir);
+      bufferRecv.UnpackJDirSymetric(Vs, KDIR, sVs, recvBoxVsKdir);
     }
   } else if(side==right) {
     //unpack Vc on right part
@@ -514,14 +515,14 @@ void Axis::ExchangeMPI(int side) {
       recvBoxVsIdir[IDIR][1] += 1;
       recvBoxVsIdir[JDIR][0] += offset;
       recvBoxVsIdir[JDIR][1] += offset;
-      bufferRecv.UnpackJDirSymetric(Vs, IDIR, sVs(IDIR), recvBoxVsIdir);
+      bufferRecv.UnpackJDirSymetric(Vs, IDIR, sVs, recvBoxVsIdir);
 
       //unpack Vs face-centered on right part
       BoundingBox recvBoxVsKdir = baseBox;
       recvBoxVsKdir[KDIR][1] += 1;
       recvBoxVsKdir[JDIR][0] += offset;
       recvBoxVsKdir[JDIR][1] += offset;
-      bufferRecv.UnpackJDirSymetric(Vs, KDIR, sVs(KDIR), recvBoxVsKdir);
+      bufferRecv.UnpackJDirSymetric(Vs, KDIR, sVs, recvBoxVsKdir);
     } // MHD
   }
 

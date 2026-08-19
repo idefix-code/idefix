@@ -110,6 +110,40 @@ int main( int argc, char* argv[] )
     idfx::cout << "Success" << std::endl;
 
     idfx::cout << "--------------------------------------" << std::endl;
+    idfx::cout << "Testing 1D CSV file read as columns on device." << std::endl;
+    // Read the same 1D table, but stored as columns of the CSV file
+    LookupTable<1> csv1Dcolumn("toto1Dcolumn.csv",',', true, true);
+
+    idefix_for("loop",0, 1, KOKKOS_LAMBDA (int i) {
+      real x[1];
+      x[0] = 2.1;
+      arr(i) = csv1Dcolumn.Get(x);
+    });
+
+    Kokkos::deep_copy(arrHost , arr);
+
+    idfx::cout << "result="<<arrHost(0) << std::endl;
+    if(arrHost(0) != 4.2) {
+      idfx::cerr << std::scientific;
+      idfx::cerr << "ERROR!!" << std::endl;
+      exit(1);
+    }
+    idfx::cout << "Success" << std::endl;
+
+    idfx::cout << "--------------------------------------" << std::endl;
+    idfx::cout << "Testing 1D CSV file read as columns on Host." << std::endl;
+
+    x[0] = 2.1;
+    result = csv1Dcolumn.GetHost(x);
+    idfx::cout << "result="<<result << std::endl;
+    if(result != 4.2) {
+      idfx::cerr << std::scientific;
+      idfx::cerr << "ERROR!!" << std::endl;
+      exit(1);
+    }
+    idfx::cout << "Success" << std::endl;
+
+    idfx::cout << "--------------------------------------" << std::endl;
     idfx::cout << "Testing 3D npy file on device." << std::endl;
     // Read npy File
     std::vector<std::string> coords({"x.npy","y.npy","z.npy"});

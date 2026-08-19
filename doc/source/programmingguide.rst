@@ -489,7 +489,36 @@ For the CSV constructor, ``nDim`` can only have the values 1 or 2.
 
 .. note::
   The input CSV file is allowed to contain comments, starting with "#". Any character following
-  "#" is ignored by the ``LookupTable`` class.
+  "#" is ignored by the ``LookupTable`` class. Hence, a line starting with "#" is entirely ignored,
+  and so are empty lines and lines made only of white spaces. Comments and blank lines can therefore
+  be inserted anywhere in the file, including before the first line of the table.
+
+By default, the coordinates and the data are read as *lines* of the CSV file, as in the examples above. For 1D lookup
+tables, they can also be read as *columns* of the CSV file, using the optional argument ``readColumns`` of the constructor:
+
+.. code-block:: c++
+
+  template <int nDim>
+  LookupTable<nDim>::LookupTable(std::string filename, char delimiter,
+                                 bool errorIfOutOfBound, bool readColumns);
+
+With ``readColumns=true``, the 1D lookup table is read from the two first columns of the file, the first one
+giving the coordinates and the second one the data:
+
+.. list-table:: example1D_col.csv
+  :widths: 25 25
+  :header-rows: 0
+
+  * - x\ :sub:`1`
+    - data\ :sub:`1`
+  * - x\ :sub:`2`
+    - data\ :sub:`2`
+  * - x\ :sub:`3`
+    - data\ :sub:`3`
+
+.. note::
+  ``readColumns`` is only available for 1D lookup tables. 2D lookup tables are always read as lines,
+  following the layout of ``example2D.csv`` above.
 
 
 Numpy constructor

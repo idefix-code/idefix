@@ -18,7 +18,16 @@ template <const int kDim>
 class LookupTable {
  public:
   LookupTable() = default;
-  LookupTable(std::string filename, char delimiter, bool errorIfOutOfBound = true);
+  // Constructor from a CSV/ASCII file.
+  // By default (readColumns=false), the arrays are read as *lines* of the input file:
+  //    1D: 1st line = coordinates (xinHost), 2nd line = data (dataHost)
+  //    2D: 1st line = coordinates of the 1st dimension, then each line starts with the
+  //        coordinate of the 2nd dimension, followed by the data of that line.
+  // For 1D tables only, the arrays can also be read as *columns* of the input file by setting
+  // readColumns=true:
+  //    1st column = coordinates (xinHost), 2nd column = data (dataHost)
+  LookupTable(std::string filename, char delimiter, bool errorIfOutOfBound = true,
+              bool readColumns = false);
   LookupTable(std::vector<std::string> filenames,
               std::string dataSet,
                bool errorIfOutOfBound = true);
@@ -177,7 +186,7 @@ LookupTable<kDim>::LookupTable(std::vector<std::string> filenames,
   }
 
   // Allocate the required memory
-  //Allocate arrays so that the data fits in it
+  // Allocate arrays so that the data fits in it
   this->xinDev = IdefixArray1D<real> ("Table_x", sizeTotal);
   this->dimensionsDev = IdefixArray1D<int> ("Table_dim", kDim);
   this->offsetDev = IdefixArray1D<int> ("Table_offset", kDim);
@@ -244,12 +253,19 @@ LookupTable<kDim>::LookupTable(std::vector<std::string> filenames,
 
 
 // Constructor from CSV file
+// The coordinates and the data are read as lines of the input file, unless readColumns is set
+// to true, in which case they are read as columns of the input file (1D tables only, see the
+// declaration of the class for a description of both layouts).
 template <int kDim>
-LookupTable<kDim>::LookupTable(std::string filename, char delimiter, bool errOOB) {
+LookupTable<kDim>::LookupTable(std::string filename, char delimiter, bool errOOB,
+                               bool readColumns) {
   idfx::pushRegion("LookupTable::LookupTable");
     this->errorIfOutOfBound = errOOB;
   if(kDim>2) {
     IDEFIX_ERROR("CSV files are only compatible with 1D and 2D tables");
+  }
+  if(kDim>1 && readColumns) {
+    IDEFIX_ERROR("CSV files can only be read as columns for 1D tables");
   }
   // Only 1 process loads the file
   // Size of the array
@@ -265,21 +281,18 @@ LookupTable<kDim>::LookupTable(std::string filename, char delimiter, bool errOOB
 
     if(file.is_open()) {
       std::string line, lineWithComments;
-      bool firstLine = true;
-      int nx = -1;
+      // Full content of the file, stored as a list of lines, each line being a list of values
+      std::vector<std::vector<real>> fileContent;
 
       while(std::getline(file, lineWithComments)) {
         // get rid of comments (starting with #)
         line = lineWithComments.substr(0, lineWithComments.find("#",0));
         if (line.empty()) continue;     // skip blank line
-        char firstChar = line.find_first_not_of(" ");
+        std::size_t firstChar = line.find_first_not_of(" ");
         if (firstChar == std::string::npos) continue;      // line is all white space
         // Walk the line
-        bool firstColumn=true;
-        if(kDim == 1) firstColumn = false;
-
-        std::vector<real> dataLine;
-        dataLine.clear();
+        std::vector<real> lineVector;
+        lineVector.clear();
         // make the line a string stream, and get all of the values separated by a delimiter
         std::stringstream str(line);
         std::string valueString;
@@ -294,31 +307,62 @@ LookupTable<kDim>::LookupTable(std::string filename, char delimiter, bool errOOB
                    << "\" cannot be converted to real." << std::endl;
             IDEFIX_ERROR(errmsg);
           }
-          if(firstLine) {
-            xVector.push_back(value);
-          } else if(firstColumn) {
-            yVector.push_back(value);
-            firstColumn = false;
-          } else {
-            dataLine.push_back(value);
-          }
+          lineVector.push_back(value);
         }
         // We have finished the line
-        if(firstLine) {
-          nx = xVector.size();
-          firstLine=false;
-        } else {
-          if(dataLine.size() != nx) {
-            IDEFIX_ERROR("LookupTable: The number of columns in the input CSV "
-                          "file should be constant");
-          }
-          dataVector.push_back(dataLine);
-          firstLine = false;
-          if(kDim < 2) break; // Stop reading what's after the first two lines
-        }
+        fileContent.push_back(lineVector);
+        // When read as lines, a 1D table is fully described by the first two lines of the file,
+        // so we stop reading what's after them
+        if(kDim < 2 && !readColumns && fileContent.size() == 2) break;
       }
       file.close();
       // End of file reached
+
+      if(fileContent.size() < 2) {
+        IDEFIX_ERROR("LookupTable: The input CSV file should contain at least two lines");
+      }
+
+      // Dispatch the content of the file in the coordinate and data containers.
+      // Note that dataVector is always indexed as dataVector[j][i], where i (resp. j) is the
+      // index along the 1st (resp. 2nd) dimension of the table.
+      if(readColumns) {
+        // (1D tables only) the coordinates are stored in the 1st column of the input file,
+        // while the data is stored in its 2nd column
+        dataVector.push_back(std::vector<real>());
+        for(int i = 0 ; i < fileContent.size() ; i++) {
+          if(fileContent[i].size() < 2) {
+            IDEFIX_ERROR("LookupTable: The input CSV file should have at least two columns "
+                          "when the table is read as columns");
+          }
+          xVector.push_back(fileContent[i][0]);
+          dataVector[0].push_back(fileContent[i][1]);
+        }
+      } else {
+        // (default) the arrays are stored as lines of the input file
+        // 1st line always gives the coordinates of the 1st dimension
+        xVector = fileContent[0];
+        const int nx = xVector.size();
+        if(kDim < 2) {
+          // 2nd line is the data
+          if(fileContent[1].size() != nx) {
+            IDEFIX_ERROR("LookupTable: The number of columns in the input CSV "
+                          "file should be constant");
+          }
+          dataVector.push_back(fileContent[1]);
+        } else {
+          // each of the following lines starts with the coordinate of the 2nd dimension,
+          // followed by the data of that line
+          for(int j = 1 ; j < fileContent.size() ; j++) {
+            if(fileContent[j].size() != nx+1) {
+              IDEFIX_ERROR("LookupTable: The number of columns in the input CSV "
+                            "file should be constant");
+            }
+            yVector.push_back(fileContent[j][0]);
+            dataVector.push_back(std::vector<real>(fileContent[j].begin()+1,
+                                                   fileContent[j].end()));
+          }
+        }
+      }
     } else {
       std::stringstream errmsg;
       errmsg << "LookupTable: Unable to open file " << filename << std::endl;

@@ -370,6 +370,156 @@ int main( int argc, char* argv[] )
     }
 
     idfx::cout << "--------------------------------------" << std::endl;
+    idfx::cout << "Testing the 1D neighbours on the edges of the table." << std::endl;
+    {
+      // toto1D.csv holds x=1,2,3 and data=2,4,6. Whatever the requested value, we expect the two
+      // neighbours bracketing it, i.e. the last two nodes when we sit on the upper edge
+      real xq[1];
+      real xN[2];
+      real dataN[2];
+      real expected[3][2] = {{1.0,2.0}, {2.0,3.0}, {2.0,3.0}};
+      real xRequest[3] = {1.0, 2.0, 3.0};
+      for(int n = 0 ; n < 3 ; n++) {
+        xq[0] = xRequest[n];
+        csv1D.GetNeighboursHost(xq, xN, dataN);
+        idfx::cout << "x=" << xq[0] << " -> neighbours " << xN[0] << "," << xN[1]
+                   << " (data " << dataN[0] << "," << dataN[1] << ")" << std::endl;
+        if(xN[0] != expected[n][0] || xN[1] != expected[n][1]) {
+          idfx::cerr << "ERROR!!" << std::endl;
+          exit(1);
+        }
+        if(xN[0] > xq[0] || xN[1] < xq[0]) {
+          idfx::cerr << "ERROR!! the neighbours do not bracket the requested value" << std::endl;
+          exit(1);
+        }
+      }
+      idfx::cout << "Success" << std::endl;
+    }
+
+    idfx::cout << "--------------------------------------" << std::endl;
+    idfx::cout << "Testing the reuse of the search between Get and GetNeighbours on Host."
+               << std::endl;
+    {
+      real xq[2];
+      xq[0] = 2.1;
+      xq[1] = 3.5;
+      // The neighbours found by Get are stored in nb...
+      LookupTableNeighbours<2> nb;
+      result = csv.GetHost(xq, nb);
+      if(std::fabs(result - 5.6)>1e-13 || !nb.valid || nb.idx[0] != 0 || nb.idx[1] != 1) {
+        idfx::cerr << "ERROR!!" << std::endl;
+        exit(1);
+      }
+
+      // ... and are reused (not computed again) by the getters below
+      real xN[4];
+      real dataN[4];
+      int idx[2];
+      int dataIdx[4];
+      csv.GetNeighboursHost(xq, nb, xN, dataN);
+      csv.GetNeighboursIndxHost(xq, nb, idx, dataIdx);
+      if(xN[0] != 2.0 || xN[1] != 3.0 || xN[2] != 3.0 || xN[3] != 4.0) {
+        idfx::cerr << "ERROR!!" << std::endl;
+        exit(1);
+      }
+      if(dataN[0] != 5.0 || dataN[1] != 6.0 || dataN[2] != 6.0 || dataN[3] != 7.0) {
+        idfx::cerr << "ERROR!!" << std::endl;
+        exit(1);
+      }
+      if(idx[0] != 0 || idx[1] != 1
+         || dataIdx[0] != 1 || dataIdx[1] != 4 || dataIdx[2] != 2 || dataIdx[3] != 5) {
+        idfx::cerr << "ERROR!!" << std::endl;
+        exit(1);
+      }
+
+      // Check that the table is really not searched again for the same coordinates: we corrupt
+      // the stored search, and check that the corrupted result is the one which is used
+      nb.idx[0] = 1;
+      csv.GetNeighboursIndxHost(xq, nb, idx, dataIdx);
+      if(idx[0] != 1) {
+        idfx::cerr << "ERROR!! the stored search was not reused" << std::endl;
+        exit(1);
+      }
+
+      // ... while different coordinates trigger a new search, as usual
+      real xq2[2];
+      xq2[0] = 2.9;
+      xq2[1] = 2.5;
+      csv.GetNeighboursIndxHost(xq2, nb, idx, dataIdx);
+      if(idx[0] != 0 || idx[1] != 0) {
+        idfx::cerr << "ERROR!! the search was not performed again" << std::endl;
+        exit(1);
+      }
+      idfx::cout << "Success" << std::endl;
+    }
+
+    idfx::cout << "--------------------------------------" << std::endl;
+    idfx::cout << "Testing the reuse of the search between Get and GetNeighbours on device."
+               << std::endl;
+    {
+      IdefixArray1D<real> xNdev = IdefixArray1D<real>("xN",4);
+      IdefixArray1D<real> dataNdev = IdefixArray1D<real>("dataN",4);
+      IdefixArray1D<int> idxDev = IdefixArray1D<int>("idx",2);
+      IdefixArray1D<int> dataIdxDev = IdefixArray1D<int>("dataIdx",4);
+
+      idefix_for("neighbours",0, 1, KOKKOS_LAMBDA (int i) {
+        real xq[2];
+        xq[0] = 2.1;
+        xq[1] = 3.5;
+        // the structure is local to the loop, and is therefore private to each thread
+        LookupTableNeighbours<2> nb;
+        real xN[4];
+        real dataN[4];
+        int idx[2];
+        int dataIdx[4];
+        arr(i) = csv.Get(xq, nb);
+        csv.GetNeighbours(xq, nb, xN, dataN);
+        csv.GetNeighboursIndx(xq, nb, idx, dataIdx);
+        for(int n = 0 ; n < 4 ; n++) {
+          xNdev(n) = xN[n];
+          dataNdev(n) = dataN[n];
+          dataIdxDev(n) = dataIdx[n];
+        }
+        idxDev(0) = idx[0];
+        idxDev(1) = idx[1];
+      });
+
+      Kokkos::deep_copy(arrHost , arr);
+      auto xNHost = Kokkos::create_mirror_view(xNdev);
+      auto dataNHost = Kokkos::create_mirror_view(dataNdev);
+      auto idxHost = Kokkos::create_mirror_view(idxDev);
+      auto dataIdxHost = Kokkos::create_mirror_view(dataIdxDev);
+      Kokkos::deep_copy(xNHost, xNdev);
+      Kokkos::deep_copy(dataNHost, dataNdev);
+      Kokkos::deep_copy(idxHost, idxDev);
+      Kokkos::deep_copy(dataIdxHost, dataIdxDev);
+
+      idfx::cout << "value=" << arrHost(0) << " x=" << xNHost(0) << "," << xNHost(1)
+                 << " y=" << xNHost(2) << "," << xNHost(3)
+                 << " data=" << dataNHost(0) << "," << dataNHost(1) << "," << dataNHost(2)
+                 << "," << dataNHost(3) << " idx=" << idxHost(0) << "," << idxHost(1) << std::endl;
+      if(std::fabs(arrHost(0) - 5.6)>1e-13) {
+        idfx::cerr << "ERROR!!" << std::endl;
+        exit(1);
+      }
+      if(xNHost(0) != 2.0 || xNHost(1) != 3.0 || xNHost(2) != 3.0 || xNHost(3) != 4.0) {
+        idfx::cerr << "ERROR!!" << std::endl;
+        exit(1);
+      }
+      if(dataNHost(0) != 5.0 || dataNHost(1) != 6.0 || dataNHost(2) != 6.0
+         || dataNHost(3) != 7.0) {
+        idfx::cerr << "ERROR!!" << std::endl;
+        exit(1);
+      }
+      if(idxHost(0) != 0 || idxHost(1) != 1 || dataIdxHost(0) != 1 || dataIdxHost(1) != 4
+         || dataIdxHost(2) != 2 || dataIdxHost(3) != 5) {
+        idfx::cerr << "ERROR!!" << std::endl;
+        exit(1);
+      }
+      idfx::cout << "Success" << std::endl;
+    }
+
+    idfx::cout << "--------------------------------------" << std::endl;
     idfx::cout << "Testing 3D npy file on device." << std::endl;
     // Read npy File
     std::vector<std::string> coords({"x.npy","y.npy","z.npy"});

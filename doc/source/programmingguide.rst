@@ -676,6 +676,46 @@ For instance, the 2D table ``example2D.csv`` above, interpolated in (x=2.1, y=3.
 The same methods without the ``Host`` suffix can be called from within an ``idefix_for`` loop, the arrays being then
 local to the loop.
 
+Both ``Get`` and the methods above search the table for the cell surrounding the requested coordinates. When the
+interpolated value *and* its neighbours are needed for the same coordinates, this search can be performed only once,
+by handing a ``LookupTableNeighbours<nDim>`` structure to ``Get``: the search it stores is then reused by
+``GetNeighbours`` and ``GetNeighboursIndx`` instead of being done a second time.
+
+.. code-block:: c++
+
+  idefix_for("loop",0, 10, KOKKOS_LAMBDA (int i) {
+    real x[2];
+    x[0] = 2.1;
+    x[1] = 3.5;
+
+    // The search performed by Get is stored in neighbours...
+    LookupTableNeighbours<2> neighbours;
+    real value = csv.Get(x, neighbours);
+
+    // ... and is reused by the two methods below, which do not search the table again
+    real xN[4];
+    real dataN[4];
+    int idx[2];
+    int dataIdx[4];
+    csv.GetNeighbours(x, neighbours, xN, dataN);
+    csv.GetNeighboursIndx(x, neighbours, idx, dataIdx);
+  });
+
+The very same methods are available on the host, as ``GetHost``, ``GetNeighboursHost`` and ``GetNeighboursIndxHost``.
+The structure gives access to the search itself, ``neighbours.idx[n]`` being the index of the left neighbour along
+the dimension ``n``, and ``neighbours.delta[n]`` the elementary ratio used to weight the two neighbours of that
+dimension.
+
+.. note::
+  The stored search is only reused when the coordinates it was computed for are the ones being requested. Calling
+  ``GetNeighbours`` or ``GetNeighboursIndx`` with different coordinates simply searches the table again, and updates
+  the structure accordingly, so that a ``LookupTableNeighbours`` can be reused from one point to the next.
+
+.. warning::
+  The structure is declared by the caller, and not by the lookup table itself: when it is used inside an
+  ``idefix_for`` loop, it should be declared *inside* the loop, so that each thread has its own copy. A lookup table
+  is shared by all of the threads of a loop, and can therefore not store anything of the sort itself.
+
 .. note::
   When the table is interpolated in function space (see above), ``xN`` and ``dataN`` are returned in the original
   space of the table, i.e. ``invFunc`` is applied to the values which are stored in ``xin`` and ``data``. The

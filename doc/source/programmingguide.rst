@@ -619,6 +619,74 @@ The ``Get`` and ``GetHost`` functions expect a C array of size ``nDim`` and retu
   real result = csv.GetHost(y);
 
 
+Accessing the neighbours used for the interpolation
++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+In addition to the interpolated value, ``LookupTable`` can return the elements of the table which surround the
+requested coordinates, i.e. the ones the interpolation is computed from. This is useful to implement a custom
+interpolation or reconstruction (e.g. a power law between two nodes), to estimate a local slope, or simply to
+check which part of the table is being used. Four methods are available, ``GetNeighbours`` and ``GetNeighboursIndx``
+on the device, and ``GetNeighboursHost`` and ``GetNeighboursIndxHost`` on the host:
+
+.. code-block:: c++
+
+  // Coordinates and data of the neighbours (device and host)
+  void GetNeighbours(const real x[nDim], real xN[2*nDim], real dataN[1 << nDim]);
+  void GetNeighboursHost(const real x[nDim], real xN[2*nDim], real dataN[1 << nDim]);
+
+  // Indices of the same neighbours (device and host)
+  void GetNeighboursIndx(const real x[nDim], int idx[nDim], int dataIdx[1 << nDim]);
+  void GetNeighboursIndxHost(const real x[nDim], int idx[nDim], int dataIdx[1 << nDim]);
+
+These methods do not return anything, but they fill the arrays which are given to them:
+
+* ``xN[2*n]`` and ``xN[2*n+1]`` are the two coordinates of the table bracketing ``x[n]`` along the dimension ``n``.
+* ``dataN[v]`` is the data on the vertex ``v`` of the cell surrounding ``x``. Since a cell of a ``nDim`` table has
+  ``2^nDim`` vertices, ``dataN`` has ``1 << nDim`` elements. The bit ``n`` of ``v`` tells whether the vertex is on
+  the right (1) or on the left (0) of the dimension ``n``: in 2D, ``dataN[0]``, ``dataN[1]``, ``dataN[2]`` and
+  ``dataN[3]`` are therefore the data in (x\ :sub:`i`, y\ :sub:`j`), (x\ :sub:`i+1`, y\ :sub:`j`),
+  (x\ :sub:`i`, y\ :sub:`j+1`) and (x\ :sub:`i+1`, y\ :sub:`j+1`).
+* ``idx[n]`` is the index of the left neighbour along the dimension ``n`` (the right one being ``idx[n]+1``).
+* ``dataIdx[v]`` is the index of the vertex ``v`` in the data array of the table, following the same convention as
+  ``dataN``, so that ``dataN[v]`` and ``dataHost(dataIdx[v])`` refer to the same element.
+
+For instance, the 2D table ``example2D.csv`` above, interpolated in (x=2.1, y=3.5), gives:
+
+.. code-block:: c++
+
+  real x[2];
+  x[0] = 2.1;
+  x[1] = 3.5;
+
+  real xN[4];        // 2 coordinates for each of the 2 dimensions
+  real dataN[4];     // 2^2 vertices
+  int idx[2];
+  int dataIdx[4];
+
+  csv.GetNeighboursHost(x, xN, dataN);
+  csv.GetNeighboursIndxHost(x, idx, dataIdx);
+
+  // xN[0] and xN[1] now bracket x[0], while xN[2] and xN[3] bracket x[1], and the interpolated
+  // value returned by csv.GetHost(x) can be recomputed from dataN:
+  real dx = (x[0]-xN[0])/(xN[1]-xN[0]);
+  real dy = (x[1]-xN[2])/(xN[3]-xN[2]);
+  real value = (1-dx)*(1-dy)*dataN[0] + dx*(1-dy)*dataN[1]
+             + (1-dx)*dy*dataN[2] + dx*dy*dataN[3];
+
+The same methods without the ``Host`` suffix can be called from within an ``idefix_for`` loop, the arrays being then
+local to the loop.
+
+.. note::
+  When the table is interpolated in function space (see above), ``xN`` and ``dataN`` are returned in the original
+  space of the table, i.e. ``invFunc`` is applied to the values which are stored in ``xin`` and ``data``. The
+  indices returned by ``GetNeighboursIndx`` are of course not affected by the transformation.
+
+.. note::
+  The search of the neighbours follows exactly the same rules as ``Get``: an out of bound coordinate triggers an
+  error when ``errorIfOutOfBound`` is enabled, and is otherwise clamped to the closest cell of the table. If one of
+  the requested coordinates is a nan, ``xN`` and ``dataN`` are filled with nans, and ``idx`` and ``dataIdx`` with -1.
+
+
 .. note::
   Usage examples are provided in `test/utils/lookupTable`.
 

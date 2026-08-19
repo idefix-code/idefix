@@ -100,6 +100,91 @@ class LookupTable {
     }
   }
 
+  // Generic search of the neighbours used for the interpolation, for all kinds of input arrays.
+  // On output, idx[n] is the index of the left neighbour along the dimension n (so that the
+  // interpolation is performed between xin(offset(n)+idx[n]) and xin(offset(n)+idx[n]+1)), and
+  // delta[n] is the elementary ratio used to weight these two neighbours.
+  // Returns false when the requested coordinates contain nans, and true otherwise.
+  template<typename Tint, typename Treal>
+  KOKKOS_INLINE_FUNCTION
+  bool GetIndices(const real x[kDim], Tint &dimensions, Tint &offset, Treal &xin,
+                  int idx[kDim], real delta[kDim]) const {
+    for(int n = 0 ; n < kDim ; n++) {
+      real xstart = xin(offset(n));
+      real xend = xin(offset(n)+dimensions(n)-1);
+      // When interpolating in function space, xin already stores func(x), so the coordinate
+      // we are looking for should be transformed accordingly
+      real x_n = interpolateInFuncSpace ? func(x[n]) : x[n];
+
+      if(std::isnan(x_n)) return(false);
+
+      // Compute index of closest element assuming even distribution
+      int i;
+
+       // Check that we're within bounds
+      if(x_n < xstart) {
+        if(errorIfOutOfBound) {
+          Kokkos::abort("LookupTable:: ERROR! Attempt to interpolate below your lower bound.");
+        } else {
+          x_n = xstart;
+          i = 0;
+        }
+      } else if( x_n > xend) {
+        if(errorIfOutOfBound) {
+          Kokkos::abort("LookupTable:: ERROR! Attempt to interpolate above your upper bound.");
+        } else {
+          // We set x_n=xend, and we do the interpolation between xin(dim-2) and xin(dim-1),
+          // so i= dim-2
+          i = dimensions(n)-2;
+          x_n = xend;
+        }
+      } else {
+        // Bounds are fine,
+        i = static_cast<int> ( (x_n - xstart) / (xend - xstart) * (dimensions(n)-1));
+        if(i == dimensions(n)-1) i = dimensions(n)-2;
+        // Check if resulting bounding elements are correct
+        if(xin(offset(n) + i) > x_n || xin(offset(n) + i+1) < x_n) {
+          // Nop, so the points are not evenly distributed
+          // Search for the correct index (a dicotomy would be more appropriate...)
+
+          i = 0;
+          while(xin(offset(n) + i) < x_n && i < dimensions(n)-1 ) {
+            i++;
+          }
+          i = i-1; // i is overestimated by one
+        }
+      }
+
+      // Store the index
+      idx[n] = i;
+
+      // Store the elementary ratio
+      delta[n] = (x_n - xin(offset(n) + i) ) / (xin(offset(n) + i+1) - xin(offset(n) + i));
+    }
+
+    return(true);
+  }
+
+  // Index in the data array of the vertex "vertex" of the neighbours. Each bit of "vertex" tells
+  // whether we are on the right (1) or on the left (0) of the corresponding dimension, so that
+  // there are 2^kDim vertices surrounding the point we are interpolating.
+  template<typename Tint>
+  KOKKOS_INLINE_FUNCTION
+  int GetDataIndex(Tint &dimensions, const int idx[kDim], const unsigned int vertex) const {
+    int index = 0;
+    for(unsigned int m = 0 ; m < kDim ; m++) {
+      index = index * dimensions(m);
+      unsigned int myBit = 1 << m;
+      // If bit is set, we're doing the right vertex, otherwise we're doing the left vertex
+      if((vertex & myBit) > 0) {
+        index += idx[m]+1;
+      } else {
+        index += idx[m];
+      }
+    }
+    return(index);
+  }
+
   // Generic getter for all kinds of input arrays
   template<typename Tint, typename Treal>
   KOKKOS_INLINE_FUNCTION
@@ -191,6 +276,64 @@ class LookupTable {
     return(value);
   }
 
+  // Generic getter for the neighbours used by the interpolation, for all kinds of input arrays.
+  // On output, xN[2*n] and xN[2*n+1] are the coordinates bracketing x[n] along the dimension n,
+  // and dataN[v] is the data at the vertex v of these neighbours (see GetDataIndex for the
+  // convention on v). When the table is interpolated in function space, both are returned in the
+  // original space of the table (i.e. invFunc is applied to the values stored in the table).
+  // All of the outputs are set to nan when the requested coordinates contain nans.
+  template<typename Tint, typename Treal>
+  KOKKOS_INLINE_FUNCTION
+  void GetNeighbours(const real x[kDim], Tint &dimensions, Tint &offset, Treal &xin, Treal &data,
+                     real xN[2*kDim], real dataN[1 << kDim]) const {
+    int idx[kDim];
+    real delta[kDim];
+
+    if(!GetIndices(x, dimensions, offset, xin, idx, delta)) {
+      for(int n = 0 ; n < 2*kDim ; n++) xN[n] = NAN;
+      for(unsigned int n = 0 ; n < (1 << kDim) ; n++) dataN[n] = NAN;
+      return;
+    }
+
+    // Coordinates of the neighbours along each dimension
+    for(int n = 0 ; n < kDim ; n++) {
+      xN[2*n] = xin(offset(n) + idx[n]);
+      xN[2*n+1] = xin(offset(n) + idx[n]+1);
+      if(interpolateInFuncSpace) {
+        xN[2*n] = invFunc(xN[2*n]);
+        xN[2*n+1] = invFunc(xN[2*n+1]);
+      }
+    }
+
+    // Data on each vertex of the neighbours
+    for(unsigned int n = 0 ; n < (1 << kDim) ; n++) {
+      dataN[n] = data(GetDataIndex(dimensions, idx, n));
+      if(interpolateInFuncSpace) dataN[n] = invFunc(dataN[n]);
+    }
+  }
+
+  // Generic getter for the indices of the neighbours used by the interpolation, for all kinds of
+  // input arrays. On output, idx[n] is the index of the left neighbour along the dimension n
+  // (the right one being idx[n]+1), and dataIdx[v] is the index in the data array of the vertex v
+  // of these neighbours (see GetDataIndex for the convention on v).
+  // All of the outputs are set to -1 when the requested coordinates contain nans.
+  template<typename Tint, typename Treal>
+  KOKKOS_INLINE_FUNCTION
+  void GetNeighboursIndx(const real x[kDim], Tint &dimensions, Tint &offset, Treal &xin,
+                         int idx[kDim], int dataIdx[1 << kDim]) const {
+    real delta[kDim];
+
+    if(!GetIndices(x, dimensions, offset, xin, idx, delta)) {
+      for(int n = 0 ; n < kDim ; n++) idx[n] = -1;
+      for(unsigned int n = 0 ; n < (1 << kDim) ; n++) dataIdx[n] = -1;
+      return;
+    }
+
+    for(unsigned int n = 0 ; n < (1 << kDim) ; n++) {
+      dataIdx[n] = GetDataIndex(dimensions, idx, n);
+    }
+  }
+
   // Getter on device
   KOKKOS_INLINE_FUNCTION
   real Get(const real x[kDim]) const {
@@ -201,6 +344,30 @@ class LookupTable {
   KOKKOS_INLINE_FUNCTION
   real GetHost(const real x[kDim]) const {
     return(Get(x, dimensionsHost, offsetHost, xinHost, dataHost));
+  }
+
+  // Getter for the neighbours used by the interpolation, on device
+  KOKKOS_INLINE_FUNCTION
+  void GetNeighbours(const real x[kDim], real xN[2*kDim], real dataN[1 << kDim]) const {
+    GetNeighbours(x, dimensionsDev, offsetDev, xinDev, dataDev, xN, dataN);
+  }
+
+  // Getter for the neighbours used by the interpolation, on Host
+  KOKKOS_INLINE_FUNCTION
+  void GetNeighboursHost(const real x[kDim], real xN[2*kDim], real dataN[1 << kDim]) const {
+    GetNeighbours(x, dimensionsHost, offsetHost, xinHost, dataHost, xN, dataN);
+  }
+
+  // Getter for the indices of the neighbours used by the interpolation, on device
+  KOKKOS_INLINE_FUNCTION
+  void GetNeighboursIndx(const real x[kDim], int idx[kDim], int dataIdx[1 << kDim]) const {
+    GetNeighboursIndx(x, dimensionsDev, offsetDev, xinDev, idx, dataIdx);
+  }
+
+  // Getter for the indices of the neighbours used by the interpolation, on Host
+  KOKKOS_INLINE_FUNCTION
+  void GetNeighboursIndxHost(const real x[kDim], int idx[kDim], int dataIdx[1 << kDim]) const {
+    GetNeighboursIndx(x, dimensionsHost, offsetHost, xinHost, idx, dataIdx);
   }
 };
 

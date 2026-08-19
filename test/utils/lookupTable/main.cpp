@@ -232,6 +232,144 @@ int main( int argc, char* argv[] )
     idfx::cout << "Success" << std::endl;
 
     idfx::cout << "--------------------------------------" << std::endl;
+    idfx::cout << "Testing the neighbours used for the interpolation on Host." << std::endl;
+    {
+      // 1D table (x=1,2,3 and data=2,4,6) interpolated in x=2.1
+      real xq[1];
+      xq[0] = 2.1;
+      real xN[2];
+      real dataN[2];
+      int idx[1];
+      int dataIdx[2];
+      csv1D.GetNeighboursHost(xq, xN, dataN);
+      csv1D.GetNeighboursIndxHost(xq, idx, dataIdx);
+      idfx::cout << "1D: x=" << xN[0] << "," << xN[1] << " data=" << dataN[0] << "," << dataN[1]
+                 << " idx=" << idx[0] << " dataIdx=" << dataIdx[0] << "," << dataIdx[1]
+                 << std::endl;
+      if(xN[0] != 2.0 || xN[1] != 3.0 || dataN[0] != 4.0 || dataN[1] != 6.0
+         || idx[0] != 1 || dataIdx[0] != 1 || dataIdx[1] != 2) {
+        idfx::cerr << "ERROR!!" << std::endl;
+        exit(1);
+      }
+
+      // 2D table interpolated in (2.1,3.5). The vertices are ordered so that the bit n of the
+      // vertex index tells whether we are on the right (1) or on the left (0) of the dimension n
+      real xq2[2];
+      xq2[0] = 2.1;
+      xq2[1] = 3.5;
+      real xN2[4];
+      real dataN2[4];
+      int idx2[2];
+      int dataIdx2[4];
+      csv.GetNeighboursHost(xq2, xN2, dataN2);
+      csv.GetNeighboursIndxHost(xq2, idx2, dataIdx2);
+      idfx::cout << "2D: x=" << xN2[0] << "," << xN2[1] << " y=" << xN2[2] << "," << xN2[3]
+                 << " data=" << dataN2[0] << "," << dataN2[1] << "," << dataN2[2] << ","
+                 << dataN2[3] << " idx=" << idx2[0] << "," << idx2[1] << std::endl;
+      if(xN2[0] != 2.0 || xN2[1] != 3.0 || xN2[2] != 3.0 || xN2[3] != 4.0) {
+        idfx::cerr << "ERROR!!" << std::endl;
+        exit(1);
+      }
+      if(dataN2[0] != 5.0 || dataN2[1] != 6.0 || dataN2[2] != 6.0 || dataN2[3] != 7.0) {
+        idfx::cerr << "ERROR!!" << std::endl;
+        exit(1);
+      }
+      if(idx2[0] != 0 || idx2[1] != 1
+         || dataIdx2[0] != 1 || dataIdx2[1] != 4 || dataIdx2[2] != 2 || dataIdx2[3] != 5) {
+        idfx::cerr << "ERROR!!" << std::endl;
+        exit(1);
+      }
+
+      // The neighbours should reproduce the value returned by GetHost
+      real dx = (xq2[0]-xN2[0])/(xN2[1]-xN2[0]);
+      real dy = (xq2[1]-xN2[2])/(xN2[3]-xN2[2]);
+      real interpolated = (1-dx)*(1-dy)*dataN2[0] + dx*(1-dy)*dataN2[1]
+                        + (1-dx)*dy*dataN2[2] + dx*dy*dataN2[3];
+      idfx::cout << "2D: interpolation from the neighbours=" << interpolated << std::endl;
+      if(std::fabs(interpolated - csv.GetHost(xq2))>1e-13) {
+        idfx::cerr << "ERROR!!" << std::endl;
+        exit(1);
+      }
+
+      // When the table is interpolated in function space, the neighbours are returned in the
+      // original space of the table (x=1,2,4 and data=1,4,16 here)
+      real xq3[1];
+      xq3[0] = 3.0;
+      real xN3[2];
+      real dataN3[2];
+      int idx3[1];
+      int dataIdx3[2];
+      csv1Dlog.GetNeighboursHost(xq3, xN3, dataN3);
+      csv1Dlog.GetNeighboursIndxHost(xq3, idx3, dataIdx3);
+      idfx::cout << "1D (function space): x=" << xN3[0] << "," << xN3[1]
+                 << " data=" << dataN3[0] << "," << dataN3[1] << " idx=" << idx3[0] << std::endl;
+      if(std::fabs(xN3[0]-2.0)>1e-13 || std::fabs(xN3[1]-4.0)>1e-13
+         || std::fabs(dataN3[0]-4.0)>1e-13 || std::fabs(dataN3[1]-16.0)>1e-13
+         || idx3[0] != 1 || dataIdx3[0] != 1 || dataIdx3[1] != 2) {
+        idfx::cerr << "ERROR!!" << std::endl;
+        exit(1);
+      }
+      idfx::cout << "Success" << std::endl;
+    }
+
+    idfx::cout << "--------------------------------------" << std::endl;
+    idfx::cout << "Testing the neighbours used for the interpolation on device." << std::endl;
+    {
+      IdefixArray1D<real> xNdev = IdefixArray1D<real>("xN",4);
+      IdefixArray1D<real> dataNdev = IdefixArray1D<real>("dataN",4);
+      IdefixArray1D<int> idxDev = IdefixArray1D<int>("idx",2);
+      IdefixArray1D<int> dataIdxDev = IdefixArray1D<int>("dataIdx",4);
+
+      idefix_for("neighbours",0, 1, KOKKOS_LAMBDA (int i) {
+        real xq[2];
+        xq[0] = 2.1;
+        xq[1] = 3.5;
+        real xN[4];
+        real dataN[4];
+        int idx[2];
+        int dataIdx[4];
+        csv.GetNeighbours(xq, xN, dataN);
+        csv.GetNeighboursIndx(xq, idx, dataIdx);
+        for(int n = 0 ; n < 4 ; n++) {
+          xNdev(n) = xN[n];
+          dataNdev(n) = dataN[n];
+          dataIdxDev(n) = dataIdx[n];
+        }
+        idxDev(0) = idx[0];
+        idxDev(1) = idx[1];
+      });
+
+      auto xNHost = Kokkos::create_mirror_view(xNdev);
+      auto dataNHost = Kokkos::create_mirror_view(dataNdev);
+      auto idxHost = Kokkos::create_mirror_view(idxDev);
+      auto dataIdxHost = Kokkos::create_mirror_view(dataIdxDev);
+      Kokkos::deep_copy(xNHost, xNdev);
+      Kokkos::deep_copy(dataNHost, dataNdev);
+      Kokkos::deep_copy(idxHost, idxDev);
+      Kokkos::deep_copy(dataIdxHost, dataIdxDev);
+
+      idfx::cout << "2D: x=" << xNHost(0) << "," << xNHost(1) << " y=" << xNHost(2) << ","
+                 << xNHost(3) << " data=" << dataNHost(0) << "," << dataNHost(1) << ","
+                 << dataNHost(2) << "," << dataNHost(3) << " idx=" << idxHost(0) << ","
+                 << idxHost(1) << std::endl;
+      if(xNHost(0) != 2.0 || xNHost(1) != 3.0 || xNHost(2) != 3.0 || xNHost(3) != 4.0) {
+        idfx::cerr << "ERROR!!" << std::endl;
+        exit(1);
+      }
+      if(dataNHost(0) != 5.0 || dataNHost(1) != 6.0 || dataNHost(2) != 6.0
+         || dataNHost(3) != 7.0) {
+        idfx::cerr << "ERROR!!" << std::endl;
+        exit(1);
+      }
+      if(idxHost(0) != 0 || idxHost(1) != 1 || dataIdxHost(0) != 1 || dataIdxHost(1) != 4
+         || dataIdxHost(2) != 2 || dataIdxHost(3) != 5) {
+        idfx::cerr << "ERROR!!" << std::endl;
+        exit(1);
+      }
+      idfx::cout << "Success" << std::endl;
+    }
+
+    idfx::cout << "--------------------------------------" << std::endl;
     idfx::cout << "Testing 3D npy file on device." << std::endl;
     // Read npy File
     std::vector<std::string> coords({"x.npy","y.npy","z.npy"});

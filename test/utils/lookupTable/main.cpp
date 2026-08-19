@@ -454,6 +454,75 @@ int main( int argc, char* argv[] )
     }
 
     idfx::cout << "--------------------------------------" << std::endl;
+    idfx::cout << "Testing the search performed by GetNeighbours first, and reused by Get, "
+                  "on Host." << std::endl;
+    {
+      real xq[2];
+      xq[0] = 2.1;
+      xq[1] = 3.5;
+
+      // No call to Get yet: GetNeighbours searches the table as usual, and stores the result
+      LookupTableNeighbours<2> nb;
+      real xN[4];
+      real dataN[4];
+      csv.GetNeighboursHost(xq, nb, xN, dataN);
+      if(!nb.valid || nb.idx[0] != 0 || nb.idx[1] != 1) {
+        idfx::cerr << "ERROR!! the search was not performed" << std::endl;
+        exit(1);
+      }
+      if(xN[0] != 2.0 || xN[1] != 3.0 || dataN[0] != 5.0 || dataN[3] != 7.0) {
+        idfx::cerr << "ERROR!!" << std::endl;
+        exit(1);
+      }
+
+      // Get now reuses that search for the same coordinates
+      result = csv.GetHost(xq, nb);
+      if(std::fabs(result - 5.6)>1e-13) {
+        idfx::cerr << "ERROR!!" << std::endl;
+        exit(1);
+      }
+
+      // Same check as before, the other way around: we corrupt the ratio stored by
+      // GetNeighbours, and check that Get uses it instead of computing it again.
+      // With delta[0]=0.5 instead of 0.1, the interpolation gives (5+6+6+7)/4=6
+      nb.delta[0] = 0.5;
+      result = csv.GetHost(xq, nb);
+      if(std::fabs(result - 6.0)>1e-13) {
+        idfx::cerr << "ERROR!! the stored search was not reused by Get" << std::endl;
+        exit(1);
+      }
+
+      // ... while different coordinates make Get search the table again
+      real xq2[2];
+      xq2[0] = 2.9;
+      xq2[1] = 2.5;
+      result = csv.GetHost(xq2, nb);
+      if(std::fabs(result - csv.GetHost(xq2))>1e-13 || nb.idx[1] != 0) {
+        idfx::cerr << "ERROR!! the search was not performed again" << std::endl;
+        exit(1);
+      }
+
+      // The same holds when the search comes from GetNeighboursIndx, here on the 1D table
+      LookupTableNeighbours<1> nb1D;
+      real xq1[1];
+      xq1[0] = 2.1;
+      int idx1[1];
+      int dataIdx1[2];
+      csv1D.GetNeighboursIndxHost(xq1, nb1D, idx1, dataIdx1);
+      if(!nb1D.valid || idx1[0] != 1) {
+        idfx::cerr << "ERROR!!" << std::endl;
+        exit(1);
+      }
+      nb1D.delta[0] = 0.0;   // x is now on the left neighbour, so we expect its data
+      result = csv1D.GetHost(xq1, nb1D);
+      if(std::fabs(result - 4.0)>1e-13) {
+        idfx::cerr << "ERROR!! the stored search was not reused by Get" << std::endl;
+        exit(1);
+      }
+      idfx::cout << "Success" << std::endl;
+    }
+
+    idfx::cout << "--------------------------------------" << std::endl;
     idfx::cout << "Testing the reuse of the search between Get and GetNeighbours on device."
                << std::endl;
     {
@@ -493,6 +562,32 @@ int main( int argc, char* argv[] )
       Kokkos::deep_copy(dataNHost, dataNdev);
       Kokkos::deep_copy(idxHost, idxDev);
       Kokkos::deep_copy(dataIdxHost, dataIdxDev);
+
+      // Same test on device, but with GetNeighbours called first and Get reusing its search.
+      // The ratio stored by GetNeighbours is corrupted in between, so that a value of 6 (instead
+      // of 5.6) proves that Get did not search the table again
+      IdefixArray1D<real> valuesDev = IdefixArray1D<real>("values",2);
+      idefix_for("neighboursFirst",0, 1, KOKKOS_LAMBDA (int i) {
+        real xq[2];
+        xq[0] = 2.1;
+        xq[1] = 3.5;
+        LookupTableNeighbours<2> nb;
+        real xN[4];
+        real dataN[4];
+        // no call to Get yet: the search is performed here for the first time
+        csv.GetNeighbours(xq, nb, xN, dataN);
+        valuesDev(0) = csv.Get(xq, nb);
+        nb.delta[0] = 0.5;
+        valuesDev(1) = csv.Get(xq, nb);
+      });
+      auto valuesHost = Kokkos::create_mirror_view(valuesDev);
+      Kokkos::deep_copy(valuesHost, valuesDev);
+      idfx::cout << "neighbours first: value=" << valuesHost(0)
+                 << " (with a corrupted stored search)=" << valuesHost(1) << std::endl;
+      if(std::fabs(valuesHost(0) - 5.6)>1e-13 || std::fabs(valuesHost(1) - 6.0)>1e-13) {
+        idfx::cerr << "ERROR!! the stored search was not reused by Get" << std::endl;
+        exit(1);
+      }
 
       idfx::cout << "value=" << arrHost(0) << " x=" << xNHost(0) << "," << xNHost(1)
                  << " y=" << xNHost(2) << "," << xNHost(3)

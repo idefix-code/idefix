@@ -678,8 +678,10 @@ local to the loop.
 
 Both ``Get`` and the methods above search the table for the cell surrounding the requested coordinates. When the
 interpolated value *and* its neighbours are needed for the same coordinates, this search can be performed only once,
-by handing a ``LookupTableNeighbours<nDim>`` structure to ``Get``: the search it stores is then reused by
-``GetNeighbours`` and ``GetNeighboursIndx`` instead of being done a second time.
+by handing the same ``LookupTableNeighbours<nDim>`` structure to each of them: whichever is called first searches the
+table and stores the result in the structure, and the ones called next reuse it instead of searching the table again.
+The order in which they are called is irrelevant, ``Get`` can fill the structure for ``GetNeighbours`` and
+``GetNeighboursIndx``, or the other way around.
 
 .. code-block:: c++
 

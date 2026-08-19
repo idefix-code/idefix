@@ -70,7 +70,7 @@ int MPI_Send_init(IdefixCommArray<T> & buf, int count, MPI_Datatype datatype, in
     request->commArray = buf;
 
     //call MPI
-    const int result = MPI_Send_init(buf.commData(), count, datatype,
+    const int result = ::MPI_Send_init(buf.commData(), count, datatype,
       dest, tag, comm, &request->request);
 
     //ok
@@ -93,7 +93,7 @@ int MPI_Recv_init(IdefixCommArray<T> & buf, int count, MPI_Datatype datatype, in
   request->commArray = buf;
 
   //call MPI
-  const int result = MPI_Recv_init(buf.commData(), count, datatype,
+  const int result = ::MPI_Recv_init(buf.commData(), count, datatype,
     source, tag, comm, &request->request);
 
   //ok
@@ -110,7 +110,7 @@ int MPI_Request_free(Idefix_MPI_Request<T>* request) {
   assert(request != nullptr);
 
   //call MPI
-  return MPI_Request_free(&request->request);
+  return ::MPI_Request_free(&request->request);
 }
 
 /**
@@ -495,7 +495,8 @@ int MPI_Gather(const void* sendbuf, int sendcount, MPI_Datatype
     sendtype, std::vector<T> & recvbuf, int recvcount, MPI_Datatype recvtype,
     int root, MPI_Comm comm) {
   assert(recvcount <= recvbuf.size());
-  return MPI_Gather(sendbuf, sendcount, sendtype, recvbuf.data(), recvcount, recvtype, root, comm);
+  return ::MPI_Gather(sendbuf, sendcount, sendtype, recvbuf.data(), recvcount,
+    recvtype, root, comm);
 }
 
 #endif //WITH_MPI

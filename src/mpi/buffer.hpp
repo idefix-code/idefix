@@ -31,11 +31,11 @@ class Buffer {
   }
 
   void* deviceData() {
-    return(array.data());
+    return(array.deviceView().data());
   }
 
   IdefixArray1D<real> & deviceView(void) {
-    return this->array;
+    return this->array.deviceView();
   }
 
   idefix::IdefixCommArray1D<real> & commView(void) {
@@ -43,7 +43,7 @@ class Buffer {
   }
 
   int Size() {
-    return(array.size());
+    return(array.deviceView().size());
   }
 
   void ResetPointer() {
@@ -62,7 +62,7 @@ class Buffer {
     const int kend = box[KDIR][1];
     const int offset = this->pointer;
 
-    auto arr = this->array;
+    auto arr = this->array.deviceView();
     idefix_for("LoadBuffer3D",kbeg,kend,jbeg,jend,ibeg,iend,
       KOKKOS_LAMBDA (int k, int j, int i) {
       arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + offset ) = in(k,j,i);

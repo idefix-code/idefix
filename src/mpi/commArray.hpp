@@ -29,17 +29,26 @@ namespace idefix {
  * if we have access to WITH_MPI_GPU_DIRECT or not.
  */
 template <class T>
-class IdefixCommArrayGpuDirect : public T {
+class IdefixCommArrayGpuDirect {
  public:
-  //inherit constructors
-  using T::T;
+  template <class... Args>
+  explicit IdefixCommArrayGpuDirect(Args... args)
+    :deviceArray(args...)
+  {}
 
   /**
    * Accès it as a simple device view for usiage in kokkos kernels
    * (because need to not carry the host part).
    */
   T & deviceView(void) {
-    return *this;
+    return this->deviceArray;
+  }
+
+  /**
+   * Acces it as a simple communication view for usiage in communication routines.
+   */
+  T commView(void) {
+    return this->deviceArray;
   }
 
   /**
@@ -71,8 +80,16 @@ class IdefixCommArrayGpuDirect : public T {
    * depending on the WITH_MPI_GPU_DIRECT configuration.
    */
   void * commData(void) {
-      return this->data();
+      return this->deviceArray.data();
   }
+
+ private:
+  /**
+  * Device buffer containing the device side of the data to use for communications.
+  * This where the computation are done. Then it is transfered to/from the communication
+  * buffer if needed.
+  */
+  T deviceArray;
 };
 
 /**
@@ -81,17 +98,27 @@ class IdefixCommArrayGpuDirect : public T {
  * if we have access to WITH_MPI_GPU_DIRECT or not.
  */
 template <class T>
-class IdefixCommArrayNoGpuDirect : public T {
+class IdefixCommArrayNoGpuDirect {
  public:
-  //inherit constructors
-  using T::T;
+  template <class... Args>
+  explicit IdefixCommArrayNoGpuDirect(Args... args)
+    :deviceArray(args...)
+    ,commArray(initCommArray(this->deviceArray))
+  {}
 
   /**
-   * Accès it as a simple device view for usiage in kokkos kernels
+   * Acces it as a simple device view for usiage in kokkos kernels
    * (because need to not carry the host part).
    */
   T & deviceView(void) {
-    return *this;
+    return this->deviceArray;
+  }
+
+  /**
+   * Acces it as a simple communication view for usiage in communication routines.
+   */
+  typename T::host_mirror_type & commView(void) {
+    return this->commArray;
   }
 
   /**
@@ -99,7 +126,7 @@ class IdefixCommArrayNoGpuDirect : public T {
    * a communication.
    */
   void syncCommData(void) {
-    Kokkos::deep_copy(this->commArray, *this);
+    Kokkos::deep_copy(this->commArray, this->deviceArray);
   }
 
   /**
@@ -107,7 +134,7 @@ class IdefixCommArrayNoGpuDirect : public T {
    * a communication.
    */
   void syncCommDataAsync(void) {
-    Kokkos::deep_copy(Kokkos::DefaultExecutionSpace(), this->commArray, *this);
+    Kokkos::deep_copy(Kokkos::DefaultExecutionSpace(), this->commArray, this->deviceArray);
   }
 
   /**
@@ -115,7 +142,7 @@ class IdefixCommArrayNoGpuDirect : public T {
    * to use it.
    */
   void syncDeviceData(void) {
-    Kokkos::deep_copy(*this, this->commArray);
+    Kokkos::deep_copy(this->deviceArray, this->commArray);
   }
 
   /**
@@ -123,7 +150,7 @@ class IdefixCommArrayNoGpuDirect : public T {
    * to use it.
    */
   void syncDeviceDataAsync(void) {
-    Kokkos::deep_copy(Kokkos::DefaultExecutionSpace(), *this, this->commArray);
+    Kokkos::deep_copy(Kokkos::DefaultExecutionSpace(), this->deviceArray, this->commArray);
   }
 
   /**
@@ -148,10 +175,16 @@ class IdefixCommArrayNoGpuDirect : public T {
 
  private:
   /**
+   * Device buffer containing the device side of the data to use for communications.
+   * This where the computation are done. Then it is transfered to/from the communication
+   * buffer if needed.
+   */
+  T deviceArray;
+  /**
    * Buffer to contain a copy of the data on host if required. If WITH_MPI_GPU_DIRECT
    * is enabled it directly points the device buffer as no copy is required.
    */
-  typename T::host_mirror_type commArray{initCommArray(*this)};
+  typename T::host_mirror_type commArray;
 };
 
 #ifdef WITH_MPI_GPU_DIRECT

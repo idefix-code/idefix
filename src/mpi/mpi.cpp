@@ -131,11 +131,11 @@ void Mpi::CheckConfig() {
 
   // Run-time check that we can do a reduce on device arrays
   idefix::IdefixCommArray1D<int64_t> src("MPIChecksrc",1);
-  IdefixArray1D<int64_t>::host_mirror_type srcHost = Kokkos::create_mirror_view(src);
+  IdefixArray1D<int64_t>::host_mirror_type srcHost = Kokkos::create_mirror_view(src.deviceView());
 
   if(idfx::prank == 0) {
     srcHost(0) = 0;
-    Kokkos::deep_copy(src, srcHost);
+    Kokkos::deep_copy(src.deviceView(), srcHost);
   }
 
   if(idfx::psize > 1) {
@@ -160,9 +160,9 @@ void Mpi::CheckConfig() {
       } else {
         ierrRecv = idefix::MPI_Recv(src, 1, MPI_INT64_T, idfx::prank-1, 1, MPI_COMM_WORLD, &status);
         // Add our own rank to the data
-        Kokkos::deep_copy(srcHost, src);
+        Kokkos::deep_copy(srcHost, src.deviceView());
         srcHost(0) += idfx::prank;
-        Kokkos::deep_copy(src, srcHost);
+        Kokkos::deep_copy(src.deviceView(), srcHost);
         ierrSend = idefix::MPI_Send(src, 1, MPI_INT64_T, (idfx::prank+1)%idfx::psize, 1,
                                                         MPI_COMM_WORLD);
       }
@@ -199,7 +199,7 @@ void Mpi::CheckConfig() {
   }
 
   // Check that we have the proper end result
-  Kokkos::deep_copy(srcHost, src);
+  Kokkos::deep_copy(srcHost, src.deviceView());
   int64_t size = static_cast<int64_t>(idfx::psize);
   int64_t rank = static_cast<int64_t>(idfx::prank);
   int64_t result = rank == 0 ? size*(size-1)/2 : rank*(rank+1)/2;

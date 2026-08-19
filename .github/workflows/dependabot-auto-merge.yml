@@ -1,0 +1,42 @@
+name: Dependabot auto-merge (GitHub Actions)
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  enable-automerge:
+    if: ${{ github.actor == 'dependabot[bot]' && startsWith(github.event.pull_request.head.ref, 'dependabot/github_actions/') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Allow auto-merge for workflow-only updates
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_NODE_ID: ${{ github.event.pull_request.node_id }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          files_json="$(gh api \
+            "repos/${REPOSITORY}/pulls/${PR_NUMBER}/files?per_page=100")"
+
+          disallowed_count="$(printf '%s' "${files_json}" \
+            | jq '[.[] | select((.filename | startswith(".github/workflows/")) | not)] | length')"
+
+          if [ "${disallowed_count}" -ne 0 ]; then
+            echo "PR touches non-workflow files; skipping auto-merge enablement."
+            exit 0
+          fi
+
+          gh api graphql \
+            -F pullRequestId="${PR_NODE_ID}" \
+            -f query='mutation($pullRequestId: ID!) { enablePullRequestAutoMerge(input: {pullRequestId: $pullRequestId, mergeMethod: SQUASH}) { clientMutationId } }' >/dev/null

@@ -295,7 +295,7 @@ int Xdmf::Write() {
   #if DIMENSIONS == 1
   [[maybe_unused]] int tot_dim = 1;
   #elif DIMENSIONS == 2
-  int tot_dim = 2;
+  [[maybe_unused]] int tot_dim = 2;
   #elif DIMENSIONS == 3
   [[maybe_unused]] int tot_dim = 3;
   #endif

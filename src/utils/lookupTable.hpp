@@ -14,7 +14,24 @@
 #include "lookupTable.hpp"
 #include "npy.hpp"
 
-template <const int kDim>
+// Default transformation (and its inverse) used when the lookup table interpolates in function
+// space: the interpolation is then performed on log(x) and log(data), and the interpolated value
+// is transformed back with exp.
+// Any functor exposing a KOKKOS_INLINE_FUNCTION operator()(const real) can be used instead, so
+// that the transformation is available both on the host and on the device.
+struct LookupTableLog {
+  KOKKOS_INLINE_FUNCTION real operator() (const real x) const {
+    return(LOG(x));
+  }
+};
+
+struct LookupTableExp {
+  KOKKOS_INLINE_FUNCTION real operator() (const real x) const {
+    return(EXP(x));
+  }
+};
+
+template <const int kDim, class TFunc = LookupTableLog, class TInvFunc = LookupTableExp>
 class LookupTable {
  public:
   LookupTable() = default;
@@ -26,15 +43,21 @@ class LookupTable {
   // For 1D tables only, the arrays can also be read as *columns* of the input file by setting
   // readColumns=true:
   //    1st column = coordinates (xinHost), 2nd column = data (dataHost)
+  // All of the constructors accept the optional argument interpolateInFuncSpace: when it is set
+  // to true, the coordinates and the data are stored as func(x) and func(data), the interpolation
+  // is performed in that space, and Get returns invFunc of the interpolated value (see below).
   LookupTable(std::string filename, char delimiter, bool errorIfOutOfBound = true,
-              bool readColumns = false);
+              bool readColumns = false, bool interpolateInFuncSpace = false,
+              TFunc func = TFunc(), TInvFunc invFunc = TInvFunc());
   LookupTable(std::vector<std::string> filenames,
               std::string dataSet,
-               bool errorIfOutOfBound = true);
+               bool errorIfOutOfBound = true, bool interpolateInFuncSpace = false,
+               TFunc func = TFunc(), TInvFunc invFunc = TInvFunc());
   template<typename T, typename ... Args>
   LookupTable(Kokkos::View<T, Args...> array,
               std::array<IdefixHostArray1D<real>,kDim>,
-               bool errorIfOutOfBound = true);
+               bool errorIfOutOfBound = true, bool interpolateInFuncSpace = false,
+               TFunc func = TFunc(), TInvFunc invFunc = TInvFunc());
 
   IdefixArray1D<int> dimensionsDev;
   IdefixArray1D<int> offsetDev;      // Actually sum_(n-1) (dimensions)
@@ -49,6 +72,34 @@ class LookupTable {
 
   bool errorIfOutOfBound{true};
 
+  // When enabled, the table is interpolated in function space: xin and data store func(x) and
+  // func(data), and Get returns invFunc(interpolated value). func and invFunc are stored by
+  // value, so that they are available on the device as well as on the host.
+  bool interpolateInFuncSpace{false};
+  TFunc func;
+  TInvFunc invFunc;
+
+  // Transform the coordinates and the data of the table in function space.
+  // This is called on the host by the constructors, before the arrays are copied on the device.
+  void ToFuncSpace() {
+    for(int i = 0 ; i < xinHost.extent(0) ; i++) {
+      xinHost(i) = func(xinHost(i));
+      if(!std::isfinite(xinHost(i))) {
+        IDEFIX_ERROR("LookupTable: the transformation of the coordinates in function space "
+                     "produced invalid values (with the default log, the coordinates of the "
+                     "table should all be strictly positive)");
+      }
+    }
+    for(int i = 0 ; i < dataHost.extent(0) ; i++) {
+      dataHost(i) = func(dataHost(i));
+      if(!std::isfinite(dataHost(i))) {
+        IDEFIX_ERROR("LookupTable: the transformation of the data in function space "
+                     "produced invalid values (with the default log, the data of the "
+                     "table should all be strictly positive)");
+      }
+    }
+  }
+
   // Generic getter for all kinds of input arrays
   template<typename Tint, typename Treal>
   KOKKOS_INLINE_FUNCTION
@@ -60,7 +111,9 @@ class LookupTable {
     for(int n = 0 ; n < kDim ; n++) {
       real xstart = xin(offset(n));
       real xend = xin(offset(n)+dimensions(n)-1);
-      real x_n = x[n];
+      // When interpolating in function space, xin already stores func(x), so the coordinate
+      // we are looking for should be transformed accordingly
+      real x_n = interpolateInFuncSpace ? func(x[n]) : x[n];
 
       if(std::isnan(x_n)) return(NAN);
 
@@ -108,7 +161,7 @@ class LookupTable {
       delta[n] = (x_n - xin(offset(n) + i) ) / (xin(offset(n) + i+1) - xin(offset(n) + i));
     }
 
-    // De a linear interpolation from the neightbouring points to get our value.
+    // Do a linear interpolation from the neightbouring points to get our value.
     real value = 0;
 
     // loop on all of the vertices of the neighbours
@@ -132,6 +185,9 @@ class LookupTable {
       value = value + weight*data(index);
     }
 
+    // The interpolation was performed on func(data), so we transform the result back
+    if(interpolateInFuncSpace) value = invFunc(value);
+
     return(value);
   }
 
@@ -148,12 +204,15 @@ class LookupTable {
   }
 };
 
-template <int kDim>
-LookupTable<kDim>::LookupTable(std::vector<std::string> filenames,
+template <int kDim, class TFunc, class TInvFunc>
+LookupTable<kDim, TFunc, TInvFunc>::LookupTable(std::vector<std::string> filenames,
                                std::string dataSet,
-                               bool errOOB) {
+                               bool errOOB, bool funcSpace, TFunc funcIn, TInvFunc invFuncIn) {
   idfx::pushRegion("LookupTable::LookupTable");
   this->errorIfOutOfBound = errOOB;
+  this->interpolateInFuncSpace = funcSpace;
+  this->func = funcIn;
+  this->invFunc = invFuncIn;
 
   std::vector<uint64_t> shape;
   bool fortran_order;
@@ -242,6 +301,9 @@ LookupTable<kDim>::LookupTable(std::vector<std::string> filenames,
     }
   }
 
+  // Transform the table in function space if required
+  if(this->interpolateInFuncSpace) this->ToFuncSpace();
+
   // Copy to target
   Kokkos::deep_copy(this->xinDev ,xinHost);
   Kokkos::deep_copy(this->dimensionsDev, dimensionsHost);
@@ -256,11 +318,14 @@ LookupTable<kDim>::LookupTable(std::vector<std::string> filenames,
 // The coordinates and the data are read as lines of the input file, unless readColumns is set
 // to true, in which case they are read as columns of the input file (1D tables only, see the
 // declaration of the class for a description of both layouts).
-template <int kDim>
-LookupTable<kDim>::LookupTable(std::string filename, char delimiter, bool errOOB,
-                               bool readColumns) {
+template <int kDim, class TFunc, class TInvFunc>
+LookupTable<kDim, TFunc, TInvFunc>::LookupTable(std::string filename, char delimiter, bool errOOB,
+                               bool readColumns, bool funcSpace, TFunc funcIn, TInvFunc invFuncIn) {
   idfx::pushRegion("LookupTable::LookupTable");
     this->errorIfOutOfBound = errOOB;
+    this->interpolateInFuncSpace = funcSpace;
+    this->func = funcIn;
+    this->invFunc = invFuncIn;
   if(kDim>2) {
     IDEFIX_ERROR("CSV files are only compatible with 1D and 2D tables");
   }
@@ -442,6 +507,9 @@ LookupTable<kDim>::LookupTable(std::string filename, char delimiter, bool errOOB
     MPI_Bcast(dataHost.data(),dataHost.extent(0), realMPI, 0, MPI_COMM_WORLD);
   #endif
 
+  // Transform the table in function space if required
+  if(this->interpolateInFuncSpace) this->ToFuncSpace();
+
   // Copy to target
   Kokkos::deep_copy(this->xinDev ,xinHost);
   Kokkos::deep_copy(this->dimensionsDev, dimensionsHost);
@@ -470,13 +538,16 @@ LookupTable<kDim>::LookupTable(std::string filename, char delimiter, bool errOOB
 
 
 // Constructor from IdefixHostArray
-template<const int kDim>
+template<const int kDim, class TFunc, class TInvFunc>
 template<typename T, typename ... Args>
-LookupTable<kDim>::LookupTable(Kokkos::View<T, Args...> array,
+LookupTable<kDim, TFunc, TInvFunc>::LookupTable(Kokkos::View<T, Args...> array,
             std::array<IdefixHostArray1D<real>,kDim> x,
-              bool errOOB) {
+              bool errOOB, bool funcSpace, TFunc funcIn, TInvFunc invFuncIn) {
   idfx::pushRegion("LookupTable::LookupTable");
   this->errorIfOutOfBound = errOOB;
+  this->interpolateInFuncSpace = funcSpace;
+  this->func = funcIn;
+  this->invFunc = invFuncIn;
 
   std::vector<uint64_t> shape(kDim);
   for(int i = 0 ; i < kDim ; i++) shape[i] = x[i].extent(0);
@@ -547,6 +618,9 @@ LookupTable<kDim>::LookupTable(Kokkos::View<T, Args...> array,
       }
     }
   }
+
+  // Transform the table in function space if required
+  if(this->interpolateInFuncSpace) this->ToFuncSpace();
 
   // Copy to target
   Kokkos::deep_copy(this->xinDev ,xinHost);

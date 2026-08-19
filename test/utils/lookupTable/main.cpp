@@ -10,6 +10,20 @@
 // minimal skeleton to use idfx basic functions
 void testReduction();
 
+// Custom transformation (and its inverse) to check that the functions used for the interpolation
+// in function space can be changed when the lookup table is created
+struct MyLog10 {
+  KOKKOS_INLINE_FUNCTION real operator() (const real x) const {
+    return(log10(x));
+  }
+};
+
+struct MyPow10 {
+  KOKKOS_INLINE_FUNCTION real operator() (const real x) const {
+    return(pow(10.0,x));
+  }
+};
+
 
 // main function
 int main( int argc, char* argv[] )
@@ -139,6 +153,80 @@ int main( int argc, char* argv[] )
     if(result != 4.2) {
       idfx::cerr << std::scientific;
       idfx::cerr << "ERROR!!" << std::endl;
+      exit(1);
+    }
+    idfx::cout << "Success" << std::endl;
+
+    idfx::cout << "--------------------------------------" << std::endl;
+    idfx::cout << "Testing interpolation in function space on device." << std::endl;
+    // data = x^2 sampled in x=1,2,4. A linear interpolation in x=3 gives 10, while an
+    // interpolation performed on log(x) and log(data) gives the exact result 9
+    LookupTable<1> csv1Dlin("toto1Dlog.csv",',', true, true);
+    LookupTable<1> csv1Dlog("toto1Dlog.csv",',', true, true, true);
+    // the transformation and its inverse can also be chosen when the table is created
+    LookupTable<1, MyLog10, MyPow10> csv1Dlog10("toto1Dlog.csv",',', true, true, true);
+
+    idefix_for("loop",0, 1, KOKKOS_LAMBDA (int i) {
+      real x[1];
+      x[0] = 3.0;
+      arr(i) = csv1Dlog.Get(x);
+    });
+
+    Kokkos::deep_copy(arrHost , arr);
+
+    idfx::cout << "result="<<arrHost(0) << std::endl;
+    if(std::fabs(arrHost(0) - 9.0)>1e-13) {
+      idfx::cerr << std::scientific;
+      idfx::cerr << "ERROR!!" << std::endl;
+      idfx::cerr << arrHost(0)-9.0;
+      exit(1);
+    }
+    idfx::cout << "Success" << std::endl;
+
+    idefix_for("loop",0, 1, KOKKOS_LAMBDA (int i) {
+      real x[1];
+      x[0] = 3.0;
+      arr(i) = csv1Dlog10.Get(x);
+    });
+
+    Kokkos::deep_copy(arrHost , arr);
+
+    idfx::cout << "result (with log10)="<<arrHost(0) << std::endl;
+    if(std::fabs(arrHost(0) - 9.0)>1e-13) {
+      idfx::cerr << std::scientific;
+      idfx::cerr << "ERROR!!" << std::endl;
+      idfx::cerr << arrHost(0)-9.0;
+      exit(1);
+    }
+    idfx::cout << "Success" << std::endl;
+
+    idfx::cout << "--------------------------------------" << std::endl;
+    idfx::cout << "Testing interpolation in function space on Host." << std::endl;
+
+    x[0] = 3.0;
+    result = csv1Dlog.GetHost(x);
+    idfx::cout << "result="<<result << std::endl;
+    if(std::fabs(result - 9.0)>1e-13) {
+      idfx::cerr << std::scientific;
+      idfx::cerr << "ERROR!!" << std::endl;
+      idfx::cerr << result-9.0;
+      exit(1);
+    }
+    result = csv1Dlog10.GetHost(x);
+    idfx::cout << "result (with log10)="<<result << std::endl;
+    if(std::fabs(result - 9.0)>1e-13) {
+      idfx::cerr << std::scientific;
+      idfx::cerr << "ERROR!!" << std::endl;
+      idfx::cerr << result-9.0;
+      exit(1);
+    }
+    // the same table, interpolated linearly (default behaviour)
+    result = csv1Dlin.GetHost(x);
+    idfx::cout << "result (linear interpolation)="<<result << std::endl;
+    if(std::fabs(result - 10.0)>1e-13) {
+      idfx::cerr << std::scientific;
+      idfx::cerr << "ERROR!!" << std::endl;
+      idfx::cerr << result-10.0;
       exit(1);
     }
     idfx::cout << "Success" << std::endl;

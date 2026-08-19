@@ -536,6 +536,60 @@ the constructor expects a vector of size ``nDim`` of .npy files for the 1D coord
 
 Note that the template parameter ``nDim`` should match the number of dimensions of the numpy array stored in the file ``dataSet``.
 
+Interpolation in function space
++++++++++++++++++++++++++++++++
+
+By default, ``LookupTable`` performs a multi-linear interpolation directly on the coordinates ``x`` and the data
+of the table. For data spanning several orders of magnitude (cooling tables, opacity tables, etc...), it is often
+more accurate to interpolate the data in *function space*, i.e. to interpolate ``func(data)`` as a function of
+``func(x)``, and to transform the interpolated value back with the inverse function ``invFunc``. This is enabled with
+the optional argument ``interpolateInFuncSpace`` accepted by each of the constructors:
+
+.. code-block:: c++
+
+  // 1D CSV table read as columns, interpolated in log space
+  LookupTable<1> table("cooling.csv", ',', true, true, true);
+
+  // 3D numpy table, interpolated in log space
+  LookupTable<3> tablenpy(coordinates, "data.npy", true, true);
+
+When this option is enabled, ``func`` is applied to the coordinates and to the data when the table is constructed
+(so that ``xinHost``, ``xinDev``, ``dataHost`` and ``dataDev`` all store transformed values), the interpolation is
+performed in that space, and ``Get`` and ``GetHost`` return ``invFunc`` of the interpolated value. The coordinates
+passed to ``Get`` and ``GetHost``, as well as the value they return, are therefore always expressed in the original
+(untransformed) space.
+
+``func`` and ``invFunc`` default to the natural logarithm and the exponential (the functors ``LookupTableLog`` and
+``LookupTableExp``). They can be changed when the lookup table is created, using the two optional template parameters
+of ``LookupTable``, which expect functors defining ``operator()(const real)``. This operator should be decorated with
+``KOKKOS_INLINE_FUNCTION``, so that the transformation can be used both on the host and on the device:
+
+.. code-block:: c++
+
+  // A user-defined transformation and its inverse
+  struct MyLog10 {
+    KOKKOS_INLINE_FUNCTION real operator() (const real x) const {
+      return(log10(x));
+    }
+  };
+
+  struct MyPow10 {
+    KOKKOS_INLINE_FUNCTION real operator() (const real x) const {
+      return(pow(10.0,x));
+    }
+  };
+
+  // A 1D CSV table interpolated in log10 space
+  LookupTable<1, MyLog10, MyPow10> table("cooling.csv", ',', true, true, true);
+
+Instances of these functors can also be given as the last two arguments of the constructors, which is useful when the
+transformation carries a state (e.g. a tunable exponent).
+
+.. warning::
+  The transformation is applied to every coordinate and to every element of the data. Since the default transformation
+  is the natural logarithm, the whole table should be strictly positive when the default ``func`` is used, otherwise
+  ``LookupTable`` triggers an error while it is being constructed.
+
 Using the lookup table
 ++++++++++++++++++++++
 

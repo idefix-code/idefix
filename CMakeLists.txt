@@ -16,6 +16,7 @@ option(Idefix_DEBUG "Enable Idefix debug features (makes the code very slow)" OF
 option(Idefix_RUNTIME_CHECKS "Enable runtime sanity checks" OFF)
 option(Idefix_WERROR "Treat compiler warnings as errors" OFF)
 option(Idefix_PYTHON "Enable python bindings (requires pybind11)" OFF)
+option(Idefix_FFT "Enable FFT (requires dedicated FFT library)" OFF)
 set(Idefix_PROBLEM_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "Problem directory to build for.")
 set(Idefix_CXX_FLAGS "" CACHE STRING "Additional compiler/linker flag")
 set(Idefix_DEFS "definitions.hpp" CACHE FILEPATH "Problem definition header file")
@@ -54,6 +55,12 @@ endif()
 # Add kokkos CMAKE files (required early since these set compiler options)
 add_subdirectory(src/kokkos ${CMAKE_BINARY_DIR}/build/kokkos)
 include_directories(${Kokkos_INCLUDE_DIRS_RET})
+
+# Add FFT library if requested
+if(Idefix_FFT)
+  add_compile_definitions("WITH_FFT")
+  add_subdirectory(src/kokkos-fft)
+endif()
 
 # Add Idefix CXX Flags
 add_compile_options(${Idefix_CXX_FLAGS})
@@ -262,12 +269,17 @@ target_include_directories(idefix PUBLIC
                            src/rkl
                            src/gravity
                            src/utils
+                           src/utils/fft
                            src/utils/iterativesolver
                            src/mpi
                            src
                            )
 
 target_link_libraries(idefix Kokkos::kokkos)
+if(Idefix_FFT)
+  target_link_libraries(idefix KokkosFFT::fft)
+  add_subdirectory(src/utils/fft)
+endif()
 
 message(STATUS "Idefix final configuration")
 if(Idefix_EVOLVE_VECTOR_POTENTIAL)
@@ -277,6 +289,7 @@ else()
 endif()
 message(STATUS "    MPI:  ${Idefix_MPI}")
 message(STATUS "    HDF5: ${Idefix_HDF5}")
+message(STATUS "    FFT:  ${Idefix_FFT}")
 message(STATUS "    Python: ${Idefix_PYTHON}")
 message(STATUS "    Reconstruction: ${Idefix_RECONSTRUCTION}")
 message(STATUS "    Precision: ${Idefix_PRECISION}")

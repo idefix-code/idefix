@@ -17,7 +17,7 @@ class IterativeSolver {
  public:
   IterativeSolver(T &op, real error, int maxIter,
                   std::array<int,3> ntot, std::array<int,3> beg, std::array<int,3> end);
-
+  virtual ~IterativeSolver() = default;
   real GetError();  // return the current error of the solver
 
   virtual int Solve(IdefixArray3D<real> &guess, IdefixArray3D<real> &rhs) = 0;

@@ -126,8 +126,8 @@ void Mpi::CheckConfig() {
   #if defined(KOKKOS_ENABLE_CUDA) && defined(WITH_MPI_GPU_DIRECT)
     #if defined(MPIX_CUDA_AWARE_SUPPORT) && !MPIX_CUDA_AWARE_SUPPORT
       #error Your MPI library is not CUDA Aware (check Idefix requirements). \
-             You can look on Idefix cmake option -DIdefix_MPI_GPU_DIRECT=OFF to not \
-             use it (will be slower).
+             You can look on Idefix cmake option -DIdefix_MPI_GPU_DIRECT=OFF to skip \
+             this requirement (will be slower).
     #endif
   #endif /* MPIX_CUDA_AWARE_SUPPORT */
 

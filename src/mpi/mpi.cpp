@@ -125,7 +125,9 @@ void Mpi::CheckConfig() {
   // compile time check
   #if defined(KOKKOS_ENABLE_CUDA) && defined(WITH_MPI_GPU_DIRECT)
     #if defined(MPIX_CUDA_AWARE_SUPPORT) && !MPIX_CUDA_AWARE_SUPPORT
-      #error Your MPI library is not CUDA Aware (check Idefix requirements).
+      #error Your MPI library is not CUDA Aware (check Idefix requirements). \
+             You can look on Idefix cmake option -DIdefix_MPI_GPU_DIRECT=OFF to not \
+             use it (will be slower).
     #endif
   #endif /* MPIX_CUDA_AWARE_SUPPORT */
 
@@ -189,6 +191,10 @@ void Mpi::CheckConfig() {
         errmsg << "Check that your MPI library is RocM aware." << std::endl;
       #else
         errmsg << "Check your MPI library configuration." << std::endl;
+      #endif
+      #if defined(KOKKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+        errmsg << "You can look on Idefix cmake option -DIdefix_MPI_GPU_DIRECT=OFF to not"
+                  "use it (will be slower)." << std::endl;
       #endif
       errmsg << "Error: " << e.what() << std::endl;
       IDEFIX_ERROR(errmsg);

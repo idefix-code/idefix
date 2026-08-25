@@ -29,15 +29,9 @@
     target_link_libraries(mylib PUBLIC Kokkos::kokkos)
     target_suppress_fma(mylib)
 
-  FMA suppression is only actually applied if the cache option
-  SUPPRESS_FMA is ON (default OFF), so the function can be called
-  unconditionally and toggled at configure time with:
-    cmake -DSUPPRESS_FMA=ON ..
 ============================================================================]]
 
 include_guard(GLOBAL)
-
-option(SUPPRESS_FMA "Disable FMA (fused multiply-add) contraction/codegen for CXX where possible" OFF)
 
 # Determine the CXX FMA-suppression flags for the active Kokkos backend /
 # CXX compiler. Returns the list of flags (possibly empty) via out_var.

@@ -16,6 +16,7 @@ option(Idefix_DEBUG "Enable Idefix debug features (makes the code very slow)" OF
 option(Idefix_RUNTIME_CHECKS "Enable runtime sanity checks" OFF)
 option(Idefix_WERROR "Treat compiler warnings as errors" OFF)
 option(Idefix_PYTHON "Enable python bindings (requires pybind11)" OFF)
+option(Idefix_SUPPRESS_FMA "Disable FMA (fused multiply-add) contraction/codegen. Useful for code validation accross architectures." OFF)
 set(Idefix_PROBLEM_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "Problem directory to build for.")
 set(Idefix_CXX_FLAGS "" CACHE STRING "Additional compiler/linker flag")
 set(Idefix_DEFS "definitions.hpp" CACHE FILEPATH "Problem definition header file")
@@ -43,6 +44,7 @@ include(AddIdefixSource)
 include(SetIdefixProperty)
 include(SetRequiredBuildSettingsForGCC8)
 include(CheckHdf5ParallelSupport)
+include(SuppressFMA)
 
 #Idefix requires Cuda Lambdas (experimental)
 if(Kokkos_ENABLE_CUDA)
@@ -57,6 +59,8 @@ include_directories(${Kokkos_INCLUDE_DIRS_RET})
 
 # Add Idefix CXX Flags
 add_compile_options(${Idefix_CXX_FLAGS})
+
+
 
 # Add filesystem libraries for GCC8
 set_required_build_settings_for_GCC8()
@@ -277,6 +281,12 @@ configure_file(
 )
 # Make sure the generated header is on the include path
 target_include_directories(idefix PRIVATE ${CMAKE_BINARY_DIR}/build/generated)
+
+# disable FMA if needed
+if(Idefix_SUPPRESS_FMA)
+  message(STATUS "FMA (fused multiply-add) contraction/codegen is disabled")
+  target_suppress_fma(idefix)
+endif()
 
 message(STATUS "Idefix final configuration")
 if(Idefix_EVOLVE_VECTOR_POTENTIAL)

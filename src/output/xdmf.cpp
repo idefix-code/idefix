@@ -21,7 +21,6 @@
 #endif
 
 #include "xdmf.hpp"
-#include "version.hpp"
 #include "idefix.hpp"
 #include "dataBlockHost.hpp"
 #include "gridHost.hpp"

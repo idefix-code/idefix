@@ -181,10 +181,9 @@ endif()
 if(Idefix_EVOLVE_VECTOR_POTENTIAL)
   add_compile_definitions("EVOLVE_VECTOR_POTENTIAL")
 endif()
-#update version.hpp if possible
+
+# determine idefix version from git
 git_describe(GIT_SHA1)
-
-
 set(Idefix_VERSION ${Idefix_VERSION_MAJOR}.${Idefix_VERSION_MINOR}.${Idefix_VERSION_PATCH}-${GIT_SHA1})
 configure_file(
     ${CMAKE_SOURCE_DIR}/src/version.h.in

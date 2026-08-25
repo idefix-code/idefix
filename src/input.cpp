@@ -18,7 +18,6 @@
 
 #include "idefix.hpp"
 #include "input.hpp"
-#include "version.hpp"
 #include "profiler.hpp"
 #include "version.h"
 #include "compiler_info.h"

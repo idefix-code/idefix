@@ -20,7 +20,6 @@
 #else
   error "Missing the <filesystem> header."
 #endif
-#include "version.hpp"
 #include "idefix.hpp"
 #include "dataBlock.hpp"
 #include "gridHost.hpp"

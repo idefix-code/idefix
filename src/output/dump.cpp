@@ -20,7 +20,6 @@
 #include <string>
 #include <cstdio>
 #include "dump.hpp"
-#include "version.hpp"
 #include "dataBlockHost.hpp"
 #include "gridHost.hpp"
 #include "output.hpp"

@@ -9,7 +9,6 @@
 #include <cstdio>
 #include "../idefix.hpp"
 #include "dataBlock.hpp"
-#include "version.hpp"
 #include "fluid.hpp"
 #include "version.h"
 

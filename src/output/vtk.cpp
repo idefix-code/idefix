@@ -26,6 +26,7 @@
 #include "gridHost.hpp"
 #include "output.hpp"
 #include "fluid.hpp"
+#include "version.h"
 
 #define VTK_RECTILINEAR_GRID    14
 #define VTK_STRUCTURED_GRID     35
@@ -385,7 +386,7 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
   2. Header
   ------------------------------------------- */
 
-  ssheader << "Idefix " << IDEFIX_VERSION << " VTK Data" << std::endl;
+  ssheader << "Idefix " << VersionInfo::version << " VTK Data" << std::endl;
 
   /* ------------------------------------------
   3. File format

@@ -26,6 +26,7 @@
 #include "dataBlockHost.hpp"
 #include "gridHost.hpp"
 #include "output.hpp"
+#include "version.h"
 
 // Whether or not we write the time in the XDMF file
 #define WRITE_TIME
@@ -526,7 +527,7 @@ void Xdmf::WriteHeader(
 
   dimstr = 1;
 
-  ssheader << "Idefix " << IDEFIX_VERSION << " XDMF Data";
+  ssheader << "Idefix " << VersionInfo::version << " XDMF Data";
   strspace = H5Screate_simple(1, &dimstr, NULL);
   string_type = H5Tcopy(H5T_C_S1);
   H5Tset_size(string_type, strlen( ssheader.str().c_str() ));

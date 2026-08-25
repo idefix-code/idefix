@@ -50,7 +50,7 @@ function(_fma_suppression_flags_cxx out_var)
     elseif(id STREQUAL "GNU")
         set(flags "-ffp-contract=off" "-mno-fma")
 
-    elseif(id MATCHES "^(Clang|AppleClang)$")
+    elseif(id MATCHES "^(Clang|AppleClang|CrayClang)$")
         set(flags "-ffp-contract=off")
 
     elseif(id STREQUAL "Intel")

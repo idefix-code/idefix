@@ -193,7 +193,10 @@ void Mpi::CheckConfig() {
         errmsg << "Check your MPI library configuration." << std::endl;
       #endif
       #if defined(KOKKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
-        errmsg << "You can look on Idefix cmake option -DIdefix_MPI_GPU_DIRECT=OFF to not"
+        errmsg << "GPU-aware MPI is required to communicate GPU buffers directly. "
+              "You can disable this requirement by configuring Idefix with "
+              "-DIdefix_MPI_GPU_DIRECT=OFF, which falls back to staging "
+              "data through host memory (this will be slower)." << std::endl;
                   "use it (will be slower)." << std::endl;
       #endif
       errmsg << "Error: " << e.what() << std::endl;

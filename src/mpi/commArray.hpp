@@ -37,7 +37,7 @@ class IdefixCommArrayGpuDirect {
   {}
 
   /**
-   * Accès it as a simple device view for usiage in kokkos kernels
+   * Acces as a simple device view for use in kokkos kernels
    * (because need to not carry the host part).
    */
   T & deviceView(void) {

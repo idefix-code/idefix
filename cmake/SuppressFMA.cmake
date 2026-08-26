@@ -48,8 +48,12 @@ function(_fma_suppression_flags_cxx out_var)
         set(flags "--fmad=false")
 
     elseif(id STREQUAL "GNU")
-        set(flags "-ffp-contract=off" "-mno-fma")
-
+        include(CheckCXXCompilerFlag)
+        check_cxx_compiler_flag("-mno-fma" IDEFIX_HAS_MNO_FMA)
+        set(flags "-ffp-contract=off")
+        if(IDEFIX_HAS_MNO_FMA)
+            list(APPEND flags "-mno-fma")
+        endif()
     elseif(id MATCHES "^(Clang|AppleClang|CrayClang)$")
         set(flags "-ffp-contract=off")
 

@@ -19,7 +19,7 @@
 #include "idefix.hpp"
 #include "commArray.hpp"
 
-namespace idefix {
+namespace idfx {
 
 #ifdef WITH_MPI
 
@@ -500,6 +500,6 @@ int MPI_Gather(const void* sendbuf, int sendcount, MPI_Datatype
 
 #endif //WITH_MPI
 
-} // namespace idefix
+} // namespace idfx
 
 #endif // MPI_MPIVIEW_HPP_

@@ -72,8 +72,8 @@ class Exchanger {
   bool haveVs{false};
 
   // Requests for MPI persistent communications
-  idefix::MPI_Request_1D<real> sendRequest[2];
-  idefix::MPI_Request_1D<real> recvRequest[2];
+  idfx::MPI_Request_1D<real> sendRequest[2];
+  idfx::MPI_Request_1D<real> recvRequest[2];
 
   Grid *grid;
 };

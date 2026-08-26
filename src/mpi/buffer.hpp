@@ -38,7 +38,7 @@ class Buffer {
     return this->array.deviceView();
   }
 
-  idefix::IdefixCommArray1D<real> & commView(void) {
+  idfx::IdefixCommArray1D<real> & commView(void) {
     return this->array;
   }
 
@@ -257,7 +257,7 @@ class Buffer {
 
  private:
   size_t pointer{0};
-  idefix::IdefixCommArray1D<real> array{};
+  idfx::IdefixCommArray1D<real> array{};
 };
 
 #endif // MPI_BUFFER_HPP_

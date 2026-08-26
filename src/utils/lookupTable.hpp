@@ -392,10 +392,10 @@ LookupTable<kDim>::LookupTable(std::string filename, char delimiter, bool errOOB
 
   #ifdef WITH_MPI
     // Share with the others
-    idefix::MPI_Bcast(xinHost, xinHost.extent(0), realMPI, 0, MPI_COMM_WORLD);
-    idefix::MPI_Bcast(dimensionsHost, dimensionsHost.extent(0), MPI_INT, 0, MPI_COMM_WORLD);
-    idefix::MPI_Bcast(offsetHost, offsetHost.extent(0), MPI_INT, 0, MPI_COMM_WORLD);
-    idefix::MPI_Bcast(dataHost,dataHost.extent(0), realMPI, 0, MPI_COMM_WORLD);
+    idfx::MPI_Bcast(xinHost, xinHost.extent(0), realMPI, 0, MPI_COMM_WORLD);
+    idfx::MPI_Bcast(dimensionsHost, dimensionsHost.extent(0), MPI_INT, 0, MPI_COMM_WORLD);
+    idfx::MPI_Bcast(offsetHost, offsetHost.extent(0), MPI_INT, 0, MPI_COMM_WORLD);
+    idfx::MPI_Bcast(dataHost,dataHost.extent(0), realMPI, 0, MPI_COMM_WORLD);
   #endif
 
   // Copy to target

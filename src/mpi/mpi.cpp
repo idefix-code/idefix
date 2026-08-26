@@ -132,7 +132,7 @@ void Mpi::CheckConfig() {
   #endif /* MPIX_CUDA_AWARE_SUPPORT */
 
   // Run-time check that we can do a reduce on device arrays
-  idefix::IdefixCommArray1D<int64_t> src("MPIChecksrc",1);
+  idfx::IdefixCommArray1D<int64_t> src("MPIChecksrc",1);
   IdefixArray1D<int64_t>::host_mirror_type srcHost = Kokkos::create_mirror_view(src.deviceView());
 
   if(idfx::prank == 0) {
@@ -157,15 +157,15 @@ void Mpi::CheckConfig() {
       MPI_Status status;
       int ierrSend, ierrRecv;
       if(idfx::prank == 0) {
-        ierrSend = idefix::MPI_Send(src, 1, MPI_INT64_T, idfx::prank+1, 1, MPI_COMM_WORLD);
-        ierrRecv = idefix::MPI_Recv(src, 1, MPI_INT64_T, idfx::psize-1, 1, MPI_COMM_WORLD, &status);
+        ierrSend = idfx::MPI_Send(src, 1, MPI_INT64_T, idfx::prank+1, 1, MPI_COMM_WORLD);
+        ierrRecv = idfx::MPI_Recv(src, 1, MPI_INT64_T, idfx::psize-1, 1, MPI_COMM_WORLD, &status);
       } else {
-        ierrRecv = idefix::MPI_Recv(src, 1, MPI_INT64_T, idfx::prank-1, 1, MPI_COMM_WORLD, &status);
+        ierrRecv = idfx::MPI_Recv(src, 1, MPI_INT64_T, idfx::prank-1, 1, MPI_COMM_WORLD, &status);
         // Add our own rank to the data
         Kokkos::deep_copy(srcHost, src.deviceView());
         srcHost(0) += idfx::prank;
         Kokkos::deep_copy(src.deviceView(), srcHost);
-        ierrSend = idefix::MPI_Send(src, 1, MPI_INT64_T, (idfx::prank+1)%idfx::psize, 1,
+        ierrSend = idfx::MPI_Send(src, 1, MPI_INT64_T, (idfx::prank+1)%idfx::psize, 1,
                                                         MPI_COMM_WORLD);
       }
 
@@ -197,7 +197,6 @@ void Mpi::CheckConfig() {
               "You can disable this requirement by configuring Idefix with "
               "-DIdefix_MPI_GPU_DIRECT=OFF, which falls back to staging "
               "data through host memory (this will be slower)." << std::endl;
-                  "use it (will be slower)." << std::endl;
       #endif
       errmsg << "Error: " << e.what() << std::endl;
       IDEFIX_ERROR(errmsg);

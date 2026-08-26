@@ -132,22 +132,22 @@ void Exchanger::Init(
   // X1-dir exchanges
   // We receive from procRecv, and we send to procSend
 
-  idefix::MPI_Send_init(BufferSend[faceRight].commView(), bufferSizeSend[faceRight], realMPI,
+  idfx::MPI_Send_init(BufferSend[faceRight].commView(), bufferSizeSend[faceRight], realMPI,
             procSend[faceRight], thisInstance*2,
             grid->CartComm, &sendRequest[faceRight]);
 
-  idefix::MPI_Recv_init(BufferRecv[faceLeft].commView(), bufferSizeRecv[faceLeft], realMPI,
+  idfx::MPI_Recv_init(BufferRecv[faceLeft].commView(), bufferSizeRecv[faceLeft], realMPI,
             procRecv[faceLeft],thisInstance*2,
             grid->CartComm, &recvRequest[faceLeft]);
 
   // Send to the left
   // We receive from procRecv, and we send to procSend
 
-  idefix::MPI_Send_init(BufferSend[faceLeft].commView(), bufferSizeSend[faceLeft], realMPI,
+  idfx::MPI_Send_init(BufferSend[faceLeft].commView(), bufferSizeSend[faceLeft], realMPI,
             procSend[faceLeft],thisInstance*2+1,
             grid->CartComm, &sendRequest[faceLeft]);
 
-  idefix::MPI_Recv_init(BufferRecv[faceRight].commView(), bufferSizeRecv[faceRight], realMPI,
+  idfx::MPI_Recv_init(BufferRecv[faceRight].commView(), bufferSizeRecv[faceRight], realMPI,
             procRecv[faceRight], thisInstance*2+1,
             grid->CartComm, &recvRequest[faceRight]);
 
@@ -166,8 +166,8 @@ Exchanger::~Exchanger() {
     // Properly clean up the mess
     #ifdef MPI_PERSISTENT
       for(int i=0 ; i< 2; i++) {
-        idefix::MPI_Request_free( &sendRequest[i]);
-        idefix::MPI_Request_free( &recvRequest[i]);
+        idfx::MPI_Request_free( &sendRequest[i]);
+        idfx::MPI_Request_free( &recvRequest[i]);
       }
     #endif
     isInitialized = false;
@@ -192,7 +192,7 @@ void Exchanger::Exchange(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   MPI_Status sendStatus[2];
   MPI_Status recvStatus[2];
 
-  idefix::MPI_Startall(2, recvRequest);
+  idfx::MPI_Startall(2, recvRequest);
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 #endif
   myTimer += MPI_Wtime();
@@ -216,43 +216,43 @@ void Exchanger::Exchange(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   tStart = MPI_Wtime();
 
 #ifdef MPI_PERSISTENT
-  idefix::MPI_Startall(2, sendRequest);
+  idfx::MPI_Startall(2, sendRequest);
   // Wait for buffers to be received
-  idefix::MPI_Waitall(2, recvRequest, recvStatus);
+  idfx::MPI_Waitall(2, recvRequest, recvStatus);
 
 #else
 
   #ifdef MPI_NON_BLOCKING
   MPI_Status sendStatus[2];
   MPI_Status recvStatus[2];
-  idefix::MPI_Request_1D<real> sendRequest[2];
-  idefix::MPI_Request_1D<real> recvRequest[2];
+  idfx::MPI_Request_1D<real> sendRequest[2];
+  idfx::MPI_Request_1D<real> recvRequest[2];
 
   // We receive from procRecv, and we send to procSend
 
-  idefix::MPI_Isend(BufferSend[faceRight].commView(), bufferSizeSend[faceRight], realMPI,
+  idfx::MPI_Isend(BufferSend[faceRight].commView(), bufferSizeSend[faceRight], realMPI,
             procSend[faceRight], 100, grid->CartComm, &sendRequest[0]);
 
-  idefix::MPI_Irecv(BufferRecv[faceLeft].commView(), bufferSizeRecv[faceLeft], realMPI,
+  idfx::MPI_Irecv(BufferRecv[faceLeft].commView(), bufferSizeRecv[faceLeft], realMPI,
             procRecv[faceLeft], 100, grid->CartComm, &recvRequest[0]);
   // Send to the left
   // We receive from procRecv, and we send to procSend
 
-  idefix::MPI_Isend(BufferSend[faceLeft].commView(), bufferSizeSend[faceLeft], realMPI,
+  idfx::MPI_Isend(BufferSend[faceLeft].commView(), bufferSizeSend[faceLeft], realMPI,
             procSend[faceLeft], 101, grid->CartComm, &sendRequest[1]);
 
-  idefix::MPI_Irecv(BufferRecv[faceRight].commView(), bufferSizeRecv[faceRight], realMPI,
+  idfx::MPI_Irecv(BufferRecv[faceRight].commView(), bufferSizeRecv[faceRight], realMPI,
             procRecv[faceRight], 101, grid->CartComm, &recvRequest[1]);
 
   // Wait for recv to complete (we don't care about the sends)
-  idefix::MPI_Waitall(2, recvRequest, recvStatus);
+  idfx::MPI_Waitall(2, recvRequest, recvStatus);
 
   #else
   MPI_Status status;
   // Send to the right
   // We receive from procRecv, and we send to procSend
 
-  idefix::MPI_Sendrecv(BufferSend[faceRight].commView(), bufferSizeSend[faceRight], realMPI,
+  idfx::MPI_Sendrecv(BufferSend[faceRight].commView(), bufferSizeSend[faceRight], realMPI,
                 procSend[faceRight], 100,
                 BufferRecv[faceLeft].commView(), bufferSizeRecv[faceLeft], realMPI,
                 procRecv[faceLeft], 100,
@@ -261,7 +261,7 @@ void Exchanger::Exchange(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
   // Send to the left
   // We receive from procRecv, and we send to procSend
 
-  idefix::MPI_Sendrecv(BufferSend[faceLeft].commView(), bufferSizeSend[faceLeft], realMPI,
+  idfx::MPI_Sendrecv(BufferSend[faceLeft].commView(), bufferSizeSend[faceLeft], realMPI,
                 procSend[faceLeft], 101,
                 BufferRecv[faceRight].commView(), bufferSizeRecv[faceRight], realMPI,
                 procRecv[faceRight], 101,
@@ -298,11 +298,11 @@ if(recvRight) {
 myTimer -= MPI_Wtime();
 #ifdef MPI_NON_BLOCKING
   // Wait for the sends if they have not yet completed
-  idefix::MPI_Waitall(2, sendRequest, sendStatus);
+  idfx::MPI_Waitall(2, sendRequest, sendStatus);
 #endif
 
 #ifdef MPI_PERSISTENT
-  idefix::MPI_Waitall(2, sendRequest, sendStatus);
+  idfx::MPI_Waitall(2, sendRequest, sendStatus);
 #endif
   myTimer += MPI_Wtime();
   bytesSentOrReceived += (bufferSizeRecv[faceLeft]

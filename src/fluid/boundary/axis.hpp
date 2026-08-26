@@ -57,8 +57,8 @@ class Axis {
 
   enum {faceTop, faceBot};
 #ifdef WITH_MPI
-  idefix::MPI_Request_1D<real> sendRequest;
-  idefix::MPI_Request_1D<real> recvRequest;
+  idfx::MPI_Request_1D<real> sendRequest;
+  idfx::MPI_Request_1D<real> recvRequest;
 
   Buffer bufferSend;
   Buffer bufferRecv;
@@ -71,8 +71,8 @@ class Axis {
 #endif
   void InitMPI();
 
-  idefix::IdefixCommArray1D<real> Ex1Avg;
-  idefix::IdefixCommArray2D<real> BAvg;
+  idfx::IdefixCommArray1D<real> Ex1Avg;
+  idfx::IdefixCommArray2D<real> BAvg;
   bool haveCurrent;
   IdefixArray2D<real> JAvg;
   IdefixArray1D<int> symmetryVc;
@@ -155,8 +155,8 @@ Axis::Axis(Boundary<Phys> *boundary) {
     }
     Kokkos::deep_copy(symmetryVs, symmetryVsHost);
 
-    this->Ex1Avg = idefix::IdefixCommArray1D<real>("Axis:Ex1Avg",data->np_tot[IDIR]);
-    this->BAvg = idefix::IdefixCommArray2D<real>("Axis:BxAvg",data->np_tot[IDIR],2);
+    this->Ex1Avg = idfx::IdefixCommArray1D<real>("Axis:Ex1Avg",data->np_tot[IDIR]);
+    this->BAvg = idfx::IdefixCommArray2D<real>("Axis:BxAvg",data->np_tot[IDIR],2);
     if(haveCurrent) {
       this->JAvg = IdefixArray2D<real>("Axis:JAvg",data->np_tot[IDIR],3);
     }

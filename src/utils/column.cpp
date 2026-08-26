@@ -36,13 +36,13 @@ Column::Column(int dir, int sign, DataBlock *data)
 
   // allocate helper  array
   if(dir == IDIR) {
-    localSum = idefix::IdefixCommArray2D<real>("localSum",np_tot[KDIR], np_tot[JDIR]);
+    localSum = idfx::IdefixCommArray2D<real>("localSum",np_tot[KDIR], np_tot[JDIR]);
   }
   if(dir == JDIR) {
-    localSum = idefix::IdefixCommArray2D<real>("localSum",np_tot[KDIR], np_tot[IDIR]);
+    localSum = idfx::IdefixCommArray2D<real>("localSum",np_tot[KDIR], np_tot[IDIR]);
   }
   if(dir == KDIR) {
-    localSum = idefix::IdefixCommArray2D<real>("localSum",np_tot[JDIR], np_tot[IDIR]);
+    localSum = idfx::IdefixCommArray2D<real>("localSum",np_tot[JDIR], np_tot[IDIR]);
   }
   #ifdef WITH_MPI
   // Create sub-MPI communicator dedicated to scan
@@ -134,7 +134,7 @@ void Column::ComputeColumn(IdefixArray4D<real> in, const int var) {
         MPI_Status status;
         // Get the cumulative sum from previous processes
         Kokkos::fence();
-        idefix::MPI_Recv(this->localSum, size, realMPI, src, 20, ColumnComm, &status);
+        idfx::MPI_Recv(this->localSum, size, realMPI, src, 20, ColumnComm, &status);
         // Add this to our cumulative sum
         idefix_for("Addsum",kb,ke,jb,je,ib,ie,
           KOKKOS_LAMBDA(int k, int j, int i) {
@@ -165,7 +165,7 @@ void Column::ComputeColumn(IdefixArray4D<real> in, const int var) {
         }
         // And send it
         Kokkos::fence();
-        idefix::MPI_Send(this->localSum,size, realMPI, dst, 20, ColumnComm);
+        idfx::MPI_Send(this->localSum,size, realMPI, dst, 20, ColumnComm);
       } // MPIrank small enough
     #endif
     // If we need it backwards
@@ -195,7 +195,7 @@ void Column::ComputeColumn(IdefixArray4D<real> in, const int var) {
 
       #ifdef WITH_MPI
       Kokkos::fence();
-      idefix::MPI_Bcast(this->localSum,size, realMPI, MPIsize-1, ColumnComm);
+      idfx::MPI_Bcast(this->localSum,size, realMPI, MPIsize-1, ColumnComm);
       #endif
       // All substract the local column from the full column
 

@@ -21,7 +21,7 @@
 
 #include "idefix.hpp"
 
-namespace idefix {
+namespace idfx {
 
 /**
  * Provide a specific array used for MPI communications. It embeds the standard
@@ -45,7 +45,7 @@ class IdefixCommArrayGpuDirect {
   }
 
   /**
-   * Acces it as a simple communication view for usiage in communication routines.
+   * Acces as a simple communication view for use in communication routines.
    */
   T commView(void) {
     return this->deviceArray;
@@ -107,7 +107,7 @@ class IdefixCommArrayNoGpuDirect {
   {}
 
   /**
-   * Acces it as a simple device view for usiage in kokkos kernels
+   * Acces as a simple device view for use in kokkos kernels
    * (because need to not carry the host part).
    */
   T & deviceView(void) {
@@ -115,7 +115,7 @@ class IdefixCommArrayNoGpuDirect {
   }
 
   /**
-   * Acces it as a simple communication view for usiage in communication routines.
+   * Acces as a simple communication view for use in communication routines.
    */
   typename T::host_mirror_type & commView(void) {
     return this->commArray;
@@ -219,6 +219,6 @@ template <class T> using MPI_Request_3D = Idefix_MPI_Request< IdefixArray3D<T> >
 /** Wrap the idefix 4D array to use it for communication purpose. */
 template <class T> using MPI_Request_4D = Idefix_MPI_Request< IdefixArray4D<T> >;
 
-} // namespace idefix
+} // namespace idfx
 
 #endif // MPI_COMMARRAY_HPP_

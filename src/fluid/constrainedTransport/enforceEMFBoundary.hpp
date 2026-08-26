@@ -142,7 +142,7 @@ void ConstrainedTransport<Phys>::SymmetrizeEMFShearingBox() {
           // We send to our left (which, by periodicity, is the right end of the domain)
           // our value of sbEyL and get
           Kokkos::fence();
-          idefix::MPI_Sendrecv(this->sbEyL, size, realMPI, procLeft, 2001,
+          idfx::MPI_Sendrecv(this->sbEyL, size, realMPI, procLeft, 2001,
                        this->sbEyR, size, realMPI, procLeft, 2002,
                        data->mygrid->CartComm, &status );
         }
@@ -150,7 +150,7 @@ void ConstrainedTransport<Phys>::SymmetrizeEMFShearingBox() {
           Kokkos::fence();
           // We send to our right (which, by periodicity, is the left end (=beginning)
           // of the domain) our value of sbEyR and get sbEyL
-          idefix::MPI_Sendrecv(this->sbEyR, size, realMPI, procRight, 2002,
+          idfx::MPI_Sendrecv(this->sbEyR, size, realMPI, procRight, 2002,
                        this->sbEyL, size, realMPI, procRight, 2001,
                        data->mygrid->CartComm, &status );
         }

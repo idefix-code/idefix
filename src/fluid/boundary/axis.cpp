@@ -40,7 +40,7 @@ void Axis::SymmetrizeEx1Side(int jref, IdefixArray3D<real> Ex1) {
     #ifdef WITH_MPI
       Kokkos::fence();
       // sum along all of the processes on the same r
-      idefix::MPI_Allreduce(MPI_IN_PLACE, this->Ex1Avg, data->np_tot[IDIR], realMPI,
+      idfx::MPI_Allreduce(MPI_IN_PLACE, this->Ex1Avg, data->np_tot[IDIR], realMPI,
                     MPI_SUM, data->mygrid->AxisComm);
     #endif
   }
@@ -209,7 +209,7 @@ void Axis::FixBx2sAxis(int side) {
       Kokkos::fence();
       #ifdef WITH_MPI
         // sum along all of the processes on the same r
-        idefix::MPI_Allreduce(MPI_IN_PLACE, this->BAvg, 2*data->np_tot[IDIR], realMPI,
+        idfx::MPI_Allreduce(MPI_IN_PLACE, this->BAvg, 2*data->np_tot[IDIR], realMPI,
                       MPI_SUM, data->mygrid->AxisComm);
       #endif
     }
@@ -409,7 +409,7 @@ void Axis::ExchangeMPI(int side) {
   MPI_Status recvStatus;
 
   double tStart = MPI_Wtime();
-  MPI_SAFE_CALL(idefix::MPI_Start(&recvRequest));
+  MPI_SAFE_CALL(idfx::MPI_Start(&recvRequest));
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // Coordinates of the ghost region which needs to be transfered
@@ -471,8 +471,8 @@ void Axis::ExchangeMPI(int side) {
   Kokkos::fence();
 
   tStart = MPI_Wtime();
-  MPI_SAFE_CALL(idefix::MPI_Start(&sendRequest));
-  idefix::MPI_Wait(&recvRequest,&recvStatus);
+  MPI_SAFE_CALL(idfx::MPI_Start(&sendRequest));
+  idfx::MPI_Wait(&recvRequest,&recvStatus);
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // Unpack
@@ -526,7 +526,7 @@ void Axis::ExchangeMPI(int side) {
     } // MHD
   }
 
-  idefix::MPI_Wait(&sendRequest, &sendStatus);
+  idfx::MPI_Wait(&sendRequest, &sendStatus);
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
 
@@ -593,10 +593,10 @@ void Axis::InitMPI() {
   MPI_SAFE_CALL(MPI_Cart_shift(data->mygrid->AxisComm,0,data->mygrid->nproc[KDIR]/2,
                                &procRecv,&procSend ));
 
-  MPI_SAFE_CALL(idefix::MPI_Send_init(bufferSend.commView(), bufferSend.Size(),
+  MPI_SAFE_CALL(idfx::MPI_Send_init(bufferSend.commView(), bufferSend.Size(),
                 realMPI, procSend, 650, data->mygrid->AxisComm, &sendRequest));
 
-  MPI_SAFE_CALL(idefix::MPI_Recv_init(bufferRecv.commView(), bufferRecv.Size(),
+  MPI_SAFE_CALL(idfx::MPI_Recv_init(bufferRecv.commView(), bufferRecv.Size(),
                 realMPI, procRecv, 650, data->mygrid->AxisComm, &recvRequest));
 
   #endif

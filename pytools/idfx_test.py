@@ -225,21 +225,19 @@ class idfxTest:
 
         if self.cuda:
             comm.append("-DKokkos_ENABLE_CUDA=ON")
-            # disable fmad operations on Cuda to make it compatible with CPU arithmetics
-            comm.append("-DIdefix_CXX_FLAGS=--fmad=false")
             # disable Async cuda malloc for tests performed on old UCX implementations
             comm.append("-DKokkos_ENABLE_IMPL_CUDA_MALLOC_ASYNC=OFF")
 
         if self.intel:
             # disable fmad operations on Cuda to make it compatible with CPU arithmetics
-            comm.append("-DIdefix_CXX_FLAGS=-fp-model=strict")
             comm.append("-DCMAKE_CXX_COMPILER=icpx")
             comm.append("-DCMAKE_C_COMPILER=icx")
 
         if self.hip:
             comm.append("-DKokkos_ENABLE_HIP=ON")
-            # disable fmad operations on HIP to make it compatible with CPU arithmetics
-            comm.append("-DIdefix_CXX_FLAGS=-ffp-contract=off")
+
+        # disable FMA for testing so that we have the same results on CPU and GPU (otherwise, the results are not bitwise identical)
+        comm.append("-DIdefix_SUPPRESS_FMA=ON")
 
         # if we use single precision
         if self.single:

@@ -5,8 +5,8 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
-#ifndef MPI_MPIVIEW_HPP_
-#define MPI_MPIVIEW_HPP_
+#ifndef MPI_MPIWRAPPER_HPP_
+#define MPI_MPIWRAPPER_HPP_
 
 #ifdef WITH_MPI
   #include <mpi.h>
@@ -502,4 +502,4 @@ int MPI_Gather(const void* sendbuf, int sendcount, MPI_Datatype
 
 } // namespace idfx
 
-#endif // MPI_MPIVIEW_HPP_
+#endif // MPI_MPIWRAPPER_HPP_

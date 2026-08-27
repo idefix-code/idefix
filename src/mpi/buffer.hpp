@@ -10,7 +10,7 @@
 
 #include "idefix.hpp"
 #include "arrays.hpp"
-#include "mpiView.hpp"
+#include "mpiWrapper.hpp"
 
 using BoundingBox = std::array<std::array<int,2>,3>;
 

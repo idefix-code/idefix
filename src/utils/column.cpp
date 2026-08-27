@@ -16,7 +16,7 @@
 #include "grid.hpp"
 #include "dataBlock.hpp"
 #include "dataBlockHost.hpp"
-#include "mpiView.hpp"
+#include "mpiWrapper.hpp"
 
 Column::Column(int dir, int sign, DataBlock *data)
                 : direction(dir), sign(sign) {

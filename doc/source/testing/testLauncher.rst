@@ -32,12 +32,12 @@ To run the test you can basically :
     # Run all tests
     ./test.py
 
-    # Run all tests in ./tests/HD
-    ./test.py -subdir=./tests/HD
+    # Run all tests in ./test/HD
+    ./test.py -subdir=./test/HD
 
     # Select in more details the tests containing the "single" keyword
     # See pytest documentation for the exact advanced semantic
-    ./test.py -subdir=./tests/HD -k single
+    ./test.py -subdir=./test/HD -k single
 
     # Run in verbose
     ./test.py -v

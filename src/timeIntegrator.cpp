@@ -199,7 +199,7 @@ double TimeIntegrator::ComputeBalance() {
     #ifdef WITH_MPI
       const double allowedImbalance = 20.0;
       std::vector<double> computeLogPerCore(idfx::psize);
-      MPI_Gather(&computeLastLog, 1, MPI_DOUBLE, computeLogPerCore.data(), 1, MPI_DOUBLE, 0,
+      idfx::MPI_Gather(&computeLastLog, 1, MPI_DOUBLE, computeLogPerCore, 1, MPI_DOUBLE, 0,
                   MPI_COMM_WORLD);
       computeLastLog = 0; // reset timer for all cores
       if(idfx::prank==0) {

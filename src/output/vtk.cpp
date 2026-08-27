@@ -50,7 +50,7 @@ void Vtk::WriteHeaderNodes(IdfxFileHandler fvtk) {
   int size_int = static_cast<int>(size);
   MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_FLOAT, this->nodeView,
                                   "native", MPI_INFO_NULL));
-  MPI_SAFE_CALL(MPI_File_write_all(fvtk, node_coord.data(), size_int,
+  MPI_SAFE_CALL(idfx::MPI_File_write_all(fvtk, node_coord, size_int,
                                    MPI_FLOAT, MPI_STATUS_IGNORE));
   this->offset += sizeof(float)*(nx1+ioffset)*(nx2+joffset)*(nx3+koffset)*3;
 #else

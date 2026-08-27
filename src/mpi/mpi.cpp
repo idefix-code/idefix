@@ -123,19 +123,21 @@ void Mpi::ExchangeX3(IdefixArray4D<real> Vc, IdefixArray4D<real> Vs) {
 void Mpi::CheckConfig() {
   idfx::pushRegion("Mpi::CheckConfig");
   // compile time check
-  #ifdef KOKKOS_ENABLE_CUDA
+  #if defined(KOKKOS_ENABLE_CUDA) && defined(WITH_MPI_GPU_DIRECT)
     #if defined(MPIX_CUDA_AWARE_SUPPORT) && !MPIX_CUDA_AWARE_SUPPORT
-      #error Your MPI library is not CUDA Aware (check Idefix requirements).
+      #error Your MPI library is not CUDA Aware (check Idefix requirements). \
+             You can look on Idefix cmake option -DIdefix_MPI_GPU_DIRECT=OFF to skip \
+             this requirement (will be slower).
     #endif
   #endif /* MPIX_CUDA_AWARE_SUPPORT */
 
   // Run-time check that we can do a reduce on device arrays
-  IdefixArray1D<int64_t> src("MPIChecksrc",1);
-  IdefixArray1D<int64_t>::host_mirror_type srcHost = Kokkos::create_mirror_view(src);
+  idfx::IdefixCommArray1D<int64_t> src("MPIChecksrc",1);
+  IdefixArray1D<int64_t>::host_mirror_type srcHost = Kokkos::create_mirror_view(src.deviceView());
 
   if(idfx::prank == 0) {
     srcHost(0) = 0;
-    Kokkos::deep_copy(src, srcHost);
+    Kokkos::deep_copy(src.deviceView(), srcHost);
   }
 
   if(idfx::psize > 1) {
@@ -155,15 +157,15 @@ void Mpi::CheckConfig() {
       MPI_Status status;
       int ierrSend, ierrRecv;
       if(idfx::prank == 0) {
-        ierrSend = MPI_Send(src.data(), 1, MPI_INT64_T, idfx::prank+1, 1, MPI_COMM_WORLD);
-        ierrRecv = MPI_Recv(src.data(), 1, MPI_INT64_T, idfx::psize-1, 1, MPI_COMM_WORLD, &status);
+        ierrSend = idfx::MPI_Send(src, 1, MPI_INT64_T, idfx::prank+1, 1, MPI_COMM_WORLD);
+        ierrRecv = idfx::MPI_Recv(src, 1, MPI_INT64_T, idfx::psize-1, 1, MPI_COMM_WORLD, &status);
       } else {
-        ierrRecv = MPI_Recv(src.data(), 1, MPI_INT64_T, idfx::prank-1, 1, MPI_COMM_WORLD, &status);
+        ierrRecv = idfx::MPI_Recv(src, 1, MPI_INT64_T, idfx::prank-1, 1, MPI_COMM_WORLD, &status);
         // Add our own rank to the data
-        Kokkos::deep_copy(srcHost, src);
+        Kokkos::deep_copy(srcHost, src.deviceView());
         srcHost(0) += idfx::prank;
-        Kokkos::deep_copy(src, srcHost);
-        ierrSend = MPI_Send(src.data(), 1, MPI_INT64_T, (idfx::prank+1)%idfx::psize, 1,
+        Kokkos::deep_copy(src.deviceView(), srcHost);
+        ierrSend = idfx::MPI_Send(src, 1, MPI_INT64_T, (idfx::prank+1)%idfx::psize, 1,
                                                         MPI_COMM_WORLD);
       }
 
@@ -190,6 +192,12 @@ void Mpi::CheckConfig() {
       #else
         errmsg << "Check your MPI library configuration." << std::endl;
       #endif
+      #if defined(KOKKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP)
+        errmsg << "GPU-aware MPI is required to communicate GPU buffers directly. "
+              "You can disable this requirement by configuring Idefix with "
+              "-DIdefix_MPI_GPU_DIRECT=OFF, which falls back to staging "
+              "data through host memory (this will be slower)." << std::endl;
+      #endif
       errmsg << "Error: " << e.what() << std::endl;
       IDEFIX_ERROR(errmsg);
     }
@@ -199,7 +207,7 @@ void Mpi::CheckConfig() {
   }
 
   // Check that we have the proper end result
-  Kokkos::deep_copy(srcHost, src);
+  Kokkos::deep_copy(srcHost, src.deviceView());
   int64_t size = static_cast<int64_t>(idfx::psize);
   int64_t rank = static_cast<int64_t>(idfx::prank);
   int64_t result = rank == 0 ? size*(size-1)/2 : rank*(rank+1)/2;

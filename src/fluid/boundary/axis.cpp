@@ -25,7 +25,7 @@ void Axis::ShowConfig() {
 void Axis::SymmetrizeEx1Side(int jref, IdefixArray3D<real> Ex1) {
 #if DIMENSIONS == 3
 
-  IdefixArray1D<real> Ex1Avg = this->Ex1Avg;
+  auto Ex1Avg = this->Ex1Avg.deviceView();
 
   idefix_for("Ex1_ini",0,data->np_tot[IDIR],
       KOKKOS_LAMBDA(int i) {
@@ -40,7 +40,7 @@ void Axis::SymmetrizeEx1Side(int jref, IdefixArray3D<real> Ex1) {
     #ifdef WITH_MPI
       Kokkos::fence();
       // sum along all of the processes on the same r
-      MPI_Allreduce(MPI_IN_PLACE, Ex1Avg.data(), data->np_tot[IDIR], realMPI,
+      idfx::MPI_Allreduce(MPI_IN_PLACE, this->Ex1Avg, data->np_tot[IDIR], realMPI,
                     MPI_SUM, data->mygrid->AxisComm);
     #endif
   }
@@ -88,7 +88,8 @@ void Axis::RegularizeCurrentSide(int side) {
       jc = data->end[JDIR]-1;
       sign = -1;
     }
-    IdefixArray1D<real> BAvg = this->Ex1Avg;
+    auto BAvg = this->Ex1Avg.deviceView();
+    auto BAvgComm = this->Ex1Avg;
     IdefixArray1D<real> x1 = data->x[IDIR];
     IdefixArray1D<real> dx3 = data->dx[KDIR];
     IdefixArray1D<real> dx2 = data->dx[JDIR];
@@ -107,7 +108,7 @@ void Axis::RegularizeCurrentSide(int side) {
       #ifdef WITH_MPI
         Kokkos::fence();
         // sum along all of the processes on the same r
-        MPI_Allreduce(MPI_IN_PLACE, BAvg.data(), data->np_tot[IDIR], realMPI,
+        MPI_Allreduce(MPI_IN_PLACE, BAvgComm, data->np_tot[IDIR], realMPI,
                       MPI_SUM, data->mygrid->AxisComm);
       #endif
     }
@@ -169,7 +170,7 @@ void Axis::FixBx2sAxis(int side) {
   // Compute the values of Bx and By that are consistent with BX2 along the axis
   #if DIMENSIONS == 3
     IdefixArray4D<real> Vs = this->Vs;
-    IdefixArray2D<real> BAvg = this->BAvg;
+    auto BAvg = this->BAvg.deviceView();
     IdefixArray1D<real> phi = data->x[KDIR];
 
     int jin = 0;
@@ -208,7 +209,7 @@ void Axis::FixBx2sAxis(int side) {
       Kokkos::fence();
       #ifdef WITH_MPI
         // sum along all of the processes on the same r
-        MPI_Allreduce(MPI_IN_PLACE, BAvg.data(), 2*data->np_tot[IDIR], realMPI,
+        idfx::MPI_Allreduce(MPI_IN_PLACE, this->BAvg, 2*data->np_tot[IDIR], realMPI,
                       MPI_SUM, data->mygrid->AxisComm);
       #endif
     }
@@ -392,7 +393,6 @@ void Axis::ExchangeMPI(int side) {
   idfx::pushRegion("Axis::ExchangeMPI");
   #ifdef WITH_MPI
   // Load  the buffers with data
-  [[maybe_unused]] int ibeg,iend,jbeg,jend,kbeg,kend;
   int offset;
   int ny;
   Buffer bufferSend = this->bufferSend;
@@ -409,7 +409,7 @@ void Axis::ExchangeMPI(int side) {
   MPI_Status recvStatus;
 
   double tStart = MPI_Wtime();
-  MPI_SAFE_CALL(MPI_Start(&recvRequest));
+  MPI_SAFE_CALL(idfx::MPI_Start(&recvRequest));
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // Coordinates of the ghost region which needs to be transfered
@@ -471,8 +471,8 @@ void Axis::ExchangeMPI(int side) {
   Kokkos::fence();
 
   tStart = MPI_Wtime();
-  MPI_SAFE_CALL(MPI_Start(&sendRequest));
-  MPI_Wait(&recvRequest,&recvStatus);
+  MPI_SAFE_CALL(idfx::MPI_Start(&sendRequest));
+  idfx::MPI_Wait(&recvRequest,&recvStatus);
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // Unpack
@@ -526,8 +526,7 @@ void Axis::ExchangeMPI(int side) {
     } // MHD
   }
 
-  MPI_Wait(&sendRequest, &sendStatus);
-
+  idfx::MPI_Wait(&sendRequest, &sendStatus);
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
 
@@ -594,11 +593,11 @@ void Axis::InitMPI() {
   MPI_SAFE_CALL(MPI_Cart_shift(data->mygrid->AxisComm,0,data->mygrid->nproc[KDIR]/2,
                                &procRecv,&procSend ));
 
-  MPI_SAFE_CALL(MPI_Send_init(bufferSend.data(), bufferSend.Size(), realMPI, procSend,
-                650, data->mygrid->AxisComm, &sendRequest));
+  MPI_SAFE_CALL(idfx::MPI_Send_init(bufferSend.commView(), bufferSend.Size(),
+                realMPI, procSend, 650, data->mygrid->AxisComm, &sendRequest));
 
-  MPI_SAFE_CALL(MPI_Recv_init(bufferRecv.data(), bufferRecv.Size(), realMPI, procRecv,
-                650, data->mygrid->AxisComm, &recvRequest));
+  MPI_SAFE_CALL(idfx::MPI_Recv_init(bufferRecv.commView(), bufferRecv.Size(),
+                realMPI, procRecv, 650, data->mygrid->AxisComm, &recvRequest));
 
   #endif
   idfx::popRegion();

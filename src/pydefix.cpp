@@ -96,15 +96,15 @@ py::array_t<real, py::array::c_style> GatherIdefixArray(IdefixHostArray3D<real> 
         #ifdef WITH_MPI
           MPI_Status status;
           // Fetch the local array size
-          MPI_Recv(np_int.data(), 3, MPI_INT, rank, 010, MPI_COMM_WORLD, &status);
-          MPI_Recv(np_tot.data(), 3, MPI_INT, rank, 011, MPI_COMM_WORLD, &status);
-          MPI_Recv(beg.data(), 3, MPI_INT, rank, 012, MPI_COMM_WORLD, &status);
-          MPI_Recv(gbeg.data(), 3, MPI_INT, rank, 013, MPI_COMM_WORLD, &status);
+          idfx::MPI_Recv(np_int, 3, MPI_INT, rank, 010, MPI_COMM_WORLD, &status);
+          idfx::MPI_Recv(np_tot, 3, MPI_INT, rank, 011, MPI_COMM_WORLD, &status);
+          idfx::MPI_Recv(beg, 3, MPI_INT, rank, 012, MPI_COMM_WORLD, &status);
+          idfx::MPI_Recv(gbeg, 3, MPI_INT, rank, 013, MPI_COMM_WORLD, &status);
 
           buf = IdefixHostArray3D<real>("pydefix::tempArray",
                                          np_tot[KDIR],np_tot[JDIR],np_tot[IDIR]);
           // Fetch data
-          MPI_Recv(buf.data(), np_tot[IDIR]*np_tot[JDIR]*np_tot[KDIR],
+          idfx::MPI_Recv(buf, np_tot[IDIR]*np_tot[JDIR]*np_tot[KDIR],
                    realMPI, rank, 014, MPI_COMM_WORLD,&status);
         #else
           IDEFIX_ERROR("Can't deal with psize>1 without MPI.");
@@ -147,11 +147,11 @@ py::array_t<real, py::array::c_style> GatherIdefixArray(IdefixHostArray3D<real> 
     }
     #ifdef WITH_MPI
       // send the local array size
-      MPI_Send(np_int.data(), 3, MPI_INT, 0, 010, MPI_COMM_WORLD);
-      MPI_Send(np_tot.data(), 3, MPI_INT, 0, 011, MPI_COMM_WORLD);
-      MPI_Send(beg.data(), 3, MPI_INT, 0, 012, MPI_COMM_WORLD);
-      MPI_Send(gbeg.data(), 3, MPI_INT, 0, 013, MPI_COMM_WORLD);
-      MPI_Send(in.data(), np_tot[IDIR]*np_tot[JDIR]*np_tot[KDIR], realMPI, 0, 014, MPI_COMM_WORLD);
+      idfx::MPI_Send(np_int, 3, MPI_INT, 0, 010, MPI_COMM_WORLD);
+      idfx::MPI_Send(np_tot, 3, MPI_INT, 0, 011, MPI_COMM_WORLD);
+      idfx::MPI_Send(beg, 3, MPI_INT, 0, 012, MPI_COMM_WORLD);
+      idfx::MPI_Send(gbeg, 3, MPI_INT, 0, 013, MPI_COMM_WORLD);
+      idfx::MPI_Send(in, np_tot[IDIR]*np_tot[JDIR]*np_tot[KDIR], realMPI, 0, 014, MPI_COMM_WORLD);
     #else
       IDEFIX_ERROR("Can't deal with psize>1 without MPI.");
     #endif
@@ -159,7 +159,7 @@ py::array_t<real, py::array::c_style> GatherIdefixArray(IdefixHostArray3D<real> 
   // All is transfered
   #ifdef WITH_MPI
     if(broadcast) {
-      MPI_Bcast(out.data(), out.extent(0)*out.extent(1)*out.extent(2), realMPI, 0, MPI_COMM_WORLD);
+      idfx::MPI_Bcast(out, out.extent(0)*out.extent(1)*out.extent(2), realMPI, 0, MPI_COMM_WORLD);
     }
   #endif
 

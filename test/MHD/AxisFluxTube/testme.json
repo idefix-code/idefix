@@ -1,5 +1,5 @@
 {
-  "namings": "ini,mpi",
+  "namings": "ini,mpi,mpiGpuForceCopy,mpiMode",
   "default": {
     "dumpname": "dump.0001.dmp",
     "noplot": true,
@@ -12,7 +12,21 @@
   "variants": [
     {
       "ini": ["idefix.ini","idefix-coarsening.ini"],
-      "mpi": [false, true]
+      "mpi": [false, true],
+      "mpiGpuForceCopy": false,
+      "mpiMode": "Default"
+    },
+    {
+      "ini": ["idefix.ini"],
+      "mpi": true,
+      "mpiGpuForceCopy": [true],
+      "mpiMode": ["Persistent"]
+    },
+    {
+      "ini": ["idefix.ini"],
+      "mpi": true,
+      "mpiGpuForceCopy": [false, true],
+      "mpiMode": ["NonBlocking", "Blocking"]
     }
   ]
 }

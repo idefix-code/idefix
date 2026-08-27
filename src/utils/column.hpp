@@ -13,6 +13,7 @@
 
 #include "idefix.hpp"
 #include "dataBlock.hpp"
+#include "commArray.hpp"
 
 
 
@@ -59,7 +60,7 @@ class Column {
   IdefixArray3D<real> Area;
   IdefixArray3D<real> Volume;
 
-    IdefixArray2D<real> localSum;
+  idfx::IdefixCommArray2D<real> localSum;
   #ifdef WITH_MPI
   Mpi mpi;  // Mpi object when WITH_MPI is set
   MPI_Comm ColumnComm;

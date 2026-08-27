@@ -10,6 +10,7 @@
 
 #include "idefix.hpp"
 #include "arrays.hpp"
+#include "mpiWrapper.hpp"
 
 using BoundingBox = std::array<std::array<int,2>,3>;
 
@@ -17,7 +18,9 @@ using BoundingBox = std::array<std::array<int,2>,3>;
 class Buffer {
  public:
   Buffer() = default;
-  explicit Buffer(size_t size): pointer{0}, array{IdefixArray1D<real>("BufferArray",size)} {};
+  explicit Buffer(size_t size)
+    : pointer{0}
+    , array{IdefixArray1D<real>("BufferArray",size)} {}
 
   // Compute the size of a bounding box
   static size_t ComputeBoxSize(BoundingBox box) {
@@ -27,16 +30,20 @@ class Buffer {
     return(ninjnk);
   }
 
-  void* data() {
-    return(array.data());
+  void* deviceData() {
+    return(array.deviceView().data());
   }
 
-  const IdefixArray1D<real> & getArray(void) const {
+  IdefixArray1D<real> & deviceView(void) {
+    return this->array.deviceView();
+  }
+
+  idfx::IdefixCommArray1D<real> & commView(void) {
     return this->array;
   }
 
   int Size() {
-    return(array.size());
+    return(array.deviceView().size());
   }
 
   void ResetPointer() {
@@ -55,7 +62,7 @@ class Buffer {
     const int kend = box[KDIR][1];
     const int offset = this->pointer;
 
-    auto arr = this->array;
+    auto arr = this->array.deviceView();
     idefix_for("LoadBuffer3D",kbeg,kend,jbeg,jend,ibeg,iend,
       KOKKOS_LAMBDA (int k, int j, int i) {
       arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + offset ) = in(k,j,i);
@@ -79,7 +86,7 @@ class Buffer {
     const int kend = box[KDIR][1];
     const int offset = this->pointer;
 
-    auto arr = this->array;
+    auto arr = this->array.deviceView();
     idefix_for("LoadBuffer4D_var",kbeg,kend,jbeg,jend,ibeg,iend,
       KOKKOS_LAMBDA (int k, int j, int i) {
       arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + offset ) = in(var, k,j,i);
@@ -102,7 +109,7 @@ class Buffer {
     const int jend = box[JDIR][1];
     const int kend = box[KDIR][1];
     const int offset = this->pointer;
-    auto arr = this->array;
+    auto arr = this->array.deviceView();
 
     idefix_for("LoadBuffer4D_map",0,map.size(),
                              kbeg,kend,
@@ -128,7 +135,7 @@ class Buffer {
     const int jend = box[JDIR][1];
     const int kend = box[KDIR][1];
     const int offset = this->pointer;
-    auto arr = this->array;
+    auto arr = this->array.deviceView();
 
     idefix_for("UnLoadBuffer3D",kbeg,kend,jbeg,jend,ibeg,iend,
       KOKKOS_LAMBDA (int k, int j, int i) {
@@ -153,7 +160,7 @@ class Buffer {
       const int kend = box[KDIR][1];
     const int offset = this->pointer;
 
-    auto arr = this->array;
+    auto arr = this->array.deviceView();
     idefix_for("UnLoadBuffer4D_var",kbeg,kend,jbeg,jend,ibeg,iend,
       KOKKOS_LAMBDA (int k, int j, int i) {
         out(var,k,j,i) = arr(i-ibeg + (j-jbeg)*ni + (k-kbeg)*ninj + offset );
@@ -178,7 +185,7 @@ class Buffer {
     const int kend = box[KDIR][1];
     const int offset = this->pointer;
 
-    auto arr = this->array;
+    auto arr = this->array.deviceView();
     idefix_for("UnLoadBuffer4D_var_sym",kbeg,kend,jbeg,jend,ibeg,iend,
       KOKKOS_LAMBDA (int k, int j, int i) {
         const int jinverted = jend-(j-jbeg)-1;
@@ -205,7 +212,7 @@ class Buffer {
     const int kend = box[KDIR][1];
     const int offset = this->pointer;
 
-    auto arr = this->array;
+    auto arr = this->array.deviceView();
     idefix_for("UnLoadBuffer4D_map",0,map.size(),
                               kbeg,kend,
                               jbeg,jend,
@@ -233,7 +240,7 @@ class Buffer {
     const int kend = box[KDIR][1];
     const int offset = this->pointer;
 
-    auto arr = this->array;
+    auto arr = this->array.deviceView();
     idefix_for("UnLoadBuffer4D_map_sym",0,map.size(),
                               kbeg,kend,
                               jbeg,jend,
@@ -248,10 +255,9 @@ class Buffer {
     this->pointer += ninjnk*map.size();
   }
 
-
  private:
-  size_t pointer;
-  IdefixArray1D<real> array;
+  size_t pointer{0};
+  idfx::IdefixCommArray1D<real> array{};
 };
 
 #endif // MPI_BUFFER_HPP_

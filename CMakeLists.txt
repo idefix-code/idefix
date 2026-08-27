@@ -16,6 +16,9 @@ option(Idefix_DEBUG "Enable Idefix debug features (makes the code very slow)" OF
 option(Idefix_RUNTIME_CHECKS "Enable runtime sanity checks" OFF)
 option(Idefix_WERROR "Treat compiler warnings as errors" OFF)
 option(Idefix_PYTHON "Enable python bindings (requires pybind11)" OFF)
+option(Idefix_MPI_GPU_DIRECT "Enable usage of GPU direct to avoid CPU-GPU copies for MPI messages." ON)
+option(Idefix_MPI_GPU_FORCE_COPY "When GPU_DIRECT is disabled, force using transfers for validation purpose." OFF)
+mark_as_advanced(Idefix_MPI_GPU_FORCE_TRANSFERS)
 option(Idefix_SUPPRESS_FMA "Disable FMA (fused multiply-add) contraction/codegen. Useful for code validation across architectures." OFF)
 set(Idefix_PROBLEM_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "Problem directory to build for.")
 set(Idefix_CXX_FLAGS "" CACHE STRING "Additional compiler/linker flag")
@@ -35,6 +38,10 @@ set_property(CACHE Idefix_PRECISION PROPERTY STRINGS Double Single)
 
 set(Idefix_LOOP_PATTERN "Default" CACHE STRING "Loop pattern for idefix_for")
 set_property(CACHE Idefix_LOOP_PATTERN PROPERTY STRINGS Default SIMD Range MDRange TeamPolicy TeamPolicyInnerVector)
+
+set(Idefix_MPI_MODE "Persistent" CACHE STRING "MPI communication mode to use.")
+set_property(CACHE Idefix_MPI_MODE PROPERTY STRINGS Persistent Blocking NonBlocking)
+mark_as_advanced(Idefix_MPI_MODE)
 
 # load git revision tools
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
@@ -107,6 +114,10 @@ if(Idefix_MPI)
   find_package(MPI REQUIRED)
   target_link_libraries(idefix MPI::MPI_CXX)
   add_subdirectory(src/mpi)
+endif()
+
+if (Idefix_MPI_GPU_DIRECT)
+  add_compile_definitions("WITH_MPI_GPU_DIRECT")
 endif()
 
 if(Idefix_HDF5)
@@ -245,6 +256,20 @@ if(${Idefix_PRECISION} STREQUAL "Single")
   add_compile_definitions("SINGLE_PRECISION")
 endif()
 
+# MPI mode
+if(${Idefix_MPI_MODE} STREQUAL "Persistent")
+  add_compile_definitions("COMMUNICATION_MODE_PERSISTENT")
+elseif(${Idefix_MPI_MODE} STREQUAL "NonBlocking")
+  add_compile_definitions("COMMUNICATION_MODE_NON_BLOCKING")
+else(NOT ${Idefix_MPI_MODE} STREQUAL "Blocking")
+  message(ERROR "Unknown MPI communication mode : Idefix_MPI_MODE=${Idefix_MPI_MODE}")
+endif()
+
+# GPU direct disabled and force transfers
+if (${Idefix_MPI_GPU_FORCE_COPY})
+  add_compile_definitions("WITH_GPU_FORCE_COPY")
+endif()
+
 target_include_directories(idefix PUBLIC
                            "${Idefix_PROBLEM_DIR_ABS}"
                            )
@@ -297,6 +322,7 @@ endif()
 message(STATUS "    MPI:  ${Idefix_MPI}")
 message(STATUS "    HDF5: ${Idefix_HDF5}")
 message(STATUS "    Python: ${Idefix_PYTHON}")
+message(STATUS "    GPU direct: ${Idefix_MPI_GPU_DIRECT}")
 message(STATUS "    Reconstruction: ${Idefix_RECONSTRUCTION}")
 message(STATUS "    Precision: ${Idefix_PRECISION}")
 message(STATUS "    Version: ${Idefix_VERSION}")

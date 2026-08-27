@@ -107,25 +107,42 @@ Configuration examples for selected clusters
 ++++++++++++++++++++++++++++++++++++++++++++
 
 
-AdAstra at CINES, AMD Mi250X GPUs
+AdAstra at CINES, AMD Mi250X/Mi300 GPUs
 ---------------------------------
 
 We recommend the following modules and environement variables on AdAstra:
 
 .. code-block:: bash
 
-    module load cpe/24.07
+    module load cpe/25.09
+    # Mi250X Only:
     module load craype-accel-amd-gfx90a craype-x86-trento
-    module load PrgEnv-cray
-    module load amd-mixed/6.1.2
-    module load rocm/6.1.2
+    # Mi300 Only:
+    #module load craype-accel-amd-gfx942 craype-x86-trento
+    module load PrgEnv-amd
     module load cray-python/3.11.7
+    module load cmake
 
-Finally, *Idefix* can be configured to run on Mi250 by enabling HIP and the desired architecture with the following options to ccmake:
+    export MPICH_GPU_SUPPORT_ENABLED=1
+
+    # Note: force hipcc as the compiler for C and C++ to avoid issues with Cray wrappers
+
+    # Mi250x version:
+    export IDEFIX_FLAGS="-DCMAKE_CXX_COMPILER=hipcc -DCMAKE_C_COMPILER=hipcc -DKokkos_ENABLE_HIP=ON -DKokkos_ENABLE_HIP_MULTIPLE_KERNEL_INSTANTIATIONS=ON -DKokkos_ARCH_AMD_GFX90A=ON"
+    export HIPCC_COMPILE_FLAGS_APPEND="-isystem ${CRAY_MPICH_PREFIX}/include"
+    export HIPCC_LINK_FLAGS_APPEND="-L${CRAY_MPICH_PREFIX}/lib -lmpi ${PE_MPICH_GTL_DIR_amd_gfx90a} ${PE_MPICH_GTL_LIBS_amd_gfx90a} -lstdc++fs"
+
+    ############################################
+    # Mi300 version:
+    # export IDEFIX_FLAGS="-DCMAKE_CXX_COMPILER=hipcc -DCMAKE_C_COMPILER=hipcc -DKokkos_ENABLE_HIP=ON -DKokkos_ENABLE_HIP_MULTIPLE_KERNEL_INSTANTIATIONS=ON -DKokkos_ARCH_AMD_GFX942=ON"
+    # export HIPCC_COMPILE_FLAGS_APPEND="-isystem ${CRAY_MPICH_PREFIX}/include"
+    # export HIPCC_LINK_FLAGS_APPEND="-L${CRAY_MPICH_PREFIX}/lib -lmpi ${PE_MPICH_GTL_DIR_amd_gfx942} ${PE_MPICH_GTL_LIBS_amd_gfx942} -lstdc++fs"
+
+Finally, *Idefix* can be configured to run on Mi250/Mi300 using the ``$IDEFIX_FLAGS` environment variable as follows:
 
 .. code-block:: bash
 
-    -DKokkos_ENABLE_HIP=ON -DKokkos_ENABLE_HIP_MULTIPLE_KERNEL_INSTANTIATIONS=ON -DKokkos_ARCH_VEGA90A=ON
+    cmake $IDEFIX_DIR $IDEFIX_FLAGS
 
 
 MPI (multi-GPU) can be enabled by adding ``-DIdefix_MPI=ON`` as usual.

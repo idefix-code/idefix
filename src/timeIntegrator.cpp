@@ -339,7 +339,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
     // Add back fargo velocity so that boundary conditions are applied on the total V
     if(data.haveFargo) data.fargo->AddVelocity(data.t);
- 
+
     // Look for Nans every now and then (this actually cost a lot of time on GPUs
     // because streams are divergent)
     if(ncycles%checkNanPeriodicity==0) {

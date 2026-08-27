@@ -19,6 +19,7 @@ option(Idefix_PYTHON "Enable python bindings (requires pybind11)" OFF)
 option(Idefix_MPI_GPU_DIRECT "Enable usage of GPU direct to avoid CPU-GPU copies for MPI messages." ON)
 option(Idefix_MPI_GPU_FORCE_COPY "When GPU_DIRECT is disabled, force using transfers for validation purpose." OFF)
 mark_as_advanced(Idefix_MPI_GPU_FORCE_TRANSFERS)
+option(Idefix_SUPPRESS_FMA "Disable FMA (fused multiply-add) contraction/codegen. Useful for code validation across architectures." OFF)
 set(Idefix_PROBLEM_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "Problem directory to build for.")
 set(Idefix_CXX_FLAGS "" CACHE STRING "Additional compiler/linker flag")
 set(Idefix_DEFS "definitions.hpp" CACHE FILEPATH "Problem definition header file")
@@ -49,6 +50,8 @@ include(ReplaceIdefixSource)
 include(AddIdefixSource)
 include(SetIdefixProperty)
 include(SetRequiredBuildSettingsForGCC8)
+include(CheckHdf5ParallelSupport)
+include(SuppressFMA)
 
 #Idefix requires Cuda Lambdas (experimental)
 if(Kokkos_ENABLE_CUDA)
@@ -63,6 +66,8 @@ include_directories(${Kokkos_INCLUDE_DIRS_RET})
 
 # Add Idefix CXX Flags
 add_compile_options(${Idefix_CXX_FLAGS})
+
+
 
 # Add filesystem libraries for GCC8
 set_required_build_settings_for_GCC8()
@@ -124,12 +129,25 @@ if(Idefix_HDF5)
     PUBLIC src/output/xdmf.cpp
     PUBLIC src/output/xdmf.hpp
   )
-  find_package(HDF5 REQUIRED)
-  target_link_libraries(idefix "${HDF5_LIBRARIES}")
+  # Prefer imported targets (matches older working behavior), then fall back.
+  find_package(HDF5 QUIET COMPONENTS C)
+  if(NOT HDF5_FOUND)
+    find_package(HDF5 REQUIRED MODULE COMPONENTS C)
+  endif()
+
+  set(_idefix_hdf5_link_items "${HDF5_LIBRARIES}")
+  if(TARGET hdf5::hdf5)
+    set(_idefix_hdf5_link_items hdf5::hdf5)
+  elseif(TARGET HDF5::HDF5)
+    set(_idefix_hdf5_link_items HDF5::HDF5)
+  endif()
+
+  target_link_libraries(idefix ${_idefix_hdf5_link_items})
   message(STATUS "Found HDF5 include directories: ${HDF5_INCLUDE_DIRS}")
   target_include_directories(idefix PUBLIC "${HDF5_INCLUDE_DIRS}")
   if(Idefix_MPI)
-    if(NOT HDF5_IS_PARALLEL)
+    CheckHdf5ParallelSupport("${_idefix_hdf5_link_items}")
+    if(NOT IDEFIX_HDF5_IS_PARALLEL)
       message(FATAL_ERROR "Parallel HDF5 required for Idefix_MPI but the found HDF5 library does not support it")
     endif()
   endif()
@@ -178,15 +196,15 @@ endif()
 if(Idefix_EVOLVE_VECTOR_POTENTIAL)
   add_compile_definitions("EVOLVE_VECTOR_POTENTIAL")
 endif()
-#update version.hpp if possible
+
+# determine idefix version from git
 git_describe(GIT_SHA1)
 set(Idefix_VERSION ${Idefix_VERSION_MAJOR}.${Idefix_VERSION_MINOR}.${Idefix_VERSION_PATCH}-${GIT_SHA1})
-file(WRITE ${CMAKE_SOURCE_DIR}/src/version.hpp "#define IDEFIX_GIT_COMMIT \"${GIT_SHA1}\"\n")
-file(APPEND ${CMAKE_SOURCE_DIR}/src/version.hpp "#define IDEFIX_VERSION_MAJOR \"${Idefix_VERSION_MAJOR}\"\n")
-file(APPEND ${CMAKE_SOURCE_DIR}/src/version.hpp "#define IDEFIX_VERSION_MINOR \"${Idefix_VERSION_MINOR}\"\n")
-file(APPEND ${CMAKE_SOURCE_DIR}/src/version.hpp "#define IDEFIX_VERSION_PATCH \"${Idefix_VERSION_PATCH}\"\n")
-file(APPEND ${CMAKE_SOURCE_DIR}/src/version.hpp "#define IDEFIX_VERSION \"${Idefix_VERSION}\"\n")
-
+configure_file(
+    ${CMAKE_SOURCE_DIR}/src/version.h.in
+    ${CMAKE_BINARY_DIR}/build/generated/version.h
+    @ONLY
+)
 
 if(NOT ${Idefix_DEFS} STREQUAL "definitions.hpp")
   add_compile_definitions("DEFINITIONS_FILE=\"${Idefix_DEFS}\"")
@@ -279,6 +297,21 @@ target_include_directories(idefix PUBLIC
                            )
 
 target_link_libraries(idefix Kokkos::kokkos)
+
+# Generate header with compiler information (name, flags, path)
+configure_file(
+    ${CMAKE_SOURCE_DIR}/src/compiler_info.h.in
+    ${CMAKE_BINARY_DIR}/build/generated/compiler_info.h
+    @ONLY
+)
+# Make sure the generated header is on the include path
+target_include_directories(idefix PRIVATE ${CMAKE_BINARY_DIR}/build/generated)
+
+# disable FMA if needed
+if(Idefix_SUPPRESS_FMA)
+  message(STATUS "FMA (fused multiply-add) contraction/codegen is disabled")
+  target_suppress_fma(idefix)
+endif()
 
 message(STATUS "Idefix final configuration")
 if(Idefix_EVOLVE_VECTOR_POTENTIAL)

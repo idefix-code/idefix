@@ -1,0 +1,17 @@
+// ***********************************************************************************
+// Idefix MHD astrophysical code
+// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+// and other code contributors
+// Licensed under CeCILL 2.1 License, see COPYING for more information
+// ***********************************************************************************
+
+#ifndef COMPILER_INFO_H
+#define COMPILER_INFO_H
+
+namespace CompilerInfo {
+    inline constexpr const char* name    = "@CMAKE_CXX_COMPILER_ID@";
+    inline constexpr const char* version = "@CMAKE_CXX_COMPILER_VERSION@";
+    inline constexpr const char* path    = "@CMAKE_CXX_COMPILER@";
+}
+
+#endif

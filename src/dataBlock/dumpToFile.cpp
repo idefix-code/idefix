@@ -9,8 +9,8 @@
 #include <cstdio>
 #include "../idefix.hpp"
 #include "dataBlock.hpp"
-#include "version.hpp"
 #include "fluid.hpp"
+#include "version.h"
 
 #define  NAMESIZE     16
 #define  HEADERSIZE 128
@@ -78,7 +78,7 @@ void DataBlock::DumpToFile(std::string filebase)  {
 
   // Write Header
   char header[HEADERSIZE];
-  std::snprintf(header, HEADERSIZE, "Idefix %s Debug DataBlock", IDEFIX_VERSION);
+  std::snprintf(header, HEADERSIZE, "Idefix %s Debug DataBlock", VersionInfo::version);
   fwrite (header, sizeof(char), HEADERSIZE, fileHdl);
 
   // Write Vc

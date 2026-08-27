@@ -1,0 +1,19 @@
+// ***********************************************************************************
+// Idefix MHD astrophysical code
+// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+// and other code contributors
+// Licensed under CeCILL 2.1 License, see COPYING for more information
+// ***********************************************************************************
+
+#ifndef VERSION_H
+#define VERSION_H
+
+namespace VersionInfo {
+    inline constexpr const char* gitCommit  = "@GIT_SHA1@";
+    inline constexpr const char* versionMajor  = "@Idefix_VERSION_MAJOR@";
+    inline constexpr const char* versionMinor  = "@Idefix_VERSION_MINOR@";
+    inline constexpr const char* versionPatch  = "@Idefix_VERSION_PATCH@";
+    inline constexpr const char* version = "@Idefix_VERSION@";
+}
+
+#endif

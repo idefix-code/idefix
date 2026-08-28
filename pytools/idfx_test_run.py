@@ -13,6 +13,7 @@ import os
 import sys
 from contextlib import contextmanager
 
+import jsonschema
 import pytest
 
 # idefix test class
@@ -45,6 +46,13 @@ class IdexPytestRunner:
         self.currentTestRunner: tst.idfxTest = None
         self.parentScritFile = parentScriptFile
         self.filterSubdir = os.environ.get("IDEFIX_TEST_FILTER_SUBDIR", "./test/")
+        self.testmeSchema = self._loadTestmeSchema()
+
+    def _loadTestmeSchema(self) -> dict:
+        scriptDir = os.path.dirname(__file__)
+        schemaPath = os.path.join(scriptDir, "testme.schema.json")
+        with open(schemaPath, "r") as fp:
+            return json.load(fp)
 
     def _validateNaming(self, namings: str, autoExtracted: str, file: str):
         names = namings.split(",")
@@ -98,6 +106,23 @@ class IdexPytestRunner:
                     with open(testfilePath, "r") as fp:
                         # load
                         test = json.load(fp)
+
+                        # validate via jsonschema
+                        try:
+                            jsonschema.validate(instance=test, schema=self.testmeSchema)
+                        except jsonschema.ValidationError as e:
+                            print()
+                            print(
+                                "--------------- testme.json format error ---------------"
+                            )
+                            print(f"Invalid format for : {testfilePath}\n{e}")
+                            print(
+                                "--------------------------------------------------------"
+                            )
+                            print()
+                            raise Exception(f"{testfilePath} format error !") from e
+
+                        # build generator
                         idefixTestGenerator = IdefixDirTestGenerator(
                             testfilePath, testfileDir
                         )

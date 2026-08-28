@@ -6,7 +6,7 @@
     "reconstruction": 2,
     "single": false,
     "mpi": false,
-    "dec": ["2","1","2"],
+    "dec": [2,1,2],
     "tolerance": 0
   },
   "variants": [

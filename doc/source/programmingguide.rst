@@ -678,7 +678,7 @@ local to the loop.
 
 Both ``Get`` and the methods above search the table for the cell surrounding the requested coordinates. When the
 interpolated value *and* its neighbours are needed for the same coordinates, this search can be performed only once,
-by handing the same ``LookupTableNeighbours<nDim>`` structure to each of them: whichever is called first searches the
+by handing the same ``LookupTableSearchCache<nDim>`` structure to each of them: whichever is called first searches the
 table and stores the result in the structure, and the ones called next reuse it instead of searching the table again.
 The order in which they are called is irrelevant, ``Get`` can fill the structure for ``GetNeighbours`` and
 ``GetNeighboursIndx``, or the other way around.
@@ -691,7 +691,7 @@ The order in which they are called is irrelevant, ``Get`` can fill the structure
     x[1] = 3.5;
 
     // The search performed by Get is stored in neighbours...
-    LookupTableNeighbours<2> neighbours;
+    LookupTableSearchCache<2> neighbours;
     real value = csv.Get(x, neighbours);
 
     // ... and is reused by the two methods below, which do not search the table again
@@ -711,10 +711,10 @@ dimension.
 .. note::
   The stored search is only reused when the coordinates it was computed for are the ones being requested. Calling
   ``GetNeighbours`` or ``GetNeighboursIndx`` with different coordinates simply searches the table again, and updates
-  the structure accordingly, so that a ``LookupTableNeighbours`` can be reused from one point to the next.
+  the structure accordingly, so that a ``LookupTableSearchCache`` can be reused from one point to the next.
 
 .. warning::
-  The structure is declared by the caller, and not by the lookup table itself: when it is used inside an
+  The ``LookupTableSearchCache`` structure is declared *per thread*, and not by the lookup table itself: when it is used inside an
   ``idefix_for`` loop, it should be declared *inside* the loop, so that each thread has its own copy. A lookup table
   is shared by all of the threads of a loop, and can therefore not store anything of the sort itself.
 

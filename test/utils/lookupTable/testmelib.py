@@ -1,11 +1,15 @@
 import numpy as np
+from scipy.interpolate import RegularGridInterpolator
 
 
 def MakeNumpyFile():
-    x = np.arange(1, 10, 1.0)
-    y = np.arange(5, 10, 1.0)
-    z = np.arange(2, 5, 1.0)
+    x = 2 ** np.arange(np.log2(1), np.log2(10), 0.2)
+    y = 2 ** np.arange(np.log2(5), np.log2(10), 0.2)
+    z = 2 ** np.arange(np.log2(2), np.log2(5), 0.2)
 
+    print(x)
+    print(y)
+    print(z)
     xp, yp, zp = np.meshgrid(x, y, z, indexing="ij")
 
     data = xp + 2 * yp - zp
@@ -14,6 +18,13 @@ def MakeNumpyFile():
     np.save("y.npy", y)
     np.save("z.npy", z)
     np.save("data.npy", data)
+    f = RegularGridInterpolator((x, y, z), data)
+    return f([2.7, 7.4, 3.9])
     # show the expected result
-    # f=RegularGridInterpolator((x, y, z), data)
+    #
     # print(f([2.7,7.4,3.9]))
+
+
+if __name__ == "__main__":
+    f = MakeNumpyFile()
+    print("expected result:%f", f)

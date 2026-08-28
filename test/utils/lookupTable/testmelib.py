@@ -20,9 +20,6 @@ def MakeNumpyFile():
     np.save("data.npy", data)
     f = RegularGridInterpolator((x, y, z), data)
     return f([2.7, 7.4, 3.9])
-    # show the expected result
-    #
-    # print(f([2.7,7.4,3.9]))
 
 
 if __name__ == "__main__":

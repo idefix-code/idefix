@@ -42,13 +42,17 @@ struct LookupTableExp {
 // an idefix_for loop. The lookup table itself is shared by all of the threads of a loop, and can
 // therefore not be used to store anything of the sort.
 template <const int kDim>
-struct LookupTableNeighbours {
+struct LookupTableSearchCache {
   real x[kDim];        // coordinates for which the neighbours below were computed
   int idx[kDim];       // index of the left neighbour along each dimension
   real delta[kDim];    // elementary ratio between the two neighbours of each dimension
   bool valid{false};   // whether the neighbours above have been successfully computed
 
-  // Check whether this structure already holds the neighbours of the coordinates xIn
+  // Check whether this structure already holds the neighbours of the coordinates xIn.
+  // The comparison is a bit-exact "==" on purpose: this is meant to catch the case where the
+  // caller passes back literally the same x it just queried (e.g. Get then GetNeighbours on the
+  // same iteration), not to approximate "close enough" coordinates. Do not replace this with a
+  // tolerance-based comparison, or two distinct nearby queries could wrongly reuse a stale search.
   KOKKOS_INLINE_FUNCTION
   bool Matches(const real xIn[kDim]) const {
     if(!valid) return(false);
@@ -128,11 +132,22 @@ class LookupTable {
     }
   }
 
-  // Generic search of the neighbours used for the interpolation, for all kinds of input arrays.
+  // ---------------------------------------------------------------------------------------------
+  // Implementation details below: these generic (Tint/Treal-templated) helpers are shared by the
+  // public Get/GetHost/GetNeighbours*/GetNeighboursIndx* entry points declared further down, which
+  // simply instantiate them with the device or host storage. They are not meant to be called
+  // directly, hence kept private; make this public again if another translation unit genuinely
+  // needs the generic (host-or-device) form directly.
+  // ---------------------------------------------------------------------------------------------
+ private:
+  // Search of the bracketing indices used by the interpolation, for all kinds of input arrays.
   // On output, idx[n] is the index of the left neighbour along the dimension n (so that the
   // interpolation is performed between xin(offset(n)+idx[n]) and xin(offset(n)+idx[n]+1)), and
   // delta[n] is the elementary ratio used to weight these two neighbours.
   // Returns false when the requested coordinates contain nans, and true otherwise.
+  // This is the only place that performs the actual search: Get, GetNeighbours and
+  // GetNeighboursIndx all reach it through GetIndices below, so that a bug fix here never
+  // needs to be duplicated elsewhere.
   template<typename Tint, typename Treal>
   KOKKOS_INLINE_FUNCTION
   bool GetIndices(const real x[kDim], Tint &dimensions, Tint &offset, Treal &xin,
@@ -173,16 +188,20 @@ class LookupTable {
         // Check if resulting bounding elements are correct
         if(xin(offset(n) + i) > x_n || xin(offset(n) + i+1) < x_n) {
           // Nop, so the points are not evenly distributed
-          // Search for the correct index (a dicotomy would be more appropriate...)
-
-          i = 0;
-          while(xin(offset(n) + i) < x_n && i < dimensions(n)-1 ) {
-            i++;
+          // Search for the correct index with a dichotomy
+          int ileft = 0;
+          int iright = dimensions(n)-1;
+          while(iright-ileft>1) {
+            int imid = (ileft + iright) / 2;
+            if(xin(offset(n) + imid) <= x_n) {
+              ileft = imid;
+            } else {
+              iright = imid;
+            }
           }
-          i = i-1; // i is overestimated by one
+          i = ileft;
         }
       }
-
       // Store the index
       idx[n] = i;
 
@@ -213,123 +232,32 @@ class LookupTable {
     return(index);
   }
 
-  // Generic getter for all kinds of input arrays
-  template<typename Tint, typename Treal>
-  KOKKOS_INLINE_FUNCTION
-  real Get(const real x[kDim], Tint &dimensions, Tint &offset, Treal &xin, Treal &data) const {
-  // Fetch function that should be called inside idefix_loop
-    int idx[kDim];
-    real delta[kDim];
-
-    for(int n = 0 ; n < kDim ; n++) {
-      real xstart = xin(offset(n));
-      real xend = xin(offset(n)+dimensions(n)-1);
-      // When interpolating in function space, xin already stores func(x), so the coordinate
-      // we are looking for should be transformed accordingly
-      real x_n = interpolateInFuncSpace ? func(x[n]) : x[n];
-
-      if(std::isnan(x_n)) return(NAN);
-
-      // Compute index of closest element assuming even distribution
-      int i;
-
-       // Check that we're within bounds
-      if(x_n < xstart) {
-        if(errorIfOutOfBound) {
-          Kokkos::abort("LookupTable:: ERROR! Attempt to interpolate below your lower bound.");
-        } else {
-          x_n = xstart;
-          i = 0;
-        }
-      } else if( x_n > xend) {
-        if(errorIfOutOfBound) {
-          Kokkos::abort("LookupTable:: ERROR! Attempt to interpolate above your upper bound.");
-        } else {
-          // We set x_n=xend, and we do the interpolation between xin(dim-2) and xin(dim-1),
-          // so i= dim-2
-          i = dimensions(n)-2;
-          x_n = xend;
-        }
-      } else {
-        // Bounds are fine,
-        i = static_cast<int> ( (x_n - xstart) / (xend - xstart) * (dimensions(n)-1));
-        if(i == dimensions(n)-1) i = dimensions(n)-2;
-        // Check if resulting bounding elements are correct
-        if(xin(offset(n) + i) > x_n || xin(offset(n) + i+1) < x_n) {
-          // Nop, so the points are not evenly distributed
-          // Search for the correct index (a dicotomy would be more appropriate...)
-
-          i = 0;
-          while(xin(offset(n) + i) < x_n && i < dimensions(n)-1 ) {
-            i++;
-          }
-          i = i-1; // i is overestimated by one
-        }
-      }
-
-      // Store the index
-      idx[n] = i;
-
-      // Store the elementary ratio
-      delta[n] = (x_n - xin(offset(n) + i) ) / (xin(offset(n) + i+1) - xin(offset(n) + i));
-    }
-
-    // Do a linear interpolation from the neightbouring points to get our value.
-    real value = 0;
-
-    // loop on all of the vertices of the neighbours
-    for(unsigned int n = 0 ; n < (1 << kDim) ; n++) {
-      int index = 0;
-      real weight = 1.0;
-      for(unsigned int m = 0 ; m < kDim ; m++) {
-        index = index * dimensions(m);
-        unsigned int myBit = 1 << m;
-        // If bit is set, we're doing the right vertex, otherwise we're doing the left vertex
-        if((n & myBit) > 0) {
-          // We're on the right
-          weight = weight*delta[m];
-          index += idx[m]+1;
-        } else {
-          // We're on the left
-          weight = weight*(1-delta[m]);
-          index += idx[m];
-        }
-      }
-      value = value + weight*data(index);
-    }
-
-    // The interpolation was performed on func(data), so we transform the result back
-    if(interpolateInFuncSpace) value = invFunc(value);
-
-    return(value);
-  }
-
-  // Fill "neighbours" with the neighbours of x, unless it already holds them (in which case the
+  // Fill "searchCache" with the neighbours of x, unless it already holds them (in which case the
   // table is not searched again). This is what allows Get, GetNeighbours and GetNeighboursIndx to
   // share a single search when they are called successively with the same coordinates.
   template<typename Tint, typename Treal>
   KOKKOS_INLINE_FUNCTION
   void SearchNeighbours(const real x[kDim], Tint &dimensions, Tint &offset, Treal &xin,
-                        LookupTableNeighbours<kDim> &neighbours) const {
+                        LookupTableSearchCache<kDim> &searchCache) const {
     // Nothing to do if the neighbours of these very coordinates are already known
-    if(neighbours.Matches(x)) return;
+    if(searchCache.Matches(x)) return;
 
-    neighbours.valid = GetIndices(x, dimensions, offset, xin, neighbours.idx, neighbours.delta);
+    searchCache.valid = GetIndices(x, dimensions, offset, xin, searchCache.idx, searchCache.delta);
     for(int n = 0 ; n < kDim ; n++) {
-      neighbours.x[n] = x[n];
+      searchCache.x[n] = x[n];
     }
   }
 
-  // Generic getter which stores in "neighbours" the elements of the table it used, so that a
+  // Generic getter which stores in "searchCache" the elements of the table it used, so that a
   // subsequent call to GetNeighbours or GetNeighboursIndx with the same coordinates does not
   // search the table again
   template<typename Tint, typename Treal>
   KOKKOS_INLINE_FUNCTION
   real Get(const real x[kDim], Tint &dimensions, Tint &offset, Treal &xin, Treal &data,
-           LookupTableNeighbours<kDim> &neighbours) const {
-    SearchNeighbours(x, dimensions, offset, xin, neighbours);
+           LookupTableSearchCache<kDim> &searchCache) const {
+    SearchNeighbours(x, dimensions, offset, xin, searchCache);
 
-    if(!neighbours.valid) return(NAN);
+    if(!searchCache.valid) return(NAN);
 
     // Do a linear interpolation from the neightbouring points to get our value.
     real value = 0;
@@ -342,19 +270,30 @@ class LookupTable {
         // If bit is set, we're doing the right vertex, otherwise we're doing the left vertex
         if((n & myBit) > 0) {
           // We're on the right
-          weight = weight*neighbours.delta[m];
+          weight = weight*searchCache.delta[m];
         } else {
           // We're on the left
-          weight = weight*(1-neighbours.delta[m]);
+          weight = weight*(1-searchCache.delta[m]);
         }
       }
-      value = value + weight*data(GetDataIndex(dimensions, neighbours.idx, n));
+      value = value + weight*data(GetDataIndex(dimensions, searchCache.idx, n));
     }
 
     // The interpolation was performed on func(data), so we transform the result back
     if(interpolateInFuncSpace) value = invFunc(value);
 
     return(value);
+  }
+
+  // Generic getter for all kinds of input arrays.
+  // Implemented as a thin delegation to the neighbours-caching overload below, using a throwaway
+  // searchCache structure: LookupTableSearchCache is a small stack-only POD (no allocation), so
+  // this costs nothing extra while guaranteeing the two overloads can never disagree on the result.
+  template<typename Tint, typename Treal>
+  KOKKOS_INLINE_FUNCTION
+  real Get(const real x[kDim], Tint &dimensions, Tint &offset, Treal &xin, Treal &data) const {
+    LookupTableSearchCache<kDim> searchCache;
+    return Get(x, dimensions, offset, xin, data, searchCache);
   }
 
   // Generic getter for the neighbours used by the interpolation, for all kinds of input arrays.
@@ -367,21 +306,25 @@ class LookupTable {
   KOKKOS_INLINE_FUNCTION
   void GetNeighbours(const real x[kDim], Tint &dimensions, Tint &offset, Treal &xin, Treal &data,
                      real xN[2*kDim], real dataN[1 << kDim]) const {
-    LookupTableNeighbours<kDim> neighbours;
-    GetNeighbours(x, dimensions, offset, xin, data, neighbours, xN, dataN);
+    LookupTableSearchCache<kDim> searchCache;
+    GetNeighbours(x, dimensions, offset, xin, data, searchCache, xN, dataN);
   }
 
-  // Same as above, but the search is stored in (and reused from) "neighbours": the table is only
-  // searched again when "neighbours" does not already hold the neighbours of x, e.g. because it
+  // Same as above, but the search is stored in (and reused from) "searchCache": the table is only
+  // searched again when "searchCache" does not already hold the neighbours of x, e.g. because it
   // was filled by a previous call to Get with these very same coordinates.
   template<typename Tint, typename Treal>
   KOKKOS_INLINE_FUNCTION
   void GetNeighbours(const real x[kDim], Tint &dimensions, Tint &offset, Treal &xin, Treal &data,
-                     LookupTableNeighbours<kDim> &neighbours,
+                     LookupTableSearchCache<kDim> &searchCache,
                      real xN[2*kDim], real dataN[1 << kDim]) const {
-    SearchNeighbours(x, dimensions, offset, xin, neighbours);
+    // Reuse GetNeighboursIndx for the search and the idx -> flat data offset bookkeeping, so that
+    // logic only lives in one place (GetDataIndex/GetNeighboursIndx).
+    int idx[kDim];
+    int dataIdx[1 << kDim];
+    GetNeighboursIndx(x, dimensions, offset, xin, searchCache, idx, dataIdx);
 
-    if(!neighbours.valid) {
+    if(!searchCache.valid) {
       for(int n = 0 ; n < 2*kDim ; n++) xN[n] = NAN;
       for(unsigned int n = 0 ; n < (1 << kDim) ; n++) dataN[n] = NAN;
       return;
@@ -389,8 +332,8 @@ class LookupTable {
 
     // Coordinates of the neighbours along each dimension
     for(int n = 0 ; n < kDim ; n++) {
-      xN[2*n] = xin(offset(n) + neighbours.idx[n]);
-      xN[2*n+1] = xin(offset(n) + neighbours.idx[n]+1);
+      xN[2*n] = xin(offset(n) + idx[n]);
+      xN[2*n+1] = xin(offset(n) + idx[n]+1);
       if(interpolateInFuncSpace) {
         xN[2*n] = invFunc(xN[2*n]);
         xN[2*n+1] = invFunc(xN[2*n+1]);
@@ -399,7 +342,7 @@ class LookupTable {
 
     // Data on each vertex of the neighbours
     for(unsigned int n = 0 ; n < (1 << kDim) ; n++) {
-      dataN[n] = data(GetDataIndex(dimensions, neighbours.idx, n));
+      dataN[n] = data(dataIdx[n]);
       if(interpolateInFuncSpace) dataN[n] = invFunc(dataN[n]);
     }
   }
@@ -412,34 +355,44 @@ class LookupTable {
   template<typename Tint, typename Treal>
   KOKKOS_INLINE_FUNCTION
   void GetNeighboursIndx(const real x[kDim], Tint &dimensions, Tint &offset, Treal &xin,
+                         LookupTableSearchCache<kDim> &searchCache,
                          int idx[kDim], int dataIdx[1 << kDim]) const {
-    LookupTableNeighbours<kDim> neighbours;
-    GetNeighboursIndx(x, dimensions, offset, xin, neighbours, idx, dataIdx);
-  }
+    SearchNeighbours(x, dimensions, offset, xin, searchCache);
 
-  // Same as above, but the search is stored in (and reused from) "neighbours", exactly like the
-  // GetNeighbours variant above
-  template<typename Tint, typename Treal>
-  KOKKOS_INLINE_FUNCTION
-  void GetNeighboursIndx(const real x[kDim], Tint &dimensions, Tint &offset, Treal &xin,
-                         LookupTableNeighbours<kDim> &neighbours,
-                         int idx[kDim], int dataIdx[1 << kDim]) const {
-    SearchNeighbours(x, dimensions, offset, xin, neighbours);
-
-    if(!neighbours.valid) {
+    if(!searchCache.valid) {
       for(int n = 0 ; n < kDim ; n++) idx[n] = -1;
       for(unsigned int n = 0 ; n < (1 << kDim) ; n++) dataIdx[n] = -1;
       return;
     }
 
     for(int n = 0 ; n < kDim ; n++) {
-      idx[n] = neighbours.idx[n];
+      idx[n] = searchCache.idx[n];
     }
     for(unsigned int n = 0 ; n < (1 << kDim) ; n++) {
-      dataIdx[n] = GetDataIndex(dimensions, neighbours.idx, n);
+      dataIdx[n] = GetDataIndex(dimensions, searchCache.idx, n);
     }
   }
 
+
+// Same as above, but the search is not stored in a caller-supplied structure: a throwaway
+// LookupTableSearchCache is created and filled, and then discarded.
+  template<typename Tint, typename Treal>
+  KOKKOS_INLINE_FUNCTION
+  void GetNeighboursIndx(const real x[kDim], Tint &dimensions, Tint &offset, Treal &xin,
+                         int idx[kDim], int dataIdx[1 << kDim]) const {
+    LookupTableSearchCache<kDim> searchCache;
+    GetNeighboursIndx(x, dimensions, offset, xin, searchCache, idx, dataIdx);
+  }
+
+
+
+  // -----------------------------------------------------------------------------------------
+  // Public interface: each of Get/GetNeighbours/GetNeighboursIndx below is a thin one-line
+  // dispatch to the generic (private) implementation above, selecting device or host storage,
+  // and optionally reusing a caller-supplied LookupTableSearchCache cache. None of them contains
+  // any interpolation logic of its own.
+  // -----------------------------------------------------------------------------------------
+ public:
   // Getter on device
   KOKKOS_INLINE_FUNCTION
   real Get(const real x[kDim]) const {
@@ -479,20 +432,20 @@ class LookupTable {
   // Getter on device, which stores the neighbours it used in "neighbours". Giving that same
   // structure to GetNeighbours or GetNeighboursIndx below then avoids searching the table twice.
   KOKKOS_INLINE_FUNCTION
-  real Get(const real x[kDim], LookupTableNeighbours<kDim> &neighbours) const {
+  real Get(const real x[kDim], LookupTableSearchCache<kDim> &neighbours) const {
     return(Get(x, dimensionsDev, offsetDev, xinDev, dataDev, neighbours));
   }
 
   // Getter on Host, which stores the neighbours it used in "neighbours"
   KOKKOS_INLINE_FUNCTION
-  real GetHost(const real x[kDim], LookupTableNeighbours<kDim> &neighbours) const {
+  real GetHost(const real x[kDim], LookupTableSearchCache<kDim> &neighbours) const {
     return(Get(x, dimensionsHost, offsetHost, xinHost, dataHost, neighbours));
   }
 
   // Getter for the neighbours used by the interpolation, on device, reusing the search stored in
   // "neighbours" when it was performed for these very same coordinates
   KOKKOS_INLINE_FUNCTION
-  void GetNeighbours(const real x[kDim], LookupTableNeighbours<kDim> &neighbours,
+  void GetNeighbours(const real x[kDim], LookupTableSearchCache<kDim> &neighbours,
                      real xN[2*kDim], real dataN[1 << kDim]) const {
     GetNeighbours(x, dimensionsDev, offsetDev, xinDev, dataDev, neighbours, xN, dataN);
   }
@@ -500,7 +453,7 @@ class LookupTable {
   // Getter for the neighbours used by the interpolation, on Host, reusing the search stored in
   // "neighbours" when it was performed for these very same coordinates
   KOKKOS_INLINE_FUNCTION
-  void GetNeighboursHost(const real x[kDim], LookupTableNeighbours<kDim> &neighbours,
+  void GetNeighboursHost(const real x[kDim], LookupTableSearchCache<kDim> &neighbours,
                          real xN[2*kDim], real dataN[1 << kDim]) const {
     GetNeighbours(x, dimensionsHost, offsetHost, xinHost, dataHost, neighbours, xN, dataN);
   }
@@ -508,15 +461,15 @@ class LookupTable {
   // Getter for the indices of the neighbours, on device, reusing the search stored in
   // "neighbours" when it was performed for these very same coordinates
   KOKKOS_INLINE_FUNCTION
-  void GetNeighboursIndx(const real x[kDim], LookupTableNeighbours<kDim> &neighbours,
+  void GetNeighboursIndx(const real x[kDim], LookupTableSearchCache<kDim> &searchCache,
                          int idx[kDim], int dataIdx[1 << kDim]) const {
-    GetNeighboursIndx(x, dimensionsDev, offsetDev, xinDev, neighbours, idx, dataIdx);
+    GetNeighboursIndx(x, dimensionsDev, offsetDev, xinDev, searchCache, idx, dataIdx);
   }
 
   // Getter for the indices of the neighbours, on Host, reusing the search stored in
   // "neighbours" when it was performed for these very same coordinates
   KOKKOS_INLINE_FUNCTION
-  void GetNeighboursIndxHost(const real x[kDim], LookupTableNeighbours<kDim> &neighbours,
+  void GetNeighboursIndxHost(const real x[kDim], LookupTableSearchCache<kDim> &neighbours,
                              int idx[kDim], int dataIdx[1 << kDim]) const {
     GetNeighboursIndx(x, dimensionsHost, offsetHost, xinHost, neighbours, idx, dataIdx);
   }

@@ -56,11 +56,28 @@ class IdexPytestRunner:
 
     def _validateNaming(self, namings: str, autoExtracted: str, file: str):
         names = namings.split(",")
-        for n in autoExtracted.split(","):
-            if not n in names:
-                raise Exception(
-                    f"Naming parameter list not match the auto-detectection, some are missinge. You gave : '{names}', detected '{autoExtracted}' into {file}"
-                )
+        names_sorted = namings.split(",")
+        autoNames = autoExtracted.split(",")
+        autoNames_sorted = autoExtracted.split(",")
+
+        # quick compare
+        names_sorted.sort()
+        autoNames_sorted.sort()
+
+        # check and if error check in details to report
+        if names_sorted != autoNames_sorted:
+            for n in autoNames:
+                if n not in names:
+                    raise Exception(
+                        f"Naming parameter list not match the auto-detectection, some are missing : '{n}'\n"
+                        f"You gave : '{names}', detected '{autoNames}' into {file}"
+                    )
+            for n in names:
+                if n not in autoNames:
+                    raise Exception(
+                        f"Naming parameter list not match the auto-detectection, some are missing : '{n}'.\n"
+                        f"You gave : '{names}', detected '{autoNames}' into {file}"
+                    )
 
     def _makeVariableArgAsList(self, namings: str, variants) -> list:
         # make as a list
@@ -155,7 +172,7 @@ class IdexPytestRunner:
                         )
                 except Exception as e:
                     raise Exception(
-                        f"Fail to generate tests from {testfileRelPath}"
+                        f"Fail to generate tests from {testfileRelPath}.\n{e}"
                     ) from e
 
         # ok
@@ -448,7 +465,29 @@ class IdexPytestRunner:
                     f"Dump file {file} was overwritten on restart"
                 )
 
+    def validateTestmeJsons(self) -> bool:
+        try:
+            self.genTests()
+        except Exception as e:
+            print(f"{e}")
+            return False
+        return True
+
     def main(self, all: bool = False):
+        # make testme.json validation for pre-commit
+        if "--validate-testme-jsons" in sys.argv:
+            try:
+                tests = self.genTests()
+                for test in tests:
+                    testfile = test.values[0]["testfile"]
+                    id = test.id
+                    print(f"{testfile} => {id}")
+            except Exception as e:
+                print(f"{e}")
+                sys.exit(1)
+            return
+
+        # run
         if all:
             sys.argv.append("-all")
         idefixTest = tst.idfxTest(self.parentScritFile, name="main")

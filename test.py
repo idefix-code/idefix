@@ -18,6 +18,14 @@ from pytools.idfx_test_run import IdexPytestRunner
 gblIdefixPytestRunner = IdexPytestRunner(__file__)
 
 
+# if called directly as a script
+if __name__ == "__main__" and "--validate-testme-jsons" in sys.argv:
+    if gblIdefixPytestRunner.validateTestmeJsons():
+        sys.exit(0)
+    else:
+        sys.exit(1)
+
+
 # define the pytest test
 @pytest.mark.parametrize("config", gblIdefixPytestRunner.genTests())
 def test_idefix_build_run_check(config):

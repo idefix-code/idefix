@@ -16,7 +16,7 @@ import numpy as np
 
 n = 1  # fondamental mode
 
-conf = inifix.load("../idefix.ini")
+conf = inifix.load("../idefix.ini", sections="require")
 Pr = conf["Setup"]["pr"]
 ksi = conf["Setup"]["ksi"]
 

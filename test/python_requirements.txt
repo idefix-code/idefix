@@ -5,7 +5,7 @@
 numpy>=1.21.1
 matplotlib>=3.5.0
 scipy>=1.7.2
-inifix>=0.11.2
+inifix>=5.1.0
 
 pybind11 >= 3.0.4
 # To run the test suite, we can use pytest, mostly any version

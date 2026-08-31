@@ -34,7 +34,7 @@ with open("../idefix.0.log", "r") as fp:
             s = line.split()
             inputFile = s[5][:-1]
 
-input = inifix.load("../" + inputFile)
+input = inifix.load(f"../{inputFile}", sections="require")
 componentDir = input["Setup"]["direction"][0]
 spatialDir = input["Setup"]["direction"][1]
 

@@ -8,7 +8,7 @@ from scipy.special import jn
 
 from pytools.vtk_io import readVTK
 
-conf = inifix.load("../idefix.ini")
+conf = inifix.load("../idefix.ini", sections="require")
 amplitude = conf["Setup"]["amplitude"]
 time_step = conf["Output"]["vtk"]
 

@@ -7,7 +7,7 @@ import numpy as np
 
 from pytools.vtk_io import readVTK
 
-conf = inifix.load("../idefix.ini")
+conf = inifix.load("../idefix.ini", sections="require")
 amplitude = conf["Setup"]["amplitude"]
 gamma = conf["Hydro"]["gamma"]
 kappa = conf["Hydro"]["bragTDiffusion"][-1]

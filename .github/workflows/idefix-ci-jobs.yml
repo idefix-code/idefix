@@ -28,16 +28,18 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
+      - name: Prep python
+        uses: ./.github/workflows/actions/pre-install-py-packages
       - name: Sod test
         run: scripts/ci/run-tests $IDEFIX_DIR/test/HD/sod -all $TESTME_OPTIONS
       - name: Isothermal Sod test
         run: scripts/ci/run-tests $IDEFIX_DIR/test/HD/sod-iso -all $TESTME_OPTIONS
       - name: Mach reflection test
-        run: scripts/ci/run-tests $IDEFIX_DIR/test/HD//MachReflection -all $TESTME_OPTIONS
+        run: scripts/ci/run-tests $IDEFIX_DIR/test/HD/MachReflection -all $TESTME_OPTIONS
       - name: Sedov blast wave
         run: scripts/ci/run-tests $IDEFIX_DIR/test/HD/SedovBlastWave -all $TESTME_OPTIONS
 
@@ -45,10 +47,12 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
+      - name: Prep python
+        uses: ./.github/workflows/actions/pre-install-py-packages
       - name: Viscous flow past cylinder
         run: scripts/ci/run-tests $IDEFIX_DIR/test/HD/ViscousFlowPastCylinder -all $TESTME_OPTIONS
       - name: Viscous disk
@@ -60,10 +64,12 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
+      - name: Prep python
+        uses: ./.github/workflows/actions/pre-install-py-packages
       - name: MHD Sod test
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/sod -all $TESTME_OPTIONS
       - name: MHD Isothermal Sod test
@@ -81,10 +87,12 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
+      - name: Prep python
+        uses: ./.github/workflows/actions/pre-install-py-packages
       - name: Ambipolar C Shock
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/AmbipolarCshock -all $TESTME_OPTIONS
       - name: Ambipolar C Shock 3D
@@ -101,10 +109,12 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
+      - name: Prep python
+        uses: ./.github/workflows/actions/pre-install-py-packages
       - name: Fargo + planet
         run: scripts/ci/run-tests $IDEFIX_DIR/test/HD/FargoPlanet -all $TESTME_OPTIONS
       - name: Fargo MHD spherical
@@ -115,10 +125,12 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
+      - name: Prep python
+        uses: ./.github/workflows/actions/pre-install-py-packages
       - name: Hydro shearing box
         run: scripts/ci/run-tests $IDEFIX_DIR/test/HD/ShearingBox -all $TESTME_OPTIONS
       - name: MHD shearing box
@@ -129,10 +141,12 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
+      - name: Prep python
+        uses: ./.github/workflows/actions/pre-install-py-packages
       - name: Jeans Instability
         run: scripts/ci/run-tests $IDEFIX_DIR/test/SelfGravity/JeansInstability -all $TESTME_OPTIONS
       - name: Random sphere spherical
@@ -149,10 +163,12 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
+      - name: Prep python
+        uses: ./.github/workflows/actions/pre-install-py-packages
       - name: 3 body
         run: scripts/ci/run-tests $IDEFIX_DIR/test/Planet/Planet3Body -all $TESTME_OPTIONS
       - name: migration
@@ -171,10 +187,12 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
+      - name: Prep python
+        uses: ./.github/workflows/actions/pre-install-py-packages
       - name: Energy conservation
         run: scripts/ci/run-tests $IDEFIX_DIR/test/Dust/DustEnergy -all $TESTME_OPTIONS
       - name: Dusty wave
@@ -185,10 +203,12 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
+      - name: Prep python
+        uses: ./.github/workflows/actions/pre-install-py-packages
       - name: MTI
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/MTI -all $TESTME_OPTIONS
       - name: Spherical anisotropic diffusion
@@ -203,10 +223,12 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
+      - name: Prep python
+        uses: ./.github/workflows/actions/pre-install-py-packages
       - name: Run examples test
         run: cd test && ./checks_examples.sh $TEST_OPTIONS
 
@@ -215,10 +237,12 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
+      - name: Prep python
+        uses: ./.github/workflows/actions/pre-install-py-packages
       - name: Lookup table
         run: scripts/ci/run-tests $IDEFIX_DIR/test/utils/lookupTable -all $TESTME_OPTIONS
       - name: Dump Image
@@ -231,10 +255,12 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Check out repo
-        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3.6.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
           persist-credentials: false
+      - name: Prep python
+        uses: ./.github/workflows/actions/pre-install-py-packages
       - name: Restart dumps
         run: scripts/ci/run-tests $IDEFIX_DIR/test/IO/dump -all $TESTME_OPTIONS
       - name: Pydefix

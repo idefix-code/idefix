@@ -1,12 +1,14 @@
 {
   "namings": "ini",
+  "default": {
+    "dumpname": "dump.0001.dmp",
+    "noplot": true,
+    "reconstruction": 2,
+    "tolerance": 0
+  },
   "variants": [
     {
-      "dumpname": "dump.0001.dmp",
-      "ini": ["idefix.ini","idefix-implicit.ini"],
-      "noplot": true,
-      "reconstruction": 2,
-      "tolerance": 0
+      "ini": ["idefix.ini","idefix-implicit.ini"]
     }
   ]
 }

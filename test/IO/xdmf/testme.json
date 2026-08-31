@@ -1,17 +1,12 @@
 {
-    "namings": "ini,single,vectPot,mpi",
-    "variants": [
-        {
-            "dumpname": "dump.0001.dmp",
-            "ini": ["idefix.ini"],
-            "vectPot": false,
-            "reconstruction": 2,
-            "single": false,
-            "mpi": false,
-            "dec": ["2","2","2"],
-            "standardTest": false,
-            "nonRegressionTest": false,
-            "check_file_produced": [ "data.0001.flt.xmf", "data.0001.flt.h5" ]
-        }
-    ]
+  "default": {
+    "ini": "idefix.ini",
+    "dumpname": "dump.0001.dmp",
+    "vectPot": false,
+    "single": false,
+    "mpi": false,
+    "nonRegressionTest": false,
+    "standardTest": false,
+    "check_file_produced": [ "data.0001.flt.xmf", "data.0001.flt.h5" ]
+  }
 }

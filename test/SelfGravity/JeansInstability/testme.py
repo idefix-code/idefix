@@ -4,45 +4,48 @@
 
 @author: glesur
 """
+
 import os
 import sys
+
 sys.path.append(os.getenv("IDEFIX_DIR"))
 
 import pytools.idfx_test as tst
 
-name="dump.0001.dmp"
+name = "dump.0001.dmp"
 
 
-tolerance=1e-12
+tolerance = 1e-12
+
 
 def testMe(test):
-  test.configure()
-  test.compile()
-  inifiles=["idefix.ini","idefix-cg.ini"]
+    test.configure()
+    test.compile()
+    inifiles = ["idefix.ini", "idefix-cg.ini"]
 
-  # loop on all the ini files for this test
-  for ini in inifiles:
-    test.run(inputFile=ini)
-    test.standardTest()
+    # loop on all the ini files for this test
+    for ini in inifiles:
+        test.run(inputFile=ini)
+        test.standardTest()
 
 
-test=tst.idfxTest(__file__)
+test = tst.idfxTest(__file__)
 
 # if no decomposition is specified, use that one
 if not test.dec:
-  test.dec=['2']
+    test.dec = ["2"]
 
 if not test.all:
-  if(test.check):
-    test.standardTest()
-  else:
-    testMe(test)
+    if test.check:
+        test.standardTest()
+    else:
+        testMe(test)
 else:
-  test.noplot = True
-  test.vectPot=False
-  test.single=False
-  test.reconstruction=2
-  test.mpi=False
-  testMe(test)
-  test.mpi=True
-  testMe(test)
+    test.noplot = True
+    test.vectPot = False
+    test.single = False
+    test.reconstruction = 2
+    test.mpi = False
+    testMe(test)
+    test.mpi = True
+    testMe(test)

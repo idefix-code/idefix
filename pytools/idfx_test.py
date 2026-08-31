@@ -1,655 +1,775 @@
 import argparse
+import json
 import os
+import re
 import shutil
 import subprocess
 import sys
-import re
-import json
 
-import numpy as np
 import matplotlib.pyplot as plt
+import numpy as np
 
 from .dump_io import readDump
 
+
 class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
+    HEADER = "\033[95m"
+    OKBLUE = "\033[94m"
+    OKCYAN = "\033[96m"
+    OKGREEN = "\033[92m"
+    WARNING = "\033[93m"
+    FAIL = "\033[91m"
+    ENDC = "\033[0m"
+    BOLD = "\033[1m"
+    UNDERLINE = "\033[4m"
+
 
 class idfxTest:
-  def __init__ (self, current_test_file, name=""):
-    parser = argparse.ArgumentParser()
+    def __init__(self, current_test_file, name=""):
+        parser = argparse.ArgumentParser()
 
-    idefix_dir_env = os.getenv("IDEFIX_DIR")
+        idefix_dir_env = os.getenv("IDEFIX_DIR")
 
-    parser.add_argument("-noplot",
-                        dest="noplot",
-                        help="disable plotting in standard tests",
-                        action="store_false")
+        parser.add_argument(
+            "-noplot",
+            dest="noplot",
+            help="disable plotting in standard tests",
+            action="store_false",
+        )
 
-    parser.add_argument("-ploterr",
-                        help="Enable plotting on error in regression tests",
-                        action="store_true")
+        parser.add_argument(
+            "-ploterr",
+            help="Enable plotting on error in regression tests",
+            action="store_true",
+        )
 
-    parser.add_argument("-cmake",
-                        default=[],
-                        help="CMake options",
-                        nargs='+')
+        parser.add_argument("-cmake", default=[], help="CMake options", nargs="+")
 
-    parser.add_argument("-definitions",
-                        default="",
-                        help="definitions.hpp file")
+        parser.add_argument("-definitions", default="", help="definitions.hpp file")
 
-    parser.add_argument("-dec",
-                        default="",
-                        help="MPI domain decomposition",
-                        nargs='+')
+        parser.add_argument(
+            "-dec", default="", help="MPI domain decomposition", nargs="+"
+        )
 
-    parser.add_argument("-check",
-                        help="Only perform regression tests without compilation",
-                        action="store_true")
+        parser.add_argument(
+            "-check",
+            help="Only perform regression tests without compilation",
+            action="store_true",
+        )
 
-    parser.add_argument("-cuda",
-                        help="Test on Nvidia GPU using CUDA",
-                        action="store_true")
+        parser.add_argument(
+            "-cuda", help="Test on Nvidia GPU using CUDA", action="store_true"
+        )
 
-    parser.add_argument("-intel",
-                        help="Test compiling with Intel OneAPI",
-                        action="store_true")
+        parser.add_argument(
+            "-intel", help="Test compiling with Intel OneAPI", action="store_true"
+        )
 
-    parser.add_argument("-hip",
-                        help="Test on AMD GPU using HIP",
-                        action="store_true")
+        parser.add_argument(
+            "-hip", help="Test on AMD GPU using HIP", action="store_true"
+        )
 
-    parser.add_argument("-single",
-                        help="Enable single precision",
-                        action="store_true")
+        parser.add_argument(
+            "-single", help="Enable single precision", action="store_true"
+        )
 
-    parser.add_argument("-vectPot",
-                        help="Enable vector potential formulation",
-                        action="store_true")
+        parser.add_argument(
+            "-vectPot", help="Enable vector potential formulation", action="store_true"
+        )
 
-    parser.add_argument("-reconstruction",
-                        type=int,
-                        default=2,
-                        help="set reconstruction scheme (2=PLM, 3=LimO3, 4=PPM)")
+        parser.add_argument(
+            "-reconstruction",
+            type=int,
+            default=2,
+            help="set reconstruction scheme (2=PLM, 3=LimO3, 4=PPM)",
+        )
 
-    parser.add_argument("-idefixDir",
-                        default=idefix_dir_env,
-                        help="Set directory for idefix source files (default $IDEFIX_DIR)")
+        parser.add_argument(
+            "-idefixDir",
+            default=idefix_dir_env,
+            help="Set directory for idefix source files (default $IDEFIX_DIR)",
+        )
 
-    parser.add_argument("-mpi",
-                        help="Enable MPI",
-                        action="store_true")
+        parser.add_argument("-mpi", help="Enable MPI", action="store_true")
 
-    parser.add_argument("-all",
-                    help="Do all test suite (otherwise, just do the test with the current configuration)",
-                    action="store_true")
+        parser.add_argument(
+            "-mpiMode",
+            default="Persistent",
+            choices=["Default", "Persistent", "NonBlocking", "Blocking"],
+            help="MPI communication mode to use (Default)",
+            type=str,
+        )
 
-    parser.add_argument("-init",
-                    help="Reinit reference files for non-regression tests (dangerous!)",
-                    action="store_true")
+        parser.add_argument(
+            "-mpiGpuForceCopy",
+            action="store_true",
+            help="Disable MPI GPU direct and force memory transfers for validation purpose.",
+        )
 
-    parser.add_argument("-Werror",
-                    help="Consider warnings as errors",
-                    action="store_true")
+        parser.add_argument(
+            "-all",
+            help="Do all test suite (otherwise, just do the test with the current configuration)",
+            action="store_true",
+        )
 
-    parser.add_argument("-ccache",
-                    help="Use ccache to reduce the build time over multiple run of the test suite.",
-                    action="store_true")
+        parser.add_argument(
+            "-init",
+            help="Reinit reference files for non-regression tests (dangerous!)",
+            action="store_true",
+        )
 
-    parser.add_argument("-restart",
-                    help="Enable creating a restart from a checkpoint.",
-                    action='store_true')
+        parser.add_argument(
+            "-Werror", help="Consider warnings as errors", action="store_true"
+        )
 
-    parser.add_argument("-v", "--verbose",
-                    help="Enable verbose mode, by not capturing the output.",
-                    action="store_true")
+        parser.add_argument(
+            "-ccache",
+            help="Use ccache to reduce the build time over multiple run of the test suite.",
+            action="store_true",
+        )
 
-    parser.add_argument("--help-pytest",
-                    help="Display the options you can transmit directly to pytest in addition to the specific to idefix tests.",
-                    action="store_true")
+        parser.add_argument(
+            "-restart",
+            help="Enable creating a restart from a checkpoint.",
+            action="store_true",
+        )
 
-    parser.add_argument("-fake",
-                    help="Make a fake run by just logging the actions to validate that we generate same command over refactoring.",
-                    action="store_true")
+        parser.add_argument(
+            "-v",
+            "--verbose",
+            help="Enable verbose mode, by not capturing the output.",
+            action="store_true",
+        )
 
-    # this option is not used directly by direct users of idfxTest but by idx_test_gen
-    parser.add_argument("-subdir",
-                    default="./test",
-                    help="Select the test in the given subdir not to run all.",
-                    type=str)
+        parser.add_argument(
+            "--help-pytest",
+            help="Display the options you can transmit directly to pytest in addition to the specific to idefix tests.",
+            action="store_true",
+        )
 
-    args, unknown=parser.parse_known_args()
+        parser.add_argument(
+            "-fake",
+            help="Make a fake run by just logging the actions to validate that we generate same command over refactoring.",
+            action="store_true",
+        )
 
-    # transform all arguments from args into attributes of this instance
-    self.__dict__.update(vars(args))
-    # store the full path of problem directory
-    self.currentTestFile = current_test_file
-    self.currentTestName = name
-    self.problemDir=os.path.dirname(current_test_file)
-    self.referenceDirectory = os.path.join(idefix_dir_env,"reference")
-    # current directory relative to $IDEFIX_DIR/test (used to retrieve the path ot reference files)
-    self.testDir=os.path.relpath(self.problemDir,os.path.join(idefix_dir_env,"test"))
-    # build directory, currently inside the test named build-test
-    self.buildDir=os.path.join(self.problemDir,"build-test")
-    # remind what build we dit last
-    self.lastCmakeCmd=""
-    # subdir
-    self.filterSubdir=args.subdir
-    # save
-    self.cmdArgs = vars(args)
-    self.cmdArgs.update({
-      "restart_no_overwrite": [],
-    })
-    self.log=[]
-    # when making a restart we should not overrite those files (will be checked)
-    self.restart_no_overwrite=[]
+        # this option is not used directly by direct users of idfxTest but by idx_test_gen
+        parser.add_argument(
+            "-subdir",
+            default="./test",
+            help="Select the test in the given subdir not to run all.",
+            type=str,
+        )
 
-    # forward args for pytest
-    if args.verbose:
-      unknown.append("--capture=no")
-    if args.help_pytest:
-      unknown.append("--help")
-    # remaining args
-    self.remainingArgs=unknown
+        args, unknown = parser.parse_known_args()
 
-  def addLog(self, entry):
-    if self.fake:
-      self.log.append(entry)
-      with open(os.path.join(self.problemDir,"testsuite.log.json"), "w+") as fp:
-        json.dump(self.log, fp, indent='\t')
+        # transform all arguments from args into attributes of this instance
+        self.__dict__.update(vars(args))
+        # store the full path of problem directory
+        self.currentTestFile = current_test_file
+        self.currentTestName = name
+        self.problemDir = os.path.dirname(current_test_file)
+        self.referenceDirectory = os.path.join(idefix_dir_env, "reference")
+        # current directory relative to $IDEFIX_DIR/test (used to retrieve the path ot reference files)
+        self.testDir = os.path.relpath(
+            self.problemDir, os.path.join(idefix_dir_env, "test")
+        )
+        # build directory, currently inside the test named build-test
+        self.buildDir = os.path.join(self.problemDir, "build-test")
+        # remind what build we dit last
+        self.lastCmakeCmd = ""
+        # subdir
+        self.filterSubdir = args.subdir
+        # save
+        self.cmdArgs = vars(args)
+        self.cmdArgs.update({"restart_no_overwrite": []})
+        self.log = []
+        # when making a restart we should not overrite those files (will be checked)
+        self.restart_no_overwrite = []
 
-  def applyConfig(self, config: dict={}):
-    # check args
-    for key, value in config.items():
-      if key not in ['ini', 'testfile', 'testname', 'dumpname']:
-        assert key in self.cmdArgs, f"The given configuration overriding try to set an invalid paramater : {key}={value}"
+        # forward args for pytest
+        if args.verbose:
+            unknown.append("--capture=no")
+        if args.help_pytest:
+            unknown.append("--help")
+        # remaining args
+        self.remainingArgs = unknown
 
-    # override options
-    newArgs = {}
-    newArgs.update(self.cmdArgs)
-    newArgs.update(config)
+    def addLog(self, entry):
+        if self.fake:
+            self.log.append(entry)
+            with open(os.path.join(self.problemDir, "testsuite.log.json"), "w+") as fp:
+                json.dump(self.log, fp, indent="\t")
 
-    # replace in dict
-    self.__dict__.update(newArgs)
+    def applyConfig(self, config: dict | None = None):
+        # check args
+        if config is None:
+            config = {}
+        for key, value in config.items():
+            if key not in [
+                "ini",
+                "testfile",
+                "testname",
+                "dumpname",
+                "check_file_produced",
+            ]:
+                assert key in self.cmdArgs, (
+                    f"The given configuration overriding try to set an invalid paramater : {key}={value}"
+                )
 
-  def _genCmakeCommand(self,definitionFile=""):
-    comm=["cmake"]
-    # add source directory
-    comm.append(self.idefixDir)
+        # override options
+        newArgs = {}
+        newArgs.update(self.cmdArgs)
+        newArgs.update(config)
 
-    # we will build in ./build-test so problem dir is parent
-    comm.append("-DIdefix_PROBLEM_DIR="+self.problemDir)
+        # replace in dict
+        self.__dict__.update(newArgs)
 
-    # add specific options
-    for opt in self.cmake:
-      comm.append("-D"+opt)
+    def _genCmakeCommand(self, definitionFile=""):
+        comm = ["cmake"]
+        # add source directory
+        comm.append(self.idefixDir)
 
-    if self.cuda:
-      comm.append("-DKokkos_ENABLE_CUDA=ON")
-      # disable fmad operations on Cuda to make it compatible with CPU arithmetics
-      comm.append("-DIdefix_CXX_FLAGS=--fmad=false")
-      # disable Async cuda malloc for tests performed on old UCX implementations
-      comm.append("-DKokkos_ENABLE_IMPL_CUDA_MALLOC_ASYNC=OFF")
+        # we will build in ./build-test so problem dir is parent
+        comm.append("-DIdefix_PROBLEM_DIR=" + self.problemDir)
 
-    if self.intel:
-      # disable fmad operations on Cuda to make it compatible with CPU arithmetics
-      comm.append("-DIdefix_CXX_FLAGS=-fp-model=strict")
-      comm.append("-DCMAKE_CXX_COMPILER=icpx")
-      comm.append("-DCMAKE_C_COMPILER=icx")
+        # add specific options
+        for opt in self.cmake:
+            comm.append("-D" + opt)
 
-    if self.hip:
-      comm.append("-DKokkos_ENABLE_HIP=ON")
-      # disable fmad operations on HIP to make it compatible with CPU arithmetics
-      comm.append("-DIdefix_CXX_FLAGS=-ffp-contract=off")
+        if self.cuda:
+            comm.append("-DKokkos_ENABLE_CUDA=ON")
+            # disable Async cuda malloc for tests performed on old UCX implementations
+            comm.append("-DKokkos_ENABLE_IMPL_CUDA_MALLOC_ASYNC=OFF")
 
-    #if we use single precision
-    if(self.single):
-      comm.append("-DIdefix_PRECISION=Single")
-    else:
-      comm.append("-DIdefix_PRECISION=Double")
+        if self.intel:
+            # disable fmad operations on Cuda to make it compatible with CPU arithmetics
+            comm.append("-DCMAKE_CXX_COMPILER=icpx")
+            comm.append("-DCMAKE_C_COMPILER=icx")
 
+        if self.hip:
+            comm.append("-DKokkos_ENABLE_HIP=ON")
 
-    if(self.vectPot):
-      comm.append("-DIdefix_EVOLVE_VECTOR_POTENTIAL=ON")
-    else:
-      comm.append("-DIdefix_EVOLVE_VECTOR_POTENTIAL=OFF")
+        # disable FMA for testing so that we have the same results on CPU and GPU (otherwise, the results are not bitwise identical)
+        comm.append("-DIdefix_SUPPRESS_FMA=ON")
 
-    if(self.Werror):
-      comm.append("-DIdefix_WERROR=ON")
+        # if we use single precision
+        if self.single:
+            comm.append("-DIdefix_PRECISION=Single")
+        else:
+            comm.append("-DIdefix_PRECISION=Double")
 
-    # add a definition file if provided
-    if(definitionFile):
-      self.definitions=definitionFile
-    else:
-      self.definitions="definitions.hpp"
+        if self.vectPot:
+            comm.append("-DIdefix_EVOLVE_VECTOR_POTENTIAL=ON")
+        else:
+            comm.append("-DIdefix_EVOLVE_VECTOR_POTENTIAL=OFF")
 
-    comm.append("-DIdefix_DEFS="+os.path.join(self.problemDir, self.definitions))
+        if self.Werror:
+            comm.append("-DIdefix_WERROR=ON")
 
-    if(self.mpi):
-      comm.append("-DIdefix_MPI=ON")
-    else:
-      comm.append("-DIdefix_MPI=OFF")
+        # add a definition file if provided
+        if definitionFile:
+            self.definitions = definitionFile
+        else:
+            self.definitions = "definitions.hpp"
 
-    if(self.reconstruction == 2):
-      comm.append("-DIdefix_RECONSTRUCTION=Linear")
-    elif(self.reconstruction==3):
-      comm.append("-DIdefix_RECONSTRUCTION=LimO3")
-    elif(self.reconstruction==4):
-      comm.append("-DIdefix_RECONSTRUCTION=Parabolic")
+        comm.append("-DIdefix_DEFS=" + os.path.join(self.problemDir, self.definitions))
 
-    # export ccache env
-    if self.ccache:
-      comm.append("-DCMAKE_CXX_COMPILER_LAUNCHER=ccache")
+        if self.mpi:
+            comm.append("-DIdefix_MPI=ON")
+        else:
+            comm.append("-DIdefix_MPI=OFF")
 
-    # ok
-    return comm
+        if self.mpiMode != "Default":
+            comm.append(f"-DIdefix_MPI_MODE={self.mpiMode}")
 
+        if self.mpiGpuForceCopy:
+            comm.append("-DIdefix_MPI_GPU_DIRECT=OFF")
+            comm.append("-DIdefix_MPI_GPU_FORCE_COPY=ON")
 
-  def configure(self,definitionFile="", reuse_last_same_build=True, override: dict={}):
-    # log
-    self.addLog({"call": "configure", "args":{
-      'definitionFile': definitionFile,
-      'reuse_last_same_build': reuse_last_same_build,
-      'override': override
-    }})
+        if self.reconstruction == 2:
+            comm.append("-DIdefix_RECONSTRUCTION=Linear")
+        elif self.reconstruction == 3:
+            comm.append("-DIdefix_RECONSTRUCTION=LimO3")
+        elif self.reconstruction == 4:
+            comm.append("-DIdefix_RECONSTRUCTION=Parabolic")
 
-    # gen command
-    comm = self._genCmakeCommand(definitionFile)
+        # export ccache env
+        if self.ccache:
+            comm.append("-DCMAKE_CXX_COMPILER_LAUNCHER=ccache")
 
-    # log
-    print("***************** CALLING CMAKE *******************")
-    print(f"mkdir -p {self.buildDir}")
-    print(f"cd {self.buildDir}")
-    print(' '.join(comm))
-    print("***************************************************")
+        # ok
+        return comm
 
-    # not action needed if same command or force no rebuild
-    if reuse_last_same_build == True and self.lastCmakeCmd == ' '.join(comm):
-      print("SKIP ALREADY DONE")
-      return
+    def configure(
+        self,
+        definitionFile="",
+        reuse_last_same_build=True,
+        override: dict | None = None,
+    ):
+        if override is None:
+            override = {}
+        # log
+        self.addLog(
+            {
+                "call": "configure",
+                "args": {
+                    "definitionFile": definitionFile,
+                    "reuse_last_same_build": reuse_last_same_build,
+                    "override": override,
+                },
+            }
+        )
 
-    # run
-    try:
-        # do cleanup
-        self.clean()
+        # gen command
+        comm = self._genCmakeCommand(definitionFile)
 
+        # log
+        print("***************** CALLING CMAKE *******************")
+        print(f"mkdir -p {self.buildDir}")
+        print(f"cd {self.buildDir}")
+        print(" ".join(comm))
+        print("***************************************************")
+
+        # not action needed if same command or force no rebuild
+        if reuse_last_same_build == True and self.lastCmakeCmd == " ".join(comm):
+            print("SKIP ALREADY DONE")
+            return
+
+        # run
+        try:
+            # do cleanup
+            self.clean()
+
+            # log and in fake mode we do not execute
+            self.addLog({"command": comm})
+
+            # call cmake
+            if not self.fake:
+                cmake = subprocess.run(comm, cwd=os.path.abspath(self.buildDir))
+                cmake.check_returncode()
+        except subprocess.CalledProcessError as e:
+            print(bcolors.FAIL + "***************************************************")
+            print("Cmake failed")
+            print("***************************************************" + bcolors.ENDC)
+            raise e
+        finally:
+            # remind for next time
+            self.lastCmakeCmd = " ".join(comm)
+
+    def clean(self):
         # log and in fake mode we do not execute
-        self.addLog({"command": comm})
+        self.addLog({"call": "clean", "args": {}})
+        if self.fake:
+            return
 
-        # call cmake
-        if not self.fake:
-          cmake=subprocess.run(comm, cwd=os.path.abspath(self.buildDir))
-          cmake.check_returncode()
-    except subprocess.CalledProcessError as e:
-        print(bcolors.FAIL+"***************************************************")
-        print("Cmake failed")
-        print("***************************************************"+bcolors.ENDC)
-        raise e
-    finally:
-        # remind for next time
-        self.lastCmakeCmd = ' '.join(comm)
+        # remove the build directory before re-creating it
+        if os.path.exists(self.buildDir):
+            shutil.rmtree(self.buildDir)
 
-  def clean(self):
-    # log and in fake mode we do not execute
-    self.addLog({"call": "clean", "args":{}})
-    if self.fake:
-      return
+        # recreate
+        os.makedirs(self.buildDir, exist_ok=False)
 
-    # remove the build directory before re-creating it
-    if os.path.exists(self.buildDir):
-      shutil.rmtree(self.buildDir)
+    def compile(self, jobs=8):
+        self.addLog({"call": "compile", "args": {"jobs": jobs}})
 
-    # recreate
-    os.makedirs(self.buildDir, exist_ok=False)
+        try:
+            comm = ["make", "-j" + str(jobs)]
+            self.addLog({"command": comm})
 
-  def compile(self,jobs=8):
-    self.addLog({"call": "compile", "args":{
-      'jobs': jobs,
-    }})
+            print("***************************************************")
+            print(f"cd {os.getcwd()}")
+            print(" ".join(comm))
+            print("***************************************************")
 
-    try:
-        comm = ["make","-j"+str(jobs)]
-        self.addLog({"command": comm})
+            if not self.fake:
+                make = subprocess.run(comm, cwd=os.path.abspath(self.buildDir))
+                make.check_returncode()
+        except subprocess.CalledProcessError as e:
+            print(bcolors.FAIL + "***************************************************")
+            print("Compilation failed")
+            print("***************************************************" + bcolors.ENDC)
+            raise e
+
+    def run(self, inputFile="", np=2, nowrite=False, restart=-1):
+        # log
+        self.addLog(
+            {
+                "call": "run",
+                "args": {
+                    "np": np,
+                    "nowrite": nowrite,
+                    "restart": restart,
+                },
+            }
+        )
+
+        comm = [os.path.join(self.buildDir, "idefix")]
+        if inputFile:
+            comm.append("-i")
+            comm.append(inputFile)
+        if self.mpi:
+            if self.dec:
+                np = 1
+                for n in range(len(self.dec)):
+                    np = np * int(self.dec[n])
+
+            comm.insert(0, "mpirun")
+            comm.insert(1, "-np")
+            comm.insert(2, str(np))
+            if self.dec:
+                comm.append("-dec")
+                for n in range(len(self.dec)):
+                    comm.append(str(self.dec[n]))
+
+        if nowrite:
+            comm.append("-nowrite")
+
+        if self.Werror:
+            comm.append("-Werror")
+
+        if restart >= 0:
+            comm.append("-restart")
+            comm.append(str(restart))
 
         print("***************************************************")
         print(f"cd {os.getcwd()}")
-        print(' '.join(comm))
+        print(" ".join(comm))
         print("***************************************************")
 
-        if not self.fake:
-          make=subprocess.run(comm, cwd=os.path.abspath(self.buildDir))
-          make.check_returncode()
-    except subprocess.CalledProcessError as e:
-        print(bcolors.FAIL+"***************************************************")
-        print("Compilation failed")
-        print("***************************************************"+bcolors.ENDC)
-        raise e
+        try:
+            self.addLog({"command": comm})
+            if not self.fake:
+                make = subprocess.run(comm, cwd=self.problemDir)
+                make.check_returncode()
+        except subprocess.CalledProcessError as e:
+            print(bcolors.FAIL + "***************************************************")
+            print("Execution failed")
+            print("***************************************************" + bcolors.ENDC)
+            raise e
 
-  def run(self, inputFile="", np=2, nowrite=False, restart=-1):
-      # log
-      self.addLog({"call": "run", "args":{
-        'np': np,
-        'nowrite': nowrite,
-        'restart': restart,
-      }})
+        self._readLog()
 
-      comm=[os.path.join(self.buildDir,"idefix")]
-      if inputFile:
-          comm.append("-i")
-          comm.append(inputFile)
-      if self.mpi:
-          if self.dec:
-            np=1
-            for n in range(len(self.dec)):
-              np=np*int(self.dec[n])
+    def _readLog(self):
+        if self.fake:
+            return
 
-          comm.insert(0,"mpirun")
-          comm.insert(1,"-np")
-          comm.insert(2,str(np))
-          if self.dec:
-              comm.append("-dec")
-              for n in range(len(self.dec)):
-                comm.append(str(self.dec[n]))
+        if not os.path.exists("./idefix.0.log"):
+            # When no idefix file is produced, we leave
+            return
 
-      if nowrite:
-          comm.append("-nowrite")
+        with open("./idefix.0.log", "r") as file:
+            log = file.read()
 
-      if self.Werror:
-        comm.append("-Werror")
+        if "SINGLE PRECISION" in log:
+            self.single = True
+        else:
+            self.single = False
 
-      if restart>=0:
-        comm.append("-restart")
-        comm.append(str(restart))
+        if "Kokkos CUDA target ENABLED" in log:
+            self.cuda = True
+        else:
+            self.cuda = False
 
-      print("***************************************************")
-      print(f"cd {os.getcwd()}")
-      print(' '.join(comm))
-      print("***************************************************")
+        if "Kokkos HIP target ENABLED" in log:
+            self.hip = True
+        else:
+            self.hip = False
 
-      try:
-          self.addLog({"command": comm})
-          if not self.fake:
-            make=subprocess.run(comm, cwd=self.problemDir)
-            make.check_returncode()
-      except subprocess.CalledProcessError as e:
-          print(bcolors.FAIL+"***************************************************")
-          print("Execution failed")
-          print("***************************************************"+bcolors.ENDC)
-          raise e
+        self.reconstruction = 2
+        if "3rd order (LimO3)" in log:
+            self.reconstruction = 3
 
-      self._readLog()
+        if "4th order (PPM)" in log:
+            self.reconstruction = 4
 
-  def _readLog(self):
-    if self.fake:
-      return
+        self.mpi = False
+        if "MPI ENABLED" in log:
+            self.mpi = True
 
-    if not os.path.exists('./idefix.0.log'):
-      # When no idefix file is produced, we leave
-      return
+        # Get input file from log
+        line = re.search("(?<=Input Parameters using input file )(.*)", log)
+        self.inifile = line.group(0)[:-1]
 
-    with open('./idefix.0.log','r') as file:
-      log = file.read()
+        # Get performances from log
+        line = re.search("Main: Perfs are (.*) cell", log)
+        self.perf = float(line.group(1))
 
-    if "SINGLE PRECISION" in log:
-      self.single = True
-    else:
-      self.single = False
+    def checkOnly(self, filename, tolerance=0):
+        # log
+        self.addLog(
+            {
+                "call": "checkOnly",
+                "args": {
+                    "filename": filename,
+                    "tolerance": tolerance,
+                },
+            }
+        )
 
-    if "Kokkos CUDA target ENABLED" in log:
-      self.cuda = True
-    else:
-      self.cuda = False
+        # Assumes the code has been run manually using some configuration, so we simply
+        # do the test suite witout configure/compile/run
+        self._readLog()
+        self._showConfig()
+        if self.cuda or self.hip:
+            print(bcolors.WARNING + "***********************************************")
+            print("WARNING: Idefix guarantees floating point arithmetic accuracy")
+            print("ONLY when fmad instruction are explicitely disabled at compilation.")
+            print("Otheriwse, this test will likely fail.")
+            print("***********************************************" + bcolors.ENDC)
+        self.standardTest()
+        self.nonRegressionTest(filename, tolerance)
 
-    if "Kokkos HIP target ENABLED" in log:
-      self.hip = True
-    else:
-      self.hip = False
+    def standardTest(self):
+        # log and in fake mode do not execute.
+        self.addLog({"call": "standardTest", "args": {}})
+        if self.fake:
+            return
 
+        if os.path.exists(os.path.join(self.problemDir, "python", "testidefix.py")):
+            oldPwd = os.getcwd()
+            os.chdir(os.path.join(self.problemDir, "python"))
+            comm = [sys.executable, "testidefix.py"]
+            if self.noplot:
+                comm.append("-noplot")
 
-    self.reconstruction = 2
-    if "3rd order (LimO3)" in log:
-      self.reconstruction = 3
+            print(bcolors.OKCYAN + "Running standard test...")
+            try:
+                make = subprocess.run(comm)
+                make.check_returncode()
+            except subprocess.CalledProcessError as e:
+                print(
+                    bcolors.FAIL + "***************************************************"
+                )
+                print("Standard test execution failed")
+                print(
+                    "***************************************************" + bcolors.ENDC
+                )
+                raise e
+            print(bcolors.OKCYAN + "Standard test succeeded" + bcolors.ENDC)
+            os.chdir(oldPwd)
+        else:
+            print(
+                bcolors.WARNING
+                + "No standard testidefix.py for this test"
+                + bcolors.ENDC
+            )
+        sys.stdout.flush()
 
-    if "4th order (PPM)" in log:
-      self.reconstruction = 4
+    def nonRegressionTest(self, filename, tolerance=0):
+        # log and in fake mode do not execute.
+        self.addLog(
+            {
+                "call": "nonRegressionTest",
+                "args": {"filename": filename, "tolerance": tolerance},
+            }
+        )
+        if self.fake:
+            return
 
-    self.mpi=False
-    if "MPI ENABLED" in log:
-      self.mpi=True
+        fileref = os.path.join(
+            self.referenceDirectory, self.testDir, self._getReferenceFilename()
+        )
+        if not (os.path.exists(fileref)):
+            raise Exception("Reference file " + fileref + " doesn't exist")
 
+        filetest = filename
+        if not (os.path.exists(filetest)):
+            raise Exception("Test file " + filetest + " doesn't exist")
 
-    # Get input file from log
-    line = re.search('(?<=Input Parameters using input file )(.*)', log)
-    self.inifile=line.group(0)[:-1]
+        Vref = readDump(fileref)
+        Vtest = readDump(filetest)
+        error = self._computeError(Vref, Vtest)
+        if error > tolerance:
+            print(bcolors.FAIL + "Non-Regression test failed!")
+            self._showConfig()
+            print(bcolors.ENDC)
+            if self.ploterr:
+                self._plotDiff(Vref, Vtest)
+            assert error <= tolerance, (
+                bcolors.FAIL
+                + "Error (%e) above tolerance (%e)" % (error, tolerance)
+                + bcolors.ENDC
+            )
+        print(
+            bcolors.OKGREEN
+            + "Non-regression test succeeded with error=%e" % error
+            + bcolors.ENDC
+        )
+        sys.stdout.flush()
 
-    # Get performances from log
-    line = re.search('Main: Perfs are (.*) cell', log)
-    self.perf=float(line.group(1))
+    def compareDump(self, file1, file2, tolerance=0):
+        self.addLog(
+            {
+                "call": "compareDump",
+                "args": {
+                    "file1": file1,
+                    "file2": file2,
+                    "tolerance": tolerance,
+                },
+            }
+        )
+        if self.fake:
+            return
 
-  def checkOnly(self, filename, tolerance=0):
-    # log
-    self.addLog({"call": "checkOnly", "args":{
-      'filename': filename,
-      'tolerance': tolerance,
-    }})
+        Vref = readDump(file1)
+        Vtest = readDump(file2)
+        error = self._computeError(Vref, Vtest)
+        if error > tolerance:
+            print(bcolors.FAIL + "Files are different !")
+            print(bcolors.ENDC)
 
-    # Assumes the code has been run manually using some configuration, so we simply
-    # do the test suite witout configure/compile/run
-    self._readLog()
-    self._showConfig()
-    if self.cuda or self.hip:
-      print(bcolors.WARNING+"***********************************************")
-      print("WARNING: Idefix guarantees floating point arithmetic accuracy")
-      print("ONLY when fmad instruction are explicitely disabled at compilation.")
-      print("Otheriwse, this test will likely fail.")
-      print("***********************************************"+bcolors.ENDC)
-    self.standardTest()
-    self.nonRegressionTest(filename, tolerance)
+            self._plotDiff(Vref, Vtest)
+            assert error <= tolerance, (
+                bcolors.FAIL
+                + "Error (%e) above tolerance (%e)" % (error, tolerance)
+                + bcolors.ENDC
+            )
+        print(
+            bcolors.OKGREEN
+            + "Files are identical up to error=%e" % error
+            + bcolors.ENDC
+        )
+        sys.stdout.flush()
 
-  def standardTest(self):
-    # log and in fake mode do not execute.
-    self.addLog({"call": "standardTest", "args":{}})
-    if self.fake:
-      return
+    def makeReference(self, filename):
+        # log and in fake mode do not execute.
+        self.addLog(
+            {
+                "call": "compareDump",
+                "args": {"filename": filename},
+            }
+        )
+        if self.fake:
+            return
 
-    if os.path.exists(os.path.join(self.problemDir, 'python', 'testidefix.py')):
-      oldPwd = os.getcwd()
-      os.chdir(os.path.join(self.problemDir, "python"))
-      comm = [sys.executable, "testidefix.py"]
-      if self.noplot:
-        comm.append("-noplot")
+        self._readLog()
+        targetDir = os.path.join(self.referenceDirectory, self.testDir)
+        if not os.path.exists(targetDir):
+            print("Creating reference directory")
+            os.makedirs(targetDir, exist_ok=True)
+        fileout = os.path.join(targetDir, self._getReferenceFilename())
+        if os.path.exists(fileout):
+            ans = input(
+                bcolors.WARNING
+                + "This will overwrite already existing reference file:\n"
+                + fileout
+                + "\nDo you confirm? (type yes to continue): "
+                + bcolors.ENDC
+            )
+            if ans != "yes":
+                print(bcolors.WARNING + "Reference creation aborpted" + bcolors.ENDC)
+                return
 
-      print(bcolors.OKCYAN+"Running standard test...")
-      try:
-          make=subprocess.run(comm)
-          make.check_returncode()
-      except subprocess.CalledProcessError as e:
-          print(bcolors.FAIL+"***************************************************")
-          print("Standard test execution failed")
-          print("***************************************************"+bcolors.ENDC)
-          raise e
-      print(bcolors.OKCYAN+"Standard test succeeded"+bcolors.ENDC)
-      os.chdir(oldPwd)
-    else:
-      print(bcolors.WARNING+"No standard testidefix.py for this test"+bcolors.ENDC)
-    sys.stdout.flush()
+        shutil.copy(filename, fileout)
+        print(bcolors.OKGREEN + "Reference file " + fileout + " created" + bcolors.ENDC)
+        sys.stdout.flush()
 
-  def nonRegressionTest(self, filename,tolerance=0):
-    # log and in fake mode do not execute.
-    self.addLog({"call": "nonRegressionTest", "args":{
-      "filename": filename,
-      "tolerance": tolerance
-    }})
-    if self.fake:
-      return
+    def _showConfig(self):
+        print("**************************************************************")
+        if self.cuda:
+            print("Nvidia Cuda enabled.")
+        if self.hip:
+            print("AMD HIP enabled.")
+        print("CMake Opts: " + " ".join(self.cmake))
+        print("Definitions file:" + self.definitions)
+        print("Input File: " + self.inifile)
+        if self.single:
+            print("Precision: Single")
+        else:
+            print("Precision: Double")
+        if self.reconstruction == 2:
+            print("Reconstruction: PLM")
+        elif self.reconstruction == 3:
+            print("Reconstruction: LimO3")
+        elif self.reconstruction == 4:
+            print("Reconstruction: PPM")
+        if self.vectPot:
+            print("Vector Potential: ON")
+        else:
+            print("Vector Potential: OFF")
+        if self.mpi:
+            print("MPI: ON")
+        else:
+            print("MPI: OFF")
 
-    fileref=os.path.join(self.referenceDirectory, self.testDir, self._getReferenceFilename())
-    if not(os.path.exists(fileref)):
-      raise Exception("Reference file "+fileref+ " doesn't exist")
+        print("**************************************************************")
 
-    filetest=filename
-    if not(os.path.exists(filetest)):
-      raise Exception("Test file "+filetest+ " doesn't exist")
+    def _getReferenceFilename(self):
+        strReconstruction = "plm"
+        if self.reconstruction == 3:
+            strReconstruction = "limo3"
+        if self.reconstruction == 4:
+            strReconstruction = "ppm"
 
-    Vref=readDump(fileref)
-    Vtest=readDump(filetest)
-    error=self._computeError(Vref,Vtest)
-    if error > tolerance:
-      print(bcolors.FAIL+"Non-Regression test failed!")
-      self._showConfig()
-      print(bcolors.ENDC)
-      if self.ploterr:
-        self._plotDiff(Vref,Vtest)
-      assert error <= tolerance, bcolors.FAIL+"Error (%e) above tolerance (%e)"%(error,tolerance)+bcolors.ENDC
-    print(bcolors.OKGREEN+"Non-regression test succeeded with error=%e"%error+bcolors.ENDC)
-    sys.stdout.flush()
+        strPrecision = "double"
+        if self.single:
+            strPrecision = "single"
 
-  def compareDump(self, file1, file2,tolerance=0):
-    self.addLog({"call": "compareDump", "args":{
-      "file1": file1,
-      "file2": file2,
-      "tolerance": tolerance,
-    }})
-    if self.fake:
-      return
+        fileref = (
+            "dump.ref." + strPrecision + "." + strReconstruction + "." + self.inifile
+        )
+        if self.vectPot:
+            fileref = fileref + ".vectPot"
 
-    Vref=readDump(file1)
-    Vtest=readDump(file2)
-    error=self._computeError(Vref,Vtest)
-    if error > tolerance:
-      print(bcolors.FAIL+"Files are different !")
-      print(bcolors.ENDC)
+        fileref = fileref + ".dmp"
+        return fileref
 
-      self._plotDiff(Vref,Vtest)
-      assert error <= tolerance, bcolors.FAIL+"Error (%e) above tolerance (%e)"%(error,tolerance)+bcolors.ENDC
-    print(bcolors.OKGREEN+"Files are identical up to error=%e"%error+bcolors.ENDC)
-    sys.stdout.flush()
+    def _computeError(self, Vref, Vtest):
+        ntested = 0
+        error = 0
+        for fld in Vtest.data.keys():
+            if Vtest.data[fld].ndim == 3:
+                if fld in Vref.data.keys():
+                    # print("error in "+fld+" = "+str(np.sqrt(np.mean((Vref.data[fld]-Vtest.data[fld])**2))))
+                    error = error + np.sqrt(
+                        np.mean((Vref.data[fld] - Vtest.data[fld]) ** 2)
+                    )
+                    ntested = ntested + 1
 
+        if ntested == 0:
+            raise Exception(
+                bcolors.FAIL
+                + "There is no common field between the reference and current file"
+                + bcolors.ENDC
+            )
 
-  def makeReference(self,filename):
-    # log and in fake mode do not execute.
-    self.addLog({"call": "compareDump", "args":{
-      "filename": filename,
-    }})
-    if self.fake:
-      return
+        error = error / ntested
+        return error
 
-    self._readLog()
-    targetDir = os.path.join(self.referenceDirectory,self.testDir)
-    if not os.path.exists(targetDir):
-      print("Creating reference directory")
-      os.makedirs(targetDir, exist_ok=True)
-    fileout = os.path.join(targetDir, self._getReferenceFilename())
-    if(os.path.exists(fileout)):
-      ans=input(bcolors.WARNING+"This will overwrite already existing reference file:\n"+fileout+"\nDo you confirm? (type yes to continue): "+bcolors.ENDC)
-      if(ans != "yes"):
-        print(bcolors.WARNING+"Reference creation aborpted"+bcolors.ENDC)
-        return
+    def _plotDiff(self, Vref, Vtest):
 
-    shutil.copy(filename,fileout)
-    print(bcolors.OKGREEN+"Reference file "+fileout+" created"+bcolors.ENDC)
-    sys.stdout.flush()
-
-  def _showConfig(self):
-    print("**************************************************************")
-    if self.cuda:
-      print("Nvidia Cuda enabled.")
-    if self.hip:
-      print("AMD HIP enabled.")
-    print("CMake Opts: " +" ".join(self.cmake))
-    print("Definitions file:"+self.definitions)
-    print("Input File: "+self.inifile)
-    if(self.single):
-      print("Precision: Single")
-    else:
-      print("Precision: Double")
-    if(self.reconstruction==2):
-      print("Reconstruction: PLM")
-    elif(self.reconstruction==3):
-      print("Reconstruction: LimO3")
-    elif(self.reconstruction==4):
-      print("Reconstruction: PPM")
-    if(self.vectPot):
-      print("Vector Potential: ON")
-    else:
-      print("Vector Potential: OFF")
-    if self.mpi:
-      print("MPI: ON")
-    else:
-      print("MPI: OFF")
-
-    print("**************************************************************")
-
-  def _getReferenceFilename(self):
-    strReconstruction="plm"
-    if self.reconstruction == 3:
-      strReconstruction = "limo3"
-    if self.reconstruction == 4:
-      strReconstruction= "ppm"
-
-    strPrecision="double"
-    if self.single:
-      strPrecision="single"
-
-    fileref='dump.ref.'+strPrecision+"."+strReconstruction+"."+self.inifile
-    if self.vectPot:
-      fileref=fileref+".vectPot"
-
-    fileref=fileref+'.dmp'
-    return(fileref)
-
-  def _computeError(self,Vref,Vtest):
-    ntested=0
-    error=0
-    for fld in Vtest.data.keys():
-      if(Vtest.data[fld].ndim==3):
-        if fld in Vref.data.keys():
-          #print("error in "+fld+" = "+str(np.sqrt(np.mean((Vref.data[fld]-Vtest.data[fld])**2))))
-          error = error+np.sqrt(np.mean((Vref.data[fld]-Vtest.data[fld])**2))
-          ntested=ntested+1
-
-    if ntested==0:
-      raise Exception(bcolors.FAIL+"There is no common field between the reference and current file"+bcolors.ENDC)
-
-    error=error/ntested
-    return(error)
-
-  def _plotDiff(self,Vref,Vtest):
-
-    for fld in Vtest.data.keys():
-      if(Vtest.data[fld].ndim==3):
-        if fld in Vref.data.keys():
-          plt.figure()
-          plt.title(fld)
-          x1=Vref.x1
-          if Vref.data[fld].shape[0] == Vref.x1.size+1:
-            x1=np.zeros(Vref.data[fld].shape[0])
-            x1[:-1]=Vref.x1l
-            x1[-1]=Vref.x1r[-1]
-          x2=Vref.x2
-          if Vref.data[fld].shape[1] == Vref.x2.size+1:
-            x2=np.zeros(Vref.data[fld].shape[1])
-            x2[:-1]=Vref.x2l
-            x2[-1]=Vref.x2r[-1]
-          x3=Vref.x3
-          if Vref.data[fld].shape[2] == Vref.x3.size+1:
-            x3=np.zeros(Vref.data[fld].shape[2])
-            x3[:-1]=Vref.x3l
-            x3[-1]=Vref.x3r[-1]
-          if Vref.data[fld].shape[1]>1:
-            plt.pcolor(x1, x2, Vref.data[fld][:,:,0].T-Vtest.data[fld][:,:,0].T,cmap='seismic')
-            plt.xlabel("x1")
-            plt.ylabel("x2")
-            plt.colorbar()
-          else:
-            plt.plot(x1, Vref.data[fld][:,0,0]-Vtest.data[fld][:,0,0])
-            plt.xlabel("x1")
-    plt.show()
+        for fld in Vtest.data.keys():
+            if Vtest.data[fld].ndim == 3:
+                if fld in Vref.data.keys():
+                    plt.figure()
+                    plt.title(fld)
+                    x1 = Vref.x1
+                    if Vref.data[fld].shape[0] == Vref.x1.size + 1:
+                        x1 = np.zeros(Vref.data[fld].shape[0])
+                        x1[:-1] = Vref.x1l
+                        x1[-1] = Vref.x1r[-1]
+                    x2 = Vref.x2
+                    if Vref.data[fld].shape[1] == Vref.x2.size + 1:
+                        x2 = np.zeros(Vref.data[fld].shape[1])
+                        x2[:-1] = Vref.x2l
+                        x2[-1] = Vref.x2r[-1]
+                    x3 = Vref.x3
+                    if Vref.data[fld].shape[2] == Vref.x3.size + 1:
+                        x3 = np.zeros(Vref.data[fld].shape[2])
+                        x3[:-1] = Vref.x3l
+                        x3[-1] = Vref.x3r[-1]
+                    if Vref.data[fld].shape[1] > 1:
+                        plt.pcolor(
+                            x1,
+                            x2,
+                            Vref.data[fld][:, :, 0].T - Vtest.data[fld][:, :, 0].T,
+                            cmap="seismic",
+                        )
+                        plt.xlabel("x1")
+                        plt.ylabel("x2")
+                        plt.colorbar()
+                    else:
+                        plt.plot(x1, Vref.data[fld][:, 0, 0] - Vtest.data[fld][:, 0, 0])
+                        plt.xlabel("x1")
+        plt.show()

@@ -1,3 +1,5 @@
+.. _makefile:
+
 Code configuration with Cmake
 =============================
 
@@ -32,6 +34,10 @@ Several options can be enabled from the command line (or are accessible with ``c
 
 ``-D Idefix_MPI=ON``
     Enable MPI parallelisation. Requires an MPI library. When used in conjonction with CUDA (Nvidia GPUs), a CUDA-aware MPI library is required by *Idefix*.
+
+``-D Idefix_MPI_GPU_DIRECT=OFF``
+    Disable the usage of MPI GPU direct for inter-process communication. In this case it uses a copy between GPU and GPU before and after making communications.
+    It is usefull if your MPI is not GPU-aware. Note that this option decreases performances.
 
 ``-D Idefix_DEFS=foo.hpp``
     Specify a particular filename to be used in place of the default problem file ``definitions.hpp``

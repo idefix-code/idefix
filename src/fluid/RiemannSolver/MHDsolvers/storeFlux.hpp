@@ -55,15 +55,15 @@ KOKKOS_FORCEINLINE_FUNCTION void K_StoreHLL( const int i, const int j, const int
                                         const IdefixArray3D<real> &dL,
                                         const IdefixArray3D<real> &dR) {
   EXPAND(                                          ,
-        constexpr int Xt = (DIR == IDIR ? MX2 : MX1);  ,
-        constexpr int Xb = (DIR == KDIR ? MX2 : MX3);  )
+        [[maybe_unused]] constexpr int Xt = (DIR == IDIR ? MX2 : MX1);  ,
+        [[maybe_unused]] constexpr int Xb = (DIR == KDIR ? MX2 : MX3);  )
 
   real ar = std::fmax(ZERO_F, sr);
   real al = std::fmin(ZERO_F, sl);
   real scrh = ONE_F/(ar - al);
 
-  #if COMPONENTS > 1
-  EXPAND( Et(k,j,i) = -st*(ar*vL[Xt] - al*vR[Xt])*scrh;  ,
+  #if DIMENSIONS > 1
+  D_EXPAND( Et(k,j,i) = -st*(ar*vL[Xt] - al*vR[Xt])*scrh;  ,
                                                         ,
           Eb(k,j,i) = -sb*(ar*vL[Xb] - al*vR[Xb])*scrh;  );
   #endif

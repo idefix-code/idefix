@@ -1,34 +1,31 @@
 {
-    "namings": "ini,single,vectPot,mpi",
-    "variants": [
-        {
-            "dumpname": "dump.0001.dmp",
-            "ini": ["idefix.ini"],
-            "vectPot": [false, true],
-            "reconstruction": 2,
-            "single": [false],
-            "mpi": [false, true],
-            "dec": ["2","2","2"],
-            "standardTest": false,
-            "tolerance": 1e-13
-        },{
-            "dumpname": "dump.0001.dmp",
-            "ini": ["idefix.ini"],
-            "vectPot": [false],
-            "reconstruction": 2,
-            "mpi": [false, true],
-            "single": [true],
-            "dec": ["2","2","2"],
-            "standardTest": false,
-            "tolerance": 1e-13
-        }
-    ],
-    "when": {
-        "conditions": {
-            "single": true
-        },
-        "apply" : {
-            "tolerance": 1e-6
-        }
+  "namings": "ini,single,vectPot,mpi",
+  "default": {
+    "dumpname": "dump.0001.dmp",
+    "reconstruction": 2,
+    "dec": ["2","2","2"],
+    "standardTest": false,
+    "tolerance": 1e-13
+  },
+  "variants": [
+    {
+      "ini": ["idefix.ini"],
+      "vectPot": [false, true],
+      "single": [false],
+      "mpi": [false, true]
+    },{
+      "ini": ["idefix.ini"],
+      "vectPot": [false],
+      "mpi": [false, true],
+      "single": [true]
     }
+  ],
+  "when": {
+    "conditions": {
+      "single": true
+    },
+    "apply" : {
+      "tolerance": 1e-6
+    }
+  }
 }

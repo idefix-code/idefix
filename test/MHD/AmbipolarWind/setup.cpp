@@ -373,7 +373,7 @@ void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
   IdefixHostArray1D<real> x1=d.x[IDIR];
   IdefixHostArray1D<real> x2=d.x[JDIR];
   IdefixHostArray4D<real> Vc=d.Vc;
-  IdefixArray3D<real>::HostMirror scrhHost = Kokkos::create_mirror_view(scrh);
+  IdefixArray3D<real>::host_mirror_type scrhHost = Kokkos::create_mirror_view(scrh);
   Kokkos::deep_copy(scrhHost,scrh);
 
   for(int k = d.beg[KDIR]; k < d.end[KDIR] ; k++) {

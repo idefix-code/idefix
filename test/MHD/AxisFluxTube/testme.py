@@ -4,45 +4,48 @@
 
 @author: glesur
 """
+
 import os
 import sys
+
 sys.path.append(os.getenv("IDEFIX_DIR"))
 
 import pytools.idfx_test as tst
 
-name="dump.0001.dmp"
+name = "dump.0001.dmp"
 
-tolerance=1e-14
+tolerance = 1e-14
+
 
 def testMe(test):
-  test.configure()
-  test.compile()
-  inifiles=["idefix.ini","idefix-coarsening.ini"]
+    test.configure()
+    test.compile()
+    inifiles = ["idefix.ini", "idefix-coarsening.ini"]
 
-  # loop on all the ini files for this test
-  for ini in inifiles:
-    test.run(inputFile=ini)
-    if test.init and not test.mpi:
-      test.makeReference(filename=name)
-    test.nonRegressionTest(filename=name,tolerance=tolerance)
+    # loop on all the ini files for this test
+    for ini in inifiles:
+        test.run(inputFile=ini)
+        if test.init and not test.mpi:
+            test.makeReference(filename=name)
+        test.nonRegressionTest(filename=name, tolerance=tolerance)
 
 
-test=tst.idfxTest(__file__)
+test = tst.idfxTest(__file__)
 
 if not test.all:
-  if(test.check):
-    test.checkOnly(filename=name,tolerance=tolerance)
-  else:
-    testMe(test)
+    if test.check:
+        test.checkOnly(filename=name, tolerance=tolerance)
+    else:
+        testMe(test)
 else:
-  test.noplot = True
+    test.noplot = True
 
-  test.vectPot=False
-  test.single=False
-  test.reconstruction=2
-  test.mpi=False
-  testMe(test)
+    test.vectPot = False
+    test.single = False
+    test.reconstruction = 2
+    test.mpi = False
+    testMe(test)
 
-  # test with MPI
-  test.mpi=True
-  testMe(test)
+    # test with MPI
+    test.mpi = True
+    testMe(test)

@@ -9,7 +9,7 @@
 #include <string>
 #include <sstream>
 #if __has_include(<filesystem>)
-  #include <filesystem>
+  #include <filesystem> // NOLINT [build/c++17]
   namespace fs = std::filesystem;
 #elif __has_include(<experimental/filesystem>)
   #include <experimental/filesystem>
@@ -38,7 +38,6 @@ bool warningsAreErrors{false};
 
 IdefixOutStream cout;
 IdefixErrStream cerr;
-std::string logFileDir;
 Profiler prof;
 LoopPattern defaultLoopPattern;
 Units units;
@@ -116,10 +115,9 @@ void IdefixOutStream::init(int rank) {
 
 
 // disable the log file
-void IdefixOutStream::enableLogFile() {
+void IdefixOutStream::enableLogFile(std::string logFileDir) {
   std::stringstream sslogFileName;
-
-  sslogFileName << idfx::logFileDir << "/"  << "idefix." << idfx::prank << ".log";
+  sslogFileName << logFileDir << "/"  << "idefix." << idfx::prank << ".log";
   std::string logFileName(sslogFileName.str());
 
   if(idfx::prank==0) {

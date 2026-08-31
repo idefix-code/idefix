@@ -113,13 +113,12 @@ Input::Input(int argc, char* argv[] ) {
   file.close();
 
   if(this->enableLogs) {
-      if(CheckEntry("Output","log_dir")>=0) {
-        idfx::logFileDir = Get<std::string>("Output", "log_dir", 0);
-      } else {
-        idfx::logFileDir = "./";
-      }
-      idfx::cout.enableLogFile();
+    std::string logFileDir{"./"};
+    if(CheckEntry("Output","log_dir")>=0) {
+      logFileDir = Get<std::string>("Output", "log_dir", 0);
     }
+    idfx::cout.enableLogFile(logFileDir);
+  }
 }
 
 // This routine parse command line options

@@ -44,6 +44,8 @@ Input::Input(int argc, char* argv[] ) {
   bool haveBlock = false;
   std::stringstream msg;
   int nParameters = 0;    // # of parameters in current block
+  // Log files are enabled by default
+  this->enableLogs = true;
 
   // Tell the system we want to catch the SIGUSR2 signals
   signal(SIGUSR2, signalHandler);
@@ -109,12 +111,19 @@ Input::Input(int argc, char* argv[] ) {
     }
   }
   file.close();
+
+  if(this->enableLogs) {
+    std::string logFileDir{"./"};
+    if(CheckEntry("Output","log_dir")>=0) {
+      logFileDir = Get<std::string>("Output", "log_dir", 0);
+    }
+    idfx::cout.enableLogFile(logFileDir);
+  }
 }
 
 // This routine parse command line options
 void Input::ParseCommandLine(int argc, char **argv) {
   std::stringstream msg;
-  bool enableLogs = true;
   for(int i = 1 ; i < argc ; i++) {
     // MPI decomposition argument
     if(std::string(argv[i]) == "-dec") {
@@ -172,9 +181,9 @@ void Input::ParseCommandLine(int argc, char **argv) {
       this->forceInitRequested = true;
     } else if(std::string(argv[i]) == "-nowrite") {
       this->forceNoWrite = true;
-      enableLogs = false;
+      this->enableLogs = false;
     } else if(std::string(argv[i]) == "-nolog") {
-      enableLogs = false;
+      this->enableLogs = false;
     } else if(std::string(argv[i]) == "-profile") {
       idfx::prof.EnablePerformanceProfiling();
     } else if(std::string(argv[i]) == "-Werror") {
@@ -190,9 +199,6 @@ void Input::ParseCommandLine(int argc, char **argv) {
       msg << "Unknown option " << argv[i];
       IDEFIX_ERROR(msg);
     }
-  }
-  if(enableLogs) {
-    idfx::cout.enableLogFile();
   }
 }
 

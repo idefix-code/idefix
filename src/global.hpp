@@ -24,6 +24,7 @@ class Units;
 
 extern int prank;                       //< parallel rank
 extern int psize;
+extern std::string logFileDir;       //< logfileDir
 extern IdefixOutStream cout;              //< custom cout for idefix
 extern IdefixErrStream cerr;              //< custom cerr for idefix
 extern Profiler prof;                   //< profiler (for memory & performance usage)
@@ -66,7 +67,7 @@ void DumpArray(std::string filename, ArrayType array) {
 class idfx::IdefixOutStream {
  public:
   void init(int);
-  void enableLogFile();
+  void enableLogFile(std::string logFileDir);
   // for regular output of variables and stuff
   template<typename T> IdefixOutStream& operator<<(const T& something) {
     if(toscreen) std::cout << something;

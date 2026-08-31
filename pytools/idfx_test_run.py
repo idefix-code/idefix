@@ -474,20 +474,6 @@ class IdexPytestRunner:
         return True
 
     def main(self, all: bool = False):
-        # make testme.json validation for pre-commit
-        if "--validate-testme-jsons" in sys.argv:
-            try:
-                tests = self.genTests()
-                for test in tests:
-                    testfile = test.values[0]["testfile"]
-                    id = test.id
-                    print(f"{testfile} => {id}")
-            except Exception as e:
-                print(f"{e}")
-                sys.exit(1)
-            return
-
-        # run
         if all:
             sys.argv.append("-all")
         idefixTest = tst.idfxTest(self.parentScritFile, name="main")

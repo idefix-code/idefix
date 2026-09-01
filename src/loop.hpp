@@ -34,6 +34,12 @@ typedef Kokkos::TeamPolicy<>::member_type  member_type;
 
 // Check if the user requested a specific loop unrolling strategy
 #if defined(LOOP_PATTERN_SIMD)
+  // Check that Idefix Arrays can be assigned from SIMD loop
+  static_assert(
+    Kokkos::SpaceAccessibility<Kokkos::DefaultHostExecutionSpace::execution_space,
+                               Kokkos::DefaultExecutionSpace::memory_space>::accessible,
+    "Idefix Arrays cannot be accessed from SIMD loop. You should try another loop pattern."
+  );
   constexpr LoopPattern defaultLoop = LoopPattern::SIMDFOR;
 #elif defined(LOOP_PATTERN_1DRANGE)
   constexpr LoopPattern defaultLoop = LoopPattern::RANGE;
@@ -51,7 +57,16 @@ typedef Kokkos::TeamPolicy<>::member_type  member_type;
     constexpr LoopPattern defaultLoop = LoopPattern::RANGE;
   #elif defined(KOKKOS_ENABLE_HIP)
     constexpr LoopPattern defaultLoop = LoopPattern::RANGE;
+  #elif defined(KOKKOS_ENABLE_SYCL)
+    constexpr LoopPattern defaultLoop = LoopPattern::RANGE;
   #elif defined(KOKKOS_ENABLE_SERIAL)
+    // Check that Idefix Arrays can be assigned from SIMD loop
+    static_assert(
+      Kokkos::SpaceAccessibility<Kokkos::DefaultHostExecutionSpace::execution_space,
+                                 Kokkos::DefaultExecutionSpace::memory_space>::accessible,
+      "Idefix Arrays cannot be accessed from Host, but Device is unknown/untested. "
+      "Ask the developers to add support."
+    );
     constexpr LoopPattern defaultLoop = LoopPattern::SIMDFOR;
   #else
     #warning "Unknown target architeture: default to MDrange"
@@ -70,7 +85,7 @@ inline void idefix_for(const std::string & NAME,
   idfx::pushRegion("idefix_for("+NAME+")");
   #endif
   const int NI = IE - IB;
-  Kokkos::parallel_for(NAME, NI,
+  Kokkos::parallel_for(NAME, Kokkos::RangePolicy<Kokkos::LaunchBounds<256>>(0, NI),
     KOKKOS_LAMBDA (const int& IDX) {
       int i = IDX;
       i += IB;
@@ -97,7 +112,7 @@ inline void idefix_for(const std::string & NAME,
     const int NJ = JE - JB;
     const int NI = IE - IB;
     const int NJNI = NJ * NI;
-    Kokkos::parallel_for(NAME, NJNI,
+    Kokkos::parallel_for(NAME, Kokkos::RangePolicy<Kokkos::LaunchBounds<256>>(0, NJNI),
       KOKKOS_LAMBDA (const int& IDX) {
         int j = IDX  / NI;
         int i = IDX - j*NI;
@@ -157,7 +172,7 @@ inline void idefix_for(const std::string & NAME,
     const int NI = IE - IB;
     const int NKNJNI = NK*NJ*NI;
     const int NJNI = NJ * NI;
-    Kokkos::parallel_for(NAME,NKNJNI,
+    Kokkos::parallel_for(NAME,Kokkos::RangePolicy<Kokkos::LaunchBounds<256>>(0, NKNJNI),
       KOKKOS_LAMBDA (const int& IDX) {
         int k = IDX / NJNI;
         int j = (IDX - k*NJNI) / NI;
@@ -244,7 +259,7 @@ inline void idefix_for(const std::string & NAME,
     const int NNNKNJNI = NN*NK*NJ*NI;
     const int NKNJNI = NK*NJ*NI;
     const int NJNI = NJ * NI;
-    Kokkos::parallel_for(NAME,NNNKNJNI,
+    Kokkos::parallel_for(NAME,Kokkos::RangePolicy<Kokkos::LaunchBounds<256>>(0, NNNKNJNI),
       KOKKOS_LAMBDA (const int& IDX) {
         int n = IDX / NKNJNI;
         int k = (IDX - n*NKNJNI) / NJNI;

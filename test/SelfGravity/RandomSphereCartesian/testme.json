@@ -1,0 +1,14 @@
+{
+    "namings": "ini",
+    "default": {
+        "dumpname": "dump.0001.dmp",
+        "noplot": true,
+        "nonRegressionTest": false,
+        "tolerance": 0
+    },
+    "variants": [
+        {
+            "ini": ["idefix.ini","idefix-cg.ini","idefix-minres.ini","idefix-jacobi.ini"]
+        }
+    ]
+}

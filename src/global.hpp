@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include "arrays.hpp"
+#include "npy.hpp"
 
 namespace idfx {
 int initialize();   // Initialisation routine for idefix
@@ -19,6 +20,7 @@ void safeExit(int );       // Exit the code
 class IdefixOutStream;
 class IdefixErrStream;
 class Profiler;
+class Units;
 
 extern int prank;                       //< parallel rank
 extern int psize;
@@ -28,6 +30,7 @@ extern Profiler prof;                   //< profiler (for memory & performance u
 extern double mpiCallsTimer;            //< time significant MPI calls
 extern LoopPattern defaultLoopPattern;  //< default loop patterns (for idefix_for loops)
 extern bool warningsAreErrors;    //< whether warnings should be considered as errors
+extern Units units;               //< Units for the run
 
 void pushRegion(const std::string&);
 void popRegion();
@@ -36,12 +39,26 @@ template<typename T>
 IdefixArray1D<T> ConvertVectorToIdefixArray(std::vector<T> &inputVector) {
   IdefixArray1D<T> outArr = IdefixArray1D<T>("Vector",inputVector.size());
   IdefixHostArray1D<T> outArrHost;
-  outArrHost = Kokkos::create_mirror_view(outArr);
+  outArrHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), outArr);
   for(int i = 0; i < inputVector.size() ; i++) {
     outArrHost(i) = inputVector[i];
   }
   Kokkos::deep_copy(outArr, outArrHost);
   return(outArr);
+}
+
+///< dump Idefix array to a numpy array on disk
+template<typename ArrayType>
+void DumpArray(std::string filename, ArrayType array) {
+  auto hArray = Kokkos::create_mirror(array);
+  Kokkos::deep_copy(hArray, array);
+
+  std::array<uint64_t, ArrayType::rank> shape;
+  bool fortran_order{false};
+  for (size_t i = 0; i < ArrayType::rank; ++i) {
+    shape[i] = array.extent(i);
+  }
+  npy::SaveArrayAsNumpy(filename, fortran_order, ArrayType::rank, shape.data(), hArray.data());
 }
 
 } // namespace idfx

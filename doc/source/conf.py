@@ -18,13 +18,12 @@ import textwrap
 
 # -- Project information -----------------------------------------------------
 
-project = 'Idefix'
-copyright = 'Geoffroy Lesur et al.'
-author = 'Geoffroy Lesur'
+project = "Idefix"
+copyright = "Geoffroy Lesur et al."
+author = "Geoffroy Lesur"
 
 # The full version, including alpha/beta/rc tags
-release = '2.1.02'
-
+release = "2.3.0"
 
 
 # -- General configuration ---------------------------------------------------
@@ -34,19 +33,24 @@ release = '2.1.02'
 # ones.
 extensions = [
     "sphinx_rtd_theme",
-    'sphinx_git',
+    "sphinx_git",
+    "matplotlib.sphinxext.plot_directive",
     "breathe",
     "exhale",
     "m2r2",
-    "sphinx_copybutton"
-    ]
+    "sphinx_copybutton",
+]
 
 source_suffix = [".rst", ".md"]
 
-cpp_id_attributes=["KOKKOS_FORCEINLINE_FUNCTION","KOKKOS_INLINE_FUNCTION","KOKKOS_RESTRICT"]
+cpp_id_attributes = [
+    "KOKKOS_FORCEINLINE_FUNCTION",
+    "KOKKOS_INLINE_FUNCTION",
+    "KOKKOS_RESTRICT",
+]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -59,45 +63,47 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+html_theme = "sphinx_rtd_theme"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = ["_static"]
+
 
 def setup(app):
-    app.add_css_file('my_theme.css')
+    app.add_css_file("my_theme.css")
+
 
 ##############
 # Breathe/Exhale options
 
 # Setup the breathe extension
 breathe_projects = {
-    "Idefix": "./xml"
+    "Idefix": "./xml",
 }
 breathe_default_project = "Idefix"
 
 # Setup the exhale extension
 exhale_args = {
     # These arguments are required
-    "containmentFolder":     "./api",
-    "rootFileName":          "library_root.rst",
-    "rootFileTitle":         "Idefix API",
+    "containmentFolder": "./api",
+    "rootFileName": "library_root.rst",
+    "rootFileTitle": "Idefix API",
     # Suggested optional arguments
-    "createTreeView":        False,
+    "createTreeView": False,
     # TIP: if using the sphinx-bootstrap-theme, you need
     # "treeViewIsBootstrap": True,
     "doxygenStripFromPath": "../../src",
     "exhaleExecutesDoxygen": True,
-    "exhaleDoxygenStdin":    textwrap.dedent('''
+    "exhaleDoxygenStdin": textwrap.dedent("""
             INPUT = ../../src
             EXCLUDE = ../../src/kokkos
-            ''')
+            """),
 }
 
 # Tell sphinx what the primary language being documented is.
-primary_domain = 'cpp'
+primary_domain = "cpp"
 
 # Tell sphinx what the pygments highlight language should be.
-highlight_language = 'cpp'
+highlight_language = "cpp"

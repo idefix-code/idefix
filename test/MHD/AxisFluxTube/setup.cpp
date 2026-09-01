@@ -112,7 +112,7 @@ void CoarsenFunction(DataBlock &data) {
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
   output.EnrollUserDefVariables(&ComputeUserVars);
   data.hydro->EnrollUserDefBoundary(&UserdefBoundary);
-  output.EnrollAnalysis(&Analysis);
+  //output.EnrollAnalysis(&Analysis);
   Rtorus = input.Get<real>("Setup","Rtorus",0);
   Ztorus = input.Get<real>("Setup","Ztorus",0);
   Rin = input.Get<real>("Setup","Rin",0);

@@ -149,47 +149,49 @@ struct Fluid_CorrectFluxFunctor {
         Flux(MX1+meanDir,k,j,i) += meanV * Flux(RHO,k,j,i);
       } // Fargo & Rotation corrections
 
-      real Ax = A(k,j,i);
+      //////////////////////////////////////////////
+      // Define correction factor for the fluxes
+      //////////////////////////////////////////////
 
-      for(int nv = 0 ; nv < Phys::nvar ; nv++) {
-        Flux(nv,k,j,i) = Flux(nv,k,j,i) * Ax;
-      }
+      real Ax[Phys::nvar]; // corrected Area
+      for(int nv = 0 ; nv < Phys::nvar ; nv++) Ax[nv] = A(k,j,i);
 
       // Curvature terms
-#if    (GEOMETRY == POLAR       && COMPONENTS >= 2) \
-    || (GEOMETRY == CYLINDRICAL && COMPONENTS == 3)
-      if constexpr (dir==IDIR) {
-        // Conserve angular momentum, hence flux is R*Bphi
-        Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(x1m(i));
-        if constexpr(Phys::mhd) {
-          if(Ax<SMALL_NUMBER) Ax=SMALL_NUMBER;    //avoid singularity around poles
-          // No area for this one
-          Flux(iBPHI,k,j,i) = Flux(iBPHI,k,j,i) / Ax;
+      #if    (GEOMETRY == POLAR       && COMPONENTS >= 2) \
+          || (GEOMETRY == CYLINDRICAL && COMPONENTS == 3)
+        if constexpr (dir==IDIR) {
+          // Conserve angular momentum, hence flux is R*Bphi
+          Ax[iMPHI] *= FABS(x1m(i));
+          if constexpr(Phys::mhd) {
+            Ax[iBPHI] = 1.0;    // corrected Flux is simply Bphi
+          }
         }
-      }
-#endif // GEOMETRY==POLAR OR CYLINDRICAL
+      #endif // GEOMETRY==POLAR OR CYLINDRICAL
 
-#if GEOMETRY == SPHERICAL
-      if constexpr(dir==IDIR) {
-  #if COMPONENTS == 3
-        Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(x1m(i));
-  #endif // COMPONENTS == 3
-        if constexpr(Phys::mhd) {
-          if(Ax<SMALL_NUMBER) Ax=SMALL_NUMBER;    // avoid singularity around poles
-          EXPAND(                                            ,
-              Flux(iBTH,k,j,i)  = Flux(iBTH,k,j,i) * x1m(i) / Ax;  ,
-              Flux(iBPHI,k,j,i) = Flux(iBPHI,k,j,i) * x1m(i) / Ax; )
+      #if GEOMETRY == SPHERICAL
+        if constexpr(dir==IDIR) {
+          #if COMPONENTS == 3
+            Ax[iMPHI] *= FABS(x1m(i));
+          #endif // COMPONENTS == 3
+          if constexpr(Phys::mhd) {
+            EXPAND(                                            ,
+                Ax[iBTH]  = x1m(i);  ,
+                Ax[iBPHI]  = x1m(i); )
+          }// Phys::mhd
+        } else if constexpr (dir==JDIR) {
+          #if COMPONENTS == 3
+              Ax[iMPHI] *= FABS(sinx2m(j));
+              if constexpr(Phys::mhd) {
+                Ax[iBPHI] = 1.0; // corrected Flux is simply Bphi
+              }
+          #endif // COMPONENTS = 3
         }
-      } else if constexpr (dir==JDIR) {
-  #if COMPONENTS == 3
-        Flux(iMPHI,k,j,i) = Flux(iMPHI,k,j,i) * FABS(sinx2m(j));
-        if constexpr(Phys::mhd) {
-          if(Ax<SMALL_NUMBER) Ax=SMALL_NUMBER;    // avoid singularity around poles
-          Flux(iBPHI,k,j,i) = Flux(iBPHI,k,j,i)  / Ax;
-        }
-  #endif // COMPONENTS = 3
+      #endif // GEOMETRY == SPHERICAL
+
+      // Finally correct the flux
+      for(int nv = 0 ; nv < Phys::nvar ; nv++) {
+        Flux(nv,k,j,i) = Flux(nv,k,j,i) * Ax[nv];
       }
-#endif // GEOMETRY == SPHERICAL
     }
 };
 
@@ -361,7 +363,7 @@ struct Fluid_CalcRHSFunctor {
         #if (GEOMETRY == SPHERICAL) && (COMPONENTS == 3)
           rhs[iMPHI] /= FABS(sinx2(j));
           if constexpr(Phys::mhd) {
-            rhs[iBPHI] = -dt / (rt(i)*dx(j)) * (Flux(iBPHI, k, j+1, i) - Flux(iBPHI, k, j, i));
+            rhs[iBPHI] = -dt / (x1(i)*dx(j)) * (Flux(iBPHI, k, j+1, i) - Flux(iBPHI, k, j, i));
           } // MHD
         #endif // GEOMETRY
       }
@@ -470,12 +472,18 @@ struct Fluid_CalcRHSFunctor {
 
     // Body force
     if(needBodyForce) {
-      rhs[MX1+dir] += dt * Vc(RHO,k,j,i) * bodyForce(dir,k,j,i);
+      real bf = bodyForce(dir,k,j,i);
+      #if GEOMETRY == CARTESIAN
+        if(haveFargo && dir==IDIR) {
+          // Remove Body force that is already compensated by Fargo shear*Rotation
+          bf -= -2*Omega*sbS * x1(i);
+        }
+      #endif
+      rhs[MX1+dir] += dt * Vc(RHO,k,j,i) * bf;
       if constexpr(Phys::pressure) {
         //  rho * v . f, where rhov is taken as a  volume average of Flux(RHO)
         rhs[ENG] += HALF_F * dtdV * dl *
-                      (Flux(RHO,k,j,i) + Flux(RHO, k+koffset, j+joffset, i+ioffset)) *
-                        bodyForce(dir,k,j,i);
+                      (Flux(RHO,k,j,i) + Flux(RHO, k+koffset, j+joffset, i+ioffset)) * bf;
       } // Pressure
 
       // Particular cases if we do not sweep all of the components

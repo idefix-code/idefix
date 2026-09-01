@@ -1,0 +1,14 @@
+target-version = "py310"
+
+[lint]
+select = [
+    "F",    # pyflakes
+    "B",    # flake8-bugbear
+    "I",    # isort
+    "NPY",  # numpy-specific rules
+]
+ignore = [
+    # allow `import *`
+    "F403", # undefined-local-with-import-star
+    "F405", # undefined-local-with-import-star-usage
+]

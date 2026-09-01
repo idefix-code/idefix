@@ -20,11 +20,11 @@ algorithm is essentially the same (but with some major modification to its struc
 ================
 Requirements
 ================
-*Idefix* is written is standard C++17 and does not rely on any external library in serial (non MPI).
+*Idefix* is written is standard C++20 and does not rely on any external library in serial (non MPI).
 
 Compiler
-  *Idefix* requires a C++17 compatible compiler. It has been tested successfully with GCC (>8), Intel compiler suite (>2018) and
-  Clang on both Intel and AMD CPUs. *Idefix* has also been tested on NVIDIA GPUs (Pascal, Volta and Ampere architectures) using the nvcc (>10) compiler, and on AMD GPUs (Radeon Mi50, Mi210, Mi250) using the hipcc compiler.
+  *Idefix* requires a C++20 compatible compiler. It has been tested successfully with GCC (>11), Intel compiler suite (>2022) and
+  Clang on both Intel and AMD CPUs. *Idefix* has also been tested on NVIDIA GPUs (Pascal, Volta and Ampere architectures) using the nvcc (>12) compiler, and on AMD GPUs (Radeon Mi50, Mi210, Mi250, Mi300) using the hipcc compiler.
 
 Kokkos library
   *Idefix* relies internally on the `Kokkos <https://github.com/kokkos/kokkos>`_ library, which is bundled with *Idefix* as a git submodule and compiled on the fly, hence no external installation is required.
@@ -32,6 +32,10 @@ Kokkos library
 MPI library
   When using MPI parallelisation, *Idefix* relies on an external MPI library. *Idefix* has been tested successfully with OpenMPI and IntelMPI libraries. When used on GPU architectures, *Idefix* assumes that
   the MPI library is GPU-Aware. If unsure, check this last point with your system administrator.
+
+Python
+  When using *Idefix* with its python interface through the module `Pydefix`, *Idefix* relies on an external python>=3.10 interpreter with the module `pybind11 <https://pybind11.readthedocs.io>`_
+  installed.
 
 ================
 Features
@@ -80,8 +84,14 @@ Jonah Mauxion
 Clément Robert
   gitlab integration, linter
 
-Jean Kempf & François Rincon
-    anisotropic diffusion
+Jean Kempf, Victor Reville, François Rincon
+  anisotropic diffusion and collisionless thermal conduction
+
+Marc Coiffier
+  Continuous integration, automatic benchmarking
+
+Sébastien Valat
+   Continuous integration
 
 ========================
 About this documentation
@@ -115,6 +125,7 @@ The Idefix collaboration benefited from funding from the “Programme National d
    reference
    modules
    programmingguide
+   testing
    performances
    kokkos
    contributing

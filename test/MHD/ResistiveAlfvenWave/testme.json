@@ -1,0 +1,24 @@
+{
+    "namings": "ini,mpi",
+    "default": {
+        "dumpname": "dump.0001.dmp",
+        "noplot": true,
+        "single": false,
+        "reconstruction": 2,
+        "tolerance": 1e-14
+    },
+    "variants": [
+        {
+            "ini": ["idefix.ini","idefix-rkl.ini"],
+            "mpi": [false, true]
+        }
+    ],
+    "when": {
+        "conditions": {
+            "ini": "idefix-rkl.ini"
+        },
+        "apply" : {
+            "tolerance": 1e-10
+        }
+    }
+}

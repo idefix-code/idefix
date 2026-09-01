@@ -199,7 +199,7 @@ double TimeIntegrator::ComputeBalance() {
     #ifdef WITH_MPI
       const double allowedImbalance = 20.0;
       std::vector<double> computeLogPerCore(idfx::psize);
-      MPI_Gather(&computeLastLog, 1, MPI_DOUBLE, computeLogPerCore.data(), 1, MPI_DOUBLE, 0,
+      idfx::MPI_Gather(&computeLastLog, 1, MPI_DOUBLE, computeLogPerCore, 1, MPI_DOUBLE, 0,
                   MPI_COMM_WORLD);
       computeLastLog = 0; // reset timer for all cores
       if(idfx::prank==0) {
@@ -219,24 +219,29 @@ double TimeIntegrator::ComputeBalance() {
         }
         computeMean /= idfx::psize;
         imbalance = (computeMax-computeMin)/computeMean*100;
-
-        if(imbalance>allowedImbalance ) {
-          idfx::cout << "-------------------------------------------------------------"<< std::endl;
-          idfx::cout << "Warning: MPI imbalance found in this run " << std::endl;
-          idfx::cout << std::fixed;
-          for(int i = 0 ; i < idfx::psize ; i++) {
-            if(computeLogPerCore[i]/computeMean - 1> allowedImbalance/2/100) {
-              idfx::cout << "+" << 100*(computeLogPerCore[i]/computeMean-1)
-                        << "% (proc " << i << ")" << std::endl;
+        // only show warnings if the imbalance is higher than 20%on GPUs
+        #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_SYCL)
+          if(imbalance>allowedImbalance ) {
+            idfx::cout << "-------------------------------------------------------------"
+                        << std::endl;
+            idfx::cout << "Warning: MPI imbalance found in this run " << std::endl;
+            idfx::cout << std::fixed;
+            for(int i = 0 ; i < idfx::psize ; i++) {
+              if(computeLogPerCore[i]/computeMean - 1> allowedImbalance/2/100) {
+                idfx::cout << "+" << 100*(computeLogPerCore[i]/computeMean-1)
+                          << "% (proc " << i << ")" << std::endl;
+              }
+              if(1-computeLogPerCore[i]/computeMean > allowedImbalance/2/100) {
+                idfx::cout << "-" << 100*(1-computeLogPerCore[i]/computeMean)
+                                  << "% (proc " << i << ")" << std::endl;
+              }
             }
-            if(1-computeLogPerCore[i]/computeMean > allowedImbalance/2/100) {
-              idfx::cout << "-" << 100*(1-computeLogPerCore[i]/computeMean)
-                                << "% (proc " << i << ")" << std::endl;
-            }
+            idfx::cout << "You should probably check these nodes are running properly."
+                        << std::endl;
+            idfx::cout << "-------------------------------------------------------------"
+                        << std::endl;
           }
-          idfx::cout << "You should probably check these nodes are running properly." << std::endl;
-          idfx::cout << "-------------------------------------------------------------"<< std::endl;
-        }
+        #endif
       }
     #endif
     return(imbalance);

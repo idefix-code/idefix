@@ -103,7 +103,7 @@ Laplacian::Laplacian(DataBlock *datain, std::array<LaplacianBoundaryType,3> left
     std::vector<int> mapVars;
     mapVars.push_back(ntarget);
 
-    this->mpi.Init(data->mygrid, mapVars, this->nghost.data(), this->np_int.data());
+    this->mpi.Init(data->mygrid, mapVars, nghost, np_int, datain->lbound, datain->rbound, false);
   #endif
 
   idfx::popRegion();
@@ -170,7 +170,7 @@ void Laplacian::InitInternalGrid() {
      });
 
   // Check that all is well
-  IdefixArray1D<real>::HostMirror xH = Kokkos::create_mirror_view(x1l);
+  IdefixArray1D<real>::host_mirror_type xH = Kokkos::create_mirror_view(x1l);
   Kokkos::deep_copy(xH, x1l);
 
   if(xH(0)<0.0) {

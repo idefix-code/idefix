@@ -81,7 +81,7 @@ class SubGrid {
           parentGrid(grid), type(type), direction(d) {
             idfx::pushRegion("SubGrid::SubGrid()");
             // Find the index of the current subgrid.
-            auto x = Kokkos::create_mirror_view(parentGrid->x[direction]);
+            auto x = Kokkos::create_mirror_view(Kokkos::HostSpace(), parentGrid->x[direction]);
             Kokkos::deep_copy(x,parentGrid->x[direction]);
             int iref = -1;
             for(int i = 0 ; i < x.extent(0) - 1 ; i++) {

@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+# load ICC compiler env
+if [ "$IDEFIX_COMPILER" == icc ]; then
+    source /opt/intel/oneapi/setvars.sh
+fi
+
+# enable bash features
+set -ue
+
+# load python venv if present
+if [ -d .venv ]; then
+    source .venv/bin/activate
+fi
+
+# to get access to idefix ./pytools/ module in python code
+if [[ -v PYTHONPATH ]]; then
+    export PYTHONPATH="${PWD}:${PYTHONPATH}"
+else
+    export PYTHONPATH="${PWD}"
+fi
+
+# run the test the old way (still possible up to now)
+#cd "$1"
+#./testme.py "${@:2}"
+
+# run the test the new way (via pytest)
+./test.py -subdir "$@"

@@ -15,6 +15,11 @@ repos:
       - id: check-added-large-files
         args: ['--maxkb=100'] ## prevent files larger than 100kB from being commited (exclude git lfs files)
 
+  - repo: https://github.com/zizmorcore/zizmor-pre-commit
+    rev: v1.23.1
+    hooks:
+    - id: zizmor
+
   - repo: https://github.com/Lucas-C/pre-commit-hooks-nodejs
     rev: v1.1.2
     hooks:
@@ -23,20 +28,15 @@ repos:
 
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.9
+    rev: v0.15.8
     hooks:
-      - id: ruff
-        args:
-        - --quiet
-        - --fix
-        - --select
-        - F # pyflakes
-        - B # flake8-bugbear
-        - I # isort
-        - NPY # numpy-specific rules
+      - id: ruff-format
+        args: [--target-version=py310]
+      - id: ruff-check
+        args: [--target-version=py310, --quiet, --fix, --show-fixes]
 
-  - repo: https://github.com/neutrinoceros/inifix
-    rev: v5.0.2
+  - repo: https://github.com/la-niche/inifix-pre-commit
+    rev: v1.0.0
     hooks:
       - id: inifix-format
 

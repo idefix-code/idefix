@@ -25,7 +25,6 @@
 #if COMPONENTS == 3
   #define EXPAND(a,b,c) a b c
   #define SELECT(a,b,c) c
-
 #endif
 
 #if DIMENSIONS == 1

@@ -18,6 +18,9 @@
 #ifdef WITH_HDF5
 #include "xdmf.hpp"
 #endif
+#ifdef WITH_PYTHON
+#include "pydefix.hpp"
+#endif
 #include "dump.hpp"
 #include "slice.hpp"
 
@@ -78,6 +81,14 @@ class Output {
 
   bool haveSlices = false;
   std::vector<std::unique_ptr<Slice>> slices;
+
+  #ifdef WITH_PYTHON
+    Pydefix pydefix;
+    bool pythonEnabled = false;
+    real pythonPeriod;
+    real pythonLast;
+    real pythonNumber;
+  #endif
 
   Kokkos::Timer timer;
   double elapsedTime{0.0};

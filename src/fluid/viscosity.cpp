@@ -111,9 +111,9 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
   IdefixArray1D<real> x1l = this->data->xl[IDIR];
   IdefixArray1D<real> x2l = this->data->xl[JDIR];
   IdefixArray1D<real> x3l = this->data->xl[KDIR];
-  IdefixArray1D<real> dx1 = this->data->dx[IDIR];
-  IdefixArray1D<real> dx2 = this->data->dx[JDIR];
-  IdefixArray1D<real> dx3 = this->data->dx[KDIR];
+  IdefixArray1D<real> dx1Array = this->data->dx[IDIR];
+  IdefixArray1D<real> dx2Array = this->data->dx[JDIR];
+  IdefixArray1D<real> dx3Array = this->data->dx[KDIR];
 
   // Fargo variables use to correct energy fluxes
   #if HAVE_ENERGY
@@ -129,6 +129,14 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
   IdefixArray1D<real> tanx2m = this->data->tanx2m;
   #endif
 
+  // Coarsening parameters
+  bool haveGridCoarsening = data->haveGridCoarsening != GridCoarsening::disabled;
+  bool haveGridCoarseningX1 = data->coarseningDirection[IDIR];
+  bool haveGridCoarseningX2 = data->coarseningDirection[JDIR];
+  bool haveGridCoarseningX3 = data->coarseningDirection[KDIR];
+  auto coarseningLevelX1 = data->coarseningLevel[IDIR];
+  auto coarseningLevelX2 = data->coarseningLevel[JDIR];
+  auto coarseningLevelX3 = data->coarseningLevel[KDIR];
 
   HydroModuleStatus haveViscosity = this->status.status;
 
@@ -201,18 +209,42 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
           etaC2 = eta2 = eta2Constant;
         }
 
-        EXPAND(  dVxi = D_DX_I(Vc,VX1)/dx1(i); ,
-                  dVyi = D_DX_I(Vc,VX2)/dx1(i); ,
-                  dVzi = D_DX_I(Vc,VX3)/dx1(i); )
+        // Compute spacing
+        real dx1 = dx1Array(i);
+        real dx2 = dx2Array(j);
+        real dx3 = dx3Array(k);
+
+        // Correct spacing for grid coarsening
+
+        if(haveGridCoarsening) {
+          if(haveGridCoarseningX1) {
+            const int factor =  1 << (coarseningLevelX1(k,j) - 1);
+            dx1 *= factor;
+          }
+
+          if(haveGridCoarseningX2) {
+            const int factor =  1 << (coarseningLevelX2(k,i) - 1);
+            dx2 *= factor;
+          }
+
+          if(haveGridCoarseningX3) {
+            const int factor =  1 << (coarseningLevelX3(j,i) - 1);
+            dx3 *= factor;
+          }
+        }
+
+        EXPAND(  dVxi = D_DX_I(Vc,VX1)/dx1; ,
+                  dVyi = D_DX_I(Vc,VX2)/dx1; ,
+                  dVzi = D_DX_I(Vc,VX3)/dx1; )
 
         #if DIMENSIONS >= 2
-          EXPAND(  dVxj = D_DY_I(Vc,VX1)/dx2(j); ,
-                    dVyj = D_DY_I(Vc,VX2)/dx2(j); ,
-                    dVzj = D_DY_I(Vc,VX3)/dx2(j); )
+          EXPAND(  dVxj = D_DY_I(Vc,VX1)/dx2; ,
+                    dVyj = D_DY_I(Vc,VX2)/dx2; ,
+                    dVzj = D_DY_I(Vc,VX3)/dx2; )
           #if DIMENSIONS == 3
-            dVxk = D_DZ_I(Vc,VX1)/dx3(k);
-            dVyk = D_DZ_I(Vc,VX2)/dx3(k);
-            dVzk = D_DZ_I(Vc,VX3)/dx3(k);
+            dVxk = D_DZ_I(Vc,VX1)/dx3;
+            dVyk = D_DZ_I(Vc,VX2)/dx3;
+            dVzk = D_DZ_I(Vc,VX3)/dx3;
           #endif
         #endif
 
@@ -234,14 +266,14 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
           tau_xy = eta1*(dVxj + dVyi);
           SELECT(  ,
                     ,
-                  tau_xz = eta1*0.5*(x1(i)+x1(i-1))/dx1(i)
+                  tau_xz = eta1*0.5*(x1(i)+x1(i-1))/dx1
                           *(Vc(VX3,k,j,i)/x1(i) - Vc(VX3,k,j,i-1)/x1(i-1)); )
 
           tau_xz = eta1*(dVxk + dVzi);
 
           // compute tau_zz at cell center
-          divV = D_EXPAND(  0.5*(Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i-1))/dx1(i) + Vc(VX1,k,j,i)/x1(i),
-                            +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)                      ,
+          divV = D_EXPAND(  0.5*(Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i-1))/dx1 + Vc(VX1,k,j,i)/x1(i),
+                            +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2                      ,
                                                                                                   );
           tau_zz = 2.0*etaC1*Vc(VX1,k,j,i)/x1(i) + (etaC2 - (2.0/3.0)*etaC1)*divV;
 
@@ -269,14 +301,14 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
 
 
           // compute tau_yy at cell center
-          divV = D_EXPAND(  0.5*(Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i-1))/dx1(i) + Vc(VX1,k,j,i)/x1(i),
-                            +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i)                ,
-                            +0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3(k)                      );
+          divV = D_EXPAND(  0.5*(Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i-1))/dx1 + Vc(VX1,k,j,i)/x1(i),
+                            +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2/x1(i)                ,
+                            +0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3                      );
 
           #if DIMENSIONS == 1
             tau_yy = 2.0*etaC1*( Vc(VX1,k,j,i)/x1(i)) + (etaC2 - (2.0/3.0)*etaC1)*divV;
           #else
-            tau_yy = 2.0*etaC1*( 0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i)
+            tau_yy = 2.0*etaC1*( 0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2/x1(i)
                                 + Vc(VX1,k,j,i)/x1(i))
                                 + (etaC2 - (2.0/3.0)*etaC1)*divV;
           #endif
@@ -325,14 +357,14 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
 
           // Compute tau_yy and tau_zz at cell center
 
-          divV = D_EXPAND( 0.5*(Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i-1))/dx1(i) + 2.0*Vc(VX1,k,j,i)/x1(i),
-                            +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i)
+          divV = D_EXPAND( 0.5*(Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i-1))/dx1 + 2.0*Vc(VX1,k,j,i)/x1(i),
+                            +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2/x1(i)
                             +Vc(VX2,k,j,i)/x1(i)*tan_1                                        ,
-                            +0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3(k)/x1(i)*s_1 );
+                            +0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3/x1(i)*s_1 );
 
           tau_yy = Vc(VX1,k,j,i)/x1(i);
           #if DIMENSIONS >= 2
-            tau_yy += 0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i);
+            tau_yy += 0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2/x1(i);
           #endif
           tau_yy = 2.0*etaC1*tau_yy + (etaC2-2.0/3.0*etaC1)*divV;
 
@@ -341,7 +373,7 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
             tau_zz += Vc(VX2,k,j,i)*tan_1/x1(i);
           #endif
           #if DIMENSIONS == 3
-            tau_zz += 0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3(k)/x1(i)*s_1;
+            tau_zz += 0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3/x1(i)*s_1;
           #endif
           tau_zz = 2.0*etaC1*tau_zz + (etaC2-2.0/3.0*etaC1)*divV;
 
@@ -426,18 +458,41 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
         etaC2 = eta2 = eta2Constant;
       }
 
-      EXPAND(  dVxi = D_DX_J(Vc,VX1)/dx1(i); ,
-                dVyi = D_DX_J(Vc,VX2)/dx1(i); ,
-                dVzi = D_DX_J(Vc,VX3)/dx1(i); )
+      // Compute spacing
+      real dx1 = dx1Array(i);
+      real dx2 = dx2Array(j);
+      real dx3 = dx3Array(k);
 
-      EXPAND(  dVxj = D_DY_J(Vc,VX1)/dx2(j); ,
-                dVyj = D_DY_J(Vc,VX2)/dx2(j); ,
-                dVzj = D_DY_J(Vc,VX3)/dx2(j); )
+      // Correct spacing for grid coarsening
+      if(haveGridCoarsening) {
+        if(haveGridCoarseningX1) {
+          const int factor =  1 << (coarseningLevelX1(k,j) - 1);
+          dx1 *= factor;
+        }
+
+        if(haveGridCoarseningX2) {
+          const int factor =  1 << (coarseningLevelX2(k,i) - 1);
+          dx2 *= factor;
+        }
+
+        if(haveGridCoarseningX3) {
+          const int factor =  1 << (coarseningLevelX3(j,i) - 1);
+          dx3 *= factor;
+        }
+      }
+
+      EXPAND(  dVxi = D_DX_J(Vc,VX1)/dx1; ,
+                dVyi = D_DX_J(Vc,VX2)/dx1; ,
+                dVzi = D_DX_J(Vc,VX3)/dx1; )
+
+      EXPAND(  dVxj = D_DY_J(Vc,VX1)/dx2; ,
+                dVyj = D_DY_J(Vc,VX2)/dx2; ,
+                dVzj = D_DY_J(Vc,VX3)/dx2; )
 
       #if DIMENSIONS == 3
-        dVxk = D_DZ_J(Vc,VX1)/dx3(k);
-        dVyk = D_DZ_J(Vc,VX2)/dx3(k);
-        dVzk = D_DZ_J(Vc,VX3)/dx3(k);
+        dVxk = D_DZ_J(Vc,VX1)/dx3;
+        dVyk = D_DZ_J(Vc,VX2)/dx3;
+        dVzk = D_DZ_J(Vc,VX3)/dx3;
       #endif
 
       #if GEOMETRY == CARTESIAN
@@ -508,8 +563,8 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
                         + dVzk/x1(i)*s_1 );
 
         // tau_xy is initially cell centered since it is involved in the source term
-        tau_xy = etaC1*( 0.5*(Vc(VX1,k,j+1,i)-Vc(VX1,k,j-1,i))/x1(i)/dx2(j)
-                        +0.5*(Vc(VX2,k,j,i+1)-Vc(VX2,k,j,i-1))/dx1(i)
+        tau_xy = etaC1*( 0.5*(Vc(VX1,k,j+1,i)-Vc(VX1,k,j-1,i))/x1(i)/dx2
+                        +0.5*(Vc(VX2,k,j,i+1)-Vc(VX2,k,j,i-1))/dx1
                             - Vc(VX2,k,j,i)/x1(i));
         tau_yy = 2.0*eta1*(dVyj/x1(i) + vx1i/x1(i)) + (eta2 - (2.0/3.0)*eta1)*divV;
 
@@ -539,17 +594,17 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
           s_1 = ONE_F/s_1;
         }
 
-        divV = D_EXPAND( 0.5*(Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i-1))/dx1(i) + 2.0*Vc(VX1,k,j,i)/x1(i),
-                          +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2(j)/x1(i)
+        divV = D_EXPAND( 0.5*(Vc(VX1,k,j,i+1) - Vc(VX1,k,j,i-1))/dx1 + 2.0*Vc(VX1,k,j,i)/x1(i),
+                          +0.5*(Vc(VX2,k,j+1,i) - Vc(VX2,k,j-1,i))/dx2/x1(i)
                           +Vc(VX2,k,j,i)/x1(i)*tan_1                                              ,
-                          +0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3(k)/x1(i)*s_1 );
+                          +0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3/x1(i)*s_1 );
 
         tau_zz = Vc(VX1,k,j,i)/x1(i);
         #if COMPONENTS >= 2
           tau_zz += Vc(VX2,k,j,i)/x1(i)*tan_1;
         #endif
         #if DIMENSIONS == 3
-          tau_zz += 0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3(k)/x1(i)*s_1;
+          tau_zz += 0.5*(Vc(VX3,k+1,j,i) - Vc(VX3,k-1,j,i))/dx3/x1(i)*s_1;
         #endif
         tau_zz = 2*eta1*tau_zz + (eta2-2.0/3.0*eta1)*divV;
 
@@ -639,15 +694,38 @@ void Viscosity::AddViscousFlux(int dir, const real t, const IdefixArray4D<real> 
         etaC2 = eta2 = eta2Constant;
       }
 
-      dVxi = D_DX_K(Vc,VX1)/dx1(i);
-      dVyi = D_DX_K(Vc,VX2)/dx1(i);
-      dVzi = D_DX_K(Vc,VX3)/dx1(i);
-      dVxj = D_DY_K(Vc,VX1)/dx2(j);
-      dVyj = D_DY_K(Vc,VX2)/dx2(j);
-      dVzj = D_DY_K(Vc,VX3)/dx2(j);
-      dVxk = D_DZ_K(Vc,VX1)/dx3(k);
-      dVyk = D_DZ_K(Vc,VX2)/dx3(k);
-      dVzk = D_DZ_K(Vc,VX3)/dx3(k);
+      // Compute spacing
+      real dx1 = dx1Array(i);
+      real dx2 = dx2Array(j);
+      real dx3 = dx3Array(k);
+
+      // Correct spacing for grid coarsening
+      if(haveGridCoarsening) {
+        if(haveGridCoarseningX1) {
+          const int factor =  1 << (coarseningLevelX1(k,j) - 1);
+          dx1 *= factor;
+        }
+
+        if(haveGridCoarseningX2) {
+          const int factor =  1 << (coarseningLevelX2(k,i) - 1);
+          dx2 *= factor;
+        }
+
+        if(haveGridCoarseningX3) {
+          const int factor =  1 << (coarseningLevelX3(j,i) - 1);
+          dx3 *= factor;
+        }
+      }
+
+      dVxi = D_DX_K(Vc,VX1)/dx1;
+      dVyi = D_DX_K(Vc,VX2)/dx1;
+      dVzi = D_DX_K(Vc,VX3)/dx1;
+      dVxj = D_DY_K(Vc,VX1)/dx2;
+      dVyj = D_DY_K(Vc,VX2)/dx2;
+      dVzj = D_DY_K(Vc,VX3)/dx2;
+      dVxk = D_DZ_K(Vc,VX1)/dx3;
+      dVyk = D_DZ_K(Vc,VX2)/dx3;
+      dVzk = D_DZ_K(Vc,VX3)/dx3;
 
       #if GEOMETRY == CARTESIAN
         divV = dVxi + dVyj + dVzk;

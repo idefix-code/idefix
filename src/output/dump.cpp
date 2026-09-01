@@ -20,11 +20,11 @@
 #include <string>
 #include <cstdio>
 #include "dump.hpp"
-#include "version.hpp"
 #include "dataBlockHost.hpp"
 #include "gridHost.hpp"
 #include "output.hpp"
 #include "fluid.hpp"
+#include "version.h"
 
 // Max size of array name
 #define  NAMESIZE     16
@@ -71,7 +71,7 @@ void Dump::CreateMPIDataType(GridBox gb, bool read) {
     int size[3];
     int subsize[3];
 
-    // the grid is required to now the current MPÏ domain decomposition
+    // the grid is required to know the current MPÏ domain decomposition
     Grid *grid = data->mygrid;
 
     // Dimensions for cell-centered fields
@@ -880,7 +880,7 @@ int Dump::Write(Output& output) {
 
   char header[HEADERSIZE];
   std::snprintf(header, HEADERSIZE, "Idefix %s Dump Data %s endian",
-                IDEFIX_VERSION, endian.c_str());
+                VersionInfo::version, endian.c_str());
   WriteString(fileHdl, header, HEADERSIZE);
 
   for(int dir = 0; dir < 3 ; dir++) {

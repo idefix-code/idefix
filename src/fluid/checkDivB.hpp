@@ -30,14 +30,23 @@ real Fluid<Phys>::CheckDivB() {
     data->beg[IDIR], data->end[IDIR],
     KOKKOS_LAMBDA (int k, int j, int i, real &divBmax) {
       [[maybe_unused]] real dB1,dB2,dB3;
+      [[maybe_unused]] real d1, d2, d3;
 
       dB1=dB2=dB3=ZERO_F;
+      d1=d2=d3=ZERO_F;
 
       D_EXPAND( dB1=(Ax1(k,j,i+1)*Vs(BX1s,k,j,i+1)-Ax1(k,j,i)*Vs(BX1s,k,j,i));  ,
                 dB2=(Ax2(k,j+1,i)*Vs(BX2s,k,j+1,i)-Ax2(k,j,i)*Vs(BX2s,k,j,i));  ,
                 dB3=(Ax3(k+1,j,i)*Vs(BX3s,k+1,j,i)-Ax3(k,j,i)*Vs(BX3s,k,j,i));  )
 
-      divBmax=FMAX(FABS(D_EXPAND(dB1, +dB2, +dB3))/dV(k,j,i),divBmax);
+      D_EXPAND( d1=0.5*(Ax1(k,j,i+1) + Ax1(k,j,i));  ,
+                d2=0.5*(Ax2(k,j+1,i) + Ax2(k,j,i));  ,
+                d3=0.5*(Ax3(k+1,j,i) + Ax3(k,j,i));  )
+
+
+      const real amplitude = D_EXPAND( d1, + d2, + d3 );
+
+      divBmax=FMAX(FABS(D_EXPAND(dB1, +dB2, +dB3))/amplitude,divBmax);
     },
     Kokkos::Max<real>(divB) // reduction
   );

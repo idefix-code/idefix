@@ -9,8 +9,8 @@
 #include <cstdio>
 #include "../idefix.hpp"
 #include "dataBlock.hpp"
-#include "version.hpp"
 #include "fluid.hpp"
+#include "version.h"
 
 #define  NAMESIZE     16
 #define  HEADERSIZE 128
@@ -45,14 +45,15 @@ void DataBlock::DumpToFile(std::string filebase)  {
 
 
   // TODO(lesurg) Make datablock a friend of hydro to get the Riemann flux?
-  //IdefixArray4D<real>::HostMirror locFlux = Kokkos::create_mirror_view(this->hydro->FluxRiemann);
+  //IdefixArray4D<real>::host_mirror_type locFlux = Kokkos::create_mirror_view(Kokkos::HostSpace(),
+  //                                                                     this->hydro->FluxRiemann);
   //Kokkos::deep_copy(locFlux, this->FluxRiemann);
 #if MHD == YES
 
 
-  IdefixArray4D<real>::HostMirror locJ;
+  IdefixArray4D<real>::host_mirror_type locJ;
   if(hydro->haveCurrent) {
-    locJ = Kokkos::create_mirror_view(this->hydro->J);
+    locJ = Kokkos::create_mirror_view(Kokkos::HostSpace(), this->hydro->J);
     Kokkos::deep_copy(locJ, this->hydro->J);
   }
 #endif
@@ -77,11 +78,11 @@ void DataBlock::DumpToFile(std::string filebase)  {
 
   // Write Header
   char header[HEADERSIZE];
-  std::snprintf(header, HEADERSIZE, "Idefix %s Debug DataBlock", IDEFIX_VERSION);
+  std::snprintf(header, HEADERSIZE, "Idefix %s Debug DataBlock", VersionInfo::version);
   fwrite (header, sizeof(char), HEADERSIZE, fileHdl);
 
   // Write Vc
-  IdefixArray4D<real>::HostMirror locVc = Kokkos::create_mirror_view(this->hydro->Vc);
+  IdefixArray4D<real>::host_mirror_type locVc = Kokkos::create_mirror_view(this->hydro->Vc);
   Kokkos::deep_copy(locVc,this->hydro->Vc);
   dims[0] = this->np_tot[IDIR];
   dims[1] = this->np_tot[JDIR];
@@ -93,7 +94,7 @@ void DataBlock::DumpToFile(std::string filebase)  {
   WriteVariable(fileHdl, 4, dims, fieldName, locVc.data());
 
   if (this->gravity->haveSelfGravityPotential) {
-    IdefixArray3D<real>::HostMirror locPot = Kokkos::create_mirror_view(this->gravity->phiP);
+    IdefixArray3D<real>::host_mirror_type locPot = Kokkos::create_mirror_view(this->gravity->phiP);
     Kokkos::deep_copy(locPot, this->gravity->phiP);
 
     dims[3] = 1;
@@ -120,7 +121,8 @@ void DataBlock::DumpToFile(std::string filebase)  {
   // Write Vs
 #if MHD == YES
   // Write Vs
-  IdefixArray4D<real>::HostMirror locVs = Kokkos::create_mirror_view(this->hydro->Vs);
+  IdefixArray4D<real>::host_mirror_type locVs = Kokkos::create_mirror_view(Kokkos::HostSpace(),
+                                                                     this->hydro->Vs);
   Kokkos::deep_copy(locVs,this->hydro->Vs);
   dims[0] = this->np_tot[IDIR]+IOFFSET;
   dims[1] = this->np_tot[JDIR]+JOFFSET;
@@ -137,7 +139,8 @@ void DataBlock::DumpToFile(std::string filebase)  {
   dims[2] = this->np_tot[KDIR];
 
   std::snprintf(fieldName,NAMESIZE,"Ex3");
-  IdefixArray3D<real>::HostMirror locE = Kokkos::create_mirror_view(this->hydro->emf->ez);
+  IdefixArray3D<real>::host_mirror_type locE = Kokkos::create_mirror_view(Kokkos::HostSpace(),
+                                                                    this->hydro->emf->ez);
   Kokkos::deep_copy(locE,this->hydro->emf->ez);
   WriteVariable(fileHdl, 3, dims, fieldName, locE.data());
 
@@ -152,7 +155,8 @@ void DataBlock::DumpToFile(std::string filebase)  {
 
 
   if(hydro->haveCurrent) {
-    IdefixArray4D<real>::HostMirror locJ = Kokkos::create_mirror_view(this->hydro->J);
+    IdefixArray4D<real>::host_mirror_type locJ = Kokkos::create_mirror_view(Kokkos::HostSpace(),
+                                                                      this->hydro->J);
     Kokkos::deep_copy(locJ,this->hydro->J);
     dims[0] = this->np_tot[IDIR];
     dims[1] = this->np_tot[JDIR];

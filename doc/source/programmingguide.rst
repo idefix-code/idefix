@@ -355,13 +355,13 @@ fills the following arrays (essentially grid information) with data from its par
 
 .. code-block:: c++
 
-  IdefixArray1D<real>::HostMirror x[3];   // geometrical central points
-  IdefixArray1D<real>::HostMirror xr[3];  // cell right interface
-  IdefixArray1D<real>::HostMirror xl[3];  // cell left interface
-  IdefixArray1D<real>::HostMirror dx[3];  // cell width
+  IdefixArray1D<real>::host_mirror_type x[3];   // geometrical central points
+  IdefixArray1D<real>::host_mirror_type xr[3];  // cell right interface
+  IdefixArray1D<real>::host_mirror_type xl[3];  // cell left interface
+  IdefixArray1D<real>::host_mirror_type dx[3];  // cell width
 
-  IdefixArray3D<real>::HostMirror dV;     // cell volume
-  IdefixArray3D<real>::HostMirror A[3];   // cell right interface area
+  IdefixArray3D<real>::host_mirror_type dV;     // cell volume
+  IdefixArray3D<real>::host_mirror_type A[3];   // cell right interface area
 
 
 Note however that the physics arrays are not automatically synchronized when ``DataBlockHost`` is
@@ -369,17 +369,17 @@ created, that is:
 
 .. code-block:: c++
 
-  IdefixArray4D<real>::HostMirror Vc;     // Main cell-centered primitive variables index
-  IdefixArray4D<real>::HostMirror Vs;     // Main face-centered primitive variables index
-  IdefixArray4D<real>::HostMirror J;      // Current (only when haveCurrent is enabled)
-  IdefixArray4D<real>::HostMirror Uc;     // Main cell-centered conservative variables
-  IdefixArray3D<real>::HostMirror InvDt;
+  IdefixArray4D<real>::host_mirror_type Vc;     // Main cell-centered primitive variables index
+  IdefixArray4D<real>::host_mirror_type Vs;     // Main face-centered primitive variables index
+  IdefixArray4D<real>::host_mirror_type J;      // Current (only when haveCurrent is enabled)
+  IdefixArray4D<real>::host_mirror_type Uc;     // Main cell-centered conservative variables
+  IdefixArray3D<real>::host_mirror_type InvDt;
 
-  IdefixArray3D<real>::HostMirror Ex1;    // x1 electric field
-  IdefixArray3D<real>::HostMirror Ex2;    // x2 electric field
-  IdefixArray3D<real>::HostMirror Ex3;    // x3 electric field
+  IdefixArray3D<real>::host_mirror_type Ex1;    // x1 electric field
+  IdefixArray3D<real>::host_mirror_type Ex2;    // x2 electric field
+  IdefixArray3D<real>::host_mirror_type Ex3;    // x3 electric field
 
-need to be synchronized *manually*. These IdefixArrays are all defined as ``HostMirror``, implying that they are accessible
+need to be synchronized *manually*. These IdefixArrays are all defined as ``host_mirror_type``, implying that they are accessible
 from the host only. If modifications are performed on the arrays of the
 parent ``DataBlock``, one can call ``DataBlockHost::SyncFromDevice()`` to refresh the host arrays,
 and inversely one can call ``DataBlockHost::SyncToDevice()`` to send data from ``DataBlockHost``
@@ -489,7 +489,36 @@ For the CSV constructor, ``nDim`` can only have the values 1 or 2.
 
 .. note::
   The input CSV file is allowed to contain comments, starting with "#". Any character following
-  "#" is ignored by the ``LookupTable`` class.
+  "#" is ignored by the ``LookupTable`` class. Hence, a line starting with "#" is entirely ignored,
+  and so are empty lines and lines made only of white spaces. Comments and blank lines can therefore
+  be inserted anywhere in the file, including before the first line of the table.
+
+By default, the coordinates and the data are read as *lines* of the CSV file, as in the examples above. For 1D lookup
+tables, they can also be read as *columns* of the CSV file, using the optional argument ``readColumns`` of the constructor:
+
+.. code-block:: c++
+
+  template <int nDim>
+  LookupTable<nDim>::LookupTable(std::string filename, char delimiter,
+                                 bool errorIfOutOfBound, bool readColumns);
+
+With ``readColumns=true``, the 1D lookup table is read from the two first columns of the file, the first one
+giving the coordinates and the second one the data:
+
+.. list-table:: example1D_col.csv
+  :widths: 25 25
+  :header-rows: 0
+
+  * - x\ :sub:`1`
+    - data\ :sub:`1`
+  * - x\ :sub:`2`
+    - data\ :sub:`2`
+  * - x\ :sub:`3`
+    - data\ :sub:`3`
+
+.. note::
+  ``readColumns`` is only available for 1D lookup tables. 2D lookup tables are always read as lines,
+  following the layout of ``example2D.csv`` above.
 
 
 Numpy constructor
@@ -506,6 +535,60 @@ the constructor expects a vector of size ``nDim`` of .npy files for the 1D coord
 
 
 Note that the template parameter ``nDim`` should match the number of dimensions of the numpy array stored in the file ``dataSet``.
+
+Interpolation in function space
++++++++++++++++++++++++++++++++
+
+By default, ``LookupTable`` performs a multi-linear interpolation directly on the coordinates ``x`` and the data
+of the table. For data spanning several orders of magnitude (cooling tables, opacity tables, etc...), it is often
+more accurate to interpolate the data in *function space*, i.e. to interpolate ``func(data)`` as a function of
+``func(x)``, and to transform the interpolated value back with the inverse function ``invFunc``. This is enabled with
+the optional argument ``interpolateInFuncSpace`` accepted by each of the constructors:
+
+.. code-block:: c++
+
+  // 1D CSV table read as columns, interpolated in log space
+  LookupTable<1> table("cooling.csv", ',', true, true, true);
+
+  // 3D numpy table, interpolated in log space
+  LookupTable<3> tablenpy(coordinates, "data.npy", true, true);
+
+When this option is enabled, ``func`` is applied to the coordinates and to the data when the table is constructed
+(so that ``xinHost``, ``xinDev``, ``dataHost`` and ``dataDev`` all store transformed values), the interpolation is
+performed in that space, and ``Get`` and ``GetHost`` return ``invFunc`` of the interpolated value. The coordinates
+passed to ``Get`` and ``GetHost``, as well as the value they return, are therefore always expressed in the original
+(untransformed) space.
+
+``func`` and ``invFunc`` default to the natural logarithm and the exponential (the functors ``LookupTableLog`` and
+``LookupTableExp``). They can be changed when the lookup table is created, using the two optional template parameters
+of ``LookupTable``, which expect functors defining ``operator()(const real)``. This operator should be decorated with
+``KOKKOS_INLINE_FUNCTION``, so that the transformation can be used both on the host and on the device:
+
+.. code-block:: c++
+
+  // A user-defined transformation and its inverse
+  struct MyLog10 {
+    KOKKOS_INLINE_FUNCTION real operator() (const real x) const {
+      return(log10(x));
+    }
+  };
+
+  struct MyPow10 {
+    KOKKOS_INLINE_FUNCTION real operator() (const real x) const {
+      return(pow(10.0,x));
+    }
+  };
+
+  // A 1D CSV table interpolated in log10 space
+  LookupTable<1, MyLog10, MyPow10> table("cooling.csv", ',', true, true, true);
+
+Instances of these functors can also be given as the last two arguments of the constructors, which is useful when the
+transformation carries a state (e.g. a tunable exponent).
+
+.. warning::
+  The transformation is applied to every coordinate and to every element of the data. Since the default transformation
+  is the natural logarithm, the whole table should be strictly positive when the default ``func`` is used, otherwise
+  ``LookupTable`` triggers an error while it is being constructed.
 
 Using the lookup table
 ++++++++++++++++++++++
@@ -534,6 +617,116 @@ The ``Get`` and ``GetHost`` functions expect a C array of size ``nDim`` and retu
   y[0] = 3.0]
   y[1] = -1.0;
   real result = csv.GetHost(y);
+
+
+Accessing the neighbours used for the interpolation
++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+In addition to the interpolated value, ``LookupTable`` can return the elements of the table which surround the
+requested coordinates, i.e. the ones the interpolation is computed from. This is useful to implement a custom
+interpolation or reconstruction (e.g. a power law between two nodes), to estimate a local slope, or simply to
+check which part of the table is being used. Four methods are available, ``GetNeighbours`` and ``GetNeighboursIndx``
+on the device, and ``GetNeighboursHost`` and ``GetNeighboursIndxHost`` on the host:
+
+.. code-block:: c++
+
+  // Coordinates and data of the neighbours (device and host)
+  void GetNeighbours(const real x[nDim], real xN[2*nDim], real dataN[1 << nDim]);
+  void GetNeighboursHost(const real x[nDim], real xN[2*nDim], real dataN[1 << nDim]);
+
+  // Indices of the same neighbours (device and host)
+  void GetNeighboursIndx(const real x[nDim], int idx[nDim], int dataIdx[1 << nDim]);
+  void GetNeighboursIndxHost(const real x[nDim], int idx[nDim], int dataIdx[1 << nDim]);
+
+These methods do not return anything, but they fill the arrays which are given to them:
+
+* ``xN[2*n]`` and ``xN[2*n+1]`` are the two coordinates of the table bracketing ``x[n]`` along the dimension ``n``.
+* ``dataN[v]`` is the data on the vertex ``v`` of the cell surrounding ``x``. Since a cell of a ``nDim`` table has
+  ``2^nDim`` vertices, ``dataN`` has ``1 << nDim`` elements. The bit ``n`` of ``v`` tells whether the vertex is on
+  the right (1) or on the left (0) of the dimension ``n``: in 2D, ``dataN[0]``, ``dataN[1]``, ``dataN[2]`` and
+  ``dataN[3]`` are therefore the data in (x\ :sub:`i`, y\ :sub:`j`), (x\ :sub:`i+1`, y\ :sub:`j`),
+  (x\ :sub:`i`, y\ :sub:`j+1`) and (x\ :sub:`i+1`, y\ :sub:`j+1`).
+* ``idx[n]`` is the index of the left neighbour along the dimension ``n`` (the right one being ``idx[n]+1``).
+* ``dataIdx[v]`` is the index of the vertex ``v`` in the data array of the table, following the same convention as
+  ``dataN``, so that ``dataN[v]`` and ``dataHost(dataIdx[v])`` refer to the same element.
+
+For instance, the 2D table ``example2D.csv`` above, interpolated in (x=2.1, y=3.5), gives:
+
+.. code-block:: c++
+
+  real x[2];
+  x[0] = 2.1;
+  x[1] = 3.5;
+
+  real xN[4];        // 2 coordinates for each of the 2 dimensions
+  real dataN[4];     // 2^2 vertices
+  int idx[2];
+  int dataIdx[4];
+
+  csv.GetNeighboursHost(x, xN, dataN);
+  csv.GetNeighboursIndxHost(x, idx, dataIdx);
+
+  // xN[0] and xN[1] now bracket x[0], while xN[2] and xN[3] bracket x[1], and the interpolated
+  // value returned by csv.GetHost(x) can be recomputed from dataN:
+  real dx = (x[0]-xN[0])/(xN[1]-xN[0]);
+  real dy = (x[1]-xN[2])/(xN[3]-xN[2]);
+  real value = (1-dx)*(1-dy)*dataN[0] + dx*(1-dy)*dataN[1]
+             + (1-dx)*dy*dataN[2] + dx*dy*dataN[3];
+
+The same methods without the ``Host`` suffix can be called from within an ``idefix_for`` loop, the arrays being then
+local to the loop.
+
+Both ``Get`` and the methods above search the table for the cell surrounding the requested coordinates. When the
+interpolated value *and* its neighbours are needed for the same coordinates, this search can be performed only once,
+by handing the same ``LookupTableSearchCache<nDim>`` structure to each of them: whichever is called first searches the
+table and stores the result in the structure, and the ones called next reuse it instead of searching the table again.
+The order in which they are called is irrelevant, ``Get`` can fill the structure for ``GetNeighbours`` and
+``GetNeighboursIndx``, or the other way around.
+
+.. code-block:: c++
+
+  idefix_for("loop",0, 10, KOKKOS_LAMBDA (int i) {
+    real x[2];
+    x[0] = 2.1;
+    x[1] = 3.5;
+
+    // The search performed by Get is stored in neighbours...
+    LookupTableSearchCache<2> neighbours;
+    real value = csv.Get(x, neighbours);
+
+    // ... and is reused by the two methods below, which do not search the table again
+    real xN[4];
+    real dataN[4];
+    int idx[2];
+    int dataIdx[4];
+    csv.GetNeighbours(x, neighbours, xN, dataN);
+    csv.GetNeighboursIndx(x, neighbours, idx, dataIdx);
+  });
+
+The very same methods are available on the host, as ``GetHost``, ``GetNeighboursHost`` and ``GetNeighboursIndxHost``.
+The structure gives access to the search itself, ``neighbours.idx[n]`` being the index of the left neighbour along
+the dimension ``n``, and ``neighbours.delta[n]`` the elementary ratio used to weight the two neighbours of that
+dimension.
+
+.. note::
+  The stored search is only reused when the coordinates it was computed for are the ones being requested. Calling
+  ``GetNeighbours`` or ``GetNeighboursIndx`` with different coordinates simply searches the table again, and updates
+  the structure accordingly, so that a ``LookupTableSearchCache`` can be reused from one point to the next.
+
+.. warning::
+  The ``LookupTableSearchCache`` structure is declared *per thread*, and not by the lookup table itself: when it is used inside an
+  ``idefix_for`` loop, it should be declared *inside* the loop, so that each thread has its own copy. A lookup table
+  is shared by all of the threads of a loop, and can therefore not store anything of the sort itself.
+
+.. note::
+  When the table is interpolated in function space (see above), ``xN`` and ``dataN`` are returned in the original
+  space of the table, i.e. ``invFunc`` is applied to the values which are stored in ``xin`` and ``data``. The
+  indices returned by ``GetNeighboursIndx`` are of course not affected by the transformation.
+
+.. note::
+  The search of the neighbours follows exactly the same rules as ``Get``: an out of bound coordinate triggers an
+  error when ``errorIfOutOfBound`` is enabled, and is otherwise clamped to the closest cell of the table. If one of
+  the requested coordinates is a nan, ``xN`` and ``dataN`` are filled with nans, and ``idx`` and ``dataIdx`` with -1.
 
 
 .. note::
@@ -644,6 +837,27 @@ To enable them, use the `-D Idefix_RUNTIME_CHECKS=ON` configuration flag.
 It may also be useful to implement debug-only safeguards with custom logic that doesn't
 fit `RUNTIME_CHECK_*` macros. This can be achieved by using the compiler directive
 `#ifdef RUNTIME_CHECKS` directly.
+
+Dump an array to a file
+-----------------------
+
+It is usually difficult to know what Idefix arrays effectively contains, especially when running on GPU.
+To help with this difficulty, Idefix provides a global function ``DumpArray`` that can be used
+to dump a ``IdefixArray`` to a numpy file (that can be read from python). This feature can be used
+for debugging purpose as:
+
+
+.. code-block:: c++
+
+  #include "idefix.hpp"
+
+  IdefixArray3D<real> myArray("debugMe",10,10,10);
+
+  idfx::DumpArray("myFilename.npy",myArray); // Dump the array content to a numpy file named "myFilename.npy"
+
+
+Note that the array is automatically transfered from the GPU, if needed.
+
 
 Minimal skeleton
 ================

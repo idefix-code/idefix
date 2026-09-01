@@ -83,9 +83,6 @@ struct Fluid_AddSourceTermsFunctor {
         Uc(MX1,k,j,i) +=   TWO_F * dt * Vc(RHO,k,j,i) * OmegaZ * Vc(VX2,k,j,i);
         Uc(MX2,k,j,i) += - TWO_F * dt * Vc(RHO,k,j,i) * OmegaZ * Vc(VX1,k,j,i);
       }
-      if(haveFargo) {
-        Uc(MX1,k,j,i) +=   TWO_F * dt * Vc(RHO,k,j,i) * OmegaZ * sbS * x1(i);
-      }
     #endif
       // fetch fargo velocity when required
       [[maybe_unused]] real fargoV = ZERO_F;

@@ -22,45 +22,36 @@ void Axis::ShowConfig() {
 }
 
 
-void Axis::SymmetrizeEx1Side(int jref) {
+void Axis::SymmetrizeEx1Side(int jref, IdefixArray3D<real> Ex1) {
 #if DIMENSIONS == 3
 
-  IdefixArray3D<real> Ex1 = this->ex;
-  IdefixArray1D<real> Ex1Avg = this->Ex1Avg;
+  auto Ex1Avg = this->Ex1Avg.deviceView();
 
-  if(isTwoPi) {
-    idefix_for("Ex1_ini",0,data->np_tot[IDIR],
-        KOKKOS_LAMBDA(int i) {
-          Ex1Avg(i) = ZERO_F;
-        });
-
-    idefix_for("Ex1_Symmetrize",data->beg[KDIR],data->end[KDIR],0,data->np_tot[IDIR],
-      KOKKOS_LAMBDA(int k,int i) {
-        Kokkos::atomic_add(&Ex1Avg(i),  Ex1(k,jref,i));
+  idefix_for("Ex1_ini",0,data->np_tot[IDIR],
+      KOKKOS_LAMBDA(int i) {
+        Ex1Avg(i) = ZERO_F;
       });
-    if(needMPIExchange) {
-      #ifdef WITH_MPI
-        Kokkos::fence();
-        // sum along all of the processes on the same r
-        MPI_Allreduce(MPI_IN_PLACE, Ex1Avg.data(), data->np_tot[IDIR], realMPI,
-                      MPI_SUM, data->mygrid->AxisComm);
-      #endif
-    }
 
-    int ncells=data->mygrid->np_int[KDIR];
-
-    idefix_for("Ex1_Store",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
+  idefix_for("Ex1_Symmetrize",data->beg[KDIR],data->end[KDIR],0,data->np_tot[IDIR],
     KOKKOS_LAMBDA(int k,int i) {
-      Ex1(k,jref,i) = Ex1Avg(i)/((real) ncells);
+      Kokkos::atomic_add(&Ex1Avg(i),  Ex1(k,jref,i));
     });
-  } else {
-    // if we're not doing full two pi, the flow is symmetric with respect to the axis, and the axis
-    // EMF is simply zero
-    idefix_for("Ex1_Store",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
-    KOKKOS_LAMBDA(int k,int i) {
-      Ex1(k,jref,i) = ZERO_F;
-    });
+  if(needMPIExchange) {
+    #ifdef WITH_MPI
+      Kokkos::fence();
+      // sum along all of the processes on the same r
+      idfx::MPI_Allreduce(MPI_IN_PLACE, this->Ex1Avg, data->np_tot[IDIR], realMPI,
+                    MPI_SUM, data->mygrid->AxisComm);
+    #endif
   }
+
+  int ncells=data->mygrid->np_int[KDIR];
+
+  idefix_for("Ex1_Store",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
+  KOKKOS_LAMBDA(int k,int i) {
+    Ex1(k,jref,i) = Ex1Avg(i)/((real) ncells);
+  });
+
 #endif
 }
 
@@ -71,9 +62,7 @@ void Axis::SymmetrizeEx1Side(int jref) {
 // Hence, we enforce a regularisation of Ex3 for consistancy.
 
 
-void Axis::RegularizeEx3side(int jref) {
-  IdefixArray3D<real> Ex3 = this->ez;
-
+void Axis::RegularizeEx3side(int jref, IdefixArray3D<real> Ex3) {
   idefix_for("Ex3_Regularise",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
     KOKKOS_LAMBDA(int k,int i) {
       Ex3(k,jref,i) = 0.0;
@@ -99,10 +88,11 @@ void Axis::RegularizeCurrentSide(int side) {
       jc = data->end[JDIR]-1;
       sign = -1;
     }
-    IdefixArray1D<real> BAvg = this->Ex1Avg;
-    IdefixArray1D<real> x2 = data->x[JDIR];
+    auto BAvg = this->Ex1Avg.deviceView();
+    auto BAvgComm = this->Ex1Avg;
     IdefixArray1D<real> x1 = data->x[IDIR];
     IdefixArray1D<real> dx3 = data->dx[KDIR];
+    IdefixArray1D<real> dx2 = data->dx[JDIR];
 
     idefix_for("B_ini",0,data->np_tot[IDIR],
           KOKKOS_LAMBDA(int i) {
@@ -118,7 +108,7 @@ void Axis::RegularizeCurrentSide(int side) {
       #ifdef WITH_MPI
         Kokkos::fence();
         // sum along all of the processes on the same r
-        MPI_Allreduce(MPI_IN_PLACE, BAvg.data(), data->np_tot[IDIR], realMPI,
+        MPI_Allreduce(MPI_IN_PLACE, BAvgComm, data->np_tot[IDIR], realMPI,
                       MPI_SUM, data->mygrid->AxisComm);
       #endif
     }
@@ -128,12 +118,11 @@ void Axis::RegularizeCurrentSide(int side) {
     real deltaPhi = data->mygrid->xend[KDIR] - data->mygrid->xbeg[KDIR];
 
     // Use the circulation around the pole of Bphi to determine Jr on the pole:
-    // Delta phi r^2(1-cos theta) Jr = int r sin(theta) Bphi dphi
+    // 1/2*Delta phi r^2 sin theta^2 Jr = int r sin(theta) Bphi dphi
 
     idefix_for("fixJ",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
         KOKKOS_LAMBDA(int k,int i) {
-          real th = x2(jc);
-          real fact = sign*sin(th)/(deltaPhi*x1(i)*(1-cos(th)));
+          real fact = 2*sign/(deltaPhi*x1(i)*dx2(jc));
           J(IDIR, k,js,i) = BAvg(i)*fact;
         });
 
@@ -142,18 +131,20 @@ void Axis::RegularizeCurrentSide(int side) {
 
 // Average the Emf component along the axis
 
-void Axis::RegularizeEMFs() {
+void Axis::RegularizeEMFs(IdefixArray3D<real> ex,
+                          IdefixArray3D<real> ey,
+                          IdefixArray3D<real> ez) {
   idfx::pushRegion("Axis::RegularizeEMFs");
 
   if(this->axisLeft) {
     int jref = data->beg[JDIR];
-    SymmetrizeEx1Side(jref);
-    RegularizeEx3side(jref);
+    SymmetrizeEx1Side(jref, ex);
+    RegularizeEx3side(jref, ez);
   }
   if(this->axisRight) {
     int jref = data->end[JDIR];
-    SymmetrizeEx1Side(jref);
-    RegularizeEx3side(jref);
+    SymmetrizeEx1Side(jref, ex);
+    RegularizeEx3side(jref, ez);
   }
 
   idfx::popRegion();
@@ -179,7 +170,7 @@ void Axis::FixBx2sAxis(int side) {
   // Compute the values of Bx and By that are consistent with BX2 along the axis
   #if DIMENSIONS == 3
     IdefixArray4D<real> Vs = this->Vs;
-    IdefixArray2D<real> BAvg = this->BAvg;
+    auto BAvg = this->BAvg.deviceView();
     IdefixArray1D<real> phi = data->x[KDIR];
 
     int jin = 0;
@@ -218,7 +209,7 @@ void Axis::FixBx2sAxis(int side) {
       Kokkos::fence();
       #ifdef WITH_MPI
         // sum along all of the processes on the same r
-        MPI_Allreduce(MPI_IN_PLACE, BAvg.data(), 2*data->np_tot[IDIR], realMPI,
+        idfx::MPI_Allreduce(MPI_IN_PLACE, this->BAvg, 2*data->np_tot[IDIR], realMPI,
                       MPI_SUM, data->mygrid->AxisComm);
       #endif
     }
@@ -358,65 +349,28 @@ void Axis::EnforceAxisBoundary(int side) {
 
 // Reconstruct Bx2s taking care of the sides where an axis is lying
 
-void Axis::ReconstructBx2s() {
-  idfx::pushRegion("Axis::ReconstructBx2s");
+void Axis::RegularizeBX2s() {
+  idfx::pushRegion("Axis::RegularizeBX2s");
 #if DIMENSIONS >= 2 && MHD == YES
   IdefixArray4D<real> Vs = this->Vs;
-  IdefixArray3D<real> Ax1=data->A[IDIR];
-  IdefixArray3D<real> Ax2=data->A[JDIR];
-  IdefixArray3D<real> Ax3=data->A[KDIR];
-  int nstart = data->beg[JDIR]-1;
-  int nend = data->end[JDIR];
-  int ntot = data->np_tot[JDIR];
-
-  bool haveleft = axisLeft;
-  bool haveright = axisRight;
-
-  if(haveleft) {
-    // This loop is a copy of ReconstructNormalField, with the proper sign when we cross the axis
-    idefix_for("Axis::ReconstructBX2sLeft",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
-      KOKKOS_LAMBDA (int k, int i) {
-        for(int j = nstart ; j>=0 ; j-- ) {
-          Vs(BX2s,k,j,i) = 1.0 / Ax2(k,j,i) * ( Ax2(k,j+1,i)*Vs(BX2s,k,j+1,i)
-                      +(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
-                                                                                                ,
-                            - ( Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i)
-                                                            - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))));
-        }
-      }
-    );
-  }
-  if(haveright) {
-    // This loop is a copy of ReconstructNormalField, with the proper sign when we cross the axis
-    idefix_for("Axis::ReconstructBX2sRight",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
-      KOKKOS_LAMBDA (int k, int i) {
-        for(int j = nend ; j<ntot ; j++ ) {
-          Vs(BX2s,k,j+1,i) = 1.0 / Ax2(k,j+1,i) * ( Ax2(k,j,i)*Vs(BX2s,k,j,i)
-                      -(D_EXPAND( Ax1(k,j,i+1) * Vs(BX1s,k,j,i+1) - Ax1(k,j,i) * Vs(BX1s,k,j,i)  ,
-                                                                                                ,
-                            -  ( Ax3(k+1,j,i) * Vs(BX3s,k+1,j,i)
-                                                            - Ax3(k,j,i) * Vs(BX3s,k,j,i) ))));
-        }
-      }
-    );
-  }
 
     // Set BX2s on the axis to the average of the two agacent cells
     // This is required since Bx2s on the axis is not evolved since
     // there is no circulation around it
 
-
     int jright = data->end[JDIR];
     int jleft = data->beg[JDIR];
     if(isTwoPi) {
       #ifdef AXIS_BX2S_USE_ATHENA_REGULARISATION
-        if(haveleft) FixBx2sAxisGhostAverage(left);
-        if(haveright) FixBx2sAxisGhostAverage(right);
+        if(axisLeft) FixBx2sAxisGhostAverage(left);
+        if(axisRight) FixBx2sAxisGhostAverage(right);
       #else
-        if(haveleft) FixBx2sAxis(left);
-        if(haveright) FixBx2sAxis(right);
+        if(axisLeft) FixBx2sAxis(left);
+        if(axisRight) FixBx2sAxis(right);
       #endif
     } else {
+      bool haveleft = axisLeft;
+      bool haveright = axisRight;
       idefix_for("Axis:BoundaryAvg",0,data->np_tot[KDIR],0,data->np_tot[IDIR],
             KOKKOS_LAMBDA (int k, int i) {
               if(haveleft) {
@@ -439,12 +393,15 @@ void Axis::ExchangeMPI(int side) {
   idfx::pushRegion("Axis::ExchangeMPI");
   #ifdef WITH_MPI
   // Load  the buffers with data
-  int ibeg,iend,jbeg,jend,kbeg,kend,offset;
-  int nx,ny,nz;
-  auto bufferSend = this->bufferSend;
+  int offset;
+  int ny;
+  Buffer bufferSend = this->bufferSend;
   IdefixArray1D<int> map = this->mapVars;
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Vs = this->Vs;
+
+  //reset pointer
+  bufferSend.ResetPointer();
 
 // If MPI Persistent, start receiving even before the buffers are filled
 
@@ -452,141 +409,124 @@ void Axis::ExchangeMPI(int side) {
   MPI_Status recvStatus;
 
   double tStart = MPI_Wtime();
-  MPI_SAFE_CALL(MPI_Start(&recvRequest));
+  MPI_SAFE_CALL(idfx::MPI_Start(&recvRequest));
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // Coordinates of the ghost region which needs to be transfered
-  ibeg   = 0;
-  iend   = data->np_tot[IDIR];
-  nx     = data->np_tot[IDIR];  // Number of points in x
-  jbeg   = 0;
-  jend   = data->nghost[JDIR];
   offset = data->end[JDIR];     // Distance between beginning of left and right ghosts
   ny     = data->nghost[JDIR];
-  kbeg   = data->beg[KDIR];
-  kend   = data->end[KDIR];
-  nz     = kend - kbeg;
+
+  // Create the base box to be patched by the ops
+  BoundingBox baseBox;
+  baseBox[IDIR][0] = 0;
+  baseBox[IDIR][1] = data->np_tot[IDIR];
+  baseBox[JDIR][0] = 0;
+  baseBox[JDIR][1] = data->nghost[JDIR];
+  baseBox[KDIR][0] = data->beg[KDIR];
+  baseBox[KDIR][1] = data->end[KDIR];
+
   if(side==left) {
-    idefix_for("LoadBufferX2Vc",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
-      KOKKOS_LAMBDA (int n, int k, int j, int i) {
-        bufferSend(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ) =
-                                                          Vc(map(n),k,j+ny,i);
-      }
-    );
+    //shift by NY
+    BoundingBox sendBoxVc = baseBox;
+    sendBoxVc[JDIR][0] += ny;
+    sendBoxVc[JDIR][1] += ny;
+    bufferSend.Pack(Vc, map, sendBoxVc);
+
     if (haveMHD) {
-      int VsIndex = mapNVars*nx*ny*nz;
-      idefix_for("LoadBufferX2IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
-        KOKKOS_LAMBDA (int k, int j, int i) {
-          bufferSend(i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex ) =
-                                                          Vs(IDIR,k,j+ny,i);
-        }
-      );
-      VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz;
-      idefix_for("LoadBufferX2KDIR",kbeg,kend+1,jbeg,jend,ibeg,iend,
-        KOKKOS_LAMBDA (int k, int j, int i) {
-          bufferSend(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) =
-                                                          Vs(KDIR,k,j+ny,i);
-        }
-      );
+      //extend by one the end on idir
+      BoundingBox sendBoxVsIdir = sendBoxVc;
+      sendBoxVsIdir[IDIR][1] += 1;
+      bufferSend.Pack(Vs, IDIR, sendBoxVsIdir);
+
+      //extend by one the end on kdir
+      BoundingBox sendBoxVsKdir = sendBoxVc;
+      sendBoxVsKdir[KDIR][1] += 1;
+      bufferSend.Pack(Vs, KDIR, sendBoxVsKdir);
     } // MHD
   } else if(side==right) {
-    idefix_for("LoadBufferX2Vc",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
-      KOKKOS_LAMBDA (int n, int k, int j, int i) {
-        bufferSend(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz ) =
-                                                          Vc(map(n),k,j+offset-ny,i);
-      }
-    );
+    //shift by offset - NY (to select the right part)
+    BoundingBox sendBoxVc = baseBox;
+    sendBoxVc[JDIR][0] += offset - ny;
+    sendBoxVc[JDIR][1] += offset - ny;
+    bufferSend.Pack(Vc, map, sendBoxVc);
 
     // Load face-centered field in the buffer
      if (haveMHD) {
-      int VsIndex = mapNVars*nx*ny*nz;
-      idefix_for("LoadBufferX2IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
-        KOKKOS_LAMBDA (int k, int j, int i) {
-          bufferSend(i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex ) =
-                                                          Vs(IDIR,k,j+offset-ny,i);
-        }
-      );
-      VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz;
+      //extend by one the end on idir + take the right part or the mesh on jdir
+      BoundingBox sendBoxVsIdir = baseBox;
+      sendBoxVsIdir[IDIR][1] += 1;
+      sendBoxVsIdir[JDIR][0] += offset - ny;
+      sendBoxVsIdir[JDIR][1] += offset - ny;
+      bufferSend.Pack(Vs, IDIR, sendBoxVsIdir);
 
-      idefix_for("LoadBufferX2KDIR",kbeg,kend+1,jbeg,jend,ibeg,iend,
-        KOKKOS_LAMBDA (int k, int j, int i) {
-          bufferSend(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex ) =
-                                                          Vs(KDIR,k,j+offset-ny,i);
-        }
-      );
+      //extend by one the end on kdir + take the right part or the mesh on jdir
+      BoundingBox sendBoxVsKdir = baseBox;
+      sendBoxVsKdir[KDIR][1] += 1;
+      sendBoxVsKdir[JDIR][0] += offset - ny;
+      sendBoxVsKdir[JDIR][1] += offset - ny;
+      bufferSend.Pack(Vs, KDIR, sendBoxVsKdir);
     } // MHD
   } // side==right
 
   Kokkos::fence();
 
   tStart = MPI_Wtime();
-  MPI_SAFE_CALL(MPI_Start(&sendRequest));
-  MPI_Wait(&recvRequest,&recvStatus);
+  MPI_SAFE_CALL(idfx::MPI_Start(&sendRequest));
+  idfx::MPI_Wait(&recvRequest,&recvStatus);
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // Unpack
-  auto bufferRecv=this->bufferRecv;
+  Buffer bufferRecv=this->bufferRecv;
+  bufferRecv.ResetPointer();
   auto sVc = this->symmetryVc;
 
   if(side==left) {
-    idefix_for("StoreBufferAxis",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
-      KOKKOS_LAMBDA (int n, int k, int j, int i) {
-        Vc(map(n),k,jend-(j-jbeg)-1,i) =
-                    sVc(map(n))*bufferRecv(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz );
-      }
-    );
+    //unpack Vc
+    BoundingBox recvBoxVc = baseBox;
+    bufferRecv.UnpackJDirSymetric(Vc, map, sVc, recvBoxVc);
 
     // Load face-centered field in the buffer
     if (haveMHD) {
-      int VsIndex = mapNVars*nx*ny*nz;
       auto sVs = this->symmetryVs;
-      idefix_for("StoreBufferX2IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
-        KOKKOS_LAMBDA (int k, int j, int i) {
-          Vs(IDIR,k,jend-(j-jbeg)-1,i) =
-                    sVs(IDIR)*bufferRecv(i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex );
-        }
-      );
 
-      VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz;
+      //unpack Vs face-centered
+      BoundingBox recvBoxVsIdir = baseBox;
+      recvBoxVsIdir[IDIR][1] += 1;
+      bufferRecv.UnpackJDirSymetric(Vs, IDIR, sVs, recvBoxVsIdir);
 
-      idefix_for("StoreBufferX2KDIR",kbeg,kend+1,jbeg,jend,ibeg,iend,
-        KOKKOS_LAMBDA ( int k, int j, int i) {
-          Vs(KDIR,k,jend-(j-jbeg)-1,i) =
-                      sVs(KDIR)*bufferRecv(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
-        }
-      );
+      //unpack Vs face-centered
+      BoundingBox recvBoxVsKdir = baseBox;
+      recvBoxVsKdir[KDIR][1] += 1;
+      bufferRecv.UnpackJDirSymetric(Vs, KDIR, sVs, recvBoxVsKdir);
     }
   } else if(side==right) {
-    idefix_for("StoreBufferAxis",0,mapNVars,kbeg,kend,jbeg,jend,ibeg,iend,
-      KOKKOS_LAMBDA (int n, int k, int j, int i) {
-        Vc(map(n),k,jend-(j-jbeg)-1+offset,i) =
-                    sVc(map(n))*bufferRecv(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + n*nx*ny*nz );
-      }
-    );
+    //unpack Vc on right part
+    BoundingBox recvBoxVc = baseBox;
+    recvBoxVc[JDIR][0] += offset;
+    recvBoxVc[JDIR][1] += offset;
+    bufferRecv.UnpackJDirSymetric(Vc, map, sVc, recvBoxVc);
 
     // Load face-centered field in the buffer
     if (haveMHD) {
-      int VsIndex = mapNVars*nx*ny*nz;
       auto sVs = this->symmetryVs;
-      idefix_for("StoreBufferX2IDIR",kbeg,kend,jbeg,jend,ibeg,iend+1,
-        KOKKOS_LAMBDA (int k, int j, int i) {
-          Vs(IDIR,k,jend-(j-jbeg)-1+offset,i) =
-                      sVs(IDIR)*bufferRecv(i + (j-jbeg)*(nx+1) + (k-kbeg)*(nx+1)*ny + VsIndex );
-        }
-      );
-      VsIndex = mapNVars*nx*ny*nz + (nx+1)*ny*nz;
 
-      idefix_for("StoreBufferX2KDIR",kbeg,kend+1,jbeg,jend,ibeg,iend,
-        KOKKOS_LAMBDA ( int k, int j, int i) {
-          Vs(KDIR,k,jend-(j-jbeg)-1+offset,i) =
-                      sVs(KDIR)*bufferRecv(i + (j-jbeg)*nx + (k-kbeg)*nx*ny + VsIndex );
-        }
-      );
+      //unpack Vs face-centered on right part
+      BoundingBox recvBoxVsIdir = baseBox;
+      recvBoxVsIdir[IDIR][1] += 1;
+      recvBoxVsIdir[JDIR][0] += offset;
+      recvBoxVsIdir[JDIR][1] += offset;
+      bufferRecv.UnpackJDirSymetric(Vs, IDIR, sVs, recvBoxVsIdir);
+
+      //unpack Vs face-centered on right part
+      BoundingBox recvBoxVsKdir = baseBox;
+      recvBoxVsKdir[KDIR][1] += 1;
+      recvBoxVsKdir[JDIR][0] += offset;
+      recvBoxVsKdir[JDIR][1] += offset;
+      bufferRecv.UnpackJDirSymetric(Vs, KDIR, sVs, recvBoxVsKdir);
     } // MHD
   }
 
-  MPI_Wait(&sendRequest, &sendStatus);
-
+  idfx::MPI_Wait(&sendRequest, &sendStatus);
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
 
@@ -641,8 +581,9 @@ void Axis::InitMPI() {
     #endif  // DIMENSIONS
   }
 
-  this->bufferRecv = IdefixArray1D<real>("bufferRecvAxis", bufferSize);
-  this->bufferSend = IdefixArray1D<real>("bufferSendAxis", bufferSize);
+  //build buffers
+  this->bufferRecv = Buffer(bufferSize);
+  this->bufferSend = Buffer(bufferSize);
 
   // init persistent communications
   // We receive from procRecv, and we send to procSend
@@ -652,11 +593,11 @@ void Axis::InitMPI() {
   MPI_SAFE_CALL(MPI_Cart_shift(data->mygrid->AxisComm,0,data->mygrid->nproc[KDIR]/2,
                                &procRecv,&procSend ));
 
-  MPI_SAFE_CALL(MPI_Send_init(bufferSend.data(), bufferSize, realMPI, procSend,
-                650, data->mygrid->AxisComm, &sendRequest));
+  MPI_SAFE_CALL(idfx::MPI_Send_init(bufferSend.commView(), bufferSend.Size(),
+                realMPI, procSend, 650, data->mygrid->AxisComm, &sendRequest));
 
-  MPI_SAFE_CALL(MPI_Recv_init(bufferRecv.data(), bufferSize, realMPI, procRecv,
-                650, data->mygrid->AxisComm, &recvRequest));
+  MPI_SAFE_CALL(idfx::MPI_Recv_init(bufferRecv.commView(), bufferRecv.Size(),
+                realMPI, procRecv, 650, data->mygrid->AxisComm, &recvRequest));
 
   #endif
   idfx::popRegion();

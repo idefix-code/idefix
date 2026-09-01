@@ -18,9 +18,15 @@ void CheckConservation(DataBlock &data) {
   data.hydro->ConvertPrimToCons();
   auto Uc = data.hydro->Uc;
   auto dV = data.dV;
+  //idfx::cout << "Analysis: checking conserved quantities..." << std::endl;
+  #ifdef SINGLE_PRECISION
+    const real threshold = 1e-4;
+  #else
+    const real threshold = 1e-13;
+  #endif
   for(int nv = 0 ; nv < DefaultPhysics::nvar ; nv++) {
     real cons = 0;
-    idefix_reduce("Timestep_reduction",
+    idefix_reduce("Conserved quantity reduction",
         data.beg[KDIR], data.end[KDIR],
         data.beg[JDIR], data.end[JDIR],
         data.beg[IDIR], data.end[IDIR],
@@ -35,7 +41,7 @@ void CheckConservation(DataBlock &data) {
       consArray[nv] = cons;
     } else {
       real err = std::fabs((consArray[nv]-cons));
-      if(err>1e-13) {
+      if(err>threshold) {
         std::stringstream str;
         str << "Quantity " << data.hydro->VcName[nv] << " is not conserved" << std::endl;
         std::cout << "Error on " << data.hydro->VcName[nv] << " is " << err << std::endl;
@@ -45,6 +51,7 @@ void CheckConservation(DataBlock &data) {
     }
   }
   firstCall=false;
+  //idfx::cout << "Analysis: done." << std::endl;
 }
 
 // Initialisation routine. Can be used to allocate

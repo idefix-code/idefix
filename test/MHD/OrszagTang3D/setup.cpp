@@ -46,19 +46,11 @@ void CheckConservation(DataBlock &data) {
   }
   firstCall=false;
 }
-// Analysis function
-// This analysis checks that the restart routines are performing as they should
-void Analysis(DataBlock& data) {
-  idfx::cout << "Analysis: conservation check..." << std::endl;
-
-  CheckConservation(data);
-  idfx::cout << "Analysis: conservation check successful." << std::endl;
-
-}
 
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
+  output.EnrollAnalysis(&CheckConservation);
 }
 
 // This routine initialize the flow

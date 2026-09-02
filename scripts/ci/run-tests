@@ -46,7 +46,7 @@ module load openmpi
 if [ ${#CMAKE_OPTS[@]} -gt 0 ]; then
     # pass cmake options as a single argument so pytest does not parse -D* flags
     CMAKE_OPTS_STR="${CMAKE_OPTS[*]}"
-    ./test.py -cmake-opts "${CMAKE_OPTS_STR}" -subdir "$@"
+    ./test.py -subdir "$@" -cmake-opts "${CMAKE_OPTS_STR}"
 else
     ./test.py -subdir "$@"
 fi

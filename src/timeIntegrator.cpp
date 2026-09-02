@@ -340,6 +340,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     // Add back fargo velocity so that boundary conditions are applied on the total V
     if(data.haveFargo) data.fargo->AddVelocity(data.t);
   }
+
   /////////////////////////////////////////////////
   // END STAGES LOOP                             //
   /////////////////////////////////////////////////

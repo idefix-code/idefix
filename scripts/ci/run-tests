@@ -18,7 +18,7 @@ if [ "$IDEFIX_COMPILER" == cuda ]; then
 fi
 
 # enable bash features
-set -uex
+set -ue
 
 # load python venv if present
 if [ -d .venv ]; then
@@ -46,7 +46,7 @@ module load openmpi
 if [ ${#CMAKE_OPTS[@]} -gt 0 ]; then
     # pass cmake options as a single argument so pytest does not parse -D* flags
     CMAKE_OPTS_STR="${CMAKE_OPTS[*]}"
-    ./test.py -subdir "$@" -cmake "${CMAKE_OPTS_STR}"
+    ./test.py -subdir "$@" -cmake "${CMAKE_OPTS_STR}" -compileJobs 16
 else
-    ./test.py -subdir "$@"
+    ./test.py -subdir "$@" -compileJobs 16
 fi

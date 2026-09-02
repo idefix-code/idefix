@@ -339,15 +339,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
     // Add back fargo velocity so that boundary conditions are applied on the total V
     if(data.haveFargo) data.fargo->AddVelocity(data.t);
- 
-    // Look for Nans every now and then (this actually cost a lot of time on GPUs
-    // because streams are divergent)
-    if(ncycles%checkNanPeriodicity==0) {
-      if(data.CheckNan()>0) {
-        throw std::runtime_error(std::string("Nan found after integration cycle"));
-      }
-    }
- }
+  }
   /////////////////////////////////////////////////
   // END STAGES LOOP                             //
   /////////////////////////////////////////////////
@@ -375,6 +367,14 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
   // Launch user step last
   data.LaunchUserStepLast();
+
+  // Look for Nans every now and then (this actually cost a lot of time on GPUs
+  // because streams are divergent)
+  if(ncycles%checkNanPeriodicity==0) {
+    if(data.CheckNan()>0) {
+      throw std::runtime_error(std::string("Nan found after integration cycle"));
+    }
+  }
 
   // Update current time (should have already been done, but this gets rid of roundoff errors)
   data.t=t0+data.dt;

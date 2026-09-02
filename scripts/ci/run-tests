@@ -17,6 +17,7 @@ fi
 # load CUDA compiler env
 if [ "$IDEFIX_COMPILER" == cuda ]; then
     CMAKE_OPTS="-DCMAKE_CXX_COMPILER=clang++-21 -DCMAKE_C_COMPILER=clang-21 -DKokkos_ARCH_AMPERE86=ON"
+    module unload cuda
     module load cuda/12.8
     export CXXFLAGS=-Wno-unknown-cuda-version
 fi

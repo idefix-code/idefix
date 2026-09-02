@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -242,7 +243,8 @@ class idfxTest:
 
         # add specific options
         for opt in self.cmake:
-            comm.append(opt)
+            comm.extend(shlex.split(opt))
+            # comm.append(opt)
 
         if self.cuda:
             comm.append("-DKokkos_ENABLE_CUDA=ON")

@@ -32,13 +32,18 @@ else
     export PYTHONPATH="${PWD}"
 fi
 
+# load openmpi env
+module load openmpi
+
 # run the test the old way (still possible up to now)
 #cd "$1"
 #./testme.py "${@:2}"
 
 # run the test the new way (via pytest)
 if [ ${#CMAKE_OPTS[@]} -gt 0 ]; then
-    ./test.py -cmake-opts "${CMAKE_OPTS[@]}" -subdir "$@"
+    # pass cmake options as a single argument so pytest does not parse -D* flags
+    CMAKE_OPTS_STR="${CMAKE_OPTS[*]}"
+    ./test.py -cmake-opts "${CMAKE_OPTS_STR}" -subdir "$@"
 else
     ./test.py -subdir "$@"
 fi

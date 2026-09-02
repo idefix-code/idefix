@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Use an array to keep each CMake option as a separate argument
-CMAKE_OPTS=()
+CMAKE_OPTS=""
 
 # load ICC compiler env
 if [ "$IDEFIX_COMPILER" == icc ]; then
@@ -10,11 +10,7 @@ fi
 
 # load CUDA compiler env
 if [ "$IDEFIX_COMPILER" == cuda ]; then
-    CMAKE_OPTS+=(
-        -DCMAKE_CXX_COMPILER=clang++-21
-        -DCMAKE_C_COMPILER=clang-21
-        -DKokkos_ARCH_AMPERE86=ON
-    )
+    CMAKE_OPTS="-DCMAKE_CXX_COMPILER=clang++-21 -DCMAKE_C_COMPILER=clang-21 -DKokkos_ARCH_AMPERE86=ON"
 fi
 
 # enable bash features
@@ -43,10 +39,8 @@ module load openmpi
 #./testme.py "${@:2}"
 
 # run the test the new way (via pytest)
-if [ ${#CMAKE_OPTS[@]} -gt 0 ]; then
-    # pass cmake options as a single argument so pytest does not parse -D* flags
-    CMAKE_OPTS_STR="${CMAKE_OPTS[*]}"
-    ./test.py -subdir "$@" -cmake "${CMAKE_OPTS_STR}" -compileJobs 16
+if [[ -n "$CMAKE_OPTS" ]]; then
+    ./test.py -subdir "$@" -cmake "$CMAKE_OPTS" -compileJobs 16
 else
     ./test.py -subdir "$@" -compileJobs 16
 fi

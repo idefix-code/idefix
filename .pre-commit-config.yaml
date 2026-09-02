@@ -57,3 +57,23 @@ repos:
     hooks:
       - id: cpplint
         args: [--counting=detailed, --exclude=test/*]
+
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.38.0
+    hooks:
+    - id: check-jsonschema
+      files: ^test/.*/testme.json$
+      args: ["--schemafile", "pytools/testme.schema.json"]
+
+  - repo: local
+    hooks:
+    - id: pytest
+      name: testme.json validation
+      entry: ./test.py --validate-testme-jsons
+      language: python
+      files: ^test/.*/testme.json$
+      pass_filenames: false
+      additional_dependencies:
+        - matplotlib >= 3.5.0
+        - pytest >= 6.0
+        - jsonschema >= 4.26.0

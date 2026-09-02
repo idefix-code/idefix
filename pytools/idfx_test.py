@@ -142,6 +142,12 @@ class idfxTest:
         )
 
         parser.add_argument(
+            "--validate-testme-jsons",
+            help="Only validate the testme.json files.",
+            action="store_true",
+        )
+
+        parser.add_argument(
             "--help-pytest",
             help="Display the options you can transmit directly to pytest in addition to the specific to idefix tests.",
             action="store_true",

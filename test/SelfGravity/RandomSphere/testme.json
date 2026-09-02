@@ -3,7 +3,7 @@
     "default": {
         "dumpname": "dump.0001.dmp",
         "noplot": true,
-        "dec": ["2","2","1"],
+        "dec": [2,2,1],
         "nonRegressionTest": false,
         "tolerance": 0
     },

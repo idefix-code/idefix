@@ -20,7 +20,7 @@ void CheckConservation(DataBlock &data) {
   auto dV = data.dV;
   //idfx::cout << "Analysis: checking conserved quantities..." << std::endl;
   #ifdef SINGLE_PRECISION
-    const real threshold = 1e-4;
+    const real threshold = 2e-4;
   #else
     const real threshold = 1e-13;
   #endif

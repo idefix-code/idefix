@@ -5,6 +5,11 @@ if [ "$IDEFIX_COMPILER" == icc ]; then
     source /opt/intel/oneapi/setvars.sh
 fi
 
+# load CUDA compiler env
+if [ "$IDEFIX_COMPILER" == cuda ]; then
+    export CMAKE_OPTS="-DCMAKE_CXX_COMPILER=clang++-21 -DCMAKE_C_COMPILER=clang++ -DKokkos_ARCH_AMPERE86=ON"
+fi
+
 # enable bash features
 set -ue
 
@@ -25,4 +30,4 @@ fi
 #./testme.py "${@:2}"
 
 # run the test the new way (via pytest)
-./test.py -subdir "$@"
+./test.py -subdir "$@" -cmake-opts "$CMAKE_OPTS"

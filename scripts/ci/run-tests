@@ -3,6 +3,12 @@
 # Use an array to keep each CMake option as a separate argument
 CMAKE_OPTS=""
 
+#load module environement
+source /etc/profile.d/modules.sh
+
+# load openmpi env
+module load openmpi
+
 # load ICC compiler env
 if [ "$IDEFIX_COMPILER" == icc ]; then
     source /opt/intel/oneapi/setvars.sh
@@ -11,6 +17,8 @@ fi
 # load CUDA compiler env
 if [ "$IDEFIX_COMPILER" == cuda ]; then
     CMAKE_OPTS="-DCMAKE_CXX_COMPILER=clang++-21 -DCMAKE_C_COMPILER=clang-21 -DKokkos_ARCH_AMPERE86=ON"
+    module load cuda/12.8
+    export CXXFLAGS=-Wno-unknown-cuda-version
 fi
 
 # enable bash features
@@ -28,11 +36,6 @@ else
     export PYTHONPATH="${PWD}"
 fi
 
-#load module environement
-source /etc/profile.d/modules.sh
-
-# load openmpi env
-module load openmpi
 
 # run the test the old way (still possible up to now)
 #cd "$1"

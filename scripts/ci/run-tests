@@ -18,7 +18,7 @@ if [ "$IDEFIX_COMPILER" == cuda ]; then
 fi
 
 # enable bash features
-set -ue
+set -uex
 
 # load python venv if present
 if [ -d .venv ]; then

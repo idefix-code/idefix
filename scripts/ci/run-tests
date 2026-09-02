@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+export CMAKE_OPTS=""
 # load ICC compiler env
 if [ "$IDEFIX_COMPILER" == icc ]; then
     source /opt/intel/oneapi/setvars.sh

@@ -32,6 +32,9 @@ else
     export PYTHONPATH="${PWD}"
 fi
 
+#load module environement
+source /etc/profile.d/modules.sh
+
 # load openmpi env
 module load openmpi
 

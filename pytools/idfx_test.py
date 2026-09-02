@@ -242,7 +242,7 @@ class idfxTest:
 
         # add specific options
         for opt in self.cmake:
-            comm.append("-D" + opt)
+            comm.append(opt)
 
         if self.cuda:
             comm.append("-DKokkos_ENABLE_CUDA=ON")

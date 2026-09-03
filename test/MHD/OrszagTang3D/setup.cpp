@@ -11,11 +11,53 @@ generators on different architectures.
 
 Output* myOutput;
 int outnum;
-// Analysis function
+
+void CheckConservation(DataBlock &data) {
+  static real firstCall{true};
+  static std::array<real,DefaultPhysics::nvar> consArray;
+  data.hydro->ConvertPrimToCons();
+  auto Uc = data.hydro->Uc;
+  auto dV = data.dV;
+  //idfx::cout << "Analysis: checking conserved quantities..." << std::endl;
+  #ifdef SINGLE_PRECISION
+    const real threshold = 2e-4;
+  #else
+    const real threshold = 1e-13;
+  #endif
+  for(int nv = 0 ; nv < DefaultPhysics::nvar ; nv++) {
+    real cons = 0;
+    idefix_reduce("Conserved quantity reduction",
+        data.beg[KDIR], data.end[KDIR],
+        data.beg[JDIR], data.end[JDIR],
+        data.beg[IDIR], data.end[IDIR],
+        KOKKOS_LAMBDA (int k, int j, int i, real &c) {
+                c += dV(k,j,i)*Uc(nv,k,j,i);
+            },
+        Kokkos::Sum<real>(cons));
+    #ifdef WITH_MPI
+      MPI_Allreduce(MPI_IN_PLACE, &cons, 1, realMPI, MPI_SUM, MPI_COMM_WORLD);
+    #endif
+    if(firstCall) {
+      consArray[nv] = cons;
+    } else {
+      real err = std::fabs((consArray[nv]-cons));
+      if(err>threshold) {
+        std::stringstream str;
+        str << "Quantity " << data.hydro->VcName[nv] << " is not conserved" << std::endl;
+        std::cout << "Error on " << data.hydro->VcName[nv] << " is " << err << std::endl;
+        std::cout << "Original=" << consArray[nv] << " New=" << cons << std::endl;
+        IDEFIX_ERROR(str);
+      }
+    }
+  }
+  firstCall=false;
+  //idfx::cout << "Analysis: done." << std::endl;
+}
 
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
+  output.EnrollAnalysis(&CheckConservation);
 }
 
 // This routine initialize the flow

@@ -44,7 +44,7 @@ function(_fma_suppression_flags_cxx out_var)
     if(Kokkos_ENABLE_HIP)
         set(flags "-ffp-contract=off")
 
-    elseif(Kokkos_ENABLE_CUDA)
+    elseif(Kokkos_ENABLE_CUDA AND CMAKE_CXX_COMPILER_ID STREQUAL "NVIDIA")
         set(flags "--fmad=false")
 
     elseif(id STREQUAL "GNU")

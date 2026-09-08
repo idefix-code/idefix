@@ -73,7 +73,7 @@ add_compile_options(${Idefix_CXX_FLAGS})
 set_required_build_settings_for_GCC8()
 
 if(Idefix_WERROR)
-  if(Kokkos_ENABLE_CUDA)
+  if(Kokkos_ENABLE_CUDA AND CMAKE_CXX_COMPILER_ID STREQUAL "NVIDIA")
     add_compile_options(-Xcudafe --promote_warnings)
   else()
     add_compile_options(-Werror)

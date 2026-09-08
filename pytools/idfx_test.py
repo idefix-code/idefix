@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -88,6 +89,13 @@ class idfxTest:
             "-idefixDir",
             default=idefix_dir_env,
             help="Set directory for idefix source files (default $IDEFIX_DIR)",
+        )
+
+        parser.add_argument(
+            "-compileJobs",
+            type=int,
+            default=8,
+            help="set the number of parallel compilation jobs",
         )
 
         parser.add_argument("-mpi", help="Enable MPI", action="store_true")
@@ -241,7 +249,8 @@ class idfxTest:
 
         # add specific options
         for opt in self.cmake:
-            comm.append("-D" + opt)
+            comm.extend(shlex.split(opt))
+            # comm.append(opt)
 
         if self.cuda:
             comm.append("-DKokkos_ENABLE_CUDA=ON")
@@ -376,11 +385,11 @@ class idfxTest:
         # recreate
         os.makedirs(self.buildDir, exist_ok=False)
 
-    def compile(self, jobs=8):
-        self.addLog({"call": "compile", "args": {"jobs": jobs}})
+    def compile(self):
+        self.addLog({"call": "compile", "args": {"jobs": self.compileJobs}})
 
         try:
-            comm = ["make", "-j" + str(jobs)]
+            comm = ["make", "-j" + str(self.compileJobs)]
             self.addLog({"command": comm})
 
             print("***************************************************")

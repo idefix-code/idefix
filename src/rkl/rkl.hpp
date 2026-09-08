@@ -30,7 +30,7 @@ class RKLegendre {
   RKLegendre(Input &, Fluid<Phys>*);
   void Cycle();
   void ResetStage();
-  void ResetFlux();
+  void ResetFlux(int dir);
   void EvolveStage(real);
   template <int> void CalcParabolicRHS(real);
   void ComputeDt();
@@ -556,9 +556,9 @@ void RKLegendre<Phys>::Cycle() {
 
 
 template<typename Phys>
-void RKLegendre<Phys>::ResetFlux() {
+void RKLegendre<Phys>::ResetFlux(int dir) {
   idfx::pushRegion("RKLegendre::ResetFlux");
-  IdefixArray4D<real> Flux = hydro->FluxRiemann;
+  IdefixArray4D<real> Flux = hydro->FluxRiemann[dir];
   IdefixArray1D<int> vars = this->varList;
   idefix_for("RKL_ResetFlux",
              0,nvarRKL,
@@ -577,7 +577,6 @@ template<typename Phys>
 struct RKLegendre_ResetStageFunctor {
   explicit RKLegendre_ResetStageFunctor(RKLegendre<Phys> *rkl) {
     dU = rkl->dU;
-    Flux = rkl->hydro->FluxRiemann;
     vars = rkl->varList;
     stage = rkl->stage;
     nvar = rkl->nvarRKL;
@@ -597,7 +596,6 @@ struct RKLegendre_ResetStageFunctor {
   }
 
   IdefixArray4D<real> dU;
-  IdefixArray4D<real> Flux;
   IdefixArray1D<int> vars;
   IdefixArray4D<real> dA, dB;
   IdefixArray3D<real> ex,ey,ez;
@@ -681,7 +679,7 @@ void RKLegendre<Phys>::ComputeDt() {
 template<typename Phys>
 template<int dir>
 void RKLegendre<Phys>::LoopDir(real t) {
-    ResetFlux();
+    ResetFlux(dir);
 
     // CalcParabolicFlux
     hydro->template CalcParabolicFlux<dir>(t);
@@ -725,7 +723,7 @@ template <int dir>
 void RKLegendre<Phys>::CalcParabolicRHS(real t) {
   idfx::pushRegion("RKLegendre::CalcParabolicRHS");
 
-  IdefixArray4D<real> Flux = hydro->FluxRiemann;
+  IdefixArray4D<real> Flux = hydro->FluxRiemann[dir];
   IdefixArray3D<real> A    = data->A[dir];
   IdefixArray3D<real> dV   = data->dV;
   IdefixArray1D<real> x1m  = data->xl[IDIR];

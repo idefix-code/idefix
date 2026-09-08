@@ -65,7 +65,7 @@ void FluxBoundary(Fluid<DefaultPhysics> *hydro, int dir, BoundarySide side, cons
     if((dir==IDIR) && (side == left)) {
       // Loading needed data
       DataBlock &data = *hydro->data;
-      IdefixArray4D<real> Flux = hydro->FluxRiemann;
+      IdefixArray4D<real> Flux = hydro->FluxRiemann[dir];
       real halfDt = data.dt/2.; // RK2, dt is actually half at each flux calculation
       int iref = data.nghost[IDIR];
       real rin = data.xbeg[IDIR];

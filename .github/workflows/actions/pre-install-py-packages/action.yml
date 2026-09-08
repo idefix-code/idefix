@@ -12,4 +12,5 @@ runs:
       run: |
         python3 -m venv .venv
         source .venv/bin/activate
-        python3 -m pip install -r ./test/python_requirements.txt
+        python3 -m pip install "pip>=26.2"
+        python3 -m pip install -r ./test/pylock.toml

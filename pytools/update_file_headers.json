@@ -1,0 +1,154 @@
+{
+  "header_keys": {
+    "PROJECT": "Idefix MHD astrophysical code",
+    "DATE": "@LAST_EDIT_MONTH_YEAR@",
+    "LICENSE": "CeCILL-C"
+  },
+  "message": [
+    "Idefix MHD astrophysical code",
+    "",
+    "Source file FILE",
+    "",
+    "Copyright(C) by :",
+    "@COPYRIGHTS@",
+    "- and other code contributors",
+    "",
+    "Licensed under CeCILL 2.1 License, see COPYING for more information"
+  ],
+  "width": 86,
+  "specific": {
+  },
+  "authors_name_fixes": {
+    "Geoffroy Lesur": "Geoffroy R. J. Lesur"
+  },
+  "affiliation_domains": {
+    "geoffroy.lesur@univ-grenoble-alpes.fr": "IPAG / CNRS",
+    "sebastien.valat@univ-grenoble-alpes.fr": "IPAG / CNRS",
+    "soufiane.baghdadi@univ-grenoble-alpes.fr": "IPAG / CNRS",
+    "dutta.alankar@gmail.com": "Max Planck Institute",
+    "marc.coiffier@univ-grenoble-alpes.fr": "IPAG / CNRS"
+  },
+  "exclude_hashes": [
+  ],
+  "exclude_summary_regexps": [
+    "^copyrights:"
+  ],
+  "lang": {
+    "shell": {
+      "open_start": "",
+      "open_end": "",
+      "repeat": "#",
+      "info_open": "#",
+      "close_start": "",
+      "close_end": "",
+      "apply_on": [
+        "*.py",
+        "*.sh",
+        "*.cmake",
+        "*.cmake.in",
+        "*.spec",
+        "*.ebuild",
+        "*.sh.in",
+        "Dockerfile-*",
+        "CMakeLists.txt",
+        "options",
+        "configure",
+        "PKGBUILD",
+        "Makefile",
+        "makefile",
+        "makefile.rules",
+        "*.yml",
+        "*.toml",
+        "run-tests"
+      ]
+    },
+    "c": {
+      "open_start": "// ",
+      "open_end": "",
+      "repeat": "*",
+      "info_open": "// ",
+      "close_start": "// ",
+      "close_end": "",
+      "apply_on": [
+        "*.c",
+        "*.cpp",
+        "*.cxx",
+        "*.h",
+        "*.hpp",
+        "*.hxx",
+        "*.h.in",
+        "*.js",
+        "*.css",
+        "*.rs",
+        "*.ts",
+        "*.scss"
+      ]
+    },
+    "html": {
+      "open_start": "<!--",
+      "open_end": "",
+      "repeat": "-",
+      "info_open": "|",
+      "close_start": "",
+      "close_end": "-->",
+      "apply_on": [
+        "*.html",
+        "*.vue"
+      ]
+    },
+    "fortran": {
+      "open_start": "!",
+      "open_end": "",
+      "repeat": "-",
+      "info_open": "!",
+      "close_start": "!",
+      "close_end": "!",
+      "apply_on": [
+        "*.f90",
+        "*.f",
+        "*.F90",
+        "*.F"
+      ]
+    }
+  },
+  "exclude_files": [
+    ".version",
+    "*.yml",
+    "*.yaml",
+    "*.gitignore",
+    ".gitignore",
+    "*.json",
+    "*.md",
+    "Doxyfile",
+    "*.txt",
+    "*.xmi",
+    "*.ini",
+    "*.bat",
+    "*.ico",
+    "*.ttf",
+    "*.bz2",
+    "*.ronn",
+    "*.bowerrc",
+    "*.png",
+    "*.webp",
+    "*.jpg",
+    "*.jpeg",
+    "*.jpeg",
+    "*.rst",
+    "*.svg",
+    "*.vtk",
+    "COPYING",
+    "CPPLINT.cfg",
+    ".gitmodules",
+    ".git-blame-ignore-revs",
+    "reference",
+    "src/kokkos",
+    "*/README",
+    "*.dmp",
+    "*.dat",
+    "*.csv",
+    "*.npy"
+  ],
+  "include_files": [
+  ]
+}

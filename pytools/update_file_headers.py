@@ -336,6 +336,7 @@ class HeaderPatcher:
         self, authors_list: list, last_edit: str, infos: dict, lang: dict
     ) -> list:
         # pattern
+        max_line_length = lang["max_line_length"]
         info_open = lang["info_open"]
         open_start = lang["open_start"]
         open_end = lang["open_end"]
@@ -370,7 +371,12 @@ class HeaderPatcher:
             else:
                 years = f"{start} - {end}"
             if affiliation:
-                authors.append(f"- {name} <{email}> ({affiliation} - {years})")
+                descr = f"- {name} <{email}> ({affiliation} - {years})"
+                if len(descr) <= max_line_length:
+                    authors.append(descr)
+                else:
+                    authors.append(f"- {name} <{email}>")
+                    authors.append(f"  ({affiliation} - {years})")
             else:
                 authors.append(f"- {name} <{email}> ({years})")
 

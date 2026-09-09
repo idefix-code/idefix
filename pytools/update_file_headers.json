@@ -60,6 +60,7 @@
   ],
   "lang": {
     "shell": {
+      "max_line_length": 100,
       "open_start": "##",
       "open_end": "",
       "repeat": "#",
@@ -88,6 +89,7 @@
       ]
     },
     "c": {
+      "max_line_length": 100,
       "open_start": "// ",
       "open_end": "",
       "repeat": "*",
@@ -110,6 +112,7 @@
       ]
     },
     "html": {
+      "max_line_length": 100,
       "open_start": "<!--",
       "open_end": "",
       "repeat": "-",
@@ -122,6 +125,7 @@
       ]
     },
     "fortran": {
+      "max_line_length": 100,
       "open_start": "!",
       "open_end": "",
       "repeat": "-",

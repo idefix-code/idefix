@@ -1,7 +1,19 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
-// and other code contributors
+//
+// Source file src/main.cpp
+//
+// Last modified : 04/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG / CNRS - 2020 - 2026)
+// - Geoffroy Lesur <geoffroy@MacPro-des-Lesur.local> (2020)
+// - Soufiane Baghdadi <soufiane.baghdadi@univ-grenoble-alpes.fr> (IPAG / CNRS - 2020)
+// - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG / CNRS - 2021 - 2023)
+// - Clément Robert <cmt.robert@univ-grenoble-alpes.fr> (2022)
+// - Clément Robert <cr52@protonmail.com> (2024)
+// - and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 

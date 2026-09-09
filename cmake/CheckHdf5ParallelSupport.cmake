@@ -1,3 +1,17 @@
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file cmake/CheckHdf5ParallelSupport.cmake
+#
+# Last modified : 08/2026
+#
+# Copyright(C) by :
+# - Alankar Dutta <dutta.alankar@gmail.com> (Max Planck Institute - 2026)
+# - and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
+
 include(CheckCSourceCompiles)
 
 # Check whether the HDF5 library found by find_package(HDF5) supports parallel

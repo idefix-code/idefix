@@ -1,3 +1,18 @@
+// ***********************************************************************************
+// Idefix MHD astrophysical code
+//
+// Source file test/utils/lookupTable/main.cpp
+//
+// Last modified : 08/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG / CNRS - 2022 - 2026)
+// - Alankar Dutta <dutta.alankar@gmail.com> (Max Planck Institute - 2026)
+// - and other code contributors
+//
+// Licensed under CeCILL 2.1 License, see COPYING for more information
+// ***********************************************************************************
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>

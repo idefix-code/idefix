@@ -4,12 +4,15 @@
 #
 # Source file pytools/update_file_headers.py
 #
+# Last modified : 09/2026
+#
 # Copyright(C) by :
 # - Sebastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG / CNRS - 2026)
 # - and other code contributors
 #
 # Licensed under CeCILL 2.1 License, see COPYING for more information
 ######################################################################################
+
 ############################################################
 #
 # Imported and modified by Sébastien Valat (IPAG/CNRS)
@@ -126,15 +129,33 @@ class HeaderPatcher:
         return log
 
     def get_mail_affiliation(self, mail: str) -> str | None:
-        email = mail[1:-1]
-        domain = "@" + email.split("@")[1]
+        domain = "@" + mail.split("@")[1]
         affiliation_domains = self.config["affiliation_domains"]
         if domain in affiliation_domains:
             return affiliation_domains[domain]
-        elif email in affiliation_domains:
-            return affiliation_domains[email]
+        elif mail in affiliation_domains:
+            return affiliation_domains[mail]
         else:
             return None
+
+    def replace_mail_by_pro_mail(self, mail: str, year: int) -> str:
+        # get the db entry in config
+        db = self.config["replace_mails"]
+
+        # check if in
+        if mail in db:
+            # direct definition or per year mode
+            if isinstance(db[mail], str):
+                return db[mail]
+            elif isinstance(db[mail], list):
+                for entry in db[mail]:
+                    started = entry.get("from", 0)
+                    ended = entry.get("to", 9999)
+                    if year >= started and year <= ended:
+                        return entry["mail"]
+
+        # ok keep as it is
+        return mail
 
     def fix_name(self, name: str) -> str:
         authors_name_fixes = self.config["authors_name_fixes"]
@@ -166,21 +187,25 @@ class HeaderPatcher:
                 continue
 
             # build summary
-            author = entry["mail"]
-            name = self.fix_name(entry["name"])
-            affiliation = self.get_mail_affiliation(entry["mail"])
-            full_name = name
             date = datetime.datetime.fromtimestamp(int(entry["time"]))
             year = date.year
+            mail = self.replace_mail_by_pro_mail(entry["mail"][1:-1], year)
+            author = entry["mail"]
+            name = self.fix_name(entry["name"])
+            affiliation = self.get_mail_affiliation(mail)
+            full_name = f"{name} <{mail}>"
             month = date.month
+            if name is None:
+                continue
             if not full_name in authors:
                 authors[full_name] = {
+                    "name": name,
                     "full-name": full_name,
                     "author": author,
                     "year-start": year,
                     "year-end": year,
                     "last-month": month,
-                    "mail": entry["mail"],
+                    "mail": mail,
                     "affiliation": affiliation,
                 }
 
@@ -335,7 +360,7 @@ class HeaderPatcher:
         # add authors
         authors = []
         for author in authors_list:
-            full_name = author["full-name"]
+            name = author["name"]
             start = author["year-start"]
             end = author["year-end"]
             email = author["mail"]
@@ -345,9 +370,9 @@ class HeaderPatcher:
             else:
                 years = f"{start} - {end}"
             if affiliation:
-                authors.append(f"{full_name} {email} ({affiliation} - {years})")
+                authors.append(f"- {name} <{email}> ({affiliation} - {years})")
             else:
-                authors.append(f"{full_name} {email} ({years})")
+                authors.append(f"- {name} <{email}> ({years})")
 
         # replace in message
         msg_line: str
@@ -355,12 +380,15 @@ class HeaderPatcher:
         for msg_line in self.config["message"]:
             for key, value in infos["header"].items():
                 fixed_value = value.replace("@LAST_EDIT_MONTH_YEAR@", last_edit)
-                msg_line = msg_line.replace(key, fixed_value)
+                msg_line = msg_line.replace(f"@{key}@", fixed_value)
             if msg_line == "@COPYRIGHTS@":
                 for author in authors:
-                    header_script.append(f"{info_open} - {author}\n")
+                    header_script.append(f"{info_open}{author}\n")
             else:
-                header_script.append(f"{info_open} {msg_line}\n")
+                if msg_line == "":
+                    header_script.append(f"{info_open.strip()}\n")
+                else:
+                    header_script.append(f"{info_open}{msg_line}\n")
 
         # close
         header_script.append(f"{line_end}\n")
@@ -444,7 +472,7 @@ class HeaderPatcher:
 
         result = []
         for year in sorted(per_year.keys()):
-            auths = per_year[year]
+            auths = sorted(per_year[year], key=lambda author: author["full-name"])
             for author in auths:
                 result.append(author)
 

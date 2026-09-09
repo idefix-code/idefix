@@ -1,3 +1,19 @@
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file doc/source/plot_idefix_bench.py
+#
+# Last modified : 07/2026
+#
+# Copyright(C) by :
+# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG / CNRS - 2025)
+# - Marc Coiffier <marc.coiffier@univ-grenoble-alpes.fr> (IPAG / CNRS - 2025)
+# - Clément Robert <cr52@protonmail.com> (2026)
+# - and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
+
 import json
 
 import matplotlib.pyplot as plt

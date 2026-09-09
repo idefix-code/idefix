@@ -1,4 +1,19 @@
 #!/usr/bin/env bash
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file scripts/ci/run-tests
+#
+# Last modified : 06/2026
+#
+# Copyright(C) by :
+# - Marc Coiffier <marc.coiffier@univ-grenoble-alpes.fr> (IPAG / CNRS - 2024)
+# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG / CNRS - 2026)
+# - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG / CNRS - 2026)
+# - and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
 
 # load ICC compiler env
 if [ "$IDEFIX_COMPILER" == icc ]; then

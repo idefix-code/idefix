@@ -1,3 +1,18 @@
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file test/utils/lookupTable/testmelib.py
+#
+# Last modified : 08/2026
+#
+# Copyright(C) by :
+# - Alankar Dutta <dutta.alankar@gmail.com> (Max Planck Institute - 2026)
+# - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG / CNRS - 2026)
+# - and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
+
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 

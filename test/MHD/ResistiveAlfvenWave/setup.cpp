@@ -1,3 +1,19 @@
+// ***********************************************************************************
+// Idefix MHD astrophysical code
+//
+// Source file test/MHD/ResistiveAlfvenWave/setup.cpp
+//
+// Last modified : 11/2023
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG / CNRS - 2020 - 2023)
+// - Geoffroy Lesur <lesurg@ipag-gpu1.u-ga.fr> (2020)
+// - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG / CNRS - 2021)
+// - and other code contributors
+//
+// Licensed under CeCILL 2.1 License, see COPYING for more information
+// ***********************************************************************************
+
 #include "idefix.hpp"
 #include "setup.hpp"
 

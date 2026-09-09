@@ -5,9 +5,11 @@
     "LICENSE": "CeCILL-C"
   },
   "message": [
-    "Idefix MHD astrophysical code",
+    "@PROJECT@",
     "",
-    "Source file FILE",
+    "Source file @FILE@",
+    "",
+    "Last modified : @DATE@",
     "",
     "Copyright(C) by :",
     "@COPYRIGHTS@",
@@ -19,14 +21,37 @@
   "specific": {
   },
   "authors_name_fixes": {
-    "Geoffroy Lesur": "Geoffroy R. J. Lesur"
+    "pre-commit-ci-lite[bot]": null,
+    "Geoffroy Lesur geoffroy.lesur@univ-grenoble-alpes.fr": "Geoffroy Lesur",
+    "nscepi": "Nicolas Scepi",
+    "Soufiane BAGHDADI": "Soufiane Baghdadi",
+    "vdbma": "Marc Van den Bossche",
+    "Hal Bal": "Victor Réville"
+  },
+  "replace_mails": {
+    "sebastien.valat.dev@orange.fr": "sebastien.valat@univ-grenoble-alpes.fr",
+    "63753204+nscepi@users.noreply.github.com": "nicolas.scepi@univ-grenoble-alpes.fr",
+    "nicolas.scepi@gmail.com": "nicolas.scepi@univ-grenoble-alpes.fr",
+    "geoffroy.lesur@obs.ujf-grenoble.fr": "geoffroy.lesur@univ-grenoble-alpes.fr",
+    "93188557+vdbma@users.noreply.github.com": "vreville@irap.omp.eu",
+    "victorreville@gmail.com": "vreville@irap.omp.eu",
+    "cr52@protonmail.com": [
+      {
+        "to": 2023,
+        "mail": "clement.robert@univ-grenoble-alpes.fr"
+      }
+    ]
   },
   "affiliation_domains": {
+    "@irap.omp.eu": "IPAP",
     "geoffroy.lesur@univ-grenoble-alpes.fr": "IPAG / CNRS",
     "sebastien.valat@univ-grenoble-alpes.fr": "IPAG / CNRS",
     "soufiane.baghdadi@univ-grenoble-alpes.fr": "IPAG / CNRS",
     "dutta.alankar@gmail.com": "Max Planck Institute",
-    "marc.coiffier@univ-grenoble-alpes.fr": "IPAG / CNRS"
+    "marc.coiffier@univ-grenoble-alpes.fr": "IPAG / CNRS",
+    "clement.robert@univ-grenoble-alpes.fr": "IPAG / CNRS",
+    "nicolas.scepi@univ-grenoble-alpes.fr": "IPAG / CNRS",
+    "jonah.mauxion@univ-grenoble-alpes.fr": "IPAG / CNRS"
   },
   "exclude_hashes": [
   ],
@@ -35,11 +60,11 @@
   ],
   "lang": {
     "shell": {
-      "open_start": "",
+      "open_start": "##",
       "open_end": "",
       "repeat": "#",
-      "info_open": "#",
-      "close_start": "",
+      "info_open": "# ",
+      "close_start": "##",
       "close_end": "",
       "apply_on": [
         "*.py",
@@ -88,7 +113,7 @@
       "open_start": "<!--",
       "open_end": "",
       "repeat": "-",
-      "info_open": "|",
+      "info_open": "| ",
       "close_start": "",
       "close_end": "-->",
       "apply_on": [
@@ -100,7 +125,7 @@
       "open_start": "!",
       "open_end": "",
       "repeat": "-",
-      "info_open": "!",
+      "info_open": "! ",
       "close_start": "!",
       "close_end": "!",
       "apply_on": [

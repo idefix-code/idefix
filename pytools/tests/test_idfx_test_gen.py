@@ -1,9 +1,17 @@
-#####################################################################################
+######################################################################################
 # Idefix MHD astrophysical code
-# Copyright(C) Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr>
-# and other code contributors
+#
+# Source file pytools/tests/test_idfx_test_gen.py
+#
+# Last modified : 07/2026
+#
+# Copyright(C) by :
+# - Clément Robert <cr52@protonmail.com> (2026)
+# - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG / CNRS - 2026)
+# - and other code contributors
+#
 # Licensed under CeCILL 2.1 License, see COPYING for more information
-#####################################################################################
+######################################################################################
 
 import pytest
 

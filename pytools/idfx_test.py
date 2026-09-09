@@ -1,3 +1,19 @@
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file pytools/idfx_test.py
+#
+# Last modified : 09/2026
+#
+# Copyright(C) by :
+# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG / CNRS - 2023 - 2026)
+# - Clément Robert <cr52@protonmail.com> (2026)
+# - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG / CNRS - 2026)
+# - and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
+
 import argparse
 import json
 import os

@@ -1,3 +1,19 @@
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file pytools/sod.py
+#
+# Last modified : 07/2026
+#
+# Copyright(C) by :
+# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG / CNRS - 2020)
+# - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG / CNRS - 2021)
+# - Clément Robert <cr52@protonmail.com> (2026)
+# - and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
+
 """
 Created on Thu Mar  5 11:27:16 2020
 

@@ -11,6 +11,9 @@
 //
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
+// Other contributors :
+// - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG / CNRS - 2024)
+// ***********************************************************************************
 
 #ifndef FLUID_CALCRIGHTHANDSIDE_HPP_
 #define FLUID_CALCRIGHTHANDSIDE_HPP_

@@ -1,3 +1,21 @@
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file CMakeLists.txt
+#
+# Last modified : 08/2026
+#
+# Copyright(C) by :
+# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG / CNRS - 2021 - 2026)
+# - Soufiane Baghdadi <soufiane.baghdadi@univ-grenoble-alpes.fr> (IPAG / CNRS - 2021)
+# - Alankar Dutta <dutta.alankar@gmail.com> (Max Planck Institute - 2023 - 2026)
+# - Nicolas Aunai <nicolas.aunai@lpp.polytechnique.fr> (2024)
+# - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG / CNRS - 2026)
+# - and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
+
 cmake_minimum_required(VERSION 3.16)
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)

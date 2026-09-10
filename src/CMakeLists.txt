@@ -1,3 +1,17 @@
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file src/CMakeLists.txt
+#
+# Last modified : 04/2025
+#
+# Copyright(C) by :
+# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG / CNRS - 2021 - 2025)
+# - Soufiane Baghdadi <soufiane.baghdadi@univ-grenoble-alpes.fr> (IPAG / CNRS - 2021)
+# - and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
 
 add_subdirectory(fluid)
 add_subdirectory(dataBlock)

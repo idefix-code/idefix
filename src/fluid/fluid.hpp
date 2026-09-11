@@ -171,6 +171,10 @@ class Fluid {
   IdefixArray4D<real> J;       // Electrical current
                                // (only defined when non-ideal MHD effects are enabled)
 
+  // For muli-fluid simulations, we need to store the variables of all fluids in a single array
+  IdefixArray5D<real> AllVc;    // All cell-centered primitive variables index
+  IdefixArray5D<real> AllUc;    // All face-centered varariables
+
   // Name of the fields (used in outputs)
   std::vector<std::string> VcName;
   std::vector<std::string> VsName;
@@ -525,11 +529,31 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
   //  ALLOCATION SECION ///////////////////
   /////////////////////////////////////////
 
-  // We now allocate the fields required by the hydro solver
-  Vc = IdefixArray4D<real>(prefix+"_Vc", Phys::nvar+nTracer,
-                           data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  Uc = IdefixArray4D<real>(prefix+"_Uc", Phys::nvar+nTracer,
-                           data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+  if(std::string(Phys::prefix).compare("Dust") == 0) {
+    // Ensure Vc and Vs are subviews of the a parent array (own by the primary dust fluid object)
+    if(instanceNumber == 0) {
+      // Allocate AllVc
+      int nSpecies = input.Get<int>("Dust","nSpecies",0);
+      AllVc = IdefixArray5D<real>("Dust_AllVc", nSpecies, Phys::nvar+nTracer,
+                                 data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+      AllUc = IdefixArray5D<real>("Dust_AllUc", nSpecies, Phys::nvar+nTracer,
+                                 data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+    } else {
+      AllVc = data->dust[0]->AllVc;
+      AllUc = data->dust[0]->AllUc;
+    }
+    // Create subviews for this dust specie
+    Vc = Kokkos::subview(AllVc, instanceNumber,
+                        Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+    Uc = Kokkos::subview(AllUc, instanceNumber,
+                        Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL(), Kokkos::ALL());
+  } else {
+    // We now allocate the fields required by the hydro solver
+    Vc = IdefixArray4D<real>(prefix+"_Vc", Phys::nvar+nTracer,
+                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+    Uc = IdefixArray4D<real>(prefix+"_Uc", Phys::nvar+nTracer,
+                            data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+    }
 
   data->states["current"].PushArray(Uc, State::center, prefix+"_Uc");
 

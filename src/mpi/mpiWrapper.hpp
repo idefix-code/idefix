@@ -6,8 +6,8 @@
 // Last modified : 08/2026
 //
 // Copyright(C) by :
-// - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG / CNRS - 2026)
-// - and other code contributors
+// - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+// and other code contributors
 //
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************

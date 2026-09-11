@@ -6,9 +6,9 @@
 // Last modified : 04/2025
 //
 // Copyright(C) by :
-// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG / CNRS - 2021 - 2025)
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2025)
 // - Antonin Borderies <89980449+Anto6453@users.noreply.github.com> (2024)
-// - and other code contributors
+// and other code contributors
 //
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************

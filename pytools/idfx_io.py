@@ -6,11 +6,10 @@
 # Last modified : 07/2026
 #
 # Copyright(C) by :
-# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG / CNRS - 2021)
-# - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG / CNRS - 2022)
+# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021)
+# - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2022 - 2026)
 # - marc <vandenbossche.marc@hotmail.com> (2024)
-# - Clément Robert <cr52@protonmail.com> (2026)
-# - and other code contributors
+# and other code contributors
 #
 # Licensed under CeCILL 2.1 License, see COPYING for more information
 ######################################################################################

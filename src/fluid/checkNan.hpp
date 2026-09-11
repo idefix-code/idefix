@@ -6,10 +6,10 @@
 // Last modified : 01/2026
 //
 // Copyright(C) by :
-// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG / CNRS - 2023)
-// - Clément Robert <cr52@protonmail.com> (2024)
-// - Alankar Dutta <dutta.alankar@gmail.com> (Max Planck Institute - 2026)
-// - and other code contributors
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023)
+// - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
+// - Alankar Dutta <dutta.alankar@gmail.com> (MPA Garching - 2026)
+// and other code contributors
 //
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************

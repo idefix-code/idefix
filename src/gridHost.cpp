@@ -6,14 +6,14 @@
 // Last modified : 01/2026
 //
 // Copyright(C) by :
-// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG / CNRS - 2020 - 2024)
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2024)
 // - Geoffroy Lesur <geoffroy@MacPro-des-Lesur.local> (2020)
 // - Geoffroy Lesur <lesurg@ipag-gpu1.u-ga.fr> (2020)
-// - Soufiane Baghdadi <soufiane.baghdadi@univ-grenoble-alpes.fr> (IPAG / CNRS - 2020)
-// - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG / CNRS - 2021)
-// - Jonah Mauxion <jonah.mauxion@univ-grenoble-alpes.fr> (IPAG / CNRS - 2023)
-// - Alankar Dutta <dutta.alankar@gmail.com> (Max Planck Institute - 2026)
-// - and other code contributors
+// - Soufiane Baghdadi <soufiane.baghdadi@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020)
+// - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021)
+// - Jonah Mauxion <jonah.mauxion@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023)
+// - Alankar Dutta <dutta.alankar@gmail.com> (MPA Garching - 2026)
+// and other code contributors
 //
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************

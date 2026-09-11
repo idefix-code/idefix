@@ -6,9 +6,9 @@
 # Last modified : 07/2026
 #
 # Copyright(C) by :
-# - Clément Robert <cr52@protonmail.com> (2026)
-# - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG / CNRS - 2026)
-# - and other code contributors
+# - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+# - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+# and other code contributors
 #
 # Licensed under CeCILL 2.1 License, see COPYING for more information
 ######################################################################################

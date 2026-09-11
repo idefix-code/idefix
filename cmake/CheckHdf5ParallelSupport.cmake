@@ -6,8 +6,8 @@
 # Last modified : 08/2026
 #
 # Copyright(C) by :
-# - Alankar Dutta <dutta.alankar@gmail.com> (Max Planck Institute - 2026)
-# - and other code contributors
+# - Alankar Dutta <dutta.alankar@gmail.com> (MPA Garching - 2026)
+# and other code contributors
 #
 # Licensed under CeCILL 2.1 License, see COPYING for more information
 ######################################################################################

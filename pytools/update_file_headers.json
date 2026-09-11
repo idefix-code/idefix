@@ -13,7 +13,7 @@
     "",
     "Copyright(C) by :",
     "@COPYRIGHTS@",
-    "- and other code contributors",
+    "and other code contributors",
     "",
     "Licensed under CeCILL 2.1 License, see COPYING for more information"
   ],
@@ -33,25 +33,15 @@
     "63753204+nscepi@users.noreply.github.com": "nicolas.scepi@univ-grenoble-alpes.fr",
     "nicolas.scepi@gmail.com": "nicolas.scepi@univ-grenoble-alpes.fr",
     "geoffroy.lesur@obs.ujf-grenoble.fr": "geoffroy.lesur@univ-grenoble-alpes.fr",
-    "93188557+vdbma@users.noreply.github.com": "vreville@irap.omp.eu",
+    "93188557+vdbma@users.noreply.github.com": "mbossche@aip.de",
     "victorreville@gmail.com": "vreville@irap.omp.eu",
-    "cr52@protonmail.com": [
-      {
-        "to": 2023,
-        "mail": "clement.robert@univ-grenoble-alpes.fr"
-      }
-    ]
+    "cr52@protonmail.com": "clement.robert@univ-grenoble-alpes.fr"
   },
   "affiliation_domains": {
-    "@irap.omp.eu": "IPAP",
-    "geoffroy.lesur@univ-grenoble-alpes.fr": "IPAG / CNRS",
-    "sebastien.valat@univ-grenoble-alpes.fr": "IPAG / CNRS",
-    "soufiane.baghdadi@univ-grenoble-alpes.fr": "IPAG / CNRS",
-    "dutta.alankar@gmail.com": "Max Planck Institute",
-    "marc.coiffier@univ-grenoble-alpes.fr": "IPAG / CNRS",
-    "clement.robert@univ-grenoble-alpes.fr": "IPAG / CNRS",
-    "nicolas.scepi@univ-grenoble-alpes.fr": "IPAG / CNRS",
-    "jonah.mauxion@univ-grenoble-alpes.fr": "IPAG / CNRS"
+    "@irap.omp.eu": "IRAP",
+    "@univ-grenoble-alpes.fr": "IPAG/UGA/CNRS",
+    "dutta.alankar@gmail.com": "MPA Garching",
+    "@aip.de": "IAP Postdam"
   },
   "exclude_hashes": [
   ],

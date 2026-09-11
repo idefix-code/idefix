@@ -7,8 +7,8 @@
 # Last modified : 09/2026
 #
 # Copyright(C) by :
-# - Sebastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG / CNRS - 2026)
-# - and other code contributors
+# - Sebastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+# and other code contributors
 #
 # Licensed under CeCILL 2.1 License, see COPYING for more information
 ######################################################################################
@@ -131,10 +131,10 @@ class HeaderPatcher:
     def get_mail_affiliation(self, mail: str) -> str | None:
         domain = "@" + mail.split("@")[1]
         affiliation_domains = self.config["affiliation_domains"]
-        if domain in affiliation_domains:
-            return affiliation_domains[domain]
-        elif mail in affiliation_domains:
+        if mail in affiliation_domains:
             return affiliation_domains[mail]
+        elif domain in affiliation_domains:
+            return affiliation_domains[domain]
         else:
             return None
 

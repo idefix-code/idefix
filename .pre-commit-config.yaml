@@ -40,18 +40,6 @@ repos:
     hooks:
       - id: inifix-format
 
-  - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.5.5
-    hooks:
-      - id: remove-tabs  # auto-fix tab/space mixing
-      - id: insert-license
-        files: ^(src/).*\.(hpp|cpp)$
-        args:
-        - --license-filepath
-        - src/license_header.txt
-        - --comment-style
-        - //
-
   - repo: https://gitlab.com/daverona/pre-commit/cpp
     rev: 0.8.0
     hooks:

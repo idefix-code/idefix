@@ -1,3 +1,17 @@
+// ***********************************************************************************
+// Idefix MHD astrophysical code
+//
+// Source file test/skeleton/main.cpp
+//
+// Last modified : 06/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2026)
+// and other code contributors
+//
+// Licensed under CeCILL 2.1 License, see COPYING for more information
+// ***********************************************************************************
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>

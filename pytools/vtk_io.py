@@ -1,3 +1,21 @@
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file pytools/vtk_io.py
+#
+# Last modified : 07/2026
+#
+# Copyright(C) by :
+# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2021)
+# - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2022 - 2026)
+# and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
+# Other contributors :
+# - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG / CNRS - 2024)
+######################################################################################
+
 """
 Created on Mon Nov  3 15:23:00 2014
 

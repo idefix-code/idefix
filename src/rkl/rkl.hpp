@@ -1,7 +1,15 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/rkl/rkl.hpp
+//
+// Last modified : 12/2025
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2025)
+// - Soufiane Baghdadi <soufiane.baghdadi@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 

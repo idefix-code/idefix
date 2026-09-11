@@ -1,10 +1,19 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/output/slice.hpp
+//
+// Last modified : 05/2024
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023 - 2024)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
-
+// Other contributors :
+// - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG / CNRS - 2024)
+// ***********************************************************************************
 
 #ifndef OUTPUT_SLICE_HPP_
 #define OUTPUT_SLICE_HPP_

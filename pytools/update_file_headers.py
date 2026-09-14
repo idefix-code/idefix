@@ -47,8 +47,10 @@
 import argparse
 import datetime
 import fnmatch
+import itertools
 import json
 import os
+import pathlib
 import re
 import subprocess
 
@@ -73,9 +75,9 @@ class HeaderPatcher:
                 config["exclude_summary_regexps"][id] = re.compile(entry)
             self.config = config
 
-    def git_load_blame_log(self, file: str) -> list:
+    def git_load_blame_log(self, file: str) -> list[dict]:
         # open git repo
-        repo = Repo("./")
+        repo = Repo(pathlib.Path("."))
         assert not repo.bare
 
         # blame
@@ -124,6 +126,9 @@ class HeaderPatcher:
                 commiter_time = "INIT"
                 commiter_zone = "INIT"
                 summary = "INIT"
+            else:
+                # just ignore the other fields
+                pass
 
         # ok
         return log
@@ -140,7 +145,7 @@ class HeaderPatcher:
 
     def replace_mail_by_pro_mail(self, mail: str, year: int) -> str:
         # get the db entry in config
-        db = self.config["replace_mails"]
+        db: str | list[str] = self.config["replace_mails"]
 
         # check if in
         if mail in db:
@@ -153,6 +158,10 @@ class HeaderPatcher:
                     ended = entry.get("to", 9999)
                     if year >= started and year <= ended:
                         return entry["mail"]
+            else:
+                raise Exception(
+                    f"Invalid format for the field 'replace_mails' : {db[mail]}"
+                )
 
         # ok keep as it is
         return mail
@@ -166,38 +175,43 @@ class HeaderPatcher:
 
     def need_skip_blame_entry(self, blame_entry: dict) -> bool:
         exclude_hashes = self.config["exclude_hashes"]
+
         # skip some based on hash
-        skip = False
         if blame_entry["hash"] in exclude_hashes:
-            skip = True
+            return True
+
         # skip based on summary (not to get commit which push file headers update)
         for regexp in self.config["exclude_summary_regexps"]:
             if regexp.match(blame_entry["summary"]):
-                skip = True
-        return skip
+                return True
+
+        # not found, so keep it
+        return False
 
     def git_extract_authors_from_history(self, blame_log: list) -> dict:
         # build final storage
         authors = {}
 
         # loop on all entries
-        for entry in blame_log:
-            # apply skip
-            if self.need_skip_blame_entry(entry):
-                continue
-
-            # build summary
-            date = datetime.datetime.fromtimestamp(int(entry["time"]))
-            year = date.year
-            mail = self.replace_mail_by_pro_mail(entry["mail"][1:-1], year)
-            author = entry["mail"]
+        for entry in itertools.filterfalse(self.need_skip_blame_entry, blame_log):
+            # extract name & skip if none
             name = self.fix_name(entry["name"])
-            affiliation = self.get_mail_affiliation(mail)
-            full_name = f"{name} <{mail}>"
-            month = date.month
             if name is None:
                 continue
-            if not full_name in authors:
+
+            # extract date infos
+            date = datetime.datetime.fromtimestamp(int(entry["time"]))
+            year = date.year
+            month = date.month
+
+            # extract author infos
+            mail = self.replace_mail_by_pro_mail(entry["mail"][1:-1], year)
+            author = entry["mail"]
+            affiliation = self.get_mail_affiliation(mail)
+            full_name = f"{name} <{mail}>"
+
+            # inject it
+            if full_name not in authors:
                 authors[full_name] = {
                     "name": name,
                     "full-name": full_name,
@@ -217,7 +231,7 @@ class HeaderPatcher:
         # ok
         return authors
 
-    def get_last_edit_month_year(self, blame_log: list) -> str:
+    def get_last_edit_month_year(self, blame_log: list[str]) -> str:
         # vars
         last_month = 0
         last_year = 0
@@ -268,7 +282,7 @@ class HeaderPatcher:
         return infos
 
     def build_new_file_header(
-        self, authors_list: list, last_edit: str, infos: dict, lang: dict
+        self, authors_list: list[dict], last_edit: str, infos: dict, lang: dict
     ) -> list:
         if "message" in self.config:
             return self.build_new_file_header_by_message(
@@ -280,7 +294,7 @@ class HeaderPatcher:
             )
 
     def build_new_file_header_by_keys(
-        self, authors_list: list, last_edit: str, infos: dict, lang: dict
+        self, authors_list: list[dict], last_edit: str, infos: dict, lang: dict
     ) -> list:
         # pattern
         info_open = lang["info_open"]
@@ -333,7 +347,7 @@ class HeaderPatcher:
         return header_script
 
     def build_new_file_header_by_message(
-        self, authors_list: list, last_edit: str, infos: dict, lang: dict
+        self, authors_list: list[dict], last_edit: str, infos: dict, lang: dict
     ) -> list:
         # pattern
         max_line_length = lang["max_line_length"]
@@ -468,7 +482,7 @@ class HeaderPatcher:
         # ok
         return patched_content
 
-    def order_authors_by_date(self, authors: dict) -> list:
+    def order_authors_by_date(self, authors: dict) -> list[dict]:
         per_year = {}
         for _key, author in authors.items():
             year = author["year-start"]
@@ -519,8 +533,7 @@ class HeaderPatcher:
 
     def is_in_include_files(self, filename: str) -> bool:
         # check if included
-        include = self.config["include_files"]
-        for ipattern in include:
+        for ipattern in self.config["include_files"]:
             if (
                 fnmatch.fnmatch(filename, ipattern)
                 or filename.startswith(ipattern)
@@ -529,15 +542,10 @@ class HeaderPatcher:
                 return True
         return False
 
-    def patch_file(self, filename: str):
+    def patch_file(self, filename: str) -> None:
         # if exclude
-        exclude = self.config["exclude_files"]
-        for pattern in exclude:
-            if (
-                fnmatch.fnmatch(filename, pattern)
-                or filename.startswith(pattern)
-                or filename == pattern
-            ):
+        for pattern in self.config["exclude_files"]:
+            if fnmatch.fnmatch(filename, pattern) or filename.startswith(pattern):
                 if not self.is_in_include_files(filename):
                     print(f" - {filename} : EXCLUDED")
                     return
@@ -564,7 +572,7 @@ def run_from_args(args):
 
 
 ############################################################
-def config_arg_parser(parser: argparse.ArgumentParser):
+def config_arg_parser(parser: argparse.ArgumentParser) -> None:
     # calc default config path
     default_config = os.path.join(os.path.dirname(__file__), "update_file_headers.json")
 
@@ -582,7 +590,7 @@ def config_arg_parser(parser: argparse.ArgumentParser):
 
 
 ############################################################
-def main():
+def main() -> None:
     # define arguments
     parser = argparse.ArgumentParser()
     config_arg_parser(parser)

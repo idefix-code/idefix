@@ -64,7 +64,7 @@ parser.add_argument(
 args, unknown = parser.parse_known_args()
 
 
-# initial condition: vr=1, rest is 0, mode initial is nx=0, ny=1, nz=5)
+# initial condition: vr=1, rest is 0, mode initial is nx=0, ny=1, nz=2)
 y = solve_ivp(
     rhs,
     [0, 30],
@@ -103,6 +103,9 @@ error = np.sqrt(
     (V["vx"] / v0 - y.sol(V["t"])[0, :]) ** 2
     + (V["vy"] / v0 - y.sol(V["t"])[1, :]) ** 2
     + (V["vz"] / v0 - y.sol(V["t"])[2, :]) ** 2
+    + (V["bx"] / v0 - y.sol(V["t"])[3, :]) ** 2
+    + (V["by"] / v0 - y.sol(V["t"])[4, :]) ** 2
+    + (V["bz"] / v0 - y.sol(V["t"])[5, :]) ** 2
 )
 
 
@@ -122,6 +125,16 @@ if not args.noplot:
     plt.legend()
     plt.xlabel("t")
 
+    plt.figure(2)
+    plt.plot(V["t"], V["bx"] / v0, "r-", label=r"$b_{R}$")
+    plt.plot(V["t"], y.sol(V["t"])[3, :], "r--")
+    plt.plot(V["t"], V["by"] / v0, "b-", label=r"$b_{\varphi}$")
+    plt.plot(V["t"], y.sol(V["t"])[4, :], "b--")
+    plt.plot(V["t"], V["bz"] / v0, "g-", label=r"$b_{z}$")
+    plt.plot(V["t"], y.sol(V["t"])[5, :], "g--")
+    plt.legend()
+    plt.xlabel("t")
+
     # plot error
     plt.figure()
     plt.semilogy(V["t"], error)
@@ -134,7 +147,7 @@ if not args.noplot:
 err = np.mean(error)
 print("Error=", err)
 
-if err < 0.03:
+if err < 0.04:
     print("SUCCESS")
     sys.exit(0)
 else:

@@ -20,7 +20,7 @@ algorithm is essentially the same (but with some major modification to its struc
 ================
 Requirements
 ================
-*Idefix* is written is standard C++20 and does not rely on any external library in serial (non MPI).
+*Idefix* is written in standard C++20 and does not rely on any external library in serial (non MPI).
 
 Compiler
   *Idefix* requires a C++20 compatible compiler. It has been tested successfully with GCC (>11), Intel compiler suite (>2022) and

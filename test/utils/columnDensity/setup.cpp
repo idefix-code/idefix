@@ -33,7 +33,7 @@ void Analysis(DataBlock & data) {
   columnX3Right->ComputeColumn(rho);
 
   IdefixArray3D<real> columnDensityLeft, columnDensityRight;
-  IdefixArray3D<real>::HostMirror columnDensityLeftHost, columnDensityRightHost;
+  IdefixArray3D<real>::host_mirror_type columnDensityLeftHost, columnDensityRightHost;
   // IDIR
   columnDensityLeft = columnX1Left->GetColumn();
   columnDensityRight = columnX1Right->GetColumn();

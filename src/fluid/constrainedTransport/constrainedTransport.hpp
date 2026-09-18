@@ -11,6 +11,7 @@
 #include "idefix.hpp"
 #include "input.hpp"
 #include "riemannSolver.hpp"
+#include "buffer.hpp"
 
 // Forward declarations
 #include "physics.hpp"
@@ -67,9 +68,9 @@ class ConstrainedTransport {
   IdefixArray3D<real>     Ex3;
 
   // Helper arrays for shearing box
-  IdefixArray2D<real>     sbEyL;
-  IdefixArray2D<real>     sbEyR;
-  IdefixArray2D<real>     sbEyRL;
+  idfx::IdefixCommArray2D<real> sbEyL;
+  idfx::IdefixCommArray2D<real> sbEyR;
+  idfx::IdefixCommArray2D<real> sbEyRL;
 
   // Range of existence
 
@@ -122,12 +123,12 @@ class ConstrainedTransport {
   enum {faceRight, faceLeft};
 
   // Buffers for MPI calls
-  IdefixArray1D<real> BufferSendX1[2];
-  IdefixArray1D<real> BufferSendX2[2];
-  IdefixArray1D<real> BufferSendX3[2];
-  IdefixArray1D<real> BufferRecvX1[2];
-  IdefixArray1D<real> BufferRecvX2[2];
-  IdefixArray1D<real> BufferRecvX3[2];
+  Buffer BufferSendX1[2];
+  Buffer BufferSendX2[2];
+  Buffer BufferSendX3[2];
+  Buffer BufferRecvX1[2];
+  Buffer BufferRecvX2[2];
+  Buffer BufferRecvX3[2];
 
   IdefixArray1D<int>  mapVars;
 
@@ -136,12 +137,12 @@ class ConstrainedTransport {
   int bufferSizeX3;
 
   // Requests for MPI persistent communications
-  MPI_Request sendRequestX1[2];
-  MPI_Request sendRequestX2[2];
-  MPI_Request sendRequestX3[2];
-  MPI_Request recvRequestX1[2];
-  MPI_Request recvRequestX2[2];
-  MPI_Request recvRequestX3[2];
+  idfx::MPI_Request_1D<real> sendRequestX1[2];
+  idfx::MPI_Request_1D<real> sendRequestX2[2];
+  idfx::MPI_Request_1D<real> sendRequestX3[2];
+  idfx::MPI_Request_1D<real> recvRequestX1[2];
+  idfx::MPI_Request_1D<real> recvRequestX2[2];
+  idfx::MPI_Request_1D<real> recvRequestX3[2];
 
   Kokkos::Timer timer;    // Internal MPI timer
 #endif
@@ -187,9 +188,9 @@ ConstrainedTransport<Phys>::ConstrainedTransport(Input &input, Fluid<Phys> *hydr
 
   // Allocate shearing box arrays
   if(hydro->haveShearingBox == true) {
-    sbEyL = IdefixArray2D<real>("EMF_sbEyL", data->np_tot[KDIR], data->np_tot[JDIR]);
-    sbEyR = IdefixArray2D<real>("EMF_sbEyR", data->np_tot[KDIR], data->np_tot[JDIR]);
-    sbEyRL = IdefixArray2D<real>("EMF_sbEyRL", data->np_tot[KDIR], data->np_tot[JDIR]);
+    sbEyL = idfx::IdefixCommArray2D<real>("EMF_sbEyL", data->np_tot[KDIR], data->np_tot[JDIR]);
+    sbEyR = idfx::IdefixCommArray2D<real>("EMF_sbEyR", data->np_tot[KDIR], data->np_tot[JDIR]);
+    sbEyRL = idfx::IdefixCommArray2D<real>("EMF_sbEyRL", data->np_tot[KDIR], data->np_tot[JDIR]);
   }
 
   D_EXPAND( ez = IdefixArray3D<real>("EMF_ez",
@@ -286,10 +287,10 @@ ConstrainedTransport<Phys>::ConstrainedTransport(Input &input, Fluid<Phys> *hydr
   bufferSizeX1 += data->np_int[JDIR] * (data->np_int[KDIR]+KOFFSET);
   #endif
 
-  BufferRecvX1[faceLeft ] = IdefixArray1D<real>("EmfRecvX1Left", bufferSizeX1);
-  BufferRecvX1[faceRight] = IdefixArray1D<real>("EmfRecvX1Right",bufferSizeX1);
-  BufferSendX1[faceLeft ] = IdefixArray1D<real>("EmfSendX1Left", bufferSizeX1);
-  BufferSendX1[faceRight] = IdefixArray1D<real>("EmfSendX1Right",bufferSizeX1);
+  BufferRecvX1[faceLeft ] = Buffer(bufferSizeX1);
+  BufferRecvX1[faceRight] = Buffer(bufferSizeX1);
+  BufferSendX1[faceLeft ] = Buffer(bufferSizeX1);
+  BufferSendX1[faceRight] = Buffer(bufferSizeX1);
 
   // Number of cells in X2 boundary condition (only required when problem >2D):
 #if DIMENSIONS >= 2
@@ -301,10 +302,10 @@ ConstrainedTransport<Phys>::ConstrainedTransport(Input &input, Fluid<Phys> *hydr
   bufferSizeX2 += data->np_int[IDIR] * (data->np_int[KDIR]+KOFFSET);
   #endif
 
-  BufferRecvX2[faceLeft ] = IdefixArray1D<real>("EmfRecvX2Left", bufferSizeX2);
-  BufferRecvX2[faceRight] = IdefixArray1D<real>("EmfRecvX2Right",bufferSizeX2);
-  BufferSendX2[faceLeft ] = IdefixArray1D<real>("EmfSendX2Left", bufferSizeX2);
-  BufferSendX2[faceRight] = IdefixArray1D<real>("EmfSendX2Right",bufferSizeX2);
+  BufferRecvX2[faceLeft ] = Buffer(bufferSizeX2);
+  BufferRecvX2[faceRight] = Buffer(bufferSizeX2);
+  BufferSendX2[faceLeft ] = Buffer(bufferSizeX2);
+  BufferSendX2[faceRight] = Buffer(bufferSizeX2);
 
 #endif
 // Number of cells in X3 boundary condition (only required when problem is 3D):
@@ -314,10 +315,10 @@ ConstrainedTransport<Phys>::ConstrainedTransport(Input &input, Fluid<Phys> *hydr
   // ey
   bufferSizeX3 += (data->np_int[IDIR]+IOFFSET) * data->np_int[JDIR];
 
-  BufferRecvX3[faceLeft ] = IdefixArray1D<real>("EmfRecvX3Left", bufferSizeX3);
-  BufferRecvX3[faceRight] = IdefixArray1D<real>("EmfRecvX3Right",bufferSizeX3);
-  BufferSendX3[faceLeft ] = IdefixArray1D<real>("EmfSendX3Left", bufferSizeX3);
-  BufferSendX3[faceRight] = IdefixArray1D<real>("EmfSendX3Right",bufferSizeX3);
+  BufferRecvX3[faceLeft ] = Buffer(bufferSizeX3);
+  BufferRecvX3[faceRight] = Buffer(bufferSizeX3);
+  BufferSendX3[faceLeft ] = Buffer(bufferSizeX3);
+  BufferSendX3[faceRight] = Buffer(bufferSizeX3);
 #endif // DIMENSIONS
 
   // Init persistent MPI communications
@@ -330,11 +331,11 @@ ConstrainedTransport<Phys>::ConstrainedTransport(Input &input, Fluid<Phys> *hydr
   if(data->rbound[IDIR] == shearingbox ) procSend = MPI_PROC_NULL;
   if(data->lbound[IDIR] == shearingbox ) procRecv = MPI_PROC_NULL;
 
-  MPI_SAFE_CALL(MPI_Send_init(BufferSendX1[faceRight].data(), bufferSizeX1, realMPI, procSend, 100,
-                mygrid->CartComm, &sendRequestX1[faceRight]));
+  MPI_SAFE_CALL(idfx::MPI_Send_init(BufferSendX1[faceRight].commView(), bufferSizeX1,
+                realMPI, procSend, 100, mygrid->CartComm, &sendRequestX1[faceRight]));
 
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX1[faceLeft].data(), bufferSizeX1, realMPI, procRecv, 100,
-                mygrid->CartComm, &recvRequestX1[faceLeft]));
+  MPI_SAFE_CALL(idfx::MPI_Recv_init(BufferRecvX1[faceLeft].commView(), bufferSizeX1,
+                realMPI, procRecv, 100, mygrid->CartComm, &recvRequestX1[faceLeft]));
 
   // Send to the left
   // We receive from procRecv, and we send to procSend
@@ -343,52 +344,52 @@ ConstrainedTransport<Phys>::ConstrainedTransport(Input &input, Fluid<Phys> *hydr
   if(data->lbound[IDIR] == shearingbox ) procSend = MPI_PROC_NULL;
   if(data->rbound[IDIR] == shearingbox ) procRecv = MPI_PROC_NULL;
 
-  MPI_SAFE_CALL(MPI_Send_init(BufferSendX1[faceLeft].data(), bufferSizeX1, realMPI, procSend, 101,
-                mygrid->CartComm, &sendRequestX1[faceLeft]));
+  MPI_SAFE_CALL(idfx::MPI_Send_init(BufferSendX1[faceLeft].commView(), bufferSizeX1,
+                 realMPI, procSend, 101, mygrid->CartComm, &sendRequestX1[faceLeft]));
 
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX1[faceRight].data(), bufferSizeX1, realMPI, procRecv, 101,
-                mygrid->CartComm, &recvRequestX1[faceRight]));
+  MPI_SAFE_CALL(idfx::MPI_Recv_init(BufferRecvX1[faceRight].commView(), bufferSizeX1,
+                 realMPI, procRecv, 101, mygrid->CartComm, &recvRequestX1[faceRight]));
 
   #if DIMENSIONS >= 2
   // We receive from procRecv, and we send to procSend
   MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,1,1,&procRecv,&procSend ));
 
-  MPI_SAFE_CALL(MPI_Send_init(BufferSendX2[faceRight].data(), bufferSizeX2, realMPI, procSend, 200,
-                mygrid->CartComm, &sendRequestX2[faceRight]));
+  MPI_SAFE_CALL(idfx::MPI_Send_init(BufferSendX2[faceRight].commView(), bufferSizeX2,
+                 realMPI, procSend, 200, mygrid->CartComm, &sendRequestX2[faceRight]));
 
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX2[faceLeft].data(), bufferSizeX2, realMPI, procRecv, 200,
-                mygrid->CartComm, &recvRequestX2[faceLeft]));
+  MPI_SAFE_CALL(idfx::MPI_Recv_init(BufferRecvX2[faceLeft].commView(), bufferSizeX2,
+                 realMPI, procRecv, 200, mygrid->CartComm, &recvRequestX2[faceLeft]));
 
   // Send to the left
   // We receive from procRecv, and we send to procSend
   MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,1,-1,&procRecv,&procSend ));
 
-  MPI_SAFE_CALL(MPI_Send_init(BufferSendX2[faceLeft].data(), bufferSizeX2, realMPI, procSend, 201,
-                mygrid->CartComm, &sendRequestX2[faceLeft]));
+  MPI_SAFE_CALL(idfx::MPI_Send_init(BufferSendX2[faceLeft].commView(), bufferSizeX2,
+                 realMPI, procSend, 201, mygrid->CartComm, &sendRequestX2[faceLeft]));
 
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX2[faceRight].data(), bufferSizeX2, realMPI, procRecv, 201,
-                mygrid->CartComm, &recvRequestX2[faceRight]));
+  MPI_SAFE_CALL(idfx::MPI_Recv_init(BufferRecvX2[faceRight].commView(), bufferSizeX2,
+                 realMPI, procRecv, 201, mygrid->CartComm, &recvRequestX2[faceRight]));
   #endif
 
   #if DIMENSIONS == 3
   // We receive from procRecv, and we send to procSend
   MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,2,1,&procRecv,&procSend ));
 
-  MPI_SAFE_CALL(MPI_Send_init(BufferSendX3[faceRight].data(), bufferSizeX3, realMPI, procSend, 300,
-                mygrid->CartComm, &sendRequestX3[faceRight]));
+  MPI_SAFE_CALL(idfx::MPI_Send_init(BufferSendX3[faceRight].commView(), bufferSizeX3,
+                 realMPI, procSend, 300, mygrid->CartComm, &sendRequestX3[faceRight]));
 
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX3[faceLeft].data(), bufferSizeX3, realMPI, procRecv, 300,
-                mygrid->CartComm, &recvRequestX3[faceLeft]));
+  MPI_SAFE_CALL(idfx::MPI_Recv_init(BufferRecvX3[faceLeft].commView(), bufferSizeX3,
+                 realMPI, procRecv, 300, mygrid->CartComm, &recvRequestX3[faceLeft]));
 
   // Send to the left
   // We receive from procRecv, and we send to procSend
   MPI_SAFE_CALL(MPI_Cart_shift(mygrid->CartComm,2,-1,&procRecv,&procSend ));
 
-  MPI_SAFE_CALL(MPI_Send_init(BufferSendX3[faceLeft].data(), bufferSizeX3, realMPI, procSend, 301,
-                mygrid->CartComm, &sendRequestX3[faceLeft]));
+  MPI_SAFE_CALL(idfx::MPI_Send_init(BufferSendX3[faceLeft].commView(), bufferSizeX3,
+                 realMPI, procSend, 301, mygrid->CartComm, &sendRequestX3[faceLeft]));
 
-  MPI_SAFE_CALL(MPI_Recv_init(BufferRecvX3[faceRight].data(), bufferSizeX3, realMPI, procRecv, 301,
-                mygrid->CartComm, &recvRequestX3[faceRight]));
+  MPI_SAFE_CALL(idfx::MPI_Recv_init(BufferRecvX3[faceRight].commView(), bufferSizeX3,
+                 realMPI, procRecv, 301, mygrid->CartComm, &recvRequestX3[faceRight]));
   #endif
 
 #endif  // WITH_MPI
@@ -408,17 +409,17 @@ ConstrainedTransport<Phys>::~ConstrainedTransport() {
     // Properly clean up the mess
     idfx::cout << "Emf: Cleaning up MPI persistent communication channels" << std::endl;
     for(int i=0 ; i< 2; i++) {
-      MPI_Request_free( &sendRequestX1[i]);
-      MPI_Request_free( &recvRequestX1[i]);
+      idfx::MPI_Request_free( &sendRequestX1[i]);
+      idfx::MPI_Request_free( &recvRequestX1[i]);
 
     #if DIMENSIONS >= 2
-      MPI_Request_free( &sendRequestX2[i]);
-      MPI_Request_free( &recvRequestX2[i]);
+      idfx::MPI_Request_free( &sendRequestX2[i]);
+      idfx::MPI_Request_free( &recvRequestX2[i]);
     #endif
 
     #if DIMENSIONS == 3
-      MPI_Request_free( &sendRequestX3[i]);
-      MPI_Request_free( &recvRequestX3[i]);
+      idfx::MPI_Request_free( &sendRequestX3[i]);
+      idfx::MPI_Request_free( &recvRequestX3[i]);
     #endif
     }
     #endif

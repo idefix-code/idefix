@@ -21,7 +21,7 @@ struct Fluid_CorrectFluxFunctor {
   explicit Fluid_CorrectFluxFunctor (Fluid<Phys> *hydro, real dt) {
     Uc   = hydro->Uc;
     Vc   = hydro->Vc;
-    Flux = hydro->FluxRiemann;
+    Flux = hydro->FluxRiemann[dir];
     A    = hydro->data->A[dir];
     dV   = hydro->data->dV;
     x1m  = hydro->data->xl[IDIR];
@@ -205,7 +205,7 @@ struct Fluid_CalcRHSFunctor {
   explicit Fluid_CalcRHSFunctor (Fluid<Phys> *hydro, real dt) {
     Uc   = hydro->Uc;
     Vc   = hydro->Vc;
-    Flux = hydro->FluxRiemann;
+    Flux = hydro->FluxRiemann[dir];
     A    = hydro->data->A[dir];
     dV   = hydro->data->dV;
     x1m  = hydro->data->xl[IDIR];

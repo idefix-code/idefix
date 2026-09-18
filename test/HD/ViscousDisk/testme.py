@@ -4,38 +4,43 @@
 
 @author: glesur
 """
+
 import os
 import sys
+
 sys.path.append(os.getenv("IDEFIX_DIR"))
 
 import pytools.idfx_test as tst
-tolerance=3e-15
+
+tolerance = 3e-15
+
+
 def testMe(test):
-  test.configure()
-  test.compile()
-  inifiles=["idefix.ini","idefix-rkl.ini"]
-  for ini in inifiles:
-    mytol=tolerance
+    test.configure()
+    test.compile()
+    inifiles = ["idefix.ini", "idefix-rkl.ini"]
+    for ini in inifiles:
+        mytol = tolerance
 
-    test.run(inputFile=ini)
-    if test.init and not test.mpi:
-      test.makeReference(filename="dump.0001.dmp")
-    test.standardTest()
-    test.nonRegressionTest(filename="dump.0001.dmp",tolerance=mytol)
+        test.run(inputFile=ini)
+        if test.init and not test.mpi:
+            test.makeReference(filename="dump.0001.dmp")
+        test.standardTest()
+        test.nonRegressionTest(filename="dump.0001.dmp", tolerance=mytol)
 
 
-test=tst.idfxTest(__file__)
+test = tst.idfxTest(__file__)
 if not test.dec:
-  test.dec=['2','2']
+    test.dec = ["2", "2"]
 
 if not test.all:
-  if(test.check):
-    test.checkOnly(filename="dump.0001.dmp",tolerance=tolerance)
-  else:
-    testMe(test)
+    if test.check:
+        test.checkOnly(filename="dump.0001.dmp", tolerance=tolerance)
+    else:
+        testMe(test)
 else:
-  test.noplot = True
-  test.single=False
-  test.reconstruction=2
-  test.mpi=False
-  testMe(test)
+    test.noplot = True
+    test.single = False
+    test.reconstruction = 2
+    test.mpi = False
+    testMe(test)

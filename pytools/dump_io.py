@@ -4,6 +4,7 @@ Created on Fri Nov 27 22:07:47 2020
 
 @author: lesurg
 """
+
 import os
 import re
 import struct
@@ -59,7 +60,7 @@ class DumpField(object):
         self.ndims = int.from_bytes(fh.read(INT_SIZE), byteorder)
         dims = []
         ntot = 1
-        for dim in range(self.ndims):
+        for _ in range(self.ndims):
             dims.append(int.from_bytes(fh.read(INT_SIZE), byteorder))
             ntot = ntot * dims[-1]
         raw = struct.unpack(str(ntot) + stringchar, fh.read(mysize * ntot))
@@ -118,6 +119,7 @@ class DumpDataset(object):
 
     def __repr__(self):
         return "DumpDataset('%s')" % self.filename
+
 
 # public API
 def readDump(filename):

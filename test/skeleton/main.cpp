@@ -37,7 +37,7 @@ void testReduction() {
 
   // Init an array on device, and image on host
   IdefixArray3D<real> rho = IdefixArray3D<real>("rho",nx3,nx2,nx1);
-  IdefixArray3D<real>::HostMirror rhoHost = Kokkos::create_mirror_view(rho);
+  IdefixArray3D<real>::host_mirror_type rhoHost = Kokkos::create_mirror_view(rho);
 
   // Fill the host array, and compute the theoretical results
   real theoreticalResult = 0;

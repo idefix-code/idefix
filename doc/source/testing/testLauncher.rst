@@ -32,12 +32,12 @@ To run the test you can basically :
     # Run all tests
     ./test.py
 
-    # Run all tests in ./tests/HD
-    ./test.py -subdir=./tests/HD
+    # Run all tests in ./test/HD
+    ./test.py -subdir=./test/HD
 
     # Select in more details the tests containing the "single" keyword
     # See pytest documentation for the exact advanced semantic
-    ./test.py -subdir=./tests/HD -k single
+    ./test.py -subdir=./test/HD -k single
 
     # Run in verbose
     ./test.py -v
@@ -144,7 +144,7 @@ For a single basic configuration one can use :
 .. code-block:: json
 
     {
-        "variants": {
+        "default": {
             "dumpname": "dump.0001.dmp",
             "ini": "idefix.ini",
             "vectPot": false,
@@ -159,7 +159,7 @@ For a single basic configuration one can use :
 Available parameters
 --------------------
 
-The parameters in the ``variants`` dictionnary correspond to the options supported by the
+The parameters in the ``default`` dictionnary correspond to the options supported by the
 :doc:`idfxTest <idfxTest>` script to configure the build and run of *Idefix*.
 
 In addition there is some extra keys which are dedicated to the json interpretation layer :
@@ -191,26 +191,34 @@ In addition there is some extra keys which are dedicated to the json interpretat
    * - ``multirun``
      - ``{}``
      - See the multi-run section below.
+   * - ``callPyFunctionBefore``
+     -
+     - Call a python function before executing the test (see dedicated section at the end of this file).
+   * - ``callPyFunctionAfter``
+     -
+     - Call a python function after executing the test (see dedicated section at the end of this file).
 
 Looping over parameters
 -----------------------
 
-You might want to explore running Idefix within parameter ranges (configuration files, modes).
-For this simply list the values you want as a list. The test script will automatically
-generate all combinations.
+You might want to explore running *Idefix* within parameter ranges (configuration files, modes).
+For this simply list the values you want as a list in tha ``variants`` dictionnary. The test script
+will automatically generate all combinations.
 
 .. code-block:: json
 
     {
-        "variants": {
+        "default": {
             "dumpname": "dump.0001.dmp",
-            "ini": ["idefix.ini","idefix-hll.ini"],
-            "vectPot": [false, true],
             "single": false,
             "reconstruction": 2,
-            "mpi": [false, true],
             "standardTest": false,
             "tolerance": 0
+        },
+        "variants": {
+            "ini": ["idefix.ini","idefix-hll.ini"],
+            "vectPot": [false, true],
+            "mpi": [false, true]
         }
     }
 
@@ -245,25 +253,24 @@ can list several sets as a list. Here using single only on half of the modes.
 .. code-block:: json
 
     {
+        "default": {
+            "dumpname": "dump.0001.dmp",
+            "tolerance": 0
+            "standardTest": false,
+            "reconstruction": 2
+        },
         "variants": [
             {
-                "dumpname": "dump.0001.dmp",
-                "ini": ["idefix.ini"],
+                "ini": "idefix.ini",
                 "vectPot": false,
                 "single": false,
-                "reconstruction": 2,
                 "mpi": [false, true],
-                "standardTest": false,
-                "tolerance": 0
             },{
-                "dumpname": "dump.0001.dmp",
-                "ini": ["idefix-hll.ini"],
+                "ini": "idefix-hll.ini",
                 "vectPot": true,
                 "single": true,
-                "reconstruction": 2,
                 "mpi": [false, true],
-                "standardTest": false,
-                "tolerance": 0
+
             }
         ]
     }
@@ -284,15 +291,17 @@ the order you want to see them composing the test name.
 
     {
         "namings": "ini,single,mpi",
-        "variants": {
+        "default": {
             "dumpname": "dump.0001.dmp",
-            "ini": ["idefix.ini","idefix-hll.ini"],
             "vectPot": false,
-            "single": [false, true],
             "reconstruction": 2,
-            "mpi": [false, true],
             "standardTest": false,
             "tolerance": 0
+        },
+        "variants": {
+            "ini": ["idefix.ini","idefix-hll.ini"],
+            "single": [false, true],
+            "mpi": [false, true],
         }
     }
 
@@ -309,15 +318,17 @@ It is just like if you used and IF statement.
 
     {
         "namings": "ini,single,mpi",
-        "variants": {
+        "default": {
             "dumpname": "dump.0001.dmp",
-            "ini": ["idefix.ini","idefix-hll.ini"],
             "vectPot": false,
-            "single": [false, true],
             "reconstruction": 2,
-            "mpi": [false, true],
             "standardTest": false,
             "tolerance": 0
+        },
+        "variants": {
+            "ini": ["idefix.ini","idefix-hll.ini"],
+            "single": [false, true],
+            "mpi": [false, true],
         },
         "when": {
             "conditions": {
@@ -348,9 +359,9 @@ They are described like :
 .. code-block:: json
 
     {
-        "variants": {
+        "default": {
             "dumpname": "dump.0001.dmp",
-            "ini": ["idefix.ini"],
+            "ini": "idefix.ini",
             "vectPot": false,
             "single": false,
             "reconstruction": 2,
@@ -367,6 +378,33 @@ They are described like :
                 }
             ]
         },
+    }
+
+Calling a Python function
+-------------------------
+
+In some cases (example in ``test/utils/lookupTable``) you might need to call a custom
+python function before running the test to prepare the data or after the test to perform
+some extra check.
+
+You can simply implement the functions you want to call in the python file in the test
+directory (ideally named ``testmelib.py``) :
+
+.. code-block:: python
+
+    def callMeAtStart():
+        print("This is called at test start !")
+
+    def callMeAtEnd():
+        print("This is called at test end !")
+
+And add the keys in ``testme.json``:
+
+.. code-block:: json
+
+    "default": {
+        "callPyFunctionBefore": "testmelib.py:callMeAtStart",
+        "callPyFunctionAfter": "testmelib.py:callMeAtEnd"
     }
 
 Using the idfxTest options

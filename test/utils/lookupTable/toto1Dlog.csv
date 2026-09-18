@@ -1,0 +1,6 @@
+# test csv file, power law data = x^2 stored as columns
+# used to test the interpolation in function space
+
+1.0,   1.0
+2.0,   4.0
+4.0,  16.0

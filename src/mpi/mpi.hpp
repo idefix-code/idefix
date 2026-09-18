@@ -17,6 +17,7 @@
 #include "grid.hpp"
 #include "buffer.hpp"
 #include "exchanger.hpp"
+#include "mpiWrapper.hpp"
 
 
 class DataBlock;

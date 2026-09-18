@@ -11,6 +11,7 @@
 #include <vector>
 #include "idefix.hpp"
 #include "grid.hpp"
+#include "buffer.hpp"
 
 // Forward class hydro declaration
 #include "physics.hpp"
@@ -56,11 +57,11 @@ class Axis {
 
   enum {faceTop, faceBot};
 #ifdef WITH_MPI
-  MPI_Request sendRequest;
-  MPI_Request recvRequest;
+  idfx::MPI_Request_1D<real> sendRequest;
+  idfx::MPI_Request_1D<real> recvRequest;
 
-  IdefixArray1D<real> bufferSend;
-  IdefixArray1D<real> bufferRecv;
+  Buffer bufferSend;
+  Buffer bufferRecv;
 
   int bufferSize;
 
@@ -70,8 +71,8 @@ class Axis {
 #endif
   void InitMPI();
 
-  IdefixArray1D<real> Ex1Avg;
-  IdefixArray2D<real> BAvg;
+  idfx::IdefixCommArray1D<real> Ex1Avg;
+  idfx::IdefixCommArray2D<real> BAvg;
   bool haveCurrent;
   IdefixArray2D<real> JAvg;
   IdefixArray1D<int> symmetryVc;
@@ -126,7 +127,7 @@ Axis::Axis(Boundary<Phys> *boundary) {
 
   // Init the symmetry array (used to flip the signs of arrays accross the axis)
   symmetryVc = IdefixArray1D<int>("Axis:SymmetryVc",nVar);
-  IdefixArray1D<int>::HostMirror symmetryVcHost = Kokkos::create_mirror_view(symmetryVc);
+  IdefixArray1D<int>::host_mirror_type symmetryVcHost = Kokkos::create_mirror_view(symmetryVc);
   // Init the array
   for (int nv = 0; nv < nVar; nv++) {
     symmetryVcHost(nv) = 1;
@@ -143,7 +144,7 @@ Axis::Axis(Boundary<Phys> *boundary) {
 
   if constexpr(Phys::mhd) {
     symmetryVs = IdefixArray1D<int>("Axis:SymmetryVs",DIMENSIONS);
-    IdefixArray1D<int>::HostMirror symmetryVsHost = Kokkos::create_mirror_view(symmetryVs);
+    IdefixArray1D<int>::host_mirror_type symmetryVsHost = Kokkos::create_mirror_view(symmetryVs);
     // Init the array
     for(int nv = 0; nv < DIMENSIONS; nv++) {
       symmetryVsHost(nv) = 1;
@@ -154,8 +155,8 @@ Axis::Axis(Boundary<Phys> *boundary) {
     }
     Kokkos::deep_copy(symmetryVs, symmetryVsHost);
 
-    this->Ex1Avg = IdefixArray1D<real>("Axis:Ex1Avg",data->np_tot[IDIR]);
-    this->BAvg = IdefixArray2D<real>("Axis:BxAvg",data->np_tot[IDIR],2);
+    this->Ex1Avg = idfx::IdefixCommArray1D<real>("Axis:Ex1Avg",data->np_tot[IDIR]);
+    this->BAvg = idfx::IdefixCommArray2D<real>("Axis:BxAvg",data->np_tot[IDIR],2);
     if(haveCurrent) {
       this->JAvg = IdefixArray2D<real>("Axis:JAvg",data->np_tot[IDIR],3);
     }

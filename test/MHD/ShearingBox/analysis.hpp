@@ -25,7 +25,8 @@ class Analysis {
                          const int,
                          const int,
                          const int,
-                         const real);
+                         const real,
+                        const real);
   DataBlockHost *d;
   Grid *grid;
 

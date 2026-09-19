@@ -1,3 +1,17 @@
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file cmake/GetGitRevisionDescription.cmake
+#
+# Last modified : 10/2023
+#
+# Copyright(C) by :
+# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2023)
+# and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
+
 # - Returns a version string from Git
 #
 # These functions force a re-configure on each git commit so that you can

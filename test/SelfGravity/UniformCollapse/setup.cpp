@@ -1,3 +1,19 @@
+// ***********************************************************************************
+// Idefix MHD astrophysical code
+//
+// Source file test/SelfGravity/UniformCollapse/setup.cpp
+//
+// Last modified : 03/2024
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023 - 2024)
+// and other code contributors
+//
+// Licensed under CeCILL 2.1 License, see COPYING for more information
+// ***********************************************************************************
+// Other contributors :
+// - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG / CNRS - 2024)
+// ***********************************************************************************
 #include <cmath>
 
 #include "idefix.hpp"

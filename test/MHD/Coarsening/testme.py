@@ -1,4 +1,21 @@
 #!/usr/bin/env python3
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file test/MHD/Coarsening/testme.py
+#
+# Last modified : 07/2026
+#
+# Copyright(C) by :
+# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
+# - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+# and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
+# Other contributors :
+# - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG / CNRS - 2024)
+######################################################################################
 
 """
 

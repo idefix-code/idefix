@@ -1,3 +1,18 @@
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file test/MHD/clessTDiffusion/python/testidefix.py
+#
+# Last modified : 08/2026
+#
+# Copyright(C) by :
+# - Victor Réville <vreville@irap.omp.eu> (IRAP - 2025)
+# - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+# and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
+
 import os
 import sys
 

@@ -638,7 +638,10 @@ def main() -> None:
     # run
     run_from_args(options)
 
+    # ok
+    return 0
+
 
 ############################################################
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

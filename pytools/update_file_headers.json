@@ -48,13 +48,15 @@
     "geoffroy.lesur@obs.ujf-grenoble.fr": "geoffroy.lesur@univ-grenoble-alpes.fr",
     "93188557+vdbma@users.noreply.github.com": "mbossche@aip.de",
     "victorreville@gmail.com": "vreville@irap.omp.eu",
-    "cr52@protonmail.com": "clement.robert@univ-grenoble-alpes.fr"
+    "cr52@protonmail.com": "clement.robert@univ-grenoble-alpes.fr",
+    "89980449+Anto6453@users.noreply.github.com": "antonin.borderies@ens-lyon.fr"
   },
   "affiliation_domains": {
     "@irap.omp.eu": "IRAP",
     "@univ-grenoble-alpes.fr": "IPAG/UGA/CNRS",
     "dutta.alankar@gmail.com": "MPA Garching",
-    "@aip.de": "IAP Postdam"
+    "@aip.de": "IAP Postdam",
+    "@ens-lyon.fr": "ENS Lyon"
   },
   "exclude_hashes": [
   ],

@@ -8,7 +8,7 @@
 # Copyright(C) by :
 # - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021)
 # - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2022 - 2026)
-# - marc <vandenbossche.marc@hotmail.com> (2024)
+# - Marc Van den Bossche <mbossche@aip.de> (IAP Postdam - 2024)
 # and other code contributors
 #
 # Licensed under CeCILL 2.1 License, see COPYING for more information

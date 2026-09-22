@@ -6,7 +6,6 @@
 // Last modified : 11/2024
 //
 // Copyright(C) by :
-// - Geoffroy Lesur <geoffroy@MacPro-des-Lesur.local> (2020)
 // - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2024)
 // - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2024)
 // - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)

@@ -8,7 +8,6 @@
 #
 # Copyright(C) by :
 # - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2022)
-# - Geoffroy Lesur <lesurg@ipag-gpu1.u-ga.fr> (2022)
 # - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
 # and other code contributors
 #

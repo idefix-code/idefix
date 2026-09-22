@@ -7,9 +7,6 @@
 //
 // Copyright(C) by :
 // - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2024)
-// - Geoffroy Lesur <geoffroy@MacPro-des-Lesur.local> (2020)
-// - Geoffroy Lesur <lesurg@ipag-8207.u-ga.fr> (2020)
-// - Geoffroy Lesur <lesurg@ipag-gpu1.u-ga.fr> (2020)
 // - Soufiane Baghdadi <soufiane.baghdadi@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021)
 // - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
 // and other code contributors

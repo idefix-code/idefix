@@ -9,8 +9,6 @@
 // - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2025)
 // - Soufiane Baghdadi <soufiane.baghdadi@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020)
 // - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2024)
-// - Geoffroy Lesur <gelesur@neowise-2.lyon.grid5000.fr> (2021)
-// - Clément Robert <cmt.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2022)
 // - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
 // and other code contributors
 //

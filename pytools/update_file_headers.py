@@ -53,6 +53,7 @@ import os
 import pathlib
 import re
 import subprocess
+import warnings
 
 # git
 from git import Repo
@@ -169,29 +170,40 @@ class HeaderPatcher:
         if mail == "":
             return None
         domain = "@" + mail.split("@")[1]
+        username = mail.split("@")[0] + "@"
         affiliation_domains = self.config["affiliation_domains"]
         if mail in affiliation_domains:
             return affiliation_domains[mail]
         elif domain in affiliation_domains:
             return affiliation_domains[domain]
+        elif username in affiliation_domains:
+            return affiliation_domains[username]
         else:
             return None
 
     def replace_mail_by_pro_mail(self, mail: str, year: int) -> str:
         # get the db entry in config
         db: str | list[str] = self.config["replace_mails"]
+        username = mail.split("@")[0] + "@"
 
         # check if in
+        entry = None
         if mail in db:
+            entry = db[mail]
+        elif username in db:
+            entry = db[username]
+
+        # if need to replace
+        if entry is not None:
             # direct definition or per year mode
-            if isinstance(db[mail], str):
-                return db[mail]
-            elif isinstance(db[mail], list):
-                for entry in db[mail]:
-                    started = entry.get("from", 0)
-                    ended = entry.get("to", 9999)
+            if isinstance(entry, str):
+                return entry
+            elif isinstance(entry, list):
+                for epoc in entry:
+                    started = epoc.get("from", 0)
+                    ended = epoc.get("to", 9999)
                     if year >= started and year <= ended:
-                        return entry["mail"]
+                        return epoc["mail"]
             else:
                 raise Exception(
                     f"Invalid format for the field 'replace_mails' : {db[mail]}"
@@ -244,6 +256,13 @@ class HeaderPatcher:
             author = entry["mail"]
             affiliation = self.get_mail_affiliation(mail)
             full_name = f"{name} <{mail}>"
+
+            # if no afficiation, warn
+            if affiliation is None:
+                if self.config.get("allow_no_affiliation", True):
+                    warnings.warn(f"No affilication found for {entry}", stacklevel=1)
+                else:
+                    raise Exception(f"No affilication found for {entry}")
 
             # inject it
             if full_name not in authors:

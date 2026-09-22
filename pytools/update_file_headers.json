@@ -39,6 +39,7 @@
     "nscepi": "Nicolas Scepi",
     "Soufiane BAGHDADI": "Soufiane Baghdadi",
     "vdbma": "Marc Van den Bossche",
+    "marc": "Marc Van den Bossche",
     "Hal Bal": "Victor Réville"
   },
   "replace_mails": {
@@ -47,17 +48,28 @@
     "nicolas.scepi@gmail.com": "nicolas.scepi@univ-grenoble-alpes.fr",
     "geoffroy.lesur@obs.ujf-grenoble.fr": "geoffroy.lesur@univ-grenoble-alpes.fr",
     "93188557+vdbma@users.noreply.github.com": "mbossche@aip.de",
+    "vandenbossche.marc@hotmail.com": "mbossche@aip.de",
     "victorreville@gmail.com": "vreville@irap.omp.eu",
     "cr52@protonmail.com": "clement.robert@univ-grenoble-alpes.fr",
-    "89980449+Anto6453@users.noreply.github.com": "antonin.borderies@ens-lyon.fr"
+    "89980449+Anto6453@users.noreply.github.com": "antonin.borderies@ens-lyon.fr",
+    "lesur@": "geoffroy.lesur@univ-grenoble-alpes.fr",
+    "lesurg@": "geoffroy.lesur@univ-grenoble-alpes.fr",
+    "gelesur@": "geoffroy.lesur@univ-grenoble-alpes.fr",
+    "glesur@": "geoffroy.lesur@univ-grenoble-alpes.fr",
+    "glesurg@": "geoffroy.lesur@univ-grenoble-alpes.fr",
+    "geoffroy@": "geoffroy.lesur@univ-grenoble-alpes.fr",
+    "cmt.robert@univ-grenoble-alpes.fr": "clement.robert@univ-grenoble-alpes.fr",
+    "soufiane.baghdadi@meryntech.com": "soufiane.baghdadi@univ-grenoble-alpes.fr"
   },
   "affiliation_domains": {
     "@irap.omp.eu": "IRAP",
     "@univ-grenoble-alpes.fr": "IPAG/UGA/CNRS",
     "dutta.alankar@gmail.com": "MPA Garching",
     "@aip.de": "IAP Postdam",
-    "@ens-lyon.fr": "ENS Lyon"
+    "@ens-lyon.fr": "ENS Lyon",
+    "@lpp.polytechnique.fr": "LPP"
   },
+  "allow_no_affiliation": false,
   "exclude_hashes": [
   ],
   "exclude_summary_regexps": [
@@ -184,6 +196,7 @@
     "*.npy"
   ],
   "include_files": [
-    "**/CMakeLists.txt"
+    "**/CMakeLists.txt",
+    "CMakeLists.txt"
   ]
 }

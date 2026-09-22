@@ -75,24 +75,18 @@ class HeaderPatcher:
                 config["exclude_summary_regexps"][id] = re.compile(entry)
             self.config = config
 
-    def git_extract_co_authors(self, repo: Repo, commit_hash: str) -> list[dict]:
-        # ignore
-        if self.config.get("git_message_co_authors", False) == False:
-            return []
-
-        # get full message from commit
-        message = repo.commit(commit_hash).message
+    def get_manual_co_authors(self, commit_hash: str) -> list[dict]:
+        # get the manual infos
+        manual_authors: list[dict] = self.config.get("extra_authors", [])
 
         # build result list
         result: list[dict] = []
 
-        # scan for "Co-authored-by:"
-        for line in message.split("\n"):
-            if "Co-authored-by: " in line:
-                fields = line.replace("Co-authored-by: ", "").split("<")
-                name = fields[0].strip()
-                mail = fields[1].replace(">", "")
-                result.append({"name": name, "mail": mail})
+        # loop to scan
+        for author in manual_authors:
+            for commit in author["commits"]:
+                if commit == commit_hash:
+                    result.append({"name": author["name"], "mail": author["mail"]})
 
         # ok
         return result
@@ -143,8 +137,8 @@ class HeaderPatcher:
                     }
                 )
 
-                # search for co-authors
-                co_authors = self.git_extract_co_authors(repo, commit_hash)
+                # search for co-authors to add to commit authors
+                co_authors = self.get_manual_co_authors(commit_hash)
                 for co_author in co_authors:
                     log.append(
                         {
@@ -253,8 +247,6 @@ class HeaderPatcher:
 
             # inject it
             if full_name not in authors:
-                if mail == "<>":
-                    raise Exception(f"Invalid mail, cannot continue : {entry}")
                 authors[full_name] = {
                     "name": name,
                     "full-name": full_name,

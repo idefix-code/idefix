@@ -11,13 +11,11 @@
 // - Soufiane Baghdadi <soufiane.baghdadi@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020)
 // - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2024)
 // - Alankar Dutta <dutta.alankar@gmail.com> (MPA Garching - 2023)
+// - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
 // - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
 // and other code contributors
 //
 // Licensed under CeCILL 2.1 License, see COPYING for more information
-// ***********************************************************************************
-// Other contributors :
-// - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG / CNRS - 2024)
 // ***********************************************************************************
 
 #include "vtk.hpp"

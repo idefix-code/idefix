@@ -7,12 +7,10 @@
 //
 // Copyright(C) by :
 // - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2022 - 2024)
+// - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
 // and other code contributors
 //
 // Licensed under CeCILL 2.1 License, see COPYING for more information
-// ***********************************************************************************
-// Other contributors :
-// - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG / CNRS - 2024)
 // ***********************************************************************************
 
 #include "idefix.hpp"

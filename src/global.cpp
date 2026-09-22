@@ -11,12 +11,10 @@
 // - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2024)
 // - Geoffroy Lesur <gelesur@neowise-2.lyon.grid5000.fr> (2021)
 // - Clément Robert <cmt.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2022)
+// - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
 // and other code contributors
 //
 // Licensed under CeCILL 2.1 License, see COPYING for more information
-// ***********************************************************************************
-// Other contributors :
-// - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG / CNRS - 2024)
 // ***********************************************************************************
 
 #include <iostream>

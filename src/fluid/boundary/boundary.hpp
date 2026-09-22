@@ -7,12 +7,10 @@
 //
 // Copyright(C) by :
 // - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023 - 2025)
+// - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
 // and other code contributors
 //
 // Licensed under CeCILL 2.1 License, see COPYING for more information
-// ***********************************************************************************
-// Other contributors :
-// - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG / CNRS - 2024)
 // ***********************************************************************************
 
 #ifndef FLUID_BOUNDARY_BOUNDARY_HPP_

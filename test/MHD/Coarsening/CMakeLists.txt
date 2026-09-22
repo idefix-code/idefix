@@ -6,6 +6,7 @@
 # Last modified : 03/2024
 #
 # Copyright(C) by :
+# - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
 # - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
 # and other code contributors
 #

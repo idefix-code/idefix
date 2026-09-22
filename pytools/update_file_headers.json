@@ -20,10 +20,21 @@
   "width": 86,
   "specific": {
   },
-  "git_message_co_authors": false,
+  "extra_authors": [
+    {
+      "name": "Gaylor Wafflard",
+      "mail": "gaylor.wafflard@univ-grenoble-alpes.fr",
+      "commits": [
+        "158f2aa3a35148bb2a992ae24bb8f813a5965034",
+        "18c2b7301334a291b1acfcbed431b71607cb433d",
+        "1087e858d72fc99f1e37aa2276bfdb79b3007ac4",
+        "8d13e69a6193db9fd4cdb7ef292033790c54f457",
+        "d00a8eb17198dfa2b9bd924f1245f7fb00844b22"
+      ]
+    }
+  ],
   "authors_name_fixes": {
     "pre-commit-ci-lite[bot]": null,
-    "Copilot Autofix powered by AI": null,
     "Geoffroy Lesur geoffroy.lesur@univ-grenoble-alpes.fr": "Geoffroy Lesur",
     "nscepi": "Nicolas Scepi",
     "Soufiane BAGHDADI": "Soufiane Baghdadi",

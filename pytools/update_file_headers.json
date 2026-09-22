@@ -20,6 +20,7 @@
   "width": 86,
   "specific": {
   },
+  "git_message_co_authors": false,
   "authors_name_fixes": {
     "pre-commit-ci-lite[bot]": null,
     "Copilot Autofix powered by AI": null,

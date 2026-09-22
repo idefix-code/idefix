@@ -6,8 +6,8 @@
 // Last modified : 01/2026
 //
 // Copyright(C) by :
-// - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2024)
 // - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2024)
+// - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2024)
 // - Alankar Dutta <dutta.alankar@gmail.com> (MPA Garching - 2026)
 // and other code contributors
 //

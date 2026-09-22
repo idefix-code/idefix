@@ -6,8 +6,8 @@
 # Last modified : 07/2026
 #
 # Copyright(C) by :
-# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2025)
 # - Marc Coiffier <marc.coiffier@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2025)
+# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2025)
 # - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
 # and other code contributors
 #

@@ -76,6 +76,10 @@ class HeaderPatcher:
             self.config = config
 
     def git_extract_co_authors(self, repo: Repo, commit_hash: str) -> list[dict]:
+        # ignore
+        if self.config.get("git_message_co_authors", False) == False:
+            return []
+
         # get full message from commit
         message = repo.commit(commit_hash).message
 
@@ -168,6 +172,8 @@ class HeaderPatcher:
         return log
 
     def get_mail_affiliation(self, mail: str) -> str | None:
+        if mail == "":
+            return None
         domain = "@" + mail.split("@")[1]
         affiliation_domains = self.config["affiliation_domains"]
         if mail in affiliation_domains:
@@ -239,13 +245,16 @@ class HeaderPatcher:
             month = date.month
 
             # extract author infos
-            mail = self.replace_mail_by_pro_mail(entry["mail"][1:-1], year)
+            mail = entry["mail"][1:-1].strip()
+            mail = self.replace_mail_by_pro_mail(mail, year)
             author = entry["mail"]
             affiliation = self.get_mail_affiliation(mail)
             full_name = f"{name} <{mail}>"
 
             # inject it
             if full_name not in authors:
+                if mail == "<>":
+                    raise Exception(f"Invalid mail, cannot continue : {entry}")
                 authors[full_name] = {
                     "name": name,
                     "full-name": full_name,

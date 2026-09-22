@@ -22,6 +22,7 @@
   },
   "authors_name_fixes": {
     "pre-commit-ci-lite[bot]": null,
+    "Copilot Autofix powered by AI": null,
     "Geoffroy Lesur geoffroy.lesur@univ-grenoble-alpes.fr": "Geoffroy Lesur",
     "nscepi": "Nicolas Scepi",
     "Soufiane BAGHDADI": "Soufiane Baghdadi",

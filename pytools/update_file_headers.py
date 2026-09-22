@@ -75,6 +75,24 @@ class HeaderPatcher:
                 config["exclude_summary_regexps"][id] = re.compile(entry)
             self.config = config
 
+    def git_extract_co_authors(self, repo: Repo, commit_hash: str) -> list[dict]:
+        # get full message from commit
+        message = repo.commit(commit_hash).message
+
+        # build result list
+        result: list[dict] = []
+
+        # scan for "Co-authored-by:"
+        for line in message.split("\n"):
+            if "Co-authored-by: " in line:
+                fields = line.replace("Co-authored-by: ", "").split("<")
+                name = fields[0].strip()
+                mail = fields[1].replace(">", "")
+                result.append({"name": name, "mail": mail})
+
+        # ok
+        return result
+
     def git_load_blame_log(self, file: str) -> list[dict]:
         # open git repo
         repo = Repo(pathlib.Path("."))
@@ -120,6 +138,22 @@ class HeaderPatcher:
                         "summary": summary,
                     }
                 )
+
+                # search for co-authors
+                co_authors = self.git_extract_co_authors(repo, commit_hash)
+                for co_author in co_authors:
+                    log.append(
+                        {
+                            "mail": "<" + co_author["mail"] + ">",
+                            "name": co_author["name"],
+                            "time": commiter_time,
+                            "zone": commiter_zone,
+                            "hash": commit_hash,
+                            "summary": summary,
+                        }
+                    )
+
+                # reset vars for next scan
                 commit_hash = ""
                 commiter_mail = "INIT"
                 commiter_name = "INIT"
@@ -219,6 +253,7 @@ class HeaderPatcher:
                     "year-start": year,
                     "year-end": year,
                     "last-month": month,
+                    "date-start": date,
                     "mail": mail,
                     "affiliation": affiliation,
                 }
@@ -227,6 +262,7 @@ class HeaderPatcher:
             auth_entry = authors[full_name]
             auth_entry["year-start"] = min(auth_entry["year-start"], year)
             auth_entry["year-end"] = max(auth_entry["year-end"], year)
+            auth_entry["date-start"] = min(auth_entry["date-start"], date)
 
         # ok
         return authors
@@ -485,7 +521,7 @@ class HeaderPatcher:
     def order_authors_by_date(self, authors: dict) -> list[dict]:
         per_year = {}
         for _key, author in authors.items():
-            year = author["year-start"]
+            year = author["date-start"]
             if not year in per_year:
                 per_year[year] = []
             per_year[year].append(author)

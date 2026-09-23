@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - add conservation tests to OT and OT3D (#407)
 - add/improve `testme.json` validation in tests  (#378, #394, #405)
 - add documentation for pydefix usage in virtual environments (#365)
+- add compiler informations in the logs and in stdout (#402)
 
 
 ## [2.3.0] 2026-04-21

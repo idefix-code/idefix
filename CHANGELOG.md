@@ -4,6 +4,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] 2026-09-23
+### Changed
+
+- bump up Kokkos to 5.1. As a result, Idefix now requires a C++20-compatible compiler (#384)
+- improve Kokkos 5 performances on AMD targets (#402)
+- make MPI gpu-direct optional with a device-host fallback transfer path (#389)
+- refactor communication packing/unpacking in Axis and ConstrainedTransport using Buffer and BoundingBox (#385)
+- move CheckNan to the end of loop stages in TimeIntegrator (#403)
+- keep inter-cell flux in every direction for analysis (#337)
+- update CI/tooling and dependencies  (#371,#372,#377,#383,#390,#392,#393,#400)
+- update copyright headers across the project (#410)
+
+### Fixed
+
+- fix div(B) check robustness (#369)
+- fix segfault when using UCT_HLL with DIMENSIONS < 3 (#386)
+- fix coarsening + viscosity CFL condition violation (#397)
+- fix issues when linking parallel HDF5 with CMake (#391)
+- restore Ctrl-C handling when pydefix is active (#388)
+- ensure shearing-box tests also analyse magnetic field B (#412)
+- fix security settings in CI jobs (#373)
+
+### Added
+
+- enable parsing of 1D column data and interpolation in functional space using `LookupTable` (#401)
+- add conservation tests to OT and OT3D (#407)
+- add/improve `testme.json` validation in tests  (#378, #394, #405)
+- add documentation for pydefix usage in virtual environments (#365)
+
+
 ## [2.3.0] 2026-04-21
 ### Changed
 

@@ -1,3 +1,18 @@
+// ***********************************************************************************
+// Idefix MHD astrophysical code
+//
+// Source file test/utils/dumpImage/setup.cpp
+//
+// Last modified : 05/2024
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2022 - 2024)
+// - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
+// and other code contributors
+//
+// Licensed under CeCILL 2.1 License, see COPYING for more information
+// ***********************************************************************************
+
 #include "idefix.hpp"
 #include "setup.hpp"
 #include "dumpImage.hpp"

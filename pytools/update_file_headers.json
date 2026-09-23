@@ -1,0 +1,202 @@
+{
+  "header_keys": {
+    "PROJECT": "Idefix MHD astrophysical code",
+    "DATE": "@LAST_EDIT_MONTH_YEAR@",
+    "LICENSE": "CeCILL-C"
+  },
+  "message": [
+    "@PROJECT@",
+    "",
+    "Source file @FILE@",
+    "",
+    "Last modified : @DATE@",
+    "",
+    "Copyright(C) by :",
+    "@COPYRIGHTS@",
+    "and other code contributors",
+    "",
+    "Licensed under CeCILL 2.1 License, see COPYING for more information"
+  ],
+  "width": 86,
+  "specific": {
+  },
+  "extra_authors": [
+    {
+      "name": "Gaylor Wafflard",
+      "mail": "gaylor.wafflard@univ-grenoble-alpes.fr",
+      "commits": [
+        "158f2aa3a35148bb2a992ae24bb8f813a5965034",
+        "18c2b7301334a291b1acfcbed431b71607cb433d",
+        "1087e858d72fc99f1e37aa2276bfdb79b3007ac4",
+        "8d13e69a6193db9fd4cdb7ef292033790c54f457",
+        "d00a8eb17198dfa2b9bd924f1245f7fb00844b22"
+      ]
+    }
+  ],
+  "authors_name_fixes": {
+    "pre-commit-ci-lite[bot]": null,
+    "Geoffroy Lesur geoffroy.lesur@univ-grenoble-alpes.fr": "Geoffroy Lesur",
+    "nscepi": "Nicolas Scepi",
+    "Soufiane BAGHDADI": "Soufiane Baghdadi",
+    "vdbma": "Marc Van den Bossche",
+    "marc": "Marc Van den Bossche",
+    "Hal Bal": "Victor Réville"
+  },
+  "replace_mails": {
+    "sebastien.valat.dev@orange.fr": "sebastien.valat@univ-grenoble-alpes.fr",
+    "63753204+nscepi@users.noreply.github.com": "nicolas.scepi@univ-grenoble-alpes.fr",
+    "nicolas.scepi@gmail.com": "nicolas.scepi@univ-grenoble-alpes.fr",
+    "geoffroy.lesur@obs.ujf-grenoble.fr": "geoffroy.lesur@univ-grenoble-alpes.fr",
+    "93188557+vdbma@users.noreply.github.com": "mbossche@aip.de",
+    "vandenbossche.marc@hotmail.com": "mbossche@aip.de",
+    "victorreville@gmail.com": "vreville@irap.omp.eu",
+    "cr52@protonmail.com": "clement.robert@univ-grenoble-alpes.fr",
+    "89980449+Anto6453@users.noreply.github.com": "antonin.borderies@ens-lyon.fr",
+    "lesur@": "geoffroy.lesur@univ-grenoble-alpes.fr",
+    "lesurg@": "geoffroy.lesur@univ-grenoble-alpes.fr",
+    "gelesur@": "geoffroy.lesur@univ-grenoble-alpes.fr",
+    "glesur@": "geoffroy.lesur@univ-grenoble-alpes.fr",
+    "glesurg@": "geoffroy.lesur@univ-grenoble-alpes.fr",
+    "geoffroy@": "geoffroy.lesur@univ-grenoble-alpes.fr",
+    "cmt.robert@univ-grenoble-alpes.fr": "clement.robert@univ-grenoble-alpes.fr",
+    "soufiane.baghdadi@meryntech.com": "soufiane.baghdadi@univ-grenoble-alpes.fr"
+  },
+  "affiliation_domains": {
+    "@irap.omp.eu": "IRAP",
+    "@univ-grenoble-alpes.fr": "IPAG/UGA/CNRS",
+    "dutta.alankar@gmail.com": "MPA Garching",
+    "@aip.de": "IAP Postdam",
+    "@ens-lyon.fr": "ENS Lyon",
+    "@lpp.polytechnique.fr": "LPP"
+  },
+  "allow_no_affiliation": false,
+  "exclude_hashes": [
+  ],
+  "exclude_summary_regexps": [
+    "^copyrights:"
+  ],
+  "lang": {
+    "shell": {
+      "max_line_length": 100,
+      "open_start": "##",
+      "open_end": "",
+      "repeat": "#",
+      "info_open": "# ",
+      "close_start": "##",
+      "close_end": "",
+      "apply_on": [
+        "*.py",
+        "*.sh",
+        "*.cmake",
+        "*.cmake.in",
+        "*.spec",
+        "*.ebuild",
+        "*.sh.in",
+        "Dockerfile-*",
+        "CMakeLists.txt",
+        "options",
+        "configure",
+        "PKGBUILD",
+        "Makefile",
+        "makefile",
+        "makefile.rules",
+        "*.yml",
+        "*.toml",
+        "run-tests"
+      ]
+    },
+    "c": {
+      "max_line_length": 100,
+      "open_start": "// ",
+      "open_end": "",
+      "repeat": "*",
+      "info_open": "// ",
+      "close_start": "// ",
+      "close_end": "",
+      "apply_on": [
+        "*.c",
+        "*.cpp",
+        "*.cxx",
+        "*.h",
+        "*.hpp",
+        "*.hxx",
+        "*.h.in",
+        "*.js",
+        "*.css",
+        "*.rs",
+        "*.ts",
+        "*.scss"
+      ]
+    },
+    "html": {
+      "max_line_length": 100,
+      "open_start": "<!--",
+      "open_end": "",
+      "repeat": "-",
+      "info_open": "| ",
+      "close_start": "",
+      "close_end": "-->",
+      "apply_on": [
+        "*.html",
+        "*.vue"
+      ]
+    },
+    "fortran": {
+      "max_line_length": 100,
+      "open_start": "!",
+      "open_end": "",
+      "repeat": "-",
+      "info_open": "! ",
+      "close_start": "!",
+      "close_end": "!",
+      "apply_on": [
+        "*.f90",
+        "*.f",
+        "*.F90",
+        "*.F"
+      ]
+    }
+  },
+  "exclude_files": [
+    ".version",
+    "*.yml",
+    "*.yaml",
+    "*.gitignore",
+    ".gitignore",
+    "*.json",
+    "*.md",
+    "Doxyfile",
+    "*.txt",
+    "*.xmi",
+    "*.ini",
+    "*.bat",
+    "*.ico",
+    "*.ttf",
+    "*.bz2",
+    "*.ronn",
+    "*.bowerrc",
+    "*.png",
+    "*.webp",
+    "*.jpg",
+    "*.jpeg",
+    "*.jpeg",
+    "*.rst",
+    "*.svg",
+    "*.vtk",
+    "COPYING",
+    "CPPLINT.cfg",
+    ".gitmodules",
+    ".git-blame-ignore-revs",
+    "reference",
+    "src/kokkos",
+    "*/README",
+    "*.dmp",
+    "*.dat",
+    "*.csv",
+    "*.npy"
+  ],
+  "include_files": [
+    "**/CMakeLists.txt",
+    "CMakeLists.txt"
+  ]
+}

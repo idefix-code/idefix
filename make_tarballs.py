@@ -1,3 +1,18 @@
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file make_tarballs.py
+#
+# Last modified : 07/2026
+#
+# Copyright(C) by :
+# - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2026)
+# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023)
+# and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
+
 import argparse
 import os
 import subprocess
@@ -89,7 +104,7 @@ def _make_self_contained_tarball(output_dir, *, suffix="", exclude_list=None):
         os.replace(os.path.join(work_dir, tarball), final_tarfile)
 
     filesize = os.path.getsize(final_tarfile)
-    print("Done ! Final file size is %.1f MB" % (filesize / 1024 ** 2))
+    print("Done ! Final file size is %.1f MB" % (filesize / 1024**2))
 
 
 def main(argv=None):

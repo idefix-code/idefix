@@ -1,4 +1,18 @@
 #!/usr/bin/env python3
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file test/SelfGravity/UniformCollapse/python/testidefix.py
+#
+# Last modified : 07/2026
+#
+# Copyright(C) by :
+# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023)
+# - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+# and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
 # -*- coding: utf-8 -*-
 """
 Created on Thu Mar  5 11:29:41 2020
@@ -8,44 +22,50 @@ Created on Thu Mar  5 11:29:41 2020
 
 import os
 import sys
+
 sys.path.append(os.getenv("IDEFIX_DIR"))
-from pytools.vtk_io import readVTK
 import numpy as np
 
+from pytools.vtk_io import readVTK
+
 # Arguments
-gravCst = 1./(4.*np.pi) # grav cst 4piG
-rho0 = 1e-3 # initial density
+gravCst = 1.0 / (4.0 * np.pi)  # grav cst 4piG
+rho0 = 1e-3  # initial density
 
 # Parameters (calculated from the arguments)
-tff = np.sqrt(3.*np.pi/(32.*rho0*gravCst)) # Theoretical free-fall time to achieve collapse
+tff = np.sqrt(
+    3.0 * np.pi / (32.0 * rho0 * gravCst)
+)  # Theoretical free-fall time to achieve collapse
 
 # Collecting data
-V=readVTK('../data.0005.vtk')
+V = readVTK("../data.0005.vtk")
 time = V.t[0]
-rho = np.squeeze(V.data['RHO'])
+rho = np.squeeze(V.data["RHO"])
+
 
 # A function to detect density plateau, its size and position
 def get_plateau(rho):
     plateau = [rho[0]]
     for dsty in rho[1:]:
-        if np.abs(dsty-plateau[-1])>0.01*plateau[-1]:
+        if np.abs(dsty - plateau[-1]) > 0.01 * plateau[-1]:
             return np.mean(plateau)
         else:
             plateau.append(dsty)
     return "Error : the whole density distribution is approximately constant !"
 
+
 # Isolating density plateau
-plateau=get_plateau(rho)
+plateau = get_plateau(rho)
 
 # Calculating absolute error
-r_th=time/tff # Theoretical ratio
-eta = np.arccos((plateau/rho0)**(-1./6.))
-r_num = 2./np.pi*(eta + 1./2.*np.sin(2.*eta)) # Numerical ratio
-error = np.abs(r_num-r_th) # Absolute error
+r_th = time / tff  # Theoretical ratio
+eta = np.arccos((plateau / rho0) ** (-1.0 / 6.0))
+r_num = 2.0 / np.pi * (eta + 1.0 / 2.0 * np.sin(2.0 * eta))  # Numerical ratio
+error = np.abs(r_num - r_th)  # Absolute error
 
 # Print the result of the test
-print("Error=%e"%error)
-if error<2.0e-3:
+print("Error=%e" % error)
+if error < 2.0e-3:
     print("SUCCESS!")
     sys.exit(0)
 else:

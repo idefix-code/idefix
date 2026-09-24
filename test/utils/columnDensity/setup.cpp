@@ -1,3 +1,17 @@
+// ***********************************************************************************
+// Idefix MHD astrophysical code
+//
+// Source file test/utils/columnDensity/setup.cpp
+//
+// Last modified : 06/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2025 - 2026)
+// and other code contributors
+//
+// Licensed under CeCILL 2.1 License, see COPYING for more information
+// ***********************************************************************************
+
 #include "idefix.hpp"
 #include "setup.hpp"
 #include "column.hpp"
@@ -33,7 +47,7 @@ void Analysis(DataBlock & data) {
   columnX3Right->ComputeColumn(rho);
 
   IdefixArray3D<real> columnDensityLeft, columnDensityRight;
-  IdefixArray3D<real>::HostMirror columnDensityLeftHost, columnDensityRightHost;
+  IdefixArray3D<real>::host_mirror_type columnDensityLeftHost, columnDensityRightHost;
   // IDIR
   columnDensityLeft = columnX1Left->GetColumn();
   columnDensityRight = columnX1Right->GetColumn();

@@ -1,3 +1,18 @@
+// ***********************************************************************************
+// Idefix MHD astrophysical code
+//
+// Source file test/SelfGravity/UniformCollapse/setup.cpp
+//
+// Last modified : 03/2024
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023 - 2024)
+// - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
+// and other code contributors
+//
+// Licensed under CeCILL 2.1 License, see COPYING for more information
+// ***********************************************************************************
+
 #include <cmath>
 
 #include "idefix.hpp"
@@ -65,7 +80,7 @@ void FluxBoundary(Fluid<DefaultPhysics> *hydro, int dir, BoundarySide side, cons
     if((dir==IDIR) && (side == left)) {
       // Loading needed data
       DataBlock &data = *hydro->data;
-      IdefixArray4D<real> Flux = hydro->FluxRiemann;
+      IdefixArray4D<real> Flux = hydro->FluxRiemann[dir];
       real halfDt = data.dt/2.; // RK2, dt is actually half at each flux calculation
       int iref = data.nghost[IDIR];
       real rin = data.xbeg[IDIR];

@@ -1,7 +1,15 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/input.cpp
+//
+// Last modified : 08/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2026)
+// - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -18,8 +26,9 @@
 
 #include "idefix.hpp"
 #include "input.hpp"
-#include "version.hpp"
 #include "profiler.hpp"
+#include "version.h"
+#include "compiler_info.h"
 
 // Flag will be set if a signal has been received
 bool Input::abortRequested = false;
@@ -415,7 +424,10 @@ void Input::PrintOptions() {
 }
 
 void Input::PrintVersion() {
-  idfx::cout << "              Idefix version " << IDEFIX_VERSION << std::endl;
-  idfx::cout << "              Built against Kokkos " << KOKKOS_VERSION << std::endl;
-  idfx::cout << "              Compiled on " << __DATE__ <<  " at " << __TIME__ << std::endl;
+  idfx::cout << "Idefix version " << VersionInfo::version << std::endl;
+  idfx::cout << "Built against Kokkos " << KOKKOS_VERSION << std::endl;
+  idfx::cout << "Compiled on " << __DATE__ <<  " at " << __TIME__ << std::endl;
+  idfx::cout << "Compiler name: " << CompilerInfo::name    << std::endl;
+  idfx::cout << "Compiler version: " << CompilerInfo::version   << std::endl;
+  idfx::cout << "Compiler path:  " << CompilerInfo::path    << std::endl;
 }

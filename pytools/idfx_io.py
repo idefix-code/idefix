@@ -1,7 +1,22 @@
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file pytools/idfx_io.py
+#
+# Last modified : 07/2026
+#
+# Copyright(C) by :
+# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021)
+# - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2022 - 2026)
+# - Marc Van den Bossche <mbossche@aip.de> (IAP Postdam - 2024)
+# and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
+
 import struct
 
 import numpy as np
-
 
 __all__ = ["readIdfxFile"]
 # Read .idfx files which are created
@@ -14,9 +29,9 @@ FLOAT_SIZE = 4
 
 HEADER_SIZE = 128
 
+
 # There is one .idfx file per processor
 class IdfxFileField(object):
-
     def __init__(self, fh, byteorder="little"):
         # read entry name
         q = fh.read(NAME_SIZE)
@@ -27,11 +42,12 @@ class IdfxFileField(object):
             return
         self.ndims = int.from_bytes(fh.read(INT_SIZE), byteorder)
         dims = []
-        for dim in range(self.ndims):
+        for _ in range(self.ndims):
             dims.append(int.from_bytes(fh.read(INT_SIZE), byteorder))
         ntot = int(np.prod(dims))
         raw = struct.unpack(str(ntot) + "d", fh.read(DOUBLE_SIZE * ntot))
         self.array = np.asarray(raw).reshape(dims[::-1])
+
 
 class IdfxFileDataset(object):
     def __init__(self, filename):
@@ -46,11 +62,10 @@ class IdfxFileDataset(object):
         # could easily be identical to DumpDataset
         headerSize = 128
         q = fh.read(headerSize)
-        n = q.index(b'\x00')
-        self.header = q[:n].decode('utf-8')
+        n = q.index(b"\x00")
+        self.header = q[:n].decode("utf-8")
 
         self.metadata["byteorder"] = "little"
-
 
     def _read_field(self, fh):
         # identical to DumpDataset

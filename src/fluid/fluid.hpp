@@ -1,7 +1,14 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/fluid/fluid.hpp
+//
+// Last modified : 02/2025
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023 - 2025)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -67,7 +74,7 @@ class Fluid {
   void EvolveStage(const real, const real);
   void ResetStage();
   void ShowConfig();
-  IdefixArray4D<real> GetFlux() {return this->FluxRiemann;}
+  IdefixArray4D<real> GetFlux(int dir) {return this->FluxRiemann.at(dir);}
   int CheckNan();
 
   // Our boundary conditions
@@ -182,7 +189,7 @@ class Fluid {
   // Required by time integrator
   IdefixArray3D<real> InvDt;
 
-  IdefixArray4D<real> FluxRiemann;
+  std::array<IdefixArray4D<real>,DIMENSIONS> FluxRiemann;
   IdefixArray3D<real> dMax;    // Maximum diffusion speed
 
   std::unique_ptr<RiemannSolver<Phys>> rSolver;
@@ -539,8 +546,12 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
   dMax = IdefixArray3D<real>(prefix+"_dMax",
                               data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-  FluxRiemann =  IdefixArray4D<real>(prefix+"_FluxRiemann", Phys::nvar+nTracer,
-                                     data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+
+  for(int i = 0 ; i < DIMENSIONS ; i++) {
+    FluxRiemann[i] = IdefixArray4D<real>(prefix+"_FluxRiemann_X"+std::to_string(i),
+                                        Phys::nvar+nTracer,
+                                        data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+  }
 
   if constexpr(Phys::mhd) {
     Vs = IdefixArray4D<real>(prefix+"_Vs", DIMENSIONS,

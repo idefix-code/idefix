@@ -1,7 +1,14 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/dataBlock/planetarySystem/planetStructs.hpp
+//
+// Last modified : 06/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023 - 2026)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -19,7 +26,7 @@ struct Force {
     real f_ex_inner[3];
     real f_outer[3];
     real f_ex_outer[3];
-    KOKKOS_FUNCTION void operator+=(Force const volatile& f) volatile {
+    KOKKOS_FUNCTION void operator+=(const Force & f) {
         for (int i = 0; i < 3; ++i) {
             f_inner[i] += f.f_inner[i];
             f_ex_inner[i] += f.f_ex_inner[i];

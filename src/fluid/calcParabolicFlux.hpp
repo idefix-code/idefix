@@ -1,7 +1,16 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/fluid/calcParabolicFlux.hpp
+//
+// Last modified : 10/2023
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2023)
+// - Soufiane Baghdadi <soufiane.baghdadi@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020)
+// - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 #ifndef FLUID_CALCPARABOLICFLUX_HPP_
@@ -42,7 +51,7 @@ void Fluid<Phys>::CalcParabolicFlux(const real t) {
     if(data->haveFargo && viscosityStatus.isExplicit) {
       data->fargo->AddVelocityFluid(t,this);
     }
-    this->viscosity->AddViscousFlux(dir,t, this->FluxRiemann);
+    this->viscosity->AddViscousFlux(dir,t, this->FluxRiemann[dir]);
 
     // Remove back Fargo velocity
     if(data->haveFargo && viscosityStatus.isExplicit) {
@@ -53,18 +62,18 @@ void Fluid<Phys>::CalcParabolicFlux(const real t) {
   // Add thermal diffusion
   if( (thermalDiffusionStatus.isExplicit && (!data->rklCycle))
     || (thermalDiffusionStatus.isRKL && data->rklCycle))  {
-    this->thermalDiffusion->AddDiffusiveFlux(dir,t, this->FluxRiemann);
+    this->thermalDiffusion->AddDiffusiveFlux(dir,t, this->FluxRiemann[dir]);
   }
 
   if( (bragViscosityStatus.isExplicit && (!data->rklCycle))
     || (bragViscosityStatus.isRKL && data->rklCycle))  {
-    this->bragViscosity->AddBragViscousFlux(dir,t, this->FluxRiemann);
+    this->bragViscosity->AddBragViscousFlux(dir,t, this->FluxRiemann[dir]);
   }
 
   // Add braginskii thermal diffusion
   if( (bragThermalDiffusionStatus.isExplicit && (!data->rklCycle))
     || (bragThermalDiffusionStatus.isRKL && data->rklCycle))  {
-    this->bragThermalDiffusion->AddBragDiffusiveFlux(dir,t, this->FluxRiemann);
+    this->bragThermalDiffusion->AddBragDiffusiveFlux(dir,t, this->FluxRiemann[dir]);
   }
 
   idfx::popRegion();

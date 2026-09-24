@@ -1,42 +1,60 @@
 #!/usr/bin/env python3
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file test/MHD/Coarsening/testme.py
+#
+# Last modified : 07/2026
+#
+# Copyright(C) by :
+# - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
+# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
+# - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+# and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
 
 """
 
 @author: glesur
 """
+
 import os
 import sys
+
 sys.path.append(os.getenv("IDEFIX_DIR"))
 
 import pytools.idfx_test as tst
 
-name="dump.0001.dmp"
+name = "dump.0001.dmp"
+
 
 def testMe(test):
-  test.configure()
-  test.compile()
-  inifiles=["idefix.ini","idefix-rkl.ini","idefix-x2.ini","idefix-x3.ini"]
+    test.configure()
+    test.compile()
+    inifiles = ["idefix.ini", "idefix-rkl.ini", "idefix-x2.ini", "idefix-x3.ini"]
 
-  # loop on all the ini files for this test
-  for ini in inifiles:
-    test.run(inputFile=ini)
-    if test.init and not test.mpi:
-      test.makeReference(filename=name)
-    test.standardTest()
-    test.nonRegressionTest(filename=name)
+    # loop on all the ini files for this test
+    for ini in inifiles:
+        test.run(inputFile=ini)
+        if test.init and not test.mpi:
+            test.makeReference(filename=name)
+        test.standardTest()
+        test.nonRegressionTest(filename=name)
 
 
-test=tst.idfxTest(__file__)
+test = tst.idfxTest(__file__)
 
 if not test.all:
-  if(test.check):
-    test.checkOnly(filename=name)
-  else:
-    testMe(test)
+    if test.check:
+        test.checkOnly(filename=name)
+    else:
+        testMe(test)
 else:
-  test.noplot = True
-  test.mpi=False
-  testMe(test)
+    test.noplot = True
+    test.mpi = False
+    testMe(test)
 
-  test.mpi=True
-  testMe(test)
+    test.mpi = True
+    testMe(test)

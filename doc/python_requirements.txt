@@ -1,5 +1,5 @@
 # Other requirements
-# Python >= 3.7
+# Python >= 3.10
 # Doxygen https://www.doxygen.nl/download.html
 #
 # Install Sphinx and required plugins with the following command

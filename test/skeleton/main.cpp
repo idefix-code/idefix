@@ -1,3 +1,17 @@
+// ***********************************************************************************
+// Idefix MHD astrophysical code
+//
+// Source file test/skeleton/main.cpp
+//
+// Last modified : 06/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2026)
+// and other code contributors
+//
+// Licensed under CeCILL 2.1 License, see COPYING for more information
+// ***********************************************************************************
+
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -37,7 +51,7 @@ void testReduction() {
 
   // Init an array on device, and image on host
   IdefixArray3D<real> rho = IdefixArray3D<real>("rho",nx3,nx2,nx1);
-  IdefixArray3D<real>::HostMirror rhoHost = Kokkos::create_mirror_view(rho);
+  IdefixArray3D<real>::host_mirror_type rhoHost = Kokkos::create_mirror_view(rho);
 
   // Fill the host array, and compute the theoretical results
   real theoreticalResult = 0;

@@ -1,7 +1,22 @@
 #!/usr/bin/env python3
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file test.py
+#
+# Last modified : 09/2026
+#
+# Copyright(C) by :
+# - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+# - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+# and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
 
 import os
 import sys
+
 import pytest
 
 # set IDEFIX_DIR
@@ -16,11 +31,21 @@ from pytools.idfx_test_run import IdexPytestRunner
 # to build for each run if we just changed the ini file and run options.
 gblIdefixPytestRunner = IdexPytestRunner(__file__)
 
+
+# if called directly as a script
+if __name__ == "__main__" and "--validate-testme-jsons" in sys.argv:
+    if gblIdefixPytestRunner.validateTestmeJsons():
+        sys.exit(0)
+    else:
+        sys.exit(1)
+
+
 # define the pytest test
 @pytest.mark.parametrize("config", gblIdefixPytestRunner.genTests())
 def test_idefix_build_run_check(config):
-  gblIdefixPytestRunner.run(config)
+    gblIdefixPytestRunner.run(config)
+
 
 # if called directly as a script
 if __name__ == "__main__":
-  gblIdefixPytestRunner.main(all=True)
+    gblIdefixPytestRunner.main(all=True)

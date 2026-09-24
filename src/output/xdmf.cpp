@@ -1,7 +1,16 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/output/xdmf.cpp
+//
+// Last modified : 08/2026
+//
+// Copyright(C) by :
+// - Alankar Dutta <dutta.alankar@gmail.com> (MPA Garching - 2023 - 2026)
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023 - 2026)
+// - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -21,11 +30,11 @@
 #endif
 
 #include "xdmf.hpp"
-#include "version.hpp"
 #include "idefix.hpp"
 #include "dataBlockHost.hpp"
 #include "gridHost.hpp"
 #include "output.hpp"
+#include "version.h"
 
 // Whether or not we write the time in the XDMF file
 #define WRITE_TIME
@@ -295,7 +304,7 @@ int Xdmf::Write() {
   #if DIMENSIONS == 1
   [[maybe_unused]] int tot_dim = 1;
   #elif DIMENSIONS == 2
-  int tot_dim = 2;
+  [[maybe_unused]] int tot_dim = 2;
   #elif DIMENSIONS == 3
   [[maybe_unused]] int tot_dim = 3;
   #endif
@@ -526,7 +535,7 @@ void Xdmf::WriteHeader(
 
   dimstr = 1;
 
-  ssheader << "Idefix " << IDEFIX_VERSION << " XDMF Data";
+  ssheader << "Idefix " << VersionInfo::version << " XDMF Data";
   strspace = H5Screate_simple(1, &dimstr, NULL);
   string_type = H5Tcopy(H5T_C_S1);
   H5Tset_size(string_type, strlen( ssheader.str().c_str() ));

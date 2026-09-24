@@ -1,7 +1,14 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/fluid/addNonIdealMHDFlux.hpp
+//
+// Last modified : 06/2024
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023 - 2024)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -19,8 +26,7 @@ void Fluid<Phys>::AddNonIdealMHDFlux(const real t) {
 
   if constexpr(Phys::mhd) {
     int ioffset,joffset,koffset;
-
-    IdefixArray4D<real> Flux = this->FluxRiemann;
+    IdefixArray4D<real> Flux = this->FluxRiemann[dir];
     IdefixArray4D<real> Vc   = this->Vc;
     IdefixArray4D<real> Vs   = this->Vs;
     IdefixArray3D<real> dMax = this->dMax;

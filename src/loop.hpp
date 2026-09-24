@@ -1,7 +1,16 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/loop.hpp
+//
+// Last modified : 08/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2026)
+// - Soufiane Baghdadi <soufiane.baghdadi@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020)
+// - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -85,7 +94,7 @@ inline void idefix_for(const std::string & NAME,
   idfx::pushRegion("idefix_for("+NAME+")");
   #endif
   const int NI = IE - IB;
-  Kokkos::parallel_for(NAME, NI,
+  Kokkos::parallel_for(NAME, Kokkos::RangePolicy<Kokkos::LaunchBounds<256>>(0, NI),
     KOKKOS_LAMBDA (const int& IDX) {
       int i = IDX;
       i += IB;
@@ -112,7 +121,7 @@ inline void idefix_for(const std::string & NAME,
     const int NJ = JE - JB;
     const int NI = IE - IB;
     const int NJNI = NJ * NI;
-    Kokkos::parallel_for(NAME, NJNI,
+    Kokkos::parallel_for(NAME, Kokkos::RangePolicy<Kokkos::LaunchBounds<256>>(0, NJNI),
       KOKKOS_LAMBDA (const int& IDX) {
         int j = IDX  / NI;
         int i = IDX - j*NI;
@@ -172,7 +181,7 @@ inline void idefix_for(const std::string & NAME,
     const int NI = IE - IB;
     const int NKNJNI = NK*NJ*NI;
     const int NJNI = NJ * NI;
-    Kokkos::parallel_for(NAME,NKNJNI,
+    Kokkos::parallel_for(NAME,Kokkos::RangePolicy<Kokkos::LaunchBounds<256>>(0, NKNJNI),
       KOKKOS_LAMBDA (const int& IDX) {
         int k = IDX / NJNI;
         int j = (IDX - k*NJNI) / NI;
@@ -259,7 +268,7 @@ inline void idefix_for(const std::string & NAME,
     const int NNNKNJNI = NN*NK*NJ*NI;
     const int NKNJNI = NK*NJ*NI;
     const int NJNI = NJ * NI;
-    Kokkos::parallel_for(NAME,NNNKNJNI,
+    Kokkos::parallel_for(NAME,Kokkos::RangePolicy<Kokkos::LaunchBounds<256>>(0, NNNKNJNI),
       KOKKOS_LAMBDA (const int& IDX) {
         int n = IDX / NKNJNI;
         int k = (IDX - n*NKNJNI) / NJNI;

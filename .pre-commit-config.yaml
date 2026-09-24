@@ -28,42 +28,40 @@ repos:
 
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.9
+    rev: v0.15.8
     hooks:
-      - id: ruff
-        args:
-        - --quiet
-        - --fix
-        - --select
-        - F # pyflakes
-        - B # flake8-bugbear
-        - I # isort
-        - NPY # numpy-specific rules
-        - --ignore
-        - F405
-        - --ignore
-        - F403 # ignore import *
+      - id: ruff-format
+        args: [--target-version=py310]
+      - id: ruff-check
+        args: [--target-version=py310, --quiet, --fix, --show-fixes]
 
-  - repo: https://github.com/neutrinoceros/inifix
-    rev: v6.1.2
+  - repo: https://github.com/la-niche/inifix-pre-commit
+    rev: v1.0.0
     hooks:
       - id: inifix-format
-        files: ^(test/).*\.(ini)$ # want to skip pytest.ini
-
-  - repo: https://github.com/Lucas-C/pre-commit-hooks
-    rev: v1.5.5
-    hooks:
-      - id: remove-tabs  # auto-fix tab/space mixing
-      - id: insert-license
-        files: ^(src/).*\.(hpp|cpp)$
-        args:
-        - --license-filepath
-        - src/license_header.txt
-        - --comment-style
-        - //
 
   - repo: https://gitlab.com/daverona/pre-commit/cpp
     rev: 0.8.0
     hooks:
       - id: cpplint
         args: [--counting=detailed, --exclude=test/*]
+
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.38.0
+    hooks:
+    - id: check-jsonschema
+      files: ^test/.*/testme.json$
+      args: ["--schemafile", "pytools/testme.schema.json"]
+
+  - repo: local
+    hooks:
+    - id: pytest
+      name: testme.json validation
+      entry: ./test.py --validate-testme-jsons
+      language: python
+      files: ^test/.*/testme.json$
+      pass_filenames: false
+      additional_dependencies:
+        - matplotlib >= 3.5.0
+        - pytest >= 6.0
+        - jsonschema >= 4.26.0

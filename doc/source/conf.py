@@ -34,11 +34,11 @@ import textwrap
 # -- Project information -----------------------------------------------------
 
 project = "Idefix"
-copyright = "Geoffroy Lesur et al."
+copyright = "The Idefix Code contributors"
 author = "Geoffroy Lesur"
 
 # The full version, including alpha/beta/rc tags
-release = "2.3.0"
+release = "2.4.0"
 
 
 # -- General configuration ---------------------------------------------------
@@ -114,6 +114,7 @@ exhale_args = {
     "exhaleDoxygenStdin": textwrap.dedent("""
             INPUT = ../../src
             EXCLUDE = ../../src/kokkos
+            EXCLUDE += ../../src/kokkos-fft
             """),
 }
 

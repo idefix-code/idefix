@@ -38,15 +38,25 @@ void Axis::SymmetrizeEx1Side(int jref, IdefixArray3D<real> Ex1) {
 
   auto Ex1Avg = this->Ex1Avg.deviceView();
 
-  idefix_for("Ex1_ini",0,data->np_tot[IDIR],
-      KOKKOS_LAMBDA(int i) {
-        Ex1Avg(i) = ZERO_F;
-      });
+  // Deterministic reduction: one thread per i, fixed k loop order
 
-  idefix_for("Ex1_Symmetrize",data->beg[KDIR],data->end[KDIR],0,data->np_tot[IDIR],
-    KOKKOS_LAMBDA(int k,int i) {
-      Kokkos::atomic_add(&Ex1Avg(i),  Ex1(k,jref,i));
+  const int kbeg = data->beg[KDIR];
+  const int kend = data->end[KDIR];
+
+  idefix_for("Ex1_SymmetrizeDet", 0, data->np_tot[IDIR],
+    KOKKOS_LAMBDA(int i) {
+      real sum = ZERO_F;
+      real c = ZERO_F;  // Kahan compensation
+      for(int k = kbeg; k < kend; k++) {
+        real y = Ex1(k, jref, i) - c;
+        real t = sum + y;
+        c = (t - sum) - y;
+        sum = t;
+      }
+      Ex1Avg(i) = sum;
     });
+
+
   if(needMPIExchange) {
     #ifdef WITH_MPI
       Kokkos::fence();
@@ -105,14 +115,20 @@ void Axis::RegularizeCurrentSide(int side) {
     IdefixArray1D<real> dx3 = data->dx[KDIR];
     IdefixArray1D<real> dx2 = data->dx[JDIR];
 
-    idefix_for("B_ini",0,data->np_tot[IDIR],
-          KOKKOS_LAMBDA(int i) {
-            BAvg(i) = ZERO_F;
-    });
-    idefix_for("Compute_Bcirculation",data->beg[KDIR],data->end[KDIR],0,data->np_tot[IDIR],
-        KOKKOS_LAMBDA(int k,int i) {
-          Kokkos::atomic_add(&BAvg(i), Vs(BX3s,k,jc,i)*dx3(k) ); // Compute the circulation of
-                                                                 // Bphi around the pole
+    const int kbeg = data->beg[KDIR];
+    const int kend = data->end[KDIR];
+    idefix_for("Compute_BcirculationDet", 0, data->np_tot[IDIR],
+      KOKKOS_LAMBDA(int i) {
+      real sum = ZERO_F;
+      real c = ZERO_F;  // Kahan compensation
+      for(int k = kbeg; k < kend; k++) {
+        real term = Vs(BX3s, k, jc, i) * dx3(k);
+        real y = term - c;
+        real t = sum + y;
+        c = (t - sum) - y;
+        sum = t;
+      }
+      BAvg(i) = sum;
     });
 
     if(needMPIExchange) {
@@ -202,19 +218,34 @@ void Axis::FixBx2sAxis(int side) {
       sign = -1;
     }
 
-    idefix_for("B_ini",0,data->np_tot[IDIR],0,2,
-          KOKKOS_LAMBDA(int i, int n) {
-            BAvg(i,n) = ZERO_F;
-    });
-    idefix_for("BHorizontal_compute",data->beg[KDIR],data->end[KDIR],0,data->np_tot[IDIR],
-        KOKKOS_LAMBDA(int k,int i) {
-          real Bthmid = sign*HALF_F*(Vs(BX2s,k,jaxe-1,i) + Vs(BX2s,k,jaxe+1,i));
-          real Bphimid = HALF_F*(Vs(BX3s,k,jin,i) + Vs(BX3s,k,jout,i));
-          //Bthmid = 0.0;
-          //Bphimid = 0.0;
+    const int kbeg = data->beg[KDIR];
+    const int kend = data->end[KDIR];
+    idefix_for("BHorizontal_computeDet", 0, data->np_tot[IDIR],
+    KOKKOS_LAMBDA(int i) {
+      real sumX = ZERO_F;
+      real cX   = ZERO_F;  // Kahan compensation for X
+      real sumY = ZERO_F;
+      real cY   = ZERO_F;  // Kahan compensation for Y
 
-          Kokkos::atomic_add(&BAvg(i,IDIR), Bthmid * cos(phi(k)) - Bphimid * sin(phi(k)));
-          Kokkos::atomic_add(&BAvg(i,JDIR), Bthmid * sin(phi(k)) + Bphimid * cos(phi(k)));
+      for(int k = kbeg; k < kend ; k++) {
+        real Bthmid  = sign*HALF_F*(Vs(BX2s,k,jaxe-1,i) + Vs(BX2s,k,jaxe+1,i));
+        real Bphimid =      HALF_F*(Vs(BX3s,k,jin,i)    + Vs(BX3s,k,jout,i));
+
+        real termX = Bthmid * cos(phi(k)) - Bphimid * sin(phi(k));
+        real yX = termX - cX;
+        real tX = sumX + yX;
+        cX = (tX - sumX) - yX;
+        sumX = tX;
+
+        real termY = Bthmid * sin(phi(k)) + Bphimid * cos(phi(k));
+        real yY = termY - cY;
+        real tY = sumY + yY;
+        cY = (tY - sumY) - yY;
+        sumY = tY;
+      }
+
+      BAvg(i,IDIR) = sumX;
+      BAvg(i,JDIR) = sumY;
     });
     if(needMPIExchange) {
       Kokkos::fence();

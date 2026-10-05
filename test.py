@@ -27,6 +27,12 @@ os.environ["IDEFIX_DIR"] = source_dir
 sys.path.append(source_dir)
 from pytools.idfx_test_run import IdexPytestRunner
 
+# export it for sub-commands accessing ./pytools module
+if "PYTHONPATH" in os.environ:
+    os.environ["PYTHONPATH"] = source_dir + ":" + os.environ["PYTHONPATH"]
+else:
+    os.environ["PYTHONPATH"] = source_dir
+
 # should be global so it remember state (last build) and avoids
 # to build for each run if we just changed the ini file and run options.
 gblIdefixPytestRunner = IdexPytestRunner(__file__)

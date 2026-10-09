@@ -1,0 +1,18 @@
+{
+  "namings": "ini,reconstruction",
+  "default": {
+    "dumpname": "./data/dump.0001.dmp",
+    "mpi": false,
+    "noplot": true,
+    "vectPot": false,
+    "tolerance": 0,
+    "standardTest":true,
+    "single": false
+  },
+  "variants": [
+    {
+      "ini": ["idefix-constantKernel.ini", "idefix-additiveKernel.ini", "idefix-brownianKernel.ini", "idefix-physicalKernel.ini"],
+      "reconstruction": [2, 3, 4]
+    }
+  ]
+}

@@ -37,7 +37,7 @@ parser.add_argument(
     "-noplot", default=False, help="disable plotting", action="store_true"
 )
 
-args = parser.parse_args()
+args = parser.parse_known_args()
 
 # Read vtk
 V = readVTK("../data.0000.vtk")

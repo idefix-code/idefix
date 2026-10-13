@@ -124,7 +124,7 @@ endif()
 # add tests
 if (Idefix_GTEST)
   add_executable(unittests)
-  target_link_libraries(unittests GTest::gtest)
+  target_link_libraries(unittests GTest::gtest GTest::gmock)
   add_test(unittests unittests)
 endif()
 

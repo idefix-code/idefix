@@ -52,5 +52,12 @@ target_sources(idefix-core
 )
 # NOTE: mpi file are added by the root CMakeLists along with dependencies to the MPI library
 
+if (Idefix_GTEST)
+  target_sources(unittests
+    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/tests/testKokkos.cpp
+    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/tests/testArrays.cpp
+    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/gtest-idfx.cpp
+  )
+endif()
 
 #add_subdirectory("${PROJECT_BINARY_DIR}" "${PROJECT_BINARY_DIR}/local")

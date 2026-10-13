@@ -71,27 +71,15 @@ include(SetIdefixProperty)
 include(SetRequiredBuildSettingsForGCC8)
 include(CheckHdf5ParallelSupport)
 include(SuppressFMA)
+include(HandleDeps)
 
 # enable tests
 if (Idefix_GTEST)
   # enable supports of "make test"
   enable_testing()
 
-  # try to use the system one
-  find_package(GTest QUIET)
-
   # it not, download it internally to the project
-  if (NOT GTest_FOUND)
-    cmake_policy(SET CMP0135 NEW)
-    include(FetchContent)
-    FetchContent_Declare(
-      googletest
-      URL https://github.com/google/googletest/releases/download/v1.18.0/googletest-1.18.0.tar.gz
-    )
-    # For Windows: Prevent overriding the parent project's compiler/linker settings
-    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-    FetchContent_MakeAvailable(googletest)
-  endif()
+  FindSystemGoogleTestOrDownload()
 endif()
 
 #Idefix requires Cuda Lambdas (experimental)

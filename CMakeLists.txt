@@ -79,7 +79,7 @@ if (Idefix_GTEST)
   enable_testing()
 
   # it not, download it internally to the project
-  FindSystemGoogleTestOrDownload()
+  GoogleTestDownloadAndLink()
 endif()
 
 #Idefix requires Cuda Lambdas (experimental)

@@ -360,13 +360,14 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
     } \
   } while(0)
 
-//Note(Sébastien): I don't like too much that approach but that looks the only easy one.
-//Patch GTEST_TEST_ so it is supported by NVCC. We fix here the usage of "private"
+//Note from Sébastien: I don't like too much that approach but it looks the only easy one.
+//Patch GTEST_TEST_() so it is supported by NVCC. We fix here the usage of "private"
 //keyword for TestBody function which prevent using KOKKOS_LAMBDA.
-//Fix is reported here : https://github.com/google/googletest/issues/4104
-#define GTEST_TESTBODY_VISIBILITY public
-
+//Fix is reported coming from : https://github.com/google/googletest/issues/4104
 //We re-write the GTEST_TEST_ with that feature.
+//Here it if the GEST_TEST_() imported from googletest/include/gtest/internal/gtest-internal.h
+//version 1.18.0
+#define GTEST_TESTBODY_VISIBILITY public
 #undef GTEST_TEST_
 #define GTEST_TEST_(test_suite_name, test_name, parent_class, parent_id)       \
   static_assert(sizeof(GTEST_STRINGIFY_(test_suite_name)) > 1,                 \

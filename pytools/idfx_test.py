@@ -554,6 +554,9 @@ class idfxTest:
             comm = [sys.executable, "testidefix.py"]
             if self.noplot:
                 comm.append("-noplot")
+            if self.inifile:
+                comm.append("-ini")
+                comm.append(self.inifile)
 
             print(bcolors.OKCYAN + "Running standard test...")
             try:

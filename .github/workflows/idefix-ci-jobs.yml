@@ -24,7 +24,19 @@ env:
 permissions: {}
 
 jobs:
+  UnitTests:
+    runs-on: self-hosted
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - name: Configure, Build Idefix and Run Unit Tests
+        run: scripts/ci/run-unit-tests $TESTME_OPTIONS
+
   ShocksHydro:
+    needs: UnitTests
     runs-on: self-hosted
     steps:
       - name: Check out repo
@@ -44,6 +56,7 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/HD/SedovBlastWave -all $TESTME_OPTIONS
 
   ParabolicHydro:
+    needs: UnitTests
     runs-on: self-hosted
     steps:
       - name: Check out repo
@@ -61,6 +74,7 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/HD/thermalDiffusion -all $TESTME_OPTIONS
 
   ShocksMHD:
+    needs: UnitTests
     runs-on: self-hosted
     steps:
       - name: Check out repo
@@ -84,6 +98,7 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/AxisFluxTube -all $TESTME_OPTIONS
 
   ParabolicMHD:
+    needs: UnitTests
     runs-on: self-hosted
     steps:
       - name: Check out repo
@@ -105,7 +120,7 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/HallWhistler -all $TESTME_OPTIONS
 
   Fargo:
-    needs: [ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
+    needs: [ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD, UnitTests]
     runs-on: self-hosted
     steps:
       - name: Check out repo
@@ -121,7 +136,7 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/FargoMHDSpherical -all $TESTME_OPTIONS
 
   ShearingBox:
-    needs: [ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
+    needs: [ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD, UnitTests]
     runs-on: self-hosted
     steps:
       - name: Check out repo
@@ -137,7 +152,7 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/ShearingBox -all $TESTME_OPTIONS
 
   SelfGravity:
-    needs: [ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
+    needs: [ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD, UnitTests]
     runs-on: self-hosted
     steps:
       - name: Check out repo
@@ -159,7 +174,7 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/SelfGravity/DustyCollapse -all $TESTME_OPTIONS
 
   Planet:
-    needs: [ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
+    needs: [ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD, UnitTests]
     runs-on: self-hosted
     steps:
       - name: Check out repo
@@ -183,7 +198,7 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/Planet/PlanetsIsActiveRK52D -all $TESTME_OPTIONS
 
   Dust:
-    needs: [ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
+    needs: [ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD, UnitTests]
     runs-on: self-hosted
     steps:
       - name: Check out repo
@@ -199,7 +214,7 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/Dust/DustyWave -all $TESTME_OPTIONS
 
   Braginskii:
-    needs: [ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
+    needs: [ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD, UnitTests]
     runs-on: self-hosted
     steps:
       - name: Check out repo
@@ -219,7 +234,7 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/clessTDiffusion -all $TESTME_OPTIONS
 
   Examples:
-    needs: [Fargo, Dust, Planet, ShearingBox, SelfGravity]
+    needs: [Fargo, Dust, Planet, ShearingBox, SelfGravity, UnitTests]
     runs-on: self-hosted
     steps:
       - name: Check out repo
@@ -233,7 +248,7 @@ jobs:
         run: cd test && ./checks_examples.sh $TEST_OPTIONS
 
   Utils:
-    needs: [Fargo, Dust, Planet, ShearingBox, SelfGravity]
+    needs: [Fargo, Dust, Planet, ShearingBox, SelfGravity, UnitTests]
     runs-on: self-hosted
     steps:
       - name: Check out repo
@@ -251,7 +266,7 @@ jobs:
         run: scripts/ci/run-tests $IDEFIX_DIR/test/utils/columnDensity -all $TESTME_OPTIONS
 
   IOs:
-    needs: [Fargo, Dust, Planet, ShearingBox, SelfGravity]
+    needs: [Fargo, Dust, Planet, ShearingBox, SelfGravity, UnitTests]
     runs-on: self-hosted
     steps:
       - name: Check out repo

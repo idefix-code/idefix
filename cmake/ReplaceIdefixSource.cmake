@@ -32,5 +32,5 @@ function(replace_idefix_source _old_source _new_source)
   # replace the source with our new source list
   set_property(TARGET idefix PROPERTY SOURCES ${mylist})
   # add the new source file
-  target_sources(idefix PUBLIC ${_new_source})
+  target_sources(idefix-core PRIVATE ${_new_source})
 endfunction()

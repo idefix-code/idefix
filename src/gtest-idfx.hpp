@@ -57,6 +57,7 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
   do { \
     Kokkos::fence(); \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
+    Kokkos::deep_copy(arrayOnHost, array); \
     Kokkos::fence(); \
     for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
       ASSERT_THAT(arrayOnHost(i), matcher(__VA_ARGS__)) << "      at: (" << i << ")"; \
@@ -80,6 +81,8 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
     Kokkos::fence(); \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
     auto array2OnHost = Kokkos::create_mirror_view(array2); \
+    Kokkos::deep_copy(arrayOnHost, array); \
+    Kokkos::deep_copy(array2OnHost, array2); \
     Kokkos::fence(); \
     for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
       ASSERT_THAT(arrayOnHost(i), matcher(array2OnHost(i))) << "      at: (" << i << ")"; \
@@ -104,6 +107,8 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
     Kokkos::fence(); \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
     auto array2OnHost = Kokkos::create_mirror_view(array2); \
+    Kokkos::deep_copy(arrayOnHost, array); \
+    Kokkos::deep_copy(array2OnHost, array2); \
     Kokkos::fence(); \
     for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
       ASSERT_THAT(arrayOnHost(i), that(array2OnHost(i), __VA_ARGS__)) \
@@ -126,6 +131,7 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
   do { \
     Kokkos::fence(); \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
+    Kokkos::deep_copy(arrayOnHost, array); \
     Kokkos::fence(); \
     for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
       for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
@@ -152,6 +158,8 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
     Kokkos::fence(); \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
     auto array2OnHost = Kokkos::create_mirror_view(array2); \
+    Kokkos::deep_copy(arrayOnHost, array); \
+    Kokkos::deep_copy(array2OnHost, array2); \
     Kokkos::fence(); \
     for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
       for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
@@ -179,6 +187,8 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
     Kokkos::fence(); \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
     auto array2OnHost = Kokkos::create_mirror_view(array2); \
+    Kokkos::deep_copy(arrayOnHost, array); \
+    Kokkos::deep_copy(array2OnHost, array2); \
     Kokkos::fence(); \
     for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
       for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
@@ -203,6 +213,7 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
   do { \
     Kokkos::fence(); \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
+    Kokkos::deep_copy(arrayOnHost, array); \
     Kokkos::fence(); \
     for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
       for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
@@ -231,6 +242,8 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
     Kokkos::fence(); \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
     auto array2OnHost = Kokkos::create_mirror_view(array2); \
+    Kokkos::deep_copy(arrayOnHost, array); \
+    Kokkos::deep_copy(array2OnHost, array2); \
     Kokkos::fence(); \
     for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
       for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
@@ -260,6 +273,8 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
     Kokkos::fence(); \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
     auto array2OnHost = Kokkos::create_mirror_view(array2); \
+    Kokkos::deep_copy(arrayOnHost, array); \
+    Kokkos::deep_copy(array2OnHost, array2); \
     Kokkos::fence(); \
     for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
       for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
@@ -286,6 +301,7 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
   do { \
     Kokkos::fence(); \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
+    Kokkos::deep_copy(arrayOnHost, array); \
     Kokkos::fence(); \
     for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
       for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
@@ -316,6 +332,8 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
     Kokkos::fence(); \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
     auto array2OnHost = Kokkos::create_mirror_view(array2); \
+    Kokkos::deep_copy(arrayOnHost, array); \
+    Kokkos::deep_copy(array2OnHost, array2); \
     Kokkos::fence(); \
     for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
       for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
@@ -347,6 +365,8 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
     Kokkos::fence(); \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
     auto array2OnHost = Kokkos::create_mirror_view(array2); \
+    Kokkos::deep_copy(arrayOnHost, array); \
+    Kokkos::deep_copy(array2OnHost, array2); \
     Kokkos::fence(); \
     for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
       for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \

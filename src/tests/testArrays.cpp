@@ -27,9 +27,9 @@ TEST(Array, assert_1d) {
   IdefixArray1D<double> b("b", 10);
 
   //make both 5
-  for (size_t i = 0 ; i < 10 ; i++) {
+  idefix_for("Loop1", 0, 10, KOKKOS_LAMBDA (const int i) {
     a(i) = b(i) = 5;
-  }
+  });
 
   //check all 5 static
   ASSERT_THAT_1D_ARRAY(a, testing::Eq, 5);
@@ -49,9 +49,9 @@ TEST(Array, assert_1d_is_nan) {
   IdefixArray1D<double> b("b", 10);
 
   //make both 5
-  for (size_t i = 0 ; i < 10 ; i++) {
+  idefix_for("Loop1", 0, 10, KOKKOS_LAMBDA (const int i) {
     a(i) = b(i) = NAN;
-  }
+  });
 
   //check all 5 static
   ASSERT_THAT_1D_ARRAY(a, testing::IsNan);
@@ -59,17 +59,15 @@ TEST(Array, assert_1d_is_nan) {
 
 TEST(Array, assert_2d) {
   //data array
-  IdefixArray2D<double> a("a", 10, 10);
+  IdefixArray2D<double> a("a", 10, 20);
 
   //ref array
-  IdefixArray2D<double> b("b", 10, 10);
+  IdefixArray2D<double> b("b", 10, 20);
 
   //make both 5
-  for (size_t j = 0 ; j < 10 ; j++) {
-    for (size_t i = 0 ; i < 10 ; i++) {
-      a(i, j) = b(i, j) = 5;
-    }
-  }
+  idefix_for("Loop1", 0, 10, 0, 20, KOKKOS_LAMBDA (const int j, const int i) {
+    a(j, i) = b(j, i) = 5;
+  });
 
   //check all 5 static
   ASSERT_THAT_2D_ARRAY(a, testing::Eq, 5);
@@ -83,19 +81,15 @@ TEST(Array, assert_2d) {
 
 TEST(Array, assert_3d) {
   //data array
-  IdefixArray3D<double> a("a", 10, 10, 10);
+  IdefixArray3D<double> a("a", 10, 20, 30);
 
   //ref array
-  IdefixArray3D<double> b("b", 10, 10, 10);
+  IdefixArray3D<double> b("b", 10, 20, 30);
 
   //make both 5
-  for (size_t k = 0 ; k < 10 ; k++) {
-    for (size_t j = 0 ; j < 10 ; j++) {
-      for (size_t i = 0 ; i < 10 ; i++) {
-        a(i, j, k) = b(i, j, k) = 5;
-      }
-    }
-  }
+  idefix_for("Loop1", 0, 10, 0, 20, 0, 30, KOKKOS_LAMBDA (const int k, const int j, const int i) {
+    a(k, j, i) = b(k, j, i) = 5;
+  });
 
   //check all 5 static
   ASSERT_THAT_3D_ARRAY(a, testing::Eq, 5);
@@ -109,21 +103,16 @@ TEST(Array, assert_3d) {
 
 TEST(Array, assert_4d) {
   //data array
-  IdefixArray4D<double> a("a", 10, 10, 10, 10);
+  IdefixArray4D<double> a("a", 10, 20, 30, 40);
 
   //ref array
-  IdefixArray4D<double> b("b", 10, 10, 10, 10);
+  IdefixArray4D<double> b("b", 10, 20, 30, 40);
 
   //make both 5
-  for (size_t l = 0 ; l < 10 ; l++) {
-    for (size_t k = 0 ; k < 10 ; k++) {
-      for (size_t j = 0 ; j < 10 ; j++) {
-        for (size_t i = 0 ; i < 10 ; i++) {
-          a(i, j, k, l) = b(i, j, k, l) = 5;
-        }
-      }
-    }
-  }
+  idefix_for("Loop1", 0, 10, 0, 20, 0, 30, 0, 40,
+    KOKKOS_LAMBDA (const int l, const int k, const int j, const int i) {
+    a(l, k, j, i) = b(l, k, j, i) = 5;
+  });
 
   //check all 5 static
   ASSERT_THAT_4D_ARRAY(a, testing::Eq, 5);

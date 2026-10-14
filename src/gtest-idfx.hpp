@@ -119,7 +119,7 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
 #define ASSERT_THAT_2D_ARRAY(array, matcher, ...) \
   do { \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
-    for (size_t j = 0 ; j < arrayOnHost.extent(0) ; j++) { \
+    for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
       for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
         ASSERT_THAT(arrayOnHost(i, j), matcher(__VA_ARGS__)) \
           << "      at: (" << i << " , " << j << ")"; \
@@ -143,7 +143,7 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
   do { \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
     auto array2OnHost = Kokkos::create_mirror_view(array2); \
-    for (size_t j = 0 ; j < arrayOnHost.extent(0) ; j++) { \
+    for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
       for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
         ASSERT_THAT(arrayOnHost(i, j), matcher(array2OnHost(i, j))) \
           << "      at: (" << i << " , " << j << ")"; \
@@ -168,7 +168,7 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
   do { \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
     auto array2OnHost = Kokkos::create_mirror_view(array2); \
-    for (size_t j = 0 ; j < arrayOnHost.extent(0) ; j++) { \
+    for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
       for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
         ASSERT_THAT(arrayOnHost(i, j), matcher(array2OnHost(i, j), __VA_ARGS__)) \
           << "      at: (" << i << " , " << j << ")"; \
@@ -190,8 +190,8 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
 #define ASSERT_THAT_3D_ARRAY(array, matcher, ...) \
   do { \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
-    for (size_t k = 0 ; k < arrayOnHost.extent(0) ; k++) { \
-      for (size_t j = 0 ; j < arrayOnHost.extent(0) ; j++) { \
+    for (size_t k = 0 ; k < arrayOnHost.extent(2) ; k++) { \
+      for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
         for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
           ASSERT_THAT(arrayOnHost(i, j, k), matcher(__VA_ARGS__)) \
             << "      at: (" << i << " , " << j << " , " << k << ")"; \
@@ -216,8 +216,8 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
   do { \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
     auto array2OnHost = Kokkos::create_mirror_view(array2); \
-    for (size_t k = 0 ; k < arrayOnHost.extent(0) ; k++) { \
-      for (size_t j = 0 ; j < arrayOnHost.extent(0) ; j++) { \
+    for (size_t k = 0 ; k < arrayOnHost.extent(2) ; k++) { \
+      for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
         for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
           ASSERT_THAT(arrayOnHost(i, j, k), matcher(array2OnHost(i, j, k))) \
             << "      at: (" << i << " , " << j << " , " << k << ")"; \
@@ -243,8 +243,8 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
   do { \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
     auto array2OnHost = Kokkos::create_mirror_view(array2); \
-    for (size_t k = 0 ; k < arrayOnHost.extent(0) ; k++) { \
-      for (size_t j = 0 ; j < arrayOnHost.extent(0) ; j++) { \
+    for (size_t k = 0 ; k < arrayOnHost.extent(2) ; k++) { \
+      for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
         for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
           ASSERT_THAT(arrayOnHost(i, j, k), matcher(array2OnHost(i, j, k), __VA_ARGS__)) \
             << "      at: (" << i << " , " << j << " , " << k << ")"; \
@@ -267,9 +267,9 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
 #define ASSERT_THAT_4D_ARRAY(array, matcher, ...) \
   do { \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
-    for (size_t l = 0 ; l < arrayOnHost.extent(0) ; l++) { \
-      for (size_t k = 0 ; k < arrayOnHost.extent(0) ; k++) { \
-        for (size_t j = 0 ; j < arrayOnHost.extent(0) ; j++) { \
+    for (size_t l = 0 ; l < arrayOnHost.extent(3) ; l++) { \
+      for (size_t k = 0 ; k < arrayOnHost.extent(2) ; k++) { \
+        for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
           for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
             ASSERT_THAT(arrayOnHost(i, j, k, l), matcher(__VA_ARGS__)) \
               << "      at: (" << i << " , " << j << " , " << k << " , " << l << ")"; \
@@ -295,9 +295,9 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
   do { \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
     auto array2OnHost = Kokkos::create_mirror_view(array2); \
-    for (size_t l = 0 ; l < arrayOnHost.extent(0) ; l++) { \
-      for (size_t k = 0 ; k < arrayOnHost.extent(0) ; k++) { \
-        for (size_t j = 0 ; j < arrayOnHost.extent(0) ; j++) { \
+    for (size_t l = 0 ; l < arrayOnHost.extent(3) ; l++) { \
+      for (size_t k = 0 ; k < arrayOnHost.extent(2) ; k++) { \
+        for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
           for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
             ASSERT_THAT(arrayOnHost(i, j, k, l), matcher(array2OnHost(i, j, k, l))) \
               << "      at: (" << i << " , " << j << " , " << k << " , " << l << ")"; \
@@ -324,9 +324,9 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
   do { \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
     auto array2OnHost = Kokkos::create_mirror_view(array2); \
-    for (size_t l = 0 ; l < arrayOnHost.extent(0) ; l++) { \
-      for (size_t k = 0 ; k < arrayOnHost.extent(0) ; k++) { \
-        for (size_t j = 0 ; j < arrayOnHost.extent(0) ; j++) { \
+    for (size_t l = 0 ; l < arrayOnHost.extent(3) ; l++) { \
+      for (size_t k = 0 ; k < arrayOnHost.extent(2) ; k++) { \
+        for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
           for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
             ASSERT_THAT(arrayOnHost(i, j, k, l), matcher(array2OnHost(i, j, k, l), __VA_ARGS__)) \
               << "      at: (" << i << " , " << j << " , " << k << " , " << l << ")"; \

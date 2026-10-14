@@ -56,11 +56,11 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
 #define ASSERT_THAT_1D_ARRAY(array, matcher, ...) \
   do { \
     Kokkos::fence(); \
-    auto arrayOnHost = Kokkos::create_mirror_view(array); \
-    Kokkos::deep_copy(arrayOnHost, array); \
+    auto array##_host = Kokkos::create_mirror_view(array); \
+    Kokkos::deep_copy(array##_host, array); \
     Kokkos::fence(); \
-    for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
-      ASSERT_THAT(arrayOnHost(i), matcher(__VA_ARGS__)) << "      at: (" << i << ")"; \
+    for (size_t i = 0 ; i < array##_host.extent(0) ; i++) { \
+      ASSERT_THAT(array##_host(i), matcher(__VA_ARGS__)) << "      at: (" << i << ")"; \
     } \
   } while(0)
 
@@ -79,13 +79,13 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
 #define ASSERT_THAT_1D_ARRAYS(array, matcher, array2) \
   do { \
     Kokkos::fence(); \
-    auto arrayOnHost = Kokkos::create_mirror_view(array); \
-    auto array2OnHost = Kokkos::create_mirror_view(array2); \
-    Kokkos::deep_copy(arrayOnHost, array); \
-    Kokkos::deep_copy(array2OnHost, array2); \
+    auto array##_host = Kokkos::create_mirror_view(array); \
+    auto array2##_host = Kokkos::create_mirror_view(array2); \
+    Kokkos::deep_copy(array##_host, array); \
+    Kokkos::deep_copy(array2##_host, array2); \
     Kokkos::fence(); \
-    for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
-      ASSERT_THAT(arrayOnHost(i), matcher(array2OnHost(i))) << "      at: (" << i << ")"; \
+    for (size_t i = 0 ; i < array##_host.extent(0) ; i++) { \
+      ASSERT_THAT(array##_host(i), matcher(array2##_host(i))) << "      at: (" << i << ")"; \
     } \
   } while(0)
 
@@ -105,13 +105,13 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
 #define ASSERT_THAT_1D_ARRAYS_ARGS(array, that, array2, ...) \
   do { \
     Kokkos::fence(); \
-    auto arrayOnHost = Kokkos::create_mirror_view(array); \
-    auto array2OnHost = Kokkos::create_mirror_view(array2); \
-    Kokkos::deep_copy(arrayOnHost, array); \
-    Kokkos::deep_copy(array2OnHost, array2); \
+    auto array##_host = Kokkos::create_mirror_view(array); \
+    auto array2##_host = Kokkos::create_mirror_view(array2); \
+    Kokkos::deep_copy(array##_host, array); \
+    Kokkos::deep_copy(array2##_host, array2); \
     Kokkos::fence(); \
-    for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
-      ASSERT_THAT(arrayOnHost(i), that(array2OnHost(i), __VA_ARGS__)) \
+    for (size_t i = 0 ; i < array##_host.extent(0) ; i++) { \
+      ASSERT_THAT(array##_host(i), that(array2##_host(i), __VA_ARGS__)) \
         << "      at: (" << i << ")"; \
     } \
   } while(0)
@@ -130,12 +130,12 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
 #define ASSERT_THAT_2D_ARRAY(array, matcher, ...) \
   do { \
     Kokkos::fence(); \
-    auto arrayOnHost = Kokkos::create_mirror_view(array); \
-    Kokkos::deep_copy(arrayOnHost, array); \
+    auto array##_host = Kokkos::create_mirror_view(array); \
+    Kokkos::deep_copy(array##_host, array); \
     Kokkos::fence(); \
-    for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
-      for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
-        ASSERT_THAT(arrayOnHost(i, j), matcher(__VA_ARGS__)) \
+    for (size_t i = 0 ; i < array##_host.extent(0) ; i++) { \
+      for (size_t j = 0 ; j < array##_host.extent(1) ; j++) { \
+        ASSERT_THAT(array##_host(i, j), matcher(__VA_ARGS__)) \
           << "      at: (" << i << " , " << j << ")"; \
       } \
     } \
@@ -156,14 +156,14 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
 #define ASSERT_THAT_2D_ARRAYS(array, matcher, array2) \
   do { \
     Kokkos::fence(); \
-    auto arrayOnHost = Kokkos::create_mirror_view(array); \
-    auto array2OnHost = Kokkos::create_mirror_view(array2); \
-    Kokkos::deep_copy(arrayOnHost, array); \
-    Kokkos::deep_copy(array2OnHost, array2); \
+    auto array##_host = Kokkos::create_mirror_view(array); \
+    auto array2##_host = Kokkos::create_mirror_view(array2); \
+    Kokkos::deep_copy(array##_host, array); \
+    Kokkos::deep_copy(array2##_host, array2); \
     Kokkos::fence(); \
-    for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
-      for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
-        ASSERT_THAT(arrayOnHost(i, j), matcher(array2OnHost(i, j))) \
+    for (size_t i = 0 ; i < array##_host.extent(0) ; i++) { \
+      for (size_t j = 0 ; j < array##_host.extent(1) ; j++) { \
+        ASSERT_THAT(array##_host(i, j), matcher(array2##_host(i, j))) \
           << "      at: (" << i << " , " << j << ")"; \
       } \
     } \
@@ -185,14 +185,14 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
 #define ASSERT_THAT_2D_ARRAYS_ARGS(array, matcher, array2, ...) \
   do { \
     Kokkos::fence(); \
-    auto arrayOnHost = Kokkos::create_mirror_view(array); \
-    auto array2OnHost = Kokkos::create_mirror_view(array2); \
-    Kokkos::deep_copy(arrayOnHost, array); \
-    Kokkos::deep_copy(array2OnHost, array2); \
+    auto array##_host = Kokkos::create_mirror_view(array); \
+    auto array2##_host = Kokkos::create_mirror_view(array2); \
+    Kokkos::deep_copy(array##_host, array); \
+    Kokkos::deep_copy(array2##_host, array2); \
     Kokkos::fence(); \
-    for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
-      for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
-        ASSERT_THAT(arrayOnHost(i, j), matcher(array2OnHost(i, j), __VA_ARGS__)) \
+    for (size_t i = 0 ; i < array##_host.extent(0) ; i++) { \
+      for (size_t j = 0 ; j < array##_host.extent(1) ; j++) { \
+        ASSERT_THAT(array##_host(i, j), matcher(array2##_host(i, j), __VA_ARGS__)) \
           << "      at: (" << i << " , " << j << ")"; \
       } \
     } \
@@ -212,13 +212,13 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
 #define ASSERT_THAT_3D_ARRAY(array, matcher, ...) \
   do { \
     Kokkos::fence(); \
-    auto arrayOnHost = Kokkos::create_mirror_view(array); \
-    Kokkos::deep_copy(arrayOnHost, array); \
+    auto array##_host = Kokkos::create_mirror_view(array); \
+    Kokkos::deep_copy(array##_host, array); \
     Kokkos::fence(); \
-    for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
-      for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
-        for (size_t k = 0 ; k < arrayOnHost.extent(2) ; k++) { \
-          ASSERT_THAT(arrayOnHost(i, j, k), matcher(__VA_ARGS__)) \
+    for (size_t i = 0 ; i < array##_host.extent(0) ; i++) { \
+      for (size_t j = 0 ; j < array##_host.extent(1) ; j++) { \
+        for (size_t k = 0 ; k < array##_host.extent(2) ; k++) { \
+          ASSERT_THAT(array##_host(i, j, k), matcher(__VA_ARGS__)) \
             << "      at: (" << i << " , " << j << " , " << k << ")"; \
         } \
       } \
@@ -240,15 +240,15 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
 #define ASSERT_THAT_3D_ARRAYS(array, matcher, array2) \
   do { \
     Kokkos::fence(); \
-    auto arrayOnHost = Kokkos::create_mirror_view(array); \
-    auto array2OnHost = Kokkos::create_mirror_view(array2); \
-    Kokkos::deep_copy(arrayOnHost, array); \
-    Kokkos::deep_copy(array2OnHost, array2); \
+    auto array##_host = Kokkos::create_mirror_view(array); \
+    auto array2##_host = Kokkos::create_mirror_view(array2); \
+    Kokkos::deep_copy(array##_host, array); \
+    Kokkos::deep_copy(array2##_host, array2); \
     Kokkos::fence(); \
-    for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
-      for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
-        for (size_t k = 0 ; k < arrayOnHost.extent(2) ; k++) { \
-          ASSERT_THAT(arrayOnHost(i, j, k), matcher(array2OnHost(i, j, k))) \
+    for (size_t i = 0 ; i < array##_host.extent(0) ; i++) { \
+      for (size_t j = 0 ; j < array##_host.extent(1) ; j++) { \
+        for (size_t k = 0 ; k < array##_host.extent(2) ; k++) { \
+          ASSERT_THAT(array##_host(i, j, k), matcher(array2##_host(i, j, k))) \
             << "      at: (" << i << " , " << j << " , " << k << ")"; \
         } \
       } \
@@ -271,15 +271,15 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
 #define ASSERT_THAT_3D_ARRAYS_ARGS(array, matcher, array2, ...) \
   do { \
     Kokkos::fence(); \
-    auto arrayOnHost = Kokkos::create_mirror_view(array); \
-    auto array2OnHost = Kokkos::create_mirror_view(array2); \
-    Kokkos::deep_copy(arrayOnHost, array); \
-    Kokkos::deep_copy(array2OnHost, array2); \
+    auto array##_host = Kokkos::create_mirror_view(array); \
+    auto array2##_host = Kokkos::create_mirror_view(array2); \
+    Kokkos::deep_copy(array##_host, array); \
+    Kokkos::deep_copy(array2##_host, array2); \
     Kokkos::fence(); \
-    for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
-      for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
-        for (size_t k = 0 ; k < arrayOnHost.extent(2) ; k++) { \
-          ASSERT_THAT(arrayOnHost(i, j, k), matcher(array2OnHost(i, j, k), __VA_ARGS__)) \
+    for (size_t i = 0 ; i < array##_host.extent(0) ; i++) { \
+      for (size_t j = 0 ; j < array##_host.extent(1) ; j++) { \
+        for (size_t k = 0 ; k < array##_host.extent(2) ; k++) { \
+          ASSERT_THAT(array##_host(i, j, k), matcher(array2##_host(i, j, k), __VA_ARGS__)) \
             << "      at: (" << i << " , " << j << " , " << k << ")"; \
         } \
       } \
@@ -300,14 +300,14 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
 #define ASSERT_THAT_4D_ARRAY(array, matcher, ...) \
   do { \
     Kokkos::fence(); \
-    auto arrayOnHost = Kokkos::create_mirror_view(array); \
-    Kokkos::deep_copy(arrayOnHost, array); \
+    auto array##_host = Kokkos::create_mirror_view(array); \
+    Kokkos::deep_copy(array##_host, array); \
     Kokkos::fence(); \
-    for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
-      for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
-        for (size_t k = 0 ; k < arrayOnHost.extent(2) ; k++) { \
-          for (size_t l = 0 ; l < arrayOnHost.extent(3) ; l++) { \
-            ASSERT_THAT(arrayOnHost(i, j, k, l), matcher(__VA_ARGS__)) \
+    for (size_t i = 0 ; i < array##_host.extent(0) ; i++) { \
+      for (size_t j = 0 ; j < array##_host.extent(1) ; j++) { \
+        for (size_t k = 0 ; k < array##_host.extent(2) ; k++) { \
+          for (size_t l = 0 ; l < array##_host.extent(3) ; l++) { \
+            ASSERT_THAT(array##_host(i, j, k, l), matcher(__VA_ARGS__)) \
               << "      at: (" << i << " , " << j << " , " << k << " , " << l << ")"; \
           } \
         } \
@@ -330,16 +330,16 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
 #define ASSERT_THAT_4D_ARRAYS(array, matcher, array2) \
   do { \
     Kokkos::fence(); \
-    auto arrayOnHost = Kokkos::create_mirror_view(array); \
-    auto array2OnHost = Kokkos::create_mirror_view(array2); \
-    Kokkos::deep_copy(arrayOnHost, array); \
-    Kokkos::deep_copy(array2OnHost, array2); \
+    auto array##_host = Kokkos::create_mirror_view(array); \
+    auto array2##_host = Kokkos::create_mirror_view(array2); \
+    Kokkos::deep_copy(array##_host, array); \
+    Kokkos::deep_copy(array2##_host, array2); \
     Kokkos::fence(); \
-    for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
-      for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
-        for (size_t k = 0 ; k < arrayOnHost.extent(2) ; k++) { \
-          for (size_t l = 0 ; l < arrayOnHost.extent(3) ; l++) { \
-            ASSERT_THAT(arrayOnHost(i, j, k, l), matcher(array2OnHost(i, j, k, l))) \
+    for (size_t i = 0 ; i < array##_host.extent(0) ; i++) { \
+      for (size_t j = 0 ; j < array##_host.extent(1) ; j++) { \
+        for (size_t k = 0 ; k < array##_host.extent(2) ; k++) { \
+          for (size_t l = 0 ; l < array##_host.extent(3) ; l++) { \
+            ASSERT_THAT(array##_host(i, j, k, l), matcher(array2##_host(i, j, k, l))) \
               << "      at: (" << i << " , " << j << " , " << k << " , " << l << ")"; \
           } \
         } \
@@ -363,16 +363,16 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
 #define ASSERT_THAT_4D_ARRAYS_ARGS(array, matcher, array2, ...) \
   do { \
     Kokkos::fence(); \
-    auto arrayOnHost = Kokkos::create_mirror_view(array); \
-    auto array2OnHost = Kokkos::create_mirror_view(array2); \
-    Kokkos::deep_copy(arrayOnHost, array); \
-    Kokkos::deep_copy(array2OnHost, array2); \
+    auto array##_host = Kokkos::create_mirror_view(array); \
+    auto array2##_host = Kokkos::create_mirror_view(array2); \
+    Kokkos::deep_copy(array##_host, array); \
+    Kokkos::deep_copy(array2##_host, array2); \
     Kokkos::fence(); \
-    for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
-      for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
-        for (size_t k = 0 ; k < arrayOnHost.extent(2) ; k++) { \
-          for (size_t l = 0 ; l < arrayOnHost.extent(3) ; l++) { \
-            ASSERT_THAT(arrayOnHost(i, j, k, l), matcher(array2OnHost(i, j, k, l), __VA_ARGS__)) \
+    for (size_t i = 0 ; i < array##_host.extent(0) ; i++) { \
+      for (size_t j = 0 ; j < array##_host.extent(1) ; j++) { \
+        for (size_t k = 0 ; k < array##_host.extent(2) ; k++) { \
+          for (size_t l = 0 ; l < array##_host.extent(3) ; l++) { \
+            ASSERT_THAT(array##_host(i, j, k, l), matcher(array2##_host(i, j, k, l), __VA_ARGS__)) \
               << "      at: (" << i << " , " << j << " , " << k << " , " << l << ")"; \
           } \
         } \

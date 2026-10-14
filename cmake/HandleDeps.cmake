@@ -1,9 +1,9 @@
 ######################################################################################
 # Idefix MHD astrophysical code
 #
-# Source file cmake/AddIdefixSource.cmake
+# Source file cmake/HandleDeps.cmake
 #
-# Last modified : 12/2021
+# Last modified : 10/2026
 #
 # Copyright(C) by :
 # - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)

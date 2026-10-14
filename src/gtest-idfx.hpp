@@ -55,7 +55,9 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
  */
 #define ASSERT_THAT_1D_ARRAY(array, matcher, ...) \
   do { \
+    Kokkos::fence(); \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
+    Kokkos::fence(); \
     for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
       ASSERT_THAT(arrayOnHost(i), matcher(__VA_ARGS__)) << "      at: (" << i << ")"; \
     } \
@@ -75,8 +77,10 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
  */
 #define ASSERT_THAT_1D_ARRAYS(array, matcher, array2) \
   do { \
+    Kokkos::fence(); \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
     auto array2OnHost = Kokkos::create_mirror_view(array2); \
+    Kokkos::fence(); \
     for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
       ASSERT_THAT(arrayOnHost(i), matcher(array2OnHost(i))) << "      at: (" << i << ")"; \
     } \
@@ -97,8 +101,10 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
  */
 #define ASSERT_THAT_1D_ARRAYS_ARGS(array, that, array2, ...) \
   do { \
+    Kokkos::fence(); \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
     auto array2OnHost = Kokkos::create_mirror_view(array2); \
+    Kokkos::fence(); \
     for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
       ASSERT_THAT(arrayOnHost(i), that(array2OnHost(i), __VA_ARGS__)) \
         << "      at: (" << i << ")"; \
@@ -118,7 +124,9 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
  */
 #define ASSERT_THAT_2D_ARRAY(array, matcher, ...) \
   do { \
+    Kokkos::fence(); \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
+    Kokkos::fence(); \
     for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
       for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
         ASSERT_THAT(arrayOnHost(i, j), matcher(__VA_ARGS__)) \
@@ -141,8 +149,10 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
  */
 #define ASSERT_THAT_2D_ARRAYS(array, matcher, array2) \
   do { \
+    Kokkos::fence(); \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
     auto array2OnHost = Kokkos::create_mirror_view(array2); \
+    Kokkos::fence(); \
     for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
       for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
         ASSERT_THAT(arrayOnHost(i, j), matcher(array2OnHost(i, j))) \
@@ -166,8 +176,10 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
  */
 #define ASSERT_THAT_2D_ARRAYS_ARGS(array, matcher, array2, ...) \
   do { \
+    Kokkos::fence(); \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
     auto array2OnHost = Kokkos::create_mirror_view(array2); \
+    Kokkos::fence(); \
     for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
       for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
         ASSERT_THAT(arrayOnHost(i, j), matcher(array2OnHost(i, j), __VA_ARGS__)) \
@@ -189,7 +201,9 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
  */
 #define ASSERT_THAT_3D_ARRAY(array, matcher, ...) \
   do { \
+    Kokkos::fence(); \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
+    Kokkos::fence(); \
     for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
       for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
         for (size_t k = 0 ; k < arrayOnHost.extent(2) ; k++) { \
@@ -214,8 +228,10 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
  */
 #define ASSERT_THAT_3D_ARRAYS(array, matcher, array2) \
   do { \
+    Kokkos::fence(); \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
     auto array2OnHost = Kokkos::create_mirror_view(array2); \
+    Kokkos::fence(); \
     for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
       for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
         for (size_t k = 0 ; k < arrayOnHost.extent(2) ; k++) { \
@@ -241,8 +257,10 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
  */
 #define ASSERT_THAT_3D_ARRAYS_ARGS(array, matcher, array2, ...) \
   do { \
+    Kokkos::fence(); \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
     auto array2OnHost = Kokkos::create_mirror_view(array2); \
+    Kokkos::fence(); \
     for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
       for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
         for (size_t k = 0 ; k < arrayOnHost.extent(2) ; k++) { \
@@ -266,7 +284,9 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
  */
 #define ASSERT_THAT_4D_ARRAY(array, matcher, ...) \
   do { \
+    Kokkos::fence(); \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
+    Kokkos::fence(); \
     for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
       for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
         for (size_t k = 0 ; k < arrayOnHost.extent(2) ; k++) { \
@@ -293,8 +313,10 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
  */
 #define ASSERT_THAT_4D_ARRAYS(array, matcher, array2) \
   do { \
+    Kokkos::fence(); \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
     auto array2OnHost = Kokkos::create_mirror_view(array2); \
+    Kokkos::fence(); \
     for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
       for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
         for (size_t k = 0 ; k < arrayOnHost.extent(2) ; k++) { \
@@ -322,8 +344,10 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
  */
 #define ASSERT_THAT_4D_ARRAYS_ARGS(array, matcher, array2, ...) \
   do { \
+    Kokkos::fence(); \
     auto arrayOnHost = Kokkos::create_mirror_view(array); \
     auto array2OnHost = Kokkos::create_mirror_view(array2); \
+    Kokkos::fence(); \
     for (size_t i = 0 ; i < arrayOnHost.extent(0) ; i++) { \
       for (size_t j = 0 ; j < arrayOnHost.extent(1) ; j++) { \
         for (size_t k = 0 ; k < arrayOnHost.extent(2) ; k++) { \

@@ -431,3 +431,7 @@ void Input::PrintVersion() {
   idfx::cout << "Compiler version: " << CompilerInfo::version   << std::endl;
   idfx::cout << "Compiler path:  " << CompilerInfo::path    << std::endl;
 }
+
+const IdefixInputContainer& Input::GetInputParameters() const {
+  return inputParameters;
+}

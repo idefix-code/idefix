@@ -44,6 +44,7 @@ class Pydefix {
   template<typename... Ts>
   void CallScript(std::string, std::string, Ts...);
   static int ninstance;
+  Input* inputPtr;  // Store pointer to active Input instance
   std::string scriptFilename;
   std::string outputFunctionName;
   std::string initflowFunctionName;

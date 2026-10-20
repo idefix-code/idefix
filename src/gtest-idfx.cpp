@@ -47,14 +47,13 @@ std::string idfx_get_data_file_path(
 **/
 class MPIEnvironment : public ::testing::Environment {
  public:
+  MPIEnvironment(int * argc, char *** argv): argc(argc), argv(argv) {}
   ~MPIEnvironment() override {}
 
   // Override this to define how to set up the environment.
   void SetUp() override {
-    char** argv;
-    int argc = 0;
     #ifdef WITH_MPI
-      int mpiError = MPI_Init(&argc, &argv);
+      int mpiError = MPI_Init(argc, argv);
       ASSERT_EQ(mpiError, 0);
     #endif
   }
@@ -66,6 +65,10 @@ class MPIEnvironment : public ::testing::Environment {
       ASSERT_EQ(mpiError, 0);
     #endif
   }
+
+ private:
+  int * argc{nullptr};
+  char *** argv{nullptr};
 };
 
 /**
@@ -73,19 +76,22 @@ class MPIEnvironment : public ::testing::Environment {
 */
 class KokkosEnvironment : public ::testing::Environment {
  public:
+  KokkosEnvironment(int argc, char ** argv): argc(argc), argv(argv) {}
   ~KokkosEnvironment() override {}
 
   // Override this to define how to set up the environment.
   void SetUp() override {
-    char** argv;
-    int argc = 0;
-    Kokkos::initialize(argc, argv);
+    Kokkos::initialize(this->argc, this->argv);
   }
 
   // Override this to define how to tear down the environment.
   void TearDown() override {
     Kokkos::finalize();
   }
+
+ private:
+  int argc{0};
+  char ** argv{nullptr};
 };
 
 /**
@@ -122,11 +128,11 @@ int main(int argc, char* argv[]) {
 
   //init MPI & Kokkos with right order
   if (initKokkosBeforeMPI) {
-    ::testing::AddGlobalTestEnvironment(new MPIEnvironment);
-    ::testing::AddGlobalTestEnvironment(new KokkosEnvironment);
+    ::testing::AddGlobalTestEnvironment(new MPIEnvironment(&argc, &argv));
+    ::testing::AddGlobalTestEnvironment(new KokkosEnvironment(argc, argv));
   } else {
-    ::testing::AddGlobalTestEnvironment(new KokkosEnvironment);
-    ::testing::AddGlobalTestEnvironment(new MPIEnvironment);
+    ::testing::AddGlobalTestEnvironment(new KokkosEnvironment(argc, argv));
+    ::testing::AddGlobalTestEnvironment(new MPIEnvironment(&argc, &argv));
   }
 
   //init idefix

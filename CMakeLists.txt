@@ -134,7 +134,7 @@ endif()
 get_filename_component(Idefix_PROBLEM_DIR_ABS ${Idefix_PROBLEM_DIR} ABSOLUTE BASE_DIR ${PROJECT_BINARY_DIR})
 
 if(EXISTS ${Idefix_PROBLEM_DIR_ABS}/setup.cpp)
-  target_sources(idefix-core PRIVATE ${Idefix_PROBLEM_DIR_ABS}/setup.cpp)
+  target_sources(idefix PRIVATE ${Idefix_PROBLEM_DIR_ABS}/setup.cpp)
 else()
   message(WARNING "No specific setup.cpp found in the problem directory (this message can be ignored if using python to define your problem)")
 endif()

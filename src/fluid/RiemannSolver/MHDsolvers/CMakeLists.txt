@@ -12,9 +12,9 @@
 # Licensed under CeCILL 2.1 License, see COPYING for more information
 ######################################################################################
 
-target_sources(idefix
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/hlldMHD.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/hllMHD.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/roeMHD.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/tvdlfMHD.hpp
+target_sources(idefix-core
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/hlldMHD.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/hllMHD.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/roeMHD.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/tvdlfMHD.hpp
   )

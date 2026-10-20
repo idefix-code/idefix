@@ -12,14 +12,14 @@
 # Licensed under CeCILL 2.1 License, see COPYING for more information
 ######################################################################################
 
-target_sources(idefix
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/calcCornerEmf.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/calcNonidealEMF.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/calcRiemannEmf.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/constrainedTransport.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/EMFexchange.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/enforceEMFBoundary.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/enforceVectorPotentialBoundary.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/evolveMagField.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/evolveVectorPotential.hpp
+target_sources(idefix-core
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/calcCornerEmf.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/calcNonidealEMF.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/calcRiemannEmf.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/constrainedTransport.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/EMFexchange.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/enforceEMFBoundary.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/enforceVectorPotentialBoundary.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/evolveMagField.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/evolveVectorPotential.hpp
   )

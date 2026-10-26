@@ -16,6 +16,12 @@ function(replace_idefix_source _old_source _new_source)
   get_target_property(fullsource idefix SOURCES)
   list(FILTER fullsource INCLUDE REGEX ${_old_source})
 
+  # affected target
+  set(_target_name "idefix-core")
+  if (_old_source STREQUAL "main.cpp")
+    set(_target_name "idefix")
+  endif()
+
   # Check that only one file matches the pattern
   list(LENGTH fullsource listsize)
   if(listsize GREATER 1)
@@ -27,10 +33,10 @@ function(replace_idefix_source _old_source _new_source)
   message(STATUS "    Replacing: ${fullsource} by ${_new_source}")
 
   # remove the old source file from the target source list
-  get_target_property(mylist idefix SOURCES)
+  get_target_property(mylist ${_target_name} SOURCES)
   list(FILTER mylist EXCLUDE REGEX ${_old_source})
   # replace the source with our new source list
-  set_property(TARGET idefix PROPERTY SOURCES ${mylist})
+  set_property(TARGET ${_target_name} PROPERTY SOURCES ${mylist})
   # add the new source file
-  target_sources(idefix-core PRIVATE ${_new_source})
+  target_sources(${_target_name} PRIVATE ${_new_source})
 endfunction()

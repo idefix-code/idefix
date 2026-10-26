@@ -16,19 +16,19 @@
 
 add_subdirectory(planetarySystem)
 
-target_sources(idefix
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/coarsen.cpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/dataBlock.cpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/dataBlock.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/dataBlockHost.cpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/dataBlockHost.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/dumpToFile.cpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/evolveStage.cpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/fargo.cpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/fargo.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/makeGeometry.cpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/stateContainer.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/stateContainer.cpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/validation.cpp
+target_sources(idefix-core
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/coarsen.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/dataBlock.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/dataBlock.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/dataBlockHost.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/dataBlockHost.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/dumpToFile.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/evolveStage.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/fargo.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/fargo.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/makeGeometry.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/stateContainer.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/stateContainer.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/validation.cpp
 
   )

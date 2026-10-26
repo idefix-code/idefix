@@ -12,8 +12,8 @@
 # Licensed under CeCILL 2.1 License, see COPYING for more information
 ######################################################################################
 
-target_sources(idefix
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/eos_adiabatic.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/eos_isothermal.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/eos.hpp
+target_sources(idefix-core
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/eos_adiabatic.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/eos_isothermal.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/eos.hpp
   )

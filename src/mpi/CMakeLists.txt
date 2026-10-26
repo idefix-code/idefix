@@ -12,10 +12,10 @@
 # Licensed under CeCILL 2.1 License, see COPYING for more information
 ######################################################################################
 
-target_sources(idefix
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/buffer.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/exchanger.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/exchanger.cpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/mpi.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/mpi.cpp
+target_sources(idefix-core
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/buffer.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/exchanger.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/exchanger.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/mpi.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/mpi.cpp
 )

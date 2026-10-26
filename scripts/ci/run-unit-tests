@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file scripts/ci/run-unit-tests
+#
+# Last modified : 10/2026
+#
+# Copyright(C) by :
+# - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+# and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
+
+function gen_cmake_options()
+{
+  # scan args
+  while [ $# != 0 ]; do
+    case "${1}" in
+      '-Werror')
+        echo "-DIdefix_WERROR=ON"
+        shift 1
+        ;;
+      '-ccache')
+        echo "-DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
+        shift 1
+        ;;
+      '-intel')
+        echo "-DCMAKE_CXX_COMPILER=icpx"
+        echo "-DCMAKE_C_COMPILER=icx"
+        shift 1
+        ;;
+      '-cuda')
+        echo "-DKokkos_ENABLE_CUDA=ON"
+        # disable Async cuda malloc for tests performed on old UCX implementations
+        echo "-DKokkos_ENABLE_IMPL_CUDA_MALLOC_ASYNC=OFF"
+        shift 1
+        ;;
+      '-hip')
+        echo "-DKokkos_ENABLE_HIP=ON"
+        shift 1
+        ;;
+      *)
+        echo "Invalid option : ${1}" 1>&2
+        return 1
+    esac
+  done
+}
+
+function display_and_run()
+{
+  echo ""
+  echo "======================================================================================"
+  echo ">> $@"
+  echo ""
+  "$@" || return 1
+}
+
+# load ICC compiler env
+if [ "$IDEFIX_COMPILER" == icc ]; then
+    source /opt/intel/oneapi/setvars.sh
+fi
+
+# enable bash features
+set -ue
+
+# load python venv if present
+if [ -d .venv ]; then
+    source .venv/bin/activate
+fi
+
+# to get access to idefix ./pytools/ module in python code
+if [[ -v PYTHONPATH ]]; then
+    export PYTHONPATH="${PWD}:${PYTHONPATH}"
+else
+    export PYTHONPATH="${PWD}"
+fi
+
+# check gen options
+display_and_run gen_cmake_options "$@"
+
+# create build dir
+display_and_run mkdir -p build-unittests
+
+# configure via cmake
+display_and_run cmake . -B ./build-unittests -DIdefix_GTEST=ON -DIdefix_PROBLEM_DIR=$PWD/test/MHD/AxisFluxTube/ $(gen_cmake_options "$@") --fresh
+
+# compile
+display_and_run make -C build-unittests -j8
+
+# jump in dir to run in
+display_and_run cd build-unittests
+
+# run the unit tests
+display_and_run ./unittests
+
+# END
+echo ""
+echo "======================================================================================"
+echo "Finished with SUCCESS"

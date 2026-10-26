@@ -12,8 +12,8 @@
 # Licensed under CeCILL 2.1 License, see COPYING for more information
 ######################################################################################
 
-target_sources(idefix
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/axis.cpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/axis.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/boundary.hpp
+target_sources(idefix-core
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/axis.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/axis.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/boundary.hpp
   )

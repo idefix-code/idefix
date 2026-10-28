@@ -1,0 +1,141 @@
+// ***********************************************************************************
+// Idefix MHD astrophysical code
+//
+// Source file test/HD/MachReflection_newsetup/setup.cpp
+//
+// Last modified : 10/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2023)
+// and other code contributors
+//
+// Licensed under CeCILL 2.1 License, see COPYING for more information
+// ***********************************************************************************
+
+#include "idefix.hpp"
+#include "setup.hpp"
+
+// User's Setup class derived from SetupBase
+class MachReflectionSetup : public SetupBase {
+public:
+    using SetupBase::SetupBase;  // Inherit constructor
+
+    // ===== Member functions (previously global) =====
+
+    // User-defined boundary - now a member function!
+    void MyUserdefBoundary(Fluid<DefaultPhysics>* hydro, int dir, BoundarySide side,
+                            const real t) {
+        const real alpha = 60./180.*M_PI;
+
+        if ((dir==IDIR) && (side == left)) {
+            IdefixArray4D<real> Vc = hydro->Vc;
+            int ighost = hydro->data->nghost[IDIR];
+            hydro->boundary->BoundaryFor("UserDefBoundaryX1Beg", dir, side,
+                        KOKKOS_LAMBDA (int k, int j, int i) {
+
+                            Vc(RHO,k,j,i) = 8.0;
+                            Vc(VX1,k,j,i) =   8.25*sin(alpha);
+                            Vc(VX2,k,j,i) = - 8.25*cos(alpha);
+                            Vc(PRS,k,j,i) = 116.5;
+                          });
+        }
+
+        if(dir==JDIR) {
+            IdefixArray4D<real> Vc = hydro->Vc;
+            IdefixArray1D<real> x1 = hydro->data->x[IDIR];
+            IdefixArray1D<real> x2 = hydro->data->x[JDIR];
+            if(side == left) {
+                const int jend = hydro->data->beg[JDIR];
+                hydro->boundary->BoundaryFor("UserDefBoundaryX2Beg", dir, side,
+                            KOKKOS_LAMBDA (int k, int j, int i) {
+                                if(x1(i) < 1.0/6.0) {
+                                  Vc(RHO,k,j,i) = 8.0;
+                                  Vc(VX1,k,j,i) =   8.25*sin(alpha);
+                                  Vc(VX2,k,j,i) = - 8.25*cos(alpha);
+                                  Vc(PRS,k,j,i) = 116.5;
+                                } else {
+                                  Vc(RHO,k,j,i) =  Vc(RHO,k,2*jend-j-1,i);
+                                  Vc(VX1,k,j,i) =  Vc(VX1,k,2*jend-j-1,i);
+                                  Vc(VX2,k,j,i) = -Vc(VX2,k,2*jend-j-1,i);
+                                  Vc(PRS,k,j,i) =  Vc(PRS,k,2*jend-j-1,i);
+                                }
+
+                            });
+                //return;
+            } else if(side==right) {
+                real xs = 10.0*t/sin(alpha) + 1.0/6.0 + 1.0/tan(alpha);
+
+                hydro->boundary->BoundaryFor("UserDefBoundaryX2End", dir, side,
+                            KOKKOS_LAMBDA (int k, int j, int i) {
+                                if(x1(i) < xs) {
+                                  Vc(RHO,k,j,i) = 8.0;
+                                  Vc(VX1,k,j,i) =   8.25*sin(alpha);
+                                  Vc(VX2,k,j,i) = - 8.25*cos(alpha);
+                                  Vc(PRS,k,j,i) = 116.5;
+                                } else {
+                                  Vc(RHO,k,j,i) =  1.4;
+                                  Vc(VX1,k,j,i) =  0.0;
+                                  Vc(VX2,k,j,i) =  0.0;
+                                  Vc(PRS,k,j,i) =  1.0;
+                                }
+
+                            });
+            }
+        }
+
+    }
+
+    // ===== Constructor - enroll member functions =====
+    MachReflectionSetup(Input &input, Grid &grid, DataBlock &data, Output &output)
+        : SetupBase(input, grid, data, output) {
+
+        // Enroll boundary function using lambda that captures 'this'
+        myData.hydro->EnrollUserDefBoundary(
+            [this](Fluid<DefaultPhysics>* hydro, int dir, BoundarySide side,
+                   const real t) {
+                this->MyUserdefBoundary(hydro, dir, side, t);
+            }
+        );
+    }
+
+    // ===== InitFlow =====
+    void InitFlow(DataBlock &data) override {
+        // Create a host copy
+        DataBlockHost d(data);
+        real alpha, xs, x1, x2;
+
+        alpha = 1.0/3.0*M_PI;
+
+        for(int k = 0; k < d.np_tot[KDIR] ; k++) {
+            for(int j = 0; j < d.np_tot[JDIR] ; j++) {
+                for(int i = 0; i < d.np_tot[IDIR] ; i++) {
+                    x1 = d.x[IDIR](i);
+                    x2 = d.x[JDIR](j);
+                    xs = 1.0/6.0 + x2/tan(alpha);
+                    if(x1>xs) {
+                      d.Vc(RHO,k,j,i) = 1.4;
+                      d.Vc(VX1,k,j,i) = 0.0;
+                      d.Vc(VX2,k,j,i) = 0.0;
+                      d.Vc(PRS,k,j,i) = 1.0;
+                    } else {
+                      d.Vc(RHO,k,j,i) = 8.0;
+                      d.Vc(VX1,k,j,i) = 8.25*sin(alpha);
+                      d.Vc(VX2,k,j,i) = -8.25*cos(alpha);
+                      d.Vc(PRS,k,j,i) = 116.5;
+                    }
+                }
+            }
+        }
+
+        // Send it all, if needed
+        d.SyncToDevice();
+    }
+
+private:
+    // Can add member variables here if needed
+};
+
+// ===== Factory function override =====
+SetupBase* CreateSetup(Input &input, Grid &grid, DataBlock &data, Output &output) {
+    return new MachReflectionSetup(input, grid, data, output);
+}

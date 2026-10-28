@@ -12,13 +12,14 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include <memory>
 #include "setup.hpp"
 #include "idefix.hpp"
 
 // Default factory function - returns a DefaultSetup which wraps the old Setup
-__attribute__((weak)) SetupBase* CreateSetup(
+__attribute__((weak)) std::unique_ptr<SetupBase> CreateSetup(
     Input &input, Grid &grid, DataBlock &data, Output &output) {
-      return new DefaultSetup(input, grid, data, output);
+    return std::make_unique<DefaultSetup>(input, grid, data, output);
 }
 
 // Default setup functions. These are automatically redefined if the user provide her/his

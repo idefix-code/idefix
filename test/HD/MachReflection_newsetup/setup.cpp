@@ -6,12 +6,13 @@
 // Last modified : 10/2026
 //
 // Copyright(C) by :
-// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2023)
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
 // and other code contributors
 //
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include <memory>
 #include "idefix.hpp"
 #include "setup.hpp"
 
@@ -136,6 +137,7 @@ private:
 };
 
 // ===== Factory function override =====
-SetupBase* CreateSetup(Input &input, Grid &grid, DataBlock &data, Output &output) {
-    return new MachReflectionSetup(input, grid, data, output);
+std::unique_ptr<SetupBase> CreateSetup(
+    Input &input, Grid &grid, DataBlock &data, Output &output) {
+    return std::make_unique<MachReflectionSetup>(input, grid, data, output);
 }

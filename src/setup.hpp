@@ -75,6 +75,6 @@ class DefaultSetup : public SetupBase {
 // Factory function to create Setup instance
 // This will be overridden by user code via weak symbol to return user's Setup class
 // Default implementation returns a DefaultSetup which wraps the old Setup class
-SetupBase* CreateSetup(Input &input, Grid &grid, DataBlock &data, Output &output);
+std::unique_ptr<SetupBase> CreateSetup(Input &input, Grid &grid, DataBlock &data, Output &output);
 
 #endif // SETUP_HPP_

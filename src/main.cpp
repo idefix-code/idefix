@@ -110,7 +110,7 @@ int main( int argc, char* argv[] ) {
       Pydefix pydefix(input);
     #endif
     Output output(input, data);
-    std::unique_ptr<SetupBase> mysetup(CreateSetup(input, grid, data, output));
+    auto mysetup = CreateSetup(input, grid, data, output);
 
     idfx::cout << "Main: initialisation finished." << std::endl;
 

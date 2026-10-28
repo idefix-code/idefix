@@ -31,7 +31,7 @@ void Drag::AddDragForce(const real dt) {
   }
 
   auto gammaDrag = this->gammaDrag;
-  gammaDrag.RefreshUserDrag(data);
+  RefreshUserDrag(gammaDrag);
 
   // Compute a drag force fd = - gamma*rhod*rhog*(vd-vg)
   // Where gamma is computed according to the choice of drag type
@@ -88,7 +88,7 @@ void Drag::AddImplicitBackReaction(const real dt, IdefixArray3D<real> preFactor)
   }
 
   auto gammaDrag = this->gammaDrag;
-  gammaDrag.RefreshUserDrag(data);
+  RefreshUserDrag(gammaDrag);
 
   // Compute a drag force fd = - gamma*rhod*rhog*(vd-vg)
   // Where gamma is computed according to the choice of drag type
@@ -154,7 +154,7 @@ void Drag::AddImplicitFluidMomentum(const real dt) {
   }
 
   auto gammaDrag = this->gammaDrag;
-  if(!feedback) gammaDrag.RefreshUserDrag(data);
+  if(!feedback) RefreshUserDrag(gammaDrag);
 
   // Compute a drag force fd = - gamma*rhod*rhog*(vd-vg)
   // Where gamma is computed according to the choice of drag type
@@ -180,6 +180,18 @@ void Drag::AddImplicitFluidMomentum(const real dt) {
       }
     });
   idfx::popRegion();
+}
+
+void Drag::RefreshUserDrag(GammaDrag &gammaDrag) {
+  if(dragType == GammaDrag::Type::Userdef) {
+    if(userDrag) {
+      idfx::pushRegion("Drag::UserDrag");
+        userDrag(data, gammaDrag.instanceNumber, gammaDrag.dragCoeff, gammaDrag.gammai);
+      idfx::popRegion();
+    } else {
+      IDEFIX_ERROR("No User-defined drag function has been enrolled");
+    }
+  }
 }
 
 void Drag::ShowConfig() {
@@ -218,17 +230,7 @@ void Drag::ShowConfig() {
 // GammaDrag function definitions
 ////////////////////////////////////////////
 
-void GammaDrag::RefreshUserDrag(DataBlock *data) {
-  if(type == Type::Userdef) {
-    if(userDrag) {
-      idfx::pushRegion("GammaDrag::UserDrag");
-        userDrag(data, instanceNumber, dragCoeff, gammai);
-      idfx::popRegion();
-    } else {
-      IDEFIX_ERROR("No User-defined drag function has been enrolled");
-    }
-  }
-}
+
 
 
 GammaDrag::GammaDrag(Input &input, std::string BlockName, int instanceNumber, DataBlock *data) {

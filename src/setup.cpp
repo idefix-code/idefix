@@ -16,12 +16,6 @@
 #include "setup.hpp"
 #include "idefix.hpp"
 
-// Default factory function - returns a DefaultSetup which wraps the old Setup
-__attribute__((weak)) std::unique_ptr<SetupBase> CreateSetup(
-    Input &input, Grid &grid, DataBlock &data, Output &output) {
-    return std::make_unique<DefaultSetup>(input, grid, data, output);
-}
-
 // Default setup functions. These are automatically redefined if the user provide her/his
 // own implementation of the constructor, initflow and destructor
 

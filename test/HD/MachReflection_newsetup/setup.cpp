@@ -15,6 +15,7 @@
 #include <memory>
 #include "idefix.hpp"
 #include "setup.hpp"
+#include "setup_registry.hpp"
 
 // User's Setup class derived from SetupBase
 class MachReflectionSetup : public SetupBase {
@@ -136,8 +137,5 @@ private:
     // Can add member variables here if needed
 };
 
-// ===== Factory function override =====
-std::unique_ptr<SetupBase> CreateSetup(
-    Input &input, Grid &grid, DataBlock &data, Output &output) {
-    return std::make_unique<MachReflectionSetup>(input, grid, data, output);
-}
+// ===== Registration =====
+REGISTER_SETUP(MachReflectionSetup)

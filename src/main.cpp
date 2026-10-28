@@ -48,6 +48,7 @@
 #include "dataBlock.hpp"
 #include "timeIntegrator.hpp"
 #include "setup.hpp"
+#include "setup_registry.hpp"
 #include "output.hpp"
 #ifdef WITH_MPI
 #include "mpi.hpp"
@@ -110,7 +111,7 @@ int main( int argc, char* argv[] ) {
       Pydefix pydefix(input);
     #endif
     Output output(input, data);
-    auto mysetup = CreateSetup(input, grid, data, output);
+    auto mysetup = SetupRegistry::Create(input, grid, data, output);
 
     idfx::cout << "Main: initialisation finished." << std::endl;
 

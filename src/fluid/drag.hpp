@@ -30,14 +30,6 @@ class GammaDrag {
   enum class Type{Gamma, Tau, Size, Userdef};
   GammaDrag() = default;
   GammaDrag(Input &, std::string BlockName, int instanceNumber, DataBlock *data);
-  template<typename Func>
-  void EnrollUserDrag(Func func) {
-    if(type != Type::Userdef) {
-      IDEFIX_ERROR("User-defined drag function requires drag entry to be set to \"userdef\"");
-    }
-    this->userDrag = func;
-  }
-  void RefreshUserDrag(DataBlock *);
 
   KOKKOS_INLINE_FUNCTION real GetGamma(const int k, const int j, const int i) const {
     real gamma;  // The drag coefficient
@@ -63,7 +55,6 @@ class GammaDrag {
     }
     return gamma;
   }
-
   Type type;
   real dragCoeff;
   EquationOfState eos;
@@ -71,7 +62,6 @@ class GammaDrag {
   IdefixArray4D<real> VcGas;
 
   int instanceNumber;
-  UserDefDragFunc userDrag;
 };
 
 
@@ -83,6 +73,7 @@ class Drag {
   void ShowConfig();                    // print configuration
   void AddDragForce(const real);
 
+  void RefreshUserDrag(GammaDrag &);
   //////////////////////////
   // Implicit functions
   void AddImplicitBackReaction(const real, IdefixArray3D<real>);  // Add the back reaction
@@ -91,8 +82,11 @@ class Drag {
   /////////////////////////
 
   template<typename Func>
-  void EnrollUserDrag(Func func) {  // User defined drag function enrollment
-    gammaDrag.EnrollUserDrag(func);
+  void EnrollUserDrag(Func func) {
+    if(dragType != GammaDrag::Type::Userdef) {
+      IDEFIX_ERROR("User-defined drag function requires drag entry to be set to \"userdef\"");
+    }
+    this->userDrag = func;
   }
   bool IsImplicit() const { return implicit; }  // Check if the drag is implicit
 
@@ -110,6 +104,8 @@ class Drag {
   bool feedback{false};
   bool implicit{false};
   int instanceNumber;
+  UserDefDragFunc userDrag;
+  GammaDrag::Type dragType;
 };
 
 
@@ -138,7 +134,7 @@ Drag::Drag(Input &input, Fluid<Phys> *hydroin):
   if(input.CheckEntry(blockName,"drag")>=0) {
     this->instanceNumber = hydroin->instanceNumber;
     this->gammaDrag = GammaDrag(input,blockName,instanceNumber,data);
-
+    this->dragType = gammaDrag.type;
     // Feedback is true by default, but can be switched off.
     this->feedback = input.GetOrSet<bool>(blockName,"drag_feedback",0,true);
     this->implicit = input.GetOrSet<bool>(blockName,"drag_implicit",0,false);

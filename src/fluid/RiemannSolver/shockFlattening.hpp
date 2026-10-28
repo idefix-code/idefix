@@ -15,13 +15,15 @@
 #ifndef FLUID_RIEMANNSOLVER_SHOCKFLATTENING_HPP_
 #define FLUID_RIEMANNSOLVER_SHOCKFLATTENING_HPP_
 
+#include <functional>
+
 #include "fluid.hpp"
 #include "../physics.hpp"
 #include "eos.hpp"
 
 enum class FlagShock{None, Shock};
 
-using UserShockFunc = void (*) (DataBlock &, const real t, IdefixArray3D<FlagShock>&);
+using UserShockFunc = std::function<void(DataBlock &, const real, IdefixArray3D<FlagShock>&)>;
 
 template<typename Phys>
 class ShockFlattening {
@@ -37,9 +39,10 @@ class ShockFlattening {
   bool isActive{false};
   real smoothing{0};
 
-  void EnrollUserShockFlag(UserShockFunc);
+  template<typename Func>
+  void EnrollUserShockFlag(Func myFunc);
   bool haveUserShockFlag{false};
-  UserShockFunc userShockFunc{NULL};
+  UserShockFunc userShockFunc;
 };
 
 template<typename Phys>
@@ -192,7 +195,8 @@ void ShockFlattening<Phys>::FindShock() {
 }
 
 template<typename Phys>
-void ShockFlattening<Phys>::EnrollUserShockFlag(UserShockFunc myFunc) {
+template<typename Func>
+void ShockFlattening<Phys>::EnrollUserShockFlag(Func myFunc) {
   this->haveUserShockFlag = true;
   this->userShockFunc = myFunc;
 }

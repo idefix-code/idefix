@@ -27,17 +27,21 @@ class Grid;
 class SubGrid;
 class Vtk;
 
-using UserDefVariablesFunc = void (*) (DataBlock &,
-                                      std::map<std::string,IdefixHostArray3D<real>> &);
+using UserDefVariablesFunc = std::function<void(DataBlock &,
+                                      std::map<std::string,IdefixHostArray3D<real>> &)>;
 
 class Slice {
  public:
   Slice(Input &, DataBlock &, int, SliceType, int, real, real);
   void CheckForWrite(DataBlock &, bool = false);
   void EnrollUserDefVariables(std::map<std::string,IdefixHostArray3D<real>>);
-  void EnrollUserDefFunc(UserDefVariablesFunc);
+  template<typename Func>
+  void EnrollUserDefFunc(Func myFunc) {
+    userDefVariablesFunc = myFunc;
+  }
   real slicePeriod = 0.0;
   real sliceLast = 0.0;
+
  private:
   bool containsX0;
   SliceType type;
@@ -48,7 +52,7 @@ class Slice {
   bool haveUserDefinedVariables{false};
   std::map<std::string, IdefixHostArray3D<real>> variableMap;
   std::map<std::string,IdefixHostArray3D<real>> userDefVariableMap;
-  UserDefVariablesFunc userDefVariablesFunc{NULL};
+  UserDefVariablesFunc userDefVariablesFunc;
   #ifdef WITH_MPI
     MPI_Comm avgComm;  // Communicator for averages
   #endif

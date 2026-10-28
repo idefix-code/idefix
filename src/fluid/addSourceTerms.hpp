@@ -208,12 +208,7 @@ void Fluid<Phys>::AddSourceTerms(real t, real dt) {
   idfx::pushRegion("Fluid::AddSourceTerms");
 
   if(haveUserSourceTerm) {
-    if(userSourceTerm != NULL) {
-      userSourceTerm(this, t, dt);
-    } else {
-      // Deprecated version
-      userSourceTermOld(*data, t, dt);
-    }
+    userSourceTerm(this, t, dt);
   }
 
   auto func = Fluid_AddSourceTermsFunctor<Phys>(this,dt);

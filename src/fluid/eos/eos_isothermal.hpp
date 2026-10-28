@@ -89,7 +89,8 @@ class EquationOfState {
   }
 
   // Enroll user-defined isothermal sound speed
-  void EnrollIsoSoundSpeed(IsoSoundSpeedFunc func) {
+  template<typename Func>
+  void EnrollIsoSoundSpeed(Func func) {
     if(this->haveIsoSoundSpeed != UserDefFunction) {
       IDEFIX_WARNING("Isothermal sound speed enrollment requires Hydro/csiso "
                   " to be set to userdef in .ini file");
@@ -101,7 +102,7 @@ class EquationOfState {
     real isoSoundSpeed;
     HydroModuleStatus haveIsoSoundSpeed{Disabled};
     IdefixArray3D<real> isoSoundSpeedArray;
-    IsoSoundSpeedFunc isoSoundSpeedFunc{NULL};
+    IsoSoundSpeedFunc isoSoundSpeedFunc;
 };
 
 #endif // FLUID_EOS_EOS_ISOTHERMAL_HPP_

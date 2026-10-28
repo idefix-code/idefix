@@ -201,7 +201,7 @@ void Fargo::GetFargoVelocity(real t) {
   if(type != userdef)
     IDEFIX_ERROR("Fargo::GetFargoVelocity should not be called when fargo != userdef");
   if(velocityHasBeenComputed == false) {
-    if(fargoVelocityFunc== NULL) {
+    if(!fargoVelocityFunc) {
       IDEFIX_ERROR("No Fargo velocity function has been defined");
     }
     fargoVelocityFunc(*data, meanVelocity);

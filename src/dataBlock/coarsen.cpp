@@ -41,7 +41,7 @@ void DataBlock::EnrollGridCoarseningLevels(GridCoarseningFunc func) {
 void DataBlock::ComputeGridCoarseningLevels() {
   idfx::pushRegion("DataBlock::ComputeGridCoarseningLevels");
   static bool levelsHaveBeenComputedOnce = false;
-  if((gridCoarseningFunc == NULL) && (haveGridCoarsening == GridCoarsening::dynamic)) {
+  if(!gridCoarseningFunc && (haveGridCoarsening == GridCoarsening::dynamic)) {
     IDEFIX_ERROR("Dynamic grid Coarsening is enabled, "
                  "but no function has been enrolled to compute coarsening levels");
   }
@@ -49,7 +49,7 @@ void DataBlock::ComputeGridCoarseningLevels() {
   // levels can be either initialised with the initial conditions, or with a dedicated
   // Coarsening function (if Enrollment has been called)
   if((haveGridCoarsening == GridCoarsening::enabled) && (!levelsHaveBeenComputedOnce)) {
-    if(gridCoarseningFunc != NULL) {
+    if(gridCoarseningFunc) {
       idfx::pushRegion("User-defined Coarsening function");
         gridCoarseningFunc(*this);
       idfx::popRegion();

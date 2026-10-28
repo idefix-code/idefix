@@ -212,9 +212,7 @@ void Drag::ShowConfig() {
   }
 }
 
-void Drag::EnrollUserDrag(UserDefDragFunc func) {
-  gammaDrag.EnrollUserDrag(func);
-}
+
 
 ////////////////////////////////////////////
 // GammaDrag function definitions
@@ -222,7 +220,7 @@ void Drag::EnrollUserDrag(UserDefDragFunc func) {
 
 void GammaDrag::RefreshUserDrag(DataBlock *data) {
   if(type == Type::Userdef) {
-    if(userDrag != NULL) {
+    if(userDrag) {
       idfx::pushRegion("GammaDrag::UserDrag");
         userDrag(data, instanceNumber, dragCoeff, gammai);
       idfx::popRegion();
@@ -232,12 +230,6 @@ void GammaDrag::RefreshUserDrag(DataBlock *data) {
   }
 }
 
-void GammaDrag::EnrollUserDrag(UserDefDragFunc func) {
-  if(type != Type::Userdef) {
-    IDEFIX_ERROR("User-defined drag function requires drag entry to be set to \"userdef\"");
-  }
-  this->userDrag = func;
-}
 
 GammaDrag::GammaDrag(Input &input, std::string BlockName, int instanceNumber, DataBlock *data) {
   if(input.CheckEntry(BlockName,"drag")>=0) {

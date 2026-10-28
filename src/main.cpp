@@ -34,6 +34,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <memory>
 
 #include <Kokkos_Core.hpp>
 
@@ -109,7 +110,7 @@ int main( int argc, char* argv[] ) {
       Pydefix pydefix(input);
     #endif
     Output output(input, data);
-    Setup mysetup(input, grid, data, output);
+    std::unique_ptr<SetupBase> mysetup(CreateSetup(input, grid, data, output));
 
     idfx::cout << "Main: initialisation finished." << std::endl;
 
@@ -146,13 +147,13 @@ int main( int argc, char* argv[] ) {
             pydefix.InitFlow(data);
           } else {
             idfx::pushRegion("Setup::Initflow");
-            mysetup.InitFlow(data);
+            mysetup->InitFlow(data);
           }
           data.DeriveVectorPotential();
           idfx::popRegion();
         #else
           idfx::pushRegion("Setup::Initflow");
-          mysetup.InitFlow(data);
+          mysetup->InitFlow(data);
           data.DeriveVectorPotential();
           idfx::popRegion();
         #endif
@@ -174,11 +175,11 @@ int main( int argc, char* argv[] ) {
           pydefix.InitFlow(data);
         } else {
           idfx::pushRegion("Setup::Initflow");
-          mysetup.InitFlow(data);
+          mysetup->InitFlow(data);
         }
       #else
         idfx::pushRegion("Setup::Initflow");
-        mysetup.InitFlow(data);
+        mysetup->InitFlow(data);
       #endif
       idfx::popRegion();
       data.DeriveVectorPotential();   // This does something only when evolveVectorPotential is on

@@ -158,8 +158,8 @@ class Fluid {
   void EnrollEmfBoundary(EmfBoundaryFunc);
 
   // Add some user source terms
-  void EnrollUserSourceTerm(SrcTermFunc<Phys>);
-  void EnrollUserSourceTerm(SrcTermFuncOld); // Deprecated
+  template<typename Func>
+  void EnrollUserSourceTerm(Func myFunc);
 
   // Enroll user-defined ohmic, ambipolar and Hall diffusivities
   void EnrollOhmicDiffusivity(DiffusivityFunc);
@@ -227,19 +227,18 @@ class Fluid {
 
   // Emf boundary conditions
   bool haveEmfBoundary{false};
-  EmfBoundaryFunc emfBoundaryFunc{NULL};
+  EmfBoundaryFunc emfBoundaryFunc;
 
   // User defined source term
-  SrcTermFunc<Phys> userSourceTerm{NULL};
-  SrcTermFuncOld    userSourceTermOld{NULL};
+  SrcTermFunc<Phys> userSourceTerm;
   bool haveUserSourceTerm{false};
 
   real etaO, xH, xA;  // Ohmic resistivity, Hall, ambipolar (when constant)
 
   // Ohmic, Hall and ambipolar diffusivity (when function-defined)
-  DiffusivityFunc ohmicDiffusivityFunc{NULL};
-  DiffusivityFunc ambipolarDiffusivityFunc{NULL};
-  DiffusivityFunc hallDiffusivityFunc{NULL};
+  DiffusivityFunc ohmicDiffusivityFunc;
+  DiffusivityFunc ambipolarDiffusivityFunc;
+  DiffusivityFunc hallDiffusivityFunc;
 
   IdefixArray3D<real> cMax;    // Maximum propagation speed
 

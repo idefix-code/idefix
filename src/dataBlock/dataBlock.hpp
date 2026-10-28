@@ -17,11 +17,12 @@
 #ifndef DATABLOCK_DATABLOCK_HPP_
 #define DATABLOCK_DATABLOCK_HPP_
 
-#include <vector>
-#include <string>
+#include <cstdio>
+#include <functional>
 #include <map>
 #include <memory>
-#include <cstdio>
+#include <string>
+#include <vector>
 
 #include "idefix.hpp"
 #include "grid.hpp"
@@ -50,15 +51,13 @@ class PlanetarySystem;
 template<typename Phys>
 class Fluid;
 class SubGrid;
-class Vtk;
-class Dump;
 
 // Forward class hydro declaration
 #include "physics.hpp"
 
-using GridCoarseningFunc = void(*) (DataBlock &);
+using GridCoarseningFunc = std::function<void(DataBlock &)>;
 
-using StepFunc = void (*) (DataBlock &, const real t, const real dt);
+using StepFunc = std::function<void(DataBlock &, const real, const real)>;
 
 class DataBlock {
  public:
@@ -101,7 +100,7 @@ class DataBlock {
 
   GridCoarsening haveGridCoarsening{GridCoarsening::disabled};
                                 ///< Is grid coarsening enabled?
-  GridCoarseningFunc gridCoarseningFunc{NULL};
+  GridCoarseningFunc gridCoarseningFunc;
                                ///< The user-defined grid coarsening level computation function
 
 
@@ -176,8 +175,16 @@ class DataBlock {
   void LaunchUserStepFirst();     ///< perform user-defined step before main integration step
   void LaunchUserStepLast();      ///< Perform user-defined step after main integration step
 
-  void EnrollUserStepFirst(StepFunc);
-  void EnrollUserStepLast(StepFunc);
+  template<typename Func>
+  void EnrollUserStepFirst(Func func) {
+    haveUserStepFirst = true;
+    userStepFirst = func;
+  }
+  template<typename Func>
+  void EnrollUserStepLast(Func func) {
+    haveUserStepLast = true;
+    userStepLast = func;
+  }
 
  private:
   void WriteVariable(FILE* , int , int *, char *, void*);
@@ -187,8 +194,8 @@ class DataBlock {
   bool haveUserStepFirst{false};
   bool haveUserStepLast{false};
 
-  StepFunc userStepFirst{nullptr};
-  StepFunc userStepLast{nullptr};
+  StepFunc userStepFirst;
+  StepFunc userStepLast;
 };
 
 #endif // DATABLOCK_DATABLOCK_HPP_

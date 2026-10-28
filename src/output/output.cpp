@@ -399,34 +399,7 @@ void Output::ForceWriteXdmf(DataBlock &data) {
 }
 #endif
 
-void Output::EnrollAnalysis(AnalysisFunc myFunc) {
-  idfx::pushRegion("Output::EnrollAnalysis");
-  if(!analysisEnabled) {
-    IDEFIX_WARNING("You are enrolling an analysis function "
-                  "but analysis are not enabled in the input file,"
-                  "so no analysis will be performed");
-  }
-  analysisFunc = myFunc;
-  haveAnalysisFunc = true;
 
-  idfx::popRegion();
-}
-
-void Output::EnrollUserDefVariables(UserDefVariablesFunc myFunc) {
-  idfx::pushRegion("Output::EnrollUserDefVariable");
-  if(!userDefVariablesEnabled) {
-    IDEFIX_ERROR("You are enrolling a user-defined variables function "
-                 "but the userdef variables are not set in the input file");
-  }
-  userDefVariablesFunc = myFunc;
-  if(haveSlices) {
-    for(int i = 0 ; i < slices.size() ; i++) {
-      slices[i]->EnrollUserDefFunc(myFunc);
-    }
-  }
-  haveUserDefVariablesFunc = true;
-  idfx::popRegion();
-}
 
 void Output::ResetTimer() {
   elapsedTime = 0.0;

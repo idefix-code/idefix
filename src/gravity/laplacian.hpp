@@ -16,6 +16,7 @@
 #define GRAVITY_LAPLACIAN_HPP_
 
 #include <vector>
+#include <functional>
 #include "idefix.hpp"
 #ifdef WITH_MPI
 #include "mpi.hpp"
@@ -52,16 +53,20 @@ class Laplacian {
   void operator() (IdefixArray3D<real> in,  IdefixArray3D<real> laplacian);
 
   // Handling userdef boundary.
-  using UserDefBoundaryFunc = void (*) (DataBlock &, int dir, BoundarySide side,
-                                       const real t, IdefixArray3D<real> &arr);
+  using UserDefBoundaryFunc = std::function<void(DataBlock &, int, BoundarySide,
+                                       const real, IdefixArray3D<real> &)>;
   void EnforceBoundary(int dir, BoundarySide side, LaplacianBoundaryType type,
                        IdefixArray3D<real> &);
   bool haveUserDefBoundary{false};
 
-  void EnrollUserDefBoundary(UserDefBoundaryFunc);  // Enroll user-defined boundary conditions
+  template<typename Func>
+  void EnrollUserDefBoundary(Func myFunc) {
+    this->userDefBoundaryFunc = myFunc;
+    this->haveUserDefBoundary = true;
+  }
 
   // User defined Boundary conditions
-  UserDefBoundaryFunc userDefBoundaryFunc{NULL};
+  UserDefBoundaryFunc userDefBoundaryFunc;
 
   // Local potential array size
   std::array<int,3> np_tot;

@@ -3,7 +3,7 @@
 //
 // Source file src/setup.cpp
 //
-// Last modified : 03/2026
+// Last modified : 10/2026
 //
 // Copyright(C) by :
 // - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2026)
@@ -14,6 +14,12 @@
 
 #include "setup.hpp"
 #include "idefix.hpp"
+
+// Default factory function - returns a DefaultSetup which wraps the old Setup
+__attribute__((weak)) SetupBase* CreateSetup(
+    Input &input, Grid &grid, DataBlock &data, Output &output) {
+      return new DefaultSetup(input, grid, data, output);
+}
 
 // Default setup functions. These are automatically redefined if the user provide her/his
 // own implementation of the constructor, initflow and destructor
@@ -28,5 +34,4 @@ __attribute__((weak)) void Setup::InitFlow(DataBlock &data) {
   IDEFIX_ERROR("Please create your own setup.cpp following the documentation");
 }
 
-__attribute__((weak)) Setup::~Setup() {
-}
+__attribute__((weak)) Setup::~Setup() {}

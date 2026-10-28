@@ -15,12 +15,14 @@
 #define FLUID_DRAG_HPP_
 
 #include <string>
+#include <functional>
+
 #include "idefix.hpp"
 #include "input.hpp"
 #include "fluid_defs.hpp"
 #include "eos.hpp"
 
-using UserDefDragFunc = void (*) (DataBlock *, int n, real beta, IdefixArray3D<real> &gammai);
+using UserDefDragFunc = std::function<void(DataBlock *, int, real, IdefixArray3D<real> &)>;
 
 /* A class that holds the kind of drag law we intend to use */
 class GammaDrag {
@@ -28,7 +30,13 @@ class GammaDrag {
   enum class Type{Gamma, Tau, Size, Userdef};
   GammaDrag() = default;
   GammaDrag(Input &, std::string BlockName, int instanceNumber, DataBlock *data);
-  void EnrollUserDrag(UserDefDragFunc);
+  template<typename Func>
+  void EnrollUserDrag(Func func) {
+    if(type != Type::Userdef) {
+      IDEFIX_ERROR("User-defined drag function requires drag entry to be set to \"userdef\"");
+    }
+    this->userDrag = func;
+  }
   void RefreshUserDrag(DataBlock *);
 
   KOKKOS_INLINE_FUNCTION real GetGamma(const int k, const int j, const int i) const {
@@ -63,7 +71,7 @@ class GammaDrag {
   IdefixArray4D<real> VcGas;
 
   int instanceNumber;
-  UserDefDragFunc userDrag{NULL};
+  UserDefDragFunc userDrag;
 };
 
 
@@ -82,7 +90,10 @@ class Drag {
   void AddImplicitFluidMomentum(const real);  // Add the implicit drag force on dust grains
   /////////////////////////
 
-  void EnrollUserDrag(UserDefDragFunc);   // User defined drag function enrollment
+  template<typename Func>
+  void EnrollUserDrag(Func func) {  // User defined drag function enrollment
+    gammaDrag.EnrollUserDrag(func);
+  }
   bool IsImplicit() const { return implicit; }  // Check if the drag is implicit
 
   IdefixArray4D<real> UcDust;  // Dust conservative quantities

@@ -18,6 +18,7 @@
 #define FLUID_FLUID_DEFS_HPP_
 
 #include <vector>
+#include <functional>
 #include "../idefix.hpp"
 
 
@@ -33,7 +34,6 @@ class Fluid;
 #define     eps_UCT_CONTACT         (1.0e-6)
 
 
-
 // Parabolic terms can have different status
 enum HydroModuleStatus {Disabled, Constant, UserDefFunction};
 
@@ -45,26 +45,26 @@ struct ParabolicModuleStatus {
 };
 
 
-using GravPotentialFunc = void (*) (DataBlock &, const real t, IdefixArray1D<real>&,
-                                    IdefixArray1D<real>&, IdefixArray1D<real>&,
-                                    IdefixArray3D<real> &);
+using GravPotentialFunc = std::function<void(DataBlock &, const real, IdefixArray1D<real>&,
+                                     IdefixArray1D<real>&, IdefixArray1D<real>&,
+                                     IdefixArray3D<real> &)>;
 
-using BodyForceFunc = void (*) (DataBlock &, const real t, IdefixArray4D<real>&);
+using BodyForceFunc = std::function<void(DataBlock &, const real, IdefixArray4D<real>&)>;
 
-using IsoSoundSpeedFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
+using IsoSoundSpeedFunc = std::function<void(DataBlock &, const real, IdefixArray3D<real> &)>;
 
 template<typename Phys>
-using SrcTermFunc = void (*) (Fluid<Phys> *, const real t, const real dt);
+using SrcTermFunc = std::function<void(Fluid<Phys> *, const real, const real)>;
 
 
-using EmfBoundaryFunc = void (*) (DataBlock &, const real t);
-using DiffusivityFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
+using EmfBoundaryFunc = std::function<void(DataBlock &, const real)>;
+using DiffusivityFunc = std::function<void(DataBlock &, const real, IdefixArray3D<real> &)>;
 
-using BragDiffusivityFunc = void (*) (DataBlock &, const real,
-                      std::vector<IdefixArray3D<real>> &);
+using BragDiffusivityFunc = std::function<void(DataBlock &, const real,
+                       std::vector<IdefixArray3D<real>> &)>;
 
-// Deprecated signatures
-using SrcTermFuncOld = void (*) (DataBlock &, const real t, const real dt);
+// Deprecated signatures (kept as aliases for backward compatibility)
+using SrcTermFuncOld = std::function<void(DataBlock &, const real, const real)>;
 
 
 #endif //FLUID_FLUID_DEFS_HPP_

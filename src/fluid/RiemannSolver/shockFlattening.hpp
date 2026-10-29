@@ -81,7 +81,7 @@ struct ShockFlattening_FindShockFunctor {
     IdefixArray3D<real> Ax1,Ax2,Ax3, dV;
   #endif
 
-  EquationOfState eos;
+  EquationOfStateDevice eos;
 
   //*****************************************************************
   // Functor Operator

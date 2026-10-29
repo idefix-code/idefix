@@ -57,7 +57,7 @@ class GammaDrag {
   }
   Type type;
   real dragCoeff;
-  EquationOfState eos;
+  EquationOfStateDevice eos;
   IdefixArray3D<real> gammai;
   IdefixArray4D<real> VcGas;
 
@@ -134,6 +134,7 @@ Drag::Drag(Input &input, Fluid<Phys> *hydroin):
   if(input.CheckEntry(blockName,"drag")>=0) {
     this->instanceNumber = hydroin->instanceNumber;
     this->gammaDrag = GammaDrag(input,blockName,instanceNumber,data);
+    this->gammaDrag.eos = *(data->hydro->eos.get());
     this->dragType = gammaDrag.type;
     // Feedback is true by default, but can be switched off.
     this->feedback = input.GetOrSet<bool>(blockName,"drag_feedback",0,true);

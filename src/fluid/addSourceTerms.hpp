@@ -67,7 +67,7 @@ struct Fluid_AddSourceTermsFunctor {
   IdefixArray1D<real> rt;
 #endif
 
-  EquationOfState eos;
+  EquationOfStateDevice eos;
 
   bool haveRotation;
   real OmegaZ;

@@ -22,12 +22,12 @@
 #include "dataBlock.hpp"
 
 
-// This is the isothermal implementation of the equation of state
-class EquationOfState {
+// This is the isothermal implementation of the equation of state (device-compatible subset)
+class EquationOfStateDevice {
  public:
-  EquationOfState() = default;
+  EquationOfStateDevice() = default;
 
-  EquationOfState(Input & input, DataBlock *data, std::string prefix) {
+  EquationOfStateDevice(Input & input, DataBlock *data, std::string prefix) {
     std::string isoString = input.Get<std::string>(prefix,"csiso",0);
     if(isoString.compare("constant") == 0) {
       this->haveIsoSoundSpeed = Constant;
@@ -41,37 +41,10 @@ class EquationOfState {
     }
   }
 
-  void ShowConfig() {
-    if(haveIsoSoundSpeed == Constant) {
-    idfx::cout << "EquationOfState: isothermal with cs=" << isoSoundSpeed << "."
-                << std::endl;
-    } else if(haveIsoSoundSpeed == UserDefFunction) {
-      idfx::cout << "EquationOfState: isothermal with user-defined cs function."
-                  << std::endl;
-      if(!isoSoundSpeedFunc) {
-        IDEFIX_ERROR("No user-defined isothermal sound speed function has been enrolled.");
-      }
-    }
-  }
-
   // In the isothermal EOS, gamma does not depend on the gas state,
   // So we add default values to 0 here so that GetGamma can be called without any argument
   KOKKOS_INLINE_FUNCTION real GetGamma(real P = 0.0, real rho = 0.0) const {
     return 1.0;
-  }
-
-  void Refresh(DataBlock &data, real t) {     // Refresh the coefficients (and tables)
-  idfx::pushRegion("EquationOfState::Refresh");
-    if(haveIsoSoundSpeed == UserDefFunction) {
-      if(isoSoundSpeedFunc) {
-        idfx::pushRegion("EquationOfState::UserDefSoundSpeed");
-        isoSoundSpeedFunc(data, t, isoSoundSpeedArray);
-        idfx::popRegion();
-      } else {
-        IDEFIX_ERROR("No user-defined isothermal sound speed function has been enrolled");
-      }
-    }
-    idfx::popRegion();
   }
 
   KOKKOS_INLINE_FUNCTION real GetWaveSpeed(const int k, const int j, const int i) const {
@@ -88,6 +61,47 @@ class EquationOfState {
     Kokkos::abort("Pressure is not defined in the isothermal EOS");
   }
 
+ protected:
+    real isoSoundSpeed;
+    HydroModuleStatus haveIsoSoundSpeed{Disabled};
+    IdefixArray3D<real> isoSoundSpeedArray;
+};
+
+// This is the isothermal implementation of the equation of state (full class)
+class EquationOfState : public EquationOfStateDevice {
+ public:
+  EquationOfState() = default;
+
+  EquationOfState(Input & input, DataBlock *data, std::string prefix)
+    : EquationOfStateDevice(input, data, prefix) {}
+
+  void ShowConfig() {
+    if(haveIsoSoundSpeed == Constant) {
+    idfx::cout << "EquationOfState: isothermal with cs=" << isoSoundSpeed << "."
+                << std::endl;
+    } else if(haveIsoSoundSpeed == UserDefFunction) {
+      idfx::cout << "EquationOfState: isothermal with user-defined cs function."
+                  << std::endl;
+      if(!isoSoundSpeedFunc) {
+        IDEFIX_ERROR("No user-defined isothermal sound speed function has been enrolled.");
+      }
+    }
+  }
+
+  void Refresh(DataBlock &data, real t) {     // Refresh the coefficients (and tables)
+  idfx::pushRegion("EquationOfState::Refresh");
+    if(haveIsoSoundSpeed == UserDefFunction) {
+      if(isoSoundSpeedFunc) {
+        idfx::pushRegion("EquationOfState::UserDefSoundSpeed");
+        isoSoundSpeedFunc(data, t, isoSoundSpeedArray);
+        idfx::popRegion();
+      } else {
+        IDEFIX_ERROR("No user-defined isothermal sound speed function has been enrolled");
+      }
+    }
+    idfx::popRegion();
+  }
+
   // Enroll user-defined isothermal sound speed
   template<typename Func>
   void EnrollIsoSoundSpeed(Func func) {
@@ -99,9 +113,6 @@ class EquationOfState {
   }
 
  private:
-    real isoSoundSpeed;
-    HydroModuleStatus haveIsoSoundSpeed{Disabled};
-    IdefixArray3D<real> isoSoundSpeedArray;
     IsoSoundSpeedFunc isoSoundSpeedFunc;
 };
 

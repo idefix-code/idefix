@@ -110,7 +110,7 @@ class EquationOfState : public EquationOfStateDevice {
   }
 
  private:
-    
+
     IsoSoundSpeedFunc isoSoundSpeedFunc;
 };
 

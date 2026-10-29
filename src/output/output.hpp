@@ -30,6 +30,9 @@
 #include "xdmf.hpp"
 #endif
 #include "slice.hpp"
+#ifdef WITH_PYTHON
+  #include "pydefix.hpp"
+#endif
 
 using AnalysisFunc = std::function<void(DataBlock &)>;
 

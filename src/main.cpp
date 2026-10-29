@@ -53,6 +53,9 @@
 #ifdef WITH_MPI
 #include "mpi.hpp"
 #endif
+#ifdef WITH_PYTHON
+  #include "pydefix.hpp"
+#endif
 
 
 

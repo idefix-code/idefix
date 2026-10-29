@@ -115,7 +115,7 @@ void Fluid<Phys>::ConvertConsToPrim() {
 
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Uc = this->Uc;
-  EquationOfState eos;
+  EquationOfStateDevice eos;
   if constexpr(Phys::eos) {
     eos = *(this->eos.get());
   }
@@ -162,7 +162,7 @@ void Fluid<Phys>::ConvertPrimToCons() {
 
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Uc = this->Uc;
-  EquationOfState eos;
+  EquationOfStateDevice eos;
   if constexpr(Phys::eos) {
     eos = *(this->eos.get());
   }

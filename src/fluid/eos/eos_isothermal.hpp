@@ -27,20 +27,6 @@ class EquationOfStateDevice {
  public:
   EquationOfStateDevice() = default;
 
-  EquationOfStateDevice(Input & input, DataBlock *data, std::string prefix) {
-    std::string isoString = input.Get<std::string>(prefix,"csiso",0);
-    if(isoString.compare("constant") == 0) {
-      this->haveIsoSoundSpeed = Constant;
-      this->isoSoundSpeed = input.Get<real>(prefix,"csiso",1);
-    } else if(isoString.compare("userdef") == 0) {
-      this->haveIsoSoundSpeed = UserDefFunction;
-      this->isoSoundSpeedArray = IdefixArray3D<real>(prefix+"_csIso",
-                                  data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
-    } else {
-      IDEFIX_ERROR("csiso admits only constant or userdef entries");
-    }
-  }
-
   // In the isothermal EOS, gamma does not depend on the gas state,
   // So we add default values to 0 here so that GetGamma can be called without any argument
   KOKKOS_INLINE_FUNCTION real GetGamma(real P = 0.0, real rho = 0.0) const {
@@ -71,9 +57,20 @@ class EquationOfStateDevice {
 class EquationOfState : public EquationOfStateDevice {
  public:
   EquationOfState() = default;
-
   EquationOfState(Input & input, DataBlock *data, std::string prefix)
-    : EquationOfStateDevice(input, data, prefix) {}
+    : EquationOfStateDevice() {
+      std::string isoString = input.Get<std::string>(prefix,"csiso",0);
+      if(isoString.compare("constant") == 0) {
+        this->haveIsoSoundSpeed = Constant;
+        this->isoSoundSpeed = input.Get<real>(prefix,"csiso",1);
+      } else if(isoString.compare("userdef") == 0) {
+        this->haveIsoSoundSpeed = UserDefFunction;
+        this->isoSoundSpeedArray = IdefixArray3D<real>(prefix+"_csIso",
+                                    data->np_tot[KDIR], data->np_tot[JDIR], data->np_tot[IDIR]);
+      } else {
+        IDEFIX_ERROR("csiso admits only constant or userdef entries");
+      }
+  }
 
   void ShowConfig() {
     if(haveIsoSoundSpeed == Constant) {

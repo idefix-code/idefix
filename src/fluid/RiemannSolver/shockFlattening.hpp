@@ -34,7 +34,7 @@ class ShockFlattening {
   void FindShock();
 
   Fluid<Phys> *hydro;
-  EquationOfState *eos;
+  EquationOfStateDevice *eos;
   IdefixArray3D<FlagShock> flagArray;
   bool isActive{false};
   real smoothing{0};

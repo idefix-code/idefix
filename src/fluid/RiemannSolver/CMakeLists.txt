@@ -22,6 +22,7 @@ target_sources(idefix
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/extrapolateToFaces.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/flux.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/riemannSolver.hpp
+  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/shockFlag.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/shockFlattening.hpp
   PUBLIC ${CMAKE_CURRENT_LIST_DIR}/slopeLimiter.hpp
   )

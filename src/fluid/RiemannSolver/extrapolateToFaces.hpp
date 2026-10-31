@@ -32,6 +32,16 @@ template<typename Phys,
 class ExtrapolateToFaces {
   using SL = SlopeLimiter<limiter>;
 
+  // PLM weights for irregular grids (trivially copyable, hence device-safe)
+  struct GridWeights {
+    IdefixArray1D<real> cp;   ///< (xgc(i+1)-xgc(i)) / (xr(i)-xgc(i))
+    IdefixArray1D<real> cm;   ///< (xgc(i)-xgc(i-1)) / (xgc(i)-xr(i-1))
+    IdefixArray1D<real> dp;   ///< (xr(i)-xgc(i)) / dx(i)
+    IdefixArray1D<real> dm;   ///< (xgc(i)-xr(i-1)) / dx(i)
+    IdefixArray1D<real> wp;   ///< dx(i) / (xgc(i+1)-xgc(i))
+    IdefixArray1D<real> wm;   ///< dx(i) / (xgc(i)-xgc(i-1))
+  };
+
   // Index offsets along the reconstruction direction
   static constexpr int ioffset = (dir == IDIR ? 1 : 0);
   static constexpr int joffset = (dir == JDIR ? 1 : 0);
@@ -75,17 +85,6 @@ class ExtrapolateToFaces {
       ExtrapolateOrder4(i,j,k,vL,vR);
     }
   }
-
- private:
-  // PLM weights for irregular grids (trivially copyable, hence device-safe)
-  struct GridWeights {
-    IdefixArray1D<real> cp;   ///< (xgc(i+1)-xgc(i)) / (xr(i)-xgc(i))
-    IdefixArray1D<real> cm;   ///< (xgc(i)-xgc(i-1)) / (xgc(i)-xr(i-1))
-    IdefixArray1D<real> dp;   ///< (xr(i)-xgc(i)) / dx(i)
-    IdefixArray1D<real> dm;   ///< (xgc(i)-xr(i-1)) / dx(i)
-    IdefixArray1D<real> wp;   ///< dx(i) / (xgc(i+1)-xgc(i))
-    IdefixArray1D<real> wm;   ///< dx(i) / (xgc(i)-xgc(i-1))
-  };
 
   // Allocate and compute the PLM weights along direction dir (irregular grids only)
   void ComputeGridWeights(DataBlock *data) {
@@ -287,6 +286,5 @@ class ExtrapolateToFaces {
   bool isRegularGrid{true};
   bool shockFlattening{false};
 };
-
 
 #endif // FLUID_RIEMANNSOLVER_EXTRAPOLATETOFACES_HPP_

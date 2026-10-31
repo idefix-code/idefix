@@ -6,8 +6,7 @@
 // Last modified : 10/2024
 //
 // Copyright(C) by :
-// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2024)
-// - Alankar Dutta <dutta.alankar@gmail.com> (MPA Garching - 2023)
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023 - 2024)
 // - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
 // and other code contributors
 //
@@ -16,27 +15,29 @@
 
 #ifndef OUTPUT_OUTPUT_HPP_
 #define OUTPUT_OUTPUT_HPP_
-#include <string>
+
 #include <map>
 #include <vector>
+#include <string>
 #include <memory>
+#include <functional>
 #include "idefix.hpp"
-#include "input.hpp"
 #include "dataBlock.hpp"
+#include "input.hpp"
 #include "vtk.hpp"
+#include "dump.hpp"
 #ifdef WITH_HDF5
 #include "xdmf.hpp"
 #endif
-#ifdef WITH_PYTHON
-#include "pydefix.hpp"
-#endif
-#include "dump.hpp"
 #include "slice.hpp"
+#ifdef WITH_PYTHON
+  #include "pydefix.hpp"
+#endif
 
-using AnalysisFunc = void (*) (DataBlock &);
+using AnalysisFunc = std::function<void(DataBlock &)>;
 
 using UserDefVariablesContainer = std::map<std::string,IdefixHostArray3D<real>>;
-using UserDefVariablesFunc = void (*) (DataBlock &, UserDefVariablesContainer &);
+using UserDefVariablesFunc = std::function<void(DataBlock &, UserDefVariablesContainer &)>;
 
 
 class Output {
@@ -57,8 +58,37 @@ class Output {
   #endif
   void ResetTimer();                      // Reset internal timer
   double GetTimer();
-  void EnrollAnalysis(AnalysisFunc);
-  void EnrollUserDefVariables(UserDefVariablesFunc);
+
+  // Template enrollment methods (definitions inline)
+  template<typename Func>
+  void EnrollAnalysis(Func myFunc) {
+    idfx::pushRegion("Output::EnrollAnalysis");
+    if(!analysisEnabled) {
+      IDEFIX_WARNING("You are enrolling an analysis function "
+                    "but analysis are not enabled in the input file,"
+                    "so no analysis will be performed");
+    }
+    analysisFunc = myFunc;
+    haveAnalysisFunc = true;
+    idfx::popRegion();
+  }
+
+  template<typename Func>
+  void EnrollUserDefVariables(Func myFunc) {
+    idfx::pushRegion("Output::EnrollUserDefVariable");
+    if(!userDefVariablesEnabled) {
+      IDEFIX_ERROR("You are enrolling a user-defined variables function "
+                   "but the userdef variables are not set in the input file");
+    }
+    userDefVariablesFunc = myFunc;
+    if(haveSlices) {
+      for(int i = 0 ; i < slices.size() ; i++) {
+        slices[i]->EnrollUserDefFunc(myFunc);
+      }
+    }
+    haveUserDefVariablesFunc = true;
+    idfx::popRegion();
+  }
 
  private:
   bool forceNoWrite = false;    //< explicitely disable all writes
@@ -102,4 +132,5 @@ class Output {
   Kokkos::Timer timer;
   double elapsedTime{0.0};
 };
+
 #endif // OUTPUT_OUTPUT_HPP_

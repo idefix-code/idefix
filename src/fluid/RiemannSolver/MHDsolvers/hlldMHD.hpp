@@ -80,7 +80,7 @@ void RiemannSolver<Phys>::HlldMHD(IdefixArray4D<real> &Flux) {
   IdefixArray3D<real> dL;
   IdefixArray3D<real> dR;
 
-  EquationOfState eos = *(hydro->eos.get());
+  EquationOfStateDevice eos = *(hydro->eos.get());
 
   ExtrapolateToFaces<Phys,DIR> extrapol = *this->GetExtrapolator<DIR>();
 

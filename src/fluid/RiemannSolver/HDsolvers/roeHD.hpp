@@ -58,7 +58,7 @@ void RiemannSolver<Phys>::RoeHD(IdefixArray4D<real> &Flux) {
   IdefixArray4D<real> Vs = this->Vs;
   IdefixArray3D<real> cMax = this->cMax;
 
-  EquationOfState eos = *(hydro->eos.get());
+  EquationOfStateDevice eos = *(hydro->eos.get());
 
   ExtrapolateToFaces<Phys,DIR> extrapol = *this->GetExtrapolator<DIR>();
 

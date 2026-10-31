@@ -73,9 +73,6 @@ class RiemannSolver {
   std::unique_ptr<ShockFlattening<Phys>> shockFlattening;
 
  private:
-  template <typename P, int dir, PLMLimiter L, int O>
-  friend class ExtrapolateToFaces;
-
   IdefixArray4D<real> Vc;
   IdefixArray4D<real> Vs;
   IdefixArray3D<real> cMax;
@@ -163,12 +160,19 @@ RiemannSolver<Phys>::RiemannSolver(Input &input, Fluid<Phys>* hydro) : Vc{hydro-
   }
 
   // init slope limiters
-  slopeLimIDIR = std::make_unique<ExtrapolateToFaces<Phys,IDIR>>(this);
+  IdefixArray3D<FlagShock> shockFlags{};
+  if(haveShockFlattening) {
+    shockFlags = shockFlattening->flagArray;
+  }
+  slopeLimIDIR = std::make_unique<ExtrapolateToFaces<Phys,IDIR>>(data, Vc, shockFlags,
+                                                                  haveShockFlattening);
   #if DIMENSIONS >= 2
-  slopeLimJDIR = std::make_unique<ExtrapolateToFaces<Phys,JDIR>>(this);
+  slopeLimJDIR = std::make_unique<ExtrapolateToFaces<Phys,JDIR>>(data, Vc, shockFlags,
+                                                                  haveShockFlattening);
   #endif
   #if DIMENSIONS == 3
-  slopeLimKDIR = std::make_unique<ExtrapolateToFaces<Phys,KDIR>>(this);
+  slopeLimKDIR = std::make_unique<ExtrapolateToFaces<Phys,KDIR>>(data, Vc, shockFlags,
+                                                                  haveShockFlattening);
   #endif
 }
 

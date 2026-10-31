@@ -82,9 +82,6 @@ void Slice::EnrollUserDefVariables(std::map<std::string,IdefixHostArray3D<real>>
   this->haveUserDefinedVariables = true;
 }
 
-void Slice::EnrollUserDefFunc(UserDefVariablesFunc myFunc) {
-  userDefVariablesFunc = myFunc;
-}
 
 void Slice::CheckForWrite(DataBlock &data, bool force) {
   idfx::pushRegion("Slice:CheckForWrite");

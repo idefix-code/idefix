@@ -15,6 +15,8 @@
 #ifndef GRAVITY_GRAVITY_HPP_
 #define GRAVITY_GRAVITY_HPP_
 
+#include <functional>
+
 #include "idefix.hpp"
 #include "input.hpp"
 #include "selfGravity.hpp"
@@ -23,11 +25,11 @@
 class DataBlock;
 
 // Enrolled functions signature
-using GravPotentialFunc = void (*) (DataBlock &, const real t, IdefixArray1D<real>&,
+using GravPotentialFunc = std::function<void(DataBlock &, const real, IdefixArray1D<real>&,
                                     IdefixArray1D<real>&, IdefixArray1D<real>&,
-                                    IdefixArray3D<real> &);
+                                    IdefixArray3D<real> &)>;
 
-using BodyForceFunc = void (*) (DataBlock &, const real t, IdefixArray4D<real>&);
+using BodyForceFunc = std::function<void(DataBlock &, const real, IdefixArray4D<real>&)>;
 
 
 class Gravity {
@@ -81,10 +83,10 @@ class Gravity {
   DataBlock *data;
 
   // User defined gravitational potential
-  GravPotentialFunc gravPotentialFunc{NULL};
+  GravPotentialFunc gravPotentialFunc;
 
   // Body force
-  BodyForceFunc bodyForceFunc{NULL};
+  BodyForceFunc bodyForceFunc;
 
   #ifdef DEBUG_GRAVITY
   // Used to get fields usefull for debugging

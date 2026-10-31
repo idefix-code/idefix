@@ -63,7 +63,7 @@ class ThermalDiffusion {
   real kappa;
 
   // equation of state (required to get the heat capacity)
-  EquationOfState *eos;
+  EquationOfStateDevice *eos;
 };
 
 #include "fluid.hpp"

@@ -3,7 +3,7 @@
 //
 // Source file src/setup.cpp
 //
-// Last modified : 03/2026
+// Last modified : 10/2026
 //
 // Copyright(C) by :
 // - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2026)
@@ -12,6 +12,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include <memory>
 #include "setup.hpp"
 #include "idefix.hpp"
 
@@ -28,5 +29,4 @@ __attribute__((weak)) void Setup::InitFlow(DataBlock &data) {
   IDEFIX_ERROR("Please create your own setup.cpp following the documentation");
 }
 
-__attribute__((weak)) Setup::~Setup() {
-}
+__attribute__((weak)) Setup::~Setup() {}

@@ -34,6 +34,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <memory>
 
 #include <Kokkos_Core.hpp>
 
@@ -47,9 +48,13 @@
 #include "dataBlock.hpp"
 #include "timeIntegrator.hpp"
 #include "setup.hpp"
+#include "setup_registry.hpp"
 #include "output.hpp"
 #ifdef WITH_MPI
 #include "mpi.hpp"
+#endif
+#ifdef WITH_PYTHON
+  #include "pydefix.hpp"
 #endif
 
 
@@ -109,7 +114,7 @@ int main( int argc, char* argv[] ) {
       Pydefix pydefix(input);
     #endif
     Output output(input, data);
-    Setup mysetup(input, grid, data, output);
+    auto mysetup = SetupRegistry::Create(input, grid, data, output);
 
     idfx::cout << "Main: initialisation finished." << std::endl;
 
@@ -146,13 +151,13 @@ int main( int argc, char* argv[] ) {
             pydefix.InitFlow(data);
           } else {
             idfx::pushRegion("Setup::Initflow");
-            mysetup.InitFlow(data);
+            mysetup->InitFlow(data);
           }
           data.DeriveVectorPotential();
           idfx::popRegion();
         #else
           idfx::pushRegion("Setup::Initflow");
-          mysetup.InitFlow(data);
+          mysetup->InitFlow(data);
           data.DeriveVectorPotential();
           idfx::popRegion();
         #endif
@@ -174,11 +179,11 @@ int main( int argc, char* argv[] ) {
           pydefix.InitFlow(data);
         } else {
           idfx::pushRegion("Setup::Initflow");
-          mysetup.InitFlow(data);
+          mysetup->InitFlow(data);
         }
       #else
         idfx::pushRegion("Setup::Initflow");
-        mysetup.InitFlow(data);
+        mysetup->InitFlow(data);
       #endif
       idfx::popRegion();
       data.DeriveVectorPotential();   // This does something only when evolveVectorPotential is on

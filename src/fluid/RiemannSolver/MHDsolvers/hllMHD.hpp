@@ -83,7 +83,7 @@ void RiemannSolver<Phys>::HllMHD(IdefixArray4D<real> &Flux) {
   IdefixArray3D<real> dL;
   IdefixArray3D<real> dR;
 
-  EquationOfState eos = *(hydro->eos.get());
+  EquationOfStateDevice eos = *(hydro->eos.get());
 
   [[maybe_unused]] real xHConstant = hydro->xH;
 

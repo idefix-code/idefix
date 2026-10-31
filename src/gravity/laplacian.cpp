@@ -632,10 +632,6 @@ void Laplacian::EnforceBoundary(int dir, BoundarySide side, LaplacianBoundaryTyp
 }
 
 
-void Laplacian::EnrollUserDefBoundary(UserDefBoundaryFunc myFunc) {
-  this->userDefBoundaryFunc = myFunc;
-  this->haveUserDefBoundary = true;
-}
 
 void Laplacian::SetBoundaries(IdefixArray3D<real> &arr) {
   idfx::pushRegion("Laplacian::SetBoundaries");

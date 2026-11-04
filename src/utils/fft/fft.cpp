@@ -79,6 +79,7 @@ FFT::FFT(std::array<int,3> npr_glob, std::array<int,3> npf_glob) {
 
 
 
+#ifdef WITH_MPI
 void FFT::R2C_MPI(const IdefixArray3D<real> in, IdefixArray3D<complex> out, bool transpose) {
   idfx::pushRegion("FFT::R2C_MPI");
 
@@ -110,8 +111,10 @@ void FFT::R2C_MPI(const IdefixArray3D<real> in, IdefixArray3D<complex> out, bool
   }
   idfx::popRegion();
 }
+#endif
 
 
+#ifdef WITH_MPI
 void FFT::C2R_MPI(const IdefixArray3D<complex> in, IdefixArray3D<real> out, bool transpose) {
   idfx::pushRegion("FFT::C2R_MPI");
   idfx::pushRegion("FFT::C2R_MPI axis2");
@@ -136,6 +139,7 @@ void FFT::C2R_MPI(const IdefixArray3D<complex> in, IdefixArray3D<real> out, bool
 
   idfx::popRegion();
 }
+#endif
 
 
 void FFT::TestMPI() {

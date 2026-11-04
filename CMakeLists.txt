@@ -83,11 +83,7 @@ endif()
 add_subdirectory(src/kokkos ${CMAKE_BINARY_DIR}/build/kokkos)
 include_directories(${Kokkos_INCLUDE_DIRS_RET})
 
-# Add FFT library if requested
-if(Idefix_FFT)
-  add_compile_definitions("WITH_FFT")
-  add_subdirectory(src/kokkos-fft)
-endif()
+
 
 # Add Idefix CXX Flags
 add_compile_options(${Idefix_CXX_FLAGS})
@@ -126,6 +122,12 @@ endif()
 if(EXISTS ${Idefix_PROBLEM_DIR_ABS}/CMakeLists.txt)
   message(STATUS "Including problem-specific CMakeLists in '${Idefix_PROBLEM_DIR_ABS}'")
   add_subdirectory(${Idefix_PROBLEM_DIR_ABS} build/setup)
+endif()
+
+# Add FFT library if requested
+if(Idefix_FFT)
+  add_compile_definitions("WITH_FFT")
+  add_subdirectory(src/kokkos-fft)
 endif()
 
 if(Idefix_MHD)

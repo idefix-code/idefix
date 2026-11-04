@@ -30,7 +30,13 @@ import pytools.idfx_test as tst
 def testMe(test):
     test.configure()
     test.compile()
-    inifiles = ["idefix.ini", "idefix-cg.ini", "idefix-minres.ini", "idefix-jacobi.ini"]
+    inifiles = [
+        "idefix.ini",
+        "idefix-cg.ini",
+        "idefix-minres.ini",
+        "idefix-jacobi.ini",
+        "idefix-fft.ini",
+    ]
 
     # loop on all the ini files for this test
     for ini in inifiles:

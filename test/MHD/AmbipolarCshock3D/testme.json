@@ -12,12 +12,12 @@
       "ini": ["idefix.ini","idefix-rkl.ini"],
       "mpi": [false],
       "vectPot": [false, true],
-      "dec": ["2","1","1"]
+      "dec": [2,1,1]
     },{
       "ini": ["idefix.ini","idefix-rkl.ini"],
       "mpi": [true],
       "vectPot": [false],
-      "dec": ["2","1","1"],
+      "dec": [2,1,1],
       "tolerance": 3e-14
     }
   ],

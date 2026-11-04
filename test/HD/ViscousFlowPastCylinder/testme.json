@@ -5,7 +5,7 @@
     "noplot": true,
     "reconstruction": 2,
     "single": false,
-    "dec": ["2","2"],
+    "dec": [2,2],
     "tolerance": 3e-14
   },
   "variants": [

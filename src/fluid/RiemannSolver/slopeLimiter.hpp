@@ -1,9 +1,17 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/fluid/RiemannSolver/slopeLimiter.hpp
+//
+// Last modified : 10/2023
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
+
 #ifndef FLUID_RIEMANNSOLVER_SLOPELIMITER_HPP_
 #define FLUID_RIEMANNSOLVER_SLOPELIMITER_HPP_
 

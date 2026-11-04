@@ -1,3 +1,17 @@
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file test/MHD/sphBragTDiffusion/python/testidefix.py
+#
+# Last modified : 08/2026
+#
+# Copyright(C) by :
+# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023)
+# - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+# and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
 import os
 import sys
 
@@ -7,7 +21,7 @@ import numpy as np
 
 from pytools.vtk_io import readVTK
 
-conf = inifix.load("../idefix.ini")
+conf = inifix.load("../idefix.ini", sections="require")
 amplitude = conf["Setup"]["amplitude"]
 gamma = conf["Hydro"]["gamma"]
 kappa = conf["Hydro"]["bragTDiffusion"][-1]

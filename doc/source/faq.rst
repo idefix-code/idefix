@@ -27,6 +27,9 @@ I have a complex setup, and have written some functions in separate .cpp files. 
 I want to run on the GPUs of xxx machine, how do I proceed?
   Check the examples in :ref:`setupExamples`
 
+I don't have a CUDA or HIP aware MPI with GPU DIRECT support, how I can run *Idefix* ?
+  You can look at the compile option `-DIdefix_MPI_GPU_DIRECT=OFF` in :ref:`makefile` to disable GPU DIRECT usage. Note that this will decrease performances.
+
 Compilation
 -----------
 

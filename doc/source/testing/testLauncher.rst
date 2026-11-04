@@ -32,12 +32,12 @@ To run the test you can basically :
     # Run all tests
     ./test.py
 
-    # Run all tests in ./tests/HD
-    ./test.py -subdir=./tests/HD
+    # Run all tests in ./test/HD
+    ./test.py -subdir=./test/HD
 
     # Select in more details the tests containing the "single" keyword
     # See pytest documentation for the exact advanced semantic
-    ./test.py -subdir=./tests/HD -k single
+    ./test.py -subdir=./test/HD -k single
 
     # Run in verbose
     ./test.py -v
@@ -191,6 +191,12 @@ In addition there is some extra keys which are dedicated to the json interpretat
    * - ``multirun``
      - ``{}``
      - See the multi-run section below.
+   * - ``callPyFunctionBefore``
+     -
+     - Call a python function before executing the test (see dedicated section at the end of this file).
+   * - ``callPyFunctionAfter``
+     -
+     - Call a python function after executing the test (see dedicated section at the end of this file).
 
 Looping over parameters
 -----------------------
@@ -372,6 +378,33 @@ They are described like :
                 }
             ]
         },
+    }
+
+Calling a Python function
+-------------------------
+
+In some cases (example in ``test/utils/lookupTable``) you might need to call a custom
+python function before running the test to prepare the data or after the test to perform
+some extra check.
+
+You can simply implement the functions you want to call in the python file in the test
+directory (ideally named ``testmelib.py``) :
+
+.. code-block:: python
+
+    def callMeAtStart():
+        print("This is called at test start !")
+
+    def callMeAtEnd():
+        print("This is called at test end !")
+
+And add the keys in ``testme.json``:
+
+.. code-block:: json
+
+    "default": {
+        "callPyFunctionBefore": "testmelib.py:callMeAtStart",
+        "callPyFunctionAfter": "testmelib.py:callMeAtEnd"
     }
 
 Using the idfxTest options

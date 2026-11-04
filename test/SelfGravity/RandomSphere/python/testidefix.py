@@ -1,4 +1,18 @@
 #!/usr/bin/env python3
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file test/SelfGravity/RandomSphere/python/testidefix.py
+#
+# Last modified : 07/2026
+#
+# Copyright(C) by :
+# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023)
+# - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+# and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
 # -*- coding: utf-8 -*-
 """
 Created on Thu Mar  5 11:29:41 2020
@@ -23,7 +37,7 @@ parser.add_argument(
     "-noplot", default=False, help="disable plotting", action="store_true"
 )
 
-args = parser.parse_args()
+args, unkown_args = parser.parse_known_args()
 
 # Read vtk
 V = readVTK("../data.0000.vtk")

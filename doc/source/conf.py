@@ -1,3 +1,18 @@
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file doc/source/conf.py
+#
+# Last modified : 07/2026
+#
+# Copyright(C) by :
+# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2023)
+# - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+# and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
+
 # Configuration file for the Sphinx documentation builder.
 #
 # This file only contains a selection of the most common options. For a full
@@ -19,11 +34,11 @@ import textwrap
 # -- Project information -----------------------------------------------------
 
 project = "Idefix"
-copyright = "Geoffroy Lesur et al."
+copyright = "The Idefix Code contributors"
 author = "Geoffroy Lesur"
 
 # The full version, including alpha/beta/rc tags
-release = "2.3.0"
+release = "2.4.0"
 
 
 # -- General configuration ---------------------------------------------------
@@ -99,6 +114,7 @@ exhale_args = {
     "exhaleDoxygenStdin": textwrap.dedent("""
             INPUT = ../../src
             EXCLUDE = ../../src/kokkos
+            EXCLUDE += ../../src/kokkos-fft
             """),
 }
 

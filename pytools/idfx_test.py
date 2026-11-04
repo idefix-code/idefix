@@ -1,3 +1,19 @@
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file pytools/idfx_test.py
+#
+# Last modified : 09/2026
+#
+# Copyright(C) by :
+# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023 - 2026)
+# - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+# - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+# and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
+
 import argparse
 import json
 import os
@@ -93,6 +109,20 @@ class idfxTest:
         parser.add_argument("-mpi", help="Enable MPI", action="store_true")
 
         parser.add_argument(
+            "-mpiMode",
+            default="Persistent",
+            choices=["Default", "Persistent", "NonBlocking", "Blocking"],
+            help="MPI communication mode to use (Default)",
+            type=str,
+        )
+
+        parser.add_argument(
+            "-mpiGpuForceCopy",
+            action="store_true",
+            help="Disable MPI GPU direct and force memory transfers for validation purpose.",
+        )
+
+        parser.add_argument(
             "-all",
             help="Do all test suite (otherwise, just do the test with the current configuration)",
             action="store_true",
@@ -124,6 +154,12 @@ class idfxTest:
             "-v",
             "--verbose",
             help="Enable verbose mode, by not capturing the output.",
+            action="store_true",
+        )
+
+        parser.add_argument(
+            "--validate-testme-jsons",
+            help="Only validate the testme.json files.",
             action="store_true",
         )
 
@@ -225,21 +261,19 @@ class idfxTest:
 
         if self.cuda:
             comm.append("-DKokkos_ENABLE_CUDA=ON")
-            # disable fmad operations on Cuda to make it compatible with CPU arithmetics
-            comm.append("-DIdefix_CXX_FLAGS=--fmad=false")
             # disable Async cuda malloc for tests performed on old UCX implementations
             comm.append("-DKokkos_ENABLE_IMPL_CUDA_MALLOC_ASYNC=OFF")
 
         if self.intel:
             # disable fmad operations on Cuda to make it compatible with CPU arithmetics
-            comm.append("-DIdefix_CXX_FLAGS=-fp-model=strict")
             comm.append("-DCMAKE_CXX_COMPILER=icpx")
             comm.append("-DCMAKE_C_COMPILER=icx")
 
         if self.hip:
             comm.append("-DKokkos_ENABLE_HIP=ON")
-            # disable fmad operations on HIP to make it compatible with CPU arithmetics
-            comm.append("-DIdefix_CXX_FLAGS=-ffp-contract=off")
+
+        # disable FMA for testing so that we have the same results on CPU and GPU (otherwise, the results are not bitwise identical)
+        comm.append("-DIdefix_SUPPRESS_FMA=ON")
 
         # if we use single precision
         if self.single:
@@ -267,6 +301,13 @@ class idfxTest:
             comm.append("-DIdefix_MPI=ON")
         else:
             comm.append("-DIdefix_MPI=OFF")
+
+        if self.mpiMode != "Default":
+            comm.append(f"-DIdefix_MPI_MODE={self.mpiMode}")
+
+        if self.mpiGpuForceCopy:
+            comm.append("-DIdefix_MPI_GPU_DIRECT=OFF")
+            comm.append("-DIdefix_MPI_GPU_FORCE_COPY=ON")
 
         if self.reconstruction == 2:
             comm.append("-DIdefix_RECONSTRUCTION=Linear")
@@ -513,6 +554,9 @@ class idfxTest:
             comm = [sys.executable, "testidefix.py"]
             if self.noplot:
                 comm.append("-noplot")
+            if self.inifile:
+                comm.append("-ini")
+                comm.append(self.inifile)
 
             print(bcolors.OKCYAN + "Running standard test...")
             try:

@@ -1,7 +1,15 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/fluid/RiemannSolver/riemannSolver.hpp
+//
+// Last modified : 09/2024
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023)
+// - Marc Van den Bossche <mbossche@aip.de> (IAP Postdam - 2024)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -70,7 +78,6 @@ class RiemannSolver {
 
   IdefixArray4D<real> Vc;
   IdefixArray4D<real> Vs;
-  IdefixArray4D<real> Flux;
   IdefixArray3D<real> cMax;
   Fluid<Phys>* hydro;
   DataBlock *data;
@@ -90,7 +97,6 @@ class RiemannSolver {
 template <typename Phys>
 RiemannSolver<Phys>::RiemannSolver(Input &input, Fluid<Phys>* hydro) : Vc{hydro->Vc},
                                       Vs{hydro->Vs},
-                                      Flux{hydro->FluxRiemann},
                                       cMax{hydro->cMax},
                                       hydro{hydro},
                                       data{hydro->data}
@@ -147,8 +153,6 @@ RiemannSolver<Phys>::RiemannSolver(Input &input, Fluid<Phys>* hydro) : Vc{hydro-
     // We're dealing with dust grains
     mySolver = HLL_DUST;
   }
-
-
 
   // Shock flattening
   this->haveShockFlattening = input.CheckEntry(std::string(Phys::prefix),"shockFlattening")>=0;

@@ -1,3 +1,17 @@
+// ***********************************************************************************
+// Idefix MHD astrophysical code
+//
+// Source file test/MHD/AmbipolarWind/setup.cpp
+//
+// Last modified : 06/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2026)
+// and other code contributors
+//
+// Licensed under CeCILL 2.1 License, see COPYING for more information
+// ***********************************************************************************
+
 #include "idefix.hpp"
 #include "setup.hpp"
 
@@ -335,7 +349,7 @@ void EmfBoundary(DataBlock& data, const real t) {
 }
 
 void FluxBoundary(DataBlock & data, int dir, BoundarySide side, const real t) {
-    IdefixArray4D<real> Flux = data.hydro->FluxRiemann;
+    IdefixArray4D<real> Flux = data.hydro->FluxRiemann[dir];
     if( dir==IDIR && side == left) {
         int iref = data.beg[IDIR];
 

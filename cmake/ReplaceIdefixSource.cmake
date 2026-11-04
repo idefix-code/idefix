@@ -1,3 +1,17 @@
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file cmake/ReplaceIdefixSource.cmake
+#
+# Last modified : 12/2021
+#
+# Copyright(C) by :
+# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021)
+# and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
+
 function(replace_idefix_source _old_source _new_source)
   get_target_property(fullsource idefix SOURCES)
   list(FILTER fullsource INCLUDE REGEX ${_old_source})

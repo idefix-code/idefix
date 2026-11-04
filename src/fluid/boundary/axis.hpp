@@ -1,7 +1,15 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/fluid/boundary/axis.hpp
+//
+// Last modified : 08/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023 - 2026)
+// - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -57,8 +65,8 @@ class Axis {
 
   enum {faceTop, faceBot};
 #ifdef WITH_MPI
-  MPI_Request sendRequest;
-  MPI_Request recvRequest;
+  idfx::MPI_Request_1D<real> sendRequest;
+  idfx::MPI_Request_1D<real> recvRequest;
 
   Buffer bufferSend;
   Buffer bufferRecv;
@@ -71,8 +79,8 @@ class Axis {
 #endif
   void InitMPI();
 
-  IdefixArray1D<real> Ex1Avg;
-  IdefixArray2D<real> BAvg;
+  idfx::IdefixCommArray1D<real> Ex1Avg;
+  idfx::IdefixCommArray2D<real> BAvg;
   bool haveCurrent;
   IdefixArray2D<real> JAvg;
   IdefixArray1D<int> symmetryVc;
@@ -155,8 +163,8 @@ Axis::Axis(Boundary<Phys> *boundary) {
     }
     Kokkos::deep_copy(symmetryVs, symmetryVsHost);
 
-    this->Ex1Avg = IdefixArray1D<real>("Axis:Ex1Avg",data->np_tot[IDIR]);
-    this->BAvg = IdefixArray2D<real>("Axis:BxAvg",data->np_tot[IDIR],2);
+    this->Ex1Avg = idfx::IdefixCommArray1D<real>("Axis:Ex1Avg",data->np_tot[IDIR]);
+    this->BAvg = idfx::IdefixCommArray2D<real>("Axis:BxAvg",data->np_tot[IDIR],2);
     if(haveCurrent) {
       this->JAvg = IdefixArray2D<real>("Axis:JAvg",data->np_tot[IDIR],3);
     }

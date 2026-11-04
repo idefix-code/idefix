@@ -1,7 +1,19 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/timeIntegrator.cpp
+//
+// Last modified : 09/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2026)
+// - Soufiane Baghdadi <soufiane.baghdadi@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2021)
+// - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2022)
+// - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
+// - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+// - Nicolas Scepi <nicolas.scepi@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -199,7 +211,7 @@ double TimeIntegrator::ComputeBalance() {
     #ifdef WITH_MPI
       const double allowedImbalance = 20.0;
       std::vector<double> computeLogPerCore(idfx::psize);
-      MPI_Gather(&computeLastLog, 1, MPI_DOUBLE, computeLogPerCore.data(), 1, MPI_DOUBLE, 0,
+      idfx::MPI_Gather(&computeLastLog, 1, MPI_DOUBLE, computeLogPerCore, 1, MPI_DOUBLE, 0,
                   MPI_COMM_WORLD);
       computeLastLog = 0; // reset timer for all cores
       if(idfx::prank==0) {
@@ -306,14 +318,6 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     // evolve dt accordingly
     data.t += data.dt;
 
-    // Look for Nans every now and then (this actually cost a lot of time on GPUs
-    // because streams are divergent)
-    if(ncycles%checkNanPeriodicity==0) {
-      if(data.CheckNan()>0) {
-        throw std::runtime_error(std::string("Nan found after integration cycle"));
-      }
-    }
-
     // Compute next time_step during first stage
     if(stage==0) {
       if(!haveFixedDt) {
@@ -353,6 +357,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     // Add back fargo velocity so that boundary conditions are applied on the total V
     if(data.haveFargo) data.fargo->AddVelocity(data.t);
   }
+
   /////////////////////////////////////////////////
   // END STAGES LOOP                             //
   /////////////////////////////////////////////////
@@ -380,6 +385,14 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
   // Launch user step last
   data.LaunchUserStepLast();
+
+  // Look for Nans every now and then (this actually cost a lot of time on GPUs
+  // because streams are divergent)
+  if(ncycles%checkNanPeriodicity==0) {
+    if(data.CheckNan()>0) {
+      throw std::runtime_error(std::string("Nan found after integration cycle"));
+    }
+  }
 
   // Update current time (should have already been done, but this gets rid of roundoff errors)
   data.t=t0+data.dt;

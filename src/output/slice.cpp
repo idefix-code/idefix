@@ -1,7 +1,17 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/output/slice.cpp
+//
+// Last modified : 08/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023 - 2024)
+// - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
+// - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
+// - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -162,7 +172,7 @@ void Slice::CheckForWrite(DataBlock &data, bool force) {
         }}}
         #ifdef WITH_MPI
           Kokkos::fence();
-          MPI_Allreduce(MPI_IN_PLACE, arrOut.data(),
+          idfx::MPI_Allreduce(MPI_IN_PLACE, arrOut,
                         arrOut.extent(0)*arrOut.extent(1)*arrOut.extent(2)*arrOut.extent(3),
                         realMPI, MPI_SUM, avgComm);
         #endif

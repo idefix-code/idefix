@@ -1,17 +1,27 @@
-#####################################################################################
+######################################################################################
 # Idefix MHD astrophysical code
-# Copyright(C) Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr>
+#
+# Source file pytools/idfx_test_run.py
+#
+# Last modified : 09/2026
+#
+# Copyright(C) by :
+# - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+# - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
 # and other code contributors
+#
 # Licensed under CeCILL 2.1 License, see COPYING for more information
-#####################################################################################
+######################################################################################
 
 import copy
 import glob
+import importlib
 import json
 import os
 import sys
 from contextlib import contextmanager
 
+import jsonschema
 import pytest
 
 # idefix test class
@@ -44,14 +54,38 @@ class IdexPytestRunner:
         self.currentTestRunner: tst.idfxTest = None
         self.parentScritFile = parentScriptFile
         self.filterSubdir = os.environ.get("IDEFIX_TEST_FILTER_SUBDIR", "./test/")
+        self.testmeSchema = self._loadTestmeSchema()
+
+    def _loadTestmeSchema(self) -> dict:
+        scriptDir = os.path.dirname(__file__)
+        schemaPath = os.path.join(scriptDir, "testme.schema.json")
+        with open(schemaPath, "r") as fp:
+            return json.load(fp)
 
     def _validateNaming(self, namings: str, autoExtracted: str, file: str):
         names = namings.split(",")
-        for n in autoExtracted.split(","):
-            if not n in names:
-                raise Exception(
-                    f"Naming parameter list not match the auto-detectection, some are missinge. You gave : '{names}', detected '{autoExtracted}' into {file}"
-                )
+        names_sorted = namings.split(",")
+        autoNames = autoExtracted.split(",")
+        autoNames_sorted = autoExtracted.split(",")
+
+        # quick compare
+        names_sorted.sort()
+        autoNames_sorted.sort()
+
+        # check and if error check in details to report
+        if names_sorted != autoNames_sorted:
+            for n in autoNames:
+                if n not in names:
+                    raise Exception(
+                        f"Naming parameter list not match the auto-detectection, some are missing : '{n}'\n"
+                        f"You gave : '{names}', detected '{autoNames}' into {file}"
+                    )
+            for n in names:
+                if n not in autoNames:
+                    raise Exception(
+                        f"Naming parameter list not match the auto-detectection, some are missing : '{n}'.\n"
+                        f"You gave : '{names}', detected '{autoNames}' into {file}"
+                    )
 
     def _makeVariableArgAsList(self, namings: str, variants) -> list:
         # make as a list
@@ -97,6 +131,23 @@ class IdexPytestRunner:
                     with open(testfilePath, "r") as fp:
                         # load
                         test = json.load(fp)
+
+                        # validate via jsonschema
+                        try:
+                            jsonschema.validate(instance=test, schema=self.testmeSchema)
+                        except jsonschema.ValidationError as e:
+                            print()
+                            print(
+                                "--------------- testme.json format error ---------------"
+                            )
+                            print(f"Invalid format for : {testfilePath}\n{e}")
+                            print(
+                                "--------------------------------------------------------"
+                            )
+                            print()
+                            raise Exception(f"{testfilePath} format error !") from e
+
+                        # build generator
                         idefixTestGenerator = IdefixDirTestGenerator(
                             testfilePath, testfileDir
                         )
@@ -129,11 +180,63 @@ class IdexPytestRunner:
                         )
                 except Exception as e:
                     raise Exception(
-                        f"Fail to generate tests from {testfileRelPath}"
+                        f"Fail to generate tests from {testfileRelPath}.\n{e}"
                     ) from e
 
         # ok
         return result
+
+    def buildPyHooks(self, config: dict) -> dict:
+        # init
+        result = {}
+        key: str
+
+        # extract and build dict
+        for key, value in config.items():
+            if key.startswith("callPyFunction"):
+                when = key.replace("callPyFunction", "")
+                result[when] = value
+
+        # ok
+        return result
+
+    # https://docs.python.org/3/library/importlib.html#importing-a-source-file-directly
+    def importFromPath(self, moduleName: str, filePath: str):
+        spec = importlib.util.spec_from_file_location(moduleName, filePath)
+        module = importlib.util.module_from_spec(spec)
+        # sys.modules[moduleName] = module
+        spec.loader.exec_module(module)
+        return module
+
+    def callPyHook(self, dir: str, hooks: dict, name: str) -> None:
+        # nothing to do
+        if name not in hooks:
+            return
+
+        # split file:funcName
+        params = hooks[name].split(":", 1)
+        filePath = params[0]
+        funcName = params[1]
+
+        # complete
+        fileFullPath = os.path.join(dir, filePath)
+
+        # log
+        print("************** CALLING PY FUNCTION ****************")
+        print(f"Hook: {name}")
+        print(f"HookValue: {hooks[name]}")
+        print(f"Import {fileFullPath}")
+        print(f"Call: {funcName}")
+        print("***************************************************")
+
+        # import the module
+        module = self.importFromPath("idefix_test_py_hooks", fileFullPath)
+
+        # get function
+        function = getattr(module, funcName)
+
+        # call it
+        function()
 
     def run(self, config: dict) -> None:
         # clone before modify to not modity for caller
@@ -155,6 +258,7 @@ class IdexPytestRunner:
         nonRegressionTestIni = config.get("nonRegressionTestIni", None)
         check_file_produced = config.get("check_file_produced", [])
         problemDir = os.path.dirname(testfile)
+        pyHooks = self.buildPyHooks(config)
 
         # cleanup some keyword not handled at the
         # level of idx_test so we don't perturbate it
@@ -169,6 +273,12 @@ class IdexPytestRunner:
             del config["nonRegressionTest"]
         if "nonRegressionTestIni" in config:
             del config["nonRegressionTestIni"]
+        for hook in pyHooks:
+            del config[f"callPyFunction{hook}"]
+
+        # call hook before
+        with moveInDir(problemDir):
+            self.callPyHook(problemDir, pyHooks, "Before")
 
         # if switch from test, rebuild the runner (a runner make for one dir)
         if self.currentTestFile != testfile:
@@ -189,11 +299,16 @@ class IdexPytestRunner:
             )
 
         # check produced
-        for file in check_file_produced:
-            if not os.path.exists(file) and not self.currentTestRunner.fake:
-                raise Exception(
-                    f"Don't find expected file to be produced by the run : {file} !"
-                )
+        with moveInDir(problemDir):
+            for file in check_file_produced:
+                if not os.path.exists(file) and not self.currentTestRunner.fake:
+                    raise Exception(
+                        f"Don't find expected file to be produced by the run : {file} !"
+                    )
+
+        # call hook after
+        with moveInDir(problemDir):
+            self.callPyHook(problemDir, pyHooks, "After")
 
     def _runNonRegression(
         self,
@@ -358,6 +473,14 @@ class IdexPytestRunner:
                     f"Dump file {file} was overwritten on restart"
                 )
 
+    def validateTestmeJsons(self) -> bool:
+        try:
+            self.genTests()
+        except Exception as e:
+            print(f"{e}")
+            return False
+        return True
+
     def main(self, all: bool = False):
         if all:
             sys.argv.append("-all")
@@ -365,7 +488,7 @@ class IdexPytestRunner:
         os.environ["IDEFIX_TEST_FILTER_SUBDIR"] = idefixTest.filterSubdir
 
         if idefixTest.all:
-            pytest.main(
+            status = pytest.main(
                 [
                     "-v",
                     "--no-header",
@@ -375,6 +498,7 @@ class IdexPytestRunner:
                 + idefixTest.remainingArgs
                 + [self.parentScritFile]
             )
+            sys.exit(status)
         else:
             raise NotImplementedError("Not yet supported !")
         # elif self.check:

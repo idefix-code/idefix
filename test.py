@@ -1,4 +1,18 @@
 #!/usr/bin/env python3
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file test.py
+#
+# Last modified : 09/2026
+#
+# Copyright(C) by :
+# - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+# - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+# and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
 
 import os
 import sys
@@ -13,9 +27,23 @@ os.environ["IDEFIX_DIR"] = source_dir
 sys.path.append(source_dir)
 from pytools.idfx_test_run import IdexPytestRunner
 
+# export it for sub-commands accessing ./pytools module
+if "PYTHONPATH" in os.environ:
+    os.environ["PYTHONPATH"] = source_dir + ":" + os.environ["PYTHONPATH"]
+else:
+    os.environ["PYTHONPATH"] = source_dir
+
 # should be global so it remember state (last build) and avoids
 # to build for each run if we just changed the ini file and run options.
 gblIdefixPytestRunner = IdexPytestRunner(__file__)
+
+
+# if called directly as a script
+if __name__ == "__main__" and "--validate-testme-jsons" in sys.argv:
+    if gblIdefixPytestRunner.validateTestmeJsons():
+        sys.exit(0)
+    else:
+        sys.exit(1)
 
 
 # define the pytest test

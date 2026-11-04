@@ -1,0 +1,157 @@
+{
+  "title": "testme",
+  "description": "Schema to validate the testme.json files in the test suite of Idefix.",
+  "type": "object",
+  "properties": {
+    "namings": {
+      "type": "string"
+    },
+    "default": { "$ref": "#/$defs/config" },
+    "variants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "ini": {
+            "anyOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" } }
+            ]
+          },
+          "definitionFile": {
+            "anyOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" } }
+            ]
+          },
+          "dumpname": {
+            "anyOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" } }
+            ]
+          },
+          "tolerance": {
+            "anyOf": [
+              { "type": "number" },
+              { "type": "array", "items": { "type": "number" } }
+            ]
+          },
+          "nonRegressionTest": {
+            "anyOf": [
+              { "type": "boolean" },
+              { "type": "array", "items": { "type": "boolean" } }
+            ]
+          },
+          "standardTest": {
+            "anyOf": [
+              { "type": "boolean" },
+              { "type": "array", "items": { "type": "boolean" } }
+            ]
+          },
+          "noplot": {
+            "anyOf": [
+              { "type": "boolean" },
+              { "type": "array", "items": { "type": "boolean" } }
+            ]
+          },
+          "reconstruction": {
+            "anyOf": [
+              { "type": "integer" },
+              { "type": "array", "items": { "type": "integer" } }
+            ]
+          },
+          "dec": { "type": "array", "items": { "type": "number"} },
+          "single": {
+            "anyOf": [
+              { "type": "boolean" },
+              { "type": "array", "items": { "type": "boolean" } }
+            ]
+          },
+          "vectPot": {
+            "anyOf": [
+              { "type": "boolean" },
+              { "type": "array", "items": { "type": "boolean" } }
+            ]
+          },
+          "mpi": {
+            "anyOf": [
+              { "type": "boolean" },
+              { "type": "array", "items": { "type": "boolean" } }
+            ]
+          },
+          "mpiGpuForceCopy": {
+            "anyOf": [
+              { "type": "boolean" },
+              { "type": "array", "items": { "type": "boolean" } }
+            ]
+          },
+          "mpiMode": {
+            "anyOf": [
+              { "enum": ["Default", "Persistent", "Blocking", "NonBlocking" ] },
+              { "type": "array", "items": { "enum": ["Default", "Persistent", "Blocking", "NonBlocking" ] } }
+            ]
+          },
+          "restart": {
+            "anyOf": [
+              { "type": "boolean" },
+              { "type": "array", "items": { "type": "boolean" } }
+            ]
+          },
+          "callPyFunctionBefore": {
+            "anyOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" } }
+            ]
+          },
+          "callPyFunctionAfter": {
+            "anyOf": [
+              { "type": "string" },
+              { "type": "array", "items": { "type": "string" } }
+            ]
+          },
+          "check_file_produced": { "type": "array", "items": { "type": "string"} },
+          "restart_no_overwrite": { "type": "array", "items": { "type": "string"} },
+          "multirun": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/config" }
+          }
+        }
+      }
+    }
+  },
+  "when": {
+    "type": "object",
+    "properties": {
+      "condition": { "$ref": "#/$defs/config" },
+      "apply": { "$ref": "#/$defs/config" }
+    }
+  },
+  "$defs": {
+    "config": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ini": { "type": "string" },
+        "definitionFile": { "type": "string" },
+        "dumpname": { "type": "string" },
+        "tolerance": { "type": "number" },
+        "nonRegressionTest": { "type": "boolean" },
+        "standardTest": { "type": "boolean" },
+        "noplot": { "type": "boolean" },
+        "reconstruction": { "type": "integer" },
+        "dec": { "type": "array", "items": { "type": "number"} },
+        "single": { "type": "boolean" },
+        "vectPot": { "type": "boolean" },
+        "mpi": { "type": "boolean" },
+        "mpiGpuForceCopy": { "type": "boolean" },
+        "mpiMode": { "enum": ["Default", "Persistent", "Blocking", "NonBlocking" ] },
+        "restart": { "type": "boolean" },
+        "callPyFunctionBefore": { "type": "string" },
+        "callPyFunctionAfter": { "type": "string" },
+        "check_file_produced": { "type": "array", "items": { "type": "string"} },
+        "restart_no_overwrite": { "type": "array", "items": { "type": "string"} }
+      }
+    }
+  }
+}

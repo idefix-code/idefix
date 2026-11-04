@@ -1,13 +1,33 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/global.cpp
+//
+// Last modified : 05/2025
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2025)
+// - Soufiane Baghdadi <soufiane.baghdadi@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020)
+// - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2024)
+// - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
 #include <iostream>
 #include <string>
 #include <sstream>
+#if __has_include(<filesystem>)
+  #include <filesystem> // NOLINT [build/c++17]
+  namespace fs = std::filesystem;
+#elif __has_include(<experimental/filesystem>)
+  #include <experimental/filesystem>
+  namespace fs = std::experimental::filesystem;
+#else
+  #error "Missing the <filesystem> header."
+#endif
+
 #include "idefix.hpp"
 #include "global.hpp"
 #include "profiler.hpp"
@@ -105,13 +125,31 @@ void IdefixOutStream::init(int rank) {
 
 
 // disable the log file
-void IdefixOutStream::enableLogFile() {
+void IdefixOutStream::enableLogFile(std::string logFileDir) {
   std::stringstream sslogFileName;
-  sslogFileName << "idefix." << idfx::prank << ".log";
-
+  sslogFileName << logFileDir << "/"  << "idefix." << idfx::prank << ".log";
   std::string logFileName(sslogFileName.str());
-  this->my_fstream.open(logFileName.c_str());
 
+  if(idfx::prank==0) {
+    if(!fs::is_directory(logFileDir)) {
+      try {
+        if(!fs::create_directories(logFileDir)) {
+          std::stringstream msg;
+          msg << "Cannot create directory " << logFileDir << std::endl;
+          IDEFIX_ERROR(msg);
+        }
+      } catch(std::exception &e) {
+        std::stringstream msg;
+        msg << "Cannot create directory " << logFileDir << std::endl;
+        msg << e.what();
+        IDEFIX_ERROR(msg);
+      }
+    }
+  }
+#ifdef WITH_MPI
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif
+  this->my_fstream.open(logFileName.c_str());
   this->logFileEnabled = true;
 }
 

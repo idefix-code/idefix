@@ -44,8 +44,15 @@ def testMe(test):
 
 
 test = tst.idfxTest(__file__)
+
+if not test.dec:
+    test.dec = ["1", "1", "2"]
+
 if not test.all:
     testMe(test)
 else:
     test.noplot = True
+    test.mpi = False
+    testMe(test)
+    test.mpi = True
     testMe(test)

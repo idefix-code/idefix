@@ -1,7 +1,7 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
 //
-// Source file src/utils/gtest-idfx.hpp
+// Source file src/gtest-idfx.hpp
 //
 // Last modified : 10/2026
 //
@@ -43,7 +43,7 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
   } while(0)
 
 /**
- * Apply a google mock patcher matcher to each element of an array
+ * Apply a google mock matcher to each element of an array
  * @param array Name of the Kokkos::view to validate.
  * @param matcher Name of the google mock matcher to apply.
  * @param ... Optional arguments to pass to the matcher constructor.
@@ -65,11 +65,12 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
   } while(0)
 
 /**
- * Apply a google mock patcher matcher to each element of two array applying
+ * Apply a google mock matcher to each element of two array applying
  * the given matcher to each element.
  * @param array Name of the Kokkos::view to validate.
- * @param matcher Name of the google mock matcher to apply. It will recieve the array
- * value as first parameter.
+ * @param matcher Name of the google mock matcher to apply. When called, it will get the array2
+ * cell value as first parameter.
+ * @param array2 Name of the Kokkos::view to match.
  *
  * For usage example, please see ./src/tests/testKokkos.cpp
  *
@@ -90,11 +91,12 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
   } while(0)
 
 /**
- * Apply a google mock patcher matcher to each element of two array applying
+ * Apply a google mock matcher to each element of two array applying
  * the given matcher to each element.
  * @param array Name of the Kokkos::view to validate.
- * @param matcher Name of the google mock matcher to apply. It will recieve the array
- * value as first parameter.
+ * @param matcher Name of the google mock matcher to apply. When called, it will get the array2
+ * cell value as first parameter.
+ * @param array2 Name of the Kokkos::view to match.
  * @param ... Optional extra arguments to pass to the matcher constructor.
  *
  * For usage example, please see ./src/tests/testKokkos.cpp
@@ -117,7 +119,7 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
   } while(0)
 
 /**
- * Apply a google mock patcher matcher to each element of an array
+ * Apply a google mock matcher to each element of an array
  * @param array Name of the Kokkos::view to validate.
  * @param matcher Name of the google mock matcher to apply.
  * @param ... Optional arguments to pass to the matcher constructor.
@@ -142,11 +144,12 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
   } while(0)
 
 /**
- * Apply a google mock patcher matcher to each element of two array applying
+ * Apply a google mock matcher to each element of two array applying
  * the given matcher to each element.
  * @param array Name of the Kokkos::view to validate.
- * @param matcher Name of the google mock matcher to apply. It will recieve the array
- * value as first parameter.
+ * @param matcher Name of the google mock matcher to apply. When called, it will get the array2
+ * cell value as first parameter.
+ * @param array2 Name of the Kokkos::view to match.
  *
  * For usage example, please see ./src/tests/testKokkos.cpp
  *
@@ -170,11 +173,12 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
   } while(0)
 
 /**
- * Apply a google mock patcher matcher to each element of two array applying
+ * Apply a google mock matcher to each element of two array applying
  * the given matcher to each element.
  * @param array Name of the Kokkos::view to validate.
- * @param matcher Name of the google mock matcher to apply. It will recieve the array
- * value as first parameter.
+ * @param matcher Name of the google mock matcher to apply. When called, it will get the array2
+ * cell value as first parameter.
+ * @param array2 Name of the Kokkos::view to match.
  * @param ... Optional extra arguments to pass to the matcher constructor.
  *
  * For usage example, please see ./src/tests/testKokkos.cpp
@@ -199,7 +203,7 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
   } while(0)
 
 /**
- * Apply a google mock patcher matcher to each element of an array
+ * Apply a google mock matcher to each element of an array
  * @param array Name of the Kokkos::view to validate.
  * @param matcher Name of the google mock matcher to apply.
  * @param ... Optional arguments to pass to the matcher constructor.
@@ -226,11 +230,12 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
   } while(0)
 
 /**
- * Apply a google mock patcher matcher to each element of two array applying
+ * Apply a google mock matcher to each element of two array applying
  * the given matcher to each element.
  * @param array Name of the Kokkos::view to validate.
- * @param matcher Name of the google mock matcher to apply. It will recieve the array
- * value as first parameter.
+ * @param matcher Name of the google mock matcher to apply. When called, it will get the array2
+ * cell value as first parameter.
+ * @param array2 Name of the Kokkos::view to match.
  *
  * For usage example, please see ./src/tests/testKokkos.cpp
  *
@@ -256,11 +261,12 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
   } while(0)
 
 /**
- * Apply a google mock patcher matcher to each element of two array applying
+ * Apply a google mock matcher to each element of two array applying
  * the given matcher to each element.
  * @param array Name of the Kokkos::view to validate.
- * @param matcher Name of the google mock matcher to apply. It will recieve the array
- * value as first parameter.
+ * @param matcher Name of the google mock matcher to apply. When called, it will get the array2
+ * cell value as first parameter.
+ * @param array2 Name of the Kokkos::view to match.
  * @param ... Optional extra arguments to pass to the matcher constructor.
  *
  * For usage example, please see ./src/tests/testKokkos.cpp
@@ -287,7 +293,7 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
   } while(0)
 
 /**
- * Apply a google mock patcher matcher to each element of an array
+ * Apply a google mock matcher to each element of an array
  * @param array Name of the Kokkos::view to validate.
  * @param matcher Name of the google mock matcher to apply.
  * @param ... Optional arguments to pass to the matcher constructor.
@@ -316,11 +322,12 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
   } while(0)
 
 /**
- * Apply a google mock patcher matcher to each element of two array applying
+ * Apply a google mock matcher to each element of two array applying
  * the given matcher to each element.
  * @param array Name of the Kokkos::view to validate.
- * @param matcher Name of the google mock matcher to apply. It will recieve the array
- * value as first parameter.
+ * @param matcher Name of the google mock matcher to apply. When called, it will get the array2
+ * cell value as first parameter.
+ * @param array2 Name of the Kokkos::view to match.
  *
  * For usage example, please see ./src/tests/testKokkos.cpp
  *
@@ -348,11 +355,12 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
   } while(0)
 
 /**
- * Apply a google mock patcher matcher to each element of two array applying
+ * Apply a google mock matcher to each element of two array applying
  * the given matcher to each element.
  * @param array Name of the Kokkos::view to validate.
- * @param matcher Name of the google mock matcher to apply. It will recieve the array
- * value as first parameter.
+ * @param matcher Name of the google mock matcher to apply. When called, it will get the array2
+ * cell value as first parameter.
+ * @param array2 Name of the Kokkos::view to match.
  * @param ... Optional extra arguments to pass to the matcher constructor.
  *
  * For usage example, please see ./src/tests/testKokkos.cpp
@@ -385,7 +393,7 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
 //keyword for TestBody function which prevent using KOKKOS_LAMBDA.
 //Fix is reported coming from : https://github.com/google/googletest/issues/4104
 //We re-write the GTEST_TEST_ with that feature.
-//Here it if the GEST_TEST_() imported from googletest/include/gtest/internal/gtest-internal.h
+//Here it is the GTEST_TEST_() imported from googletest/include/gtest/internal/gtest-internal.h
 //version 1.18.0
 #define GTEST_TESTBODY_VISIBILITY public
 #undef GTEST_TEST_

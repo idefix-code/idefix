@@ -84,7 +84,7 @@ display_and_run gen_cmake_options "$@"
 display_and_run mkdir -p build-unittests
 
 # configure via cmake
-display_and_run cmake . -B ./build-unittests -DIdefix_GTEST=ON -DIdefix_PROBLEM_DIR=$PWD/test/MHD/AxisFluxTube/ $(gen_cmake_options "$@") --fresh
+display_and_run cmake . -B ./build-unittests -DIdefix_GTEST=ON -DIdefix_PROBLEM_DIR=$PWD/test/MHD/AxisFluxTube/ $(gen_cmake_options "$@")
 
 # compile
 display_and_run make -C build-unittests -j8

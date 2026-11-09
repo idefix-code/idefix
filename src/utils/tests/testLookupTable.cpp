@@ -1,7 +1,7 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
 //
-// Source file src/utils/testLookupTable.hpp
+// Source file src/utils/tests/testLookupTable.hpp
 //
 // Last modified : 10/2026
 //
@@ -197,9 +197,6 @@ TEST(LookupTable, neighbours_used_for_interpol_on_host) {
   int dataIdx[2];
   csv1D.GetNeighboursHost(xq, xN, dataN);
   csv1D.GetNeighboursIndxHost(xq, idx, dataIdx);
-  //idfx::cout << "1D: x=" << xN[0] << "," << xN[1] << " data=" << dataN[0] << "," << dataN[1]
-  //            << " idx=" << idx[0] << " dataIdx=" << dataIdx[0] << "," << dataIdx[1]
-  //            << std::endl;
   const real expectedXN[2] = {2.0, 3.0};
   const real expectedDataN[2] = {4.0, 6.0};
   const int expectedDataIdx[2] = {1, 2};
@@ -219,9 +216,6 @@ TEST(LookupTable, neighbours_used_for_interpol_on_host) {
   int dataIdx2[4];
   csv.GetNeighboursHost(xq2, xN2, dataN2);
   csv.GetNeighboursIndxHost(xq2, idx2, dataIdx2);
-  //idfx::cout << "2D: x=" << xN2[0] << "," << xN2[1] << " y=" << xN2[2] << "," << xN2[3]
-  //            << " data=" << dataN2[0] << "," << dataN2[1] << "," << dataN2[2] << ","
-  //            << dataN2[3] << " idx=" << idx2[0] << "," << idx2[1] << std::endl;
   ASSERT_C_ARRAY_EQ(xN2, kXN2D, 4, "2D neighbours, coordinates");
   ASSERT_C_ARRAY_EQ(dataN2, kDataN2D, 4, "2D neighbours, data");
   ASSERT_C_ARRAY_EQ(idx2, kIdx2D, 2, "2D neighbours, idx");
@@ -232,7 +226,6 @@ TEST(LookupTable, neighbours_used_for_interpol_on_host) {
   real dy = (xq2[1]-xN2[2])/(xN2[3]-xN2[2]);
   real interpolated = (1-dx)*(1-dy)*dataN2[0] + dx*(1-dy)*dataN2[1]
                     + (1-dx)*dy*dataN2[2] + dx*dy*dataN2[3];
-  //idfx::cout << "2D: interpolation from the neighbours=" << interpolated << std::endl;
   ASSERT_NEAR(interpolated, csv.GetHost(xq2), 1e-13)
     << "2D neighbours, manual interpolation vs GetHost";
 
@@ -246,8 +239,6 @@ TEST(LookupTable, neighbours_used_for_interpol_on_host) {
   int dataIdx3[2];
   csv1Dlog.GetNeighboursHost(xq3, xN3, dataN3);
   csv1Dlog.GetNeighboursIndxHost(xq3, idx3, dataIdx3);
-  //idfx::cout << "1D (function space): x=" << xN3[0] << "," << xN3[1]
-  //            << " data=" << dataN3[0] << "," << dataN3[1] << " idx=" << idx3[0] << std::endl;
   ASSERT_NEAR(xN3[0], 2.0, 1e-13) << "1D function-space neighbours, x lower bound";
   ASSERT_NEAR(xN3[1], 4.0, 1e-13) << "1D function-space neighbours, x upper bound";
   ASSERT_NEAR(dataN3[0], 4.0, 1e-13) << "1D function-space neighbours, data lower bound";
@@ -299,10 +290,6 @@ TEST(LookupTable, neighbours_used_for_interpol_on_device) {
   Kokkos::deep_copy(idxHost, idxDev);
   Kokkos::deep_copy(dataIdxHost, dataIdxDev);
 
-  //idfx::cout << "2D: x=" << xNHost(0) << "," << xNHost(1) << " y=" << xNHost(2) << ","
-  //            << xNHost(3) << " data=" << dataNHost(0) << "," << dataNHost(1) << ","
-  //            << dataNHost(2) << "," << dataNHost(3) << " idx=" << idxHost(0) << ","
-  //            << idxHost(1) << std::endl;
   real xN[4], dataN[4];
   int idx[2], dataIdx[4];
   for(int n = 0 ; n < 4 ; n++) { xN[n] = xNHost(n); dataN[n] = dataNHost(n); }
@@ -329,8 +316,6 @@ TEST(LookupTable, neighbours_on_edges_1d) {
   for(int n = 0 ; n < 3 ; n++) {
     xq[0] = xRequest[n];
     csv1D.GetNeighboursHost(xq, xN, dataN);
-    //idfx::cout << "x=" << xq[0] << " -> neighbours " << xN[0] << "," << xN[1]
-    //            << " (data " << dataN[0] << "," << dataN[1] << ")" << std::endl;
     ASSERT_C_ARRAY_EQ(xN, expected[n], 2, "1D edge neighbours, coordinates");
     EXPECT_LE(xN[0], xq[0]) << "1D edge neighbours do not bracket the requested value";
     EXPECT_GE(xN[1], xq[0]) << "1D edge neighbours do not bracket the requested value";
@@ -499,17 +484,11 @@ TEST(LookupTable, get_and_reuse_on_device) {
   });
   auto valuesHost = Kokkos::create_mirror_view(valuesDev);
   Kokkos::deep_copy(valuesHost, valuesDev);
-  //idfx::cout << "neighbours first: value=" << valuesHost(0)
-  //            << " (with a corrupted stored search)=" << valuesHost(1) << std::endl;
   ASSERT_NEAR(valuesHost(0), kValue2D, 1e-13)
     << "GetNeighbours-then-Get (device): the stored search was not reused by Get";
   ASSERT_NEAR(valuesHost(1), 6.0, 1e-13)
     << "GetNeighbours-then-Get (device): the stored search was not reused by Get";
 
-  //idfx::cout << "value=" << arrHost(0) << " x=" << xNHost(0) << "," << xNHost(1)
-  //            << " y=" << xNHost(2) << "," << xNHost(3)
-  //            << " data=" << dataNHost(0) << "," << dataNHost(1) << "," << dataNHost(2)
-  //            << "," << dataNHost(3) << " idx=" << idxHost(0) << "," << idxHost(1) << std::endl;
   ASSERT_NEAR(arrHost(0), kValue2D, 1e-13) << "Get-then-GetNeighbours (device), value";
   real xN[4], dataN[4];
   int idx[2], dataIdx[4];
@@ -544,7 +523,6 @@ TEST(LookupTable, numpy_file_3d_on_device) {
   });
 
   Kokkos::deep_copy(arrHost , arr);
-  //idfx::cout << "result="<<arrHost(0) << std::endl;
   ASSERT_NEAR(arrHost(0), 13.6, 1e-13) << "3D npy, device";
 }
 
@@ -566,6 +544,5 @@ TEST(LookupTable, numpy_file_3d_on_host) {
   y[2] = 3.9;
   real result = csvnpy.GetHost(y);
 
-  //idfx::cout << "result="<< result << std::endl;
   ASSERT_NEAR(result, 13.6, 1e-13) << "3D npy, host";
 }

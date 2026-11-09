@@ -13,14 +13,14 @@
 ######################################################################################
 
 function(replace_idefix_source _old_source _new_source)
-  get_target_property(fullsource idefix SOURCES)
-  list(FILTER fullsource INCLUDE REGEX ${_old_source})
-
   # affected target
   set(_target_name "idefix-core")
-  if (_old_source STREQUAL "main.cpp")
+  if (_old_source STREQUAL "main.cpp" OR _old_source STREQUAL "setup.cpp")
     set(_target_name "idefix")
   endif()
+
+  get_target_property(fullsource ${_target_name} SOURCES)
+  list(FILTER fullsource INCLUDE REGEX ${_old_source})
 
   # Check that only one file matches the pattern
   list(LENGTH fullsource listsize)

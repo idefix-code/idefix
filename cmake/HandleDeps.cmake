@@ -13,12 +13,16 @@
 ######################################################################################
 
 function(GoogleTestDownloadAndLink)
-  # CAUTION: if you change this verison, you should also check if you need to adapt
+  # CAUTION: if you change this version, you should also check if you need to adapt
   # the fix in gtest-idfx and re-import the definition of GTEST_TEST_().
   set(gtest_version "1.18.0")
 
-  # it not, download it internally to the project
-  cmake_policy(SET CMP0135 NEW)
+  # Download it internally to the project
+  # Note: we don't check the system available one, because due to the fix in gtest-idfx.hpp
+  # about Kokkos, we depend on a specific version of GTest.
+  if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+  endif()
   include(FetchContent)
   FetchContent_Declare(
     googletest

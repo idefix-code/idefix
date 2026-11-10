@@ -45,6 +45,7 @@ class IdexPytestRunner:
         self.currentTestRunner: tst.idfxTest = None
         self.parentScritFile = parentScriptFile
         self.filterSubdir = os.environ.get("IDEFIX_TEST_FILTER_SUBDIR", "./test/")
+        self.makeReferencesDone: list[str] = []
 
     def _validateNaming(self, namings: str, autoExtracted: str, file: str):
         names = namings.split(",")
@@ -406,7 +407,7 @@ class IdexPytestRunner:
 
         # regen ref if needed
         if idefixTest.init:
-            idefixTest.makeReference(filename=dumpname)
+            idefixTest.makeReference(filename=dumpname, done=self.makeReferencesDone)
 
         # check outputs
         if standardTest:

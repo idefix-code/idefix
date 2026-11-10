@@ -636,6 +636,7 @@ class idfxTest:
                 + "Reference creation skipped, already done by previous specific config"
                 + bcolors.ENDC
             )
+            return
         if os.path.exists(fileout):
             ans = input(
                 bcolors.WARNING

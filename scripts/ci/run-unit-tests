@@ -71,7 +71,7 @@ if [ -d .venv ]; then
 fi
 
 # to get access to idefix ./pytools/ module in python code
-if [[ -v PYTHONPATH ]]; then
+if [ -n "${PYTHONPATH+x}" ]; then
     export PYTHONPATH="${PWD}:${PYTHONPATH}"
 else
     export PYTHONPATH="${PWD}"

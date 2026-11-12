@@ -83,8 +83,8 @@ display_and_run gen_cmake_options "$@"
 # create build dir
 display_and_run mkdir -p build-unittests
 
-# configure via cmake
-display_and_run cmake . -B ./build-unittests -DIdefix_GTEST=ON -DIdefix_PROBLEM_DIR=$PWD/test/MHD/AxisFluxTube/ $(gen_cmake_options "$@")
+# configure via cmake (serial build, with FFT so the FFT unit tests are compiled in)
+display_and_run cmake . -B ./build-unittests -DIdefix_GTEST=ON -DIdefix_FFT=ON -DIdefix_PROBLEM_DIR=$PWD/test/MHD/AxisFluxTube/ $(gen_cmake_options "$@")
 
 # compile
 display_and_run make -C build-unittests -j8
@@ -92,8 +92,21 @@ display_and_run make -C build-unittests -j8
 # jump in dir to run in
 display_and_run cd build-unittests
 
-# run the unit tests
+# run the unit tests (serial)
 display_and_run ./unittests
+
+# go back to source dir
+display_and_run cd ..
+
+# run the MPI unit tests if mpirun is available (covers the WITH_MPI FFT tests:
+# TransposeReal_MPI, TransposeComplex_MPI, MPI_Distributed_R2C_C2R)
+if command -v mpirun >/dev/null 2>&1; then
+  display_and_run mkdir -p build-unittests-mpi
+  display_and_run cmake . -B ./build-unittests-mpi -DIdefix_GTEST=ON -DIdefix_FFT=ON -DIdefix_MPI=ON -DIdefix_PROBLEM_DIR=$PWD/test/MHD/AxisFluxTube/ $(gen_cmake_options "$@")
+  display_and_run make -C build-unittests-mpi -j8
+  display_and_run cd build-unittests-mpi
+  display_and_run mpirun -np 4 ./unittests
+fi
 
 # END
 echo ""

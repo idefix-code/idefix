@@ -373,7 +373,7 @@ if(Idefix_SUPPRESS_FMA)
   endif()
 endif()
 if(Idefix_FFT)
-  target_link_libraries(idefix KokkosFFT::fft)
+  target_link_libraries(idefix-core PUBLIC KokkosFFT::fft)
   add_subdirectory(src/utils/fft)
 endif()
 

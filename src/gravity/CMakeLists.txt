@@ -12,11 +12,11 @@
 # Licensed under CeCILL 2.1 License, see COPYING for more information
 ######################################################################################
 
-target_sources(idefix
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/gravity.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/gravity.cpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/laplacian.cpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/laplacian.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/selfGravity.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/selfGravity.cpp
+target_sources(idefix-core
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/gravity.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/gravity.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/laplacian.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/laplacian.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/selfGravity.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/selfGravity.cpp
   )

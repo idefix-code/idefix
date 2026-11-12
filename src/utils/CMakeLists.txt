@@ -14,11 +14,17 @@
 
 add_subdirectory(iterativesolver)
 
-target_sources(idefix
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/bigEndian.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/dumpImage.cpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/dumpImage.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/lookupTable.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/column.cpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/column.hpp
+target_sources(idefix-core
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/bigEndian.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/dumpImage.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/dumpImage.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lookupTable.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/column.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/column.hpp
   )
+
+if (Idefix_GTEST)
+  target_sources(unittests
+    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/tests/testLookupTable.cpp
+  )
+endif()

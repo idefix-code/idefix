@@ -12,9 +12,9 @@
 # Licensed under CeCILL 2.1 License, see COPYING for more information
 ######################################################################################
 
-target_sources(idefix
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/bragThermalDiffusion.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/bragThermalDiffusion.cpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/bragViscosity.hpp
-  PUBLIC ${CMAKE_CURRENT_LIST_DIR}/bragViscosity.cpp
+target_sources(idefix-core
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/bragThermalDiffusion.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/bragThermalDiffusion.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/bragViscosity.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/bragViscosity.cpp
   )

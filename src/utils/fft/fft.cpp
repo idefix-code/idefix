@@ -17,6 +17,8 @@
 #include "global.hpp"
 #include "loop.hpp"
 #include "transpose.hpp"
+#include "mpi/commArray.hpp"
+#include "mpi/mpiWrapper.hpp"
 
 template <typename T> void ShowExtent(T array) {
   for(int i = 0 ; i < 3 ; i++) {
@@ -156,58 +158,55 @@ void FFT::TestMPI() {
   std::array<int,3> npf_glob = npr_glob;
   npf_glob[2] = npr_glob[2]/2+1;
 
-  Kokkos::View<real***, Kokkos::LayoutRight, Device> localReal_right("local real array", npr[0], npr[1], npr[2]);
-  IdefixArray3D<real> localReal = IdefixArray3D<real>("local real array", npr[0], npr[1], npr[2]);
+  // Use IdefixCommArray3D for MPI communication with automatic GPU/CPU transfers
+  idfx::IdefixCommArray3D<real> localReal_comm("local real array", npr[0], npr[1], npr[2]);
+  idfx::IdefixCommArray3D<real> globalReal_comm("global real array", npr_glob[0], npr_glob[1], npr_glob[2]);
 
-  Kokkos::View<real***, Kokkos::LayoutRight, Device> globalReal_right("global real array", npr_glob[0], npr_glob[1], npr_glob[2]);
-  IdefixArray3D<real> globalReal = IdefixArray3D<real>("global real array", npr_glob[0], npr_glob[1], npr_glob[2]);
+  IdefixArray3D<real> localReal = localReal_comm.deviceView();
+  IdefixArray3D<real> globalReal = globalReal_comm.deviceView();
 
   // Compute a dummy real array
   if(idfx::prank == 0) {
     Kokkos::Random_XorShift64_Pool<> random_pool(12345);
-    Kokkos::fill_random(globalReal_right, random_pool, 1);
+    Kokkos::fill_random(globalReal, random_pool, 1);
   }
-  // Scatter to make local arrays
-  // And broadcast the global the array
-  MPI_Scatter(globalReal_right.data(), npr[0]*npr[1]*npr[2],
+
+  // Sync data to host for communication
+  globalReal_comm.syncCommData();
+  localReal_comm.syncCommData();
+
+  // Scatter to make local arrays using IdefixCommArray
+  ::MPI_Scatter(globalReal_comm.commData(), npr[0]*npr[1]*npr[2],
               realMPI,
-              localReal_right.data(), npr[0]*npr[1]*npr[2],
+              localReal_comm.commData(), npr[0]*npr[1]*npr[2],
               realMPI,
               0, MPI_COMM_WORLD);
 
-  MPI_Bcast(globalReal_right.data(), npr_glob[0]*npr_glob[1]*npr_glob[2],
+  // Sync data back to device
+  localReal_comm.syncDeviceData();
+  globalReal_comm.syncDeviceData();
+
+  // Broadcast the global array using IdefixCommArray wrapper
+  idfx::MPI_Bcast(globalReal_comm, npr_glob[0]*npr_glob[1]*npr_glob[2],
             realMPI, 0, MPI_COMM_WORLD);
 
-  // Change array Layout
-  idefix_for("Reshape global",0, npr_glob[0],
-                            0, npr_glob[1],
-                            0, npr_glob[2],
-    KOKKOS_LAMBDA(int i, int j, int k) {
-      globalReal(i,j,k) = globalReal_right(i,j,k);
-    });
+  // Sync back after broadcast
+  globalReal_comm.syncDeviceData();
 
-  // Change array Layout
-  idefix_for("Reshape local",0, npr[0],
-                            0, npr[1],
-                            0, npr[2],
-    KOKKOS_LAMBDA(int i, int j, int k) {
-      localReal(i,j,k) = localReal_right(i,j,k);
-    });
+  // Create the complex arrays
+  IdefixArray3D<complex> localComplex = IdefixArray3D<complex>("local complex array", npf[0], npf[1], npf[2]);
+  IdefixArray3D<complex> globalComplex = IdefixArray3D<complex>("global complex array", npf_glob[0], npf_glob[1], npf_glob[2]);
 
-    // Create the complex arrays
-    IdefixArray3D<complex> localComplex = IdefixArray3D<complex>("local complex array", npf[0], npf[1], npf[2]);
-    IdefixArray3D<complex> globalComplex = IdefixArray3D<complex>("global complex array", npf_glob[0], npf_glob[1], npf_glob[2]);
+  // Compute the full serial fft
+  KokkosFFT::rfftn(Kokkos::DefaultExecutionSpace(), globalReal, globalComplex);
 
-    // Compute the full serial fft
-    KokkosFFT::rfftn(Kokkos::DefaultExecutionSpace(), globalReal, globalComplex);
+  // Compute the parallele fft
+  this->R2C_MPI(localReal, localComplex);
 
-    // Compute the parallele fft
-    this->R2C_MPI(localReal, localComplex);
+  // Check on a per-process that they all agree
+  int offset = npf[0]*idfx::prank;
 
-    // Check on a per-process that they all agree
-    int offset = npf[0]*idfx::prank;
-
-    idefix_for("Reshape local",0, npf[0],
+  idefix_for("Reshape local",0, npf[0],
                             0, npf[1],
                             0, npf[2],
     KOKKOS_LAMBDA(int i, int j, int k) {
@@ -222,13 +221,13 @@ void FFT::TestMPI() {
       }
     });
 
-    // Compute the parallele fft
-    this->C2R_MPI(localComplex, localReal);
+  // Compute the parallele fft
+  this->C2R_MPI(localComplex, localReal);
 
-    // Check on a per-process that they all agree
-    offset = npr[0]*idfx::prank;
+  // Check on a per-process that they all agree
+  offset = npr[0]*idfx::prank;
 
-    idefix_for("Reshape local",0, npr[0],
+  idefix_for("Reshape local",0, npr[0],
                             0, npr[1],
                             0, npr[2],
     KOKKOS_LAMBDA(int i, int j, int k) {

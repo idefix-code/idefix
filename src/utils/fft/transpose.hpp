@@ -17,6 +17,8 @@
 #include <iostream>
 #include <Kokkos_Core.hpp>
 
+#include "commArray.hpp"
+
 
 template <typename T>
 class Transpose {
@@ -25,14 +27,16 @@ class Transpose {
     // Allocate temporary arrays for domain-splited FFTs and transposes
     int64_t n1 = n[0]*n[1]; // Block size
     int64_t nk = n[2];
-    this->tempB = Kokkos::View<T**, Kokkos::LayoutRight, Device>("FFT transpose tempB", n1,nk);
-    this->tempC = Kokkos::View<T**, Kokkos::LayoutRight, Device>("FFT transpose tempC", n1,nk);
+    this->tempB = idfx::IdefixCommArray2D<T>("FFT transpose tempB", n1,nk);
+    this->tempC = idfx::IdefixCommArray2D<T>("FFT transpose tempC", n1,nk);
   }
   void Apply(const IdefixArray3D<T>& input, const IdefixArray3D<T>& output);
   void Test();
 
  private:
-  Kokkos::View<T**, Kokkos::LayoutRight, Device> tempB, tempC;
+  // IdefixCommArray embeds a host copy of the data so that MPI transfers work
+  // even when WITH_MPI_GPU_DIRECT is not available
+  idfx::IdefixCommArray2D<T> tempB, tempC;
 };
 
 
@@ -139,7 +143,7 @@ void Transpose<T>::Apply(const IdefixArray3D<T>& in, const IdefixArray3D<T>& out
 
 
   //Array2D<complex> tempB("FFT transpose temp", n1,nk);
-  auto tempB = this->tempB;
+  auto tempB = this->tempB.deviceView();
   if(tempB.extent(0) != n1 || tempB.extent(1) != nk) {
     idfx:: cout << "!! tempB size: " << tempB.extent(0) << "," << tempB.extent(1) << std::endl;
     idfx:: cout << "!! in size: " << in.extent(0) << "," << in.extent(1) << "," << in.extent(2) << std::endl;
@@ -157,13 +161,18 @@ void Transpose<T>::Apply(const IdefixArray3D<T>& in, const IdefixArray3D<T>& out
     });
     Kokkos::fence();
 
-  auto tempC = this->tempC;
+  // Make tempB ready for communication (copies to host if no GPU direct)
+  this->tempB.syncCommData();
   //Kokkos::View<complex**, Kokkos::LayoutRight, Device> tempC("FFT transpose temp", n1,nk);
-  int ret = MPI_Alltoall(tempB.data(), ni*nj*nk*sizeof(T),
+  int ret = MPI_Alltoall(this->tempB.commData(), ni*nj*nk*sizeof(T),
                          MPI_BYTE,
-                         tempC.data(), ni*nj*nk*sizeof(T),
+                         this->tempC.commData(), ni*nj*nk*sizeof(T),
                          MPI_BYTE,
                          MPI_COMM_WORLD);
+
+  // Make the received data available on device (copies from host if no GPU direct)
+  this->tempC.syncDeviceData();
+  auto tempC = this->tempC.deviceView();
 
   idefix_for("FFT::TransposeBlock", 0,n1, 0, nk,
     KOKKOS_LAMBDA(const int64_t ij, const int64_t k) {

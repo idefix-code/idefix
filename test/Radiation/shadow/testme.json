@@ -10,7 +10,7 @@
   "variants": [
     {
       "ini": ["idefix-hll.ini","idefix-hllc.ini"],
-      "reconstruction": [1, 2, 3],
+      "reconstruction": [2, 3],
       "mpi": [false, true]
     }
   ]

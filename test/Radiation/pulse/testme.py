@@ -114,7 +114,7 @@ if not test.all:
     else:
         testMe(test)
 else:
-    for rec in range(1, 2):
+    for rec in range(2, 4):
         test.vectPot = False
         test.single = False
         test.reconstruction = rec

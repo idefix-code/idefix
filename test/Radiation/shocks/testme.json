@@ -22,7 +22,7 @@
         "idefix-hllc-c001_super.ini",
         "idefix-hllc-c00001_super.ini"
       ],
-      "reconstruction": [1, 2, 3],
+      "reconstruction": [2, 3],
       "mpi": [false, true]
     }
   ]

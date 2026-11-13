@@ -194,9 +194,11 @@ TEST(FFT, MPI_Distributed_R2C_C2R) {
   IdefixArray3D<real> globalReal("global real", nr_glob[0], nr_glob[1], nr_glob[2]);
   IdefixArray3D<complex> globalComplex("global complex", nf_glob[0], nf_glob[1], nf_glob[2]);
 
-  idefix_for("fill global", 0, nr_glob[0], 0, nr_glob[1], 0, nr_glob[2],
+  // hoist into a plain int: std::array::operator[] is not callable from a device lambda on nvcc
+  const int nx = nr_glob[0];
+  idefix_for("fill global", 0, nx, 0, nr_glob[1], 0, nr_glob[2],
     KOKKOS_LAMBDA(const int i, const int j, const int k) {
-      globalReal(i,j,k) = std::cos(2.0*kPi*static_cast<real>(i)/static_cast<real>(nr_glob[0]))
+      globalReal(i,j,k) = std::cos(2.0*kPi*static_cast<real>(i)/static_cast<real>(nx))
                         + 0.5*std::sin(2.0*kPi*static_cast<real>(j)/static_cast<real>(n))
                         + 0.25*static_cast<real>(k);
     });

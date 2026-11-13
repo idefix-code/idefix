@@ -19,14 +19,16 @@
 #include "fft.hpp"
 #include "transpose.hpp"
 
-namespace {
-constexpr real kPi = 3.14159265358979323846;
-}  // namespace
+
 
 // Serial-only tests: under WITH_MPI, FFT::R2C/C2R route through the distributed
 // (MPI) path and expect local-sized arrays — that path is covered by the tests
 // in testFFTMPI.cpp (unittests_mpi executable).
 #ifndef WITH_MPI
+
+namespace {
+constexpr real kPi = M_PI;
+}  // namespace
 
 // R2C followed by C2R must recover the original array (roundtrip identity).
 TEST(FFT, R2C_C2R_RoundTrip) {

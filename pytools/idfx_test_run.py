@@ -1,9 +1,17 @@
-#####################################################################################
+######################################################################################
 # Idefix MHD astrophysical code
-# Copyright(C) Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr>
+#
+# Source file pytools/idfx_test_run.py
+#
+# Last modified : 09/2026
+#
+# Copyright(C) by :
+# - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+# - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
 # and other code contributors
+#
 # Licensed under CeCILL 2.1 License, see COPYING for more information
-#####################################################################################
+######################################################################################
 
 import copy
 import glob
@@ -13,6 +21,7 @@ import os
 import sys
 from contextlib import contextmanager
 
+import jsonschema
 import pytest
 
 # idefix test class
@@ -46,14 +55,38 @@ class IdexPytestRunner:
         self.parentScritFile = parentScriptFile
         self.filterSubdir = os.environ.get("IDEFIX_TEST_FILTER_SUBDIR", "./test/")
         self.makeReferencesDone: list[str] = []
+        self.testmeSchema = self._loadTestmeSchema()
+
+    def _loadTestmeSchema(self) -> dict:
+        scriptDir = os.path.dirname(__file__)
+        schemaPath = os.path.join(scriptDir, "testme.schema.json")
+        with open(schemaPath, "r") as fp:
+            return json.load(fp)
 
     def _validateNaming(self, namings: str, autoExtracted: str, file: str):
         names = namings.split(",")
-        for n in autoExtracted.split(","):
-            if not n in names:
-                raise Exception(
-                    f"Naming parameter list not match the auto-detectection, some are missinge. You gave : '{names}', detected '{autoExtracted}' into {file}"
-                )
+        names_sorted = namings.split(",")
+        autoNames = autoExtracted.split(",")
+        autoNames_sorted = autoExtracted.split(",")
+
+        # quick compare
+        names_sorted.sort()
+        autoNames_sorted.sort()
+
+        # check and if error check in details to report
+        if names_sorted != autoNames_sorted:
+            for n in autoNames:
+                if n not in names:
+                    raise Exception(
+                        f"Naming parameter list not match the auto-detectection, some are missing : '{n}'\n"
+                        f"You gave : '{names}', detected '{autoNames}' into {file}"
+                    )
+            for n in names:
+                if n not in autoNames:
+                    raise Exception(
+                        f"Naming parameter list not match the auto-detectection, some are missing : '{n}'.\n"
+                        f"You gave : '{names}', detected '{autoNames}' into {file}"
+                    )
 
     def _makeVariableArgAsList(self, namings: str, variants) -> list:
         # make as a list
@@ -99,6 +132,23 @@ class IdexPytestRunner:
                     with open(testfilePath, "r") as fp:
                         # load
                         test = json.load(fp)
+
+                        # validate via jsonschema
+                        try:
+                            jsonschema.validate(instance=test, schema=self.testmeSchema)
+                        except jsonschema.ValidationError as e:
+                            print()
+                            print(
+                                "--------------- testme.json format error ---------------"
+                            )
+                            print(f"Invalid format for : {testfilePath}\n{e}")
+                            print(
+                                "--------------------------------------------------------"
+                            )
+                            print()
+                            raise Exception(f"{testfilePath} format error !") from e
+
+                        # build generator
                         idefixTestGenerator = IdefixDirTestGenerator(
                             testfilePath, testfileDir
                         )
@@ -131,7 +181,7 @@ class IdexPytestRunner:
                         )
                 except Exception as e:
                     raise Exception(
-                        f"Fail to generate tests from {testfileRelPath}"
+                        f"Fail to generate tests from {testfileRelPath}.\n{e}"
                     ) from e
 
         # ok
@@ -423,6 +473,14 @@ class IdexPytestRunner:
                 assert file_mtime[file] == os.path.getmtime(file), (
                     f"Dump file {file} was overwritten on restart"
                 )
+
+    def validateTestmeJsons(self) -> bool:
+        try:
+            self.genTests()
+        except Exception as e:
+            print(f"{e}")
+            return False
+        return True
 
     def main(self, all: bool = False):
         if all:

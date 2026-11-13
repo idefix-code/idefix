@@ -3,7 +3,7 @@
   "default": {
     "dumpname": "dump.0001.dmp",
     "reconstruction": 2,
-    "dec": ["2","2","2"],
+    "dec": [2,2,2],
     "standardTest": false,
     "tolerance": 1e-13
   },

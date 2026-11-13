@@ -1,3 +1,18 @@
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file pytools/dump_io.py
+#
+# Last modified : 07/2026
+#
+# Copyright(C) by :
+# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021)
+# - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2022 - 2026)
+# and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
+
 # -*- coding: utf-8 -*-
 """
 Created on Fri Nov 27 22:07:47 2020

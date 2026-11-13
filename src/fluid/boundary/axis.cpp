@@ -1,7 +1,18 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/fluid/boundary/axis.cpp
+//
+// Last modified : 08/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2025)
+// - Marc Van den Bossche <marc.vanden-bossche@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023)
+// - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
+// - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
+// - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -25,22 +36,32 @@ void Axis::ShowConfig() {
 void Axis::SymmetrizeEx1Side(int jref, IdefixArray3D<real> Ex1) {
 #if DIMENSIONS == 3
 
-  IdefixArray1D<real> Ex1Avg = this->Ex1Avg;
+  auto Ex1Avg = this->Ex1Avg.deviceView();
 
-  idefix_for("Ex1_ini",0,data->np_tot[IDIR],
-      KOKKOS_LAMBDA(int i) {
-        Ex1Avg(i) = ZERO_F;
-      });
+  // Deterministic reduction: one thread per i, fixed k loop order
 
-  idefix_for("Ex1_Symmetrize",data->beg[KDIR],data->end[KDIR],0,data->np_tot[IDIR],
-    KOKKOS_LAMBDA(int k,int i) {
-      Kokkos::atomic_add(&Ex1Avg(i),  Ex1(k,jref,i));
+  const int kbeg = data->beg[KDIR];
+  const int kend = data->end[KDIR];
+
+  idefix_for("Ex1_SymmetrizeDet", 0, data->np_tot[IDIR],
+    KOKKOS_LAMBDA(int i) {
+      real sum = ZERO_F;
+      real c = ZERO_F;  // Kahan compensation
+      for(int k = kbeg; k < kend; k++) {
+        real y = Ex1(k, jref, i) - c;
+        real t = sum + y;
+        c = (t - sum) - y;
+        sum = t;
+      }
+      Ex1Avg(i) = sum;
     });
+
+
   if(needMPIExchange) {
     #ifdef WITH_MPI
       Kokkos::fence();
       // sum along all of the processes on the same r
-      MPI_Allreduce(MPI_IN_PLACE, Ex1Avg.data(), data->np_tot[IDIR], realMPI,
+      idfx::MPI_Allreduce(MPI_IN_PLACE, this->Ex1Avg, data->np_tot[IDIR], realMPI,
                     MPI_SUM, data->mygrid->AxisComm);
     #endif
   }
@@ -88,26 +109,33 @@ void Axis::RegularizeCurrentSide(int side) {
       jc = data->end[JDIR]-1;
       sign = -1;
     }
-    IdefixArray1D<real> BAvg = this->Ex1Avg;
+    auto BAvg = this->Ex1Avg.deviceView();
+    auto BAvgComm = this->Ex1Avg;
     IdefixArray1D<real> x1 = data->x[IDIR];
     IdefixArray1D<real> dx3 = data->dx[KDIR];
     IdefixArray1D<real> dx2 = data->dx[JDIR];
 
-    idefix_for("B_ini",0,data->np_tot[IDIR],
-          KOKKOS_LAMBDA(int i) {
-            BAvg(i) = ZERO_F;
-    });
-    idefix_for("Compute_Bcirculation",data->beg[KDIR],data->end[KDIR],0,data->np_tot[IDIR],
-        KOKKOS_LAMBDA(int k,int i) {
-          Kokkos::atomic_add(&BAvg(i), Vs(BX3s,k,jc,i)*dx3(k) ); // Compute the circulation of
-                                                                 // Bphi around the pole
+    const int kbeg = data->beg[KDIR];
+    const int kend = data->end[KDIR];
+    idefix_for("Compute_BcirculationDet", 0, data->np_tot[IDIR],
+      KOKKOS_LAMBDA(int i) {
+      real sum = ZERO_F;
+      real c = ZERO_F;  // Kahan compensation
+      for(int k = kbeg; k < kend; k++) {
+        real term = Vs(BX3s, k, jc, i) * dx3(k);
+        real y = term - c;
+        real t = sum + y;
+        c = (t - sum) - y;
+        sum = t;
+      }
+      BAvg(i) = sum;
     });
 
     if(needMPIExchange) {
       #ifdef WITH_MPI
         Kokkos::fence();
         // sum along all of the processes on the same r
-        MPI_Allreduce(MPI_IN_PLACE, BAvg.data(), data->np_tot[IDIR], realMPI,
+        MPI_Allreduce(MPI_IN_PLACE, BAvgComm, data->np_tot[IDIR], realMPI,
                       MPI_SUM, data->mygrid->AxisComm);
       #endif
     }
@@ -169,7 +197,7 @@ void Axis::FixBx2sAxis(int side) {
   // Compute the values of Bx and By that are consistent with BX2 along the axis
   #if DIMENSIONS == 3
     IdefixArray4D<real> Vs = this->Vs;
-    IdefixArray2D<real> BAvg = this->BAvg;
+    auto BAvg = this->BAvg.deviceView();
     IdefixArray1D<real> phi = data->x[KDIR];
 
     int jin = 0;
@@ -190,25 +218,40 @@ void Axis::FixBx2sAxis(int side) {
       sign = -1;
     }
 
-    idefix_for("B_ini",0,data->np_tot[IDIR],0,2,
-          KOKKOS_LAMBDA(int i, int n) {
-            BAvg(i,n) = ZERO_F;
-    });
-    idefix_for("BHorizontal_compute",data->beg[KDIR],data->end[KDIR],0,data->np_tot[IDIR],
-        KOKKOS_LAMBDA(int k,int i) {
-          real Bthmid = sign*HALF_F*(Vs(BX2s,k,jaxe-1,i) + Vs(BX2s,k,jaxe+1,i));
-          real Bphimid = HALF_F*(Vs(BX3s,k,jin,i) + Vs(BX3s,k,jout,i));
-          //Bthmid = 0.0;
-          //Bphimid = 0.0;
+    const int kbeg = data->beg[KDIR];
+    const int kend = data->end[KDIR];
+    idefix_for("BHorizontal_computeDet", 0, data->np_tot[IDIR],
+    KOKKOS_LAMBDA(int i) {
+      real sumX = ZERO_F;
+      real cX   = ZERO_F;  // Kahan compensation for X
+      real sumY = ZERO_F;
+      real cY   = ZERO_F;  // Kahan compensation for Y
 
-          Kokkos::atomic_add(&BAvg(i,IDIR), Bthmid * cos(phi(k)) - Bphimid * sin(phi(k)));
-          Kokkos::atomic_add(&BAvg(i,JDIR), Bthmid * sin(phi(k)) + Bphimid * cos(phi(k)));
+      for(int k = kbeg; k < kend ; k++) {
+        real Bthmid  = sign*HALF_F*(Vs(BX2s,k,jaxe-1,i) + Vs(BX2s,k,jaxe+1,i));
+        real Bphimid =      HALF_F*(Vs(BX3s,k,jin,i)    + Vs(BX3s,k,jout,i));
+
+        real termX = Bthmid * cos(phi(k)) - Bphimid * sin(phi(k));
+        real yX = termX - cX;
+        real tX = sumX + yX;
+        cX = (tX - sumX) - yX;
+        sumX = tX;
+
+        real termY = Bthmid * sin(phi(k)) + Bphimid * cos(phi(k));
+        real yY = termY - cY;
+        real tY = sumY + yY;
+        cY = (tY - sumY) - yY;
+        sumY = tY;
+      }
+
+      BAvg(i,IDIR) = sumX;
+      BAvg(i,JDIR) = sumY;
     });
     if(needMPIExchange) {
       Kokkos::fence();
       #ifdef WITH_MPI
         // sum along all of the processes on the same r
-        MPI_Allreduce(MPI_IN_PLACE, BAvg.data(), 2*data->np_tot[IDIR], realMPI,
+        idfx::MPI_Allreduce(MPI_IN_PLACE, this->BAvg, 2*data->np_tot[IDIR], realMPI,
                       MPI_SUM, data->mygrid->AxisComm);
       #endif
     }
@@ -393,7 +436,6 @@ void Axis::ExchangeMPI(int side) {
   idfx::pushRegion("Axis::ExchangeMPI");
   #ifdef WITH_MPI
   // Load  the buffers with data
-  [[maybe_unused]] int ibeg,iend,jbeg,jend,kbeg,kend;
   int offset;
   int ny;
   Buffer bufferSend = this->bufferSend;
@@ -410,7 +452,7 @@ void Axis::ExchangeMPI(int side) {
   MPI_Status recvStatus;
 
   double tStart = MPI_Wtime();
-  MPI_SAFE_CALL(MPI_Start(&recvRequest));
+  MPI_SAFE_CALL(idfx::MPI_Start(&recvRequest));
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // Coordinates of the ghost region which needs to be transfered
@@ -472,8 +514,8 @@ void Axis::ExchangeMPI(int side) {
   Kokkos::fence();
 
   tStart = MPI_Wtime();
-  MPI_SAFE_CALL(MPI_Start(&sendRequest));
-  MPI_Wait(&recvRequest,&recvStatus);
+  MPI_SAFE_CALL(idfx::MPI_Start(&sendRequest));
+  idfx::MPI_Wait(&recvRequest,&recvStatus);
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
   // Unpack
@@ -527,8 +569,7 @@ void Axis::ExchangeMPI(int side) {
     } // MHD
   }
 
-  MPI_Wait(&sendRequest, &sendStatus);
-
+  idfx::MPI_Wait(&sendRequest, &sendStatus);
   idfx::mpiCallsTimer += MPI_Wtime() - tStart;
 
 
@@ -595,11 +636,11 @@ void Axis::InitMPI() {
   MPI_SAFE_CALL(MPI_Cart_shift(data->mygrid->AxisComm,0,data->mygrid->nproc[KDIR]/2,
                                &procRecv,&procSend ));
 
-  MPI_SAFE_CALL(MPI_Send_init(bufferSend.data(), bufferSend.Size(), realMPI, procSend,
-                650, data->mygrid->AxisComm, &sendRequest));
+  MPI_SAFE_CALL(idfx::MPI_Send_init(bufferSend.commView(), bufferSend.Size(),
+                realMPI, procSend, 650, data->mygrid->AxisComm, &sendRequest));
 
-  MPI_SAFE_CALL(MPI_Recv_init(bufferRecv.data(), bufferRecv.Size(), realMPI, procRecv,
-                650, data->mygrid->AxisComm, &recvRequest));
+  MPI_SAFE_CALL(idfx::MPI_Recv_init(bufferRecv.commView(), bufferRecv.Size(),
+                realMPI, procRecv, 650, data->mygrid->AxisComm, &recvRequest));
 
   #endif
   idfx::popRegion();

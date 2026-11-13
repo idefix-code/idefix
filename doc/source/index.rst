@@ -20,7 +20,7 @@ algorithm is essentially the same (but with some major modification to its struc
 ================
 Requirements
 ================
-*Idefix* is written is standard C++20 and does not rely on any external library in serial (non MPI).
+*Idefix* is written in standard C++20 and does not rely on any external library in serial (non MPI).
 
 Compiler
   *Idefix* requires a C++20 compatible compiler. It has been tested successfully with GCC (>11), Intel compiler suite (>2022) and
@@ -30,8 +30,8 @@ Kokkos library
   *Idefix* relies internally on the `Kokkos <https://github.com/kokkos/kokkos>`_ library, which is bundled with *Idefix* as a git submodule and compiled on the fly, hence no external installation is required.
 
 MPI library
-  When using MPI parallelisation, *Idefix* relies on an external MPI library. *Idefix* has been tested successfully with OpenMPI and IntelMPI libraries. When used on GPU architectures, *Idefix* assumes that
-  the MPI library is GPU-Aware. If unsure, check this last point with your system administrator.
+  When using MPI parallelisation, *Idefix* relies on an external MPI library. *Idefix* has been tested successfully with OpenMPI, Mpich and IntelMPI libraries. When used on GPU architectures, *Idefix* assumes that
+  the MPI library is GPU-Aware by default. It is possible to fallback to a non-GPU-Aware mode if needed (check :ref:`configurationOptions`), at the cost of lower performances. If unsure, check this with your system administrator.
 
 Python
   When using *Idefix* with its python interface through the module `Pydefix`, *Idefix* relies on an external python>=3.10 interpreter with the module `pybind11 <https://pybind11.readthedocs.io>`_
@@ -91,7 +91,7 @@ Marc Coiffier
   Continuous integration, automatic benchmarking
 
 Sébastien Valat
-   Continuous integration
+   Continuous integration, MPI fallback
 
 ========================
 About this documentation

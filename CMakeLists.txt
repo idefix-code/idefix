@@ -1,3 +1,21 @@
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file CMakeLists.txt
+#
+# Last modified : 08/2026
+#
+# Copyright(C) by :
+# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2026)
+# - Soufiane Baghdadi <soufiane.baghdadi@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021)
+# - Alankar Dutta <dutta.alankar@gmail.com> (MPA Garching - 2023 - 2026)
+# - Nicolas Aunai <nicolas.aunai@lpp.polytechnique.fr> (LPP - 2024)
+# - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+# and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
+
 cmake_minimum_required(VERSION 3.16)
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING "" FORCE)
@@ -5,17 +23,21 @@ endif()
 set (CMAKE_CXX_STANDARD 20)
 
 set(Idefix_VERSION_MAJOR 2)
-set(Idefix_VERSION_MINOR 3)
+set(Idefix_VERSION_MINOR 4)
 set(Idefix_VERSION_PATCH 0)
 
-project (idefix VERSION 2.3.0)
+project (idefix VERSION 2.4.0)
 option(Idefix_MHD "enable MHD" OFF)
 option(Idefix_MPI "enable Message Passing Interface parallelisation" OFF)
 option(Idefix_HIGH_ORDER_FARGO "Force Fargo to use a PPM reconstruction scheme" OFF)
 option(Idefix_DEBUG "Enable Idefix debug features (makes the code very slow)" OFF)
+option(Idefix_GTEST "Enable building unittests with GoogleTest framework" OFF)
 option(Idefix_RUNTIME_CHECKS "Enable runtime sanity checks" OFF)
 option(Idefix_WERROR "Treat compiler warnings as errors" OFF)
 option(Idefix_PYTHON "Enable python bindings (requires pybind11)" OFF)
+option(Idefix_MPI_GPU_DIRECT "Enable usage of GPU direct to avoid CPU-GPU copies for MPI messages." ON)
+option(Idefix_MPI_GPU_FORCE_COPY "When GPU_DIRECT is disabled, force using transfers for validation purpose." OFF)
+mark_as_advanced(Idefix_MPI_GPU_FORCE_TRANSFERS)
 option(Idefix_SUPPRESS_FMA "Disable FMA (fused multiply-add) contraction/codegen. Useful for code validation across architectures." OFF)
 set(Idefix_PROBLEM_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "Problem directory to build for.")
 set(Idefix_CXX_FLAGS "" CACHE STRING "Additional compiler/linker flag")
@@ -36,6 +58,10 @@ set_property(CACHE Idefix_PRECISION PROPERTY STRINGS Double Single)
 set(Idefix_LOOP_PATTERN "Default" CACHE STRING "Loop pattern for idefix_for")
 set_property(CACHE Idefix_LOOP_PATTERN PROPERTY STRINGS Default SIMD Range MDRange TeamPolicy TeamPolicyInnerVector)
 
+set(Idefix_MPI_MODE "Persistent" CACHE STRING "MPI communication mode to use.")
+set_property(CACHE Idefix_MPI_MODE PROPERTY STRINGS Persistent Blocking NonBlocking)
+mark_as_advanced(Idefix_MPI_MODE)
+
 # load git revision tools
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 include(GetGitRevisionDescription)
@@ -45,6 +71,16 @@ include(SetIdefixProperty)
 include(SetRequiredBuildSettingsForGCC8)
 include(CheckHdf5ParallelSupport)
 include(SuppressFMA)
+include(HandleDeps)
+
+# enable tests
+if (Idefix_GTEST)
+  # enable supports of "make test"
+  enable_testing()
+
+  # it not, download it internally to the project
+  GoogleTestDownloadAndLink()
+endif()
 
 #Idefix requires Cuda Lambdas (experimental)
 if(Kokkos_ENABLE_CUDA)
@@ -73,18 +109,32 @@ if(Idefix_WERROR)
   endif()
 endif()
 
+# add tests
+if (Idefix_GTEST)
+  add_executable(unittests)
+  target_link_libraries(unittests GTest::gtest GTest::gmock)
+  add_test(NAME unittests COMMAND unittests)
+endif()
+
 # sub directories should be called after add_executable
 # because the binary target "idefix" should be defined
 # before adding source files via "target_sources"
 # create target binary "idefix"
 add_executable(idefix)
+add_library(idefix-core STATIC)
 add_subdirectory(src build)
+
+# link idefix-core where it should
+target_link_libraries(idefix idefix-core)
+if (Idefix_GTEST)
+  target_link_libraries(unittests idefix-core)
+endif()
 
 # make absolute
 get_filename_component(Idefix_PROBLEM_DIR_ABS ${Idefix_PROBLEM_DIR} ABSOLUTE BASE_DIR ${PROJECT_BINARY_DIR})
 
 if(EXISTS ${Idefix_PROBLEM_DIR_ABS}/setup.cpp)
-  target_sources(idefix PUBLIC ${Idefix_PROBLEM_DIR_ABS}/setup.cpp)
+  target_sources(idefix PRIVATE ${Idefix_PROBLEM_DIR_ABS}/setup.cpp)
 else()
   message(WARNING "No specific setup.cpp found in the problem directory (this message can be ignored if using python to define your problem)")
 endif()
@@ -105,8 +155,12 @@ endif()
 if(Idefix_MPI)
   add_compile_definitions("WITH_MPI")
   find_package(MPI REQUIRED)
-  target_link_libraries(idefix MPI::MPI_CXX)
+  target_link_libraries(idefix-core PUBLIC MPI::MPI_CXX)
   add_subdirectory(src/mpi)
+endif()
+
+if (Idefix_MPI_GPU_DIRECT)
+  add_compile_definitions("WITH_MPI_GPU_DIRECT")
 endif()
 
 if(Idefix_HDF5)
@@ -114,9 +168,9 @@ if(Idefix_HDF5)
   if(Idefix_MPI)
     set(HDF5_PREFER_PARALLEL TRUE)
   endif()
-  target_sources(idefix
-    PUBLIC src/output/xdmf.cpp
-    PUBLIC src/output/xdmf.hpp
+  target_sources(idefix-core
+    PRIVATE src/output/xdmf.cpp
+    PRIVATE src/output/xdmf.hpp
   )
   # Prefer imported targets (matches older working behavior), then fall back.
   find_package(HDF5 QUIET COMPONENTS C)
@@ -131,9 +185,9 @@ if(Idefix_HDF5)
     set(_idefix_hdf5_link_items HDF5::HDF5)
   endif()
 
-  target_link_libraries(idefix ${_idefix_hdf5_link_items})
+  target_link_libraries(idefix-core PUBLIC ${_idefix_hdf5_link_items})
   message(STATUS "Found HDF5 include directories: ${HDF5_INCLUDE_DIRS}")
-  target_include_directories(idefix PUBLIC "${HDF5_INCLUDE_DIRS}")
+  target_include_directories(idefix-core PUBLIC "${HDF5_INCLUDE_DIRS}")
   if(Idefix_MPI)
     CheckHdf5ParallelSupport("${_idefix_hdf5_link_items}")
     if(NOT IDEFIX_HDF5_IS_PARALLEL)
@@ -162,8 +216,8 @@ if(Idefix_PYTHON)
   endif ()
   set(PYBIND11_FINDPYTHON ON CACHE BOOL "Idefix requires python" FORCE)
   find_package(pybind11 REQUIRED)
-  target_link_libraries(idefix pybind11::embed)
-  target_sources(idefix
+  target_link_libraries(idefix-core PUBLIC pybind11::embed)
+  target_sources(idefix-core
     PUBLIC src/pydefix.cpp
     PUBLIC src/pydefix.hpp
   )
@@ -245,10 +299,24 @@ if(${Idefix_PRECISION} STREQUAL "Single")
   add_compile_definitions("SINGLE_PRECISION")
 endif()
 
-target_include_directories(idefix PUBLIC
+# MPI mode
+if(${Idefix_MPI_MODE} STREQUAL "Persistent")
+  add_compile_definitions("COMMUNICATION_MODE_PERSISTENT")
+elseif(${Idefix_MPI_MODE} STREQUAL "NonBlocking")
+  add_compile_definitions("COMMUNICATION_MODE_NON_BLOCKING")
+else(NOT ${Idefix_MPI_MODE} STREQUAL "Blocking")
+  message(ERROR "Unknown MPI communication mode : Idefix_MPI_MODE=${Idefix_MPI_MODE}")
+endif()
+
+# GPU direct disabled and force transfers
+if (${Idefix_MPI_GPU_FORCE_COPY})
+  add_compile_definitions("WITH_GPU_FORCE_COPY")
+endif()
+
+target_include_directories(idefix-core PUBLIC
                            "${Idefix_PROBLEM_DIR_ABS}"
                            )
-target_include_directories(idefix PUBLIC
+target_include_directories(idefix-core PUBLIC
                            src/kokkos/core/src
                            src/dataBlock
                            src/dataBlock/planetarySystem
@@ -272,7 +340,7 @@ target_include_directories(idefix PUBLIC
                            src
                            )
 
-target_link_libraries(idefix Kokkos::kokkos)
+target_link_libraries(idefix-core PUBLIC Kokkos::kokkos)
 
 # Generate header with compiler information (name, flags, path)
 configure_file(
@@ -281,12 +349,19 @@ configure_file(
     @ONLY
 )
 # Make sure the generated header is on the include path
-target_include_directories(idefix PRIVATE ${CMAKE_BINARY_DIR}/build/generated)
+target_include_directories(idefix-core PRIVATE ${CMAKE_BINARY_DIR}/build/generated)
+if (Idefix_GTEST)
+  target_include_directories(unittests PRIVATE ${CMAKE_BINARY_DIR}/build/generated)
+endif()
 
 # disable FMA if needed
 if(Idefix_SUPPRESS_FMA)
   message(STATUS "FMA (fused multiply-add) contraction/codegen is disabled")
   target_suppress_fma(idefix)
+  target_suppress_fma(idefix-core)
+  if (Idefix_GTEST)
+    target_suppress_fma(unittests)
+  endif()
 endif()
 
 message(STATUS "Idefix final configuration")
@@ -298,6 +373,7 @@ endif()
 message(STATUS "    MPI:  ${Idefix_MPI}")
 message(STATUS "    HDF5: ${Idefix_HDF5}")
 message(STATUS "    Python: ${Idefix_PYTHON}")
+message(STATUS "    GPU direct: ${Idefix_MPI_GPU_DIRECT}")
 message(STATUS "    Reconstruction: ${Idefix_RECONSTRUCTION}")
 message(STATUS "    Precision: ${Idefix_PRECISION}")
 message(STATUS "    Version: ${Idefix_VERSION}")

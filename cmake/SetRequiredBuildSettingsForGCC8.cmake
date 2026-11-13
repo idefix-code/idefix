@@ -1,3 +1,17 @@
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file cmake/SetRequiredBuildSettingsForGCC8.cmake
+#
+# Last modified : 11/2023
+#
+# Copyright(C) by :
+# - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023)
+# and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
+
 # The std::filesystem functions are part of the C++17 standard, but GCC8
 # does not store them in libstdc++ but in libstdc++-fs. This function
 # ensure that we link to this additional library when using GCC8

@@ -1,7 +1,15 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/global.hpp
+//
+// Last modified : 12/2025
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2025)
+// - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2022 - 2024)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -24,6 +32,7 @@ class Units;
 
 extern int prank;                       //< parallel rank
 extern int psize;
+extern std::string logFileDir;       //< logfileDir
 extern IdefixOutStream cout;              //< custom cout for idefix
 extern IdefixErrStream cerr;              //< custom cerr for idefix
 extern Profiler prof;                   //< profiler (for memory & performance usage)
@@ -66,7 +75,7 @@ void DumpArray(std::string filename, ArrayType array) {
 class idfx::IdefixOutStream {
  public:
   void init(int);
-  void enableLogFile();
+  void enableLogFile(std::string logFileDir);
   // for regular output of variables and stuff
   template<typename T> IdefixOutStream& operator<<(const T& something) {
     if(toscreen) std::cout << something;

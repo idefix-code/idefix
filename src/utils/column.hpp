@@ -1,7 +1,15 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/utils/column.hpp
+//
+// Last modified : 08/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2025)
+// - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -13,6 +21,7 @@
 
 #include "idefix.hpp"
 #include "dataBlock.hpp"
+#include "commArray.hpp"
 
 
 
@@ -59,7 +68,7 @@ class Column {
   IdefixArray3D<real> Area;
   IdefixArray3D<real> Volume;
 
-    IdefixArray2D<real> localSum;
+  idfx::IdefixCommArray2D<real> localSum;
   #ifdef WITH_MPI
   Mpi mpi;  // Mpi object when WITH_MPI is set
   MPI_Comm ColumnComm;

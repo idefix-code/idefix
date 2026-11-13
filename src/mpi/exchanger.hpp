@@ -1,7 +1,15 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/mpi/exchanger.hpp
+//
+// Last modified : 08/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2025)
+// - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -72,8 +80,8 @@ class Exchanger {
   bool haveVs{false};
 
   // Requests for MPI persistent communications
-  MPI_Request sendRequest[2];
-  MPI_Request recvRequest[2];
+  idfx::MPI_Request_1D<real> sendRequest[2];
+  idfx::MPI_Request_1D<real> recvRequest[2];
 
   Grid *grid;
 };

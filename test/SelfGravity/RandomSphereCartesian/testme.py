@@ -30,7 +30,13 @@ import pytools.idfx_test as tst
 def testMe(test):
     test.configure()
     test.compile()
-    inifiles = ["idefix.ini", "idefix-cg.ini", "idefix-minres.ini", "idefix-jacobi.ini"]
+    inifiles = [
+        "idefix.ini",
+        "idefix-cg.ini",
+        "idefix-minres.ini",
+        "idefix-jacobi.ini",
+        "idefix-fft.ini",
+    ]
 
     # loop on all the ini files for this test
     for ini in inifiles:
@@ -44,8 +50,15 @@ def testMe(test):
 
 
 test = tst.idfxTest(__file__)
+
+if not test.dec:
+    test.dec = ["1", "1", "2"]
+
 if not test.all:
     testMe(test)
 else:
     test.noplot = True
+    test.mpi = False
+    testMe(test)
+    test.mpi = True
     testMe(test)

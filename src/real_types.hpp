@@ -24,11 +24,13 @@
 
 #ifdef SINGLE_PRECISION
   using real = float;
+  using complex = Kokkos::complex<float>;
   #ifdef WITH_MPI
     #define realMPI      MPI_FLOAT
   #endif
 #else
   using real = double;
+  using complex = Kokkos::complex<double>;
   #ifdef WITH_MPI
     #define realMPI     MPI_DOUBLE
   #endif

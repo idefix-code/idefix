@@ -98,14 +98,16 @@ display_and_run ./unittests
 # go back to source dir
 display_and_run cd ..
 
-# run the MPI unit tests if mpirun is available (covers the WITH_MPI FFT tests:
-# TransposeReal_MPI, TransposeComplex_MPI, MPI_Distributed_R2C_C2R)
+# run the MPI unit tests if mpirun is available: the unittests_mpi executable
+# holds only the MPI tests (test*MPI.cpp files, e.g. the FFT MPI tests in
+# src/utils/fft/tests/testFFTMPI.cpp)
 if command -v mpirun >/dev/null 2>&1; then
   display_and_run mkdir -p build-unittests-mpi
   display_and_run cmake . -B ./build-unittests-mpi -DIdefix_GTEST=ON -DIdefix_FFT=ON -DIdefix_MPI=ON -DIdefix_PROBLEM_DIR=$PWD/test/MHD/AxisFluxTube/ $(gen_cmake_options "$@")
-  display_and_run make -C build-unittests-mpi -j8
+  display_and_run make -C build-unittests-mpi -j8 unittests unittests_mpi
   display_and_run cd build-unittests-mpi
-  display_and_run mpirun -np 4 ./unittests
+  display_and_run ./unittests
+  display_and_run mpirun -np 4 ./unittests_mpi
 fi
 
 # END

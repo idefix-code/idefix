@@ -8,4 +8,9 @@ if (Idefix_GTEST)
   target_sources(unittests
     PRIVATE ${CMAKE_CURRENT_LIST_DIR}/tests/testFFT.cpp
   )
+  if (Idefix_MPI)
+    target_sources(unittests_mpi
+      PRIVATE ${CMAKE_CURRENT_LIST_DIR}/tests/testFFTMPI.cpp
+    )
+  endif()
 endif()

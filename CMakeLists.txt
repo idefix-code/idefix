@@ -113,10 +113,17 @@ if(Idefix_WERROR)
 endif()
 
 # add tests
+# unittests: non-MPI tests. unittests_mpi: MPI-only tests (test*MPI.cpp files),
+# only built when Idefix_MPI=ON, to be run with mpirun -np N ./unittests_mpi
 if (Idefix_GTEST)
   add_executable(unittests)
   target_link_libraries(unittests GTest::gtest GTest::gmock)
   add_test(NAME unittests COMMAND unittests)
+  if (Idefix_MPI)
+    add_executable(unittests_mpi)
+    target_link_libraries(unittests_mpi GTest::gtest GTest::gmock)
+    add_test(NAME unittests_mpi COMMAND unittests_mpi)
+  endif()
 endif()
 
 # sub directories should be called after add_executable
@@ -131,6 +138,9 @@ add_subdirectory(src build)
 target_link_libraries(idefix idefix-core)
 if (Idefix_GTEST)
   target_link_libraries(unittests idefix-core)
+  if (Idefix_MPI)
+    target_link_libraries(unittests_mpi idefix-core)
+  endif()
 endif()
 
 # make absolute
@@ -361,6 +371,9 @@ configure_file(
 target_include_directories(idefix-core PRIVATE ${CMAKE_BINARY_DIR}/build/generated)
 if (Idefix_GTEST)
   target_include_directories(unittests PRIVATE ${CMAKE_BINARY_DIR}/build/generated)
+  if (Idefix_MPI)
+    target_include_directories(unittests_mpi PRIVATE ${CMAKE_BINARY_DIR}/build/generated)
+  endif()
 endif()
 
 # disable FMA if needed
@@ -370,6 +383,9 @@ if(Idefix_SUPPRESS_FMA)
   target_suppress_fma(idefix-core)
   if (Idefix_GTEST)
     target_suppress_fma(unittests)
+    if (Idefix_MPI)
+      target_suppress_fma(unittests_mpi)
+    endif()
   endif()
 endif()
 if(Idefix_FFT)

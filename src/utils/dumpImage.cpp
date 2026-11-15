@@ -20,6 +20,7 @@
 #include "dataBlock.hpp"
 #include "idefix.hpp"
 
+using dump_io::DataType;
 
 #define  HEADERSIZE 128
 
@@ -29,7 +30,7 @@ DumpImage::DumpImage(std::string filename, DataBlock *data, bool enableDomainDec
   int nx[3];
   std::string fieldName;
   std::string eof ("eof");
-  DataType type;
+  dump_io::DataType type;
   int ndim;
   IdfxFileHandler fileHdl;
   Dump dump(data);

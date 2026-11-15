@@ -42,36 +42,7 @@
 #define  HEADERSIZE 128
 
 // Register a variable to be dumped (and read)
-
-void Dump::RegisterVariable(IdefixArray3D<real>& in,
-                        std::string name,
-                        int dir,
-                        DumpField::ArrayLocation loc) {
-    dumpFieldMap.emplace(name, DumpField(in, loc, dir));
-}
-
-void  Dump::RegisterVariable(IdefixHostArray3D<real>& in,
-                        std::string name,
-                        int dir,
-                        DumpField::ArrayLocation loc) {
-    dumpFieldMap.emplace(name, DumpField(in, loc, dir));
-}
-
-void  Dump::RegisterVariable(IdefixArray4D<real>& in,
-                        std::string name,
-                        int varnum,
-                        int dir,
-                        DumpField::ArrayLocation loc) {
-    dumpFieldMap.emplace(name, DumpField(in, varnum, loc, dir));
-}
-
-void  Dump::RegisterVariable(IdefixHostArray4D<real>& in,
-                        std::string name,
-                        int varnum,
-                        int dir,
-                        DumpField::ArrayLocation loc) {
-    dumpFieldMap.emplace(name, DumpField(in, varnum, loc, dir));
-}
+// Implementation moved to dump.hpp as template functions
 
 
 
@@ -268,14 +239,14 @@ void Dump::WriteString(IdfxFileHandler fileHdl, char *str, int size) {
 
 
 void Dump::WriteSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
-                             DataType type, char* name, void* data ) {
+                             dump_io::DataType type, char* name, void* data ) {
   int ntot = 1;   // Number of elements to be written
   int size;
 
-  if(type == DoubleType) size=sizeof(double);
-  if(type == SingleType) size=sizeof(float);
-  if(type == IntegerType) size=sizeof(int);
-  if(type == BoolType) size=sizeof(bool);
+  if(type == dump_io::DataType::Double) size=sizeof(double);
+  if(type == dump_io::DataType::Float) size=sizeof(float);
+  if(type == dump_io::DataType::Int) size=sizeof(int);
+  if(type == dump_io::DataType::Bool) size=sizeof(bool);
 
   // Write field name
 
@@ -312,9 +283,10 @@ void Dump::WriteSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
     }
 
     // Write raw data
-    if(type == DoubleType) MpiType=MPI_DOUBLE;
-    if(type == SingleType) MpiType=MPI_FLOAT;
-    if(type == IntegerType) MpiType=MPI_INT;
+    if(type == dump_io::DataType::Double) MpiType=MPI_DOUBLE;
+    if(type == dump_io::DataType::Float) MpiType=MPI_FLOAT;
+    if(type == dump_io::DataType::Int) MpiType=MPI_INT;
+    if(type == dump_io::DataType::Bool) MpiType=MPI_CXX_BOOL;
     MPI_SAFE_CALL(MPI_File_set_view(fileHdl, offset, MPI_BYTE,
                                     MPI_CHAR, "native", MPI_INFO_NULL ));
 
@@ -351,11 +323,11 @@ void Dump::WriteDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gd
     int64_t ntot = 1;   // Number of elements to be written
 
   // Define current datatype
-  DataType type;
+  dump_io::DataType type;
   #ifndef SINGLE_PRECISION
-  type = DoubleType;
+  type = dump_io::DataType::Double;
   #else
-  type = SingleType;
+  type = dump_io::DataType::Float;
   #endif
 
   // Write field name
@@ -394,8 +366,10 @@ void Dump::WriteDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gd
     }
 
     // Write raw data
-    if(type == DoubleType) MpiType=MPI_DOUBLE;
-    if(type == SingleType) MpiType=MPI_FLOAT;
+    if(type == dump_io::DataType::Double) MpiType=MPI_DOUBLE;
+    if(type == dump_io::DataType::Float) MpiType=MPI_FLOAT;
+    if(type == dump_io::DataType::Int) MpiType=MPI_INT;
+    if(type == dump_io::DataType::Bool) MpiType=MPI_CXX_BOOL;
 
     MPI_SAFE_CALL(MPI_File_set_view(fileHdl, offset, MpiType,
                                     descriptor, "native", MPI_INFO_NULL ));
@@ -430,7 +404,7 @@ void Dump::WriteDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gd
 }
 
 void Dump::ReadNextFieldProperties(IdfxFileHandler fileHdl, int &ndim, int *dim,
-                                         DataType &type, std::string &name) {
+                                         dump_io::DataType &type, std::string &name) {
   char fieldName[NAMESIZE];
   #ifdef WITH_MPI
     // Read Name
@@ -500,26 +474,26 @@ void Dump::ReadNextFieldProperties(IdfxFileHandler fileHdl, int &ndim, int *dim,
 }
 
 void Dump::ReadSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
-                            DataType type, void* data) {
+                            dump_io::DataType type, void* data) {
   int size;
   int64_t ntot=1;
   // Get total size
   for(int i=0; i < ndim; i++) {
     ntot=ntot*dim[i];
   }
-  if(type == DoubleType) size=sizeof(double);
-  if(type == SingleType) size=sizeof(float);
-  if(type == IntegerType) size=sizeof(int);
-  if(type == BoolType) size=sizeof(bool);
+  if(type == dump_io::DataType::Double) size=sizeof(double);
+  if(type == dump_io::DataType::Float) size=sizeof(float);
+  if(type == dump_io::DataType::Int) size=sizeof(int);
+  if(type == dump_io::DataType::Bool) size=sizeof(bool);
 
   #ifdef WITH_MPI
     MPI_Status status;
     MPI_Datatype MpiType;
 
-    if(type == DoubleType) MpiType=MPI_DOUBLE;
-    if(type == SingleType) MpiType=MPI_FLOAT;
-    if(type == IntegerType) MpiType=MPI_INT;
-    if(type == BoolType) MpiType=MPI_CXX_BOOL;
+    if(type == dump_io::DataType::Double) MpiType=MPI_DOUBLE;
+    if(type == dump_io::DataType::Float) MpiType=MPI_FLOAT;
+    if(type == dump_io::DataType::Int) MpiType=MPI_INT;
+    if(type == dump_io::DataType::Bool) MpiType=MPI_CXX_BOOL;
 
     MPI_SAFE_CALL(MPI_File_set_view(fileHdl, this->offset, MPI_BYTE,
                                     MPI_CHAR, "native", MPI_INFO_NULL ));
@@ -541,17 +515,17 @@ void Dump::ReadSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
 }
 
 void Dump::Skip(IdfxFileHandler fileHdl, int ndim, int *dim,
-                            DataType type) {
+                            dump_io::DataType type) {
   int size;
   int64_t ntot=1;
   // Get total size
   for(int i=0; i < ndim; i++) {
     ntot=ntot*dim[i];
   }
-  if(type == DoubleType) size=sizeof(double);
-  if(type == SingleType) size=sizeof(float);
-  if(type == IntegerType) size=sizeof(int);
-  if(type == BoolType) size=sizeof(bool);
+  if(type == dump_io::DataType::Double) size=sizeof(double);
+  if(type == dump_io::DataType::Float) size=sizeof(float);
+  if(type == dump_io::DataType::Int) size=sizeof(int);
+  if(type == dump_io::DataType::Bool) size=sizeof(bool);
 
   #ifdef WITH_MPI
     offset+= ntot*size;
@@ -641,7 +615,7 @@ bool Dump::Read(Output& output, int readNumber ) {
   int nxglob[3];
   std::string fieldName;
   std::string eof ("eof");
-  DataType type;
+  dump_io::DataType type;
   int ndim;
   IdfxFileHandler fileHdl;
 
@@ -740,7 +714,7 @@ bool Dump::Read(Output& output, int readNumber ) {
         // This key has been registered
         notFound.erase(fieldName);
         DumpField &scalar = it->second;
-        if(scalar.GetType() == DumpField::Type::IdefixArray) {
+        if(scalar.IsArray()) {
           // Distributed idefix array
           int direction = scalar.GetDirection();
 
@@ -826,9 +800,9 @@ int Dump::Write(Output& output) {
   int nxtot[3];
 
   #ifndef SINGLE_PRECISION
-  const DataType realType = DoubleType;
+  const dump_io::DataType realType = dump_io::DataType::Double;
   #else
-  const DataType realType = SingleType;
+  const dump_io::DataType realType = dump_io::DataType::Float;
   #endif
   IdfxFileHandler fileHdl;
 
@@ -913,7 +887,7 @@ int Dump::Write(Output& output) {
   for(auto const& [name, scalar] : dumpFieldMap) {
     // Todo: replace these C char by std::string
     std::snprintf(fieldName,NAMESIZE,"%s",name.c_str());
-    if(scalar.GetType() == DumpField::Type::IdefixArray) {
+    if(scalar.IsArray()) {
       auto toWrite = scalar.GetHostField<IdefixHostArray3D<real>>();
       int dir = scalar.GetDirection();
       for(int i = 0; i < 3 ; i++) {
@@ -962,15 +936,10 @@ int Dump::Write(Output& output) {
 
     } else {
       // Scalar type if a fundamental type, not distributed
-      DataType thisType;
-      if(scalar.GetType()==DumpField::Type::Int) thisType = DataType::IntegerType;
-      if(scalar.GetType()==DumpField::Type::Single) thisType = DataType::SingleType;
-      if(scalar.GetType()==DumpField::Type::Double) thisType = DataType::DoubleType;
-      if(scalar.GetType()==DumpField::Type::Bool) thisType = DataType::BoolType;
-
+      dump_io::DataType thisType = scalar.GetDataType();
       nx[0] = scalar.GetSize();
 
-      WriteSerial(fileHdl, 1, nx, thisType, fieldName, scalar.GetHostField<void*>());
+      WriteSerial(fileHdl, 1, nx, thisType, fieldName, scalar.GetRawPointer<void>());
     }
   }
 

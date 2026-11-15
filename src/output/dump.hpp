@@ -115,16 +115,16 @@ struct GridBox {
 // =====================================================================================
 
 class DumpField {
-public:
+ public:
     enum class ArrayLocation { Center, Face, Edge };
 
-private:
+ private:
     // =============================================================================
     // Base class for type-erased storage
     // =============================================================================
 
     class StorageBase {
-    public:
+     public:
         virtual ~StorageBase() = default;
         virtual std::unique_ptr<StorageBase> clone() const = 0;
 
@@ -137,17 +137,17 @@ private:
         virtual int GetArrayDimension() const = 0;
         virtual bool IsHost() const = 0;
         virtual void SyncToHost() const = 0;
-        
+
         virtual void* GetRawPointer() const {
             IDEFIX_ERROR("GetRawPointer not implemented for this storage type");
             return nullptr;
         }
-        
+
         virtual IdefixHostArray3D<real> GetHostField() const {
             IDEFIX_ERROR("GetHostField not implemented for this storage type");
             return IdefixHostArray3D<real>();
         }
-        
+
         virtual void SyncFrom(const IdefixHostArray3D<real>& source) const {
             IDEFIX_ERROR("SyncFrom not implemented for this storage type");
         }
@@ -164,7 +164,7 @@ private:
         ArrayLocation location;
         int direction;
 
-    public:
+     public:
         ArrayStorage(ArrayType& arr, int v, ArrayLocation loc, int dir)
             : array{arr}, var{v}, location{loc}, direction{dir} {}
 
@@ -201,7 +201,8 @@ private:
                 if constexpr (idefix::is_host_space_v<ArrayType>) {
                     return array;
                 } else {
-                    IdefixHostArray3D<real> hostArr = Kokkos::create_mirror(Kokkos::HostSpace(), array);
+                    IdefixHostArray3D<real> hostArr =
+                        Kokkos::create_mirror(Kokkos::HostSpace(), array);
                     Kokkos::deep_copy(hostArr, array);
                     return hostArr;
                 }
@@ -214,7 +215,8 @@ private:
                 if constexpr (idefix::is_host_space_v<ArrayType>) {
                     return slice;
                 } else {
-                    IdefixHostArray3D<real> hostArr = Kokkos::create_mirror(Kokkos::HostSpace(), slice);
+                    IdefixHostArray3D<real> hostArr =
+                        Kokkos::create_mirror(Kokkos::HostSpace(), slice);
                     Kokkos::deep_copy(hostArr, slice);
                     return hostArr;
                 }
@@ -225,7 +227,7 @@ private:
                              "Only 3D and 4D arrays supported");
             }
         }
-        
+
         template<typename SourceArrayType>
         void SyncFrom(const SourceArrayType& source) const {
             // Copy from source array to our stored array
@@ -237,7 +239,8 @@ private:
             else if constexpr (idefix::view_dimension_v<ArrayType> == 4) {
                 if constexpr (idefix::view_dimension_v<SourceArrayType> == 3) {
                     // Source is 3D, we need to copy to the var-th slice of our 4D array
-                    auto destSlice = Kokkos::subview(array, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
+                    auto destSlice =
+                        Kokkos::subview(array, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
                     Kokkos::deep_copy(destSlice, source);
                 }
             }
@@ -247,7 +250,8 @@ private:
             if constexpr (!idefix::is_host_space_v<ArrayType>) {
                 if constexpr (idefix::view_dimension_v<ArrayType> == 4) {
                     if (var >= 0) {
-                        auto slice = Kokkos::subview(array, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
+                        auto slice =
+                            Kokkos::subview(array, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
                         auto mirror = Kokkos::create_mirror(Kokkos::HostSpace(), slice);
                         Kokkos::deep_copy(mirror, slice);
                     }
@@ -257,7 +261,7 @@ private:
                 }
             }
         }
-        
+
         void SyncFrom(const IdefixHostArray3D<real>& source) const override {
             // Copy from source array to our stored array
             if constexpr (idefix::view_dimension_v<ArrayType> == 3) {
@@ -272,7 +276,8 @@ private:
             }
             else if constexpr (idefix::view_dimension_v<ArrayType> == 4) {
                 if (var >= 0) {
-                    auto destSlice = Kokkos::subview(array, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
+                    auto destSlice =
+                        Kokkos::subview(array, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
                     if constexpr (idefix::is_host_space_v<ArrayType>) {
                         Kokkos::deep_copy(destSlice, source);
                     } else {
@@ -295,7 +300,7 @@ private:
         T* data;
         int size;
 
-    public:
+     public:
         RawStorage(T* d, int s) : data{d}, size{s} {}
 
         std::unique_ptr<StorageBase> clone() const override {
@@ -332,7 +337,7 @@ private:
         }
     };
 
-public:
+ public:
     // =============================================================================
     // Constructors
     // =============================================================================
@@ -343,7 +348,7 @@ public:
         : impl{std::make_unique<ArrayStorage<ArrayType>>(arr, varnum, loc, dir)} {}
 
     template<typename T>
-    DumpField(T* data, int size = 1)
+    explicit DumpField(T* data, int size = 1)
         : impl{std::make_unique<RawStorage<T>>(data, size)} {}
 
     // =============================================================================
@@ -367,7 +372,7 @@ public:
     IdefixHostArray3D<real> GetHostField() const {
         return impl->GetHostField();
     }
-    
+
     // Template version for backward compatibility
     template<typename T>
     T GetHostField() const {
@@ -385,7 +390,7 @@ public:
     void* GetRawPointer() const {
         return impl->GetRawPointer();
     }
-    
+
     template<typename T>
     T* GetRawPointer() const {
         return static_cast<T*>(impl->GetRawPointer());
@@ -412,7 +417,7 @@ public:
     int GetArrayDimension() const { return impl->GetArrayDimension(); }
     bool IsHost() const { return impl->IsHost(); }
 
-private:
+ private:
     // =============================================================================
     // Member variable - type-erased storage
     // =============================================================================
@@ -426,8 +431,8 @@ private:
 class Dump {
     friend class DumpImage; // Allow dumpimag to have access to dump API
     friend class Output;
-    
-public:
+
+ public:
     explicit Dump(Input &, DataBlock *);               // Create Dump Object
     explicit Dump(DataBlock *);               // Create a dump object independent of input
     ~Dump();
@@ -447,7 +452,7 @@ public:
     template<typename T>
     void RegisterVariable(T* in, std::string name, int size = 1);
 
-private:
+ private:
     void Init(DataBlock*);
     DataBlock *data;
     int dumpFileNumber;
@@ -496,7 +501,7 @@ void Dump::RegisterVariable(ArrayType& in, std::string name,
                            DumpField::ArrayLocation loc) {
     static_assert(idefix::is_idefix_array_v<ArrayType>,
                  "RegisterVariable requires an IdefixArray type");
-    
+
     if (dumpFieldMap.count(name) > 0) {
         std::stringstream msg;
         msg << "Error while registering variable in Dump I/O: " << std::endl

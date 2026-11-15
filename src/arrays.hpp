@@ -98,8 +98,9 @@ struct remove_all_pointers<T* volatile> {
 template<typename T>
 struct remove_all_pointers<T* const volatile> {
     using type = typename remove_all_pointers<T>::type;
-};
-}
+};  // namespace detail
+
+} // namespace detail
 
 template<typename T>
 using remove_all_pointers_t = typename detail::remove_all_pointers<T>::type;
@@ -142,26 +143,32 @@ struct is_device_space : std::false_type {};
 
 // Specializations for Kokkos::View
 template<typename T, typename... Args>
-struct is_host_space<Kokkos::View<T, Args...>> : 
+struct is_host_space<Kokkos::View<T, Args...>> :
     std::disjunction<
         std::is_same<Kokkos::HostSpace, typename Kokkos::View<T, Args...>::memory_space>,
         std::is_same<Kokkos::HostSpace, typename Kokkos::View<T, Args...>::device_type>
     > {};
 
 template<typename T, typename... Args>
-struct is_device_space<Kokkos::View<T, Args...>> : 
+struct is_device_space<Kokkos::View<T, Args...>> :
     std::is_same<Device, typename Kokkos::View<T, Args...>::memory_space> {};
 
 // =====================================================================================
 // Convenience type traits (public API)
 // =====================================================================================
 
-template<typename T> inline constexpr bool is_kokkos_view_v = idefix::detail::is_kokkos_view<T>::value;
-template<typename T> inline constexpr bool is_idefix_array_v = idefix::detail::is_idefix_array<T>::value;
-template<typename T> inline constexpr int view_dimension_v = idefix::detail::view_dimension<T>::value;
-template<typename T> inline constexpr bool is_host_space_v = idefix::is_host_space<T>::value;
-template<typename T> inline constexpr bool is_device_space_v = idefix::is_device_space<T>::value;
-template<typename T> using value_type_t = typename idefix::detail::view_value_type<T>::type;
+template<typename T>
+inline constexpr bool is_kokkos_view_v = idefix::detail::is_kokkos_view<T>::value;
+template<typename T>
+inline constexpr bool is_idefix_array_v = idefix::detail::is_idefix_array<T>::value;
+template<typename T>
+inline constexpr int view_dimension_v = idefix::detail::view_dimension<T>::value;
+template<typename T>
+inline constexpr bool is_host_space_v = idefix::is_host_space<T>::value;
+template<typename T>
+inline constexpr bool is_device_space_v = idefix::is_device_space<T>::value;
+template<typename T>
+using value_type_t = typename idefix::detail::view_value_type<T>::type;
 
 } // namespace idefix
 

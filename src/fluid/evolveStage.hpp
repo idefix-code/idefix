@@ -106,15 +106,14 @@ void Fluid<Phys>::EvolveForcing(const real t, const real dt) {
              data->beg[JDIR],data->end[JDIR],
              data->beg[IDIR],data->end[IDIR],
             KOKKOS_LAMBDA (int k, int j, int i) {
-            
             for(int component = 0 ; component < COMPONENTS ; component++) {
               Uc(MX1+component,k,j,i) += dt * Vc(RHO,k,j,i) * forcingTerm(component,k,j,i);
               if constexpr(Phys::pressure) {
                 //  rho * v . f
-                Uc(ENG,k,j,i) += dt * Vc(RHO,k,j,i) 
-                                    * Vc(VX1+component,k,j,i) 
+                Uc(ENG,k,j,i) += dt * Vc(RHO,k,j,i)
+                                    * Vc(VX1+component,k,j,i)
                                     * forcingTerm(component,k,j,i);
-              } // pressure 
+              } // pressure
             }
         });
 

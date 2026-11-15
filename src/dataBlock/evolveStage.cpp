@@ -52,7 +52,7 @@ void DataBlock::EvolveForcing() {
     forcing->oUprocesses.WriteNormalValues(t);
   }
 
-  if (forcing->stillHaveForcing and t > forcing->stopTime) forcing->stillHaveForcing = false;
+  if (forcing->stillHaveForcing && t > forcing->stopTime) forcing->stillHaveForcing = false;
 
   if(forcing->stillHaveForcing) {
     hydro->EvolveForcing(t, dt);

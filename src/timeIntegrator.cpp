@@ -86,7 +86,8 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
     d.SyncToDevice();
     data.forcing->InitForcingModes();
     if (!input.restartRequested) {
-      data.forcing->oUprocesses.ResetProcessesValues(); // so that we get the excited modes even if we don't write
+      // so that we get the excited modes even if we don't write
+      data.forcing->oUprocesses.ResetProcessesValues();
       data.forcing->oUprocesses.ResetTimestep();
       if(data.forcing->write) {
         data.forcing->oUprocesses.ResetNormalValues();
@@ -386,7 +387,7 @@ if(data.haveForcing) {
       data.ConsToPrim();
     }
   }*/
-  
+
   if(haveRKL && (ncycles%2)==0) {    // Runge-Kutta-Legendre cycle
     data.EvolveRKLStage();
   }

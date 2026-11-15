@@ -8,6 +8,9 @@
 #ifndef FORCING_FORCING_HPP_
 #define FORCING_FORCING_HPP_
 
+#include <string>
+#include <vector>
+
 #include "idefix.hpp"
 #include "input.hpp"
 #include "OrnsteinUhlenbeckProcess.hpp"
@@ -25,40 +28,33 @@ class Forcing {
 
   void InitForcingParameters();          ///< init forcing parameters
 
-  void InitForcingModes();          ///< init forcing modes given its type
+  void InitForcingModes();               ///< init forcing modes given its type
 
-  void ComputeForcing(real);        ///< compute the required forcing field at current time t
+  void ComputeForcing(real);             ///< compute the required forcing field at current time t
 
-  void ComputePristineForcing(real);///< compute the pristine forcing field at current time t
+  void ComputePristineForcing(real);     ///< compute the pristine forcing field at current time t
 
-  void ComputeSolenoidalForcing(real); ///< compute the solenoidal part of the forcing field at current time t
+  void ComputeSolenoidalForcing(real);   ///< compute the solenoidal part of the forcing field
 
-//  void ComputeCompressiveForcing(real); ///< compute the compressive part of the forcing field at current time t
+  void ResetForcingTerms();              ///< fill the forcing field with zeros.
 
-  void ResetForcingTerms();          ///< fill the forcing field with zeros.
-
-  void ShowConfig();                ///< Show the forcing configuration
+  void ShowConfig();                     ///< Show the forcing configuration
 
   // Forcing modes
-//  IdefixArray4D<Kokkos::complex<real>> forcingModes;
   EXPAND(
   IdefixArray4D<Kokkos::complex<real>> forcingModesIdir; ,
   IdefixArray4D<Kokkos::complex<real>> forcingModesJdir; ,
   IdefixArray4D<Kokkos::complex<real>> forcingModesKdir; )
-//  IdefixHostArray2D<std::string> modeNamesHost;
   std::vector<std::vector<std::string>> modeNames;
   // Forcing terms
   IdefixArray4D<real> forcingTerm;
   IdefixArray4D<real> pristineForcingTerm;
   IdefixArray4D<real> solenoidalForcingTerm;
-//  IdefixArray4D<real> compressiveForcingTerm;
   OrnsteinUhlenbeckProcesses oUprocesses;
 
-  void WriteNormalBasis(std::string);                ///< Write the functions of the normal basis in txt files
-
   int write;
- private:
 
+ private:
   DataBlock *data;
   int seed;
   std::string folder;
@@ -103,7 +99,6 @@ class Forcing {
   int ellmax;
   int mmin;
   int mmax;
-//  #endif //GEOMETRY == SPHERICAL
 };
 
 #endif // FORCING_FORCING_HPP_

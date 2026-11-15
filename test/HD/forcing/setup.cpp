@@ -37,4 +37,3 @@ void Setup::InitFlow(DataBlock &data) {
     // Send it all, if needed
     d.SyncToDevice();
 }
-

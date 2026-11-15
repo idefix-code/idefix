@@ -168,7 +168,7 @@ class DataBlock {
   // Do we have Forcing ?
   bool haveForcing{false};
   std::unique_ptr<Forcing> forcing;
-  
+
   // User step functions (before or after the main integrator step)
   void LaunchUserStepFirst();     ///< perform user-defined step before main integration step
   void LaunchUserStepLast();      ///< Perform user-defined step after main integration step

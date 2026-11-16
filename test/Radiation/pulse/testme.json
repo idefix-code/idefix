@@ -33,7 +33,14 @@
       "definitionFile": "definitions-cart3D.hpp",
       "ini": ["idefix-hllc-cart-thick.ini", "idefix-hll-cart-thick.ini", "idefix-hllc-cart-thin.ini", "idefix-hll-cart-thin.ini"],
       "dec": [2,2,1],
-      "reconstruction": [2,3],
+      "reconstruction": [2],
+      "mpi": [false, true]
+    },
+    {
+      "definitionFile": "definitions-cart3D.hpp",
+      "ini": ["idefix-hllc-cart-thick.ini", "idefix-hll-cart-thick.ini", "idefix-hll-cart-thin.ini"],
+      "dec": [2,2,1],
+      "reconstruction": [3],
       "mpi": [false, true]
     }
   ]

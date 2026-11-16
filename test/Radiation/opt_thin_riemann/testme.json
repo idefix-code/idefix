@@ -2,7 +2,7 @@
   "default": {
     "dumpname": "dump.0001.dmp",
     "tolerance": 0,
-    "dec": [2, 2],
+    "dec": [2],
     "vectPot": false,
     "single": false
 

@@ -166,8 +166,11 @@ void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
   columnGlob->ComputeColumn(Vc,RHO);
   tau = columnGlob->GetColumn();
 
-  Kokkos::deep_copy(variables["tau"], tau);
-  Kokkos::deep_copy(variables["dV"], dV);
+  IdefixHostArray3D<real> var_tau = variables["tau"];
+  IdefixHostArray3D<real> var_dV = variables["dV"];
+
+  Kokkos::deep_copy(var_tau, tau);
+  Kokkos::deep_copy(var_dV, dV);
 
   IdefixArray3D<real> rho("rho",d.np_tot[KDIR],d.np_tot[JDIR],d.np_tot[IDIR]);
   idefix_for("init rho",0,data.np_tot[KDIR],0,data.np_tot[JDIR],0,data.np_tot[IDIR],
@@ -187,8 +190,8 @@ void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
         for(int i = d.beg[IDIR]; i < d.end[IDIR] ; i++) {
           A1_out(k,j,i) = A1(k,j,i);
 
-          real Fim = std::exp(-kirr*variables["tau"](k,j,i-1))/std::pow(x1l(i),2.);
-          real Fip = std::exp(-kirr*variables["tau"](k,j,i))/std::pow(x1l(i+1),2.);
+          real Fim = std::exp(-kirr*var_tau(k,j,i-1))/std::pow(x1l(i),2.);
+          real Fip = std::exp(-kirr*var_tau(k,j,i))/std::pow(x1l(i+1),2.);
 
           divF(k,j,i) = (Fip*A1(k,j,i+1)-Fim*A1(k,j,i));
           divF(k,j,i) *= flux_pre;
@@ -204,9 +207,9 @@ void ComputeUserVars(DataBlock & data, UserDefVariablesContainer &variables) {
         for(int i = d.beg[IDIR]; i < d.end[IDIR] ; i++) {
           A1_out(k,j,i) = A1(k,j,i);
 
-          real logtaum = std::log10(FMAX(variables["tau"](k,j,i-1)*idfx::units.GetDensity()*idfx::units.GetLength(),1.e-15));
+          real logtaum = std::log10(FMAX(var_tau(k,j,i-1)*idfx::units.GetDensity()*idfx::units.GetLength(),1.e-15));
           real Fim = pow(10.,kappairrtableGlob->GetHost(&logtaum))*A1(k,j,i)/std::pow(x1l(i),2.);
-          real logtaup = std::log10(FMAX(variables["tau"](k,j,i)*idfx::units.GetDensity()*idfx::units.GetLength(),1.e-15));
+          real logtaup = std::log10(FMAX(var_tau(k,j,i)*idfx::units.GetDensity()*idfx::units.GetLength(),1.e-15));
           real Fip = pow(10.,kappairrtableGlob->GetHost(&logtaup))*A1(k,j,i+1)/std::pow(x1l(i+1),2.);
           divF(k,j,i)  = flux_pre*(Fip-Fim)/dV(k,j,i);
 
@@ -264,13 +267,6 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output)
   data.hydro->EnrollInternalBoundary(&InternalBoundary);
   data.hydro->EnrollFluxBoundary(&FluxBoundary);
   output.EnrollUserDefVariables(&ComputeUserVars);
-
-  // Compute tau in dumps to check error with or without MPI
-  auto temp_array2 = columnGlob2->GetColumn();
-  data.dump->RegisterVariable(temp_array2,"Tau2");
-
-  auto temp_array = columnGlob->GetColumn();
-  data.dump->RegisterVariable(temp_array,"Tau");
 }
 
 Setup::~Setup() {

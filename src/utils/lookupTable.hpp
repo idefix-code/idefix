@@ -20,8 +20,9 @@
 #include <string>
 #include <vector>
 #include "idefix.hpp"
-#include "lookupTable.hpp"
 #include "npy.hpp"
+#include "mpiWrapper.hpp"
+#include "lookupTable.hpp"
 
 // Default transformation (and its inverse) used when the lookup table interpolates in function
 // space: the interpolation is then performed on log(x) and log(data), and the interpolated value

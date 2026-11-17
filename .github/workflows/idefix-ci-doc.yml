@@ -2,7 +2,7 @@ name: Build and deploy docs
 on:
   workflow_dispatch:
   pull_request:
-    branches: [master]
+    branches: [master, develop]
   push:
     branches: [master, develop]
 

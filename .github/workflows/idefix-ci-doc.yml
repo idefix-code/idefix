@@ -1,18 +1,15 @@
-name: Build the docs
+name: Build and deploy docs
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - master
-      - develop
   pull_request:
-    paths-ignore:
-      - '.github/ISSUE_TEMPLATE/*'
+    branches: [master]
+  push:
+    branches: [master, develop]
 
 permissions: {}
 
 jobs:
-  ReadTheDocs:
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repo
@@ -24,4 +21,38 @@ jobs:
       - name: install python dependencies
         run: python -m pip install --exists-action=w --no-cache-dir -r doc/python_requirements.txt
       - name: compile documentation
-        run: python -m sphinx -T -b html -d _build/doctrees -D language=en doc/source doc/html
+        run: python -m sphinx -T -W -b html -d _build/doctrees -D language=en doc/source _build
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: _build
+  deploy-master:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages (master)
+        id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
+  deploy-develop:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages-develop
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages (develop)
+        id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
+        with:
+          branch: develop

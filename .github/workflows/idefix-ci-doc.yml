@@ -9,50 +9,32 @@ on:
 permissions: {}
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
     steps:
       - name: Check out repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+
       - name: install doxygen
         run: sudo apt-get install -y doxygen
+
       - name: install python dependencies
         run: python -m pip install --exists-action=w --no-cache-dir -r doc/python_requirements.txt
+
       - name: compile documentation
         run: python -m sphinx -T -b html -d _build/doctrees -D language=en doc/source _build
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@373f3d51534e80448582449f33456446979ec46e # v3
         with:
-          path: _build
-  deploy-master:
-    needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to GitHub Pages (master)
-        id: deployment
-        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
-  deploy-develop:
-    needs: build
-    #if: github.ref == 'refs/heads/develop'
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages-develop
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to GitHub Pages (develop)
-        id: deployment
-        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
-        with:
-          branch: develop
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: _build
+          destination_dir: ${{ github.ref == 'refs/heads/master' && '' || 'develop' }}
+          keep_files: true
+          enable_jekyll: false

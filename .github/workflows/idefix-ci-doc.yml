@@ -31,7 +31,7 @@ jobs:
         run: python -m sphinx -T -b html -d _build/doctrees -D language=en doc/source _build
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@373f3d51534e80448582449f33456446979ec46e # v3
+        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: _build

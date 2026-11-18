@@ -19,10 +19,6 @@ build:
 sphinx:
    configuration: doc/source/conf.py
 
-versions:
-  - master
-  - develop
-
 # If using Sphinx, optionally build your docs in additional formats such as PDF
 # formats:
 #    - pdf

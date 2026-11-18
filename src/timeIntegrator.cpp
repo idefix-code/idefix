@@ -70,6 +70,9 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
 
   data.t=0.0;
   ncycles=0;
+  ncyclesDump=0.0;
+  // dumps without this field (older code) leave it at 0, i.e. the old behaviour
+  data.dump->RegisterVariable(&ncyclesDump, "ncycles");
 
   if(nstages==2) {
     wc[0] = 0.5;
@@ -119,7 +122,8 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
 
 
   int col_width{16};
-  if (ncycles == 0) {
+  if (!logHeaderDone) {
+    logHeaderDone = true;
     idfx::cout << "TimeIntegrator: ";
     idfx::cout << std::setw(col_width) << "time";
     idfx::cout << " | " << std::setw(col_width) << "cycle";
@@ -266,6 +270,13 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   real newdt;
 
   idfx::pushRegion("TimeIntegrator::Cycle");
+
+  if(firstCycle) {
+    // fresh run: 0; restart: the cycle count stored in the dump
+    ncycles = static_cast<int64_t>(ncyclesDump);
+    ncyclesStart = ncycles;
+    firstCycle = false;
+  }
 
   if(ncycles%cyclePeriod==0) ShowLog(data);
 
@@ -427,12 +438,17 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
 
   ncycles++;
+  ncyclesDump = static_cast<double>(ncycles);
 
   idfx::popRegion();
 }
 
 int64_t TimeIntegrator::GetNCycles() {
   return(ncycles);
+}
+
+int64_t TimeIntegrator::GetNCyclesThisRun() {
+  return(ncycles-ncyclesStart);
 }
 
 // Check whether our maximumruntime has been reached. Reduce the results on all of the cores

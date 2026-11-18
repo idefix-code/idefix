@@ -289,6 +289,10 @@ Xdmf::Xdmf(Input &input, DataBlock *datain) {
   }
   #endif
   #endif
+
+  // Register variables that are required in restart dumps
+  if(data->dump.get() != nullptr)
+    data->dump->RegisterVariable(&xdmfFileNumber, "xdmfFileNumber");
 }
 
 int Xdmf::Write() {

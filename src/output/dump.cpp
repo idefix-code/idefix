@@ -29,6 +29,8 @@
 #include <iomanip>
 #include <string>
 #include <cstdio>
+#include <cstring>
+#include <vector>
 #include "dump.hpp"
 #include "dataBlockHost.hpp"
 #include "gridHost.hpp"
@@ -251,16 +253,20 @@ Dump::~Dump() {
 }
 
 void Dump::WriteString(IdfxFileHandler fileHdl, char *str, int size) {
+  /* Pad with zeros after the terminating null: the callers' buffers are not initialised
+     beyond it, and writing them as they are would make identical dumps differ. */
+  std::vector<char> padded(size, 0);
+  std::strncpy(padded.data(), str, size);
   #ifdef WITH_MPI
     MPI_Status status;
     MPI_SAFE_CALL(MPI_File_set_view(fileHdl, this->offset,
                                     MPI_BYTE, MPI_CHAR, "native", MPI_INFO_NULL ));
     if(idfx::prank==0) {
-      MPI_SAFE_CALL(MPI_File_write(fileHdl, str, size, MPI_CHAR, &status));
+      MPI_SAFE_CALL(MPI_File_write(fileHdl, padded.data(), size, MPI_CHAR, &status));
     }
     offset=offset+size;
   #else
-    if(fwrite (str, sizeof(char), size, fileHdl) != size) {
+    if(fwrite (padded.data(), sizeof(char), size, fileHdl) != size) {
       IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota.");
     }
   #endif

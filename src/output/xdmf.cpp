@@ -325,6 +325,16 @@ int Xdmf::Write() {
   filename = outputDirectory/ssfileName.str();
   filename_xmf = outputDirectory/ssfileNameXmf.str();
 
+  // Do not record access/modification/change/birth times in the object headers: identical
+  // data would otherwise produce files that differ, e.g. between a restart and the
+  // uninterrupted run.
+  fcplNoTimes = H5Pcreate(H5P_FILE_CREATE);   // applies to the root group
+  H5Pset_obj_track_times(fcplNoTimes, false);
+  gcplNoTimes = H5Pcreate(H5P_GROUP_CREATE);
+  H5Pset_obj_track_times(gcplNoTimes, false);
+  dcplNoTimes = H5Pcreate(H5P_DATASET_CREATE);
+  H5Pset_obj_track_times(dcplNoTimes, false);
+
   #ifdef WITH_MPI
   hid_t file_access = H5Pcreate(H5P_FILE_ACCESS);
   // #if MPI_POSIX == YES
@@ -332,16 +342,17 @@ int Xdmf::Write() {
   // #else
   H5Pset_fapl_mpio(file_access,  MPI_COMM_WORLD, MPI_INFO_NULL);
   // #endif
-  hid_t fileHdf = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, file_access);
+  hid_t fileHdf = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, fcplNoTimes, file_access);
   H5Pclose(file_access);
   #else
-  hid_t fileHdf = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+  hid_t fileHdf = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, fcplNoTimes, H5P_DEFAULT);
   #endif
 
   hid_t group_fields; // = static_cast<hid_t *>(malloc(sizeof(hid_t)));
   std::stringstream ssgroup_name;
   ssgroup_name << "/Timestep_" << xdmfFileNumber;
-  hid_t timestep = H5Gcreate(fileHdf, ssgroup_name.str().c_str(), 0);
+  hid_t timestep = H5Gcreate2(fileHdf, ssgroup_name.str().c_str(), H5P_DEFAULT,
+                              gcplNoTimes, H5P_DEFAULT);
 
   WriteHeader(fileHdf, ssfileName.str(), filename_xmf, data->t, timestep, group_fields);
 
@@ -431,6 +442,9 @@ int Xdmf::Write() {
   H5Gclose(group_fields); // Close group "vars"
   H5Gclose(timestep);
   H5Fclose(fileHdf);
+  H5Pclose(dcplNoTimes);
+  H5Pclose(gcplNoTimes);
+  H5Pclose(fcplNoTimes);
 
   xdmfFileNumber++;
   // Make file number
@@ -582,7 +596,7 @@ void Xdmf::WriteHeader(
   H5Sclose(strspace);
 
   /* Create group_fields "vars" (cell-centered vars) */
-  group_fields = H5Gcreate(timestep, "vars", 0);
+  group_fields = H5Gcreate2(timestep, "vars", H5P_DEFAULT, gcplNoTimes, H5P_DEFAULT);
 
   /* Define "coords" attribute of group_fields "vars" */
   dimstr = 3;
@@ -602,7 +616,7 @@ void Xdmf::WriteHeader(
   hsize_t count[DIMENSIONS];
 
   /* Create group "cell_coords" (centered mesh) */
-  group = H5Gcreate(fileHdf, "cell_coords", 0);
+  group = H5Gcreate2(fileHdf, "cell_coords", H5P_DEFAULT, gcplNoTimes, H5P_DEFAULT);
 
   #if (DIMENSIONS == 1) || (DIMENSIONS == 3)
   for (int dir = 0; dir < DIMENSIONS; dir++) {
@@ -644,7 +658,8 @@ void Xdmf::WriteHeader(
 
   DUMP_DATATYPE *cell_mesh;
   for (int dir = 0; dir < 3; dir++) {
-    dataset = H5Dcreate(group, directions[dir].c_str(), H5_DUMP_DATATYPE, dataspace, H5P_DEFAULT);
+    dataset = H5Dcreate(group, directions[dir].c_str(), H5_DUMP_DATATYPE, dataspace,
+                        dcplNoTimes);
     cell_mesh = Kokkos::subview (this->cell_coord,
                                             dir,
                                             Kokkos::ALL(),
@@ -668,7 +683,7 @@ void Xdmf::WriteHeader(
   H5Gclose(group); /* Close group "cell_coords" */
 
   /* Create group "node_coords" (node mesh) */
-  group = H5Gcreate(fileHdf, "node_coords", 0);
+  group = H5Gcreate2(fileHdf, "node_coords", H5P_DEFAULT, gcplNoTimes, H5P_DEFAULT);
 
   #if (DIMENSIONS == 1) || (DIMENSIONS == 3)
   for (int dir = 0; dir < DIMENSIONS; dir++) {
@@ -717,7 +732,8 @@ void Xdmf::WriteHeader(
   #endif
 
   for (int dir = 0; dir < 3; dir++) {
-    dataset = H5Dcreate(group, directions[dir].c_str(), H5_DUMP_DATATYPE, dataspace, H5P_DEFAULT);
+    dataset = H5Dcreate(group, directions[dir].c_str(), H5_DUMP_DATATYPE, dataspace,
+                        dcplNoTimes);
 
     DUMP_DATATYPE *node_mesh = Kokkos::subview (this->node_coord,
                                               dir,
@@ -832,7 +848,7 @@ void Xdmf::WriteScalar(
   // We define the dataset that contain the fields.
 
   dataset = H5Dcreate(group_fields, var_name.c_str(), H5_DUMP_DATATYPE,
-                        dataspace, H5P_DEFAULT);
+                        dataspace, dcplNoTimes);
   #ifdef WITH_MPI
   err = H5Dwrite(dataset, H5_DUMP_DATATYPE, memspace, dataspace,
                  plist_id_mpiio, Vin);

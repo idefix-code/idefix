@@ -110,9 +110,9 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
 #endif
   double sgOverhead;
   if(data.haveGravity && data.gravity->haveSelfGravityPotential) {
-    double sgCycleTime = data.gravity->selfGravity.elapsedTime - lastSGLog;
+    double sgCycleTime = data.gravity->selfGravity->elapsedTime - lastSGLog;
     sgOverhead = 100.0 * sgCycleTime / (timer.seconds() - lastLog);
-    lastSGLog = data.gravity->selfGravity.elapsedTime;
+    lastSGLog = data.gravity->selfGravity->elapsedTime;
   }
 
   lastLog = timer.seconds();
@@ -191,9 +191,9 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
   }
   if(data.haveGravity && data.gravity->haveSelfGravityPotential) {
     if(ncycles>=cyclePeriod) {
-      idfx::cout << " | " << std::setw(col_width) << data.gravity->selfGravity.nsteps;
+      idfx::cout << " | " << std::setw(col_width) << data.gravity->selfGravity->nsteps;
       idfx::cout << std::scientific;
-      idfx::cout << " | " << std::setw(col_width) << data.gravity->selfGravity.currentError;
+      idfx::cout << " | " << std::setw(col_width) << data.gravity->selfGravity->currentError;
       idfx::cout << std::fixed;
       idfx::cout << " | " << std::setw(col_width) << sgOverhead;
     } else {

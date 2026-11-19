@@ -23,9 +23,6 @@
 #include "fft.hpp"
 #include "transpose.hpp"
 
-namespace {
-constexpr real kPi = 3.14159265358979323846;
-}  // namespace
 
 // Transpose<real> — same logic as Transpose<T>::Test() but with gtest assertions.
 // in(i,j,k) = k + 10*j + 100*(i + rank*ni)  →  out(j,i,k) = k + 10*(j + rank*nj) + 100*i
@@ -109,8 +106,8 @@ TEST(FFT, MPI_Distributed_R2C_C2R) {
   const int nx = nr_glob[0];
   idefix_for("fill global", 0, nx, 0, nr_glob[1], 0, nr_glob[2],
     KOKKOS_LAMBDA(const int i, const int j, const int k) {
-      globalReal(i,j,k) = std::cos(2.0*kPi*static_cast<real>(i)/static_cast<real>(nx))
-                        + 0.5*std::sin(2.0*kPi*static_cast<real>(j)/static_cast<real>(n))
+      globalReal(i,j,k) = std::cos(2.0*M_PI*static_cast<real>(i)/static_cast<real>(nx))
+                        + 0.5*std::sin(2.0*M_PI*static_cast<real>(j)/static_cast<real>(n))
                         + 0.25*static_cast<real>(k);
     });
 

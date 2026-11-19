@@ -26,10 +26,6 @@
 // in testFFTMPI.cpp (unittests_mpi executable).
 #ifndef WITH_MPI
 
-namespace {
-constexpr real kPi = M_PI;
-}  // namespace
-
 // R2C followed by C2R must recover the original array (roundtrip identity).
 TEST(FFT, R2C_C2R_RoundTrip) {
   const int n = 16;
@@ -47,7 +43,7 @@ TEST(FFT, R2C_C2R_RoundTrip) {
   for (int i = 0; i < n; i++)
     for (int j = 0; j < n; j++)
       for (int k = 0; k < n; k++)
-        inHost(i,j,k) = std::cos(2.0*kPi*i/n) * std::sin(2.0*kPi*j/n) + 0.5*k;
+        inHost(i,j,k) = std::cos(2.0*M_PI*i/n) * std::sin(2.0*M_PI*j/n) + 0.5*k;
   Kokkos::deep_copy(in, inHost);
 
   fft.R2C(in, freq);
@@ -72,7 +68,7 @@ TEST(FFT, R2C_AnalyticalCosine) {
   for (int i = 0; i < n; i++)
     for (int j = 0; j < n; j++)
       for (int k = 0; k < n; k++)
-        inHost(i,j,k) = std::cos(2.0*kPi*i/n);
+        inHost(i,j,k) = std::cos(2.0*M_PI*i/n);
   Kokkos::deep_copy(in, inHost);
 
   fft.R2C(in, freq);

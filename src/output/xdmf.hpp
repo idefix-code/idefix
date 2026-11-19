@@ -100,8 +100,8 @@ class Xdmf {
   // output directory
   std::filesystem::path outputDirectory;
 
-  // HDF5 creation property lists that disable object timestamps (set in Write())
-  hid_t fcplNoTimes, gcplNoTimes, dcplNoTimes;
+  // HDF5 creation property lists for the file, groups and datasets (set in Write())
+  hid_t fcpl, gcpl, dcpl;
 
 #ifdef WITH_MPI
   int mpi_data_start[3];

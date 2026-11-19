@@ -94,7 +94,16 @@ endif()
 add_subdirectory(src/kokkos ${CMAKE_BINARY_DIR}/build/kokkos)
 include_directories(${Kokkos_INCLUDE_DIRS_RET})
 
-
+# Add FFT library if requested (must be done before creating idefix-core)
+if(Idefix_FFT)
+  include(FetchContent)
+  FetchContent_Declare(KokkosFFT
+    GIT_REPOSITORY https://github.com/kokkos/kokkos-fft
+    GIT_TAG "ee53f8c68af9f4febe51c406312d4497368b0ba8"
+  )
+  FetchContent_MakeAvailable(KokkosFFT)
+  add_compile_definitions("WITH_FFT")
+endif()
 
 # Add Idefix CXX Flags
 add_compile_options(${Idefix_CXX_FLAGS})
@@ -157,12 +166,6 @@ endif()
 if(EXISTS ${Idefix_PROBLEM_DIR_ABS}/CMakeLists.txt)
   message(STATUS "Including problem-specific CMakeLists in '${Idefix_PROBLEM_DIR_ABS}'")
   add_subdirectory(${Idefix_PROBLEM_DIR_ABS} build/setup)
-endif()
-
-# Add FFT library if requested
-if(Idefix_FFT)
-  add_compile_definitions("WITH_FFT")
-  add_subdirectory(src/kokkos-fft)
 endif()
 
 if(Idefix_MHD)
@@ -361,6 +364,12 @@ target_include_directories(idefix-core PUBLIC
 
 target_link_libraries(idefix-core PUBLIC Kokkos::kokkos)
 
+# Link KokkosFFT if enabled
+if(Idefix_FFT)
+  target_include_directories(idefix-core PUBLIC ${KokkosFFT_SOURCE_DIR}/fft/src ${KokkosFFT_SOURCE_DIR}/common/src)
+  target_link_libraries(idefix-core PUBLIC KokkosFFT::fft)
+endif()
+
 # Generate header with compiler information (name, flags, path)
 configure_file(
     ${CMAKE_SOURCE_DIR}/src/compiler_info.h.in
@@ -388,8 +397,9 @@ if(Idefix_SUPPRESS_FMA)
     endif()
   endif()
 endif()
+
+# Add FFT source files if enabled
 if(Idefix_FFT)
-  target_link_libraries(idefix-core PUBLIC KokkosFFT::fft)
   add_subdirectory(src/utils/fft)
 endif()
 

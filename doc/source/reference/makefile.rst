@@ -44,7 +44,8 @@ Several options can be enabled from the command line (or are accessible with ``c
 
 ``-D Idefix_DEBUG=ON``
     Enable debug options in *Idefix*. This triggers a lot of outputs, and automatic bound checks of array accesses. As a result, this
-    option makes the code very slow.
+    option makes the code very slow. It also stops HDF5 outputs from recording object timestamps, so that identical data produce
+    byte-identical ``.h5`` files.
 
 ``-D Idefix_RUNTIME_CHECKS=ON``
     Include (potentially expensive) runtime sanity checks implemented with ``RUNTIME_CHECK_HOST`` and ``RUNTIME_CHECK_KERNEL``.

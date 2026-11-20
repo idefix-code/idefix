@@ -49,4 +49,4 @@ jobs:
     uses: ./.github/workflows/idefix-ci-jobs.yml
     with:
       TESTME_OPTIONS: -cuda -Werror
-      IDEFIX_COMPILER: nvcc
+      IDEFIX_COMPILER: cuda

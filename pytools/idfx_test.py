@@ -758,9 +758,11 @@ class idfxTest:
             if Vtest.data[fld].ndim == 3:
                 if fld in Vref.data.keys():
                     # print("error in "+fld+" = "+str(np.sqrt(np.mean((Vref.data[fld]-Vtest.data[fld])**2))))
-                    error = error + np.sqrt(
-                        np.mean((Vref.data[fld] - Vtest.data[fld]) ** 2)
-                    )
+                    norm = np.sqrt(np.mean(Vref.data[fld] ** 2))
+                    fld_error = np.sqrt(np.mean((Vref.data[fld] - Vtest.data[fld]) ** 2))
+                    if norm > 1e-10:
+                        fld_error = fld_error / norm
+                    error = error + fld_error
                     ntested = ntested + 1
 
         if ntested == 0:

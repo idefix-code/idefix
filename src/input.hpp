@@ -66,6 +66,7 @@ class Input {
   void PrintLogo();
   void PrintOptions();
   void PrintVersion();
+  const IdefixInputContainer& GetInputParameters() const;
 
   bool restartRequested{false};       //< Should we restart?
   int  restartFileNumber;             //< if yes, from which file?

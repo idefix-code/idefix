@@ -56,6 +56,30 @@ Your python script should define functions that will be called while Idefix is r
 * The signature of the ``initflow`` function should be ``(data)`` where ``data`` is a python structure matching Idefix's ``DataBlockHost`` class.
 * The signature of the ``output`` function should be ``(data,grid,n)`` where ``data`` is a python structure matching Idefix's ``DataBlockHost`` class, ``grid`` is Idefix's ``GridHost`` class, and ``n`` is an integer representing the current number of the output
 
+Access to input parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``pydefix`` module exposes the full set of Idefix input parameters as a global variable ``input_parameters``. This variable is a nested dictionary with the structure ``dict[str, dict[str, list[str]]]``, where:
+
+* The first level keys are the block names from the input file (e.g., ``Grid``, ``Hydro``, ``TimeIntegrator``, etc.)
+* The second level keys are the parameter names within each block
+* The values are lists of strings containing the parameter values as specified in the input file
+
+For example, to access the grid parameters from your Python script:
+
+.. code-block:: python
+
+   from pydefix import input_parameters
+
+   # Access Grid block parameters
+   grid_params = input_parameters["Grid"]
+   x1_grid = grid_params["X1-grid"]  # Returns a list like ["1", "0.0", "256", "u", "1.0"]
+
+   # Access TimeIntegrator parameters
+   cfl = input_parameters["TimeIntegrator"]["CFL"][0]  # Returns "0.6" as a string
+
+This allows your Python functions to access and use any parameter from the input file without needing to pass them explicitly.
+
 MPI parallelism
 +++++++++++++++
 When Idefix runs with MPI parallelism enabled, a python interpreter and script is launched by each MPI process. Each of these script is independent

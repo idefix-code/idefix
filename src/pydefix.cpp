@@ -31,6 +31,9 @@ namespace py = pybind11;
 
 int Pydefix::ninstance = 0;
 
+// Global pointer to input parameters for Python access
+static const IdefixInputContainer* globalInputParameters = nullptr;
+
 
 namespace PydefixTools {
 // Functions provided by Idefix in Pydefix for user convenience
@@ -250,6 +253,11 @@ PYBIND11_EMBEDDED_MODULE(pydefix, m) {
     m.attr("prank") = idfx::prank;
     m.attr("psize") = idfx::psize;
 
+    // Expose input parameters as a global module attribute
+    if (globalInputParameters != nullptr) {
+      m.attr("input_parameters") = py::cast(*globalInputParameters);
+    }
+
     m.def("GatherIdefixArray",&PydefixTools::GatherIdefixArray,
                                py::arg("in"),
                                py::arg("data"),
@@ -277,7 +285,10 @@ void Pydefix::CallScript(std::string scriptName, std::string funcName, Ts... arg
 }
 
 
-Pydefix::Pydefix(Input &input) {
+Pydefix::Pydefix(Input &input) : inputPtr(&input) {
+  // Store reference to input parameters for Python access
+  globalInputParameters = &(input.GetInputParameters());
+
   // Check that the input has a [python] block
   if(input.CheckBlock("Python")) {
     this->isActive = true;

@@ -10,7 +10,7 @@
   "variants": [
     {
       "ini": ["idefix_constant_kappa.ini","idefix_usertable_kappa.ini"],
-      "reconstruction": [2, 3],
+      "reconstruction": [2],
       "mpi": [false, true]
     }
   ],

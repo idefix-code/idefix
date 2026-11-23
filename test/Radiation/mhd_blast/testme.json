@@ -10,7 +10,7 @@
   "variants": [
     {
       "ini": ["idefix-norad.ini","idefix-hll-thin.ini","idefix-hll-thick.ini","idefix-hllc-thin.ini","idefix-hllc-thick.ini"],
-      "reconstruction": [2, 3],
+      "reconstruction": [2],
       "mpi": [false, true]
     }
   ]

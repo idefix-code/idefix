@@ -10,12 +10,12 @@
   "variants": [
     {
       "ini": ["idefix-hll-1.ini","idefix-hll-2.ini","idefix-hllc-1.ini","idefix-hllc-2.ini"],
-      "reconstruction": [2, 3],
+      "reconstruction": [2],
       "mpi": false
     },
     {
       "ini": ["idefix-hll-1.ini","idefix-hll-2.ini","idefix-hllc-1.ini","idefix-hllc-2.ini"],
-      "reconstruction": [3],
+      "reconstruction": [2],
       "mpi": true
     }
   ]

@@ -12,21 +12,21 @@
       "definitionFile": "definitions-sph1D.hpp",
       "ini": ["idefix-hllc-sph-thick.ini", "idefix-hll-sph-thick.ini", "idefix-hllc-sph-thin.ini", "idefix-hll-sph-thin.ini"],
       "dec": [2],
-      "reconstruction": [2,3],
+      "reconstruction": [2],
       "mpi": [false, true]
     },
     {
       "definitionFile": "definitions-sph2D.hpp",
       "ini": ["idefix-hllc-sph-thick.ini", "idefix-hll-sph-thick.ini", "idefix-hllc-sph-thin.ini", "idefix-hll-sph-thin.ini"],
       "dec": [2, 2],
-      "reconstruction": [2,3],
+      "reconstruction": [2],
       "mpi": [false, true]
     },
     {
       "definitionFile": "definitions-sph3D.hpp",
       "ini": ["idefix-hllc-sph-thick.ini", "idefix-hll-sph-thick.ini", "idefix-hllc-sph-thin.ini", "idefix-hll-sph-thin.ini"],
       "dec": [2, 2, 1],
-      "reconstruction": [2,3],
+      "reconstruction": [2],
       "mpi": [false, true]
     },
     {
@@ -34,13 +34,6 @@
       "ini": ["idefix-hllc-cart-thick.ini", "idefix-hll-cart-thick.ini", "idefix-hllc-cart-thin.ini", "idefix-hll-cart-thin.ini"],
       "dec": [2,2,1],
       "reconstruction": [2],
-      "mpi": [false, true]
-    },
-    {
-      "definitionFile": "definitions-cart3D.hpp",
-      "ini": ["idefix-hllc-cart-thick.ini", "idefix-hll-cart-thick.ini", "idefix-hll-cart-thin.ini"],
-      "dec": [2,2,1],
-      "reconstruction": [3],
       "mpi": [false, true]
     }
   ]

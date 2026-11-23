@@ -41,11 +41,6 @@
 #define  FILENAMESIZE   256
 #define  HEADERSIZE 128
 
-// Register a variable to be dumped (and read)
-// Implementation moved to dump.hpp as template functions
-
-
-
 void Dump::CreateMPIDataType(GridBox gb, bool read) {
   #ifdef WITH_MPI
     int start[3];
@@ -241,12 +236,10 @@ void Dump::WriteString(IdfxFileHandler fileHdl, char *str, int size) {
 void Dump::WriteSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
                              dump_io::DataType type, char* name, void* data ) {
   int ntot = 1;   // Number of elements to be written
-  int size;
-
-  if(type == dump_io::DataType::Double) size=sizeof(double);
-  if(type == dump_io::DataType::Float) size=sizeof(float);
-  if(type == dump_io::DataType::Int) size=sizeof(int);
-  if(type == dump_io::DataType::Bool) size=sizeof(bool);
+  int const size = dump_io::size_of(type);
+  if (size == 0) {
+    IDEFIX_ERROR("Cannot write field " + std::string(name) + ": unsupported data type");
+  }
 
   // Write field name
 
@@ -283,10 +276,7 @@ void Dump::WriteSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
     }
 
     // Write raw data
-    if(type == dump_io::DataType::Double) MpiType=MPI_DOUBLE;
-    if(type == dump_io::DataType::Float) MpiType=MPI_FLOAT;
-    if(type == dump_io::DataType::Int) MpiType=MPI_INT;
-    if(type == dump_io::DataType::Bool) MpiType=MPI_CXX_BOOL;
+    MpiType = dump_io::to_mpi_type(type);
     MPI_SAFE_CALL(MPI_File_set_view(fileHdl, offset, MPI_BYTE,
                                     MPI_CHAR, "native", MPI_INFO_NULL ));
 
@@ -366,10 +356,7 @@ void Dump::WriteDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gd
     }
 
     // Write raw data
-    if(type == dump_io::DataType::Double) MpiType=MPI_DOUBLE;
-    if(type == dump_io::DataType::Float) MpiType=MPI_FLOAT;
-    if(type == dump_io::DataType::Int) MpiType=MPI_INT;
-    if(type == dump_io::DataType::Bool) MpiType=MPI_CXX_BOOL;
+    MpiType = dump_io::to_mpi_type(type);
 
     MPI_SAFE_CALL(MPI_File_set_view(fileHdl, offset, MpiType,
                                     descriptor, "native", MPI_INFO_NULL ));
@@ -475,25 +462,18 @@ void Dump::ReadNextFieldProperties(IdfxFileHandler fileHdl, int &ndim, int *dim,
 
 void Dump::ReadSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
                             dump_io::DataType type, void* data) {
-  int size;
   int64_t ntot=1;
   // Get total size
   for(int i=0; i < ndim; i++) {
     ntot=ntot*dim[i];
   }
-  if(type == dump_io::DataType::Double) size=sizeof(double);
-  if(type == dump_io::DataType::Float) size=sizeof(float);
-  if(type == dump_io::DataType::Int) size=sizeof(int);
-  if(type == dump_io::DataType::Bool) size=sizeof(bool);
+  int const size = dump_io::size_of(type);
+  if (size == 0) IDEFIX_ERROR("Cannot read field: unsupported data type");
 
   #ifdef WITH_MPI
     MPI_Status status;
-    MPI_Datatype MpiType;
 
-    if(type == dump_io::DataType::Double) MpiType=MPI_DOUBLE;
-    if(type == dump_io::DataType::Float) MpiType=MPI_FLOAT;
-    if(type == dump_io::DataType::Int) MpiType=MPI_INT;
-    if(type == dump_io::DataType::Bool) MpiType=MPI_CXX_BOOL;
+    MPI_Datatype MpiType = dump_io::to_mpi_type(type);
 
     MPI_SAFE_CALL(MPI_File_set_view(fileHdl, this->offset, MPI_BYTE,
                                     MPI_CHAR, "native", MPI_INFO_NULL ));
@@ -516,16 +496,13 @@ void Dump::ReadSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
 
 void Dump::Skip(IdfxFileHandler fileHdl, int ndim, int *dim,
                             dump_io::DataType type) {
-  int size;
   int64_t ntot=1;
   // Get total size
   for(int i=0; i < ndim; i++) {
     ntot=ntot*dim[i];
   }
-  if(type == dump_io::DataType::Double) size=sizeof(double);
-  if(type == dump_io::DataType::Float) size=sizeof(float);
-  if(type == dump_io::DataType::Int) size=sizeof(int);
-  if(type == dump_io::DataType::Bool) size=sizeof(bool);
+  int const size = dump_io::size_of(type);
+  if (size == 0) IDEFIX_ERROR("Cannot skip field: unsupported data type");
 
   #ifdef WITH_MPI
     offset+= ntot*size;

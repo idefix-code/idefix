@@ -62,113 +62,36 @@ template<typename> struct is_kokkos_view : std::false_type {};
 template<typename... Args>
 struct is_kokkos_view<Kokkos::View<Args...>> : std::true_type {};
 
-// Extract dimension from Kokkos::View (1D, 2D, 3D, 4D)
+// Number of dimensions of a Kokkos::View (0 if T is not a View)
 template<typename> struct view_dimension : std::integral_constant<int, 0> {};
-template<typename T, typename... Args>
-struct view_dimension<Kokkos::View<T*, Args...>> : std::integral_constant<int, 1> {};
-template<typename T, typename... Args>
-struct view_dimension<Kokkos::View<T**, Args...>> : std::integral_constant<int, 2> {};
-template<typename T, typename... Args>
-struct view_dimension<Kokkos::View<T***, Args...>> : std::integral_constant<int, 3> {};
-template<typename T, typename... Args>
-struct view_dimension<Kokkos::View<T****, Args...>> : std::integral_constant<int, 4> {};
+template<typename... Args>
+struct view_dimension<Kokkos::View<Args...>> :
+    std::integral_constant<int, Kokkos::View<Args...>::rank> {};
 
-// Helper to remove all pointer levels from a type
-namespace detail {
-template<typename T>
-struct remove_all_pointers {
-    using type = T;
-};
-
-template<typename T>
-struct remove_all_pointers<T*> {
-    using type = typename remove_all_pointers<T>::type;
-};
-
-template<typename T>
-struct remove_all_pointers<T* const> {
-    using type = typename remove_all_pointers<T>::type;
-};
-
-template<typename T>
-struct remove_all_pointers<T* volatile> {
-    using type = typename remove_all_pointers<T>::type;
-};
-
-template<typename T>
-struct remove_all_pointers<T* const volatile> {
-    using type = typename remove_all_pointers<T>::type;
-};  // namespace detail
-
-} // namespace detail
-
-template<typename T>
-using remove_all_pointers_t = typename detail::remove_all_pointers<T>::type;
-
-// Extract value_type from Kokkos::View
-// For views like Kokkos::View<double***, ...>, we want to extract double, not double***
-template<typename> struct view_value_type {};
-template<typename T, typename... Args>
-struct view_value_type<Kokkos::View<T, Args...>> {
-    using type = remove_all_pointers_t<T>;
-};
-
-// Check if type is an IdefixArray
-template<typename T>
-struct is_idefix_array : is_kokkos_view<T> {};
-
-} // namespace detail
-
-// =====================================================================================
-// Memory space traits - use detection idiom
-// =====================================================================================
-
-namespace detail {
-
-// Helper to check if a type has a specific memory space
-template<typename T, typename = void>
-struct has_host_space : std::false_type {};
-
-template<typename T>
-struct has_host_space<T, std::void_t<typename T::memory_space>> : std::true_type {};
-
-} // namespace detail
-
-// Primary templates
+// Check whether a Kokkos::View lives in host memory
 template<typename T>
 struct is_host_space : std::false_type {};
+template<typename... Args>
+struct is_host_space<Kokkos::View<Args...>> :
+    std::is_same<Kokkos::HostSpace, typename Kokkos::View<Args...>::memory_space> {};
+
+} // namespace detail
+
+// Value type stored by a Kokkos::View (e.g. double for Kokkos::View<double***>)
+template<typename> struct view_value_type {};
+template<typename... Args>
+struct view_value_type<Kokkos::View<Args...>> {
+    using type = typename Kokkos::View<Args...>::non_const_value_type;
+};
 
 template<typename T>
-struct is_device_space : std::false_type {};
-
-// Specializations for Kokkos::View
-template<typename T, typename... Args>
-struct is_host_space<Kokkos::View<T, Args...>> :
-    std::disjunction<
-        std::is_same<Kokkos::HostSpace, typename Kokkos::View<T, Args...>::memory_space>,
-        std::is_same<Kokkos::HostSpace, typename Kokkos::View<T, Args...>::device_type>
-    > {};
-
-template<typename T, typename... Args>
-struct is_device_space<Kokkos::View<T, Args...>> :
-    std::is_same<Device, typename Kokkos::View<T, Args...>::memory_space> {};
-
-// =====================================================================================
-// Convenience type traits (public API)
-// =====================================================================================
-
+inline constexpr bool is_kokkos_view_v = detail::is_kokkos_view<T>::value;
 template<typename T>
-inline constexpr bool is_kokkos_view_v = idefix::detail::is_kokkos_view<T>::value;
+inline constexpr int view_dimension_v = detail::view_dimension<T>::value;
 template<typename T>
-inline constexpr bool is_idefix_array_v = idefix::detail::is_idefix_array<T>::value;
+inline constexpr bool is_host_space_v = detail::is_host_space<T>::value;
 template<typename T>
-inline constexpr int view_dimension_v = idefix::detail::view_dimension<T>::value;
-template<typename T>
-inline constexpr bool is_host_space_v = idefix::is_host_space<T>::value;
-template<typename T>
-inline constexpr bool is_device_space_v = idefix::is_device_space<T>::value;
-template<typename T>
-using value_type_t = typename idefix::detail::view_value_type<T>::type;
+using value_type_t = typename view_value_type<T>::type;
 
 } // namespace idefix
 

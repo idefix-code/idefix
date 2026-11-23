@@ -30,7 +30,7 @@ DumpImage::DumpImage(std::string filename, DataBlock *data, bool enableDomainDec
   int nx[3];
   std::string fieldName;
   std::string eof ("eof");
-  dump_io::DataType type;
+  DataType type;
   int ndim;
   IdfxFileHandler fileHdl;
   Dump dump(data);

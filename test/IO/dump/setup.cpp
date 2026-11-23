@@ -25,12 +25,69 @@ generators on different architectures.
 
 Output* myOutput;
 int outnum;
+// =====================================================================================
+// Scalars covering every data type supported by the dump I/O.
+// They are registered with the Dump, written once, then randomized so that only the
+// dump file can restore their original value.
+// =====================================================================================
+struct DumpScalars {
+  int       int_      = 42;
+  int64_t   int64_    = -1234567890123LL;
+  float     float_    = 1.25f;
+  double    double_   = 3.14159265358979;
+  bool      bool_     = true;
+  std::complex<float>  cfloat_  = {0.5f, -3.0f};
+  std::complex<double> cdouble_ = {1.5, -2.25};
+  Kokkos::complex<float>  kcfloat_  = {-7.0f, 8.5f};
+  Kokkos::complex<double> kcdouble_ = {4.0, 5.5};
+};
+DumpScalars scalars;
+// Snapshot of the original values, used for validation after the round-trip
+DumpScalars scalarsRef;
+
+// Overwrite every scalar with a value that cannot be confused with the original
+void RandomizeScalars() {
+  scalars.int_      = scalars.int_ + 1;
+  scalars.int64_    = -scalars.int64_ - 1;
+  scalars.float_    = scalars.float_ * 2.f + 1.f;
+  scalars.double_   = -scalars.double_ * 2.0 - 1.0;
+  scalars.bool_     = !scalars.bool_;
+  scalars.cfloat_   = std::complex<float>(9.f, 9.f);
+  scalars.cdouble_  = std::complex<double>(9., 9.);
+  scalars.kcfloat_  = Kokkos::complex<float>(9.f, 9.f);
+  scalars.kcdouble_ = Kokkos::complex<double>(9., 9.);
+}
+
+// Check that the current scalars match the snapshot taken before the dump
+int CheckScalars() {
+  int errors = 0;
+  auto report = [&](const char *name, bool ok) {
+    if (!ok) {
+      errors++;
+      idfx::cout << "-----------------------------------------" << std::endl
+                 << " Error: field " << name << " was not restored correctly" << std::endl;
+    }
+  };
+  report("int",         scalars.int_      == scalarsRef.int_);
+  report("int64",       scalars.int64_    == scalarsRef.int64_);
+  report("float",       scalars.float_    == scalarsRef.float_);
+  report("double",      scalars.double_   == scalarsRef.double_);
+  report("bool",        scalars.bool_     == scalarsRef.bool_);
+  report("complexFloat",  scalars.cfloat_  == scalarsRef.cfloat_);
+  report("complexDouble", scalars.cdouble_ == scalarsRef.cdouble_);
+  report("kcomplexFloat",  scalars.kcfloat_  == scalarsRef.kcfloat_);
+  report("kcomplexDouble", scalars.kcdouble_ == scalarsRef.kcdouble_);
+  return errors;
+}
 // Analysis function
 // This analysis checks that the restart routines are performing as they should
 void Analysis(DataBlock& data) {
 
 
   idfx::cout << "Analysis: Checking restart routines" << std::endl;
+
+  // Snapshot the scalar values so they can be checked after the round-trip
+  scalarsRef = scalars;
 
   // Trigger dump creation
   // data.SetBoundaries();
@@ -87,6 +144,9 @@ void Analysis(DataBlock& data) {
   // Push our datablockHost to erase everything
   d.SyncToDevice();
   // From this point, the dataBlock is full of zeros
+
+  // Randomise every scalar so that only the dump can restore the original values
+  RandomizeScalars();
 
   // Load back the restart dump
   myOutput->RestartFromDump(data, outnum);
@@ -206,6 +266,9 @@ void Analysis(DataBlock& data) {
     }
 #endif
 
+  // Validate that every scalar survived the dump/restart round-trip
+  errornum += CheckScalars();
+
   idfx::cout << "Analysis: consistency check done with " << errornum << " errors " << std::endl;
   if(errornum>0) {
     IDEFIX_ERROR("Restart from dump failed validation");
@@ -220,6 +283,18 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
      myOutput = &output;
      outnum=0;
    }
+   // Register every supported scalar type so the dump I/O exercises them all.
+   // NOTE: names are truncated to NAMESIZE-1 = 15 characters in the dump file,
+   // so keep them short enough to match exactly on read-back.
+   data.dump->RegisterVariable(&scalars.int_,      "testInt");
+   data.dump->RegisterVariable(&scalars.int64_,    "testInt64");
+   data.dump->RegisterVariable(&scalars.float_,    "testFloat");
+   data.dump->RegisterVariable(&scalars.double_,   "testDouble");
+   data.dump->RegisterVariable(&scalars.bool_,     "testBool");
+   data.dump->RegisterVariable(&scalars.cfloat_,   "testCFloat");
+   data.dump->RegisterVariable(&scalars.cdouble_,  "testCDouble");
+   data.dump->RegisterVariable(&scalars.kcfloat_,  "testKCFloat");
+   data.dump->RegisterVariable(&scalars.kcdouble_, "testKCDouble");
 }
 
 // This routine initialize the flow

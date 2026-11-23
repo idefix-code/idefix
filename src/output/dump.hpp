@@ -22,6 +22,8 @@
 #include <array>
 #include <memory>
 #include <type_traits>
+#include <complex>
+#include <cstdint>
 #if __has_include(<filesystem>)
   #include <filesystem> // NOLINT [build/c++17]
   namespace fs = std::filesystem;
@@ -54,18 +56,34 @@ class DataBlock;
 
 namespace dump_io {
 
-enum class DataType {
-    Int,           /// <int>
-    Float,         /// <float>
-    Double,        /// <double>
-    Bool,          /// <bool>
-    ComplexFloat,  /// <std::complex<float>>
-    ComplexDouble, /// <std::complex<double>>
-    Unknown        /// <Unknown type>
+// Underlying type is fixed explicitly: DataType is written as a raw int in
+// dump files, so the on-disk format must not depend on the compiler default.
+// The numeric values are part of the file format (pytools/dump_io.py relies on
+// them): they MUST stay Double=0, Float=1, Int=2, Bool=3. New types are
+// appended after to keep existing files readable.
+enum class DataType : int {
+    Double = 0,        /// <double>
+    Float  = 1,        /// <float>
+    Int    = 2,        /// <int>
+    Bool   = 3,        /// <bool>
+    ComplexFloat  = 4, /// <Kokkos::complex<float>>  (interleaved re,im floats)
+    ComplexDouble = 5, /// <Kokkos::complex<double>> (interleaved re,im doubles)
+    Int64         = 6, /// <int64_t>
+    Unknown = -1       /// <Unknown type>
 };
+static_assert(static_cast<int>(DataType::Double) == 0, "DataType value is on-disk format");
+static_assert(static_cast<int>(DataType::Float) == 1, "DataType value is on-disk format");
+static_assert(static_cast<int>(DataType::Int) == 2, "DataType value is on-disk format");
+static_assert(static_cast<int>(DataType::Bool) == 3, "DataType value is on-disk format");
+static_assert(static_cast<int>(DataType::ComplexFloat) == 4,
+              "DataType value is on-disk format");
+static_assert(static_cast<int>(DataType::ComplexDouble) == 5,
+              "DataType value is on-disk format");
+static_assert(static_cast<int>(DataType::Int64) == 6,
+              "DataType value is on-disk format");
 
 // Map C++ types to DataType
-template<typename T, typename = void> struct type_to_data_type {
+template<typename T> struct type_to_data_type {
     static constexpr DataType value = DataType::Unknown;
 };
 template<> struct type_to_data_type<int> {
@@ -80,10 +98,20 @@ template<> struct type_to_data_type<double> {
 template<> struct type_to_data_type<bool> {
     static constexpr DataType value = DataType::Bool;
 };
+template<> struct type_to_data_type<int64_t> {
+    static constexpr DataType value = DataType::Int64;
+};
+// Kokkos::complex is layout-compatible with std::complex (two contiguous reals)
 template<> struct type_to_data_type<std::complex<float>> {
     static constexpr DataType value = DataType::ComplexFloat;
 };
 template<> struct type_to_data_type<std::complex<double>> {
+    static constexpr DataType value = DataType::ComplexDouble;
+};
+template<> struct type_to_data_type<Kokkos::complex<float>> {
+    static constexpr DataType value = DataType::ComplexFloat;
+};
+template<> struct type_to_data_type<Kokkos::complex<double>> {
     static constexpr DataType value = DataType::ComplexDouble;
 };
 
@@ -97,6 +125,36 @@ constexpr DataType get_array_data_type() {
     using T = idefix::value_type_t<ArrayType>;
     return get_data_type<T>();
 }
+
+// Size in bytes of a single element of the given type
+constexpr int size_of(DataType type) {
+    switch (type) {
+        case DataType::Int:           return sizeof(int);
+        case DataType::Float:         return sizeof(float);
+        case DataType::Double:        return sizeof(double);
+        case DataType::Bool:          return sizeof(bool);
+        case DataType::ComplexFloat:  return 2 * sizeof(float);
+        case DataType::ComplexDouble: return 2 * sizeof(double);
+        case DataType::Int64:         return sizeof(int64_t);
+        default:                      return 0;
+    }
+}
+
+#ifdef WITH_MPI
+// Matching MPI datatype (MPI_DATATYPE_NULL if unsupported)
+inline MPI_Datatype to_mpi_type(DataType type) {
+    switch (type) {
+        case DataType::Int:           return MPI_INT;
+        case DataType::Float:         return MPI_FLOAT;
+        case DataType::Double:        return MPI_DOUBLE;
+        case DataType::Bool:          return MPI_CXX_BOOL;
+        case DataType::ComplexFloat:  return MPI_CXX_FLOAT_COMPLEX;
+        case DataType::ComplexDouble: return MPI_CXX_DOUBLE_COMPLEX;
+        case DataType::Int64:         return MPI_LONG_LONG;
+        default:                      return MPI_DATATYPE_NULL;
+    }
+}
+#endif
 
 } // namespace dump_io
 
@@ -135,8 +193,6 @@ class DumpField {
         virtual bool IsArray() const = 0;
         virtual int GetVarNum() const = 0;
         virtual int GetArrayDimension() const = 0;
-        virtual bool IsHost() const = 0;
-        virtual void SyncToHost() const = 0;
 
         virtual void* GetRawPointer() const {
             IDEFIX_ERROR("GetRawPointer not implemented for this storage type");
@@ -164,6 +220,18 @@ class DumpField {
         ArrayLocation location;
         int direction;
 
+        static constexpr int dimension = idefix::view_dimension_v<ArrayType>;
+
+        // 3D view of the stored data (directly for 3D arrays, else the var-th slice)
+        auto GetSlice() const {
+            if constexpr (dimension == 3) {
+                return array;
+            } else {
+                if (var < 0) IDEFIX_ERROR("var index required for 4D arrays");
+                return Kokkos::subview(array, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
+            }
+        }
+
      public:
         ArrayStorage(ArrayType& arr, int v, ArrayLocation loc, int dir)
             : array{arr}, var{v}, location{loc}, direction{dir} {}
@@ -181,12 +249,7 @@ class DumpField {
         }
         bool IsArray() const override { return true; }
         int GetVarNum() const override { return var; }
-        int GetArrayDimension() const override {
-            return idefix::view_dimension_v<ArrayType>;
-        }
-        bool IsHost() const override {
-            return idefix::is_host_space_v<ArrayType>;
-        }
+        int GetArrayDimension() const override { return dimension; }
 
         void* GetRawPointer() const override {
             IDEFIX_ERROR("GetRawPointer not supported for array storage");
@@ -194,99 +257,28 @@ class DumpField {
         }
 
         IdefixHostArray3D<real> GetHostField() const override {
-            using T = idefix::value_type_t<ArrayType>;
-            static_assert(std::is_same_v<T, real>, "GetHostField requires real type for now");
-
-            if constexpr (idefix::view_dimension_v<ArrayType> == 3) {
-                if constexpr (idefix::is_host_space_v<ArrayType>) {
-                    return array;
-                } else {
-                    IdefixHostArray3D<real> hostArr =
-                        Kokkos::create_mirror(Kokkos::HostSpace(), array);
-                    Kokkos::deep_copy(hostArr, array);
-                    return hostArr;
-                }
-            }
-            else if constexpr (idefix::view_dimension_v<ArrayType> == 4) {
-                if (var < 0) {
-                    IDEFIX_ERROR("var index required for 4D arrays");
-                }
-                auto slice = Kokkos::subview(array, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
-                if constexpr (idefix::is_host_space_v<ArrayType>) {
-                    return slice;
-                } else {
-                    IdefixHostArray3D<real> hostArr =
-                        Kokkos::create_mirror(Kokkos::HostSpace(), slice);
-                    Kokkos::deep_copy(hostArr, slice);
-                    return hostArr;
-                }
-            }
-            else {
-                static_assert(idefix::view_dimension_v<ArrayType> == 3 ||
-                             idefix::view_dimension_v<ArrayType> == 4,
-                             "Only 3D and 4D arrays supported");
-            }
-        }
-
-        template<typename SourceArrayType>
-        void SyncFrom(const SourceArrayType& source) const {
-            // Copy from source array to our stored array
-            if constexpr (idefix::view_dimension_v<ArrayType> == 3) {
-                if constexpr (idefix::view_dimension_v<SourceArrayType> == 3) {
-                    Kokkos::deep_copy(array, source);
-                }
-            }
-            else if constexpr (idefix::view_dimension_v<ArrayType> == 4) {
-                if constexpr (idefix::view_dimension_v<SourceArrayType> == 3) {
-                    // Source is 3D, we need to copy to the var-th slice of our 4D array
-                    auto destSlice =
-                        Kokkos::subview(array, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
-                    Kokkos::deep_copy(destSlice, source);
-                }
-            }
-        }
-
-        void SyncToHost() const override {
-            if constexpr (!idefix::is_host_space_v<ArrayType>) {
-                if constexpr (idefix::view_dimension_v<ArrayType> == 4) {
-                    if (var >= 0) {
-                        auto slice =
-                            Kokkos::subview(array, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
-                        auto mirror = Kokkos::create_mirror(Kokkos::HostSpace(), slice);
-                        Kokkos::deep_copy(mirror, slice);
-                    }
-                } else {
-                    auto mirror = Kokkos::create_mirror(Kokkos::HostSpace(), array);
-                    Kokkos::deep_copy(mirror, array);
-                }
+            static_assert(std::is_same_v<idefix::value_type_t<ArrayType>, real>,
+                          "GetHostField requires real type for now");
+            static_assert(dimension == 3 || dimension == 4,
+                          "Only 3D and 4D arrays supported");
+            if constexpr (idefix::is_host_space_v<ArrayType>) {
+                return GetSlice();
+            } else {
+                auto hostArr = Kokkos::create_mirror(Kokkos::HostSpace(), GetSlice());
+                Kokkos::deep_copy(hostArr, GetSlice());
+                return hostArr;
             }
         }
 
         void SyncFrom(const IdefixHostArray3D<real>& source) const override {
-            // Copy from source array to our stored array
-            if constexpr (idefix::view_dimension_v<ArrayType> == 3) {
-                if constexpr (idefix::is_host_space_v<ArrayType>) {
-                    Kokkos::deep_copy(array, source);
-                } else {
-                    // For device arrays, we need to copy from host to device
-                    auto mirror = Kokkos::create_mirror(Kokkos::HostSpace(), array);
-                    Kokkos::deep_copy(mirror, source);
-                    Kokkos::deep_copy(array, mirror);
-                }
-            }
-            else if constexpr (idefix::view_dimension_v<ArrayType> == 4) {
-                if (var >= 0) {
-                    auto destSlice =
-                        Kokkos::subview(array, var, Kokkos::ALL, Kokkos::ALL, Kokkos::ALL);
-                    if constexpr (idefix::is_host_space_v<ArrayType>) {
-                        Kokkos::deep_copy(destSlice, source);
-                    } else {
-                        // For device 4D arrays, copy to the var-th slice
-                        auto mirror = Kokkos::create_mirror(Kokkos::HostSpace(), destSlice);
-                        Kokkos::deep_copy(mirror, source);
-                        Kokkos::deep_copy(destSlice, mirror);
-                    }
-                }
+            if constexpr (dimension != 3 && dimension != 4) {
+                IDEFIX_ERROR("Only 3D and 4D arrays supported");
+            } else if constexpr (idefix::is_host_space_v<ArrayType>) {
+                Kokkos::deep_copy(GetSlice(), source);
+            } else {
+                auto mirror = Kokkos::create_mirror(Kokkos::HostSpace(), GetSlice());
+                Kokkos::deep_copy(mirror, source);
+                Kokkos::deep_copy(GetSlice(), mirror);
             }
         }
     };
@@ -316,7 +308,6 @@ class DumpField {
         bool IsArray() const override { return false; }
         int GetVarNum() const override { return -1; }
         int GetArrayDimension() const override { return 0; }
-        bool IsHost() const override { return true; }
 
         void* GetRawPointer() const override {
             return static_cast<void*>(data);
@@ -327,13 +318,8 @@ class DumpField {
             return IdefixHostArray3D<real>();
         }
 
-        void SyncToHost() const override {
-            // Nothing to do - already on host
-        }
-
         void SyncFrom(const IdefixHostArray3D<real>& source) const override {
-            // For raw pointers, we copy directly from the source
-            // This is a no-op for raw storage as the data is already in the right place
+            // Raw storage already aliases the caller's data: nothing to copy back
         }
     };
 
@@ -345,11 +331,20 @@ class DumpField {
     template<typename ArrayType>
     DumpField(ArrayType& arr, int varnum = -1,
               ArrayLocation loc = ArrayLocation::Center, int dir = -1)
-        : impl{std::make_unique<ArrayStorage<ArrayType>>(arr, varnum, loc, dir)} {}
+        : impl{std::make_unique<ArrayStorage<ArrayType>>(arr, varnum, loc, dir)} {
+        static_assert(std::is_same_v<idefix::value_type_t<ArrayType>, real>,
+                      "Only real-valued arrays can be dumped as distributed fields "
+                      "(complex arrays must be written element-wise).");
+    }
 
+    // Scalar (raw pointer) storage: any type with a known DataType, including
+    // std::complex<float/double> and Kokkos::complex<float/double>.
     template<typename T>
     explicit DumpField(T* data, int size = 1)
-        : impl{std::make_unique<RawStorage<T>>(data, size)} {}
+        : impl{std::make_unique<RawStorage<T>>(data, size)} {
+        static_assert(dump_io::get_data_type<T>() != dump_io::DataType::Unknown,
+                      "Unsupported scalar type for dump I/O");
+    }
 
     // =============================================================================
     // Copy and move semantics
@@ -387,17 +382,9 @@ class DumpField {
         }
     }
 
-    void* GetRawPointer() const {
-        return impl->GetRawPointer();
-    }
-
     template<typename T>
     T* GetRawPointer() const {
         return static_cast<T*>(impl->GetRawPointer());
-    }
-
-    void SyncToHost() const {
-        impl->SyncToHost();
     }
 
     void SyncFrom(const IdefixHostArray3D<real>& source) const {
@@ -415,7 +402,6 @@ class DumpField {
     bool IsArray() const { return impl->IsArray(); }
     int GetVarNum() const { return impl->GetVarNum(); }
     int GetArrayDimension() const { return impl->GetArrayDimension(); }
-    bool IsHost() const { return impl->IsHost(); }
 
  private:
     // =============================================================================
@@ -499,8 +485,12 @@ template<typename ArrayType>
 void Dump::RegisterVariable(ArrayType& in, std::string name,
                            int varnum, int dir,
                            DumpField::ArrayLocation loc) {
-    static_assert(idefix::is_idefix_array_v<ArrayType>,
+    static_assert(idefix::is_kokkos_view_v<ArrayType>,
                  "RegisterVariable requires an IdefixArray type");
+    // A 3D array has a single variable: varnum must be left to its default (-1).
+    // A 4D array stores several variables: varnum designates which one to dump.
+    static_assert(idefix::view_dimension_v<ArrayType> == 4 || varnum < 0,
+                 "varnum is only meaningful for 4D arrays");
 
     if (dumpFieldMap.count(name) > 0) {
         std::stringstream msg;

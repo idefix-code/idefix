@@ -175,13 +175,11 @@ class DataBlock {
   void LaunchUserStepFirst();     ///< perform user-defined step before main integration step
   void LaunchUserStepLast();      ///< Perform user-defined step after main integration step
 
-  template<typename Func>
-  void EnrollUserStepFirst(Func func) {
+  void EnrollUserStepFirst(StepFunc func) {
     haveUserStepFirst = true;
     userStepFirst = func;
   }
-  template<typename Func>
-  void EnrollUserStepLast(Func func) {
+  void EnrollUserStepLast(StepFunc func) {
     haveUserStepLast = true;
     userStepLast = func;
   }

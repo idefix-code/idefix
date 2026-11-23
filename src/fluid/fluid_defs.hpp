@@ -56,6 +56,16 @@ using IsoSoundSpeedFunc = std::function<void(DataBlock &, const real, IdefixArra
 template<typename Phys>
 using SrcTermFunc = std::function<void(Fluid<Phys> *, const real, const real)>;
 
+// User-defined boundary conditions signature
+template<typename Phys>
+using UserDefBoundaryFunc = std::function<void(Fluid<Phys> *, int, BoundarySide, const real)>;
+using UserDefBoundaryFuncOld = std::function<void(DataBlock &, int, BoundarySide, const real)>;
+  // This last one is deprecated
+
+template <typename Phys>
+using InternalBoundaryFunc = std::function<void(Fluid<Phys> *, const real)>;
+using InternalBoundaryFuncOld = std::function<void(DataBlock &, const real)>; // DEPRECATED
+
 
 using EmfBoundaryFunc = std::function<void(DataBlock &, const real)>;
 using DiffusivityFunc = std::function<void(DataBlock &, const real, IdefixArray3D<real> &)>;

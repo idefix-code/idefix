@@ -53,14 +53,13 @@ class Laplacian {
   void operator() (IdefixArray3D<real> in,  IdefixArray3D<real> laplacian);
 
   // Handling userdef boundary.
-  using UserDefBoundaryFunc = std::function<void(DataBlock &, int, BoundarySide,
-                                       const real, IdefixArray3D<real> &)>;
+  using UserDefBoundaryFunc = std::function<void(DataBlock &data, int dir, BoundarySide side,
+                                       const real t, IdefixArray3D<real> &phi)>;
   void EnforceBoundary(int dir, BoundarySide side, LaplacianBoundaryType type,
                        IdefixArray3D<real> &);
   bool haveUserDefBoundary{false};
 
-  template<typename Func>
-  void EnrollUserDefBoundary(Func myFunc) {
+  void EnrollUserDefBoundary(UserDefBoundaryFunc myFunc) {
     this->userDefBoundaryFunc = myFunc;
     this->haveUserDefBoundary = true;
   }

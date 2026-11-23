@@ -81,8 +81,7 @@ class Drag {
   void AddImplicitFluidMomentum(const real);  // Add the implicit drag force on dust grains
   /////////////////////////
 
-  template<typename Func>
-  void EnrollUserDrag(Func func) {
+  void EnrollUserDrag(UserDefDragFunc func) {
     if(dragType != GammaDrag::Type::Userdef) {
       IDEFIX_ERROR("User-defined drag function requires drag entry to be set to \"userdef\"");
     }

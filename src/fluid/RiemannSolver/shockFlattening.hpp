@@ -42,8 +42,7 @@ class ShockFlattening {
   // Enroll a user-defined function flagging additional cells for shock flattening.
   // The function is called on the host at the end of FindShock() and receives the
   // datablock, the current time and the flag array (see UserShockFunc).
-  template<typename Func>
-  void EnrollUserShockFlag(Func myFunc);
+  void EnrollUserShockFlag(UserShockFunc myFunc);
 
   bool IsActive() const {return isActive;}
   real Smoothing() const {return smoothing;}
@@ -229,8 +228,7 @@ void ShockFlattening<Phys>::FindShock() {
 }
 
 template<typename Phys>
-template<typename Func>
-void ShockFlattening<Phys>::EnrollUserShockFlag(Func myFunc) {
+void ShockFlattening<Phys>::EnrollUserShockFlag(UserShockFunc myFunc) {
   this->haveUserShockFlag = true;
   this->userShockFunc = myFunc;
 }

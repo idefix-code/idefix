@@ -59,9 +59,9 @@ class Output {
   void ResetTimer();                      // Reset internal timer
   double GetTimer();
 
-  // Template enrollment methods (definitions inline)
-  template<typename Func>
-  void EnrollAnalysis(Func myFunc) {
+  // Enrollment methods (definitions inline). The std::function arguments accept
+  // free functions, lambdas and member-function wrappers.
+  void EnrollAnalysis(AnalysisFunc myFunc) {
     idfx::pushRegion("Output::EnrollAnalysis");
     if(!analysisEnabled) {
       IDEFIX_WARNING("You are enrolling an analysis function "
@@ -73,8 +73,7 @@ class Output {
     idfx::popRegion();
   }
 
-  template<typename Func>
-  void EnrollUserDefVariables(Func myFunc) {
+  void EnrollUserDefVariables(UserDefVariablesFunc myFunc) {
     idfx::pushRegion("Output::EnrollUserDefVariable");
     if(!userDefVariablesEnabled) {
       IDEFIX_ERROR("You are enrolling a user-defined variables function "

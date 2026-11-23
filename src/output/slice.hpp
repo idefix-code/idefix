@@ -35,8 +35,7 @@ class Slice {
   Slice(Input &, DataBlock &, int, SliceType, int, real, real);
   void CheckForWrite(DataBlock &, bool = false);
   void EnrollUserDefVariables(std::map<std::string,IdefixHostArray3D<real>>);
-  template<typename Func>
-  void EnrollUserDefFunc(Func myFunc) {
+  void EnrollUserDefFunc(UserDefVariablesFunc myFunc) {
     userDefVariablesFunc = myFunc;
   }
   real slicePeriod = 0.0;

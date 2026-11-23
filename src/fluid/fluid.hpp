@@ -148,18 +148,14 @@ class Fluid {
 
 
   // Enroll user-defined boundary conditions (proxies for boundary class functions)
-  template <typename T>
-  void EnrollUserDefBoundary(T);
-  template <typename T>
-  void EnrollInternalBoundary(T);
-  template <typename T>
-  void EnrollFluxBoundary(T);
+  void EnrollUserDefBoundary(UserDefBoundaryFunc<Phys>);
+  void EnrollInternalBoundary(InternalBoundaryFunc<Phys>);
+  void EnrollFluxBoundary(UserDefBoundaryFunc<Phys>);
 
   void EnrollEmfBoundary(EmfBoundaryFunc);
 
   // Add some user source terms
-  template<typename Func>
-  void EnrollUserSourceTerm(Func myFunc);
+  void EnrollUserSourceTerm(SrcTermFunc<Phys> myFunc);
 
   // Enroll user-defined ohmic, ambipolar and Hall diffusivities
   void EnrollOhmicDiffusivity(DiffusivityFunc);

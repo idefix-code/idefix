@@ -29,29 +29,25 @@ void Fluid<Phys>::EnrollIsoSoundSpeed(IsoSoundSpeedFunc myFunc) {
 }
 
 template<typename Phys>
-template<typename T>
-void Fluid<Phys>::EnrollUserDefBoundary(T myFunc) {
+void Fluid<Phys>::EnrollUserDefBoundary(UserDefBoundaryFunc<Phys> myFunc) {
   // This is a proxy for userdef enrollment
   boundary->EnrollUserDefBoundary(myFunc);
 }
 
 template<typename Phys>
-template<typename T>
-void Fluid<Phys>::EnrollInternalBoundary(T myFunc) {
+void Fluid<Phys>::EnrollInternalBoundary(InternalBoundaryFunc<Phys> myFunc) {
   // This is a proxy for internal boundary enrollment
   boundary->EnrollInternalBoundary(myFunc);
 }
 
 template<typename Phys>
-template<typename T>
-void Fluid<Phys>::EnrollFluxBoundary(T myFunc) {
+void Fluid<Phys>::EnrollFluxBoundary(UserDefBoundaryFunc<Phys> myFunc) {
   // This is a proxy for userdef enrollment
   boundary->EnrollFluxBoundary(myFunc);
 }
 
 template<typename Phys>
-template<typename Func>
-void Fluid<Phys>::EnrollUserSourceTerm(Func myFunc) {
+void Fluid<Phys>::EnrollUserSourceTerm(SrcTermFunc<Phys> myFunc) {
   this->userSourceTerm = myFunc;
   this->haveUserSourceTerm = true;
   this->haveSourceTerms = true;

@@ -33,15 +33,9 @@ class DataBlock;
 template <typename Phys> class Fluid;
 class Axis;
 
-// User-defined boundary conditions signature
-template<typename Phys>
-using UserDefBoundaryFunc = std::function<void(Fluid<Phys> *, int, BoundarySide, const real)>;
-using UserDefBoundaryFuncOld = std::function<void(DataBlock &, int, BoundarySide, const real)>;
-  // This last one is deprecated
-
-template <typename Phys>
-using InternalBoundaryFunc = std::function<void(Fluid<Phys> *, const real)>;
-using InternalBoundaryFuncOld = std::function<void(DataBlock &, const real)>; // DEPRECATED
+// User-defined boundary conditions signature (UserDefBoundaryFunc, InternalBoundaryFunc and the
+// deprecated *Old variants are declared in fluid_defs.hpp, so that they are also visible from the
+// Fluid class, which only forward declares Boundary)
 
 using BoundingBox = std::array<std::array<int,2>,3>;
 
@@ -56,12 +50,12 @@ class Boundary {
 
   void EnforceFluxBoundaries(int,real);      ///< Apply boundary condition conditions to the fluxes
 
-  template<typename Func>
-  void EnrollUserDefBoundary(Func myFunc); ///< User-defined boundary condition
-  template<typename Func>
-  void EnrollInternalBoundary(Func myFunc); ///< User-defined internal boundary
-  template<typename Func>
-  void EnrollFluxBoundary(Func myFunc); ///< Flux boundary condition
+  void EnrollUserDefBoundary(UserDefBoundaryFunc<Phys> myFunc);
+                                  ///< User-defined boundary condition
+  void EnrollInternalBoundary(InternalBoundaryFunc<Phys> myFunc);
+                                  ///< User-defined internal boundary
+  void EnrollFluxBoundary(UserDefBoundaryFunc<Phys> myFunc);
+                                  ///< Flux boundary condition
 
   void EnforcePeriodic(int, BoundarySide ); ///< Enforce periodic BC in direction and side
   void EnforceReflective(int, BoundarySide ); ///< Enforce reflective BC in direction and side
@@ -259,8 +253,7 @@ Boundary<Phys>::Boundary(Fluid<Phys>* fluid) {
 
 
 template<typename Phys>
-template<typename Func>
-void Boundary<Phys>::EnrollFluxBoundary(Func myFunc) {
+void Boundary<Phys>::EnrollFluxBoundary(UserDefBoundaryFunc<Phys> myFunc) {
   this->haveFluxBoundary = true;
   this->fluxBoundaryFunc = myFunc;
 }
@@ -562,16 +555,14 @@ void Boundary<Phys>::ReconstructNormalField(int dir) {
 
 
 template<typename Phys>
-template<typename Func>
-void Boundary<Phys>::EnrollUserDefBoundary(Func myFunc) {
+void Boundary<Phys>::EnrollUserDefBoundary(UserDefBoundaryFunc<Phys> myFunc) {
   this->userDefBoundaryFunc = myFunc;
   this->haveUserDefBoundary = true;
 }
 
 
 template<typename Phys>
-template<typename Func>
-void Boundary<Phys>::EnrollInternalBoundary(Func myFunc) {
+void Boundary<Phys>::EnrollInternalBoundary(InternalBoundaryFunc<Phys> myFunc) {
   this->internalBoundaryFunc = myFunc;
   this->haveInternalBoundary = true;
 }

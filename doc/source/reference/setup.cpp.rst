@@ -8,14 +8,106 @@ The source code ``setup.cpp`` contains the code specific to the physical setup a
   - Define and enroll setup-specific functions which will be called from the integration loop
   - Define and enroll setup-specific outputs
 
-Most of these initialisations relies on the class ``Setup`` which has to be implemented in your
+Most of these initialisations rely on a setup class which has to be implemented in your
 ``setup.cpp``. At this stage, if you are not familliar with the ``idefix_loop`` structures,
 ``IdefixArray`` data arrays and *Idefix* class structure, it is strongly recommended you have a
 look at the :ref:`programmingGuide`.
 
-The ``Setup`` class
---------------------
-The ``Setup`` class is declared as follows:
+The setup is written as a class of your own, derived from ``SetupBase``, which you register with
+``REGISTER_SETUP``. Several setups can coexist in one binary and the one actually used is selected at
+run time with ``[Setup] name`` in the input file, as described in :ref:`setupClasses`.
+
+.. note::
+    Older versions of *Idefix* defined the members of a ``Setup`` class directly in ``setup.cpp``.
+    This legacy approach is still accepted for backward compatibility, but it is deprecated and
+    **will be removed in a future release**. New setups should derive from ``SetupBase``
+    (see :ref:`legacySetup` for the migration note).
+
+.. _setupClasses:
+
+The ``SetupBase`` class
+-----------------------
+The setup relies on ``SetupBase``, declared in ``setup.hpp``:
+
+.. code-block:: c++
+
+  class SetupBase {
+    public:
+      SetupBase(Input &, Grid &, DataBlock &, Output &);
+      virtual void InitFlow(DataBlock &) = 0;
+    protected:
+      Input &myInput;
+      Grid &myGrid;
+      DataBlock &myData;
+      Output &myOutput;
+  };
+
+You derive your own setup from this class. Enrollment of user-defined functions happens in the
+constructor (exactly as for the legacy ``Setup`` constructor, see :ref:`functionEnrollment`), and the
+initial conditions are set in ``InitFlow``. To enroll a member function, capture ``this`` in a lambda:
+
+.. code-block:: c++
+
+  #include "setup.hpp"
+  #include "setup_registry.hpp"
+
+  class MySetup : public SetupBase {
+    public:
+      MySetup(Input &input, Grid &grid, DataBlock &data, Output &output)
+        : SetupBase(input, grid, data, output) {
+        myData.hydro->EnrollUserDefBoundary(
+          [this](Fluid<DefaultPhysics>* hydro, int dir, BoundarySide side, const real t) {
+            this->MyBoundary(hydro, dir, side, t);
+          });
+      }
+
+      void MyBoundary(Fluid<DefaultPhysics>* hydro, int dir, BoundarySide side, const real t) {
+        // ...
+      }
+
+      void InitFlow(DataBlock &data) override {
+        // ...
+      }
+  };
+
+  REGISTER_SETUP(MySetup)
+
+The ``REGISTER_SETUP`` macro comes in two forms:
+
+.. code-block:: c++
+
+  REGISTER_SETUP(MySetup)                  // setup named "MySetup"
+  REGISTER_SETUP("MachReflection", MySetup) // setup named "MachReflection"
+
+The two-argument form is useful when the run-time name should differ from the C++ class name.
+Several setups may be registered in the same binary, either in a single ``setup.cpp`` or in
+additional source files added through a ``CMakeLists.txt`` in your problem directory.
+
+Selecting a setup
+*****************
+The setup to use is chosen with the ``[Setup]`` block of the input file:
+
+.. code-block:: ini
+
+  [Setup]
+  name    MachReflection
+
+The possible values are:
+
+  - a name registered with ``REGISTER_SETUP``: the corresponding setup is instantiated. If the name
+    is not registered, *Idefix* aborts and lists the available setups.
+  - ``legacy``: explicitly use the legacy ``Setup`` class (see :ref:`legacySetup`).
+  - no ``name`` entry: the legacy ``Setup`` class is used. When at least one setup is registered, a
+    warning is printed, as you most likely forgot to set ``name``.
+
+Names are case-sensitive, and ``legacy`` is a reserved name.
+
+.. _legacySetup:
+
+Legacy style (deprecated)
+-------------------------
+Older versions of *Idefix* did not use ``SetupBase``: the members of a ``Setup`` class had to be
+defined directly in ``setup.cpp``,
 
 .. code-block:: c++
 
@@ -23,16 +115,30 @@ The ``Setup`` class is declared as follows:
     public:
       Setup(Input &, Grid &, DataBlock &, Output &);
       void InitFlow(DataBlock &);
-    };
+  };
 
-As it can be seen, this class consist of a constructor and one mandatory method: ``InitFlow``, which will handle
-the initial condition.
+and were resolved through weak symbols provided by the library. This approach is kept **only for
+backward compatibility**: it is deprecated and **will be removed in a future release**.
 
-The ``Setup`` constructor
--------------------------
-Let us start with the constructor `Setup(Input &, Grid &, DataBlock &, Output &)`.
+.. warning::
+    Do not write new setups in the legacy style. Convert existing ones by moving the body of your
+    ``Setup::Setup(...)`` constructor into the constructor of a class derived from ``SetupBase``, and
+    the body of ``Setup::InitFlow(...)`` into its ``InitFlow`` override, then register the class with
+    ``REGISTER_SETUP`` (see :ref:`setupClasses`) and select it with ``[Setup] name`` in the input
+    file. Functions enrolled as free functions can be converted to member functions and enrolled
+    through a lambda capturing ``this``, as shown above.
+
+When no ``[Setup] name`` is given in the input file (or when it is set to ``legacy``), *Idefix*
+falls back to this legacy style. A warning is printed if setups are registered, as you most likely
+forgot to set ``name``.
+
+The setup constructor
+---------------------
+Let us start with your setup constructor, which takes four arguments ``(Input &, Grid &, DataBlock &, Output &)``.
 This constructor is called on the code startup and allows the user to load and set setup-specific parameters. The parameters are four objects
-which have already been initialised when ``Setup`` is called: ``Input``, ``Grid``, ``DataBlock`` and ``Output`` (see :ref:`classes`).
+which have already been initialised when the setup is called: ``Input``, ``Grid``, ``DataBlock`` and ``Output`` (see :ref:`classes`).
+They are also stored in the base class as the members ``myInput``, ``myGrid``, ``myData`` and ``myOutput``, which is
+the convenient way to access them from member functions.
 
 A typical constructor first loads the setup parameters calling accessors from the ``Input`` object (see :ref:`inputClass`). Then,
 if there are some user-defined functions (for instance a user-defined potential, boundary condition or output),
@@ -48,20 +154,24 @@ the input file, and for user-defined outputs. This can be seen as a way to link 
 setup to the main code at runtime, and avoid the need to pre-define tens of empty functions. Function enrollment
 is achieved by calling one of the ``EnrollXXX`` function of the class associated to it.
 
-For instance, the ``Fluid`` class provide the following list of enrollment functions (declared in hydro.hpp):
+For instance, the ``Fluid`` class (``data.hydro``) provides the following enrollment functions
+(declared in fluid.hpp):
 
 .. code-block:: c++
 
   // Enroll user-defined boundary conditions
-  void EnrollUserDefBoundary(UserDefBoundaryFunc);
-  void EnrollInternalBoundary(InternalBoundaryFunc);
+  template <typename T>
+  void EnrollUserDefBoundary(T);
+  template <typename T>
+  void EnrollInternalBoundary(T);
+  template <typename T>
+  void EnrollFluxBoundary(T);
+
   void EnrollEmfBoundary(EmfBoundaryFunc);
 
-  // Enroll user-defined gravitational potential
-  void EnrollGravPotential(GravPotentialFunc);
-
   // Enroll user source terms
-  void EnrollUserSourceTerm(SrcTermFunc);
+  template<typename Func>
+  void EnrollUserSourceTerm(Func);
 
   // Enroll user-defined ohmic, ambipolar and Hall diffusivities
   void EnrollOhmicDiffusivity(DiffusivityFunc);
@@ -71,22 +181,39 @@ For instance, the ``Fluid`` class provide the following list of enrollment funct
   // Enroll user-defined isothermal sound speed
   void EnrollIsoSoundSpeed(IsoSoundSpeedFunc);
 
-When called, these function expects the address of the user-defined function. These user-defined
-function should have the following signatures (declared in fluid_defs.hpp and boundary.hpp):
+The gravitational potential is enrolled on the ``Gravity`` object (``data.gravity``, declared in
+gravity.hpp), as are the body forces:
 
 .. code-block:: c++
 
-  using UserDefBoundaryFunc = void (*) (Fluid<Phys> *, int dir, BoundarySide side,
-                                      const real t);
-  using GravPotentialFunc = void (*) (DataBlock &, const real t, IdefixArray1D<real>&,
-                                    IdefixArray1D<real>&, IdefixArray1D<real>&,
-                                    IdefixArray3D<real> &);
+  void EnrollPotential(GravPotentialFunc);
+  void EnrollBodyForce(BodyForceFunc);
 
-  using SrcTermFunc = void (*) (Fluid<Phys> *, const real t, const real dt);
-  using InternalBoundaryFunc = void (*) (Fluid<Phys>*, const real t);
-  using EmfBoundaryFunc = void (*) (DataBlock &, const real t);
-  using DiffusivityFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
-  using IsoSoundSpeedFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real> &);
+The enrollment functions taking a template parameter accept any callable matching the expected
+signature: a pointer to a free function, a lambda, or a lambda capturing ``this`` that forwards to a
+member function of your setup class (recommended, see the example above), which is then stored in a
+``std::function``. The expected signatures are (declared in fluid_defs.hpp and boundary.hpp):
+
+.. code-block:: c++
+
+  // templated on the type of fluid
+  template<typename Phys>
+  using UserDefBoundaryFunc = std::function<void (Fluid<Phys> *, int dir, BoundarySide side,
+                                                const real t)>;
+
+  template<typename Phys>
+  using SrcTermFunc = std::function<void (Fluid<Phys> *, const real t, const real dt)>;
+
+  template<typename Phys>
+  using InternalBoundaryFunc = std::function<void (Fluid<Phys>*, const real t)>;
+
+  // not templated
+  using GravPotentialFunc = std::function<void (DataBlock &, const real t, IdefixArray1D<real>&,
+                                              IdefixArray1D<real>&, IdefixArray1D<real>&,
+                                              IdefixArray3D<real> &)>;
+  using EmfBoundaryFunc = std::function<void (DataBlock &, const real t)>;
+  using DiffusivityFunc = std::function<void (DataBlock &, const real t, IdefixArray3D<real> &)>;
+  using IsoSoundSpeedFunc = std::function<void (DataBlock &, const real t, IdefixArray3D<real> &)>;
 
 
 Note that some of these functions involve the template class ``Fluid<Phys>``. The ``Fluid`` class
@@ -115,31 +242,50 @@ Note that *Idefix* defines an alias for the default fluid which is often found i
 Example
 *******
 
-The following example have a user-defined gravitational potential, and defines a ``Setup``
-constructor which reads a parameter from the .ini file and enroll the user-defined potential.
+The following example defines a setup class with a user-defined gravitational potential. The
+constructor reads the mass of the central object from the .ini file and enrolls the user-defined
+potential, which is a member function of the class.
 
 .. code-block:: c++
 
-  // a global variable which stores the mass of some object
-  real Mass;
+  #include "setup.hpp"
+  #include "setup_registry.hpp"
 
-  // user-defined potential
-  void Potential(DataBlock& data, const real t, IdefixArray1D<real>& x1, IdefixArray1D<real>& x2, IdefixArray1D<real>& x3, IdefixArray3D<real>& phi) {
-    idefix_for("Potential",0,data.np_tot[KDIR], 0, data.np_tot[JDIR], 0, data.np_tot[IDIR],
-               KOKKOS_LAMBDA (int k, int j, int i) {
-                  phi(k,j,i) = -Mass/x1(i);
-              });
+  class MySetup : public SetupBase {
+    public:
+      MySetup(Input &input, Grid &grid, DataBlock &data, Output &output)
+        : SetupBase(input, grid, data, output) {
+        // Read some parameter from the ini file
+        mass = input.Get<real>("Setup","mass",0);
 
-  }
+        // Enroll the user-defined potential
+        data.gravity->EnrollPotential(
+          [this](DataBlock &data, const real t, IdefixArray1D<real>& x1, IdefixArray1D<real>& x2,
+                 IdefixArray1D<real>& x3, IdefixArray3D<real>& phi) {
+            this->Potential(data, t, x1, x2, x3, phi);
+          });
+      }
 
-  // Setup constructor
-  Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
-    // Read some parameter from the ini file
-    Mass = input.Get<real>("Setup","mass",0);
+      // user-defined potential
+      void Potential(DataBlock& data, const real t, IdefixArray1D<real>& x1,
+                     IdefixArray1D<real>& x2, IdefixArray1D<real>& x3,
+                     IdefixArray3D<real>& phi) {
+        real Mass = mass;
+        idefix_for("Potential",0,data.np_tot[KDIR], 0, data.np_tot[JDIR], 0, data.np_tot[IDIR],
+                   KOKKOS_LAMBDA (int k, int j, int i) {
+                      phi(k,j,i) = -Mass/x1(i);
+                  });
+      }
 
-    // Enroll the user-defined potential
-    data.gravity->EnrollGravPotential(&Potential);
-  }
+      void InitFlow(DataBlock &data) override {
+        // ...
+      }
+
+    private:
+      real mass;
+  };
+
+  REGISTER_SETUP(MySetup)
 
 
 .. _userdefBoundaries:
@@ -192,13 +338,13 @@ A typical user-defined boundary condition function looks like this:
 
 .. _setupInitflow:
 
-``Setup::InitFlow`` method
---------------------------
+The ``InitFlow`` method
+-----------------------
 
 Basics of the Initflow method
 *****************************
 
-``InitFlow`` is a method of the ``Setup`` class and is called by *Idefix* after the ``Setup`` constructor.
+``InitFlow`` is the pure virtual method of ``SetupBase`` which every setup must override. It is called by *Idefix* after the setup constructor.
 Its role is to define the initial conditions for the flow, initializing the ``Vc`` (and ``Vs`` in MHD)
 arrays of the ``Hydro`` class, for instance. Because this method does not have to be fast, since
 it is called only once, it is customary to initialise the flow on the host, and then send it to the
@@ -210,7 +356,7 @@ C loop on the host, as in the example below.
 
 .. code-block:: c++
 
-  void Setup::InitFlow(DataBlock &data) {
+  void InitFlow(DataBlock &data) {
     // Create a host copy of the DataBlock given in argument
     DataBlockHost dataHost(data);
 
@@ -253,7 +399,7 @@ can be automatically derived using ``DataBlockHost::MakeVsFromAmag`` as in the e
 
 .. code-block:: c++
 
-  void Setup::InitFlow(DataBlock &data) {
+  void InitFlow(DataBlock &data) {
     // Create a host copy of the DataBlock given in argument
     DataBlockHost dataHost(data);
 
@@ -300,7 +446,7 @@ Each tracer can be accessed in the dataBlockHost as a particular field in the ar
 
 .. code-block:: c++
 
-  void Setup::InitFlow(DataBlock &data) {
+  void InitFlow(DataBlock &data) {
       // Create a host copy of the DataBlock given in argument
       DataBlockHost dataHost(data);
 
@@ -330,7 +476,7 @@ a new initial condition by extrapolating or extanding a restart dump (such as in
 test or a dimension change). In this case, one should use the ``DumpImage`` class which provides
 all the tools needed to read a restart dump (see also :ref:`dumpImageClass`).
 
-One typically first construct an instance of ``DumpImage`` in ``Setup::InitFlow``, and then
+One typically first construct an instance of ``DumpImage`` in ``InitFlow``, and then
 use this instance to initialise the flow. The procedure is examplified below,
 assuming we want to create a dump from ``mydump.dmp``:
 
@@ -339,7 +485,7 @@ assuming we want to create a dump from ``mydump.dmp``:
   #include "dumpImage.hpp"
 
   // Flow initialisation, read directly from the DumpImage
-  void Setup::InitFlow(DataBlock &data) {
+  void InitFlow(DataBlock &data) {
 
     // Create a host copy
     DataBlockHost d(data);
@@ -442,21 +588,25 @@ containing all of the arrays you will need in the global scope, and just have a 
       // A global class instance named "myGlobals"
       MyGlobalClass *myGlobals;
 
-#. initialise your global object in the Setup constructor (this will aumatically allocate the array it contains thanks to the class constructor we have defined):
+#. since the state is now owned by your setup class, initialise your global object in the setup constructor
+(the class constructor we have defined automatically allocates the array it contains):
 
     .. code-block:: c++
 
-      Setup::Setup(....) {
+      MySetup(Input &input, Grid &grid, DataBlock &data, Output &output)
+        : SetupBase(input, grid, data, output) {
         ...
         myGlobals = new MyGlobalClass(data);
         ...
       }
 
-#. to avoid the error message above, don't forget to delete the object on exit in the Setup destructor
+#. to avoid the error message above, don't forget to delete the object on exit in the setup destructor.
+A class derived from ``SetupBase`` has a virtual destructor, so this is safe and simpler than with the
+legacy ``Setup`` class:
 
     .. code-block:: c++
 
-      Setup::~Setup(....) {
+      ~MySetup() {
         ...
         delete myGlobals;
         ...

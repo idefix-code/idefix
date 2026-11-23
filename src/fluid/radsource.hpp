@@ -194,6 +194,11 @@ RadSource::RadSource(Input &input, Fluid<Phys> *hydroin):
                       eos{*(hydroin->data->hydro->eos.get())} {
   idfx::pushRegion("RadSource::RadSource");
 
+  //do not yet support ORDER=3 with Radiation support
+  if (ORDER == 3) {
+    IDEFIX_ERROR("ORDER=3 is not yet valid when used in conjunction with Radiation support !");
+  }
+
   // Create our own prefix
   std::string prefix = std::string(Phys::prefix);
 

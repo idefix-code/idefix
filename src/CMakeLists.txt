@@ -45,6 +45,7 @@ target_sources(idefix-core
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/reduce.hpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/setup.hpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/setup.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/setup_registry.hpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/units.hpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/units.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/timeIntegrator.hpp

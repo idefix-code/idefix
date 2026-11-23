@@ -3,7 +3,7 @@
 //
 // Source file src/setup_registry.hpp
 //
-// Last modified : 10/2026
+// Last modified : 11/2026
 //
 // Copyright(C) by :
 // - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2026)
@@ -16,42 +16,124 @@
 #define SETUP_REGISTRY_HPP_
 
 #include <functional>
+#include <map>
 #include <memory>
-#include <utility>  // for std::move
+#include <string>
+#include <utility>
+#include <vector>
 #include "setup.hpp"
 
+// Registry of user-defined setups (OOP style, inheriting from SetupBase).
+//
+// Several setups can be registered in a single binary, each one under a
+// distinct name. The setup actually used is selected at run time with the
+// [Setup] name entry of the input file:
+//
+//  - name = <registered name> : instantiate that setup
+//  - name = legacy            : use the legacy Setup class (weak symbols)
+//  - no name                  : use the legacy Setup class (with a warning
+//                               when at least one setup is registered)
+//
+// Setups are registered with the REGISTER_SETUP macro, which must be called
+// once per setup in the user's setup.cpp file.
 class SetupRegistry {
  public:
     using SetupFactory = std::function<std::unique_ptr<SetupBase>(
         Input&, Grid&, DataBlock&, Output&)>;
 
-    // Register the user's setup factory (only one allowed per binary)
-    static void Register(SetupFactory factory) {
+    /// Name reserved for the legacy Setup class (weak symbols)
+    static constexpr const char* legacyName = "legacy";
+
+    /// Register a setup under a given name (several setups may be registered)
+    static void Register(const std::string &name, SetupFactory factory) {
         auto& instance = GetInstance();
-        if (instance.factory) {
-            IDEFIX_ERROR("Multiple Setup registrations detected. "
-                         "Only one REGISTER_SETUP() call is allowed per binary.");
+        if(name.empty()) {
+            IDEFIX_ERROR("Setup registration with an empty name is not allowed.");
         }
-        instance.factory = std::move(factory);
+        if(name == legacyName) {
+            std::stringstream msg;
+            msg << "The setup name \"" << legacyName << "\" is reserved for the legacy "
+                << "Setup class. Please choose another name." << std::endl;
+            IDEFIX_ERROR(msg);
+        }
+        if(instance.factories.find(name) != instance.factories.end()) {
+            std::stringstream msg;
+            msg << "Duplicate registration of setup \"" << name << "\"." << std::endl
+                << "Each setup must be registered under a unique name." << std::endl
+                << "Registered setups are: " << GetStringOfNames() << std::endl;
+            IDEFIX_ERROR(msg);
+        }
+        instance.factories.emplace(name, std::move(factory));
     }
 
-    // Create the setup: uses registered factory or falls back to DefaultSetup
+    /// Create the setup selected in the input file ([Setup] name)
     static std::unique_ptr<SetupBase> Create(
         Input& input, Grid& grid, DataBlock& data, Output& output) {
-        auto& instance = GetInstance();
-        if (instance.factory) {
-            return instance.factory(input, grid, data, output);
+        // Is a name requested in the input file?
+        if(input.CheckEntry("Setup", "name") < 0) {
+            auto& instance = GetInstance();
+            if(!instance.factories.empty()) {
+                idfx::cout << "Main: WARNING! No [Setup] name given in the input file, "
+                           << "falling back to the legacy Setup." << std::endl
+                           << "Main: Registered setups are: " << GetStringOfNames()
+                           << std::endl;
+            }
+            return std::make_unique<DefaultSetup>(input, grid, data, output);
         }
-        // Fallback to default (backward compatible with old Setup class)
-        return std::make_unique<DefaultSetup>(input, grid, data, output);
+        // A name is requested: use it
+        std::string name = input.Get<std::string>("Setup", "name", 0);
+        return Create(name, input, grid, data, output);
+    }
+
+    /// Create the setup with an explicit name ("legacy" for the legacy Setup)
+    static std::unique_ptr<SetupBase> Create(const std::string &name,
+        Input& input, Grid& grid, DataBlock& data, Output& output) {
+        if(name == legacyName) {
+            idfx::cout << "Main: using the legacy Setup." << std::endl;
+            return std::make_unique<DefaultSetup>(input, grid, data, output);
+        }
+        auto& instance = GetInstance();
+        auto it = instance.factories.find(name);
+        if(it == instance.factories.end()) {
+            std::stringstream msg;
+            msg << "Setup \"" << name
+                << "\" requested in the input file ([Setup] name) is not available." << std::endl
+                << "Available setups are: " << GetStringOfNames() << std::endl
+                << "Set [Setup] name to one of these, or to \"" << legacyName
+                << "\" to use the legacy Setup class." << std::endl;
+            IDEFIX_ERROR(msg);
+        }
+        idfx::cout << "Main: using setup \"" << name << "\"." << std::endl;
+        return it->second(input, grid, data, output);
+    }
+
+    /// Names of the registered setups (sorted)
+    static std::vector<std::string> GetRegisteredNames() {
+        std::vector<std::string> names;
+        for(const auto &entry : GetInstance().factories) {
+            names.push_back(entry.first);
+        }
+        return names;
     }
 
  private:
-    SetupFactory factory;
+    std::map<std::string, SetupFactory> factories;
 
     static SetupRegistry& GetInstance() {
         static SetupRegistry instance;  // Meyer's singleton
         return instance;
+    }
+
+    // Human-readable list of the registered setups (plus the legacy one)
+    static std::string GetStringOfNames() {
+        std::string list;
+        for(const auto &name : GetRegisteredNames()) {
+            if(!list.empty()) list += ", ";
+            list += name;
+        }
+        if(!list.empty()) list += ", ";
+        list += legacyName;
+        return list;
     }
 
     SetupRegistry() = default;
@@ -60,18 +142,39 @@ class SetupRegistry {
     SetupRegistry& operator=(const SetupRegistry&) = delete;
 };
 
-// Macro for one-line registration in user's setup.cpp
-#define REGISTER_SETUP(SetupClass) \
+// Macros for one-line registration in user's setup.cpp
+//
+//  REGISTER_SETUP(MySetup)                  -> setup named "MySetup"
+//  REGISTER_SETUP("MachReflection", MySetup) -> setup named "MachReflection"
+//
+// The name of the registrar object is built from the line number, so that
+// several setups can be registered in the same file.
+#define IDEFIX_SETUP_CONCAT_(a, b) a##b
+#define IDEFIX_SETUP_CONCAT(a, b) IDEFIX_SETUP_CONCAT_(a, b)
+
+// Pick the 1-argument or 2-argument form of REGISTER_SETUP
+#define IDEFIX_SETUP_PICK_(_1, _2, NAME, ...) NAME
+
+#define IDEFIX_SETUP_1_(SetupClass) \
+    IDEFIX_SETUP_BODY_(#SetupClass, SetupClass, __LINE__)
+
+#define IDEFIX_SETUP_2_(SetupName, SetupClass) \
+    IDEFIX_SETUP_BODY_(SetupName, SetupClass, __LINE__)
+
+#define IDEFIX_SETUP_BODY_(SetupName, SetupClass, Id) \
     namespace { \
-        struct SetupRegistrar { \
-            SetupRegistrar() { \
-                SetupRegistry::Register( \
+        struct IDEFIX_SETUP_CONCAT(SetupRegistrar, Id) { \
+            IDEFIX_SETUP_CONCAT(SetupRegistrar, Id)() { \
+                SetupRegistry::Register(SetupName, \
                     [](Input& input, Grid& grid, DataBlock& data, Output& output) { \
                         return std::make_unique<SetupClass>( \
                             input, grid, data, output); \
                     }); \
             } \
-        } setup_registrar; \
+        } IDEFIX_SETUP_CONCAT(setupRegistrar, Id); \
     }  // namespace
+
+#define REGISTER_SETUP(...) \
+    IDEFIX_SETUP_PICK_(__VA_ARGS__, IDEFIX_SETUP_2_, IDEFIX_SETUP_1_)(__VA_ARGS__)
 
 #endif  // SETUP_REGISTRY_HPP_

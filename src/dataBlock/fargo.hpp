@@ -83,7 +83,7 @@ class Fargo {
   bool velocityHasBeenComputed{false};
   bool haveDomainDecomposition{false};
 
-  FargoVelocityFunc fargoVelocityFunc{NULL};  // The user-defined fargo velocity function
+  FargoVelocityFunc fargoVelocityFunc;  // The user-defined fargo velocity function
 };
 
 

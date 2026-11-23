@@ -36,7 +36,7 @@ void RiemannSolver<Phys>::TvdlfHD(IdefixArray4D<real> &Flux) {
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Vs = this->Vs;
   IdefixArray3D<real> cMax = this->cMax;
-  EquationOfState eos = *(hydro->eos.get());
+  EquationOfStateDevice eos = *(hydro->eos.get());
 
   // Required for high order interpolations
   IdefixArray1D<real> dx = this->data->dx[DIR];

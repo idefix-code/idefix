@@ -335,6 +335,23 @@ These entries define how one code units should be converted to CGS units. When u
     The units module automatically reconstruct all of the units (time, temperature, magnetic field, etc.) from the above 3 fundamental constants. These can
     all be obtained from the global object ``idfx::units``. Note however that the code outputs remain in code units, even if `[Units]` are defined.
 
+.. _setupSection:
+
+``Setup`` section
+------------------
+
+This optional section selects which user-defined setup is used when your ``setup.cpp`` registers
+several setups (see :ref:`setupClasses`). This section is otherwise ignored, and legacy setups are
+free to use it for their own parameters.
+
++----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
+|  Entry name    | Parameter type     | Comment                                                                                                   |
++================+====================+===========================================================================================================+
+| name           | string             | | Name of the setup to use, as given to ``REGISTER_SETUP``. The reserved name ``legacy`` selects the      |
+|                |                    | | legacy ``Setup`` class. When this entry is absent, the legacy ``Setup`` class is used (a warning is     |
+|                |                    | | printed if setups are registered).                                                                      |
++----------------+--------------------+-----------------------------------------------------------------------------------------------------------+
+
 ``RKL`` section
 ------------------
 

@@ -81,7 +81,7 @@ class BragThermalDiffusion {
   real clessAlpha, clessBeta;
 
   // equation of state (required to get the heat capacity)
-  EquationOfState *eos;
+  EquationOfStateDevice *eos;
 
   PLMLimiter limiter{PLMLimiter::VanLeer};
 };
@@ -260,7 +260,7 @@ void BragThermalDiffusion::AddBragDiffusiveFluxLim(int dir, const real t,
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Vs = this->Vs;
   IdefixArray3D<real> dMax = this->dMax;
-  EquationOfState eos = *(this->eos);
+  EquationOfStateDevice eos = *(this->eos);
 
   HydroModuleStatus haveThermalDiffusion = this->status.status;
   bool haveSlopeLimiter = this->haveSlopeLimiter;

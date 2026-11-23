@@ -65,7 +65,7 @@ void ThermalDiffusion::AddDiffusiveFlux(int dir, const real t, const IdefixArray
   IdefixArray3D<real> kappaArr = this->kappaArr;
   IdefixArray1D<real> dx = this->data->dx[dir];
 
-  EquationOfState eos = *(this->eos);
+  EquationOfStateDevice eos = *(this->eos);
   #if GEOMETRY == POLAR
     IdefixArray1D<real> x1 = this->data->x[IDIR];
   #endif

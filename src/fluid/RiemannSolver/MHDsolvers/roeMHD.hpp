@@ -104,7 +104,7 @@ void RiemannSolver<Phys>::RoeMHD(IdefixArray4D<real> &Flux) {
   IdefixArray3D<real> dL;
   IdefixArray3D<real> dR;
 
-  EquationOfState eos = *(hydro->eos.get());
+  EquationOfStateDevice eos = *(hydro->eos.get());
 
   // TODO(baghdads) what is this delta?
   real delta    = 1.e-6;

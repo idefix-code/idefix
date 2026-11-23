@@ -39,7 +39,8 @@ From there, one sees 4 files and a directories:
 
 ``setup.cpp``
     The physical setup definition. Its role is to define the initial conditions of the problem, but also to provide functions for user-defined
-    properties (boundary conditions, diffusivity, potential, etc.)
+    properties (boundary conditions, diffusivity, potential, etc.). Setups are written as a class derived from ``SetupBase`` and registered with
+    ``REGISTER_SETUP``, and selected with ``[Setup] name`` in ``idefix.ini`` (see :doc:`reference/setup.cpp`)
 
 ``idefix.ini``
     The input file. This file is read at runtime *only*. It defines most of the properties of the code: resolution, integrator, output, physical modules.

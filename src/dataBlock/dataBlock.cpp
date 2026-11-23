@@ -386,10 +386,7 @@ void DataBlock::DeriveVectorPotential() {
 void DataBlock::LaunchUserStepLast() {
   if(haveUserStepLast) {
     idfx::pushRegion("User::UserStepLast");
-    if(userStepLast != nullptr)
-      userStepLast(*this, this->t, this->dt);
-    else
-      IDEFIX_ERROR("UserStepLast not properly initialized");
+    userStepLast(*this, this->t, this->dt);
     idfx::popRegion();
   }
 }
@@ -397,20 +394,7 @@ void DataBlock::LaunchUserStepLast() {
 void DataBlock::LaunchUserStepFirst() {
   if(haveUserStepFirst) {
     idfx::pushRegion("User::UserStepFirst");
-    if(userStepFirst != nullptr)
-      userStepFirst(*this, this->t, this->dt);
-    else
-      IDEFIX_ERROR("UserStepLast not properly initialized");
+    userStepFirst(*this, this->t, this->dt);
     idfx::popRegion();
   }
-}
-
-void DataBlock::EnrollUserStepLast(StepFunc func) {
-  haveUserStepLast = true;
-  userStepLast = func;
-}
-
-void DataBlock::EnrollUserStepFirst(StepFunc func) {
-  haveUserStepFirst = true;
-  userStepFirst = func;
 }

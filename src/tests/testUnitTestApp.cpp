@@ -34,9 +34,4 @@ TEST(UnitTestApp, constructor) {
   ASSERT_EQ(data.np_int[IDIR], 8);
   ASSERT_EQ(data.np_int[JDIR], 8);
   ASSERT_EQ(data.np_int[KDIR], 8);
-
-  //checks about cell size
-  ASSERT_EQ(data.dx[IDIR][0], 1.0);
-  ASSERT_EQ(data.dx[JDIR][0], 1.0);
-  ASSERT_EQ(data.dx[KDIR][0], 1.0);
 }

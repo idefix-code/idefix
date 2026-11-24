@@ -65,9 +65,9 @@ void UnitTestApp::InitInput(size_t s1, size_t s2, size_t s3, float cell_size) {
   //create config file
   TempConfigFile configFile({
     "[Grid]",
-    std::format("X1-grid    1  0.0  {}  u  {}", s1, static_cast<float>(s1)*cell_size),
-    std::format("X2-grid    1  0.0  {}  u  {}", s2, static_cast<float>(s2)*cell_size),
-    std::format("X3-grid    1  0.0  {}  u  {}", s3, static_cast<float>(s3)*cell_size),
+    std::format("X1-grid    1  1.0  {}  u  {}", s1, 1 + static_cast<float>(s1)*cell_size), //R
+    std::format("X2-grid    1  0.0  {}  u  3.1415926", s2, static_cast<float>(s2)*cell_size), //teta
+    std::format("X3-grid    1  0.0  {}  u  {}", s3, 2 * 3.1415926), //phi
     "",
     "[Boundary]",
     "X1-beg    periodic",

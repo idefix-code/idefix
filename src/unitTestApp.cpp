@@ -65,9 +65,21 @@ void UnitTestApp::InitInput(size_t s1, size_t s2, size_t s3, float cell_size) {
   //create config file
   TempConfigFile configFile({
     "[Grid]",
-    std::format("X1-grid    1  1.0  {}  u  {}", s1, 1 + static_cast<float>(s1)*cell_size), //R
-    std::format("X2-grid    1  0.0  {}  u  3.1415926", s2, static_cast<float>(s2)*cell_size), //teta
-    std::format("X3-grid    1  0.0  {}  u  {}", s3, 2 * 3.1415926), //phi
+    #if GEOMETRY == CARTESIAN
+      std::format("X1-grid    1  0.0  {}  u  {}", s1, static_cast<float>(s1)*cell_size),
+      std::format("X2-grid    1  0.0  {}  u  {}", s2, static_cast<float>(s2)*cell_size),
+      std::format("X3-grid    1  0.0  {}  u  {}", s3, static_cast<float>(s1)*cell_size),
+    #elif GEOMETRY == SPHERICAL
+      std::format("X1-grid    1  1.0  {}  u  {}", s1, 1 + static_cast<float>(s1)*cell_size), //R
+      std::format("X2-grid    1  0.0  {}  u  {}", s2, 3.1415926), //theta
+      std::format("X3-grid    1  0.0  {}  u  {}", s3, 2 * 3.1415926), //phi
+    #elif GEOMETRY == POLAR
+      std::format("X1-grid    1  1.0  {}  u  {}", s1, 1 + static_cast<float>(s1)*cell_size), //R
+      std::format("X2-grid    1  0.0  {}  u  {}", s2, 2* 3.1415926), //theta
+    #else //GEOMETRY
+      #warning "Using unsupported geometry for the unit test object, some tests will fail !"
+      "# UNSUPPORTED GEOMETRY"
+    #endif //GEOMETRY
     "",
     "[Boundary]",
     "X1-beg    periodic",

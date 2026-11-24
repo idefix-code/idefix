@@ -14,6 +14,7 @@
 
 // includes
 #include <string>
+#include <format>
 #if __has_include(<filesystem>)
   #include <filesystem> // NOLINT [build/c++17]
   namespace fs = std::filesystem;
@@ -111,6 +112,12 @@ class IdefixEnvironment : public ::testing::Environment {
   void TearDown() override {
   }
 };
+
+// Override safeExit to throw an exception instead of exiting.
+// So the unit test suite can continue.
+void idfx::safeExit(int retCode) {
+  throw std::runtime_error(std::format("idfx::safeExit: exit with retCode={} !", retCode));
+}
 
 // setup advanded main for tests using MPI / Kokkos
 int main(int argc, char* argv[]) {

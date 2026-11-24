@@ -55,6 +55,21 @@ EXPECTED = {
     "testKCDouble": (np.complex128(complex(4.0, 5.5)), np.complex128),
 }
 
+# Expected replicated 1D/2D arrays, mirroring InitArrays() in setup.cpp.
+# key -> (first element, shape, numpy dtype)
+EXPECTED_ARRAYS = {
+    "testInt1D": (100, (7,), np.int32),
+    "testInt641D": (-9000000000000, (7,), np.int64),
+    "testFloat1D": (np.float32(1.0), (7,), np.float32),
+    "testDouble1D": (2.0, (7,), np.float64),
+    "testBool1D": (True, (7,), np.bool_),
+    "testDouble2D": (0.5, (4, 3), np.float64),
+    "testBool2D": (True, (4, 3), np.bool_),
+    "testInt2D": (0, (4, 3), np.int32),
+    "testCFloat2D": (np.complex64(complex(0.5, -1.5)), (4, 3), np.complex64),
+    "testCDouble2D": (np.complex128(complex(0.0, 0.0)), (4, 3), np.complex128),
+}
+
 
 def check_dump(filename, expected=EXPECTED, rtol=0.0, atol=0.0):
     """Read `filename` and check every field in `expected`.
@@ -83,6 +98,32 @@ def check_dump(filename, expected=EXPECTED, rtol=0.0, atol=0.0):
             errors += 1
         else:
             print(f"OK:   field {name!r} = {got!r}")
+
+    # Replicated 1D/2D arrays: check shape, dtype and first element
+    for name, (value, shape, dtype) in EXPECTED_ARRAYS.items():
+        if name not in dataset.data:
+            print(f"FAIL: array {name!r} not found in {filename}")
+            errors += 1
+            continue
+        field = dataset.data[name]
+        if field.shape != shape:
+            print(f"FAIL: array {name!r} has shape {field.shape}, expected {shape}")
+            errors += 1
+            continue
+        if field.dtype != dtype:
+            print(f"FAIL: array {name!r} has dtype {field.dtype}, expected {dtype}")
+            errors += 1
+            continue
+        got = field.ravel()[0]
+        if isinstance(value, (bool, np.bool_)):
+            ok = bool(got) == bool(value)
+        else:
+            ok = np.isclose(got, value, rtol=rtol, atol=atol)
+        if not ok:
+            print(f"FAIL: array {name!r}[0] = {got!r}, expected {value!r}")
+            errors += 1
+        else:
+            print(f"OK:   array {name!r} shape={field.shape} dtype={field.dtype}")
     return errors
 
 

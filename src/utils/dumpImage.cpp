@@ -15,6 +15,7 @@
 // ***********************************************************************************
 
 #include <string>
+#include <vector>
 #include <cstdio>
 #include "dumpImage.hpp"
 #include "dataBlock.hpp"
@@ -174,14 +175,26 @@ DumpImage::DumpImage(std::string filename, DataBlock *data, bool enableDomainDec
       dump.ReadSerial(fileHdl, ndim, nx, type, &this->geometry);
     } else if(fieldName.compare("centralMass")==0) {
       dump.ReadSerial(fileHdl, ndim, nx, type, &this->centralMass);
+    } else if(ndim <= 2 && ndim > 0) {
+      // Replicated 1D/2D array: the record holds the full (global) array on
+      // every rank. Keep it so GetSerialArray() can serve it later.
+      int64_t ntot = 1;
+      for(int dim = 0 ; dim < ndim ; dim++) ntot *= nx[dim];
+      int const size = dump_io::size_of(type);
+      if(size == 0) IDEFIX_ERROR("DumpImage: unsupported data type for " + fieldName);
+      serialArrays[fieldName].resize(ntot*size);
+      dump.ReadSerial(fileHdl, ndim, nx, type,
+                      static_cast<void*>(serialArrays[fieldName].data()));
+      serialArrayShape[fieldName].assign(nx, nx+ndim);
+      serialArrayType[fieldName] = type;
     } else {
-      int size=sizeof(double);
+      int64_t size = dump_io::size_of(type);
+      if(size == 0) IDEFIX_ERROR("DumpImage: unsupported data type for " + fieldName);
       for(int dim =0 ; dim<ndim ; dim++) {
         size = size*nx[dim];
       }
-      double *scrch = new double[size];
-      dump.ReadSerial(fileHdl,ndim, nx, type, scrch);
-      delete[] scrch;
+      std::vector<char> scrch(size);
+      dump.ReadSerial(fileHdl,ndim, nx, type, static_cast<void*>(scrch.data()));
     }
   }
   // Close file

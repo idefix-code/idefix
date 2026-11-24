@@ -16,6 +16,7 @@
 #include "idefix.hpp"
 #include "setup.hpp"
 #include "dumpImage.hpp"
+#include <memory>
 
 /*********************************************/
 /**
@@ -27,6 +28,13 @@ generators on different architectures.
 
 Output* myOutput;
 int outnum;
+
+// Replicated 1D array registered in the dump, read back through DumpImage
+// Kokkos views cannot be built before Kokkos::initialize(): allocate on demand.
+constexpr int NARR = 6;
+std::unique_ptr<IdefixArray1D<double>> serialArr;
+std::unique_ptr<IdefixHostArray1D<double>> serialArrRef;
+
 // Analysis function
 // This analysis checks that the restart routines are performing as they should
 void Analysis(DataBlock& data) {
@@ -127,6 +135,21 @@ void Analysis(DataBlock& data) {
   }
 
 
+  // Check that the replicated 1D array is readable through DumpImage
+  {
+    auto arr = image.GetSerialArray<double, 1>("testSerial1D");
+    int nerr = 0;
+    for(int i = 0 ; i < NARR ; i++) {
+      if(arr(i) != (*serialArrRef)(i)) nerr++;
+    }
+    if(nerr > 0) {
+      errornum += nerr;
+      idfx::cout << "-----------------------------------------" << std::endl
+                 << " Error: DumpImage::GetSerialArray returned " << nerr
+                 << " wrong values" << std::endl;
+    }
+  }
+
   idfx::cout << "done with " << errornum << " errors " << std::endl;
   if(errornum>0) {
     IDEFIX_ERROR("DumpImage failed validation");
@@ -136,11 +159,30 @@ void Analysis(DataBlock& data) {
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
+   // Allocate and fill the replicated array, then register it in the dump
+   serialArr = std::make_unique<IdefixArray1D<double>>("testSerial1D", NARR);
+   serialArrRef = std::make_unique<IdefixHostArray1D<double>>("testSerial1DRef", NARR);
+   {
+     auto h = Kokkos::create_mirror_view(*serialArr);
+     for(int i = 0 ; i < NARR ; i++) {
+       h(i) = 0.5 * i - 1.0;
+       (*serialArrRef)(i) = h(i);
+     }
+     Kokkos::deep_copy(*serialArr, h);
+   }
+   data.dump->RegisterVariable(*serialArr, "testSerial1D");
+
    if(input.CheckEntry("Output","analysis")>0) {
      output.EnrollAnalysis(&Analysis);
      myOutput = &output;
      outnum=0;
    }
+}
+
+// Release the Kokkos views before Kokkos::finalize()
+Setup::~Setup() {
+  serialArr.reset();
+  serialArrRef.reset();
 }
 
 // This routine initialize the flow

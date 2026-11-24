@@ -45,6 +45,250 @@ DumpScalars scalars;
 // Snapshot of the original values, used for validation after the round-trip
 DumpScalars scalarsRef;
 
+// =====================================================================================
+// Replicated 1D/2D arrays covering every data type supported by the dump I/O.
+// Rank 0 writes them once; every rank receives an identical copy on restart.
+// =====================================================================================
+constexpr int N1D = 7;    // length of 1D test arrays
+constexpr int N2Da = 4;   // first extent of 2D test arrays
+constexpr int N2Db = 3;   // second extent of 2D test arrays
+
+// Kokkos views cannot be constructed before Kokkos::initialize(), so they are
+// allocated in a holder created from Setup::Setup (after initialisation).
+struct TestArrays {
+  IdefixArray1D<int>       int1D;
+  IdefixArray1D<int64_t>   int641D;
+  IdefixArray1D<float>     float1D;
+  IdefixArray1D<double>    double1D;
+  IdefixArray1D<bool>      bool1D;
+  IdefixArray2D<double>    double2D;
+  IdefixArray2D<bool>      bool2D;
+  IdefixArray2D<int>       int2D;
+  IdefixArray2D<Kokkos::complex<float>>  cfloat2D;
+  IdefixArray2D<Kokkos::complex<double>> cdouble2D;
+
+  TestArrays()
+    : int1D("arrInt1D", N1D),
+      int641D("arrInt641D", N1D),
+      float1D("arrFloat1D", N1D),
+      double1D("arrDouble1D", N1D),
+      bool1D("arrBool1D", N1D),
+      double2D("arrDouble2D", N2Da, N2Db),
+      bool2D("arrBool2D", N2Da, N2Db),
+      int2D("arrInt2D", N2Da, N2Db),
+      cfloat2D("arrCFloat2D", N2Da, N2Db),
+      cdouble2D("arrCDouble2D", N2Da, N2Db) {}
+};
+
+std::unique_ptr<TestArrays> testArrays;
+
+// Fill every array with values a wrong packing would scramble
+void InitArrays() {
+  auto hInt1D    = Kokkos::create_mirror_view(testArrays->int1D);
+  auto hInt641D  = Kokkos::create_mirror_view(testArrays->int641D);
+  auto hFloat1D  = Kokkos::create_mirror_view(testArrays->float1D);
+  auto hDouble1D = Kokkos::create_mirror_view(testArrays->double1D);
+  auto hBool1D   = Kokkos::create_mirror_view(testArrays->bool1D);
+  auto hDouble2D = Kokkos::create_mirror_view(testArrays->double2D);
+  auto hBool2D   = Kokkos::create_mirror_view(testArrays->bool2D);
+  auto hInt2D    = Kokkos::create_mirror_view(testArrays->int2D);
+  auto hCf2D     = Kokkos::create_mirror_view(testArrays->cfloat2D);
+  auto hCd2D     = Kokkos::create_mirror_view(testArrays->cdouble2D);
+  for(int i = 0 ; i < N1D ; i++) {
+    hInt1D(i)    = 100 + i;
+    hInt641D(i)  = -9000000000000LL + i;
+    hFloat1D(i)  = 0.5f * i + 1.0f;
+    hDouble1D(i) = -0.25 * i + 2.0;
+    hBool1D(i)   = (i % 2 == 0);
+  }
+  for(int i = 0 ; i < N2Da ; i++) {
+    for(int j = 0 ; j < N2Db ; j++) {
+      hDouble2D(i, j) = 10.0 * i + j + 0.5;
+      hBool2D(i, j)   = ((i + j) % 2 == 0);
+      hInt2D(i, j)    = 100 * i + j;
+      hCf2D(i, j)     = Kokkos::complex<float>(i + 0.5f, -j - 1.5f);
+      hCd2D(i, j)     = Kokkos::complex<double>(2.0 * i, -3.0 * j);
+    }
+  }
+  Kokkos::deep_copy(testArrays->int1D, hInt1D);
+  Kokkos::deep_copy(testArrays->int641D, hInt641D);
+  Kokkos::deep_copy(testArrays->float1D, hFloat1D);
+  Kokkos::deep_copy(testArrays->double1D, hDouble1D);
+  Kokkos::deep_copy(testArrays->bool1D, hBool1D);
+  Kokkos::deep_copy(testArrays->double2D, hDouble2D);
+  Kokkos::deep_copy(testArrays->bool2D, hBool2D);
+  Kokkos::deep_copy(testArrays->int2D, hInt2D);
+  Kokkos::deep_copy(testArrays->cfloat2D, hCf2D);
+  Kokkos::deep_copy(testArrays->cdouble2D, hCd2D);
+}
+
+// Compare the current arrays against a reference set of host copies
+int CheckArraysAgainst(const IdefixHostArray1D<int> &refInt1D,
+                       const IdefixHostArray1D<int64_t> &refInt641D,
+                       const IdefixHostArray1D<float> &refFloat1D,
+                       const IdefixHostArray1D<double> &refDouble1D,
+                       const IdefixHostArray1D<bool> &refBool1D,
+                       const IdefixHostArray2D<double> &refDouble2D,
+                       const IdefixHostArray2D<bool> &refBool2D,
+                       const IdefixHostArray2D<int> &refInt2D,
+                       const IdefixHostArray2D<Kokkos::complex<float>> &refCf2D,
+                       const IdefixHostArray2D<Kokkos::complex<double>> &refCd2D);
+
+// Reference host copies, filled by SnapshotArrays() before the dump is written
+struct ArrayRefs {
+  IdefixHostArray1D<int>     int1D;
+  IdefixHostArray1D<int64_t> int641D;
+  IdefixHostArray1D<float>   float1D;
+  IdefixHostArray1D<double>  double1D;
+  IdefixHostArray1D<bool>    bool1D;
+  IdefixHostArray2D<double>  double2D;
+  IdefixHostArray2D<bool>    bool2D;
+  IdefixHostArray2D<int>     int2D;
+  IdefixHostArray2D<Kokkos::complex<float>>  cfloat2D;
+  IdefixHostArray2D<Kokkos::complex<double>> cdouble2D;
+};
+ArrayRefs arrRefs;
+
+void SnapshotArrays() {
+  arrRefs.int1D    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), testArrays->int1D);
+  arrRefs.int641D  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), testArrays->int641D);
+  arrRefs.float1D  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), testArrays->float1D);
+  arrRefs.double1D = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), testArrays->double1D);
+  arrRefs.bool1D   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), testArrays->bool1D);
+  arrRefs.double2D = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), testArrays->double2D);
+  arrRefs.bool2D   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), testArrays->bool2D);
+  arrRefs.int2D    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), testArrays->int2D);
+  arrRefs.cfloat2D = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), testArrays->cfloat2D);
+  arrRefs.cdouble2D = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), testArrays->cdouble2D);
+}
+
+// Overwrite every array with values that cannot match the reference snapshot
+void RandomizeArrays() {
+  {
+    auto h = Kokkos::create_mirror_view(testArrays->int1D);
+    for(int i = 0 ; i < N1D ; i++) h(i) = -1 - i;
+    Kokkos::deep_copy(testArrays->int1D, h);
+  }
+  {
+    auto h = Kokkos::create_mirror_view(testArrays->int641D);
+    for(int i = 0 ; i < N1D ; i++) h(i) = 1 + i;
+    Kokkos::deep_copy(testArrays->int641D, h);
+  }
+  {
+    auto h = Kokkos::create_mirror_view(testArrays->float1D);
+    for(int i = 0 ; i < N1D ; i++) h(i) = 99.0f;
+    Kokkos::deep_copy(testArrays->float1D, h);
+  }
+  {
+    auto h = Kokkos::create_mirror_view(testArrays->double1D);
+    for(int i = 0 ; i < N1D ; i++) h(i) = -99.0;
+    Kokkos::deep_copy(testArrays->double1D, h);
+  }
+  {
+    auto h = Kokkos::create_mirror_view(testArrays->bool1D);
+    for(int i = 0 ; i < N1D ; i++) h(i) = true;
+    Kokkos::deep_copy(testArrays->bool1D, h);
+  }
+  {
+    auto h = Kokkos::create_mirror_view(testArrays->double2D);
+    for(int i = 0 ; i < N2Da ; i++) for(int j = 0 ; j < N2Db ; j++) h(i, j) = -99.0;
+    Kokkos::deep_copy(testArrays->double2D, h);
+  }
+  {
+    auto h = Kokkos::create_mirror_view(testArrays->bool2D);
+    for(int i = 0 ; i < N2Da ; i++) for(int j = 0 ; j < N2Db ; j++) h(i, j) = true;
+    Kokkos::deep_copy(testArrays->bool2D, h);
+  }
+  {
+    auto h = Kokkos::create_mirror_view(testArrays->int2D);
+    for(int i = 0 ; i < N2Da ; i++) for(int j = 0 ; j < N2Db ; j++) h(i, j) = -1;
+    Kokkos::deep_copy(testArrays->int2D, h);
+  }
+  {
+    auto h = Kokkos::create_mirror_view(testArrays->cfloat2D);
+    for(int i = 0 ; i < N2Da ; i++) for(int j = 0 ; j < N2Db ; j++)
+      h(i, j) = Kokkos::complex<float>(9.f, 9.f);
+    Kokkos::deep_copy(testArrays->cfloat2D, h);
+  }
+  {
+    auto h = Kokkos::create_mirror_view(testArrays->cdouble2D);
+    for(int i = 0 ; i < N2Da ; i++) for(int j = 0 ; j < N2Db ; j++)
+      h(i, j) = Kokkos::complex<double>(9., 9.);
+    Kokkos::deep_copy(testArrays->cdouble2D, h);
+  }
+}
+
+// Compare the current (reloaded) arrays against the snapshot
+int CheckArrays() {
+  return CheckArraysAgainst(arrRefs.int1D, arrRefs.int641D, arrRefs.float1D,
+                            arrRefs.double1D, arrRefs.bool1D, arrRefs.double2D,
+                            arrRefs.bool2D, arrRefs.int2D, arrRefs.cfloat2D,
+                            arrRefs.cdouble2D);
+}
+
+// Compare the current (reloaded) arrays against the reference host copies
+int CheckArraysAgainst(const IdefixHostArray1D<int> &refInt1D,
+                       const IdefixHostArray1D<int64_t> &refInt641D,
+                       const IdefixHostArray1D<float> &refFloat1D,
+                       const IdefixHostArray1D<double> &refDouble1D,
+                       const IdefixHostArray1D<bool> &refBool1D,
+                       const IdefixHostArray2D<double> &refDouble2D,
+                       const IdefixHostArray2D<bool> &refBool2D,
+                       const IdefixHostArray2D<int> &refInt2D,
+                       const IdefixHostArray2D<Kokkos::complex<float>> &refCf2D,
+                       const IdefixHostArray2D<Kokkos::complex<double>> &refCd2D) {
+  int errors = 0;
+  auto report = [&](const char *name, bool ok) {
+    if(!ok) {
+      errors++;
+      idfx::cout << "-----------------------------------------" << std::endl
+                 << " Error: array " << name << " was not restored correctly" << std::endl;
+    }
+  };
+
+  auto curInt1D    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), testArrays->int1D);
+  auto curInt641D  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), testArrays->int641D);
+  auto curFloat1D  = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), testArrays->float1D);
+  auto curDouble1D = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), testArrays->double1D);
+  auto curBool1D   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), testArrays->bool1D);
+  auto curDouble2D = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), testArrays->double2D);
+  auto curBool2D   = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), testArrays->bool2D);
+  auto curInt2D    = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), testArrays->int2D);
+  auto curCf2D     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), testArrays->cfloat2D);
+  auto curCd2D     = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), testArrays->cdouble2D);
+
+  bool okInt1D = true, okInt641D = true, okFloat1D = true, okDouble1D = true;
+  bool okBool1D = true, okDouble2D = true, okBool2D = true, okInt2D = true;
+  bool okCf2D = true, okCd2D = true;
+  for(int i = 0 ; i < N1D ; i++) {
+    okInt1D    = okInt1D    && (curInt1D(i)    == refInt1D(i));
+    okInt641D  = okInt641D  && (curInt641D(i)  == refInt641D(i));
+    okFloat1D  = okFloat1D  && (curFloat1D(i)  == refFloat1D(i));
+    okDouble1D = okDouble1D && (curDouble1D(i) == refDouble1D(i));
+    okBool1D   = okBool1D   && (bool(curBool1D(i)) == bool(refBool1D(i)));
+  }
+  for(int i = 0 ; i < N2Da ; i++) {
+    for(int j = 0 ; j < N2Db ; j++) {
+      okDouble2D = okDouble2D && (curDouble2D(i, j) == refDouble2D(i, j));
+      okBool2D   = okBool2D   && (bool(curBool2D(i, j)) == bool(refBool2D(i, j)));
+      okInt2D    = okInt2D    && (curInt2D(i, j) == refInt2D(i, j));
+      okCf2D     = okCf2D     && (curCf2D(i, j) == refCf2D(i, j));
+      okCd2D     = okCd2D     && (curCd2D(i, j) == refCd2D(i, j));
+    }
+  }
+  report("testInt1D",    okInt1D);
+  report("testInt641D",  okInt641D);
+  report("testFloat1D",  okFloat1D);
+  report("testDouble1D", okDouble1D);
+  report("testBool1D",   okBool1D);
+  report("testDouble2D", okDouble2D);
+  report("testBool2D",   okBool2D);
+  report("testInt2D",    okInt2D);
+  report("testCFloat2D", okCf2D);
+  report("testCDouble2D", okCd2D);
+  return errors;
+}
+
 // Overwrite every scalar with a value that cannot be confused with the original
 void RandomizeScalars() {
   scalars.int_      = scalars.int_ + 1;
@@ -88,6 +332,10 @@ void Analysis(DataBlock& data) {
 
   // Snapshot the scalar values so they can be checked after the round-trip
   scalarsRef = scalars;
+
+  // Fill the replicated arrays and snapshot them for the round-trip check
+  InitArrays();
+  SnapshotArrays();
 
   // Trigger dump creation
   // data.SetBoundaries();
@@ -147,6 +395,8 @@ void Analysis(DataBlock& data) {
 
   // Randomise every scalar so that only the dump can restore the original values
   RandomizeScalars();
+  // Idem for the replicated arrays
+  RandomizeArrays();
 
   // Load back the restart dump
   myOutput->RestartFromDump(data, outnum);
@@ -269,15 +519,26 @@ void Analysis(DataBlock& data) {
   // Validate that every scalar survived the dump/restart round-trip
   errornum += CheckScalars();
 
+  // Validate that every replicated array survived the dump/restart round-trip
+  errornum += CheckArrays();
+
   idfx::cout << "Analysis: consistency check done with " << errornum << " errors " << std::endl;
   if(errornum>0) {
     IDEFIX_ERROR("Restart from dump failed validation");
   }
 }
 
+// Release the Kokkos views before Kokkos::finalize() is called
+Setup::~Setup() {
+  arrRefs = ArrayRefs{};
+  testArrays.reset();
+}
+
 // Initialisation routine. Can be used to allocate
 // Arrays or variables which are used later on
 Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
+   // Kokkos views must be allocated after Kokkos::initialize()
+   testArrays = std::make_unique<TestArrays>();
    if(input.CheckEntry("Output","analysis")>0) {
      output.EnrollAnalysis(&Analysis);
      myOutput = &output;
@@ -295,6 +556,19 @@ Setup::Setup(Input &input, Grid &grid, DataBlock &data, Output &output) {
    data.dump->RegisterVariable(&scalars.cdouble_,  "testCDouble");
    data.dump->RegisterVariable(&scalars.kcfloat_,  "testKCFloat");
    data.dump->RegisterVariable(&scalars.kcdouble_, "testKCDouble");
+
+   // Replicated 1D/2D arrays: one field per data type and rank. Names must stay
+   // within NAMESIZE-1 = 15 characters to match exactly on read-back.
+   data.dump->RegisterVariable(testArrays->int1D,    "testInt1D");
+   data.dump->RegisterVariable(testArrays->int641D,  "testInt641D");
+   data.dump->RegisterVariable(testArrays->float1D,  "testFloat1D");
+   data.dump->RegisterVariable(testArrays->double1D, "testDouble1D");
+   data.dump->RegisterVariable(testArrays->bool1D,   "testBool1D");
+   data.dump->RegisterVariable(testArrays->double2D, "testDouble2D");
+   data.dump->RegisterVariable(testArrays->bool2D,   "testBool2D");
+   data.dump->RegisterVariable(testArrays->int2D,    "testInt2D");
+   data.dump->RegisterVariable(testArrays->cfloat2D, "testCFloat2D");
+   data.dump->RegisterVariable(testArrays->cdouble2D, "testCDouble2D");
 }
 
 // This routine initialize the flow

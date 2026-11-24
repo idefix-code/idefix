@@ -47,6 +47,8 @@ target_sources(idefix-core
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/setup.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/units.hpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/units.cpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/unitTestApp.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/unitTestApp.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/timeIntegrator.hpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/timeIntegrator.cpp
 )
@@ -56,6 +58,7 @@ if (Idefix_GTEST)
   target_sources(unittests
     PRIVATE ${CMAKE_CURRENT_LIST_DIR}/tests/testKokkos.cpp
     PRIVATE ${CMAKE_CURRENT_LIST_DIR}/tests/testArrays.cpp
+    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/tests/testUnitTestApp.cpp
     PRIVATE ${CMAKE_CURRENT_LIST_DIR}/gtest-idfx.cpp
   )
   if (Idefix_MPI)

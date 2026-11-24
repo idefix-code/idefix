@@ -123,7 +123,8 @@ constexpr DataType get_data_type() {
 
 template<typename ArrayType>
 constexpr DataType get_array_data_type() {
-    using T = idefix::value_type_t<ArrayType>;
+    // Kokkos::View<>::non_const_value_type
+    using T = typename ArrayType::non_const_value_type;
     return get_data_type<T>();
 }
 
@@ -190,11 +191,12 @@ class DumpField {
     //                split is independent of the MPI topology used for the grid.
     enum class Storage { Replicated, Distributed };
 
-    // Default storage semantics for a registered object, decided by its rank:
-    // grid arrays (3D/4D) are distributed, everything else is replicated.
+    // Default storage semantics for a registered object, decided by its rank
+    // (Kokkos::View<>::rank): grid arrays (3D/4D) are distributed, everything
+    // else is replicated.
     template<typename T>
     static constexpr Storage default_storage_for_view() {
-        return (idefix::view_dimension_v<T> >= 3)
+        return (T::rank >= 3)
                    ? Storage::Distributed
                    : Storage::Replicated;
     }
@@ -260,16 +262,19 @@ class DumpField {
         int direction;
         Storage storage;
 
-        static constexpr int dimension = idefix::view_dimension_v<ArrayType>;
-        using value_type = idefix::value_type_t<ArrayType>;
+        // Kokkos::View members used below: rank, non_const_value_type,
+        // host_mirror_type, memory_space
+        static constexpr int dimension = ArrayType::rank;
+        using value_type = typename ArrayType::non_const_value_type;
 
         // Host mirror type with the same rank as the stored view
-        template<int N> struct HostViewOf;
-        template<> struct HostViewOf<1> { using type = IdefixHostArray1D<value_type>; };
-        template<> struct HostViewOf<2> { using type = IdefixHostArray2D<value_type>; };
-        template<> struct HostViewOf<3> { using type = IdefixHostArray3D<value_type>; };
-        template<> struct HostViewOf<4> { using type = IdefixHostArray4D<value_type>; };
-        using host_array_type = typename HostViewOf<dimension>::type;
+        using host_array_type = typename ArrayType::host_mirror_type;
+
+        // True when the view's memory space is directly accessible from the
+        // host (Kokkos::SpaceAccessibility, Kokkos_Concepts.hpp)
+        static constexpr bool host_accessible =
+            Kokkos::SpaceAccessibility<Kokkos::HostSpace,
+                                       typename ArrayType::memory_space>::accessible;
 
         // 3D view of the stored data (directly for 3D arrays, else the var-th slice)
         auto GetSlice() const {
@@ -310,16 +315,12 @@ class DumpField {
             return shape;
         }
 
-        // Total number of elements held by this rank
-        size_t Size() const override {
-            size_t n = 1;
-            for (int i = 0 ; i < dimension ; i++) n *= array.extent(i);
-            return n;
-        }
+        // Total number of elements held by this rank (Kokkos::View::size())
+        size_t Size() const override { return array.size(); }
 
         // Host copy of the whole array (rank-preserving), used by the serial path
         host_array_type GetHostArray() const {
-            if constexpr (idefix::is_host_space_v<ArrayType>) {
+            if constexpr (host_accessible) {
                 return array;
             } else {
                 auto hostArr = Kokkos::create_mirror(Kokkos::HostSpace(), array);
@@ -328,12 +329,17 @@ class DumpField {
             }
         }
 
-        // Copy the array into an existing host buffer of Size() elements
+        // Copy the array into an existing host buffer of Size() elements.
+        // IdefixArrays are LayoutRight, hence contiguous in memory: the whole
+        // array can be copied through a flat rank-1 host view (Kokkos::deep_copy)
         void CopyToHost(void* dest) const override {
             if constexpr (dimension == 1 || dimension == 2) {
                 auto hostArr = GetHostArray();
-                value_type* dst = static_cast<value_type*>(dest);
-                for (size_t n = 0 ; n < Size() ; n++) dst[n] = hostArr.data()[n];
+                Kokkos::View<value_type*, Kokkos::HostSpace> dst(
+                    static_cast<value_type*>(dest), Size());
+                Kokkos::View<const value_type*, Kokkos::HostSpace> src(
+                    hostArr.data(), Size());
+                Kokkos::deep_copy(dst, src);
             } else {
                 IDEFIX_ERROR("CopyToHost is only used for replicated 1D/2D arrays");
             }
@@ -341,14 +347,15 @@ class DumpField {
 
         void SyncFromHost(const void* source) const override {
             if constexpr (dimension == 1 || dimension == 2) {
-                const value_type* src = static_cast<const value_type*>(source);
-                if constexpr (idefix::is_host_space_v<ArrayType>) {
-                    value_type* dst = array.data();
-                    for (size_t n = 0 ; n < Size() ; n++) dst[n] = src[n];
+                Kokkos::View<const value_type*, Kokkos::HostSpace> src(
+                    static_cast<const value_type*>(source), Size());
+                if constexpr (host_accessible) {
+                    Kokkos::View<value_type*, Kokkos::HostSpace> dst(array.data(), Size());
+                    Kokkos::deep_copy(dst, src);
                 } else {
                     auto mirror = Kokkos::create_mirror(Kokkos::HostSpace(), array);
-                    for (size_t n = 0 ; n < Size() ; n++)
-                        mirror.data()[n] = src[n];
+                    Kokkos::View<value_type*, Kokkos::HostSpace> dst(mirror.data(), Size());
+                    Kokkos::deep_copy(dst, src);
                     Kokkos::deep_copy(array, mirror);
                 }
             } else {
@@ -363,8 +370,8 @@ class DumpField {
 
         IdefixHostArray3D<real> GetHostField() const override {
             if constexpr (dimension == 3 || dimension == 4) {
-                if constexpr (std::is_same_v<idefix::value_type_t<ArrayType>, real>) {
-                    if constexpr (idefix::is_host_space_v<ArrayType>) {
+                if constexpr (std::is_same_v<value_type, real>) {
+                    if constexpr (host_accessible) {
                         return GetSlice();
                     } else {
                         auto hostArr = Kokkos::create_mirror(Kokkos::HostSpace(), GetSlice());
@@ -384,7 +391,7 @@ class DumpField {
         void SyncFrom(const IdefixHostArray3D<real>& source) const override {
             if constexpr (dimension != 3 && dimension != 4) {
                 IDEFIX_ERROR("Only 3D and 4D arrays supported");
-            } else if constexpr (idefix::is_host_space_v<ArrayType>) {
+            } else if constexpr (host_accessible) {
                 Kokkos::deep_copy(GetSlice(), source);
             } else {
                 auto mirror = Kokkos::create_mirror(Kokkos::HostSpace(), GetSlice());
@@ -631,15 +638,15 @@ void Dump::RegisterVariable(ArrayType& in, std::string name,
                            int varnum, int dir,
                            DumpField::ArrayLocation loc,
                            DumpField::Storage storage) {
-    static_assert(idefix::is_kokkos_view_v<ArrayType>,
+    static_assert(Kokkos::is_view_v<ArrayType>,
                  "RegisterVariable requires an IdefixArray type");
     // A 4D array stores several variables: varnum designates which one to dump.
     // Other ranks have a single variable and ignore varnum.
-    if (idefix::view_dimension_v<ArrayType> != 4 && varnum >= 0) {
+    if (ArrayType::rank != 4 && varnum >= 0) {
         IDEFIX_ERROR("varnum is only meaningful for 4D arrays");
     }
     // Only 1D/2D arrays may be replicated: grid arrays are always distributed
-    if (idefix::view_dimension_v<ArrayType> >= 3 &&
+    if (ArrayType::rank >= 3 &&
         storage == DumpField::Storage::Replicated) {
         IDEFIX_ERROR("Only 1D and 2D arrays can be registered as replicated "
                      "fields (3D/4D arrays are always distributed)");
@@ -647,8 +654,8 @@ void Dump::RegisterVariable(ArrayType& in, std::string name,
     // Distributed (grid) fields are stored as real precision sub-arrays.
     // Replicated fields may hold any type supported by dump_io::DataType.
     // Only 1D/2D arrays can be replicated, so these two checks are disjoint.
-    static_assert(idefix::view_dimension_v<ArrayType> <= 2 ||
-                  std::is_same_v<idefix::value_type_t<ArrayType>, real>,
+    static_assert(ArrayType::rank <= 2 ||
+                  std::is_same_v<typename ArrayType::non_const_value_type, real>,
                   "Only real-valued arrays can be dumped as distributed fields");
     static_assert(dump_io::scalar_or_known_type_v<ArrayType>,
                   "Unsupported array element type for dump I/O");

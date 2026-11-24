@@ -28,6 +28,7 @@ class Laplacian {
   // Types of boundary which can be treated
   enum LaplacianBoundaryType {internalgrav,
                               periodic,
+                              shearingbox,
                               nullgrad,
                               nullpot,
                               userdef,
@@ -97,6 +98,7 @@ class Laplacian {
   bool isTwoPi{false};
   bool havePreconditioner{false}; // Use of preconditionner (or not)
 
+  IdefixArray3D<real> sBArray;    ///< Array use by shearingbox boundary conditions
 
   DataBlock *data;
 

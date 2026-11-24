@@ -4,7 +4,7 @@
       "dumpname": "dump.0001.dmp",
       "tolerance": 1e-13,
       "nonRegressionTest": false,
-      "standardTest": false,
+      "standardTest": true,
       "reconstruction": 2,
       "dec": [2, 2, 2]
   },

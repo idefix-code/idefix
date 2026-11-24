@@ -15,11 +15,13 @@
 // ***********************************************************************************
 
 #include <string>
+#include <vector>
 #include <cstdio>
 #include "dumpImage.hpp"
 #include "dataBlock.hpp"
 #include "idefix.hpp"
 
+using dump_io::DataType;
 
 #define  HEADERSIZE 128
 
@@ -173,14 +175,28 @@ DumpImage::DumpImage(std::string filename, DataBlock *data, bool enableDomainDec
       dump.ReadSerial(fileHdl, ndim, nx, type, &this->geometry);
     } else if(fieldName.compare("centralMass")==0) {
       dump.ReadSerial(fileHdl, ndim, nx, type, &this->centralMass);
+    } else if(ndim <= 2 && ndim > 0) {
+      // Any 1D/2D field is replicated: the record holds the whole array, which
+      // is the same on every rank. Keep it so GetSerialArray() can serve it.
+      int64_t ntot = 1;
+      for(int dim = 0 ; dim < ndim ; dim++) ntot *= nx[dim];
+      int const size = dump_io::size_of(type);
+      if(size == 0) IDEFIX_ERROR("DumpImage: unsupported data type for " + fieldName);
+      serialArrays[fieldName].resize(ntot*size);
+      dump.ReadSerial(fileHdl, ndim, nx, type,
+                      static_cast<void*>(serialArrays[fieldName].data()));
+      serialArrayShape[fieldName].assign(nx, nx+ndim);
+      serialArrayType[fieldName] = type;
     } else {
-      int size=sizeof(double);
+      // Unregistered field: read and discard it so that it does not break the
+      // stream. Grid fields never reach this branch (ndim == 3 above).
+      int64_t size = dump_io::size_of(type);
+      if(size == 0) IDEFIX_ERROR("DumpImage: unsupported data type for " + fieldName);
       for(int dim =0 ; dim<ndim ; dim++) {
         size = size*nx[dim];
       }
-      double *scrch = new double[size];
-      dump.ReadSerial(fileHdl,ndim, nx, type, scrch);
-      delete[] scrch;
+      std::vector<char> scrch(size);
+      dump.ReadSerial(fileHdl,ndim, nx, type, static_cast<void*>(scrch.data()));
     }
   }
   // Close file

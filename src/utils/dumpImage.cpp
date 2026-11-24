@@ -176,8 +176,8 @@ DumpImage::DumpImage(std::string filename, DataBlock *data, bool enableDomainDec
     } else if(fieldName.compare("centralMass")==0) {
       dump.ReadSerial(fileHdl, ndim, nx, type, &this->centralMass);
     } else if(ndim <= 2 && ndim > 0) {
-      // Replicated 1D/2D array: the record holds the full (global) array on
-      // every rank. Keep it so GetSerialArray() can serve it later.
+      // Any 1D/2D field is replicated: the record holds the whole array, which
+      // is the same on every rank. Keep it so GetSerialArray() can serve it.
       int64_t ntot = 1;
       for(int dim = 0 ; dim < ndim ; dim++) ntot *= nx[dim];
       int const size = dump_io::size_of(type);
@@ -188,6 +188,8 @@ DumpImage::DumpImage(std::string filename, DataBlock *data, bool enableDomainDec
       serialArrayShape[fieldName].assign(nx, nx+ndim);
       serialArrayType[fieldName] = type;
     } else {
+      // Unregistered field: read and discard it so that it does not break the
+      // stream. Grid fields never reach this branch (ndim == 3 above).
       int64_t size = dump_io::size_of(type);
       if(size == 0) IDEFIX_ERROR("DumpImage: unsupported data type for " + fieldName);
       for(int dim =0 ; dim<ndim ; dim++) {

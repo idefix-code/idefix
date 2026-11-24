@@ -183,24 +183,6 @@ class DumpField {
  public:
     enum class ArrayLocation { Center, Face, Edge };
 
-    // How the field is spread across MPI ranks (see agent/adr/0001).
-    //  Replicated  : every rank holds an identical copy. One rank writes it,
-    //                every rank reads it back.
-    //  Distributed : the field is split across ranks along its slowest-varying
-    //                axis, using all ranks in their linear rank order. The
-    //                split is independent of the MPI topology used for the grid.
-    enum class Storage { Replicated, Distributed };
-
-    // Default storage semantics for a registered object, decided by its rank
-    // (Kokkos::View<>::rank): grid arrays (3D/4D) are distributed, everything
-    // else is replicated.
-    template<typename T>
-    static constexpr Storage default_storage_for_view() {
-        return (T::rank >= 3)
-                   ? Storage::Distributed
-                   : Storage::Replicated;
-    }
-
  private:
     // =============================================================================
     // Base class for type-erased storage
@@ -218,7 +200,14 @@ class DumpField {
         virtual bool IsArray() const = 0;
         virtual int GetVarNum() const = 0;
         virtual int GetArrayDimension() const = 0;
-        virtual Storage GetStorage() const = 0;
+
+        // The storage semantics of a field follow from its rank: arrays with
+        // rank <= 2 are replicated (identical on every rank), arrays of rank 3
+        // or 4 are grid arrays and hence distributed. Raw pointers are scalar
+        // and replicated. See agent/adr/0001.
+        bool IsDistributed() const {
+            return IsArray() && GetArrayDimension() >= 3;
+        }
 
         // Shape of a replicated array (extent along each axis). Empty for
         // distributed fields and scalars.
@@ -260,7 +249,6 @@ class DumpField {
         int var;
         ArrayLocation location;
         int direction;
-        Storage storage;
 
         // Kokkos::View members used below: rank, non_const_value_type,
         // host_mirror_type, memory_space
@@ -289,12 +277,12 @@ class DumpField {
         }
 
      public:
-        ArrayStorage(ArrayType& arr, int v, ArrayLocation loc, int dir, Storage s)
-            : array{arr}, var{v}, location{loc}, direction{dir}, storage{s} {}
+        ArrayStorage(ArrayType& arr, int v, ArrayLocation loc, int dir)
+            : array{arr}, var{v}, location{loc}, direction{dir} {}
 
         std::unique_ptr<StorageBase> clone() const override {
             return std::make_unique<ArrayStorage<ArrayType>>(array, var, location,
-                                                             direction, storage);
+                                                             direction);
         }
 
         // Accessors
@@ -307,7 +295,6 @@ class DumpField {
         bool IsArray() const override { return true; }
         int GetVarNum() const override { return var; }
         int GetArrayDimension() const override { return dimension; }
-        Storage GetStorage() const override { return storage; }
 
         std::vector<int> GetShape() const override {
             std::vector<int> shape(dimension);
@@ -426,7 +413,6 @@ class DumpField {
         bool IsArray() const override { return false; }
         int GetVarNum() const override { return -1; }
         int GetArrayDimension() const override { return 0; }
-        Storage GetStorage() const override { return Storage::Replicated; }
 
         size_t Size() const override { return static_cast<size_t>(size); }
 
@@ -460,12 +446,12 @@ class DumpField {
     // Constructors
     // =============================================================================
 
+    // IdefixArray storage: the storage semantics follow from the rank, so no
+    // option is offered to the caller (see agent/adr/0001).
     template<typename ArrayType>
     DumpField(ArrayType& arr, int varnum = -1,
-              ArrayLocation loc = ArrayLocation::Center, int dir = -1,
-              Storage storage = default_storage_for_view<ArrayType>())
-        : impl{std::make_unique<ArrayStorage<ArrayType>>(arr, varnum, loc, dir,
-                                                         storage)} {}
+              ArrayLocation loc = ArrayLocation::Center, int dir = -1)
+        : impl{std::make_unique<ArrayStorage<ArrayType>>(arr, varnum, loc, dir)} {}
 
     // Scalar (raw pointer) storage: any type with a known DataType, including
     // std::complex<float/double> and Kokkos::complex<float/double>.
@@ -536,7 +522,9 @@ class DumpField {
     dump_io::DataType GetDataType() const { return impl->GetDataType(); }
     bool IsArray() const { return impl->IsArray(); }
     int GetVarNum() const { return impl->GetVarNum(); }
-    Storage GetStorage() const { return impl->GetStorage(); }
+    // 3D/4D grid arrays are distributed across ranks; 1D/2D arrays and scalars
+    // are replicated (identical on every rank).
+    bool IsDistributed() const { return impl->IsDistributed(); }
     std::vector<int> GetShape() const { return impl->GetShape(); }
     size_t Size() const { return impl->Size(); }
     int GetArrayDimension() const { return impl->GetArrayDimension(); }
@@ -567,14 +555,13 @@ class Dump {
     bool Read(Output&, int);
 
     // Register IdefixArrays - generic versions
-    // The default storage depends on the array rank: 3D/4D arrays are distributed
-    // across ranks, 1D/2D arrays are replicated (identical on every rank).
+    // Storage is decided by the array rank, with no override: 3D/4D grid arrays
+    // are distributed across ranks, 1D/2D arrays are replicated (identical on
+    // every rank). See agent/adr/0001.
     template<typename ArrayType>
     void RegisterVariable(ArrayType& in, std::string name,
                          int varnum = -1, int dir = -1,
-                         DumpField::ArrayLocation loc = DumpField::ArrayLocation::Center,
-                         DumpField::Storage storage =
-                             DumpField::default_storage_for_view<ArrayType>());
+                         DumpField::ArrayLocation loc = DumpField::ArrayLocation::Center);
 
     // Register any other fundamental type
     template<typename T>
@@ -613,12 +600,6 @@ class Dump {
     void WriteString(IdfxFileHandler, char *, int);
     void WriteSerial(IdfxFileHandler, int, int *, dump_io::DataType, char*, void*);
     void WriteDistributed(IdfxFileHandler, int, int*, int*, char*, IdfxDataDescriptor&, real*);
-    // Write/read a field split across all ranks along its slowest-varying axis.
-    // Each rank holds an equal-sized block, contiguous in memory.
-    void WriteDistributedArray(IdfxFileHandler, int, int*, char*,
-                               dump_io::DataType, void*);
-    void ReadDistributedArray(IdfxFileHandler, int, int*, int*,
-                              dump_io::DataType, void*);
     void ReadNextFieldProperties(IdfxFileHandler, int&, int*, dump_io::DataType&, std::string&);
     void ReadSerial(IdfxFileHandler, int, int*, dump_io::DataType, void*);
     void ReadDistributed(IdfxFileHandler, int, int*, int*, IdfxDataDescriptor&, void*);
@@ -636,29 +617,23 @@ class Dump {
 template<typename ArrayType>
 void Dump::RegisterVariable(ArrayType& in, std::string name,
                            int varnum, int dir,
-                           DumpField::ArrayLocation loc,
-                           DumpField::Storage storage) {
+                           DumpField::ArrayLocation loc) {
     static_assert(Kokkos::is_view_v<ArrayType>,
                  "RegisterVariable requires an IdefixArray type");
-    // A 4D array stores several variables: varnum designates which one to dump.
-    // Other ranks have a single variable and ignore varnum.
-    if (ArrayType::rank != 4 && varnum >= 0) {
-        IDEFIX_ERROR("varnum is only meaningful for 4D arrays");
-    }
-    // Only 1D/2D arrays may be replicated: grid arrays are always distributed
-    if (ArrayType::rank >= 3 &&
-        storage == DumpField::Storage::Replicated) {
-        IDEFIX_ERROR("Only 1D and 2D arrays can be registered as replicated "
-                     "fields (3D/4D arrays are always distributed)");
-    }
-    // Distributed (grid) fields are stored as real precision sub-arrays.
-    // Replicated fields may hold any type supported by dump_io::DataType.
-    // Only 1D/2D arrays can be replicated, so these two checks are disjoint.
+    static_assert(ArrayType::rank >= 1 && ArrayType::rank <= 4,
+                 "Only 1D, 2D, 3D and 4D arrays can be dumped");
+    // Distributed (3D/4D) grid fields are stored as real-precision sub-arrays.
+    // Replicated (1D/2D) fields may hold any type supported by dump_io::DataType.
     static_assert(ArrayType::rank <= 2 ||
                   std::is_same_v<typename ArrayType::non_const_value_type, real>,
                   "Only real-valued arrays can be dumped as distributed fields");
     static_assert(dump_io::scalar_or_known_type_v<ArrayType>,
                   "Unsupported array element type for dump I/O");
+    // A 4D array stores several variables: varnum designates which one to dump.
+    // Other ranks have a single variable and ignore varnum.
+    if (ArrayType::rank != 4 && varnum >= 0) {
+        IDEFIX_ERROR("varnum is only meaningful for 4D arrays");
+    }
 
     if (dumpFieldMap.count(name) > 0) {
         std::stringstream msg;
@@ -666,7 +641,7 @@ void Dump::RegisterVariable(ArrayType& in, std::string name,
             << name << " has already been registered." << std::endl;
         IDEFIX_ERROR(msg);
     }
-    dumpFieldMap.emplace(name, DumpField(in, varnum, loc, dir, storage));
+    dumpFieldMap.emplace(name, DumpField(in, varnum, loc, dir));
 }
 
 template<typename T>

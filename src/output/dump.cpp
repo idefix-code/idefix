@@ -318,144 +318,6 @@ void* Dump::GetSerialBuffer(DumpField const& field) {
   return static_cast<void*>(serialBuffer.data());
 }
 
-// Write a field split across all ranks along its slowest-varying axis.
-// Every rank holds an equal-sized block which is contiguous in memory, so the
-// k-th block is found at a fixed byte offset. This decomposition uses all ranks
-// in their linear order and is independent of the MPI topology of the grid.
-void Dump::WriteDistributedArray(IdfxFileHandler fileHdl, int ndim, int *dim,
-                                 char* name, dump_io::DataType type, void* data) {
-  int const size = dump_io::size_of(type);
-  if (size == 0) {
-    IDEFIX_ERROR("Cannot write field " + std::string(name) +
-                 ": unsupported data type");
-  }
-
-  // dim[] holds this rank's local extents: all ranks must agree on them.
-  int nlocal = 1;
-  for (int n = 0 ; n < ndim ; n++) nlocal *= dim[n];
-
-  int64_t localMin = nlocal;
-  int64_t localMax = nlocal;
-  #ifdef WITH_MPI
-    MPI_SAFE_CALL(MPI_Allreduce(MPI_IN_PLACE, &localMin, 1, MPI_INT64_T, MPI_MIN,
-                                MPI_COMM_WORLD));
-    MPI_SAFE_CALL(MPI_Allreduce(MPI_IN_PLACE, &localMax, 1, MPI_INT64_T, MPI_MAX,
-                                MPI_COMM_WORLD));
-  #endif
-  if (localMin != localMax) {
-    std::stringstream msg;
-    msg << "Dump: distributed field " << name << " has different local sizes "
-        << "across ranks (" << localMin << " vs " << localMax << "). "
-        << "Distributed arrays must have the same size on every process."
-        << std::endl;
-    IDEFIX_ERROR(msg);
-  }
-
-  // Write field name
-  WriteString(fileHdl, name, NAMESIZE);
-
-  #ifdef WITH_MPI
-    MPI_Status status;
-    MPI_Datatype MpiType = dump_io::to_mpi_type(type);
-
-    // Write data type
-    MPI_SAFE_CALL(MPI_File_set_view(fileHdl, offset, MPI_BYTE,
-                                    MPI_CHAR, "native", MPI_INFO_NULL ));
-    if(idfx::prank==0) {
-      MPI_SAFE_CALL(MPI_File_write(fileHdl, &type, 1, MPI_INT, &status));
-    }
-    offset=offset+sizeof(int);
-
-    // Write dimensions (global: every rank holds the same number of elements,
-    // so the global size is the local size times the number of ranks)
-    MPI_SAFE_CALL(MPI_File_set_view(fileHdl, offset, MPI_BYTE,
-                                    MPI_CHAR, "native", MPI_INFO_NULL ));
-    if(idfx::prank==0) {
-      MPI_SAFE_CALL(MPI_File_write(fileHdl, &ndim, 1, MPI_INT, &status));
-    }
-    offset=offset+sizeof(int);
-
-    for(int n = 0 ; n < ndim ; n++) {
-      int gdim = (n == 0) ? dim[n]*idfx::psize : dim[n];
-      MPI_SAFE_CALL(MPI_File_set_view(fileHdl, offset, MPI_BYTE,
-                                      MPI_CHAR, "native", MPI_INFO_NULL ));
-      if(idfx::prank==0) {
-        MPI_SAFE_CALL(MPI_File_write(fileHdl, &gdim, 1, MPI_INT, &status));
-      }
-      offset=offset+sizeof(int);
-    }
-
-    // Write raw data: each rank writes its own block at a fixed byte offset.
-    // Reset the file view to the identity first: the metadata writes above left
-    // a one-element MPI_CHAR view in place, which would truncate the block write.
-    MPI_SAFE_CALL(MPI_File_set_view(fileHdl, 0, MPI_BYTE, MPI_BYTE, "native",
-                                    MPI_INFO_NULL ));
-    MPI_Offset blockSize = static_cast<MPI_Offset>(nlocal)*size;
-    MPI_Offset dataOffset = offset + static_cast<MPI_Offset>(idfx::prank)*blockSize;
-    MPI_SAFE_CALL(MPI_File_write_at(fileHdl, dataOffset, data, nlocal, MpiType,
-                                    MPI_STATUS_IGNORE));
-
-    int64_t nglob = 1;
-    for(int n = 0 ; n < ndim ; n++) nglob *= ((n == 0) ? dim[n]*idfx::psize : dim[n]);
-    offset=offset+nglob*size;
-  #else
-    // Serial run: single block, identical to a serial record
-    if(fwrite(&type, sizeof(int), 1, fileHdl) != 1) {
-      IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota.");
-    }
-    if(fwrite(&ndim, sizeof(int), 1, fileHdl) != 1) {
-      IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota.");
-    }
-    int nglob = 1;
-    for(int n = 0 ; n < ndim ; n++) {
-      int gdim = dim[n];
-      if(fwrite(&gdim, sizeof(int), 1, fileHdl) != 1) {
-        IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota.");
-      }
-      nglob *= gdim;
-    }
-    if(fwrite(data, size, nglob, fileHdl) != static_cast<size_t>(nglob)) {
-      IDEFIX_ERROR("Unable to write to file. Check your filesystem permissions and disk quota.");
-    }
-  #endif
-}
-
-// Read back a field written by WriteDistributedArray. dim[] holds this rank's
-// local extents and gdim[] the global ones; data receives this rank's block.
-void Dump::ReadDistributedArray(IdfxFileHandler fileHdl, int ndim, int *dim, int *gdim,
-                                dump_io::DataType type, void* data) {
-  int const size = dump_io::size_of(type);
-  if (size == 0) IDEFIX_ERROR("Cannot read field: unsupported data type");
-
-  int nlocal = 1;
-  for (int n = 0 ; n < ndim ; n++) nlocal *= dim[n];
-
-  int64_t nglob = 1;
-  for (int n = 0 ; n < ndim ; n++) nglob *= gdim[n];
-
-  #ifdef WITH_MPI
-    MPI_Status status;
-    MPI_Datatype MpiType = dump_io::to_mpi_type(type);
-
-    // Reset the file view to the identity before the explicit-offset read: the
-    // view left by ReadNextFieldProperties is a one-element MPI_CHAR window.
-    MPI_SAFE_CALL(MPI_File_set_view(fileHdl, 0, MPI_BYTE, MPI_BYTE, "native",
-                                    MPI_INFO_NULL ));
-    MPI_Offset blockSize = static_cast<MPI_Offset>(nlocal)*size;
-    MPI_Offset dataOffset = offset + static_cast<MPI_Offset>(idfx::prank)*blockSize;
-    MPI_SAFE_CALL(MPI_File_read_at(fileHdl, dataOffset, data, nlocal, MpiType,
-                                   &status));
-
-    offset=offset+nglob*size;
-  #else
-    size_t numRead;
-    numRead = fread(data, size, nlocal, fileHdl);
-    if(numRead < static_cast<size_t>(nlocal)) {
-      IDEFIX_ERROR("Error: unexpected end of dump file");
-    }
-  #endif
-}
-
 void Dump::WriteDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gdim,
                             char* name, IdfxDataDescriptor &descriptor, real* data ) {
     int64_t ntot = 1;   // Number of elements to be written
@@ -840,10 +702,9 @@ bool Dump::Read(Output& output, int readNumber ) {
         notFound.erase(fieldName);
         DumpField &scalar = it->second;
         if(scalar.IsArray()) {
-          if(scalar.GetStorage() == DumpField::Storage::Replicated ||
-             scalar.GetArrayDimension() <= 2) {
-            // Serial record (replicated, or distributed with rank <= 2):
-            // check that the field in the file matches what the code expects.
+          if(!scalar.IsDistributed()) {
+            // Serial record (replicated 1D/2D array): the record holds the
+            // whole array. Check that it matches what the code expects.
             int const rank = scalar.GetArrayDimension();
             std::vector<int> const shape = scalar.GetShape();
 
@@ -855,28 +716,13 @@ bool Dump::Read(Output& output, int readNumber ) {
               IDEFIX_ERROR(msg);
             }
 
-            if(scalar.GetStorage() == DumpField::Storage::Distributed) {
-              // Global size is the local size times the number of ranks along
-              // the slowest axis; other axes are not distributed.
-              for(int n = 0 ; n < rank ; n++) {
-                int expected = (n == 0) ? shape[n]*idfx::psize : shape[n];
-                if(nxglob[n] != expected) {
-                  std::stringstream msg;
-                  msg << "Dump: field " << fieldName << " has global size "
-                      << nxglob[n] << " along axis " << n << " in the restart file"
-                      << " but " << expected << " in the running code." << std::endl;
-                  IDEFIX_ERROR(msg);
-                }
-              }
-            } else {
-              for(int n = 0 ; n < rank ; n++) {
-                if(nxglob[n] != shape[n]) {
-                  std::stringstream msg;
-                  msg << "Dump: field " << fieldName << " has size "
-                      << nxglob[n] << " along axis " << n << " in the restart file"
-                      << " but " << shape[n] << " in the running code." << std::endl;
-                  IDEFIX_ERROR(msg);
-                }
+            for(int n = 0 ; n < rank ; n++) {
+              if(nxglob[n] != shape[n]) {
+                std::stringstream msg;
+                msg << "Dump: field " << fieldName << " has size "
+                    << nxglob[n] << " along axis " << n << " in the restart file"
+                    << " but " << shape[n] << " in the running code." << std::endl;
+                IDEFIX_ERROR(msg);
               }
             }
 
@@ -890,16 +736,10 @@ bool Dump::Read(Output& output, int readNumber ) {
             }
 
             void* buf = GetSerialBuffer(scalar);
-            if(scalar.GetStorage() == DumpField::Storage::Distributed) {
-              int localDim[3];
-              for(int n = 0 ; n < rank ; n++) localDim[n] = shape[n];
-              ReadDistributedArray(fileHdl, ndim, localDim, nxglob, type, buf);
-            } else {
-              ReadSerial(fileHdl, ndim, nxglob, type, buf);
-            }
+            ReadSerial(fileHdl, ndim, nxglob, type, buf);
             scalar.SyncFromHost(buf);
-          } else { // dimensions<2 or replicated
-            // Distributed idefix array
+          } else {
+            // Distributed grid array (3D/4D)
             int direction = scalar.GetDirection();
 
             // Load it
@@ -934,8 +774,8 @@ bool Dump::Read(Output& output, int readNumber ) {
               }
             }
             scalar.SyncFrom(toRead);
-          } // arraydims || replicated
-        } else { // Isarray
+          } // replicated || distributed
+        } else { // IsArray
           // Fundamental Type
           // Check that size matches
           if(nxglob[0] != scalar.GetSize()) {
@@ -1073,26 +913,16 @@ int Dump::Write(Output& output) {
     // Todo: replace these C char by std::string
     std::snprintf(fieldName,NAMESIZE,"%s",name.c_str());
     if(scalar.IsArray()) {
-      if(scalar.GetStorage() == DumpField::Storage::Replicated) {
-        // Replicated array: identical on every rank, written once
+      if(!scalar.IsDistributed()) {
+        // Replicated array (1D/2D): identical on every rank, written once
         std::vector<int> const shape = scalar.GetShape();
         int const rank = scalar.GetArrayDimension();
         for(int n = 0 ; n < rank ; n++) nx[n] = shape[n];
 
         void* buf = GetSerialBuffer(scalar);
         WriteSerial(fileHdl, rank, nx, scalar.GetDataType(), fieldName, buf);
-      } else if(scalar.GetArrayDimension() <= 2) {
-        // Distributed 1D/2D array: split along the slowest-varying axis
-        std::vector<int> const shape = scalar.GetShape();
-        int const rank = scalar.GetArrayDimension();
-        for(int n = 0 ; n < rank ; n++) nx[n] = shape[n];
-
-        void* buf = GetSerialBuffer(scalar);
-        WriteDistributedArray(fileHdl, rank, nx, fieldName,
-                              scalar.GetDataType(), buf);
-        continue;
       } else {
-        // Distributed 3D array meshed on the grid using MPI topology.
+        // Distributed array (3D/4D) meshed on the grid using MPI topology.
         auto toWrite = scalar.GetHostField<IdefixHostArray3D<real>>();
         int dir = scalar.GetDirection();
         for(int i = 0; i < 3 ; i++) {

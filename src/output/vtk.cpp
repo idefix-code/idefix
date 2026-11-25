@@ -1,7 +1,19 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/output/vtk.cpp
+//
+// Last modified : 08/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2026)
+// - Soufiane Baghdadi <soufiane.baghdadi@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020)
+// - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2024)
+// - Alankar Dutta <dutta.alankar@gmail.com> (MPA Garching - 2023)
+// - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
+// - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -20,12 +32,12 @@
 #else
   error "Missing the <filesystem> header."
 #endif
-#include "version.hpp"
 #include "idefix.hpp"
 #include "dataBlock.hpp"
 #include "gridHost.hpp"
 #include "output.hpp"
 #include "fluid.hpp"
+#include "version.h"
 
 #define VTK_RECTILINEAR_GRID    14
 #define VTK_STRUCTURED_GRID     35
@@ -50,7 +62,7 @@ void Vtk::WriteHeaderNodes(IdfxFileHandler fvtk) {
   int size_int = static_cast<int>(size);
   MPI_SAFE_CALL(MPI_File_set_view(fvtk, this->offset, MPI_FLOAT, this->nodeView,
                                   "native", MPI_INFO_NULL));
-  MPI_SAFE_CALL(MPI_File_write_all(fvtk, node_coord.data(), size_int,
+  MPI_SAFE_CALL(idfx::MPI_File_write_all(fvtk, node_coord, size_int,
                                    MPI_FLOAT, MPI_STATUS_IGNORE));
   this->offset += sizeof(float)*(nx1+ioffset)*(nx2+joffset)*(nx3+koffset)*3;
 #else
@@ -385,7 +397,7 @@ void Vtk::WriteHeader(IdfxFileHandler fvtk, real time) {
   2. Header
   ------------------------------------------- */
 
-  ssheader << "Idefix " << IDEFIX_VERSION << " VTK Data" << std::endl;
+  ssheader << "Idefix " << VersionInfo::version << " VTK Data" << std::endl;
 
   /* ------------------------------------------
   3. File format

@@ -1,7 +1,18 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/gridHost.cpp
+//
+// Last modified : 01/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2024)
+// - Soufiane Baghdadi <soufiane.baghdadi@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020)
+// - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021)
+// - Jonah Mauxion <jonah.mauxion@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023)
+// - Alankar Dutta <dutta.alankar@gmail.com> (MPA Garching - 2026)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -32,10 +43,10 @@ GridHost::GridHost(Grid &grid) {
 
   // Create mirrors on host
   for(int dir = 0 ; dir < 3 ; dir++) {
-    x[dir] = Kokkos::create_mirror_view(grid.x[dir]);
-    xr[dir] = Kokkos::create_mirror_view(grid.xr[dir]);
-    xl[dir] = Kokkos::create_mirror_view(grid.xl[dir]);
-    dx[dir] = Kokkos::create_mirror_view(grid.dx[dir]);
+    x[dir] = Kokkos::create_mirror_view(Kokkos::HostSpace(), grid.x[dir]);
+    xr[dir] = Kokkos::create_mirror_view(Kokkos::HostSpace(), grid.xr[dir]);
+    xl[dir] = Kokkos::create_mirror_view(Kokkos::HostSpace(), grid.xl[dir]);
+    dx[dir] = Kokkos::create_mirror_view(Kokkos::HostSpace(), grid.dx[dir]);
   }
 
   idfx::popRegion();

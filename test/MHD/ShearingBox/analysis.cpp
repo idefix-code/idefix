@@ -1,3 +1,17 @@
+// ***********************************************************************************
+// Idefix MHD astrophysical code
+//
+// Source file test/MHD/ShearingBox/analysis.cpp
+//
+// Last modified : 10/2023
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2023)
+// and other code contributors
+//
+// Licensed under CeCILL 2.1 License, see COPYING for more information
+// ***********************************************************************************
+
 #include "analysis.hpp"
 #include "idefix.hpp"
 #include "fluid.hpp"
@@ -58,7 +72,8 @@ double Analysis::ShwaveAmplitude(const int field,
                                  const int nx,
                                  const int ny,
                                  const int nz,
-                                 const real t)
+                                 const real t,
+                                 const real phaseShift = 0.0)
     /*
      * compute the weighted average: int dphi dz rho *infield/int dphi dz rho
      *
@@ -74,7 +89,7 @@ double Analysis::ShwaveAmplitude(const int field,
         real z = d->x[KDIR](k);
         real wave = sin(2.0*M_PI*(  (nx-ny*shear*t)*x
                                   + ny*y
-                                  + nz*z));
+                                  + nz*z ) + 2*phaseShift*M_PI);
         q += wave*d->Vc(field,k,j,i);
       }
     }
@@ -159,9 +174,9 @@ void Analysis::PerformAnalysis(DataBlock &data) {
   WriteField(ShwaveAmplitude(VX1, 0, 1, 2, data.t) );
   WriteField(ShwaveAmplitude(VX2, 0, 1, 2, data.t) );
   WriteField(ShwaveAmplitude(VX3, 0, 1, 2, data.t) );
-  WriteField(ShwaveAmplitude(BX1, 0, 1, 2, data.t) );
-  WriteField(ShwaveAmplitude(BX2, 0, 1, 2, data.t) );
-  WriteField(ShwaveAmplitude(BX3, 0, 1, 2, data.t) );
+  WriteField(ShwaveAmplitude(BX1, 0, 1, 2, data.t, -0.25));
+  WriteField(ShwaveAmplitude(BX2, 0, 1, 2, data.t, -0.25));
+  WriteField(ShwaveAmplitude(BX3, 0, 1, 2, data.t, -0.25));
 
 
   if(idfx::prank==0) {

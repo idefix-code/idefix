@@ -1,7 +1,16 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/fluid/braginskii/bragThermalDiffusion.hpp
+//
+// Last modified : 01/2025
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023)
+// - Victor Réville <vreville@irap.omp.eu> (IRAP - 2024 - 2025)
+// - Jean Kempf <jean.kempf@irap.omp.eu> (IRAP - 2025)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 

@@ -41,6 +41,7 @@ test/**/*.pyc
 test/**/*.dat
 test/**/cmake_packages*
 test/**/
+idefix-tests.junit.xml
 
 # machine specific cache and hidden files
 .*

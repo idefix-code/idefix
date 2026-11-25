@@ -1,7 +1,19 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/timeIntegrator.cpp
+//
+// Last modified : 09/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2026)
+// - Soufiane Baghdadi <soufiane.baghdadi@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2021)
+// - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2022)
+// - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
+// - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+// - Nicolas Scepi <nicolas.scepi@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -114,9 +126,9 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
 #endif
   double sgOverhead;
   if(data.haveGravity && data.gravity->haveSelfGravityPotential) {
-    double sgCycleTime = data.gravity->selfGravity.elapsedTime - lastSGLog;
+    double sgCycleTime = data.gravity->selfGravity->elapsedTime - lastSGLog;
     sgOverhead = 100.0 * sgCycleTime / (timer.seconds() - lastLog);
-    lastSGLog = data.gravity->selfGravity.elapsedTime;
+    lastSGLog = data.gravity->selfGravity->elapsedTime;
   }
 
   lastLog = timer.seconds();
@@ -195,9 +207,9 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
   }
   if(data.haveGravity && data.gravity->haveSelfGravityPotential) {
     if(ncycles>=cyclePeriod) {
-      idfx::cout << " | " << std::setw(col_width) << data.gravity->selfGravity.nsteps;
+      idfx::cout << " | " << std::setw(col_width) << data.gravity->selfGravity->nsteps;
       idfx::cout << std::scientific;
-      idfx::cout << " | " << std::setw(col_width) << data.gravity->selfGravity.currentError;
+      idfx::cout << " | " << std::setw(col_width) << data.gravity->selfGravity->currentError;
       idfx::cout << std::fixed;
       idfx::cout << " | " << std::setw(col_width) << sgOverhead;
     } else {
@@ -215,7 +227,7 @@ double TimeIntegrator::ComputeBalance() {
     #ifdef WITH_MPI
       const double allowedImbalance = 20.0;
       std::vector<double> computeLogPerCore(idfx::psize);
-      MPI_Gather(&computeLastLog, 1, MPI_DOUBLE, computeLogPerCore.data(), 1, MPI_DOUBLE, 0,
+      idfx::MPI_Gather(&computeLastLog, 1, MPI_DOUBLE, computeLogPerCore, 1, MPI_DOUBLE, 0,
                   MPI_COMM_WORLD);
       computeLastLog = 0; // reset timer for all cores
       if(idfx::prank==0) {
@@ -235,24 +247,29 @@ double TimeIntegrator::ComputeBalance() {
         }
         computeMean /= idfx::psize;
         imbalance = (computeMax-computeMin)/computeMean*100;
-
-        if(imbalance>allowedImbalance ) {
-          idfx::cout << "-------------------------------------------------------------"<< std::endl;
-          idfx::cout << "Warning: MPI imbalance found in this run " << std::endl;
-          idfx::cout << std::fixed;
-          for(int i = 0 ; i < idfx::psize ; i++) {
-            if(computeLogPerCore[i]/computeMean - 1> allowedImbalance/2/100) {
-              idfx::cout << "+" << 100*(computeLogPerCore[i]/computeMean-1)
-                        << "% (proc " << i << ")" << std::endl;
+        // only show warnings if the imbalance is higher than 20%on GPUs
+        #if defined(KOKKOS_ENABLE_CUDA) || defined(KOKKOS_ENABLE_HIP) || defined(KOKKOS_ENABLE_SYCL)
+          if(imbalance>allowedImbalance ) {
+            idfx::cout << "-------------------------------------------------------------"
+                        << std::endl;
+            idfx::cout << "Warning: MPI imbalance found in this run " << std::endl;
+            idfx::cout << std::fixed;
+            for(int i = 0 ; i < idfx::psize ; i++) {
+              if(computeLogPerCore[i]/computeMean - 1> allowedImbalance/2/100) {
+                idfx::cout << "+" << 100*(computeLogPerCore[i]/computeMean-1)
+                          << "% (proc " << i << ")" << std::endl;
+              }
+              if(1-computeLogPerCore[i]/computeMean > allowedImbalance/2/100) {
+                idfx::cout << "-" << 100*(1-computeLogPerCore[i]/computeMean)
+                                  << "% (proc " << i << ")" << std::endl;
+              }
             }
-            if(1-computeLogPerCore[i]/computeMean > allowedImbalance/2/100) {
-              idfx::cout << "-" << 100*(1-computeLogPerCore[i]/computeMean)
-                                << "% (proc " << i << ")" << std::endl;
-            }
+            idfx::cout << "You should probably check these nodes are running properly."
+                        << std::endl;
+            idfx::cout << "-------------------------------------------------------------"
+                        << std::endl;
           }
-          idfx::cout << "You should probably check these nodes are running properly." << std::endl;
-          idfx::cout << "-------------------------------------------------------------"<< std::endl;
-        }
+        #endif
       }
     #endif
     return(imbalance);
@@ -317,14 +334,6 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     // evolve dt accordingly
     data.t += data.dt;
 
-    // Look for Nans every now and then (this actually cost a lot of time on GPUs
-    // because streams are divergent)
-    if(ncycles%checkNanPeriodicity==0) {
-      if(data.CheckNan()>0) {
-        throw std::runtime_error(std::string("Nan found after integration cycle"));
-      }
-    }
-
     // Compute next time_step during first stage
     if(stage==0) {
       if(!haveFixedDt) {
@@ -368,6 +377,7 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     // Add back fargo velocity so that boundary conditions are applied on the total V
     if(data.haveFargo) data.fargo->AddVelocity(data.t);
   }
+
   /////////////////////////////////////////////////
   // END STAGES LOOP                             //
   /////////////////////////////////////////////////
@@ -404,6 +414,14 @@ if(data.haveForcing) {
 
   // Launch user step last
   data.LaunchUserStepLast();
+
+  // Look for Nans every now and then (this actually cost a lot of time on GPUs
+  // because streams are divergent)
+  if(ncycles%checkNanPeriodicity==0) {
+    if(data.CheckNan()>0) {
+      throw std::runtime_error(std::string("Nan found after integration cycle"));
+    }
+  }
 
   // Update current time (should have already been done, but this gets rid of roundoff errors)
   data.t=t0+data.dt;

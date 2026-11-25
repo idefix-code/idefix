@@ -1,7 +1,16 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/output/xdmf.cpp
+//
+// Last modified : 08/2026
+//
+// Copyright(C) by :
+// - Alankar Dutta <dutta.alankar@gmail.com> (MPA Garching - 2023 - 2026)
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023 - 2026)
+// - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -21,11 +30,11 @@
 #endif
 
 #include "xdmf.hpp"
-#include "version.hpp"
 #include "idefix.hpp"
 #include "dataBlockHost.hpp"
 #include "gridHost.hpp"
 #include "output.hpp"
+#include "version.h"
 
 // Whether or not we write the time in the XDMF file
 #define WRITE_TIME
@@ -286,18 +295,18 @@ int Xdmf::Write() {
   idfx::pushRegion("Xdmf::Write");
   fs::path filename;
   fs::path filename_xmf;
-  hid_t err;
+  [[maybe_unused]] hid_t err;
   idfx::cout << "Xdmf: Write file n " << xdmfFileNumber << "..." << std::flush;
   timer.reset();
 
   // Create a copy of the dataBlock on Host, and sync it.
 
   #if DIMENSIONS == 1
-  int tot_dim = 1;
+  [[maybe_unused]] int tot_dim = 1;
   #elif DIMENSIONS == 2
-  int tot_dim = 2;
+  [[maybe_unused]] int tot_dim = 2;
   #elif DIMENSIONS == 3
-  int tot_dim = 3;
+  [[maybe_unused]] int tot_dim = 3;
   #endif
 
   std::stringstream ssfileName, ssfileNameXmf, ssxdmfFileNum;
@@ -344,7 +353,8 @@ int Xdmf::Write() {
   #endif
 
   // Layout of the field data in memory
-  hsize_t field_data_size[3], field_data_start[3], field_data_subsize[3], stride[3];
+  [[maybe_unused]] hsize_t field_data_size[3], field_data_start[3];
+  [[maybe_unused]] hsize_t field_data_subsize[3], stride[3];
   #ifdef WITH_MPI
   for(int dir = 0; dir < 3 ; dir++) {
     field_data_size[dir] = static_cast<hsize_t>(this->mpi_data_size[dir]);
@@ -454,11 +464,10 @@ void Xdmf::WriteHeader(
   hid_t tspace, tattr;
   hid_t unit_info, unit_attr;
   hid_t group;
-  hid_t file_access = 0;
   #ifdef WITH_MPI
   hid_t plist_id_mpiio = 0; /* for collective MPI I/O */
   #endif
-  hid_t err;
+  [[maybe_unused]] hid_t err;
 
   hsize_t dimstr;
 
@@ -526,7 +535,7 @@ void Xdmf::WriteHeader(
 
   dimstr = 1;
 
-  ssheader << "Idefix " << IDEFIX_VERSION << " XDMF Data";
+  ssheader << "Idefix " << VersionInfo::version << " XDMF Data";
   strspace = H5Screate_simple(1, &dimstr, NULL);
   string_type = H5Tcopy(H5T_C_S1);
   H5Tset_size(string_type, strlen( ssheader.str().c_str() ));
@@ -814,7 +823,7 @@ void Xdmf::WriteScalar(
   dataset_name = var_name.c_str();
   std::string dataset_label = dataset_name.c_str();
   std::transform(dataset_label.begin(), dataset_label.end(), dataset_label.begin(), ::tolower);
-  hid_t err, dataset;
+  [[maybe_unused]] hid_t err, dataset;
 
   // We define the dataset that contain the fields.
 

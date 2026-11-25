@@ -1,3 +1,17 @@
+// ***********************************************************************************
+// Idefix MHD astrophysical code
+//
+// Source file test/Pluto/HD/ViscousFlowPastCylinder/visc_nu.c
+//
+// Last modified : 08/2022
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2022)
+// and other code contributors
+//
+// Licensed under CeCILL 2.1 License, see COPYING for more information
+// ***********************************************************************************
+
 /* /////////////////////////////////////////////////////////////////// */
 /*! \file
  *  \brief Specification of explicit first and second viscosity coefficients*/

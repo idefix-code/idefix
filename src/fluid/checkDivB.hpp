@@ -1,7 +1,16 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/fluid/checkDivB.hpp
+//
+// Last modified : 03/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2026)
+// - Soufiane Baghdadi <soufiane.baghdadi@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020)
+// - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -31,12 +40,9 @@ real Fluid<Phys>::CheckDivB() {
     KOKKOS_LAMBDA (int k, int j, int i, real &divBmax) {
       [[maybe_unused]] real dB1,dB2,dB3;
       [[maybe_unused]] real d1, d2, d3;
-      [[maybe_unused]] real B1,B2,B3;
 
       dB1=dB2=dB3=ZERO_F;
       d1=d2=d3=ZERO_F;
-      B1=B2=B3=ZERO_F;
-
 
       D_EXPAND( dB1=(Ax1(k,j,i+1)*Vs(BX1s,k,j,i+1)-Ax1(k,j,i)*Vs(BX1s,k,j,i));  ,
                 dB2=(Ax2(k,j+1,i)*Vs(BX2s,k,j+1,i)-Ax2(k,j,i)*Vs(BX2s,k,j,i));  ,
@@ -46,12 +52,8 @@ real Fluid<Phys>::CheckDivB() {
                 d2=0.5*(Ax2(k,j+1,i) + Ax2(k,j,i));  ,
                 d3=0.5*(Ax3(k+1,j,i) + Ax3(k,j,i));  )
 
-      D_EXPAND( B1=0.5*(Vs(BX1s,k,j,i+1) + Vs(BX1s,k,j,i));  ,
-                B2=0.5*(Vs(BX2s,k,j+1,i) + Vs(BX2s,k,j,i));  ,
-                B3=0.5*(Vs(BX3s,k+1,j,i) + Vs(BX3s,k,j,i));  )
 
-      real amplitude = 1e-40;
-      amplitude += D_EXPAND( std::fabs(B1)*d1, + std::fabs(B2)*d2, + std::fabs(B3)*d3 );
+      const real amplitude = D_EXPAND( d1, + d2, + d3 );
 
       divBmax=FMAX(FABS(D_EXPAND(dB1, +dB2, +dB3))/amplitude,divBmax);
     },

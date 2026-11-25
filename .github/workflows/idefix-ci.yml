@@ -9,18 +9,22 @@ on:
     paths-ignore:
       - '.github/ISSUE_TEMPLATE/*'
 
+permissions: {}
+
 jobs:
   Linter:
     # Don't do this in forks
     if: ${{ github.repository == 'idefix-code/idefix' || github.repository == 'glesur/idefix' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
         with:
           python-version: 3.x
-      - uses: pre-commit/action@v3.0.0
-      - uses: pre-commit-ci/lite-action@v1.0.0
+      - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
+      - uses: pre-commit-ci/lite-action@5d6cc0eb514c891a40562a58a8e71576c5c7fb43 # v1.1.0
         if: always()
 
   icc-jobs:
@@ -28,7 +32,7 @@ jobs:
     name: CPU Jobs (intel OneApi)
     uses: ./.github/workflows/idefix-ci-jobs.yml
     with:
-      TESTME_OPTIONS: -intel -Werror
+      TESTME_OPTIONS: -intel -Werror -ccache
       IDEFIX_COMPILER: icc
 
   gcc-jobs:
@@ -36,7 +40,7 @@ jobs:
     name: CPU Jobs (gcc)
     uses: ./.github/workflows/idefix-ci-jobs.yml
     with:
-      TESTME_OPTIONS: -Werror
+      TESTME_OPTIONS: -Werror -ccache
       IDEFIX_COMPILER: gcc
 
   cuda-jobs:

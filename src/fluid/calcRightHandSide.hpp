@@ -1,7 +1,15 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/fluid/calcRightHandSide.hpp
+//
+// Last modified : 11/2025
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023 - 2025)
+// - Gaylor Wafflard <gaylor.wafflard@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -21,7 +29,7 @@ struct Fluid_CorrectFluxFunctor {
   explicit Fluid_CorrectFluxFunctor (Fluid<Phys> *hydro, real dt) {
     Uc   = hydro->Uc;
     Vc   = hydro->Vc;
-    Flux = hydro->FluxRiemann;
+    Flux = hydro->FluxRiemann[dir];
     A    = hydro->data->A[dir];
     dV   = hydro->data->dV;
     x1m  = hydro->data->xl[IDIR];
@@ -205,7 +213,7 @@ struct Fluid_CalcRHSFunctor {
   explicit Fluid_CalcRHSFunctor (Fluid<Phys> *hydro, real dt) {
     Uc   = hydro->Uc;
     Vc   = hydro->Vc;
-    Flux = hydro->FluxRiemann;
+    Flux = hydro->FluxRiemann[dir];
     A    = hydro->data->A[dir];
     dV   = hydro->data->dV;
     x1m  = hydro->data->xl[IDIR];

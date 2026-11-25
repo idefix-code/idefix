@@ -1,13 +1,21 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/gravity/gravity.hpp
+//
+// Last modified : 10/2023
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2023)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
 #ifndef GRAVITY_GRAVITY_HPP_
 #define GRAVITY_GRAVITY_HPP_
 
+#include <memory>
 #include "idefix.hpp"
 #include "input.hpp"
 #include "selfGravity.hpp"
@@ -52,7 +60,7 @@ class Gravity {
   IdefixArray4D<real> bodyForceVector;
 
   // Self gravity
-  SelfGravity selfGravity;
+  std::unique_ptr<SelfGravity> selfGravity;
 
   // JM : moved in public class to handle changing centralMass during computation
   real centralMass{1.0};                    ///< central mass parameter when central mass potential

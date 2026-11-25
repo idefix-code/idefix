@@ -1,7 +1,14 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/utils/iterativesolver/iterativesolver.hpp
+//
+// Last modified : 10/2023
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -17,7 +24,7 @@ class IterativeSolver {
  public:
   IterativeSolver(T &op, real error, int maxIter,
                   std::array<int,3> ntot, std::array<int,3> beg, std::array<int,3> end);
-
+  virtual ~IterativeSolver() = default;
   real GetError();  // return the current error of the solver
 
   virtual int Solve(IdefixArray3D<real> &guess, IdefixArray3D<real> &rhs) = 0;

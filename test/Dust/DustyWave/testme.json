@@ -1,0 +1,14 @@
+{
+  "namings": "ini",
+  "default": {
+    "dumpname": "dump.0001.dmp",
+    "noplot": true,
+    "reconstruction": 2,
+    "tolerance": 1e-14
+  },
+  "variants": [
+    {
+      "ini": ["idefix.ini","idefix-implicit.ini"]
+    }
+  ]
+}

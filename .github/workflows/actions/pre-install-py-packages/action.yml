@@ -1,0 +1,15 @@
+name: Install python packages
+
+description: "Action installing the Idefix python packages before running the tests."
+
+inputs: {}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Create venv
+      shell: bash
+      run: |
+        python3 -m venv .venv
+        source .venv/bin/activate
+        python3 -m pip install -r ./test/python_requirements.txt

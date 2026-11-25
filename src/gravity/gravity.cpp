@@ -1,7 +1,15 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/gravity/gravity.cpp
+//
+// Last modified : 04/2025
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2025)
+// - Antonin Borderies <antonin.borderies@ens-lyon.fr> (ENS Lyon - 2024)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -98,7 +106,10 @@ Gravity::Gravity(Input &input, DataBlock *datain) {
 
   // Check SelfGravity object
   if(haveSelfGravityPotential) {
-    selfGravity.Init(input, this->data);
+    if(!haveInitialisedSelfGravity) {
+      selfGravity = SelfGravity::Create(input, this->data);
+    }
+    selfGravity->Init(input, this->data);
     haveInitialisedSelfGravity = true;
   }
 
@@ -125,7 +136,7 @@ void Gravity::ShowConfig() {
     }
     if(haveSelfGravityPotential) {
       idfx::cout << "Gravity: self-gravity ENABLED." << std::endl;
-      selfGravity.ShowConfig();
+      selfGravity->ShowConfig();
     }
     if(havePlanetsPotential) {
       idfx::cout << "Gravity: planet(s) potential ENABLED." << std::endl;
@@ -165,10 +176,10 @@ void Gravity::ComputeGravity(int stepNumber) {
     }
     if(haveSelfGravityPotential) {
       // Solving Poisson for the current gas density distribution
-      if(stepNumber % selfGravity.skipSelfGravity == 0) selfGravity.SolvePoisson();
+      if(stepNumber % selfGravity->skipSelfGravity == 0) selfGravity->SolvePoisson();
 
       // Adding gas self-gravity contribution to global gravity potential
-      selfGravity.AddSelfGravityPotential(phiP);
+      selfGravity->AddSelfGravityPotential(phiP);
     }
   }
   if(haveBodyForce) {

@@ -1,7 +1,16 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/fluid/checkNan.hpp
+//
+// Last modified : 01/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023)
+// - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2024)
+// - Alankar Dutta <dutta.alankar@gmail.com> (MPA Garching - 2026)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -67,7 +76,7 @@ int Fluid<Phys>::CheckNan()  {
 
       DataBlockHost dataHost(*data);
 
-      IdefixHostArray4D<real> VcHost = Kokkos::create_mirror_view(this->Vc);
+      IdefixHostArray4D<real> VcHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), this->Vc);
       Kokkos::deep_copy(VcHost,Vc);
 
       int nerrormax=10;
@@ -95,7 +104,7 @@ int Fluid<Phys>::CheckNan()  {
       }
 
       if constexpr(Phys::mhd) {
-        IdefixHostArray4D<real> VsHost = Kokkos::create_mirror_view(this->Vs);
+        IdefixHostArray4D<real> VsHost = Kokkos::create_mirror_view(Kokkos::HostSpace(), this->Vs);
         Kokkos::deep_copy(VsHost,Vs);
         for(int k = data->beg[KDIR] ; k < data->end[KDIR]+KOFFSET ; k++) {
           for(int j = data->beg[JDIR] ; j < data->end[JDIR]+JOFFSET ; j++) {

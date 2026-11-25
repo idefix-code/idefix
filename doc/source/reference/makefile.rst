@@ -1,3 +1,5 @@
+.. _makefile:
+
 Code configuration with Cmake
 =============================
 
@@ -33,6 +35,10 @@ Several options can be enabled from the command line (or are accessible with ``c
 ``-D Idefix_MPI=ON``
     Enable MPI parallelisation. Requires an MPI library. When used in conjonction with CUDA (Nvidia GPUs), a CUDA-aware MPI library is required by *Idefix*.
 
+``-D Idefix_MPI_GPU_DIRECT=OFF``
+    Disable the usage of MPI GPU direct for inter-process communication. In this case it uses a copy between GPU and CPU before and after making communications.
+    It is usefull if your MPI is not GPU-aware. Note that this option decreases performances.
+
 ``-D Idefix_DEFS=foo.hpp``
     Specify a particular filename to be used in place of the default problem file ``definitions.hpp``
 
@@ -58,6 +64,12 @@ Several options can be enabled from the command line (or are accessible with ``c
 
     The number of ghost cells is automatically adjusted as a function of the order of the reconstruction scheme.
     *Idefix* uses 2 ghost cells when ``ORDER < 4`` and 3 ghost cells when ``ORDER = 4``
+
+``-D Idefix_PROBLEM_DIR=.``
+    Specify where to find the problem directory to build *Idefix* out of source.
+    Place yourself in the ``build`` directory you want to build in and call the ``cmake`` by :
+      + pointing the *Idefix* source directory via ``IDEFIX_DIR`` as usual.
+      + using ``-D Idefix_PROBLEM_DIR`` to point the problem to build.
 
 ``-D Kokkos_ENABLE_OPENMP=ON``
     Enable OpenMP parallelisation on supported compilers. Note that this can be enabled simultaneously with MPI, resulting in a hybrid MPI+OpenMP compilation.

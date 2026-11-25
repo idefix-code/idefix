@@ -1,0 +1,35 @@
+{
+    "namings": "ini,reconstruction,single",
+    "default": {
+        "dumpname": "dump.0001.dmp",
+        "vectPot": false,
+        "mpi": false,
+        "standardTest": false,
+        "tolerance": 0
+    },
+    "variants": [
+        {
+            "ini": ["idefix.ini","idefix-hll.ini","idefix-hlld.ini","idefix-tvdlf.ini"],
+            "single": false,
+            "reconstruction": [2,3]
+        },{
+            "ini": ["idefix-rk3.ini","idefix-hlld-rk3.ini"],
+            "single": false,
+            "reconstruction": [4]
+        },{
+            "ini": ["idefix.ini","idefix-hll.ini","idefix-hlld.ini","idefix-tvdlf.ini"],
+            "reconstruction": [2],
+            "single": true
+        }
+    ],
+    "when": [
+        {
+            "conditions": {
+                "ini": "idefix-rkl.ini"
+            },
+            "apply": {
+                "tolerance": 1e-10
+            }
+        }
+    ]
+}

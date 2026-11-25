@@ -1,7 +1,17 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/dataBlock/dataBlockHost.cpp
+//
+// Last modified : 01/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2025)
+// - Soufiane Baghdadi <soufiane.baghdadi@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020)
+// - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2024)
+// - Alankar Dutta <dutta.alankar@gmail.com> (MPA Garching - 2026)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -21,11 +31,11 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
 
   // Create mirrors (should be mirror_view)
   for(int dir = 0 ; dir < 3 ; dir++) {
-    x[dir] = Kokkos::create_mirror_view(data->x[dir]);
-    xr[dir] = Kokkos::create_mirror_view(data->xr[dir]);
-    xl[dir] = Kokkos::create_mirror_view(data->xl[dir]);
-    dx[dir] = Kokkos::create_mirror_view(data->dx[dir]);
-    A[dir] = Kokkos::create_mirror_view(data->A[dir]);
+    x[dir] = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->x[dir]);
+    xr[dir] = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->xr[dir]);
+    xl[dir] = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->xl[dir]);
+    dx[dir] = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->dx[dir]);
+    A[dir] = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->A[dir]);
   }
 
   np_tot = data->np_tot;
@@ -47,30 +57,30 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
 
     // TO BE COMPLETED...
 
-  dV = Kokkos::create_mirror_view(data->dV);
-  Vc = Kokkos::create_mirror_view(data->hydro->Vc);
-  Uc = Kokkos::create_mirror_view(data->hydro->Uc);
-  InvDt = Kokkos::create_mirror_view(data->hydro->InvDt);
+  dV = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->dV);
+  Vc = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->Vc);
+  Uc = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->Uc);
+  InvDt = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->InvDt);
 
 #if MHD == YES
-  Vs = Kokkos::create_mirror_view(data->hydro->Vs);
+  Vs = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->Vs);
   this->haveCurrent = data->hydro->haveCurrent;
   if(data->hydro->haveCurrent) {
-    J = Kokkos::create_mirror_view(data->hydro->J);
+    J = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->J);
   }
   #ifdef EVOLVE_VECTOR_POTENTIAL
-    Ve = Kokkos::create_mirror_view(data->hydro->Ve);
+    Ve = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->Ve);
   #endif
 
-  D_EXPAND( Ex3 = Kokkos::create_mirror_view(data->hydro->emf->ez);  ,
+  D_EXPAND( Ex3 = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->emf->ez);  ,
                                                              ,
-            Ex1 = Kokkos::create_mirror_view(data->hydro->emf->ex);
-            Ex2 = Kokkos::create_mirror_view(data->hydro->emf->ey);  )
+            Ex1 = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->emf->ex);
+            Ex2 = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->emf->ey);  )
 #endif
   if(haveDust) {
     dustVc = std::vector<IdefixHostArray4D<real>>(data->dust.size());
     for(int i = 0 ; i < data->dust.size() ; i++) {
-      dustVc[i] = Kokkos::create_mirror_view(data->dust[i]->Vc);
+      dustVc[i] = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->dust[i]->Vc);
     }
   }
 
@@ -80,7 +90,8 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
     this->coarseningDirection = data->coarseningDirection;
     for(int dir = 0 ; dir < 3 ; dir++) {
       if(coarseningDirection[dir]) {
-        coarseningLevel[dir] = Kokkos::create_mirror_view(data->coarseningLevel[dir]);
+        coarseningLevel[dir] = Kokkos::create_mirror_view(Kokkos::HostSpace(),
+                                                          data->coarseningLevel[dir]);
       }
     }
   }

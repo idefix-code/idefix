@@ -1,11 +1,16 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/gravity/laplacian.cpp
+//
+// Last modified : 06/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023 - 2026)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
-
-
 
 #include <string>
 #include <vector>
@@ -170,7 +175,7 @@ void Laplacian::InitInternalGrid() {
      });
 
   // Check that all is well
-  IdefixArray1D<real>::HostMirror xH = Kokkos::create_mirror_view(x1l);
+  IdefixArray1D<real>::host_mirror_type xH = Kokkos::create_mirror_view(x1l);
   Kokkos::deep_copy(xH, x1l);
 
   if(xH(0)<0.0) {

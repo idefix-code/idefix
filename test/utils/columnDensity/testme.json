@@ -1,0 +1,15 @@
+{
+    "namings": "mpi",
+    "default": {
+        "ini": "idefix.ini",
+        "dumpname": "dump.0001.dmp",
+        "nonRegressionTest": false,
+        "standardTest": false,
+        "tolerance": 0
+    },
+    "variants": [
+        {
+            "mpi": [false,true]
+        }
+    ]
+}

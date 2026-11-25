@@ -1,7 +1,17 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/real_types.hpp
+//
+// Last modified : 08/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2022)
+// - Soufiane Baghdadi <soufiane.baghdadi@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2020 - 2021)
+// - Clément Robert <clement.robert@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021)
+// - Alankar Dutta <dutta.alankar@gmail.com> (MPA Garching - 2026)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -14,11 +24,13 @@
 
 #ifdef SINGLE_PRECISION
   using real = float;
+  using complex = Kokkos::complex<float>;
   #ifdef WITH_MPI
     #define realMPI      MPI_FLOAT
   #endif
 #else
   using real = double;
+  using complex = Kokkos::complex<double>;
   #ifdef WITH_MPI
     #define realMPI     MPI_DOUBLE
   #endif
@@ -33,6 +45,8 @@
 #define TAN(x) tanf(x)
 #define SIN(x) sinf(x)
 #define COS(x) cosf(x)
+#define LOG(x) logf(x)
+#define EXP(x) expf(x)
 #define COPYSIGN(x,y) copysignf(x,y)
 #define ISNAN(x) isnanf(x)
 #define FMOD(x,y) fmodf(x,y)
@@ -52,6 +66,8 @@
 #define TAN(x) tan(x)
 #define SIN(x) sin(x)
 #define COS(x) cos(x)
+#define LOG(x) log(x)
+#define EXP(x) exp(x)
 #define COPYSIGN(x,y) copysign(x,y)
 #define ISNAN(x) isnan(x)
 #define FMOD(x,y) fmod(x,y)

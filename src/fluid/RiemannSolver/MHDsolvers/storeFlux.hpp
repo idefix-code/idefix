@@ -1,7 +1,15 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/fluid/RiemannSolver/MHDsolvers/storeFlux.hpp
+//
+// Last modified : 08/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2021 - 2026)
+// - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -55,15 +63,15 @@ KOKKOS_FORCEINLINE_FUNCTION void K_StoreHLL( const int i, const int j, const int
                                         const IdefixArray3D<real> &dL,
                                         const IdefixArray3D<real> &dR) {
   EXPAND(                                          ,
-        constexpr int Xt = (DIR == IDIR ? MX2 : MX1);  ,
-        constexpr int Xb = (DIR == KDIR ? MX2 : MX3);  )
+        [[maybe_unused]] constexpr int Xt = (DIR == IDIR ? MX2 : MX1);  ,
+        [[maybe_unused]] constexpr int Xb = (DIR == KDIR ? MX2 : MX3);  )
 
   real ar = std::fmax(ZERO_F, sr);
   real al = std::fmin(ZERO_F, sl);
   real scrh = ONE_F/(ar - al);
 
-  #if COMPONENTS > 1
-  EXPAND( Et(k,j,i) = -st*(ar*vL[Xt] - al*vR[Xt])*scrh;  ,
+  #if DIMENSIONS > 1
+  D_EXPAND( Et(k,j,i) = -st*(ar*vL[Xt] - al*vR[Xt])*scrh;  ,
                                                         ,
           Eb(k,j,i) = -sb*(ar*vL[Xb] - al*vR[Xb])*scrh;  );
   #endif
@@ -87,9 +95,9 @@ KOKKOS_FORCEINLINE_FUNCTION void K_StoreHLLD( const int i, const int j, const in
                                         const IdefixArray3D<real> &aR,
                                         const IdefixArray3D<real> &dL,
                                         const IdefixArray3D<real> &dR) {
-  EXPAND( const int Xn = DIR+MX1;                    ,
-        const int Xt = (DIR == IDIR ? MX2 : MX1);  ,
-        const int Xb = (DIR == KDIR ? MX2 : MX3);  )
+  EXPAND(                const int Xn = DIR+MX1;                    ,
+                         const int Xt = (DIR == IDIR ? MX2 : MX1);  ,
+        [[maybe_unused]] const int Xb = (DIR == KDIR ? MX2 : MX3);  )
   // Compute magnetic pressure
   [[maybe_unused]] real ptR, ptL;
 
@@ -201,7 +209,7 @@ KOKKOS_FORCEINLINE_FUNCTION void K_StoreHLLD( const int i, const int j, const in
   }
 
   #if COMPONENTS > 1
-  EXPAND( Et(k,j,i) = -st*(ar*vL[Xt] - al*vR[Xt])*scrh;  ,
+  D_EXPAND( Et(k,j,i) = -st*(ar*vL[Xt] - al*vR[Xt])*scrh;  ,
                                                           ,
           Eb(k,j,i) = -sb*(ar*vL[Xb] - al*vR[Xb])*scrh;  );
   #endif

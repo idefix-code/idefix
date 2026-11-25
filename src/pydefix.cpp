@@ -1,7 +1,15 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file src/pydefix.cpp
+//
+// Last modified : 08/2026
+//
+// Copyright(C) by :
+// - Geoffroy Lesur <geoffroy.lesur@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2023 - 2026)
+// - Sébastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
@@ -13,6 +21,7 @@
 #include <pybind11/stl.h>   // For STL vectors and containers
 #include <string>
 #include <vector>
+#include <csignal>
 #include "idefix.hpp"
 #include "dataBlock.hpp"
 #include "dataBlockHost.hpp"
@@ -68,7 +77,7 @@ py::array_t<real, py::array::c_style> GatherIdefixArray(IdefixHostArray3D<real> 
       // np_int: size that should be copied into global
       // beg: offset in the incoming array where copy should begin
       // gbeg: offset in the global array where copy should be begin
-      std::array<int,3> np_int,np_tot, beg, gbeg;
+      [[maybe_unused]] std::array<int,3> np_int,np_tot, beg, gbeg;
       IdefixHostArray3D<real> buf;
 
       if(rank==0) {
@@ -95,15 +104,15 @@ py::array_t<real, py::array::c_style> GatherIdefixArray(IdefixHostArray3D<real> 
         #ifdef WITH_MPI
           MPI_Status status;
           // Fetch the local array size
-          MPI_Recv(np_int.data(), 3, MPI_INT, rank, 010, MPI_COMM_WORLD, &status);
-          MPI_Recv(np_tot.data(), 3, MPI_INT, rank, 011, MPI_COMM_WORLD, &status);
-          MPI_Recv(beg.data(), 3, MPI_INT, rank, 012, MPI_COMM_WORLD, &status);
-          MPI_Recv(gbeg.data(), 3, MPI_INT, rank, 013, MPI_COMM_WORLD, &status);
+          idfx::MPI_Recv(np_int, 3, MPI_INT, rank, 010, MPI_COMM_WORLD, &status);
+          idfx::MPI_Recv(np_tot, 3, MPI_INT, rank, 011, MPI_COMM_WORLD, &status);
+          idfx::MPI_Recv(beg, 3, MPI_INT, rank, 012, MPI_COMM_WORLD, &status);
+          idfx::MPI_Recv(gbeg, 3, MPI_INT, rank, 013, MPI_COMM_WORLD, &status);
 
           buf = IdefixHostArray3D<real>("pydefix::tempArray",
                                          np_tot[KDIR],np_tot[JDIR],np_tot[IDIR]);
           // Fetch data
-          MPI_Recv(buf.data(), np_tot[IDIR]*np_tot[JDIR]*np_tot[KDIR],
+          idfx::MPI_Recv(buf, np_tot[IDIR]*np_tot[JDIR]*np_tot[KDIR],
                    realMPI, rank, 014, MPI_COMM_WORLD,&status);
         #else
           IDEFIX_ERROR("Can't deal with psize>1 without MPI.");
@@ -127,7 +136,7 @@ py::array_t<real, py::array::c_style> GatherIdefixArray(IdefixHostArray3D<real> 
     }// End loop on target rank for root process
   } else { // MPI prank >0
     std::array<int,3> np_int = dataHost.np_int;
-    std::array<int,3> np_tot = dataHost.np_tot;
+    [[maybe_unused]] std::array<int,3> np_tot = dataHost.np_tot;
     std::array<int,3> gbeg = dataHost.gbeg;
     std::array<int,3> beg = dataHost.beg;
 
@@ -146,11 +155,11 @@ py::array_t<real, py::array::c_style> GatherIdefixArray(IdefixHostArray3D<real> 
     }
     #ifdef WITH_MPI
       // send the local array size
-      MPI_Send(np_int.data(), 3, MPI_INT, 0, 010, MPI_COMM_WORLD);
-      MPI_Send(np_tot.data(), 3, MPI_INT, 0, 011, MPI_COMM_WORLD);
-      MPI_Send(beg.data(), 3, MPI_INT, 0, 012, MPI_COMM_WORLD);
-      MPI_Send(gbeg.data(), 3, MPI_INT, 0, 013, MPI_COMM_WORLD);
-      MPI_Send(in.data(), np_tot[IDIR]*np_tot[JDIR]*np_tot[KDIR], realMPI, 0, 014, MPI_COMM_WORLD);
+      idfx::MPI_Send(np_int, 3, MPI_INT, 0, 010, MPI_COMM_WORLD);
+      idfx::MPI_Send(np_tot, 3, MPI_INT, 0, 011, MPI_COMM_WORLD);
+      idfx::MPI_Send(beg, 3, MPI_INT, 0, 012, MPI_COMM_WORLD);
+      idfx::MPI_Send(gbeg, 3, MPI_INT, 0, 013, MPI_COMM_WORLD);
+      idfx::MPI_Send(in, np_tot[IDIR]*np_tot[JDIR]*np_tot[KDIR], realMPI, 0, 014, MPI_COMM_WORLD);
     #else
       IDEFIX_ERROR("Can't deal with psize>1 without MPI.");
     #endif
@@ -158,7 +167,7 @@ py::array_t<real, py::array::c_style> GatherIdefixArray(IdefixHostArray3D<real> 
   // All is transfered
   #ifdef WITH_MPI
     if(broadcast) {
-      MPI_Bcast(out.data(), out.extent(0)*out.extent(1)*out.extent(2), realMPI, 0, MPI_COMM_WORLD);
+      idfx::MPI_Bcast(out, out.extent(0)*out.extent(1)*out.extent(2), realMPI, 0, MPI_COMM_WORLD);
     }
   #endif
 
@@ -228,6 +237,11 @@ PYBIND11_EMBEDDED_MODULE(pydefix, m) {
         m.attr("BX1s") = BX1s; ,
         m.attr("BX2s") = BX2s; ,
         m.attr("BX3s") = BX3s; )
+      #ifdef EVOLVE_VECTOR_POTENTIAL
+        m.attr("AX1e") = AX1e;
+        m.attr("AX2e") = AX2e;
+        m.attr("AX3e") = AX3e;
+      #endif
     #endif
     m.attr("IDIR") = IDIR;
     m.attr("JDIR") = JDIR;
@@ -273,6 +287,10 @@ Pydefix::Pydefix(Input &input) {
       idfx::cout << "Pydefix: start Python interpreter." << std::endl;
 
       py::initialize_interpreter();
+      std::signal(SIGINT, SIG_DFL);  // restore "terminate on Ctrl-C" signal handler
+      py::exec("import sys; print(f'Pydefix: Python Version: {sys.version}')");
+      py::exec("print(f'Pydefix: Executable Path: {sys.executable}')");
+      py::exec("print(f'Pydefix: Sys Path: {sys.path}')");
     }
     this->scriptFilename = input.Get<std::string>("Python","script",0);
     if(scriptFilename.substr(scriptFilename.length() - 3, 3).compare(".py")==0) {

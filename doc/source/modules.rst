@@ -31,6 +31,9 @@ In this section, you will find a more detailed documentation about each module t
 :ref:`pydefixModule`
   The Python interaction module, that allows Idefix to interact directly with a python interpreter.
 
+:ref:`forcingModule`
+  The stochastic forcing module, driving turbulence with Ornstein–Uhlenbeck Fourier modes.
+
 
 .. toctree::
    :maxdepth: 2
@@ -44,3 +47,4 @@ In this section, you will find a more detailed documentation about each module t
    modules/braginskii.rst
    modules/gridCoarsening.rst
    modules/pydefix.rst
+   modules/forcing.rst

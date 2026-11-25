@@ -35,6 +35,7 @@ option(Idefix_GTEST "Enable building unittests with GoogleTest framework" OFF)
 option(Idefix_RUNTIME_CHECKS "Enable runtime sanity checks" OFF)
 option(Idefix_WERROR "Treat compiler warnings as errors" OFF)
 option(Idefix_PYTHON "Enable python bindings (requires pybind11)" OFF)
+option(Idefix_FFT "Enable FFT (requires dedicated FFT library)" OFF)
 option(Idefix_MPI_GPU_DIRECT "Enable usage of GPU direct to avoid CPU-GPU copies for MPI messages." ON)
 option(Idefix_MPI_GPU_FORCE_COPY "When GPU_DIRECT is disabled, force using transfers for validation purpose." OFF)
 mark_as_advanced(Idefix_MPI_GPU_FORCE_TRANSFERS)
@@ -93,6 +94,8 @@ endif()
 add_subdirectory(src/kokkos ${CMAKE_BINARY_DIR}/build/kokkos)
 include_directories(${Kokkos_INCLUDE_DIRS_RET})
 
+
+
 # Add Idefix CXX Flags
 add_compile_options(${Idefix_CXX_FLAGS})
 
@@ -110,10 +113,17 @@ if(Idefix_WERROR)
 endif()
 
 # add tests
+# unittests: non-MPI tests. unittests_mpi: MPI-only tests (test*MPI.cpp files),
+# only built when Idefix_MPI=ON, to be run with mpirun -np N ./unittests_mpi
 if (Idefix_GTEST)
   add_executable(unittests)
   target_link_libraries(unittests GTest::gtest GTest::gmock)
   add_test(NAME unittests COMMAND unittests)
+  if (Idefix_MPI)
+    add_executable(unittests_mpi)
+    target_link_libraries(unittests_mpi GTest::gtest GTest::gmock)
+    add_test(NAME unittests_mpi COMMAND unittests_mpi)
+  endif()
 endif()
 
 # sub directories should be called after add_executable
@@ -128,6 +138,9 @@ add_subdirectory(src build)
 target_link_libraries(idefix idefix-core)
 if (Idefix_GTEST)
   target_link_libraries(unittests idefix-core)
+  if (Idefix_MPI)
+    target_link_libraries(unittests_mpi idefix-core)
+  endif()
 endif()
 
 # make absolute
@@ -144,6 +157,17 @@ endif()
 if(EXISTS ${Idefix_PROBLEM_DIR_ABS}/CMakeLists.txt)
   message(STATUS "Including problem-specific CMakeLists in '${Idefix_PROBLEM_DIR_ABS}'")
   add_subdirectory(${Idefix_PROBLEM_DIR_ABS} build/setup)
+endif()
+
+# Add FFT library if requested
+if(Idefix_FFT)
+  include(FetchContent)
+  FetchContent_Declare(KokkosFFT
+    GIT_REPOSITORY https://github.com/kokkos/kokkos-fft
+    GIT_TAG "28cbdc0bb8e5205992c42d82b63716fe56a8f058" # Kokkos-fft v2.0.0
+  )
+  FetchContent_MakeAvailable(KokkosFFT)
+  add_compile_definitions("WITH_FFT")
 endif()
 
 if(Idefix_MHD)
@@ -334,12 +358,19 @@ target_include_directories(idefix-core PUBLIC
                            src/rkl
                            src/gravity
                            src/utils
+                           src/utils/fft
                            src/utils/iterativesolver
                            src/mpi
                            src
                            )
 
 target_link_libraries(idefix-core PUBLIC Kokkos::kokkos)
+
+# Link KokkosFFT if enabled
+if(Idefix_FFT)
+  target_include_directories(idefix-core PUBLIC ${KokkosFFT_SOURCE_DIR}/fft/src ${KokkosFFT_SOURCE_DIR}/common/src)
+  target_link_libraries(idefix-core PUBLIC KokkosFFT::fft)
+endif()
 
 # Generate header with compiler information (name, flags, path)
 configure_file(
@@ -351,6 +382,9 @@ configure_file(
 target_include_directories(idefix-core PRIVATE ${CMAKE_BINARY_DIR}/build/generated)
 if (Idefix_GTEST)
   target_include_directories(unittests PRIVATE ${CMAKE_BINARY_DIR}/build/generated)
+  if (Idefix_MPI)
+    target_include_directories(unittests_mpi PRIVATE ${CMAKE_BINARY_DIR}/build/generated)
+  endif()
 endif()
 
 # disable FMA if needed
@@ -360,7 +394,15 @@ if(Idefix_SUPPRESS_FMA)
   target_suppress_fma(idefix-core)
   if (Idefix_GTEST)
     target_suppress_fma(unittests)
+    if (Idefix_MPI)
+      target_suppress_fma(unittests_mpi)
+    endif()
   endif()
+endif()
+
+# Add FFT source files if enabled
+if(Idefix_FFT)
+  add_subdirectory(src/utils/fft)
 endif()
 
 message(STATUS "Idefix final configuration")
@@ -371,6 +413,7 @@ else()
 endif()
 message(STATUS "    MPI:  ${Idefix_MPI}")
 message(STATUS "    HDF5: ${Idefix_HDF5}")
+message(STATUS "    FFT:  ${Idefix_FFT}")
 message(STATUS "    Python: ${Idefix_PYTHON}")
 message(STATUS "    GPU direct: ${Idefix_MPI_GPU_DIRECT}")
 message(STATUS "    Reconstruction: ${Idefix_RECONSTRUCTION}")

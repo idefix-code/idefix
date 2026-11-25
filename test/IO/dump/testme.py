@@ -47,23 +47,28 @@ if not test.dec:
 
 if not test.all:
     testMe(test)
+    test.standardTest()
 else:
     test.vectPot = False
     test.reconstruction = 2
     test.mpi = False
     testMe(test)
+    test.standardTest()
     # test in MPI mode
     test.mpi = True
     testMe(test)
+    test.standardTest()
 
     # test with vector potential
     test.mpi = False
     test.vectPot = True
     test.reconstruction = 2
     testMe(test)
+    test.standardTest()
 
     test.mpi = True
     testMe(test)
+    test.standardTest()
 
     # test with other precision
     test.single = True
@@ -71,6 +76,8 @@ else:
     test.reconstruction = 2
     test.mpi = False
     testMe(test)
+    test.standardTest()
     # test in MPI mode
     test.mpi = True
     testMe(test)
+    test.standardTest()

@@ -50,7 +50,9 @@ set in a dedicated ``[SelfGravity]`` block:
 | solver         | string                  | | Specifies which solver should be used. Can be ``Jacobi``, ``CG``, ``MINRES``, ``BICGSTAB``|
 |                |                         | | which corresponds to Jacobin, conjugate gradient, Minimal residual or bi-conjugate        |
 |                |                         | | stabilised method. Note that a preconditionned version is available adding a ``P`` to     |
-|                |                         | | the solver  name (e.g. ``PCG`` or ``PBIGCSTAB`` ).                                        |
+|                |                         | | the solver name (e.g. ``PCG`` or ``PBICGSTAB``).                                         |
+|                |                         | | The FFT solver (``FFT``) is also available for Cartesian geometries with periodic          |
+|                |                         | | boundaries (see :ref:`fftSolverSection`).                                                |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 | targetError    | real                    | | Set the error allowed in the residual :math:`r=\Delta\psi_{SG}/(4\pi G_c)-\rho`. The error|
 |                |                         | | computation is based on a L2 norm. Default is 1e-2.                                       |
@@ -61,6 +63,8 @@ set in a dedicated ``[SelfGravity]`` block:
 | skip           | int                     | | Set the number of integration cycles between each computation of self-gravity potential.  |
 |                |                         | | Default is 1 (i.e. self-gravity is computed at every cycle).                              |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
+
+
 
 
 Boundary conditions on self-gravitating potential
@@ -97,5 +101,30 @@ The boundary conditions can be following
     Hence, make sure to specify all self-gravity boundary conditions as periodic for such setups, otherwise the solver will
     fail to converge.
 
-The selfGravity module in *Idefix* is fully parallelised. This means that one can have a MPI domain decomposition in any spatial direction
-either on CPU or GPU.
+
+.. _fftSolverSection:
+
+FFT Solver
+----------
+
+The FFT-based solver provides an alternative to iterative methods for solving the Poisson equation.
+It computes the gravitational potential in Fourier space, where Poisson's equation becomes a simple
+algebraic relation: :math:`\hat{\psi} = -4\pi G_c \hat{\rho} / k^2` (for :math:`k \neq 0`).
+This approach is significantly faster than iterative methods for uniform Cartesian grids.
+
+**Requirements and limitations:**
+
+- **Geometry**: Cartesian only (not compatible with cylindrical or spherical geometries)
+- **Dimensionality**: Only 3D is supported, as the FFT solver relies on 3D FFTs for efficiency
+- **Boundary conditions**: Must be periodic in all active dimensions
+- **Grid constraints**:
+  - Even number of grid points required in the X1 direction
+  - No domain decomposition allowed in the X1 and X2 directions
+  - The number of grid points in X2 and X3 must be divisible by the number of MPI processes (due to global transpositions)
+- **Compilation**: Requires enabling FFT support with ``-DIdefix_FFT=ON`` during CMake configuration
+
+**Parallelization:**
+
+The FFT solver uses a slab decomposition strategy for MPI parallelization, where the domain can be
+decomposed along the X2 and X3 directions. The solver leverages the KokkosFFT library for efficient
+FFT computations on both CPU and GPU architectures.

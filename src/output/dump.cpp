@@ -28,6 +28,7 @@
 #endif
 #include <iomanip>
 #include <string>
+#include <vector>
 #include <cstdio>
 #include <cstring>
 #include <vector>
@@ -42,40 +43,6 @@
 #define  NAMESIZE     16
 #define  FILENAMESIZE   256
 #define  HEADERSIZE 128
-
-// Register a variable to be dumped (and read)
-
-void Dump::RegisterVariable(IdefixArray3D<real>& in,
-                        std::string name,
-                        int dir,
-                        DumpField::ArrayLocation loc) {
-    dumpFieldMap.emplace(name, DumpField(in, loc, dir));
-}
-
-void  Dump::RegisterVariable(IdefixHostArray3D<real>& in,
-                        std::string name,
-                        int dir,
-                        DumpField::ArrayLocation loc) {
-    dumpFieldMap.emplace(name, DumpField(in, loc, dir));
-}
-
-void  Dump::RegisterVariable(IdefixArray4D<real>& in,
-                        std::string name,
-                        int varnum,
-                        int dir,
-                        DumpField::ArrayLocation loc) {
-    dumpFieldMap.emplace(name, DumpField(in, varnum, loc, dir));
-}
-
-void  Dump::RegisterVariable(IdefixHostArray4D<real>& in,
-                        std::string name,
-                        int varnum,
-                        int dir,
-                        DumpField::ArrayLocation loc) {
-    dumpFieldMap.emplace(name, DumpField(in, varnum, loc, dir));
-}
-
-
 
 void Dump::CreateMPIDataType(GridBox gb, bool read) {
   #ifdef WITH_MPI
@@ -274,14 +241,12 @@ void Dump::WriteString(IdfxFileHandler fileHdl, char *str, int size) {
 
 
 void Dump::WriteSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
-                             DataType type, char* name, void* data ) {
+                             dump_io::DataType type, char* name, void* data ) {
   int ntot = 1;   // Number of elements to be written
-  int size;
-
-  if(type == DoubleType) size=sizeof(double);
-  if(type == SingleType) size=sizeof(float);
-  if(type == IntegerType) size=sizeof(int);
-  if(type == BoolType) size=sizeof(bool);
+  int const size = dump_io::size_of(type);
+  if (size == 0) {
+    IDEFIX_ERROR("Cannot write field " + std::string(name) + ": unsupported data type");
+  }
 
   // Write field name
 
@@ -318,9 +283,7 @@ void Dump::WriteSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
     }
 
     // Write raw data
-    if(type == DoubleType) MpiType=MPI_DOUBLE;
-    if(type == SingleType) MpiType=MPI_FLOAT;
-    if(type == IntegerType) MpiType=MPI_INT;
+    MpiType = dump_io::to_mpi_type(type);
     MPI_SAFE_CALL(MPI_File_set_view(fileHdl, offset, MPI_BYTE,
                                     MPI_CHAR, "native", MPI_INFO_NULL ));
 
@@ -352,16 +315,25 @@ void Dump::WriteSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
   #endif
 }
 
+// Copy a replicated field into the host serial buffer, growing it as needed.
+// Returns a pointer valid until the next call.
+void* Dump::GetSerialBuffer(DumpField const& field) {
+  size_t bytes = field.Size() * dump_io::size_of(field.GetDataType());
+  if (serialBuffer.size() < bytes) serialBuffer.resize(bytes);
+  field.CopyToHost(static_cast<void*>(serialBuffer.data()));
+  return static_cast<void*>(serialBuffer.data());
+}
+
 void Dump::WriteDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gdim,
-                                  char* name, IdfxDataDescriptor &descriptor, real* data ) {
+                            char* name, IdfxDataDescriptor &descriptor, real* data ) {
     int64_t ntot = 1;   // Number of elements to be written
 
   // Define current datatype
-  DataType type;
+  dump_io::DataType type;
   #ifndef SINGLE_PRECISION
-  type = DoubleType;
+  type = dump_io::DataType::Double;
   #else
-  type = SingleType;
+  type = dump_io::DataType::Float;
   #endif
 
   // Write field name
@@ -400,8 +372,7 @@ void Dump::WriteDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gd
     }
 
     // Write raw data
-    if(type == DoubleType) MpiType=MPI_DOUBLE;
-    if(type == SingleType) MpiType=MPI_FLOAT;
+    MpiType = dump_io::to_mpi_type(type);
 
     MPI_SAFE_CALL(MPI_File_set_view(fileHdl, offset, MpiType,
                                     descriptor, "native", MPI_INFO_NULL ));
@@ -436,7 +407,7 @@ void Dump::WriteDistributed(IdfxFileHandler fileHdl, int ndim, int *dim, int *gd
 }
 
 void Dump::ReadNextFieldProperties(IdfxFileHandler fileHdl, int &ndim, int *dim,
-                                         DataType &type, std::string &name) {
+                                         dump_io::DataType &type, std::string &name) {
   char fieldName[NAMESIZE];
   #ifdef WITH_MPI
     // Read Name
@@ -506,26 +477,19 @@ void Dump::ReadNextFieldProperties(IdfxFileHandler fileHdl, int &ndim, int *dim,
 }
 
 void Dump::ReadSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
-                            DataType type, void* data) {
-  int size;
+                            dump_io::DataType type, void* data) {
   int64_t ntot=1;
   // Get total size
   for(int i=0; i < ndim; i++) {
     ntot=ntot*dim[i];
   }
-  if(type == DoubleType) size=sizeof(double);
-  if(type == SingleType) size=sizeof(float);
-  if(type == IntegerType) size=sizeof(int);
-  if(type == BoolType) size=sizeof(bool);
+  int const size = dump_io::size_of(type);
+  if (size == 0) IDEFIX_ERROR("Cannot read field: unsupported data type");
 
   #ifdef WITH_MPI
     MPI_Status status;
-    MPI_Datatype MpiType;
 
-    if(type == DoubleType) MpiType=MPI_DOUBLE;
-    if(type == SingleType) MpiType=MPI_FLOAT;
-    if(type == IntegerType) MpiType=MPI_INT;
-    if(type == BoolType) MpiType=MPI_CXX_BOOL;
+    MPI_Datatype MpiType = dump_io::to_mpi_type(type);
 
     MPI_SAFE_CALL(MPI_File_set_view(fileHdl, this->offset, MPI_BYTE,
                                     MPI_CHAR, "native", MPI_INFO_NULL ));
@@ -547,17 +511,14 @@ void Dump::ReadSerial(IdfxFileHandler fileHdl, int ndim, int *dim,
 }
 
 void Dump::Skip(IdfxFileHandler fileHdl, int ndim, int *dim,
-                            DataType type) {
-  int size;
+                            dump_io::DataType type) {
   int64_t ntot=1;
   // Get total size
   for(int i=0; i < ndim; i++) {
     ntot=ntot*dim[i];
   }
-  if(type == DoubleType) size=sizeof(double);
-  if(type == SingleType) size=sizeof(float);
-  if(type == IntegerType) size=sizeof(int);
-  if(type == BoolType) size=sizeof(bool);
+  int const size = dump_io::size_of(type);
+  if (size == 0) IDEFIX_ERROR("Cannot skip field: unsupported data type");
 
   #ifdef WITH_MPI
     offset+= ntot*size;
@@ -647,7 +608,7 @@ bool Dump::Read(Output& output, int readNumber ) {
   int nxglob[3];
   std::string fieldName;
   std::string eof ("eof");
-  DataType type;
+  dump_io::DataType type;
   int ndim;
   IdfxFileHandler fileHdl;
 
@@ -746,43 +707,81 @@ bool Dump::Read(Output& output, int readNumber ) {
         // This key has been registered
         notFound.erase(fieldName);
         DumpField &scalar = it->second;
-        if(scalar.GetType() == DumpField::Type::IdefixArray) {
-          // Distributed idefix array
-          int direction = scalar.GetDirection();
+        if(scalar.IsArray()) {
+          if(!scalar.IsDistributed()) {
+            // Serial record (replicated 1D/2D array): the record holds the
+            // whole array. Check that it matches what the code expects.
+            int const rank = scalar.GetArrayDimension();
+            std::vector<int> const shape = scalar.GetShape();
 
-          // Load it
-          for(int dir = 0 ; dir < 3; dir++) {
-            nx[dir] = data->np_int[dir];
-          }
-
-          if(scalar.GetLocation() == DumpField::ArrayLocation::Face) {
-            nx[direction]++;   // Extra cell in the dir direction for face-centered fields
-          }
-          if(scalar.GetLocation() == DumpField::ArrayLocation::Edge) {
-            // Extra cell in the dirs perp to field
-            for(int i = 0 ; i < DIMENSIONS ; i++) {
-              if(i!=direction) nx[i] ++;
+            if(ndim != rank) {
+              std::stringstream msg;
+              msg << "Dump: field " << fieldName << " has " << ndim
+                  << " dimension(s) in the restart file but " << rank
+                  << " in the running code." << std::endl;
+              IDEFIX_ERROR(msg);
             }
-          }
-          if(scalar.GetLocation() == DumpField::ArrayLocation::Center) {
-            ReadDistributed(fileHdl, ndim, nx, nxglob, descCR, scrch);
-          } else if(scalar.GetLocation() == DumpField::ArrayLocation::Face) {
-            ReadDistributed(fileHdl, ndim, nx, nxglob, descSR[direction], scrch);
-          } else if(scalar.GetLocation() == DumpField::ArrayLocation::Edge) {
-            ReadDistributed(fileHdl, ndim, nx, nxglob, descER[direction], scrch);
-          }
-          auto toRead = scalar.GetHostField<IdefixHostArray3D<real>>();
-          // Load the scratch space in designated field
-          for(int k = 0; k < nx[KDIR]; k++) {
-            for(int j = 0 ; j < nx[JDIR]; j++) {
-              for(int i = 0; i < nx[IDIR]; i++) {
-                toRead(k+data->beg[KDIR],j+data->beg[JDIR],i+data->beg[IDIR]) =
-                                                        scrch[i + j*nx[IDIR] + k*nx[IDIR]*nx[JDIR]];
+
+            for(int n = 0 ; n < rank ; n++) {
+              if(nxglob[n] != shape[n]) {
+                std::stringstream msg;
+                msg << "Dump: field " << fieldName << " has size "
+                    << nxglob[n] << " along axis " << n << " in the restart file"
+                    << " but " << shape[n] << " in the running code." << std::endl;
+                IDEFIX_ERROR(msg);
               }
             }
-          }
-          scalar.SyncFrom(toRead);
-        } else {
+
+            if(type != scalar.GetDataType()) {
+              std::stringstream msg;
+              msg << "Dump: field " << fieldName << " has data type "
+                  << static_cast<int>(type) << " in the restart file but "
+                  << static_cast<int>(scalar.GetDataType())
+                  << " in the running code." << std::endl;
+              IDEFIX_ERROR(msg);
+            }
+
+            void* buf = GetSerialBuffer(scalar);
+            ReadSerial(fileHdl, ndim, nxglob, type, buf);
+            scalar.SyncFromHost(buf);
+          } else {
+            // Distributed grid array (3D/4D)
+            int direction = scalar.GetDirection();
+
+            // Load it
+            for(int dir = 0 ; dir < 3; dir++) {
+              nx[dir] = data->np_int[dir];
+            }
+
+            if(scalar.GetLocation() == DumpField::ArrayLocation::Face) {
+              nx[direction]++;   // Extra cell in the dir direction for face-centered fields
+            }
+            if(scalar.GetLocation() == DumpField::ArrayLocation::Edge) {
+              // Extra cell in the dirs perp to field
+              for(int i = 0 ; i < DIMENSIONS ; i++) {
+                if(i!=direction) nx[i] ++;
+              }
+            }
+            if(scalar.GetLocation() == DumpField::ArrayLocation::Center) {
+              ReadDistributed(fileHdl, ndim, nx, nxglob, descCR, scrch);
+            } else if(scalar.GetLocation() == DumpField::ArrayLocation::Face) {
+              ReadDistributed(fileHdl, ndim, nx, nxglob, descSR[direction], scrch);
+            } else if(scalar.GetLocation() == DumpField::ArrayLocation::Edge) {
+              ReadDistributed(fileHdl, ndim, nx, nxglob, descER[direction], scrch);
+            }
+            auto toRead = scalar.GetHostField<IdefixHostArray3D<real>>();
+            // Load the scratch space in designated field
+            for(int k = 0; k < nx[KDIR]; k++) {
+              for(int j = 0 ; j < nx[JDIR]; j++) {
+                for(int i = 0; i < nx[IDIR]; i++) {
+                  toRead(k+data->beg[KDIR],j+data->beg[JDIR],i+data->beg[IDIR]) =
+                    scrch[i + j*nx[IDIR] + k*nx[IDIR]*nx[JDIR]];
+                }
+              }
+            }
+            scalar.SyncFrom(toRead);
+          } // replicated || distributed
+        } else { // IsArray
           // Fundamental Type
           // Check that size matches
           if(nxglob[0] != scalar.GetSize()) {
@@ -832,9 +831,9 @@ int Dump::Write(Output& output) {
   int nxtot[3];
 
   #ifndef SINGLE_PRECISION
-  const DataType realType = DoubleType;
+  const dump_io::DataType realType = dump_io::DataType::Double;
   #else
-  const DataType realType = SingleType;
+  const dump_io::DataType realType = dump_io::DataType::Float;
   #endif
   IdfxFileHandler fileHdl;
 
@@ -919,64 +918,69 @@ int Dump::Write(Output& output) {
   for(auto const& [name, scalar] : dumpFieldMap) {
     // Todo: replace these C char by std::string
     std::snprintf(fieldName,NAMESIZE,"%s",name.c_str());
-    if(scalar.GetType() == DumpField::Type::IdefixArray) {
-      auto toWrite = scalar.GetHostField<IdefixHostArray3D<real>>();
-      int dir = scalar.GetDirection();
-      for(int i = 0; i < 3 ; i++) {
-        nx[i] = data->np_int[i];
-        nxtot[i] = gridHost.np_int[i];
-      }
+    if(scalar.IsArray()) {
+      if(!scalar.IsDistributed()) {
+        // Replicated array (1D/2D): identical on every rank, written once
+        std::vector<int> const shape = scalar.GetShape();
+        int const rank = scalar.GetArrayDimension();
+        for(int n = 0 ; n < rank ; n++) nx[n] = shape[n];
 
-      if(scalar.GetLocation() == DumpField::ArrayLocation::Face) {
-        // If it is the last datablock of the dimension, increase the size by one to get the last
-        //active face of the staggered mesh.
-        if(data->mygrid->xproc[dir] == data->mygrid->nproc[dir] - 1  ) nx[dir]++;
-        nxtot[dir]++;
-      }
-
-      if(scalar.GetLocation() == DumpField::ArrayLocation::Edge) {
-        // If it is the last datablock of the dimension, increase the size by one in the direction
-        // perpendicular to the vector.
-        for(int i = 0 ; i < DIMENSIONS ; i++) {
-          if(i != dir) {
-            if(data->mygrid->xproc[i] == data->mygrid->nproc[i] - 1) nx[i]++;
-            nxtot[i]++;
-          }
-        }
-      }
-
-      // Load the dataset in the scratch array
-      for(int k = 0; k < nx[KDIR]; k++) {
-        for(int j = 0 ; j < nx[JDIR]; j++) {
-          for(int i = 0; i < nx[IDIR]; i++) {
-            scrch[i + j*nx[IDIR] + k*nx[IDIR]*nx[JDIR]] = toWrite(k+data->beg[KDIR],
-                                                                  j+data->beg[JDIR],
-                                                                  i+data->beg[IDIR]);
-          }
-        }
-      }
-
-      if(scalar.GetLocation() == DumpField::ArrayLocation::Center) {
-        WriteDistributed(fileHdl, 3, nx, nxtot, fieldName, this->descCW, scrch);
-      } else if(scalar.GetLocation() == DumpField::ArrayLocation::Face) {
-        WriteDistributed(fileHdl, 3, nx, nxtot, fieldName, this->descSW[dir], scrch);
-      } else if(scalar.GetLocation() == DumpField::ArrayLocation::Edge) {
-         WriteDistributed(fileHdl, 3, nx, nxtot, fieldName, this->descEW[dir], scrch);
+        void* buf = GetSerialBuffer(scalar);
+        WriteSerial(fileHdl, rank, nx, scalar.GetDataType(), fieldName, buf);
       } else {
-        IDEFIX_ERROR("Unknown scalar type for dump write");
-      }
+        // Distributed array (3D/4D) meshed on the grid using MPI topology.
+        auto toWrite = scalar.GetHostField<IdefixHostArray3D<real>>();
+        int dir = scalar.GetDirection();
+        for(int i = 0; i < 3 ; i++) {
+          nx[i] = data->np_int[i];
+          nxtot[i] = gridHost.np_int[i];
+        }
 
+        if(scalar.GetLocation() == DumpField::ArrayLocation::Face) {
+          // If it is the last datablock of the dimension, increase the size by one to get the last
+          //active face of the staggered mesh.
+          if(data->mygrid->xproc[dir] == data->mygrid->nproc[dir] - 1  ) nx[dir]++;
+          nxtot[dir]++;
+        }
+
+        if(scalar.GetLocation() == DumpField::ArrayLocation::Edge) {
+          // If it is the last datablock of the dimension, increase the size by one in the direction
+          // perpendicular to the vector.
+          for(int i = 0 ; i < DIMENSIONS ; i++) {
+            if(i != dir) {
+              if(data->mygrid->xproc[i] == data->mygrid->nproc[i] - 1) nx[i]++;
+              nxtot[i]++;
+            }
+          }
+        }
+
+        // Load the dataset in the scratch array
+        for(int k = 0; k < nx[KDIR]; k++) {
+          for(int j = 0 ; j < nx[JDIR]; j++) {
+            for(int i = 0; i < nx[IDIR]; i++) {
+              scrch[i + j*nx[IDIR] + k*nx[IDIR]*nx[JDIR]] = toWrite(k+data->beg[KDIR],
+                                                                    j+data->beg[JDIR],
+                                                                    i+data->beg[IDIR]);
+            }
+          }
+        }
+
+        if(scalar.GetLocation() == DumpField::ArrayLocation::Center) {
+          WriteDistributed(fileHdl, 3, nx, nxtot, fieldName, this->descCW, scrch);
+        } else if(scalar.GetLocation() == DumpField::ArrayLocation::Face) {
+          WriteDistributed(fileHdl, 3, nx, nxtot, fieldName, this->descSW[dir], scrch);
+        } else if(scalar.GetLocation() == DumpField::ArrayLocation::Edge) {
+          WriteDistributed(fileHdl, 3, nx, nxtot, fieldName, this->descEW[dir], scrch);
+        } else {
+          IDEFIX_ERROR("Unknown scalar type for dump write");
+        }
+      } // IdefixArray3D
     } else {
       // Scalar type if a fundamental type, not distributed
-      DataType thisType;
-      if(scalar.GetType()==DumpField::Type::Int) thisType = DataType::IntegerType;
-      if(scalar.GetType()==DumpField::Type::Single) thisType = DataType::SingleType;
-      if(scalar.GetType()==DumpField::Type::Double) thisType = DataType::DoubleType;
-      if(scalar.GetType()==DumpField::Type::Bool) thisType = DataType::BoolType;
-
+      dump_io::DataType thisType = scalar.GetDataType();
       nx[0] = scalar.GetSize();
 
-      WriteSerial(fileHdl, 1, nx, thisType, fieldName, scalar.GetHostField<void*>());
+      WriteSerial(fileHdl, 1, nx, thisType, fieldName, scalar.GetRawPointer<void>());
     }
   }
 

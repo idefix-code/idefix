@@ -261,7 +261,7 @@ Forcing::Forcing(Input &input, DataBlock *datain) {
   // runs before the dump is read on restart: a restored state is therefore
   // never overwritten by re-initialisation.
   data->dump->RegisterVariable(this->oUprocesses.ouValues, "ouValues");
-  data->dump->RegisterVariable(this->oUprocesses.rngState, "ouRngState");
+  data->dump->RegisterVariable(this->oUprocesses.rng.state(), "ouRngState");
   data->dump->RegisterVariable(this->oUprocesses.means, "ouMeans");
   data->dump->RegisterVariable(this->oUprocesses.tcorrs, "ouTcorrs");
   data->dump->RegisterVariable(this->oUprocesses.epsilons, "ouEpsilons");

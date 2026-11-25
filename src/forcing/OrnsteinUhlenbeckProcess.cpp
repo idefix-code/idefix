@@ -21,7 +21,6 @@ void OrnsteinUhlenbeckProcesses::InitProcesses(std::string folder, int seed, int
   this->ouValues = IdefixArray2D<Kokkos::complex<real>>("ouValues", nSeries, COMPONENTS);
   this->normalValuesReal = IdefixArray2D<real>("normalValuesReal", nSeries, COMPONENTS);
   this->normalValuesImag = IdefixArray2D<real>("normalValuesImag", nSeries, COMPONENTS);
-  this->rngState = IdefixArray2D<uint64_t>("ouRngState", nSeries, COMPONENTS);
   this->means = IdefixArray2D<real>("ouMeans", nSeries, COMPONENTS);
   this->tcorrs = IdefixArray2D<real>("ouTcorrs", nSeries, COMPONENTS);
   this->epsilons = IdefixArray2D<real>("ouEpsilons", nSeries, COMPONENTS);
@@ -32,33 +31,11 @@ void OrnsteinUhlenbeckProcesses::InitProcesses(std::string folder, int seed, int
   Kokkos::deep_copy(this->ouValues, 0);
 
   // Deterministic initialisation of one xorshift64 state per (mode, component)
-  // from the configured seed (see agent/adr/0002). This mirrors the warm-up and
-  // the 16-bit packing used by Kokkos::Random_XorShift64_Pool::init, with a
-  // single host-side generator, so the initial states are identical on every
-  // rank. A zero state would be stuck at zero, so it is replaced as in the
-  // Kokkos generator constructor.
-  uint64_t genState = (seed == 0) ? static_cast<uint64_t>(1318319)
-                                   : static_cast<uint64_t>(seed);
-  auto hostRand = [&genState]() {  // Kokkos::Random_XorShift64::rand() == urand()/2
-    genState ^= genState >> 12;
-    genState ^= genState << 25;
-    genState ^= genState >> 27;
-    uint64_t tmp = (genState * 2685821657736338717ULL) >> 16;
-    return static_cast<int>((tmp & 0xFFFFFFFFULL) / 2);
-  };
-  for (int i = 0; i < 17; i++) hostRand();  // warm-up, as in the Kokkos pool
-  IdefixHostArray2D<uint64_t> rngStateHost("ouRngStateHost", nSeries, COMPONENTS);
-  for (int l = 0; l < nSeries; l++) {
-    for (int dir = 0; dir < COMPONENTS; dir++) {
-      uint64_t state = 0;
-      state |= (static_cast<uint64_t>(hostRand()) & 0xFFFF) << 0;
-      state |= (static_cast<uint64_t>(hostRand()) & 0xFFFF) << 16;
-      state |= (static_cast<uint64_t>(hostRand()) & 0xFFFF) << 32;
-      state |= (static_cast<uint64_t>(hostRand()) & 0xFFFF) << 48;
-      rngStateHost(l, dir) = (state == 0) ? static_cast<uint64_t>(1318319) : state;
-    }
-  }
-  Kokkos::deep_copy(this->rngState, rngStateHost);
+  // from the configured seed (see agent/adr/0002 and idfx::RandomXorShift64).
+  // The generator stores a flat 1D state; the (l, dir) pair is mapped to the
+  // effective index l*COMPONENTS+dir (the LayoutRight offset of (l, dir)).
+  this->rng = idfx::RandomXorShift64(nSeries*COMPONENTS);
+  this->rng.InitFromSeed(seed);
 
   this->ouFilename = folder + "/ou_prank" + std::to_string(idfx::prank)
                      + "_seed" + std::to_string(seed) + ".dat";
@@ -96,7 +73,7 @@ void OrnsteinUhlenbeckProcesses::UpdateProcessesValues(real dt) {
   IdefixArray2D<real> tcorrs = this->tcorrs;
   IdefixArray2D<real> epsilons = this->epsilons;
   IdefixArray2D<Kokkos::complex<real>> ouValues = this->ouValues;
-  IdefixArray2D<uint64_t> rngState = this->rngState;
+  idfx::RandomXorShift64 rng = this->rng;
   IdefixArray2D<real> normalValuesReal = this->normalValuesReal;
   IdefixArray2D<real> normalValuesImag = this->normalValuesImag;
   idefix_for("UpdateProcesses", 0, nSeries, 0, COMPONENTS,
@@ -104,10 +81,11 @@ void OrnsteinUhlenbeckProcesses::UpdateProcessesValues(real dt) {
       // Each (mode, component) draws from its own xorshift64 state: the
       // sequence is deterministic on every backend and identical on all
       // ranks, and it is part of the restart dump (see agent/adr/0002).
-      uint64_t state = rngState(l, dir);
-      real normalReal = static_cast<real>(XorShift64Normal(state));
-      real normalImag = static_cast<real>(XorShift64Normal(state));
-      rngState(l, dir) = state;
+      // The by-value copy of rng shares the same underlying state array.
+      // Effective 1D index of the (l, dir) stream in the flat state array.
+      const int idx = l*COMPONENTS + dir;
+      real normalReal = static_cast<real>(rng.Normal(idx));
+      real normalImag = static_cast<real>(rng.Normal(idx));
       normalValuesReal(l, dir) = normalReal;
       normalValuesImag(l, dir) = normalImag;
       real expTerm = std::exp(-dt/tcorrs(l, dir));

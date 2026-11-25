@@ -31,7 +31,6 @@
 #include <vector>
 #include <cstdio>
 #include <cstring>
-#include <vector>
 #include "dump.hpp"
 #include "dataBlockHost.hpp"
 #include "gridHost.hpp"

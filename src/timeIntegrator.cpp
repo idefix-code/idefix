@@ -70,9 +70,8 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
 
   data.t=0.0;
   ncycles=0;
-  ncyclesDump=0.0;
   // dumps without this field (older code) leave it at 0, i.e. the old behaviour
-  data.dump->RegisterVariable(&ncyclesDump, "ncycles");
+  data.dump->RegisterVariable(&ncycles, "ncycles");
 
   if(nstages==2) {
     wc[0] = 0.5;
@@ -272,8 +271,8 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   idfx::pushRegion("TimeIntegrator::Cycle");
 
   if(firstCycle) {
-    // fresh run: 0; restart: the cycle count stored in the dump
-    ncycles = static_cast<int64_t>(ncyclesDump);
+    // capture the cycle count at the start of this run (0 for a fresh run,
+    // the value stored in the dump for a restart)
     ncyclesStart = ncycles;
     firstCycle = false;
   }
@@ -438,7 +437,6 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
 
   ncycles++;
-  ncyclesDump = static_cast<double>(ncycles);
 
   idfx::popRegion();
 }

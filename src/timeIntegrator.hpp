@@ -62,13 +62,8 @@ class TimeIntegrator {
   real cfl;   // CFL number
   real cflMaxVar; // Max CFL variation number
   real maxdivB{0};   // Maximum allowed divB
-  int64_t ncycles;        // # of cycles
-  // ncycles is an int64_t, which the dumps cannot store: mirror it in a double (exact up to
-  // 2^53) so that a restart resumes the cycle count, and with it the parity that sets the
-  // order of the RKL and hydro steps in Cycle(). Without it a restart from a dump written
-  // after an odd cycle flips that order and departs from the uninterrupted run.
-  double ncyclesDump{0.0};
-  bool firstCycle{true};     // ncycles has not yet been synced with ncyclesDump
+  int64_t ncycles;        // # of cycles (stored in dumps as int64, resumed on restart)
+  bool firstCycle{true};     // ncyclesStart has not yet been captured
   int64_t ncyclesStart{0};   // value of ncycles at the start of this run
   bool logHeaderDone{false}; // the log header has been printed
 

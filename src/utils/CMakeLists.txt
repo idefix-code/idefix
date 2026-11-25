@@ -21,6 +21,8 @@ target_sources(idefix-core
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/lookupTable.hpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/column.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/column.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/random.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/random.cpp
   )
 
 if (Idefix_GTEST)

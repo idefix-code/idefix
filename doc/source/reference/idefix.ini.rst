@@ -234,6 +234,43 @@ This section enables the orbital advection algorithm provided in *Idefix*. More 
 |                |                         | | Default: 10                                                                               |
 +----------------+-------------------------+---------------------------------------------------------------------------------------------+
 
+.. _forcingSection:
+
+``Forcing`` section
+-------------------
+
+This section enables the stochastic forcing module provided in *Idefix*, which drives turbulence with
+Ornstein-Uhlenbeck Fourier modes. More information may be found in :ref:`forcingModule`
+
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| Entry name     | Parameter type          | | Comment                                                                                   |
++================+=========================+=============================================================================================+
+| iso3D          | real, real              | | 3D isotropic forcing: all wavevectors with ``kmin <= |k| <= kmax`` are driven. Cartesian  |
+|                |                         | | geometry with 3 dimensions and 3 components only.                                         |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| iso2D          | string, real, real      | | 2D isotropic forcing in the plane perpendicular to ``normal`` (``IDIR``, ``JDIR`` or      |
+|                |                         | | ``KDIR``), with ``kmin <= |k| <= kmax``.                                                  |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| solenoidal     | (flag)                  | | Projects the forcing onto its solenoidal (divergence-free) part. Not available in polar   |
+|                |                         | | and cylindrical geometries.                                                               |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| mach           | real                    | | Alternative to ``t_corr``/``epsilon``: sets the amplitude from a target Mach number       |
+|                |                         | | ``M``, using the volume-averaged sound speed at t=0 (``csiso`` in isothermal runs).       |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| t_corr         | real                    | | Ornstein-Uhlenbeck correlation time. Used when ``mach`` is not set.                       |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| epsilon        | real                    | | Ornstein-Uhlenbeck amplitude. Used when ``mach`` is not set. Internally divided by the    |
+|                |                         | | number of forcing modes.                                                                  |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| seed           | integer                 | | Seed of the random number generator. Default is 0.                                        |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| stoptime       | real                    | | Time after which the forcing is switched off. Default is infinity (never).                |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+| write          | integer                 | | If set to 1, writes the time series of the OU amplitudes and normal draws to the output   |
+|                |                         | | folder (``ou_prank0_seed<seed>.dat`` and ``normal_prank0_seed<seed>.dat``). Default is 0. |
++----------------+-------------------------+---------------------------------------------------------------------------------------------+
+
+
 .. _gravitySection:
 
 ``Gravity`` section

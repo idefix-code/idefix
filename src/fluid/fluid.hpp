@@ -25,6 +25,7 @@
 #include "eos.hpp"
 #include "thermalDiffusion.hpp"
 #include "bragThermalDiffusion.hpp"
+#include "forcing.hpp"
 #include "selfGravity.hpp"
 #include "vtk.hpp"
 #include "dump.hpp"
@@ -73,6 +74,7 @@ class Fluid {
   real CheckDivB();
   void EvolveStage(const real, const real);
   void ResetStage();
+  void EvolveForcing(const real, const real);
   void ShowConfig();
   IdefixArray4D<real> GetFlux(int dir) {return this->FluxRiemann.at(dir);}
   int CheckNan();

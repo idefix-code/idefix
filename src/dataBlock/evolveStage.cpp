@@ -50,3 +50,20 @@ void DataBlock::EvolveRKLStage() {
   }
   idfx::popRegion();
 }
+
+
+void DataBlock::EvolveForcing() {
+  idfx::pushRegion("DataBlock::EvolveForcing");
+  forcing->ComputeForcing(dt);
+  if (forcing->write) {
+    forcing->oUprocesses.WriteProcessesValues(t);
+    forcing->oUprocesses.WriteNormalValues(t);
+  }
+
+  if (forcing->stillHaveForcing && t > forcing->stopTime) forcing->stillHaveForcing = false;
+
+  if(forcing->stillHaveForcing) {
+    hydro->EvolveForcing(t, dt);
+  }
+  idfx::popRegion();
+}

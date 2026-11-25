@@ -17,6 +17,8 @@
 
 #include "fluid.hpp"
 #include "riemannSolver.hpp"
+#include "forcing.hpp"
+
 template<typename Phys>
 template<int dir>
 void Fluid<Phys>::LoopDir(const real t, const real dt) {
@@ -95,4 +97,35 @@ void Fluid<Phys>::EvolveStage(const real t, const real dt) {
 
   idfx::popRegion();
 }
+
+
+// Evolve one step forward in time of forcing
+template<typename Phys>
+void Fluid<Phys>::EvolveForcing(const real t, const real dt) {
+  idfx::pushRegion("Fluid::EvolveForcing");
+
+  auto Uc   = this->Uc;
+  auto Vc   = this->Vc;
+  auto forcingTerm = this->data->forcing->forcingTerm;
+
+  idefix_for("EvolveForcing",
+             data->beg[KDIR],data->end[KDIR],
+             data->beg[JDIR],data->end[JDIR],
+             data->beg[IDIR],data->end[IDIR],
+            KOKKOS_LAMBDA (int k, int j, int i) {
+            for(int component = 0 ; component < COMPONENTS ; component++) {
+              Uc(MX1+component,k,j,i) += dt * Vc(RHO,k,j,i) * forcingTerm(component,k,j,i);
+              if constexpr(Phys::pressure) {
+                //  rho * v . f
+                Uc(ENG,k,j,i) += dt * Vc(RHO,k,j,i)
+                                    * Vc(VX1+component,k,j,i)
+                                    * forcingTerm(component,k,j,i);
+              } // pressure
+            }
+        });
+
+
+  idfx::popRegion();
+}
+
 #endif //FLUID_EVOLVESTAGE_HPP_

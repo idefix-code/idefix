@@ -93,6 +93,21 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
     data.states["begin"].AllocateAs(data.states["current"]);
   }
 
+  if(data.haveForcing && !input.restartRequested) {
+    // Forcing modes are initialised in the Forcing constructor; on restart,
+    // the complete forcing state (ouValues, rngState, ouMeans, ouTcorrs,
+    // ouEpsilons) comes from the dump (see agent/adr/0002).
+    // so that we get the excited modes even if we don't write
+    // todo: check if this is still needed with the new Forcing constructor as we
+    // might just overwrite the state with the dump values.
+    // If so, we can remove this call to ResetProcessesValues() and ResetNormalValues()
+    // Which should be called straight from oUprocesses constructor.
+    data.forcing->oUprocesses.ResetProcessesValues();
+    if(data.forcing->write) {
+      data.forcing->oUprocesses.ResetNormalValues();
+    }
+  }
+
   idfx::popRegion();
 }
 
@@ -346,6 +361,10 @@ void TimeIntegrator::Cycle(DataBlock &data) {
       data.fargo->ShiftSolution(t0,data.dt);
     }
 
+    if(data.haveForcing && stage == nstages-1) {
+      data.EvolveForcing();
+    }
+
     // Coarsen conservative variables once they have been evolved
     if(data.haveGridCoarsening) {
       data.Coarsen();
@@ -368,6 +387,15 @@ void TimeIntegrator::Cycle(DataBlock &data) {
     MPI_SAFE_CALL(MPI_Wait(&dtReduce, MPI_STATUS_IGNORE));
   }
 #endif
+/*
+if(data.haveForcing) {
+    if(data.forcing->stillHaveForcing) {
+      data.EvolveForcing();
+
+      // Back to using Vc
+      data.ConsToPrim();
+    }
+  }*/
 
   if(haveRKL && (ncycles%2)==0) {    // Runge-Kutta-Legendre cycle
     data.EvolveRKLStage();

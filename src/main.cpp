@@ -156,6 +156,7 @@ int main( int argc, char* argv[] ) {
           data.DeriveVectorPotential();
           idfx::popRegion();
         #endif
+        if(data.haveForcing) data.forcing->InitForcingParameters();
       }
       idfx::cout << "Main: Restarting from dump file."  << std::endl;
       bool restartSuccess = output.RestartFromDump(data,input.restartFileNumber);
@@ -185,6 +186,7 @@ int main( int argc, char* argv[] ) {
       data.SetBoundaries();
       data.Validate();
       output.CheckForWrites(data);
+      if(data.haveForcing) data.forcing->InitForcingParameters();
     }
 
     ///////////////////////////////

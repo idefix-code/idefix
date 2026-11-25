@@ -97,7 +97,7 @@ class RandomXorShift64 {
     state ^= state << 25;
     state ^= state >> 27;
     return static_cast<double>((state * 2685821657736338717ULL) - 1)
-           / static_cast<double>(std::numeric_limits<uint64_t>::max());
+           / static_cast<double>(Kokkos::Experimental::finite_max_v<uint64_t>);
   }
 
   /// Box–Muller standard normal draw, exactly like

@@ -5,6 +5,7 @@
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -14,19 +15,55 @@ OrnsteinUhlenbeckProcesses::OrnsteinUhlenbeckProcesses() {  // Default (empty) c
 }
 
 void OrnsteinUhlenbeckProcesses::InitProcesses(std::string folder, int seed, int nSeries,
-                                                std::vector<std::vector<std::string>> modeNames) {
+                                                 std::vector<std::vector<std::string>> modeNames) {
   this->names = modeNames;
   this->nSeries = nSeries;
   this->ouValues = IdefixArray2D<Kokkos::complex<real>>("ouValues", nSeries, COMPONENTS);
   this->normalValuesReal = IdefixArray2D<real>("normalValuesReal", nSeries, COMPONENTS);
   this->normalValuesImag = IdefixArray2D<real>("normalValuesImag", nSeries, COMPONENTS);
-  this->random_pool = Kokkos::Random_XorShift64_Pool<>(/*seed=*/seed);
+  this->rngState = IdefixArray2D<uint64_t>("ouRngState", nSeries, COMPONENTS);
+  this->means = IdefixArray2D<real>("ouMeans", nSeries, COMPONENTS);
+  this->tcorrs = IdefixArray2D<real>("ouTcorrs", nSeries, COMPONENTS);
+  this->epsilons = IdefixArray2D<real>("ouEpsilons", nSeries, COMPONENTS);
+
+  // The OU amplitudes start at the (zero) mean. On a fresh start,
+  // SetProcesses() resets them to the actual mean; on a restart, the dump
+  // overwrites them with the exact values at the time of the dump.
+  Kokkos::deep_copy(this->ouValues, 0);
+
+  // Deterministic initialisation of one xorshift64 state per (mode, component)
+  // from the configured seed (see agent/adr/0002). This mirrors the warm-up and
+  // the 16-bit packing used by Kokkos::Random_XorShift64_Pool::init, with a
+  // single host-side generator, so the initial states are identical on every
+  // rank. A zero state would be stuck at zero, so it is replaced as in the
+  // Kokkos generator constructor.
+  uint64_t genState = (seed == 0) ? static_cast<uint64_t>(1318319)
+                                   : static_cast<uint64_t>(seed);
+  auto hostRand = [&genState]() {  // Kokkos::Random_XorShift64::rand() == urand()/2
+    genState ^= genState >> 12;
+    genState ^= genState << 25;
+    genState ^= genState >> 27;
+    uint64_t tmp = (genState * 2685821657736338717ULL) >> 16;
+    return static_cast<int>((tmp & 0xFFFFFFFFULL) / 2);
+  };
+  for (int i = 0; i < 17; i++) hostRand();  // warm-up, as in the Kokkos pool
+  IdefixHostArray2D<uint64_t> rngStateHost("ouRngStateHost", nSeries, COMPONENTS);
+  for (int l = 0; l < nSeries; l++) {
+    for (int dir = 0; dir < COMPONENTS; dir++) {
+      uint64_t state = 0;
+      state |= (static_cast<uint64_t>(hostRand()) & 0xFFFF) << 0;
+      state |= (static_cast<uint64_t>(hostRand()) & 0xFFFF) << 16;
+      state |= (static_cast<uint64_t>(hostRand()) & 0xFFFF) << 32;
+      state |= (static_cast<uint64_t>(hostRand()) & 0xFFFF) << 48;
+      rngStateHost(l, dir) = (state == 0) ? static_cast<uint64_t>(1318319) : state;
+    }
+  }
+  Kokkos::deep_copy(this->rngState, rngStateHost);
 
   this->ouFilename = folder + "/ou_prank" + std::to_string(idfx::prank)
                      + "_seed" + std::to_string(seed) + ".dat";
   this->normalFilename = folder + "/normal_prank" + std::to_string(idfx::prank)
                          + "_seed" + std::to_string(seed) + ".dat";
-  this->timestepFilename = folder + "/timestep.dat";
   this->precision = 10;
   this->ouValuesHost =
       IdefixHostArray2D<Kokkos::complex<real>>("ouValuesHost", nSeries, COMPONENTS);
@@ -37,11 +74,8 @@ void OrnsteinUhlenbeckProcesses::InitProcesses(std::string folder, int seed, int
 }
 
 void OrnsteinUhlenbeckProcesses::SetProcesses(IdefixArray2D<real> mean,
-                                               IdefixArray2D<real> tcorr,
-                                               IdefixArray2D<real> epsilon) {
-  this->epsilons = IdefixArray2D<real>("ouEpsilons", nSeries, COMPONENTS);
-  this->tcorrs = IdefixArray2D<real>("ouTcorrs", nSeries, COMPONENTS);
-  this->means = IdefixArray2D<real>("ouMeans", nSeries, COMPONENTS);
+                                                IdefixArray2D<real> tcorr,
+                                                IdefixArray2D<real> epsilon) {
   IdefixArray2D<real> means = this->means;
   IdefixArray2D<real> tcorrs = this->tcorrs;
   IdefixArray2D<real> epsilons = this->epsilons;
@@ -62,15 +96,18 @@ void OrnsteinUhlenbeckProcesses::UpdateProcessesValues(real dt) {
   IdefixArray2D<real> tcorrs = this->tcorrs;
   IdefixArray2D<real> epsilons = this->epsilons;
   IdefixArray2D<Kokkos::complex<real>> ouValues = this->ouValues;
+  IdefixArray2D<uint64_t> rngState = this->rngState;
   IdefixArray2D<real> normalValuesReal = this->normalValuesReal;
   IdefixArray2D<real> normalValuesImag = this->normalValuesImag;
-  Kokkos::Random_XorShift64_Pool<> random_pool = this->random_pool;
   idefix_for("UpdateProcesses", 0, nSeries, 0, COMPONENTS,
               KOKKOS_LAMBDA (int l, int dir) {
-      auto generator = random_pool.get_state();
-      real normalReal = generator.normal(0., 1.);
-      real normalImag = generator.normal(0., 1.);
-      random_pool.free_state(generator);
+      // Each (mode, component) draws from its own xorshift64 state: the
+      // sequence is deterministic on every backend and identical on all
+      // ranks, and it is part of the restart dump (see agent/adr/0002).
+      uint64_t state = rngState(l, dir);
+      real normalReal = static_cast<real>(XorShift64Normal(state));
+      real normalImag = static_cast<real>(XorShift64Normal(state));
+      rngState(l, dir) = state;
       normalValuesReal(l, dir) = normalReal;
       normalValuesImag(l, dir) = normalImag;
       real expTerm = std::exp(-dt/tcorrs(l, dir));
@@ -84,23 +121,6 @@ void OrnsteinUhlenbeckProcesses::UpdateProcessesValues(real dt) {
       Kokkos::complex<real> newCompValue(newRealPart, newImagPart);
       ouValues(l, dir) = newCompValue;
   });
-}
-
-void OrnsteinUhlenbeckProcesses::AdvanceProcessesValues() {
-  std::ifstream file(timestepFilename);
-  std::string line;
-
-  if (file.is_open()) {
-    while (getline(file, line)) {
-      std::string::size_type sz;
-      real dt = std::stof(line, &sz);
-      real t = std::stof(line.substr(sz));
-      UpdateProcessesValues(dt);
-    }
-    file.close();
-  } else {
-    IDEFIX_WARNING("UNABLE TO READ THE TIMESTEP FILE TO ADVANCE OU PROCESSES");
-  }
 }
 
 void OrnsteinUhlenbeckProcesses::ResetProcessesValues() {
@@ -167,25 +187,6 @@ void OrnsteinUhlenbeckProcesses::WriteNormalValues(real time) {
              << '+' << normalValuesImagHost(l,dir) << 'j';
       }
     }
-    file << std::endl;
-    file.close();
-  }
-}
-
-void OrnsteinUhlenbeckProcesses::ResetTimestep() {
-  if (idfx::prank==0) {
-    file.open(timestepFilename, std::ios::trunc);
-    file.close();
-  }
-}
-
-void OrnsteinUhlenbeckProcesses::WriteTimestep(real time, real dt) {
-  if (idfx::prank==0) {
-    int col_width = precision + 10;
-    file.open(timestepFilename, std::ios::app);
-    file.precision(precision);
-    this->file << std::scientific << std::setw(col_width) << dt;
-    this->file << std::scientific << std::setw(col_width) << time;
     file << std::endl;
     file.close();
   }

@@ -70,6 +70,7 @@ enum class DataType : int {
     ComplexFloat  = 4, /// <Kokkos::complex<float>>  (interleaved re,im floats)
     ComplexDouble = 5, /// <Kokkos::complex<double>> (interleaved re,im doubles)
     Int64         = 6, /// <int64_t>
+    UInt64        = 7, /// <uint64_t>
     Unknown = -1       /// <Unknown type>
 };
 static_assert(static_cast<int>(DataType::Double) == 0, "DataType value is on-disk format");
@@ -81,6 +82,8 @@ static_assert(static_cast<int>(DataType::ComplexFloat) == 4,
 static_assert(static_cast<int>(DataType::ComplexDouble) == 5,
               "DataType value is on-disk format");
 static_assert(static_cast<int>(DataType::Int64) == 6,
+              "DataType value is on-disk format");
+static_assert(static_cast<int>(DataType::UInt64) == 7,
               "DataType value is on-disk format");
 
 // Map C++ types to DataType
@@ -101,6 +104,9 @@ template<> struct type_to_data_type<bool> {
 };
 template<> struct type_to_data_type<int64_t> {
     static constexpr DataType value = DataType::Int64;
+};
+template<> struct type_to_data_type<uint64_t> {
+    static constexpr DataType value = DataType::UInt64;
 };
 // Kokkos::complex is layout-compatible with std::complex (two contiguous reals)
 template<> struct type_to_data_type<std::complex<float>> {
@@ -143,6 +149,7 @@ constexpr int size_of(DataType type) {
         case DataType::ComplexFloat:  return 2 * sizeof(float);
         case DataType::ComplexDouble: return 2 * sizeof(double);
         case DataType::Int64:         return sizeof(int64_t);
+        case DataType::UInt64:        return sizeof(uint64_t);
         default:                      return 0;
     }
 }
@@ -158,6 +165,7 @@ inline MPI_Datatype to_mpi_type(DataType type) {
         case DataType::ComplexFloat:  return MPI_CXX_FLOAT_COMPLEX;
         case DataType::ComplexDouble: return MPI_CXX_DOUBLE_COMPLEX;
         case DataType::Int64:         return MPI_LONG_LONG;
+        case DataType::UInt64:        return MPI_UNSIGNED_LONG_LONG;
         default:                      return MPI_DATATYPE_NULL;
     }
 }

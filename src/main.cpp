@@ -165,7 +165,6 @@ int main( int argc, char* argv[] ) {
         input.restartRequested = false;
       } else {
         data.SetBoundaries();
-        if(data.haveForcing) data.forcing->InitForcingParameters();
       }
     }
     if(!input.restartRequested) {

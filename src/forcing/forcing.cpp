@@ -13,6 +13,7 @@
 #include "forcing.hpp"
 #include "dataBlock.hpp"
 #include "dataBlockHost.hpp"
+#include "dump.hpp"
 #include "input.hpp"
 
 Forcing::Forcing(Input &input, DataBlock *datain) {
@@ -253,6 +254,22 @@ Forcing::Forcing(Input &input, DataBlock *datain) {
   #endif
 
   this->oUprocesses.InitProcesses(this->folder, this->seed, this->nForcingModes, this->modeNames);
+
+  // The complete forcing state is stored in the restart dump as replicated
+  // 2D fields (identical on every rank), so that a restart is bit-exact
+  // (see agent/adr/0002). Registration happens here, in the constructor, which
+  // runs before the dump is read on restart: a restored state is therefore
+  // never overwritten by re-initialisation.
+  data->dump->RegisterVariable(this->oUprocesses.ouValues, "ouValues");
+  data->dump->RegisterVariable(this->oUprocesses.rngState, "ouRngState");
+  data->dump->RegisterVariable(this->oUprocesses.means, "ouMeans");
+  data->dump->RegisterVariable(this->oUprocesses.tcorrs, "ouTcorrs");
+  data->dump->RegisterVariable(this->oUprocesses.epsilons, "ouEpsilons");
+
+  // Initialise the forcing modes from the constructor for the same reason.
+  // InitForcingModes() is called as a separate member function because kernels
+  // cannot be launched from a constructor body under nvcc.
+  InitForcingModes();
   idfx::popRegion();
 }
 
@@ -330,9 +347,10 @@ void Forcing::InitForcingModes() {
   int nForcingModes = this->nForcingModes;
   ForcingType forcingType = this->forcingType;
 
-  Kokkos::deep_copy(forcingModesIdir, 0);
-  Kokkos::deep_copy(forcingModesJdir, 0);
-  Kokkos::deep_copy(forcingModesKdir, 0);
+  EXPAND(
+  Kokkos::deep_copy(forcingModesIdir, 0); ,
+  Kokkos::deep_copy(forcingModesJdir, 0); ,
+  Kokkos::deep_copy(forcingModesKdir, 0); )
 
   switch (forcingType) {
     case ForcingType::iso3D:

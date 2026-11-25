@@ -39,6 +39,7 @@ DOUBLE_SIZE = 8
 FLOAT_SIZE = 4
 INT_SIZE = 4
 INT64_SIZE = 8
+UINT64_SIZE = 8
 BOOL_SIZE = 1
 
 HEADER_SIZE = 128
@@ -83,6 +84,10 @@ class DumpField(object):
             mysize = INT64_SIZE
             stringchar = "q"
             dtype = "int64"
+        elif self.type == 7:
+            mysize = UINT64_SIZE
+            stringchar = "Q"
+            dtype = "uint64"
         else:
             raise RuntimeError(
                 "Found unknown data type %d for field %s" % (self.type, self.name)

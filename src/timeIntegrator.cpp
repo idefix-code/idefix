@@ -93,20 +93,19 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
     data.states["begin"].AllocateAs(data.states["current"]);
   }
 
-  if(data.haveForcing) {
-    DataBlockHost d(data);
-    d.SyncToDevice();
-    data.forcing->InitForcingModes();
-    if (!input.restartRequested) {
-      // so that we get the excited modes even if we don't write
-      data.forcing->oUprocesses.ResetProcessesValues();
-      data.forcing->oUprocesses.ResetTimestep();
-      if(data.forcing->write) {
-        data.forcing->oUprocesses.ResetNormalValues();
-      }
+  if(data.haveForcing && !input.restartRequested) {
+    // Forcing modes are initialised in the Forcing constructor; on restart,
+    // the complete forcing state (ouValues, rngState, ouMeans, ouTcorrs,
+    // ouEpsilons) comes from the dump (see agent/adr/0002).
+    // so that we get the excited modes even if we don't write
+    // todo: check if this is still needed with the new Forcing constructor as we
+    // might just overwrite the state with the dump values.
+    // If so, we can remove this call to ResetProcessesValues() and ResetNormalValues()
+    // Which should be called straight from oUprocesses constructor.
+    data.forcing->oUprocesses.ResetProcessesValues();
+    if(data.forcing->write) {
+      data.forcing->oUprocesses.ResetNormalValues();
     }
-    if (input.restartRequested) data.forcing->oUprocesses.AdvanceProcessesValues();
-//    if (input.restartRequested) data.forcing->oUprocesses.AdvanceProcessesValues(data.tabDt);
   }
 
   idfx::popRegion();

@@ -55,6 +55,8 @@ class Forcing {
   int write;
 
  private:
+  void ComputeAverageSoundSpeed();       ///< average sound speed of the current state
+
   DataBlock *data;
   int seed;
   std::string folder;

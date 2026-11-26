@@ -27,6 +27,7 @@
 class TimeIntegrator {
  public:
   int64_t GetNCycles();   // Get current number of cycles
+  int64_t GetNCyclesThisRun();   // Get number of cycles performed since (re)start
 
   // Constructor from input and given datablock
   TimeIntegrator(Input &, DataBlock &);
@@ -61,7 +62,10 @@ class TimeIntegrator {
   real cfl;   // CFL number
   real cflMaxVar; // Max CFL variation number
   real maxdivB{0};   // Maximum allowed divB
-  int64_t ncycles;        // # of cycles
+  int64_t ncycles;        // # of cycles (stored in dumps as int64, resumed on restart)
+  bool firstCycle{true};     // ncyclesStart has not yet been captured
+  int64_t ncyclesStart{0};   // value of ncycles at the start of this run
+  bool logHeaderDone{false}; // the log header has been printed
 
   double computeLastLog;  // Timer for actual computeTime
 

@@ -100,6 +100,9 @@ class Xdmf {
   // output directory
   std::filesystem::path outputDirectory;
 
+  // HDF5 creation property lists for the file, groups and datasets (set in Write())
+  hid_t fcpl, gcpl, dcpl;
+
 #ifdef WITH_MPI
   int mpi_data_start[3];
   int mpi_data_size[3];

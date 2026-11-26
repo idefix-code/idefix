@@ -229,6 +229,34 @@ jobs:
       - name: Collisionless thermal conduction
         run: scripts/ci/run-tests $IDEFIX_DIR/test/MHD/clessTDiffusion -all $TESTME_OPTIONS
 
+  Radiation:
+    needs: [ShocksHydro, ParabolicHydro, ShocksMHD, ParabolicMHD]
+    runs-on: self-hosted
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: recursive
+          persist-credentials: false
+      - name: Prep python
+        uses: ./.github/workflows/actions/pre-install-py-packages
+      - name: MHD Blast
+        run: scripts/ci/run-tests $IDEFIX_DIR/test/Radiation/mhd_blast -all $TESTME_OPTIONS
+      - name: Free Streaming Beam
+        run: scripts/ci/run-tests $IDEFIX_DIR/test/Radiation/free_streaming_beam -all $TESTME_OPTIONS
+      - name: Shadow
+        run: scripts/ci/run-tests $IDEFIX_DIR/test/Radiation/shadow -all $TESTME_OPTIONS
+      - name: Diffusion Disk
+        run: scripts/ci/run-tests $IDEFIX_DIR/test/Radiation/diffusion_disk -all $TESTME_OPTIONS
+      - name: Shocks
+        run: scripts/ci/run-tests $IDEFIX_DIR/test/Radiation/shocks -all $TESTME_OPTIONS
+      - name: Opt Thin Riemann
+        run: scripts/ci/run-tests $IDEFIX_DIR/test/Radiation/opt_thin_riemann -all $TESTME_OPTIONS
+      - name: Stellar Irradiation
+        run: scripts/ci/run-tests $IDEFIX_DIR/test/Radiation/stellar_irradiation -all $TESTME_OPTIONS
+      - name: Pulse
+        run: scripts/ci/run-tests $IDEFIX_DIR/test/Radiation/pulse -all $TESTME_OPTIONS
+
   Examples:
     needs: [Fargo, Dust, Planet, ShearingBox, SelfGravity]
     runs-on: self-hosted

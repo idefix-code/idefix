@@ -28,7 +28,7 @@
     idfx::UnitTestApp app(8, 8, 8, 1.0);
 
     //extract one pointer for use
-    DataBlock & data = *app.dataBlock;
+    DataBlockHost & data = *app.dataBlockHost;
 
     //spawn an array
     const int MYVAR = 0;
@@ -39,7 +39,7 @@
     Kokkos::deep_copy(vars, 3.0);
 
     //create column object & use
-    Column column(JDIR, 1, &data);//teta
+    Column column(JDIR, 1, app.dataBlock.get());//teta
     column.ComputeColumn(vars, MYVAR);
     IdefixArray3D<real> result = column.GetColumn();
 

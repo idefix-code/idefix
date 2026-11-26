@@ -24,6 +24,7 @@
 //idefix
 #include "idefix.hpp"
 #include "dataBlock.hpp"
+#include "dataBlockHost.hpp"
 #include "grid.hpp"
 #include "gridHost.hpp"
 
@@ -59,6 +60,7 @@ class UnitTestApp {
   std::shared_ptr<Grid> grid;
   std::shared_ptr<GridHost> gridHost;
   std::shared_ptr<DataBlock> dataBlock;
+  std::shared_ptr<DataBlockHost> dataBlockHost;
  private:
   void InitInput(size_t s1, size_t s2, size_t s3, float cell_size);
   void InitComponents(void);

@@ -118,6 +118,7 @@ void UnitTestApp::InitComponents() {
 
   // instantiate required objects.
   this->dataBlock = std::make_shared<DataBlock>(*grid, *input, false);
+  this->dataBlockHost = std::make_shared<DataBlockHost>(*(this->dataBlock), false);
 }
 
 } // namespace idfx

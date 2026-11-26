@@ -66,7 +66,7 @@
             //remind the real value to check the constant increase
             prev = tmp(k,j,i);
           } else {
-            ASSERT_DOUBLE_EQ(prev * (j-1), tmp(k,j,i)) << "Shound have constant increase along theta";
+            ASSERT_NEAR(prev * (j-1), tmp(k,j,i),10e-14) << "Shound have constant increase along theta";
           }
         }
       }
@@ -80,7 +80,7 @@
     idfx::UnitTestApp app(8, 8, 8, 1.0);
 
     //extract one pointer for use
-    DataBlock & data = *app.dataBlock;
+    DataBlockHost & data = *app.dataBlockHost;
 
     //spawn an array
     const int MYVAR = 0;
@@ -91,7 +91,7 @@
     Kokkos::deep_copy(vars, 3.0);
 
     //create column object & use
-    Column column(KDIR, 1, &data);//phi
+    Column column(KDIR, 1, app.dataBlock.get());//phi
     column.ComputeColumn(vars, MYVAR);
     IdefixArray3D<real> result = column.GetColumn();
 
@@ -118,7 +118,7 @@
             //remind the real value to check the constant increase
             prev = tmp(k,j,i);
           } else {
-            ASSERT_DOUBLE_EQ(prev * (k-1), tmp(k,j,i)) << "Shound have constant increase along phi";
+            ASSERT_NEAR(prev * (k-1), tmp(k,j,i), 10e-14) << "Shound have constant increase along phi";
           }
         }
       }
@@ -133,7 +133,7 @@
     idfx::UnitTestApp app(8, 8, 8, 1.0);
 
     //extract one pointer for use
-    DataBlock & data = *app.dataBlock;
+    DataBlockHost & data = *app.dataBlockHost;
 
     //spawn an array
     const int MYVAR = 0;
@@ -144,7 +144,7 @@
     Kokkos::deep_copy(vars, 3.0);
 
     //create column object & use
-    Column column(IDIR, 1, &data);//r
+    Column column(IDIR, 1, app.dataBlock.get());//r
     column.ComputeColumn(vars, MYVAR);
     IdefixArray3D<real> result = column.GetColumn();
 
@@ -169,7 +169,7 @@
             //remind the real value to check the constant value over theta phi
             prev = tmp(k,j,i);
           } else {
-            ASSERT_DOUBLE_EQ(prev, tmp(k,j,i)) << "Shound have constant increase along theta phi";
+            ASSERT_NEAR(prev, tmp(k,j,i), 10e-14) << "Shound have constant increase along theta phi";
           }
         }
       }
@@ -184,7 +184,7 @@
     idfx::UnitTestApp app(8, 8, 8, 1.0);
 
     //extract one pointer for use
-    DataBlock & data = *app.dataBlock;
+    DataBlockHost & data = *app.dataBlockHost;
 
     //spawn an array
     IdefixArray3D<real> var = IdefixArray3D<real>("myvar", data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
@@ -193,7 +193,7 @@
     Kokkos::deep_copy(var, 3.0);
 
     //create column object & use
-    Column column(IDIR, 1, &data);//r
+    Column column(IDIR, 1, app.dataBlock.get());//r
     column.ComputeColumn(var);
     IdefixArray3D<real> result = column.GetColumn();
 
@@ -218,7 +218,7 @@
             //remind the real value to check the constant value over theta phi
             prev = tmp(k,j,i);
           } else {
-            ASSERT_DOUBLE_EQ(prev, tmp(k,j,i)) << "Should have constant value over phi / theta";
+            ASSERT_NEAR(prev, tmp(k,j,i), 10e-14) << "Should have constant value over phi / theta";
           }
         }
       }

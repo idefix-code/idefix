@@ -55,6 +55,7 @@ class IdexPytestRunner:
         self.parentScritFile = parentScriptFile
         self.filterSubdir = os.environ.get("IDEFIX_TEST_FILTER_SUBDIR", "./test/")
         self.testmeSchema = self._loadTestmeSchema()
+        self.makeReferencesDone: list[str] = []
 
     def _loadTestmeSchema(self) -> dict:
         scriptDir = os.path.dirname(__file__)
@@ -456,7 +457,7 @@ class IdexPytestRunner:
 
         # regen ref if needed
         if idefixTest.init:
-            idefixTest.makeReference(filename=dumpname)
+            idefixTest.makeReference(filename=dumpname, done=self.makeReferencesDone)
 
         # check outputs
         if standardTest:

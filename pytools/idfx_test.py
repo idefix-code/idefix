@@ -657,7 +657,7 @@ class idfxTest:
         )
         sys.stdout.flush()
 
-    def makeReference(self, filename):
+    def makeReference(self, filename, done: list = None):
         # log and in fake mode do not execute.
         self.addLog(
             {
@@ -674,6 +674,13 @@ class idfxTest:
             print("Creating reference directory")
             os.makedirs(targetDir, exist_ok=True)
         fileout = os.path.join(targetDir, self._getReferenceFilename())
+        if done is not None and fileout in done:
+            print(
+                bcolors.WARNING
+                + "Reference creation skipped, already done by previous specific config"
+                + bcolors.ENDC
+            )
+            return
         if os.path.exists(fileout):
             ans = input(
                 bcolors.WARNING
@@ -689,6 +696,10 @@ class idfxTest:
         shutil.copy(filename, fileout)
         print(bcolors.OKGREEN + "Reference file " + fileout + " created" + bcolors.ENDC)
         sys.stdout.flush()
+
+        # append
+        if done is not None:
+            done.append(fileout)
 
     def _showConfig(self):
         print("**************************************************************")

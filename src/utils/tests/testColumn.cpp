@@ -18,7 +18,6 @@
 #include "gtest-idfx.hpp"
 #include "unitTestApp.hpp"
 #include "column.hpp"
-#include "arrayHelpers.hpp"
 
 // only applies when being 3D + Spherical
 #if DIMENSIONS == 3 && GEOMETRY == SPHERICAL
@@ -37,7 +36,7 @@
     IdefixArray4D<real> vars = IdefixArray4D<real>("myvar", VARS, data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
 
     //fill with const values
-    ArrayUniformFill(vars, 3.0);
+    Kokkos::deep_copy(vars, 3.0);
 
     //create column object & use
     Column column(JDIR, 1, &data);//teta
@@ -89,7 +88,7 @@
     IdefixArray4D<real> vars = IdefixArray4D<real>("myvar", VARS, data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
 
     //fill with const values
-    ArrayUniformFill(vars, 3.0);
+    Kokkos::deep_copy(vars, 3.0);
 
     //create column object & use
     Column column(KDIR, 1, &data);//phi
@@ -142,7 +141,7 @@
     IdefixArray4D<real> vars = IdefixArray4D<real>("myvar", VARS, data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
 
     //fill with const values
-    ArrayUniformFill(vars, 3.0);
+    Kokkos::deep_copy(vars, 3.0);
 
     //create column object & use
     Column column(IDIR, 1, &data);//r
@@ -191,7 +190,7 @@
     IdefixArray3D<real> var = IdefixArray3D<real>("myvar", data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
 
     //fill with const values
-    ArrayUniformFill(var, 3.0);
+    Kokkos::deep_copy(var, 3.0);
 
     //create column object & use
     Column column(IDIR, 1, &data);//r

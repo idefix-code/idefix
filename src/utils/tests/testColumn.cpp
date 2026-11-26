@@ -56,8 +56,16 @@
           if (j < 2 || j >= 10) {
             ASSERT_EQ(0, tmp(k,j,i)) << "Ghost";
           } else if (j == 2) {
+            const real r = data.x[0](i);
+            const real dtheta = 3.1415926/8.0;
+            //const real dV = r * r * sin(theta) * dr * dtheta * dphi;
+            //const real avgA = r * sin(theta) * dr * dphi;
+            //const real expected = 3.0 * dV / avgA;
+            const real expected = 3.0 * r * dtheta;
+            ASSERT_NEAR(expected, tmp(k,j,i), 0.15) << "First non ghost with single contribution";
+
+            //remind the real value to check the constant increase
             prev = tmp(k,j,i);
-            ASSERT_NE(0, tmp(k,j,i)) << "First non ghost";
           } else {
             ASSERT_DOUBLE_EQ(prev * (j-1), tmp(k,j,i)) << "Shound have constant increase along theta";
           }
@@ -100,8 +108,16 @@
           if (k < 2 || k >= 10) {
             ASSERT_EQ(0, tmp(k,j,i)) << "Ghost";
           } else if (k == 2) {
+            const real r = data.x[0](i);
+            const real theta = data.x[1](j);
+            const real dphi = 2*3.1415926/8.0;
+            //const real dV = r * r * sin(theta) * dr * dtheta * dphi;
+            //const real avgA = r * dr * dtheta;
+            //const real expected = 3.0 * dV / avgA;
+            const real expected = 3.0 * r * sin(theta) * dphi;
+            ASSERT_NEAR(expected, tmp(k,j,i), 0.11) << "First non ghost with single contribution";
+            //remind the real value to check the constant increase
             prev = tmp(k,j,i);
-            ASSERT_NE(0, tmp(k,j,i)) << "First non ghost";
           } else {
             ASSERT_DOUBLE_EQ(prev * (k-1), tmp(k,j,i)) << "Shound have constant increase along phi";
           }
@@ -138,16 +154,27 @@
     Kokkos::deep_copy(tmp, result);
 
     //should increase along R and be constant over phi/theta
-    double expected_along_r[] = {
-      0, 0,
-      2.8, 5.7230769230769241, 8.6830769230769249, 11.658686679174485,
-      14.642293236551534, 17.630528530669181, 20.621678973147059, 23.61478242142292,
-      0, 0
-    };
-    for (int k = 2 ; k < data.np_tot[KDIR] - 2 ; k++)
-      for (int j = 2 ; j < data.np_tot[JDIR] - 2  ; j++)
-        for (int i = 0 ; i < data.np_tot[IDIR] ; i++)
-          ASSERT_DOUBLE_EQ(expected_along_r[i], tmp(k,j,i)) << "Shound have constant along phi & theta";
+    for (int i = 0 ; i < data.np_tot[IDIR] ; i++) {
+      real prev = 0.0;
+      for (int j = 2 ; j < data.np_tot[JDIR] - 2  ; j++) {
+        for (int k = 2 ; k < data.np_tot[KDIR] - 2 ; k++) {
+          if (i < 2 || i >= 10) {
+            ASSERT_EQ(0, tmp(k,j,i)) << "Ghost";
+          } else if (prev == 0.0) {
+            const real dr = 1.0;
+            //const real dV = r * r * sin(theta) * dr * dtheta * dphi;
+            //const real avgA = r * r * sin(theta) * dtheta * dphi;
+            //const real expected = (i-1) * dV / avgA
+            const real expected = 3.0 * dr * (i-1);
+            ASSERT_NEAR(expected, tmp(k,j,i), 0.4) << "First non ghost with single contribution";
+            //remind the real value to check the constant value over theta phi
+            prev = tmp(k,j,i);
+          } else {
+            ASSERT_DOUBLE_EQ(prev, tmp(k,j,i)) << "Shound have constant increase along theta phi";
+          }
+        }
+      }
+    }
   }
 
   // The test fill a 3D var with constant value and applies
@@ -176,15 +203,26 @@
     Kokkos::deep_copy(tmp, result);
 
     //should increase along R and be constant over phi/theta
-    double expected_along_r[] = {
-      0, 0,
-      2.8, 5.7230769230769241, 8.6830769230769249, 11.658686679174485,
-      14.642293236551534, 17.630528530669181, 20.621678973147059, 23.61478242142292,
-      0, 0
-    };
-    for (int k = 2 ; k < data.np_tot[KDIR] - 2 ; k++)
-      for (int j = 2 ; j < data.np_tot[JDIR] - 2  ; j++)
-        for (int i = 0 ; i < data.np_tot[IDIR] ; i++)
-          ASSERT_DOUBLE_EQ(expected_along_r[i], tmp(k,j,i)) << "Shound have constant along phi & theta";
+    for (int i = 0 ; i < data.np_tot[IDIR] ; i++) {
+      real prev = 0.0;
+      for (int j = 2 ; j < data.np_tot[JDIR] - 2  ; j++) {
+        for (int k = 2 ; k < data.np_tot[KDIR] - 2 ; k++) {
+          if (i < 2 || i >= 10) {
+            ASSERT_EQ(0, tmp(k,j,i)) << "Ghost";
+          } else if (prev == 0.0) {
+            const real dr = 1.0;
+            //const real dV = r * r * sin(theta) * dr * dtheta * dphi;
+            //const real avgA = r * r * sin(theta) * dtheta * dphi;
+            //const real expected = (i-1) * dV / avgA
+            const real expected = 3.0 * dr * (i-1);
+            ASSERT_NEAR(expected, tmp(k,j,i), 0.4) << "First non ghost with single contribution";
+            //remind the real value to check the constant value over theta phi
+            prev = tmp(k,j,i);
+          } else {
+            ASSERT_DOUBLE_EQ(prev, tmp(k,j,i)) << "Should have constant value over phi / theta";
+          }
+        }
+      }
+    }
   }
 #endif //DIMENSION == 3 && GEOMETRY == SPHERICAL

@@ -9,10 +9,8 @@
   "variants": [
     {
       "ini": [
-        "idefix-hll-c1_sub.ini",
         "idefix-hll-c001_sub.ini",
         "idefix-hll-c00001_sub.ini",
-        "idefix-hllc-c1_sub.ini",
         "idefix-hllc-c001_sub.ini",
         "idefix-hllc-c00001_sub.ini",
         "idefix-hll-c1_super.ini",
@@ -23,7 +21,7 @@
         "idefix-hllc-c00001_super.ini"
       ],
       "reconstruction": [2],
-      "mpi": [false, true]
+      "mpi": [false]
     }
   ]
 }

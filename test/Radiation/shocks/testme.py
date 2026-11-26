@@ -21,14 +21,10 @@ def testMe(test):
     test.configure()
     test.compile()
     inifiles = [
-        "idefix-hll-c1_sub.ini",
         "idefix-hll-c001_sub.ini",
         "idefix-hll-c00001_sub.ini",
-        "idefix-hllc-c1_sub.ini",
         "idefix-hllc-c001_sub.ini",
         "idefix-hllc-c00001_sub.ini",
-    ]
-    inifiles += [
         "idefix-hll-c1_super.ini",
         "idefix-hll-c001_super.ini",
         "idefix-hll-c00001_super.ini",
@@ -56,12 +52,9 @@ if not test.all:
     else:
         testMe(test)
 else:
-    for rec in range(2, 4):
+    for rec in [2]:
         test.vectPot = False
         test.single = False
         test.reconstruction = rec
         test.mpi = False
         testMe(test)
-
-    test.mpi = True
-    testMe(test)

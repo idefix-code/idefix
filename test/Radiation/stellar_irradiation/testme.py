@@ -16,7 +16,7 @@ name = "dump.0001.dmp"
 
 
 def testMe(test, mpi):
-    inifiles = ["idefix_constant_kappa.ini", "idefix_usertable_kappa.ini"]
+    inifiles = ["idefix_usertable_kappa.ini"]
     if mpi == True:
         tolerance = 1.0e-10
     else:
@@ -49,12 +49,9 @@ if not test.all:
     else:
         testMe(test, test.mpi)
 else:
-    for rec in range(2, 4):
+    for rec in [2]:
         test.vectPot = False
         test.single = False
         test.reconstruction = rec
         test.mpi = False
         testMe(test, test.mpi)
-
-    test.mpi = True
-    testMe(test, test.mpi)

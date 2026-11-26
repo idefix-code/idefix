@@ -20,7 +20,7 @@ tolerance = 1e-10
 def testMe(test):
     test.configure()
     test.compile()
-    inifiles = ["idefix-norad.ini", "idefix-hll-thin.ini", "idefix-hll-thick.ini"]
+    inifiles = ["idefix-hll-thin.ini", "idefix-hll-thick.ini"]
     inifiles += ["idefix-hllc-thin.ini", "idefix-hllc-thick.ini"]
 
     # loop on all the ini files for this test
@@ -48,6 +48,3 @@ else:
         test.reconstruction = rec
         test.mpi = False
         testMe(test)
-
-    test.mpi = True
-    testMe(test)

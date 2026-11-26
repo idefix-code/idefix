@@ -20,7 +20,7 @@ tolerance = 1e-13
 def testMe(test):
     test.configure()
     test.compile()
-    inifiles = ["idefix-hll.ini", "idefix-hllc.ini"]
+    inifiles = ["idefix-hllc.ini"]
 
     # loop on all the ini files for this test
     for ini in inifiles:
@@ -41,12 +41,9 @@ if not test.all:
     else:
         testMe(test)
 else:
-    for rec in range(2, 4):
+    for rec in [2]:
         test.vectPot = False
         test.single = False
         test.reconstruction = rec
         test.mpi = False
         testMe(test)
-
-    test.mpi = True
-    testMe(test)

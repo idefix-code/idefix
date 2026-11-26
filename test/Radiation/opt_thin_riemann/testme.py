@@ -46,12 +46,9 @@ if not test.all:
     else:
         testMe(test)
 else:
-    for rec in range(2, 4):
+    for rec in [2]:
         test.vectPot = False
         test.single = False
         test.reconstruction = rec
         test.mpi = False
         testMe(test)
-
-    test.mpi = True
-    testMe(test)

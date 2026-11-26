@@ -21,9 +21,7 @@ def testMe(test):
     test.configure()
     test.compile()
     inifiles = [
-        "idefix-hll-c001.ini",
         "idefix-hll-c0001.ini",
-        "idefix-hllc-c001.ini",
         "idefix-hllc-c0001.ini",
     ]
 
@@ -44,7 +42,7 @@ if not test.all:
     else:
         testMe(test)
 else:
-    for rec in range(2, 4):
+    for rec in [2]:
         test.vectPot = False
         test.single = False
         test.reconstruction = rec

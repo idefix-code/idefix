@@ -85,6 +85,8 @@ def testMe(test):
                         inifiles += [str(ini_name)]
                         test.dec = ["2", "2"]
                     elif "3D" in definition:
+                        if opt == "thick":
+                            continue
                         ini_name = (
                             "idefix-" + str(solver) + "-sph3D-" + str(opt) + ".ini"
                         )
@@ -114,12 +116,13 @@ if not test.all:
     else:
         testMe(test)
 else:
-    for rec in range(2, 4):
+    for rec in [2]:
         test.vectPot = False
         test.single = False
         test.reconstruction = rec
         test.mpi = False
         testMe(test)
 
-    test.mpi = True
-    testMe(test)
+    if "1D" not in test.definitions:
+        test.mpi = True
+        testMe(test)

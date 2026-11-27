@@ -66,7 +66,60 @@
             //remind the real value to check the constant increase
             prev = tmp(k,j,i);
           } else {
-            ASSERT_NEAR(prev * (j-1), tmp(k,j,i),10e-14) << "Shound have constant increase along theta";
+            ASSERT_NEAR(prev * (j-1), tmp(k,j,i),10e-14) << "Shound have constant increase along theta : j=" << j;
+          }
+        }
+      }
+    }
+  }
+
+  // The test fill a 3D var with constant value and applies
+  // Colum on it. Along theta it should have constant increase
+  // following axis with option -1
+  TEST(Column, ComputeColumn_4D_const_increase_along_theta_inverse_way) {
+    //ini idefix app
+    idfx::UnitTestApp app(8, 8, 8, 1.0);
+
+    //extract one pointer for use
+    DataBlockHost & data = *app.dataBlockHost;
+
+    //spawn an array
+    const int MYVAR = 0;
+    const int VARS = 1;
+    IdefixArray4D<real> vars = IdefixArray4D<real>("myvar", VARS, data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
+
+    //fill with const values
+    Kokkos::deep_copy(vars, 3.0);
+
+    //create column object & use
+    Column column(JDIR, -1, app.dataBlock.get());//teta
+    column.ComputeColumn(vars, MYVAR);
+    IdefixArray3D<real> result = column.GetColumn();
+
+    //copy to ease checking
+    IdefixHostArray3D<real> tmp("result_host", data.np_tot[KDIR], data.np_tot[JDIR], data.np_tot[IDIR]);
+    Kokkos::deep_copy(tmp, result);
+
+    //should be const increase along theta except having 0 on ghosts
+    for (int i = 2 ; i < data.np_tot[IDIR] - 2 ; i++) {
+      for (int k = 2 ; k < data.np_tot[KDIR] - 2  ; k++) {
+        double prev = 0.0;
+        for (int j = data.np_tot[JDIR] - 1 ; j >= 0 ; j--) {
+          if (j < 2 || j >= 10) {
+            ASSERT_EQ(0, tmp(k,j,i)) << "Ghost";
+          } else if (j == 9) {
+            const real r = data.x[0](i);
+            const real dtheta = 3.1415926/8.0;
+            //const real dV = r * r * sin(theta) * dr * dtheta * dphi;
+            //const real avgA = r * sin(theta) * dr * dphi;
+            //const real expected = 3.0 * dV / avgA;
+            const real expected = 3.0 * r * dtheta;
+            ASSERT_NEAR(expected, tmp(k,j,i), 0.15) << "First non ghost with single contribution";
+
+            //remind the real value to check the constant increase
+            prev = tmp(k,j,i);
+          } else {
+            ASSERT_NEAR(prev * (data.np_tot[JDIR] - j - 2), tmp(k,j,i),10e-14) << "Shound have constant increase along theta : j=" << j;
           }
         }
       }
@@ -118,7 +171,7 @@
             //remind the real value to check the constant increase
             prev = tmp(k,j,i);
           } else {
-            ASSERT_NEAR(prev * (k-1), tmp(k,j,i), 10e-14) << "Shound have constant increase along phi";
+            ASSERT_NEAR(prev * (k-1), tmp(k,j,i), 10e-14) << "Shound have constant increase along phi : k=" << k;
           }
         }
       }
@@ -169,7 +222,7 @@
             //remind the real value to check the constant value over theta phi
             prev = tmp(k,j,i);
           } else {
-            ASSERT_NEAR(prev, tmp(k,j,i), 10e-14) << "Shound have constant increase along theta phi";
+            ASSERT_NEAR(prev, tmp(k,j,i), 10e-14) << "Shound have constant increase along theta phi : k=" << k;
           }
         }
       }
@@ -218,7 +271,7 @@
             //remind the real value to check the constant value over theta phi
             prev = tmp(k,j,i);
           } else {
-            ASSERT_NEAR(prev, tmp(k,j,i), 10e-14) << "Should have constant value over phi / theta";
+            ASSERT_NEAR(prev, tmp(k,j,i), 10e-14) << "Should have constant value over phi / theta k=" << k;
           }
         }
       }

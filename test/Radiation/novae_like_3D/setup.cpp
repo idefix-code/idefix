@@ -1,3 +1,18 @@
+// ***********************************************************************************
+// Idefix MHD astrophysical code
+//
+// Source file test/Radiation/novae_like_3D/setup.cpp
+//
+// Last modified : 09/2026
+//
+// Copyright(C) by :
+// - Nicolas Scepi <nicolas.scepi@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+// - Sebastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+// and other code contributors
+//
+// Licensed under CeCILL 2.1 License, see COPYING for more information
+// ***********************************************************************************
+
 #include "idefix.hpp"
 #include "setup.hpp"
 #include "analysis.hpp"

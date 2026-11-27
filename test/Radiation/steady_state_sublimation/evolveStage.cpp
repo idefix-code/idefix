@@ -1,13 +1,21 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file test/Radiation/steady_state_sublimation/evolveStage.cpp
+//
+// Last modified : 09/2025
+//
+// Copyright(C) by :
+// - Nicolas Scepi <nicolas.scepi@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
 
 #include "../idefix.hpp"
 #include "dataBlock.hpp"
 #include "fluid.hpp"
+//
 
 // Evolve one step forward in time of hydro
 void DataBlock::EvolveStage() {

@@ -1,4 +1,17 @@
 #!/bin/bash
+######################################################################################
+# Idefix MHD astrophysical code
+#
+# Source file test/Radiation/steady_state_sublimation/iterative.sh
+#
+# Last modified : 09/2025
+#
+# Copyright(C) by :
+# - Nicolas Scepi <nicolas.scepi@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+# and other code contributors
+#
+# Licensed under CeCILL 2.1 License, see COPYING for more information
+######################################################################################
 
 cp 'dump.hr002.dmp' 'dump.ini.dmp'
 

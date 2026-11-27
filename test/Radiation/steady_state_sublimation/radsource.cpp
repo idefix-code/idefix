@@ -1,9 +1,18 @@
 // ***********************************************************************************
 // Idefix MHD astrophysical code
-// Copyright(C) Geoffroy R. J. Lesur <geoffroy.lesur@univ-grenoble-alpes.fr>
+//
+// Source file test/Radiation/steady_state_sublimation/radsource.cpp
+//
+// Last modified : 09/2026
+//
+// Copyright(C) by :
+// - Nicolas Scepi <nicolas.scepi@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
+// - Sebastien Valat <sebastien.valat@univ-grenoble-alpes.fr> (IPAG/UGA/CNRS - 2026)
 // and other code contributors
+//
 // Licensed under CeCILL 2.1 License, see COPYING for more information
 // ***********************************************************************************
+
 #include "../idefix.hpp"
 #include "radsource.hpp"
 #include "physics.hpp"

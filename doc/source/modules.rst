@@ -25,6 +25,10 @@ In this section, you will find a more detailed documentation about each module t
   The Braginskii module, models the anisotropic flux of heat and momentum
   taking place in weakly collisional, magnetised plasma (like the intracluster medium).
 
+:ref:`radiationModule`
+  The radiation module, models the photon field as an effective radiative fluid.
+  It uses the M1 approximation and is fully coupled to the gas.
+
 :ref:`gridCoarseningModule`
   The grid coarsening module, that allows to derefine the grid in particular locations to speed up the computation.
 

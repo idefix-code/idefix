@@ -87,7 +87,6 @@ class ExtrapolateToFaces {
     constexpr int ioffset = (dir==IDIR ? 1 : 0);
     constexpr int joffset = (dir==JDIR ? 1 : 0);
     constexpr int koffset = (dir==KDIR ? 1 : 0);
-
     for(int nv = 0 ; nv < Phys::nvar ; nv++) {
       if constexpr(order == 1) {
         vL[nv] = Vc(nv,k-koffset,j-joffset,i-ioffset);

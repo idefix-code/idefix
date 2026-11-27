@@ -25,6 +25,11 @@ int DataBlock::CheckNan() {
       nNans += dust[n]->CheckNan();
     }
   }
+  if(haveRadiation) {
+    for(int n = 0 ; n < radiation.size() ; n++) {
+      nNans += radiation[n]->CheckNan();
+    }
+  }
   idfx::popRegion();
   return(nNans);
 }

@@ -54,7 +54,9 @@ class ThermalDiffusion;
 class BragViscosity;
 class BragThermalDiffusion;
 class Drag;
+class RadSource;
 class Tracer;
+class Units;
 
 
 template<typename Phys>
@@ -128,6 +130,13 @@ class Fluid {
   bool haveDrag{false};
   std::unique_ptr<Drag> drag;
 
+  // RadSource object
+  std::unique_ptr<RadSource> radsource;
+  bool haveUserfuncKappa{false};
+  bool haveUserfuncKappairr{false};
+  bool haveUserfuncXi{false};
+  bool haveUserfuncIrrGeometry{false};
+
   // Whether or not we have to treat the axis
   bool haveAxis{false};
 
@@ -145,7 +154,6 @@ class Fluid {
   std::unique_ptr<Tracer> tracer;
   bool haveTracer{false};
   int nTracer{0};
-
 
   // Enroll user-defined boundary conditions (proxies for boundary class functions)
   template <typename T>
@@ -169,6 +177,13 @@ class Fluid {
   // Enroll user-defined isothermal sound speed
   void EnrollIsoSoundSpeed(IsoSoundSpeedFunc);
 
+  // Enroll user-defined functions for opacities
+  void EnrollKappa(KappaFunc);
+  void EnrollKappairr(KappairrFunc);
+  void EnrollXi(XiFunc);
+
+  //Enroll user-defined function for irradiation
+  void EnrollIrradiation(IrrFunc);
 
   // Arrays required by the Hydro object
   IdefixArray4D<real> Vc;      // Main cell-centered primitive variables index
@@ -176,7 +191,7 @@ class Fluid {
   IdefixArray4D<real> Ve;      // Main edge-centered varariables (only when EVOLVE_VECTOR_POTENTIAL)
   IdefixArray4D<real> Uc;      // Main cell-centered conservative variables
   IdefixArray4D<real> J;       // Electrical current
-                               // (only defined when non-ideal MHD effects are enabled)
+  // (only defined when non-ideal MHD effects are enabled)
 
   // Name of the fields (used in outputs)
   std::vector<std::string> VcName;
@@ -212,6 +227,7 @@ class Fluid {
   friend class BragViscosity;
   friend class BragThermalDiffusion;
   friend class Drag;
+  friend class RadSource;
 
   template <typename P>
   friend struct Fluid_AddSourceTermsFunctor;
@@ -248,6 +264,24 @@ class Fluid {
   IdefixArray3D<real> xHall;
   IdefixArray3D<real> xAmbipolar;
 
+  // Radiation reduced speed of light
+  real reduced_c;
+  bool haveRadiation{false};
+
+  // Enroll user-defined opacity function
+  XiFunc xiFunc;
+  KappaFunc kappaFunc;
+  KappairrFunc kappairrFunc;
+  IrrFunc irrFunc;
+
+
+  // Arrays containing the opacities from userdef function (only allocated when needed)
+  IdefixArray3D<real> xiArr;
+  IdefixArray3D<real> kappapArr;
+  IdefixArray3D<real> kapparArr;
+  IdefixArray3D<real> kappairrArr;
+  IdefixArray3D<real> irrArr;
+
   // Loop on dimensions
   template <int dir>
   void LoopDir(const real, const real);
@@ -263,21 +297,80 @@ class Fluid {
 #include "viscosity.hpp"
 #include "bragViscosity.hpp"
 #include "drag.hpp"
+#include "radsource.hpp"
 #include "checkNan.hpp"
 #include "tracer.hpp"
 
 
 template<typename Phys>
 Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
-  idfx::pushRegion("Fluid::Fluid");
-  // Save the datablock to which we are attached from now on
-  this->data = datain;
-
   // Create our own prefix
   prefix = std::string(Phys::prefix);
 
+  idfx::pushRegion("Fluid_"+prefix+"::Fluid");
+  // Save the datablock to which we are attached from now on
+  this->data = datain;
+
   // When dealing with dust, add the specie number
   if(Phys::prefix.compare("Dust") == 0) prefix += std::to_string(n);
+
+  // When dealing with radiation, add the frequency group number
+  //, reduced speed of light and status of opacities
+  if(Phys::prefix.compare("Rad") == 0) {
+    //non supported case.
+    if (n > 1) {
+      IDEFIX_ERROR("Using more than one fluid isn't yet supported with Rad module enabled.");
+    }
+
+    //enable radiation support
+    this->haveRadiation=true;
+
+    //set fluid prefix name
+    prefix += std::to_string(n);
+
+    //load reduced_c
+    this->reduced_c = input.Get<real>(std::string(Phys::prefix),"reduced_c",0);
+    this->reduced_c *= idfx::units.c/idfx::units.GetVelocity();
+
+    //load kappa
+    if(input.Get<std::string>(std::string(Phys::prefix),"kappa",0).compare("userfunc") == 0) {
+      this->haveUserfuncKappa = true;
+      this->kappapArr = IdefixArray3D<real>("kappapArray",data->np_tot[KDIR],
+                                          data->np_tot[JDIR],
+                                          data->np_tot[IDIR]);
+      this->kapparArr = IdefixArray3D<real>("kapparArray",data->np_tot[KDIR],
+                                          data->np_tot[JDIR],
+                                          data->np_tot[IDIR]);
+    }
+
+    //load userfunc
+    if (input.CheckEntry("Rad", "irr")>=0) {
+      if(input.Get<std::string>(std::string(Phys::prefix),"irr",0).compare("userfunc") == 0 ) {
+        this->haveUserfuncKappairr = true;
+        this->kappairrArr = IdefixArray3D<real>("kappairrArray",data->np_tot[KDIR],
+                                            data->np_tot[JDIR],
+                                            data->np_tot[IDIR]);
+      }
+    }
+
+    //load xiArray
+    if(input.Get<std::string>(std::string(Phys::prefix),"xi",0).compare("userfunc") == 0) {
+      this->haveUserfuncXi = true;
+      this->xiArr = IdefixArray3D<real>("xiArray",data->np_tot[KDIR],
+                                          data->np_tot[JDIR],
+                                          data->np_tot[IDIR]);
+    }
+
+    //load irrArray
+    if (input.CheckEntry("Rad", "irr")>=0) {
+      if(input.Get<std::string>(std::string(Phys::prefix),"irr",0).compare("usergeometry") == 0 ) {
+        this->haveUserfuncIrrGeometry = true;
+        this->irrArr = IdefixArray3D<real>("irrArray",data->np_tot[KDIR],
+                                            data->np_tot[JDIR],
+                                            data->np_tot[IDIR]);
+      }
+    }
+  }
 
   // Keep the instance # for later use
   instanceNumber = n;
@@ -755,6 +848,11 @@ Fluid<Phys>::Fluid(Grid &grid, Input &input, DataBlock *datain, int n) {
   // Drag force when needed
   if(haveDrag) {
     this->drag = std::make_unique<Drag>(input, this);
+  }
+
+  // Radiation source force when needed
+  if constexpr(Phys::radiation)  {
+    this->radsource = std::make_unique<RadSource>(input, this);
   }
 
   // Tracers when needed

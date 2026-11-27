@@ -1,0 +1,34 @@
+{
+  "default": {
+    "dumpname": "dump.0001.dmp",
+    "tolerance": 1e-13,
+    "dec": [2,2],
+    "vectPot": false,
+    "single": false
+
+  },
+  "variants": [
+    {
+      "ini": ["idefix_usertable_kappa.ini"],
+      "reconstruction": [2],
+      "mpi": [false]
+    }
+  ],
+  "when": [
+    {
+      "conditions": {
+        "mpi": true
+      },
+      "apply": {
+        "tolerance": 1e-10
+      }
+    },{
+      "conditions": {
+        "ini": "idefix_usertable_kappa.ini"
+      },
+      "apply": {
+        "tolerance": 2e-10
+      }
+    }
+  ]
+}

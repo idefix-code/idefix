@@ -134,24 +134,33 @@ enum class LoopPattern { SIMDFOR, RANGE, MDRANGE, TPX, TPTTRTVR, UNDEFINED };
   #endif
 #endif
 
+//Shortcuts for radiation field
+#define ER 0
+#define FR1 1
+#define FR2 (COMPONENTS >= 2 ? 2: 255)
+#define FR3 (COMPONENTS >= 3 ? 3: 254)
+
 // User-Friendly variables in non-cartesian geometry
 #if GEOMETRY == CYLINDRICAL
   #if COMPONENTS >= 1
     #define iVR    VX1
     #define iMR    MX1
     #define iBR    BX1
+    #define iFR    FR1
   #endif
 
   #if COMPONENTS >= 2
     #define iVZ    VX2
     #define iMZ    MX2
     #define iBZ    BX2
+    #define iFZ    FR2
   #endif
 
   #if COMPONENTS >= 3
     #define iVPHI  VX3
     #define iMPHI  MX3
     #define iBPHI  BX3
+    #define iFPHI  FR3
   #endif
 #endif
 
@@ -160,18 +169,21 @@ enum class LoopPattern { SIMDFOR, RANGE, MDRANGE, TPX, TPTTRTVR, UNDEFINED };
     #define iVR    VX1
     #define iMR    MX1
     #define iBR    BX1
+    #define iFR    FR1
   #endif
 
   #if COMPONENTS >= 2
     #define iVPHI  VX2
     #define iMPHI  MX2
     #define iBPHI  BX2
+    #define iFPHI  FR2
   #endif
 
   #if COMPONENTS == 3
     #define iVZ    VX3
     #define iMZ    MX3
     #define iBZ    BX3
+    #define iFZ    FR3
   #endif
 #endif
 
@@ -180,18 +192,21 @@ enum class LoopPattern { SIMDFOR, RANGE, MDRANGE, TPX, TPTTRTVR, UNDEFINED };
     #define iVR    VX1
     #define iMR    MX1
     #define iBR    BX1
+    #define iFR    FR1
   #endif
 
   #if COMPONENTS >= 2
     #define iVTH   VX2
     #define iMTH   MX2
     #define iBTH   BX2
+    #define iFTH   FR2
   #endif
 
   #if COMPONENTS == 3
     #define iVPHI  VX3
     #define iMPHI  MX3
     #define iBPHI  BX3
+    #define iFPHI  FR3
   #endif
 #endif
 
@@ -226,7 +241,8 @@ using IdfxFileHandler = FILE*;
 #endif
 
 // Types of boundary which can be treated
-enum BoundaryType { internal, periodic, reflective, outflow, shearingbox, axis, userdef, undefined};
+enum BoundaryType { internal, periodic, reflective, outflow,shearingbox,
+                    axis, axis_rad, userdef, undefined};
 enum BoundarySide { left, right};
 enum class SliceType {Cut, Average};
 

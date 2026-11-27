@@ -28,7 +28,7 @@ int Fluid<Phys>::CheckNan()  {
   int nanVs=0;
   int nanVc=0;
 
-  idfx::pushRegion("Fluid::CheckNan");
+  idfx::pushRegion("Fluid_"+prefix+"::CheckNan");
   IdefixArray4D<real> Vc=this->Vc;
 
   idefix_reduce("checkNanVc",

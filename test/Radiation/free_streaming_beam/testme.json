@@ -1,0 +1,12 @@
+{
+  "default": {
+    "dumpname": "dump.0001.dmp",
+    "tolerance": 1e-13
+  },
+  "variants": [
+    {
+      "ini": ["idefix-hllc.ini"],
+      "reconstruction": [2]
+    }
+  ]
+}

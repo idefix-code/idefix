@@ -302,7 +302,9 @@ void Axis::FixBx2sAxisGhostAverage(int side) {
 void Axis::EnforceAxisBoundary(int side) {
   idfx::pushRegion("Axis::EnforceAxisBoundary");
   IdefixArray4D<real> Vc = this->Vc;
+
   IdefixArray1D<int> sVc = this->symmetryVc;
+
 
   int ibeg = 0;
   int iend = data->np_tot[IDIR];
@@ -325,7 +327,6 @@ void Axis::EnforceAxisBoundary(int side) {
   int kend = data->np_tot[KDIR];
   int np_int_k = data->mygrid->np_int[KDIR];
   int nghost_k = data->mygrid->nghost[KDIR];
-
   if(isTwoPi) {
     if(needMPIExchange) {
       ExchangeMPI(side);

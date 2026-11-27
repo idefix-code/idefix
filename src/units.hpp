@@ -63,7 +63,6 @@ class Units {
   KOKKOS_INLINE_FUNCTION  real GetEnergy() const {return _energy;}
   // time(s) = time(code) * Units::time
   KOKKOS_INLINE_FUNCTION  real GetTime() const {return _time;}
-
   KOKKOS_INLINE_FUNCTION  bool GetIsInitialized() const {return _isInitialized;}
 
   // code-style change of the units

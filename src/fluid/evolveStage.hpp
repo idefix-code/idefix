@@ -46,7 +46,7 @@ void Fluid<Phys>::LoopDir(const real t, const real dt) {
 // Evolve one step forward in time of hydro
 template<typename Phys>
 void Fluid<Phys>::EvolveStage(const real t, const real dt) {
-  idfx::pushRegion("Fluid::EvolveStage");
+  idfx::pushRegion("Fluid_"+prefix+"::EvolveStage");
   // Compute current when needed
   if(needExplicitCurrent) CalcCurrent();
 
@@ -61,6 +61,22 @@ void Fluid<Phys>::EvolveStage(const real t, const real dt) {
     eos->Refresh(*data, t);
   }
 
+  // Compute userfunc opacities
+  if constexpr(Phys::radiation) {
+    if (haveUserfuncKappa) {
+      kappaFunc(*data,kappapArr,kapparArr);
+    }
+    if (haveUserfuncXi) {
+      xiFunc(*data,xiArr);
+    }
+    if (haveUserfuncKappairr) {
+      kappairrFunc(*data,kappairrArr);
+    }
+    if (haveUserfuncIrrGeometry) {
+      irrFunc(*data,irrArr);
+    }
+  }
+
   // Loop on all of the directions
   LoopDir<IDIR>(t,dt);
 
@@ -72,6 +88,11 @@ void Fluid<Phys>::EvolveStage(const real t, const real dt) {
     if(!drag->IsImplicit()) {
       drag->AddDragForce(dt);
     }
+  }
+
+  // Step 6: add radiation source terms
+  if constexpr(Phys::radiation) {
+    radsource->AddRadSource(dt);
   }
 
   if constexpr(Phys::mhd) {

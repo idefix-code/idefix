@@ -62,6 +62,11 @@ using DiffusivityFunc = void (*) (DataBlock &, const real t, IdefixArray3D<real>
 
 using BragDiffusivityFunc = void (*) (DataBlock &, const real,
                       std::vector<IdefixArray3D<real>> &);
+using XiFunc = void (*) (DataBlock &, IdefixArray3D<real> &);
+using KappaFunc = void (*) (DataBlock &, IdefixArray3D<real> &, IdefixArray3D<real> &);
+using KappairrFunc = void (*) (DataBlock &, IdefixArray3D<real> &);
+
+using IrrFunc = void (*) (DataBlock &, IdefixArray3D<real> &);
 
 // Deprecated signatures
 using SrcTermFuncOld = void (*) (DataBlock &, const real t, const real dt);

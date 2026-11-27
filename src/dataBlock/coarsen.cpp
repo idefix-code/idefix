@@ -25,6 +25,11 @@ void DataBlock::Coarsen() {
   ComputeGridCoarseningLevels();
   // This routine coarsen the *conservative* variables
   hydro->CoarsenFlow(hydro->Uc);
+  if (haveRadiation) {
+    for(int i = 0 ; i < radiation.size() ; i++) {
+      radiation[i]->CoarsenFlow(radiation[i]->Uc);
+    }
+  }
   #if MHD==YES
     hydro->CoarsenMagField(hydro->Vs);
   #endif

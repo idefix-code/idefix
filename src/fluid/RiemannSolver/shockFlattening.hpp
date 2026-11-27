@@ -150,8 +150,23 @@ struct ShockFlattening_FindShockFunctor {
           pmin = FMIN(pmin,Vc(PRS,k-1,j,i));
           gradP += FABS(Vc(PRS,k+1,j,i) - Vc(PRS,k-1,j,i));
         #endif
+      } else if constexpr(Phys::radiation) {
+        pmin = Vc(ER,k,j,i);
+        pmin = FMIN(pmin,Vc(ER,k,j,i+1));
+        pmin = FMIN(pmin,Vc(ER,k,j,i-1));
+        gradP = FABS(Vc(ER,k,j,i+1) - Vc(ER,k,j,i-1));
+        #if DIMENSIONS >= 2
+          pmin = FMIN(pmin,Vc(ER,k,j+1,i));
+          pmin = FMIN(pmin,Vc(ER,k,j-1,i));
+          gradP += FABS(Vc(ER,k,j+1,i) - Vc(ER,k,j-1,i));
+        #endif
+        #if DIMENSIONS == 3
+          pmin = FMIN(pmin,Vc(ER,k+1,j,i));
+          pmin = FMIN(pmin,Vc(ER,k-1,j,i));
+          gradP += FABS(Vc(ER,k+1,j,i) - Vc(ER,k-1,j,i));
+        #endif
       }
-      if constexpr(Phys::pressure || Phys::isothermal) {
+      if constexpr(Phys::pressure || Phys::isothermal || Phys::radiation) {
         if(gradP > smoothing*pmin) {
           flags(k,j,i) = FlagShock::Shock;
         }

@@ -120,10 +120,46 @@ void Fluid<Phys>::EnrollHallDiffusivity(DiffusivityFunc myFunc) {
 }
 
 template<typename Phys>
+void Fluid<Phys>::EnrollKappa(KappaFunc myFunc) {
+  if(!haveUserfuncKappa) {
+    IDEFIX_WARNING("Absorption opacities function enrollment requires kappa"
+                 "to be set to userfunc in .ini file");
+  }
+  this->kappaFunc = myFunc;
+}
+
+template<typename Phys>
+void Fluid<Phys>::EnrollXi(XiFunc myFunc) {
+  if(!haveUserfuncXi) {
+    IDEFIX_WARNING("Scattering opacities function enrollment requires xi "
+                 "to be set to userfunc in .ini file");
+  }
+  this->xiFunc = myFunc;
+}
+
+template<typename Phys>
+void Fluid<Phys>::EnrollKappairr(KappairrFunc myFunc) {
+  if(!haveUserfuncKappairr) {
+    IDEFIX_WARNING("Absorption opacities for irradiation function enrollment requires irr"
+                 "to be set to userfunc in .ini file");
+  }
+  this->kappairrFunc = myFunc;
+}
+
+template<typename Phys>
+void Fluid<Phys>::EnrollIrradiation(IrrFunc myFunc) {
+  if(!haveUserfuncIrrGeometry) {
+    IDEFIX_WARNING("Irradiation function enrollment requires irr"
+                 "to be set to usergeometry in .ini file");
+  }
+  this->irrFunc = myFunc;
+}
+
+template<typename Phys>
 void Fluid<Phys>::ResetStage() {
   // Reset variables required at the beginning of each stage
   // (essentially linked to timestep evaluation)
-  idfx::pushRegion("Fluid::ResetStage");
+  idfx::pushRegion("Fluid_"+prefix+"::ResetStage");
 
   IdefixArray3D<real> InvDt=this->InvDt;
 

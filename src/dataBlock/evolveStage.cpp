@@ -40,6 +40,12 @@ void DataBlock::EvolveStage() {
     }
   }
 
+  if(haveRadiation) {
+    for(int i = 0 ; i < radiation.size() ; i++) {
+      radiation[i]->EvolveStage(this->t,this->dt);
+    }
+  }
+
   idfx::popRegion();
 }
 

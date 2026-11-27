@@ -381,6 +381,27 @@ void Boundary<Phys>::EnforceBoundaryDir(real t, int dir) {
     case BoundaryType::axis:
       axis->EnforceAxisBoundary(left);
       break;
+    case BoundaryType::axis_rad:
+      if constexpr(Phys::radiation) {
+        if(this->haveUserDefBoundary) {
+        idfx::pushRegion("Boundary::UserDefBoundary");
+        if(this->userDefBoundaryFunc != NULL) {
+          this->userDefBoundaryFunc(fluid, dir, left, t);
+        } else {
+          // Revert to deprecated Boundary condition
+          this->userDefBoundaryFuncOld(*data, dir, left, t);
+        }
+        idfx::popRegion();
+        } else {
+          std::stringstream msg;
+          msg << "No function has been enrolled to define your own boundary conditions" << std::endl
+              << "for the fluid " << fluid->prefix << "." << std::endl;
+          IDEFIX_ERROR(msg);
+        }
+      } else {
+        axis->EnforceAxisBoundary(left);
+      }
+      break;
     case BoundaryType::userdef:
       if(this->haveUserDefBoundary) {
         idfx::pushRegion("Boundary::UserDefBoundary");
@@ -426,6 +447,27 @@ void Boundary<Phys>::EnforceBoundaryDir(real t, int dir) {
       break;
     case BoundaryType::axis:
       axis->EnforceAxisBoundary(right);
+      break;
+    case BoundaryType::axis_rad:
+      if constexpr(Phys::radiation) {
+        if(this->haveUserDefBoundary) {
+          idfx::pushRegion("Boundary::UserDefBoundary");
+          if(this->userDefBoundaryFunc != NULL) {
+            this->userDefBoundaryFunc(fluid, dir, right, t);
+          } else {
+            // Revert to deprecated Boundary condition
+            this->userDefBoundaryFuncOld(*data, dir, right, t);
+          }
+          idfx::popRegion();
+        } else {
+          std::stringstream msg;
+          msg << "No function has been enrolled to define your own boundary conditions" << std::endl
+              << "for the fluid " << fluid->prefix << "." << std::endl;
+          IDEFIX_ERROR(msg);
+        }
+      } else {
+        axis->EnforceAxisBoundary(right);
+      }
       break;
     case BoundaryType::userdef:
       if(this->haveUserDefBoundary) {

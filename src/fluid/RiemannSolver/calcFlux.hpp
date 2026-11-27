@@ -27,6 +27,9 @@
 #include "tvdlfHD.hpp"
 #include "roeHD.hpp"
 #include "hllDust.hpp"
+#include "hllcRad.hpp"
+#include "hllRad.hpp"
+#include "lfrRad.hpp"
 
 #include "shockFlattening.hpp"
 
@@ -37,7 +40,10 @@ void RiemannSolver<Phys>::CalcFlux(IdefixArray4D<real> &flux) {
   idfx::pushRegion("RiemannSolver::CalcFlux");
   if constexpr(dir == IDIR) {
     // enable shock flattening
-    if(haveShockFlattening) shockFlattening->FindShock();
+    if(haveShockFlattening) {
+      shockFlattening->FindShock();
+      //printf("Have shock flattening for radiation= %s\n",Phys::radiation ? "true" : "false");
+    }
   }
 
   if constexpr(Phys::mhd) {
@@ -62,6 +68,21 @@ void RiemannSolver<Phys>::CalcFlux(IdefixArray4D<real> &flux) {
       switch (mySolver) {
         case HLL_DUST:
           HllDust<dir>(flux);
+          break;
+        default: // do nothing
+          IDEFIX_ERROR("Internal error: Unknown solver");
+          break;
+      }
+    } else if constexpr(Phys::radiation) {
+      switch (mySolver) {
+        case HLLC_RAD:
+          HllcRad<dir>(flux);
+          break;
+        case HLL_RAD:
+          HllRad<dir>(flux);
+          break;
+        case LFR_RAD:
+          LFRRad<dir>(flux);
           break;
         default: // do nothing
           IDEFIX_ERROR("Internal error: Unknown solver");

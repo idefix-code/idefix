@@ -59,6 +59,10 @@ class EquationOfState {
   KOKKOS_INLINE_FUNCTION real GetGamma(real P = 0.0, real rho = 0.0) const {
     return 1.0;
   }
+  KOKKOS_INLINE_FUNCTION real GetMu(real P = 0.0, real rho = 0.0) const {
+    return 1.0;
+  }
+
 
   void Refresh(DataBlock &data, real t) {     // Refresh the coefficients (and tables)
   idfx::pushRegion("EquationOfState::Refresh");

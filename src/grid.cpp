@@ -111,6 +111,12 @@ Grid::Grid(Input &input) {
       }
       lbound[dir] = axis;
       haveAxis = true;
+    } else if(boundary.compare("axis_rad") == 0) {
+      if(dir!= JDIR) {
+        IDEFIX_ERROR("Axis_rad Boundaries are only applicable to X2");
+      }
+      lbound[dir] = axis_rad;
+      haveAxis = true;
     } else if(boundary.compare("userdef") == 0) {
       lbound[dir] = userdef;
     } else {
@@ -136,6 +142,12 @@ Grid::Grid(Input &input) {
         IDEFIX_ERROR("Axis Boundaries are only applicable to X2");
       }
       rbound[dir] = axis;
+      haveAxis = true;
+    } else if(boundary.compare("axis_rad") == 0) {
+      if(dir!= JDIR) {
+        IDEFIX_ERROR("Axis_rad Boundaries are only applicable to X2");
+      }
+      rbound[dir] = axis_rad;
       haveAxis = true;
     } else if(boundary.compare("userdef") == 0) {
       rbound[dir] = userdef;
@@ -360,6 +372,9 @@ void Grid::ShowConfig() {
         case axis:
           lboundString="axis";
           break;
+        case axis_rad:
+          lboundString="axis_rad";
+          break;
         case userdef:
           lboundString="userdef";
           break;
@@ -387,6 +402,9 @@ void Grid::ShowConfig() {
           break;
         case axis:
           rboundString="axis";
+          break;
+        case axis_rad:
+          rboundString="axis_rad";
           break;
         case userdef:
           rboundString="userdef";

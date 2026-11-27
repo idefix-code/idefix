@@ -47,9 +47,9 @@ KOKKOS_INLINE_FUNCTION void K_Flux(real *KOKKOS_RESTRICT F, const real *KOKKOS_R
             F[MX2] = U[MX2]*V[Xn] - V[BXn]*V[BX2]; ,
             F[MX3] = U[MX3]*V[Xn] - V[BXn]*V[BX3];)
   } else {
-    EXPAND( F[MX1] = U[MX1]*V[Xn];  ,
-            F[MX2] = U[MX2]*V[Xn];  ,
-            F[MX3] = U[MX3]*V[Xn];  )
+    EXPAND ( F[MX1] = U[MX1]*V[Xn];  ,
+             F[MX2] = U[MX2]*V[Xn];  ,
+             F[MX3] = U[MX3]*V[Xn];  )
   }
 
   // Magnetic flux
@@ -99,6 +99,43 @@ KOKKOS_INLINE_FUNCTION void K_Flux(real *KOKKOS_RESTRICT F, const real *KOKKOS_R
     // Add back pressure in the flux (not included in original PLUTO implementation)
     F[Xn]   += ptot;
   }
+}
+
+
+/********************************************************************************************
+ * @fn void K_Flux(real F[], real V[], real U[], real reduced_c, real xi
+ *                                  const int Xn, const int Xt, const int Xb)
+ * @param F[]   Array of flux variables (output)
+ * @param V[]   Array of primitive variabless (input)
+ * @param U[]   Array of conservative variables (input)
+ * @param reduced_c reduced speed of light for radiation
+ * @param xi    Closure parameter for radiation pressure
+ * @param Xn    Index of the normal velocity component
+ *
+ *  This routine computes the radiation out of V and U variables and stores it in F
+ ********************************************************************************************/
+template<typename Phys, int DIR>
+KOKKOS_INLINE_FUNCTION void K_Flux(real *KOKKOS_RESTRICT F, const real *KOKKOS_RESTRICT V,
+                                   const real *KOKKOS_RESTRICT U, real reduced_c, real xi) {
+  constexpr int Xn = DIR+MX1;
+
+  // Radiation energy flux
+  F[ER] = U[Xn]*reduced_c;
+
+  // Add momentum-like part of the radiation pressure tensor
+  real Fnorm2 = EXPAND(V[FR1]*V[FR1] , + V[FR2]*V[FR2], + V[FR3]*V[FR3]);
+  real inv_Fnorm2 = (Fnorm2 <= 1.e-100 ? 1.e-100 : ONE_F / Fnorm2);
+
+  EXPAND ( F[FR1] = HALF_F*(3.*xi-1.)*V[ER]*V[FR1]*V[Xn]*inv_Fnorm2;  ,
+           F[FR2] = HALF_F*(3.*xi-1.)*V[ER]*V[FR2]*V[Xn]*inv_Fnorm2;  ,
+           F[FR3] = HALF_F*(3.*xi-1.)*V[ER]*V[FR3]*V[Xn]*inv_Fnorm2;  )
+
+  // Add pressure-like part of the radiation pressure tensor
+  F[Xn] += HALF_F*(1.-xi)*V[ER],
+
+  EXPAND ( F[FR1] *= reduced_c; ,
+           F[FR2] *= reduced_c; ,
+           F[FR3] *= reduced_c; )
 }
 
 #endif //FLUID_RIEMANNSOLVER_FLUX_HPP_

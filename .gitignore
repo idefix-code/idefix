@@ -39,6 +39,9 @@ test/**/KokkosCore*
 test/**/*.csv
 test/**/*.pyc
 test/**/*.dat
+test/**/*.png
+test/**/git-state.txt
+test/**/generated
 test/**/cmake_packages*
 test/**/
 idefix-tests.junit.xml

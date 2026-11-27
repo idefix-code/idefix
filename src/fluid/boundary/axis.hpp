@@ -132,6 +132,8 @@ Axis::Axis(Boundary<Phys> *boundary) {
   // Check where the axis is lying.
   if(data->lbound[JDIR] == axis) axisLeft = true;
   if(data->rbound[JDIR] == axis) axisRight = true;
+  if(data->lbound[JDIR] == axis_rad) axisLeft = true;
+  if(data->rbound[JDIR] == axis_rad) axisRight = true;
 
   // Init the symmetry array (used to flip the signs of arrays accross the axis)
   symmetryVc = IdefixArray1D<int>("Axis:SymmetryVc",nVar);

@@ -34,6 +34,8 @@ target_sources(idefix-core
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/drag.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/evolveStage.hpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/fluid_defs.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/radsource.hpp
+  PRIVATE ${CMAKE_CURRENT_LIST_DIR}/radsource.cpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/enroll.hpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/fluid.hpp
   PRIVATE ${CMAKE_CURRENT_LIST_DIR}/viscosity.hpp

@@ -1,0 +1,17 @@
+{
+  "default": {
+    "dumpname": "dump.0001.dmp",
+    "tolerance": 0,
+    "dec": [2],
+    "vectPot": false,
+    "single": false
+
+  },
+  "variants": [
+    {
+      "ini": ["idefix-hll-1.ini","idefix-hll-2.ini","idefix-hllc-1.ini","idefix-hllc-2.ini"],
+      "reconstruction": [2],
+      "mpi": false
+    }
+  ]
+}

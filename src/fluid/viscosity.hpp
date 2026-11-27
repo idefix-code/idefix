@@ -50,6 +50,7 @@ class Viscosity {
 
   // pre-computed geometrical factors in non-cartesian geometry
   IdefixArray1D<real> one_dmu;
+  ViscousDiffusivityFunc viscousDiffusivityFunc;
 
  private:
   DataBlock* data;
@@ -57,7 +58,6 @@ class Viscosity {
   // Viscosity status
   ParabolicModuleStatus &status;
 
-  ViscousDiffusivityFunc viscousDiffusivityFunc;
 
   IdefixArray4D<real> &Vc;
   IdefixArray3D<real> &dMax;

@@ -26,15 +26,19 @@ class EquationOfState {
 
   EquationOfState(Input & input, DataBlock *, std::string prefix) {
     this->gamma = input.GetOrSet<real>(prefix,"gamma",0, 5.0/3.0);
+    this->mu = input.GetOrSet<real>(prefix,"mu",0, 1.);
   }
 
   void ShowConfig() {
     idfx::cout << "EquationOfState: ideal with gamma=" << this->gamma << std::endl;
+    idfx::cout << "EquationOfState: ideal with mu=" << this->mu << std::endl;
   }
 
-  // First adiabatic exponent. In the ideal EOS, gamma does not depend on the gas state,
-  // So we add default values to 0 here so that GetGamma can be called without any argument
+  // First adiabatic exponent. In the ideal EOS, gamma and mu do not depend on the gas state,
+  // So we add default values to 0 here so that GetGamma and GetMu can be called without any
+  // argument
   KOKKOS_INLINE_FUNCTION real GetGamma(real P = 0.0, real rho = 0.0) const {return gamma;}
+  KOKKOS_INLINE_FUNCTION real GetMu(real P = 0.0, real rho = 0.0) const {return mu;}
   void Refresh(DataBlock &, real) {}  // Refresh the eos (recompute coefficients and tables)
 
   KOKKOS_INLINE_FUNCTION
@@ -53,5 +57,6 @@ class EquationOfState {
 
  private:
   real gamma;
+  real mu;
 };
 #endif // FLUID_EOS_EOS_ADIABATIC_HPP_

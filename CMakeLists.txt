@@ -353,6 +353,7 @@ target_include_directories(idefix-core PUBLIC
                            src/fluid/RiemannSolver/HDsolvers
                            src/fluid/RiemannSolver/MHDsolvers
                            src/fluid/RiemannSolver/Dustsolvers
+                           src/fluid/RiemannSolver/Radiationsolvers
                            src/fluid/tracer
                            src/output
                            src/rkl

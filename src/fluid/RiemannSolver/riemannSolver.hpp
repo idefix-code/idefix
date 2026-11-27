@@ -33,7 +33,11 @@ class RiemannSolver {
  public:
   // Riemann Solver type
 
-  enum Solver {TVDLF_MHD, HLL_MHD, HLLD_MHD, ROE_MHD, TVDLF, HLL, HLLC, ROE, HLL_DUST};
+  enum Solver {TVDLF_MHD, HLL_MHD, HLLD_MHD, ROE_MHD, TVDLF, HLL, HLLC, ROE, HLL_DUST,
+               HLL_RAD, LFR_RAD, HLLC_RAD};
+
+  enum class Type_Radlimiter{simple,flatten,fpreserving};
+  Type_Radlimiter radLimiter;  // Type of radiative flux limiter
 
   RiemannSolver(Input &input, Fluid<Phys>* hydro);
 
@@ -66,6 +70,15 @@ class RiemannSolver {
 
   template<const int>
     void HllDust(IdefixArray4D<real> &);
+
+  template<const int>
+    void HllRad(IdefixArray4D<real> &);
+  template<const int>
+    void LFRRad(IdefixArray4D<real> &);
+  template<const int>
+    void HllcRad(IdefixArray4D<real> &);
+
+
   // Get the right slope limiter
   template<int dir>
   ExtrapolateToFaces<Phys, dir>* GetExtrapolator();
@@ -89,7 +102,9 @@ class RiemannSolver {
   std::unique_ptr<ExtrapolateToFaces<Phys,JDIR>> slopeLimJDIR;
   std::unique_ptr<ExtrapolateToFaces<Phys,KDIR>> slopeLimKDIR;
 
+  real reduced_c;
   bool haveShockFlattening;
+  bool haveRadiation;
 };
 
 #include "shockFlattening.hpp"
@@ -102,7 +117,21 @@ RiemannSolver<Phys>::RiemannSolver(Input &input, Fluid<Phys>* hydro) : Vc{hydro-
                                       data{hydro->data}
                                       {
   // read Solver from input file
-  if(!Phys::dust) {
+  if (Phys::dust) {
+    // We're dealing with dust grains
+    mySolver = HLL_DUST;
+  } else if (Phys::radiation) {
+    // We're dealing with radiation
+    std::string solver_rad_String = input.Get<std::string>(std::string(Phys::prefix)
+                                                          ,"solver_rad",0);
+    if (solver_rad_String.compare("hll_rad") == 0) {
+      mySolver = HLL_RAD;
+    } else if (solver_rad_String.compare("lfr_rad") == 0) {
+      mySolver = LFR_RAD;
+    } else if (solver_rad_String.compare("hllc_rad") == 0) {
+      mySolver = HLLC_RAD;
+    }
+  } else {
     std::string solverString = input.Get<std::string>(std::string(Phys::prefix),"solver",0);
     if (solverString.compare("tvdlf") == 0) {
       if constexpr(Phys::mhd) {
@@ -149,9 +178,34 @@ RiemannSolver<Phys>::RiemannSolver(Input &input, Fluid<Phys>* hydro) : Vc{hydro-
         if(mySolver != HLL_MHD )
           IDEFIX_ERROR("Hall effect is only compatible with HLL Riemann solver.");
     }
-  } else {
-    // We're dealing with dust grains
-    mySolver = HLL_DUST;
+  }
+
+  //Retrieve haveRadiation from fluid class
+  haveRadiation = hydro->haveRadiation;
+
+  // Reduced velocity of light
+  if(input.CheckEntry(std::string(Phys::prefix),"reduced_c")>=0) {
+    this->reduced_c = hydro->reduced_c;
+    //printf("reduced_c=%e\n",this->reduced_c);
+  }
+
+  // Radiative flux limiter
+  if (haveRadiation) {
+    std::string limiterString;
+    limiterString = input.GetOrSet<std::string>(std::string(Phys::prefix),"rad_limiter",0,"simple");
+    if(limiterString.compare("simple") == 0) {
+      radLimiter = Type_Radlimiter::simple;
+    } else if(limiterString.compare("flatten") == 0) {
+      radLimiter = Type_Radlimiter::flatten;
+    } else if(limiterString.compare("fpreserving") == 0) {
+      radLimiter = Type_Radlimiter::fpreserving;
+    } else {
+      std::stringstream msg;
+      msg << "Unknown limiter for radiative flux \"" <<  limiterString
+          << "\" in your input file." << std::endl
+          << "Allowed values are: simple, flatten, fpreserving." << std::endl;
+      IDEFIX_ERROR(msg);
+    }
   }
 
   // Shock flattening
@@ -203,12 +257,36 @@ void RiemannSolver<Phys>::ShowConfig() {
     case HLL_DUST:
       idfx::cout << "HLL (Dust)." << std::endl;
       break;
+    case HLL_RAD:
+      idfx::cout << "HLL (RAD)." << std::endl;
+      break;
+    case LFR_RAD:
+      idfx::cout << "LFR (RAD)." << std::endl;
+      break;
+    case HLLC_RAD:
+      idfx::cout << "HLLC (RAD)." << std::endl;
+      break;
     default:
       IDEFIX_ERROR("Unknown Riemann solver");
   }
 
   if(haveShockFlattening) {
     idfx::cout << Phys::prefix << ": Shock Flattening ENABLED." << std::endl;
+  }
+
+  if(haveRadiation) {
+    idfx::cout << Phys::prefix << ": Radiative flux limiter is ";
+    switch(radLimiter) {
+      case Type_Radlimiter::simple:
+        idfx::cout << "simple." << std::endl;
+        break;
+      case Type_Radlimiter::flatten:
+        idfx::cout << "flatten." << std::endl;
+        break;
+      case Type_Radlimiter::fpreserving:
+        idfx::cout << "f-preserving." << std::endl;
+        break;
+    }
   }
 }
 

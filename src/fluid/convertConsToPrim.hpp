@@ -18,14 +18,31 @@
 #include "fluid.hpp"
 #include "dataBlock.hpp"
 #include "tracer.hpp"
+#include "lim_fluxRad.hpp"
 
 template <typename Phys>
 KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[], const EquationOfState *eos) {
   Vc[RHO] = Uc[RHO];
 
-  EXPAND( Vc[VX1] = Uc[MX1]/Uc[RHO];  ,
-          Vc[VX2] = Uc[MX2]/Uc[RHO];  ,
-          Vc[VX3] = Uc[MX3]/Uc[RHO];  )
+  if constexpr(Phys::radiation) {
+      //Check radiation energy posivity
+      #ifdef SMALL_ER
+      if(Uc[ER]<= ZERO_F) {
+        Uc[ER] = SMALL_ER;
+        Vc[ER] = Uc[ER];
+      }
+      #endif
+
+      //K_LimitRadFlux(Uc);
+
+      EXPAND( Vc[FR1] = Uc[FR1];  ,
+              Vc[FR2] = Uc[FR2];  ,
+              Vc[FR3] = Uc[FR3];  )
+  } else {
+      EXPAND( Vc[VX1] = Uc[MX1]/Uc[RHO];  ,
+              Vc[VX2] = Uc[MX2]/Uc[RHO];  ,
+              Vc[VX3] = Uc[MX3]/Uc[RHO];  )
+  }
 
   if constexpr(Phys::mhd) {
     EXPAND( Vc[BX1] = Uc[BX1];  ,
@@ -61,6 +78,12 @@ KOKKOS_INLINE_FUNCTION void K_ConsToPrim(real Vc[], real Uc[], const EquationOfS
       Vc[PRS] = eos->GetPressure(Uc[ENG] - kin, Uc[RHO]);
       // Check pressure positivity
       if(Vc[PRS]<= ZERO_F) {
+        if (Uc[ENG]<=0.) {
+          //std::printf("Uc[ENG]=%e kin=%e VX1=%e VX2=%e VX3=%e RHO=%e PRS=%e\n",
+          //            Uc[ENG],kin,Vc[VX1],Vc[VX2],Vc[VX3],Vc[RHO],Vc[PRS]);
+          //throw std::runtime_error(std::string("ENG=0 in ConsToPrim"));
+          Kokkos::abort("ENG=0 in ConsToPrim");
+        }
         #ifdef SMALL_PRESSURE_TEMPERATURE
           Vc[PRS] = SMALL_PRESSURE_TEMPERATURE*Vc[RHO];
         #else
@@ -77,9 +100,17 @@ template <typename Phys>
 KOKKOS_INLINE_FUNCTION void K_PrimToCons(real Uc[], real Vc[], const EquationOfState *eos) {
   Uc[RHO] = Vc[RHO];
 
-  EXPAND( Uc[MX1] = Vc[VX1]*Vc[RHO];  ,
-          Uc[MX2] = Vc[VX2]*Vc[RHO];  ,
-          Uc[MX3] = Vc[VX3]*Vc[RHO];  )
+  if constexpr(Phys::radiation) {
+      //K_LimitRadFlux(Vc);
+
+      EXPAND( Uc[MX1] = Vc[VX1];  ,
+              Uc[MX2] = Vc[VX2];  ,
+              Uc[MX3] = Vc[VX3];  )
+  } else {
+      EXPAND( Uc[MX1] = Vc[VX1]*Vc[RHO];  ,
+              Uc[MX2] = Vc[VX2]*Vc[RHO];  ,
+              Uc[MX3] = Vc[VX3]*Vc[RHO];  )
+  }
 
   if constexpr(Phys::mhd) {
     EXPAND( Uc[BX1] = Vc[BX1];  ,
@@ -107,11 +138,10 @@ KOKKOS_INLINE_FUNCTION void K_PrimToCons(real Uc[], real Vc[], const EquationOfS
 }
 
 
-
 // Convect Conservative to Primitive variable
 template<typename Phys>
 void Fluid<Phys>::ConvertConsToPrim() {
-  idfx::pushRegion("Fluid::ConvertConsToPrim");
+  idfx::pushRegion("Fluid_"+prefix+"::ConvertConsToPrim");
 
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Uc = this->Uc;
@@ -158,7 +188,7 @@ void Fluid<Phys>::ConvertConsToPrim() {
 // Convert Primitive to conservative variables
 template<typename Phys>
 void Fluid<Phys>::ConvertPrimToCons() {
-  idfx::pushRegion("Fluid::ConvertPrimToCons");
+  idfx::pushRegion("Fluid_"+prefix+"::ConvertPrimToCons");
 
   IdefixArray4D<real> Vc = this->Vc;
   IdefixArray4D<real> Uc = this->Uc;

@@ -124,6 +124,8 @@ class DataBlock {
   std::unique_ptr<Fluid<DefaultPhysics>> hydro;   ///< The Hydro object attached to this datablock
   bool haveDust{false};
   std::vector<std::unique_ptr<Fluid<DustPhysics>>> dust; ///< Holder for zero pressure dust fluid
+  bool haveRadiation {false};
+  std::vector<std::unique_ptr<Fluid<RadiationPhysics>>> radiation; ///< Holder for radiation fluid
 
   std::unique_ptr<Vtk> vtk;
   std::unique_ptr<Dump> dump;

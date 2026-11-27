@@ -54,7 +54,6 @@ class IdexPytestRunner:
         self.currentTestRunner: tst.idfxTest = None
         self.parentScritFile = parentScriptFile
         self.filterSubdir = os.environ.get("IDEFIX_TEST_FILTER_SUBDIR", "./test/")
-        self.makeReferencesDone: list[str] = []
         self.testmeSchema = self._loadTestmeSchema()
 
     def _loadTestmeSchema(self) -> dict:
@@ -457,7 +456,7 @@ class IdexPytestRunner:
 
         # regen ref if needed
         if idefixTest.init:
-            idefixTest.makeReference(filename=dumpname, done=self.makeReferencesDone)
+            idefixTest.makeReference(filename=dumpname)
 
         # check outputs
         if standardTest:

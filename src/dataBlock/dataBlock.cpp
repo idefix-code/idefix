@@ -29,7 +29,7 @@
 #include "xdmf.hpp"
 #endif
 
-DataBlock::DataBlock(Grid &grid, Input &input) {
+DataBlock::DataBlock(Grid &grid, Input &input, bool init_phys) {
   idfx::pushRegion("DataBlock::DataBlock");
 
   this->mygrid=&grid;
@@ -121,50 +121,10 @@ DataBlock::DataBlock(Grid &grid, Input &input) {
 
   this->states["current"] = StateContainer();
 
-  // Initialize the Dump object
-  this->dump = std::make_unique<Dump>(input, this);
-
-  // Initialize the VTK object
-  this->vtk = std::make_unique<Vtk>(input, this, "data");
-
-  // Init XDMF objects for HDF5 outputs
-  #ifdef WITH_HDF5
-    this->xdmf= std::make_unique<Xdmf>(input,this);
-  #endif
-
-
-  // Initialize the hydro object attached to this datablock
-  this->hydro = std::make_unique<Fluid<DefaultPhysics>>(grid, input, this);
-
-  // Initialise Fargo if needed
-  if(input.CheckBlock("Fargo")) {
-    this->fargo = std::make_unique<Fargo>(input, DefaultPhysics::nvar, this);
-    this->haveFargo = true;
-  }
-
-  // initialise planets if needed
-  if(input.CheckBlock("Planet")) {
-    this->planetarySystem = std::make_unique<PlanetarySystem>(input, this);
-    this->haveplanetarySystem = true;
-  }
-
-  // Initialise gravity if needed (automatically if planets are present)
-  if(input.CheckBlock("Gravity") || haveplanetarySystem) {
-    this->gravity = std::make_unique<Gravity>(input, this);
-    this->haveGravity = true;
-  }
-
-  // Initialise dust grains if needed
-  if(input.CheckBlock("Dust")) {
-    haveDust = true;
-    int nSpecies = input.Get<int>("Dust","nSpecies",0);
-    for(int i = 0 ; i < nSpecies ; i++) {
-      dust.emplace_back(std::make_unique<Fluid<DustPhysics>>(grid, input, this, i));
-    }
-  }
-  // Register variables that need to be saved in case of restart dump
-  dump->RegisterVariable(&t, "time");
-  dump->RegisterVariable(&dt, "dt");
+  // Ini storage & physics
+  this->InitStorage(input);
+  if (init_phys)
+    this->InitPhysics(grid, input);
 
   idfx::popRegion();
 }
@@ -371,6 +331,60 @@ real DataBlock::ComputeTimestep() {
   }
   Kokkos::fence();
   return(dt);
+}
+
+/**
+ * @brief Initialise the IO storage part of the datablock.
+ *
+ * Initialise the IO storage part of the datablock.
+ */
+void DataBlock::InitStorage(Input & input) {
+  // Initialize the Dump object
+  this->dump = std::make_unique<Dump>(input, this);
+
+  // Initialize the VTK object
+  this->vtk = std::make_unique<Vtk>(input, this, "data");
+
+  // Init XDMF objects for HDF5 outputs
+  #ifdef WITH_HDF5
+    this->xdmf= std::make_unique<Xdmf>(input,this);
+  #endif
+
+  // Register variables that need to be saved in case of restart dump
+  dump->RegisterVariable(&t, "time");
+  dump->RegisterVariable(&dt, "dt");
+}
+
+void DataBlock::InitPhysics(Grid & grid, Input & input) {
+  // Initialize the hydro object attached to this datablock
+  this->hydro = std::make_unique<Fluid<DefaultPhysics>>(grid, input, this);
+
+  // Initialise Fargo if needed
+  if(input.CheckBlock("Fargo")) {
+    this->fargo = std::make_unique<Fargo>(input, DefaultPhysics::nvar, this);
+    this->haveFargo = true;
+  }
+
+  // initialise planets if needed
+  if(input.CheckBlock("Planet")) {
+    this->planetarySystem = std::make_unique<PlanetarySystem>(input, this);
+    this->haveplanetarySystem = true;
+  }
+
+  // Initialise gravity if needed (automatically if planets are present)
+  if(input.CheckBlock("Gravity") || haveplanetarySystem) {
+    this->gravity = std::make_unique<Gravity>(input, this);
+    this->haveGravity = true;
+  }
+
+  // Initialise dust grains if needed
+  if(input.CheckBlock("Dust")) {
+    haveDust = true;
+    int nSpecies = input.Get<int>("Dust","nSpecies",0);
+    for(int i = 0 ; i < nSpecies ; i++) {
+      dust.emplace_back(std::make_unique<Fluid<DustPhysics>>(grid, input, this, i));
+    }
+  }
 }
 
 // Recompute magnetic fields from vector potential in dedicated fluids

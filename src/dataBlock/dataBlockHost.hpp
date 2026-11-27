@@ -87,10 +87,12 @@ class DataBlockHost {
   real dt;                     ///< Current timestep
   real t;                      ///< Current time
 
-  explicit DataBlockHost(DataBlock &);        ///< Constructor from a device datablock
+  explicit DataBlockHost(DataBlock &, bool init_physics = true);        ///< Constructor from a device datablock
                                               ///< (NB: does not sync any data)
 
   DataBlockHost() = default;                  ///< Default constructor
+
+  void IniPhysics();          ///< Init the physics part of the host data block
 
   // The Planetary system (actually a copy from the dataBlock)
   bool haveplanetarySystem{false};

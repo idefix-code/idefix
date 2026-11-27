@@ -20,7 +20,7 @@
 #include "dataBlockHost.hpp"
 #include "fluid.hpp"
 
-DataBlockHost::DataBlockHost(DataBlock& datain) {
+DataBlockHost::DataBlockHost(DataBlock& datain, bool init_physics) {
   idfx::pushRegion("DataBlockHost::DataBlockHost(DataBlock)");
 
   // copy the dataBlock object for later use
@@ -58,31 +58,9 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
     // TO BE COMPLETED...
 
   dV = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->dV);
-  Vc = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->Vc);
-  Uc = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->Uc);
-  InvDt = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->InvDt);
 
-#if MHD == YES
-  Vs = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->Vs);
-  this->haveCurrent = data->hydro->haveCurrent;
-  if(data->hydro->haveCurrent) {
-    J = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->J);
-  }
-  #ifdef EVOLVE_VECTOR_POTENTIAL
-    Ve = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->Ve);
-  #endif
-
-  D_EXPAND( Ex3 = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->emf->ez);  ,
-                                                             ,
-            Ex1 = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->emf->ex);
-            Ex2 = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->emf->ey);  )
-#endif
-  if(haveDust) {
-    dustVc = std::vector<IdefixHostArray4D<real>>(data->dust.size());
-    for(int i = 0 ; i < data->dust.size() ; i++) {
-      dustVc[i] = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->dust[i]->Vc);
-    }
-  }
+  if (init_physics)
+    this->IniPhysics();
 
   // if grid coarsening is enabled
   if(data->haveGridCoarsening) {
@@ -113,6 +91,34 @@ DataBlockHost::DataBlockHost(DataBlock& datain) {
   this->dt = data->dt;
 
   idfx::popRegion();
+}
+
+void DataBlockHost::IniPhysics() {
+  Vc = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->Vc);
+  Uc = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->Uc);
+  InvDt = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->InvDt);
+
+  #if MHD == YES
+  Vs = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->Vs);
+  this->haveCurrent = data->hydro->haveCurrent;
+  if(data->hydro->haveCurrent) {
+    J = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->J);
+  }
+  #ifdef EVOLVE_VECTOR_POTENTIAL
+    Ve = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->Ve);
+  #endif
+
+  D_EXPAND( Ex3 = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->emf->ez);  ,
+                                                             ,
+            Ex1 = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->emf->ex);
+            Ex2 = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->hydro->emf->ey);  )
+#endif
+  if(haveDust) {
+    dustVc = std::vector<IdefixHostArray4D<real>>(data->dust.size());
+    for(int i = 0 ; i < data->dust.size() ; i++) {
+      dustVc[i] = Kokkos::create_mirror_view(Kokkos::HostSpace(), data->dust[i]->Vc);
+    }
+  }
 }
 
 // Synchronisation routines of Data (*Only*)

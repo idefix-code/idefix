@@ -26,5 +26,6 @@ target_sources(idefix-core
 if (Idefix_GTEST)
   target_sources(unittests
     PRIVATE ${CMAKE_CURRENT_LIST_DIR}/tests/testLookupTable.cpp
+    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/tests/testColumn.cpp
   )
 endif()

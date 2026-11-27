@@ -132,8 +132,11 @@ class DataBlock {
   #endif
 
 
-  DataBlock(Grid &, Input &);     ///< init from a Grid object
+  DataBlock(Grid &, Input &, bool init_phys = true);  ///< init from a Grid object
   explicit DataBlock(SubGrid *);           ///< init a minimal datablock for a subgrid
+
+  void InitStorage(Input &);             ///< initialise the IO storage part of the datablock
+  void InitPhysics(Grid &, Input &);             ///< initialise the physics part of the datablock
 
   void ExtractSubdomain();        ///< initialise datablock sub-domain according to domain decomp.
   void MakeGeometry();            ///< Compute geometrical terms

@@ -80,6 +80,7 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
 #define ASSERT_THAT_1D_ARRAYS(array, matcher, array2) \
   do { \
     Kokkos::fence(); \
+    ASSERT_EQ(array.extent(0), array2.extent(0)) << "      Array dimension 0"; \
     auto array##_host = Kokkos::create_mirror_view(array); \
     auto array2##_host = Kokkos::create_mirror_view(array2); \
     Kokkos::deep_copy(array##_host, array); \
@@ -107,6 +108,7 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
 #define ASSERT_THAT_1D_ARRAYS_ARGS(array, that, array2, ...) \
   do { \
     Kokkos::fence(); \
+    ASSERT_EQ(array.extent(0), array2.extent(0)) << "      Array dimension 0"; \
     auto array##_host = Kokkos::create_mirror_view(array); \
     auto array2##_host = Kokkos::create_mirror_view(array2); \
     Kokkos::deep_copy(array##_host, array); \
@@ -159,6 +161,8 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
 #define ASSERT_THAT_2D_ARRAYS(array, matcher, array2) \
   do { \
     Kokkos::fence(); \
+    ASSERT_EQ(array.extent(0), array2.extent(0)) << "      Array dimension 0"; \
+    ASSERT_EQ(array.extent(1), array2.extent(1)) << "      Array dimension 1"; \
     auto array##_host = Kokkos::create_mirror_view(array); \
     auto array2##_host = Kokkos::create_mirror_view(array2); \
     Kokkos::deep_copy(array##_host, array); \
@@ -189,6 +193,8 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
 #define ASSERT_THAT_2D_ARRAYS_ARGS(array, matcher, array2, ...) \
   do { \
     Kokkos::fence(); \
+    ASSERT_EQ(array.extent(0), array2.extent(0)) << "      Array dimension 0"; \
+    ASSERT_EQ(array.extent(1), array2.extent(1)) << "      Array dimension 1"; \
     auto array##_host = Kokkos::create_mirror_view(array); \
     auto array2##_host = Kokkos::create_mirror_view(array2); \
     Kokkos::deep_copy(array##_host, array); \
@@ -245,6 +251,9 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
 #define ASSERT_THAT_3D_ARRAYS(array, matcher, array2) \
   do { \
     Kokkos::fence(); \
+    ASSERT_EQ(array.extent(0), array2.extent(0)) << "      Array dimension 0"; \
+    ASSERT_EQ(array.extent(1), array2.extent(1)) << "      Array dimension 1"; \
+    ASSERT_EQ(array.extent(3), array2.extent(3)) << "      Array dimension 3"; \
     auto array##_host = Kokkos::create_mirror_view(array); \
     auto array2##_host = Kokkos::create_mirror_view(array2); \
     Kokkos::deep_copy(array##_host, array); \
@@ -277,6 +286,9 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
 #define ASSERT_THAT_3D_ARRAYS_ARGS(array, matcher, array2, ...) \
   do { \
     Kokkos::fence(); \
+    ASSERT_EQ(array.extent(0), array2.extent(0)) << "      Array dimension 0"; \
+    ASSERT_EQ(array.extent(1), array2.extent(1)) << "      Array dimension 1"; \
+    ASSERT_EQ(array.extent(3), array2.extent(3)) << "      Array dimension 3"; \
     auto array##_host = Kokkos::create_mirror_view(array); \
     auto array2##_host = Kokkos::create_mirror_view(array2); \
     Kokkos::deep_copy(array##_host, array); \
@@ -337,6 +349,10 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
 #define ASSERT_THAT_4D_ARRAYS(array, matcher, array2) \
   do { \
     Kokkos::fence(); \
+    ASSERT_EQ(array.extent(0), array2.extent(0)) << "      Array dimension 0"; \
+    ASSERT_EQ(array.extent(1), array2.extent(1)) << "      Array dimension 1"; \
+    ASSERT_EQ(array.extent(3), array2.extent(3)) << "      Array dimension 3"; \
+    ASSERT_EQ(array.extent(4), array2.extent(4)) << "      Array dimension 4"; \
     auto array##_host = Kokkos::create_mirror_view(array); \
     auto array2##_host = Kokkos::create_mirror_view(array2); \
     Kokkos::deep_copy(array##_host, array); \
@@ -371,6 +387,10 @@ std::string idfx_get_data_file_path(const std::string & sourceFile, const std::s
 #define ASSERT_THAT_4D_ARRAYS_ARGS(array, matcher, array2, ...) \
   do { \
     Kokkos::fence(); \
+    ASSERT_EQ(array.extent(0), array2.extent(0)) << "      Array dimension 0"; \
+    ASSERT_EQ(array.extent(1), array2.extent(1)) << "      Array dimension 1"; \
+    ASSERT_EQ(array.extent(3), array2.extent(3)) << "      Array dimension 3"; \
+    ASSERT_EQ(array.extent(4), array2.extent(4)) << "      Array dimension 4"; \
     auto array##_host = Kokkos::create_mirror_view(array); \
     auto array2##_host = Kokkos::create_mirror_view(array2); \
     Kokkos::deep_copy(array##_host, array); \

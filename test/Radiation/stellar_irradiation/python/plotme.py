@@ -41,12 +41,12 @@ def main():
     V = readVTK("../data.0001.vtk")
 
     unit_density = ini["Units"]["density"] * u.g / u.cm**3
-    unit_length = ini["Units"]["length"] * u.cm
+    # unit_length = ini["Units"]["length"] * u.cm
     unit_velocity = ini["Units"]["velocity"] * u.cm / u.s
     unit_mu = ini["Hydro"]["mu"]
     unit_energy = unit_density * unit_velocity**2
-    unit_kelvin = u.u * unit_velocity**2 / c.k_B
-    unit_ar = 4 * c.sigma_sb / c.c
+    # unit_kelvin = u.u * unit_velocity**2 / c.k_B
+    # unit_ar = 4 * c.sigma_sb / c.c
 
     Tgas = (
         (V.data["PRS"] * unit_energy)

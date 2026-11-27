@@ -22,7 +22,7 @@
 #include "idefix.hpp"
 #include "npy.hpp"
 #ifdef WITH_MPI
-	#include "mpiWrapper.hpp"  // for idfx::MPI_Bcast used below
+  #include "mpiWrapper.hpp"  // for idfx::MPI_Bcast used below
 #endif
 
 // Default transformation (and its inverse) used when the lookup table interpolates in function

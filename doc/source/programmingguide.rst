@@ -743,7 +743,10 @@ adding ``-DIdefix_DEBUG=ON`` when calling cmake). This forces the code to log ea
 returned (this is achieved thanks to the ``idfx::pushRegion(std::string)`` and ``idfx::popRegion()`` which are
 found at the beginning and end of each function). In addition, ``Idefix_DEBUG`` will force *Idefix* to wait for each
 ``idefix_for`` to finish before continuing to the next instruction (otherwise, ``idefix_for`` are asynchronous when using
-an accelerator). This simplifies the detection and identification of bugs in ``idefix_for`` loops. Note that all of these
+an accelerator). This simplifies the detection and identification of bugs in ``idefix_for`` loops. Finally, ``Idefix_DEBUG``
+stops HDF5 (XDMF) outputs from recording the access/modification/change/birth times of their objects, so that runs producing
+identical data (e.g. a restart and the uninterrupted run) produce byte-identical ``.h5`` files. Outside of debug builds, these
+files differ by these timestamps only, and ``h5diff`` can be used to compare their content. Note that all of these
 debugging features induce a large overhead, and should therefore not be activated in production runs.
 
 If you suspect an out-of-bound access, it may be worth enabling additionaly ``Kokkos_ENABLE_BOUNDS_CHECK`` that will check

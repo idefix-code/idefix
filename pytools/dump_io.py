@@ -38,6 +38,7 @@ NAME_SIZE = 16
 DOUBLE_SIZE = 8
 FLOAT_SIZE = 4
 INT_SIZE = 4
+INT64_SIZE = 8
 BOOL_SIZE = 1
 
 HEADER_SIZE = 128
@@ -68,6 +69,20 @@ class DumpField(object):
             mysize = BOOL_SIZE
             stringchar = "?"
             dtype = bool
+        elif self.type == 4:
+            # Kokkos::complex<float>: two contiguous floats (re, im)
+            mysize = 2 * FLOAT_SIZE
+            stringchar = "f"
+            dtype = "complex64"
+        elif self.type == 5:
+            # Kokkos::complex<double>: two contiguous doubles (re, im)
+            mysize = 2 * DOUBLE_SIZE
+            stringchar = "d"
+            dtype = "complex128"
+        elif self.type == 6:
+            mysize = INT64_SIZE
+            stringchar = "q"
+            dtype = "int64"
         else:
             raise RuntimeError(
                 "Found unknown data type %d for field %s" % (self.type, self.name)
@@ -78,8 +93,15 @@ class DumpField(object):
         for _ in range(self.ndims):
             dims.append(int.from_bytes(fh.read(INT_SIZE), byteorder))
             ntot = ntot * dims[-1]
-        raw = struct.unpack(str(ntot) + stringchar, fh.read(mysize * ntot))
-        self.array = np.asarray(raw, dtype=dtype).reshape(dims[::-1]).T
+        if self.type in (4, 5):
+            # `mysize` is the size of a complex element: read twice as many reals
+            # and view them as interleaved (re, im) complex numbers.
+            realdtype = "float32" if self.type == 4 else "float64"
+            real = np.frombuffer(fh.read(mysize * ntot), dtype=realdtype)
+            self.array = real.view(dtype).reshape(dims[::-1]).T
+        else:
+            raw = struct.unpack(str(ntot) + stringchar, fh.read(mysize * ntot))
+            self.array = np.asarray(raw, dtype=dtype).reshape(dims[::-1]).T
 
 
 class DumpDataset(object):

@@ -8,7 +8,7 @@
     },
     "variants": [
         {
-            "ini": ["idefix.ini","idefix-cg.ini","idefix-minres.ini","idefix-jacobi.ini"]
+            "ini": ["idefix.ini","idefix-cg.ini","idefix-minres.ini","idefix-jacobi.ini","idefix-fft.ini"]
         }
     ]
 }

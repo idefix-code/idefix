@@ -58,6 +58,12 @@ if (Idefix_GTEST)
     PRIVATE ${CMAKE_CURRENT_LIST_DIR}/tests/testArrays.cpp
     PRIVATE ${CMAKE_CURRENT_LIST_DIR}/gtest-idfx.cpp
   )
+  if (Idefix_MPI)
+    # the MPI test executable also needs the gtest main() from gtest-idfx.cpp
+    target_sources(unittests_mpi
+      PRIVATE ${CMAKE_CURRENT_LIST_DIR}/gtest-idfx.cpp
+    )
+  endif()
 endif()
 
 #add_subdirectory("${PROJECT_BINARY_DIR}" "${PROJECT_BINARY_DIR}/local")

@@ -229,7 +229,7 @@ int main( int argc, char* argv[] ) {
         break;
       }
       if(input.maxCycles>=0) {
-        if(Tint.GetNCycles() >= input.maxCycles) {
+        if(Tint.GetNCyclesThisRun() >= input.maxCycles) {
           idfx::cout << "Main: Reached maximum number of integration cycles." << std::endl;
           break;
         }
@@ -247,7 +247,7 @@ int main( int argc, char* argv[] ) {
     n_seconds = divres.rem;
 
     double perfs = timer.seconds() / grid.np_int[IDIR] / grid.np_int[JDIR]
-                            / grid.np_int[KDIR] / Tint.GetNCycles() * idfx::psize;
+                            / grid.np_int[KDIR] / Tint.GetNCyclesThisRun() * idfx::psize;
 
     idfx::cout << "Main: Reached t=" << data.t << std::endl;
     idfx::cout << "Main: Completed in ";
@@ -277,8 +277,8 @@ int main( int argc, char* argv[] ) {
       idfx::cout << "s";
     }
     idfx::cout << " ";
-    idfx::cout << "and " << Tint.GetNCycles() << " cycle";
-    if (Tint.GetNCycles() != 1) {
+    idfx::cout << "and " << Tint.GetNCyclesThisRun() << " cycle";
+    if (Tint.GetNCyclesThisRun() != 1) {
       idfx::cout << "s";
     }
     idfx::cout << std::endl;

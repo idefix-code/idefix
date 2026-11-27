@@ -70,6 +70,8 @@ TimeIntegrator::TimeIntegrator(Input & input, DataBlock & data) {
 
   data.t=0.0;
   ncycles=0;
+  // dumps without this field (older code) leave it at 0, i.e. the old behaviour
+  data.dump->RegisterVariable(&ncycles, "ncycles");
 
   if(nstages==2) {
     wc[0] = 0.5;
@@ -110,16 +112,17 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
 #endif
   double sgOverhead;
   if(data.haveGravity && data.gravity->haveSelfGravityPotential) {
-    double sgCycleTime = data.gravity->selfGravity.elapsedTime - lastSGLog;
+    double sgCycleTime = data.gravity->selfGravity->elapsedTime - lastSGLog;
     sgOverhead = 100.0 * sgCycleTime / (timer.seconds() - lastLog);
-    lastSGLog = data.gravity->selfGravity.elapsedTime;
+    lastSGLog = data.gravity->selfGravity->elapsedTime;
   }
 
   lastLog = timer.seconds();
 
 
   int col_width{16};
-  if (ncycles == 0) {
+  if (!logHeaderDone) {
+    logHeaderDone = true;
     idfx::cout << "TimeIntegrator: ";
     idfx::cout << std::setw(col_width) << "time";
     idfx::cout << " | " << std::setw(col_width) << "cycle";
@@ -191,9 +194,9 @@ void TimeIntegrator::ShowLog(DataBlock &data) {
   }
   if(data.haveGravity && data.gravity->haveSelfGravityPotential) {
     if(ncycles>=cyclePeriod) {
-      idfx::cout << " | " << std::setw(col_width) << data.gravity->selfGravity.nsteps;
+      idfx::cout << " | " << std::setw(col_width) << data.gravity->selfGravity->nsteps;
       idfx::cout << std::scientific;
-      idfx::cout << " | " << std::setw(col_width) << data.gravity->selfGravity.currentError;
+      idfx::cout << " | " << std::setw(col_width) << data.gravity->selfGravity->currentError;
       idfx::cout << std::fixed;
       idfx::cout << " | " << std::setw(col_width) << sgOverhead;
     } else {
@@ -266,6 +269,13 @@ void TimeIntegrator::Cycle(DataBlock &data) {
   real newdt;
 
   idfx::pushRegion("TimeIntegrator::Cycle");
+
+  if(firstCycle) {
+    // capture the cycle count at the start of this run (0 for a fresh run,
+    // the value stored in the dump for a restart)
+    ncyclesStart = ncycles;
+    firstCycle = false;
+  }
 
   if(ncycles%cyclePeriod==0) ShowLog(data);
 
@@ -433,6 +443,10 @@ void TimeIntegrator::Cycle(DataBlock &data) {
 
 int64_t TimeIntegrator::GetNCycles() {
   return(ncycles);
+}
+
+int64_t TimeIntegrator::GetNCyclesThisRun() {
+  return(ncycles-ncyclesStart);
 }
 
 // Check whether our maximumruntime has been reached. Reduce the results on all of the cores

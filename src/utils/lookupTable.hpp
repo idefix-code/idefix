@@ -22,7 +22,7 @@
 #include "idefix.hpp"
 #include "npy.hpp"
 #ifdef WITH_MPI
-#include "mpiWrapper.hpp"  // for idfx::MPI_Bcast used below
+	#include "mpiWrapper.hpp"  // for idfx::MPI_Bcast used below
 #endif
 
 // Default transformation (and its inverse) used when the lookup table interpolates in function
@@ -726,7 +726,7 @@ LookupTable<kDim, TFunc, TInvFunc>::LookupTable(std::string filename, char delim
 
   #ifdef WITH_MPI
     // Share the size of the arrays
-    idfx::MPI_Bcast(size, 2, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(size, 2, MPI_INT, 0, MPI_COMM_WORLD);
   #endif
   int sizeTotal = size[0];
   if(kDim>1) sizeTotal += size[1];
